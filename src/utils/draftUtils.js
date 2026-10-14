@@ -39,3 +39,23 @@ export function loadDraftTime(key) {
 export function clearDraft(key) {
     try { almacen.borrar(PREFIX + key); } catch { /* localStorage no disponible (privado/cuota) */ }
 }
+
+/**
+ * Borra TODOS los borradores de este dispositivo. Lo llama el cierre de sesión
+ * —el botón, el vencimiento por inactividad, el cierre desde otra pestaña—.
+ *
+ * Los borradores no llevan dueño en la clave: en una computadora de sala, el
+ * que entra después de alguien se encontraba el pedido a medio escribir de la
+ * persona anterior, ofrecido como si fuera suyo. Lo que se escribió y no se
+ * guardó muere con la sesión que lo escribió.
+ *
+ * Sólo toca el prefijo de los borradores: las preferencias del equipo (tema,
+ * impresora, filtros) viven en otras claves y no se van.
+ */
+export function borrarTodosLosBorradores() {
+    try {
+        almacen.claves()
+            .filter((k) => k && k.startsWith(PREFIX))
+            .forEach((k) => almacen.borrar(k));
+    } catch { /* localStorage no disponible (privado/cuota) */ }
+}

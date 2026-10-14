@@ -20,6 +20,7 @@ import {
 } from '@nucleo/data/sesiones';
 import BloqueoModal from '../components/sesiones/BloqueoModal';
 import useSobreviveAlCierre from '@nucleo/hooks/useSobreviveAlCierre';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 
 const EMPTY_ARRAY = [];
@@ -62,10 +63,12 @@ const SesionesView = () => {
     }, []);
 
     useEffect(() => {
-        cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco periódico (mismo patrón que SyncHealthView.jsx)
-        const t = setInterval(cargar, POLL_MS);
-        return () => clearInterval(t);
+        cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
     }, [cargar]);
+    // El refresco periódico NO consulta con la pestaña oculta —una pestaña de
+    // Conexiones olvidada abierta eran 1,440 consultas al día que nadie veía— y
+    // al volver lee UNA vez si ya venció el minuto (`useRefrescoEnVivo`).
+    useRefrescoEnVivo(cargar, { ms: POLL_MS });
 
     const personas = useMemo(() => agruparPorPersona(filas), [filas]);
 

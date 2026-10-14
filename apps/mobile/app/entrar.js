@@ -1,5 +1,5 @@
 // Entrar con usuario y contraseña — las MISMAS funciones del portal
-// (`loginWithUsername`, `cambiarMiContrasenaInicial`, `completePasswordChange`)
+// (`loginWithUsername`, `cambiarClaveInicial`)
 // con sus mismos mensajes y las mismas reglas de contraseña. La forma es la
 // del sistema: un formulario agrupado como el de Ajustes (ver
 // componentes/Formulario.js) y el botón nativo de @expo/ui.
@@ -13,7 +13,7 @@ import { colorSistema, FilaCampo, Formulario, Grupo } from '../componentes/Formu
 const ICONO_FACE = Icon.select({ ios: 'faceid', android: require('@expo/material-symbols/face.xml') });
 const ICONO_HUELLA = Icon.select({ ios: 'touchid', android: require('@expo/material-symbols/fingerprint.xml') });
 import { useAuth } from '@nucleo/context/AuthContext';
-import { cambiarMiContrasenaInicial } from '@nucleo/data/auth';
+import { esFalloDeCredencial } from '@nucleo/utils/sesionDelNavegador';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 import {
@@ -33,10 +33,13 @@ async function ofrecerBiometria(usuario, clave) {
 }
 
 export default function Entrar() {
-  const { loginWithUsername, completePasswordChange } = useAuth();
+  const { loginWithUsername, cambioDeClave, cambiarClaveInicial } = useAuth();
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
-  const [pendiente, setPendiente] = useState(null); // quien debe cambiar la contraseña
+  // Quien debe cambiar la contraseña: lo dice el contexto, que también cierra
+  // ese trámite solo si nadie lo termina (y entonces dice por qué).
+  const pendiente = cambioDeClave?.estado === 'pendiente';
+  const motivoDeCierre = cambioDeClave?.estado === 'cerrado' ? cambioDeClave.motivo : '';
   const [nueva, setNueva] = useState('');
   const [confirmacion, setConfirmacion] = useState('');
   const [ocupado, setOcupado] = useState(false);
@@ -55,13 +58,21 @@ export default function Entrar() {
     try {
       const r = await loginWithUsername(c.usuario, c.clave);
       if (!r?.ok) {
-        // La contraseña cambió (o la cuenta): lo guardado ya no sirve.
-        await olvidarBiometria();
-        setBiometria(null);
-        setError(`${r?.error || 'Credenciales inválidas.'} Escribe tu contraseña.`);
+        // Sólo si el servidor dijo que la credencial no sirve (la contraseña
+        // cambió, la cuenta no existe o está bloqueada) lo guardado se olvida.
+        // Sin señal, con el tope de intentos o con un error del servidor, la
+        // contraseña guardada sigue siendo buena: borrarla obligaba a
+        // escribirla de nuevo por un corte de red.
+        if (esFalloDeCredencial(r)) {
+          await olvidarBiometria();
+          setBiometria(null);
+          setError(`${r?.error || 'Credenciales inválidas.'} Escribe tu contraseña.`);
+        } else {
+          setError(r?.error || 'No se pudo entrar. Intenta de nuevo.');
+        }
         return;
       }
-      if (r.mustChangePassword) { setUsuario(c.usuario); setPendiente(r.user); return; }
+      if (r.mustChangePassword) { setUsuario(c.usuario); return; }
       router.replace('/inicio');
     } catch {
       setError('Error de conexión. Intenta de nuevo.');
@@ -99,7 +110,7 @@ export default function Entrar() {
     try {
       const r = await loginWithUsername(usuario, clave);
       if (!r?.ok) { setError(r?.error || 'Credenciales inválidas.'); setClave(''); claveRef.current?.clear(); return; }
-      if (r.mustChangePassword) { setPendiente(r.user); return; }
+      if (r.mustChangePassword) return;
       await ofrecerBiometria(usuario, clave);
       router.replace('/inicio');
     } catch {
@@ -116,9 +127,14 @@ export default function Entrar() {
     if (problema) { setError(problema); return; }
     setOcupado(true);
     try {
-      const { error: e } = await cambiarMiContrasenaInicial(nueva);
-      if (e) { setError(mensajeAmigable(e)); return; }
-      await completePasswordChange(pendiente);
+      const r = await cambiarClaveInicial(nueva);
+      // Con `reentrar` la sesión ya se cerró: el formulario vuelve a la
+      // entrada solo y el motivo sale abajo.
+      if (!r.ok) {
+        if (r.reentrar) setClave('');   // la temporal ya no sirve: se entra con la nueva
+        else setError(mensajeAmigable(r.error));
+        return;
+      }
       // Lo guardado tenía la contraseña temporal: se reemplaza por la nueva.
       if (await biometriaActiva()) await activarBiometria(usuario, nueva);
       else await ofrecerBiometria(usuario, nueva);
@@ -176,7 +192,7 @@ export default function Entrar() {
         </Grupo>
       )}
 
-      {error ? <Text style={{ color: colorSistema.rojo, fontSize: 15, textAlign: 'center', marginHorizontal: 24 }}>{error}</Text> : null}
+      {error || motivoDeCierre ? <Text style={{ color: colorSistema.rojo, fontSize: 15, textAlign: 'center', marginHorizontal: 24 }}>{error || motivoDeCierre}</Text> : null}
 
       <View style={{ marginHorizontal: 16 }}>
         <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>

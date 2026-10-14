@@ -10,7 +10,9 @@ import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { anotar } from '@plataforma/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
-import { fetchEmployeeSafeByUsername, motivoDeLoginFallido } from "../data/auth";
+import { fetchEmployeeSafeByUsername, motivoDeLoginFallido, cambiarMiContrasenaInicial } from "../data/auth";
+import { debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos } from "../utils/sesionDelNavegador";
+import { borrarTodosLosBorradores } from "../utils/draftUtils";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "@plataforma/pushEquipo";
 import { programarEn } from "../utils/temporizadorLargo";
 
@@ -205,6 +207,10 @@ export const AuthProvider = ({ children }) => {
   // filtro en el listener: una recarga entrega dos eventos con la misma sesión).
   const sesionProcesada = useRef(null);
 
+  // Cuándo se pidieron los permisos por última vez, por cualquier camino. Lo
+  // mira el regreso a la pestaña para no pedirlos más de una vez por minuto.
+  const ultimoRefrescoPermisosRef = useRef(0);
+
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => { rolePermsRef.current = rolePerms; }, [rolePerms]);
 
@@ -216,8 +222,14 @@ export const AuthProvider = ({ children }) => {
     if (!u) {
       setRolePerms(null); setPermsLoading(false); setMaxPriceLevel(null);
       setPermsError(false); permsIntentosRef.current = 0;
+      // Sin nadie dentro, tampoco hay superusuario. La guarda no es decorativa:
+      // este camino también corre en el MONTAJE —antes de que el arranque
+      // ponga al usuario del caché—, y apagar ahí el `isSU` sembrado del caché
+      // es justo el parpadeo de botones que se describe en su `useState`.
+      if (!hayAlguienDentro()) setIsSU(false);
       return;
     }
+    ultimoRefrescoPermisosRef.current = Date.now();
 
     // Un fallo de lectura no se traga en silencio:
     //   · con permisos ya cargados (caché o red) no cambia nada — se conservan;
@@ -298,7 +310,10 @@ export const AuthProvider = ({ children }) => {
         });
         const price = roleData?.max_price_level ?? null;
         const isSU  = roleData?.is_su ?? false;
-        setRolePerms(map);
+        // Mismo contenido → misma referencia. `rolePerms` está en el valor del
+        // contexto: un mapa nuevo con los mismos permisos volvía a dibujar
+        // toda la app cada vez que la persona volvía a la pestaña.
+        if (!mismosPermisos(rolePermsRef.current, map)) setRolePerms(map);
         setMaxPriceLevel(price);
         setIsSU(isSU);   // el estado propio: nadie más lo pisa
         // Persist isSU on user object so idle-timeout survives page reload from cache
@@ -419,7 +434,9 @@ export const AuthProvider = ({ children }) => {
       setTimeout(() => {
         if (!userRef.current) return;
         try { if (!almacen.leer(LS_USER)) return; } catch { /* sin localStorage: se sigue */ }
-        refreshPermissions();
+        // El mismo tope que `revalidarSesion`: alternar entre ventanas diez
+        // veces en un minuto eran diez rondas de tres consultas cada una.
+        if (Date.now() - ultimoRefrescoPermisosRef.current >= REVALIDATE_MS) refreshPermissions();
         revalidarSesion();
       }, 0);
     };
@@ -618,11 +635,101 @@ export const AuthProvider = ({ children }) => {
     almacen.borrar(LS_SU);
     almacen.borrar(LS_DEVICE);
     clearSignedUrlCache();
+    // Los borradores son de quien los escribió, y su clave no dice de quién:
+    // cerrar la sesión se los lleva (ver `borrarTodosLosBorradores`).
+    borrarTodosLosBorradores();
+  };
+
+  // ── El cambio de contraseña obligatorio, mientras está en pantalla ────────
+  //
+  // Entre «la contraseña temporal sirvió» y «eligió la suya» hay una sesión
+  // ABIERTA sin usuario en el portal: el vigilante de inactividad no corre
+  // (no hay a quién vigilar) y una computadora de sala abandonada en «Cambia tu
+  // contraseña» dejaba a cualquiera elegirle la clave a esa persona. Esto le
+  // pone el mismo plazo que a una sesión de sala, contado desde el último
+  // movimiento, y al vencer cierra la sesión del lado de Auth.
+  //
+  // `cambioDeClave` es lo que la pantalla mira: `{ estado: 'pendiente' }`
+  // mientras se espera la clave nueva, `{ estado: 'cerrado', motivo }` si se
+  // cerró sin terminar (para decir por qué), `null` fuera de ese trámite.
+  const [cambioDeClave, setCambioDeClave] = useState(null);
+  const cambioRef = useRef(null);   // { username, timer, alActuar, ultimo }
+
+  const terminarVigilanciaDelCambio = () => {
+    const v = cambioRef.current;
+    if (!v) return;
+    clearTimeout(v.timer);
+    soltarActividad(v.alActuar);
+    cambioRef.current = null;
+  };
+
+  // Suelta la sesión de Auth de ESTE navegador sin pasar por el oyente: no hay
+  // nada del portal que limpiar (nadie llegó a entrar) y el `SIGNED_OUT` que
+  // emite `signOut` no tiene que disparar el cierre completo. Se espera —con
+  // tope, sin red no puede colgar el login— para que quien llama no reintente
+  // encima de una sesión que todavía existe.
+  const soltarSesionDeAuth = async () => {
+    skipAuthListener.current = true;
+    try {
+      await withTimeout(supabase.auth.signOut({ scope: 'local' }), 3000, 'signOut timeout');
+    } catch { /* sin red: igual se borra abajo */ }
+    try { almacen.borrar(AUTH_STORAGE_KEY); } catch { /* sin localStorage */ }
+    skipAuthListener.current = false;
+  };
+
+  const abandonarCambioDeClave = useCallback(async (motivo = null) => {
+    if (!cambioRef.current) return;
+    terminarVigilanciaDelCambio();
+    setCambioDeClave(motivo ? { estado: 'cerrado', motivo } : null);
+    await soltarSesionDeAuth();
+  }, []);
+
+  const vigilarCambioDeClave = (username) => {
+    terminarVigilanciaDelCambio();
+    const v = { username, timer: null, ultimo: 0, alActuar: null };
+    const armar = () => {
+      clearTimeout(v.timer);
+      v.timer = setTimeout(
+        () => abandonarCambioDeClave('La sesión se cerró por inactividad. Entra de nuevo con tu contraseña temporal.'),
+        IDLE_EMP_MS,
+      );
+    };
+    v.alActuar = () => {
+      const ahora = Date.now();
+      if (ahora - v.ultimo < ACTIVITY_THROTTLE_MS) return;
+      v.ultimo = ahora;
+      armar();
+    };
+    armar();
+    escucharActividad(v.alActuar);
+    cambioRef.current = v;
+    setCambioDeClave({ estado: 'pendiente' });
+  };
+
+  // Lo que deja el navegador como si nadie hubiera entrado. UNA sola función
+  // para los dos caminos que cierran: `doLogout` (el botón, la inactividad, la
+  // sesión revocada) y el `SIGNED_OUT` que llega de otra pestaña. Eran dos
+  // listas escritas a mano, y la del evento se había quedado sin `isSU` y sin
+  // el almacén de personal: la próxima persona arrancaba con el privilegio y
+  // los datos de la anterior.
+  const limpiarSesionLocal = () => {
+    stopIdleWatcher();
+    terminarVigilanciaDelCambio();
+    setCambioDeClave((prev) => (prev?.estado === 'pendiente' ? null : prev));
+    ultimoLatidoRef.current = 0;   // que el próximo login lata de inmediato
+    sesionProcesada.current = null;
+    clearAuthCache();
+    clearErpCache();
+    setIsSU(false);   // el estado propio también se apaga: si no, el próximo login arranca con el privilegio del anterior
+    setUser(null);
+    setRolePerms(null);
+    setPermsLoading(false);
+    setPermsError(false);
+    setMaxPriceLevel(null);
+    useStaffStore.getState().resetBootState();
   };
 
   const doLogout = () => {
-    stopIdleWatcher();
-    ultimoLatidoRef.current = 0;   // que el próximo login lata de inmediato
 
     // El aviso del sistema es del EQUIPO, no de la cuenta —lo emite el
     // navegador de esa computadora—, así que en una máquina compartida cerrar
@@ -639,14 +746,10 @@ export const AuthProvider = ({ children }) => {
     try { claseDispositivo = almacen.leer(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
     soltarPushDelEquipoSiEsCompartido(claseDispositivo);
 
-    clearAuthCache();
-    clearErpCache();
-    setIsSU(false);   // el estado propio también se apaga: si no, el próximo login arranca con el privilegio del anterior
-    setUser(null);
-    setRolePerms(null);
-    setPermsLoading(false);
-    setMaxPriceLevel(null);
-    useStaffStore.getState().resetBootState();
+    limpiarSesionLocal();
+    // Un cierre a mitad de un login (el cambio de contraseña pendiente deja el
+    // oyente apagado) no puede dejarlo apagado para siempre.
+    skipAuthListener.current = false;
 
     // Cerrar sesión tiene que ser cierto SIN RED, y no se puede delegar en
     // `signOut()`: auth-js retorna antes de `_removeSession()` cuando la
@@ -1008,9 +1111,17 @@ export const AuthProvider = ({ children }) => {
           const u = await withSignedPhoto(ensured.user);
           if (isExpiredByIdle(u)) { doLogout(); return; }
 
-          setUser(u);
-          almacen.guardar(LS_USER, JSON.stringify(u));
-          startIdleWatcher(u);
+          // Mismo perfil → misma referencia, y el vigilante que ya corre se
+          // deja correr. `user` está en el valor del contexto: un objeto nuevo
+          // con los mismos datos vuelve a dibujar TODA la app, y esto corría en
+          // cada recarga (INITIAL_SESSION) contra el usuario recién puesto
+          // desde el caché, que casi siempre es idéntico.
+          const cambio = !mismoPerfil(userRef.current, u);
+          if (cambio) {
+            setUser((prev) => (mismoPerfil(prev, u) ? prev : u));
+            almacen.guardar(LS_USER, JSON.stringify(u));
+          }
+          if (cambio || !idleIntervalRef.current) startIdleWatcher(u);
           // NO se llama a refreshPermissions acá: el efecto de abajo
           // ([user?.id, user?.roleId, user?.secondaryRoleId]) ya cubre los dos
           // casos. Si el rol cambió en el servidor, estos ids cambian y el
@@ -1034,19 +1145,17 @@ export const AuthProvider = ({ children }) => {
       try {
         if (skipAuthListener.current) return;
 
+        // El cierre que llega por evento —otra pestaña cerró, o auth-js soltó
+        // la sesión— limpia EXACTAMENTE lo mismo que el botón: la misma función.
         if (event === 'SIGNED_OUT' || !session?.user) {
-          stopIdleWatcher();
-          clearAuthCache();
-          clearErpCache();
-          sesionProcesada.current = null;
-          setUser(null);
+          limpiarSesionLocal();
           return;
         }
 
-        // Usuario con contraseña temporal: loginWithUsername maneja ese flujo.
-        // Las cuentas kiosk/carné (@staff.local) no usan contraseña personal — se exentan.
-        const meta = session.user?.user_metadata;
-        if (!meta?.kiosk && meta?.must_change_password !== false) {
+        // Contraseña temporal sin cambiar: ese trámite lo lleva
+        // loginWithUsername. Lo decide `app_metadata` (lo pone el servidor y
+        // la persona no lo puede escribir), nunca `user_metadata`.
+        if (debeCambiarClave(session.user)) {
           clearAuthCache();
           clearErpCache();
           return;
@@ -1062,6 +1171,19 @@ export const AuthProvider = ({ children }) => {
         // uno nuevo y sí tiene que reprocesarse.
         if (sesionProcesada.current === session.access_token) return;
         sesionProcesada.current = session.access_token;
+
+        // ── Qué eventos piden el perfil al servidor ──────────────────────────
+        // Al entrar (SIGNED_IN) y al arrancar (INITIAL_SESSION): ahí el perfil
+        // puede no estar o estar viejo. En cada TOKEN_REFRESHED —cada ~15 min
+        // por persona— era una edge function que devolvía lo mismo, más un
+        // `setUser` y un reinicio del vigilante. Ahí sólo hace falta para el
+        // carné de PAPEL: es el único que vence a mitad de la sesión, y el
+        // único que puede decirlo es `ensure_user_by_code` (CARNE_VENCIDO).
+        // El resto de los cambios de cargo los recogen los permisos (realtime
+        // y regreso a la pestaña) y la próxima recarga.
+        const pidePerfil = event === 'INITIAL_SESSION' || event === 'SIGNED_IN'
+          || (event === 'TOKEN_REFRESHED' && esCarneDePapel(session.user.email));
+        if (!pidePerfil) return;
 
         setTimeout(() => procesarSesion(session), 0);
       } catch (e) {
@@ -1082,10 +1204,21 @@ export const AuthProvider = ({ children }) => {
   // -------------------------
   // 🔐 Login — Kiosk (por código/PIN)
   // -------------------------
+  //
+  // ── Un login que falla A MEDIAS no deja la sesión abierta ────────────────
+  // Los tres caminos tienen la misma forma: `signInWithPassword` y después
+  // algo más (el perfil, la ficha). Si lo primero entra y lo segundo falla
+  // —red, la ficha que no aparece—, la pantalla decía «no se pudo» y la sesión
+  // de Auth quedaba GUARDADA en el navegador: la próxima recarga entraba sola
+  // por `INITIAL_SESSION`, sin que nadie hubiera terminado el login. Por eso
+  // cada uno lleva la cuenta de si ya abrió sesión y la suelta antes de
+  // devolver el error.
   const login = async (identifier) => {
     const cleanId = String(identifier ?? '').trim().toUpperCase();
     if (!cleanId) return { ok: false };
     skipAuthListener.current = true;
+    let sesionAbierta = false;
+    const fallar = async (r) => { if (sesionAbierta) await soltarSesionDeAuth(); return r; };
     try {
       const { data: ensured, error: fnErr } = await withNetworkRetry(() =>
         supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanId } })
@@ -1096,21 +1229,22 @@ export const AuthProvider = ({ children }) => {
       const { data: authData, error: authErr } = await withNetworkRetry(() =>
         supabase.auth.signInWithPassword({ email: ensured.user.email, password: cleanId })
       );
-      if (isNetworkError(authErr)) return { ok: false, error: NETWORK_ERROR_MSG };
-      if (authErr || !authData?.session) return { ok: false };
+      if (authData?.session) sesionAbierta = true;
+      if (isNetworkError(authErr)) return await fallar({ ok: false, error: NETWORK_ERROR_MSG });
+      if (authErr || !authData?.session) return await fallar({ ok: false });
 
       // Segunda llamada (ya autenticada): devuelve el perfil completo y sincroniza
       // metadata del JWT. Completar aquí mismo evita depender del listener.
       const { data: profile, error: profErr } = await withNetworkRetry(() =>
         supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanId } })
       );
-      if (isNetworkError(profErr)) return { ok: false, error: NETWORK_ERROR_MSG };
-      if (profErr || !profile?.ok || !profile?.user?.id) return { ok: false };
+      if (isNetworkError(profErr)) return await fallar({ ok: false, error: NETWORK_ERROR_MSG });
+      if (profErr || !profile?.ok || !profile?.user?.id) return await fallar({ ok: false });
 
       completeLogin(profile.user);
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: isNetworkError(err) ? NETWORK_ERROR_MSG : undefined };
+      return await fallar({ ok: false, error: isNetworkError(err) ? NETWORK_ERROR_MSG : undefined });
     } finally {
       skipAuthListener.current = false;
     }
@@ -1121,46 +1255,102 @@ export const AuthProvider = ({ children }) => {
   // -------------------------
   const loginWithEmail = async (email, password) => {
     skipAuthListener.current = true;
+    let sesionAbierta = false;
+    const fallar = async () => { if (sesionAbierta) await soltarSesionDeAuth(); return false; };
     try {
       const { data: authData, error: authErr } = await withNetworkRetry(() =>
         supabase.auth.signInWithPassword({ email, password })
       );
-      if (authErr || !authData?.session) {
-        skipAuthListener.current = false;
-        return false;
-      }
+      if (authData?.session) sesionAbierta = true;
+      if (authErr || !authData?.session) return await fallar();
 
       const sessionUser = authData.session.user;
       const code = (sessionUser.user_metadata?.code && String(sessionUser.user_metadata.code)) ||
         (sessionUser.email ? sessionUser.email.split('@')[0] : '');
       const cleanCode = String(code || '').trim().toUpperCase();
-      if (!cleanCode) { skipAuthListener.current = false; return false; }
+      if (!cleanCode) return await fallar();
 
       const { data: ensured, error: fnErr } = await withNetworkRetry(() =>
         supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanCode } })
       );
-      if (fnErr || !ensured?.ok || !ensured?.user) { skipAuthListener.current = false; return false; }
+      if (fnErr || !ensured?.ok || !ensured?.user) return await fallar();
 
       const u = await withSignedPhoto(ensured.user);
-      clearErpCache();
-      almacen.guardar(LS_USER, JSON.stringify(u));
-      writeLastActivity(true);
-      setPermsLoading(true);
-      setUser(u);
-      startIdleWatcher(u);
-      skipAuthListener.current = false;
+      ponerAdentro(u);
       return true;
     } catch {
+      return await fallar();
+    } finally {
       skipAuthListener.current = false;
-      return false;
     }
   };
+
+  // El usuario del portal a partir de su fila de `employees_safe`.
+  const usuarioDeLaFicha = (emp) => withSignedPhoto({
+    id:         emp.id,
+    name:       emp.name,
+    code:       emp.code,
+    username:   emp.username,
+    branchId:   emp.branch_id,
+    photo:      emp.photo_url,
+    role:       emp.role_id,
+    roleId:     emp.role_id ?? null,
+    secondaryRoleId: emp.secondary_role_id ?? null,
+    // El escalón sale del CARGO. `employees_safe` lo publica ya derivado
+    // —el propio y el secundario—, así que acá no hay ninguna regla que
+    // pueda desincronizarse de la base. Reemplaza a `systemRole`, que era un
+    // rango escrito por persona y podía contradecir al organigrama.
+    rango:      Number(emp.rango ?? 0),
+  });
+
+  // Lee la ficha de quien acaba de entrar. Devuelve `{ u }` o `{ error, motivo }`.
+  const leerFichaParaEntrar = async (cleanUsername) => {
+    const { data: emp, error: empError } = await withNetworkRetry(() =>
+      fetchEmployeeSafeByUsername(cleanUsername)
+    );
+    if (empError && empError.code !== 'PGRST116') {
+      if (isNetworkError(empError)) return { error: NETWORK_ERROR_MSG, motivo: 'red' };
+      return { error: 'Error de conexión. Intenta de nuevo.', motivo: 'otro' };
+    }
+    if (!emp) return { error: 'Usuario no encontrado en el sistema.', motivo: 'credenciales' };
+    // Empleado dado de baja: la cuenta Auth queda baneada por disable-employee-auth,
+    // pero este gate cubre bajas previas al ban.
+    if (emp.status && emp.status !== 'ACTIVO') {
+      return { error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.', motivo: 'bloqueado' };
+    }
+    return { u: await usuarioDeLaFicha(emp) };
+  };
+
+  // Lo que hace falta para que alguien quede adentro, igual en todos los caminos.
+  function ponerAdentro(u) {
+    skipAuthListener.current = false;
+    clearErpCache();
+    almacen.guardar(LS_USER, JSON.stringify(u));
+    writeLastActivity(true);
+    setPermsLoading(true);
+    setUser(u);
+    startIdleWatcher(u);
+  }
 
   // -------------------------
   // 🔐 Login — Username + password (portal principal)
   // -------------------------
+  //
+  // Cada error lleva un `motivo` además del texto: `credenciales`, `bloqueado`,
+  // `red`, `limite` u `otro`. La app lo usa para decidir si la credencial
+  // guardada con biometría sigue sirviendo — un corte de red no dice nada de
+  // la contraseña (ver `esFalloDeCredencial`).
   const loginWithUsername = async (username, password) => {
     skipAuthListener.current = true;
+    // Un login nuevo empieza sin el trámite anterior a medias.
+    terminarVigilanciaDelCambio();
+    setCambioDeClave(null);
+    let sesionAbierta = false;
+    const fallar = async (r) => {
+      if (sesionAbierta) await soltarSesionDeAuth();
+      skipAuthListener.current = false;
+      return r;
+    };
     try {
       const cleanUsername = username.toLowerCase().trim();
       const emailToLogin  = `${cleanUsername}@farmalasa.app`;
@@ -1168,110 +1358,89 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await withNetworkRetry(() =>
         supabase.auth.signInWithPassword({ email: emailToLogin, password })
       );
+      if (data?.session) sesionAbierta = true;
 
       if (error) {
-        skipAuthListener.current = false;
-        if (isNetworkError(error)) return { ok: false, error: NETWORK_ERROR_MSG };
+        if (isNetworkError(error)) return await fallar({ ok: false, error: NETWORK_ERROR_MSG, motivo: 'red' });
         // Por código y no por el texto: el texto de Auth está en inglés y
         // llegaba tal cual a la pantalla («User is banned»).
         if (error.code === 'invalid_credentials' || error.message.includes('Invalid login credentials')) {
-          return { ok: false, error: await motivoDeLoginFallido(cleanUsername) };
+          return await fallar({ ok: false, error: await motivoDeLoginFallido(cleanUsername), motivo: 'credenciales' });
         }
         if (error.code === 'user_banned') {
-          return { ok: false, error: 'Usuario bloqueado.' };
+          return await fallar({ ok: false, error: 'Usuario bloqueado.', motivo: 'bloqueado' });
         }
         if (error.status === 429 || String(error.code || '').startsWith('over_')) {
-          return { ok: false, error: 'Demasiados intentos. Espera unos minutos.' };
+          return await fallar({ ok: false, error: 'Demasiados intentos. Espera unos minutos.', motivo: 'limite' });
         }
         console.warn('signInWithPassword:', error.code, error.message);
-        return { ok: false, error: 'No se pudo iniciar sesión. Intenta de nuevo.' };
+        return await fallar({ ok: false, error: 'No se pudo iniciar sesión. Intenta de nuevo.', motivo: 'otro' });
       }
 
       if (!data?.session) {
-        skipAuthListener.current = false;
-        return { ok: false, error: 'Error de sesión. Intenta de nuevo.' };
+        return await fallar({ ok: false, error: 'Error de sesión. Intenta de nuevo.', motivo: 'otro' });
       }
 
-      const { data: emp, error: empError } = await withNetworkRetry(() =>
-        fetchEmployeeSafeByUsername(cleanUsername)
-      );
-
-      if (empError && empError.code !== 'PGRST116') {
-        skipAuthListener.current = false;
-        if (isNetworkError(empError)) return { ok: false, error: NETWORK_ERROR_MSG };
-        return { ok: false, error: 'Error de conexión. Intenta de nuevo.' };
-      }
-      if (!emp) {
-        skipAuthListener.current = false;
-        return { ok: false, error: 'Usuario no encontrado en el sistema.' };
+      // ANTES de leer la ficha: mientras el token diga `primer_acceso` la base
+      // no devuelve datos, así que la ficha se lee después del cambio.
+      // skipAuthListener se mantiene en true hasta `cambiarClaveInicial` o
+      // hasta que el trámite se abandone.
+      if (debeCambiarClave(data.session.user)) {
+        vigilarCambioDeClave(cleanUsername);
+        return { ok: true, mustChangePassword: true, user: null };
       }
 
-      // Empleado dado de baja: la cuenta Auth queda baneada por disable-employee-auth,
-      // pero este gate cubre bajas previas al ban y cierra la sesión recién creada.
-      if (emp.status && emp.status !== 'ACTIVO') {
-        skipAuthListener.current = false;
-        supabase.auth.signOut().catch(() => {});
-        return { ok: false, error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.' };
-      }
+      const ficha = await leerFichaParaEntrar(cleanUsername);
+      if (!ficha.u) return await fallar({ ok: false, error: ficha.error, motivo: ficha.motivo });
 
-      const u = await withSignedPhoto({
-        id:         emp.id,
-        name:       emp.name,
-        code:       emp.code,
-        username:   emp.username,
-        branchId:   emp.branch_id,
-        photo:      emp.photo_url,
-        role:       emp.role_id,
-        roleId:     emp.role_id ?? null,
-        secondaryRoleId: emp.secondary_role_id ?? null,
-        // El escalón sale del CARGO. `employees_safe` lo publica ya derivado
-        // —el propio y el secundario—, así que acá no hay ninguna regla que
-        // pueda desincronizarse de la base. Reemplaza a `systemRole`, que era un
-        // rango escrito por persona y podía contradecir al organigrama.
-        rango:      Number(emp.rango ?? 0),
-      });
-
-      const meta       = data.session.user?.user_metadata;
-      const mustChange = meta?.must_change_password !== false;
-
-      if (mustChange) {
-        // skipAuthListener se mantiene true hasta que completePasswordChange lo restaure
-        return { ok: true, mustChangePassword: true, user: u };
-      }
-
-      skipAuthListener.current = false;
-      clearErpCache();
-      almacen.guardar(LS_USER, JSON.stringify(u));
-      writeLastActivity(true);
-      setPermsLoading(true);
-      setUser(u);
-      startIdleWatcher(u);
+      ponerAdentro(ficha.u);
       return { ok: true };
     } catch (err) {
-      skipAuthListener.current = false;
-      return { ok: false, error: isNetworkError(err) ? NETWORK_ERROR_MSG : 'Error de conexión con el servidor.' };
+      return await fallar({
+        ok: false,
+        error: isNetworkError(err) ? NETWORK_ERROR_MSG : 'Error de conexión con el servidor.',
+        motivo: isNetworkError(err) ? 'red' : 'otro',
+      });
     }
   };
 
   const completeLogin = async (u) => {
     const su = await withSignedPhoto(u);
-    clearErpCache();
-    almacen.guardar(LS_USER, JSON.stringify(su));
-    writeLastActivity(true);
-    setPermsLoading(true);
-    setUser(su);
-    startIdleWatcher(su);
+    ponerAdentro(su);
   };
 
-  const completePasswordChange = async (u) => {
-    const su = await withSignedPhoto(u);
-    skipAuthListener.current = false;
-    clearErpCache();
-    almacen.guardar(LS_USER, JSON.stringify(su));
-    writeLastActivity(true);
-    setPermsLoading(true);
-    setUser(su);
-    startIdleWatcher(su);
+  // ── Terminar el cambio de contraseña obligatorio ──────────────────────────
+  //
+  // Devuelve `{ ok: true }`, o `{ ok: false, error, reentrar }`:
+  //   · sin `reentrar`, la contraseña NO cambió y la pantalla sigue (el
+  //     `error` es el de Auth: pasarlo por `mensajeAmigable`);
+  //   · con `reentrar`, la sesión se cerró y el `error` ya es el texto para la
+  //     persona. Pasa cuando la clave cambió pero el token no se pudo renovar:
+  //     el viejo sigue diciendo `primer_acceso` y la base no le daría nada.
+  const MSG_REENTRAR = 'Tu contraseña nueva quedó guardada. Entra de nuevo con ella.';
+  const cambiarClaveInicial = async (nueva) => {
+    const v = cambioRef.current;
+    if (!v) return { ok: false, reentrar: true, error: 'La sesión se cerró. Entra de nuevo.' };
+
+    const r = await cambiarMiContrasenaInicial(nueva);
+    if (r.error && !r.reentrar) return { ok: false, error: r.error };
+    if (r.reentrar || debeCambiarClave(r.session?.user)) {
+      await abandonarCambioDeClave(MSG_REENTRAR);
+      return { ok: false, reentrar: true, error: MSG_REENTRAR };
+    }
+
+    // Token nuevo, sin la marca: ahora sí la base contesta la ficha.
+    let ficha;
+    try { ficha = await leerFichaParaEntrar(v.username); } catch { ficha = {}; }
+    if (!ficha.u) {
+      await abandonarCambioDeClave(MSG_REENTRAR);
+      return { ok: false, reentrar: true, error: MSG_REENTRAR };
+    }
+
+    terminarVigilanciaDelCambio();
+    setCambioDeClave(null);
+    ponerAdentro(ficha.u);
+    return { ok: true };
   };
 
   const logout = async () => doLogout();
@@ -1333,14 +1502,15 @@ export const AuthProvider = ({ children }) => {
       rolePerms, permsLoading, permsError, hasPermission,
       moduleLocks, moduleLock, isModuleLocked, refreshModuleLocks,
       maxPriceLevel, loading,
-      completeLogin, completePasswordChange,
+      completeLogin,
+      cambioDeClave, cambiarClaveInicial, abandonarCambioDeClave,
       login, loginWithEmail, loginWithUsername, logout,
       refreshPermissions,
     };
   // `permsLoading` y `permsError` van en la lista: `permsError` cambia SOLO
   // —sin que cambien los permisos—, así que sin él la app nunca se entera de
   // que la lectura falló y se queda en el splash para siempre.
-  }, [user, loading, isSU, rolePerms, permsLoading, permsError, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, loading, isSU, rolePerms, permsLoading, permsError, moduleLocks, refreshPermissions, refreshModuleLocks, cambioDeClave, abandonarCambioDeClave]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const seguirEnLaSesion = useCallback(() => {
     ponerAviso(null); writeLastActivity(true); latirSesion();

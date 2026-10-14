@@ -64,8 +64,34 @@ export async function usuarioDeLaSesion() {
 }
 
 /**
- * Cambia la contraseña de quien tiene la sesión y apaga la marca de «debe
- * cambiarla» (primer ingreso). Devuelve `{ error }` como `auth.updateUser`.
+ * Cambia la contraseña de quien tiene la sesión (primer ingreso) y RENUEVA el
+ * token antes de devolver.
+ *
+ * Lo que decide «debe cambiarla» es `app_metadata.cambio_de_clave`, que viaja
+ * DENTRO del JWT. Al escribir la contraseña el servidor quita la marca, pero el
+ * token que ya tiene el navegador la sigue diciendo hasta que se renueve — y la
+ * base bloquea los datos mientras el token diga `primer_acceso`. Sin el
+ * `refreshSession()` la persona entraría a un portal que no le devuelve nada.
+ *
+ * Devuelve `{ error, reentrar, session }`:
+ *   · `error` sin `reentrar` → la contraseña NO cambió (regla, red…).
+ *   · `reentrar: true` → la contraseña SÍ cambió, pero no se pudo renovar la
+ *     sesión: quien llama la cierra y pide entrar con la clave nueva.
+ *
+ * `must_change_password: false` se sigue escribiendo en `user_metadata`
+ * porque `set-employee-password` lo lee para decidir si conserva la clave de
+ * la persona. NO decide nada del lado del navegador.
  */
-export const cambiarMiContrasenaInicial = (password) =>
-    supabase.auth.updateUser({ password, data: { must_change_password: false } });
+export async function cambiarMiContrasenaInicial(password) {
+    const { error } = await supabase.auth.updateUser({ password, data: { must_change_password: false } });
+    if (error) return { error, reentrar: false, session: null };
+    try {
+        const { data, error: errRenovar } = await supabase.auth.refreshSession();
+        if (errRenovar || !data?.session) {
+            return { error: errRenovar || new Error('SIN_SESION'), reentrar: true, session: null };
+        }
+        return { error: null, reentrar: false, session: data.session };
+    } catch (e) {
+        return { error: e, reentrar: true, session: null };
+    }
+}

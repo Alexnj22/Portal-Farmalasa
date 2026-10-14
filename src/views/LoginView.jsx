@@ -10,7 +10,6 @@ import { isMobileOrApp } from '@nucleo/utils/helpers';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMediaQuery from '../plataforma/useMediaQuery';
 import { esAtajoDePegar, esPegadoDeUnaPersona } from '@nucleo/utils/pegadoManual';
-import { cambiarMiContrasenaInicial } from '@nucleo/data/auth';
 import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
@@ -321,7 +320,7 @@ const CameraScanner = ({ videoRef, compact }) => {
 /* ─── LoginView ─────────────────────────────────────────────────────────── */
 
 const LoginView = ({ setView, setActiveEmployee }) => {
-    const { login, loginWithUsername, hasPermission, user, completePasswordChange } = useAuth();
+    const { login, loginWithUsername, hasPermission, user, cambioDeClave, cambiarClaveInicial } = useAuth();
 
     const [isLoading,         setIsLoading]         = useState(false);
     const [error,             setError]             = useState('');
@@ -333,8 +332,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [confirmPassword,   setConfirmPassword]   = useState('');
     const [changePassError,   setChangePassError]   = useState('');
     const [changePassLoading, setChangePassLoading] = useState(false);
-    const [mustChangePwd,     setMustChangePwd]     = useState(false);
-    const [pendingUserLocal,  setPendingUserLocal]  = useState(null);
+    // El cambio de contraseña obligatorio lo lleva el contexto —que también lo
+    // cierra solo si nadie lo termina—, así que la pantalla no guarda su
+    // propia copia de «está pendiente»: si lo hiciera, el cierre por
+    // inactividad dejaría el formulario puesto sobre una sesión que ya no existe.
+    const mustChangePwd = cambioDeClave?.estado === 'pendiente';
+    const motivoDeCierre = cambioDeClave?.estado === 'cerrado' ? cambioDeClave.motivo : '';
     // Ver lo escrito en la contraseña. En el teléfono no se puede pegar (ver
     // `bloquearPegado`) y el teclado mete mayúsculas solo: sin ver, un error
     // de tecla es indistinguible de una contraseña olvidada.
@@ -864,7 +867,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         try {
             const result = await loginWithUsername(username, password);
             if (!result.ok) { setError(result.error || 'Credenciales inválidas.'); setIsLoading(false); if (userPasswordRef.current) userPasswordRef.current.value = ''; userPasswordRef.current?.focus(); }
-            else if (result.mustChangePassword) { setPendingUserLocal(result.user); setMustChangePwd(true); setIsLoading(false); }
+            else if (result.mustChangePassword) { setNewPassword(''); setConfirmPassword(''); setChangePassError(''); setIsLoading(false); }
             else { setIsLoading(false); }
         } catch { setError('Error de conexión. Intenta de nuevo.'); setIsLoading(false); }
     };
@@ -875,9 +878,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         if (problema) { setChangePassError(problema); return; }
         setChangePassLoading(true);
         try {
-            const { error } = await cambiarMiContrasenaInicial(newPassword);
-            if (error) { setChangePassError(mensajeAmigable(error)); setChangePassLoading(false); return; }
-            completePasswordChange(pendingUserLocal); setMustChangePwd(false); setPendingUserLocal(null); setNewPassword(''); setConfirmPassword('');
+            const r = await cambiarClaveInicial(newPassword);
+            // Con `reentrar` la sesión ya se cerró y el contexto vuelve a la
+            // entrada solo, con el motivo a la vista: no hay nada que hacer acá.
+            if (!r.ok && !r.reentrar) { setChangePassError(mensajeAmigable(r.error)); setChangePassLoading(false); return; }
+            setNewPassword(''); setConfirmPassword('');
         } catch { setChangePassError('Error de conexión. Intenta de nuevo.'); }
         setChangePassLoading(false);
     };
@@ -1086,10 +1091,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         {id === 'password' && <BotonVerClave visible={verClave} onToggle={() => setVerClave(v => !v)} />}
                     </div>
                 ))}
-                {error && (
+                {(error || motivoDeCierre) && (
                     <div className="animate-in fade-in slide-in-from-top-1 duration-[var(--dur-base)] px-4 py-3 bg-danger/10 border border-danger/30 rounded-card flex items-center gap-3">
                         <AlertCircle size={15} className="text-danger shrink-0" strokeWidth={2.5} />
-                        <p className="text-danger text-caption font-black uppercase tracking-widest">{error}</p>
+                        <p className="text-danger text-caption font-black uppercase tracking-widest">{error || motivoDeCierre}</p>
                     </div>
                 )}
                 <LoginButton height={compact ? 'h-[46px]' : 'h-[54px]'} disabled={isLoading}>

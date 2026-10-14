@@ -19,7 +19,7 @@ import { MARCA_DISTRIBUIDORA } from './marca';
 
 export default function TorogozLoginView() {
     useMarca('distribucion');
-    const { loginWithUsername } = useAuth();
+    const { loginWithUsername, abandonarCambioDeClave } = useAuth();
     const [usuario, setUsuario] = useState('');
     const [clave, setClave] = useState('');
     const [entrando, setEntrando] = useState(false);
@@ -34,7 +34,12 @@ export default function TorogozLoginView() {
         try {
             const r = await loginWithUsername(usuario, clave);
             if (!r.ok) { setError(r.error || 'Usuario o contraseña incorrectos.'); setClave(''); }
-            else if (r.mustChangePassword) setCambiarClave(true);
+            else if (r.mustChangePassword) {
+                // Acá no se cambia: la sesión con la contraseña temporal se
+                // suelta ya, en vez de quedar abierta hasta que venza sola.
+                await abandonarCambioDeClave();
+                setCambiarClave(true);
+            }
             // Si entró, la ruta cambia sola a la distribuidora (App.jsx).
         } catch {
             setError('No se pudo conectar. Revisa tu internet e intenta de nuevo.');

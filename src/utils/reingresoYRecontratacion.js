@@ -3,6 +3,8 @@
 // app (`app/empleado/ingreso-vacaciones.js`, `app/empleado/recontratar.js`).
 // La escritura es del store: `vacationRecallEmployee` y `rehireEmployee`.
 
+import { contratoConPlazo } from './contrato';
+
 /** Las vacaciones que está gozando HOY (no canceladas), si las hay. */
 export function vacacionEnCurso(empleado, hoy) {
     return (empleado?.history || []).find((h) => h.type === 'VACATION'
@@ -61,9 +63,15 @@ export const horasValidas = (h) => {
 export function faltaParaRecontratar(f = {}) {
     if (!(f.rehire_hire_date && f.rehire_branch_id && f.rehire_role_id)) return 'Fecha de ingreso, sucursal y cargo son obligatorios.';
     if (!horasValidas(f.rehire_weekly_hours ?? 44)) return 'Las horas semanales van de 1 a 44 (Art. 161).';
-    if ((f.rehire_contract_type || 'INDEFINIDO') === 'TEMPORAL') {
-        if (!f.rehire_contract_end_date) return 'Un contrato a plazo necesita su fecha de fin.';
+    const tipo = f.rehire_contract_type || 'INDEFINIDO';
+    // La fecha de fin la pide todo contrato con plazo —Temporal y Servicios—,
+    // la misma regla del alta (`contratoConPlazo`). La base legal y el motivo
+    // son del Art. 25, o sea sólo del Temporal: Servicios es un contrato civil.
+    if (contratoConPlazo(tipo)) {
+        if (!f.rehire_contract_end_date) return 'Este contrato necesita su fecha de fin.';
         if (f.rehire_contract_end_date <= f.rehire_hire_date) return 'La fecha de fin tiene que ser posterior a la de ingreso.';
+    }
+    if (tipo === 'TEMPORAL') {
         if (!f.rehire_temporal_legal_basis) return 'Falta por qué es temporal (base legal del Art. 25).';
         if (!String(f.rehire_temporal_reason ?? '').trim()) return 'Falta el motivo concreto del contrato a plazo.';
     }

@@ -9,6 +9,7 @@ import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, horasAlCambiarContrato, horasValidas, sucursalesPorArea } from '@nucleo/utils/reingresoYRecontratacion';
+import { contratoConPlazo } from '@nucleo/utils/contrato';
 
 // Los contratos, las áreas y las horas salen del núcleo (`reingresoYRecontratacion`).
 const CONTRACT_TYPE_OPTIONS = CONTRATOS_DE_RECONTRATACION;
@@ -80,14 +81,16 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Contrato a plazo: fecha de fin, base legal y motivo (Art. 25).
                         Sin ellos `rehireEmployee` guardaba un TEMPORAL que la ley
                         presume indefinido. */}
+                    {contratoConPlazo(formData.rehire_contract_type) && (
+                        <div>
+                            <label className={rotuloCampo('text-content-3')}>
+                                Fecha de fin {reqBadge}
+                            </label>
+                            <LiquidDatePicker hasError={!formData.rehire_contract_end_date} value={formData.rehire_contract_end_date || ''} onChange={v => set('rehire_contract_end_date', v)} />
+                        </div>
+                    )}
                     {formData.rehire_contract_type === 'TEMPORAL' && (
                         <>
-                            <div>
-                                <label className={rotuloCampo('text-content-3')}>
-                                    Fecha de fin {reqBadge}
-                                </label>
-                                <LiquidDatePicker hasError={!formData.rehire_contract_end_date} value={formData.rehire_contract_end_date || ''} onChange={v => set('rehire_contract_end_date', v)} />
-                            </div>
                             <div>
                                 <label className={rotuloCampo('text-content-3')}>
                                     Por qué es temporal {reqBadge}

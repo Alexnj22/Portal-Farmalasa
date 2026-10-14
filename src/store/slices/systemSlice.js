@@ -17,7 +17,7 @@ import {
     publicarHorariosDeSala as publicarHorariosRpc,
 } from '../../data/schedules';
 import {
-    fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
+    fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata, fetchEmployeeEventRow,
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
     insertEmployeeBranches, insertEmployeeDocument, insertRole, updateRoleRow, deleteRoleRow,
     insertAnnouncement, updateAnnouncementFull, updateAnnouncementFields, deleteAnnouncementRow,
@@ -749,11 +749,16 @@ export const createSystemSlice = (set, get) => ({
                     Object.assign(localPatch, { branch_id: targetBranch, branchId: targetBranch });
                 }
             } else if (eventData.type === 'SALARY') {
-                const newSalary = parseFloat(eventData.newSalary);
-                if (!Number.isNaN(newSalary)) {
-                    empUpdates.base_salary = newSalary;
-                    localPatch.base_salary = newSalary;
+                // Un monto que no es un número mayor a 0 se RECHAZA. Antes la
+                // novedad se registraba igual y el sueldo no cambiaba: quedaba
+                // «Ajuste salarial» en el historial sobre un sueldo intacto, y
+                // el cron la marcaba INVALID_SALARY sin que nadie lo viera.
+                const newSalary = parseFloat(String(eventData.newSalary ?? '').replace(/[^0-9.]/g, ''));
+                if (!(newSalary > 0)) {
+                    throw usuario('El nuevo salario tiene que ser un monto mayor a 0.');
                 }
+                empUpdates.base_salary = newSalary;
+                localPatch.base_salary = newSalary;
             } else if (eventData.type === 'CODE_CHANGE') {
                 const cleanCode = String(eventData.newCode ?? '').trim();
                 if (cleanCode) {
@@ -1783,6 +1788,27 @@ export const createSystemSlice = (set, get) => ({
             return false;
         }
     },
+    // Un evento que escribió una función de la base (una sanción, una
+    // rectificación) no pasa por `registerEmployeeEvent`, así que la copia en
+    // memoria no se enteraba: la etiqueta «Suspendido» de la ficha y del listado
+    // esperaba a la próxima carga del padrón. Se lee la fila y se agrega.
+    traerEventoAlHistorial: async (employeeId, eventId) => {
+        const { data: fila, error } = await fetchEmployeeEventRow(eventId);
+        if (error || !fila) {
+            console.warn('traerEventoAlHistorial:', error?.message || 'sin fila');
+            return;
+        }
+        set((state) => {
+            const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
+                ...emp,
+                history: [...(emp.history || []).filter(h => String(h.id) !== String(fila.id)), fila],
+            });
+            persistEmployees(next);
+            return { employees: next };
+        });
+        emitir('employee-event-updated', { employeeId });
+    },
+
     addDocumentToEvent: async (employeeId, eventId, file) => {
         if (!file) return;
         try {

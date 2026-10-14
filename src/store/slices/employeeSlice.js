@@ -26,6 +26,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 // El motivo de un paso del alta que falló, legible para quien da de alta.
 const mensajeDeFallo = (err) => mensajeAmigable(err, err?.message || 'sin motivo');
 import { revisarNup } from '../../utils/nupAfp';
+import { contratoConPlazo } from '../../utils/contrato';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -1531,13 +1532,19 @@ export const createEmployeeSlice = (set, get) => ({
         // una fecha que ya no correspondía a nada.
         const tipo = rehireData.contract_type || 'INDEFINIDO';
         const aPlazo = tipo === 'TEMPORAL';
+        // Temporal y Servicios terminan en una fecha (`contratoConPlazo`, la
+        // misma regla del alta). Sólo el Temporal lleva base legal y motivo.
+        const conFin = contratoConPlazo(tipo);
         // Las mismas reglas que el formulario (`faltaParaRecontratar`), acá
         // también: la app y cualquier otro llamador pasan por este método.
         const horas = Number(rehireData.weekly_contracted_hours ?? 44);
         if (!Number.isInteger(horas) || horas < 1 || horas > 44) {
             throw Object.assign(new Error('Las horas semanales van de 1 a 44 (Art. 161).'), { userFacing: true });
         }
-        if (aPlazo && !(rehireData.contract_end_date && rehireData.contract_temporal_legal_basis && String(rehireData.contract_temporal_reason ?? '').trim())) {
+        if (conFin && !rehireData.contract_end_date) {
+            throw Object.assign(new Error('Este contrato necesita su fecha de fin.'), { userFacing: true });
+        }
+        if (aPlazo && !(rehireData.contract_temporal_legal_basis && String(rehireData.contract_temporal_reason ?? '').trim())) {
             throw Object.assign(new Error('Un contrato a plazo necesita fecha de fin, base legal y motivo (Art. 25).'), { userFacing: true });
         }
         const dbPayload = {
@@ -1549,7 +1556,7 @@ export const createEmployeeSlice = (set, get) => ({
             contract_type: tipo,
             weekly_contracted_hours: horas,
             base_salary: rehireData.base_salary ? parseFloat(rehireData.base_salary) : null,
-            contract_end_date: aPlazo ? (rehireData.contract_end_date || null) : null,
+            contract_end_date: conFin ? (rehireData.contract_end_date || null) : null,
             contract_temporal_legal_basis: aPlazo ? (rehireData.contract_temporal_legal_basis || null) : null,
             contract_temporal_reason: aPlazo ? (rehireData.contract_temporal_reason || null) : null,
             // El contrato nuevo se firma de nuevo. Si el formulario no lo dice,

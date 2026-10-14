@@ -87,3 +87,19 @@ describe('las reglas que viven en el código del store', () => {
         expect(system + slice).not.toMatch(/invoke\('disable-employee-auth'[\s\S]{0,120}\}\)\.catch/);
     });
 });
+
+describe('los tres pendientes que quedaron del plan', () => {
+    const system = readFileSync('src/store/slices/systemSlice.js', 'utf8');
+    it('una novedad de sueldo sin monto válido se rechaza', () => {
+        expect(system).toMatch(/if \(!\(newSalary > 0\)\) \{\s*throw usuario\(/);
+    });
+    it('la sanción nueva entra a la copia en memoria', () => {
+        expect(system).toMatch(/traerEventoAlHistorial: async/);
+        expect(readFileSync('src/components/personal/SancionModal.jsx', 'utf8')).toMatch(/onGuardado\?\.\(eventoId\)/);
+    });
+    it('Servicios pide fecha de fin, pero no base legal', () => {
+        const base = { rehire_hire_date: '2026-10-14', rehire_branch_id: 4, rehire_role_id: 7, rehire_contract_type: 'SERVICIOS' };
+        expect(faltaParaRecontratar(base)).toMatch(/fecha de fin/);
+        expect(faltaParaRecontratar({ ...base, rehire_contract_end_date: '2027-01-01' })).toBeNull();
+    });
+});

@@ -13,6 +13,7 @@ import {
   CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, datosDeRecontratacion, faltaParaRecontratar, horasAlCambiarContrato, recontratacionCompleta, recontratacionInicial, sucursalesPorArea,
 } from '@nucleo/utils/reingresoYRecontratacion';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { contratoConPlazo } from '@nucleo/utils/contrato';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -75,10 +76,13 @@ export default function Recontratar() {
           </Seccion>
           {/* Un contrato a plazo sin fecha de fin, base legal y motivo es el
               que el Art. 25 presume indefinido: se piden acá, como en el alta. */}
-          {f.rehire_contract_type === 'TEMPORAL' ? (
-            <Seccion titulo="Contrato a plazo">
-              <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Fecha de fin</Text>
+          {contratoConPlazo(f.rehire_contract_type) ? (
+            <Seccion titulo="Fecha de fin del contrato">
               <Fecha valor={f.rehire_contract_end_date} onCambiar={(v) => pon({ rehire_contract_end_date: v })} />
+            </Seccion>
+          ) : null}
+          {f.rehire_contract_type === 'TEMPORAL' ? (
+            <Seccion titulo="Contrato a plazo (Art. 25)">
               <Opciones valor={f.rehire_temporal_legal_basis || ''} onCambiar={(v) => pon({ rehire_temporal_legal_basis: v })}
                 opciones={TEMPORAL_LEGAL_BASIS_OPTIONS.map((o) => ({ id: o.value, label: o.label }))} />
               <Campo value={f.rehire_temporal_reason || ''} onChangeText={(t) => pon({ rehire_temporal_reason: t })} placeholder="Motivo concreto (ej.: cobertura de la incapacidad de la titular)" />

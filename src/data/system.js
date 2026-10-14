@@ -23,6 +23,10 @@ export function fetchEmployeeEventForCancel(eventId) {
     return supabase.from('employee_events').select('type, metadata, employee_id').eq('id', eventId).single();
 }
 
+export function fetchEmployeeEventRow(eventId) {
+    return supabase.from('employee_events').select('*').eq('id', eventId).single();
+}
+
 export function fetchEmployeeEventMetadata(eventId) {
     return supabase.from('employee_events').select('metadata').eq('id', eventId).single();
 }

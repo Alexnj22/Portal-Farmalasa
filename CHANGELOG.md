@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1287.3 — Personal: los tres pendientes de la auditoría
+
+- **Novedad de sueldo sin monto válido:** se registraba igual y el sueldo no
+  cambiaba —el historial decía «Ajuste salarial» sobre un sueldo intacto—. Ahora
+  se rechaza con el motivo.
+- **«Suspendido» al instante:** la sanción la escribe una función de la base, así
+  que la copia en memoria no se enteraba hasta recargar. Ahora la fila se lee y
+  entra al historial al guardarse; la etiqueta de la ficha y del listado cambia
+  en el momento.
+- **Recontratar como Servicios pide fecha de fin**, la misma regla que el alta
+  (`contratoConPlazo`). La base legal y el motivo siguen siendo sólo del
+  Temporal (Art. 25). En el portal y en la app.
+
 ## v2.1287.2 — Personal: la auditoría del alta, el expediente y el listado
 
 Auditoría completa del módulo (`docs/PLAN-PERSONAL-AUDITORIA-2026-10-14.md`).

@@ -89,9 +89,10 @@ Estado: `[ ]` abierto · `[x]` cerrado. **Cerrado el 2026-10-14** (migraciones
   de la cuenta de carné. S4/S5 lo sacaron del CSV y del disco, pero el arreglo
   de fondo es darle al carné un secreto propio — ya anotado en `systemSlice`.
   Es decisión del usuario: cambia cómo entra la gente.
-- Una novedad de SALARIO con un monto no numérico se registra sin cambiar el
-  sueldo y sin error (el cron sí la marca `INVALID_SALARY`).
-- La sanción recién puesta refresca el historial, pero la píldora de estado
-  (p. ej. «Suspendido») espera a la próxima carga del padrón.
-- Recontratar como SERVICIOS no pide fecha de fin: no hay regla escrita que la
-  exija y no se inventó una.
+- ~~Una novedad de SALARIO con un monto no numérico se registraba sin cambiar
+  el sueldo.~~ Cerrado en v2.1287.3: se rechaza.
+- ~~La etiqueta «Suspendido» esperaba a la próxima carga.~~ Cerrado en
+  v2.1287.3: la sanción entra a la copia en memoria al guardarse.
+- ~~Recontratar como SERVICIOS no pedía fecha de fin.~~ Cerrado en v2.1287.3:
+  la regla existía en el alta (`contratoConPlazo`) y ahora la sigue también la
+  recontratación.

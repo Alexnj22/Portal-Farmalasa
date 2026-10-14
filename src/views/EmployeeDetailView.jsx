@@ -434,8 +434,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         sala={branch?.name}
                         firmante={user?.name}
                         // Sin esto la sanción recién puesta no aparecía en el
-                        // historial hasta recargar la página.
-                        onGuardado={() => window.dispatchEvent(new CustomEvent('force-history-refresh'))}
+                        // historial —ni la etiqueta «Suspendido»— hasta recargar.
+                        onGuardado={(eventoId) => {
+                            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+                            if (eventoId) useStaffStore.getState().traerEventoAlHistorial(emp.id, eventoId);
+                        }}
                     />
                 </Suspense>
             )}

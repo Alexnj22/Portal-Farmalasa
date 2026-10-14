@@ -166,7 +166,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             if (r.ok) toast('Sanción registrada. Imprime la constancia y súbela firmada.', 'success');
             else toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el expediente para descargarla.', 'warning');
 
-            onGuardado?.();
+            onGuardado?.(eventoId);
             onClose?.();
         } catch (err) {
             toast(mensajeAmigable(err), 'error');

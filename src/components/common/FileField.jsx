@@ -547,13 +547,17 @@ const FileField = memo(({
                 parte de la pantalla: el usuario lo señaló mirando el DUI —«en
                 dui no está en su área, está por la foto»—. Un botón que sirve
                 para este campo tiene que estar en este campo. */}
+            {/* En la densidad compacta va como acción chica y no como franja de
+                ancho completo: en el expediente hay veinte adjuntos en grilla, y
+                veinte botones grandes iguales tapaban lo que importa de cada
+                tarjeta —si está, y hasta cuándo sirve— (2026-10-13). */}
             {ofreceTelefono && (
                 <Button
-                    variant="secondary" size="md" icon={Smartphone}
+                    variant={density === 'sm' ? 'ghost' : 'secondary'} size={density === 'sm' ? 'sm' : 'md'} icon={Smartphone}
                     onClick={pedirFotoAlTelefono}
                     disabled={pidiendoQr || !!captura}
                     loading={pidiendoQr}
-                    className="w-full mt-2"
+                    className={density === 'sm' ? 'mt-1 self-start' : 'w-full mt-2'}
                 >
                     {captura ? 'Esperando el teléfono…' : 'Tomar con el teléfono'}
                 </Button>

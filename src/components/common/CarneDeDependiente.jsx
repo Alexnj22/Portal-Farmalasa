@@ -28,7 +28,7 @@
  * fotografiarlo sería pedir un rodeo. Los dos caminos terminan en la misma
  * comprobación.
  */
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { QrCode, Camera, ExternalLink, Trash2, ShieldCheck, X, Smartphone } from 'lucide-react';
 import Button from './Button';
 import Notice from './Notice';
@@ -38,6 +38,8 @@ import QrDeCaptura from './QrDeCaptura';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { normalizarCarne, numeroDelCarne, porQueNoSirve } from '@nucleo/utils/carneDeDependiente';
+import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
+import { hayCamaraEnVivo } from '@plataforma/leerQrDeFoto';
 
 // Arrastra `@zxing` y prende la cámara: sólo hace falta al apretar el botón.
 const LectorDeCodigo = lazy(() => import('./LectorDeCodigo'));
@@ -57,6 +59,12 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
     const [error, setError] = useState(null);
     const [captura, setCaptura] = useState(null);
     const esTactil = useCoarsePointer();
+    const [leyendoFoto, setLeyendoFoto] = useState(false);
+    const entradaDeFoto = useRef(null);
+    // Sin cámara en vivo (la vista web de una app, un navegador incrustado) el
+    // lector no puede abrir: ahí el camino es una foto del código.
+    const enVivo = hayCamaraEnVivo();
+
 
     const numero = numeroDelCarne(url);
 
@@ -67,6 +75,29 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
         onChange?.(bueno);
         return true;
     }, [onChange]);
+
+    /* ── El QR desde una FOTO, en el mismo teléfono ─────────────────────────
+     *
+     * Reportado dos veces en Android (2026-10-13 y 14): «Escanear» daba error y
+     * no abría la cámara, mientras en iPhone sí. La cámara en vivo depende del
+     * navegador —y dentro de una app o del navegador de Google Lens no está—;
+     * una foto con la cámara del sistema funciona en todos. Se lee aquí y se
+     * guarda el ENLACE, nunca la foto. */
+    const desdeUnaFoto = async (file) => {
+        if (!file) return;
+        setError(null);
+        setLeyendoFoto(true);
+        try {
+            const { leerQrDeFoto } = await import('@plataforma/leerQrDeFoto');
+            const texto = await leerQrDeFoto(file);
+            if (!texto) setError('No se leyó ningún código en la foto. Acércate al QR, que salga nítido y sin reflejo.');
+            else aceptar(texto);
+        } catch {
+            setError('No se pudo abrir la foto. Intenta de nuevo.');
+        } finally {
+            setLeyendoFoto(false);
+        }
+    };
 
     /* ── El carné, desde el teléfono ────────────────────────────────────────
      *
@@ -148,11 +179,28 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
                         en línea. Escanéalo y el portal guarda su dirección.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" size="sm" icon={Camera}
-                            onClick={() => { setError(null); setEscaneando(true); }}
-                            disabled={!!captura}>
-                            Escanear el QR
-                        </Button>
+                        {enVivo && (
+                            <Button variant="secondary" size="sm" icon={Camera}
+                                onClick={() => { setError(null); setEscaneando(true); }}
+                                disabled={!!captura || leyendoFoto}>
+                                Escanear el QR
+                            </Button>
+                        )}
+                        {/* En el teléfono, o donde no hay cámara en vivo. */}
+                        {(esTactil || !enVivo) && (
+                            <>
+                                <Button variant="secondary" size="sm" icon={Camera}
+                                    onClick={() => entradaDeFoto.current?.click()}
+                                    disabled={!!captura || leyendoFoto} loading={leyendoFoto}>
+                                    {leyendoFoto ? 'Leyendo el código…' : 'Foto del código'}
+                                </Button>
+                                <input ref={entradaDeFoto} type="file" {...PROPS_CAMARA} className="sr-only" onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    e.target.value = '';
+                                    desdeUnaFoto(file);
+                                }} />
+                            </>
+                        )}
                         {/* Sólo en escritorio, igual que en los adjuntos: en el
                             teléfono ya está la cámara ahí mismo y ofrecer un
                             código para escanearse a sí mismo es un rodeo. */}

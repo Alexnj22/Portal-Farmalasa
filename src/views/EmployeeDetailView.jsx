@@ -24,7 +24,6 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '@nucleo/data/requests';
 import { fetchEmployeeTimeline, fetchCredenciales } from '@nucleo/data/employees';
-import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { historialDeFicha, ausenciasFiltradas, diasDeAusencia, varianteDeEvento, eventoVigente, datosParaCorregir } from '@nucleo/utils/historialDeFicha';
 // `lazy`: el carné del día arrastra el selector de sala y su diálogo, y esta
 // vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
@@ -36,6 +35,8 @@ const CarneDelDia = lazy(() => import('../components/personal/CarneDelDia'));
 // expediente. Sancionar es de unos pocos y ocurre pocas veces al año — no puede
 // viajar en la carga de todos los días.
 const SancionModal = lazy(() => import('../components/personal/SancionModal'));
+// El respaldo de un evento se ve DENTRO del portal, no en otra pestaña.
+const VisorDeDocumento = lazy(() => import('../components/common/VisorDeDocumento'));
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import useMediaQuery from '../plataforma/useMediaQuery';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -83,6 +84,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const setCurrentTab = setActiveTab || _setActiveTab;
 
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [respaldoViendo, setRespaldoViendo] = useState(null);
     const [isResetting, setIsResetting] = useState(false);
     const [resetResult, setResetResult] = useState(null); // contraseña temporal generada
     const [copiedPwd, setCopiedPwd]     = useState(false);
@@ -434,6 +436,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     />
                 </Suspense>
             )}
+            {respaldoViendo && (
+                <Suspense fallback={null}>
+                    <VisorDeDocumento url={respaldoViendo.url}
+                        nombre={respaldoViendo.file_name || respaldoViendo.name || 'Respaldo'}
+                        alCerrar={() => setRespaldoViendo(null)} />
+                </Suspense>
+            )}
         </div>
     );
 
@@ -724,7 +733,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         // Antes este botón no tenía `onClick`: no abría nada.
                                                                         <Button tone="chart-1" soft size="xs" icon={FileText} onClick={() => {
                                                                             const doc = (emp.documents || []).find(d => String(d.id) === String(ev.documentId) || (ev.eventoId && String(d.event_id) === String(ev.eventoId)));
-                                                                            if (doc?.url) Promise.resolve(openStoredFile(doc.url)).catch(() => {});
+                                                                            if (doc?.url) setRespaldoViendo(doc);
                                                                         }}>Ver Respaldo Legal</Button>
                                                                     ) : (
                                                                         <Button tone="chart-4" icon={Paperclip} disabled={!canEdit || !ev.eventoId} onClick={() => openModal('uploadDocument', {}, ev.eventoId)}>Adjuntar Soporte</Button>

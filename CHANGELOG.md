@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1284.0 — Expediente: documentos con estado, vencimiento y autor; DUI de una vez desde el teléfono
+
+Pedido del usuario sobre la pestaña Documentos del alta de empleado
+(2026-10-13):
+
+- **Ver sin salir del portal**: las versiones anteriores de un documento, la
+  lista de la ficha y el respaldo de un evento abren en `VisorDeDocumento`,
+  no en otra pestaña.
+- **El DUI también en Documentos**, con su estado y su vencimiento (el de la
+  ficha). Es el mismo bloque de subida que en Datos personales.
+- **Cada documento en su tarjeta** (`TarjetaDeDocumento`): si está, hasta
+  cuándo sirve —visible aunque no tenga archivo— y quién lo subió, con foto y
+  nombre corto. Arriba, «X de Y entregados» y cuántos por vencer.
+- **Quién lo subió**: `documentoReemplazado` anota `subido_por`,
+  `subido_por_id` y `subido_el` al llegar un archivo nuevo. Lo anterior no
+  tiene el dato: nunca se guardó.
+- **Certificado médico por AÑO calendario** («sólo tome el año, es válido para
+  todo ese año»): se elige el año y vence el 31 de diciembre; del papel se toma
+  el año de emisión. Los años anteriores se listan por año. Los 4 certificados
+  de producción guardados con la regla vieja (emisión + 1 año) se corrigieron a
+  2026-12-31 con OK del usuario, y `anioQueCubre` los lee bien igual.
+- **DUI de una vez desde el teléfono**: «Las dos caras con el teléfono» abre
+  una captura en modo `dui`; el teléfono pide Frente y Reverso con su nombre,
+  las recorta y las manda unidas en una imagen, que entra como «DUI en un solo
+  archivo» y se lee sola. Migración `20261014143231`.
+- **Carné de dependiente en Android**: donde no hay cámara en vivo (el
+  navegador de la cámara o de Google Lens, una vista web) ya no se ofrece
+  «Escanear» —sólo llevaba a un error—: el camino es «Foto del código», que se
+  lee en el mismo teléfono (`leerQrDeFoto`, probando varias escalas) y guarda el
+  enlace. En la página del teléfono, además, «abrir en Chrome».
+- `FileField` en densidad compacta: «Tomar con el teléfono» pasa a ser una
+  acción chica en vez de una franja de ancho completo.
+
 ## v2.1283.1 — Chat: asignado, escalada y solicitud de mayorista en la app
 
 - **Chat en la app del personal:** «Asignado a» (foto y nombre corto, o «Sin asignar») y la escalada con su hora — «Avisado a la sala» a los 15 min, «Avisado a supervisión» a los 20 — en la bandeja y la conversación (`escaladaDe`, `asignadoDe`).

@@ -4,6 +4,10 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 /* Diferido: repartir un documento colectivo pasa una vez cada tanto, y su
    código no tiene por qué viajar con cada apertura de una ficha. */
 const AsignarDocumentoAVarios = lazy(() => import('./AsignarDocumentoAVarios'));
+// El visor del portal, para las versiones anteriores de un documento: verlas sin
+// salir a otra pestaña (pedido del usuario, 2026-10-13).
+const VisorDeDocumento = lazy(() => import('../common/VisorDeDocumento'));
+const DialogoDeCaptura = lazy(() => import('../common/DialogoDeCaptura'));
 import { loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
 import { faltantesDelExpediente } from '@nucleo/utils/expediente';
@@ -39,10 +43,12 @@ import {
     fetchIdentidades, fetchSalarios,
 } from '@nucleo/data/employees';
 import { revisarNup } from '@nucleo/utils/nupAfp';
-import { getStoragePathFromUrl, openStoredFile } from '@nucleo/utils/storageFiles';
+import { getStoragePathFromUrl } from '@nucleo/utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
-import { ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado } from '@nucleo/utils/documentosDelExpediente';
+import { ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado,
+    POR_ANIO_CALENDARIO, vencimientoDelAnio, anioDelVencimiento, anioQueCubre, estadoDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+import TarjetaDeDocumento from './TarjetaDeDocumento';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '@nucleo/utils/economicDependents';
 import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
 import { usuarioDesdeNombre } from '@nucleo/utils/nameUtils';
@@ -351,12 +357,16 @@ const PROBATION_EXEMPTION_DAYS = 365;
  * usuario acaba de pedir ordenar.
  */
 function HistorialDeDocumento({ entrada }) {
+    const [viendo, setViendo] = useState(null);
     const previas = entrada?.historial || [];
     if (!previas.length) return null;
+    // El certificado médico se lee AÑO por año: «2025», no «se reemplazó el 3-ene».
+    const porAnio = POR_ANIO_CALENDARIO.has(entrada?.category);
     return (
         <div className="mt-2 pt-2 border-t border-divider">
             <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1">
-                {previas.some(v => v.url) ? `Anteriores (${previas.length})` : `Se actualizó ${previas.length} ${previas.length === 1 ? 'vez' : 'veces'}`}
+                {porAnio ? 'Años anteriores'
+                    : previas.some(v => v.url) ? `Anteriores (${previas.length})` : `Se actualizó ${previas.length} ${previas.length === 1 ? 'vez' : 'veces'}`}
             </p>
             <ul className="flex flex-col gap-1">
                 {previas.map((v, i) => (
@@ -366,12 +376,12 @@ function HistorialDeDocumento({ entrada }) {
                        porque dos reemplazos del mismo día son posibles y la
                        fecha sola no los distingue. */
                     <li key={`${v.reemplazado_el}-${i}`} className="flex items-center gap-2 min-w-0">
-                        <span className="text-micro text-content-3 font-medium shrink-0">
-                            {v.reemplazado_el || '—'}
+                        <span className={`text-micro shrink-0 ${porAnio ? 'font-black text-content-2' : 'font-medium text-content-3'}`}>
+                            {porAnio ? (anioQueCubre(v.expiry_date) || v.reemplazado_el || '—') : (v.reemplazado_el || '—')}
                         </span>
                         {v.url ? (
                             <button type="button"
-                                onClick={() => openStoredFile(v.url)}
+                                onClick={() => setViendo(v)}
                                 className="min-w-0 truncate text-micro font-bold text-brand-text hover:underline text-left">
                                 {v.file_name || 'Ver el archivo'}
                             </button>
@@ -386,6 +396,12 @@ function HistorialDeDocumento({ entrada }) {
                     </li>
                 ))}
             </ul>
+            {viendo && (
+                <Suspense fallback={null}>
+                    <VisorDeDocumento url={viendo.url} nombre={viendo.file_name || 'Documento'}
+                        alCerrar={() => setViendo(null)} />
+                </Suspense>
+            )}
         </div>
     );
 }
@@ -637,7 +653,7 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
     </div>
 );
 
-const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, onValidationChange }) => {
+const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, setActiveTab: irAPestana, onValidationChange }) => {
 
     const employees = useStaffStore(state => state.employees);
     // Se maneja con el dedo: decide si se ofrece la cámara para la foto oficial.
@@ -1472,7 +1488,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const updateDoc = (category, patch) => setFormData(prev => ({
         ...prev,
         employee_documents: documentoReemplazado(prev.employee_documents, category, patch,
-            { quien: quienCarga?.name || '', hoy: hoySV(), listaDeLaFicha: documentCategories }),
+            { quien: quienCarga?.name || '', quienId: quienCarga?.id || null, hoy: hoySV(), listaDeLaFicha: documentCategories }),
     }));
 
     /* Lo que hace el portal con la respuesta del lector.
@@ -1591,7 +1607,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     filePath: stored.path, bucketName: stored.bucket,
                     ...(COMPARTIBLES.has(category) ? { buscarPersonas: true } : {}),
                 }));
-                if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate) {
+                if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate
+                    && !POR_ANIO_CALENDARIO.has(category)) {
                     expiryDate = aiResponse.aiData.expDate;
                 }
                 // ── El número de la acreditación también sale del papel ──────
@@ -1627,15 +1644,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             // expidió, el vencimiento sale solo; si no lo dice, se queda vacío
             // para que alguien lo escriba. Poner «hoy + un año» sobre un
             // certificado viejo lo daría por vigente cuando no lo está.
-            if (!expiryDate && category === 'CERTIFICADO_MEDICO_ANUAL') {
-                const emision = aiResponse?.aiData?.issueDate;
-                if (emision) {
-                    const d = new Date(`${emision}T12:00:00`);
-                    if (!Number.isNaN(d.getTime())) {
-                        d.setFullYear(d.getFullYear() + 1);
-                        expiryDate = d.toISOString().split('T')[0];
-                    }
-                }
+            // Desde el 2026-10-13 vale por AÑO CALENDARIO (decisión del usuario:
+            // «sólo tome el año, es válido para todo ese año»): el certificado
+            // de 2026 cubre hasta el 31 de diciembre de 2026. Del papel se toma
+            // sólo el año en que se expidió; sin fecha legible queda vacío para
+            // que alguien elija el año.
+            if (!expiryDate && POR_ANIO_CALENDARIO.has(category)) {
+                expiryDate = vencimientoDelAnio(anioDelVencimiento(aiResponse?.aiData?.issueDate)) || null;
             }
             updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
 
@@ -1727,6 +1742,38 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     };
 
     const removeDocFile = (category) => updateDoc(category, { url: null, file_name: '' });
+
+    // ── Las dos caras del DUI con el teléfono, de una vez ────────────────────
+    //
+    // Pedido del usuario (2026-10-13): «al subir el DUI desde el teléfono, que
+    // pregunte si es el frente o reverso, que se pueda subir de un solo ambos».
+    // El teléfono pide cada cara con su nombre y las manda unidas en una
+    // imagen; acá entra como «un solo archivo» y sigue el camino normal —
+    // `handleDocFile`, con su lectura—, no uno aparte.
+    const [capturaDui, setCapturaDui] = useState(null);
+    const pedirDuiAlTelefono = async () => {
+        const r = await abrirCaptura(formData?.id || null, 'dui');
+        if (!r.ok) { useToastStore.getState().showToast('No se pudo', r.motivo, 'error'); return; }
+        setCapturaDui(r);
+    };
+    useEffect(() => {
+        if (!capturaDui?.id) return undefined;
+        return esperarFoto(capturaDui.id, async (url) => {
+            setCapturaDui(null);
+            try {
+                const file = await fotoComoArchivo(url, 'dui.jpg');
+                setDuiEnUnArchivo(true);
+                await handleDocFile('DUI_COMPLETO', file);
+                soltarCaptura(capturaDui.id);
+            } catch {
+                useToastStore.getState().showToast('Llegó pero no se pudo abrir', 'Intenta de nuevo desde el teléfono.', 'error');
+            }
+        });
+        // `handleDocFile` se redefine en cada render; la escucha depende sólo de
+        // la captura viva, igual que la de la foto de arriba.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [capturaDui?.id]);
+
 
     /* ── Las hojas que siguen a la primera ──────────────────────────────────
      *
@@ -1933,7 +1980,29 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     </div>
                 )}
 
-                {showExpiry && hasFile && !isAnalyzing && (
+                {showExpiry && hasFile && !isAnalyzing && POR_ANIO_CALENDARIO.has(category) && (
+                    <div className="mt-2">
+                        <label className={rotuloCampo('text-content-2', { denso: true })}>
+                            <span>¿De qué año es? Vale hasta el 31 de diciembre</span>
+                        </label>
+                        <div className="flex flex-wrap gap-1.5">
+                            {[0, 1, 2].map(atras => new Date().getFullYear() - atras).map(anio => {
+                                const elegido = anioQueCubre(doc.expiry_date) === anio;
+                                return (
+                                    <button key={anio} type="button" aria-pressed={elegido}
+                                        onClick={() => updateDoc(category, { expiry_date: vencimientoDelAnio(anio) })}
+                                        className={`min-h-[var(--tap-min)] px-4 rounded-full text-label font-black border transition-all active:scale-[0.97] ${
+                                            elegido
+                                                ? 'bg-brand text-white border-brand shadow-[var(--shadow-glow-brand)]'
+                                                : 'bg-surface-card text-content-2 border-border-card hover:border-brand/40'}`}>
+                                        {anio}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+                {showExpiry && hasFile && !isAnalyzing && !POR_ANIO_CALENDARIO.has(category) && (
                     <div className="mt-2">
                         <label className={rotuloCampo('text-content-2', { denso: true })}>
                             <span>Fecha de Vencimiento (opcional) — la lee el portal si el documento la trae</span>
@@ -2325,6 +2394,35 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     if (!formData) return null;
 
+    /* El documento de identidad visto como UNA entrada, para la tarjeta de
+     * Documentos: está entregado si están las dos caras (o el archivo único, o
+     * el documento alterno del menor). La autoría es la de la última cara que
+     * se subió. Va aquí, después de `isMinor` y `duiEnUnArchivo`: leerlos antes
+     * de su `const` lanza en cada render. */
+    const carasDelDocumento = isMinor ? ['DOCUMENTO_IDENTIDAD']
+        : duiEnUnArchivo ? ['DUI_COMPLETO'] : ['DUI_FRENTE', 'DUI_REVERSO'];
+    const entradasDeIdentidad = carasDelDocumento.map(getDocEntry);
+    const ultimaCara = [...entradasDeIdentidad].filter(d => d.subido_el)
+        .sort((a, b) => String(b.subido_el).localeCompare(String(a.subido_el)))[0];
+    const documentoDeIdentidad = {
+        url: entradasDeIdentidad.every(d => d.url) ? entradasDeIdentidad[0].url : null,
+        subido_por: ultimaCara?.subido_por, subido_por_id: ultimaCara?.subido_por_id, subido_el: ultimaCara?.subido_el,
+    };
+
+    // Lo que dice la barra de arriba de Documentos: entregados y por vencer.
+    const resumenDeDocumentos = (() => {
+        const estados = [
+            estadoDelDocumento({ ...documentoDeIdentidad, expiry_date: formData.dui_fecha_vencimiento }),
+            ...seccionesConDocumentos.flatMap(sec => sec.docs).map(cat =>
+                estadoDelDocumento(getDocEntry(cat.key), { conVencimiento: !SIN_VENCIMIENTO.has(cat.key) })),
+        ];
+        return {
+            total: estados.length,
+            listos: estados.filter(e => e.listo).length,
+            porVencer: estados.filter(e => e.variant === 'danger' || (e.variant === 'warning' && e.label !== 'Pendiente')).length,
+        };
+    })();
+
     return (
         <div className="flex flex-col w-full h-full relative z-base" onKeyDown={handleKeyDown}>
 
@@ -2505,8 +2603,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             {op.l}
                                         </button>
                                     ))}
+                                    {/* Las dos caras de una vez desde el teléfono: no
+                                        hace falta en el teléfono mismo, que ya tiene la
+                                        cámara en cada casilla. */}
+                                    {!esTactil && (
+                                        <Button variant="secondary" size="sm" icon={Smartphone} className="ml-auto"
+                                            onClick={pedirDuiAlTelefono} disabled={!!capturaDui || leyendoDui}>
+                                            {capturaDui ? 'Esperando el teléfono…' : 'Las dos caras con el teléfono'}
+                                        </Button>
+                                    )}
                                 </div>
                             )}
+
 
                             {isMinor ? (
                                 renderDocUploadArea('DOCUMENTO_IDENTIDAD')
@@ -4764,26 +4872,68 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 {activeTab === 'documentos' && (
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
+                            {/* ── Cuánto falta, de un vistazo ───────────────────────
+                                Antes había que recorrer la pestaña entera para
+                                contestar «¿qué le falta a esta persona?». */}
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
                                     <FileText size={16} strokeWidth={2.5} />
                                 </div>
-                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Documentación del Expediente</h4>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Documentación del Expediente</h4>
+                                    <p className="text-label text-content-3 font-medium mt-0.5">
+                                        {resumenDeDocumentos.listos} de {resumenDeDocumentos.total} entregados
+                                        {resumenDeDocumentos.porVencer > 0 && ` · ${resumenDeDocumentos.porVencer} por vencer o vencido${resumenDeDocumentos.porVencer === 1 ? '' : 's'}`}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden mb-5" data-medida="dato">
+                                <div className="h-full rounded-full bg-success transition-all duration-[var(--dur-lento)]"
+                                    style={{ width: `${resumenDeDocumentos.total ? Math.round(100 * resumenDeDocumentos.listos / resumenDeDocumentos.total) : 0}%` }} />
                             </div>
 
-                            {/* Documento de identidad: DUI (Frente+Reverso, un solo documento) para
-                                adultos; documento alterno con selector de tipo (Art. 23.2) para
-                                menores — agrupado aparte para que no se lea como 2 archivos
-                                independientes. La imagen NO bloquea el alta del empleado (a
-                                diferencia del campo de texto DUI/documento alterno, que sí es
-                                obligatorio) — si falta, queda marcada "Pendiente". */}
-                            <div data-surface="card" className="p-3 bg-surface-card-hover/60 mb-4 flex items-start gap-3">
-                                <Fingerprint size={16} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2.5} />
-                                <p className="text-label text-content-2 font-medium leading-snug">
-                                    El {isMinor ? 'documento de identidad' : 'DUI'} se sube en <span className="font-black">Datos Personales</span>, al inicio.
-                                    Está ahí y no aquí porque el documento llena media ficha: de él salen el número, el género,
-                                    el estado familiar, la fecha de nacimiento y la dirección.
-                                </p>
+                            {/* ── El documento de identidad, también aquí ──────────
+                                Pedido del usuario: «que el DUI se muestre ahí
+                                también». Se sube en Datos Personales —de él salen
+                                media ficha— pero el expediente sin el DUI a la vista
+                                parecía incompleto. Es el MISMO bloque de subida, así
+                                que cambiarlo aquí o allá es lo mismo. */}
+                            <div className="mb-5">
+                                <div className="mb-2">
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-2">Identidad</p>
+                                    <p className="text-micro text-content-3 font-medium leading-snug">De él salen el número, la fecha de nacimiento y la dirección de la ficha.</p>
+                                </div>
+                                <TarjetaDeDocumento
+                                    categoria={isMinor ? 'DOCUMENTO_IDENTIDAD' : 'DUI_FRENTE'}
+                                    titulo={isMinor ? altIdDocTypeLabel : 'DUI'}
+                                    doc={documentoDeIdentidad}
+                                    vencimiento={formData.dui_fecha_vencimiento || ''}
+                                    accion={irAPestana && (
+                                        <button type="button" onClick={() => irAPestana('personal')}
+                                            className="text-left text-micro font-black text-brand-text hover:underline min-h-[var(--tap-min)] md:min-h-0">
+                                            Cambiarlo en Datos personales →
+                                        </button>
+                                    )}>
+                                    {!isMinor && !esTactil && (
+                                        <Button variant="secondary" size="sm" icon={Smartphone} className="self-start"
+                                            onClick={pedirDuiAlTelefono} disabled={!!capturaDui || leyendoDui}>
+                                            {capturaDui ? 'Esperando el teléfono…' : 'Las dos caras con el teléfono'}
+                                        </Button>
+                                    )}
+                                    {isMinor ? renderDocUploadArea('DOCUMENTO_IDENTIDAD')
+                                        : duiEnUnArchivo ? renderDocUploadArea('DUI_COMPLETO') : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className={rotuloCampo('text-content-2', { denso: true })}><span>Frente</span></label>
+                                                    {renderDocUploadArea('DUI_FRENTE')}
+                                                </div>
+                                                <div>
+                                                    <label className={rotuloCampo('text-content-2', { denso: true })}><span>Reverso</span></label>
+                                                    {renderDocUploadArea('DUI_REVERSO')}
+                                                </div>
+                                            </div>
+                                        )}
+                                </TarjetaDeDocumento>
                             </div>
 
                             {/* Una sección por MOMENTO en que se pide el papel — ver
@@ -4796,10 +4946,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <p className="text-caption font-black uppercase tracking-widest text-content-2">{sec.titulo}</p>
                                         <p className="text-micro text-content-3 font-medium leading-snug">{sec.bajada}</p>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {sec.docs.map(cat => (
-                                            <div key={cat.key} data-surface="card" className="p-3 bg-surface-card-hover/60">
-                                                <label className={rotuloCampo('text-content-3')}>{cat.label}</label>
+                                            <TarjetaDeDocumento key={cat.key}
+                                                categoria={cat.key}
+                                                titulo={cat.label}
+                                                doc={getDocEntry(cat.key)}
+                                                conVencimiento={!SIN_VENCIMIENTO.has(cat.key)}
+                                                porAnio={POR_ANIO_CALENDARIO.has(cat.key)}>
                                                 {cat.key === 'SRS' && (
                                                     <PortalInput label="Número de Carné JVPQF" name="pharmacist_license_number" value={formData.pharmacist_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPQF" colSpan={1} />
                                                 )}
@@ -4807,11 +4961,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <PortalInput label="Número de Carné JVPE" name="nursing_license_number" value={formData.nursing_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPE" colSpan={1} />
                                                 )}
                                                 {(cat.key === 'ANUALIDAD_JVPQF' || cat.key === 'ANUALIDAD_JVPE') && (
-                                                    <p className="text-micro text-content-3 font-bold mb-2">Comprobante de pago del año en curso (recibo o mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite: 31 de marzo, igual para todos los profesionales de salud inscritos. Se completa sola al subir el recibo si no escribes otra fecha.</p>
+                                                    <p className="text-micro text-content-3 font-bold">Comprobante de pago del año en curso (recibo o mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite: 31 de marzo, igual para todos los profesionales de salud inscritos. Se completa sola al subir el recibo si no escribes otra fecha.</p>
                                                 )}
-                                                {renderDocUploadArea(cat.key)}
+                                                <div>{renderDocUploadArea(cat.key)}</div>
                                                 <HistorialDeDocumento entrada={getDocEntry(cat.key)} />
-                                            </div>
+                                            </TarjetaDeDocumento>
                                         ))}
                                     </div>
                                 </div>
@@ -4857,6 +5011,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             {/* El reparto de un documento colectivo. Va acá, fuera de las
                 pestañas: se abre después de subir el acuse y tiene que verse
                 esté donde esté la persona. */}
+            {/* Fuera de las pestañas: el botón de las dos caras vive en Datos
+                personales Y en Documentos, y el diálogo tiene que verse desde
+                cualquiera de las dos. */}
+            {capturaDui && (
+                <Suspense fallback={null}>
+                    <DialogoDeCaptura captura={capturaDui} modo="dui" etiqueta="el DUI"
+                        alCerrar={() => setCapturaDui(null)} alRenovar={pedirDuiAlTelefono} />
+                </Suspense>
+            )}
+
             {docParaVarios && (
                 <Suspense fallback={null}>
                     <AsignarDocumentoAVarios

@@ -215,7 +215,7 @@ export const AREAS = [
             'src/store/slices/employeeSlice.js', 'src/store/slices/practicantesSlice.js',
             'src/utils/ageUtils.js', 'src/utils/nameUtils.js', 'src/utils/staffHelpers.js',
             'src/utils/economicDependents.js', 'src/utils/educationCatalogs.js',
-            'src/components/forms/EmployeeFormModal.jsx', 'src/components/forms/FormRehireEmployee.jsx',
+            'src/components/forms/EmployeeFormModal.jsx', 'src/components/forms/TarjetaDeDocumento.jsx', 'src/plataforma/leerQrDeFoto.js', 'src/components/forms/FormRehireEmployee.jsx',
             // Un documento que nombra a VARIAS personas —el acuse del Ministerio
             // por una recontratación—: el reparto y su cruce de nombres contra
             // el padrón. Va en Personal porque lo que escribe es el expediente.

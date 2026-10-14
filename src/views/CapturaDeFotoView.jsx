@@ -70,6 +70,16 @@ export default function CapturaDeFotoView() {
        casi nunca se deja leer del otro lado. */
     const [modo, setModo] = useState('foto');
     const [leyendo, setLeyendo] = useState(false);
+    // ¿Hay cámara en vivo? Se pregunta una vez: no cambia mientras la página vive.
+    const [enVivo] = useState(() => (typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia));
+    const esAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent || '');
+    /* `dui` = las DOS caras del DUI de una sola vez (pedido del usuario,
+       2026-10-13: «que pregunte si es el frente o reverso, que se pueda subir
+       de un solo ambos, y no 1 y 1»). Cada cara tiene su casilla con nombre,
+       y se mandan unidas en una imagen: el lector del DUI lee un archivo con
+       las dos caras igual que dos sueltos. */
+    const [caras, setCaras] = useState({ frente: null, reverso: null });   // { file, vista }
+    const [caraPorAjustar, setCaraPorAjustar] = useState(null);           // { cara, file }
     /* Las hojas ya confirmadas, en orden. Se juntan acá y se mandan de una sola
        vez: por eso el secreto sigue siendo de un uso. */
     const [hojas, setHojas] = useState([]);   // [{ file, vista }]
@@ -95,7 +105,7 @@ export default function CapturaDeFotoView() {
             setPara(r.para || '');
             // El lector NO se abre solo: en Android, pedir la cámara sin que la
             // persona haya tocado nada puede quedar bloqueado. Se abre al tocar.
-            if (r.modo === 'qr') setModo('qr');
+            if (r.modo === 'qr' || r.modo === 'dui') setModo(r.modo);
             setEstado('listo');
         })();
         return () => { vivo = false; };
@@ -197,7 +207,7 @@ export default function CapturaDeFotoView() {
                     código. El rótulo describe lo que la pantalla HACE, que es lo
                     único cierto en todos los casos. */}
                 <p className="text-caption font-black uppercase tracking-widest text-content-3">
-                    {modo === 'qr' ? 'Código QR desde el teléfono' : 'Foto desde el teléfono'}
+                    {modo === 'qr' ? 'Código QR desde el teléfono' : modo === 'dui' ? 'DUI desde el teléfono' : 'Foto desde el teléfono'}
                 </p>
                 {para && <p className="text-display-sm font-black text-content mt-1">{para}</p>}
             </div>
@@ -213,47 +223,69 @@ export default function CapturaDeFotoView() {
             )}
 
             {estado === 'listo' && modo === 'qr' && (
-                <div className="flex flex-col items-center gap-3 text-center">
-                    <p className="text-caption text-content-3 font-medium max-w-xs leading-snug">
-                        Apunta la cámara al código QR. Lo que lea aparece solo en la computadora.
-                    </p>
-                    <Button icon={QrCode} onClick={() => setLeyendo(true)}>
-                        Escanear el código
-                    </Button>
-                    {/* ── El camino que funciona en CUALQUIER navegador ──────
-                        En Android, el enlace del QR muchas veces se abre dentro
-                        del navegador de la app de cámara o de Google Lens, y ahí
-                        no hay cámara en vivo (iPhone lo abre en Safari y por eso
-                        allá sí). Una foto con la cámara del sistema sí se puede
-                        en todos lados — y se LEE AQUÍ, a resolución completa, y
-                        lo que viaja es el enlace, no la foto. */}
-                    <label className="inline-flex items-center gap-2 min-h-[var(--tap-min)] px-4 rounded-btn
-                                      text-body-sm font-bold text-content-2 cursor-pointer active:scale-[0.97]">
+                <div className="flex flex-col items-center gap-3 text-center max-w-xs">
+                    {/* ── Sin cámara en vivo, el camino es la FOTO ─────────────
+                        En Android el enlace del QR suele abrirse dentro del
+                        navegador de la app de cámara o de Google Lens, y ese
+                        navegador no da cámara en vivo: el botón «Escanear» sólo
+                        llevaba a un error (reportado dos veces, 2026-10-13/14).
+                        Ahí ni se ofrece: la foto con la cámara del sistema
+                        funciona en todos lados, se lee AQUÍ y viaja el enlace. */}
+                    {enVivo ? (
+                        <>
+                            <p className="text-caption text-content-3 font-medium leading-snug">
+                                Apunta la cámara al código QR. Lo que lea aparece solo en la computadora.
+                            </p>
+                            <Button icon={QrCode} onClick={() => setLeyendo(true)}>
+                                Escanear el código
+                            </Button>
+                        </>
+                    ) : (
+                        <p className="text-caption text-content-3 font-medium leading-snug">
+                            Toma una foto del código QR, de cerca y nítida. El portal lo lee aquí y manda el enlace a la computadora.
+                        </p>
+                    )}
+                    <label className={enVivo
+                        ? `inline-flex items-center gap-2 min-h-[var(--tap-min)] px-4 rounded-btn
+                           text-body-sm font-bold text-content-2 cursor-pointer active:scale-[0.97]`
+                        : `inline-flex items-center justify-center gap-2 min-h-[var(--tap-min)] px-5 rounded-btn
+                           bg-brand text-white text-body-sm font-black cursor-pointer active:scale-[0.97]`}>
                         <Camera size={16} strokeWidth={2.5} />
-                        Si no abre: tomar una foto del código
+                        {enVivo ? 'Si no abre: tomar una foto del código' : 'Tomar foto del código'}
                         <input type="file" {...PROPS_CAMARA} className="sr-only" onChange={async (e) => {
                             const file = e.target.files?.[0];
                             e.target.value = '';
                             if (!file) return;
                             setEstado('mandando');
-                            const url = URL.createObjectURL(file);
                             try {
-                                const { leerQrDeImagen } = await import('@nucleo/utils/leerQrDeImagen');
-                                const texto = await leerQrDeImagen(url);
+                                const { leerQrDeFoto } = await import('@plataforma/leerQrDeFoto');
+                                const texto = await leerQrDeFoto(file);
                                 if (!texto) {
                                     setEstado('error');
-                                    setMotivo('No se leyó ningún código en la foto. Acércate al QR, que salga nítido, y vuelve a intentar.');
+                                    setMotivo('No se leyó ningún código en la foto. Acércate al QR, que salga nítido y sin reflejo, y vuelve a intentar.');
                                     return;
                                 }
                                 const r = await mandarTexto(secreto, texto);
                                 if (r.ok) { setEstado('hecho'); return; }
                                 setEstado('error');
                                 setMotivo(r.motivo);
-                            } finally {
-                                URL.revokeObjectURL(url);
+                            } catch (err) {
+                                // Sin esto, una foto que no abre deja la pantalla
+                                // en «Mandando…» para siempre.
+                                setEstado('error');
+                                setMotivo(err?.message || 'No se pudo leer la foto. Intenta de nuevo.');
                             }
                         }} />
                     </label>
+                    {/* En Android, la otra salida: abrir esta misma página en
+                        Chrome, que sí da cámara en vivo. `intent://` es la forma
+                        de pedírselo al sistema desde otro navegador. */}
+                    {!enVivo && esAndroid && (
+                        <a href={`intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;end`}
+                            className="text-micro font-black text-brand-text underline min-h-[var(--tap-min)] inline-flex items-center">
+                            O abrir esta página en Chrome
+                        </a>
+                    )}
                 </div>
             )}
 
@@ -271,6 +303,73 @@ export default function CapturaDeFotoView() {
                             if (r.ok) { setEstado('hecho'); return; }
                             setEstado('error');
                             setMotivo(r.motivo);
+                        }}
+                    />
+                </Suspense>
+            )}
+
+            {estado === 'listo' && modo === 'dui' && (
+                <div className="w-full max-w-xs flex flex-col gap-3">
+                    {[{ cara: 'frente', rotulo: 'Frente', ayuda: 'El lado de la foto y el número' },
+                      { cara: 'reverso', rotulo: 'Reverso', ayuda: 'El lado de la dirección' }].map(({ cara, rotulo, ayuda }) => (
+                        <label key={cara} data-surface="card"
+                            className="p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] min-h-[var(--tap-min)]">
+                            {caras[cara]?.vista ? (
+                                <img src={caras[cara].vista} alt="" className="w-20 h-12 rounded-lg object-cover shrink-0" />
+                            ) : (
+                                <div className="w-20 h-12 rounded-lg bg-surface-card-hover flex items-center justify-center shrink-0">
+                                    <Camera size={18} className="text-content-3" />
+                                </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-body-sm font-black text-content">{rotulo}</p>
+                                <p className="text-micro text-content-3 font-medium">
+                                    {caras[cara] ? 'Toca para tomarla de nuevo' : ayuda}
+                                </p>
+                            </div>
+                            {caras[cara] && <CheckCircle2 size={18} className="text-success shrink-0" strokeWidth={2.5} />}
+                            <input type="file" {...PROPS_CAMARA} className="sr-only" onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = '';
+                                if (file) setCaraPorAjustar({ cara, file });
+                            }} />
+                        </label>
+                    ))}
+                    <Button icon={Send} disabled={!caras.frente || !caras.reverso} onClick={async () => {
+                        setEstado('mandando');
+                        try {
+                            const unidas = await unirCaras(caras.frente.file, caras.reverso.file);
+                            const r = await mandarFoto(secreto, unidas);
+                            if (r.ok) { setEstado('hecho'); return; }
+                            setEstado('error');
+                            setMotivo(r.motivo);
+                        } catch (e) {
+                            setEstado('error');
+                            setMotivo(e?.message || 'No se pudieron unir las dos caras. Intenta de nuevo.');
+                        }
+                    }}>
+                        {caras.frente && caras.reverso ? 'Mandar las dos caras' : 'Toma las dos caras'}
+                    </Button>
+                </div>
+            )}
+
+            {caraPorAjustar && (
+                <Suspense fallback={
+                    <p className="text-body text-content-3 font-bold flex items-center gap-2">
+                        <Loader2 size={16} className="animate-spin" /> Abriendo el editor…
+                    </p>
+                }>
+                    <EditorDeDocumento
+                        tipo="dui"
+                        file={caraPorAjustar.file}
+                        onCancel={() => setCaraPorAjustar(null)}
+                        onConfirm={(listo) => {
+                            const { cara } = caraPorAjustar;
+                            setCaraPorAjustar(null);
+                            setCaras(prev => {
+                                if (prev[cara]?.vista) URL.revokeObjectURL(prev[cara].vista);
+                                return { ...prev, [cara]: { file: listo, vista: URL.createObjectURL(listo) } };
+                            });
                         }}
                     />
                 </Suspense>
@@ -397,7 +496,7 @@ export default function CapturaDeFotoView() {
             {estado === 'mandando' && (
                 <p className="text-body font-black text-brand-text flex items-center gap-2">
                     <Loader2 size={18} className="animate-spin" />
-                    {modo === 'qr' ? 'Mandando el código…'
+                    {modo === 'qr' ? 'Mandando el código…' : modo === 'dui' ? 'Mandando las dos caras…'
                         : hojas.length > 1 ? `Mandando las ${hojas.length} fotos…` : 'Mandando la foto…'}
                 </p>
             )}
@@ -455,4 +554,36 @@ export default function CapturaDeFotoView() {
             )}
         </div>
     );
+}
+
+/**
+ * Las dos caras en UNA imagen: frente arriba, reverso abajo, sobre blanco.
+ *
+ * Así viajan por el mismo canal de una foto —un archivo, un secreto— y del otro
+ * lado entran como «DUI en un solo archivo», que `leer-dui` ya lee. Mandarlas
+ * como dos archivos habría pedido un segundo buzón por captura.
+ */
+async function unirCaras(frente, reverso) {
+    const abrir = (file) => new Promise((ok, mal) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); ok(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); mal(new Error('No se pudo abrir una de las fotos.')); };
+        img.src = url;
+    });
+    const [a, b] = await Promise.all([abrir(frente), abrir(reverso)]);
+    const ancho = Math.max(a.naturalWidth, b.naturalWidth);
+    const hueco = Math.round(ancho * 0.04);
+    const lienzo = document.createElement('canvas');
+    lienzo.width = ancho;
+    lienzo.height = a.naturalHeight + hueco + b.naturalHeight;
+    const ctx = lienzo.getContext('2d');
+    // El papel no tiene tema: el fondo de la imagen es blanco siempre.
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+    ctx.drawImage(a, Math.round((ancho - a.naturalWidth) / 2), 0);
+    ctx.drawImage(b, Math.round((ancho - b.naturalWidth) / 2), a.naturalHeight + hueco);
+    const blob = await new Promise(ok => lienzo.toBlob(ok, 'image/jpeg', 0.9));
+    if (!blob) throw new Error('No se pudieron unir las dos caras.');
+    return new File([blob], 'dui.jpg', { type: 'image/jpeg' });
 }

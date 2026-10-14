@@ -1,3 +1,4 @@
+import { getExpiryBadge } from './documentExpiry';
 /**
  * Cómo se LLAMA un documento del expediente, y a qué grupo pertenece.
  *
@@ -321,6 +322,44 @@ export const CON_ARCHIVO_ANTERIOR = new Set([
     'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE',
 ]);
 
+/* ── El certificado médico vale por AÑO CALENDARIO ─────────────────────────
+ *
+ * Decisión del usuario, 2026-10-13: *«que la fecha del documento sólo tome el
+ * año, es válido para todo ese año»*. El certificado de 2026 cubre 2026 entero,
+ * no «un año desde que se hizo el examen» — así que lo que se pide es el AÑO y
+ * el vencimiento se deriva: el 31 de diciembre de ese año. Guardarlo como
+ * fecha (y no como un número aparte) mantiene vivo todo lo que ya lee
+ * `expiry_date`: el aviso de documentos por vencer, la lista de la ficha y las
+ * exportaciones. */
+export const POR_ANIO_CALENDARIO = new Set(['CERTIFICADO_MEDICO_ANUAL']);
+
+/** `2026` → `'2026-12-31'`. */
+export const vencimientoDelAnio = (anio) => {
+    const n = Number(anio);
+    return Number.isInteger(n) && n >= 2000 && n <= 2100 ? `${n}-12-31` : '';
+};
+
+/** `'2026-12-31'` (o cualquier fecha ISO) → `2026`; `null` si no hay. */
+export const anioDelVencimiento = (fecha) => {
+    const m = /^(\d{4})-/.exec(String(fecha || ''));
+    return m ? Number(m[1]) : null;
+};
+
+/**
+ * El año que CUBRE un certificado, leído de su vencimiento guardado.
+ *
+ * Con la regla nueva el vencimiento es el 31 de diciembre de ese año. Los que
+ * se guardaron antes del 2026-10-13 llevan «un año desde la emisión» (los
+ * cuatro de producción: emitidos en junio de 2026, vencen en junio de 2027), así
+ * que su año es el ANTERIOR al del vencimiento. Sin esta lectura, un
+ * certificado de 2026 se mostraría como «válido todo 2027».
+ */
+export const anioQueCubre = (fecha) => {
+    const anio = anioDelVencimiento(fecha);
+    if (!anio) return null;
+    return /-12-31$/.test(String(fecha)) ? anio : anio - 1;
+};
+
 export const EDUCATION_OPTIONS = [
     { value: 'BASICA', label: 'Educación básica' },
     { value: 'BACHILLERATO_GENERAL', label: 'Bachillerato general' },
@@ -346,9 +385,14 @@ export const LEVELS_WITH_PROFESSION = ['UNIVERSITARIO'];
  * @param {any[]} lista
  * @param {string} categoria
  * @param {any} patch
- * @param {{ quien?: string, hoy?: string, listaDeLaFicha?: any[] }} [opciones]
+ * Cuando llega un archivo NUEVO se anota quién lo subió y cuándo
+ * (`subido_por`, `subido_por_id`, `subido_el`). Pedido del usuario el
+ * 2026-10-13: *«cada documento se debe ver quién lo subió»*. Hasta hoy sólo la
+ * traza de un reemplazo decía quién — el documento vigente no lo decía nunca.
+ *
+ * @param {{ quien?: string, quienId?: string|null, hoy?: string, listaDeLaFicha?: any[] }} [opciones]
  */
-export function documentoReemplazado(lista, categoria, patch, { quien = '', hoy, listaDeLaFicha = [] } = {}) {
+export function documentoReemplazado(lista, categoria, patch, { quien = '', quienId = null, hoy, listaDeLaFicha = [] } = {}) {
     const docs = [...(lista || [])];
     const idx = docs.findIndex(d => d.category === categoria);
     const base = idx >= 0 ? docs[idx] : { category: categoria, title: rotuloDelDocumento(categoria, listaDeLaFicha), file_name: '', url: null, expiry_date: '' };
@@ -357,11 +401,27 @@ export function documentoReemplazado(lista, categoria, patch, { quien = '', hoy,
         reemplazado_el: hoy,
         por: quien || '',
         ...(CON_ARCHIVO_ANTERIOR.has(categoria)
-            ? { url: base.url, file_name: base.file_name || '', expiry_date: base.expiry_date || '' }
+            ? { url: base.url, file_name: base.file_name || '', expiry_date: base.expiry_date || '',
+                ...(base.subido_por ? { subido_por: base.subido_por, subido_el: base.subido_el || '' } : {}) }
             : {}),
     };
     const historial = llegaOtro ? [traza, ...(base.historial || [])].slice(0, HISTORIAL_MAXIMO) : (base.historial || []);
-    const nuevo = { ...base, ...patch, historial };
+    // Un archivo que entra por primera vez o que reemplaza a otro. Quitarlo
+    // (`url: null`) no cambia quién subió el que había.
+    const subeUnArchivo = Object.prototype.hasOwnProperty.call(patch, 'url') && !!patch.url && patch.url !== base.url;
+    const autoria = subeUnArchivo
+        ? { subido_por: quien || '', subido_por_id: quienId || null, subido_el: hoy || '' }
+        : {};
+    const nuevo = { ...base, ...patch, ...autoria, historial };
     if (idx >= 0) docs[idx] = nuevo; else docs.push(nuevo);
     return docs;
+}
+
+/** El estado de un documento: lo que dice la píldora de la tarjeta. */
+export function estadoDelDocumento(doc, { conVencimiento = true } = {}) {
+    if (!doc?.url) return { label: 'Pendiente', variant: 'warning', listo: false };
+    const vence = conVencimiento ? getExpiryBadge(doc.expiry_date) : null;
+    // Un documento por vencer todavía cuenta como entregado; uno vencido, no.
+    if (vence) return { label: vence.label, variant: vence.variant, listo: vence.daysLeft >= 0 };
+    return { label: 'Completo', variant: 'success', listo: true };
 }

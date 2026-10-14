@@ -352,12 +352,23 @@ describe('los documentos que pide el expediente', () => {
         expect(form).not.toContain("key: 'CERTIFICADO_MEDICO'");
     });
 
-    it('el certificado médico deriva su vencimiento de cuándo se hizo', () => {
-        // Un año desde el examen, y POR PERSONA — no una fecha fija del
-        // calendario. Sin fecha de emisión se queda vacío: «hoy + un año» sobre
-        // un certificado viejo lo daría por vigente cuando no lo está.
-        expect(form).toContain("category === 'CERTIFICADO_MEDICO_ANUAL'");
-        expect(form).toMatch(/setFullYear\(d\.getFullYear\(\) \+ 1\)/);
+    it('el certificado médico vale por AÑO CALENDARIO, tomado de cuándo se hizo', () => {
+        // Decisión del usuario, 2026-10-13: «sólo tome el año, es válido para
+        // todo ese año». Del papel sale el año de emisión y el vencimiento es el
+        // 31 de diciembre de ese año. Sin fecha de emisión se queda vacío:
+        // suponer el año en curso sobre un certificado viejo lo daría por vigente.
+        expect(form).toContain('POR_ANIO_CALENDARIO.has(category)');
+        expect(form).toMatch(/vencimientoDelAnio\(anioDelVencimiento\(aiResponse\?\.aiData\?\.issueDate\)\)/);
+    });
+
+    it('el año del certificado se lee bien también en los guardados con la regla vieja', async () => {
+        const { vencimientoDelAnio, anioQueCubre, POR_ANIO_CALENDARIO } = await import('@nucleo/utils/documentosDelExpediente');
+        expect(POR_ANIO_CALENDARIO.has('CERTIFICADO_MEDICO_ANUAL')).toBe(true);
+        expect(vencimientoDelAnio(2026)).toBe('2026-12-31');
+        expect(anioQueCubre('2026-12-31')).toBe(2026);
+        // Regla vieja: un año desde la emisión. Emitido en junio de 2026.
+        expect(anioQueCubre('2027-06-25')).toBe(2026);
+        expect(anioQueCubre('')).toBe(null);
     });
 });
 

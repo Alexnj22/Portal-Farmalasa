@@ -1,14 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { Suspense, lazy, useMemo, useState } from 'react';
 import Button from './Button';
 import Badge from './Badge';
 import { Eye, FolderOpen } from 'lucide-react';
-import { openStoredFile } from '@nucleo/utils/storageFiles';
+import { POR_ANIO_CALENDARIO, anioQueCubre } from '@nucleo/utils/documentosDelExpediente';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { getExpiryBadge, getExpiringDocuments } from '@nucleo/utils/documentExpiry';
 import { nombreDeDocumento, iconoDeCategoria, tinteDeCategoria } from './catalogos/documentos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
+// Ver el documento DENTRO del portal y no en otra pestaña (pedido del usuario,
+// 2026-10-13). Diferido: abrir un documento es la excepción, no la regla.
+const VisorDeDocumento = lazy(() => import('./VisorDeDocumento'));
 
-const DocumentRow = ({ doc }) => {
+
+const DocumentRow = ({ doc, alVer }) => {
     const Icon = iconoDeCategoria(doc.category);
     const tinte = tinteDeCategoria(doc.category);
     const badge = getExpiryBadge(doc.expiry_date);
@@ -23,7 +28,15 @@ const DocumentRow = ({ doc }) => {
                 <p className="text-body-sm font-bold text-content truncate">{nombreDeDocumento(doc)}</p>
                 {doc.expiry_date && (
                     <p className="text-caption text-content-3 font-medium mt-0.5">
-                        Vence {fechaTexto(doc.expiry_date, { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {POR_ANIO_CALENDARIO.has(doc.category)
+                            ? `Válido todo ${anioQueCubre(doc.expiry_date)}`
+                            : `Vence ${fechaTexto(doc.expiry_date, { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                    </p>
+                )}
+                {hasFile && doc.subido_por && (
+                    <p className="text-micro text-content-3 font-medium mt-0.5 truncate">
+                        Subido por {shortEmployeeName(doc.subido_por)}
+                        {doc.subido_el ? ` · ${fechaTexto(doc.subido_el, { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
                     </p>
                 )}
             </div>
@@ -32,7 +45,7 @@ const DocumentRow = ({ doc }) => {
                     <Badge variant={badge.variant} size="sm">{badge.label}</Badge>
                 )}
                 {hasFile ? (
-                    <Button size="sm" icon={Eye} title="Ver documento" iconOnly onClick={() => openStoredFile(doc.url)} />
+                    <Button size="sm" icon={Eye} title="Ver documento" iconOnly onClick={() => alVer(doc)} />
                 ) : (
                     <Badge variant="warning" size="sm" className="whitespace-nowrap">Pendiente</Badge>
                 )}
@@ -44,6 +57,7 @@ const DocumentRow = ({ doc }) => {
 // Lista de solo lectura del expediente de un empleado — vencidos/por vencer primero.
 // Usada por EmployeeProfileView (el propio empleado) y EmployeeDetailView (RRHH).
 const EmployeeDocumentsList = ({ documents, emptyLabel = 'Sin documentos registrados' }) => {
+    const [viendo, setViendo] = useState(null);
     const ordered = useMemo(() => {
         const docs = Array.isArray(documents) ? documents : [];
         const expiring = getExpiringDocuments(docs);
@@ -68,7 +82,13 @@ const EmployeeDocumentsList = ({ documents, emptyLabel = 'Sin documentos registr
 
     return (
         <div className="space-y-2">
-            {ordered.map(doc => <DocumentRow key={doc.category} doc={doc} />)}
+            {ordered.map(doc => <DocumentRow key={doc.category} doc={doc} alVer={setViendo} />)}
+            {viendo && (
+                <Suspense fallback={null}>
+                    <VisorDeDocumento url={viendo.url} nombre={nombreDeDocumento(viendo)}
+                        alCerrar={() => setViendo(null)} />
+                </Suspense>
+            )}
         </div>
     );
 };

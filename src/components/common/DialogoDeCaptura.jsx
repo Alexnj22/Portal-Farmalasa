@@ -33,6 +33,8 @@ import { enlaceDeCaptura } from '@nucleo/data/capturaDeFoto';
 export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenovar, modo = 'foto' }) {
     // `qr`: el teléfono no toma una foto, escanea un código y manda lo que leyó.
     const esQr = modo === 'qr';
+    // `dui`: el teléfono pide el frente y el reverso, cada uno con su nombre.
+    const esDui = modo === 'dui';
     return (
         <ModalShell open onClose={alCerrar} maxWidthClass="max-w-sm"
             ariaLabel={esQr ? 'Escanear el código con el teléfono' : 'Tomar la foto con el teléfono'}>
@@ -56,7 +58,9 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
                     Escanea este código con la cámara del teléfono.
                     {esQr
                         ? ` Después escanea el QR de ${etiqueta ? `«${etiqueta}»` : 'tu documento'} y su enlace va a aparecer aquí solo.`
-                        : (etiqueta ? ` La foto de «${etiqueta}» va a aparecer aquí sola.` : ' La foto va a aparecer aquí sola.')}
+                        : esDui
+                            ? ' Te va a pedir el frente y el reverso; cuando mandes las dos caras, aparecen aquí y se leen solas.'
+                            : (etiqueta ? ` La foto de «${etiqueta}» va a aparecer aquí sola.` : ' La foto va a aparecer aquí sola.')}
                 </p>
 
                 <QrDeCaptura

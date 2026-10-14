@@ -22,7 +22,8 @@
 import { useRef, useState } from 'react';
 import { Image, Platform, Share, Text, View } from 'react-native';
 import Presionable from './Presionable';
-import QRCode from 'react-native-qrcode-svg';
+// El QR con módulos de píxeles enteros (componentes/CodigoQR.js, 2026-10-14).
+import QRCode from './CodigoQR';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';

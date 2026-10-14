@@ -33,7 +33,7 @@ import { alLlegarAviso, esAvisoDeChat } from '../lib/avisos';
 import { useCuenta } from '../lib/cuenta';
 import { precargarChat } from '../lib/chatHilo';
 import { useSesion } from '../lib/sesion';
-import { useBloqueo } from '../lib/bloqueo';
+import { useTapadaPorBloqueo } from '../lib/bloqueo';
 import { LIVIANO } from '../lib/rendimiento';
 import { navegar } from '../lib/navegar';
 import { useTema } from '../tema/tema';
@@ -60,7 +60,13 @@ export default function BurbujaChat() {
   const ins = useSafeAreaInsets();
   const segmentos = useSegments();
   const token = useSesion((s) => s.token);
-  const bloqueada = useBloqueo((s) => s.bloqueada);
+  // Con el bloqueo (2026-10-14, «la burbuja sale encima de la pantalla de
+  // bloqueo»): se escondía con `bloqueada`, pero no con la TAPA —la pantalla de
+  // bloqueo sin botón que se pone al abrir Recientes o el selector de apps—, y
+  // la burbuja va en zIndex 900 (y con `elevation` en Android) sobre el 100 del
+  // bloqueo: asomaba encima, también en la foto de Recientes. Ni antes de leer
+  // del llavero si el bloqueo está encendido. El mismo store que el bloqueo.
+  const bloqueada = useTapadaPorBloqueo();
   const resumen = useCuenta((s) => s.resumen);
   const reducir = useReducedMotion() || LIVIANO;
   const conFicha = !!resumen && !resumen.pendiente;

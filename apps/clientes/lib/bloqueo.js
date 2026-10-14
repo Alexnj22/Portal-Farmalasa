@@ -22,7 +22,7 @@
 // abre (la cámara o la galería, la hoja de compartir, el pago, un permiso, la
 // propia huella) va envuelto en `sinBloquear`: esa salida es «esperada» y no
 // bloquea ni tapa — salvo que dure más de 5 minutos.
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
@@ -114,6 +114,11 @@ export async function verificar(motivo = 'Desbloquea Puntos Salud') {
 export const useBloqueo = create((set, get) => ({
   activo: false,       // la persona lo encendió
   bloqueada: false,    // ahora mismo se ve la pantalla de bloqueo
+  // La TAPA (ver `useCubierta`) vive en el store y no en el componente
+  // (2026-10-14, «la burbuja del chat sale encima del bloqueo»): lo que flota
+  // sobre las pantallas —la burbuja— tiene que saber que está puesta para
+  // esconderse, sin preguntar a cada rato.
+  cubierta: false,
   listo: false,
   cargar: async () => {
     if (!nativo) { set({ listo: true }); return; }
@@ -198,15 +203,26 @@ export function vigilarCicloDeVida() {
  * Recientes (2026-10-14). Lo que la app abrió a propósito no se tapa.
  */
 export function useCubierta(activo) {
-  const [cubierta, setCubierta] = useState(false);
+  const cubierta = useBloqueo((s) => s.cubierta);
   useEffect(() => {
+    const setCubierta = (v) => { if (useBloqueo.getState().cubierta !== v) useBloqueo.setState({ cubierta: v }); };
     if (!activo) { setCubierta(false); return undefined; }
     const subs = [AppState.addEventListener('change', (e) => setCubierta(e !== 'active' && !enGracia()))];
     if (ANDROID) {
       subs.push(AppState.addEventListener('blur', () => { if (!enGracia()) setCubierta(true); }));
       subs.push(AppState.addEventListener('focus', () => setCubierta(false)));
     }
-    return () => subs.forEach((x) => x.remove());
+    return () => { subs.forEach((x) => x.remove()); setCubierta(false); };
   }, [activo]);
   return cubierta;
+}
+
+/**
+ * ¿Está la app tapada por el bloqueo? (2026-10-14) Bloqueada, con la tapa
+ * puesta, o con el bloqueo todavía sin leer del llavero —en ese instante no se
+ * sabe si hay que bloquear, y lo que flota no debe asomar antes que la
+ * pantalla de bloqueo—. Lo usa la burbuja del chat.
+ */
+export function useTapadaPorBloqueo() {
+  return useBloqueo((s) => s.bloqueada || s.cubierta || !s.listo);
 }

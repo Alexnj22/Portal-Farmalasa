@@ -7,7 +7,7 @@
 //
 // Si el shader no compila o la imagen no carga, queda el logo plano.
 import { Image, View } from 'react-native';
-import { Canvas, Fill, ImageShader, Shader, Skia, useImage } from '@shopify/react-native-skia';
+import { Canvas, Fill, FilterMode, ImageShader, MipmapMode, Shader, Skia, useImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 
 const SKSL = `
@@ -65,6 +65,13 @@ function efectoLogo() {
 }
 
 const FUENTE = require('../../assets/icono.png');
+// Cómo se lee la imagen (2026-10-14, «se ve un poco pixeleado»): el logo es de
+// 512 px y en la tarjeta ocupa 84 pt = 252 px a 3×. Sin mipmaps, Skia lo
+// achica a la mitad leyendo con bilineal de a un píxel sí y otro no, y el
+// contorno salía escalonado —y el bisel, que se calcula del contorno, también—.
+// Con mipmaps lee del nivel de 256 px, ya filtrado: bordes limpios. Los niveles
+// se arman una vez por imagen; cada cuadro cuesta lo mismo.
+const MUESTREO = { filter: FilterMode.Linear, mipmap: MipmapMode.Linear };
 
 export default function LogoEnRelieve({ tam, x, y, estilo = 'material' }) {
   const img = useImage(FUENTE);
@@ -84,7 +91,7 @@ export default function LogoEnRelieve({ tam, x, y, estilo = 'material' }) {
       <Canvas style={{ position: 'absolute', left: -m, top: -m, width: tam + m * 2, height: tam + m * 2 }} pointerEvents="none">
         <Fill>
           <Shader source={fx} uniforms={uniforms}>
-            <ImageShader image={img} fit="contain" rect={{ x: m, y: m, width: tam, height: tam }} tx="decal" ty="decal" />
+            <ImageShader image={img} fit="contain" rect={{ x: m, y: m, width: tam, height: tam }} tx="decal" ty="decal" sampling={MUESTREO} />
           </Shader>
         </Fill>
       </Canvas>

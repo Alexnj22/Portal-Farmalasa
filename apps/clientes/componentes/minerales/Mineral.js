@@ -11,6 +11,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { Canvas, Group, Rect, Shader, Skia } from '@shopify/react-native-skia';
 import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { PRELUDIO, SHADERS } from './shaders';
+import { LIVIANO } from '../../lib/rendimiento';
 
 const cache = {};
 function efectoDe(material) {
@@ -23,13 +24,22 @@ function efectoDe(material) {
 
 export const MATERIALES = Object.keys(SHADERS);
 
-// Android (2026-10-13, «es lenta»): el shader se calcula a MEDIA resolución
+// Android (2026-10-13, «es lenta»; ajustado el 2026-10-14, ver `ESCALA`): el shader se calculaba a MEDIA resolución
 // —un cuarto de los píxeles— y el lienzo se estira al doble; y el reloj avanza
 // a 30 cuadros por segundo en vez de 60. Los materiales se miden en `p / res`,
 // así que se ven iguales, apenas más suaves; en la GPU de un Android de gama
 // media es la diferencia entre trabarse y no. Los textos y el logo van en sus
 // propias capas encima y siguen nítidos.
 const ANDROID = Platform.OS === 'android';
+// Nitidez (2026-10-14, «que todo en la card se vea ultra nítido»): la media
+// resolución se queda SÓLO donde hace falta. En modo liviano el material no se
+// anima —se dibuja una vez y queda quieto (lib/rendimiento.js)—, así que
+// dibujarlo entero cuesta un solo cuadro y no tiene sentido estirarlo. Con el
+// material vivo, 3/4 de resolución en vez de 1/2: las aristas finas de las
+// facetas y los destellos ya no salen escalonados (56 % de los píxeles contra
+// el 25 % de antes y el 100 % de iOS). Los textos, el logo, el filo y el QR van
+// en sus propias capas a la resolución del teléfono, como siempre.
+const ESCALA = ANDROID && !LIVIANO ? 0.75 : 1;
 
 // Margen de sobra (2026-10-14, Platino: «al girar se ve cortada, no cubre todo
 // ni el efecto de movimiento»). El lienzo era EXACTAMENTE la tarjeta, y en
@@ -84,12 +94,12 @@ export default function Mineral({ material, x, y, activa = true }) {
     const m = Math.ceil(Math.max(caja.w, caja.h) * SOBRA);
     const W = caja.w + 2 * m;
     const H = caja.h + 2 * m;
-    // Android: el lienzo mide la mitad y se escala ×2 alrededor de SU centro,
-    // que se coloca en el centro de la tarjeta.
-    const estilo = ANDROID
-      ? { position: 'absolute', left: caja.w / 2 - W / 4, top: caja.h / 2 - H / 4, width: W / 2, height: H / 2, transform: [{ scale: 2 }] }
+    // Android con material vivo: el lienzo mide `ESCALA` del tamaño y se
+    // estira alrededor de SU centro, que se coloca en el centro de la tarjeta.
+    const k = ESCALA;
+    const estilo = k < 1
+      ? { position: 'absolute', left: caja.w / 2 - (W * k) / 2, top: caja.h / 2 - (H * k) / 2, width: W * k, height: H * k, transform: [{ scale: 1 / k }] }
       : { position: 'absolute', left: -m, top: -m, width: W, height: H };
-    const k = ANDROID ? 0.5 : 1;
     lienzo = (
       // sRGB: el mismo espacio de color con que se diseñó y con que salen las
       // franjas de Wallet (en P3, por defecto en iOS, el zafiro se veía verdoso).

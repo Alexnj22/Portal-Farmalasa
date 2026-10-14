@@ -19,14 +19,16 @@ export default function RotuloLamina({ texto, tam = 15, espacio = 3, x, y, estil
   }, [tam]);
   const letras = useMemo(() => {
     if (!fuente) return null;
-    let cx = 0;
+    // Arranca en 1.5 pt y el lienzo sobra 3 pt (2026-10-14): en peso 900 la
+    // «P» y la «O» sobresalen de su avance y el lienzo justo las recortaba.
+    let cx = 1.5;
     return String(texto).split('').map((l) => {
       const p = { l, x: cx };
       cx += fuente.getTextWidth(l) + espacio;
       return p;
     }).concat([{ fin: cx - espacio }]);
   }, [fuente, texto, espacio]);
-  const ancho = letras ? Math.ceil(letras[letras.length - 1].fin) + 2 : 0;
+  const ancho = letras ? Math.ceil(letras[letras.length - 1].fin) + 3 : 0;
   const alto = Math.ceil(tam * 1.3);
   const ini = useDerivedValue(() => vec(-ancho * (0.8 - (x ? x.value : 0) * 0.7), 0));
   const fin = useDerivedValue(() => vec(ancho * (1.8 + (x ? x.value : 0) * 0.7), alto * (1 + (y ? y.value : 0))));

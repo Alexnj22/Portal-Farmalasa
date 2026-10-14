@@ -32,6 +32,7 @@ import { navegar } from '../lib/navegar';
 import { router } from 'expo-router';
 import RecetaFoto from './RecetaFoto';
 import { subirReceta } from '../lib/fotos';
+import { datosDePrueba } from '../lib/exclusiva';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 // Los colores salen del tema (cambian con el modo oscuro).
@@ -93,6 +94,8 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
     setError(null);
     const r = await pedir('reservar', {
       oferta_id: oferta.id, producto_id: producto.id, branch_id: sala, cantidad, acepta_terminos: terminos?.version,
+      // Ofertas por nivel (2026-10-14): la cuenta de prueba reserva «como» su nivel elegido.
+      ...datosDePrueba(),
     });
     if (r?.ok && r.receta && fotoReceta?.uri) {
       // La reserva ya existe: se sube la receta. Si falla, se dice y se sube luego.

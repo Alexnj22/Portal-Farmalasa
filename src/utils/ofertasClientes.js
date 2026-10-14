@@ -90,3 +90,21 @@ export function filaDeBanner(f, imagen_path) {
         inicio: f.inicio, fin: f.fin, publicada: !!f.publicada,
     };
 }
+
+/**
+ * Ofertas exclusivas por nivel (2026-10-14) — el mismo CHECK de
+ * `ofertas_clientes.nivel_minimo`. Todos VEN la oferta (es una invitación);
+ * sólo quien llega al nivel la puede reservar, y eso lo decide `app-clientes`.
+ * `value: ''` es «Todos» (se guarda `null`). `variant` es el color del badge
+ * en el portal (el del nivel en el chat).
+ */
+export const NIVELES_DE_OFERTA = [
+    { value: '', label: 'Todos', corto: null, variant: 'neutral' },
+    { value: 'plata', label: 'Plata o más', corto: 'Plata o más', variant: 'neutral' },
+    { value: 'oro', label: 'Oro o más', corto: 'Oro o más', variant: 'warning' },
+    { value: 'platino', label: 'Solo Platino', corto: 'Solo Platino', variant: 'info' },
+    { value: 'mayoreo', label: 'Solo Clientes Mayoristas', corto: 'Clientes Mayoristas', variant: 'chart-9' },
+];
+
+/** El nivel exigido por una oferta, o `null` si es para todos. */
+export const nivelDeOferta = (o) => NIVELES_DE_OFERTA.find((n) => n.value && n.value === o?.nivel_minimo) ?? null;

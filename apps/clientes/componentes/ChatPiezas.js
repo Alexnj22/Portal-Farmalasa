@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Keyboard, Modal, Platform, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Presionable from './Presionable';
 import { BlurView } from 'expo-blur';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { interpolate, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -29,6 +30,8 @@ import { suave, useTema } from '../tema/tema';
 
 export const EMOJIS = ['👍', '❤️', '😂', '😮', '🙏', '✅'];
 const IOS = Platform.OS === 'ios';
+// iOS 26 (Liquid Glass): el teclado flota redondeado y separado de los bordes.
+const IOS26 = IOS && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
 // El portapapeles de React Native: sigue en el núcleo (deprecado, sin módulo
 // aparte instalado). Se pide por su ruta para no disparar el aviso del índice.
@@ -66,16 +69,31 @@ function useTecladoAbierto() {
 }
 
 // `listo`: hay algo para mandar aunque el texto esté vacío (un producto elegido).
-export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false }) {
+//
+// `tecladoAlto` (2026-10-14): la altura del teclado como valor animado
+// (`useAnimatedKeyboard`), cuadro a cuadro con el del sistema —también al
+// bajarlo arrastrando la lista—. Con él, el margen de abajo pasa del indicador
+// de inicio a 6 px DURANTE el movimiento, en vez de saltar cuando llega el
+// aviso del teclado (el parpadeo). En iOS 26 la barra es una cápsula de
+// Liquid Glass separada de los bordes, como el teclado flotante: sin franjas
+// vacías a los costados ni bordes duros.
+export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false, tecladoAlto = null }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const teclado = useTecladoAbierto();
   const hay = !!texto.trim() || listo;
   const tinte = t.color.magenta;
+  const abajoFijo = teclado ? 6 : Math.max(ins.bottom, 8);
+  const insAbajo = Math.max(ins.bottom, 8);
+  const margen = useAnimatedStyle(() => ({
+    height: tecladoAlto ? Math.max(6, insAbajo - tecladoAlto.value) : 0,
+  }));
+  const espacio = tecladoAlto ? <Animated.View style={margen} /> : null;
   const contenido = (
     <>
       {encima}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 6, paddingTop: 6, paddingBottom: teclado ? 6 : Math.max(ins.bottom, 8) }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 6, paddingTop: 6,
+        paddingBottom: IOS26 ? 4 : tecladoAlto ? 0 : abajoFijo }}>
         <Redondo sf="plus" respaldo="+" etiqueta="Adjuntar un producto o una foto" alTocar={() => alAdjuntar(null)} apagado={enviando} />
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 36, marginVertical: 4, borderRadius: 18,
           backgroundColor: IOS ? (t.oscuro ? 'rgba(28,28,30,0.9)' : 'rgba(255,255,255,0.95)') : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
@@ -97,11 +115,23 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
       </View>
     </>
   );
+  if (IOS26) {
+    return (
+      <View style={{ paddingHorizontal: 8, paddingTop: 4 }}>
+        <View style={{ borderRadius: 26, overflow: 'hidden', backgroundColor: t.oscuro ? 'rgba(28,28,30,0.55)' : 'rgba(255,255,255,0.6)' }}>
+          <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} pointerEvents="none" />
+          {contenido}
+        </View>
+        {espacio ?? <View style={{ height: abajoFijo }} />}
+      </View>
+    );
+  }
   if (IOS) {
     return (
       <BlurView intensity={80} tint={t.oscuro ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
         style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
         {contenido}
+        {espacio}
       </BlurView>
     );
   }

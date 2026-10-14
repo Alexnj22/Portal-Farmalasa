@@ -39,11 +39,29 @@
 //     tocándolo (antes desaparecía).
 //   · «¿Cómo te atendimos?» cuando el equipo marca la consulta como resuelta.
 //   · Enlaces, correos y teléfonos de los mensajes se pueden tocar.
+//
+// Abrir al instante (2026-10-14, «al abrirlo tarda un poco» y «errores de
+// animación al abrir»):
+//   · El último hilo queda en MEMORIA (`HILO`): al volver se pinta enseguida y
+//     sólo se pide lo nuevo, después de la transición (InteractionManager).
+//     El esqueleto sale sólo la primera vez.
+//   · La primera carga trae los últimos 3 días (mínimo 15 mensajes, y siempre
+//     desde el primero sin leer); «Cargar mensajes anteriores» trae de a una
+//     semana (servidor: `desde_fecha` / `antes_de`).
+//   · La lista va INVERTIDA, como toda app de mensajería: nace abajo, sin el
+//     salto de arriba a abajo ni ocultarla mientras se ubica. Sólo con la
+//     franja «N nuevos» se espera a ubicarla (sin mostrar el salto).
+//   · Ningún globo entra animado al abrir: sólo lo que llega después, y con
+//     un fundido (un deslizamiento en una lista invertida se ve al revés).
+//   · El teclado: la pantalla lo sigue cuadro a cuadro con
+//     `useAnimatedKeyboard` en iOS (sin el parpadeo del margen de abajo) y en
+//     iOS 26 la barra es una cápsula de vidrio como el teclado flotante.
+//   · Atención preferente: Platino y Clientes Mayoristas lo ven en el título.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, FlatList, KeyboardAvoidingView, Modal, Platform, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, FlatList, InteractionManager, KeyboardAvoidingView, Modal, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -64,6 +82,7 @@ import { usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
 import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Reacciones, Respondiendo, useMedir } from '../componentes/ChatPiezas';
 import { BuscadorProducto, Calificar, ProductoPendiente, Sugerencias, TarjetaProducto, TextoConEnlaces } from '../componentes/ChatConsultas';
 import { suave, useTema } from '../tema/tema';
+import { useMiNivel } from '../lib/exclusiva';
 
 const IOS = Platform.OS === 'ios';
 const CADA_MS = 5000;
@@ -101,6 +120,18 @@ const iniciales = (n) => String(n ?? '').trim().split(/\s+/).slice(0, 2).map((p)
 // Mientras llega el horario real del servidor: 7:00 a 22:00 de El Salvador.
 const fueraDeHorarioLocal = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h < 7 || h >= 22; };
 const delEquipo = (m) => m.autor === 'equipo';
+// La primera carga: los últimos 3 días (2026-10-14).
+const DIAS_PRIMERA = 3;
+
+// El último hilo que se vio, en memoria y por sesión: abrir el chat otra vez lo
+// pinta al instante y se refresca detrás. No va al disco (son conversaciones).
+let HILO = null; // { token, mensajes, hayMas, fuera, horario, conversacion }
+// La altura del teclado, cuadro a cuadro, sólo en iOS: en Android la ventana
+// se redimensiona sola (adjustResize) y sumarle la altura lo empujaría dos veces.
+const useTecladoAlto = IOS ? () => useAnimatedKeyboard().height : () => null;
+const fechaCorta = (iso) => {
+  try { return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'long' }); } catch { return ''; }
+};
 
 /** El primer mensaje sin leer: el N-ésimo del equipo contando desde el final. */
 function primeroSinLeer(lista, n) {
@@ -119,12 +150,19 @@ export default function Chat() {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const pedir = useSesion((s) => s.pedir);
-  const { producto: productoParam } = useLocalSearchParams();
-  const [mensajes, setMensajes] = useState(null);
-  const [hayMas, setHayMas] = useState(false);
-  const [fuera, setFuera] = useState(fueraDeHorarioLocal());
+  const token = useSesion((s) => s.token);
+  const { producto: productoParam, consulta: consultaParam } = useLocalSearchParams();
+  // El hilo en memoria, si es de esta misma sesión.
+  const [cache] = useState(() => (HILO && HILO.token === token ? HILO : null));
+  const [mensajes, setMensajes] = useState(cache?.mensajes ?? null);
+  const [hayMas, setHayMas] = useState(cache?.hayMas ?? false);
+  const [fuera, setFuera] = useState(cache?.fuera ?? fueraDeHorarioLocal());
   // El texto del horario lo arma el servidor con el horario REAL de las sucursales (2026-10-12).
-  const [horario, setHorario] = useState(null);
+  const [horario, setHorario] = useState(cache?.horario ?? null);
+  const tecladoAlto = useTecladoAlto();
+  // Atención preferente (2026-10-14): Platino o Cliente Mayorista aprobado.
+  const { nivel: miNivel, mayorista: soyMayorista } = useMiNivel();
+  const preferente = soyMayorista ? 'mayorista' : miNivel?.clave === 'platino' ? 'platino' : null;
   const [error, setError] = useState(null);
   const [pendiente, setPendiente] = useState(false);
   const [texto, setTexto] = useState('');
@@ -134,6 +172,8 @@ export default function Chat() {
   const lista = useRef(null);
   const campo = useRef(null);
   const ultimoId = useRef(0);
+  // Abierto desde la memoria: lo primero que llegue del equipo lleva la franja «N nuevos».
+  const desdeCache = useRef(!!cache);
   const preguntando = useRef(0);
   const alFondo = useRef(true);
   const [vivo, setVivo] = useState(SIN_VIVO);
@@ -158,12 +198,22 @@ export default function Chat() {
   const [producto, setProducto] = useState(null);       // { id, nombre, foto, precio } sobre la barra
   const [buscador, setBuscador] = useState(false);
   const preguntaDelAtajo = useRef(null);
-  const [conversacion, setConversacion] = useState(null);
+  const [conversacion, setConversacion] = useState(cache?.conversacion ?? null);
   const [calificarCerrado, setCalificarCerrado] = useState(false);
   const inicial = useRef(true);
-  const [listo, setListo] = useState(false);
+  // La lista nace abajo (invertida): sólo se oculta mientras se ubica en la franja de lo nuevo.
+  const [listo, setListo] = useState(true);
   const mensajesRef = useRef(null);
   mensajesRef.current = mensajes;
+  // El id más nuevo del hilo en memoria: desde ahí se pide lo nuevo.
+  if (cache && !ultimoId.current) {
+    for (const m of cache.mensajes ?? []) if (typeof m.id === 'number' && m.id > ultimoId.current) ultimoId.current = m.id;
+  }
+  // Guardar el hilo en memoria (sin lo que está saliendo todavía).
+  useEffect(() => {
+    if (!token || mensajes == null || pendiente) return;
+    HILO = { token, mensajes: mensajes.filter((m) => !m.enviando), hayMas, fuera, horario, conversacion };
+  }, [token, mensajes, hayMas, fuera, horario, conversacion, pendiente]);
 
   // El id más nuevo que ya se tiene (los temporales no cuentan).
   const anotarUltimo = (arr) => {
@@ -176,7 +226,7 @@ export default function Chat() {
   }, [pedir]);
 
   const cargar = useCallback(async () => {
-    const r = await pedir('chat_mensajes');
+    const r = await pedir('chat_mensajes', { desde_fecha: new Date(Date.now() - DIAS_PRIMERA * 86400_000).toISOString() });
     if (r?.pendiente) { setPendiente(true); setMensajes([]); return; }
     if (!r?.ok) { setError(r?.mensaje ?? 'Revisa tu conexión.'); setMensajes((x) => x ?? []); return; }
     setError(null);
@@ -187,7 +237,12 @@ export default function Chat() {
     setHayMas(!!r.hay_mas);
     anotarUltimo(r.mensajes);
     // La franja de lo nuevo se calcula ANTES de marcar leído (2026-10-13).
-    if (r.sin_leer) setNuevosDesde(primeroSinLeer(r.mensajes, Number(r.sin_leer)));
+    if (r.sin_leer) {
+      const franja = primeroSinLeer(r.mensajes, Number(r.sin_leer));
+      setNuevosDesde(franja);
+      // Con franja, la lista se muestra cuando ya está ubicada en ella.
+      if (franja) setListo(false);
+    }
     setMensajes(r.mensajes);
     if (r.sin_leer) leido();
   }, [pedir, leido]);
@@ -204,7 +259,10 @@ export default function Chat() {
       // Lo «en vivo» cambia aunque no haya mensajes nuevos.
       if (r?.ok && 'vivo' in r) anotarVivo(r.vivo);
       if (r?.ok && r.conversacion) setConversacion(r.conversacion);
-      if (!r?.ok || !r.mensajes?.length) { if (r?.ok) setFuera(!!r.fuera_de_horario); return; }
+      if (!r?.ok || !r.mensajes?.length) {
+        if (r?.ok) { setFuera(!!r.fuera_de_horario); desdeCache.current = false; }
+        return;
+      }
       setFuera(!!r.fuera_de_horario);
       if (r.horario) setHorario(r.horario);
       anotarUltimo(r.mensajes);
@@ -214,6 +272,13 @@ export default function Chat() {
       const frescos = r.mensajes.filter((m) => !yaEstan.has(m.id));
       for (const m of frescos) recien.current.add(m.id);
       const llegaron = frescos.filter((m) => m.autor !== 'cliente').length;
+      // Abierto desde la memoria: lo que llegó del equipo mientras tanto lleva
+      // la franja «N nuevos», igual que en una carga completa.
+      if (desdeCache.current) {
+        desdeCache.current = false;
+        const primero = frescos.find((m) => m.autor === 'equipo');
+        if (primero) setNuevosDesde({ id: primero.id, n: frescos.filter((m) => m.autor === 'equipo').length });
+      }
       setMensajes((ant) => {
         const vistos = new Set((ant ?? []).map((m) => m.id));
         return [...(ant ?? []), ...r.mensajes.filter((m) => !vistos.has(m.id))];
@@ -229,7 +294,11 @@ export default function Chat() {
 
   useFocusEffect(useCallback(() => {
     marcarChatALaVista(true);
-    if (mensajes == null) cargar(); else nuevos();
+    // Sin nada en pantalla se pide ya (en paralelo con la transición); con el
+    // hilo en memoria, lo nuevo se pide cuando la transición terminó.
+    let tarea = null;
+    if (mensajes == null) cargar();
+    else tarea = InteractionManager.runAfterInteractions(() => { nuevos(); });
     // Un reloj que se reprograma solo: 3 s con el equipo activo, 5 s si no.
     let reloj = null;
     let vivoAca = true;
@@ -242,7 +311,7 @@ export default function Chat() {
     const quitar = alLlegarAviso((a) => { if (typeof a.url === 'string' && a.url.startsWith('/chat')) nuevos(); });
     const app = AppState.addEventListener('change', (e) => { if (e === 'active') nuevos(); });
     return () => {
-      vivoAca = false; marcarChatALaVista(false); clearTimeout(reloj); quitar(); app.remove();
+      vivoAca = false; marcarChatALaVista(false); clearTimeout(reloj); quitar(); app.remove(); tarea?.cancel?.();
       // La franja «N mensajes nuevos» dura hasta salir de la pantalla.
       setNuevosDesde(null);
     };
@@ -263,6 +332,19 @@ export default function Chat() {
     return () => { vigente = false; };
   }, [productoParam]);
 
+  // Llegó con una consulta escrita (`/chat?consulta=…`, desde «Más
+  // información» de una historia): queda en la barra, lista para enviar o
+  // corregir. Una sola vez por consulta, y sin pisar lo que ya se escribió.
+  const consultaPuesta = useRef(null);
+  useEffect(() => {
+    const c = typeof consultaParam === 'string' ? consultaParam.trim().slice(0, 500) : '';
+    if (!c || consultaPuesta.current === c) return undefined;
+    consultaPuesta.current = c;
+    setTexto((x) => (x.trim() ? x : c));
+    const id = setTimeout(() => campo.current?.focus?.(), 450);
+    return () => clearTimeout(id);
+  }, [consultaParam]);
+
   // Si en 1.5 s no se pudo ubicar la lista (sin mensajes que medir), se muestra igual.
   useEffect(() => {
     if (mensajes == null || listo) return undefined;
@@ -275,7 +357,8 @@ export default function Chat() {
     const primero = mensajes.find((m) => typeof m.id === 'number');
     if (!primero) return;
     setCargandoViejos(true);
-    const r = await pedir('chat_mensajes', { antes_id: primero.id });
+    // De a una semana (2026-10-14); el servidor la corta en 50.
+    const r = await pedir('chat_mensajes', { antes_id: primero.id, antes_de: primero.created_at });
     setCargandoViejos(false);
     if (!r?.ok) return;
     alFondo.current = false;
@@ -451,28 +534,26 @@ export default function Chat() {
     return out;
   }, [mensajes, nuevosDesde]);
 
-  // Al abrir: si hay franja de lo nuevo, la lista se abre ahí; si no, al final.
-  // Hasta ubicarla no se muestra (sin el salto de arriba abajo).
+  // La lista va invertida (2026-10-14): el índice 0 es lo más nuevo, abajo.
+  const datos = useMemo(() => [...filas].reverse(), [filas]);
+  const iNuevos = datos.findIndex((f) => f.nuevos);
+
+  // Al abrir: la lista invertida ya nace abajo. Con la franja de lo nuevo, se
+  // lleva la franja arriba de la pantalla ANTES de mostrarla (sin el salto).
   const ubicar = () => {
-    if (!inicial.current) return;
+    if (!inicial.current || !datos.length) return;
     inicial.current = false;
-    if (!filas.length) { setListo(true); return; }
-    const i = filas.findIndex((f) => f.nuevos);
-    if (i >= 0) {
-      alFondo.current = false;
-      setTimeout(() => {
-        try { lista.current?.scrollToIndex({ index: i, viewPosition: 0.08, animated: false }); } catch { lista.current?.scrollToEnd({ animated: false }); }
-        setTimeout(() => setListo(true), 60);
-      }, 30);
-    } else {
-      lista.current?.scrollToEnd({ animated: false });
-      setTimeout(() => setListo(true), 60);
-    }
+    if (iNuevos < 0) { setListo(true); return; }
+    alFondo.current = false;
+    requestAnimationFrame(() => {
+      try { lista.current?.scrollToIndex({ index: iNuevos, viewPosition: 0.92, animated: false }); } catch { /* fuera de lo medido */ }
+      requestAnimationFrame(() => setListo(true));
+    });
   };
   const alFinal = () => {
     alFondo.current = true;
     setSinVer(0);
-    lista.current?.scrollToEnd({ animated: true });
+    lista.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
   if (pendiente) {
@@ -486,11 +567,15 @@ export default function Chat() {
   }
   const titulo = (
     <Stack.Screen options={{ title: 'Farmacia Salud', headerTitle: () => (
-      <TituloChat fuera={fuera} atiende={vivo.atiende ? nombrePropio(vivo.atiende) : null} escribiendo={vivo.escribiendo ? nombrePropio(vivo.escribiendo) : null} />
+      <TituloChat fuera={fuera} atiende={vivo.atiende ? nombrePropio(vivo.atiende) : null} escribiendo={vivo.escribiendo ? nombrePropio(vivo.escribiendo) : null}
+        preferente={!!preferente} />
     ) }} />
   );
   const arriba = IOS ? ins.top + 52 : 0;
+  // El esqueleto sólo la primera vez: con el hilo en memoria se pinta enseguida.
   if (mensajes == null) return <View style={{ flex: 1 }}>{titulo}<Esqueleto arriba={arriba} /></View>;
+  // Desde cuándo se está viendo («Mostrando desde el 7 de octubre»).
+  const masViejo = mensajes.find((m) => typeof m.id === 'number');
 
   // «Visto» / «Enviado» junto al último mensaje del cliente, si es lo último de
   // la conversación (los avisos del sistema no cuentan).
@@ -503,58 +588,66 @@ export default function Chat() {
 
   // Tocar la cita lleva al mensaje original, si ya está cargado, y lo resalta.
   const irA = (id) => {
-    const i = filas.findIndex((f) => f.m?.id === id);
+    const i = datos.findIndex((f) => f.m?.id === id);
     if (i < 0) return;
     alFondo.current = false;
-    try { lista.current?.scrollToIndex({ index: i, viewPosition: 0.4, animated: true }); } catch { /* fuera de lo medido */ }
+    try { lista.current?.scrollToIndex({ index: i, viewPosition: 0.5, animated: true }); } catch { /* fuera de lo medido */ }
     setResaltado(id);
     setTimeout(() => setResaltado((x) => (x === id ? null : x)), 1400);
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={IOS ? 'padding' : undefined}>
+    <Pantalla tecladoAlto={tecladoAlto}>
       {titulo}
       <View style={{ flex: 1 }}>
         <FlatList
           ref={lista}
-          data={filas}
+          data={datos}
+          inverted
           keyExtractor={(f) => f.clave}
           style={{ opacity: listo ? 1 : 0 }}
-          initialNumToRender={80}
-          contentContainerStyle={{ paddingTop: arriba + 8, paddingHorizontal: 10, paddingBottom: 12, flexGrow: 1 }}
+          // Lo de la primera pantalla, no el hilo entero: el resto se dibuja al subir.
+          initialNumToRender={Math.max(15, iNuevos + 4)}
+          maxToRenderPerBatch={10}
+          windowSize={11}
+          // Invertida: el relleno de ARRIBA de la pantalla es el de abajo del contenido.
+          contentContainerStyle={{ paddingBottom: arriba + 8, paddingHorizontal: 10, paddingTop: 12 }}
+          // Con la lista abajo, lo que llega se ve; subida, no se mueve lo que se lee.
+          maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 80 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           onScroll={({ nativeEvent: e }) => {
-            const falta = e.contentSize.height - (e.layoutMeasurement.height + e.contentOffset.y);
-            alFondo.current = falta < 80;
+            const y = e.contentOffset.y;
+            alFondo.current = y < 80;
             if (alFondo.current && sinVer) setSinVer(0);
-            const l = falta > 240;
+            const l = y > 240;
             if (l !== lejos) setLejos(l);
           }}
           scrollEventThrottle={100}
           onContentSizeChange={() => {
             if (inicial.current) { ubicar(); return; }
-            if (alFondo.current) lista.current?.scrollToEnd({ animated: listo });
+            if (alFondo.current) lista.current?.scrollToOffset({ offset: 0, animated: true });
           }}
-          // El teclado encoge la lista: si se estaba al final, se sigue al final.
-          onLayout={() => { if (!inicial.current && alFondo.current) lista.current?.scrollToEnd({ animated: false }); }}
           onScrollToIndexFailed={(e) => {
             lista.current?.scrollToOffset({ offset: e.averageItemLength * e.index, animated: false });
             setTimeout(() => {
-              try { lista.current?.scrollToIndex({ index: e.index, viewPosition: 0.1, animated: false }); } catch { /* sin medir */ }
+              try { lista.current?.scrollToIndex({ index: e.index, viewPosition: 0.9, animated: false }); } catch { /* sin medir */ }
               setListo(true);
             }, 120);
           }}
-          ListHeaderComponent={(
+          ListFooterComponent={(
             <View style={{ gap: 10, marginBottom: 6 }}>
               {hayMas ? (
                 <Presionable onPress={anteriores} disabled={cargandoViejos} accessibilityRole="button"
                   style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14 }}>
                   {cargandoViejos ? <Icono sf="clock" respaldo="…" tam={14} color={colorSistema.texto3} /> : null}
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{cargandoViejos ? 'Cargando…' : 'Ver mensajes anteriores'}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{cargandoViejos ? 'Cargando…' : 'Cargar mensajes anteriores'}</Text>
                 </Presionable>
               ) : null}
-              {!mensajes.length ? <Bienvenida /> : null}
+              {hayMas && masViejo ? (
+                <Text style={{ alignSelf: 'center', marginTop: -8, fontSize: 12, color: colorSistema.texto3 }}>Mostrando desde el {fechaCorta(masViejo.created_at)}</Text>
+              ) : null}
+              {!mensajes.length ? <Bienvenida preferente={preferente} /> : null}
               {/* El horario de atención, como el aviso centrado de iMessage. */}
               <View style={{ alignSelf: 'center', maxWidth: 320, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12,
                 backgroundColor: fuera ? suave(t.color.aviso, t.oscuro ? 0.22 : 0.16) : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.75)') }}>
@@ -586,7 +679,7 @@ export default function Chat() {
                 alReaccionar={(e) => reaccionar(m, e)} alIrA={irA} />
             );
           }}
-          ListFooterComponent={(
+          ListHeaderComponent={(
             <View>
               {conversacion?.estado === 'resuelta' ? (
                 <Text style={{ alignSelf: 'center', fontSize: 12, color: colorSistema.texto3, marginTop: 14, textAlign: 'center' }}>
@@ -604,7 +697,7 @@ export default function Chat() {
 
       {/* La barra para escribir, como iMessage (componentes/ChatPiezas). */}
       <Compositor texto={texto} alEscribir={alEscribir} alEnviar={enviarBarra} alAdjuntar={adjuntar} enviando={enviando}
-        campoRef={campo} listo={!!producto}
+        campoRef={campo} listo={!!producto} tecladoAlto={tecladoAlto}
         encima={(
           <>
             {conAtajos ? <Sugerencias alElegir={atajo} /> : null}
@@ -638,18 +731,27 @@ export default function Chat() {
             if (copiar(nombreProducto(m.adjunto?.nombre))) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           }} />
       ) : null}
-    </KeyboardAvoidingView>
+    </Pantalla>
   );
 }
 
+// La pantalla entera sube con el teclado. En iOS, cuadro a cuadro con el del
+// sistema (`useAnimatedKeyboard`, también al bajarlo arrastrando la lista); en
+// Android la ventana ya se redimensiona sola.
+function Pantalla({ tecladoAlto, children }) {
+  const empuje = useAnimatedStyle(() => ({ paddingBottom: tecladoAlto ? tecladoAlto.value : 0 }));
+  if (!tecladoAlto) return <KeyboardAvoidingView style={{ flex: 1 }} behavior={undefined}>{children}</KeyboardAvoidingView>;
+  return <Animated.View style={[{ flex: 1 }, empuje]}>{children}</Animated.View>;
+}
+
 // El título: la farmacia como un contacto — logo, nombre y, debajo, el estado.
-function TituloChat({ fuera, atiende, escribiendo }) {
+function TituloChat({ fuera, atiende, escribiendo, preferente = false }) {
   const t = useTema();
   const estado = escribiendo ? `${escribiendo} está escribiendo…` : atiende ? `En línea · te atiende ${atiende}` : fuera ? 'Fuera de horario' : 'En línea';
   const activo = !!(escribiendo || atiende || !fuera);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, maxWidth: 260 }} accessible accessibilityRole="header"
-      accessibilityLabel={`Farmacia Salud. ${estado}`}>
+      accessibilityLabel={`Farmacia Salud. ${estado}${preferente ? '. Atención preferente' : ''}`}>
       <View>
         <Image source={require('../assets/icono.png')} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF' }} contentFit="cover" />
         <View style={{ position: 'absolute', right: -1, bottom: -1, width: 11, height: 11, borderRadius: 6, borderWidth: 2,
@@ -657,15 +759,25 @@ function TituloChat({ fuera, atiende, escribiendo }) {
       </View>
       <View style={{ flexShrink: 1, alignItems: 'flex-start' }}>
         <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Farmacia Salud</Text>
-        <Text numberOfLines={1} maxFontSizeMultiplier={1.3}
-          style={{ fontSize: 12, fontWeight: '600', color: escribiendo ? t.color.magentaTexto : activo ? t.color.verdeTexto : colorSistema.texto3 }}>{estado}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%' }}>
+          <Text numberOfLines={1} maxFontSizeMultiplier={1.3}
+            style={{ flexShrink: 1, fontSize: 12, fontWeight: '600', color: escribiendo ? t.color.magentaTexto : activo ? t.color.verdeTexto : colorSistema.texto3 }}>{estado}</Text>
+          {/* Atención preferente (2026-10-14): Platino y Clientes Mayoristas. */}
+          {preferente && !escribiendo ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999,
+              backgroundColor: t.oscuro ? 'rgba(233,237,245,0.14)' : 'rgba(20,22,28,0.08)' }}>
+              <Icono sf="crown.fill" respaldo="👑" tam={9} color={colorSistema.texto2} />
+              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 10, fontWeight: '800', color: colorSistema.texto2 }}>Atención preferente</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
     </View>
   );
 }
 
 // La conversación vacía: quién responde y qué se puede preguntar.
-function Bienvenida() {
+function Bienvenida({ preferente = null }) {
   const t = useTema();
   return (
     <View style={{ alignItems: 'center', gap: 10, paddingTop: 24, paddingBottom: 8, paddingHorizontal: 24 }}>
@@ -675,6 +787,15 @@ function Bienvenida() {
       <Text style={{ fontSize: 15, lineHeight: 21, color: colorSistema.texto2, textAlign: 'center' }}>
         Pregúntanos si tenemos un medicamento, su precio, si necesita receta o por tus reservas. Te responde una persona del equipo de Farmacia Salud.
       </Text>
+      {preferente ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+          backgroundColor: t.oscuro ? 'rgba(233,237,245,0.12)' : 'rgba(20,22,28,0.06)' }}>
+          <Icono sf="crown.fill" respaldo="👑" tam={13} color={colorSistema.texto2} />
+          <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: '600', color: colorSistema.texto2 }}>
+            {preferente === 'mayorista' ? 'Como Cliente Mayorista' : 'Como cliente Platino'}, tu consulta se atiende primero.
+          </Text>
+        </View>
+      ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icono sf="plus.circle.fill" respaldo="+" tam={14} color={t.color.magentaTexto} />
         <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Con «+» puedes enviar un producto o una foto de tu receta.</Text>
@@ -813,7 +934,8 @@ function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, v
   const [ref, medir] = useMedir();
   const mio = m.autor === 'cliente';
   const real = typeof m.id === 'number';
-  const entrada = entra && !reducir ? FadeInDown.duration(240) : undefined;
+  // Un fundido y nada más: en la lista invertida un deslizamiento se ve al revés.
+  const entrada = entra && !reducir ? FadeIn.duration(200) : undefined;
   if (m.autor === 'sistema') {
     return (
       <Animated.View entering={entrada} style={{ alignSelf: 'center', maxWidth: '86%', marginVertical: 8, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14,

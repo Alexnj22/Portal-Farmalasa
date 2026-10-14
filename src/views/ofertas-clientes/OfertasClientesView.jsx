@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Plus, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, ShoppingBag, GalleryHorizontal } from 'lucide-react';
+import { Tag, Plus, Crown, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, ShoppingBag, GalleryHorizontal } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -19,7 +19,7 @@ import HistoriasPanel from './HistoriasPanel';
 import BannersPanel from './BannersPanel';
 import WidgetReservas from '../dashboard/WidgetReservas';
 import EnvioPanel from './EnvioPanel';
-import { estadoDeOferta, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
+import { estadoDeOferta, etiquetaDeDescuento, nivelDeOferta } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -157,6 +157,7 @@ function Ofertas({ busqueda, puedeEditar, showToast }) {
                 minWidth="640px">
                 {filas.map((o, i) => {
                     const est = estadoDeOferta(o, hoy);
+                    const nivel = nivelDeOferta(o);
                     return (
                         <DataRow key={o.id} index={i} onClick={puedeEditar ? () => setEditando(o) : undefined}>
                             <DataCell>
@@ -165,7 +166,10 @@ function Ofertas({ busqueda, puedeEditar, showToast }) {
                                         ? <img src={o.imagen_url} alt="" className="w-14 h-8 object-cover rounded-md shrink-0" />
                                         : <span className="w-14 h-8 rounded-md bg-surface-card-hover grid place-items-center shrink-0"><ImageIcon size={14} className="text-content-3" /></span>}
                                     <div className="min-w-0">
-                                        <p className="text-body-sm font-semibold text-content truncate">{o.titulo}</p>
+                                        <p className="flex items-center gap-1.5 min-w-0">
+                                            <span className="text-body-sm font-semibold text-content truncate">{o.titulo}</span>
+                                            {nivel && <Badge variant={nivel.variant} size="sm" icon={Crown} uppercase={false} className="shrink-0">{nivel.corto}</Badge>}
+                                        </p>
                                         <p className="text-micro text-content-3 truncate">
                                             {[o.etiqueta, o.descuento_tipo ? `Descuento ${etiquetaDeDescuento(o.descuento_tipo, o.descuento_monto)}` : null,
                                                 o.exclusiva ? 'Exclusiva para socios' : null].filter(Boolean).join(' · ') || '—'}

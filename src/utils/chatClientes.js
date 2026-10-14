@@ -231,3 +231,35 @@ export function primerSinLeer(mensajes, sinLeer) {
     if (!delCliente.length) return null;
     return delCliente[Math.max(0, delCliente.length - n)].id;
 }
+
+// ── Atención preferente (2026-10-14) ──────────────────────────────────────
+//
+// Los clientes Platino y los Clientes Mayoristas aprobados se atienden
+// primero: su conversación abierta sube justo debajo de las «Urgente» y lleva
+// el chip «Preferente». Sale de lo que `chat_conversaciones()` ya trae
+// (`nivel`, `es_mayoreo`); no hay columna aparte.
+
+/** El chip de la atención preferente. `icono` es el NOMBRE del ícono. */
+export const PREFERENTE = { label: 'Preferente', variant: 'chart-3', icono: 'Crown' };
+
+/** ¿Es un cliente de atención preferente? (Platino o mayorista aprobado). */
+export function esPreferente(c) {
+    return c?.nivel === 'platino' || c?.es_mayoreo === true;
+}
+
+/**
+ * El orden de la bandeja con la atención preferente: primero las abiertas
+ * «Urgente», después las abiertas preferentes, y el resto como viene.
+ * Estable: no reordena dentro de cada grupo.
+ */
+export function ordenarConPreferentes(conversaciones) {
+    const lista = ordenarBandeja(conversaciones);
+    const abierta = (c) => c?.estado !== 'resuelta';
+    const urgente = (c) => abierta(c) && etiquetasDe(c).includes('urgente');
+    const preferente = (c) => abierta(c) && !urgente(c) && esPreferente(c);
+    return [
+        ...lista.filter(urgente),
+        ...lista.filter(preferente),
+        ...lista.filter((c) => !urgente(c) && !preferente(c)),
+    ];
+}

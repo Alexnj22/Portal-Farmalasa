@@ -16398,6 +16398,7 @@ export type Database = {
           id: string
           imagen_path: string | null
           inicio: string
+          nivel_minimo: string | null
           orden: number
           productos: Json
           promocion_id: number | null
@@ -16423,6 +16424,7 @@ export type Database = {
           id?: string
           imagen_path?: string | null
           inicio: string
+          nivel_minimo?: string | null
           orden?: number
           productos?: Json
           promocion_id?: number | null
@@ -16448,6 +16450,7 @@ export type Database = {
           id?: string
           imagen_path?: string | null
           inicio?: string
+          nivel_minimo?: string | null
           orden?: number
           productos?: Json
           promocion_id?: number | null

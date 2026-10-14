@@ -9,10 +9,11 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import FileField from '../../components/common/FileField';
 import Switch from '../../components/common/Switch';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { guardarOferta, subirImagen } from '@nucleo/data/ofertasClientes';
-import { ACENTOS_DE_OFERTA, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
+import { ACENTOS_DE_OFERTA, NIVELES_DE_OFERTA, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 
 /**
  * Crear o editar una oferta de la app.
@@ -35,7 +36,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
         titulo: oferta.titulo ?? '', etiqueta: oferta.etiqueta ?? '', descripcion: oferta.descripcion ?? '',
         condiciones: oferta.condiciones ?? '', inicio: oferta.inicio ?? hoySV(), fin: oferta.fin ?? '',
         exclusiva: oferta.exclusiva ?? false, branch_ids: oferta.branch_ids ?? [], publicada: oferta.publicada ?? false,
-        acento: oferta.acento ?? 'magenta',
+        acento: oferta.acento ?? 'magenta', nivel_minimo: oferta.nivel_minimo ?? '',
     });
     const [archivo, setArchivo] = useState(null);
     const [guardando, setGuardando] = useState(false);
@@ -56,7 +57,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
             await guardarOferta(oferta.id, {
                 titulo: f.titulo.trim(), etiqueta: f.etiqueta.trim() || null, descripcion: f.descripcion.trim() || null,
                 condiciones: f.condiciones.trim() || null, exclusiva: f.exclusiva, publicada: f.publicada, imagen_path,
-                acento: f.acento,
+                acento: f.acento, nivel_minimo: f.nivel_minimo || null,
                 ...(deDescuento ? {
                     // La foto tal cual vino del descuento: fechas y salas incluidas.
                     descuento_erp_id: oferta.descuento_erp_id, promocion_id: oferta.promocion_id ?? null,
@@ -171,6 +172,12 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                             </div>
                         </div>
                     )}
+                    <div>
+                        <LiquidSelect label="Exclusiva para" value={f.nivel_minimo ?? ''} clearable={false}
+                            onChange={(v) => cambiar('nivel_minimo')(v ?? '')}
+                            options={NIVELES_DE_OFERTA.map((n) => ({ value: n.value, label: n.label }))} />
+                        <p className="text-micro text-content-3 mt-1">Todos la ven; sólo quien llega a ese nivel la puede reservar.</p>
+                    </div>
                     <label className="flex items-center justify-between gap-3">
                         <span>
                             <span className="block text-body-sm font-semibold text-content">Exclusiva para socios</span>

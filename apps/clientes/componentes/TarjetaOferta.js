@@ -22,6 +22,40 @@ import { dolares, diasHasta, fecha } from '../lib/formato';
 import { acentoDe, suave, useTema } from '../tema/tema';
 import Icono from './Icono';
 import { compartirOferta } from '../lib/compartir';
+import { COLORES_NIVEL } from './TarjetaSocio';
+import { EXCLUSIVAS } from '../lib/exclusiva';
+
+/**
+ * Ofertas exclusivas por nivel (2026-10-14): «Solo Platino», «Oro o más»,
+ * «Plata o más», «Clientes Mayoristas», con el color de la tarjeta de ese
+ * nivel. Todos la ven; reservarla, sólo quien llega.
+ */
+export function BadgeNivel({ nivel, tam = 12 }) {
+  const ex = EXCLUSIVAS[nivel];
+  if (!ex) return null;
+  const paleta = COLORES_NIVEL[ex.paleta] ?? COLORES_NIVEL.platino;
+  return (
+    <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      accessible accessibilityLabel={`Exclusiva: ${ex.rotulo}`}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6,
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
+      <Icono sf="crown.fill" respaldo="👑" tam={tam - 1} color={paleta.acento} />
+      <Text style={{ fontSize: tam, fontWeight: '800', color: '#FFFFFF' }}>{ex.rotulo}</Text>
+    </LinearGradient>
+  );
+}
+
+/** «Acceso anticipado Platino»: la oferta todavía no empieza y Platino ya la ve. */
+export function BadgeAnticipado({ tam = 12 }) {
+  return (
+    <View accessible accessibilityLabel="Acceso anticipado Platino"
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(8,9,12,0.85)', borderRadius: 999, borderWidth: 1,
+        borderColor: 'rgba(233,237,245,0.45)', paddingHorizontal: 11, paddingVertical: 6 }}>
+      <Icono sf="crown.fill" respaldo="👑" tam={tam - 1} color="#E9EDF5" />
+      <Text style={{ fontSize: tam, fontWeight: '800', color: '#E9EDF5' }}>Acceso anticipado Platino</Text>
+    </View>
+  );
+}
 
 export function Pildora({ color, texto, solida = false }) {
   const t = useTema();
@@ -103,12 +137,9 @@ export function PortadaOferta({ oferta: o, alto = 230, conTitulo = true, compart
             <Text style={{ fontSize: 24, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 }}>{o.etiqueta}</Text>
           </Animated.View>
         ) : <View />}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        {o.pronto ? (
-          <View style={{ backgroundColor: 'rgba(8,9,12,0.8)', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(233,237,245,0.4)', paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={{ fontSize: 12, fontWeight: '800', color: '#E9EDF5' }}>👑 Antes que nadie</Text>
-          </View>
-        ) : null}
+        <View style={{ flexShrink: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+        {o.pronto ? <BadgeAnticipado /> : null}
+        {o.nivel_minimo ? <BadgeNivel nivel={o.nivel_minimo} /> : null}
         {o.exclusiva ? (
           // Fondo propio y no vidrio: sobre una foto clara el vidrio desaparece
           // y quedaba texto blanco suelto encima de la imagen.

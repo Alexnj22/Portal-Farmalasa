@@ -31,6 +31,7 @@ import AsignadoA from './AsignadoA';
 import Compositor from './Compositor';
 import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
+import ChipPreferente from './Preferente';
 import { cambiaDeDia, empiezaTanda, etiquetaDeDia, primerSinLeer } from '@nucleo/utils/chatClientes';
 import { ChipsDeEtiquetas, EditorDeEtiquetas } from './EtiquetasDelCliente';
 import { CalificacionDelCliente } from './Calificacion';
@@ -370,6 +371,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     <div className="flex flex-wrap items-center gap-1 mt-1">
                         <ChipsDeEstado conversacion={c} ahora={ahora}
                             atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
+                        <ChipPreferente conversacion={c} />
                         <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
                         {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
                         {c.telefono && (

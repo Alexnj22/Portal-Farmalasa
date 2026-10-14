@@ -15,7 +15,7 @@ import Conversacion from './Conversacion';
 import FilaDeConversacion from './FilaDeConversacion';
 import { FILTROS, estadoDeConversacion } from './estados';
 import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
-import { ordenarBandeja } from '@nucleo/utils/chatClientes';
+import { ordenarConPreferentes } from '@nucleo/utils/chatClientes';
 
 /**
  * El panel que abre la burbuja flotante: la bandeja de conversaciones
@@ -52,8 +52,8 @@ export default function PanelDelChat({ abierto, onClose }) {
     }, [conversaciones]);
     const visibles = useMemo(() => {
         const entran = new Set(FILTROS[filtro].estados);
-        // Las «Urgente» arriba, igual que en la vista.
-        return ordenarBandeja((conversaciones ?? []).filter((c) => entran.has(estadoDeConversacion(c))));
+        // Las «Urgente» arriba y las preferentes después, igual que en la vista.
+        return ordenarConPreferentes((conversaciones ?? []).filter((c) => entran.has(estadoDeConversacion(c))));
     }, [conversaciones, filtro]);
     // Estable entre renders: el expediente anota cada vez que cambia.
     const expediente = useMemo(() => (abierto ? { conv: convId } : null), [abierto, convId]);

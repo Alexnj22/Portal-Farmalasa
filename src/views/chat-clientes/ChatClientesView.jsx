@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Headset, Hourglass, Inbox, MessageCircle, MessagesSquare, Settings2, ShieldAlert, Sparkles, Tags } from 'lucide-react';
+import { CheckCircle2, Crown, Headset, Hourglass, Inbox, MessageCircle, MessagesSquare, Settings2, ShieldAlert, Sparkles, Tags } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Button from '../../components/common/Button';
@@ -21,7 +21,7 @@ import useFarmaciaEstado from './useFarmaciaEstado';
 import AjustesDelChat from './AjustesDelChat';
 import IncumplimientosDelChat from './IncumplimientosDelChat';
 import { ResumenDeCalificaciones } from './Calificacion';
-import { ETIQUETAS, etiquetasDe, nombreDeCliente, ordenarBandeja } from '@nucleo/utils/chatClientes';
+import { ETIQUETAS, esPreferente, etiquetasDe, nombreDeCliente, ordenarConPreferentes } from '@nucleo/utils/chatClientes';
 import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
 import { esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
 
@@ -90,6 +90,25 @@ export default function ChatClientesView() {
             return p;
         }, { replace: true });
     }, [setParams]);
+    // «Preferentes» (2026-10-14): sólo Platino y Mayoristas. También en la
+    // dirección (`?preferentes=1`).
+    const soloPreferentes = params.get('preferentes') === '1';
+    const elegirPreferentes = useCallback((si) => {
+        setParams((prev) => {
+            const p = new URLSearchParams(prev);
+            if (si) p.set('preferentes', '1'); else p.delete('preferentes');
+            return p;
+        }, { replace: true });
+    }, [setParams]);
+    const limpiarFiltros = useCallback(() => {
+        setParams((prev) => {
+            const p = new URLSearchParams(prev);
+            p.delete('etiqueta');
+            p.delete('preferentes');
+            return p;
+        }, { replace: true });
+    }, [setParams]);
+    const filtrosActivos = (etiqueta !== 'todas' ? 1 : 0) + (soloPreferentes ? 1 : 0);
     const ahora = useNowTick(30_000);
     // El estado que decide cuál respuesta automática recibe quien escribe ahora.
     const estadoFarmacia = useFarmaciaEstado();
@@ -100,13 +119,15 @@ export default function ChatClientesView() {
     const { conversaciones, hayMas, cargandoMas, error, cargar, verMas } = useBandejaDelChat(
         // Con una etiqueta elegida también las resueltas se piden enteras: es un
         // filtro del navegador y no puede mirar sólo la primera página.
-        estadoServidor(filtro), { asegurarEquipo, todas: filtro !== 'resuelta' || etiqueta !== 'todas' });
+        estadoServidor(filtro), { asegurarEquipo, todas: filtro !== 'resuelta' || filtrosActivos > 0 });
     // Conversación → nombre del cliente, para el registro de incumplimientos.
     const clientesPorConversacion = useMemo(() => new Map((conversaciones ?? []).map((c) => [c.id, c.cliente])), [conversaciones]);
 
-    // Las de la etiqueta elegida (todas si no hay), con las «Urgente» arriba.
-    const conEtiqueta = useMemo(() => ordenarBandeja((conversaciones ?? [])
-        .filter((c) => etiqueta === 'todas' || etiquetasDe(c).includes(etiqueta))), [conversaciones, etiqueta]);
+    // Las de la etiqueta elegida (todas si no hay) —y sólo las preferentes si
+    // se pidió—, con las «Urgente» arriba y las preferentes después.
+    const conEtiqueta = useMemo(() => ordenarConPreferentes((conversaciones ?? [])
+        .filter((c) => etiqueta === 'todas' || etiquetasDe(c).includes(etiqueta))
+        .filter((c) => !soloPreferentes || esPreferente(c))), [conversaciones, etiqueta, soloPreferentes]);
 
     // Cuántas hay en cada estado, para el número de cada chip (sólo con las
     // abiertas cargadas: con «Resueltas» la lista es otra).
@@ -156,7 +177,7 @@ export default function ChatClientesView() {
                     <ResumenDeCalificaciones />
                 </div>
                 <div className="flex justify-end min-w-0">
-                    <FilterBar onClear={() => elegirEtiqueta('todas')} activeCount={etiqueta !== 'todas' ? 1 : 0}
+                    <FilterBar onClear={limpiarFiltros} activeCount={filtrosActivos}
                         acciones={[
                             ...(veIncumplimientos ? [{ key: 'incumplimientos', icon: ShieldAlert, label: 'Incumplimientos', variant: 'quiet', onClick: () => setIncumplimientosAbiertos(true) }] : []),
                             ...(puedeResponder ? [{ key: 'ajustes', icon: Settings2, label: 'Ajustes del chat', variant: 'quiet', onClick: () => setAjustesAbiertos(true) }] : []),
@@ -164,6 +185,11 @@ export default function ChatClientesView() {
                         <FilterBar.Section active={etiqueta !== 'todas'} onClear={() => elegirEtiqueta('todas')} label="etiqueta">
                             <FilterBar.Opciones label="Etiqueta" icon={Tags} value={etiqueta}
                                 onChange={(v) => elegirEtiqueta(v || 'todas')} options={OPCIONES_DE_ETIQUETA} ancho="200px" />
+                        </FilterBar.Section>
+                        <FilterBar.Section active={soloPreferentes} onClear={() => elegirPreferentes(false)} label="atención">
+                            <FilterBar.Chip active={soloPreferentes} onToggle={() => elegirPreferentes(!soloPreferentes)} tone="brand">
+                                <Crown size={12} aria-hidden="true" /> Preferentes
+                            </FilterBar.Chip>
                         </FilterBar.Section>
                     </FilterBar>
                 </div>
@@ -179,9 +205,9 @@ export default function ChatClientesView() {
                     {conversaciones && !visibles.length && (
                         <div data-surface="card" className="rounded-card p-6">
                             <EmptyState icon={MessagesSquare} compact
-                                title={busqueda ? 'Sin resultados' : etiqueta !== 'todas' ? `Nadie con «${ETIQUETAS[etiqueta].label}»` : `Sin conversaciones: ${FILTROS[filtro]?.label.toLowerCase() ?? ''}`}
+                                title={busqueda ? 'Sin resultados' : soloPreferentes && etiqueta === 'todas' ? 'Sin clientes preferentes' : etiqueta !== 'todas' ? `Nadie con «${ETIQUETAS[etiqueta].label}»` : `Sin conversaciones: ${FILTROS[filtro]?.label.toLowerCase() ?? ''}`}
                                 subtitle={busqueda ? 'Prueba con otro nombre o teléfono.'
-                                    : etiqueta !== 'todas' ? 'Quita el filtro de etiqueta para ver las demás.'
+                                    : filtrosActivos > 0 ? 'Quita los filtros para ver las demás.'
                                     : 'Cuando un cliente escriba desde la app, aparece aquí.'} />
                         </div>
                     )}
@@ -195,7 +221,7 @@ export default function ChatClientesView() {
                             </li>
                         ))}
                     </ul>
-                    {hayMas && !busqueda && filtro === 'resuelta' && etiqueta === 'todas' && (
+                    {hayMas && !busqueda && filtro === 'resuelta' && filtrosActivos === 0 && (
                         <div className="flex justify-center pt-1">
                             <Button variant="secondary" size="sm" loading={cargandoMas} onClick={verMas}>Ver más conversaciones</Button>
                         </div>

@@ -20,7 +20,8 @@ import Presionable from '../../componentes/Presionable';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { PortadaOferta, Plazo } from '../../componentes/TarjetaOferta';
+import { BadgeAnticipado, BadgeNivel, PortadaOferta, Plazo } from '../../componentes/TarjetaOferta';
+import { EXCLUSIVAS, comoLlegar, useMiNivel } from '../../lib/exclusiva';
 import { Entrada } from '../../componentes/animacion';
 import { Cargando, Seccion, Vacio } from '../../componentes/ui';
 import { colorSistema } from '../../componentes/sistema';
@@ -67,7 +68,13 @@ export default function Oferta() {
   }, [porRevisar, quien, cargar]);
   // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
   // Platino la ve antes («pronto»): se mira, pero se reserva desde que empieza.
-  const puedeReservar = !!o && !!token && o.disponible && !preRegistro && !o.pronto;
+  // Exclusiva por nivel (2026-10-14): la VE todo el mundo, la reserva quien
+  // llega (lo decide el servidor: `disponible_para_ti`). Un servidor viejo no
+  // lo manda: entonces vale `disponible`.
+  const paraTi = o ? (o.disponible_para_ti ?? o.disponible) : false;
+  const faltaNivel = !!o?.nivel_minimo && !!token && o.disponible && !preRegistro && !paraTi;
+  const miNivel = useMiNivel();
+  const puedeReservar = !!o && !!token && o.disponible && paraTi && !preRegistro && !o.pronto;
   // Desde «Reservar» de una historia: con un solo producto, la hoja se abre
   // sola; con varios, cada uno tiene su botón.
   // Si ese producto ya está reservado, se pregunta antes de abrir la hoja
@@ -122,10 +129,16 @@ export default function Oferta() {
 
         <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 16 }}>
           <Entrada indice={0} estilo={{ gap: 6 }}>
-            {o.pronto ? (
-              <View style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: '#14161C', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: '#E9EDF5' }}>👑 Antes que nadie · empieza el {fecha(o.inicio)}</Text>
+            {o.pronto || o.nivel_minimo ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                {o.pronto ? <BadgeAnticipado tam={13} /> : null}
+                {o.nivel_minimo ? <BadgeNivel nivel={o.nivel_minimo} tam={13} /> : null}
               </View>
+            ) : null}
+            {o.pronto ? (
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>
+                La ves antes que nadie por ser Platino. Se puede reservar desde el {fecha(o.inicio)}.
+              </Text>
             ) : null}
             <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: colorSistema.texto }}>{o.titulo}</Text>
             {o.disponible && o.descripcion ? (
@@ -147,7 +160,7 @@ export default function Oferta() {
               <Separador />
               <Dato titulo="Dónde" texto={o.salas ? o.salas.join(', ') : 'Todas las salas'} />
               <Separador />
-              <Dato titulo="Para" texto={o.exclusiva ? 'Socios' : 'Todos'} />
+              <Dato titulo="Para" texto={o.nivel_minimo ? (EXCLUSIVAS[o.nivel_minimo]?.rotulo ?? 'Socios') : o.exclusiva ? 'Socios' : 'Todos'} />
             </View>
           </Entrada>
 
@@ -157,6 +170,19 @@ export default function Oferta() {
                 <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>Exclusiva para socios</Text>
                 <Text style={{ fontSize: 15, lineHeight: 21, color: colorSistema.texto2 }}>
                   Únete al programa de puntos para ver los productos y usar esta oferta.
+                </Text>
+              </View>
+            </Entrada>
+          ) : null}
+
+          {faltaNivel ? (
+            <Entrada indice={2}>
+              <View style={{ backgroundColor: suave(a.fuerte, 0.14), borderRadius: 18, padding: 16, gap: 4 }}>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
+                  Exclusiva para {o.nivel_minimo === 'mayoreo' ? 'Clientes Mayoristas' : `clientes ${EXCLUSIVAS[o.nivel_minimo]?.rotulo ?? ''}`}
+                </Text>
+                <Text style={{ fontSize: 15, lineHeight: 21, color: colorSistema.texto2 }}>
+                  {comoLlegar(o.nivel_minimo, miNivel.nivel)}
                 </Text>
               </View>
             </Entrada>
@@ -183,6 +209,15 @@ export default function Oferta() {
                           style={({ pressed }) => ({ backgroundColor: a.fuerte, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                           <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800' }}>Reservar</Text>
                         </Presionable>
+                      ) : faltaNivel && !o.pronto ? (
+                        // Apagado: dice desde qué nivel se puede (2026-10-14).
+                        <View accessible accessibilityRole="button" accessibilityState={{ disabled: true }}
+                          accessibilityLabel={EXCLUSIVAS[o.nivel_minimo]?.boton ?? 'No disponible'}
+                          style={{ backgroundColor: colorSistema.separador, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, maxWidth: 130 }}>
+                          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textAlign: 'center' }} numberOfLines={2}>
+                            {EXCLUSIVAS[o.nivel_minimo]?.boton ?? 'No disponible'}
+                          </Text>
+                        </View>
                       ) : null}
                       {p.precio != null ? (
                         <View style={{ alignItems: 'flex-end' }}>

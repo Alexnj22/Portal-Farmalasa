@@ -7,6 +7,12 @@
 // una toma corre las demás (manda el intervalo); en «N veces al día» se puede
 // mover cada una, y si quedan muy juntas o fuera de orden se advierte con
 // «Ajustar automáticamente». Las reglas viven en lib/tomas.js.
+//
+// 2026-10-14 (tarde, «¿por qué pregunta veces al día Y cada cuántas horas?»):
+// UNA pregunta, «¿Cada cuánto lo tomas?», con opciones que dicen las dos
+// cosas («3 veces al día · cada 8 h») y «Otro horario». Las de intervalo se
+// reparten parejo desde la primera toma (8:00 por defecto) y mover una corre
+// las demás; «Otro horario» deja elegir cuántas tomas y cada hora libre.
 import { useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
@@ -17,7 +23,7 @@ import { colorSistema } from './sistema';
 import { Boton, RADIO, Seccion } from './ui';
 import SelectorHora, { HORA_NATIVA } from './SelectorHora';
 import { nombrePropio } from '../lib/formato';
-import { DURACIONES, FRECUENCIAS, PRESETS, diaTexto, guardarRecordatorio, horaTexto, horasCada, horasRecomendadas, horasVeces, hoyLocal, quitarRecordatorio, revisarHoras, sumarDias } from '../lib/tomas';
+import { DURACIONES, INICIO_DEFECTO, MAX_TOMAS_LIBRES, OPCIONES, diaTexto, guardarRecordatorio, horaTexto, horasCada, horasRecomendadas, inicioRecomendado, horasVeces, hoyLocal, opcionGuardada, quitarRecordatorio, revisarHoras, sumarDias } from '../lib/tomas';
 import { useTema } from '../tema/tema';
 
 const dos = (n) => String(n).padStart(2, '0');
@@ -33,9 +39,13 @@ const MAX_DIAS = 365;
 export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
-  const [modo, setModo] = useState(actual?.modo === 'cada' ? 'cada' : 'veces');
-  const [n, setN] = useState(actual?.n ?? actual?.horas?.length ?? 2);
-  const [horas, setHoras] = useState(() => (actual?.modo === 'cada' && actual.inicio ? horasCada(actual.inicio, actual.n) : actual?.horas ?? PRESETS[2]));
+  const [inicial] = useState(() => opcionGuardada(actual));
+  const [opcion, setOpcion] = useState(inicial.opcion);
+  const [horas, setHoras] = useState(inicial.horas);
+  // `cada`: horas entre tomas (opciones de intervalo); null en «Otro horario».
+  const cada = OPCIONES.find((o) => o.id === opcion)?.cada ?? null;
+  const libre = cada == null;
+  const n = libre ? horas.length : cada;
   const [duracion, setDuracion] = useState(actual?.duracion ?? null);
   const [hasta, setHasta] = useState(actual?.duracion === 'fecha' ? actual.hasta : sumarDias(hoyLocal(), 14));
   const [nota, setNota] = useState(actual?.nota ?? '');
@@ -45,18 +55,36 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
   const hoy = hoyLocal();
 
-  const elegirFrecuencia = (m, cuantas) => {
+  const elegirOpcion = (id) => {
+    if (id === opcion) return;
     Haptics.selectionAsync().catch(() => {});
-    setModo(m); setN(cuantas); setHoras(horasRecomendadas(m, cuantas));
+    const op = OPCIONES.find((o) => o.id === id);
+    if (op?.cada) {
+      // Al cambiar de frecuencia se proponen las horas recomendadas para esa
+      // frecuencia (la primera toma se puede mover y las demás la siguen).
+      setHoras(horasCada(inicioRecomendado(op.cada), op.cada));
+    } else {
+      // A «Otro horario» se pasa con las horas que ya había, en orden.
+      setHoras((xs) => [...xs].sort().slice(0, MAX_TOMAS_LIBRES));
+    }
+    setOpcion(id);
   };
-  // Una hora nueva para la toma i. En «cada N horas» se corren todas.
+  // «Otro horario»: cuántas tomas. Se reparten parejo dentro del día; después
+  // se mueve cada una.
+  const cambiarCuantas = (d) => {
+    const nueva = Math.max(1, Math.min(MAX_TOMAS_LIBRES, horas.length + d));
+    if (nueva === horas.length) return;
+    Haptics.selectionAsync().catch(() => {});
+    setHoras(horasRecomendadas('veces', nueva));
+  };
+  // Una hora nueva para la toma i. Con intervalo se corren todas.
   const aplicar = (i, nueva) => setHoras((xs) => {
-    if (modo === 'cada') return horasCada(mover(nueva, 0, -i * n * 60), n);
+    if (!libre) return horasCada(mover(nueva, 0, -i * cada * 60), cada);
     return xs.map((x, j) => (j === i ? nueva : x));
   });
   const cambiarHora = (i, h, m) => aplicar(i, mover(horas[i], h, m));
   const fijarHora = (i, nueva) => aplicar(i, nueva);
-  const aviso = modo === 'veces' ? revisarHoras(horas, n) : null;
+  const aviso = libre ? revisarHoras(horas, n) : null;
   const ajustar = () => {
     Haptics.selectionAsync().catch(() => {});
     // Desde la primera toma, con la separación pareja; si con eso la última
@@ -84,7 +112,7 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
     const r = await guardarRecordatorio({
       product_id: String(tratamiento.product_id), nombre: tratamiento.nombre, se_acaba: tratamiento.se_acaba ?? null,
       horas, duracion, hasta: fin, nota: nota.trim(),
-      modo, n, inicio: modo === 'cada' ? horas[0] : null,
+      modo: libre ? 'veces' : 'cada', n, inicio: libre ? null : horas[0],
     });
     setGuardando(false);
     if (!r.ok) { setError(r.error); return; }
@@ -110,34 +138,55 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 16 }} keyboardShouldPersistTaps="handled">
           <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{nombrePropio(tratamiento.nombre)}</Text>
-            <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Te avisamos en este teléfono a la hora de cada toma.</Text>
+            <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto3 }}>Te avisamos en este teléfono a la hora de cada toma.</Text>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginTop: 8 }}>
+              <Icono sf="lock.fill" respaldo="i" tam={13} color={colorSistema.texto3} />
+              <Text style={{ flex: 1, fontSize: 12.5, lineHeight: 17, color: colorSistema.texto3 }}>
+                Tus horarios se guardan sólo en este teléfono; no los enviamos a nadie. Si cierras sesión, se borran.
+              </Text>
+            </View>
           </View>
 
-          <Seccion>¿Cada cuánto?</Seccion>
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto2, marginLeft: 4 }}>Veces al día</Text>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              {FRECUENCIAS.veces.map((k) => <Pildora key={`v${k}`} texto={`${k}×`} etiqueta={`${k} ${k === 1 ? 'vez' : 'veces'} al día`}
-                elegida={modo === 'veces' && n === k} alTocar={() => elegirFrecuencia('veces', k)} />)}
-            </View>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto2, marginLeft: 4, marginTop: 4 }}>Cada cuántas horas</Text>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              {FRECUENCIAS.cada.map((k) => <Pildora key={`c${k}`} texto={`${k} h`} etiqueta={`Cada ${k} horas`}
-                elegida={modo === 'cada' && n === k} alTocar={() => elegirFrecuencia('cada', k)} />)}
-            </View>
+          <Seccion>¿Cada cuánto lo tomas?</Seccion>
+          <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
+            {OPCIONES.map((o, i) => {
+              const elegida = o.id === opcion;
+              return (
+                <Presionable key={o.id} onPress={() => elegirOpcion(o.id)} accessibilityRole="radio" accessibilityState={{ selected: elegida }}
+                  accessibilityLabel={o.detalle ? `${o.texto}, ${o.detalle}` : o.texto}>
+                  {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48 }}>
+                    <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
+                    <Text style={{ flex: 1, fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{o.texto}</Text>
+                    {o.detalle ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>{o.detalle}</Text> : null}
+                  </View>
+                </Presionable>
+              );
+            })}
           </View>
           <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
-            {modo === 'cada'
-              ? `Cada ${n} horas, día y noche. Si cambias una hora, las demás se mueven para mantener ${n} horas entre tomas.`
-              : n === 1 ? 'Una toma al día. Cámbiala a la hora que te quede mejor.'
-                : 'Ya te pusimos horas repartidas en el día. Puedes cambiar cualquiera.'}
+            {libre
+              ? 'Elige cuántas tomas al día y pon cada una a la hora que quieras.'
+              : cada === 24 ? 'Una toma al día. Cámbiala a la hora que te quede mejor.'
+                : `Repartidas cada ${cada} horas desde la primera. Si cambias una hora, las demás se mueven para mantener ${cada} horas entre tomas.`}
           </Text>
+          {libre ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Tomas al día</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Paso sf="minus" etiqueta="Una toma menos" alTocar={() => cambiarCuantas(-1)} />
+                <Text accessibilityLabel={`${horas.length} ${horas.length === 1 ? 'toma' : 'tomas'} al día`}
+                  style={{ fontSize: 20, fontWeight: '900', color: colorSistema.texto, minWidth: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{horas.length}</Text>
+                <Paso sf="plus" etiqueta="Una toma más" alTocar={() => cambiarCuantas(1)} />
+              </View>
+            </View>
+          ) : null}
           <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
             {horas.map((h, i) => (
               <View key={i}>
                 {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{horas.length === 1 ? 'Hora' : `Toma ${i + 1}`}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{horas.length === 1 ? 'Hora' : !libre && i === 0 ? 'Primera toma' : `Toma ${i + 1}`}</Text>
                   {HORA_NATIVA ? (
                     <SelectorHora valor={h} titulo={horas.length === 1 ? 'Hora' : `Toma ${i + 1}`} alCambiar={(nueva) => fijarHora(i, nueva)} />
                   ) : (
@@ -202,29 +251,21 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             maxLength={80}
             style={{ minHeight: 48, borderRadius: 16, padding: 14, fontSize: 15, color: colorSistema.texto, backgroundColor: superficie }} />
 
-          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-            <Icono sf="lock.fill" respaldo="i" tam={14} color={colorSistema.texto3} />
-            <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colorSistema.texto3 }}>
-              Tus horarios se guardan sólo en este teléfono; no los enviamos a nadie. Si cierras sesión, se borran.
-            </Text>
-          </View>
           {error ? <Text style={{ fontSize: 14, color: t.color.peligroTexto }}>{error}</Text> : null}
-          {guardando ? <ActivityIndicator /> : <Boton alTocar={guardar} deshabilitado={!duracion}>{duracion ? 'Guardar recordatorio' : 'Elige por cuánto tiempo'}</Boton>}
-          {actual && !guardando ? <Boton tipo="peligro" alTocar={quitar}>Quitar recordatorio</Boton> : null}
+          {/* Los botones en su propio bloque con alto mínimo (2026-10-14, «el
+              texto sale pegado al botón»): el botón nativo de iPhone se mide
+              DESPUÉS del primer cuadro (`matchContents`) y mientras tanto
+              ocupaba 0 pt, así que el texto de arriba quedaba montado encima.
+              La nota de privacidad subió a la tarjeta del principio. */}
+          <View style={{ marginTop: 8, gap: 10 }}>
+            <View style={{ minHeight: 52, justifyContent: 'center' }}>
+              {guardando ? <ActivityIndicator /> : <Boton alTocar={guardar} deshabilitado={!duracion}>{duracion ? 'Guardar recordatorio' : 'Elige por cuánto tiempo'}</Boton>}
+            </View>
+            {actual && !guardando ? <View style={{ minHeight: 48, justifyContent: 'center' }}><Boton tipo="peligro" alTocar={quitar}>Quitar recordatorio</Boton></View> : null}
+          </View>
         </ScrollView>
       </View>
     </Modal>
-  );
-}
-
-function Pildora({ texto, etiqueta, elegida, alTocar }) {
-  const t = useTema();
-  return (
-    <Presionable onPress={alTocar} accessibilityRole="radio" accessibilityState={{ selected: elegida }} accessibilityLabel={etiqueta}
-      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: RADIO.chico, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.96 : 1 }],
-        backgroundColor: elegida ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)') })}>
-      <Text style={{ fontSize: 15, fontWeight: '700', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
-    </Presionable>
   );
 }
 

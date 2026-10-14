@@ -32,7 +32,9 @@ import { nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
 import { navegar } from '../../../lib/navegar';
-import { Image } from 'expo-image';
+import AvatarNivel, { rotuloNivel } from '../../../componentes/AvatarNivel';
+import { refrescarFotoPerfil, useFotoPerfil } from '../../../lib/fotoPerfil';
+import { rangoReal } from '../../../componentes/Mayorista';
 import { subirFoto } from '../../../lib/fotos';
 import { usarVistaPreviaFoto } from '../../../componentes/VistaPreviaFoto';
 
@@ -92,23 +94,38 @@ export default function Cuenta() {
 
   useFocusEffect(useCallback(() => { if (!resumen) cargar(); }, [resumen, cargar]));
 
-  // La foto de perfil (2026-10-12): firmada por el servidor, se pide al entrar.
-  const [foto, setFoto] = useState({ url: null, quitada: false, cargando: false });
+  // La foto de perfil (2026-10-12): firmada por el servidor. Desde el
+  // 2026-10-14 («tarda en cargar») vive en lib/fotoPerfil.js: la última
+  // conocida se pinta al instante desde la caché (por la ruta del archivo, no
+  // por la URL firmada) y al entrar sólo se confirma con el servidor.
+  const fotoGuardada = useFotoPerfil();
+  const [subiendo, setSubiendo] = useState(false);
+  const foto = { url: fotoGuardada.codigo === resumen?.codigo ? fotoGuardada.url : null, clave: fotoGuardada.clave,
+    quitada: fotoGuardada.codigo === resumen?.codigo && fotoGuardada.quitada, cargando: subiendo };
   const conFicha = !!resumen && !resumen.pendiente;
   useFocusEffect(useCallback(() => {
-    if (!conFicha) return;
-    pedir('perfil').then((r) => { if (r?.ok) setFoto({ url: r.foto_url ?? null, quitada: !!r.quitada, cargando: false }); });
-  }, [conFicha, pedir]));
+    if (!conFicha || !resumen?.codigo) return;
+    refrescarFotoPerfil(resumen.codigo);
+  }, [conFicha, resumen?.codigo]));
+  const ponerFoto = (f) => useFotoPerfil.getState().poner(resumen?.codigo ?? null, f);
+  // El nivel en el avatar (2026-10-14, «no me muestra en el avatar mi nivel»):
+  // la misma cuenta que la tarjeta del Inicio — el rango de mayoreo si lo
+  // tiene, si no su nivel; con el modo de prueba, el elegido ahí.
+  const enPrueba = !!resumen?.prueba && prueba.activo;
+  const materialAvatar = enPrueba ? (prueba.mayorista ?? prueba.nivel) : (rangoReal(resumen?.mayorista)?.clave ?? resumen?.nivel?.clave ?? null);
+  const equipoAvatar = enPrueba ? !!prueba.empleado : !!resumen?.empleado;
+  const nivelTexto = conFicha ? rotuloNivel(materialAvatar, equipoAvatar) : null;
   // Se revisa con la guía redonda antes de subirla (componentes/VistaPreviaFoto).
   const vistaPrevia = usarVistaPreviaFoto();
   const subirPerfil = async () => {
     const f = await vistaPrevia.elegir({ titulo: 'Tu foto de perfil', mensaje: 'La ve el equipo de la farmacia cuando chateas con nosotros.', circular: true });
     if (!f) return;
-    setFoto((x) => ({ ...x, cargando: true }));
+    setSubiendo(true);
     const s = await subirFoto(pedir, 'perfil_subir_url', {}, f.uri);
     const r = s.ok ? await pedir('perfil_confirmar', { ruta: s.ruta }) : s;
-    if (r?.ok) setFoto({ url: r.foto_url ?? f.uri, quitada: false, cargando: false });
-    else { setFoto((x) => ({ ...x, cargando: false })); Alert.alert('No se pudo guardar la foto', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); }
+    setSubiendo(false);
+    if (r?.ok) ponerFoto({ url: r.foto_url ?? f.uri, quitada: false });
+    else Alert.alert('No se pudo guardar la foto', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
   };
   const cambiarFoto = () => {
     Haptics.selectionAsync().catch(() => {});
@@ -117,7 +134,7 @@ export default function Cuenta() {
     // Facturas; en Android la dibuja componentes/HojasAndroid.
     const quitar = async () => {
       const r = await pedir('perfil_quitar');
-      if (r?.ok) setFoto({ url: null, quitada: false, cargando: false });
+      if (r?.ok) ponerFoto({ url: null, quitada: false });
       else Alert.alert('No se pudo quitar la foto', r?.mensaje ?? 'Revisa tu conexión.');
     };
     ActionSheetIOS.showActionSheetWithOptions({
@@ -227,13 +244,7 @@ export default function Cuenta() {
           {conFicha ? (
             <Presionable onPress={cambiarFoto} accessibilityRole="button" accessibilityLabel={foto.url ? 'Cambiar tu foto de perfil' : 'Agregar una foto de perfil'}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-              {foto.url ? (
-                <Image source={{ uri: foto.url }} style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colorSistema.separador, opacity: foto.cargando ? 0.5 : 1 }} contentFit="cover" />
-              ) : (
-                <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)', opacity: foto.cargando ? 0.5 : 1 }}>
-                  <Icono sf="person.fill" respaldo="👤" tam={28} color={colorSistema.texto3} />
-                </View>
-              )}
+              <AvatarNivel nombre={resumen.nombre} material={materialAvatar} equipo={equipoAvatar} uri={foto.url} clave={foto.clave} tam={68} atenuado={foto.cargando} />
               <View style={{ position: 'absolute', right: -2, bottom: -2, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: t.color.magenta }}>
                 <Icono sf="camera.fill" respaldo="+" tam={11} color="#FFFFFF" />
               </View>
@@ -243,6 +254,9 @@ export default function Cuenta() {
             <Text style={{ fontSize: 22, fontWeight: '700', color: colorSistema.texto }}>
               {nombrePropio(resumen.nombre)}
             </Text>
+            {nivelTexto ? (
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{nivelTexto}</Text>
+            ) : null}
             {conFicha && foto.quitada ? (
               <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Quitamos tu foto de perfil porque no correspondía. Puedes subir otra.</Text>
             ) : conFicha && !foto.url ? (

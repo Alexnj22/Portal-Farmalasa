@@ -26,7 +26,9 @@ const CAMPOS = ['titulo', 'descripcion', 'etiqueta', 'condiciones', 'imagen_path
     // La foto de un descuento de la caja (ver `fotoParaApp` en descuentos.js).
     'descuento_erp_id', 'promocion_id', 'descuento_tipo', 'descuento_monto', 'productos', 'foto_at',
     // El color que resalta la oferta en la app (etiqueta, velo de la foto).
-    'acento'];
+    'acento',
+    // Exclusiva por nivel (2026-10-14): null = todos.
+    'nivel_minimo'];
 
 export async function fetchSalas() {
     return sinError(await supabase.from('branches').select('id, name').eq('type', 'FARMACIA').order('name'));
@@ -34,7 +36,7 @@ export async function fetchSalas() {
 
 export async function fetchOfertas() {
     const filas = sinError(await supabase.from('ofertas_clientes')
-        .select('id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, publicada, orden, updated_at, descuento_erp_id, promocion_id, descuento_tipo, descuento_monto, productos, foto_at, descuento_borrado_at, acento')
+        .select('id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, publicada, orden, updated_at, descuento_erp_id, promocion_id, descuento_tipo, descuento_monto, productos, foto_at, descuento_borrado_at, acento, nivel_minimo')
         .order('fin', { ascending: false })
         .limit(500));
     // La vista previa de la imagen: firmadas en una sola llamada.

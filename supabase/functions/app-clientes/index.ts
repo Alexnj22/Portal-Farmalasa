@@ -517,17 +517,53 @@ Deno.serve(async (req) => {
       return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones } });
     }
 
+    // ── Ofertas exclusivas por nivel (2026-10-14) ─────────────────────────
+    // `ofertas_clientes.nivel_minimo`: null (todos) | plata | oro | platino |
+    // mayoreo. Los niveles van en orden vip < plata < oro < platino; «mayoreo»
+    // exige ser Cliente Mayorista aprobado. Con los niveles apagados todos
+    // están en el de entrada (`nivelDeCliente`), así que una oferta de nivel no
+    // la reserva nadie hasta encenderlos: es la regla, no un error.
+    // La cuenta de PRUEBA puede mirar «como» otro nivel (`prueba_nivel`,
+    // `prueba_mayorista`, los mismos del modo de prueba de la app).
+    const ORDEN_NIVEL: Record<string, number> = { vip: 0, bronce: 0, plata: 1, oro: 2, platino: 3 };
+    const accesoDeNivel = async (customerId: number | null): Promise<{ nivel: string | null; mayorista: boolean }> => {
+      if (!customerId) return { nivel: null, mayorista: false };
+      const pn = String(body?.prueba_nivel ?? "");
+      if ((pn in ORDEN_NIVEL || body?.prueba_mayorista === true) && await esDePrueba(customerId)) {
+        const nv = pn in ORDEN_NIVEL ? (pn === "bronce" ? "vip" : pn) : (await nivelDeCliente(admin, customerId)).clave;
+        return { nivel: nv, mayorista: body?.prueba_mayorista === true };
+      }
+      const [nv, { data: m, error: eM }] = await Promise.all([
+        nivelDeCliente(admin, customerId),
+        admin.rpc("mayorista_de", { p_customer: customerId }),
+      ]);
+      if (eM) throw eM;
+      // deno-lint-ignore no-explicit-any
+      return { nivel: nv.clave, mayorista: (m as any)?.estado === "aprobado" };
+    };
+    const alcanzaNivel = (requerido: string | null | undefined, acc: { nivel: string | null; mayorista: boolean }) => {
+      if (!requerido) return true;
+      if (requerido === "mayoreo") return acc.mayorista;
+      if (acc.nivel == null || !(requerido in ORDEN_NIVEL)) return false;
+      return (ORDEN_NIVEL[acc.nivel] ?? -1) >= ORDEN_NIVEL[requerido];
+    };
+    const NOMBRE_EXCLUSIVA: Record<string, string> = {
+      plata: "clientes Plata o más", oro: "clientes Oro o más", platino: "clientes Platino", mayoreo: "Clientes Mayoristas",
+    };
+
     // Las ofertas vigentes. Con `customerId` null es la vitrina PÚBLICA (sin
     // cuenta, desde la bienvenida): lo exclusivo se anuncia sin detalle y no
     // hay muestras. Es el gancho para unirse (2026-10-06).
     // deno-lint-ignore no-explicit-any
     const ofertasPara = async (customerId: number | null): Promise<any> => {
       const hoy = hoySV();
+      // Ofertas exclusivas por nivel (2026-10-14): a qué llega este cliente.
+      const acceso = await accesoDeNivel(customerId);
       // Platino ve las ofertas 2 días ANTES que nadie (2026-10-07), marcadas «pronto».
-      const platino = customerId ? (await nivelDeCliente(admin, customerId)).clave === "platino" : false;
+      const platino = acceso.nivel === "platino";
       const tope = platino ? new Date(Date.parse(`${hoy}T12:00:00Z`) + 2 * 86400_000).toISOString().slice(0, 10) : hoy;
       const { data: filas, error } = await admin.from("ofertas_clientes")
-        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento")
+        .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento, nivel_minimo")
         .eq("publicada", true).lte("inicio", tope).gte("fin", hoy)
         .order("orden", { ascending: true }).order("fin", { ascending: true })
         .limit(50);
@@ -561,6 +597,10 @@ Deno.serve(async (req) => {
         return {
           id: o.id, titulo: o.titulo, etiqueta: o.etiqueta, imagen, imagen_clave: o.imagen_path ?? null, inicio: o.inicio, fin: o.fin, acento: o.acento ?? "magenta",
           exclusiva: o.exclusiva, disponible, pronto: o.inicio > hoy,
+          // Exclusiva por nivel: todos la VEN (es la invitación); reservarla,
+          // sólo quien llega. Sin sesión, nunca.
+          nivel_minimo: o.nivel_minimo ?? null,
+          disponible_para_ti: !!customerId && disponible && alcanzaNivel(o.nivel_minimo, acceso),
           // Lo exclusivo se ANUNCIA a quien no es socio —es la invitación a
           // serlo— pero el detalle sólo lo ve quien puede usarlo.
           descripcion: disponible ? o.descripcion : null,
@@ -580,6 +620,8 @@ Deno.serve(async (req) => {
           id: `muestra-${m.id}`, titulo: m.titulo, etiqueta: m.etiqueta ?? null,
           imagen: m.imagen_path ? firmadas.get(m.imagen_path) ?? null : null, imagen_clave: m.imagen_path ?? null,
           inicio: m.inicio, fin: m.fin, acento: m.acento ?? "magenta", exclusiva: !!m.exclusiva, disponible,
+          nivel_minimo: m.nivel_minimo ?? null,
+          disponible_para_ti: !!customerId && disponible && alcanzaNivel(m.nivel_minimo ?? null, acceso),
           descripcion: disponible ? m.descripcion ?? null : null,
           condiciones: disponible ? m.condiciones ?? null : null,
           descuento: m.descuento ?? null,
@@ -1152,10 +1194,79 @@ Deno.serve(async (req) => {
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
       const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at";
+      // Por DÍAS (2026-10-14, «que salgan los de los últimos 3 días; si no,
+      // "Cargar más" de semana en semana»): la app nueva manda `desde_fecha`
+      // (primera carga) o `antes_de` (+ `antes_id`, la página anterior). Una
+      // app vieja no manda ninguno y sigue por páginas de 30 ids.
+      const fechaDe = (v: unknown) => {
+        const ms = typeof v === "string" ? Date.parse(v) : NaN;
+        return Number.isFinite(ms) && ms > Date.parse("2020-01-01") && ms < Date.now() + 86400_000 ? ms : null;
+      };
+      const desdeFecha = fechaDe(body?.desde_fecha);
+      const antesDe = fechaDe(body?.antes_de);
       // deno-lint-ignore no-explicit-any
       let filas: any[] = [];
       let hayMas = false;
-      if (Number.isSafeInteger(desde) && desde > 0) {
+      if (!(Number.isSafeInteger(desde) && desde > 0) && (desdeFecha != null || antesDe != null)) {
+        const TOPE_PRIMERA = 300;   // red de seguridad de la primera carga
+        const MINIMO = 15;          // una conversación tranquila no abre vacía
+        const POR_SEMANA = 50;      // tope de cada «Cargar anteriores»
+        const SEMANA_MS = 7 * 86400_000;
+        if (antesDe != null) {
+          // La semana anterior a lo más viejo que la app tiene. Si esa semana
+          // está vacía, la ventana salta a la semana del mensaje más nuevo de
+          // los que quedan (sin pedir semanas vacías una por una).
+          let q = admin.from("app_chat_mensajes").select(COLS_CHAT).limit(POR_SEMANA + 1).eq("conversacion_id", cv.id);
+          q = Number.isSafeInteger(antes) && antes > 0 ? q.lt("id", antes) : q.lt("created_at", new Date(antesDe).toISOString());
+          const { data, error } = await q.order("id", { ascending: false });
+          if (error) throw error;
+          const viejos = data ?? [];
+          if (viejos.length) {
+            const masNuevo = Date.parse(viejos[0].created_at);
+            const piso = masNuevo >= antesDe - SEMANA_MS ? antesDe - SEMANA_MS : masNuevo - SEMANA_MS;
+            // deno-lint-ignore no-explicit-any
+            const enVentana = viejos.filter((m: any) => Date.parse(m.created_at) >= piso).slice(0, POR_SEMANA);
+            hayMas = enVentana.length < viejos.length;
+            filas = enVentana.reverse();
+          }
+        } else {
+          // Primera carga: los últimos 3 días (la fecha la manda la app), con
+          // un mínimo de 15 y siempre desde el primer mensaje sin leer, para
+          // que la franja «N mensajes nuevos» tenga dónde ir.
+          const { data: rec, error: eRec } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(TOPE_PRIMERA)
+            .eq("conversacion_id", cv.id).gte("created_at", new Date(desdeFecha!).toISOString()).order("id", { ascending: false });
+          if (eRec) throw eRec;
+          let lista = rec ?? [];
+          if (lista.length < MINIMO) {
+            const { data: ult, error: eUlt } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(MINIMO)
+              .eq("conversacion_id", cv.id).order("id", { ascending: false });
+            if (eUlt) throw eUlt;
+            lista = ult ?? [];
+          }
+          const sinLeer = Math.min(TOPE_PRIMERA, Number(cv.sin_leer_cliente ?? 0));
+          if (sinLeer > 0 && lista.length < TOPE_PRIMERA) {
+            const { data: noLeidos, error: eNl } = await admin.from("app_chat_mensajes").select("id").limit(sinLeer)
+              .eq("conversacion_id", cv.id).eq("autor", "equipo").order("id", { ascending: false });
+            if (eNl) throw eNl;
+            const primero = (noLeidos ?? []).at(-1)?.id;
+            const masViejo = lista.at(-1)?.id;
+            if (primero != null && masViejo != null && primero < masViejo) {
+              const { data: hasta, error: eH } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(TOPE_PRIMERA)
+                .eq("conversacion_id", cv.id).gte("id", primero).order("id", { ascending: false });
+              if (eH) throw eH;
+              lista = hasta ?? lista;
+            }
+          }
+          const masViejo = lista.at(-1)?.id;
+          if (masViejo != null) {
+            const { data: antesUno, error: eA } = await admin.from("app_chat_mensajes").select("id").limit(1)
+              .eq("conversacion_id", cv.id).lt("id", masViejo);
+            if (eA) throw eA;
+            hayMas = (antesUno ?? []).length > 0;
+          }
+          filas = [...lista].reverse();
+        }
+      } else if (Number.isSafeInteger(desde) && desde > 0) {
         // Lo nuevo desde el último que la app ya tiene (en orden).
         const { data, error } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(100)
           .eq("conversacion_id", cv.id).gt("id", desde).order("id", { ascending: true });
@@ -1438,10 +1549,10 @@ Deno.serve(async (req) => {
       let o: any = null;
       if (ofertaId.startsWith("muestra-")) {
         const m = (await muestrasDe(admin, customerId, "oferta")).find((x) => `muestra-${x.id}` === ofertaId);
-        if (m && m.fin >= hoy) o = { id: null, titulo: m.titulo, fin: m.fin, productos: m.productos ?? [], branch_ids: null };
+        if (m && m.fin >= hoy) o = { id: null, titulo: m.titulo, fin: m.fin, productos: m.productos ?? [], branch_ids: null, nivel_minimo: m.nivel_minimo ?? null };
       } else {
         const { data, error: eO } = await admin.from("ofertas_clientes")
-          .select("id, titulo, fin, exclusiva, productos, branch_ids")
+          .select("id, titulo, fin, exclusiva, productos, branch_ids, nivel_minimo")
           .eq("id", ofertaId).eq("publicada", true).lte("inicio", hoy).gte("fin", hoy).maybeSingle();
         if (eO) throw eO;
         o = data;
@@ -1464,6 +1575,11 @@ Deno.serve(async (req) => {
       if (!salaR) return json({ ok: false, mensaje: "Elige una sucursal válida." });
       if (o.exclusiva && !(cs?.acepta_programa_puntos !== false && cs?.acumula_puntos !== false)) {
         return json({ ok: false, mensaje: "Esta oferta es exclusiva para socios de Puntos Salud." });
+      }
+      // Exclusiva por nivel (2026-10-14): la pantalla ya no ofrece el botón,
+      // pero el servidor es el que decide.
+      if (o.nivel_minimo && !alcanzaNivel(o.nivel_minimo, await accesoDeNivel(customerId))) {
+        return json({ ok: false, motivo: "nivel", mensaje: `Esta oferta es exclusiva para ${NOMBRE_EXCLUSIVA[o.nivel_minimo] ?? "otro nivel"}.` });
       }
       // Bajo receta (2026-10-12): se reserva igual, pero nace «en revisión» y
       // espera la foto de la receta (`receta_subir_url` / `receta_confirmar`).

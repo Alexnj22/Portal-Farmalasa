@@ -44,6 +44,10 @@ import { ANDROID, LIVIANO } from '../lib/rendimiento';
 import BrilloTarjeta from './BrilloTarjeta';
 import { dolares, entero } from '../lib/formato';
 import { NumeroAnimado } from './animacion';
+// La foto de perfil se precarga en cuanto llega el resumen (2026-10-14): la
+// tarjeta es lo primero que se monta al abrir la app, así que el módulo se
+// evalúa al arrancar y Cuenta ya la encuentra en memoria (lib/fotoPerfil.js).
+import '../lib/fotoPerfil';
 
 const T = tokens.temas.solid;
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -197,12 +201,20 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // `brilloQr`: el worklet captura las funciones al crearse, y declarada más
   // abajo llegaba vacía — `runOnJS(undefined)` cerraba la app al girar
   // (compilación 10, 2026-10-06).
-  // Qué cara mira al frente AHORA (cambia justo a mitad del giro): en
-  // Android decide qué lienzos se dibujan (ver `verFrente`).
-  const [caraAtras, setCaraAtras] = useState(false);
-  const alCruzar = (atras) => { vibrar(true); if (ANDROID) setCaraAtras(!!atras); };
+  const alCruzar = () => { vibrar(true); };
   useAnimatedReaction(() => giro.value > 0.5, (ahora, antes) => {
     if (antes !== null && ahora !== antes) runOnJS(alCruzar)(ahora);
+  });
+  // Qué caras tienen sus lienzos montados en Android (ver `verFrente`):
+  // bit 1 = frente, bit 2 = reverso. Antes la otra cara se montaba JUSTO a
+  // mitad del giro, y un lienzo recién montado tarda unos cuadros en tener
+  // superficie y tamaño: la segunda mitad del giro se veía sin material ni
+  // luz, y aparecían de golpe al final (2026-10-14, Platino: «al girar se ve
+  // cortada»). Ahora la otra cara se monta apenas EMPIEZA el giro (3 %) y la
+  // que quedó atrás se suelta cuando termina; quieta, sigue siendo una sola.
+  const [caras, setCaras] = useState(1);
+  useAnimatedReaction(() => (ANDROID ? (giro.value < 0.97 ? 1 : 0) | (giro.value > 0.03 ? 2 : 0) : 3), (ahora, antes) => {
+    if (ANDROID && ahora !== antes) runOnJS(setCaras)(ahora);
   });
 
   // Arrastrar de lado la inclina; un deslizamiento rápido la gira. Lo vertical
@@ -264,10 +276,10 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // Android (2026-10-13): una cara a la vez. La cara de atrás está oculta
   // (`backfaceVisibility`), pero sus lienzos de Skia —el material y la luz—
   // se seguían redibujando con cada movimiento del giroscopio: dos tarjetas
-  // pintadas para ver una. Se monta la que mira al frente, y el cambio es a
-  // mitad del giro, cuando la otra queda de canto.
-  const verFrente = !ANDROID || !caraAtras;
-  const verReverso = !ANDROID || caraAtras;
+  // pintadas para ver una. Quieta, se monta sólo la que mira al frente;
+  // durante el giro, las dos (ver `caras`).
+  const verFrente = !ANDROID || (caras & 1) !== 0;
+  const verReverso = !ANDROID || (caras & 2) !== 0;
   const frente = useAnimatedStyle(() => ({
     transform: [{ perspective: 1000 }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }],
   }));

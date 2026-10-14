@@ -48,11 +48,62 @@ export const PRESETS = { 1: ['08:00'], 2: ['08:00', '20:00'], 3: ['08:00', '14:0
 // `inicio` sólo recuerdan cómo se armó para volver a abrir la hoja igual.
 export const FRECUENCIAS = { veces: [1, 2, 3, 4, 6], cada: [4, 6, 8, 12] };
 // Separación pareja dentro del día despierto, y desde qué hora.
-const PASO_VECES = { 1: 0, 2: 12 * 60, 3: 6 * 60, 4: 4 * 60, 6: 3 * 60 };
+const PASO_VECES = { 1: 0, 2: 12 * 60, 3: 6 * 60, 4: 4 * 60, 5: 3 * 60, 6: 3 * 60 };
 const INICIO_CADA = { 4: '06:00', 6: '06:00', 8: '06:00', 12: '08:00' };
 // Menos que esto entre dos tomas seguidas, se advierte (minutos).
-const MINIMO_VECES = { 2: 4 * 60, 3: 3 * 60, 4: 2 * 60, 6: 90 };
-const SEPARACION_TEXTO = { 2: 'unas 12 horas', 3: 'unas 6 a 8 horas', 4: 'unas 4 a 6 horas', 6: 'unas 3 a 4 horas' };
+const MINIMO_VECES = { 2: 4 * 60, 3: 3 * 60, 4: 2 * 60, 5: 2 * 60, 6: 90 };
+const SEPARACION_TEXTO = { 2: 'unas 12 horas', 3: 'unas 6 a 8 horas', 4: 'unas 4 a 6 horas', 5: 'unas 3 a 4 horas', 6: 'unas 3 a 4 horas' };
+
+// ── UNA sola pregunta (2026-10-14, «¿por qué pregunta veces al día Y cada
+// cuántas horas? No tiene sentido») ─────────────────────────────────────────
+// «3 veces al día» y «cada 8 horas» son la MISMA receta dicha de dos formas,
+// y la hoja las ofrecía como dos filas de botones distintas. Ahora es una
+// lista: cada opción dice las dos cosas («3 veces al día · cada 8 h») y se
+// programa por INTERVALO desde la primera toma (por defecto 8:00): mover una
+// hora corre las demás. «Otro horario» deja poner las horas a mano, con la
+// revisión de siempre (`revisarHoras`).
+//
+// Lo guardado no cambia de forma: una opción de intervalo se guarda como
+// `modo: 'cada'` con `n` = horas entre tomas (24 para una vez al día) e
+// `inicio`; «Otro horario», como `modo: 'veces'` con `n` = cuántas tomas.
+// Así los recordatorios ya guardados se abren sin migrar nada.
+export const INICIO_DEFECTO = '08:00';
+// La primera toma recomendada según la frecuencia (2026-10-14): con 3 al día
+// desde las 8:00 la tercera caía a medianoche; desde las 6:00 queda 6/14/22.
+const INICIO_RECOMENDADO = { 24: '08:00', 12: '08:00', 8: '06:00', 6: '06:00', 4: '06:00' };
+export const inicioRecomendado = (cada) => INICIO_RECOMENDADO[cada] ?? INICIO_DEFECTO;
+export const OPCIONES = [
+  { id: '24', cada: 24, texto: '1 vez al día' },
+  { id: '12', cada: 12, texto: '2 veces al día', detalle: 'cada 12 h' },
+  { id: '8', cada: 8, texto: '3 veces al día', detalle: 'cada 8 h' },
+  { id: '6', cada: 6, texto: '4 veces al día', detalle: 'cada 6 h' },
+  { id: '4', cada: 4, texto: 'Cada 4 horas', detalle: '6 al día' },
+  { id: 'otro', texto: 'Otro horario', detalle: 'tú eliges las horas' },
+];
+export const MAX_TOMAS_LIBRES = 6;
+
+/**
+ * Con qué opción se abre la hoja para un recordatorio guardado:
+ * `{ opcion, horas }`. Uno viejo de «N veces al día» que quedó repartido
+ * parejo cae en su opción de intervalo; si no, en «Otro horario» con sus horas.
+ */
+export function opcionGuardada(actual) {
+  if (!actual) return { opcion: '12', horas: horasCada(INICIO_DEFECTO, 12) };
+  if (actual.modo === 'cada' && actual.inicio && OPCIONES.some((o) => o.cada === actual.n)) {
+    return { opcion: String(actual.n), horas: horasCada(actual.inicio, actual.n) };
+  }
+  const horas = [...(actual.horas ?? [INICIO_DEFECTO])].sort();
+  if (horas.length === 1) return { opcion: '24', horas };
+  const op = OPCIONES.find((o) => o.cada && Math.round(24 / o.cada) === horas.length);
+  if (op) {
+    // ¿Es un giro del reparto parejo? Se prueba desde cada toma.
+    for (const ini of horas) {
+      const pareja = horasCada(ini, op.cada);
+      if ([...pareja].sort().join() === horas.join()) return { opcion: op.id, horas: pareja };
+    }
+  }
+  return { opcion: 'otro', horas };
+}
 
 export const aMinutos = (h) => { const [hh, mm] = h.split(':').map(Number); return hh * 60 + mm; };
 const deMinutos = (m) => { const t = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; };
@@ -120,7 +171,7 @@ const enLista = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join('
 /** «Te recuerdo 8:00 y 20:00 · hasta el 30 oct» (o «cada 8 h: 6:00, 14:00 y 22:00 · …»). */
 export function resumenRecordatorio(c) {
   const lista = c.modo === 'cada' && c.inicio ? horasCada(c.inicio, c.n) : c.horas;
-  const horas = `${c.modo === 'cada' && c.n ? `cada ${c.n} h: ` : ''}${enLista(lista.map(horaTexto))}`;
+  const horas = `${c.modo === 'cada' && c.n && c.n < 24 ? `cada ${c.n} h: ` : ''}${enLista(lista.map(horaTexto))}`;
   return `Te recuerdo ${horas} · ${c.duracion === 'continuo' ? 'uso continuo' : `hasta el ${diaTexto(c.hasta)}`}`;
 }
 

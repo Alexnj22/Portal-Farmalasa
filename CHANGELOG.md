@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1286.0 — Atención preferente, ofertas por nivel, widget con material y chat más rápido
+
+Pedidos del usuario para que el cliente «se sienta especial» y correcciones:
+- **Atención preferente** (Platino y mayoristas aprobados): chip «Preferente» y orden Urgente → Preferentes → resto en la bandeja del portal, con filtro; la app muestra «Atención preferente» en el chat.
+- **Ofertas exclusivas por nivel** (`nivel_minimo`): «Exclusiva para» en el editor; el servidor devuelve `nivel_minimo`/`disponible_para_ti` y RECHAZA reservar sin el nivel; la app pinta sellos por nivel, «Acceso anticipado Platino» y el botón «Disponible desde Oro» con cuánto falta. Ojo: con `niveles_activos=false` todos cuentan como nivel de entrada.
+- **Widget** con el material del nivel (iOS y Android, imágenes renderizadas de los mismos shaders, Platino nuevo) y sello TEAM.
+- **Chat:** «Más información» de las historias abre el chat con la consulta (y el producto); abre al instante desde memoria; 15 mensajes al abrir; lista invertida sin saltos; teclado de iOS 26 seguido cuadro a cuadro con barra en cápsula de vidrio; carga por fechas (3 días al abrir, de a una semana después).
+- **Platino cortado al girar:** en Android el lienzo iba a media resolución estirado desde la esquina (franja de 1–2 px sin material) y la otra cara se montaba a mitad del giro con tamaño 1×1. Ahora el lienzo sobra 6 % por lado recortado por la máscara, escala desde el centro y la otra cara se monta al empezar el giro.
+- **Recordatorio:** una sola pregunta «¿Cada cuánto lo tomas?» (1–4 al día, cada 4 h u «Otro horario») con horas recomendadas por frecuencia (3 al día: 6/14/22); la nota ya no queda pegada al botón.
+- **Cuenta:** avatar con anillo del color del nivel y «Nivel Platino» / «Cliente Mayorista · Rubí» / «Team»; la foto se guarda en caché por su ruta y carga al instante.
 ## v2.1285.8 — Changelog de la bitácora
 
 Redacta la entrada de v2.1285.7, que quedó vacía.

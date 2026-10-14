@@ -12,6 +12,7 @@ import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 import { ChipsDeEtiquetas } from './EtiquetasDelCliente';
 import { Estrellas } from './Calificacion';
 import { etiquetasDe } from '@nucleo/utils/chatClientes';
+import ChipPreferente from './Preferente';
 
 // Una conversación en la bandeja: quién escribió, qué tipo de cliente es, su
 // nivel, en qué estado está (y cuánto lleva esperando), cuántos mensajes esperan
@@ -49,6 +50,7 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
             )}>
             <span className="flex flex-wrap items-center gap-1 mt-0.5">
                 <ChipsDeEstado conversacion={c} atiende={atiende} ahora={ahora} />
+                <ChipPreferente conversacion={c} />
                 <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
                 {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
                 {c.calificacion ? <Estrellas valor={c.calificacion} px={10} /> : null}

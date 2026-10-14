@@ -30,6 +30,8 @@ import { useTema } from '../tema/tema';
 import Icono from './Icono';
 import IconoWhatsapp from './IconoWhatsapp';
 import { navegar } from '../lib/navegar';
+import { useOfertas } from '../lib/ofertas';
+import { useCuenta } from '../lib/cuenta';
 
 const CLAVE = 'puntos_salud_historias_vistas';
 const DURACION = 6000;
@@ -114,6 +116,10 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
   const avance = useSharedValue(0);
   const caida = useSharedValue(0);
   const h = historias[i];
+  // Con cuenta completa, «Más información» va al chat de la app (2026-10-14).
+  const conSesion = useSesion((s) => !!s.token);
+  const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
+  const conChat = conSesion && !preRegistro;
   const siguienteRef = useRef(null);
   // Con VoiceOver no avanza sola: se pasa con las acciones «Siguiente»/«Anterior».
   const lectorRef = useRef(false);
@@ -221,9 +227,22 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                       cerrar(); setTimeout(() => navegar(destino), 250);
                     }} />
                 ) : null}
-                <BotonHistoria icono={<IconoWhatsapp tam={18} color="#FFFFFF" />} texto="Más información"
+                {/* Con cuenta (2026-10-14), «Más información» abre el CHAT de
+                    la app con la consulta escrita: si la historia es de una
+                    oferta de un solo producto, el producto va como tarjeta.
+                    Sin cuenta no hay chat: sigue por WhatsApp. */}
+                <BotonHistoria icono={conChat ? undefined : <IconoWhatsapp tam={18} color="#FFFFFF" />} sf="bubble.left.and.bubble.right.fill"
+                  texto="Más información"
                   alTocar={() => {
                     alTocarBoton?.(h.id);
+                    if (conChat) {
+                      const oferta = h.oferta_id ? useOfertas.getState().datos?.ofertas?.find((o) => String(o.id) === String(h.oferta_id)) : null;
+                      const unico = oferta?.productos?.length === 1 ? oferta.productos[0].id : null;
+                      const consulta = encodeURIComponent(`Quiero más información sobre: ${h.titulo}`);
+                      cerrar();
+                      setTimeout(() => navegar(`/chat?consulta=${consulta}${unico ? `&producto=${unico}` : ''}`), 250);
+                      return;
+                    }
                     pausar();
                     const msg = encodeURIComponent(`Hola, quiero más información sobre «${h.titulo}».`);
                     Linking.openURL(`https://wa.me/${whatsapp}?text=${msg}`).catch(() => {});

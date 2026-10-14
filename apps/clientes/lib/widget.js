@@ -21,6 +21,22 @@ function abrir() {
   return almacen;
 }
 
+// El material de la tarjeta (2026-10-14, «el widget con el material de su
+// nivel, como la tarjeta»): la MISMA regla de la pantalla de Puntos — el rango
+// de mayoreo aprobado manda (Jade…Diamante); si no, el nivel (Bronce…Platino;
+// la clave del nivel de entrada sigue siendo 'vip'). Los widgets traen una
+// imagen por material (targets/saldo/Assets.xcassets y drawable-nodpi de
+// modules/widget-saldo); una clave que no conocen dibuja el degradado de
+// siempre, así que mandar `null` nunca rompe nada.
+const MATERIALES_WIDGET = ['bronce', 'plata', 'oro', 'platino', 'jade', 'zafiro', 'rubi', 'diamante'];
+const ROTULOS = { bronce: 'BRONCE', plata: 'PLATA', oro: 'ORO', platino: 'PLATINO', jade: 'JADE', zafiro: 'ZAFIRO', rubi: 'RUBÍ', diamante: 'DIAMANTE' };
+function materialDe(resumen) {
+  const m = resumen.mayorista;
+  const clave = m && m.estado === 'aprobado' ? (m.rango ?? 'jade')
+    : resumen.nivel?.clave === 'vip' ? 'bronce' : resumen.nivel?.clave;
+  return MATERIALES_WIDGET.includes(clave) ? clave : null;
+}
+
 export function publicarEnWidget(resumen) {
   const a = abrir();
   if ((!a && Platform.OS !== 'android') || !resumen || resumen.pendiente) return;
@@ -30,9 +46,12 @@ export function publicarEnWidget(resumen) {
     .reduce((s, v) => s + Number(v.puntos), 0);
   const p = String(resumen.nombre ?? '').trim().split(/\s+/);
   const nombre = p.length >= 4 ? `${p[0]} ${p[2]}` : p.length === 3 ? `${p[0]} ${p[1]}` : p.join(' ');
+  const material = materialDe(resumen);
+  const mayoreo = ['jade', 'zafiro', 'rubi', 'diamante'].includes(material);
   const json = JSON.stringify({
     nombre, saldo: Math.round(Number(resumen.saldo ?? 0)), equivale: Number(resumen.equivale ?? 0),
     vencen90, actualizado: new Date().toISOString(),
+    material, rotulo: material ? ROTULOS[material] : null, mayoreo, equipo: !!resumen.empleado,
   });
   if (Platform.OS === 'android') { guardarEnWidget(json); return; }
   try {

@@ -40,7 +40,7 @@ const EsqueletoBarras = () => (
     </div>
 );
 
-export default function GraficaMes({ data, vista, onVista }) {
+export default function GraficaMes({ data, vista, onVista, ocultarMontos = false }) {
     // Con una sala elegida no hay interruptor y manda el termómetro. Se resuelve
     // acá y no en el padre para que no haya forma de pintar «día por día» sin
     // control para volver.
@@ -68,7 +68,7 @@ export default function GraficaMes({ data, vista, onVista }) {
                     <p className="text-label font-semibold text-content-2 mt-0.5 tabular-nums">
                         {vistaReal === 'dias'
                             ? <><strong className="text-content">{sobreRitmo} de {nCerrados}</strong> días cerrados por encima del ritmo</>
-                            : <>Día {data?.dia_hoy} de {data?.dias_mes} · faltan {formatMoney(Math.max(0, falta))}</>}
+                            : <>Día {data?.dia_hoy} de {data?.dias_mes}{!ocultarMontos && <> · faltan {formatMoney(Math.max(0, falta))}</>}</>}
                     </p>
                 </div>
                 {conInterruptor && (
@@ -87,7 +87,7 @@ export default function GraficaMes({ data, vista, onVista }) {
                     <div className="flex items-stretch gap-3 h-[190px] xl:h-[260px]">
                         <div className="flex-1 min-w-0">
                             <Suspense fallback={<EsqueletoBarras />}>
-                                <GraficaMesDias dias={dias} ritmo={ritmo} />
+                                <GraficaMesDias dias={dias} ritmo={ritmo} ocultarMontos={ocultarMontos} />
                             </Suspense>
                         </div>
 
@@ -116,11 +116,24 @@ export default function GraficaMes({ data, vista, onVista }) {
             ) : (
                 <div className="pt-1">
                     <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-display-lg font-black tabular-nums tracking-tight">{formatMoney(acum)}</span>
-                        {pct != null && (
-                            <span className="text-body-lg font-black text-chart-1-text tabular-nums">{formatPct(pct)}</span>
+                        {/* Con los montos ocultos el porcentaje pasa a ser la
+                            cifra grande: es lo único que queda para leer. */}
+                        {ocultarMontos ? (
+                            <>
+                                <span className="text-display-lg font-black tabular-nums tracking-tight text-chart-1-text">
+                                    {pct != null ? formatPct(pct) : '—'}
+                                </span>
+                                <span className="text-label font-semibold text-content-3">de la meta</span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="text-display-lg font-black tabular-nums tracking-tight">{formatMoney(acum)}</span>
+                                {pct != null && (
+                                    <span className="text-body-lg font-black text-chart-1-text tabular-nums">{formatPct(pct)}</span>
+                                )}
+                                <span className="text-label font-semibold text-content-3">de {formatMoney(meta)}</span>
+                            </>
                         )}
-                        <span className="text-label font-semibold text-content-3">de {formatMoney(meta)}</span>
                     </div>
 
                     <BarraAvance
@@ -131,10 +144,11 @@ export default function GraficaMes({ data, vista, onVista }) {
 
                     {proy != null && (
                         <p className="mt-3 text-label font-semibold text-content-2 tabular-nums">
-                            Cierra en <strong>{formatMoney(proy)}</strong>
-                            {' → '}
+                            {ocultarMontos
+                                ? <>Cierra en </>
+                                : <>Cierra en <strong>{formatMoney(proy)}</strong>{' → '}</>}
                             <strong className={TRAMO_CFG[tramoProy]?.textCls || ''}>{formatPct(pctProy)}</strong>
-                            {falta > 0 && diasRestantes > 0 && (
+                            {!ocultarMontos && falta > 0 && diasRestantes > 0 && (
                                 <span className="text-content-3">
                                     {' · '}faltan {formatMoney(falta)} en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}
                                     {' — '}{formatMoney(falta / diasRestantes)} por día

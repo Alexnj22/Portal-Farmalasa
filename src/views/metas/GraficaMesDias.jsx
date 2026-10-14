@@ -43,7 +43,7 @@ const COLOR = {
     texto:   'var(--text-tertiary)',
 };
 
-export default function GraficaMesDias({ dias, ritmo }) {
+export default function GraficaMesDias({ dias, ritmo, ocultarMontos = false }) {
     // El paso del eje sale de cuántos días hay, no de un 4 clavado. Desde que la
     // gráfica termina en hoy, el mes empieza con pocas barras: con `interval={4}`
     // el día 10 rotulaba dos días —el 1 y el 6— y el eje dejaba de decir nada.
@@ -59,9 +59,12 @@ export default function GraficaMesDias({ dias, ritmo }) {
                     tick={{ fontSize: 10, fill: COLOR.texto, fontWeight: 700 }}
                 />
                 <YAxis
+                    // Con los montos ocultos el eje se queda sin cifras: la
+                    // altura de cada barra contra la raya del ritmo ya dice si
+                    // el día empujó o quedó debiendo.
                     tickLine={false} axisLine={false} width={52}
                     tick={{ fontSize: 10, fill: COLOR.texto, fontWeight: 700 }}
-                    tickFormatter={(v) => (v ? formatMoneyCorto(v) : '0')}
+                    tickFormatter={(v) => (ocultarMontos ? '' : v ? formatMoneyCorto(v) : '0')}
                 />
                 <Tooltip
                     cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
@@ -70,7 +73,7 @@ export default function GraficaMesDias({ dias, ritmo }) {
                         borderRadius: '0.75rem', fontSize: 12, color: 'var(--text-primary)',
                         backdropFilter: 'blur(20px)',
                     }}
-                    formatter={(v) => [formatMoney(v), 'Vendido']}
+                    formatter={(v) => [ocultarMontos ? `${ritmo > 0 ? Math.round((v / ritmo) * 100) : 0}% del ritmo` : formatMoney(v), 'Vendido']}
                     labelFormatter={(d) => `Día ${d}`}
                 />
                 {/* La raya es lo que hay que vender CADA día para llegar
@@ -79,7 +82,7 @@ export default function GraficaMesDias({ dias, ritmo }) {
                 <ReferenceLine
                     y={ritmo} stroke={COLOR.ritmo} strokeWidth={2} strokeDasharray="6 5"
                     label={{
-                        value: `ritmo ${formatMoney(ritmo)}`, position: 'insideTopRight',
+                        value: ocultarMontos ? 'ritmo' : `ritmo ${formatMoney(ritmo)}`, position: 'insideTopRight',
                         fill: COLOR.texto, fontSize: 10, fontWeight: 800,
                     }}
                 />

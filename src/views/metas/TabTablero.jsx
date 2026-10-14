@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { Target, TrendingUp, Gauge, BarChart3, Plus, AlertTriangle, RefreshCw, Search } from 'lucide-react';
+import { Target, TrendingUp, Gauge, BarChart3, Plus, AlertTriangle, RefreshCw, Search, Eye, EyeOff } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import StatCard from '../../components/common/StatCard';
@@ -17,6 +17,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel, resumenDeMetas } from '@nucleo/utils/metasUtils';
 
 const fmtPct = (v) => formatPct(v);
+
+// Lo que se pinta en lugar de un monto con el ojo cerrado — el mismo de Ventas.
+const MONTO_OCULTO = '••••••';
 
 export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm, onClearSearch, salaOptions, alcanceTodas = false }) {
     const ymActual = ymHoySV();
@@ -50,6 +53,12 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
     const [vistaMes, setVistaMes] = useState('dias');
     const [mes, setMes] = useState(null);
     const [cargandoMes, setCargandoMes] = useState(true);
+
+    // El ojo de la píldora, como en Ventas: con los montos ocultos el tablero
+    // se lee sólo en porcentajes, para mostrarlo en pantalla sin decir cuánto
+    // vende cada sala.
+    const [ocultarMontos, setOcultarMontos] = useState(false);
+    const dinero = (v) => (ocultarMontos ? MONTO_OCULTO : formatMoney(v));
 
     useEffect(() => {
         let alive = true;
@@ -137,7 +146,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
             <CarrilCards className="flex-1" ariaLabel="Resumen de metas">
                 <StatCard
                     icon={Target} label="Meta del mes"
-                    value={resumen.meta > 0 ? formatMoney(resumen.meta) : '—'}
+                    value={resumen.meta > 0 ? dinero(resumen.meta) : '—'}
                     sub={resumen.conMeta > 0 ? `${resumen.conMeta} sala${resumen.conMeta !== 1 ? 's' : ''} con meta` : 'sin metas este mes'}
                     iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                     loading={loading}
@@ -147,10 +156,12 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                     cierre» salía «Proyección de cie…», que ya no nombra nada. */}
                 <StatCard
                     icon={TrendingUp} label="Vendido"
-                    value={formatMoney(resumen.vendidoConMeta)}
+                    value={ocultarMontos && resumen.meta > 0
+                        ? fmtPct(resumen.vendidoConMeta / resumen.meta * 100)
+                        : dinero(resumen.vendidoConMeta)}
                     valueCls="text-content"
                     sub={resumen.meta > 0
-                        ? `${fmtPct(resumen.vendidoConMeta / resumen.meta * 100)} de la meta`
+                        ? (ocultarMontos ? 'de la meta' : `${fmtPct(resumen.vendidoConMeta / resumen.meta * 100)} de la meta`)
                         : cerrado ? 'en el mes' : 'salas con meta'}
                     iconBg="bg-success/10" iconCls="text-success-text"
                     loading={loading}
@@ -158,9 +169,13 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 {esMesActual && (
                     <StatCard
                         icon={Gauge} label="Proyección"
-                        value={resumen.meta > 0 ? formatMoney(resumen.proy) : '—'}
+                        value={resumen.meta > 0
+                            ? (ocultarMontos ? fmtPct(resumen.proy / resumen.meta * 100) : formatMoney(resumen.proy))
+                            : '—'}
                         valueCls="text-chart-1-text"
-                        sub={resumen.meta > 0 ? `${fmtPct(resumen.proy / resumen.meta * 100)} de la meta` : 'al cierre del mes'}
+                        sub={resumen.meta > 0
+                            ? (ocultarMontos ? 'de la meta al cierre' : `${fmtPct(resumen.proy / resumen.meta * 100)} de la meta`)
+                            : 'al cierre del mes'}
                         iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                         loading={loading}
                     />
@@ -188,10 +203,23 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                     title="Filtros de metas"
                     activeCount={(esMesActual ? 0 : 1) + (salaMes ? 1 : 0)}
                     onClear={() => { setYm(ymActual); setSalaMes(''); }}
-                    acciones={canEdit ? [{
-                        key: 'agregar', icon: Plus, label: 'Agregar meta', variant: 'primary',
-                        onClick: () => onAgregarMeta(ym, null),
-                    }] : []}
+                    acciones={[
+                        // Mismo descriptor que el de Ventas: sólo el ojo en la
+                        // píldora, rotulado en el tooltip y en el teléfono.
+                        {
+                            key: 'privacidad',
+                            icon: ocultarMontos ? EyeOff : Eye,
+                            label: ocultarMontos ? 'Mostrar montos' : 'Ocultar montos',
+                            soloIcono: true,
+                            activo: ocultarMontos,
+                            principal: false,
+                            onClick: () => setOcultarMontos((v) => !v),
+                        },
+                        ...(canEdit ? [{
+                            key: 'agregar', icon: Plus, label: 'Agregar meta', variant: 'primary',
+                            onClick: () => onAgregarMeta(ym, null),
+                        }] : []),
+                    ]}
                     // El día del mes no es un filtro ni un botón: es el dato que
                     // le da sentido a la proyección (un 40% al día 4 y al día 28
                     // no dicen lo mismo). Va por la escotilla de §17.
@@ -255,14 +283,14 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                                         <h2 className="text-body font-black leading-tight">{salaNombre(r.branch_id)}</h2>
                                         <p className="text-label font-semibold text-content-3 mt-0.5 tabular-nums">
                                             {sinMeta
-                                                ? <>Vendido {cerrado ? 'en el mes' : 'este mes'} <strong className="text-content-2">{formatMoney(r.venta_acumulada)}</strong></>
-                                                : <>Meta <strong className="text-content-2">{formatMoney(r.monto_meta)}</strong></>}
+                                                ? <>Vendido {cerrado ? 'en el mes' : 'este mes'} <strong className="text-content-2">{dinero(r.venta_acumulada)}</strong></>
+                                                : <>Meta <strong className="text-content-2">{dinero(r.monto_meta)}</strong></>}
                                         </p>
                                         {/* De qué está hecha la meta. Solo cuando trae un
                                             gasto adentro: en el resto de los meses sería
                                             repetir el mismo número dos veces. Es información
                                             administrativa — la sala no la ve en su widget. */}
-                                        {!sinMeta && desglose[r.branch_id] && (
+                                        {!sinMeta && !ocultarMontos && desglose[r.branch_id] && (
                                             <p className="text-micro font-semibold text-content-3 mt-0.5 tabular-nums">
                                                 {formatMoney(desglose[r.branch_id].base)} de venta
                                                 {' + '}
@@ -302,19 +330,27 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                                 ) : (
                                     <>
                                         <div className="flex items-baseline gap-2 flex-wrap">
-                                            <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(r.venta_acumulada)}</span>
-                                            <span className="text-body-sm font-black text-chart-1-text tabular-nums">{fmtPct(r.pct_cumplimiento)}</span>
+                                            {ocultarMontos ? (
+                                                <span className="text-2xl font-black tabular-nums tracking-tight text-chart-1-text">{fmtPct(r.pct_cumplimiento)}</span>
+                                            ) : (
+                                                <>
+                                                    <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(r.venta_acumulada)}</span>
+                                                    <span className="text-body-sm font-black text-chart-1-text tabular-nums">{fmtPct(r.pct_cumplimiento)}</span>
+                                                </>
+                                            )}
                                             <span className="text-label font-semibold text-content-3">vendido</span>
                                         </div>
                                         <BarraAvance pct={Number(r.pct_cumplimiento)} pctProyectado={Number(r.pct_proyectado)} cerrado={cerrado} />
                                         {!cerrado && r.proyeccion != null && (
                                             <p className="mt-3 text-label font-semibold text-content-2 tabular-nums">
-                                                Cierra en <strong>{formatMoney(r.proyeccion)}</strong>
-                                                {' → '}<strong className={tramo?.textCls || ''}>{fmtPct(r.pct_proyectado)}</strong>
-                                                {r.bono_tier === 'medio' && (
+                                                {ocultarMontos
+                                                    ? <>Cierra en </>
+                                                    : <>Cierra en <strong>{formatMoney(r.proyeccion)}</strong>{' → '}</>}
+                                                <strong className={tramo?.textCls || ''}>{fmtPct(r.pct_proyectado)}</strong>
+                                                {!ocultarMontos && r.bono_tier === 'medio' && (
                                                     <span className="text-content-3"> · le faltan {formatMoney(Math.max(0, r.monto_meta - r.proyeccion))} para el 100%</span>
                                                 )}
-                                                {r.bono_tier === 'nada' && (
+                                                {!ocultarMontos && r.bono_tier === 'nada' && (
                                                     <span className="text-content-3"> · le faltan {formatMoney(Math.max(0, r.monto_meta * 0.95 - r.proyeccion))} para el 95%</span>
                                                 )}
                                             </p>
@@ -381,8 +417,8 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                         </div>
                     ) : mes ? (
                         <div className="space-y-4">
-                            <GraficaMes data={mes} vista={vistaMes} onVista={setVistaMes} />
-                            <RankingVendedores data={mes} />
+                            <GraficaMes data={mes} vista={vistaMes} onVista={setVistaMes} ocultarMontos={ocultarMontos} />
+                            <RankingVendedores data={mes} vistaCompleta={!ocultarMontos} ocultarMontos={ocultarMontos} />
                         </div>
                     ) : null}
                 </section>

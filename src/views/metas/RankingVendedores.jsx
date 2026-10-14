@@ -41,7 +41,11 @@ const horasCortas = (h) => Number(Number(h).toFixed(1));
 // lugar va su participación en la venta de la sala —el mismo orden, la misma
 // barra, la misma marca del promedio— y el ticket promedio pasa al frente, que
 // es lo que la persona puede mover con lo que hace en el mostrador.
-export default function RankingVendedores({ data, compacto = false, vistaCompleta = true }) {
+export default function RankingVendedores({ data, compacto = false, vistaCompleta = true, ocultarMontos = false }) {
+    // `ocultarMontos` es el ojo del Tablero: va sobre la vista sin montos
+    // (`vistaCompleta={false}`) y además tapa el ticket, que es lo único en
+    // dólares que esa vista conserva.
+    const dinero = (v) => (ocultarMontos ? '••••' : formatMoney(v));
     const [orden, setOrden] = useState('total');
 
     // «Por hora» sólo si el horario publicado alcanza a TODA la lista. Con
@@ -127,7 +131,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                                 )}
                             </>
                         ) : data?.promedio_ticket != null ? (
-                            <>Ticket de la sala <strong className="text-content-2">{formatMoney(data.promedio_ticket)}</strong></>
+                            <>Ticket de la sala <strong className="text-content-2">{dinero(data.promedio_ticket)}</strong></>
                         ) : (
                             <>{filas.length} persona{filas.length !== 1 ? 's' : ''}</>
                         )}
@@ -222,7 +226,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                                     </p>
                                 ) : (
                                     <p className="text-label font-semibold text-content-3 tabular-nums mt-0.5">
-                                        <strong className="text-body-sm font-black text-content">{formatMoney(v.ticket)}</strong>
+                                        <strong className="text-body-sm font-black text-content">{dinero(v.ticket)}</strong>
                                         {' '}de ticket · {v.tickets} tickets ·{' '}
                                         <span className={pocosDias ? 'text-warning-text font-black' : undefined}>
                                             {v.dias} día{v.dias !== 1 ? 's' : ''}

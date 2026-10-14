@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1291.0 — Metas: el ojo oculta los montos
+
+La píldora de filtros del Tablero de Metas lleva el mismo ojo que Ventas. Al
+apretarlo, el tablero se lee sólo en porcentajes: las tarjetas de arriba
+(Vendido y Proyección pasan a mostrar el % de la meta), cada sala (el % es la
+cifra grande, la proyección dice sólo el % de cierre y se ocultan los «le
+faltan $»), la gráfica del mes (eje sin cifras, el tooltip en % del ritmo) y
+el ranking de vendedores, que usa su vista sin montos (participación en la
+venta) con el ticket tapado.
+
 ## v2.1290.5 — DUI desde el teléfono: frente y reverso por separado, y se leen
 
 Reportado por el usuario: al mandar las dos caras desde el teléfono se

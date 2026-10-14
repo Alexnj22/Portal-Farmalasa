@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.1 — El acuse del Ministerio se reparte a todos los que nombra
+
+Al subir el acuse en la ficha de una persona y marcar a las demás que nombra,
+no se le asignaba a nadie y el aviso decía «Documento repartido · Sin
+cambios» en verde. Tres causas:
+
+- Las tres funciones del reparto pedían permiso sobre un módulo `personal`
+  que no existe; nadie podía usarlas. Ahora piden `staff_list`, el mismo de
+  editar fichas (migración `20261014143719`).
+- El acuse lista a la gente con los apellidos primero y el cruce sólo
+  comparaba nombres + apellidos. Ahora, si no hay coincidencia exacta, cruza
+  con las palabras en cualquier orden (`nombre_ordenado` / `ordenarNombre`,
+  gemelas enfrentadas en el test).
+- El diálogo descartaba los pendientes que fallaban. Ahora muestra el error y
+  no se cierra.
+
+
+
+
 ## v2.1285.0 — App de clientes: Material 3 Expressive, Liquid Glass, Platino, menos calor y funciones pedidas
 
 **Visual y rendimiento:** burbuja del chat en Liquid Glass (iOS 26) / FAB expresivo (Android), sin rebote, con sin leer o punto en línea/cerrado (`resumen.chat`); Material 3 Expressive en Android (resorte al tocar y al entrar, indicador de carga que se transforma, títulos más grandes, `GrupoDeBotones` en Facturas/Reservas, volver predictivo); **Platino** nuevo (grafito cepillado, roseta holográfica, bisel, rótulo en lámina, paralaje por capas, ráfaga al mantener presionado); **momentos con sensación** por nivel al ganar puntos y subir de nivel. **Calor:** el material de la tarjeta iba a 120 fps en iPhone → 30 y reposo a los 20 s; giroscopio 60 → 30 Hz (4 en reposo, ignora el temblor); la aurora pasa de tres animaciones infinitas con desenfoque a un reloj de 15 fps con reposo.

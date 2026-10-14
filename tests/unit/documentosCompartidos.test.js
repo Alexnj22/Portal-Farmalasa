@@ -19,7 +19,7 @@
 // cambiar cualquiera de las dos, hay que volver a medirla.
 
 import { describe, it, expect } from 'vitest';
-import { normalizarNombre, cruzarConElPadron } from '@nucleo/data/documentosCompartidos';
+import { normalizarNombre, ordenarNombre, cruzarConElPadron } from '@nucleo/data/documentosCompartidos';
 
 // [ lo que entra , lo que devolvió la BASE ]
 const MEDIDO_EN_LA_BASE = [
@@ -101,5 +101,28 @@ describe('cruzar lo leído con el padrón', () => {
         const conGemela = [...PADRON, { id: 'c', name: 'Jose Luis Nunez Perez', first_names: 'Jose Luis', last_names: 'Nunez Perez' }];
         const r = cruzarConElPadron(['José Luis Ñúñez Pérez'], conGemela);
         expect(r[0].ambiguo).toBe(true);
+    });
+
+    // El acuse del Ministerio pone los apellidos primero (2026-10-14).
+    it('cruza el nombre escrito con los apellidos primero', () => {
+        const r = cruzarConElPadron(['Ñúñez Pérez, José Luis'], PADRON);
+        expect(r[0].empleado?.id).toBe('a');
+    });
+});
+
+// La columna «base» se midió ejecutando `public.nombre_ordenado` contra
+// producción el 2026-10-14.
+const ORDENADO_EN_LA_BASE = [
+    ['García Zelaya, Jennifer Lisseth', 'GARCIA JENNIFER LISSETH ZELAYA'],
+    ['JENNIFER LISSETH GARCIA ZELAYA',  'GARCIA JENNIFER LISSETH ZELAYA'],
+    ['',                                ''],
+    ['Ana-María  de  la  Cruz',         'ANA CRUZ DE LA MARIA'],
+    ['Sofía Núñez  (regente)',          'NUNEZ REGENTE SOFIA'],
+    ['ZZ AB A',                         'A AB ZZ'],
+];
+
+describe('el nombre ordenado: el navegador y la base dicen lo mismo', () => {
+    it.each(ORDENADO_EN_LA_BASE)('«%s»', (entrada, enLaBase) => {
+        expect(ordenarNombre(entrada)).toBe(enLaBase);
     });
 });

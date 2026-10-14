@@ -78,15 +78,27 @@ export default function AsignarDocumentoAVarios({
                 omitidos = r?.omitidos || [];
             }
             let pendientes = 0;
+            const sinDejar = [];
             for (const f of sinFicha) {
                 const r = await dejarPendiente(f.nombre, documento);
-                if (r?.ok) pendientes += 1;
+                if (r?.ok) pendientes += 1; else sinDejar.push({ nombre: f.nombre, motivo: r?.motivo });
+            }
+            // Un pendiente que no se pudo dejar se DICE. Antes se descartaba y
+            // el diálogo cerraba con «Documento repartido · Sin cambios» en
+            // verde: así vivió roto el reparto desde el día uno (2026-10-13).
+            // Reintentar es seguro: asignar no pisa y el pendiente no se duplica.
+            if (sinDejar.length) {
+                throw new Error(`No se pudo dejar en espera a ${sinDejar.map(x => x.nombre).join(', ')}`
+                    + ` (${sinDejar[0].motivo || 'sin motivo'}).`);
             }
             alTerminar({ asignados, pendientes, omitidos });
         } catch (e) {
             // No se cierra: quien decidió tiene que poder reintentar sin volver
             // a subir el documento.
-            setFallo(e?.message || 'No se pudo asignar el documento.');
+            const msg = e?.message || 'No se pudo asignar el documento.';
+            setFallo(/FORBIDDEN/.test(msg)
+                ? 'Hace falta permiso de edición en Personal para repartir el documento.'
+                : msg);
         } finally {
             setGuardando(false);
         }

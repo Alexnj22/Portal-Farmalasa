@@ -48,6 +48,18 @@ export function normalizarNombre(texto) {
         .trim();
 }
 
+/* La misma clave con las palabras ordenadas. GEMELA de `public.nombre_ordenado`.
+ *
+ * El acuse del Ministerio lista a la gente con los APELLIDOS primero
+ * («GARCIA ZELAYA JENNIFER LISSETH») y la ficha guarda nombres + apellidos: con
+ * la clave exacta no cruzaba nadie. Se usa sólo cuando la exacta no encontró —
+ * con dos fichas que se distinguen por el orden, gana la exacta—. Orden por
+ * código de carácter, igual que `COLLATE "C"` en la base. */
+export function ordenarNombre(texto) {
+    const clave = normalizarNombre(texto);
+    return clave ? clave.split(' ').sort().join(' ') : '';
+}
+
 /**
  * Cruza los nombres leídos del documento contra el padrón que ya está cargado.
  *
@@ -62,14 +74,19 @@ export function normalizarNombre(texto) {
  */
 export function cruzarConElPadron(nombres, empleados, excluir = null) {
     const porClave = new Map();
+    const porOrden = new Map();
+    // El primero gana: si dos fichas normalizan igual, quedarse con la segunda
+    // sería elegir por orden de carga. Se informa como duda.
+    const anotar = (mapa, clave, e) => {
+        if (!clave) return;
+        if (!mapa.has(clave)) mapa.set(clave, e);
+        else if (mapa.get(clave)?.id !== e.id) mapa.set(clave, { ...mapa.get(clave), ambiguo: true });
+    };
     for (const e of empleados || []) {
         const completo = [e.first_names, e.last_names].filter(Boolean).join(' ').trim();
         for (const candidato of [completo, e.name]) {
-            const clave = normalizarNombre(candidato);
-            // El primero gana: si dos fichas normalizan igual, quedarse con la
-            // segunda sería elegir por orden de carga. Se informa como duda.
-            if (clave && !porClave.has(clave)) porClave.set(clave, e);
-            else if (clave && porClave.get(clave)?.id !== e.id) porClave.set(clave, { ...porClave.get(clave), ambiguo: true });
+            anotar(porClave, normalizarNombre(candidato), e);
+            anotar(porOrden, ordenarNombre(candidato), e);
         }
     }
 
@@ -83,7 +100,8 @@ export function cruzarConElPadron(nombres, empleados, excluir = null) {
             return true;
         })
         .map(nombre => {
-            const ficha = porClave.get(normalizarNombre(nombre)) || null;
+            const ficha = porClave.get(normalizarNombre(nombre))
+                || porOrden.get(ordenarNombre(nombre)) || null;
             return {
                 nombre,
                 empleado: ficha,

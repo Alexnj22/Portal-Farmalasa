@@ -1,99 +1,49 @@
 // La bandeja: los avisos que ya te llegaron al teléfono, para verlos otra vez
 // (pedido del usuario, 2026-10-06). Salen de `app_cliente_avisos`, la misma
-// bitácora que impide mandar dos veces; al abrir la bandeja se marcan leídos.
-// Tocar uno lleva a donde llevaba el aviso.
+// bitácora que impide mandar dos veces. Tocar uno lleva a donde llevaba el aviso.
 //
-// Rediseño (2026-10-09, «que se vea más moderno, con opción de limpiar»):
-// agrupada por día, ícono y color por clase de aviso (los mismos del banner
-// con la app abierta), deslizar a la izquierda para borrar uno y «Limpiar»
-// arriba para borrar todos. Borrar es OCULTAR, y desde el mismo día en el
-// servidor (`bandeja_ocultar` marca `oculto_at`): se va de todos los teléfonos
-// de la persona. La fila no se borra —es la bitácora que evita el aviso
-// repetido—. El ocultamiento local (lib/bandejaOculta.js) es el optimista y el
-// respaldo: lo que el servidor no confirmó se reintenta en la próxima carga.
+// Rediseño (2026-10-09): agrupada por día, ícono y color por clase de aviso,
+// deslizar para borrar y «Limpiar». Borrar es OCULTAR, en el servidor
+// (`bandeja_ocultar` marca `oculto_at`): se va de todos los teléfonos de la
+// persona. La fila no se borra —es la bitácora que evita el aviso repetido—.
+// El ocultamiento local (lib/bandejaOculta.js) es el optimista y el respaldo.
 //
-// Lo nuevo se distingue durante la visita aunque el servidor ya lo haya dado
-// por leído al abrir (la campana se apaga enseguida); «Marcar como leídas»
-// apaga el resaltado.
+// Rehecha el 2026-10-14 («mejóralo visualmente. Además al tocar una no se
+// borra; que se puedan marcar como leídas también y la opción de recuperar»):
+//   · la lista agrupada del sistema (componentes/BandejaAvisos.js), con
+//     secciones Hoy · Ayer · Esta semana · Anteriores;
+//   · LEÍDA es por aviso y vive en el servidor: tocar uno lo abre y marca ése
+//     (`bandeja_leida { ids }`), deslizar a la derecha alterna leída / no
+//     leída, y «Marcar todo como leído» marca todos. Abrir la bandeja ya NO
+//     marca todo: el punto de «sin leer» quedaba sin sentido a la segunda visita;
+//   · tocar un aviso NUNCA lo borra; borrar es deslizar a la izquierda, el
+//     menú de mantener presionado o «Limpiar» — y se puede RECUPERAR durante
+//     30 días desde «Borradas recientemente» (app/notificaciones-borradas.js).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, RefreshControl, Text, View } from 'react-native';
+import { Platform, RefreshControl, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
-import Animated, { FadeOut, LinearTransition, interpolate, useAnimatedStyle } from 'react-native-reanimated';
-import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import Icono from '../componentes/Icono';
-import Vidrio from '../componentes/Vidrio';
-import { Cargando, ESPACIO_BURBUJA, Pantalla, RADIO, Tarjeta, Vacio } from '../componentes/ui';
+import { Cargando, ESPACIO_BURBUJA, Pantalla, Vacio } from '../componentes/ui';
 import { Entrada } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
-import { estiloDeAviso } from '../componentes/estiloDeAviso';
+import { EncabezadoSeccion, FilaAviso, confirmar, estiloSnack, hojaDeOpciones, seccionar, velo } from '../componentes/BandejaAvisos';
 import { useSesion } from '../lib/sesion';
 import { alLlegarAviso } from '../lib/avisos';
 import { leerOcultas, olvidar, ocultar } from '../lib/bandejaOculta';
-import { suave, useTema } from '../tema/tema';
+import { useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 import { retocar, copiaParaEmpezar } from '../lib/sinConexion';
 
-const DIA = 86400_000;
+const ANDROID = Platform.OS === 'android';
 // Deshacer (2026-10-13): el borrado de UN aviso espera esto antes de ir al
-// servidor. `bandeja_ocultar` no tiene vuelta atrás, así que deshacer es no
-// haberlo mandado todavía.
+// servidor. Deshacer es no haberlo mandado todavía (y después de mandarlo,
+// queda «Borradas recientemente»).
 const ESPERA_DESHACER = 4000;
-const claveDia = (f) => `${f.getFullYear()}-${f.getMonth()}-${f.getDate()}`;
-
-/** «Hoy», «Ayer», «Lunes 5 de octubre» (con el año si no es este). */
-function rotuloDia(f) {
-  const hoy = new Date();
-  if (claveDia(f) === claveDia(hoy)) return 'Hoy';
-  if (claveDia(f) === claveDia(new Date(hoy.getTime() - DIA))) return 'Ayer';
-  try {
-    const s = f.toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long', ...(f.getFullYear() !== hoy.getFullYear() ? { year: 'numeric' } : {}) });
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  } catch {
-    return `${f.getDate()}/${f.getMonth() + 1}/${f.getFullYear()}`;
-  }
-}
-
-/** La hora del aviso: relativa si es de hoy, el reloj si es de antes. */
-function hora(iso) {
-  const f = new Date(iso);
-  const min = Math.round((Date.now() - f.getTime()) / 60000);
-  if (min < 1) return 'ahora';
-  if (min < 60) return `hace ${min} min`;
-  if (claveDia(f) === claveDia(new Date()) && min < 6 * 60) return `hace ${Math.round(min / 60)} h`;
-  try {
-    return f.toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit' });
-  } catch {
-    return `${f.getHours()}:${String(f.getMinutes()).padStart(2, '0')}`;
-  }
-}
-
-/** Los avisos en filas: un encabezado por día y sus avisos debajo. */
-function agrupar(avisos) {
-  const filas = [];
-  let actual = null;
-  for (const a of avisos) {
-    const f = new Date(a.created_at);
-    const k = claveDia(f);
-    if (k !== actual) { actual = k; filas.push({ clase: 'dia', clave: `dia:${k}`, titulo: rotuloDia(f) }); }
-    filas.push({ clase: 'aviso', clave: `a:${a.id}`, aviso: a });
-  }
-  return filas;
-}
-
-// «¿Seguro?» nativo; en la vista previa web `Alert` con botones no hace nada.
-function confirmar(titulo, mensaje, boton, alAceptar) {
-  if (Platform.OS === 'web') {
-    if (typeof globalThis.confirm === 'function' && globalThis.confirm(`${titulo}\n\n${mensaje}`)) alAceptar();
-    return;
-  }
-  Alert.alert(titulo, mensaje, [
-    { text: 'Cancelar', style: 'cancel' },
-    { text: boton, style: 'destructive', onPress: alAceptar },
-  ]);
-}
+const RUTA_BORRADAS = '/notificaciones-borradas';
 
 export default function Notificaciones() {
   const t = useTema();
@@ -104,14 +54,11 @@ export default function Notificaciones() {
   // (2026-10-14) Declarado ANTES del useMemo que lo lee: más abajo, el filtro
   // lo leía sin inicializar y la pantalla se caía («Cannot read property 'has'»).
   const [enEspera, setEnEspera] = useState(() => new Set());
-  const [vistas, setVistas] = useState(() => new Set()); // tocadas en esta visita
-  const [todasVistas, setTodasVistas] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
 
-  useEffect(() => { leerOcultas().then((s) => setOcultas(new Set(s))); }, []);
   // Le pide al servidor que oculte; si confirma, la lista local los olvida.
-  // Si no (sin conexión, o la base todavía sin `oculto_at`), quedan ocultos
-  // acá y se reintenta en la próxima carga. Nunca lanza.
+  // Si no (sin conexión), quedan ocultos acá y se reintenta en la próxima
+  // carga. Nunca lanza.
   const sincronizar = useCallback(async (datos, ids) => {
     try {
       const r = await pedir('bandeja_ocultar', datos);
@@ -131,9 +78,11 @@ export default function Notificaciones() {
   const cargar = useCallback(async () => {
     // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
     copiaParaEmpezar('bandeja', {}).then((c) => { if (c) setD((ant) => ant ?? c); });
+    // La lista local se relee en cada visita: «Borradas recientemente» pudo
+    // recuperar alguno que estaba oculto sólo en este teléfono.
+    leerOcultas().then((s) => setOcultas(new Set(s)));
     const r = await pedir('bandeja');
     setD((ant) => (r?.ok || !ant?.ok ? r : ant));
-    if (r?.ok && r.sin_leer) pedir('bandeja_leida');
     // Borrados en el teléfono que el servidor todavía devuelve: reintentar.
     if (r?.ok && !r.sinConexion) {
       const locales = await leerOcultas();
@@ -144,17 +93,68 @@ export default function Notificaciones() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   // Llega un aviso con la bandeja a la vista: se recarga sola. Con un respiro,
   // porque el envío marca la fila como enviada un instante después del push.
-  useEffect(() => alLlegarAviso(() => { setTimeout(() => { setTodasVistas(false); cargar(); }, 1500); }), [cargar]);
+  useEffect(() => alLlegarAviso(() => { setTimeout(() => { cargar(); }, 1500); }), [cargar]);
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   const visibles = useMemo(
     () => (d?.ok && ocultas ? (d.avisos ?? []).filter((a) => !ocultas.has(Number(a.id)) && !enEspera.has(a.id)) : []),
     [d, ocultas, enEspera],
   );
-  const esNueva = useCallback((a) => !a.leido_at && !todasVistas && !vistas.has(a.id), [todasVistas, vistas]);
-  const nuevas = visibles.filter(esNueva).length;
-  const filas = useMemo(() => agrupar(visibles), [visibles]);
+  const sinLeer = useMemo(() => visibles.filter((a) => !a.leido_at), [visibles]);
+  const filas = useMemo(() => seccionar(visibles), [visibles]);
 
+  // ── Leída / no leída ───────────────────────────────────────────────────
+  // Optimista: cambia al instante en la lista y en la copia sin conexión; si
+  // el servidor no lo confirma, vuelve a como estaba.
+  const ponerLeido = useCallback((ids, leido) => {
+    const set = new Set(ids.map(Number));
+    const marca = leido ? new Date().toISOString() : null;
+    const aplicar = (g, valor) => (g?.ok ? { ...g, avisos: (g.avisos ?? []).map((a) => (set.has(Number(a.id)) ? { ...a, leido_at: valor(a) } : a)) } : g);
+    let antes = new Map();
+    setD((ant) => {
+      antes = new Map((ant?.avisos ?? []).filter((a) => set.has(Number(a.id))).map((a) => [Number(a.id), a.leido_at]));
+      return aplicar(ant, () => marca);
+    });
+    return { aplicar, antes: () => antes };
+  }, []);
+  const marcar = useCallback(async (ids, leido) => {
+    if (!ids.length) return;
+    const { aplicar, antes } = ponerLeido(ids, leido);
+    const r = await pedir(leido ? 'bandeja_leida' : 'bandeja_no_leida', { ids: ids.map(Number) });
+    if (r?.ok && !r.sinConexion) {
+      const marca = leido ? new Date().toISOString() : null;
+      retocar('bandeja', {}, (g) => aplicar(g, () => marca));
+    } else {
+      const previo = antes();
+      setD((ant) => aplicar(ant, (a) => previo.get(Number(a.id)) ?? a.leido_at));
+    }
+  }, [pedir, ponerLeido]);
+  const alternarLeido = useCallback((a, leido) => {
+    Haptics.selectionAsync().catch(() => {});
+    marcar([a.id], leido);
+  }, [marcar]);
+  const marcarTodo = useCallback(async () => {
+    const ids = sinLeer.map((a) => a.id);
+    if (!ids.length) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    const { aplicar, antes } = ponerLeido(ids, true);
+    // Sin ids: el servidor marca TODAS (también las que no caben en la lista).
+    const r = await pedir('bandeja_leida');
+    if (r?.ok && !r.sinConexion) {
+      const marca = new Date().toISOString();
+      retocar('bandeja', {}, (g) => aplicar(g, () => marca));
+    } else {
+      const previo = antes();
+      setD((ant) => aplicar(ant, (a) => previo.get(Number(a.id)) ?? a.leido_at));
+    }
+  }, [sinLeer, pedir, ponerLeido]);
+  // Tocar un aviso: lo abre y lo marca leído. NUNCA lo borra.
+  const abrir = useCallback((a) => {
+    if (!a.leido_at) marcar([a.id], true);
+    if (a.url) navegar(a.url);
+  }, [marcar]);
+
+  // ── Borrar ─────────────────────────────────────────────────────────────
   // Primero acá (al instante), después en el servidor.
   const borrar = useCallback(async (ids, todas = false) => {
     const s = await ocultar(ids);
@@ -206,37 +206,38 @@ export default function Notificaciones() {
   const limpiarTodo = useCallback(() => {
     if (!visibles.length) return;
     confirmar('¿Borrar todas las notificaciones?',
-      'Se quitan de tu bandeja en todos tus teléfonos. Tus puntos, cupones y ofertas no cambian.',
+      'Se quitan de tu bandeja en todos tus teléfonos. Podrás recuperarlas durante 30 días en «Borradas recientemente».',
       'Borrar todas',
       () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         borrar(visibles.map((a) => a.id), true);
       });
   }, [visibles, borrar]);
-  const marcarLeidas = () => { Haptics.selectionAsync().catch(() => {}); setTodasVistas(true); };
-  const abrir = useCallback((a) => {
-    setVistas((v) => (v.has(a.id) ? v : new Set(v).add(a.id)));
-    if (a.url) navegar(a.url);
-  }, []);
+  const verBorradas = useCallback(() => navegar(RUTA_BORRADAS), []);
 
-  // «Limpiar» en la barra, como en Mail o en el centro de notificaciones.
+  // El menú de la barra (como el «…» de Mail): marcar todo, las borradas y limpiar.
+  const menu = useCallback(() => {
+    Haptics.selectionAsync().catch(() => {});
+    const opciones = [];
+    if (sinLeer.length) opciones.push({ texto: 'Marcar todo como leído', alElegir: marcarTodo });
+    opciones.push({ texto: 'Borradas recientemente', alElegir: verBorradas });
+    if (visibles.length) opciones.push({ texto: 'Limpiar', destructivo: true, alElegir: limpiarTodo });
+    if (Platform.OS === 'web') { verBorradas(); return; }
+    hojaDeOpciones({ titulo: 'Notificaciones', opciones });
+  }, [sinLeer.length, visibles.length, marcarTodo, verBorradas, limpiarTodo]);
+
   const barra = (
     <Stack.Screen options={{
-      headerRight: visibles.length ? () => (
-        <Presionable onPress={limpiarTodo} hitSlop={10} accessibilityRole="button" accessibilityLabel="Borrar todas las notificaciones"
-          style={({ pressed }) => ({ paddingHorizontal: 6, minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
-          <Text style={{ fontSize: 17, color: t.color.magentaTexto }}>Limpiar</Text>
+      headerRight: () => (
+        <Presionable onPress={menu} hitSlop={10} accessibilityRole="button" accessibilityLabel="Más opciones de notificaciones"
+          style={({ pressed }) => ({ paddingHorizontal: 6, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+          <Icono sf={ANDROID ? 'ellipsis.circle' : 'ellipsis'} respaldo="⋯" tam={ANDROID ? 24 : 20} color={ANDROID ? colorSistema.texto : t.color.magentaTexto} />
         </Presionable>
-      ) : undefined,
+      ),
     }} />
   );
 
-  // Android (2026-10-13): la «snackbar» de Material 3 — esquinas de 4, la
-  // superficie invertida (oscura en modo claro, clara en oscuro) y la acción
-  // en el primario invertido. En iPhone, la píldora de siempre.
-  const snack = Platform.OS === 'android'
-    ? { radio: 4, fondo: t.oscuro ? '#E6E0E9' : '#322F35', texto: t.oscuro ? '#322F35' : '#F5EFF7', accion: t.oscuro ? '#981D97' : '#E2A3E0' }
-    : { radio: 999, fondo: t.oscuro ? '#2C2A31' : '#1C1B1F', texto: '#FFFFFF', accion: t.oscuro ? t.color.magentaTexto : '#FF8AD8' };
+  const snack = estiloSnack(t);
   const avisoDeshacer = deshacer ? (
     <View pointerEvents="box-none" // A la izquierda de la burbuja del chat (56 + márgenes), que va encima de todo.
       style={{ position: 'absolute', left: 16, right: Platform.OS === 'web' ? 16 : 84, bottom: ins.bottom + 16, alignItems: 'center' }}>
@@ -259,7 +260,9 @@ export default function Notificaciones() {
       <>
         {barra}
         <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
-          <SinAvisos icono="wifi.exclamationmark" respaldo="!" titulo="No se pudieron cargar">Revisa tu conexión y desliza hacia abajo para reintentar.</SinAvisos>
+          <Entrada estilo={{ paddingTop: 24 }}>
+            <Vacio icono="wifi.exclamationmark" respaldo="!" titulo="No se pudieron cargar">Revisa tu conexión y desliza hacia abajo para reintentar.</Vacio>
+          </Entrada>
         </Pantalla>
       </>
     );
@@ -269,16 +272,19 @@ export default function Notificaciones() {
       <>
         {barra}
         <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
-          <SinAvisos icono="bell.badge.fill" respaldo="🔔" titulo={d.avisos?.length ? 'Todo limpio' : 'Estás al día'}>
-            Aquí verás tus puntos acumulados, cupones, ofertas y recordatorios apenas te lleguen.
-          </SinAvisos>
+          <Entrada estilo={{ paddingTop: 24 }}>
+            <Vacio icono="bell.badge.fill" respaldo="🔔" titulo={d.avisos?.length ? 'Todo limpio' : 'Estás al día'}
+              accion="Borradas recientemente" alAccion={verBorradas}>
+              Aquí verás tus puntos acumulados, cupones, ofertas y recordatorios apenas te lleguen.
+            </Vacio>
+          </Entrada>
         </Pantalla>
         {avisoDeshacer}
       </>
     );
   }
 
-  // Una lista virtual: hasta 50 avisos en vidrio no se pintan todos de una vez.
+  // Una lista virtual: hasta 50 avisos no se pintan todos de una vez.
   // `itemLayoutAnimation`: al borrar uno, los de abajo suben deslizándose.
   return (
     <>
@@ -287,113 +293,46 @@ export default function Notificaciones() {
         data={filas}
         keyExtractor={(f) => f.clave}
         contentInsetAdjustmentBehavior="automatic"
-        initialNumToRender={10}
+        initialNumToRender={12}
         itemLayoutAnimation={LinearTransition.springify().damping(22).stiffness(200)}
-        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
-        contentContainerStyle={{ padding: 16, paddingBottom: ins.bottom + 24 + (Platform.OS === 'web' ? 0 : ESPACIO_BURBUJA), gap: 10, width: '100%', maxWidth: 560, alignSelf: 'center' }}
-        ListHeaderComponent={nuevas ? (
+        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar}
+          colors={[t.color.magenta]} progressBackgroundColor={ANDROID ? colorSistema.superficieAlta : undefined} />}
+        style={ANDROID ? { backgroundColor: colorSistema.fondo } : undefined}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: ins.bottom + 24 + (Platform.OS === 'web' ? 0 : ESPACIO_BURBUJA), width: '100%', maxWidth: 560, alignSelf: 'center' }}
+        ListHeaderComponent={sinLeer.length ? (
           <Entrada>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.14) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingLeft: 4, marginBottom: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: velo(t, t.color.magenta) }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.color.magenta }} />
-                <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{nuevas === 1 ? '1 nueva' : `${nuevas} nuevas`}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{sinLeer.length === 1 ? '1 sin leer' : `${sinLeer.length} sin leer`}</Text>
               </View>
-              <Presionable onPress={marcarLeidas} hitSlop={8} accessibilityRole="button"
-                style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Marcar como leídas</Text>
+              <Presionable onPress={marcarTodo} hitSlop={8} accessibilityRole="button"
+                style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Marcar todo como leído</Text>
               </Presionable>
             </View>
           </Entrada>
         ) : null}
         ListFooterComponent={
-          <Text style={{ textAlign: 'center', fontSize: 13, color: colorSistema.texto3, marginTop: 10 }}>
-            Desliza un aviso hacia la izquierda y toca «Borrar».
-          </Text>
-        }
-        renderItem={({ item: f, index: i }) => (f.clase === 'dia'
-          ? (
-            <Text accessibilityRole="header" style={{ fontSize: 20, fontWeight: '700', color: colorSistema.texto, marginTop: i === 0 ? 2 : 14, marginBottom: 2, marginLeft: 4 }}>
-              {f.titulo}
+          <View style={{ alignItems: 'center', gap: 6, marginTop: 18 }}>
+            <Presionable onPress={verBorradas} accessibilityRole="button" hitSlop={6}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, opacity: pressed ? 0.5 : 1 })}>
+              <Icono sf="trash" respaldo="↺" tam={15} color={t.color.magentaTexto} />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Borradas recientemente</Text>
+            </Presionable>
+            <Text style={{ textAlign: 'center', fontSize: 13, lineHeight: 18, color: colorSistema.texto3, marginHorizontal: 12 }}>
+              Desliza un aviso a la derecha para marcarlo como leído, o a la izquierda para borrarlo.
             </Text>
-          )
-          : <FilaAviso a={f.aviso} indice={i} nueva={esNueva(f.aviso)} alAbrir={abrir} alBorrar={borrarUna} />)}
+          </View>
+        }
+        renderItem={({ item: f }) => (f.clase === 'seccion'
+          ? <EncabezadoSeccion titulo={f.titulo} primera={f.primeraSeccion} />
+          : (
+            <FilaAviso a={f.aviso} primero={f.primero} ultimo={f.ultimo} leido={!!f.aviso.leido_at}
+              alAbrir={abrir} alAlternarLeido={alternarLeido} alBorrar={borrarUna} />
+          ))}
       />
       {avisoDeshacer}
     </>
-  );
-}
-
-/** El estado vacío: el de todas las pantallas (`Vacio`), con su entrada animada. */
-function SinAvisos({ icono, respaldo, titulo, children }) {
-  return (
-    <Entrada estilo={{ paddingTop: 24 }}>
-      <Vacio titulo={titulo} icono={icono} respaldo={respaldo}>{children}</Vacio>
-    </Entrada>
-  );
-}
-
-/** El fondo rojo que aparece al deslizar: el bote crece con el gesto. */
-function AccionBorrar({ progreso, alTocar }) {
-  const animado = useAnimatedStyle(() => ({
-    transform: [{ scale: interpolate(progreso.value, [0, 1], [0.6, 1], 'clamp') }],
-  }));
-  return (
-    <Presionable onPress={alTocar} accessibilityRole="button" accessibilityLabel="Borrar este aviso" style={{ width: 96, paddingLeft: 10 }}>
-      <View style={{ flex: 1, borderRadius: RADIO.tarjeta, backgroundColor: colorSistema.rojo, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-        <Animated.View style={[{ alignItems: 'center', gap: 4 }, animado]}>
-          <Icono sf="trash.fill" respaldo="✕" tam={20} color="#FFFFFF" />
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>Borrar</Text>
-        </Animated.View>
-      </View>
-    </Presionable>
-  );
-}
-
-/**
- * Un aviso. Tocarlo lleva a su pantalla; deslizarlo a la izquierda muestra
- * «Borrar», y borra al tocarlo (2026-10-13): antes bastaba con pasar el umbral
- * del gesto y un deslizamiento a medias, al desplazar la lista, borraba sin querer.
- */
-function FilaAviso({ a, indice, nueva, alAbrir, alBorrar }) {
-  const t = useTema();
-  const e = estiloDeAviso(t, a.tipo);
-  return (
-    <Animated.View exiting={FadeOut.duration(160)}>
-      <Entrada indice={Math.min(indice, 6)}>
-        <ReanimatedSwipeable
-          friction={1.4}
-          rightThreshold={72}
-          overshootRight={false}
-          onSwipeableWillOpen={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }}
-          renderRightActions={(progreso) => <AccionBorrar progreso={progreso} alTocar={() => alBorrar(a)} />}
-        >
-          <Presionable onPress={() => alAbrir(a)} accessibilityRole={a.url ? 'button' : undefined}
-            accessibilityLabel={`${nueva ? 'Nueva. ' : ''}${a.titulo}. ${a.cuerpo}. ${hora(a.created_at)}`}
-            accessibilityActions={[{ name: 'borrar', label: 'Borrar' }]}
-            onAccessibilityAction={(ev) => { if (ev.nativeEvent.actionName === 'borrar') alBorrar(a); }}
-            style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-            <Tarjeta tono={nueva ? e.fuerte : undefined} estilo={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', padding: 14 }}>
-              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: suave(e.fuerte, t.oscuro ? 0.3 : 0.16), alignItems: 'center', justifyContent: 'center' }}>
-                <Icono sf={e.sf} respaldo={e.respaldo} tam={20} color={e.texto} />
-              </View>
-              <View style={{ flex: 1, gap: 3 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-                  <Text style={{ flex: 1, fontSize: 16, fontWeight: nueva ? '700' : '600', color: colorSistema.texto }}>{a.titulo}</Text>
-                  <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{hora(a.created_at)}</Text>
-                  {nueva ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: e.fuerte, alignSelf: 'center' }} /> : null}
-                </View>
-                <Text style={{ fontSize: 15, lineHeight: 20, color: colorSistema.texto2 }}>{a.cuerpo}</Text>
-                {a.url ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: e.texto }}>Ver</Text>
-                    <Icono sf="chevron.right" respaldo="›" tam={11} color={e.texto} />
-                  </View>
-                ) : null}
-              </View>
-            </Tarjeta>
-          </Presionable>
-        </ReanimatedSwipeable>
-      </Entrada>
-    </Animated.View>
   );
 }

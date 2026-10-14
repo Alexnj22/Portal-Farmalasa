@@ -56,6 +56,13 @@ const QR_DE = (codigo) => `https://portal.farmasalud.lat/mis-puntos?codigo=${cod
 const GIRO = { damping: 15, stiffness: 110, mass: 1 };
 const SUAVE = { damping: 20, stiffness: 90 };
 const SOLTAR = { damping: 18, stiffness: 160 };
+// Las esquinas de la tarjeta: las de la cara, el filo del canto y la placa.
+const RADIO = 22;
+// La perspectiva del giro (la misma de `frente` y `reverso`) y el grueso de la
+// tarjeta respecto de su ancho: una de verdad mide 0,76 mm sobre 85,6 mm
+// (0,9 %); un poco más, para que en la pantalla se lea.
+const PERSPECTIVA = 1000;
+const GROSOR = 0.011;
 const limitar = (v) => { 'worklet'; return Math.max(-1, Math.min(1, v)); };
 const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
@@ -211,17 +218,38 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   useAnimatedReaction(() => giro.value > 0.5, (ahora, antes) => {
     if (antes !== null && ahora !== antes) runOnJS(alCruzar)(ahora);
   });
-  // Qué caras tienen sus lienzos montados en Android (ver `verFrente`):
-  // bit 1 = frente, bit 2 = reverso. Antes la otra cara se montaba JUSTO a
-  // mitad del giro, y un lienzo recién montado tarda unos cuadros en tener
-  // superficie y tamaño: la segunda mitad del giro se veía sin material ni
-  // luz, y aparecían de golpe al final (2026-10-14, Platino: «al girar se ve
-  // cortada»). Ahora la otra cara se monta apenas EMPIEZA el giro (3 %) y la
-  // que quedó atrás se suelta cuando termina; quieta, sigue siendo una sola.
+  // Las dos caras tienen sus lienzos MONTADOS siempre (2026-10-14, build 55:
+  // «si la toco, giro, se pone la mitad sin los efectos, parpadea y luego se
+  // pone bien»). En Android se montaba la otra cara al empezar el giro y se
+  // soltaba al terminar: un lienzo de Skia recién montado no tiene superficie
+  // ni tamaño durante unos cuadros, así que cada giro mostraba una cara sin
+  // material y un parpadeo al llegar. El ahorro de entonces —que la cara de
+  // atrás no se redibuje con el giroscopio— se logra ahora sin desmontar:
+  // cada cara recibe su PROPIA copia de la inclinación y del barrido, que
+  // sólo se actualiza mientras esa cara puede verse. Oculta, sus valores no
+  // cambian y su lienzo no tiene nada que redibujar.
+  const frenteX = useEspejo(x, giro, true);
+  const frenteY = useEspejo(y, giro, true);
+  const frenteBarrido = useEspejo(barrido, giro, true);
+  const reversoX = useEspejo(x, giro, false);
+  const reversoY = useEspejo(y, giro, false);
+  const reversoBarrido = useEspejo(barrido, giro, false);
+  // El RELOJ del material va con la cara que se ve (2026-10-14, «al darse la
+  // vuelta se pierde la fantasía»): el reverso tenía su material con el reloj
+  // quieto, así que al girar aparecía una piedra congelada —sin destellos ni
+  // brillo que corre— y la magia se cortaba justo a mitad del giro. Ahora cada
+  // cara corre mientras puede verse, con el mismo margen que `useEspejo`: la
+  // que llega ya está viva antes de asomar, y la que se va se detiene recién
+  // pasado el canto, cuando ya no se ve. Quieta, sigue corriendo una sola.
+  // bit 1 = frente, bit 2 = reverso.
   const [caras, setCaras] = useState(1);
-  useAnimatedReaction(() => (ANDROID ? (giro.value < 0.97 ? 1 : 0) | (giro.value > 0.03 ? 2 : 0) : 3), (ahora, antes) => {
-    if (ANDROID && ahora !== antes) runOnJS(setCaras)(ahora);
+  useAnimatedReaction(() => (giro.value < 0.6 ? 1 : 0) | (giro.value > 0.4 ? 2 : 0), (ahora, antes) => {
+    if (antes !== null && ahora !== antes) runOnJS(setCaras)(ahora);
   });
+  const vivaFrente = viva && (caras & 1) !== 0;
+  const vivaReverso = viva && (caras & 2) !== 0;
+  // El tamaño de la tarjeta, para el canto que se ve al girar (`Canto`).
+  const tam = useSharedValue({ w: 0, h: 0 });
 
   // Arrastrar de lado la inclina; un deslizamiento rápido la gira. Lo vertical
   // se lo deja a la pantalla (que hace scroll).
@@ -280,20 +308,18 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     shadowOpacity: 0.28 + Math.abs(x.value) * 0.12,
     // La placa se apaga en los primeros grados del giro: de canto, la cara ya
     // no la tapa (y una tarjeta de canto casi no da sombra).
-    opacity: Math.max(0, 1 - Math.sin(giro.value * Math.PI) * 4),
+    // Con el VALOR ABSOLUTO (2026-10-14, «al darse la vuelta se ven los
+    // bordes»): sin él, el seno es NEGATIVO cuando el resorte se pasa de 1
+    // (al llegar al reverso) o de 0 (al volver al frente), y la placa quedaba
+    // a opacidad plena justo con la cara ladeada unos grados por el rebote —
+    // asomaba por el lado que se aleja como un filo liso del color de la placa.
+    opacity: Math.max(0, 1 - Math.abs(Math.sin(giro.value * Math.PI)) * 5),
   }));
-  // Android (2026-10-13): una cara a la vez. La cara de atrás está oculta
-  // (`backfaceVisibility`), pero sus lienzos de Skia —el material y la luz—
-  // se seguían redibujando con cada movimiento del giroscopio: dos tarjetas
-  // pintadas para ver una. Quieta, se monta sólo la que mira al frente;
-  // durante el giro, las dos (ver `caras`).
-  const verFrente = !ANDROID || (caras & 1) !== 0;
-  const verReverso = !ANDROID || (caras & 2) !== 0;
   const frente = useAnimatedStyle(() => ({
-    transform: [{ perspective: 1000 }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }],
+    transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }],
   }));
   const reverso = useAnimatedStyle(() => ({
-    transform: [{ perspective: 1000 }, { rotateY: `${interpolate(giro.value, [0, 1], [180, 360])}deg` }],
+    transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [180, 360])}deg` }],
   }));
 
   // Primer nombre + primer apellido, la regla del portal (`shortEmployeeName`):
@@ -306,6 +332,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     {activa && !reducir ? <Sensor key={despierta ? 'viva' : 'reposo'} salidaX={sx} salidaY={sy} enReposo={!despierta} pausado={moviendo} /> : null}
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, ladeo]}
+        onLayout={(e) => { const { width: w, height: h } = e.nativeEvent.layout; tam.value = { w, h }; }}
         accessible accessibilityRole="button"
         accessibilityLabel={deReves
           ? `Tu código: ${codigo ? deletrear(codigo) : 'sin código'}. Muéstralo en caja para usar tus puntos.`
@@ -318,7 +345,26 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             Native le da el contorno redondeado (`shadowPath`) y la sombra sale
             casi gratis. La placa queda tapada por la cara; al girar se apaga
             antes de asomar por el canto. */}
-        {ANDROID ? null : <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, estilos.sombra, { backgroundColor: paleta.sombra, shadowColor: paleta.sombra }, sombra]} />}
+        {/* (2026-10-14) La placa va METIDA unos puntos de cada lado: el borde
+            suavizado de la cara redondeada dejaba ver su color como un filo
+            oscuro alrededor de la tarjeta, y con la cara ladeada —el rebote del
+            giro, la perspectiva— asomaba por el lado que se aleja. Metida, la
+            cara la tapa entera hasta pasados los 15°, donde ya se apagó; la
+            sombra, con su desenfoque de 22, se ve igual. */}
+        {ANDROID ? null : <Animated.View pointerEvents="none" style={[estilos.placa, estilos.sombra, { backgroundColor: paleta.sombra, shadowColor: paleta.sombra }, sombra]} />}
+        {/* Las dos caras, dentro de su PROPIA capa (2026-10-14, build 55: «la
+            mitad sin los efectos, parpadea y luego se pone bien»). Core
+            Animation ordena por PROFUNDIDAD a las capas hermanas que tienen
+            transformación 3D: con las caras como hermanas directas de la placa
+            de la sombra, cada cara que gira —o que rebota en el resorte al
+            llegar— dejaba media tarjeta DETRÁS del plano de la placa, y esa
+            mitad se veía del color liso de la placa, sin material; con la cara
+            justo en el plano, las dos se peleaban cuadro a cuadro (parpadeo).
+            Una capa intermedia aplana el giro de las caras en su plano, y la
+            placa queda simplemente debajo, en el orden en que se dibujan.
+            `collapsable={false}`: que la nueva arquitectura no la quite por ser
+            sólo de diseño. */}
+        <View style={StyleSheet.absoluteFill} collapsable={false} pointerEvents="box-none">
         {/* ── Frente ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, frente]}>
           <LinearGradient
@@ -331,12 +377,12 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
               vivo con la inclinación. El degradado de arriba queda de respaldo. */}
           {/* `key`: al cambiar de nivel o rango el lienzo se rehace entero; sin
               eso podía quedar pintado el material anterior. */}
-          {!verFrente ? null : MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={viva} />
-            : <EfectoNivel nivel={nivel} activa={viva} x={x} />}
+          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={frenteX} y={frenteY} activa={vivaFrente} />
+            : <EfectoNivel nivel={nivel} activa={vivaFrente} x={frenteX} />}
           {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
           <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
             locations={[0, 0.28, 0.55, 1]} style={StyleSheet.absoluteFill} />
-          {verFrente ? <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} /> : null}
+          <BrilloTarjeta x={frenteX} y={frenteY} barrido={frenteBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
 
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
@@ -383,20 +429,18 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
               </View>
             </View>
           </Animated.View>
-          {verFrente ? <Rafaga v={rafaga} /> : null}
+          <Rafaga v={rafaga} />
         </Animated.View>
-
-        {cambio ? <CambioDeSaldo key={cambio.id} delta={cambio.delta} material={nivel} /> : null}
 
         {/* ── Reverso: el código ── */}
         <Animated.View style={[StyleSheet.absoluteFill, estilos.cara, reverso]}>
           <LinearGradient colors={paleta.reverso} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           {/* El mismo material del frente, más oscuro para que el código se lea.
-              Sigue la inclinación, pero su reloj va quieto (no gasta dos veces). */}
-          {!verReverso ? null : MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={x} y={y} activa={false} />
-            : <EfectoNivel nivel={nivel} activa={viva} x={x} />}
+              Vivo mientras el reverso puede verse (`caras`); de frente, quieto. */}
+          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={reversoX} y={reversoY} activa={vivaReverso} />
+            : <EfectoNivel nivel={nivel} activa={vivaReverso} x={reversoX} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
-          {verReverso ? <BrilloTarjeta x={x} y={y} barrido={barrido} sinArcoiris={MATERIALES.includes(nivel)} /> : null}
+          <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
             <View style={estilos.qr}>
               {codigo ? <QRCode value={QR_DE(codigo)} size={118} color="#1A0822" backgroundColor="#FFFFFF" /> : null}
@@ -408,6 +452,11 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             </View>
           </View>
         </Animated.View>
+        </View>
+        {/* El grueso de la tarjeta, visto de canto al girar (ver `Canto`). */}
+        <Canto giro={giro} tam={tam} paleta={paleta} />
+
+        {cambio ? <CambioDeSaldo key={cambio.id} delta={cambio.delta} material={nivel} /> : null}
       </Animated.View>
     </GestureDetector>
     {pista ? (
@@ -479,6 +528,83 @@ function CambioDeSaldo({ delta, material }) {
   );
 }
 
+// El CANTO de la tarjeta (2026-10-14, «que nunca se pierda la fantasía»): las
+// caras son planos sin grueso, así que a mitad del giro la tarjeta se volvía
+// NADA —ninguna cara se ve de canto— y al ladearse mostraba sólo un recorte.
+// Una tarjeta de verdad, al girar, enseña su borde: una franja finísima de
+// metal que se enciende cuando mira a la luz.
+//
+// Se calcula como geometría y no como una tercera cara 3D: el lado de la
+// placa (x = ±ancho/2, z entre 0 y −grueso, detrás de la cara que se ve) se
+// proyecta con la MISMA perspectiva que las caras (`x·p/(p − z)`) y se dibuja
+// como una franja PLANA justo afuera del borde proyectado. Así no se pelea en
+// profundidad con las caras (iOS ordena por z a las capas 3D hermanas; Android
+// no ordena nada) ni depende de cómo cada sistema descompone una matriz con
+// dos giros: en los dos se ve igual. La franja nunca pisa la cara: va del filo
+// hacia afuera.
+function Canto({ giro, tam, paleta }) {
+  const franja = useAnimatedStyle(() => {
+    const { w, h } = tam.value;
+    const th = giro.value * Math.PI;
+    const s = Math.sin(th);
+    const c = Math.cos(th);
+    if (!w || !h || Math.abs(s) < 0.02) return { opacity: 0, transform: [{ scaleX: 0 }] };
+    const grosor = Math.max(3, w * GROSOR);
+    // Rotación en Y (la de Core Animation y la de CSS): x' = x·cos + z·sen,
+    // z' = −x·sen + z·cos. Con sen > 0 se acerca el lado IZQUIERDO, y ése es
+    // el canto que mira a quien ve; con sen < 0 (el rebote), el derecho.
+    const lado = s > 0 ? -1 : 1;
+    // El cuerpo de la tarjeta queda DETRÁS de la cara visible: z ≤ 0 mientras
+    // se ve el frente (cos > 0) y z ≥ 0 cuando ya se ve el reverso.
+    const z1 = c >= 0 ? -grosor : grosor;
+    const P = PERSPECTIVA;
+    const xa = lado * (w / 2) * c;
+    const za = -lado * (w / 2) * s;
+    const ka = P / (P - za);
+    const xb = lado * (w / 2) * c + z1 * s;
+    const zb = -lado * (w / 2) * s + z1 * c;
+    const kb = P / (P - zb);
+    const pa = xa * ka;
+    const pb = xb * kb;
+    const ancho = Math.max(0.6, Math.abs(pb - pa));
+    const centro = w / 2 + (pa + pb) / 2;
+    const k = (ka + kb) / 2;
+    return {
+      opacity: Math.min(1, Math.abs(s) * 6),
+      // La franja base mide 1 pt de ancho y el alto de la tarjeta; se lleva al
+      // centro del canto proyectado y se estira a su ancho. El alto, el del
+      // borde recto (sin las esquinas redondeadas), con la perspectiva del lado.
+      transform: [{ translateX: centro - 0.5 }, { scaleX: ancho }, { scaleY: k * (1 - (1.4 * RADIO) / h) }],
+    };
+  });
+  // El brillo: más fuerte cuanto más mira el canto a quien ve (de canto pleno, a 90°).
+  const luz = useAnimatedStyle(() => ({ opacity: Math.pow(Math.abs(Math.sin(giro.value * Math.PI)), 2) * 0.75 }));
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 1 }, franja]}>
+      <LinearGradient colors={[`${paleta.acento}00`, paleta.frente[1], paleta.acento, paleta.frente[0], paleta.sombra, `${paleta.sombra}00`]}
+        locations={[0, 0.08, 0.35, 0.65, 0.92, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[StyleSheet.absoluteFill, luz]}>
+        <LinearGradient colors={['#FFFFFF00', '#FFFFFFE6', '#FFFFFF59', '#FFFFFF00']} locations={[0.05, 0.3, 0.6, 0.95]}
+          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
+// Una copia de `fuente` para UNA cara de la tarjeta: sigue a la fuente sólo
+// mientras esa cara puede verse (el frente hasta poco después de la mitad del
+// giro, el reverso desde poco antes) y, oculta, se queda quieta — así su
+// lienzo no se redibuja para nadie, sin desmontarlo. El margen alrededor de la
+// mitad cubre el rebote del resorte; de canto ninguna cara se ve.
+function useEspejo(fuente, giro, deFrente) {
+  const copia = useSharedValue(0);
+  useAnimatedReaction(
+    () => ((deFrente ? giro.value < 0.6 : giro.value > 0.4) ? fuente.value : null),
+    (v) => { if (v !== null && v !== copia.value) copia.value = v; },
+  );
+  return copia;
+}
+
 // El giroscopio, montado sólo mientras la tarjeta se ve: al desmontarse, el
 // sensor se suelta y deja de leer.
 // En reposo (2026-10-14) lee 4 veces por segundo y no mueve nada: sólo mira
@@ -526,7 +652,8 @@ function Rafaga({ v }) {
 }
 
 const estilos = StyleSheet.create({
-  cara: { borderRadius: 22, overflow: 'hidden', backfaceVisibility: 'hidden' },
+  cara: { borderRadius: RADIO, overflow: 'hidden', backfaceVisibility: 'hidden' },
+  placa: { position: 'absolute', top: '3%', bottom: '3%', left: '4%', right: '4%' },
   sombra: { shadowColor: '#2B0B3A', shadowRadius: 22, borderRadius: 22 },
   contenido: { flex: 1, padding: 20, justifyContent: 'space-between' },
   // Sombras de texto marcadas (2026-10-09): sobre metal claro (plata, oro) los

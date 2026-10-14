@@ -2563,6 +2563,27 @@ Deno.serve(async (req) => {
     if (accion === "bandeja" && !customerId) return json({ ok: true, avisos: [], sin_leer: 0 });
     if (accion === "bandeja_leida" && !customerId) return json({ ok: true });
     if (accion === "bandeja_ocultar" && !customerId) return json({ ok: true, ocultos: 0 });
+    if ((accion === "bandeja_no_leida" || accion === "bandeja_recuperar") && !customerId) return json({ ok: true });
+    // Los ids que manda la app, siempre saneados y con tope. Nunca se confía en
+    // ellos: toda escritura va además acotada a la ficha de la sesión.
+    const idsDeBandeja = (v: unknown): number[] => (Array.isArray(v)
+      ? [...new Set(v.map(Number).filter((n: number) => Number.isSafeInteger(n) && n > 0))].slice(0, 200)
+      : []);
+    // «Borradas recientemente» (2026-10-14, «la opción de recuperar»): lo
+    // ocultado en los últimos 30 días se puede traer de vuelta. Más viejo ya no
+    // se ofrece — la fila sigue (es la bitácora), sólo deja de listarse.
+    const DIAS_RECUPERAR = 30;
+    const desdeRecuperar = () => new Date(Date.now() - DIAS_RECUPERAR * 86400_000).toISOString();
+    if (accion === "bandeja" && body?.ocultas === true) {
+      const { data, error } = await admin.from("app_cliente_avisos")
+        .select("id, tipo, titulo, cuerpo, url, created_at, leido_at, oculto_at")
+        .eq("customer_id", customerId).eq("enviado", true).neq("tipo", "chat")
+        .not("oculto_at", "is", null).gte("oculto_at", desdeRecuperar())
+        .order("oculto_at", { ascending: false }).limit(100);
+      if (error && sinColumnaOculto(error)) return json({ ok: true, avisos: [], dias: DIAS_RECUPERAR });
+      if (error) throw error;
+      return json({ ok: true, avisos: data ?? [], dias: DIAS_RECUPERAR });
+    }
     if (accion === "bandeja") {
       const leer = (conFiltro: boolean) => {
         let q = admin.from("app_cliente_avisos")
@@ -2600,11 +2621,36 @@ Deno.serve(async (req) => {
       if (error) throw error;
       return json({ ok: true, ocultos: data?.length ?? 0 });
     }
-    if (accion === "bandeja_leida") {
-      const { error } = await admin.from("app_cliente_avisos").update({ leido_at: new Date().toISOString() })
-        .eq("customer_id", customerId).is("leido_at", null);
+    // Leída / no leída (2026-10-14, «al tocar una no se borra; que se puedan
+    // marcar como leídas»). `bandeja_leida` sin ids marca TODAS (el «Marcar todo
+    // como leído»); con `{ ids }` sólo ésas — tocar un aviso marca ése y nada
+    // más. `bandeja_no_leida { ids }` (o `leido: false`) las vuelve a encender.
+    if (accion === "bandeja_leida" || accion === "bandeja_no_leida") {
+      const ids = idsDeBandeja(body?.ids);
+      const leido = accion === "bandeja_leida" && body?.leido !== false;
+      if (!leido && !ids.length) return json({ ok: false, mensaje: "No hay avisos para marcar." });
+      let q = admin.from("app_cliente_avisos").update({ leido_at: leido ? new Date().toISOString() : null })
+        .eq("customer_id", customerId);
+      q = leido ? q.is("leido_at", null) : q.not("leido_at", "is", null);
+      if (ids.length) q = q.in("id", ids);
+      else if (Array.isArray(body?.ids)) return json({ ok: true, marcados: 0 }); // vinieron ids, todos inválidos: no es «todas»
+      const { data, error } = await q.select("id");
       if (error) throw error;
-      return json({ ok: true });
+      return json({ ok: true, marcados: data?.length ?? 0 });
+    }
+    // Recuperar lo borrado: `{ ids }` o `{ todas: true }` (sólo lo de los
+    // últimos 30 días, lo mismo que se lista). Siempre de la ficha de la sesión.
+    if (accion === "bandeja_recuperar") {
+      const ids = idsDeBandeja(body?.ids);
+      const todas = body?.todas === true;
+      if (!todas && !ids.length) return json({ ok: false, mensaje: "No hay avisos para recuperar." });
+      let q = admin.from("app_cliente_avisos").update({ oculto_at: null })
+        .eq("customer_id", customerId).not("oculto_at", "is", null).gte("oculto_at", desdeRecuperar());
+      if (!todas) q = q.in("id", ids);
+      const { data, error } = await q.select("id");
+      if (error && sinColumnaOculto(error)) return json({ ok: false, motivo: "sin_columna", mensaje: "No se pudieron recuperar." });
+      if (error) throw error;
+      return json({ ok: true, recuperados: data?.length ?? 0, ids: (data ?? []).map((r) => r.id) });
     }
 
     // ── Lo demás necesita ficha ────────────────────────────────────────────

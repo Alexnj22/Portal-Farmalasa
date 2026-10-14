@@ -12,7 +12,11 @@
 //   · `Deslizable`: deslizar un mensaje a la derecha para responderlo y
 //     mantenerlo presionado para el menú, con háptica.
 //   · `MenuMensaje`: el menú del mensaje (las 6 reacciones + Responder +
-//     Copiar) sobre un fondo desenfocado, pegado al globo.
+//     Copiar) sobre un fondo apenas oscurecido, pegado al globo. Sin
+//     desenfoque (2026-10-14, «se ve blur»): ni iMessage ni WhatsApp
+//     difuminan la conversación. Se queda el popover propio y no el menú
+//     contextual nativo de @expo/ui: ése exige un Host de SwiftUI por globo
+//     —uno por fila de la lista—, que es justo el costo que se quitó al abrir.
 //   · `Reacciones` y `Cita`: las píldoras bajo el globo y el bloque citado.
 import { useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Keyboard, Modal, Platform, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
@@ -190,7 +194,9 @@ export function Deslizable({ children, alResponder, alMantener }) {
     })
     .onEnd(() => { if (paso.value) runOnJS(alResponder)(); })
     .onFinalize(() => { paso.value = false; x.value = reducir ? withTiming(0, { duration: 120 }) : withSpring(0, { damping: 18, stiffness: 220 }); });
-  const mantener = Gesture.LongPress().minDuration(380).onStart(() => { runOnJS(alMantener)(); });
+  // Sólo un MANTENER deliberado abre el menú: 350 ms quieto (si el dedo se
+  // mueve más de 10 px es un desplazamiento y no cuenta).
+  const mantener = Gesture.LongPress().minDuration(350).maxDistance(10).onStart(() => { runOnJS(alMantener)(); });
   const gesto = Gesture.Race(pan, mantener);
   const globo = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const flecha = useAnimatedStyle(() => ({
@@ -223,15 +229,22 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
     if (!reducir) escala.value = withSpring(1, { damping: 16, stiffness: 300 });
   }, [reducir, escala]);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: escala.value }] }));
-  const { m, caja } = menu;
+  const { m } = menu;
+  // El teclado abierto tapa la parte de abajo: el menú se acomoda encima de él.
+  const teclado = (() => { try { return Keyboard.isVisible() ? (Keyboard.metrics()?.height ?? 0) : 0; } catch { return 0; } })();
+  // Una medida inválida (la fila se recicló) no puede mandar el menú a la
+  // esquina: se centra.
+  const valida = menu.caja && [menu.caja.x, menu.caja.y, menu.caja.w, menu.caja.h].every(Number.isFinite) && menu.caja.h > 0;
+  const caja = valida ? menu.caja : { x: (W - 250) / 2, y: H / 3, w: 250, h: 0 };
+  const piso = H - Math.max(ins.bottom, teclado) - 16;
   const mio = m.autor === 'cliente';
   const mia = (m.reacciones ?? []).find((r) => r.mia)?.emoji ?? null;
   const conProducto = m.adjunto?.tipo === 'producto' && !!alCopiarProducto;
   const ALTO_EMOJIS = 52, ALTO_ACCIONES = 52 * (1 + (m.texto ? 1 : 0) + (conProducto ? 1 : 0)), GAP = 8;
   // Las reacciones arriba del globo y las acciones abajo; si no caben, se
   // corren para quedar dentro de la pantalla (el globo queda donde estaba).
-  const top = Math.max(ins.top + 8, Math.min(caja.y - ALTO_EMOJIS - GAP, H - ins.bottom - 16 - ALTO_EMOJIS - ALTO_ACCIONES - GAP * 2 - Math.min(caja.h, 120)));
-  const abajo = Math.min(H - ins.bottom - 16 - ALTO_ACCIONES, Math.max(top + ALTO_EMOJIS + GAP + Math.min(caja.h, H / 2), caja.y + caja.h + GAP));
+  const top = Math.max(ins.top + 8, Math.min(caja.y - ALTO_EMOJIS - GAP, piso - ALTO_EMOJIS - ALTO_ACCIONES - GAP * 2 - Math.min(caja.h, 120)));
+  const abajo = Math.max(top + ALTO_EMOJIS + GAP, Math.min(piso - ALTO_ACCIONES, Math.max(top + ALTO_EMOJIS + GAP + Math.min(caja.h, H / 2), caja.y + caja.h + GAP)));
   const anchoEmojis = EMOJIS.length * 44 + 12;
   const izq = Math.max(12, Math.min(W - anchoEmojis - 12, mio ? caja.x + caja.w - anchoEmojis : caja.x));
   const izqAcc = Math.max(12, Math.min(W - 250 - 12, mio ? caja.x + caja.w - 250 : caja.x));
@@ -248,10 +261,9 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
   );
   return (
     <Modal visible transparent animationType="fade" onRequestClose={alCerrar} statusBarTranslucent>
-      <Presionable style={StyleSheet.absoluteFill} onPress={alCerrar} android_ripple={false} accessibilityRole="button" accessibilityLabel="Cerrar el menú">
-        {IOS && !LIVIANO ? <BlurView intensity={28} tint={t.oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-          : <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />}
-      </Presionable>
+      {/* Tocar en cualquier lado lo cierra. Un velo oscuro y nada más: sin desenfoque. */}
+      <Presionable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.25)' }]} onPress={alCerrar} android_ripple={false}
+        accessibilityRole="button" accessibilityLabel="Cerrar el menú" />
       <Animated.View style={[{ position: 'absolute', top, left: izq, flexDirection: 'row', gap: 0, paddingHorizontal: 6, height: ALTO_EMOJIS, alignItems: 'center',
         borderRadius: ALTO_EMOJIS / 2, backgroundColor: panel }, sombra, animado]} accessibilityRole="menu">
         {EMOJIS.map((e) => (

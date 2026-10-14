@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1287.0 — App: chat sin desenfoque y al instante, primer inicio y novedades
+
+- **Chat borroso** (captura del usuario, iOS 26): no era el menú ni la tapa de privacidad — iOS 26 difumina el contenido bajo una barra de título TRANSPARENTE, y con la lista recién invertida ese difuminado caía abajo y con el teclado cubría el hilo. Ahora la barra es opaca, fondo liso del sistema (Material en Android) y el difuminado de bordes apagado; globos del equipo en el gris de iMessage.
+- **Abrir al instante:** la burbuja precarga el hilo en memoria (`lib/chatHilo.js`) y lo renueva al llegar respuestas; la red va después de la transición; los globos ya no se redibujan al escribir; enlaces y fechas se calculan una vez; la aurora ya no se anima detrás del chat.
+- **Menú del mensaje:** sólo al mantener 350 ms sin mover; velo oscuro sin desenfoque; se cierra al tocar, al abrir el teclado y al salir.
+- **Primer inicio** (`app/guia.js`): 5 páginas (tarjeta real, niveles, tienda y reservas, chat, avisos y biometría), una vez tras entrar o registrarse. **Novedades** por versión tras actualizar (hoja nativa en iOS y Android). En Cuenta → Ayuda y en el modo de prueba para verlas cuando se quiera.
+- **PDF de la factura:** el visor abre al tocar con indicador; en iPhone usa el enlace de la lista (< 23 h); en Android el PDF se lee desde `file://` en vez de pasar el base64 por JavaScript.
 ## v2.1286.1 — El acuse propone la ficha con menos nombres y deja elegirla
 
 Al repartir el acuse, un nombre del papel que no coincidía exacto con la ficha

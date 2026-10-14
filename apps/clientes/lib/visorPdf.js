@@ -14,15 +14,25 @@
 // Se pinta cada página en un <canvas> al ancho de la pantalla (×2 para que el
 // texto se lea nítido al ampliar con dos dedos). Avisa a la app con
 // `postMessage`: «listo» al pintar la primera página, «error» si algo falla.
+//
+// 2026-10-14, «el PDF tarda en abrir»: el PDF ya no viaja en base64 DENTRO del
+// HTML. Leer el archivo entero a una cadena en JavaScript, armar un HTML de
+// varios MB y que la vista web lo vuelva a decodificar eran tres copias del
+// documento. Ahora (`htmlVisorPdfArchivo`) el HTML se escribe como archivo al
+// lado del PDF descargado y lo lee él mismo con XHR desde `file://` — el PDF
+// nunca pasa por el hilo de JavaScript. Si esa vía falla en algún Android
+// (vista web vieja, acceso a archivos bloqueado), la página avisa «reintentar»
+// ANTES de pintar nada y la app vuelve al camino de siempre, con el base64
+// adentro (`htmlVisorPdf`).
 const VERSION = '3.11.174';
 export const ORIGEN_PDFJS = 'https://cdnjs.cloudflare.com/';
 const BASE = `${ORIGEN_PDFJS}ajax/libs/pdf.js/${VERSION}`;
 const SRI = 'sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e';
 
-/** El HTML del visor con el PDF adentro. `base64`: el PDF; `fondo`: color de la hoja. */
-export function htmlVisorPdf(base64, fondo) {
-  // El base64 sólo trae [A-Za-z0-9+/=]: va seguro dentro de una cadena.
-  const datos = String(base64).replace(/[^A-Za-z0-9+/=]/g, '');
+// La página con pdf.js; `cargar` es una expresión JS que devuelve una promesa
+// con los bytes del PDF (Uint8Array). Si falla ANTES de tener los bytes o la
+// librería, avisa `fallo` (la app decide si reintenta por otra vía).
+function pagina(cargar, fondo, fallo) {
   return `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
 <style>
@@ -34,13 +44,14 @@ canvas{width:calc(100vw - 24px);height:auto;background:#fff;border-radius:4px;bo
 </head><body><div id="p"></div><script>
 (function(){
   var avisar=function(t){ if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(t); };
-  var listo=false;
+  var listo=false, abierto=false;
   (async function(){
     try{
+      if(typeof pdfjsLib==='undefined') throw new Error('sin pdf.js');
       pdfjsLib.GlobalWorkerOptions.workerSrc='${BASE}/pdf.worker.min.js';
-      var bin=atob('${datos}'); var u=new Uint8Array(bin.length);
-      for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+      var u=await (${cargar});
       var doc=await pdfjsLib.getDocument({data:u}).promise;
+      abierto=true;
       var ancho=Math.max(200,document.documentElement.clientWidth-24);
       var dpr=Math.min(window.devicePixelRatio||1,3);
       for(var n=1;n<=doc.numPages;n++){
@@ -54,8 +65,30 @@ canvas{width:calc(100vw - 24px);height:auto;background:#fff;border-radius:4px;bo
         if(!listo){ listo=true; avisar('listo'); }
       }
       if(!listo) avisar('error');
-    }catch(e){ avisar(listo?'parcial':'error'); }
+    }catch(e){ avisar(listo?'parcial':abierto?'error':'${fallo}'); }
   })();
 })();
 </script></body></html>`;
+}
+
+/** El HTML del visor con el PDF adentro (base64). `fondo`: color de la hoja. */
+export function htmlVisorPdf(base64, fondo) {
+  // El base64 sólo trae [A-Za-z0-9+/=]: va seguro dentro de una cadena.
+  const datos = String(base64).replace(/[^A-Za-z0-9+/=]/g, '');
+  const cargar = `Promise.resolve().then(function(){var bin=atob('${datos}');var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;})`;
+  return pagina(cargar, fondo, 'error');
+}
+
+/**
+ * El HTML del visor que lee el PDF de un ARCHIVO vecino (2026-10-14). Se
+ * escribe en la misma carpeta que el PDF y se abre por `file://`; `nombre` es
+ * el nombre del PDF (sólo [A-Za-z0-9._-], lo arma la app). Si no puede leerlo
+ * o no carga pdf.js, avisa «reintentar».
+ */
+export function htmlVisorPdfArchivo(nombre, fondo) {
+  const archivo = encodeURIComponent(String(nombre).replace(/[^A-Za-z0-9._-]/g, ''));
+  const cargar = `new Promise(function(ok,mal){var x=new XMLHttpRequest();x.open('GET','${archivo}');x.responseType='arraybuffer';`
+    + `x.onload=function(){if((x.status===0||x.status===200)&&x.response&&x.response.byteLength)ok(new Uint8Array(x.response));else mal(new Error('xhr '+x.status));};`
+    + `x.onerror=function(){mal(new Error('xhr'));};x.send();})`;
+  return pagina(cargar, fondo, 'reintentar');
 }

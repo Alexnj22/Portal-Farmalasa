@@ -8,13 +8,19 @@
 //   dirección; en Android (que no sabe mostrar PDF) se descarga al teléfono y
 //   lo pinta pdf.js dentro de la vista web (`lib/visorPdf.js`): el documento
 //   no sale del teléfono ni pasa por un visor de terceros (2026-10-09).
+// - 2026-10-14, «el PDF tarda»: el visor se abre AL TOCAR, con el indicador de
+//   carga adentro, en vez de esperar la descarga con el botón apagado. En
+//   iPhone se usa la dirección que ya trajo la lista (firmada por 24 h) y sólo
+//   se pide otra si falta, si la lista es vieja o si la vista web la rechaza.
+//   En Android el PDF ya no se lee a base64: lo abre pdf.js desde el archivo
+//   (`htmlVisorPdfArchivo`), con el camino viejo de respaldo.
 // - «Descargar» pregunta: enviarla por CORREO (`EnviarCorreoHoja`) o bajar el
 //   PDF y el JSON de una vez. La hoja de compartir de iOS recibe un solo
 //   archivo, así que van juntos en un .zip (`lib/zip.js`). En Android se
 //   guardan en la carpeta que la persona elige (`Share` no manda archivos ahí).
 // - «Seleccionar» (arriba) marca varias, hasta 30: «Enviar por correo» las
 //   manda en un solo correo y «Descargar» las junta en un .zip.
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Modal, Platform, Share, StyleSheet, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,11 +35,12 @@ import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
 import EnviarCorreoHoja from '../componentes/EnviarCorreoHoja';
 import Vidrio from '../componentes/Vidrio';
+import IndicadorCarga from '../componentes/IndicadorCarga';
 import { useSesion } from '../lib/sesion';
 import { useCuenta } from '../lib/cuenta';
 import { dolares, fecha } from '../lib/formato';
 import { armarZip, base64ABytes, bytesABase64 } from '../lib/zip';
-import { htmlVisorPdf, ORIGEN_PDFJS } from '../lib/visorPdf';
+import { htmlVisorPdf, htmlVisorPdfArchivo, ORIGEN_PDFJS } from '../lib/visorPdf';
 import { suave, useTema } from '../tema/tema';
 import { sinBloquear } from '../lib/bloqueo';
 
@@ -67,6 +74,10 @@ const enIphone = Platform.OS === 'ios';
 const enAndroid = Platform.OS === 'android';
 const TOPE_SELECCION = 30; // el mismo tope que `facturas_enviar`
 const MIME = { pdf: 'application/pdf', json: 'application/json', zip: 'application/zip' };
+// La dirección firmada que trae `mis_facturas` vale 24 h (2026-10-14). Se usa
+// mientras la lista tenga menos de 23 h — también la copia sin conexión.
+const VIGENCIA_LISTA_MS = 23 * 3600_000;
+const mensajeDeError = (e) => (e?.message && !/network|fetch/i.test(e.message) ? e.message : 'Revisa tu conexión e intenta de nuevo.');
 const conDocumento = (f) => !f.sin_documento;
 // Las facturas de la lista y sus notas, aplanadas (lo que se puede marcar).
 const aplanar = (lista) => lista.flatMap((f) => [f, ...(f.notas ?? [])]);
@@ -108,7 +119,9 @@ export default function Facturas() {
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const cargar = useCallback(async () => {
     const r = await pedir('mis_facturas', { periodo });
-    setPorPeriodo((ant) => ({ ...ant, [periodo]: r?.ok || !ant[periodo]?.ok ? r : ant[periodo] }));
+    // Cuándo llegó (para saber si sus direcciones firmadas siguen vigentes).
+    const conHora = r?.ok ? { ...r, recibidas: r.sinConexion ? (r.guardadoEn ?? 0) : Date.now() } : r;
+    setPorPeriodo((ant) => ({ ...ant, [periodo]: r?.ok || !ant[periodo]?.ok ? conHora : ant[periodo] }));
   }, [pedir, periodo]);
   // De a 30 (2026-10-09): al acercarse al final se pide la siguiente página
   // desde la última factura mostrada (cursor), y se suma a la lista.
@@ -158,21 +171,34 @@ export default function Facturas() {
     Haptics.selectionAsync().catch(() => {});
     setOcupada(clave);
     try { await fn(); } catch (e) {
-      Alert.alert('No se pudo abrir', e?.message && !/network|fetch/i.test(e.message) ? e.message : 'Revisa tu conexión e intenta de nuevo.');
+      Alert.alert('No se pudo abrir', mensajeDeError(e));
     } finally { setOcupada(null); }
   };
 
-  const verPdf = (f) => conEspera(`${f.id}pdf`, async () => {
-    // iPhone: la vista web muestra el PDF con su dirección. Android no sabe:
-    // se baja al teléfono y lo pinta pdf.js (lib/visorPdf.js).
-    // Siempre una dirección recién firmada (2026-10-12): la de la lista vence
-    // en una hora (o es de la copia sin conexión) y la vista web no avisa,
-    // queda en blanco.
-    if (enIphone) { setVisor({ f, url: await pedirUrl(f, 'pdf') }); return; }
-    const uri = await bajar(f, 'pdf');
-    const base64 = await FS.readAsStringAsync(uri, { encoding: FS.EncodingType.Base64 });
-    setVisor({ f, base64 });
-  });
+  // El visor se abre YA, cargando (2026-10-14). `turno` descarta lo que llega
+  // tarde: si se cerró o se abrió otra factura mientras tanto, no se pisa.
+  const turnoVisor = useRef(0);
+  const verPdf = async (f) => {
+    Haptics.selectionAsync().catch(() => {});
+    const turno = ++turnoVisor.current;
+    const poner = (x) => { if (turnoVisor.current === turno) setVisor({ f, ...x }); };
+    poner({ cargando: true });
+    try {
+      // iPhone: la vista web muestra el PDF con su dirección. La de la lista
+      // sirve 24 h; si no vino o la lista es vieja, una recién firmada. Si la
+      // vista web la rechaza igual, el visor pide otra (`alRenovar`).
+      if (enIphone) {
+        const fresca = d?.recibidas && Date.now() - d.recibidas < VIGENCIA_LISTA_MS;
+        poner(f.pdf && fresca ? { url: f.pdf, deLaLista: true } : { url: await pedirUrl(f, 'pdf') });
+        return;
+      }
+      // Android no sabe mostrar PDF: se baja al teléfono y lo pinta pdf.js.
+      poner({ archivo: await bajar(f, 'pdf') });
+    } catch (e) {
+      poner({ error: mensajeDeError(e) });
+    }
+  };
+  const cerrarVisor = () => { turnoVisor.current += 1; setVisor(null); };
   const compartirJson = (f) => conEspera(`${f.id}json`, async () => {
     await entregar(await bajar(f, 'json'), nombreArchivo(f), 'json');
   });
@@ -340,7 +366,7 @@ export default function Facturas() {
         <BarraSeleccion cantidad={marcados.length} progreso={bajandoVarias}
           alEnviar={() => { Haptics.selectionAsync().catch(() => {}); abrirCorreo(marcados); }} alDescargar={descargarMarcadas} />
       ) : null}
-      {visor ? <VisorPdf visor={visor} alCerrar={() => setVisor(null)} alCompartir={compartirPdf} /> : null}
+      {visor ? <VisorPdf visor={visor} alCerrar={cerrarVisor} alCompartir={compartirPdf} alRenovar={() => pedirUrl(visor.f, 'pdf')} /> : null}
       {hojaCorreo ? (
         <EnviarCorreoHoja ids={hojaCorreo.ids} resumen={hojaCorreo.resumen} alCerrar={() => setHojaCorreo(null)}
           alEnviar={() => { if (seleccion) setSeleccion(new Set()); }} />
@@ -381,17 +407,15 @@ function BarraSeleccion({ cantidad, progreso, alEnviar, alDescargar }) {
 }
 
 // El PDF dentro de la app: una hoja con la vista web y, arriba, cerrar y compartir.
-// iPhone: la dirección del PDF. Android: el HTML de pdf.js con el PDF adentro.
-function VisorPdf({ visor, alCerrar, alCompartir }) {
+// Se abre al tocar, con el indicador de carga (2026-10-14); el documento llega
+// después: en iPhone una dirección, en Android el archivo ya descargado.
+function VisorPdf({ visor, alCerrar, alCompartir, alRenovar }) {
   const t = useTema();
-  const [error, setError] = useState(false);
-  const [pintado, setPintado] = useState(!visor.base64);
   const [compartiendo, setCompartiendo] = useState(false);
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
-  const html = useMemo(() => (visor.base64 ? htmlVisorPdf(visor.base64, fondo) : null), [visor.base64, fondo]);
-  const origen = html ? ORIGEN_PDFJS : `${visor.url.split('/').slice(0, 3).join('/')}/`;
+  const listo = !visor.cargando && !visor.error;
   const compartir = async () => {
-    if (compartiendo) return;
+    if (compartiendo || !listo) return;
     setCompartiendo(true);
     try { await alCompartir(visor.f); } catch { Alert.alert('No se pudo compartir', 'Revisa tu conexión e intenta de nuevo.'); } finally { setCompartiendo(false); }
   };
@@ -405,31 +429,121 @@ function VisorPdf({ visor, alCerrar, alCompartir }) {
           <Text numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
             {rotulo(visor.f)}
           </Text>
-          <Presionable onPress={compartir} hitSlop={12} accessibilityRole="button" accessibilityLabel={enAndroid ? 'Guardar PDF' : 'Compartir PDF'} disabled={compartiendo}
-            style={{ minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center', opacity: compartiendo ? 0.5 : 1 }}>
+          <Presionable onPress={compartir} hitSlop={12} accessibilityRole="button" accessibilityLabel={enAndroid ? 'Guardar PDF' : 'Compartir PDF'}
+            disabled={compartiendo || !listo} accessibilityState={{ disabled: compartiendo || !listo }}
+            style={{ minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center', opacity: compartiendo || !listo ? 0.4 : 1 }}>
             {compartiendo ? <ActivityIndicator /> : <Icono sf="square.and.arrow.up" respaldo="↗" tam={20} color={t.color.magenta} />}
           </Presionable>
         </View>
-        {error ? (
-          <Vacio titulo="No se pudo mostrar">Revisa tu conexión y vuelve a intentar, o guarda el PDF con el botón de arriba.</Vacio>
+        {visor.error ? (
+          <View style={{ padding: 16 }}><Vacio titulo="No se pudo abrir">{visor.error}</Vacio></View>
+        ) : visor.cargando ? (
+          <CargandoPdf />
+        ) : visor.url ? (
+          <PdfPorDireccion key={visor.url} url={visor.url} deLaLista={!!visor.deLaLista} fondo={fondo} alRenovar={alRenovar} />
         ) : (
-          <View style={{ flex: 1 }}>
-            <WebView source={html ? { html, baseUrl: ORIGEN_PDFJS } : { uri: visor.url }} originWhitelist={['*']}
-              style={{ flex: 1, backgroundColor: fondo }}
-              startInLoadingState={!html} renderLoading={() => <ActivityIndicator style={{ marginTop: 40 }} />}
-              onError={() => setError(true)} onHttpError={() => setError(true)}
-              onMessage={html ? (e) => { const m = e.nativeEvent.data; if (m === 'error') setError(true); else setPintado(true); } : undefined}
-              // Sólo el documento (y, en Android, la librería que lo pinta): nada lleva afuera.
-              onShouldStartLoadWithRequest={(r) => r.url.startsWith(origen) || r.url === 'about:blank' || r.url.startsWith('data:')}
-              allowsBackForwardNavigationGestures={false} dataDetectorTypes="none"
-              setBuiltInZoomControls={!!html} setDisplayZoomControls={false} />
-            {!pintado ? (
-              <View pointerEvents="none" style={{ position: 'absolute', top: 40, left: 0, right: 0, alignItems: 'center' }}><ActivityIndicator /></View>
-            ) : null}
-          </View>
+          <PdfPorArchivo key={visor.archivo} archivo={visor.archivo} fondo={fondo} />
         )}
       </View>
     </Modal>
+  );
+}
+
+function CargandoPdf() {
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 72, left: 0, right: 0, alignItems: 'center', gap: 12 }}>
+      <IndicadorCarga tam="grande" />
+      <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Abriendo el PDF…</Text>
+    </View>
+  );
+}
+
+function ErrorPdf() {
+  return (
+    <View style={{ padding: 16 }}>
+      <Vacio titulo="No se pudo mostrar">Revisa tu conexión y vuelve a intentar, o guarda el PDF con el botón de arriba.</Vacio>
+    </View>
+  );
+}
+
+// iPhone: la vista web muestra el PDF con su dirección. Si la de la lista ya
+// no sirve (venció, o la lista era una copia sin conexión), se pide UNA nueva.
+function PdfPorDireccion({ url: inicial, deLaLista, fondo, alRenovar }) {
+  const [url, setUrl] = useState(inicial);
+  const [renovada, setRenovada] = useState(!deLaLista);
+  const [error, setError] = useState(false);
+  const [pintado, setPintado] = useState(false);
+  const fallo = async () => {
+    if (renovada) { setError(true); return; }
+    setRenovada(true); setPintado(false);
+    try { setUrl(await alRenovar()); } catch { setError(true); }
+  };
+  if (error) return <ErrorPdf />;
+  const origen = `${url.split('/').slice(0, 3).join('/')}/`;
+  return (
+    <View style={{ flex: 1 }}>
+      <WebView key={url} source={{ uri: url }} originWhitelist={['*']} style={{ flex: 1, backgroundColor: fondo }}
+        onLoadEnd={() => setPintado(true)}
+        onError={fallo} onHttpError={fallo}
+        // Sólo el documento: nada lleva afuera.
+        onShouldStartLoadWithRequest={(r) => r.url.startsWith(origen) || r.url === 'about:blank'}
+        allowsBackForwardNavigationGestures={false} dataDetectorTypes="none" />
+      {!pintado ? <CargandoPdf /> : null}
+    </View>
+  );
+}
+
+// Android: pdf.js dentro de la vista web. Primero leyendo el archivo desde
+// `file://` (sin pasar el PDF por JavaScript); si esa vía no anda en este
+// teléfono, la de siempre: el PDF en base64 dentro del HTML.
+function PdfPorArchivo({ archivo, fondo }) {
+  const [modo, setModo] = useState('archivo');
+  const [fuente, setFuente] = useState(null);
+  const [error, setError] = useState(false);
+  const [pintado, setPintado] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    setFuente(null);
+    (async () => {
+      try {
+        if (modo === 'archivo') {
+          const nombre = archivo.split('/').pop();
+          const html = `${archivo.slice(0, archivo.length - nombre.length)}visor-pdf.html`;
+          await FS.writeAsStringAsync(html, htmlVisorPdfArchivo(nombre, fondo));
+          if (vivo) setFuente({ uri: html });
+        } else {
+          const base64 = await FS.readAsStringAsync(archivo, { encoding: FS.EncodingType.Base64 });
+          if (vivo) setFuente({ html: htmlVisorPdf(base64, fondo), baseUrl: ORIGEN_PDFJS });
+        }
+      } catch {
+        if (!vivo) return;
+        if (modo === 'archivo') setModo('base64'); else setError(true);
+      }
+    })();
+    return () => { vivo = false; };
+  }, [modo, archivo, fondo]);
+  const reintentar = () => { if (modo === 'archivo') setModo('base64'); else setError(true); };
+  if (error) return <ErrorPdf />;
+  return (
+    <View style={{ flex: 1 }}>
+      {fuente ? (
+        <WebView key={modo} source={fuente} originWhitelist={['*']} style={{ flex: 1, backgroundColor: fondo }}
+          // El HTML lee el PDF vecino con XHR: hace falta leer archivos desde `file://`.
+          allowFileAccess={modo === 'archivo'} allowFileAccessFromFileURLs={modo === 'archivo'}
+          onError={() => (modo === 'archivo' ? reintentar() : setError(true))}
+          onMessage={(e) => {
+            const m = e.nativeEvent.data;
+            if (m === 'reintentar') reintentar();
+            else if (m === 'error') setError(true);
+            else setPintado(true);
+          }}
+          // Sólo el documento y la librería que lo pinta: nada lleva afuera.
+          onShouldStartLoadWithRequest={(r) => r.url.startsWith(ORIGEN_PDFJS) || r.url.startsWith('file://') || r.url === 'about:blank' || r.url.startsWith('data:') || r.url.startsWith('blob:')}
+          allowsBackForwardNavigationGestures={false} dataDetectorTypes="none"
+          setBuiltInZoomControls setDisplayZoomControls={false} />
+      ) : null}
+      {!pintado ? <CargandoPdf /> : null}
+    </View>
   );
 }
 

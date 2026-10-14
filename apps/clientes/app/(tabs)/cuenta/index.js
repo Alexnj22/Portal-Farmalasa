@@ -37,6 +37,7 @@ import { refrescarFotoPerfil, useFotoPerfil } from '../../../lib/fotoPerfil';
 import { rangoReal } from '../../../componentes/Mayorista';
 import { subirFoto } from '../../../lib/fotos';
 import { usarVistaPreviaFoto } from '../../../componentes/VistaPreviaFoto';
+import { usePresentacion } from '../../../lib/novedades';
 
 
 /**
@@ -310,10 +311,15 @@ export default function Cuenta() {
         <Grupo titulo="Ayuda y chat" pie="Te responde el equipo de Farmacia Salud en el horario de las sucursales.">
           <FilaAccion sf="bubble.left.and.bubble.right.fill" texto="Pregúntale a la farmacia" insignia={Number(resumen?.chat_sin_leer) || 0}
             alTocar={() => navegar('/chat')} />
+          {/* La guía del primer inicio y las novedades de esta versión, otra vez (2026-10-14). */}
+          <FilaAccion sf="questionmark.circle" texto="Cómo funciona la app" alTocar={() => navegar('/guia')} />
+          <FilaAccion sf="sparkles" texto="Novedades" alTocar={() => usePresentacion.getState().abrirNovedades()} />
         </Grupo>
       ) : (
         <Grupo titulo="Ayuda">
           <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
+          <FilaAccion sf="questionmark.circle" texto="Cómo funciona la app" alTocar={() => navegar('/guia')} />
+          <FilaAccion sf="sparkles" texto="Novedades" alTocar={() => usePresentacion.getState().abrirNovedades()} />
         </Grupo>
       )}
 
@@ -379,6 +385,9 @@ export default function Cuenta() {
           <FilaAccion sf="minus.circle.fill" texto="Simular: usar 500 puntos" alTocar={() => { prueba.simularPuntos(-500); navegar('/puntos'); }} />
           <FilaAccion sf="gift.fill" texto="Ver la pantalla de cumpleaños" alTocar={() => navegar(`/puntos?cumple=${Date.now()}`)} />
           <FilaAccion sf="crown.fill" texto="Ver la pantalla de subir de nivel" alTocar={() => navegar('/puntos?nivel=1')} />
+          {/* 2026-10-14: la guía y las novedades a pedido, sin mirar si ya se vieron. */}
+          <FilaAccion sf="questionmark.circle" texto="Ver primer inicio" alTocar={() => navegar('/guia')} />
+          <FilaAccion sf="sparkles" texto="Ver novedades" alTocar={() => usePresentacion.getState().abrirNovedades()} />
           {/* Mayoreo (2026-10-09): las pantallas de rango, precio y bienvenida; con el rango de prueba elegido arriba. */}
           {prueba.activo && prueba.mayorista ? (
             <FilaAccion sf="diamond.fill" texto="Ver la pantalla de subir de rango" alTocar={() => navegar('/puntos?rango=1')} />

@@ -20,7 +20,7 @@
 // hojas y los modales se presentan por encima y la tapan solos; además se
 // esconde a propósito donde estorba o no tiene sentido — ver OCULTA.
 import { useEffect } from 'react';
-import { AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, InteractionManager, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -31,6 +31,7 @@ import { colorSistema } from './sistema';
 import { M3, IOS } from './movimiento';
 import { alLlegarAviso, esAvisoDeChat } from '../lib/avisos';
 import { useCuenta } from '../lib/cuenta';
+import { precargarChat } from '../lib/chatHilo';
 import { useSesion } from '../lib/sesion';
 import { useBloqueo } from '../lib/bloqueo';
 import { LIVIANO } from '../lib/rendimiento';
@@ -40,7 +41,7 @@ import { useTema } from '../tema/tema';
 // Pantallas (primer segmento de la ruta) donde la burbuja NO va: el chat
 // mismo, la entrada y el registro, los modales a pantalla completa, lo legal y
 // las que tienen su propia barra de botones abajo (Facturas, la Encuesta).
-const OCULTA = new Set(['chat', 'bienvenida', 'entrar', 'registro', 'index', 'oferta', 'producto', 'o', 'mis-puntos', 'legal', 'encuesta', 'facturas']);
+const OCULTA = new Set(['chat', 'guia', 'bienvenida', 'entrar', 'registro', 'index', 'oferta', 'producto', 'o', 'mis-puntos', 'legal', 'encuesta', 'facturas']);
 // Pestañas donde tampoco: el carrito tiene abajo la barra de «Reservar».
 const PESTANA_OCULTA = new Set(['carrito']);
 
@@ -81,6 +82,17 @@ export default function BurbujaChat() {
     const app = AppState.addEventListener('change', (e) => { if (e === 'active') useCuenta.getState().cargar(); });
     return () => { quitar(); app.remove(); };
   }, [token]);
+
+  // Abrir el chat al instante (2026-10-14): el hilo se trae a memoria ANTES
+  // del toque —cuando la burbuja aparece, y otra vez cuando llega una
+  // respuesta—, después de las interacciones para no competir con la pantalla
+  // que se está dibujando. Así hasta la primera apertura pinta en el primer
+  // cuadro (lib/chatHilo).
+  useEffect(() => {
+    if (!visible) return undefined;
+    const tarea = InteractionManager.runAfterInteractions(() => { precargarChat({ sinLeer }); });
+    return () => tarea.cancel?.();
+  }, [visible, sinLeer]);
 
   // Entrada en calma: crece de 0.86 a 1 y aparece, con un resorte CRÍTICO
   // (sin pasarse). La opacidad sólo donde no hay Liquid Glass: el vidrio no se

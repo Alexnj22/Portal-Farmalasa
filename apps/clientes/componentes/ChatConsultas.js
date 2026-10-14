@@ -14,7 +14,7 @@
 //     después de la respuesta automática.
 //   · `Calificar`: «¿Cómo te atendimos?» cuando el equipo resolvió la consulta.
 //   · `TextoConEnlaces`: enlaces, correos y teléfonos de un mensaje, tocables.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -356,7 +356,8 @@ function abrirTelefono(v) {
 }
 
 export function TextoConEnlaces({ texto, color, colorEnlace, estilo }) {
-  const partes = partir(texto ?? '');
+  // Las expresiones regulares corren una vez por texto, no en cada dibujo.
+  const partes = useMemo(() => partir(texto ?? ''), [texto]);
   const tocar = (p) => {
     vibrar();
     if (p.tipo === 'url') Linking.openURL(/^https?:/i.test(p.texto) ? p.texto : `https://${p.texto}`).catch(() => {});

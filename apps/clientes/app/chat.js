@@ -57,8 +57,26 @@
 //     `useAnimatedKeyboard` en iOS (sin el parpadeo del margen de abajo) y en
 //     iOS 26 la barra es una cápsula de vidrio como el teclado flotante.
 //   · Atención preferente: Platino y Clientes Mayoristas lo ven en el título.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, FlatList, InteractionManager, KeyboardAvoidingView, Modal, Platform, Text, View } from 'react-native';
+//
+// «Los mensajes están mal, se ve blur» y «aún tarda un poco al abrir»
+// (2026-10-14, iOS 26 con el teclado abierto). Las dos causas:
+//   · El DESENFOQUE no era un efecto nuestro: era el «scroll edge effect» de
+//     iOS 26, que el sistema pone en la lista que queda debajo de una barra de
+//     título TRANSPARENTE. La lista va invertida (scaleY: -1) y UIKit calcula
+//     el borde en las coordenadas de la lista sin invertir: el difuminado del
+//     título caía abajo y el del teclado subía hasta cubrir casi todo el hilo
+//     —por eso lo de más arriba (debajo de la hora) se veía nítido—. Ahora la
+//     barra del chat es OPACA, en el fondo del sistema como iMessage, y los
+//     cuatro bordes van en `hidden`: nada difumina los mensajes.
+//   · La DEMORA de la primera apertura era la red (el esqueleto esperaba
+//     `chat_mensajes`) más la aurora animada detrás de una pantalla
+//     transparente durante la transición, y cada tecla volvía a dibujar todos
+//     los globos. Ahora el hilo se precarga antes del toque (lib/chatHilo), la
+//     pantalla es opaca, los globos son `memo` con acciones estables y lo caro
+//     por globo (fechas, enlaces) se calcula una vez. En desarrollo se anota
+//     en la consola cuánto tardó el primer cuadro y de dónde salió el hilo.
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActionSheetIOS, Alert, AppState, FlatList, InteractionManager, Keyboard, KeyboardAvoidingView, Modal, Platform, PlatformColor, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
@@ -83,6 +101,7 @@ import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Re
 import { BuscadorProducto, Calificar, ProductoPendiente, Sugerencias, TarjetaProducto, TextoConEnlaces } from '../componentes/ChatConsultas';
 import { suave, useTema } from '../tema/tema';
 import { useMiNivel } from '../lib/exclusiva';
+import { chatAbierto, desdeFechaPrimera, guardarHilo, leerHilo } from '../lib/chatHilo';
 
 const IOS = Platform.OS === 'ios';
 const CADA_MS = 5000;
@@ -120,12 +139,14 @@ const iniciales = (n) => String(n ?? '').trim().split(/\s+/).slice(0, 2).map((p)
 // Mientras llega el horario real del servidor: 7:00 a 22:00 de El Salvador.
 const fueraDeHorarioLocal = () => { const h = new Date(Date.now() - 6 * 3600_000).getUTCHours(); return h < 7 || h >= 22; };
 const delEquipo = (m) => m.autor === 'equipo';
-// La primera carga: los últimos 3 días (2026-10-14).
-const DIAS_PRIMERA = 3;
-
-// El último hilo que se vio, en memoria y por sesión: abrir el chat otra vez lo
-// pinta al instante y se refresca detrás. No va al disco (son conversaciones).
-let HILO = null; // { token, mensajes, hayMas, fuera, horario, conversacion }
+// El fondo del hilo: el del sistema, liso, como iMessage (iOS: systemBackground,
+// que cambia solo con el modo oscuro) y la superficie de Material en Android.
+// Nada detrás que se anime ni que haya que componer en cada cuadro.
+const fondoHilo = () => (IOS ? PlatformColor('systemBackground') : colorSistema.fondo);
+// El globo del equipo: el gris de iMessage (systemGray5) sobre el fondo liso.
+const globoEquipo = (oscuro) => (IOS ? PlatformColor('systemGray5') : (oscuro ? '#26252A' : '#FFFFFF'));
+// Las píldoras (día, horario, avisos del sistema) sobre el fondo liso.
+const pildora = (oscuro) => (oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(118,118,128,0.12)');
 // La altura del teclado, cuadro a cuadro, sólo en iOS: en Android la ventana
 // se redimensiona sola (adjustResize) y sumarle la altura lo empujaría dos veces.
 const useTecladoAlto = IOS ? () => useAnimatedKeyboard().height : () => null;
@@ -152,8 +173,14 @@ export default function Chat() {
   const pedir = useSesion((s) => s.pedir);
   const token = useSesion((s) => s.token);
   const { producto: productoParam, consulta: consultaParam } = useLocalSearchParams();
-  // El hilo en memoria, si es de esta misma sesión.
-  const [cache] = useState(() => (HILO && HILO.token === token ? HILO : null));
+  // El hilo en memoria (precargado por la burbuja o de la última visita), si
+  // es de esta misma sesión: con él, el primer cuadro ya trae los globos.
+  const [cache] = useState(() => leerHilo(token));
+  // Precargado con respuestas sin leer: la franja «N nuevos» va desde el primer cuadro.
+  const [franjaInicial] = useState(() => (cache?.sinLeer ? primeroSinLeer(cache.mensajes, cache.sinLeer) : null));
+  const marcarLeidoAlEntrar = useRef(!!cache?.sinLeer);
+  // Cuánto tarda el primer cuadro y de dónde salió el hilo (sólo en desarrollo).
+  const medida = useRef({ t0: Date.now(), origen: cache ? 'memoria' : 'red', anotado: false });
   const [mensajes, setMensajes] = useState(cache?.mensajes ?? null);
   const [hayMas, setHayMas] = useState(cache?.hayMas ?? false);
   const [fuera, setFuera] = useState(cache?.fuera ?? fueraDeHorarioLocal());
@@ -173,10 +200,11 @@ export default function Chat() {
   const campo = useRef(null);
   const ultimoId = useRef(0);
   // Abierto desde la memoria: lo primero que llegue del equipo lleva la franja «N nuevos».
-  const desdeCache = useRef(!!cache);
+  const desdeCache = useRef(!!cache && !franjaInicial);
   const preguntando = useRef(0);
   const alFondo = useRef(true);
-  const [vivo, setVivo] = useState(SIN_VIVO);
+  const [vivo, setVivo] = useState(() => (cache?.vivo
+    ? { escribiendo: cache.vivo.escribiendo || null, atiende: cache.vivo.atiende || null, visto: !!cache.vivo.visto } : SIN_VIVO));
   const rapido = useRef(false);
   const avisoEscribiendo = useRef(0);
   const anotarVivo = (v) => {
@@ -190,7 +218,7 @@ export default function Chat() {
   const [menu, setMenu] = useState(null); // { m, caja }
   const [resaltado, setResaltado] = useState(null);
   // 2026-10-13: lo nuevo, el producto a consultar, la calificación.
-  const [nuevosDesde, setNuevosDesde] = useState(null); // { id, n }: la franja «N mensajes nuevos»
+  const [nuevosDesde, setNuevosDesde] = useState(franjaInicial); // { id, n }: la franja «N mensajes nuevos»
   const [lejos, setLejos] = useState(false);            // la lista está subida: se ve el botón ↓
   const [sinVer, setSinVer] = useState(0);              // llegaron con la lista subida
   const recien = useRef(new Set());                     // ids que entran con destello
@@ -202,17 +230,22 @@ export default function Chat() {
   const [calificarCerrado, setCalificarCerrado] = useState(false);
   const inicial = useRef(true);
   // La lista nace abajo (invertida): sólo se oculta mientras se ubica en la franja de lo nuevo.
-  const [listo, setListo] = useState(true);
+  const [listo, setListo] = useState(!franjaInicial);
   const mensajesRef = useRef(null);
   mensajesRef.current = mensajes;
   // El id más nuevo del hilo en memoria: desde ahí se pide lo nuevo.
   if (cache && !ultimoId.current) {
     for (const m of cache.mensajes ?? []) if (typeof m.id === 'number' && m.id > ultimoId.current) ultimoId.current = m.id;
   }
-  // Guardar el hilo en memoria (sin lo que está saliendo todavía).
+  // Guardar el hilo en memoria (sin lo que está saliendo todavía). Con la
+  // pantalla abierta, la precarga de la burbuja no lo pisa.
+  useEffect(() => {
+    chatAbierto(true);
+    return () => chatAbierto(false);
+  }, []);
   useEffect(() => {
     if (!token || mensajes == null || pendiente) return;
-    HILO = { token, mensajes: mensajes.filter((m) => !m.enviando), hayMas, fuera, horario, conversacion };
+    guardarHilo({ token, mensajes: mensajes.filter((m) => !m.enviando), hayMas, fuera, horario, conversacion, sinLeer: 0, vivo: null, en: Date.now() });
   }, [token, mensajes, hayMas, fuera, horario, conversacion, pendiente]);
 
   // El id más nuevo que ya se tiene (los temporales no cuentan).
@@ -226,7 +259,7 @@ export default function Chat() {
   }, [pedir]);
 
   const cargar = useCallback(async () => {
-    const r = await pedir('chat_mensajes', { desde_fecha: new Date(Date.now() - DIAS_PRIMERA * 86400_000).toISOString() });
+    const r = await pedir('chat_mensajes', { desde_fecha: desdeFechaPrimera() });
     if (r?.pendiente) { setPendiente(true); setMensajes([]); return; }
     if (!r?.ok) { setError(r?.mensaje ?? 'Revisa tu conexión.'); setMensajes((x) => x ?? []); return; }
     setError(null);
@@ -298,7 +331,13 @@ export default function Chat() {
     // hilo en memoria, lo nuevo se pide cuando la transición terminó.
     let tarea = null;
     if (mensajes == null) cargar();
-    else tarea = InteractionManager.runAfterInteractions(() => { nuevos(); });
+    else {
+      tarea = InteractionManager.runAfterInteractions(() => {
+        // Precargado con respuestas sin leer: se marcan leídas ya en pantalla.
+        if (marcarLeidoAlEntrar.current) { marcarLeidoAlEntrar.current = false; leido(); }
+        nuevos();
+      });
+    }
     // Un reloj que se reprograma solo: 3 s con el equipo activo, 5 s si no.
     let reloj = null;
     let vivoAca = true;
@@ -312,10 +351,31 @@ export default function Chat() {
     const app = AppState.addEventListener('change', (e) => { if (e === 'active') nuevos(); });
     return () => {
       vivoAca = false; marcarChatALaVista(false); clearTimeout(reloj); quitar(); app.remove(); tarea?.cancel?.();
+      // Al irse de la pantalla, el menú de un mensaje no se queda abierto.
+      setMenu(null);
       // La franja «N mensajes nuevos» dura hasta salir de la pantalla.
       setNuevosDesde(null);
     };
   }, [cargar, nuevos])); // eslint-disable-line react-hooks/exhaustive-deps -- `mensajes` sólo decide la primera carga
+
+  // El menú de un mensaje se cierra si se abre el teclado (2026-10-14).
+  useEffect(() => {
+    const s = Keyboard.addListener(IOS ? 'keyboardWillShow' : 'keyboardDidShow', () => setMenu(null));
+    return () => s.remove();
+  }, []);
+
+  // Las acciones de los globos, ESTABLES: así un globo memoizado no se vuelve a
+  // dibujar con cada tecla que se escribe en la barra (antes, escribir
+  // redibujaba todos los globos a la vista en cada letra).
+  const acciones = useRef({});
+  const acc = useMemo(() => ({
+    verFoto: (u) => acciones.current.verFoto?.(u),
+    tocar: (m) => acciones.current.tocar?.(m),
+    responder: (m) => acciones.current.responder?.(m),
+    menu: (m, caja) => acciones.current.menu?.(m, caja),
+    reaccionar: (m, e) => acciones.current.reaccionar?.(m, e),
+    irA: (id) => acciones.current.irA?.(id),
+  }), []);
 
   // Llegó con un producto (`/chat?producto=<id>`, desde la ficha o Mis
   // tratamientos): se pone sobre la barra. Nombre, foto y precio, del catálogo.
@@ -523,8 +583,16 @@ export default function Chat() {
     const misma = (a, b) => a && b && a.autor === b.autor && a.autor !== 'sistema' && !a.fallido && !b.fallido
       && (a.autor !== 'equipo' || a.equipo?.nombre === b.equipo?.nombre)
       && Math.abs(Date.parse(b.created_at) - Date.parse(a.created_at)) < RACHA_MS && !corta(a, b);
+    // El rótulo del día se arma UNA vez por día, no por mensaje: `toLocaleDateString`
+    // es caro en Hermes y con 50 mensajes se notaba al abrir.
+    const rotulos = new Map();
+    const rotuloDe = (iso) => {
+      const k = claveDia(new Date(iso));
+      if (!rotulos.has(k)) rotulos.set(k, diaDe(iso));
+      return rotulos.get(k);
+    };
     mensajes.forEach((m, i) => {
-      const d = diaDe(m.created_at);
+      const d = rotuloDe(m.created_at);
       const previo = mensajes[i - 1];
       if (d !== dia) { dia = d; out.push({ clave: `d:${d}:${i}`, dia: d, hora: horaDe(m.created_at) }); }
       else if (previo && Date.parse(m.created_at) - Date.parse(previo.created_at) > HUECO_MS) out.push({ clave: `h:${i}`, hora: horaDe(m.created_at) });
@@ -558,7 +626,8 @@ export default function Chat() {
 
   if (pendiente) {
     return (
-      <View style={{ flex: 1, padding: 16, paddingTop: IOS ? ins.top + 60 : 16 }}>
+      <View style={{ flex: 1, padding: 16, backgroundColor: fondoHilo() }}>
+        <Stack.Screen options={OPCIONES_BARRA} />
         <Vacio titulo="Todavía no puedes escribirnos aquí" icono="bubble.left.and.bubble.right.fill" respaldo="💬">
           Cuando completes tu registro en cualquier sucursal podrás chatear con la farmacia desde la app.
         </Vacio>
@@ -566,14 +635,15 @@ export default function Chat() {
     );
   }
   const titulo = (
-    <Stack.Screen options={{ title: 'Farmacia Salud', headerTitle: () => (
+    <Stack.Screen options={{ title: 'Farmacia Salud', ...OPCIONES_BARRA, headerTitle: () => (
       <TituloChat fuera={fuera} atiende={vivo.atiende ? nombrePropio(vivo.atiende) : null} escribiendo={vivo.escribiendo ? nombrePropio(vivo.escribiendo) : null}
         preferente={!!preferente} />
     ) }} />
   );
-  const arriba = IOS ? ins.top + 52 : 0;
+  // La barra de título del chat es opaca: la lista empieza debajo de ella.
+  const arriba = 0;
   // El esqueleto sólo la primera vez: con el hilo en memoria se pinta enseguida.
-  if (mensajes == null) return <View style={{ flex: 1 }}>{titulo}<Esqueleto arriba={arriba} /></View>;
+  if (mensajes == null) return <View style={{ flex: 1, backgroundColor: fondoHilo() }}>{titulo}<Esqueleto arriba={arriba} /></View>;
   // Desde cuándo se está viendo («Mostrando desde el 7 de octubre»).
   const masViejo = mensajes.find((m) => typeof m.id === 'number');
 
@@ -595,6 +665,18 @@ export default function Chat() {
     setResaltado(id);
     setTimeout(() => setResaltado((x) => (x === id ? null : x)), 1400);
   };
+  acciones.current = {
+    verFoto: setFotoGrande,
+    tocar: (m) => {
+      if (m.fallido) { reintentar(m); return; }
+      Haptics.selectionAsync().catch(() => {});
+      setHoraDe((x) => (x === m.id ? null : m.id));
+    },
+    responder: responderA,
+    menu: (m, caja) => setMenu({ m, caja }),
+    reaccionar,
+    irA,
+  };
 
   return (
     <Pantalla tecladoAlto={tecladoAlto}>
@@ -607,7 +689,7 @@ export default function Chat() {
           keyExtractor={(f) => f.clave}
           style={{ opacity: listo ? 1 : 0 }}
           // Lo de la primera pantalla, no el hilo entero: el resto se dibuja al subir.
-          initialNumToRender={Math.max(15, iNuevos + 4)}
+          initialNumToRender={Math.max(12, iNuevos + 4)}
           maxToRenderPerBatch={10}
           windowSize={11}
           // Invertida: el relleno de ARRIBA de la pantalla es el de abajo del contenido.
@@ -625,6 +707,10 @@ export default function Chat() {
           }}
           scrollEventThrottle={100}
           onContentSizeChange={() => {
+            if (__DEV__ && !medida.current.anotado) {
+              medida.current.anotado = true;
+              console.log(`[chat] primer cuadro con globos: ${Date.now() - medida.current.t0} ms (hilo de ${medida.current.origen})`);
+            }
             if (inicial.current) { ubicar(); return; }
             if (alFondo.current) lista.current?.scrollToOffset({ offset: 0, animated: true });
           }}
@@ -650,7 +736,7 @@ export default function Chat() {
               {!mensajes.length ? <Bienvenida preferente={preferente} /> : null}
               {/* El horario de atención, como el aviso centrado de iMessage. */}
               <View style={{ alignSelf: 'center', maxWidth: 320, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12,
-                backgroundColor: fuera ? suave(t.color.aviso, t.oscuro ? 0.22 : 0.16) : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.75)') }}>
+                backgroundColor: fuera ? suave(t.color.aviso, t.oscuro ? 0.22 : 0.16) : pildora(t.oscuro) }}>
                 <Icono sf={fuera ? 'clock' : 'checkmark.seal.fill'} respaldo="" tam={13} color={fuera ? t.color.avisoTexto : t.color.verdeTexto} />
                 <Text style={{ flexShrink: 1, fontSize: 13, lineHeight: 17, textAlign: 'center', color: fuera ? t.color.avisoTexto : colorSistema.texto2 }}>
                   {horario?.texto || (fuera ? 'Estamos fuera de horario: escríbenos igual y te respondemos al abrir.' : 'Te responde el equipo de Farmacia Salud en unos minutos.')}
@@ -665,18 +751,12 @@ export default function Chat() {
             const m = f.m;
             const entra = recien.current.has(m.id);
             return (
-              <Burbuja m={m} primero={f.primero} ultimo={f.ultimo} alVerFoto={setFotoGrande} entra={entra}
+              <Burbuja m={m} primero={f.primero} ultimo={f.ultimo} entra={entra}
                 estado={m.autor === 'cliente' ? (m.id === idConEstado ? (vivo.visto ? 'visto' : 'enviado') : f.visto ? 'visto' : 'enviado') : null}
                 rotuloEstado={m.id === idConEstado}
                 verHora={horaDe_ === m.id}
-                alTocar={() => {
-                  if (m.fallido) { reintentar(m); return; }
-                  Haptics.selectionAsync().catch(() => {});
-                  setHoraDe((x) => (x === m.id ? null : m.id));
-                }}
                 resaltado={resaltado === m.id} nombreCitado={m.responde_a ? nombreDe(m.responde_a.id) : null}
-                alResponder={() => responderA(m)} alMenu={(caja) => setMenu({ m, caja })}
-                alReaccionar={(e) => reaccionar(m, e)} alIrA={irA} />
+                acc={acc} />
             );
           }}
           ListHeaderComponent={(
@@ -735,13 +815,31 @@ export default function Chat() {
   );
 }
 
+// La barra de título del chat (2026-10-14): OPACA, en el fondo del sistema,
+// como la de iMessage — no la transparente del resto de la app. Debajo de una
+// barra transparente iOS 26 difumina la lista («scroll edge effect»), y con la
+// lista invertida ese difuminado quedaba al revés y cubría el hilo entero con
+// el teclado abierto. Los cuatro bordes en `hidden`, por si acaso. El fondo de
+// la pantalla también es opaco: la aurora de la raíz no se compone detrás de
+// cada cuadro de la transición ni del desplazamiento.
+const OPCIONES_BARRA = IOS
+  ? {
+      headerTransparent: false,
+      headerBlurEffect: 'none',
+      headerShadowVisible: false,
+      headerStyle: { backgroundColor: PlatformColor('systemBackground') },
+      contentStyle: { backgroundColor: PlatformColor('systemBackground') },
+      scrollEdgeEffects: { top: 'hidden', bottom: 'hidden', left: 'hidden', right: 'hidden' },
+    }
+  : { contentStyle: { backgroundColor: colorSistema.fondo } };
+
 // La pantalla entera sube con el teclado. En iOS, cuadro a cuadro con el del
 // sistema (`useAnimatedKeyboard`, también al bajarlo arrastrando la lista); en
 // Android la ventana ya se redimensiona sola.
 function Pantalla({ tecladoAlto, children }) {
   const empuje = useAnimatedStyle(() => ({ paddingBottom: tecladoAlto ? tecladoAlto.value : 0 }));
-  if (!tecladoAlto) return <KeyboardAvoidingView style={{ flex: 1 }} behavior={undefined}>{children}</KeyboardAvoidingView>;
-  return <Animated.View style={[{ flex: 1 }, empuje]}>{children}</Animated.View>;
+  if (!tecladoAlto) return <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondoHilo() }} behavior={undefined}>{children}</KeyboardAvoidingView>;
+  return <Animated.View style={[{ flex: 1, backgroundColor: fondoHilo() }, empuje]}>{children}</Animated.View>;
 }
 
 // El título: la farmacia como un contacto — logo, nombre y, debajo, el estado.
@@ -755,7 +853,7 @@ function TituloChat({ fuera, atiende, escribiendo, preferente = false }) {
       <View>
         <Image source={require('../assets/icono.png')} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF' }} contentFit="cover" />
         <View style={{ position: 'absolute', right: -1, bottom: -1, width: 11, height: 11, borderRadius: 6, borderWidth: 2,
-          borderColor: t.oscuro ? '#1C1C1E' : '#F2F2F7', backgroundColor: activo ? t.color.verde : colorSistema.texto3 }} />
+          borderColor: IOS ? (t.oscuro ? '#000000' : '#FFFFFF') : colorSistema.fondo, backgroundColor: activo ? t.color.verde : colorSistema.texto3 }} />
       </View>
       <View style={{ flexShrink: 1, alignItems: 'flex-start' }}>
         <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Farmacia Salud</Text>
@@ -811,7 +909,7 @@ function Separador({ dia, hora }) {
     <View style={{ alignItems: 'center', marginTop: 14, marginBottom: 6 }} accessible accessibilityRole="header"
       accessibilityLabel={dia ? `${dia}, ${hora}` : hora}>
       <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
-        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)' }}>
+        backgroundColor: pildora(t.oscuro) }}>
         {dia ? <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto2, textTransform: dia.length > 4 ? 'capitalize' : 'none' }}>{dia}</Text> : null}
         <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{hora}</Text>
       </View>
@@ -888,7 +986,7 @@ function Escribiendo({ nombre }) {
       accessibilityLabel={`${nombre} está escribiendo`}>
       <View style={{ width: 28 }} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: R, paddingHorizontal: 14, height: 36,
-        backgroundColor: t.oscuro ? '#26252A' : '#FFFFFF', alignSelf: 'flex-start' }}>
+        backgroundColor: globoEquipo(t.oscuro), alignSelf: 'flex-start' }}>
         {[0, 1, 2].map((i) => <Punto key={i} i={i} quieto={reducir} />)}
       </View>
     </View>
@@ -928,8 +1026,16 @@ function Destello({ color }) {
 // Un mensaje. Del cliente: a la derecha, en magenta. Del equipo: a la
 // izquierda, con la foto (o las iniciales) en el último de la racha y el
 // nombre arriba del primero. Del sistema: centrado, en gris.
-function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, verHora, alTocar, resaltado, nombreCitado, alResponder, alMenu, alReaccionar, alIrA }) {
+// `memo` con acciones estables (`acc`): escribir, el «escribiendo…» del equipo
+// o el sondeo cada 5 s ya no redibujan los globos que no cambiaron.
+const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotuloEstado, verHora, resaltado, nombreCitado, acc }) {
   const t = useTema();
+  const alVerFoto = acc.verFoto;
+  const alTocar = () => acc.tocar(m);
+  const alResponder = () => acc.responder(m);
+  const alMenu = (caja) => acc.menu(m, caja);
+  const alReaccionar = (e) => acc.reaccionar(m, e);
+  const alIrA = acc.irA;
   const reducir = useReducedMotion() || LIVIANO;
   const [ref, medir] = useMedir();
   const mio = m.autor === 'cliente';
@@ -939,12 +1045,12 @@ function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, v
   if (m.autor === 'sistema') {
     return (
       <Animated.View entering={entrada} style={{ alignSelf: 'center', maxWidth: '86%', marginVertical: 8, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14,
-        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.7)' }}>
+        backgroundColor: pildora(t.oscuro) }}>
         <TextoConEnlaces texto={m.texto} color={colorSistema.texto2} colorEnlace={t.color.magentaTexto} estilo={{ fontSize: 13, lineHeight: 18, textAlign: 'center' }} />
       </Animated.View>
     );
   }
-  const fondo = mio ? t.color.magenta : (t.oscuro ? '#26252A' : '#FFFFFF');
+  const fondo = mio ? t.color.magenta : globoEquipo(t.oscuro);
   const colorTexto = mio ? '#FFFFFF' : colorSistema.texto;
   const nombre = m.equipo?.nombre ? nombrePropio(m.equipo.nombre) : 'Farmacia Salud';
   // Esquinas de la racha: del lado del autor se juntan (chicas) salvo al
@@ -977,7 +1083,7 @@ function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, v
         {/* Deslizar a la derecha responde; mantener presionado abre el menú; tocar muestra la hora. */}
         <Deslizable alResponder={() => { if (real) alResponder(); }} alMantener={() => { if (real) medir(alMenu); }}>
           {/* `onLongPress` vacío: soltar después del menú no cuenta como toque. */}
-          <Presionable ref={ref} collapsable={false} onPress={alTocar} onLongPress={() => {}} delayLongPress={380} accessibilityLabel={leyenda}
+          <Presionable ref={ref} collapsable={false} onPress={alTocar} onLongPress={() => {}} delayLongPress={350} accessibilityLabel={leyenda}
             accessibilityHint={m.fallido ? 'Toca para reintentar' : 'Mantén presionado para reaccionar, responder o copiar'}
             accessibilityActions={real ? [{ name: 'longpress', label: 'Más opciones' }, { name: 'magicTap', label: 'Responder' }] : undefined}
             onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'longpress') medir(alMenu); if (e.nativeEvent.actionName === 'magicTap') alResponder(); }}
@@ -1029,7 +1135,7 @@ function Burbuja({ m, primero, ultimo, alVerFoto, entra, estado, rotuloEstado, v
       </View>
     </Animated.View>
   );
-}
+});
 
 // Una oferta que mandó el equipo: se toca para abrirla.
 function Oferta({ a }) {

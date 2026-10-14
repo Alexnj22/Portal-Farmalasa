@@ -1,6 +1,6 @@
 // La raíz: el fondo de la marca, la sesión desde el llavero y la guardia que
 // manda a la bienvenida a quien no tiene sesión.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -24,6 +24,8 @@ import { navegar } from '../lib/navegar';
 import { esAccionDeToma, instalarTomas } from '../lib/tomas';
 import AvisoSinConexion from '../componentes/AvisoSinConexion';
 import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
+import NovedadesHoja from '../componentes/NovedadesHoja';
+import { guiaVista, revisarAlAbrir, usePresentacion } from '../lib/novedades';
 
 // La hoja de opciones y el prompt de iOS, en Android (componentes/HojasAndroid).
 instalarHojasAndroid();
@@ -127,12 +129,56 @@ function AbrirAviso() {
   return null;
 }
 
+// El primer inicio y «Qué hay de nuevo» (2026-10-14, lib/novedades.js).
+//   · La GUÍA sale después de una entrada o un registro HECHOS AHORA (el token
+//     pasa de no estar a estar), nunca al abrir con la sesión ya guardada ni a
+//     quien mira sin cuenta. Una vez por teléfono.
+//   · Las NOVEDADES se revisan al arrancar: sólo tras una actualización.
+// Las dos esperan a que se vean las pestañas y a que no esté el bloqueo
+// encima: así no tapan el login, la pantalla de Face ID ni una oferta abierta
+// desde un aviso.
+function Presentacion() {
+  const token = useSesion((s) => s.token);
+  const lista = useSesion((s) => s.lista);
+  const bloqueada = useBloqueo((s) => s.bloqueada);
+  const segmentos = useSegments();
+  const guiaPendiente = usePresentacion((s) => s.guiaPendiente);
+  const novedades = usePresentacion((s) => s.novedades);
+  const pendientes = usePresentacion((s) => s.novedadesPendientes);
+  // El token con el que arrancó la app (undefined = todavía no se leyó el llavero).
+  const inicial = useRef(undefined);
+  useEffect(() => {
+    if (WEB || !lista) return;
+    if (inicial.current === undefined) { inicial.current = token; revisarAlAbrir(!!token); return; }
+    const antes = inicial.current;
+    inicial.current = token;
+    if (!antes && token) guiaVista().then((vista) => { if (!vista) usePresentacion.getState().pedirGuia(); });
+  }, [lista, token]);
+  const enPestanas = segmentos[0] === '(tabs)';
+  useEffect(() => {
+    if (!token || bloqueada || !enPestanas) return undefined;
+    if (guiaPendiente) {
+      // Un respiro: que termine la transición de Entrar a las pestañas.
+      const reloj = setTimeout(() => { if (usePresentacion.getState().guiaPendiente) router.push('/guia'); }, 500);
+      return () => clearTimeout(reloj);
+    }
+    if (pendientes) {
+      const reloj = setTimeout(() => usePresentacion.getState().abrirNovedades(pendientes), 800);
+      return () => clearTimeout(reloj);
+    }
+    return undefined;
+  }, [token, bloqueada, enPestanas, guiaPendiente, pendientes]);
+  if (!token || bloqueada || !novedades) return null;
+  return <NovedadesHoja novedades={novedades} alCerrar={() => usePresentacion.getState().cerrarNovedades()} />;
+}
+
 // La aurora de la raíz: detrás de las pestañas la tapan las suyas, así que ahí
 // se pausa; y siempre con la app en segundo plano.
 function AuroraRaiz() {
   const segmentos = useSegments();
   const activa = useAppActiva();
-  return <Aurora activa={activa && segmentos[0] !== '(tabs)'} />;
+  // (2026-10-14) Tampoco detrás del chat: tiene fondo liso propio y la aurora seguía animándose sin verse.
+  return <Aurora activa={activa && segmentos[0] !== '(tabs)' && segmentos[0] !== 'chat'} />;
 }
 
 // El bloqueo con Face ID, encima de todo, sólo con sesión abierta.
@@ -209,6 +255,9 @@ function Raiz() {
             <Stack.Screen name="tratamientos" options={{ title: 'Mis tratamientos' }} />
             <Stack.Screen name="chat" options={{ title: 'Pregúntale a la farmacia' }} />
             <Stack.Screen name="mis-puntos" options={{ headerShown: false }} />
+            {/* El primer inicio (2026-10-14): modal a pantalla completa con la
+                animación del sistema; sin gesto para bajarla (tiene «Saltar»). */}
+            <Stack.Screen name="guia" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false, ...MODAL_ANDROID }} />
           </Stack>
           <AvisoSinConexion />
           {/* La burbuja del chat (2026-10-12): encima de las pantallas y debajo
@@ -216,6 +265,7 @@ function Raiz() {
           <BurbujaChat />
           {/* El aviso con la app abierta: debajo del bloqueo, que lo tapa. */}
           <AvisoEnApp />
+          <Presentacion />
           <Bloqueo />
           <HojasAndroid />
         </GestureHandlerRootView>

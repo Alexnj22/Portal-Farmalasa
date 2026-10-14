@@ -281,6 +281,7 @@ function Raiz() {
             <Stack.Screen name="compras" options={{ title: 'Mis compras' }} />
             <Stack.Screen name="sucursales" options={{ title: 'Nuestras sucursales' }} />
             <Stack.Screen name="notificaciones" options={{ title: 'Notificaciones' }} />
+            <Stack.Screen name="notificaciones-borradas" options={{ title: 'Borradas recientemente' }} />
             <Stack.Screen name="reservas" options={{ title: 'Mis reservas' }} />
             <Stack.Screen name="vitrina" options={{ title: 'Ofertas' }} />
             <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />

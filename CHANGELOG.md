@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1289.0 — App: la tarjeta conserva su material al girar y notificaciones renovadas
+
+- **Tarjeta al girar** (pedido del usuario: «que nunca se pierda la fantasía»): la placa de sombra de iOS calculaba su opacidad con `sin(giro·π)` sin valor absoluto y en el rebote del resorte asomaba como un filo liso; ahora va con valor absoluto y metida 3–4 % por lado. El reverso tenía el reloj del material detenido (piedra quieta al girar): ahora cada cara corre mientras puede verse. Filo metálico de 1.6 pt en el tono del nivel con reflejo que sigue la inclinación, y un canto (`Canto`) que da grosor: a mitad del giro la tarjeta ya no desaparece.
+- **Notificaciones:** lista nativa (inset grouped / Material 3) por Hoy, Ayer, Esta semana y Anteriores; tocar abre y marca SÓLO ese aviso (ya no borra ni marca todo); deslizar = Borrar / Leída-No leída; menú con Marcar todo como leído, Borradas recientemente y Limpiar; pantalla `notificaciones-borradas` para **recuperar** lo borrado en 30 días. Servidor: `bandeja {ocultas}`, `bandeja_leida {ids}`, `bandeja_no_leida`, `bandeja_recuperar`.
+
 ## v2.1288.2 — App: la tarjeta ya no parpadea al tocarla o girarla
 
 - Reporte del usuario (build 55): al tocar o girar la tarjeta, la mitad quedaba sin efectos, parpadeaba y luego se arreglaba.

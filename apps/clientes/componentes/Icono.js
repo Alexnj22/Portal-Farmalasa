@@ -133,6 +133,12 @@ const MATERIAL = {
   'ellipsis': 'more_horiz',
   'square.and.arrow.down': 'download',
   'wifi.exclamationmark': 'signal_wifi_bad',
+  // La bandeja de avisos (2026-10-14): leída / no leída, el menú y las borradas.
+  'envelope.badge.fill': 'mark_email_unread',
+  'envelope.open.fill': 'drafts',
+  'ellipsis.circle': 'more_vert',
+  'tray': 'inbox',
+  'trash.slash.fill': 'restore_from_trash',
 };
 
 export default function Icono({ sf, respaldo = '•', tam = 22, color }) {

@@ -9,11 +9,21 @@
  */
 import { calcAge, MINOR_AGE } from './ageUtils';
 import { getExpiringDocuments } from './documentExpiry';
+import { hoySV, diaSV } from './fecha';
 
-export function alertasDePersona(emp, ahora = new Date()) {
+// «Hoy» es el de la sala, no el del reloj del equipo (`utils/fecha`): con
+// `new Date()` el «¡Hoy cumple!» y el aniversario saltaban de día según la
+// zona de la computadora. Se acepta un `Date` por compatibilidad con quien
+// todavía lo pase, y se lee como día de El Salvador.
+const diaDe = (hoy) => (hoy instanceof Date ? diaSV(hoy.getTime()) : String(hoy).slice(0, 10));
+const partes = (dia) => String(dia).slice(0, 10).split('-').map(Number);
+
+export function alertasDePersona(emp, hoy = hoySV()) {
     const salida = [];
     const faltan = [];
-    const menor = (calcAge(emp.birth_date) ?? 99) < MINOR_AGE;
+    const dia = diaDe(hoy);
+    const [ty, tm, td] = partes(dia);
+    const menor = (calcAge(emp.birth_date, dia) ?? 99) < MINOR_AGE;
     if (!emp.birth_date) faltan.push('fecha de nacimiento');
     if (emp.identidad_conocida) {
         if (menor) {
@@ -27,9 +37,14 @@ export function alertasDePersona(emp, ahora = new Date()) {
         else if (emp.afp_estado === 'TIENE' && !emp.afp_number) faltan.push('NUP de la AFP');
     }
     const docs = emp.employee_documents || [];
+    const tiene = (cat) => docs.some(d => d.category === cat && d.url);
+    // La misma regla que `faltantesDelExpediente` (utils/expediente.js): el
+    // DUI vale como las dos caras sueltas O como un solo archivo que las trae.
+    // Exigiendo siempre dos, la tarjeta decía «Falta 1 dato» sobre un
+    // expediente que la ficha daba por completo.
     const tieneIdentidad = menor
-        ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
-        : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
+        ? tiene('DOCUMENTO_IDENTIDAD')
+        : tiene('DUI_COMPLETO') || (tiene('DUI_FRENTE') && tiene('DUI_REVERSO'));
     if (!tieneIdentidad) faltan.push('documento de identidad');
     if (faltan.length) {
         salida.push({
@@ -50,31 +65,29 @@ export function alertasDePersona(emp, ahora = new Date()) {
     }
 
     if (emp.birth_date) {
-        const b = new Date(`${emp.birth_date}T12:00:00`);
-        const hoy = new Date(ahora); hoy.setHours(12, 0, 0, 0);
-        if (b.getMonth() === hoy.getMonth()) {
-            const esteAnio = new Date(hoy.getFullYear(), b.getMonth(), b.getDate(), 12, 0, 0, 0);
-            const dias = Math.round((esteAnio.getTime() - hoy.getTime()) / 86400000);
+        const [by, bm, bd] = partes(emp.birth_date);
+        // Mismo mes: los días que faltan son la resta de los días del mes.
+        if (bm === tm) {
+            const dias = bd - td;
             if (dias >= 0) {
-                const cumple = hoy.getFullYear() - b.getFullYear();
+                const cumple = ty - by;
                 salida.push({
                     key: 'cumple', icono: 'Cake', variante: 'chart-6',
                     texto: dias === 0 ? `¡Hoy cumple ${cumple}!` : dias === 1 ? 'Cumple mañana' : `Cumple en ${dias} días`,
-                    title: `Cumple ${cumple} años el día ${b.getDate()}`,
+                    title: `Cumple ${cumple} años el día ${bd}`,
                 });
             }
         }
     }
 
     if (emp.hire_date) {
-        const h = new Date(`${emp.hire_date}T12:00:00`);
-        const hoy = new Date(ahora);
-        if (h.getMonth() === hoy.getMonth() && h.getFullYear() < hoy.getFullYear()) {
-            const anios = hoy.getFullYear() - h.getFullYear();
+        const [hy, hm, hd] = partes(emp.hire_date);
+        if (hm === tm && hy < ty) {
+            const anios = ty - hy;
             salida.push({
                 key: 'aniversario', icono: 'Medal', variante: 'success',
                 texto: `${anios} año${anios === 1 ? '' : 's'} en la empresa`,
-                title: `Aniversario laboral el día ${h.getDate()} de este mes`,
+                title: `Aniversario laboral el día ${hd} de este mes`,
             });
         }
     }

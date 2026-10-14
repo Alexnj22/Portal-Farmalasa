@@ -1,15 +1,20 @@
 // Edad real en años a partir de una fecha "YYYY-MM-DD" — compartido entre
 // EmployeeFormModal, StaffManagementView y PracticanteModal para decidir si
 // alguien es menor de edad (DUI vs documento alterno, Art. 23.2 CT).
+import { hoySV } from './fecha';
+
 export const MINOR_AGE = 18;
 
-export const calcAge = (birthDateStr) => {
+// «Hoy» es el de la sala (`hoySV`), no el del reloj del equipo: con
+// `new Date()` una computadora con otra zona —o una tableta sin configurar—
+// cumplía años un día antes o después, y un menor pasaba a pedir DUI el día
+// equivocado. Las cuentas son de calendario puro, con los tres números.
+export const calcAge = (birthDateStr, hoy = hoySV()) => {
     if (!birthDateStr) return null;
-    const bd = new Date(birthDateStr + 'T00:00:00');
-    if (isNaN(bd.getTime())) return null;
-    const today = new Date();
-    let age = today.getFullYear() - bd.getFullYear();
-    const m = today.getMonth() - bd.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+    const [by, bm, bd] = String(birthDateStr).slice(0, 10).split('-').map(Number);
+    if (!by || !bm || !bd) return null;
+    const [ty, tm, td] = String(hoy).slice(0, 10).split('-').map(Number);
+    let age = ty - by;
+    if (tm < bm || (tm === bm && td < bd)) age--;
     return age;
 };

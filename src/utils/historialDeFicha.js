@@ -78,9 +78,29 @@ export function historialDeFicha(filas = [], eventos = []) {
     });
 }
 
-/** ¿Se puede corregir o cancelar? Sólo una novedad real que no esté ya cancelada ni reemplazada. */
-export const eventoVigente = (ev) => !!ev?.eventoId && !ev.isSystem
+// Las del Art. 83 y su rectificación. Se escriben sólo por `registrar_sancion`
+// y compañía (DEFINER): la escalera, la firma de quien la impone y el peldaño
+// los pone el servidor. Corregirla con el formulario común la reinsertaba con
+// la firma que traía el navegador, y «Cancelarla» la sacaba de la escalera sin
+// pasar por el reclamo del Art. 77. Desde 2026-10-14 la base además las rechaza
+// por RLS (`employee_events_insert`/`_update`), así que el botón mentiría.
+const SANCIONES = ['AMONESTACION_VERBAL', 'AMONESTACION_ESCRITA', 'SUSPENSION', 'RECTIFICACION'];
+export const esSancion = (ev) => SANCIONES.includes(ev?.type);
+
+/** ¿Se puede corregir o cancelar? Sólo una novedad real, que no sea una sanción, ni cancelada ni reemplazada. */
+export const eventoVigente = (ev) => !!ev?.eventoId && !ev.isSystem && !esSancion(ev)
     && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED';
+
+/**
+ * El documento que respalda una novedad: el de `metadata.document_id` si lo
+ * hay, o el que se subió con su `event_id` (que es como se adjuntan hoy).
+ * @param {object} ev         renglón de `historialDeFicha`
+ * @param {Array}  documentos filas de `employee_documents` de la persona (`emp.documents`)
+ */
+export const soporteDe = (ev, documentos = []) => (documentos || []).find(d => d?.url && (
+    (ev?.documentId && String(d.id) === String(ev.documentId)) ||
+    (ev?.eventoId && String(d.event_id) === String(ev.eventoId))
+)) || null;
 
 /** Los datos para reabrir una novedad en el formulario de corrección. */
 export const datosParaCorregir = (ev, employeeId) => ({

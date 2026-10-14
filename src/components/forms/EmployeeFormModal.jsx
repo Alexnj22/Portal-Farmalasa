@@ -11,6 +11,7 @@ const DialogoDeCaptura = lazy(() => import('../common/DialogoDeCaptura'));
 import { loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
 import { faltantesDelExpediente } from '@nucleo/utils/expediente';
+import { TEMPORAL_LEGAL_BASIS_OPTIONS } from '@nucleo/utils/reingresoYRecontratacion';
 import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI } from '@nucleo/utils/duiLeido';
 import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '@nucleo/utils/acreditaciones';
@@ -330,14 +331,9 @@ const OTRO_HOURS_SENTINEL = '__OTRO_HORAS__';
 // para tiempo parcial, se deja 1 como piso solo para evitar valores absurdos.
 const MIN_WEEKLY_HOURS = 1;
 const MAX_WEEKLY_HOURS = 44;
-// Art. 25 Código de Trabajo: un contrato a plazo/Temporal SOLO es válido si cae
-// en una de estas dos bases legales — no hay una tercera opción por ley. El
-// motivo concreto (texto libre) sí es abierto y lo define la empresa caso por
-// caso, pero la base legal es un catálogo cerrado.
-const TEMPORAL_LEGAL_BASIS_OPTIONS = [
-    { value: 'TRANSITORIO_EVENTUAL', label: 'Labor transitoria, temporal o eventual por su naturaleza (Art. 25 lit. a)' },
-    { value: 'TERMINACION_NEGOCIO', label: 'Circunstancia que terminará el negocio total o parcial (Art. 25 lit. b)' },
-];
+// La base legal del contrato a plazo (Art. 25) es un catálogo cerrado y lo
+// comparte con la recontratación: `TEMPORAL_LEGAL_BASIS_OPTIONS` en
+// `reingresoYRecontratacion`.
 // Art. 28: hasta 30 días de prueba desde que inicia labores (fecha de
 // contratación). Si se recontrata a la misma persona antes de 1 año, no puede
 // volver a estipularse período de prueba.
@@ -2307,6 +2303,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         }
 
         if (phoneHasError) return 'El teléfono no tiene forma de número salvadoreño.';
+        // Faltaba: el campo se pintaba en rojo y el botón dejaba guardar, y el
+        // error recién lo lanzaba el store con el modal ya «guardando».
+        if (emergPhoneHasError) return 'El teléfono de emergencia no tiene forma de número salvadoreño.';
         for (const ph of (formData?.extra_phones || [])) {
             const dLen = digitsLen(ph);
             if (!!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph))) return 'Un teléfono adicional no tiene forma de número salvadoreño.';
@@ -2345,7 +2344,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return null;
     }, [formData, firstNamesInvalid, lastNamesInvalid, isMinor,
         isDuiInvalid, isDuiDuplicate, isDuiIncomplete, birthDateInvalid,
-        phoneHasError, emailInvalid, studyEndInPast, maestriaStudyEndInPast,
+        phoneHasError, emergPhoneHasError, emailInvalid, studyEndInPast, maestriaStudyEndInPast,
         salaryInvalid, hoursInvalid, contractDatesInvalid,
         temporalBasisMissing, temporalReasonMissing, isssIncomplete, afpIncomplete, nupRevisado.motivo,
         analyzingDocs]);

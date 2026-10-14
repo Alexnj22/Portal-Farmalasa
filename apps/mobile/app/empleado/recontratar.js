@@ -10,7 +10,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-n
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  CONTRATOS_DE_RECONTRATACION, datosDeRecontratacion, horasAlCambiarContrato, recontratacionCompleta, recontratacionInicial, sucursalesPorArea,
+  CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, datosDeRecontratacion, faltaParaRecontratar, horasAlCambiarContrato, recontratacionCompleta, recontratacionInicial, sucursalesPorArea,
 } from '@nucleo/utils/reingresoYRecontratacion';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -73,6 +73,17 @@ export default function Recontratar() {
             <Opciones valor={f.rehire_contract_type} onCambiar={(v) => pon({ rehire_contract_type: v, rehire_weekly_hours: horasAlCambiarContrato(v, f.rehire_weekly_hours) })}
               opciones={CONTRATOS_DE_RECONTRATACION.map((c) => ({ id: c.value, label: c.label }))} />
           </Seccion>
+          {/* Un contrato a plazo sin fecha de fin, base legal y motivo es el
+              que el Art. 25 presume indefinido: se piden acá, como en el alta. */}
+          {f.rehire_contract_type === 'TEMPORAL' ? (
+            <Seccion titulo="Contrato a plazo">
+              <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Fecha de fin</Text>
+              <Fecha valor={f.rehire_contract_end_date} onCambiar={(v) => pon({ rehire_contract_end_date: v })} />
+              <Opciones valor={f.rehire_temporal_legal_basis || ''} onCambiar={(v) => pon({ rehire_temporal_legal_basis: v })}
+                opciones={TEMPORAL_LEGAL_BASIS_OPTIONS.map((o) => ({ id: o.value, label: o.label }))} />
+              <Campo value={f.rehire_temporal_reason || ''} onChangeText={(t) => pon({ rehire_temporal_reason: t })} placeholder="Motivo concreto (ej.: cobertura de la incapacidad de la titular)" />
+            </Seccion>
+          ) : null}
           {grupos.map((g) => (
             <Seccion key={g.tipo} titulo={g.rotulo}>
               <Opciones valor={f.rehire_branch_id ? String(f.rehire_branch_id) : ''} onCambiar={(v) => pon({ rehire_branch_id: v })}
@@ -96,7 +107,7 @@ export default function Recontratar() {
           <Seccion titulo="Notas">
             <Campo value={f.rehire_notes || ''} onChangeText={(t) => pon({ rehire_notes: t })} placeholder="Ej.: regresa tras cierre de proyecto externo, período de prueba…" />
           </Seccion>
-          {!recontratacionCompleta(f) ? <Aviso tono="cuidado" texto="Fecha de ingreso, sucursal y cargo son obligatorios." /> : null}
+          {!recontratacionCompleta(f) ? <Aviso tono="cuidado" texto={faltaParaRecontratar(f)} /> : null}
           <BotonGrande texto={enviando ? 'Recontratando…' : 'Recontratar'} color={MARCA.verde} deshabilitado={!recontratacionCompleta(f) || enviando} onPress={guardar} />
         </ScrollView>
       </KeyboardAvoidingView>

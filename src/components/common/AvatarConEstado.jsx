@@ -2,9 +2,9 @@ import React, { useMemo, useEffect, useState, useSyncExternalStore } from 'react
 import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { estadoDePersona, estadoDesdeClave, normalizarPersona } from '@nucleo/utils/estadoDePersona';
+import { estadoDePersona, normalizarPersona } from '@nucleo/utils/estadoDePersona';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { leerEstado, pedirEstado, suscribirse } from '@nucleo/data/estadosDePersonas';
+import { leerEstado, pedirEstado, suscribirse, hayQuePreguntar as hayQuePreguntarPor, estadoDesdeRemoto } from '@nucleo/data/estadosDePersonas';
 import { fetchFotoDeEmpleado } from '@nucleo/data/notifications';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 
@@ -205,7 +205,10 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   const historialCompleto = useStaffStore(s => s.historialCompleto);
   const local = useMemo(() => estadoDePersona(ficha || emp), [ficha, emp]);
 
-  const hayQuePreguntar = !historialCompleto && !local && !!emp?.id;
+  // La regla vive en `data/estadosDePersonas` porque la lista de Personal la
+  // aplica igual: si la foto y la píldora de al lado decidieran por separado
+  // cuándo preguntar, volverían a poder decir cosas distintas.
+  const hayQuePreguntar = !local && hayQuePreguntarPor(emp, historialCompleto);
 
   // `useSyncExternalStore` y no un efecto con estado: el batcher vive fuera de
   // React, y suscribirse es justo lo que este hook existe para hacer — sin el
@@ -228,7 +231,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   // La base manda `{clave, hasta}`; el rótulo y el color los pone
   // `estadoDesdeClave`, el mismo que usa la rama local. Dos caminos, una sola
   // tabla de rótulos.
-  const estado = local || (remoto ? estadoDesdeClave(remoto.clave, remoto.hasta, remoto.faltan) : null);
+  const estado = local || estadoDesdeRemoto(remoto);
 
   const marca = estado ? MARCA[estado.variante] : null;
   const Icono = estado ? ICONO[estado.clave] : null;

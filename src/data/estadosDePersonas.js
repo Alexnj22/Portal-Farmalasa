@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { estadoDePersona, estadoDesdeClave } from '../utils/estadoDePersona';
 
 // ── El estado de una persona, preguntado UNA vez por pantalla ───────────────
 //
@@ -39,8 +40,15 @@ const cache = new Map();          // id → { estado, at }
 const suscriptores = new Set();
 let pendientes = new Set();
 let programado = false;
+// Sube con cada aviso. Un avatar se suscribe a SU id y compara su fila; una
+// pantalla que filtra a cuarenta personas necesita una sola cosa que cambie
+// cuando cambió cualquiera — si no, `useSyncExternalStore` no se entera.
+let version = 0;
 
-const avisar = () => suscriptores.forEach(fn => { try { fn(); } catch { /* un oyente roto no puede romper a los demás */ } });
+const avisar = () => {
+    version += 1;
+    suscriptores.forEach(fn => { try { fn(); } catch { /* un oyente roto no puede romper a los demás */ } });
+};
 
 function guardar(id, estado) {
     cache.set(String(id), { estado, at: Date.now() });
@@ -72,7 +80,12 @@ async function resolverTanda() {
         return;
     }
 
-    (data || []).forEach(fila => guardar(fila.id, { clave: fila.clave, hasta: fila.hasta || null }));
+    // `faltan` viaja también: sin él, la cuenta regresiva («Vacaciones en 3
+    // días») se leía como ausencia de HOY — el aro y la lista «Ausentes»
+    // contaban como fuera a quien todavía está en la sala.
+    (data || []).forEach(fila => guardar(fila.id, {
+        clave: fila.clave, hasta: fila.hasta || null, faltan: Number(fila.faltan) || 0,
+    }));
     avisar();
 }
 
@@ -119,9 +132,37 @@ export function suscribirse(fn) {
     return () => suscriptores.delete(fn);
 }
 
+/** Cambia cada vez que llega una tanda. PURA: apta para `getSnapshot`. */
+export const versionDeEstados = () => version;
+
+// ── La regla de las dos fuentes, escrita UNA vez ──────────────────────────
+//
+// Lo local manda si dice algo, o si el historial que llegó en el arranque es
+// completo. Si no, lo que contestó la base. La usan el aro de la foto y la
+// lista de Personal (pestañas, píldora, pulso de la sala): antes sólo el aro
+// preguntaba, y para quien no tiene `staff_detail` la foto decía «vacaciones»
+// al lado de una píldora muda y de una lista «Ausentes» vacía.
+
+/** ¿Hay que preguntarle a la base por esta persona? */
+export function hayQuePreguntar(emp, historialCompleto) {
+    return !historialCompleto && !!emp?.id && !estadoDePersona(emp);
+}
+
+/** El estado de una fila del caché, con el rótulo de `estadoDesdeClave`. */
+export const estadoDesdeRemoto = (remoto) =>
+    (remoto ? estadoDesdeClave(remoto.clave, remoto.hasta, remoto.faltan) : null);
+
+/** El estado de una persona con las dos fuentes. PURA: no pide nada. */
+export function estadoResuelto(emp, historialCompleto) {
+    const local = estadoDePersona(emp);
+    if (local || historialCompleto || !emp?.id) return local;
+    return estadoDesdeRemoto(leerEstado(emp.id));
+}
+
 /** Para las pruebas: deja el módulo como recién cargado. */
 export function _limpiarCache() {
     cache.clear();
     pendientes = new Set();
     programado = false;
+    version = 0;
 }

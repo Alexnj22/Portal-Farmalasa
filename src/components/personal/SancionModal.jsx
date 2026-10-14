@@ -18,7 +18,7 @@
  * que se vea dónde termina la escalera, y no se puede elegir: es una baja, con
  * su liquidación y su causal del Art. 50.
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShieldAlert, Loader2, AlertTriangle, Info } from 'lucide-react';
 import ModalShell from '../common/ModalShell';
 import Button from '../common/Button';
@@ -51,6 +51,11 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     const [faltas, setFaltas]         = useState([]);
     const [falta, setFalta]           = useState('');
     const [peldano, setPeldano]       = useState(null);
+    // Si quien sanciona eligió el peldaño a mano, la propuesta nueva no lo
+    // pisa. Si no lo tocó, sigue a la escalera: con `p ?? propuesta` el primer
+    // peldaño propuesto se congelaba y cambiar la falta o la fecha (que mueve la
+    // ventana de 60 días) dejaba un peldaño que ya no correspondía.
+    const elegidoAMano = useRef(false);
     const [fecha, setFecha]           = useState(hoySV);
     const [dias, setDias]             = useState('');
     const [autorizacion, setAutoriz]  = useState('');
@@ -89,7 +94,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             .then(r => {
                 if (!vivo) return;
                 setEscalera(r);
-                setPeldano(p => p ?? r?.peldano ?? 1);
+                if (!elegidoAMano.current) setPeldano(r?.peldano ?? 1);
             })
             .catch(err => { if (vivo) toast(mensajeAmigable(err), 'error'); })
             .finally(() => { if (vivo) setCargando(false); });
@@ -220,7 +225,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                                         key={p.n}
                                         type="button"
                                         disabled={p.noElegible || guardando}
-                                        onClick={() => setPeldano(p.n)}
+                                        onClick={() => { elegidoAMano.current = true; setPeldano(p.n); }}
                                         data-surface="card"
                                         className={`w-full text-left px-4 py-3 min-h-[var(--tap-min)] flex items-start gap-3
                                                     active:scale-[0.97] transition-transform duration-[var(--dur-fast)]

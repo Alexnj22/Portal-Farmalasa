@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1287.2 — Personal: la auditoría del alta, el expediente y el listado
+
+Auditoría completa del módulo (`docs/PLAN-PERSONAL-AUDITORIA-2026-10-14.md`).
+Ninguno de los hallazgos daba error. Lo que cerró en paralelo v2.1285.5 (alta y
+enlace sin pérdidas silenciosas) se respetó tal cual; esto es el resto.
+
+- **Seguridad.** `escalera_disciplinaria` dejaba leer el historial disciplinario
+  de cualquiera: ahora pide ser uno mismo o ver el expediente. Una sanción ya no
+  se edita ni se cancela desde el historial, y la base rechaza escribirla por
+  fuera de `registrar_sancion` (RLS). El CSV del directorio ya no exporta el
+  código de carné (es la contraseña), y el código no queda en el padrón
+  cacheado. La lectura por sala del bucket `documents` comparaba con el nombre
+  de la persona en vez de la ruta.
+- **Novedades.** Cancelar un cambio de sueldo o de código ahora sí lo revierte.
+  Editar una novedad crea la corrección antes de reemplazar la original. Los
+  errores se muestran en vez de cerrar el diálogo; cancelar y corregir quedan en
+  la bitácora. La cuenta de acceso al dar de baja, cancelar y recontratar se
+  verifica (`invoke` no rechaza).
+- **Edición.** Una foto que no sube ya no borra la anterior; un fallo en las
+  sucursales adicionales se avisa. 31 adultos sin DUI se pueden volver a guardar
+  (el DUI se exige en el alta) y el NUP de 9 dígitos ya no se rechaza.
+- **Listado.** Los estados salen de la misma fuente que el aro de la foto (el
+  Administrador veía estados vacíos), la cuenta regresiva de vacaciones, la
+  suspensión revocada, el filtro por sala que se cubre, los inactivos fuera de
+  la jefatura, la edad con el día de El Salvador y practicantes con error.
+- **Expediente.** «Ver Respaldo Legal» encuentra el soporte por `event_id`; la
+  sanción nueva aparece sin recargar; el peldaño sigue a la escalera; la
+  recontratación a plazo pide fecha de fin, base legal y motivo y empieza el
+  contrato de cero; el ascenso programado del cron busca el cargo por id.
+
 ## v2.1287.1 — App: chat con su fondo de antes y el Inicio fluido
 
 - **Chat (iOS):** vuelve el fondo y los colores de antes de 887fd7e67 (pedido del usuario: «estaba más bonito»). La barra es transparente pero con los cuatro difuminados de borde de iOS 26 apagados y la lista empezando bajo la barra (`useHeaderHeight`): no cambia de aspecto al deslizar y no vuelve el hilo borroso. La aurora detrás del chat queda en pausa. Lista memoizada (escribir, la consulta de 5 s y «escribiendo…» ya no la redibujan), fotos en caché, deslizar para responder cede antes al scroll vertical.

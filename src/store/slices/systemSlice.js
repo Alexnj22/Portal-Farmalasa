@@ -8,7 +8,7 @@ import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { fireBrowserNotif } from '@plataforma/browserNotif';
 import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
-import { fetchSalarios, fetchIdentidades, codigoDeCarneLibre, guardarDatosProtegidos } from '../../data/employees';
+import { fetchSalarios, fetchCredenciales, fetchIdentidades, codigoDeCarneLibre, guardarDatosProtegidos, cuentaDeAcceso } from '../../data/employees';
 import { kioscoMarcajesRecientes } from '../../data/kiosco';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import {
@@ -30,6 +30,19 @@ import * as almacen from '@plataforma/almacen';
 import { emitir } from '@plataforma/eventos';
 import { irA } from '@plataforma/navegacion';
 import { hoySV, lunesDe } from '../../utils/fecha';
+
+// Un error que la pantalla muestra tal cual.
+const usuario = (mensaje) => Object.assign(new Error(mensaje), { userFacing: true });
+
+// ¿El valor actual sigue siendo el que escribió la novedad? Por texto, y por
+// número cuando los dos lo son: `numeric` vuelve de la base como 500 y la
+// novedad pudo guardar "500.00".
+const mismoValor = (actual, escrito) => {
+    if (String(actual ?? '') === String(escrito ?? '')) return true;
+    if (actual == null || escrito == null || actual === '' || escrito === '') return false;
+    return !Number.isNaN(Number(actual)) && Number(actual) === Number(escrito);
+};
+
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
@@ -687,6 +700,7 @@ export const createSystemSlice = (set, get) => ({
             // fecha indicada. Las validaciones sí corren ahora para feedback inmediato.
             const todayLocal = hoySV();
             const isScheduled = primaryDate > todayLocal;
+            let avisoDeCuenta = null;
 
             if (eventData.type === 'TERMINATION') {
                 Object.assign(empUpdates, {
@@ -828,11 +842,15 @@ export const createSystemSlice = (set, get) => ({
             if (eventData.type === 'TERMINATION' && !isScheduled) {
                 // Limpiar farmacias asignadas (personal externo) — quedaban huérfanas tras la baja
                 await deleteEmployeeBranches(employeeId);
-                // Revocar la cuenta Auth (best-effort): bloquea el login usuario/contraseña
-                // además del carné, y cierra las sesiones activas.
-                supabase.functions.invoke('disable-employee-auth', {
-                    body: { employeeId, action: 'disable' }
-                }).catch(err => console.warn('No se pudo desactivar la cuenta Auth:', err));
+                // Revocar la cuenta Auth: bloquea el login usuario/contraseña
+                // además del carné, y cierra las sesiones activas. Se espera la
+                // respuesta y se mira: `invoke` NO rechaza la promesa cuando la
+                // función falla —devuelve `{ error }` o `{ ok: false }`—, así que
+                // el `.catch` de antes no corría nunca y una baja podía dejar la
+                // cuenta abierta sin que nadie se enterara. El aviso se guarda y
+                // se lanza AL FINAL: la baja ya está escrita, así que la bitácora
+                // y la copia en memoria tienen que reflejarla igual.
+                try { await cuentaDeAcceso(employeeId, 'disable'); } catch (e) { avisoDeCuenta = e; }
             }
 
             const empEvento = get().employees.find(e => String(e.id) === String(employeeId));
@@ -855,7 +873,15 @@ export const createSystemSlice = (set, get) => ({
                 // documentos de personal que su propia persona no podría ver
                 // nunca.
                 const url = await get().uploadFileToStorage(file, 'documents', `employees/${employeeId}/eventos`);
-                if (url) {
+                // `uploadFileToStorage` devuelve null cuando la subida falla. Antes
+                // eso saltaba el bloque en silencio: la novedad quedaba sin su
+                // boleta y la pantalla decía «guardado».
+                if (!url) {
+                    const e = new Error('La novedad quedó registrada pero el documento no se pudo subir. Adjúntalo desde el historial.');
+                    e.userFacing = true;
+                    throw e;
+                }
+                {
                     // El `error` NO se descarta. Descartado, un insert que falla
                     // deja el archivo en Storage, la fila sin crear y la pantalla
                     // diciendo que se subió — el documento existe y el expediente
@@ -893,14 +919,15 @@ export const createSystemSlice = (set, get) => ({
                 return { employees: next };
             });
 
+            if (avisoDeCuenta) throw avisoDeCuenta;
             return newEvent.id;
         } catch (err) {
             console.error("Error registrando evento de empleado:", err);
-            // Errores de validación de negocio se relanzan para que la UI los muestre
-            if (err?.userFacing ||
-                err?.message?.startsWith('OVERLAP_ERROR:') ||
-                err?.message?.startsWith('HEADCOUNT_LIMIT:')) throw err;
-            return null;
+            // Se relanza SIEMPRE (auditoría 2026-10-14). Antes sólo los errores
+            // de validación subían y el resto —un RLS que rechaza, la red
+            // caída— devolvía `null`, que `handleSubmit` no miraba: el modal se
+            // cerraba como si la novedad se hubiera guardado.
+            throw err;
         }
     },
 
@@ -920,17 +947,39 @@ export const createSystemSlice = (set, get) => ({
             const applied = currentMeta.appliedChanges || null;
             const previous = currentMeta.previousValues || null;
             let reverted = false;
+            let avisoDeCuenta = null;
             const localRevert = {};
 
             if (applied && previous && currentMeta.applyStatus === 'APPLIED') {
-                const { data: row, error: rowErr } = await fetchEmployeeById(existing.employee_id);
+                const { data: fila, error: rowErr } = await fetchEmployeeById(existing.employee_id);
                 if (rowErr) throw rowErr;
+
+                // `employees_safe` no trae el sueldo ni el código de carné: viven
+                // detrás de su llave. Leyendo sólo la vista, el valor actual de
+                // esas columnas llegaba `undefined`, nunca coincidía con lo que
+                // la novedad escribió, y la reversión se saltaba en silencio —
+                // cancelar un aumento de $400 a $500 dejaba los $500 con el
+                // evento marcado CANCELLED—. Se leen por su canal, en modo
+                // con `lanzar`: si no se pueden leer, no se cancela a ciegas.
+                const row = { ...fila };
+                const id = existing.employee_id;
+                if ('base_salary' in applied) {
+                    const sal = (await fetchSalarios([id], { lanzar: true })).get(id);
+                    if (!sal) throw usuario('No se pudo leer el sueldo actual para revertirlo. No se canceló nada.');
+                    row.base_salary = sal.base_salary;
+                }
+                if ('code' in applied || 'kiosk_pin' in applied) {
+                    const cred = (await fetchCredenciales([id], { lanzar: true })).get(id);
+                    if (!cred) throw usuario('No se pudo leer el código de carné actual para revertirlo. No se canceló nada.');
+                    row.code = cred.code;
+                    row.kiosk_pin = cred.kiosk_pin;
+                }
 
                 const revertPayload = {};
                 Object.keys(applied).forEach(k => {
                     if (k.startsWith('_')) return;
                     if (!(k in previous)) return;
-                    if (String(row?.[k] ?? '') === String(applied[k] ?? '')) {
+                    if (mismoValor(row?.[k], applied[k])) {
                         revertPayload[k] = previous[k] ?? null;
                     }
                 });
@@ -962,14 +1011,13 @@ export const createSystemSlice = (set, get) => ({
                     if (existing.type === 'TERMINATION' && 'status' in revertPayload) {
                         const prevBranches = previous._employee_branches || [];
                         if (prevBranches.length > 0) {
-                            await insertEmployeeBranches(
+                            const { error: ebErr } = await insertEmployeeBranches(
                                 prevBranches.map(branch_id => ({ employee_id: existing.employee_id, branch_id }))
                             );
+                            if (ebErr) throw usuario(`La baja se revirtió pero no se pudieron devolver sus sucursales: ${ebErr.message}`);
                             localRevert.assigned_branch_ids = prevBranches;
                         }
-                        supabase.functions.invoke('disable-employee-auth', {
-                            body: { employeeId: existing.employee_id, action: 'enable' }
-                        }).catch(err => console.warn('No se pudo reactivar la cuenta Auth:', err));
+                        try { await cuentaDeAcceso(existing.employee_id, 'enable'); } catch (e) { avisoDeCuenta = e; }
                     }
                 }
             }
@@ -984,6 +1032,18 @@ export const createSystemSlice = (set, get) => ({
 
             const { error: updateErr } = await updateEmployeeEventMetadata(eventId, newMeta);
             if (updateErr) throw updateErr;
+
+            // Cancelar puede revertir una baja y reabrir una cuenta: tiene que
+            // quedar quién lo hizo, no sólo el motivo en la metadata.
+            const empCancel = get().employees.find(e => String(e.id) === String(existing.employee_id));
+            await get().appendAuditLog('ACCION_RRHH_CANCELADA', existing.employee_id, {
+                timeline_title: `Evento RRHH cancelado: ${String(existing.type || '').replace(/_/g, ' ')}`,
+                dimension: 'HR',
+                branch_id: empCancel?.branchId,
+                old_value: existing.type,
+                new_value: reason,
+                details: { eventId, reverted },
+            });
 
             // Actualizar estado local sin refetch completo
             set((state) => {
@@ -1001,36 +1061,55 @@ export const createSystemSlice = (set, get) => ({
             });
 
             emitir('employee-event-updated', { employeeId: existing.employee_id });
+            if (avisoDeCuenta) throw avisoDeCuenta;
             return true;
         } catch (err) {
+            // Se relanza: quien cancela tiene que saber POR QUÉ no se canceló.
+            // Antes devolvía `false` y la pantalla cerraba el diálogo sin decir nada.
             console.error('Error cancelando evento:', err);
-            return false;
+            throw err;
         }
     },
 
     editEmployeeEvent: async (eventId, newEventData, employeeId) => {
         try {
-            const { data: existing } = await fetchEmployeeEventMetadata(eventId);
+            const { data: existing, error: exErr } = await fetchEmployeeEventMetadata(eventId);
+            if (exErr) throw exErr;
 
             const currentMeta = typeof existing.metadata === 'string'
                 ? JSON.parse(existing.metadata)
                 : (existing.metadata || {});
 
-            await updateEmployeeEventMetadata(eventId, {
-                ...currentMeta,
-                status: 'SUPERSEDED',
-                editedAt: new Date().toISOString()
-            });
-
             const cleanData = { ...newEventData };
             delete cleanData._editingEventId;
 
+            // El orden importa (auditoría 2026-10-14): primero la corrección,
+            // DESPUÉS la original pasa a SUPERSEDED. Al revés, si la nueva
+            // fallaba —fechas que se cruzan, el tope de plazas, la red— la
+            // original quedaba «EDITADO» sin reemplazo: la novedad desaparecía.
+            // `excludeEventId` es lo que deja crearla mientras la vieja sigue viva.
             const newId = await get().registerEmployeeEvent(
                 employeeId,
                 { ...cleanData, originalEventId: eventId, isEdit: true },
                 null,
                 { excludeEventId: eventId, skipRefresh: true }
             );
+
+            const { error: supErr } = await updateEmployeeEventMetadata(eventId, {
+                ...currentMeta,
+                status: 'SUPERSEDED',
+                editedAt: new Date().toISOString(),
+                supersededBy: newId,
+            });
+            if (supErr) throw usuario(`La corrección quedó guardada, pero la novedad original sigue vigente: ${supErr.message}. Cancélala desde el historial.`);
+
+            const empEdit = get().employees.find(e => String(e.id) === String(employeeId));
+            await get().appendAuditLog('ACCION_RRHH_CORREGIDA', employeeId, {
+                timeline_title: `Evento RRHH corregido: ${String(cleanData.type || '').replace(/_/g, ' ')}`,
+                dimension: 'HR',
+                branch_id: empEdit?.branchId,
+                details: { eventoOriginal: eventId, eventoNuevo: newId },
+            });
 
             set((state) => ({
                 employees: state.employees.map(emp =>
@@ -1054,7 +1133,7 @@ export const createSystemSlice = (set, get) => ({
             return newId;
         } catch (err) {
             console.error('Error editando evento:', err);
-            return null;
+            throw err;
         }
     },
 
@@ -1735,7 +1814,10 @@ export const createSystemSlice = (set, get) => ({
                 return { employees: next };
             });
         } catch (e) {
+            // Se relanza: el modal de «Adjuntar soporte» se cerraba igual y la
+            // boleta parecía subida.
             console.error("Error subiendo documento al evento:", e);
+            throw e;
         }
     },
 });

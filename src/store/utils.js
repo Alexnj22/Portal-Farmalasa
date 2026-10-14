@@ -21,7 +21,12 @@ export const makeId = () => {
 // exactamente el mismo dato para la persona a la que más conviene protegerlo. El
 // DUI de un adulto se borraba del disco y el del menor se quedaba. Lo encontró
 // la prueba que cruza esta lista contra `CAMPOS_TRAS_LLAVE`.
-export const SENSITIVE_FIELDS = ['kiosk_pin', 'dui', 'alt_identity_document', 'dui_lugar_expedicion', 'dui_fecha_expedicion', 'dui_fecha_vencimiento', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
+// `code` entró el 2026-10-14: el código de carné ES la contraseña de la cuenta
+// de carné (`signInWithPassword({ password: code })`). Quedaba en claro en el
+// borrador del alta —al enlazar, el de una persona ACTIVA— y en el padrón
+// cacheado de todo el que ve Ventas. El arranque lo vuelve a pegar desde
+// `get_vendedores` en cada carga, así que el caché no lo necesita.
+export const SENSITIVE_FIELDS = ['code', 'kiosk_pin', 'dui', 'alt_identity_document', 'dui_lugar_expedicion', 'dui_fecha_expedicion', 'dui_fecha_vencimiento', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
 
 // ── Las diez que la sesión ya NO puede escribir ────────────────────────────
 //

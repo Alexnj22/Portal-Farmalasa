@@ -120,7 +120,7 @@ export default function Personal() {
   const exportar = () => {
     const visibles = secciones.flatMap((s) => s.data.filter((f) => f.emp).map((f) => f.emp));
     const { headers, rows, nombre } = tablaDelDirectorio(visibles, nombreDe, {
-      identidad: !!hasPermission?.('staff_detail', 'can_view'), credenciales: !!hasPermission?.('ventas', 'can_view'),
+      identidad: !!hasPermission?.('staff_detail', 'can_view'),
     });
     Promise.resolve(compartirCsv({ headers, rows, nombre, modulo: 'personal' })).catch(() => {});
   };

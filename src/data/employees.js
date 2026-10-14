@@ -264,3 +264,21 @@ export function fetchAttendancePunchDetails(punchId) {
 export function updateAttendancePunch(punchId, patch) {
     return supabase.from('attendance').update(patch).eq('id', punchId);
 }
+
+// Cerrar o reabrir la cuenta de acceso de una persona, MIRANDO la respuesta.
+// `functions.invoke` no rechaza la promesa cuando la función falla: devuelve
+// `{ error }` o el cuerpo `{ ok: false }`. Con un `.catch` y nada más, una baja
+// podía dejar la cuenta abierta y una recontratación dejarla cerrada, y nadie
+// se enteraba. El cambio en la ficha ya está hecho a esta altura, así que el
+// mensaje lo dice.
+export async function cuentaDeAcceso(employeeId, action) {
+    const { data, error } = await supabase.functions.invoke('disable-employee-auth', {
+        body: { employeeId, action },
+    });
+    if (error || data?.ok === false) {
+        const motivo = error?.message || data?.error || 'sin respuesta';
+        throw Object.assign(new Error(action === 'disable'
+            ? `La baja quedó registrada, pero no se pudo cerrar su acceso al portal (${motivo}). Avísale a soporte.`
+            : `El cambio quedó registrado, pero no se pudo reabrir su acceso al portal (${motivo}). Avísale a soporte.`), { userFacing: true });
+    }
+}

@@ -1,9 +1,9 @@
-import React, { useMemo, useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useSyncExternalStore, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
   Cake, Medal, CornerDownRight, UserPlus, Download, GraduationCap,
-  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays,
+  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays, AlertTriangle,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -27,7 +27,7 @@ import Button from '../../components/common/Button';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { clickable } from '@nucleo/utils/clickable';
-import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
+import { estadoResuelto, hayQuePreguntar, pedirEstado, suscribirse, versionDeEstados } from '@nucleo/data/estadosDePersonas';
 import { getRoleTheme } from '@nucleo/utils/scheduleHelpers';
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { repartirSala } from '@nucleo/utils/mandoDeSala';
@@ -101,6 +101,44 @@ const alertasDe = (emp) => alertasDePersona(emp).map((a) => ({ ...a, icon: ICONO
 
 const cargosDe = (emp) => [emp.role, emp.secondary_role || emp.secondaryRole].filter(Boolean);
 
+// Quien ya no trabaja acá. Estaba escrita tres veces con la misma lista.
+const BAJAS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
+const esDeBaja = (emp) => BAJAS.includes(emp?.status);
+
+// ── ¿Trabaja en esta sala? ────────────────────────────────────────────────
+// La principal o cualquiera de las que cubre (`employee_branches`, que el
+// arranque deja en `assigned_branch_ids`). Mirando sólo `branch_id`, filtrar
+// por Salud 3 escondía a quien la recorre todas las semanas. Es sólo para el
+// FILTRO: la sección sigue siendo la sala principal y el alcance no cambia.
+const cubreLaSala = (emp, salaId) =>
+  String(emp.branchId ?? emp.branch_id ?? '') === String(salaId) ||
+  (emp.assigned_branch_ids || []).some(id => String(id) === String(salaId));
+
+// ── El estado, con la MISMA fuente que el aro ─────────────────────────────
+//
+// Sin `staff_detail` el arranque trae sólo el historial PROPIO, así que
+// `estadoDePersona` sobre cualquier otra ficha decía «está» siempre. El aro de
+// la foto ya lo sabía y le preguntaba a la base (`get_estados_de_personas`);
+// la píldora, las pestañas y el pulso de la sala no. O sea: aro ámbar al lado
+// de una tarjeta muda y de una lista «Ausentes» vacía.
+//
+// Esto le pide al mismo caché, en una sola tanda, a todas las personas del
+// alcance —no sólo a las que se dibujan: la pestaña «Ausentes» tiene que
+// poder encontrar a quien todavía no se pintó—, y devuelve un lector que
+// aplica la misma regla que `AvatarConEstado` (`estadoResuelto`).
+function useEstadoDe(personas) {
+  const historialCompleto = useStaff(s => s.historialCompleto);
+  const version = useSyncExternalStore(suscribirse, versionDeEstados, () => 0);
+  useEffect(() => {
+    (personas || []).forEach(p => { if (hayQuePreguntar(p, historialCompleto)) pedirEstado(p.id); });
+  }, [personas, historialCompleto]);
+  // `version` en las dependencias es lo que hace que la lista se vuelva a
+  // filtrar cuando contesta la base: el lector es otro, y los `useMemo` que
+  // dependen de él se recalculan.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useCallback((emp) => estadoResuelto(emp, historialCompleto), [historialCompleto, version]);
+}
+
 // ── Orden de las secciones ────────────────────────────────────────────────
 // El mismo criterio que ya usa la tabla, para que cambiar de vista no cambie
 // el orden de las salas y haya que volver a buscarlas.
@@ -109,15 +147,15 @@ const cargosDe = (emp) => [emp.role, emp.secondary_role || emp.secondaryRole].fi
 // `data-surface="card"` y no un `<div>` con borde y radio a mano: dibujarla a
 // mano deja el radio FIJO cuando `--card-radius` cambia por tema, y falla la
 // categoría `tarjeta-a-mano` de `gate:design`.
-function TarjetaPersona({ emp, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir, editar, recontratar, puedeEditar }) {
-  const estado = useMemo(() => estadoDePersona(emp), [emp]);
+function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir, editar, recontratar, puedeEditar }) {
+  const estado = useMemo(() => estadoDe(emp), [estadoDe, emp]);
   // `!!estado` ya no alcanza: durante la cuenta regresiva hay estado y la
   // persona está en la sala. Ver `estaAusenteHoy`.
   const ausente = !!estado && !estado.faltan;
   const alertas = useMemo(() => alertasDe(emp), [emp]);
   const cargos = cargosDe(emp);
   const tel = soloDigitos(emp.phone);
-  const inactiva = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(emp.status);
+  const inactiva = esDeBaja(emp);
 
   // ── Las áreas que cubre, cuando son más de la suya ─────────────────────
   // Hay puestos que existen porque recorren —mantenimiento repara en las
@@ -288,7 +326,11 @@ const fechaCortaDMA = (d) => {
 };
 
 function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
-  const est = PRACTICANTE_ESTADO[p.estado] || PRACTICANTE_ESTADO.ACTIVO;
+  // Un estado que la tabla no conoce se dice TAL CUAL y en neutro. Caer a
+  // «Activo» afirmaba algo que nadie escribió sobre alguien que quizá ya
+  // terminó sus horas.
+  const est = PRACTICANTE_ESTADO[p.estado]
+    || { icon: null, label: p.estado || 'Sin estado', variante: 'neutral' };
   const nombre = `${p.first_names || ''} ${p.last_names || ''}`.trim();
 
   return (
@@ -355,31 +397,34 @@ function PuestoVacante({ cargo }) {
 // Los `StatCard` de `/personal` cuentan la EMPRESA entera. Cuántos hay hoy en
 // Salud 2 —y cuántos de ellos están ausentes— no se puede saber en ninguna
 // pantalla del portal. Es lo que este renglón contesta.
-function PulsoDeSala({ personas }) {
+function PulsoDeSala({ personas, bajas = 0, estadoDe }) {
   const conteo = useMemo(() => {
     const m = new Map();
     personas.forEach(p => {
-      const e = estadoDePersona(p);
+      const e = estadoDe(p);
       // Quien tiene la cuenta regresiva corriendo TODAVÍA está: cuenta como
       // activo. Si no, el pulso de la sala restaría gente presente.
       const k = e && !e.faltan ? e.texto : 'Activos';
       m.set(k, (m.get(k) || 0) + 1);
     });
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [personas]);
+  }, [personas, estadoDe]);
 
+  // Quien ya no trabaja acá no es parte de la sala: no suma a «N personas».
+  // Se nombra aparte para que el número no se contradiga con las tarjetas.
   return (
     <p className="text-caption font-bold text-content-2">
       {personas.length} persona{personas.length === 1 ? '' : 's'}
       {conteo.map(([k, n]) => (
         <span key={k} className="text-content-3"> · {n} {k.toLowerCase()}</span>
       ))}
+      {bajas > 0 && <span className="text-content-3"> · {bajas} de baja</span>}
     </p>
   );
 }
 
-function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, recontratar, puedeEditar }) {
-  const { sucursal, sinSede, personas, jefe, segundos, vacantesDeSegundo, equipo, adscritos } = seccion;
+function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, editar, recontratar, puedeEditar }) {
+  const { sucursal, sinSede, personas, activas, bajas, jefe, segundos, vacantesDeSegundo, equipo, adscritos } = seccion;
 
   // `every` sobre una lista vacía es `true`, y una sección sin personas no
   // existe (se arma agrupando lo que hay) — pero el guard queda escrito para que
@@ -393,10 +438,10 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, reco
           <MapPin size={15} strokeWidth={2.5} className="shrink-0 text-content-3" />
           {sinSede ? 'Sin sucursal asignada' : sucursal}
         </h2>
-        <PulsoDeSala personas={personas} />
+        <PulsoDeSala personas={activas} bajas={bajas.length} estadoDe={estadoDe} />
         {/* Un hueco se DICE. Que una sala no tenga jefatura no es un renglón
             vacío que nadie mira: es un hallazgo, y acá es donde se ve. */}
-        {!jefe && !sinSede && (
+        {!jefe && !sinSede && activas.length > 0 && (
           <Badge variant="warning" size="sm" icon={AlertCircle} uppercase={false}>
             Sin jefatura
           </Badge>
@@ -429,10 +474,10 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, reco
       {(jefe || !!vacantesDeSegundo.length) && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {jefe && (
-            <TarjetaPersona key={jefe.id} emp={jefe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="jefatura" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
+            <TarjetaPersona key={jefe.id} emp={jefe} estadoDe={estadoDe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="jefatura" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
           )}
           {segundos.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="segundo" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
+            <TarjetaPersona key={emp.id} emp={emp} estadoDe={estadoDe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} destacada lugar="segundo" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
           ))}
           {vacantesDeSegundo.map(cargo => (
             <PuestoVacante key={cargo.id} cargo={cargo.name} />
@@ -443,7 +488,7 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, reco
       {!!equipo.length && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {equipo.map(emp => (
-            <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="equipo" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
+            <TarjetaPersona key={emp.id} emp={emp} estadoDe={estadoDe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="equipo" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
           ))}
         </div>
       )}
@@ -457,7 +502,24 @@ function SeccionSucursal({ seccion, roles, nombreDeSucursal, abrir, editar, reco
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {adscritos.map(emp => (
-              <TarjetaPersona key={emp.id} emp={emp} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} conSuperior lugar="adscrito" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
+              <TarjetaPersona key={emp.id} emp={emp} estadoDe={estadoDe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} conSuperior lugar="adscrito" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Quien ya no trabaja acá —sólo sale en «Todos» y «Ausentes», que es
+          donde se lo busca para reincorporarlo—. Va al final y aparte: dentro
+          del reparto podía quedar como JEFATURA de la sala y contaba en su
+          pulso. */}
+      {!!bajas.length && (
+        <>
+          <p className="pt-1 text-micro font-black uppercase tracking-widest text-content-3">
+            Ya no trabajan aquí
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {bajas.map(emp => (
+              <TarjetaPersona key={emp.id} emp={emp} estadoDe={estadoDe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="baja" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
             ))}
           </div>
         </>
@@ -474,6 +536,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   const employeesStatus = useStaff(s => s.employeesStatus);
   const practicantes = useStaff(s => s.practicantes);
   const practicantesLoading = useStaff(s => s.practicantesLoading);
+  const practicantesError = useStaff(s => s.practicantesError);
   const fetchPracticantes = useStaff(s => s.fetchPracticantes);
   const deletePracticante = useStaff(s => s.deletePracticante);
   const { user, getScope, hasPermission } = useAuth();
@@ -482,13 +545,11 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   // en pantalla (canon 2026-08-03).
   const canDownload = hasPermission('staff_list_descargar');
   // Qué columnas del directorio se pueden llenar. El DUI llega por
-  // `get_employee_identidad` (llave `staff_detail`) y el código de carné por
-  // `get_vendedores` (llave `ventas`): sin la llave vienen vacías, y una
-  // columna vacía en un CSV que se comparte por correo se lee como «acá nadie
+  // `get_employee_identidad` (llave `staff_detail`): sin la llave viene vacío,
+  // y una columna vacía en un CSV que se comparte por correo se lee como «acá nadie
   // tiene DUI». La columna que no se puede llenar no va — ver `directorioCsv`.
   const llavesDelDirectorio = {
     identidad: hasPermission('staff_detail', 'can_view'),
-    credenciales: hasPermission('ventas', 'can_view'),
   };
 
   const busqueda = (searchTerm || '').trim();
@@ -530,14 +591,18 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     const base = getScope('staff_list') !== 'ALL'
       ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
       : (employees || []);
-    return base.filter(e => !['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(e.status));
+    return base.filter(e => !esDeBaja(e));
   }, [employees, getScope, user?.branchId]);
 
   // Mismo alcance que el listado: quien sólo ve su sala, sólo ve su sala.
+  const enAlcance = useMemo(() => (getScope('staff_list') !== 'ALL'
+    ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
+    : (employees || [])), [employees, getScope, user?.branchId]);
+
+  const estadoDe = useEstadoDe(enAlcance);
+
   const visibles = useMemo(() => {
-    const base = getScope('staff_list') !== 'ALL'
-      ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
-      : (employees || []);
+    const base = enAlcance;
     // Las cuentas externas y del sistema no son personal y no arman equipo.
     // Siguen alcanzables en `/personal?tab=externos`.
     // «Externos y sistema» es la ÚNICA vista que muestra fichas que no son
@@ -552,19 +617,21 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       // decir dos veces lo mismo y abrir la puerta a que las dos listas se
       // separaran. «Ausentes» incluye a quien ya no trabaja acá a propósito:
       // es la vista donde se lo va a buscar para reincorporarlo.
+      // «No está hoy» es «hay estado y no es la cuenta regresiva» — la misma
+      // pregunta que `estaAusenteHoy`, con el estado que también ve el aro.
       .filter(e => {
-        if (vista === 'activos') return !estaAusenteHoy(e);
-        if (vista === 'ausentes') return estaAusenteHoy(e);
-        return true;
+        if (vista !== 'activos' && vista !== 'ausentes') return true;
+        const est = estadoDe(e);
+        const ausente = !!est && !est.faltan;
+        return vista === 'ausentes' ? ausente : !ausente;
       })
-      .filter(e => !selectedBranch || selectedBranch === 'ALL' ||
-        String(e.branchId ?? e.branch_id ?? '') === String(selectedBranch));
+      .filter(e => !selectedBranch || selectedBranch === 'ALL' || cubreLaSala(e, selectedBranch));
     if (!busqueda) return personas;
     return smartFilter(busqueda, personas, e => [
       e?.name, e?.role, e?.secondary_role,
       nombreDeSucursal.get(Number(e?.branchId || e?.branch_id)),
     ]).results;
-  }, [employees, getScope, user?.branchId, busqueda, selectedBranch, vista, esExternos, nombreDeSucursal]);
+  }, [enAlcance, estadoDe, busqueda, selectedBranch, vista, esExternos, nombreDeSucursal]);
 
   // ── El reparto ────────────────────────────────────────────────────────
   // Las tres reglas —y por qué el primer boceto las tenía mal— viven en
@@ -581,15 +648,22 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     });
 
     return [...porSucursal.entries()]
-      .map(([id, personas]) => ({
-        id,
-        // `id === 0` no es una sucursal: es una ficha sin sede. Se dice, no se
-        // disfraza de sala — ver el aviso de la sección.
-        sinSede: id === 0,
-        sucursal: nombreDeSucursal.get(id) || SIN_ASIGNAR,
-        ...repartirSala({ personas, todos: plantilla, roles, sucursalId: id || null }),
-        personas,
-      }))
+      .map(([id, personas]) => {
+        // Al reparto entra sólo quien trabaja acá. Con las bajas adentro, una
+        // supervisora liquidada podía salir como la JEFATURA de la sala.
+        const activas = personas.filter(e => !esDeBaja(e));
+        return {
+          id,
+          // `id === 0` no es una sucursal: es una ficha sin sede. Se dice, no
+          // se disfraza de sala — ver el aviso de la sección.
+          sinSede: id === 0,
+          sucursal: nombreDeSucursal.get(id) || SIN_ASIGNAR,
+          ...repartirSala({ personas: activas, todos: plantilla, roles, sucursalId: id || null }),
+          personas,
+          activas,
+          bajas: personas.filter(esDeBaja),
+        };
+      })
       .sort((a, b) => {
         // La ficha sin sede va al final: es un pendiente, no una sala.
         if (a.sinSede !== b.sinSede) return a.sinSede ? 1 : -1;
@@ -688,6 +762,9 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     : (employeesStatus !== 'ready' && !employees.length);
 
   const hayAlgo = esPracticantes ? practicantesPorSala.length > 0 : secciones.length > 0;
+  // Un fallo de red NO es «Sin practicantes»: se dice como error y con
+  // reintento, y el vacío no se pinta encima.
+  const errorDePracticantes = esPracticantes && !!practicantesError && !practicantesLoading;
   const hayFiltros = !!busqueda || (selectedBranch && selectedBranch !== 'ALL') || vista !== 'todos';
   const limpiar = useCallback(() => {
     setSearchTerm('');
@@ -773,7 +850,16 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
           </div>
         )}
 
-        {!cargando && !hayAlgo && (
+        {errorDePracticantes && (
+          <Notice variant="danger" icon={AlertTriangle}>
+            No se pudo cargar la lista de practicantes. {mensajeAmigable(practicantesError)}{' '}
+            <Button variant="secondary" size="sm" icon={RefreshCw} onClick={() => fetchPracticantes()}>
+              Reintentar
+            </Button>
+          </Notice>
+        )}
+
+        {!cargando && !hayAlgo && !errorDePracticantes && (
           <EmptyState
             icon={esPracticantes ? GraduationCap : Search}
             title={esPracticantes ? 'Sin practicantes' : esExternos ? 'Sin cuentas externas' : 'Sin personal'}
@@ -814,7 +900,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
 
         {!cargando && !esPracticantes && secciones.map(s => (
           <SeccionSucursal
-            key={s.id} seccion={s} roles={roles} nombreDeSucursal={nombreDeSucursal}
+            key={s.id} seccion={s} estadoDe={estadoDe} roles={roles} nombreDeSucursal={nombreDeSucursal}
             abrir={abrir} editar={editarRapido} recontratar={recontratar} puedeEditar={canEdit}
           />
         ))}

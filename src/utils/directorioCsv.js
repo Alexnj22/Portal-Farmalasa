@@ -20,19 +20,22 @@ import { hoySV } from './fecha';
 
 // ── Las columnas, y cuáles pueden no estar ─────────────────────────────────
 //
-// Dos de estas diez NO viven en `employees_safe` y llegan por una función que
+// Una de estas nueve NO vive en `employees_safe` y llega por una función que
 // contesta según quien pregunta: el DUI por `get_employee_identidad` (llave
-// `staff_detail`) y el código de carné por `get_vendedores` (llave `ventas`).
-// Sin la llave llegan `undefined`, y una columna de 48 celdas vacías en un
+// `staff_detail`). Sin la llave llega `undefined`, y una columna de 48 celdas vacías en un
 // archivo que se llama «Directorio_Personal» no se lee como «no me dejaron
 // verlo»: se lee como «acá nadie tiene DUI». Es el mismo defecto que el
 // listado tenía en la píldora de pendientes, con el agravante de que un CSV
 // sale del portal y se comparte por correo.
 //
-// Por eso la columna que no se puede llenar NO VA. Un archivo con nueve
-// columnas dice la verdad sobre sí mismo; uno con diez y una vacía, no.
+// Por eso la columna que no se puede llenar NO VA. Un archivo con ocho
+// columnas dice la verdad sobre sí mismo; uno con nueve y una vacía, no.
 const COLUMNAS = [
-    { titulo: 'Código',            llave: 'credenciales', valor: (e) => e.code },
+    // El código de carné NO sale (auditoría 2026-10-14): es la contraseña de
+    // las cuentas de carné (`signInWithPassword({ password: code })`), y la
+    // columna la decidía el permiso de VENTAS. La descarga de un supervisor
+    // llevaba las credenciales de toda la planilla en un archivo que se manda
+    // por correo. Ningún permiso justifica eso en un CSV.
     { titulo: 'Nombre Completo',   valor: (e) => e.name },
     { titulo: 'Sucursal',          valor: (e, ctx) => ctx.nombreDeSucursal?.get(Number(e.branchId || e.branch_id)) || SIN_ASIGNAR },
     { titulo: 'Cargo Principal',   valor: (e) => e.role },
@@ -47,7 +50,7 @@ const COLUMNAS = [
 /**
  * Baja el directorio. `nombreDeSucursal` es un `Map(id → nombre)`.
  *
- * `llaves` dice qué pudo leer quien descarga: `{ identidad, credenciales }`.
+ * `llaves` dice qué pudo leer quien descarga: `{ identidad }`.
  * Se pasa desde la vista —que es la que conoce los permisos— y no se adivina
  * mirando si las celdas vinieron vacías: un directorio de gente a la que
  * genuinamente le falta el DUI se vería igual, y ahí la columna SÍ tiene que

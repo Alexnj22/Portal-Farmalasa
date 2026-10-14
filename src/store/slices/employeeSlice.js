@@ -7,7 +7,7 @@ import {
     codigoDeCarneLibre, duiDisponible,
     upsertEducationCatalogEntries, insertEmployee, updateEmployee as updateEmployeeRow, updateEmployeeReturning,
     guardarDatosProtegidos,
-    insertEmployeeEventRaw, fetchAttendanceSince,
+    insertEmployeeEventRaw, fetchAttendanceSince, cuentaDeAcceso,
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
 import { insertEmployeeBranches, deleteEmployeeBranches } from '../../data/system';
@@ -25,6 +25,7 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 
 // El motivo de un paso del alta que falló, legible para quien da de alta.
 const mensajeDeFallo = (err) => mensajeAmigable(err, err?.message || 'sin motivo');
+import { revisarNup } from '../../utils/nupAfp';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -224,13 +225,16 @@ const validateDui = async (dui, excludeId = null) => {
 // Campos OPCIONALES con formato fijo: vacío es válido (queda pendiente y el
 // banner "Información Pendiente" lo recuerda), pero si tienen contenido deben
 // estar COMPLETOS — a medias no se guarda: o se completa, o se borra.
-const validateOptionalFormats = (data) => {
+const validateOptionalFormats = (data, { esAlta = false } = {}) => {
     const digitsLen = (v) => String(v ?? '').replace(/\D/g, '').length;
     const checks = [
         ['phone', 8, 'El Teléfono'],
         ['emergency_contact_phone', 8, 'El Teléfono de Emergencia'],
         ['isss_number', 9, 'El Número ISSS'],
-        ['afp_number', 12, 'El NUP (AFP)'],
+        // El NUP NO va acá: tiene dos largos válidos (9 si es el DUI, vigente
+        // desde enero de 2023; 12 si es de antes) y exigir 12 rechazaba el
+        // número que el formulario —`revisarNup`— acepta. Medido el 2026-10-14:
+        // 7 fichas con NUP de 9 dígitos no se podían volver a guardar.
     ];
     for (const [field, len, label] of checks) {
         const val = data[field];
@@ -241,6 +245,11 @@ const validateOptionalFormats = (data) => {
                 `Complétalo, o bórralo para guardarlo como pendiente.`
             );
         }
+    }
+
+    if (data.afp_number !== undefined) {
+        const nup = revisarNup(data.afp_number, data.dui);
+        if (!nup.ok) throw new Error(`El NUP (AFP) no es válido: ${nup.motivo}`);
     }
 
     if (data.email && String(data.email).trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email.trim())) {
@@ -369,9 +378,12 @@ const validateOptionalFormats = (data) => {
     // Art. 23.2 Código de Trabajo: el DUI es obligatorio en el contrato escrito;
     // en El Salvador no se tramita antes de los 18 años, así que para menores se
     // acepta "cualquier documento fehaciente" en su lugar (partida de nacimiento,
-    // carné de minoridad). Solo se exige cuando el dato llega en el payload (los
-    // updates parciales no siempre traen dui/birth_date).
-    if (data.dui !== undefined || data.alt_identity_document !== undefined) {
+    // carné de minoridad). Se exige en el ALTA, no en cada edición: al editar,
+    // el formulario manda el DUI vacío de quien todavía no lo tiene cargado y
+    // la regla de la pantalla es que lo vacío se guarda como pendiente.
+    // Exigiéndolo siempre, a las 31 fichas de adultos sin DUI (medido el
+    // 2026-10-14) no se les podía corregir ni el teléfono.
+    if (esAlta && (data.dui !== undefined || data.alt_identity_document !== undefined)) {
         let isMinor = false;
         if (data.birth_date) {
             const bd = new Date(`${data.birth_date}T00:00:00`);
@@ -673,7 +685,7 @@ export const createEmployeeSlice = (set, get) => ({
             }
 
             await validateDui(formData.dui || null, absorbeA);
-            validateOptionalFormats(formData);
+            validateOptionalFormats(formData, { esAlta: true });
 
             const dbPayload = {
                 first_names: fNames,
@@ -1153,7 +1165,12 @@ export const createEmployeeSlice = (set, get) => ({
             if (uploadedFile instanceof File) {
                 // Comprimimos antes de subir
                 const compressedPhoto = await compressImage(uploadedFile);
-                dbPayload.photo_url = await get().uploadEmployeeFile(compressedPhoto, id, 'foto_perfil');
+                const subida = await get().uploadEmployeeFile(compressedPhoto, id, 'foto_perfil');
+                // `uploadEmployeeFile` devuelve null cuando falla, y escribir ese
+                // null borraba la foto que la persona ya tenía (auditoría
+                // 2026-10-14). Se avisa y no se guarda nada.
+                if (!subida) throw Object.assign(new Error('La foto no se pudo subir. No se guardó ningún cambio; intenta de nuevo.'), { userFacing: true });
+                dbPayload.photo_url = subida;
             }
 
             if (updatedData.employee_documents !== undefined) {
@@ -1374,12 +1391,19 @@ export const createEmployeeSlice = (set, get) => ({
             }
 
             // Sync branch assignments to junction table if provided
+            // Los dos `{ error }` se miran: un insert que falla DESPUÉS del
+            // delete dejaba a la persona sin sus sucursales y la pantalla decía
+            // «guardado». La ficha ya se escribió, así que el aviso va al final,
+            // después de la bitácora y de la copia en memoria.
+            let errSalas = null;
             if (newAssignedBranches !== null) {
-                await deleteEmployeeBranches(id);
-                if (newAssignedBranches.length > 0) {
-                    await insertEmployeeBranches(
+                const { error: errBorrar } = await deleteEmployeeBranches(id);
+                if (errBorrar) errSalas = errBorrar;
+                else if (newAssignedBranches.length > 0) {
+                    const { error: errInsertar } = await insertEmployeeBranches(
                         newAssignedBranches.map(branch_id => ({ employee_id: id, branch_id }))
                     );
+                    if (errInsertar) errSalas = errInsertar;
                 }
             }
 
@@ -1469,6 +1493,9 @@ export const createEmployeeSlice = (set, get) => ({
                 persistEmployees(next);
                 return { employees: next };
             });
+            if (errSalas) {
+                throw Object.assign(new Error(`La ficha se guardó, pero sus sucursales adicionales no: ${errSalas.message}. Vuelve a guardarlas.`), { userFacing: true });
+            }
             return true;
         } catch (err) {
             console.error("Error actualizando empleado:", err);
@@ -1504,6 +1531,15 @@ export const createEmployeeSlice = (set, get) => ({
         // una fecha que ya no correspondía a nada.
         const tipo = rehireData.contract_type || 'INDEFINIDO';
         const aPlazo = tipo === 'TEMPORAL';
+        // Las mismas reglas que el formulario (`faltaParaRecontratar`), acá
+        // también: la app y cualquier otro llamador pasan por este método.
+        const horas = Number(rehireData.weekly_contracted_hours ?? 44);
+        if (!Number.isInteger(horas) || horas < 1 || horas > 44) {
+            throw Object.assign(new Error('Las horas semanales van de 1 a 44 (Art. 161).'), { userFacing: true });
+        }
+        if (aPlazo && !(rehireData.contract_end_date && rehireData.contract_temporal_legal_basis && String(rehireData.contract_temporal_reason ?? '').trim())) {
+            throw Object.assign(new Error('Un contrato a plazo necesita fecha de fin, base legal y motivo (Art. 25).'), { userFacing: true });
+        }
         const dbPayload = {
             status: 'ACTIVO',
             branch_id: parseInt(rehireData.branch_id, 10),
@@ -1511,7 +1547,7 @@ export const createEmployeeSlice = (set, get) => ({
             secondary_role_id: rehireData.secondary_role_id ? parseInt(rehireData.secondary_role_id, 10) : null,
             hire_date: rehireData.hire_date,
             contract_type: tipo,
-            weekly_contracted_hours: parseInt(rehireData.weekly_contracted_hours, 10) || 44,
+            weekly_contracted_hours: horas,
             base_salary: rehireData.base_salary ? parseFloat(rehireData.base_salary) : null,
             contract_end_date: aPlazo ? (rehireData.contract_end_date || null) : null,
             contract_temporal_legal_basis: aPlazo ? (rehireData.contract_temporal_legal_basis || null) : null,
@@ -1528,6 +1564,11 @@ export const createEmployeeSlice = (set, get) => ({
             // haría que el portal diga «ya se remitió» sobre algo que nunca se
             // remitió. Los ocho días del Art. 18 arrancan otra vez.
             mtps_remitido_fecha: null,
+            // Y el contrato nuevo empieza el día del reingreso, sin las
+            // prórrogas del anterior: arrastrarlas hacía que la ficha contara
+            // la antigüedad del plazo y sus renovaciones desde el contrato viejo.
+            contract_start_date: rehireData.hire_date || null,
+            contrato_prorrogas: [],
         };
 
         // La recontratación también toca el sueldo, así que pasa por el mismo
@@ -1540,15 +1581,16 @@ export const createEmployeeSlice = (set, get) => ({
         const { error } = await updateEmployeeRow(id, filaPlanaRehire);
         if (error) throw error;
 
-        // Levantar el ban de la cuenta Auth aplicado en la baja (best-effort)
-        supabase.functions.invoke('disable-employee-auth', {
-            body: { employeeId: id, action: 'enable' }
-        }).catch(err => console.warn('No se pudo reactivar la cuenta Auth:', err));
+        // Levantar el ban de la cuenta Auth aplicado en la baja. `invoke` no
+        // rechaza cuando falla: se mira la respuesta, y el aviso se lanza al
+        // final, con la recontratación ya reflejada en la bitácora y en memoria.
+        let avisoDeCuenta = null;
+        try { await cuentaDeAcceso(id, 'enable'); } catch (e) { avisoDeCuenta = e; }
 
         const roles = get().roles;
         const mainRoleName = roles.find(r => String(r.id) === String(dbPayload.role_id))?.name || null;
 
-        await insertEmployeeEventRaw({
+        const { error: errEvento } = await insertEmployeeEventRaw({
             employee_id: id,
             type: 'REHIRE',
             date: rehireData.hire_date,
@@ -1559,6 +1601,10 @@ export const createEmployeeSlice = (set, get) => ({
                 target_branch_id: dbPayload.branch_id,
             }
         });
+        // Sin este renglón el historial no dice que la persona volvió.
+        if (errEvento && !avisoDeCuenta) {
+            avisoDeCuenta = Object.assign(new Error(`La recontratación quedó guardada, pero no se anotó en el historial: ${errEvento.message}`), { userFacing: true });
+        }
 
         await get().appendAuditLog('RECONTRATACION', id, {
             timeline_title: `Recontratación: ${emp.name}`,
@@ -1579,6 +1625,7 @@ export const createEmployeeSlice = (set, get) => ({
             return { employees: next };
         });
 
+        if (avisoDeCuenta) throw avisoDeCuenta;
         return true;
     },
 

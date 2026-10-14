@@ -24,7 +24,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '@nucleo/data/requests';
 import { fetchEmployeeTimeline, fetchCredenciales } from '@nucleo/data/employees';
-import { historialDeFicha, ausenciasFiltradas, diasDeAusencia, varianteDeEvento, eventoVigente, datosParaCorregir } from '@nucleo/utils/historialDeFicha';
+import { historialDeFicha, ausenciasFiltradas, diasDeAusencia, varianteDeEvento, eventoVigente, datosParaCorregir, soporteDe, esSancion } from '@nucleo/utils/historialDeFicha';
 // `lazy`: el carné del día arrastra el selector de sala y su diálogo, y esta
 // vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
 // quien tiene el permiso — y sólo cuando el bloque llega a pintarse.
@@ -433,6 +433,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         empleado={emp}
                         sala={branch?.name}
                         firmante={user?.name}
+                        // Sin esto la sanción recién puesta no aparecía en el
+                        // historial hasta recargar la página.
+                        onGuardado={() => window.dispatchEvent(new CustomEvent('force-history-refresh'))}
                     />
                 </Suspense>
             )}
@@ -729,13 +732,16 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         <Badge variant="danger" size="sm">CANCELADO</Badge>
                                                                     ) : ev.metadata?.status === 'SUPERSEDED' ? (
                                                                         <Badge size="sm">EDITADO</Badge>
-                                                                    ) : ev.documentId ? (
-                                                                        // Antes este botón no tenía `onClick`: no abría nada.
+                                                                    ) : soporteDe(ev, emp.documents) ? (
+                                                                        // El soporte se busca por `event_id` en los documentos de la
+                                                                        // ficha: `metadata.document_id`, que era lo único que miraba
+                                                                        // este botón, no lo escribe nadie. Con eso, una boleta recién
+                                                                        // adjuntada seguía ofreciendo «Adjuntar Soporte».
                                                                         <Button tone="chart-1" soft size="xs" icon={FileText} onClick={() => {
-                                                                            const doc = (emp.documents || []).find(d => String(d.id) === String(ev.documentId) || (ev.eventoId && String(d.event_id) === String(ev.eventoId)));
+                                                                            const doc = soporteDe(ev, emp.documents);
                                                                             if (doc?.url) setRespaldoViendo(doc);
                                                                         }}>Ver Respaldo Legal</Button>
-                                                                    ) : (
+                                                                    ) : esSancion(ev) ? null : (
                                                                         <Button tone="chart-4" icon={Paperclip} disabled={!canEdit || !ev.eventoId} onClick={() => openModal('uploadDocument', {}, ev.eventoId)}>Adjuntar Soporte</Button>
                                                                     )}
                                                                     {canEdit && eventoVigente(ev) && (
@@ -1229,8 +1235,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             onClick={async () => {
                                 setIsCancelling(true);
                                 const { cancelEmployeeEvent } = useStaffStore.getState();
-                                const ok = await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
-                                if (ok) useToastStore.getState().showToast('Acción Cancelada', 'El evento fue cancelado exitosamente.', 'success');
+                                // El store relanza: un fallo se dice, no se cierra el diálogo en silencio.
+                                try {
+                                    await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
+                                    useToastStore.getState().showToast('Acción Cancelada', 'El evento fue cancelado exitosamente.', 'success');
+                                } catch (err) {
+                                    useToastStore.getState().showToast('No se canceló', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+                                }
                                 setIsCancelling(false);
                                 setShowCancelModal(false);
                                 setCancelReason('');

@@ -16,9 +16,13 @@ const registerInstitucionCatalogEntry = (institucion) => {
 export const createPracticantesSlice = (set, get) => ({
     practicantes: [],
     practicantesLoading: false,
+    // El error se GUARDA, no sólo se imprime. Con un `console.error` a secas la
+    // pantalla recibía la lista vacía de siempre y decía «Sin practicantes»: un
+    // fallo de red se leía igual que una sala sin nadie haciendo horas sociales.
+    practicantesError: null,
 
     fetchPracticantes: async () => {
-        set({ practicantesLoading: true });
+        set({ practicantesLoading: true, practicantesError: null });
         try {
             const { data, error } = await fetchPracticantesData();
             if (error) throw error;
@@ -26,6 +30,7 @@ export const createPracticantesSlice = (set, get) => ({
             return data || [];
         } catch (err) {
             console.error('Error obteniendo practicantes:', err);
+            set({ practicantesError: err });
             return [];
         } finally {
             set({ practicantesLoading: false });

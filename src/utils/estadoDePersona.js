@@ -162,7 +162,11 @@ export function estadoDePersona(emp) {
     const candidatos = (emp?.history || []).filter(h =>
         TEMPORALES.includes(h.type) &&
         h.date <= tope &&
-        (fin(h) >= t || !fin(h))
+        (fin(h) >= t || !fin(h)) &&
+        // Una sanción revocada por el reclamo del Art. 77 dejó de existir —
+        // mismo filtro que el gemelo SQL—. Sin él, la foto quedaba sin aro
+        // (la base ya la descartaba) al lado de una píldora «Suspendido».
+        h.metadata?.reclamo?.estado !== 'REVOCADA'
     );
     const ev = candidatos.sort((a, b) =>
         (a.date > t) - (b.date > t) || b.date.localeCompare(a.date))[0];

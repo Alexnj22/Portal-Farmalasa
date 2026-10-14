@@ -8,7 +8,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { CONTRATOS_DE_RECONTRATACION, horasAlCambiarContrato, sucursalesPorArea } from '@nucleo/utils/reingresoYRecontratacion';
+import { CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, horasAlCambiarContrato, horasValidas, sucursalesPorArea } from '@nucleo/utils/reingresoYRecontratacion';
 
 // Los contratos, las áreas y las horas salen del núcleo (`reingresoYRecontratacion`).
 const CONTRACT_TYPE_OPTIONS = CONTRATOS_DE_RECONTRATACION;
@@ -77,6 +77,36 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                             options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalProps} />
                     </div>
 
+                    {/* Contrato a plazo: fecha de fin, base legal y motivo (Art. 25).
+                        Sin ellos `rehireEmployee` guardaba un TEMPORAL que la ley
+                        presume indefinido. */}
+                    {formData.rehire_contract_type === 'TEMPORAL' && (
+                        <>
+                            <div>
+                                <label className={rotuloCampo('text-content-3')}>
+                                    Fecha de fin {reqBadge}
+                                </label>
+                                <LiquidDatePicker hasError={!formData.rehire_contract_end_date} value={formData.rehire_contract_end_date || ''} onChange={v => set('rehire_contract_end_date', v)} />
+                            </div>
+                            <div>
+                                <label className={rotuloCampo('text-content-3')}>
+                                    Por qué es temporal {reqBadge}
+                                </label>
+                                <LiquidSelect invalid={!formData.rehire_temporal_legal_basis} value={formData.rehire_temporal_legal_basis || ''} onChange={v => set('rehire_temporal_legal_basis', v)}
+                                    options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalProps} />
+                            </div>
+                            <div className="md:col-span-2">
+                                <PortalInput
+                                    label="Motivo del plazo" name="rehire-motivo-plazo" required
+                                    value={formData.rehire_temporal_reason || ''}
+                                    onChange={e => set('rehire_temporal_reason', e.target.value)}
+                                    hasError={!String(formData.rehire_temporal_reason || '').trim()} errorMessage="Requerido"
+                                    placeholder="Ej. Cobertura de incapacidad de la titular del puesto"
+                                />
+                            </div>
+                        </>
+                    )}
+
                     {/* Sucursal */}
                     <div>
                         <label className={rotuloCampo('text-content-3')}>
@@ -108,6 +138,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         type="number"
                         value={formData.rehire_weekly_hours || '44'}
                         onChange={e => set('rehire_weekly_hours', e.target.value)}
+                        hasError={!horasValidas(formData.rehire_weekly_hours || 44)} errorMessage="De 1 a 44 (Art. 161)"
                     />
 
                     {/* Salario base */}

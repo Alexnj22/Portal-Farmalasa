@@ -35,7 +35,10 @@ Deno.serve(async (req: Request) => {
     if (evErr) return json({ ok: false, error: "DB_ERROR", details: evErr.message });
     if (!events?.length) return json({ ok: true, applied: 0, failed: 0, skipped: 0 });
 
-    const { data: roles } = await admin.from("roles").select("id, name, max_limit, scope");
+    const { data: roles, error: rolesErr } = await admin.from("roles").select("id, name, max_limit, scope");
+    // Sin roles, cada ascenso caería en ROLE_NOT_FOUND y quedaría FAILED para
+    // siempre: mejor no tocar nada y que la corrida de mañana lo reintente.
+    if (rolesErr) return json({ ok: false, error: "DB_ERROR", details: rolesErr.message });
 
     let applied = 0, failed = 0, skipped = 0;
     const results: unknown[] = [];
@@ -91,7 +94,20 @@ Deno.serve(async (req: Request) => {
         if (emp.role_id && !(await headcountOk(emp.role_id, b))) applyError = "HEADCOUNT_LIMIT";
         else updates.branch_id = b;
       } else if (ev.type === "PROMOTION" && meta.newRole) {
-        const role = (roles || []).find(r => r.name === meta.newRole);
+        // El cargo se resuelve por su ID, que el portal ya dejó resuelto al
+        // programar (`appliedChanges.role_id`). Buscarlo por el rótulo exacto
+        // fallaba con cualquier diferencia de tilde («Enfermería» contra
+        // «Enfermeria») o si el cargo se renombraba antes de la fecha, y el
+        // evento quedaba FAILED sin que nadie lo viera. El rótulo queda de
+        // respaldo para eventos viejos, normalizado igual que `buscarCargo`.
+        const idProgramado = (meta.appliedChanges as Record<string, unknown> | undefined)?.role_id;
+        const sinTildes = (t: unknown) => String(t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ").trim().toLowerCase();
+        const role = (idProgramado != null
+          ? (roles || []).find(r => String(r.id) === String(idProgramado))
+          : null)
+          ?? (roles || []).find(r => r.name === meta.newRole)
+          ?? (roles || []).find(r => sinTildes(r.name) === sinTildes(meta.newRole));
         if (!role) applyError = "ROLE_NOT_FOUND";
         else {
           const movesBranch = meta.isTransferAndPromotion && meta.targetBranchId;
@@ -142,16 +158,25 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
+      // Lo que no se pudo cerrar queda ESCRITO en el evento: antes la respuesta
+      // de `disable-employee-auth` no se miraba y una baja programada podía
+      // dejar la cuenta abierta sin rastro.
+      let accesoSinCerrar: string | null = null;
       if (ev.type === "TERMINATION") {
-        await admin.from("employee_branches").delete().eq("employee_id", ev.employee_id);
+        const { error: ebErr } = await admin.from("employee_branches").delete().eq("employee_id", ev.employee_id);
+        if (ebErr) accesoSinCerrar = `employee_branches: ${ebErr.message}`;
         // Revocar cuentas Auth (principal + carné @staff.local) vía la función dedicada
         try {
-          await fetch(`${supabaseUrl}/functions/v1/disable-employee-auth`, {
+          const r = await fetch(`${supabaseUrl}/functions/v1/disable-employee-auth`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
             body: JSON.stringify({ employeeId: ev.employee_id, action: "disable" }),
           });
-        } catch { /* best-effort */ }
+          const cuerpo = await r.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+          if (!r.ok || cuerpo?.ok === false) accesoSinCerrar = `auth: ${cuerpo?.error ?? r.status}`;
+        } catch (e) {
+          accesoSinCerrar = `auth: ${String((e as Error)?.message ?? e)}`;
+        }
       }
 
       await setEventMeta({
@@ -159,7 +184,9 @@ Deno.serve(async (req: Request) => {
         appliedAt: new Date().toISOString(),
         appliedChanges: updates,
         previousValues,
+        ...(accesoSinCerrar ? { accesoSinCerrar } : {}),
       });
+      if (accesoSinCerrar) results.push({ id: ev.id, type: ev.type, aviso: accesoSinCerrar });
       applied++;
       results.push({ id: ev.id, type: ev.type, applied: true });
     }

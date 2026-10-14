@@ -21,7 +21,7 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { analizarDocumento } from '@nucleo/data/ia';
 import { problemaDelPago, registroDelPago } from '@nucleo/utils/pagoDeSucursal';
 import { ajustesConDocumentoPropio, documentoPropio, problemaDelDocumentoPropio, rutaDelDocumentoPropio } from '@nucleo/utils/expedienteDeSucursal';
-import { recontratacionCompleta, datosDeRecontratacion, ingresoCompleto } from '@nucleo/utils/reingresoYRecontratacion';
+import { faltaParaRecontratar, datosDeRecontratacion, ingresoCompleto } from '@nucleo/utils/reingresoYRecontratacion';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -826,8 +826,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         }
 
         if (type === "rehireEmployee") {
-            if (!recontratacionCompleta(formData)) {
-                setValidationError("Fecha de ingreso, sucursal y cargo son obligatorios.");
+            const falta = faltaParaRecontratar(formData);
+            if (falta) {
+                setValidationError(falta);
                 return;
             }
             setIsSaving(true);

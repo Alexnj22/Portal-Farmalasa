@@ -126,3 +126,38 @@ describe('el nombre ordenado: el navegador y la base dicen lo mismo', () => {
         expect(ordenarNombre(entrada)).toBe(enLaBase);
     });
 });
+
+// 2026-10-14: el acuse dijo «RONALDO JAVIER RECINOS LOPEZ», la ficha dice
+// «RONALDO RECINOS», y el documento quedó en espera de una ficha que ya existía.
+describe('cruzarConElPadron — la ficha con menos nombres se PROPONE, no se asigna', () => {
+    const ronaldo = { id: 'r', name: 'RONALDO RECINOS', first_names: 'RONALDO', last_names: 'RECINOS' };
+    const otro = { id: 'o', name: 'ANA RECINOS', first_names: 'ANA', last_names: 'RECINOS' };
+
+    it('propone la única ficha cuyas palabras están todas en el papel', () => {
+        const [f] = cruzarConElPadron(['RONALDO JAVIER RECINOS LOPEZ'], [ronaldo, otro]);
+        expect(f.empleado).toBeNull();
+        expect(f.posible?.id).toBe('r');
+    });
+
+    it('con dos candidatas no propone ninguna', () => {
+        const gemelo = { id: 'g', name: 'RONALDO LOPEZ', first_names: 'RONALDO', last_names: 'LOPEZ' };
+        const [f] = cruzarConElPadron(['RONALDO JAVIER RECINOS LOPEZ'], [ronaldo, gemelo]);
+        expect(f.posible).toBeNull();
+    });
+
+    it('una sola palabra en común no alcanza', () => {
+        const [f] = cruzarConElPadron(['RONALDO JAVIER'], [{ id: 'x', name: 'RONALDO', first_names: 'RONALDO', last_names: '' }]);
+        expect(f.posible).toBeNull();
+    });
+
+    it('la coincidencia exacta sigue ganando y no deja propuesta', () => {
+        const [f] = cruzarConElPadron(['RONALDO RECINOS'], [ronaldo]);
+        expect(f.empleado?.id).toBe('r');
+        expect(f.posible).toBeNull();
+    });
+
+    it('no propone la ficha abierta', () => {
+        const [f] = cruzarConElPadron(['RONALDO JAVIER RECINOS LOPEZ'], [ronaldo], 'r');
+        expect(f.posible).toBeNull();
+    });
+});

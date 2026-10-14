@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1286.1 — El acuse propone la ficha con menos nombres y deja elegirla
+
+Al repartir el acuse, un nombre del papel que no coincidía exacto con la ficha
+quedaba «en espera» aunque la persona ya tuviera ficha: el acuse dijo «RONALDO
+JAVIER RECINOS LOPEZ» y la ficha es «RONALDO RECINOS». Ahora el diálogo
+propone la ficha cuyas palabras están todas en el nombre del papel («¿Es
+RONALDO RECINOS?», hay que confirmarla), y si no se confirma ofrece un selector
+con las fichas a las que todavía les falta ese documento. Sin elegir nada,
+sigue quedando en espera. El acuse de Ronaldo se vinculó a mano a su ficha.
+
 ## v2.1286.0 — Atención preferente, ofertas por nivel, widget con material y chat más rápido
 
 Pedidos del usuario para que el cliente «se sienta especial» y correcciones:

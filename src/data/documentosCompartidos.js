@@ -90,6 +90,29 @@ export function cruzarConElPadron(nombres, empleados, excluir = null) {
         }
     }
 
+    /* Lo que no cruzó exacto puede ser la misma persona con MENOS nombres en la
+     * ficha: el acuse dice «RONALDO JAVIER RECINOS LOPEZ» y la ficha «RONALDO
+     * RECINOS» (2026-10-14 — el acuse quedó en espera de una ficha que ya
+     * existía). Se propone la ficha cuyas palabras están TODAS en el papel, con
+     * al menos dos, y sólo si es una: con dos candidatas no hay propuesta, hay
+     * que elegir. Nunca se asigna sola — es `posible`, no `empleado`. */
+    const palabrasDe = new Map();
+    for (const e of empleados || []) {
+        const completo = [e.first_names, e.last_names].filter(Boolean).join(' ').trim();
+        const juegos = [completo, e.name]
+            .map(c => normalizarNombre(c).split(' ').filter(Boolean))
+            .filter(ws => ws.length >= 2);
+        if (juegos.length) palabrasDe.set(e.id, { e, juegos });
+    }
+    const posibleDe = (nombre) => {
+        const delPapel = new Set(normalizarNombre(nombre).split(' '));
+        const hallados = [];
+        for (const { e, juegos } of palabrasDe.values()) {
+            if (juegos.some(ws => ws.every(w => delPapel.has(w)))) hallados.push(e);
+        }
+        return hallados.length === 1 ? hallados[0] : null;
+    };
+
     const vistos = new Set();
     return (nombres || [])
         .map(n => String(n || '').trim())
@@ -102,15 +125,40 @@ export function cruzarConElPadron(nombres, empleados, excluir = null) {
         .map(nombre => {
             const ficha = porClave.get(normalizarNombre(nombre))
                 || porOrden.get(ordenarNombre(nombre)) || null;
+            const posible = ficha ? null : posibleDe(nombre);
             return {
                 nombre,
                 empleado: ficha,
+                posible: posible && !(excluir && posible.id === excluir) ? posible : null,
                 // La ficha que está abierta ya lo tiene: mostrarla como
                 // «pendiente de asignar» haría dudar de lo que se acaba de hacer.
                 esLaAbierta: !!(ficha && excluir && ficha.id === excluir),
                 ambiguo: !!ficha?.ambiguo,
             };
         });
+}
+
+/**
+ * Las fichas activas a las que les falta un documento de esa categoría.
+ *
+ * Es el selector del diálogo para el nombre que no cruzó: si el papel nombra a
+ * alguien que sí tiene ficha pero con otro nombre, su ficha está en esta lista
+ * —y quien ya tiene el documento no, porque el reparto no lo pisaría—. Son ~50
+ * fichas: no necesita paginar.
+ */
+export async function fichasSinDocumento(categoria) {
+    const { data, error } = await supabase.from('employees')
+        .select('id, name, first_names, last_names, employee_documents')
+        .eq('status', 'ACTIVO')
+        .order('name');
+    if (error) throw error;
+    return (data || [])
+        .filter(e => {
+            /** @type {Array<{ category?: string, url?: string }>} */
+            const docs = Array.isArray(e.employee_documents) ? /** @type {any} */ (e.employee_documents) : [];
+            return !docs.some(d => d?.category === categoria && d?.url);
+        })
+        .map(e => ({ id: e.id, name: e.name, first_names: e.first_names, last_names: e.last_names }));
 }
 
 /** Le escribe el documento a fichas que YA existen. */

@@ -79,3 +79,21 @@ export const mismosPermisos = (a, b) => {
  */
 export const MOTIVOS_DE_CREDENCIAL = new Set(['credenciales', 'bloqueado']);
 export const esFalloDeCredencial = (resultado) => MOTIVOS_DE_CREDENCIAL.has(resultado?.motivo);
+
+/**
+ * ¿La ficha dice otro cargo u otra sala que el perfil que tiene puesto el
+ * portal? Con «sí», hay que pedir el perfil completo: los permisos se cargan
+ * según el cargo del perfil, así que con el perfil viejo la pantalla mostraría
+ * los módulos del cargo anterior hasta recargar.
+ *
+ * `fila` es lo que trae `leerCargoYSalaPropios` (nombres de columna); `perfil`
+ * es el usuario del contexto (`roleId`, `secondaryRoleId`, `branchId`). Sin
+ * fila no hay cambio que afirmar.
+ */
+export function cambioDeCargoOSala(perfil, fila) {
+    if (!perfil || !fila) return false;
+    const n = (v) => (v === null || v === undefined || v === '' ? null : String(v));
+    return n(perfil.roleId) !== n(fila.role_id)
+        || n(perfil.secondaryRoleId) !== n(fila.secondary_role_id)
+        || n(perfil.branchId) !== n(fila.branch_id);
+}

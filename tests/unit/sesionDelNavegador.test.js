@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-    debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos, esFalloDeCredencial,
+    cambioDeCargoOSala, debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos, esFalloDeCredencial,
 } from '@nucleo/utils/sesionDelNavegador.js';
 import { saveDraft, loadDraft, borrarTodosLosBorradores } from '@nucleo/utils/draftUtils.js';
 
@@ -101,5 +101,20 @@ describe('borrarTodosLosBorradores — el cierre de sesión se los lleva', () =>
         expect(localStorage.getItem('theme')).toBe('dark');
         expect(localStorage.getItem('sb_device_class')).toBe('navegador');
         expect(localStorage.getItem('mis_pedido_draft_no')).toBe('x');
+    });
+});
+
+describe('cambioDeCargoOSala', () => {
+    const perfil = { roleId: 7, secondaryRoleId: null, branchId: 25 };
+    it('misma ficha: sin cambio, aunque los tipos difieran', () => {
+        expect(cambioDeCargoOSala(perfil, { role_id: '7', secondary_role_id: null, branch_id: 25 })).toBe(false);
+    });
+    it('otro cargo, otro secundario u otra sala: cambio', () => {
+        expect(cambioDeCargoOSala(perfil, { role_id: 8, secondary_role_id: null, branch_id: 25 })).toBe(true);
+        expect(cambioDeCargoOSala(perfil, { role_id: 7, secondary_role_id: 3, branch_id: 25 })).toBe(true);
+        expect(cambioDeCargoOSala(perfil, { role_id: 7, secondary_role_id: null, branch_id: 4 })).toBe(true);
+    });
+    it('sin fila (no se pudo leer): no afirma un cambio', () => {
+        expect(cambioDeCargoOSala(perfil, null)).toBe(false);
     });
 });

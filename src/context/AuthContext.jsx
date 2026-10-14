@@ -10,8 +10,8 @@ import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { anotar } from '@plataforma/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
-import { fetchEmployeeSafeByUsername, motivoDeLoginFallido, cambiarMiContrasenaInicial } from "../data/auth";
-import { debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos } from "../utils/sesionDelNavegador";
+import { fetchEmployeeSafeByUsername, motivoDeLoginFallido, cambiarMiContrasenaInicial, leerCargoYSalaPropios } from "../data/auth";
+import { cambioDeCargoOSala, debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos } from "../utils/sesionDelNavegador";
 import { borrarTodosLosBorradores } from "../utils/draftUtils";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "@plataforma/pushEquipo";
 import { programarEn } from "../utils/temporizadorLargo";
@@ -114,6 +114,9 @@ const ACTIVITY_THROTTLE_MS  = 2000;
 const HEARTBEAT_MS          = 60 * 1000;
 // Cada cuánto, como mucho, se le PREGUNTA al servidor si la sesión sigue viva.
 const REVALIDATE_MS         = 60 * 1000;
+// Cada cuánto, como mucho, se le pregunta a la ficha si cambió el cargo o la
+// sala al volver a la pestaña. Ver `leerCargoYSalaPropios`.
+const PERFIL_TOPE_MS        = 5 * 60 * 1000;
 
 // La clase del dispositivo: 'app' (PWA instalada o build nativo) o 'navegador'.
 //
@@ -406,6 +409,34 @@ export const AuthProvider = ({ children }) => {
   // lado —«Cerrar todas», o alguien cerrándola desde Conexiones— no se notaba
   // hasta que venciera el access token. Volver a la pestaña es el momento
   // natural para enterarse, y con el throttle no cuesta casi nada.
+  // ── ¿Le cambiaron el cargo o la sala mientras tenía el portal abierto? ──
+  //
+  // Desde el 2026-10-14 el perfil no se vuelve a pedir en cada renovación del
+  // token (era una función del servidor por pestaña y por hora, y redibujaba la
+  // app entera). Pero los permisos se cargan según el cargo del PERFIL: sin
+  // esto, a quien le cambiaban el cargo la pantalla le seguía mostrando los
+  // módulos del anterior hasta recargar. La base ya decidía con el cargo nuevo;
+  // lo que quedaba viejo era lo que se veía.
+  //
+  // Al volver a la pestaña, como mucho cada 5 minutos, se leen TRES columnas
+  // de la ficha propia. Sólo si dicen otra cosa se pide el perfil completo
+  // (`procesarSesionRef`), que trae cargo, sala y permisos nuevos.
+  const ultimoChequeoPerfilRef = useRef(0);
+  const procesarSesionRef = useRef(null);
+  const verificarCargoYSala = useCallback(async () => {
+    const perfil = userRef.current;
+    if (!perfil?.id || !hayAlguienDentro()) return;
+    const ahora = Date.now();
+    if (ahora - ultimoChequeoPerfilRef.current < PERFIL_TOPE_MS) return;
+    ultimoChequeoPerfilRef.current = ahora;
+    try {
+      const fila = await leerCargoYSalaPropios(perfil.id);
+      if (!cambioDeCargoOSala(userRef.current, fila)) return;
+      const { data } = await supabase.auth.getSession();
+      if (data?.session && procesarSesionRef.current) procesarSesionRef.current(data.session);
+    } catch { /* red inestable: se reintenta en la próxima vuelta */ }
+  }, []);
+
   const ultimaValidacionRef = useRef(0);
   const revalidarSesion = useCallback(async () => {
     if (!hayAlguienDentro()) return;
@@ -438,11 +469,12 @@ export const AuthProvider = ({ children }) => {
         // veces en un minuto eran diez rondas de tres consultas cada una.
         if (Date.now() - ultimoRefrescoPermisosRef.current >= REVALIDATE_MS) refreshPermissions();
         revalidarSesion();
+        verificarCargoYSala();
       }, 0);
     };
     escucharVisibilidad(onVisible);
     return () => soltarVisibilidad(onVisible);
-  }, [refreshPermissions, revalidarSesion]);
+  }, [refreshPermissions, revalidarSesion, verificarCargoYSala]);
 
   // Realtime: refresca permisos en el instante que el admin cambia role_permissions
   // del rol del usuario actual — menú y PermissionGuard reaccionan sin recargar.
@@ -1141,6 +1173,8 @@ export const AuthProvider = ({ children }) => {
       })();
     };
 
+    procesarSesionRef.current = procesarSesion;
+
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       try {
         if (skipAuthListener.current) return;
@@ -1179,8 +1213,9 @@ export const AuthProvider = ({ children }) => {
         // `setUser` y un reinicio del vigilante. Ahí sólo hace falta para el
         // carné de PAPEL: es el único que vence a mitad de la sesión, y el
         // único que puede decirlo es `ensure_user_by_code` (CARNE_VENCIDO).
-        // El resto de los cambios de cargo los recogen los permisos (realtime
-        // y regreso a la pestaña) y la próxima recarga.
+        // Un cambio de cargo o de sala hecho en el servidor lo recoge
+        // `verificarCargoYSala` al volver a la pestaña (cada 5 min como mucho),
+        // o la próxima recarga.
         const pidePerfil = event === 'INITIAL_SESSION' || event === 'SIGNED_IN'
           || (event === 'TOKEN_REFRESHED' && esCarneDePapel(session.user.email));
         if (!pidePerfil) return;

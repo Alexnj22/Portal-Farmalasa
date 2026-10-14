@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1290.2 — Sesión: el cambio de cargo o de sala se ve sin recargar
+
+Desde v2.1290.1 el perfil ya no se pedía en cada renovación del token, y los
+permisos se cargan según el cargo del perfil: a quien le cambiaban el cargo o la
+sala con el portal abierto, la pantalla le seguía mostrando lo anterior hasta
+recargar (la base ya decidía con lo nuevo). Ahora, al volver a la pestaña y como
+mucho cada 5 minutos, se leen tres columnas de la ficha propia; sólo si cambió
+el cargo, el secundario o la sala se pide el perfil completo y los permisos.
+
 ## v2.1290.1 — Login y sesiones: auditoría
 
 Auditoría del login y las sesiones (servidor + navegador). Antes de esto se

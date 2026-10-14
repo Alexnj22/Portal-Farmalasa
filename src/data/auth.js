@@ -95,3 +95,25 @@ export async function cambiarMiContrasenaInicial(password) {
         return { error: e, reentrar: true, session: null };
     }
 }
+
+/**
+ * El cargo, el cargo secundario y la sala de la ficha propia — y nada más.
+ *
+ * Es la consulta más chica que contesta «¿me cambiaron de cargo o de sala?»
+ * (2026-10-14). El perfil completo sale de `ensure_user_by_code`, que es una
+ * función del servidor: preguntarle eso cada vez que alguien vuelve a la
+ * pestaña costaría una invocación por vuelta. Ésta es una fila de la vista, y
+ * sólo cuando contesta distinto se pide el perfil entero.
+ *
+ * Devuelve `null` si no pudo leer: quien llama no cambia nada en ese caso.
+ */
+export async function leerCargoYSalaPropios(employeeId) {
+    if (!employeeId) return null;
+    const { data, error } = await supabase
+        .from('employees_safe')
+        .select('role_id, secondary_role_id, branch_id')
+        .eq('id', employeeId)
+        .maybeSingle();
+    if (error || !data) return null;
+    return data;
+}

@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.3 — Carné en Android: la foto del QR se lee
+
+Reporte del usuario (2026-10-14): en Android, «Foto del código» decía «no se
+leyó ningún código en la foto»; en iPhone funcionaba (ahí abre la cámara en
+vivo). Las fotos de documentos sí suben porque se guardan tal cual; el carné
+necesita LEER el QR de la foto, y ese lector era el que fallaba.
+
+`leerQrDeFoto` ahora:
+- usa primero `BarcodeDetector` del navegador (en Chrome de Android, el motor
+  de Google Lens);
+- si no, zxing con `TRY_HARDER` sobre la foto SUAVIZADA (desenfoque de 1 px),
+  entera y con el centro recortado, a varias escalas. Medido: con el fondo
+  texturado de una foto real zxing no encontraba el código aunque estuviera
+  nítido (0 de 4); suavizado lee los 4;
+- prueba también la imagen invertida (QR en una pantalla en modo oscuro);
+- corrige la orientación EXIF antes de leer.
+
+Probado con fotos simuladas de 12 y 48 megapíxeles, QR chico, inclinado 12° e
+invertido: 8 de 8 con los dos lectores.
+
 ## v2.1285.2 — Campana: las solicitudes quedan hasta decidir (también la de mayorista)
 
 - La campana del portal volvía a marcar leídas las solicitudes al tocarlas: el commit del chat del 12-oct (`cf69f88e0`) borró sin querer el «no marcar leído lo que espera decisión» de `58b2886c4`. Restaurado, y extendido a `MAYORISTA_SOLICITUD` con `useEsperaDecisionDeAviso` (consulta las solicitudes en `solicitado` sólo si quien mira puede aprobar). Misma regla en Notificaciones.
@@ -39,9 +59,6 @@ cambios» en verde. Tres causas:
   gemelas enfrentadas en el test).
 - El diálogo descartaba los pendientes que fallaban. Ahora muestra el error y
   no se cierra.
-
-
-
 
 ## v2.1285.0 — App de clientes: Material 3 Expressive, Liquid Glass, Platino, menos calor y funciones pedidas
 

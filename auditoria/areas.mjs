@@ -379,6 +379,7 @@ export const AREAS = [
             'src/store/slices/notificationsSlice.js',
             'src/hooks/useNotificationsChannel.js', 'src/plataforma/usePushSubscription.js',
             'src/components/common/useAccionesDeAviso.jsx',
+            'src/components/common/useEsperaDecisionDeAviso.js',
             'src/components/common/TarjetaDeAviso.jsx', 'src/components/common/paletaDeAviso.js',
             'src/utils/announcementAudience.js', 'src/plataforma/browserNotif.js', 'src/utils/notify.js',
             'src/utils/notificacionTexto.js', 'src/utils/accionesDeAviso.js', 'src/utils/tarjetaDeSolicitud.js',

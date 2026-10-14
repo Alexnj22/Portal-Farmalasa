@@ -18,6 +18,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
 import usePestanaEnUrl from '../plataforma/usePestanaEnUrl';
 import useAccionesDeAviso from '../components/common/useAccionesDeAviso';
+import useEsperaDecisionDeAviso from '../components/common/useEsperaDecisionDeAviso';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { enlaceDeAviso } from '@nucleo/utils/notificacionTexto';
 import { fetchNotificationsPage, DIAS_VISIBLES } from '@nucleo/data/notifications';
@@ -198,11 +199,14 @@ export default function NotificacionesView() {
        aviso. `n.link` ya trae la forma correcta para cada familia —incluida
        `minmax:<id>`, que es otra tabla—; el respaldo sólo cubre avisos viejos,
        escritos antes de que el enlace se guardara. */
+    const esperaDecision = useEsperaDecisionDeAviso({ avisos: filas, activo: true });
+    // Salvo lo que todavía espera una decisión: eso se queda sin leer hasta
+    // que se decide, igual que en la campana.
     const abrir = useCallback((n) => {
-        if (!n.read_at && !n.deleted_at) markNotificationRead(n.id);
+        if (!n.read_at && !n.deleted_at && !esperaDecision(n)) markNotificationRead(n.id);
         const destino = enlaceDeAviso(n);
         if (destino) navigate(destino);
-    }, [navigate, markNotificationRead]);
+    }, [navigate, markNotificationRead, esperaDecision]);
 
     const restaurar = useCallback(async (n) => {
         try {

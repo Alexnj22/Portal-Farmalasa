@@ -28,6 +28,7 @@ const cargarTarjeta = () => import('./TarjetaDeAviso');
 const TarjetaDeAviso = React.lazy(cargarTarjeta);
 import { paletaDeAviso } from './paletaDeAviso';
 import useAccionesDeAviso from './useAccionesDeAviso';
+import useEsperaDecisionDeAviso from './useEsperaDecisionDeAviso';
 
 
 
@@ -163,6 +164,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
             !(PIDE_DECISION.has(n.type) && n.metadata?.resuelta)),
         [todasLasNotifs]
     );
+
+    // Lo que todavía espera una decisión no se marca leído al tocarlo ni con
+    // «Leídas» — incluida la solicitud de mayorista. Ver el hook.
+    const esperaDecision = useEsperaDecisionDeAviso({ avisos: notifications, activo: isOpen });
 
     const pendingIds = useMemo(() => {
         const s = new Set();
@@ -338,8 +343,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     // El enlace de salida. `n.link` ya trae la forma correcta para cada familia
     // —incluida `minmax:<id>`, que es otra tabla—; el respaldo sólo cubre avisos
     // viejos, escritos antes de que el enlace se guardara.
+    //
+    // Lo que todavía espera una DECISIÓN no se marca leído al tocarlo
+    // (2026-10-12, «si toco una y era solicitud se desaparece aun sin confirmar
+    // ni descartar»): leído la sacaba de la campana. Se queda hasta que se
+    // decide. (El 12-oct se perdió en un commit ajeno y volvió el 14-oct.)
     const handleNotifClick = (n) => {
-        if (!n.read_at) markNotificationRead(n.id);
+        if (!n.read_at && !esperaDecision(n)) markNotificationRead(n.id);
         const destino = enlaceDeAviso(n);
         if (!destino) return;
         setIsOpen(false);
@@ -499,7 +509,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 <div className="flex items-center gap-0.5">
                                     {unreadNotifs.length > 0 && !confirmClear && !pendingAll && (
                                         <button
-                                            onClick={() => markAllNotificationsRead()}
+                                            onClick={() => markAllNotificationsRead({ conservar: esperaDecision })}
                                             title="Marcar todas como leídas"
                                             className={`flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
                                         >

@@ -21,6 +21,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.2 — Campana: las solicitudes quedan hasta decidir (también la de mayorista)
+
+- La campana del portal volvía a marcar leídas las solicitudes al tocarlas: el commit del chat del 12-oct (`cf69f88e0`) borró sin querer el «no marcar leído lo que espera decisión» de `58b2886c4`. Restaurado, y extendido a `MAYORISTA_SOLICITUD` con `useEsperaDecisionDeAviso` (consulta las solicitudes en `solicitado` sólo si quien mira puede aprobar). Misma regla en Notificaciones.
 ## v2.1285.1 — El acuse del Ministerio se reparte a todos los que nombra
 
 Al subir el acuse en la ficha de una persona y marcar a las demás que nombra,

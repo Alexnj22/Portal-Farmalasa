@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1288.1 — Carné: se entra sólo con el PIN, nunca con el número
+
+El número de empleado —el mismo que es código de vendedor, impreso en las
+facturas y visible para todo el que ve Ventas— abría la sesión de esa persona:
+`ensure_user_by_code` lo buscaba antes que el PIN, y además existían 26 cuentas
+`<número>@staff.local` con el número por contraseña, con las que se entraba
+directo sin pasar por ninguna función. Comprobado contra producción antes de
+cerrarlo.
+
+- `ensure_user_by_code` acepta sólo el PIN del carné (y el carné de papel del
+  día). El número a secas contesta «no encontrado».
+- Las 26 cuentas por número quedaron bloqueadas. Nadie las usaba desde el
+  2026-07-11; las 36 personas de la última semana entraron con el PIN.
+- `disable-employee-auth` ya no las reabre al recontratar.
+
+No cambia nada para quien entra escaneando el carné. Límite conocido: el PIN se
+deriva del número con una fórmula sin secreto; el arreglo de fondo (PIN al azar)
+exige reimprimir carnés y quedó postergado por decisión del usuario.
+
 ## v2.1288.0 — App: Notificaciones sin caída, Ofertas rápidas, auditoría y aceptación de reglas
 
 - **Notificaciones se caía** («algo salió mal», `app_errores` 2× en iOS): el `useMemo` del filtro leía `enEspera`, declarado 16 líneas más abajo; Hermes en release no lanza el error de inicialización, da `undefined` → «Cannot read property 'has' of undefined». Escáner AST sobre los 140 archivos de la app: 0 casos más. Android: 0 errores registrados.

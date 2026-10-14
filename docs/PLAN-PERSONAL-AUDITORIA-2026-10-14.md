@@ -84,6 +84,9 @@ Estado: `[ ]` abierto · `[x]` cerrado. **Cerrado el 2026-10-14** (migraciones
 
 ## Queda abierto (fuera de este plan)
 
+- **2026-10-14 — cerrada la entrada con el número a secas** (`ensure_user_by_code`
+  sólo acepta el PIN; las 26 cuentas `<número>@staff.local` bloqueadas). Lo que
+  sigue abierto es lo de abajo: el PIN se deriva del número.
 - **El código de carné ES el código de vendedor.** Quien ve Ventas recibe el
   código de toda la planilla (`get_vendedores`), y ese código es la contraseña
   de la cuenta de carné. S4/S5 lo sacaron del CSV y del disco, pero el arreglo

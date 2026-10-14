@@ -120,8 +120,12 @@ Deno.serve(async (req: Request) => {
       const { data: empRows } = await admin.from("employees").select("code, kiosk_pin").eq("id", employeeId).limit(1);
       const code = empRows?.[0]?.code?.trim();
       const pin = empRows?.[0]?.kiosk_pin?.trim() || (code ? await kioskPinFromCode(code) : null);
+      // La cuenta `<número>@staff.local` se CIERRA con la baja pero no se
+      // vuelve a abrir al recontratar: desde el 2026-10-14 nadie entra con el
+      // número a secas (ver `ensure_user_by_code`), y reabrirla devolvería una
+      // cuenta cuya contraseña es el número de vendedor.
       const emails = [...new Set([
-        code ? `${code.toLowerCase()}@staff.local` : null,
+        code && action === "disable" ? `${code.toLowerCase()}@staff.local` : null,
         pin ? `${pin.toLowerCase()}@staff.local` : null,
       ].filter(Boolean))] as string[];
 

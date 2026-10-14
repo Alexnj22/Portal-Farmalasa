@@ -8,9 +8,9 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const admin       = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
 
-// ── Rate limit anti fuerza-bruta: el password de login es el propio código
+// ── Rate limit anti fuerza-bruta: el password de login es lo que trae el carné
 // (ver AuthContext.jsx signInWithPassword), así que este endpoint es el único
-// oráculo que distingue código válido/activo de inválido. Solo se cuentan
+// oráculo que distingue un carné válido/activo de uno inválido. Solo se cuentan
 // intentos FALLIDOS (NOT_FOUND/INACTIVE) por IP — un login exitoso nunca suma,
 // así que un kiosco con tráfico real de múltiples empleados jamás lo dispara.
 const RATE_LIMIT_WINDOW_MIN = 10;
@@ -268,22 +268,28 @@ Deno.serve(async (req: Request) => {
 
     const clean = raw.toUpperCase();
 
-    // ── Búsqueda parametrizada (sin interpolar input en .or()): primero por code
-    // (case-insensitive), luego por kiosk_pin exacto. Los métodos .ilike/.eq
-    // escapan el valor correctamente, evitando inyección en el filtro PostgREST.
+    // ── Sólo el PIN del carné, NUNCA el número de empleado (2026-10-14) ──
+    //
+    // Antes se buscaba primero por `code` y, si no, por `kiosk_pin`. O sea que
+    // el número a secas —el mismo que es código de vendedor, impreso en las
+    // facturas y repartido a todo el que ve Ventas— abría la sesión de esa
+    // persona: alcanzaba con llamar a esta función con `125`. La pantalla de
+    // inicio ya rechazaba teclearlo (exige velocidad de lector), pero ese freno
+    // vive en el navegador y quien llama directo se lo salta.
+    //
+    // Medido antes de cerrarlo: las 26 cuentas `<número>@staff.local` no se
+    // usaban desde el 2026-07-11, y las 36 personas de la última semana
+    // entraron con el PIN. Esas cuentas quedaron además bloqueadas: con la
+    // contraseña igual al número se entraba sin pasar por acá.
+    //
+    // Límite conocido: el PIN se DERIVA del número con una fórmula sin secreto
+    // (`derivar_kiosk_pin`). El arreglo de fondo es un PIN al azar, y exige
+    // reimprimir los carnés — decisión del usuario: por ahora no.
     let { data: rows, error: dbError } = await admin
       .from("employees")
       .select(SELECT_COLS)
-      .ilike("code", raw)
+      .eq("kiosk_pin", clean)
       .limit(1);
-
-    if (!dbError && !rows?.length) {
-      ({ data: rows, error: dbError } = await admin
-        .from("employees")
-        .select(SELECT_COLS)
-        .eq("kiosk_pin", clean)
-        .limit(1));
-    }
 
     // Tercero, el carné de PAPEL del día. Va al final porque es la excepción
     // —dura hasta medianoche y hay pocos vivos a la vez—, igual que en las tres
@@ -329,35 +335,15 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, isNewUser: false, user: { email, isKiosk: true } });
     }
 
-    const matchedByKioskPin =
-      employee.kiosk_pin != null &&
-      employee.kiosk_pin.trim().toUpperCase() === clean;
-
-    // ── Email e info de creación según tipo de usuario ──
-    let email: string;
-    let createPayload: Record<string, unknown>;
-
-    if (matchedByKioskPin) {
-      email = `${employee.kiosk_pin.toLowerCase()}@staff.local`;
-      createPayload = {
-        email,
-        password: employee.kiosk_pin,
-        email_confirm: true,
-        user_metadata: { code: employee.code, kiosk: true },
-      };
-    } else {
-      // Carné escaneado / código de empleado: cuenta scan-style cuyo password es el
-      // propio código normalizado (mismo modelo de seguridad que kiosk_pin). El cliente
-      // siempre envía el código en mayúsculas, por eso se normaliza aquí también.
-      const codeKey = employee.code.trim().toUpperCase();
-      email = `${codeKey.toLowerCase()}@staff.local`;
-      createPayload = {
-        email,
-        password: codeKey,
-        email_confirm: true,
-        user_metadata: { code: employee.code, kiosk: true },
-      };
-    }
+    // Se encontró por PIN (es la única búsqueda que queda), así que la cuenta es
+    // siempre la del PIN. Ya no se crea la `<número>@staff.local`.
+    const email = `${employee.kiosk_pin.toLowerCase()}@staff.local`;
+    const createPayload: Record<string, unknown> = {
+      email,
+      password: employee.kiosk_pin,
+      email_confirm: true,
+      user_metadata: { code: employee.code, kiosk: true },
+    };
 
     // ── Crear usuario Auth solo si no existe ──
     const createRes = await admin.auth.admin.createUser(createPayload);
@@ -380,7 +366,7 @@ Deno.serve(async (req: Request) => {
       if (linkErr) return json({ ok: false, error: "LINK_ERROR", details: linkErr.message });
     }
 
-    return json({ ok: true, isNewUser, user: { email, isKiosk: matchedByKioskPin } });
+    return json({ ok: true, isNewUser, user: { email, isKiosk: true } });
 
   } catch (e) {
     return json({ ok: false, error: "UNHANDLED", details: String((e as Error)?.message ?? e) });

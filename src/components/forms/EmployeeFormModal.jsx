@@ -185,12 +185,17 @@ const vacioParaEnlazar = (v) => v === null || v === undefined || String(v).trim(
  * ya trabajaba acá sí. */
 const SIEMPRE_DE_LA_FICHA = new Set(['code', 'kiosk_pin']);
 
+/* LANZA si alguna lectura falla (2026-10-14). Antes cada una caía a un `Map`
+ * vacío, y «no pude leer» se veía igual que «no tiene»: el formulario quedaba
+ * con el sueldo, la cuenta y el ISSS en blanco y el código aleatorio, y
+ * guardar escribía ESO sobre la ficha existente. Quien llama marca la ficha
+ * como cargada sólo cuando esto vuelve bien, y hasta entonces no se guarda. */
 export async function traerLoQueFaltaDeLaFicha(id) {
     if (!id) return {};
     const [ident, sal, cred] = await Promise.all([
-        fetchIdentidades([id]).catch(() => new Map()),
-        fetchSalarios([id]).catch(() => new Map()),
-        fetchCredenciales([id]).catch(() => new Map()),
+        fetchIdentidades([id], { lanzar: true }),
+        fetchSalarios([id], { lanzar: true }),
+        fetchCredenciales([id], { lanzar: true }),
     ]);
     const i = ident.get(id) || {};
     const s = sal.get(id) || {};
@@ -209,8 +214,31 @@ export async function traerLoQueFaltaDeLaFicha(id) {
     return Object.fromEntries(Object.entries(fuera).filter(([, v]) => v !== null && v !== undefined && v !== ''));
 }
 
-export function aplicarFichaEnlazada(prev, val, ficha) {
-    const next = { ...prev, enlazar_con_id: val };
+/* Lo que vino de la ficha enlazada, para poder DESHACERLO al cambiar de
+ * persona (2026-10-14). Enlazar con A y después corregir a B dejaba los datos de
+ * A donde B tenía `null` —el bucle salta los nulos— y, en los protegidos, donde
+ * B no estaba vacía la regla «sólo llena lo vacío» dejaba la cuenta y el sueldo
+ * de A. Guardar los escribía sobre B. Al cambiar, se vacía todo lo que sigue
+ * valiendo lo que trajo A; lo que alguien ya corrigió a mano se respeta. */
+function soltarFichaAnterior(prev) {
+    const traido = prev?._deLaFicha || {};
+    const next = { ...prev };
+    for (const [campo, valor] of Object.entries(traido)) {
+        if (next[campo] === valor) next[campo] = Array.isArray(valor) ? [] : '';
+    }
+    delete next._deLaFicha;
+    delete next._fichaCargada;
+    delete next._fichaFallo;
+    return next;
+}
+
+export function aplicarFichaEnlazada(prevOriginal, val, ficha) {
+    const cambia = prevOriginal?.enlazar_con_id && String(prevOriginal.enlazar_con_id) !== String(val);
+    const prev = cambia ? soltarFichaAnterior(prevOriginal) : prevOriginal;
+    // Los datos protegidos de la ficha todavía no llegaron: hasta que lleguen,
+    // no se puede guardar (ver `motivoNoGuardable`).
+    const next = { ...prev, enlazar_con_id: val, _fichaCargada: null, _fichaFallo: null, _deLaFicha: {} };
+    if (!val) { delete next._deLaFicha; delete next._fichaCargada; delete next._fichaFallo; return next; }
     if (!ficha) return next;
 
     for (const [campo, valor] of Object.entries(ficha)) {
@@ -218,6 +246,7 @@ export function aplicarFichaEnlazada(prev, val, ficha) {
         if (ELEGIBLES_AL_ENLAZAR.includes(campo) && prev[campo]) continue;
         if (valor === null || valor === undefined) continue;
         next[campo] = valor;
+        next._deLaFicha[campo] = valor;
     }
 
     /* La foto entra como vista previa y no como archivo: no hay `File` que
@@ -839,6 +868,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         delete limpio.file;
         delete limpio.photoPreview;
         for (const campo of SENSITIVE_FIELDS) delete limpio[campo];
+        // El código de carné es la contraseña del portal y del kiosco: al
+        // enlazar es el REAL de la persona, y no se deja en el disco de una
+        // computadora compartida. Las marcas de carga tampoco viajan: un
+        // borrador restaurado tiene que volver a pedir la ficha.
+        delete limpio.code;
+        delete limpio._fichaCargada;
+        delete limpio._fichaFallo;
         return limpio;
     }, [formData, isEditMode]);
 
@@ -846,13 +882,41 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         CLAVE_BORRADOR, borradorSeguro, { activo: !isEditMode && !formData?.id },
     );
 
+    /* Pide lo que el padrón no trae de la ficha enlazada y, sólo si vuelve
+     * bien, la marca como cargada. Sólo llena lo que quedó vacío, para no pisar
+     * lo que alguien haya escrito mientras esto viajaba — salvo el código, que
+     * siempre es el de la persona (`SIEMPRE_DE_LA_FICHA`). */
+    const cargarProtegidosDeLaFicha = (val) => {
+        traerLoQueFaltaDeLaFicha(val).then((fuera) => {
+            setFormData(prev => {
+                if (String(prev.enlazar_con_id) !== String(val)) return prev;
+                const next = { ...prev, _fichaCargada: val, _fichaFallo: null, _deLaFicha: { ...(prev._deLaFicha || {}) } };
+                for (const [k, v] of Object.entries(fuera)) {
+                    if (SIEMPRE_DE_LA_FICHA.has(k) || vacioParaEnlazar(prev[k])) {
+                        next[k] = v;
+                        next._deLaFicha[k] = v;
+                    }
+                }
+                return next;
+            });
+        }).catch((err) => {
+            console.error('traerLoQueFaltaDeLaFicha:', err);
+            setFormData(prev => (String(prev.enlazar_con_id) !== String(val) ? prev
+                : { ...prev, _fichaFallo: val }));
+        });
+    };
+
     const restoreDraft = () => {
         const parsed = loadDraft(CLAVE_BORRADOR);
         if (!parsed) { setHasDraft(false); return; }
         // El DUI y los datos de dinero NO están en el borrador a propósito
         // (ver arriba): se vuelven a escribir, que es el precio de no dejarlos
         // en el disco de una computadora compartida.
-        setFormData(prev => ({ ...prev, ...parsed }));
+        setFormData(prev => ({ ...prev, ...parsed, _fichaCargada: null, _fichaFallo: null }));
+        // Un borrador de un ENLACE vuelve sin el sueldo, la cuenta, el ISSS ni
+        // el código de la persona. Sin volver a pedirlos, guardar los dejaba
+        // en blanco sobre su ficha (2026-10-14).
+        if (parsed.enlazar_con_id) cargarProtegidosDeLaFicha(parsed.enlazar_con_id);
         setHasDraft(false);
     };
 
@@ -1015,6 +1079,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         }
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
+            // Decir «sí, tiene AFP» con el NUP vacío y un DUI completo: desde
+            // 2023 el NUP es el DUI, así que se pone, a la vista y editable.
+            if (name === 'afp_estado' && value === 'TIENE' && !String(prev.afp_number || '').trim()
+                && String(prev.dui || '').replace(/\D/g, '').length === 9) {
+                newData.afp_number = prev.dui;
+            }
             if (name === 'has_disability' && !value) {
                 newData.disability_type = '';
                 newData.disability_grade = '';
@@ -1558,7 +1628,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const handleDocHoja = async (category, idx, file) => {
         if (!file) return;
         const clave = `${category}#${idx}`;
-        updateDocHoja(category, idx, { file_name: file.name, url: null });
+        // Igual que `handleDocFile`: la hoja que había se queda hasta que la
+        // nueva esté arriba.
         setAnalyzingDocs(prev => ({ ...prev, [clave]: true }));
         try {
             const folder = formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
@@ -1567,7 +1638,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             updateDocHoja(category, idx, { url, file_name: file.name });
         } catch (err) {
             console.error('handleDocHoja:', err);
-            updateDocHoja(category, idx, { url: null });
             useToastStore.getState().showToast('No se pudo subir', 'Intenta de nuevo con esa hoja.', 'error');
         } finally {
             setAnalyzingDocs(prev => ({ ...prev, [clave]: false }));
@@ -1576,7 +1646,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const handleDocFile = async (category, file) => {
         if (!file) return;
-        updateDoc(category, { file_name: file.name, url: null });
+        /* El documento que ya estaba NO se toca hasta que llega el nuevo.
+         *
+         * Antes se vaciaba aquí (`url: null`) para pintar «subiendo». Dos
+         * consecuencias, las dos sin error: `documentoReemplazado` archiva la
+         * versión anterior sólo si la entrada TIENE url cuando llega la nueva
+         * —y ya no la tenía—, así que ningún reemplazo dejó historial (0 de 51
+         * documentos, medido el 2026-10-14); y si la subida fallaba, el
+         * documento bueno que había quedaba borrado al guardar. «Subiendo» lo
+         * dice `analyzingDocs`, que es lo que mira `FileField` (`busy`). */
         setAnalyzingDocs(prev => ({ ...prev, [category]: true }));
         try {
             const folder = formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
@@ -1734,8 +1812,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 }
             }
         } catch (err) {
+            // Si la subida falló, se queda el que había: borrarlo aquí era
+            // perder un documento bueno por intentar reemplazarlo.
             useToastStore.getState().showToast('Error al subir documento', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
-            updateDoc(category, { url: null, file_name: '' });
         } finally {
             setAnalyzingDocs(prev => ({ ...prev, [category]: false }));
         }
@@ -2197,6 +2276,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      *
      * `null` = se puede guardar. */
     const motivoNoGuardable = useMemo(() => {
+        // Guardar con una subida a medias la perdía: la entrada todavía no
+        // tiene url, el alta la descarta, y el archivo queda huérfano en
+        // Storage cuando la subida termina sobre un formulario ya cerrado.
+        if (Object.values(analyzingDocs).some(Boolean)) return 'Espera a que termine de subir el documento.';
+        // Enlazar sin los datos protegidos de la ficha escribía el sueldo, la
+        // cuenta y el ISSS en blanco y un código aleatorio encima de los de la
+        // persona. Hasta que lleguen, no se guarda.
+        if (formData?.enlazar_con_id && String(formData._fichaCargada) !== String(formData.enlazar_con_id)) {
+            return String(formData._fichaFallo) === String(formData.enlazar_con_id)
+                ? 'No se pudieron leer el sueldo, la cuenta y el código de la ficha que enlazas. Quítala y vuelve a elegirla.'
+                : 'Cargando los datos de la ficha que enlazas…';
+        }
         // Lo único imprescindible: sin nombre no hay a quién nombrar la ficha.
         if (!formData?.first_names?.trim()) return 'Falta el nombre.';
         if (firstNamesInvalid) return 'El nombre sólo puede llevar letras.';
@@ -2262,7 +2353,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         isDuiInvalid, isDuiDuplicate, isDuiIncomplete, birthDateInvalid,
         phoneHasError, emailInvalid, studyEndInPast, maestriaStudyEndInPast,
         salaryInvalid, hoursInvalid, contractDatesInvalid,
-        temporalBasisMissing, temporalReasonMissing, isssIncomplete, afpIncomplete, nupRevisado.motivo]);
+        temporalBasisMissing, temporalReasonMissing, isssIncomplete, afpIncomplete, nupRevisado.motivo,
+        analyzingDocs]);
 
     const isFormFullyValid = motivoNoGuardable === null;
 
@@ -2522,17 +2614,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         // Y lo que el padrón no puede tener, se pide. Sólo
                                         // llena lo que quedó vacío, para no pisar lo que
                                         // alguien haya escrito mientras esto viajaba.
-                                        traerLoQueFaltaDeLaFicha(val).then((fuera) => {
-                                            if (!Object.keys(fuera).length) return;
-                                            setFormData(prev => {
-                                                if (String(prev.enlazar_con_id) !== String(val)) return prev;
-                                                const next = { ...prev };
-                                                for (const [k, v] of Object.entries(fuera)) {
-                                                    if (SIEMPRE_DE_LA_FICHA.has(k) || vacioParaEnlazar(prev[k])) next[k] = v;
-                                                }
-                                                return next;
-                                            });
-                                        });
+                                        cargarProtegidosDeLaFicha(val);
                                     }}
                                     options={fichasParaEnlazar}
                                     placeholder="Buscar a la persona por su nombre..."
@@ -3693,13 +3775,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             el documento de otra persona, y las dos cosas se
                                             ven como un dato perfectamente válido. */}
                                         {formData.afp_estado !== 'NO_TIENE' && (
+                                            <div>
                                             <PortalInput
                                                 label="NUP (AFP)"
                                                 name="afp_number"
                                                 value={formData.afp_number || ''}
                                                 onChange={handleChange}
                                                 icon={Hash}
-                                                placeholder={formData.dui || 'El DUI, o 12 dígitos si es de antes de 2023'}
+                                                // El marcador de posición era el DUI mismo, en gris: el
+                                                // campo PARECÍA lleno y se guardaba vacío. 7 de 8 fichas
+                                                // con «tiene AFP» quedaron sin NUP (2026-10-14).
+                                                placeholder="Sin escribir — el DUI, o 12 dígitos si es de antes de 2023"
+
                                                 hasError={!nupRevisado.ok}
                                                 errorMessage={nupRevisado.motivo || ''}
                                                 // Corto: `helperText` se pinta al lado del
@@ -3707,6 +3794,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 // en el marcador de posición.
                                                 helperText={nupRevisado.esElDui ? '· es el DUI' : '· DUI o 12 dígitos'}
                                             />
+                                            {/* Desde 2023 el NUP ES el DUI. Llenarlo solo pisaría el
+                                                de 12 dígitos de quien lo tiene de antes, así que se
+                                                ofrece con un toque y queda a la vista. */}
+                                            {!String(formData.afp_number || '').trim() && String(formData.dui || '').replace(/\D/g, '').length === 9 && (
+                                                <Button variant="ghost" size="sm" className="mt-1"
+                                                    onClick={() => handleSelectChange('afp_number', formData.dui)}>
+                                                    Usar el DUI ({formData.dui})
+                                                </Button>
+                                            )}
+                                            </div>
                                         )}
 
                                         {/* Preguntarle la institución a quien declaró que NO tiene

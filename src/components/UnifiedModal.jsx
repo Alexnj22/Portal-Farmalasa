@@ -561,7 +561,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                         + (doc.omitido
                                             ? 'No se pidió el documento — anótala antes de cerrar, no se puede volver a ver.'
                                             : 'No se pudo generar el documento — anótala antes de cerrar.')
-                                      : ' · entra con la contraseña que ya tenía.'
+                                      : (created.accesoFallo
+                                          ? ' · todavía no tiene acceso al portal (mira el aviso).'
+                                          : ' · entra con la contraseña que ya tenía.')
                                         + (doc.omitido ? '' : ' No se pudo generar el documento.')),
                             doc.ok ? "success" : "warning",
                             20000
@@ -578,6 +580,20 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             [enlazado, conserva].filter(Boolean).join(' ') || "La ficha del empleado se guardó exitosamente.",
                             "success",
                             enlazado ? 12000 : undefined
+                        );
+                    }
+
+                    // Lo que quedó pendiente DESPUÉS de crear la ficha: el
+                    // acceso, la foto, los documentos, las sucursales o los
+                    // datos protegidos. La ficha está guardada; esto dice qué
+                    // completar, en vez de un «guardado» que no era del todo
+                    // cierto (2026-10-14).
+                    if (created?.avisos?.length && showToast) {
+                        showToast(
+                            "La ficha se guardó, pero falta algo",
+                            created.avisos.join(' '),
+                            "warning",
+                            30000
                         );
                     }
 

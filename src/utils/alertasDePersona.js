@@ -22,6 +22,9 @@ export function alertasDePersona(emp, ahora = new Date()) {
             faltan.push('DUI');
         }
         if (!emp.isss_number && !emp.afp_number) faltan.push('ISSS / AFP');
+        // Con ISSS cargado la línea de arriba calla, y así pasaron 7 fichas que
+        // dicen «tiene AFP» sin el NUP (2026-10-14).
+        else if (emp.afp_estado === 'TIENE' && !emp.afp_number) faltan.push('NUP de la AFP');
     }
     const docs = emp.employee_documents || [];
     const tieneIdentidad = menor

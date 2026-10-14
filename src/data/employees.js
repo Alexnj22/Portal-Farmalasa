@@ -73,11 +73,11 @@ export function updateEmployeeReturning(employeeId, patch) {
  * (`staff_list.can_edit`), así que ver un código es ahora una llamada explícita
  * y no un efecto de traer la fila.
  */
-export async function fetchCredenciales(ids) {
+export async function fetchCredenciales(ids, { lanzar = false } = {}) {
     const unicos = [...new Set((ids || []).filter(Boolean))];
     if (!unicos.length) return new Map();
     const { data, error } = await supabase.rpc('get_employee_credenciales', { p_ids: unicos });
-    if (error) { console.error('employees: fetchCredenciales failed:', error.message); return new Map(); }
+    if (error) { console.error('employees: fetchCredenciales failed:', error.message); if (lanzar) throw error; return new Map(); }
     return new Map((data || []).map((r) => [r.employee_id, r]));
 }
 
@@ -98,11 +98,11 @@ export async function fetchCredenciales(ids) {
  * planilla sobre la lista completa, así que pedirlos por expediente obligaría a
  * una llamada por persona justo cuando más se necesitan juntos.
  */
-export async function fetchSalarios(ids) {
+export async function fetchSalarios(ids, { lanzar = false } = {}) {
     const unicos = [...new Set((ids || []).filter(Boolean))];
     if (!unicos.length) return new Map();
     const { data, error } = await supabase.rpc('get_employee_salarios', { p_ids: unicos });
-    if (error) { console.error('employees: fetchSalarios failed:', error.message); return new Map(); }
+    if (error) { console.error('employees: fetchSalarios failed:', error.message); if (lanzar) throw error; return new Map(); }
     return new Map((data || []).map((r) => [r.employee_id, r]));
 }
 
@@ -123,11 +123,11 @@ export async function fetchSalarios(ids) {
  * alguien su propio DUI no protege a nadie — rompe una pantalla. El servidor
  * resuelve las dos cosas en la misma consulta.
  */
-export async function fetchIdentidades(ids) {
+export async function fetchIdentidades(ids, { lanzar = false } = {}) {
     const unicos = [...new Set((ids || []).filter(Boolean))];
     if (!unicos.length) return new Map();
     const { data, error } = await supabase.rpc('get_employee_identidad', { p_ids: unicos });
-    if (error) { console.error('employees: fetchIdentidades failed:', error.message); return new Map(); }
+    if (error) { console.error('employees: fetchIdentidades failed:', error.message); if (lanzar) throw error; return new Map(); }
     return new Map((data || []).map((r) => [r.employee_id, r]));
 }
 

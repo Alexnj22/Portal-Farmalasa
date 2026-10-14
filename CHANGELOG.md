@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.5 — Altas y enlaces de personal: nada se pierde sin avisar
+
+Revisión del módulo de altas después del acuse del Ministerio. Lo que se
+corrigió, del más grave al menos:
+
+- **Reemplazar un documento ya no borra el anterior.** El formulario vaciaba
+  el documento antes de subir el nuevo, así que la versión anterior nunca
+  llegaba al historial (0 de 51 documentos lo tenían) y, si la subida fallaba,
+  el documento bueno desaparecía al guardar.
+- **No se puede guardar mientras un documento sube.** Se perdía la subida.
+- **Enlazar ya no puede borrar el sueldo, la cuenta, el ISSS ni cambiar el
+  código.** El formulario no deja guardar hasta leer los datos protegidos de
+  la ficha; si la lectura falla lo dice. El alta tampoco manda datos
+  protegidos vacíos ni el PIN del kiosco (un PIN vacío al enlazar se leía como
+  una baja y la persona dejaba de marcar).
+- **Cambiar de persona enlazada** ya no arrastra datos de la primera.
+- **Un borrador de enlace** vuelve a pedir los datos de la ficha y ya no
+  guarda el código de carné en el navegador.
+- **Lo que falla después de crear la ficha se dice**: el acceso al portal, la
+  foto, los documentos, las sucursales que cubre o los datos protegidos. La
+  ficha se completa igual y un aviso dice qué falta, en vez de «guardado» o
+  «no se pudo guardar».
+- **NUP de la AFP**: el campo ya no muestra el DUI como si estuviera lleno;
+  al marcar «tiene AFP» se pone el DUI, hay un botón «Usar el DUI», y la
+  alerta de datos faltantes lo nombra.
+- La lectura de `documentos_por_asignar` pedía el módulo `personal`, que no
+  existe (migración `20261014150250`).
+
+
 ## v2.1285.4 — Reparto del acuse: la bitácora acepta la severidad
 
 Con el permiso ya corregido, guardar el reparto fallaba en la bitácora:

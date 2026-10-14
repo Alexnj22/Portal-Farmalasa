@@ -21,6 +21,10 @@ import * as almacen from '@plataforma/almacen';
 import { emitir } from '@plataforma/eventos';
 import { comprimirFotoDeEmpleado } from '@plataforma/imagenes';
 import { hoySV, lunesDe } from '../../utils/fecha';
+import { mensajeAmigable } from '../../utils/errorMessages';
+
+// El motivo de un paso del alta que falló, legible para quien da de alta.
+const mensajeDeFallo = (err) => mensajeAmigable(err, err?.message || 'sin motivo');
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -497,7 +501,10 @@ export const createEmployeeSlice = (set, get) => ({
      * exportaciones) sigue funcionando sin enterarse— y las demás van en
      * `hojas`. No es una segunda representación del mismo dato: es la primera
      * hoja y el resto, que es como llega el papel. */
-    uploadEmployeeDocuments: async (employeeId, docs) => {
+    /* `sinSubir` (opcional): se le agregan los rótulos de los documentos cuya
+     * subida falló. Antes se descartaban con un `continue` y nadie se
+     * enteraba de que el documento no quedó. */
+    uploadEmployeeDocuments: async (employeeId, docs, sinSubir = null) => {
         if (!Array.isArray(docs) || docs.length === 0) return [];
         // Las hojas que ya están subidas. Una hoja sin `url` es un hueco que
         // alguien abrió y no llenó: no se guarda, para que el documento no
@@ -512,7 +519,11 @@ export const createEmployeeSlice = (set, get) => ({
                 const fileExt = doc.file.name.split('.').pop();
                 const filePath = `employees/${employeeId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, doc.file);
-                if (uploadError) { console.error('uploadEmployeeDocuments:', uploadError.message); continue; }
+                if (uploadError) {
+                    console.error('uploadEmployeeDocuments:', uploadError.message);
+                    sinSubir?.push(doc.title || doc.category);
+                    continue;
+                }
                 const { data: publicUrlData } = supabase.storage.from('documents').getPublicUrl(filePath);
 
                 let expiryDate = doc.expiry_date || null;
@@ -603,6 +614,23 @@ export const createEmployeeSlice = (set, get) => ({
             if (absorbeA && !fichaAbsorbida) {
                 throw new Error('La ficha que quieres enlazar ya no está en la lista. Recarga la pantalla y vuelve a elegirla.');
             }
+            // El formulario marca `_fichaCargada` cuando ya leyó el sueldo, la
+            // cuenta, el ISSS y el código de esa ficha. Sin eso, lo que viaja
+            // es un formulario en blanco con un código aleatorio, y escribirlo
+            // ENCIMA de la persona le cambiaba la contraseña del portal y del
+            // kiosco. La pantalla ya no deja guardar en ese estado; esto es la
+            // segunda llave, por si alguien llega acá por otro camino.
+            if (absorbeA && formData._fichaCargada !== undefined
+                && String(formData._fichaCargada) !== String(absorbeA)) {
+                throw new Error('Todavía no se leyeron los datos de la ficha que enlazas. Espera un momento y vuelve a guardar.');
+            }
+
+            /* Lo que no salió bien DESPUÉS de crear la ficha. Antes cada paso
+             * fallaba por su lado —a la consola, o lanzando a mitad del alta—
+             * y la pantalla decía «guardado» o «no se pudo guardar», y ninguna
+             * de las dos era cierta. Ahora se siguen haciendo todos los pasos y
+             * se dice cuál quedó pendiente (2026-10-14). */
+            const avisos = [];
 
             // ── Al enlazar, el usuario no es una columna: es la CREDENCIAL ──
             //
@@ -797,7 +825,11 @@ export const createEmployeeSlice = (set, get) => ({
                 // valor por defecto: NULL es «no se pactó», y eso se ve.
                 periodo_pago: formData.periodo_pago || null,
                 
-                kiosk_pin: formData.kiosk_pin || null,
+                // `kiosk_pin` NO viaja (2026-10-14): lo deriva del código el
+                // trigger `derivar_kiosk_pin`. Mandarlo vacío al ENLAZAR era
+                // peor que inútil: el trigger lee un NULL sobre un PIN que
+                // existía como una BAJA y lo deja en NULL — la persona dejaba
+                // de poder marcar sin que nada lo dijera.
                 // La marca «todavía no tiene carné»: es lo que habilita
                 // imprimirle uno de papel sin el permiso aparte.
                 carne_pendiente: !!formData.carne_pendiente,
@@ -823,7 +855,20 @@ export const createEmployeeSlice = (set, get) => ({
             // fallar el alta entera con `permission denied for column …`. Se
             // guardan enseguida, con la ficha ya creada, porque la RPC necesita
             // el id para resolver el alcance.
-            const { dbPayload: filaPlana, protegido } = partirPorLlave(dbPayload);
+            const { dbPayload: filaPlana, protegido: protegidoCompleto } = partirPorLlave(dbPayload);
+
+            /* Un dato protegido VACÍO no viaja (2026-10-14).
+             *
+             * En un alta nueva, vacío ya es lo que la columna tiene: mandarlo no
+             * cambia nada, pero sí exige la llave de sueldos — y quien puede dar
+             * de alta sin esa llave se topaba con FORBIDDEN con la ficha ya
+             * creada. Al ENLAZAR era peor: un formulario que no alcanzó a leer
+             * el sueldo, la cuenta o el ISSS de la persona los BORRABA. Vaciar
+             * uno de esos datos a propósito se hace editando la ficha, no
+             * rehaciendo el expediente. */
+            const protegidoConValor = Object.fromEntries(Object.entries(protegidoCompleto || {})
+                .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== ''));
+            const protegido = Object.keys(protegidoConValor).length ? protegidoConValor : null;
 
             const { data: newEmp, error } = absorbeA
                 ? await updateEmployeeReturning(absorbeA, filaPlana)
@@ -832,11 +877,17 @@ export const createEmployeeSlice = (set, get) => ({
                 console.error(absorbeA ? 'Supabase UPDATE error:' : 'Supabase INSERT error:', error.message, error.details, error.hint);
                 throw error;
             }
-            // Si esto lanza, la ficha ya existe y le falta el sueldo o el DUI.
-            // Se deja subir: es MUY preferible a tragárselo — una ficha a medias
-            // que nadie sabe que está a medias es el defecto que este trabajo
-            // vino a cerrar, no uno nuevo que valga la pena introducir.
-            await guardarDatosProtegidos(newEmp.id, protegido);
+            // La ficha ya existe. Si esto falla, se SIGUE —foto, documentos,
+            // sucursales, acceso— y se avisa qué faltó. Antes lanzaba: la
+            // pantalla decía «no se pudo guardar» sobre una ficha creada sin
+            // foto, documentos ni acceso, y el reintento chocaba con su propio
+            // DUI y su código.
+            try {
+                await guardarDatosProtegidos(newEmp.id, protegido);
+            } catch (errProtegido) {
+                console.error('guardarDatosProtegidos:', errProtegido);
+                avisos.push(`No se guardaron el sueldo, la cuenta ni los documentos de identidad (${mensajeDeFallo(errProtegido)}). Complétalos editando la ficha.`);
+            }
             registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
             registerSkillCatalogEntries(dbPayload.additional_skills);
             registerMedicalCatalogEntries(dbPayload.chronic_conditions, dbPayload.disability_type);
@@ -847,15 +898,23 @@ export const createEmployeeSlice = (set, get) => ({
                 const compressedPhoto = await compressImage(uploadedFile);
                 const publicPhotoUrl = await get().uploadEmployeeFile(compressedPhoto, newEmp.id, 'foto_perfil');
                 if (publicPhotoUrl) {
-                    await updateEmployeeRow(newEmp.id, { photo_url: publicPhotoUrl });
-                    newEmp.photo_url = publicPhotoUrl;
+                    const { error: errFoto } = await updateEmployeeRow(newEmp.id, { photo_url: publicPhotoUrl });
+                    if (errFoto) avisos.push(`No se guardó la foto (${mensajeDeFallo(errFoto)}).`);
+                    else newEmp.photo_url = publicPhotoUrl;
+                } else {
+                    avisos.push('No se pudo subir la foto.');
                 }
             }
 
             if (Array.isArray(formData.employee_documents) && formData.employee_documents.length > 0) {
-                const uploadedDocs = await get().uploadEmployeeDocuments(newEmp.id, formData.employee_documents);
-                await updateEmployeeRow(newEmp.id, { employee_documents: uploadedDocs });
-                newEmp.employee_documents = uploadedDocs;
+                const sinSubir = [];
+                const uploadedDocs = await get().uploadEmployeeDocuments(newEmp.id, formData.employee_documents, sinSubir);
+                if (sinSubir.length) avisos.push(`No se pudo subir: ${sinSubir.join(', ')}.`);
+                const { error: errDocs } = await updateEmployeeRow(newEmp.id, { employee_documents: uploadedDocs });
+                // `updateEmployeeRow` no lanza: sin mirar el error, la copia en
+                // memoria mostraba documentos que la base nunca recibió.
+                if (errDocs) avisos.push(`No se guardaron los documentos (${mensajeDeFallo(errDocs)}).`);
+                else newEmp.employee_documents = uploadedDocs;
             }
 
             /* ── Los documentos que estaban esperando a esta persona ────────
@@ -888,11 +947,22 @@ export const createEmployeeSlice = (set, get) => ({
             // reemplazarlas, dejando a la persona con acceso a salas que el
             // formulario ya no dice. Es el mismo orden que usa `updateEmployee`.
             const assignedBranches = Array.isArray(formData.assigned_branch_ids) ? formData.assigned_branch_ids.map(Number).filter(Boolean) : [];
-            if (absorbeA) await deleteEmployeeBranches(newEmp.id);
-            if (assignedBranches.length > 0) {
-                await insertEmployeeBranches(
+            // Los dos devuelven `{ error }` y no lanzan: sin mirarlo, un borrado
+            // que entraba seguido de una inserción que fallaba dejaba a la
+            // persona sin acceso a sus salas y la pantalla decía «guardado».
+            let sucursalesBorradas = true;
+            if (absorbeA) {
+                const { error: errBorrar } = await deleteEmployeeBranches(newEmp.id);
+                if (errBorrar) {
+                    sucursalesBorradas = false;
+                    avisos.push(`No se actualizaron las sucursales que cubre (${mensajeDeFallo(errBorrar)}); quedaron las que tenía.`);
+                }
+            }
+            if (sucursalesBorradas && assignedBranches.length > 0) {
+                const { error: errSucursales } = await insertEmployeeBranches(
                     assignedBranches.map(branch_id => ({ employee_id: newEmp.id, branch_id }))
                 );
+                if (errSucursales) avisos.push(`No se guardaron las sucursales que cubre (${mensajeDeFallo(errSucursales)}). Asígnalas editando la ficha.`);
             }
 
             // ── El usuario nuevo se MUEVE, no se escribe ───────────────────
@@ -944,6 +1014,7 @@ export const createEmployeeSlice = (set, get) => ({
             // entregarla.
             let tempPassword = null;
             let contrasenaConservada = false;
+            const avisosAntesDelAcceso = avisos.length;
             if (usuarioEfectivo) {
                 try {
                     const { data: authResult, error: authError } =
@@ -952,14 +1023,17 @@ export const createEmployeeSlice = (set, get) => ({
                         });
                     if (authError) {
                         console.warn('Auth creation error:', authError);
+                        avisos.push(`No se pudo crear su acceso al portal (${mensajeDeFallo(authError)}). Dale una contraseña desde su ficha.`);
                     } else if (!authResult?.ok) {
                         console.warn('Auth creation failed:', authResult);
+                        avisos.push(`No se pudo crear su acceso al portal (${authResult?.details || authResult?.error || 'sin motivo'}). Dale una contraseña desde su ficha.`);
                     } else {
                         tempPassword = authResult.tempPassword || null;
                         contrasenaConservada = authResult.conservada === true;
                     }
                 } catch (authErr) {
                     console.warn('No se pudo crear usuario Auth:', authErr);
+                    avisos.push(`No se pudo crear su acceso al portal (${mensajeDeFallo(authErr)}). Dale una contraseña desde su ficha.`);
                 }
             }
 
@@ -1029,7 +1103,11 @@ export const createEmployeeSlice = (set, get) => ({
             return {
                 id: appEmp.id, username: usuarioEfectivo, tempPassword,
                 enlazadoCon: fichaAbsorbida?.name || null,
-                contrasenaConservada, avisoDeUsuario,
+                contrasenaConservada, avisoDeUsuario, avisos,
+                // Que el acceso no se creó tiene que cambiar lo que dice el
+                // aviso principal: «entra con la contraseña que ya tenía» sería
+                // falso para alguien que no tiene cuenta.
+                accesoFallo: avisos.length > avisosAntesDelAcceso,
             };
         } catch (err) {
             console.error("Fallo al crear empleado:", err);

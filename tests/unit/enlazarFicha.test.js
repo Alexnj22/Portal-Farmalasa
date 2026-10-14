@@ -221,3 +221,41 @@ describe('lo que no está en el padrón', () => {
         expect(r.base_salary).toBeUndefined();
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cambiar de persona enlazada (2026-10-14)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Enlazar con A y corregir a B dejaba los datos de A donde B tenía null, y al
+// guardar se escribían sobre B. Lo que vino de A se suelta; lo que alguien
+// corrigió a mano se respeta.
+describe('cambiar de ficha enlazada no arrastra datos de la anterior', () => {
+    const A = { id: 'a', name: 'Ana', phone: '71111111', email: 'ana@x.com', address: 'CASA DE ANA' };
+    const B = { id: 'b', name: 'Beto', phone: '72222222', email: null, address: null };
+
+    it('lo que vino de A y B no tiene, queda vacío', () => {
+        const uno = aplicarFichaEnlazada({}, 'a', A);
+        const dos = aplicarFichaEnlazada(uno, 'b', B);
+        expect(dos.phone).toBe('72222222');
+        expect(dos.email).toBe('');
+        expect(dos.address).toBe('');
+    });
+
+    it('lo que se corrigió a mano después de enlazar con A se respeta', () => {
+        const uno = { ...aplicarFichaEnlazada({}, 'a', A), address: 'DIRECCION NUEVA' };
+        const dos = aplicarFichaEnlazada(uno, 'b', B);
+        expect(dos.address).toBe('DIRECCION NUEVA');
+    });
+
+    it('enlazar deja la ficha SIN cargar hasta que lleguen sus datos protegidos', () => {
+        const r = aplicarFichaEnlazada({}, 'a', A);
+        expect(r._fichaCargada).toBeNull();
+    });
+
+    it('quitar el enlace suelta lo que vino de la ficha', () => {
+        const uno = aplicarFichaEnlazada({}, 'a', A);
+        const fuera = aplicarFichaEnlazada(uno, '', undefined);
+        expect(fuera.email).toBe('');
+        expect(fuera._fichaCargada).toBeUndefined();
+    });
+});

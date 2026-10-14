@@ -1079,12 +1079,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         }
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
-            // Decir «sí, tiene AFP» con el NUP vacío y un DUI completo: desde
-            // 2023 el NUP es el DUI, así que se pone, a la vista y editable.
-            if (name === 'afp_estado' && value === 'TIENE' && !String(prev.afp_number || '').trim()
-                && String(prev.dui || '').replace(/\D/g, '').length === 9) {
-                newData.afp_number = prev.dui;
-            }
             if (name === 'has_disability' && !value) {
                 newData.disability_type = '';
                 newData.disability_grade = '';
@@ -3794,9 +3788,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 // en el marcador de posición.
                                                 helperText={nupRevisado.esElDui ? '· es el DUI' : '· DUI o 12 dígitos'}
                                             />
-                                            {/* Desde 2023 el NUP ES el DUI. Llenarlo solo pisaría el
-                                                de 12 dígitos de quien lo tiene de antes, así que se
-                                                ofrece con un toque y queda a la vista. */}
+                                            {/* El NUP es el DUI (desde 2023) O el de 12 dígitos de
+                                                antes, y las dos formas siguen vigentes: el portal no
+                                                puede saber cuál tiene la persona. Por eso NO se llena
+                                                solo —se probó al marcar «tiene AFP» y el usuario lo
+                                                corrigió el 2026-10-14—: se ofrece el DUI con un toque,
+                                                para cuando quien da de alta sabe que es ése. */}
                                             {!String(formData.afp_number || '').trim() && String(formData.dui || '').replace(/\D/g, '').length === 9 && (
                                                 <Button variant="ghost" size="sm" className="mt-1"
                                                     onClick={() => handleSelectChange('afp_number', formData.dui)}>

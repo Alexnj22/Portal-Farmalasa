@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.6 — El NUP no se llena solo con el DUI
+
+La v2.1285.5 ponía el DUI como NUP al marcar «tiene AFP». Pero el NUP puede
+ser el DUI o el número de 12 dígitos de antes de 2023, y los dos siguen
+vigentes: el portal no sabe cuál tiene cada persona. Ya no se llena solo;
+queda el botón «Usar el DUI» para cuando quien da de alta sabe que es ése, y
+la alerta de NUP faltante.
+
 ## v2.1285.5 — Altas y enlaces de personal: nada se pierde sin avisar
 
 Revisión del módulo de altas después del acuse del Ministerio. Lo que se

@@ -44,6 +44,10 @@ import {
     fetchIdentidades, fetchSalarios,
 } from '@nucleo/data/employees';
 import { revisarNup } from '@nucleo/utils/nupAfp';
+import { BANCOS } from '@nucleo/constants/bancos';
+import OrdenesDeDescuento from './OrdenesDeDescuento';
+import { periodoVigente, estadoEnElSeguro } from '@nucleo/utils/seguroDeVida';
+import { fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
 import { getStoragePathFromUrl } from '@nucleo/utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
@@ -470,6 +474,7 @@ const COMPARTIBLES = new Set(['ACUSE_MTPS']);
 
 const VARIAS_HOJAS = new Set([
     'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS', 'CONTRATO_REGENCIA',
+    'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION',
     'CERTIFICACION_DISCAPACIDAD', 'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
 ]);
 
@@ -507,6 +512,11 @@ const SIN_VENCIMIENTO = new Set([
     'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS',
     'COPIA_NIT', 'TARJETA_ISSS', 'TARJETA_AFP',
     'DOCUMENTO_IDENTIDAD', 'DUI_COMPLETO', 'DUI_FRENTE', 'DUI_REVERSO',
+    // 2026-10-14: la oferta, la declaración ética y la inducción son
+    // constancias de un hecho; el certificado del seguro «es único y no
+    // cambia» (usuario) — lo que vence cada año es el PAGO de la póliza, que
+    // es de la empresa y se vigila aparte.
+    'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION', 'CERTIFICADO_SEGURO_VIDA',
 ]);
 
 const FIXED_DOCUMENT_CATEGORIES = [
@@ -608,19 +618,9 @@ const ACCOUNT_TYPE_OPTIONS = [
     { value: 'ELECTRONICA',label: 'Cuenta electrónica' },
 ];
 
-const BANKS_OPTIONS = [
-    { value: 'Banco Agrícola', label: 'Banco Agrícola' },
-    { value: 'Banco Cuscatlán', label: 'Banco Cuscatlán' },
-    { value: 'BAC Credomatic', label: 'BAC Credomatic' },
-    { value: 'Banco Davivienda', label: 'Banco Davivienda' },
-    { value: 'Banco Promerica', label: 'Banco Promerica' },
-    { value: 'Banco Hipotecario', label: 'Banco Hipotecario' },
-    { value: 'Banco de Fomento Agropecuario', label: 'Banco Fomento Agropecuario' },
-    { value: 'Banco Azul', label: 'Banco Azul' },
-    { value: 'Banco Industrial', label: 'Banco Industrial' },
-    { value: 'Sistema Fedecrédito', label: 'Sistema Fedecrédito' },
-    { value: 'Otro', label: 'Otro...' }
-];
+// La lista vive en el núcleo desde el 2026-10-14: la usa también la orden de
+// descuento. Ver `constants/bancos.js`.
+const BANKS_OPTIONS = BANCOS;
 
 const DEPARTAMENTOS_OPTS = Object.keys(EL_SALVADOR_GEO).map(d => ({ value: d, label: d }));
 
@@ -1419,10 +1419,31 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         { key: 'COPIA_NIT',        label: ROTULOS.COPIA_NIT },
         { key: 'TARJETA_ISSS',     label: ROTULOS.TARJETA_ISSS },
         { key: 'TARJETA_AFP',      label: ROTULOS.TARJETA_AFP },
+        // ── Pedidos por el usuario el 2026-10-14 ───────────────────────────
+        // La oferta de empleo, la declaración de responsabilidades éticas (se
+        // firma junto con el contrato) y la constancia de la inducción. Y el
+        // certificado de asegurado del seguro de vida colectivo: es de cada
+        // persona y no cambia; la póliza y el pago anual son de la empresa y
+        // se cargan en Personal › Seguro de vida.
+        { key: 'OFERTA_EMPLEO',        label: ROTULOS.OFERTA_EMPLEO },
+        { key: 'DECLARACION_ETICA',    label: ROTULOS.DECLARACION_ETICA },
+        { key: 'CONSTANCIA_INDUCCION', label: ROTULOS.CONSTANCIA_INDUCCION },
+        { key: 'CERTIFICADO_SEGURO_VIDA', label: ROTULOS.CERTIFICADO_SEGURO_VIDA },
     ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
+    // El pago del seguro de vida del periodo vigente, para decir en la ficha
+    // si la persona está solvente. `undefined` = sin consultar todavía.
+    const [pagoDelSeguro, setPagoDelSeguro] = useState(undefined);
+    useEffect(() => {
+        if (!formData?.id) return undefined;
+        let vivo = true;
+        fetchPagoDelAnio(periodoVigente())
+            .then(p => { if (vivo) setPagoDelSeguro(p || null); })
+            .catch(() => { if (vivo) setPagoDelSeguro(undefined); });
+        return () => { vivo = false; };
+    }, [formData?.id]);
     // El papel colectivo esperando que alguien decida a quiénes cubre.
     const [docParaVarios, setDocParaVarios] = useState(null);
     // Lo que dijo el DUI, esperando que alguien lo confirme. NO se aplica solo:
@@ -2184,6 +2205,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      * Antes era `length !== 12` a secas, o sea que el número de hoy —el DUI, de
      * 9— se marcaba como incompleto. */
     const nupRevisado = revisarNup(formData?.afp_number, formData?.dui);
+    // El botón «Es el DUI» del NUP: hace falta un DUI completo en la ficha, y
+    // sobra cuando lo escrito ya es ese DUI.
+    const duiDigitos = String(formData?.dui || '').replace(/\D/g, '');
+    const nupConBotonDui = duiDigitos.length === 9
+        && String(formData?.afp_number || '').replace(/\D/g, '') !== duiDigitos;
     const afpIncomplete = !nupRevisado.ok;
     const emailInvalid = !!formData?.email && !isValidEmail(formData.email);
     const firstNamesInvalid = !!formData?.first_names && !isValidPersonName(formData.first_names);
@@ -3785,20 +3811,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 // Corto: `helperText` se pinta al lado del
                                                 // rótulo, no debajo. La explicación larga vive
                                                 // en el marcador de posición.
-                                                helperText={nupRevisado.esElDui ? '· es el DUI' : '· DUI o 12 dígitos'}
+                                                helperText={nupRevisado.esElDui ? '· es el DUI' : (nupConBotonDui ? '' : '· DUI o 12 dígitos')}
+                                                /* «Es el DUI», AL LADO del campo y no debajo
+                                                   (2026-10-14). Antes el botón aparecía sólo
+                                                   con el campo VACÍO: quien empezaba a teclear
+                                                   el DUI lo hacía desaparecer y se quedaba con
+                                                   el error de «escribiste N dígitos» hasta
+                                                   terminar — o con el de «no es el DUI de esta
+                                                   ficha» por un dígito cambiado. Ahora está
+                                                   mientras lo escrito no sea ya el DUI, así que
+                                                   las dos salidas quedan a la vista: un toque,
+                                                   o los 12 dígitos del NUP de antes de 2023.
+                                                   NO se llena solo: el usuario lo corrigió el
+                                                   mismo día (las dos formas siguen vigentes). */
+                                                labelAction={nupConBotonDui && (
+                                                    <Button size="rotulo" variant="ghost" icon={Fingerprint}
+                                                        onClick={() => handleSelectChange('afp_number', formData.dui)}>
+                                                        Es el DUI
+                                                    </Button>
+                                                )}
                                             />
-                                            {/* El NUP es el DUI (desde 2023) O el de 12 dígitos de
-                                                antes, y las dos formas siguen vigentes: el portal no
-                                                puede saber cuál tiene la persona. Por eso NO se llena
-                                                solo —se probó al marcar «tiene AFP» y el usuario lo
-                                                corrigió el 2026-10-14—: se ofrece el DUI con un toque,
-                                                para cuando quien da de alta sabe que es ése. */}
-                                            {!String(formData.afp_number || '').trim() && String(formData.dui || '').replace(/\D/g, '').length === 9 && (
-                                                <Button variant="ghost" size="sm" className="mt-1"
-                                                    onClick={() => handleSelectChange('afp_number', formData.dui)}>
-                                                    Usar el DUI ({formData.dui})
-                                                </Button>
-                                            )}
                                             </div>
                                         )}
 
@@ -4799,6 +4831,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                         </div>
 
+                        {/* Las órdenes de descuento (préstamos que la empresa paga por
+                            planilla) se guardan en su propia tabla, al momento — no
+                            con el botón Guardar de la ficha. Por eso sólo existen
+                            cuando la ficha ya existe. */}
+                        {formData?.id && (
+                            <div className={`${islandClass} ${islandHoverClass}`}>
+                                <OrdenesDeDescuento empleado={{ id: formData.id, name: formData.name,
+                                    first_names: formData.first_names, last_names: formData.last_names }}
+                                    canEdit />
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className={`${islandClass} ${islandHoverClass}`}>
                                 <div className="flex items-center gap-3 mb-4">
@@ -5038,6 +5082,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="mb-2">
                                         <p className="text-caption font-black uppercase tracking-widest text-content-2">{sec.titulo}</p>
                                         <p className="text-micro text-content-3 font-medium leading-snug">{sec.bajada}</p>
+                                        {sec.id === 'seguro' && formData?.id && pagoDelSeguro !== undefined && (() => {
+                                            const est = estadoEnElSeguro(formData.id, pagoDelSeguro);
+                                            return <Badge variant={est.variant} size="sm" className="mt-1.5">{est.label}</Badge>;
+                                        })()}
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {sec.docs.map(cat => (

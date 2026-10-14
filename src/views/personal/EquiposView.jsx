@@ -21,6 +21,8 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 // absorber lo que hacía el listado, esta vista pasó de 37 a 54 kB y cruzó su
 // techo. Diferido vuelve a entrar.
 const PracticanteModal = lazy(() => import('../../components/practicantes/PracticanteModal'));
+// El seguro de vida colectivo: póliza, pago anual y quién está solvente.
+const SeguroDeVidaColectivo = lazy(() => import('./SeguroDeVidaColectivo'));
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 
@@ -564,6 +566,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   const esExternos = vista === 'externos';
 
   const [modalPracticante, setModalPracticante] = useState(false);
+  const [verSeguro, setVerSeguro] = useState(false);
   // Se monta la PRIMERA vez que se abre y ya no se desmonta: con el montaje
   // atado a `modalPracticante` el diálogo desaparecería de golpe al cerrar, sin
   // su animación de salida.
@@ -788,6 +791,10 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     { key: 'practicante', icon: GraduationCap, label: 'Nuevo practicante', rotulo: 'Pasante',
       tone: 'chart-3', disabled: !canEdit,
       onClick: () => { setPracticanteEnEdicion(null); setPidioModal(true); setModalPracticante(true); } },
+    // La póliza y el pago anual son de toda la empresa: viven acá y no en
+    // una ficha (pedido del usuario, 2026-10-14).
+    { key: 'seguro', icon: ShieldCheck, label: 'Seguro de vida', rotulo: 'Seguro',
+      tone: 'chart-9', onClick: () => setVerSeguro(true) },
     // En «Externos y sistema» no se ofrece: lo único que exporta esta vista es
     // el directorio de PERSONAL, y ahí no hay ninguno.
     ...(canDownload && !esExternos && !esPracticantes ? [{ key: 'exportar', icon: Download,
@@ -915,6 +922,13 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
             practicante={practicanteEnEdicion}
             onSaved={() => fetchPracticantes()}
           />
+        </Suspense>
+      )}
+
+      {verSeguro && (
+        <Suspense fallback={null}>
+          <SeguroDeVidaColectivo open={verSeguro} onClose={() => setVerSeguro(false)}
+            canEdit={canEdit || hasPermission('staff_detail', 'can_edit')} />
         </Suspense>
       )}
 

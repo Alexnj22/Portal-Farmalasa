@@ -401,12 +401,16 @@ export type Database = {
       }
       app_chat_conversaciones: {
         Row: {
+          asignada_a: string | null
+          asignada_at: string | null
           calificacion: number | null
           calificacion_comentario: string | null
           calificada_at: string | null
           cliente_escribiendo_at: string | null
           created_at: string
           customer_id: number
+          escalada_sala_at: string | null
+          escalada_supervision_at: string | null
           escribiendo_at: string | null
           escribiendo_por: string | null
           espera_recordada_at: string | null
@@ -426,12 +430,16 @@ export type Database = {
           visto_equipo_at: string | null
         }
         Insert: {
+          asignada_a?: string | null
+          asignada_at?: string | null
           calificacion?: number | null
           calificacion_comentario?: string | null
           calificada_at?: string | null
           cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id: number
+          escalada_sala_at?: string | null
+          escalada_supervision_at?: string | null
           escribiendo_at?: string | null
           escribiendo_por?: string | null
           espera_recordada_at?: string | null
@@ -451,12 +459,16 @@ export type Database = {
           visto_equipo_at?: string | null
         }
         Update: {
+          asignada_a?: string | null
+          asignada_at?: string | null
           calificacion?: number | null
           calificacion_comentario?: string | null
           calificada_at?: string | null
           cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id?: number
+          escalada_sala_at?: string | null
+          escalada_supervision_at?: string | null
           escribiendo_at?: string | null
           escribiendo_por?: string | null
           espera_recordada_at?: string | null
@@ -476,6 +488,20 @@ export type Database = {
           visto_equipo_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "app_chat_conversaciones_asignada_a_fkey"
+            columns: ["asignada_a"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_conversaciones_asignada_a_fkey"
+            columns: ["asignada_a"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "app_chat_conversaciones_customer_id_fkey"
             columns: ["customer_id"]
@@ -528,6 +554,65 @@ export type Database = {
           {
             foreignKeyName: "app_chat_conversaciones_tomada_por_fkey"
             columns: ["tomada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_chat_incumplimientos: {
+        Row: {
+          branch_id: number | null
+          conversacion_id: number
+          created_at: string
+          employee_id: string
+          esperando_desde: string
+          id: number
+          minutos: number
+        }
+        Insert: {
+          branch_id?: number | null
+          conversacion_id: number
+          created_at?: string
+          employee_id: string
+          esperando_desde: string
+          id?: never
+          minutos: number
+        }
+        Update: {
+          branch_id?: number | null
+          conversacion_id?: number
+          created_at?: string
+          employee_id?: string
+          esperando_desde?: string
+          id?: never
+          minutos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_chat_incumplimientos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_incumplimientos_conversacion_id_fkey"
+            columns: ["conversacion_id"]
+            isOneToOne: false
+            referencedRelation: "app_chat_conversaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_incumplimientos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_chat_incumplimientos_employee_id_fkey"
+            columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -683,6 +768,74 @@ export type Database = {
             columns: ["creada_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_cliente_aceptaciones: {
+        Row: {
+          aceptado_at: string
+          created_at: string
+          customer_id: number | null
+          documento: string
+          id: string
+          plataforma: string | null
+          preregistro_id: string | null
+          sesion_id: string | null
+          version: string
+          version_app: string | null
+        }
+        Insert: {
+          aceptado_at?: string
+          created_at?: string
+          customer_id?: number | null
+          documento: string
+          id?: string
+          plataforma?: string | null
+          preregistro_id?: string | null
+          sesion_id?: string | null
+          version: string
+          version_app?: string | null
+        }
+        Update: {
+          aceptado_at?: string
+          created_at?: string
+          customer_id?: number | null
+          documento?: string
+          id?: string
+          plataforma?: string | null
+          preregistro_id?: string | null
+          sesion_id?: string | null
+          version?: string
+          version_app?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_aceptaciones_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_aceptaciones_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_cliente_aceptaciones_preregistro_id_fkey"
+            columns: ["preregistro_id"]
+            isOneToOne: false
+            referencedRelation: "app_cliente_preregistros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_aceptaciones_sesion_id_fkey"
+            columns: ["sesion_id"]
+            isOneToOne: false
+            referencedRelation: "app_cliente_sesiones"
             referencedColumns: ["id"]
           },
         ]
@@ -16482,6 +16635,98 @@ export type Database = {
           },
         ]
       }
+      ordenes_descuento: {
+        Row: {
+          archivos: Json
+          banco: string | null
+          creado_por: string | null
+          created_at: string
+          cuota: number | null
+          employee_id: string
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: number
+          monto_prestamo: number | null
+          nombre_en_documento: string | null
+          notas: string | null
+          periodicidad: string
+          plazo_cuotas: number | null
+          referencia: string | null
+          tasa_interes: number | null
+          updated_at: string
+        }
+        Insert: {
+          archivos?: Json
+          banco?: string | null
+          creado_por?: string | null
+          created_at?: string
+          cuota?: number | null
+          employee_id: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: never
+          monto_prestamo?: number | null
+          nombre_en_documento?: string | null
+          notas?: string | null
+          periodicidad?: string
+          plazo_cuotas?: number | null
+          referencia?: string | null
+          tasa_interes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          archivos?: Json
+          banco?: string | null
+          creado_por?: string | null
+          created_at?: string
+          cuota?: number | null
+          employee_id?: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: never
+          monto_prestamo?: number | null
+          nombre_en_documento?: string | null
+          notas?: string | null
+          periodicidad?: string
+          plazo_cuotas?: number | null
+          referencia?: string | null
+          tasa_interes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_descuento_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_descuento_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_descuento_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_descuento_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orphan_objects_registry: {
         Row: {
           created_at: string
@@ -23265,6 +23510,172 @@ export type Database = {
           },
         ]
       }
+      seguro_vida_cubiertos: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          id: number
+          nombre_en_documento: string
+          pago_id: number
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          id?: never
+          nombre_en_documento: string
+          pago_id: number
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          id?: never
+          nombre_en_documento?: string
+          pago_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seguro_vida_cubiertos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seguro_vida_cubiertos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seguro_vida_cubiertos_pago_id_fkey"
+            columns: ["pago_id"]
+            isOneToOne: false
+            referencedRelation: "seguro_vida_pagos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seguro_vida_pagos: {
+        Row: {
+          anio: number
+          comprobante_nombre: string | null
+          comprobante_url: string | null
+          created_at: string
+          fecha_pago: string | null
+          id: number
+          monto_total: number | null
+          notas: string | null
+          prima_por_persona: number | null
+          registrado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          comprobante_nombre?: string | null
+          comprobante_url?: string | null
+          created_at?: string
+          fecha_pago?: string | null
+          id?: never
+          monto_total?: number | null
+          notas?: string | null
+          prima_por_persona?: number | null
+          registrado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          comprobante_nombre?: string | null
+          comprobante_url?: string | null
+          created_at?: string
+          fecha_pago?: string | null
+          id?: never
+          monto_total?: number | null
+          notas?: string | null
+          prima_por_persona?: number | null
+          registrado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seguro_vida_pagos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seguro_vida_pagos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seguro_vida_poliza: {
+        Row: {
+          actualizado_por: string | null
+          aseguradora: string
+          created_at: string
+          documento_nombre: string | null
+          documento_url: string | null
+          id: number
+          mes_de_pago: number
+          notas: string | null
+          numero_poliza: string | null
+          prima_por_persona: number | null
+          suma_asegurada: number
+          tasa_por_millar: number
+          updated_at: string
+        }
+        Insert: {
+          actualizado_por?: string | null
+          aseguradora?: string
+          created_at?: string
+          documento_nombre?: string | null
+          documento_url?: string | null
+          id?: never
+          mes_de_pago?: number
+          notas?: string | null
+          numero_poliza?: string | null
+          prima_por_persona?: number | null
+          suma_asegurada?: number
+          tasa_por_millar?: number
+          updated_at?: string
+        }
+        Update: {
+          actualizado_por?: string | null
+          aseguradora?: string
+          created_at?: string
+          documento_nombre?: string | null
+          documento_url?: string | null
+          id?: never
+          mes_de_pago?: number
+          notas?: string | null
+          numero_poliza?: string | null
+          prima_por_persona?: number | null
+          suma_asegurada?: number
+          tasa_por_millar?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seguro_vida_poliza_actualizado_por_fkey"
+            columns: ["actualizado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seguro_vida_poliza_actualizado_por_fkey"
+            columns: ["actualizado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_activity: {
         Row: {
           created_at: string
@@ -26174,6 +26585,7 @@ export type Database = {
         Args: { p_dias?: number }
         Returns: number
       }
+      avisar_pago_seguro_vida: { Args: never; Returns: Json }
       avisar_pedidos_sin_recibir: { Args: never; Returns: number }
       avisar_productos_sin_venta: {
         Args: { p_muestra_a?: string }
@@ -26663,6 +27075,7 @@ export type Database = {
         Args: { p_conversacion: number; p_soltar?: boolean }
         Returns: Json
       }
+      chat_vigilar_espera: { Args: never; Returns: Json }
       clase_de_cliente: {
         Args: { p_customer_id: number; p_texto: string }
         Returns: string
@@ -30392,6 +30805,7 @@ export type Database = {
       nombre_de_pago: { Args: { p_valor: string }; Returns: string }
       nombre_de_vendedor: { Args: { p_codigo: string }; Returns: string }
       nombre_normalizado: { Args: { p_nombre: string }; Returns: string }
+      nombre_ordenado: { Args: { p_nombre: string }; Returns: string }
       norm_busqueda: { Args: { p: string }; Returns: string }
       norm_search: { Args: { "": string }; Returns: string }
       notificaciones_que_coinciden: {
@@ -31170,6 +31584,19 @@ export type Database = {
           p_referencia: string
         }
         Returns: number
+      }
+      registrar_pago_seguro_vida: {
+        Args: {
+          p_anio: number
+          p_comprobante_nombre: string
+          p_comprobante_url: string
+          p_cubiertos: Json
+          p_fecha_pago: string
+          p_monto_total: number
+          p_notas?: string
+          p_prima_por_persona: number
+        }
+        Returns: Json
       }
       registrar_rectificacion: {
         Args: { p_employee_id: string; p_fecha?: string; p_nota?: string }

@@ -54,6 +54,9 @@ import { getExpiryBadge } from './documentExpiry';
 export const ROTULOS = {
     // Al entrar
     SOLICITUD_EMPLEO: 'Solicitud de empleo',
+    OFERTA_EMPLEO: 'Oferta de empleo',
+    DECLARACION_ETICA: 'Declaración de responsabilidades éticas',
+    CONSTANCIA_INDUCCION: 'Constancia de inducción de personal',
     CV: 'Currículum Vitae — con sus atestados',
     CONTRATO: 'Contrato de Trabajo Firmado',
     ACUSE_MTPS: 'Acuse sellado del Ministerio de Trabajo',
@@ -66,6 +69,10 @@ export const ROTULOS = {
     // ISSS y AFP
     TARJETA_ISSS: 'Copia de la tarjeta del ISSS',
     TARJETA_AFP: 'Copia de la tarjeta de la AFP',
+    // Seguro de vida colectivo — el certificado de cada asegurado. La póliza y
+    // los pagos de cada año son de la EMPRESA y viven aparte
+    // (`seguro_vida_poliza`, `seguro_vida_pagos`).
+    CERTIFICADO_SEGURO_VIDA: 'Certificado del asegurado — Seguro de vida colectivo',
     // Para ejercer
     CONTRATO_REGENCIA: 'Contrato de Regencia',
     // Sólo si aplica
@@ -95,11 +102,14 @@ export const ROTULOS = {
 export const GRUPOS = {
     SOLICITUD_EMPLEO: 'Al entrar', CV: 'Al entrar', CONTRATO: 'Al entrar',
     ACUSE_MTPS: 'Al entrar', COPIA_NIT: 'Al entrar',
+    OFERTA_EMPLEO: 'Al entrar', DECLARACION_ETICA: 'Al entrar', CONSTANCIA_INDUCCION: 'Al entrar',
 
     CERTIFICADO_MEDICO_ANUAL: 'Cada año', EXAMEN_MEDICO: 'Cada año',
     ANUALIDAD_JVPQF: 'Cada año', ANUALIDAD_JVPE: 'Cada año',
 
     TARJETA_ISSS: 'ISSS y AFP', TARJETA_AFP: 'ISSS y AFP',
+
+    CERTIFICADO_SEGURO_VIDA: 'Seguro de vida',
 
     CONTRATO_REGENCIA: 'Para ejercer',
     SRS: 'Para ejercer', ENFERMERIA: 'Para ejercer', MEDICO: 'Para ejercer',
@@ -182,6 +192,7 @@ const TINTES = {
     'Al entrar':      { iconBg: 'bg-chart-1/10', iconCls: 'text-chart-1-text' },
     'Cada año':       { iconBg: 'bg-warning/10', iconCls: 'text-warning-text' },
     'ISSS y AFP':     { iconBg: 'bg-chart-9/10', iconCls: 'text-chart-9-text' },
+    'Seguro de vida': { iconBg: 'bg-chart-9/10', iconCls: 'text-chart-9-text' },
     'Para ejercer':   { iconBg: 'bg-success/10', iconCls: 'text-success-text' },
     'Sólo si aplica': { iconBg: 'bg-chart-4/10', iconCls: 'text-chart-4-text' },
     Identidad:        { iconBg: 'bg-brand/10',   iconCls: 'text-brand-text'   },
@@ -225,6 +236,12 @@ const ICONOS = {
 
     TARJETA_ISSS: 'ShieldCheck', TARJETA_AFP: 'ShieldCheck',
 
+    // Nombres que existen también en `apps/mobile/tema/iconos.js`: uno que la
+    // app no traduce sale con el genérico.
+    CERTIFICADO_SEGURO_VIDA: 'ShieldCheck',
+
+    DECLARACION_ETICA: 'PenLine', CONSTANCIA_INDUCCION: 'BookOpen', OFERTA_EMPLEO: 'Mail',
+
     CERTIFICACION_DISCAPACIDAD: 'Accessibility',
 
     CONTRATO: 'ScrollText', CONTRATO_REGENCIA: 'ScrollText',
@@ -244,7 +261,11 @@ export const SECCIONES_DE_DOCUMENTOS = [
         id: 'ingreso',
         titulo: 'Al entrar',
         bajada: 'Lo que la empresa pide para admitir a alguien y lo que exige el contrato.',
-        claves: ['SOLICITUD_EMPLEO', 'CV', 'CONTRATO', 'ACUSE_MTPS', 'COPIA_NIT'],
+        // La oferta, la declaración ética y la constancia de inducción se
+        // sumaron el 2026-10-14 (pedido del usuario). La declaración ética se
+        // firma junto con el contrato; por eso va pegada a él.
+        claves: ['SOLICITUD_EMPLEO', 'OFERTA_EMPLEO', 'CV', 'CONTRATO', 'DECLARACION_ETICA',
+                 'CONSTANCIA_INDUCCION', 'ACUSE_MTPS', 'COPIA_NIT'],
     },
     {
         id: 'anual',
@@ -265,6 +286,17 @@ export const SECCIONES_DE_DOCUMENTOS = [
         titulo: 'ISSS y AFP',
         bajada: 'La copia de cada tarjeta es la prueba de la afiliación. Al ISSS lo inscribe la empresa; la AFP la elige la persona.',
         claves: ['TARJETA_ISSS', 'TARJETA_AFP'],
+    },
+    {
+        /* El seguro de vida colectivo (MAPFRE). Lo de la persona es UN papel —
+         * su certificado de asegurado, que no cambia ni vence—. La póliza y el
+         * pago de cada noviembre son de la empresa: se cargan una vez para todos
+         * en Personal › Seguro de vida, y de ahí sale si la persona está
+         * solvente. */
+        id: 'seguro',
+        titulo: 'Seguro de vida colectivo',
+        bajada: 'El certificado de asegurado de la persona. La póliza y el pago de cada año se cargan una vez para todos en Personal › Seguro de vida.',
+        claves: ['CERTIFICADO_SEGURO_VIDA'],
     },
     {
         id: 'ejercer',
@@ -316,8 +348,11 @@ export const HISTORIAL_MAXIMO = 10;
  *
  * Los que no están acá conservan igual la TRAZA —cuándo se cambió y quién—,
  * que pesa dos campos y contesta «¿esto quién lo tocó?». */
+// La oferta, la declaración ética y la inducción (2026-10-14) son de cada
+// ingreso, igual que el contrato: en una recontratación las dos son ciertas.
 export const CON_ARCHIVO_ANTERIOR = new Set([
     'SOLICITUD_EMPLEO', 'CONTRATO', 'ACUSE_MTPS',
+    'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION',
     'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
     'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE',
 ]);

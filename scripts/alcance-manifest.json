@@ -358,6 +358,14 @@
         "schedules"
       ],
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "leer-orden-de-descuento": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "staff_list",
+        "staff_detail"
+      ],
+      "motivo": "Lee la foto de una orden de descuento y no escribe nada. Exige `auth_can_edit_any(staff_detail, staff_list)`; esos módulos hoy sólo los tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     }
   },
   "rpc": {

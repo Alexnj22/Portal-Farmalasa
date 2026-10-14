@@ -246,9 +246,16 @@ export const AREAS = [
             'src/utils/leerQrDeImagen.js',
             'src/components/common/VisorDeDocumento.jsx',
             'src/utils/contrato.js', 'src/utils/acreditaciones.js',
+            'src/utils/seguroDeVida.js', 'src/data/seguroDeVida.js',
+            'src/utils/ordenDeDescuento.js', 'src/data/ordenesDeDescuento.js',
+            'src/components/forms/OrdenesDeDescuento.jsx', 'src/constants/bancos.js',
         ],
         tablas: ['employees', 'employee_branches', 'employee_documents', 'employee_events',
-                 'practicantes', 'education_catalog_entries'],
+                 'practicantes', 'education_catalog_entries',
+                 // 2026-10-14: el seguro de vida colectivo (póliza, pago anual y su
+                 // listado) y las órdenes de descuento de préstamos.
+                 'seguro_vida_poliza', 'seguro_vida_pagos', 'seguro_vida_cubiertos',
+                 'ordenes_descuento'],
         // `subir-foto-de-captura` la creó otra sesión el 2026-08-27 y quedó sin
         // mapear, lo que bloquea el gate para todo el mundo. Va acá porque el
         // efecto es una foto de PERSONAL: escribe en el bucket `empleados`.
@@ -260,9 +267,13 @@ export const AREAS = [
                'ordenar-documentos-de-personal',
                // `soltar-captura` vacía el buzón del traspaso: el efecto es
                // sobre documentos de PERSONAL, así que vive con su gemela.
-               'soltar-captura'],
+               'soltar-captura',
+               // Lee la foto de una orden de descuento (banco, cuota, plazo…).
+               'leer-orden-de-descuento'],
         crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily',
-                'soltar-capturas-abandonadas', 'ordenar-documentos-de-personal-diario'],
+                'soltar-capturas-abandonadas', 'ordenar-documentos-de-personal-diario',
+                // El 1 de noviembre: toca pagar el seguro de vida colectivo.
+                'avisar-pago-seguro-vida'],
         docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md',
                'docs/AUDITORIA-PERSONAL-2026-09-03.md'],
     },

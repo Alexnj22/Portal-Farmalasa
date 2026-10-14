@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1289.0 — Seguro de vida colectivo, órdenes de descuento, cuatro documentos nuevos y el NUP con «Es el DUI»
+
+- **NUP:** el botón «Es el DUI» vive al lado del rótulo y se queda mientras lo
+  escrito no sea el DUI de la ficha. Antes desaparecía con la primera tecla y
+  dejaba a la vista sólo el error de «escribiste N dígitos».
+- **Expediente:** cuatro documentos nuevos — oferta de empleo, declaración de
+  responsabilidades éticas, constancia de inducción (los tres con historial por
+  ingreso) y el certificado del asegurado del seguro de vida. Ninguno vence.
+- **Seguro de vida colectivo** (Personal › Seguro de vida): la póliza de la
+  empresa (MAPFRE, $5,000 × 6.50‰ = $32.50 por persona, editable), el pago de
+  cada noviembre con el listado de la aseguradora —se lee del documento, se
+  cruza con las fichas y se confirma— y quién está solvente. La ficha muestra el
+  estado. Aviso automático el 1 de noviembre a Talento Humano y Gerencia
+  (`avisar-pago-seguro-vida`). Tablas `seguro_vida_*`.
+- **Órdenes de descuento** (Nómina de la ficha): fotos del documento, lectura
+  en UNA llamada corta (`leer-orden-de-descuento`, pensamiento acotado a 128),
+  banco reconocido contra el catálogo, todo editable, aviso si el papel nombra
+  a otra persona, y cuántas cuotas y cuánto falta. Tabla `ordenes_descuento`.
+- **Bancos:** una sola lista en `constants/bancos.js`, ampliada con bancos
+  cooperativos y sociedades de ahorro y crédito.
+
 ## v2.1288.1 — Carné: se entra sólo con el PIN, nunca con el número
 
 El número de empleado —el mismo que es código de vendedor, impreso en las

@@ -19,6 +19,9 @@ import {
     ShieldCheck,
     ScrollText,
     Accessibility,
+    PenLine,
+    BookOpen,
+    Mail,
 } from 'lucide-react';
 import { nombreDelIconoDeCategoria } from '@nucleo/utils/documentosDelExpediente';
 
@@ -27,6 +30,9 @@ export * from '@nucleo/utils/documentosDelExpediente';
 const ICONOS = {
     Accessibility,
     Award,
+    BookOpen,
+    Mail,
+    PenLine,
     Bike,
     Car,
     CreditCard,

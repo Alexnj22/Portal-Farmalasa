@@ -108,7 +108,7 @@ export default function PanelDelChat({ abierto, onClose }) {
                 <ul className="space-y-1.5 min-w-0">
                     {visibles.map((c) => (
                         <li key={c.id}>
-                            <FilaDeConversacion conversacion={c} activa={false} ahora={ahora}
+                            <FilaDeConversacion conversacion={c} equipo={equipo} activa={false} ahora={ahora}
                                 tomadaPor={c.tomada_vigente && String(c.tomada_por) !== String(user?.id) ? equipo.get(c.tomada_por) ?? { id: c.tomada_por } : null}
                                 atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null}
                                 onAbrir={() => setConvId(c.id)} />

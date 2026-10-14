@@ -150,11 +150,12 @@ const CRONS = [
           + '`en_revision` (LIMIT 50) + `notify_employees`: ninguna petición afuera.',
   },
   {
-    job: 'chat-recordar-espera-5min', slug: null, cadencia: '*/5 * * * *',
-    corridasDia: 288, sistema: 0,
-    motivo: 'Avisa al equipo del chat cuando un cliente lleva 15 min sin respuesta (una vez por espera, '
-          + 'sólo con la farmacia abierta). SQL puro sobre el índice parcial de `esperando_desde` (LIMIT 50) '
-          + '+ `notify_employees`: ninguna petición afuera.',
+    // (2026-10-14) Reemplazó a `chat-recordar-espera-5min`: los escalones son a los 15 y 20 min.
+    job: 'chat-vigilar-espera-1min', slug: null, cadencia: '* * * * *',
+    corridasDia: 1440, sistema: 0,
+    motivo: 'Vigila esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión, '
+          + 'sólo con farmacia abierta; SQL puro (`chat_vigilar_espera`, LIMIT 100 + `notify_employees`): '
+          + 'ninguna petición afuera.',
   },
   {
     job: 'wallet-pases-minuto', slug: 'wallet-pases', cadencia: '* * * * *',

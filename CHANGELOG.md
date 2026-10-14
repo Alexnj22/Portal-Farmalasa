@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1283.0 — Chat asignado con escalera de avisos, aviso de solicitud de mayorista y nivel en el avatar
+
+Base (`20261014142445_chat_asignacion_y_aviso_mayorista`, `20261014143452_ofertas_clientes_nivel_minimo`):
+- **Solicitud de mayorista**: no avisaba a nadie (la función sólo escribía la fila). Trigger nuevo: aviso `MAYORISTA_SOLICITUD` a quien puede aprobar `mayoristas`.
+- **Chat asignado** (pedido del usuario): quien contesta primero queda asignado (no bloquea). `chat_vigilar_espera()` cada minuto con la farmacia abierta: a los 15 min sin respuesta avisa a la SALA del asignado; a los 20, registra en `app_chat_incumplimientos` y avisa a supervisión (`CHAT_INCUMPLIMIENTO`). Sin asignar, el aviso de 15 min al equipo de siempre. Reemplaza al cron `chat-recordar-espera-5min` por `chat-vigilar-espera-1min`. Resolver libera la asignación.
+- `ofertas_clientes.nivel_minimo` (plata/oro/platino/mayoreo) para ofertas exclusivas por nivel.
+
+Portal: «Asignado a» con foto y nombre, con «Avisado a la sala» / «Sin respuesta · registrado»; lista de incumplimientos de 30 días para supervisión; el avatar del cliente con el anillo del color de su nivel (tokens `--nivel-*`); los dos avisos nuevos en la campana.
+
 ## v2.1282.0 — App de clientes: Android nativo (Material 3) y más rápido
 
 Pedido del usuario: «en Android es lenta, las transiciones no se ven bien; hazlo nativo, no tiene por qué llevar el fondo de gradiente». Sólo Android (`.android.js` / ramas de plataforma); iOS igual. Sigue el camino de la app del personal.

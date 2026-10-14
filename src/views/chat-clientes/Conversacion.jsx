@@ -27,6 +27,7 @@ import {
 import { BarraDeMensaje, CitaDeMensaje, HojaDeMensaje, ReaccionesDeMensaje } from './AccionesDeMensaje';
 import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
+import AsignadoA from './AsignadoA';
 import Compositor from './Compositor';
 import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
@@ -378,6 +379,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                             </a>
                         )}
                     </div>
+                    {c.asignada_a && <AsignadoA conversacion={c} equipo={equipo} className="mt-1" />}
                     <div className="flex flex-wrap items-center gap-1 mt-1">
                         <ChipsDeEtiquetas conversacion={c} />
                         {puedeResponder && (

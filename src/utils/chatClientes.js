@@ -88,6 +88,19 @@ export function tipoDeCliente(c) {
     return { label: 'Cliente', variant: 'neutral' };
 }
 
+/**
+ * La clave del color de su tarjeta de socio (2026-10-14), para el anillo del
+ * avatar: «team» si es del equipo; el rango si es mayorista aprobado (jade,
+ * zafiro, rubi, diamante); si no, su nivel de puntos (bronce, plata, oro,
+ * platino). `null` si no se sabe: sin anillo, mejor que uno inventado.
+ */
+export function claveDeNivel(c) {
+    if (c?.es_team) return 'team';
+    if (c?.es_mayoreo && ['jade', 'zafiro', 'rubi', 'diamante'].includes(c.rango)) return c.rango;
+    const n = c?.nivel === 'vip' ? 'bronce' : c?.nivel;
+    return ['bronce', 'plata', 'oro', 'platino'].includes(n) ? n : null;
+}
+
 /** Dos iniciales del nombre del cliente, para cuando no tiene foto. */
 export function inicialesDeCliente(nombre) {
     const partes = String(nombre ?? '').trim().split(/\s+/).filter(Boolean);

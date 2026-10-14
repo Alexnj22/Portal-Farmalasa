@@ -316,3 +316,23 @@ export async function fetchContextoCliente(customerId) {
         tratamientos: ctx.tratamientos ?? [],
     };
 }
+
+// ── Incumplimientos (2026-10-14) ─────────────────────────────────────────
+
+/**
+ * Las esperas que pasaron de 20 minutos con el chat asignado a alguien que no
+ * contestó (las registra `chat_vigilar_espera`), de los últimos `dias` días,
+ * la más reciente primero. Tope de 300 deliberado (no el de PostgREST): 300
+ * incumplimientos en un mes es otro problema, y la lista ya lo dice.
+ * El cliente viene por la conversación; si la policy de `customers` no deja
+ * leerlo, llega `null` y la vista lo completa con la bandeja.
+ */
+export const TOPE_INCUMPLIMIENTOS = 300;
+export async function fetchIncumplimientosDelChat(dias = 30) {
+    const desde = new Date(Date.now() - dias * 86_400_000).toISOString();
+    return sinError(await supabase.from('app_chat_incumplimientos')
+        .select('id, conversacion_id, employee_id, branch_id, esperando_desde, minutos, created_at, sala:branches(name), conversacion:app_chat_conversaciones(customer_id, cliente:customers(name))')
+        .gte('created_at', desde)
+        .order('created_at', { ascending: false })
+        .limit(TOPE_INCUMPLIMIENTOS)) ?? [];
+}

@@ -38,6 +38,7 @@ export const tituloSinEmoji = (titulo = '') =>
 
 export const tintForType = (type = '', metadata = {}, isDark = false) => {
     if (isDark) {
+        if (type === 'CHAT_INCUMPLIMIENTO') return 'bg-danger/10 text-danger-text border-danger/40';
         if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning-text border-warning/40';
         if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
             return metadata?.status === 'REJECTED'
@@ -47,6 +48,7 @@ export const tintForType = (type = '', metadata = {}, isDark = false) => {
         if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-chart-1-text border-chart-1/40';
         return 'bg-surface-card text-white/60 border-border-card';
     }
+    if (type === 'CHAT_INCUMPLIMIENTO') return 'bg-danger/10 text-danger border-danger/30';
     if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning border-warning/30';
     if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
         return metadata?.status === 'REJECTED'
@@ -70,6 +72,8 @@ export const ACTION_LABEL = {
     CHAT_CLIENTE:    'Responder',
     RECETA_APP:      'Revisar receta',
     RECETA_SIN_REVISAR: 'Revisar receta',
+    MAYORISTA_SOLICITUD: 'Revisar solicitud',
+    CHAT_INCUMPLIMIENTO: 'Ver el chat',
 };
 
 /**
@@ -82,7 +86,8 @@ export const ACTION_LABEL = {
  * conversación, así que se abre ésa directamente (`?c=<id>`).
  */
 export const enlaceDeAviso = (n) => {
-    const conv = n?.type === 'CHAT_CLIENTE' ? n?.metadata?.conversacion_id : null;
+    // (2026-10-14) `CHAT_INCUMPLIMIENTO` trae la misma `conversacion_id`.
+    const conv = n?.type === 'CHAT_CLIENTE' || n?.type === 'CHAT_INCUMPLIMIENTO' ? n?.metadata?.conversacion_id : null;
     if (conv != null && /^\d+$/.test(String(conv))) return `/chat-clientes?c=${conv}`;
     if (n?.link) return n.link;
     return n?.metadata?.request_id ? `/requests?solicitud=${n.metadata.request_id}` : null;

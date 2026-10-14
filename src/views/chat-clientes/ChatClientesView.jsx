@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Headset, Hourglass, Inbox, MessageCircle, MessagesSquare, Settings2, Sparkles, Tags } from 'lucide-react';
+import { CheckCircle2, Headset, Hourglass, Inbox, MessageCircle, MessagesSquare, Settings2, ShieldAlert, Sparkles, Tags } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Button from '../../components/common/Button';
@@ -19,9 +19,11 @@ import { FILTROS, estadoDeConversacion, estadoServidor } from './estados';
 import EstadoDeLaFarmacia from './EstadoDeLaFarmacia';
 import useFarmaciaEstado from './useFarmaciaEstado';
 import AjustesDelChat from './AjustesDelChat';
+import IncumplimientosDelChat from './IncumplimientosDelChat';
 import { ResumenDeCalificaciones } from './Calificacion';
 import { ETIQUETAS, etiquetasDe, nombreDeCliente, ordenarBandeja } from '@nucleo/utils/chatClientes';
 import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
+import { esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
 
 /**
  * Chat con clientes (2026-10-12) — las conversaciones que los clientes abren
@@ -72,6 +74,8 @@ function FilasCargando() {
 export default function ChatClientesView() {
     const { hasPermission, user } = useAuth();
     const puedeResponder = hasPermission('chat_clientes', 'can_edit');
+    // El registro de incumplimientos (2026-10-14): supervisión o quien edita el chat.
+    const veIncumplimientos = puedeResponder || esCargoDeSupervision(user?.rango);
 
     const claves = useMemo(() => Object.keys(FILTROS), []);
     const [filtro, setFiltro] = usePestanaEnUrl(claves, 'abierta');
@@ -90,12 +94,15 @@ export default function ChatClientesView() {
     // El estado que decide cuál respuesta automática recibe quien escribe ahora.
     const estadoFarmacia = useFarmaciaEstado();
     const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
+    const [incumplimientosAbiertos, setIncumplimientosAbiertos] = useState(false);
 
     const { equipo, asegurarEquipo } = useEquipoDelChat();
     const { conversaciones, hayMas, cargandoMas, error, cargar, verMas } = useBandejaDelChat(
         // Con una etiqueta elegida también las resueltas se piden enteras: es un
         // filtro del navegador y no puede mirar sólo la primera página.
         estadoServidor(filtro), { asegurarEquipo, todas: filtro !== 'resuelta' || etiqueta !== 'todas' });
+    // Conversación → nombre del cliente, para el registro de incumplimientos.
+    const clientesPorConversacion = useMemo(() => new Map((conversaciones ?? []).map((c) => [c.id, c.cliente])), [conversaciones]);
 
     // Las de la etiqueta elegida (todas si no hay), con las «Urgente» arriba.
     const conEtiqueta = useMemo(() => ordenarBandeja((conversaciones ?? [])
@@ -150,9 +157,10 @@ export default function ChatClientesView() {
                 </div>
                 <div className="flex justify-end min-w-0">
                     <FilterBar onClear={() => elegirEtiqueta('todas')} activeCount={etiqueta !== 'todas' ? 1 : 0}
-                        acciones={puedeResponder ? [
-                            { key: 'ajustes', icon: Settings2, label: 'Ajustes del chat', variant: 'quiet', onClick: () => setAjustesAbiertos(true) },
-                        ] : []}>
+                        acciones={[
+                            ...(veIncumplimientos ? [{ key: 'incumplimientos', icon: ShieldAlert, label: 'Incumplimientos', variant: 'quiet', onClick: () => setIncumplimientosAbiertos(true) }] : []),
+                            ...(puedeResponder ? [{ key: 'ajustes', icon: Settings2, label: 'Ajustes del chat', variant: 'quiet', onClick: () => setAjustesAbiertos(true) }] : []),
+                        ]}>
                         <FilterBar.Section active={etiqueta !== 'todas'} onClear={() => elegirEtiqueta('todas')} label="etiqueta">
                             <FilterBar.Opciones label="Etiqueta" icon={Tags} value={etiqueta}
                                 onChange={(v) => elegirEtiqueta(v || 'todas')} options={OPCIONES_DE_ETIQUETA} ancho="200px" />
@@ -180,7 +188,7 @@ export default function ChatClientesView() {
                     <ul className="space-y-1.5 min-w-0">
                         {visibles.map((c) => (
                             <li key={c.id}>
-                                <FilaDeConversacion conversacion={c} activa={c.id === abiertaId}
+                                <FilaDeConversacion conversacion={c} equipo={equipo} activa={c.id === abiertaId}
                                     tomadaPor={c.tomada_vigente && String(c.tomada_por) !== String(user?.id) ? equipo.get(c.tomada_por) ?? { id: c.tomada_por } : null}
                                     atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} ahora={ahora}
                                     onAbrir={() => abrir(c.id)} />
@@ -208,6 +216,10 @@ export default function ChatClientesView() {
                 onClose={() => abrir(null)}>
                 {(conv) => hilo(conv)}
             </ExpedienteMovil>
+            {veIncumplimientos && (
+                <IncumplimientosDelChat abierto={incumplimientosAbiertos} onClose={() => setIncumplimientosAbiertos(false)}
+                    equipo={equipo} asegurarEquipo={asegurarEquipo} clientes={clientesPorConversacion} onAbrirConversacion={abrir} />
+            )}
             {puedeResponder && (
                 <AjustesDelChat abierto={ajustesAbiertos} onClose={() => setAjustesAbiertos(false)} estado={estadoFarmacia} />
             )}

@@ -90,6 +90,10 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     CHAT_CLIENTE:       'MessageCircle',
     RECETA_APP:         'FileCheck',
     RECETA_SIN_REVISAR: 'FileCheck',
+    // (2026-10-14) Un cliente pidió ser mayorista (lo ve quien aprueba
+    // `mayoristas`), y un chat asignado pasó 20 min sin respuesta (supervisión).
+    MAYORISTA_SOLICITUD: 'Contact',
+    CHAT_INCUMPLIMIENTO: 'ShieldAlert',
     SYSTEM:           'Info',       // mensaje del portal, no de una persona
 };
 

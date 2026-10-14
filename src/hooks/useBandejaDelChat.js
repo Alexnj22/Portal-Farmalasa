@@ -20,7 +20,9 @@ export const POR_PAGINA = 40;
 // `etiquetas` y la calificación también: las cambia otra persona (o el
 // cliente, al calificar) y la bandeja tiene que releerse para mostrarlas.
 const CAMPOS_DE_LA_BANDEJA = ['estado', 'ultimo_mensaje_at', 'ultimo_de', 'sin_leer_equipo', 'tomada_por', 'tomada_at',
-    'etiquetas', 'calificacion', 'esperando_desde'];
+    'etiquetas', 'calificacion', 'esperando_desde',
+    // La asignación y su escalera (2026-10-14): las cambia el servidor.
+    'asignada_a', 'escalada_sala_at', 'escalada_supervision_at'];
 // Las fechas pueden llegar escritas distinto por la función y por realtime
 // («…T15:00:00+00:00» / «… 15:00:00+00»): se comparan como instante.
 const comoInstante = (v) => (typeof v === 'string' && /^\d{4}-\d\d-\d\d[T ]\d/.test(v)
@@ -38,14 +40,16 @@ const soloPresencia = (fila) => Object.fromEntries(COLUMNAS_PRESENCIA.map((k) =>
 /** Las fichas del equipo que se van necesitando, para nombre corto y foto. */
 export function useEquipoDelChat() {
     const [equipo, setEquipo] = useState(() => new Map());
+    // Las fichas ya leídas no se vuelven a pedir (la bandeja se relee cada 15 s).
+    const leidos = useRef(new Set());
     const asegurarEquipo = useCallback(async (ids) => {
-        const faltan = [...new Set((ids || []).filter(Boolean))];
+        const faltan = [...new Set((ids || []).filter(Boolean))].filter((id) => !leidos.current.has(id));
         if (!faltan.length) return;
         try {
             const filas = await fetchAutoresDelEquipo(faltan);
             setEquipo((prev) => {
                 const nuevo = new Map(prev);
-                filas.forEach((e) => nuevo.set(e.id, e));
+                filas.forEach((e) => { nuevo.set(e.id, e); leidos.current.add(e.id); });
                 return nuevo;
             });
         } catch (err) {
@@ -99,6 +103,7 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
             setHayMas((prev) => prev || nuevas.length >= POR_PAGINA);
             setError(null);
             asegurarEquipo?.(nuevas.filter((c) => c.tomada_vigente).map((c) => c.tomada_por));
+            asegurarEquipo?.(nuevas.map((c) => c.asignada_a).filter(Boolean));
             leerPresencia(nuevas.map((c) => c.id));
         } catch (err) {
             setError(mensajeAmigable(err, 'No se pudieron cargar las conversaciones.'));
@@ -123,6 +128,7 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
     // aviso de la campana son el respaldo si el canal se cae.
     useRefrescoEnVivo(cargar, { ms: 15_000, tabla: 'app_chat_conversaciones', ignorar });
     useAlLlegarAviso('CHAT_CLIENTE', cargar);
+    useAlLlegarAviso('CHAT_INCUMPLIMIENTO', cargar);
 
     const verMas = useCallback(async () => {
         const ultima = conversaciones?.[conversaciones.length - 1];
@@ -136,6 +142,7 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
             });
             setHayMas(mas.length >= POR_PAGINA);
             asegurarEquipo?.(mas.filter((c) => c.tomada_vigente).map((c) => c.tomada_por));
+            asegurarEquipo?.(mas.map((c) => c.asignada_a).filter(Boolean));
             leerPresencia(mas.map((c) => c.id));
         } catch (err) {
             setError(mensajeAmigable(err, 'No se pudieron cargar más conversaciones.'));

@@ -6,6 +6,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
+import AsignadoA from './AsignadoA';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 import { ChipsDeEtiquetas } from './EtiquetasDelCliente';
@@ -23,7 +24,7 @@ import { etiquetasDe } from '@nucleo/utils/chatClientes';
 // una abierta «Urgente» se tiñe de rojo —y la bandeja la sube—; una resuelta
 // que el cliente calificó muestra sus estrellas. Con mensajes sin leer, el
 // nombre y la vista previa van en negrita; leída, en peso normal.
-export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor, atiende, ahora, onAbrir }) {
+export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor, atiende, ahora, onAbrir, equipo }) {
     const tipo = tipoDeCliente(c);
     const nivel = NIVELES[c.nivel];
     // La abierta no cuenta como «sin leer»: quien la mira ya la está leyendo.
@@ -52,6 +53,7 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
                 {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
                 {c.calificacion ? <Estrellas valor={c.calificacion} px={10} /> : null}
             </span>
+            {c.asignada_a && <AsignadoA conversacion={c} equipo={equipo} className="mt-1" />}
             {etiquetasDe(c).length > 0 && (
                 <span className="flex flex-wrap items-center gap-1 mt-1">
                     <ChipsDeEtiquetas conversacion={c} max={3} />

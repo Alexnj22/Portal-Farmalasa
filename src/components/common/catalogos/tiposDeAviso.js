@@ -35,6 +35,7 @@ import {
     Landmark,
     Archive,
     MessageCircle,
+    ShieldAlert,
 } from 'lucide-react';
 import { NOMBRE_DE_ICONO_POR_TIPO, nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 
@@ -62,6 +63,7 @@ const ICONOS = {
     PackagePlus,
     Palmtree,
     RefreshCw,
+    ShieldAlert,
     Stethoscope,
     Target,
     Trash2,

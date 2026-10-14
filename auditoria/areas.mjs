@@ -785,11 +785,15 @@ export const AREAS = [
                  // viven en el bucket privado `app-clientes-archivos`.
                  'app_chat_conversaciones', 'app_chat_mensajes', 'app_chat_respuestas', 'app_cliente_fotos',
                  // Los dos mensajes automáticos (abierto / fuera de horario).
-                 'app_chat_ajustes'],
+                 'app_chat_ajustes',
+                 // Chat asignado (2026-10-14): esperas de más de 20 min sin respuesta del asignado.
+                 'app_chat_incumplimientos'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos'],
         crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
-                'recetas-escalar-15min'],
+                'recetas-escalar-15min',
+                // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.
+                'chat-vigilar-espera-1min'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],
     },
 

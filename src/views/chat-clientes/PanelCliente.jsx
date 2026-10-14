@@ -56,7 +56,7 @@ export default function PanelCliente({ customerId, conversacion = null }) {
         <div className="p-4 space-y-4 text-content">
             {/* ── Quién es ─────────────────────────────────────────────── */}
             <section className="flex items-center gap-3">
-                <ClienteAvatar conversacion={{ cliente: ctx.cliente, foto_url: ctx.foto_url }} size="lg" />
+                <ClienteAvatar conversacion={{ cliente: ctx.cliente, foto_url: ctx.foto_url, es_team: ctx.es_team, es_mayoreo: ctx.es_mayoreo, rango: ctx.rango, nivel: ctx.nivel }} size="lg" />
                 <div className="min-w-0">
                     <p className="text-body font-semibold truncate">{nombreDeCliente(ctx.cliente)}</p>
                     <div className="flex flex-wrap gap-1 mt-0.5">

@@ -844,6 +844,16 @@ thead.sticky,
   --chart-6: #ec4899; --chart-6-text: #a0144f; /* rosa */
   --chart-9: #14b8a6; --chart-9-text: #0c5f59; /* verde azulado */
 
+  /* ── Nivel del cliente (2026-10-14) ─────────────────────────────────
+     El anillo del avatar del cliente en el chat. Son los colores de la
+     tarjeta de socio de la app (`COLORES_NIVEL` de
+     apps/clientes/componentes/TarjetaSocio.js, el tono medio de su frente):
+     son IDENTIDAD, no tema — el cliente ve ese color en su tarjeta. Sólo el
+     platino (negro) cambia en oscuro, donde no se vería. */
+  --nivel-bronce: #9a5a2c; --nivel-plata: #a9b2be; --nivel-oro: #e0a93a;
+  --nivel-platino: #262a33; --nivel-team: #e06bc2;
+  --nivel-jade: #1f9e77; --nivel-zafiro: #2e5bd6; --nivel-rubi: #c0163a; --nivel-diamante: #8fb3cf;
+
   /* ── Retirados: ALIAS, no valores ─────────────────────────────────────
      No se borran las variables porque 343 referencias en 88 archivos las
      usan hoy. Apuntando al destino, el color queda unificado YA y los
@@ -1303,6 +1313,8 @@ thead.sticky,
      tarjeta plana medía 5.29 y por eso había pasado. #fb9a9a da 5.95
      sobre el tinte, 7.1 sobre la tarjeta y 8.66 sobre la página. */
   --danger-text: #fb9a9a;
+  /* El anillo del platino: su negro no se ve sobre fondo oscuro. */
+  --nivel-platino: #e8ecf2;
   /* Los CINCO categóricos, aclarados para fondo oscuro. */
   --chart-1-text: #60a5fa; --chart-3-text: #a78bfa; --chart-4-text: #fb923c;
   --chart-6-text: #f472b6; --chart-9-text: #2dd4bf;
@@ -1543,6 +1555,7 @@ thead.sticky,
      (T7) — mismos valores que [data-theme="dark"], la tarjeta oscura de
      ambos temas es igual de oscura para este propósito. Mismo motivo
      para success/warning/danger-text (fix del bug real de Badge.jsx). */
+  --nivel-platino: #e8ecf2; /* ver [data-theme="dark"] */
   /* Los CINCO categóricos, aclarados para fondo oscuro; los retirados
      siguen su alias (ver :root y [data-theme="dark"]). */
   --chart-1-text: #60a5fa; --chart-3-text: #a78bfa; --chart-4-text: #fb923c;
@@ -2561,6 +2574,13 @@ thead.sticky,
   --color-chart-8: var(--chart-8); --color-chart-8-text: var(--chart-8-text);
   --color-chart-8-muted: var(--chart-8-muted);
   --color-chart-9: var(--chart-9); --color-chart-9-text: var(--chart-9-text);
+
+  /* El anillo del nivel del cliente (chat con clientes). */
+  --color-nivel-bronce: var(--nivel-bronce); --color-nivel-plata: var(--nivel-plata);
+  --color-nivel-oro: var(--nivel-oro); --color-nivel-platino: var(--nivel-platino);
+  --color-nivel-team: var(--nivel-team); --color-nivel-jade: var(--nivel-jade);
+  --color-nivel-zafiro: var(--nivel-zafiro); --color-nivel-rubi: var(--nivel-rubi);
+  --color-nivel-diamante: var(--nivel-diamante);
 
   /* Semáforo de riesgo de stock (7 estados reales, ver tabminmax/constants.js) */
   --color-stock-out:         var(--stock-out);

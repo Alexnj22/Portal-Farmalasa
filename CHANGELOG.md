@@ -21,9 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.8 — Changelog de la bitácora
+
+Redacta la entrada de v2.1285.7, que quedó vacía.
+
 ## v2.1285.7 — La bitácora acepta lo que escriben reparto, encargos y reservas
 
-_(pendiente de redactar)_
+El reparto del acuse seguía fallando después de corregir la severidad: la
+bitácora tiene otro CHECK (`source` ∈ ADMIN_PANEL/KIOSK/SYSTEM) y cinco
+funciones mandaban `'portal'`. Las dos del reparto además ponían `auth.uid()`
+en `user_id`, que apunta a la ficha y no a la cuenta. Corregidas
+`asignar_documento_a_empleados`, `aplicar_documentos_pendientes`,
+`encargo_responder`, `reserva_cambiar_estado` y `reserva_receta_decidir`
+(responder encargos y mover reservas fallaban igual). Migración
+`20261014152346`; ninguna otra función queda con esos valores.
 
 ## v2.1285.6 — El NUP no se llena solo con el DUI
 

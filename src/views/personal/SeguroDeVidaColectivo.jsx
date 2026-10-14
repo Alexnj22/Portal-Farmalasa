@@ -101,7 +101,11 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                             {poliza ? `${poliza.aseguradora} · se paga cada ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][mes - 1]}` : 'Cargando…'}
                         </p>
                     </div>
-                    <Button variant="ghost" size="sm" icon={X} iconOnly title="Cerrar" onClick={onClose} />
+                    {/* El foco al abrir va acá y no al primer campo (que es el de la
+                        póliza, al fondo): ModalShell lo respeta si ya hay algo
+                        enfocado, y así el teléfono no abre desplazado hasta la
+                        mitad de la lista. Este modal primero se LEE. */}
+                    <Button variant="ghost" size="sm" icon={X} iconOnly title="Cerrar" onClick={onClose} autoFocus />
                 </div>
             </LiquidModal.Header>
 
@@ -181,9 +185,15 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                                         return (
                                             <div key={e.id} data-surface="card" className="px-3 py-2 flex items-center gap-3 min-h-[var(--tap-min)]">
                                                 <AvatarConEstado emp={e} px={28} mostrarChip={false} />
-                                                <span className="flex-1 min-w-0 text-label font-bold text-content truncate">{shortEmployeeName(e)}</span>
-                                                {!cert && <Badge variant="neutral" size="sm">Sin certificado</Badge>}
-                                                <Badge variant={est.variant} size="sm">{est.clave === 'solvente' ? 'Solvente' : est.clave === 'sin_pago' ? 'Pendiente' : 'No cubierto'}</Badge>
+                                                {/* En el teléfono las pastillas bajan debajo del nombre:
+                                                    al lado le dejaban tres letras («Ros…»). */}
+                                                <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+                                                    <span className="md:flex-1 min-w-0 text-label font-bold text-content truncate">{shortEmployeeName(e)}</span>
+                                                    <span className="flex flex-wrap gap-1.5">
+                                                        {!cert && <Badge variant="neutral" size="sm">Sin certificado</Badge>}
+                                                        <Badge variant={est.variant} size="sm">{est.clave === 'solvente' ? 'Solvente' : est.clave === 'sin_pago' ? 'Pendiente' : 'No cubierto'}</Badge>
+                                                    </span>
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -371,7 +381,8 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
     };
     const faltan = activos.filter(e => !tomados.has(e.id));
     const conFicha = filas.filter(f => f.employee_id).length;
-    const estimado = primaPago !== '' && Number.isFinite(Number(primaPago)) ? Number(primaPago) * filas.length : null;
+    // Sin nadie en la lista no hay estimado: «$0.00 (estimado)» se leía como dato.
+    const estimado = filas.length && primaPago !== '' && Number.isFinite(Number(primaPago)) ? Number(primaPago) * filas.length : null;
 
     const guardar = async () => {
         setGuardando(true); setFallo(null);

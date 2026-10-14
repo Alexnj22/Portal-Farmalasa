@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1290.3 — Seguro de vida: en el teléfono los nombres no se cortan y abre arriba
+
+Medido en WebKit iPhone 13: las pastillas de cada persona le dejaban tres
+letras al nombre («Ros…») y la hoja abría desplazada hasta el campo de la
+póliza, al fondo, porque el foco cae en el primer campo. Las pastillas bajan
+debajo del nombre en el teléfono y el foco inicial va al encabezado. El total
+estimado del pago ya no dice «$0.00» con la lista vacía.
+
 ## v2.1290.2 — Sesión: el cambio de cargo o de sala se ve sin recargar
 
 Desde v2.1290.1 el perfil ya no se pedía en cada renovación del token, y los

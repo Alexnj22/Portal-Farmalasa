@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.7 — La bitácora acepta lo que escriben reparto, encargos y reservas
+
+_(pendiente de redactar)_
+
 ## v2.1285.6 — El NUP no se llena solo con el DUI
 
 La v2.1285.5 ponía el DUI como NUP al marcar «tiene AFP». Pero el NUP puede

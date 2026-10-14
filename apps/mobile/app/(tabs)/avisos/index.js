@@ -27,7 +27,7 @@ import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { detalleDeMinMax, detalleDeSolicitud, recortar } from '@nucleo/utils/tarjetaDeSolicitud';
-import { avisoEsperaDecision } from '@nucleo/utils/accionesDeAviso';
+import { avisoEsperaDecisionConMayoristas } from '@nucleo/utils/accionesDeAviso';
 import { ordenarBandeja } from '@nucleo/utils/bandejaDeAvisos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
@@ -94,7 +94,11 @@ export default function Notificaciones() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useFocusEffect(useCallback(() => { cargarPorDecidir(auth); }, [auth.user?.id, cargarPorDecidir]));
 
-  const esperaDecision = useCallback((n) => avisoEsperaDecision(n, hasPermission), [hasPermission]);
+  // Un aviso de mayorista espera mientras su cliente siga 'solicitado' (el
+  // conjunto lo lee «Por decidir» junto con sus tarjetas).
+  const mayoristasSolicitados = usePorDecidir((s) => s.mayoristasSolicitados);
+  const esperaDecision = useCallback((n) => avisoEsperaDecisionConMayoristas(n, hasPermission, mayoristasSolicitados),
+    [hasPermission, mayoristasSolicitados]);
   const visibles = useMemo(() => avisos.filter((n) => !ocultos.has(n.id)), [avisos, ocultos]);
   const { pendientes, sinLeer, decididos, totalPorDecidir } = useMemo(
     () => ordenarBandeja(visibles, porDecidir, esperaDecision), [visibles, porDecidir, esperaDecision]);

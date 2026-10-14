@@ -68,7 +68,12 @@ function BurbujaFlotante() {
 
   const raiz = segmentos[0];
   const enElChat = segmentos.some((s) => String(s).startsWith('chat-clientes'));
-  if (!puede || teclado || enElChat || !raiz || raiz === 'entrar' || raiz === 'portal') return null;
+  // Sólo sobre las pestañas principales: en una ficha o un formulario la
+  // burbuja tapaba los botones de abajo (visto en la ficha del mayorista:
+  // «Rechazar» quedaba debajo). Es el mismo criterio del portal, que la
+  // esconde cuando la vista tiene su barra de acciones abajo.
+  const enPestana = raiz === '(tabs)';
+  if (!puede || teclado || enElChat || !enPestana) return null;
 
   const enPestanas = raiz === '(tabs)';
   const etiqueta = sinLeer > 0

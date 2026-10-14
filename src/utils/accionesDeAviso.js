@@ -66,3 +66,32 @@ export function avisoEsperaDecision(n, hasPermission) {
 export const claveDeDecision = (n) => (n?.type === 'MINMAX_PENDING'
     ? `minmax:${n.metadata?.request_id}`
     : String(n?.metadata?.request_id ?? ''));
+
+/* ── Solicitud de mayorista (2026-10-14) ─────────────────────────────────────
+ * Aviso `MAYORISTA_SOLICITUD` (link /mayoristas) a quien aprueba mayoristas
+ * cuando un cliente lo pide desde la app. Espera decisión mientras
+ * `clientes_mayoristas.estado` de ese `metadata.customer_id` siga en
+ * 'solicitado' — no hay `metadata.resuelta` que lo marque. Por eso la regla
+ * pide el conjunto de clientes todavía solicitados: sin él (quien no lo
+ * cargó) no lo da por pendiente, para no dejar un aviso trabado para siempre. */
+export const esAvisoDeMayorista = (n) => n?.type === 'MAYORISTA_SOLICITUD';
+
+export const claveDeMayorista = (customerId) => `mayorista:${customerId}`;
+
+/**
+ * `avisoEsperaDecision` más la regla del mayorista.
+ * @param {Set<string>} [mayoristasSolicitados]  customer_id con estado 'solicitado'
+ */
+export function avisoEsperaDecisionConMayoristas(n, hasPermission, mayoristasSolicitados) {
+    if (esAvisoDeMayorista(n)) {
+        if (!n || n.deleted_at || !mayoristasSolicitados) return false;
+        return hasPermission('mayoristas', 'can_approve')
+            && mayoristasSolicitados.has(String(n.metadata?.customer_id ?? ''));
+    }
+    return avisoEsperaDecision(n, hasPermission);
+}
+
+/** `claveDeDecision` más el mayorista (para no repetirlo en «Por decidir»). */
+export const claveDeDecisionConMayoristas = (n) => (esAvisoDeMayorista(n)
+    ? claveDeMayorista(n.metadata?.customer_id)
+    : claveDeDecision(n));

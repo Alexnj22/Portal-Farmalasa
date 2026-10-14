@@ -27,6 +27,8 @@ import { fetchSolicitudesPendientes } from '@nucleo/data/requests';
 import { fetchMinMaxPendientes } from '@nucleo/data/minmaxRequests';
 import { fetchSalasQueCubro } from '@nucleo/data/traslados';
 import { fetchEnviosVivos, momentoDelEnvio } from '@nucleo/data/envios';
+import { fetchSolicitudesMayorista } from '@nucleo/data/mayoristas';
+import { claveDeMayorista } from '@nucleo/utils/accionesDeAviso';
 import { reglasDeBandeja } from '@nucleo/utils/bandejaDeSolicitudes';
 import { esOperativa } from '@nucleo/store/slices/requestsSlice';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -35,6 +37,7 @@ const TRASLADOS = new Set(['INVENTORY_TRANSFER_REQUEST', 'INVENTORY_TRANSFER_PUS
 
 export const usePorDecidir = create((set, get) => ({
   items: [],
+  mayoristasSolicitados: null,
   cargando: false,
   cargadoEn: 0,
 
@@ -53,11 +56,16 @@ export const usePorDecidir = create((set, get) => ({
       const personal = reglas('requests_personales');
       const decideTraslados = hasPermission('traslados', 'can_approve');
 
-      const [solicitudes, minmax, cubro, envios] = await Promise.all([
+      const decideMayoristas = hasPermission('mayoristas', 'can_approve');
+      const [solicitudes, minmax, cubro, envios, mayoristas] = await Promise.all([
         fetchSolicitudesPendientes().catch(() => null),
         hasPermission('requests_minmax', 'can_approve') ? fetchMinMaxPendientes().catch(() => null) : [],
         decideTraslados && miSala ? fetchSalasQueCubro(miSala).catch(() => []) : [],
         decideTraslados ? fetchEnviosVivos().catch(() => ({ envios: [] })) : { envios: [] },
+        // Un cliente pidió ser mayorista desde la app (aviso `MAYORISTA_SOLICITUD`):
+        // espera hasta que su estado deja de ser 'solicitado'. Si la lectura
+        // falla queda `null` y el aviso no se da por pendiente (no se traba).
+        decideMayoristas ? fetchSolicitudesMayorista().catch(() => null) : [],
       ]);
       const misSalas = new Set([String(miSala), ...(cubro || []).map((s) => String(s.branch_id ?? s))]);
 
@@ -83,9 +91,17 @@ export const usePorDecidir = create((set, get) => ({
           items.push({ clave: `envio:${e.id}`, tipo: 'envio', fila: e, creado: e.created_at });
         }
       }
+      // Quien la pidió no la resuelve (misma regla que la ficha), pero igual la ve en Mayoristas.
+      for (const m of mayoristas || []) {
+        if (String(m.solicitado_por ?? '') === miId) continue;
+        items.push({ clave: claveDeMayorista(m.customer_id), tipo: 'mayorista', fila: m, creado: m.solicitado_at ?? m.created_at });
+      }
       // La cola: lo que más lleva esperando, arriba.
       items.sort((a, b) => new Date(a.creado) - new Date(b.creado));
-      set({ items, cargadoEn: Date.now() });
+      // El conjunto de clientes todavía solicitados: con él la bandeja sabe si
+      // un aviso MAYORISTA_SOLICITUD sigue esperando (`null` = no se pudo leer).
+      const mayoristasSolicitados = mayoristas ? new Set(mayoristas.map((m) => String(m.customer_id))) : null;
+      set({ items, mayoristasSolicitados, cargadoEn: Date.now() });
     } finally {
       set({ cargando: false });
     }

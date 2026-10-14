@@ -22,3 +22,38 @@ describe('chat del personal', () => {
     expect(miReaccion([{ autor: 'equipo', employee_id: 9, emoji: '👍' }], 5)).toBeNull();
   });
 });
+
+import { asignadoDe, escaladaDe } from '@nucleo/utils/chatPersonal';
+import { avisoEsperaDecisionConMayoristas, claveDeDecisionConMayoristas, claveDeMayorista } from '@nucleo/utils/accionesDeAviso';
+import { ordenarBandeja } from '@nucleo/utils/bandejaDeAvisos';
+
+describe('asignación y escalera del chat', () => {
+    it('escalada: supervisión manda sobre sala; sin escalones, null', () => {
+        expect(escaladaDe({})).toBeNull();
+        expect(escaladaDe({ escalada_sala_at: '2026-10-14T15:00:00Z' }).nivel).toBe('sala');
+        expect(escaladaDe({ escalada_sala_at: 'x', escalada_supervision_at: '2026-10-14T15:05:00Z' }).nivel).toBe('supervision');
+    });
+    it('asignado: el id o null', () => {
+        expect(asignadoDe({ asignada_a: 'e1' })).toBe('e1');
+        expect(asignadoDe({ asignada_a: null })).toBeNull();
+    });
+});
+
+describe('aviso de solicitud de mayorista', () => {
+    const aviso = { id: 'n1', type: 'MAYORISTA_SOLICITUD', metadata: { customer_id: 42 } };
+    const puede = (m, a) => m === 'mayoristas' && a === 'can_approve';
+    it('espera mientras el cliente siga solicitado', () => {
+        expect(avisoEsperaDecisionConMayoristas(aviso, puede, new Set(['42']))).toBe(true);
+        expect(avisoEsperaDecisionConMayoristas(aviso, puede, new Set())).toBe(false);
+    });
+    it('sin el conjunto, o sin permiso, no se traba como pendiente', () => {
+        expect(avisoEsperaDecisionConMayoristas(aviso, puede, null)).toBe(false);
+        expect(avisoEsperaDecisionConMayoristas(aviso, () => false, new Set(['42']))).toBe(false);
+    });
+    it('no se repite en la bandeja si «Por decidir» ya lo trae', () => {
+        expect(claveDeDecisionConMayoristas(aviso)).toBe(claveDeMayorista(42));
+        const r = ordenarBandeja([aviso], [{ clave: 'mayorista:42' }], (n) => avisoEsperaDecisionConMayoristas(n, puede, new Set(['42'])));
+        expect(r.pendientes).toHaveLength(0);
+        expect(r.totalPorDecidir).toBe(1);
+    });
+});

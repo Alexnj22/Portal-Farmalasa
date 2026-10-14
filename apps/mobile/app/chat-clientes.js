@@ -28,9 +28,10 @@ import { MARCA } from '../componentes/inicio/marca';
 import { ChipsDeEstado, ClienteAvatar, EtiquetasDeCliente } from '../componentes/chat/Piezas';
 import { recordarConversacion } from '../componentes/chat/elegida';
 import { FichasDeEtiquetas } from '../componentes/chat/Etiquetas';
+import Asignacion from '../componentes/chat/Asignacion';
 import { estrellas } from '@nucleo/utils/chatPersonal';
 
-const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas }) {
+const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas, equipo }) {
   const sinLeer = Number(c.sin_leer_equipo) || 0;
   const reloj = useRelojDeEscritura([c.cliente_escribiendo_at]);
   const escribe = escribeAhora(c.cliente_escribiendo_at, reloj);
@@ -56,6 +57,7 @@ const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas }) {
                 <EtiquetasDeCliente c={c} />
               </View>
               <FichasDeEtiquetas conversacion={c} />
+              <Asignacion conversacion={c} equipo={equipo} />
               {estrellas(c.calificacion) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{estrellas(c.calificacion)}</Text> : null}
               {tomadaPor ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -115,7 +117,7 @@ export default function ChatClientes() {
         renderItem={({ item: c }) => (
           <Fila c={c} ahora={ahora} columnas={columnas}
             tomadaPor={c.tomada_vigente && String(c.tomada_por) !== String(user?.id) ? equipo.get(c.tomada_por) ?? { id: c.tomada_por } : null}
-            atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
+            atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} equipo={equipo} />
         )}
         {...scroll}
         contentInsetAdjustmentBehavior="automatic" initialNumToRender={12} windowSize={9} keyboardShouldPersistTaps="handled"

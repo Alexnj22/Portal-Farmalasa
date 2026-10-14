@@ -11,7 +11,7 @@
 // decidir», su aviso no se repite; si no está (otra fuente, otro alcance), el
 // aviso mismo sube a esa sección. Lo demás son avisos: primero los sin leer,
 // después los que ya se decidieron (quedan a la vista con su sello).
-import { claveDeDecision } from './accionesDeAviso';
+import { claveDeDecisionConMayoristas as claveDeDecision } from './accionesDeAviso';
 
 /**
  * @param {object[]} avisos       las notificaciones cargadas

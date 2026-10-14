@@ -52,3 +52,14 @@ export async function resolverMayorista(customerId, accion, precio, nota) {
         p_customer: Number(customerId), p_accion: accion, p_precio: precio ?? null, p_nota: nota ?? '',
     }));
 }
+
+/** Las solicitudes de mayorista que esperan decisión (estado 'solicitado'),
+ *  para «Por decidir» de los avisos. Lectura liviana: `mayoristas_listado` suma
+ *  seis meses de compras y no se paga en cada vuelta a la bandeja. Pocas filas
+ *  (una por cliente que lo pidió), sin paginar. */
+export async function fetchSolicitudesMayorista() {
+    return sinError(await supabase.from('clientes_mayoristas')
+        .select('customer_id, precio, origen, solicitado_por, solicitado_at, nota_solicitud, created_at, customers(name)')
+        .eq('estado', 'solicitado')
+        .order('solicitado_at', { ascending: true })) ?? [];
+}

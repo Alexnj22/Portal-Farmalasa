@@ -17,6 +17,7 @@ import { colorSistema } from './Formulario';
 import { MARCA } from './inicio/marca';
 import { iconoDe } from '../tema/iconos';
 import { abrirSolicitud } from '../pantallas';
+import { ORIGENES, PRECIOS } from '@nucleo/data/mayoristas';
 
 // La nota con la que se pidió (motivo), si la solicitud la trae.
 function describirPie(f) {
@@ -45,6 +46,17 @@ function describir(item, persona) {
         contexto: `${f.origen_branch_name ?? '—'} → ${f.branch_name ?? '—'} · ${l.length === 1 ? `${l[0].cantidad} ${l[0].presentacion_tipo ?? ''} ${l[0].descripcion}` : `${l.length} productos`}`,
         abrir: () => router.push({ pathname: '/envio/[id]', params: { id: String(f.id) } }) };
     }
+    case 'mayorista': {
+      // Un cliente pidió precio de mayorista (desde la app o propuesto en sala).
+      // Se aprueba o rechaza en su ficha; mientras siga 'solicitado' se queda aquí.
+      const cliente = f.customers?.name ?? `Cliente ${f.customer_id}`;
+      return { tipo: 'Quiere ser mayorista', icono: 'ShoppingBag',
+        quien: f.solicitado_por ? persona(f.solicitado_por) : null,
+        origen: ORIGENES[f.origen] ?? 'Desde la app',
+        contexto: `${cliente}${f.precio ? ` · ${PRECIOS[f.precio] ?? f.precio}` : ''}`,
+        pie: f.nota_solicitud ? `Nota: ${f.nota_solicitud}` : null,
+        abrir: () => router.push({ pathname: '/mayorista/[id]', params: { id: String(f.customer_id) } }) };
+    }
     default: {
       const d = detalleDeSolicitud(f);
       return { tipo: REQUEST_TYPES[f.type]?.label ?? 'Solicitud', icono: nombreDelIconoDeTipo(f.type), quien: persona(f.employee_id),
@@ -64,7 +76,7 @@ export default function TarjetaPorDecidir({ item, persona }) {
   const renglones = todos.slice(0, 3);
   const mas = todos.length - renglones.length;
   const sala = item.fila?.metadata?.branch_name ?? item.fila?.branch_name ?? null;
-  const pie = d.pie ?? (item.tipo === 'minmax' ? null : describirPie(item.fila));
+  const pie = d.pie ?? (item.tipo === 'minmax' || item.tipo === 'mayorista' ? null : describirPie(item.fila));
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); d.abrir(); }}
       android_ripple={ANDROID ? { color: 'rgba(127,127,127,0.20)', foreground: true } : undefined}
@@ -88,9 +100,9 @@ export default function TarjetaPorDecidir({ item, persona }) {
           {mas > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginTop: -4 }}>{`y ${mas} más`}</Text> : null}
           {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }} numberOfLines={2}>{pie}</Text> : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-            <Avatar empleado={d.quien} tamano={24} />
+            {d.quien ? <Avatar empleado={d.quien} tamano={24} /> : null}
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>
-              {shortEmployeeName(d.quien)}{sala ? <Text style={{ fontWeight: '400' }}>{` · ${sala}`}</Text> : null}
+              {d.quien ? shortEmployeeName(d.quien) : (d.origen ?? '')}{sala ? <Text style={{ fontWeight: '400' }}>{` · ${sala}`}</Text> : null}
             </Text>
             <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: `${MARCA.azulClaro}2E` }}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '700' }}>Te toca decidir ›</Text>

@@ -38,6 +38,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import { volver } from '../../componentes/volver';
 import { ChipsDeEstado, ClienteAvatar, EtiquetasDeCliente } from '../../componentes/chat/Piezas';
+import Asignacion from '../../componentes/chat/Asignacion';
 import PanelCliente from '../../componentes/chat/PanelCliente';
 import Compositor from '../../componentes/chat/Compositor';
 import { conversacionRecordada, recordarConversacion } from '../../componentes/chat/elegida';
@@ -288,6 +289,7 @@ export default function ConversacionDelChat() {
                   <EtiquetasDeCliente c={c} />
                   <ChipsDeEstado conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
                 </View>
+                {cv ? <Asignacion conversacion={cv} equipo={equipo} sinAsignar={cv.estado !== 'resuelta'} /> : null}
                 {estrellas(cv?.calificacion) || esperaDe(cv, ahora) ? (
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                     {[estrellas(cv?.calificacion) ? `${estrellas(cv.calificacion)}${cv.calificacion_comentario ? ` «${cv.calificacion_comentario}»` : ''}` : null,

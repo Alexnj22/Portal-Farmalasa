@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1283.1 — Chat: asignado, escalada y solicitud de mayorista en la app
+
+- **Chat en la app del personal:** «Asignado a» (foto y nombre corto, o «Sin asignar») y la escalada con su hora — «Avisado a la sala» a los 15 min, «Avisado a supervisión» a los 20 — en la bandeja y la conversación (`escaladaDe`, `asignadoDe`).
+- **Solicitud de mayorista en «Por decidir»:** tarjeta «Quiere ser mayorista» que queda hasta que el cliente deja de estar «solicitado» y abre su ficha con Aprobar/Rechazar (`avisoEsperaDecisionConMayoristas`, `fetchSolicitudesMayorista`); aparece una sola vez aunque exista el aviso.
+- Avisos `CHAT_INCUMPLIMIENTO` (abre la conversación) y `MAYORISTA_SOLICITUD` (abre la ficha) con su ícono; los avisos del chat que traen la conversación la abren directo.
+- La burbuja del chat sólo flota sobre las pestañas principales: en una ficha tapaba los botones de abajo.
+
 ## v2.1283.0 — Chat asignado con escalera de avisos, aviso de solicitud de mayorista y nivel en el avatar
 
 Base (`20261014142445_chat_asignacion_y_aviso_mayorista`, `20261014143452_ofertas_clientes_nivel_minimo`):

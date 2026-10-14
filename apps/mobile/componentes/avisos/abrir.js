@@ -15,6 +15,14 @@ export function abrirAviso(n, { conservar = false } = {}) {
   if (n.type === 'CORTE_NUEVO' && n.metadata?.corte_id) {
     return router.push({ pathname: '/corte/[id]', params: { id: String(n.metadata.corte_id), fecha: n.metadata.fecha ?? '' } });
   }
+  // El chat (mensaje, espera, incumplimiento) abre ESA conversación, no la bandeja.
+  if (n.metadata?.conversacion_id && String(n.link ?? '').startsWith('/chat-clientes')) {
+    return router.push({ pathname: '/chat-clientes/[id]', params: { id: String(n.metadata.conversacion_id) } });
+  }
+  // Una solicitud de mayorista abre la ficha del cliente, donde se aprueba o rechaza.
+  if (n.type === 'MAYORISTA_SOLICITUD' && n.metadata?.customer_id) {
+    return router.push({ pathname: '/mayorista/[id]', params: { id: String(n.metadata.customer_id) } });
+  }
   const id = n.metadata?.request_id;
   if (id) return abrirSolicitud(esAvisoDeMinMax(n) ? `minmax:${id}` : id);
   if (n.link) return abrirRuta(n.link);

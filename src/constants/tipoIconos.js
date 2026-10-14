@@ -95,6 +95,11 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     MAYORISTA_SOLICITUD: 'Contact',
     CHAT_INCUMPLIMIENTO: 'ShieldAlert',
     SYSTEM:           'Info',       // mensaje del portal, no de una persona
+    // 2026-10-14 (migración `chat_asignacion_y_aviso_mayorista`): el chat que
+    // pasó 20 min sin respuesta (a supervisión) y el cliente que pidió precio de
+    // mayorista desde la app (a quien aprueba mayoristas).
+    CHAT_INCUMPLIMIENTO: 'MessageCircle',
+    MAYORISTA_SOLICITUD: 'Contact',
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.

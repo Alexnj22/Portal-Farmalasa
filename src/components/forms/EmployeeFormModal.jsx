@@ -59,6 +59,7 @@ import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
 import { usuarioDesdeNombre } from '@nucleo/utils/nameUtils';
 import { isValidDUIAlgorithm, maskDui } from '@nucleo/utils/duiUtils';
 import { abrirCaptura, esperarFoto, fotoComoArchivo, soltarCaptura, enlaceDeCaptura } from '@nucleo/data/capturaDeFoto';
+import { partirCarasDelDui } from '../../plataforma/partirCaras';
 import QrDeCaptura from '../common/QrDeCaptura';
 
 /* Las tres casillas donde entra un DUI. `DOCUMENTO_IDENTIDAD` NO está: es el
@@ -1833,6 +1834,42 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const removeDocFile = (category) => updateDoc(category, { url: null, file_name: '' });
 
+    /* Frente y reverso que llegan JUNTOS (del teléfono): se suben los dos y se
+     * leen en UNA llamada. No se pasa dos veces por `handleDocFile` porque la
+     * segunda vuelta busca la otra cara en el `formData` de su render, que
+     * todavía no la tiene — y entonces no leería nada. */
+    const subirDuiDeDosCaras = async (frente, reverso) => {
+        setAnalyzingDocs(prev => ({ ...prev, DUI_FRENTE: true, DUI_REVERSO: true }));
+        setDuiFallo(null);
+        setDuiCaras(null);
+        try {
+            const folder = formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
+            const [urlF, urlR] = await Promise.all([
+                uploadFileToStorage(frente, 'documents', folder),
+                uploadFileToStorage(reverso, 'documents', folder),
+            ]);
+            if (!urlF || !urlR) throw new Error('La subida no devolvió una URL.');
+            updateDoc('DUI_FRENTE', { url: urlF, file_name: frente.name });
+            updateDoc('DUI_REVERSO', { url: urlR, file_name: reverso.name });
+            setLeyendoDui(true);
+            try {
+                const { data, error } = await leerDui({
+                    frente: getStoragePathFromUrl(urlF), reverso: getStoragePathFromUrl(urlR),
+                });
+                aplicarLecturaDui(data, error, false);
+            } catch (errLectura) {
+                console.error('leer-dui:', errLectura);
+                setDuiFallo('No se pudo leer. Escribe los datos a mano; el documento quedó guardado.');
+            } finally {
+                setLeyendoDui(false);
+            }
+        } catch (err) {
+            useToastStore.getState().showToast('Error al subir el DUI', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setAnalyzingDocs(prev => ({ ...prev, DUI_FRENTE: false, DUI_REVERSO: false }));
+        }
+    };
+
     // ── Las dos caras del DUI con el teléfono, de una vez ────────────────────
     //
     // Pedido del usuario (2026-10-13): «al subir el DUI desde el teléfono, que
@@ -1852,8 +1889,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             setCapturaDui(null);
             try {
                 const file = await fotoComoArchivo(url, 'dui.jpg');
-                setDuiEnUnArchivo(true);
-                await handleDocFile('DUI_COMPLETO', file);
+                /* El teléfono manda las dos caras UNIDAS en una imagen. Así
+                   entraban como «un solo archivo»: todo en una casilla y la
+                   lectura no encontraba nada (2026-10-14). Se parten acá y
+                   siguen el camino que sí funcionaba —frente y reverso por
+                   separado, leídos juntos—. Si la imagen no se deja partir, se
+                   queda como estaba. */
+                const caras = await partirCarasDelDui(file).catch(() => null);
+                if (caras) {
+                    setDuiEnUnArchivo(false);
+                    await subirDuiDeDosCaras(caras.frente, caras.reverso);
+                } else {
+                    setDuiEnUnArchivo(true);
+                    await handleDocFile('DUI_COMPLETO', file);
+                }
                 soltarCaptura(capturaDui.id);
             } catch {
                 useToastStore.getState().showToast('Llegó pero no se pudo abrir', 'Intenta de nuevo desde el teléfono.', 'error');

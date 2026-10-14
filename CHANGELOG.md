@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1290.4 — DUI desde el teléfono: frente y reverso por separado, y se leen
+
+Reportado por el usuario: al mandar las dos caras desde el teléfono se
+guardaba todo en una sola casilla y la lectura no encontraba ni el nombre ni
+el número; subidas de a una sí se leían. El teléfono une frente y reverso en
+UNA imagen (el canal de captura lleva un archivo) y la computadora la trataba
+como «DUI en un solo archivo». Ahora `plataforma/partirCaras.js` la corta por
+la franja blanca del centro, guarda frente y reverso en sus casillas y los lee
+juntos en una llamada — el mismo camino que ya funcionaba. Si la imagen no se
+deja partir, sigue como antes.
+
 ## v2.1290.3 — Seguro de vida: en el teléfono los nombres no se cortan y abre arriba
 
 Medido en WebKit iPhone 13: las pastillas de cada persona le dejaban tres

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1285.4 — Reparto del acuse: la bitácora acepta la severidad
+
+Con el permiso ya corregido, guardar el reparto fallaba en la bitácora:
+`asignar_documento_a_empleados` y `aplicar_documentos_pendientes` escribían
+`severity = 'info'` y `audit_logs` sólo acepta `INFO`/`WARNING`/`CRITICAL`. El
+error deshacía la transacción entera. Migración `20261014151103`, reescrita
+desde la definición viva; eran las dos únicas funciones con el defecto.
+
 ## v2.1285.3 — Carné en Android: la foto del QR se lee
 
 Reporte del usuario (2026-10-14): en Android, «Foto del código» decía «no se

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1290.4 — App: la tarjeta nítida en 3× y la burbuja oculta con la app bloqueada
+
+- **QR pixeleado** (iPhone 17 Pro Max): `react-native-qrcode-svg` dibujaba módulos de 10.73 px a 3×, sin bordes en píxel entero y con costuras grises. Nuevo `CodigoQR`: módulos de px enteros (`floor(118·3/33)` = 10 px), un solo `Path` de rectángulos; también en `CodigoReserva`.
+- **Logo en relieve**: muestreo con mipmap lineal (de 512 a 252 px salía escalonado).
+- **Ladeo y paralaje**: con el QR a la vista y en reposo la tarjeta se asienta plana; quieta, la transformación es la identidad exacta (antes `rotateY(360°)` + perspectiva la componía en 3D) y los corrimientos se redondean a píxel.
+- **Material en Android**: resolución completa en modo liviano y 3/4 animado (antes la mitad siempre).
+- **Burbuja de chat sobre el bloqueo**: la tapa de Recientes/selector de apps no la ocultaba (zIndex 900 contra 100). La tapa vive en el store de `lib/bloqueo.js` y la burbuja usa `useTapadaPorBloqueo()`.
+
 ## v2.1290.3 — Seguro de vida: en el teléfono los nombres no se cortan y abre arriba
 
 Medido en WebKit iPhone 13: las pastillas de cada persona le dejaban tres

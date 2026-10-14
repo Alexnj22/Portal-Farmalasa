@@ -29,14 +29,14 @@ import RotuloLamina from './minerales/RotuloLamina';
 import { despertar, useDespierta } from './reposo';
 import { useMoviendo } from '../lib/desplazamiento';
 import { Momento, vibrarMomento } from './momentos';
-import { AccessibilityInfo, Image, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Image, PixelRatio, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   cancelAnimation, Easing, interpolate, runOnJS, useReducedMotion, useAnimatedReaction, useAnimatedStyle, useDerivedValue, useSharedValue,
   withDelay, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import QRCode from 'react-native-qrcode-svg';
+import CodigoQR from './CodigoQR';
 import * as Haptics from 'expo-haptics';
 import * as Brightness from 'expo-brightness';
 import tokens from '@nucleo/constants/tokens.json';
@@ -64,6 +64,15 @@ const RADIO = 22;
 const PERSPECTIVA = 1000;
 const GROSOR = 0.011;
 const limitar = (v) => { 'worklet'; return Math.max(-1, Math.min(1, v)); };
+// Nitidez (2026-10-14, «que todo en la card se vea ultra nítido»): una capa
+// con una transformación 3D, o corrida una fracción de píxel, se dibuja
+// re-muestreada —el texto y el QR salen suavizados—. En reposo la tarjeta
+// tiene que quedar con la transformación EXACTA de identidad: los giros en 0,
+// la escala en 1 y los corrimientos en píxeles enteros.
+const DENSIDAD = PixelRatio.get();
+const alPixel = (v) => { 'worklet'; return Math.round(v * DENSIDAD) / DENSIDAD; };
+// Menos de una décima de grado no se ve, pero obliga a re-muestrear la capa.
+const grados = (v) => { 'worklet'; return Math.abs(v) < 0.1 ? 0 : v; };
 const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
 // Los colores de cada nivel (plan aprobado 2026-10-07): morada (Cliente VIP),
@@ -143,6 +152,16 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     suaveX.value = withSpring(a * 2, SUAVE);
     suaveY.value = withSpring(b * 2, SUAVE);
   });
+  // En reposo (2026-10-14, nitidez) la tarjeta se ASIENTA plana: con el
+  // ladeo del giroscopio quieto en unos grados, el nombre, el saldo y el logo
+  // quedaban re-muestreados por la perspectiva para siempre. El resorte la
+  // lleva a 0 exacto —sin transformación, cada píxel en su sitio— y al
+  // despertarla vuelve a seguir al teléfono.
+  useEffect(() => {
+    if (despierta) return;
+    suaveX.value = withSpring(0, SUAVE);
+    suaveY.value = withSpring(0, SUAVE);
+  }, [despierta, suaveX, suaveY]);
   const x = useDerivedValue(() => limitar(suaveX.value + dedoX.value));
   const y = useDerivedValue(() => limitar(suaveY.value + dedoY.value));
 
@@ -283,20 +302,39 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   const gestos = Gesture.Race(arrastre, largo, toque);
   // Profundidad (Platino): el contenido flota sobre el material y el logo un
   // poco más; al inclinar, cada capa se corre distinto — paralaje.
-  const capaTexto = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: -x.value * 3 }, { translateY: y.value * 2 }] } : {}));
-  const capaLogo = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: -x.value * 6 }, { translateY: y.value * 4 }] } : {}));
+  // Corridos a píxel entero (2026-10-14): a una fracción de píxel el texto se
+  // dibuja entre dos píxeles y se ve suave. El paso de 1/3 pt no se nota.
+  const capaTexto = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: alPixel(-x.value * 3) }, { translateY: alPixel(y.value * 2) }] } : {}));
+  const capaLogo = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: alPixel(-x.value * 6) }, { translateY: alPixel(y.value * 4) }] } : {}));
 
   const ladeo = useAnimatedStyle(() => {
-    const medio = Math.sin(giro.value * Math.PI);          // 0 en las caras, 1 a mitad del giro
+    // 0 en las caras, 1 a mitad del giro. En 0 o 1 exactos, 0 exacto: sin(π)
+    // no da 0 en coma flotante.
+    const g = giro.value;
+    const medio = g === 0 || g === 1 ? 0 : Math.sin(g * Math.PI);
+    // Con el QR a la vista la tarjeta queda PLANA (2026-10-14, «el código sale
+    // pixeleado»): ladeada, el código se re-muestrea por la perspectiva y
+    // pierde los bordes netos que el lector necesita. El ladeo se apaga con el
+    // giro; el brillo del reverso sigue a la inclinación igual.
+    const plano = 1 - Math.max(0, Math.min(1, g));
+    const rx = grados(-y.value * 12 * plano);
+    const ry = grados(x.value * 14 * plano);
+    // Sin levantarla al girar: subía 10 pt y tapaba lo de arriba (la campana).
+    const ty = alPixel((1 - entrada.value) * 16);
+    const esc = (0.97 + entrada.value * 0.03) * (1 - medio * 0.06);
+    // Quieta y plana: identidad EXACTA, sin perspectiva — iOS no tiene que
+    // componer la tarjeta en 3D y el texto y el QR salen píxel a píxel.
+    if (rx === 0 && ry === 0 && ty === 0 && Math.abs(esc - 1) < 1e-4) {
+      return { opacity: entrada.value, transform: [{ translateY: 0 }] };
+    }
     return {
       opacity: entrada.value,
       transform: [
         { perspective: 1000 },
-        // Sin levantarla al girar: subía 10 pt y tapaba lo de arriba (la campana).
-        { translateY: (1 - entrada.value) * 16 },
-        { rotateX: `${-y.value * 12}deg` },
-        { rotateY: `${x.value * 14}deg` },
-        { scale: (0.97 + entrada.value * 0.03) * (1 - medio * 0.06) },
+        { translateY: ty },
+        { rotateX: `${rx}deg` },
+        { rotateY: `${ry}deg` },
+        { scale: esc },
       ],
     };
   });
@@ -315,12 +353,15 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     // asomaba por el lado que se aleja como un filo liso del color de la placa.
     opacity: Math.max(0, 1 - Math.abs(Math.sin(giro.value * Math.PI)) * 5),
   }));
-  const frente = useAnimatedStyle(() => ({
-    transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }],
-  }));
-  const reverso = useAnimatedStyle(() => ({
-    transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [180, 360])}deg` }],
-  }));
+  // La cara que se ve, en reposo, sin perspectiva ni giro (2026-10-14,
+  // nitidez): `rotateY(360deg)` con perspectiva es «casi» la identidad y
+  // obligaba a componer el reverso —el QR— en 3D.
+  const frente = useAnimatedStyle(() => (giro.value === 0
+    ? { transform: [{ rotateY: '0deg' }] }
+    : { transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }] }));
+  const reverso = useAnimatedStyle(() => (giro.value === 1
+    ? { transform: [{ rotateY: '0deg' }] }
+    : { transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [180, 360])}deg` }] }));
 
   // Primer nombre + primer apellido, la regla del portal (`shortEmployeeName`):
   // con 4 palabras el apellido es la tercera; con 3, la segunda.
@@ -443,7 +484,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
             <View style={estilos.qr}>
-              {codigo ? <QRCode value={QR_DE(codigo)} size={118} color="#1A0822" backgroundColor="#FFFFFF" /> : null}
+              {/* Módulos de píxeles enteros (componentes/CodigoQR.js): nítido a 3×. */}
+              {codigo ? <CodigoQR value={QR_DE(codigo)} size={118} color="#1A0822" backgroundColor="#FFFFFF" /> : null}
             </View>
             <View style={{ flex: 1, gap: 6 }}>
               <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>TU CÓDIGO</Text>

@@ -29,6 +29,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import Etiqueta from '../../componentes/torogoz/rutas/Etiqueta';
 import { recordarPedido } from '../../componentes/torogoz/pedidos/elegido';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 40;
@@ -114,6 +115,8 @@ export default function TorogozPedidos() {
       }} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         {puedeVender ? (
           <View style={{ marginHorizontal: 16 }}>
             <BotonGrande texto="Nueva venta" color={PETROLEO} onPress={() => router.push('/torogoz/venta')} />

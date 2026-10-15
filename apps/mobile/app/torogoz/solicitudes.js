@@ -27,6 +27,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { PETROLEO, colorDe } from '../../componentes/torogoz/comercial/Piezas';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 function Boton({ texto, color, relleno, onPress, deshabilitado }) {
   return (
@@ -172,6 +173,8 @@ export default function SolicitudesTorogoz() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Segmentos activa={filtro} onCambiar={setFiltro}
           opciones={[{ id: 'pendientes', label: pendientes ? `Por decidir · ${pendientes}` : 'Por decidir' }, { id: 'resueltas', label: 'Resueltas' }]} />
         {!puedeDecidir ? (

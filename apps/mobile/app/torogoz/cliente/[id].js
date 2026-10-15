@@ -7,9 +7,11 @@
 // rutas (no de un texto a mano). La validación y la fila que se guarda son las
 // del núcleo (`distribucionComercial`), las mismas del portal. Un cliente nuevo
 // guarda borrador: la sesión se cierra sola.
+// Con `paraVenta` (el alta que se abre desde la venta) al guardar vuelve a la
+// venta y el cliente queda elegido (`dejarClienteNuevo`).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { fetchClientes, fetchRutas, guardarCliente, mensajeDeDistribucion } from '@nucleo/data/distribucion';
@@ -24,12 +26,13 @@ import { CampoConRotulo, Rotulo } from '../../../componentes/personas/Formulario
 import Fecha from '../../../componentes/formulario/Fecha';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
 import { volver } from '../../../componentes/volver';
+import { dejarClienteNuevo } from '../../../componentes/torogoz/pedidos/elegido';
 import {
   ElegirActividad, ElegirLargo, ElegirUbicacion, Interruptor, Nota, PETROLEO, elegida, useEmisor,
 } from '../../../componentes/torogoz/comercial/Piezas';
 
 export default function FichaClienteTorogoz() {
-  const { id } = useLocalSearchParams();
+  const { id, paraVenta } = useLocalSearchParams();
   const nuevo = id === 'nuevo';
   const { hasPermission } = useAuth();
   const puedeEditar = !!hasPermission?.('distribucion', 'can_edit');
@@ -96,9 +99,10 @@ export default function FichaClienteTorogoz() {
         setGuardando(true); setError('');
         trabajando('Guardando la ficha…');
         try {
-          await guardarCliente(clienteParaGuardar(f, { id: cliente?.id, emisorId: emisor.id }));
+          const idGuardado = await guardarCliente(clienteParaGuardar(f, { id: cliente?.id, emisorId: emisor.id }));
           descartar();
           listo(nuevo ? 'Cliente agregado' : 'Ficha guardada', f.nombre.trim());
+          if (nuevo && paraVenta && router.canGoBack()) { dejarClienteNuevo(idGuardado); router.back(); return; }
           volver('/torogoz/clientes');
         } catch (e) {
           const m = mensajeDeDistribucion(e);

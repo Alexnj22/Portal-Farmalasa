@@ -21,6 +21,7 @@ import LibrosVentas from '../../componentes/torogoz/bodega/reportes/LibrosVentas
 import LibroCompras from '../../componentes/torogoz/bodega/reportes/LibroCompras';
 import Retenciones from '../../componentes/torogoz/bodega/reportes/Retenciones';
 import Relacionadas from '../../componentes/torogoz/bodega/reportes/Relacionadas';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const VISTAS = VISTAS_REPORTES.map((v) => ({ id: v.key, label: v.label }));
 const CON_BUSCADOR = { utilidad: 'Producto, cliente, ruta…', ventas: 'Cliente o número de control', compras: 'Proveedor, número o NIT', relacionadas: 'Producto' };
@@ -41,6 +42,8 @@ export default function Reportes() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reportes', headerLargeTitle: true, headerSearchBarOptions: buscador }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         {!puede ? (
           <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Los reportes de la distribuidora los ve quien la administra." /></View>
         ) : (

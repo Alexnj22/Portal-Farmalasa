@@ -6,14 +6,26 @@
 // La ÚLTIMA forma es siempre «lo que falta»: no se escribe, se calcula (las
 // cuentas son las de `distribucionPagos`, las mismas del portal).
 //
+// Las formas que llevan comprobante (tarjeta, transferencia, cheque…) lo
+// pueden adjuntar ACÁ, al cobrar, con el mismo lector y veredicto del portal
+// (`ComprobantePago`); se sube cuando el pedido ya existe (`useVenta`). Si no,
+// se adjunta después desde el pedido. Como el cobro, va detrás de
+// `ACCIONES_DE_DINERO`: adjuntar marca la verificación del pago.
+//
 // ⚠️ Facturar mueve dinero y transmite a Hacienda, y no se deshace: el botón
 // pide confirmación con el total y la forma de pago antes de escribir.
+import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { FORMA_PAGO, TIPO_DOCUMENTO, leerMonto } from '@nucleo/utils/distribucionComun';
 import { filaNueva, montosDePagos } from '@nucleo/utils/distribucionPagos';
+import { LLEVA_COMPROBANTE } from '@nucleo/data/distribucion';
+import { VERIFICACION_PAGO } from '@nucleo/utils/distribucionFacturacion';
+import { Pildora } from '../../avisos/Piezas';
+import { colorDeVariante } from '../../colorDeVariante';
+import ComprobantePago from '../fiscal/ComprobantePago';
 import { colorSistema } from '../../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
@@ -24,9 +36,13 @@ import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
 const LLEVA_REFERENCIA = new Set(['02', '03', '04', '05']);
 
 function FilaDePago({ f, i, ultima, monto, opciones, onCambiar, onQuitar, varias }) {
+  const [adjuntando, setAdjuntando] = useState(false);
+  const comprobante = ACCIONES_DE_DINERO && LLEVA_COMPROBANTE.has(f.forma);
+  const verif = f.adjunto?.verificacion ?? f.existente?.verificacion;
+  const v = comprobante ? (VERIFICACION_PAGO[verif] ?? VERIFICACION_PAGO.pendiente) : null;
   return (
     <View style={{ gap: 8, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-      <Eleccion rotulo={varias ? `Forma ${i + 1}` : 'Forma de pago'} valor={f.forma} opciones={opciones} onCambiar={(v) => onCambiar({ forma: v })} />
+      <Eleccion rotulo={varias ? `Forma ${i + 1}` : 'Forma de pago'} valor={f.forma} opciones={opciones} onCambiar={(x) => { setAdjuntando(false); onCambiar({ forma: x, adjunto: null }); }} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{ultima ? (varias ? 'Lo que falta' : 'Monto') : 'Monto'}</Text>
         {ultima ? (
@@ -48,7 +64,27 @@ function FilaDePago({ f, i, ultima, monto, opciones, onCambiar, onQuitar, varias
         <Campo multiline={false} value={f.referencia} onChangeText={(t) => onCambiar({ referencia: t })}
           placeholder={f.forma === '04' ? 'Número de cheque' : 'Referencia o autorización'} autoCorrect={false} />
       ) : null}
-      {f.existente?.comprobante_url ? <Aviso texto="Tiene comprobante adjunto." /> : null}
+      {f.existente?.comprobante_url && !f.adjunto ? <Aviso texto="Tiene comprobante adjunto." /> : null}
+      {comprobante ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {v ? <Pildora texto={f.adjunto ? `${v.label} · listo para subir` : v.label} color={colorDeVariante(v.variant)} /> : null}
+          {!f.adjunto && !adjuntando ? (
+            <Pressable onPress={() => setAdjuntando(true)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }} accessibilityRole="button">
+              <Text style={{ color: PETROLEO, fontSize: 15, fontWeight: '700' }}>{f.existente?.comprobante_url ? 'Cambiar comprobante' : 'Adjuntar comprobante (o después)'}</Text>
+            </Pressable>
+          ) : null}
+          {f.adjunto ? (
+            <Pressable onPress={() => onCambiar({ adjunto: null })} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }} accessibilityRole="button">
+              <Text style={{ color: MARCA.rojo, fontSize: 15 }}>Quitar el comprobante</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      {comprobante && adjuntando && !f.adjunto ? (
+        <ComprobantePago forma={f.forma} montoEsperado={monto || null} puedeCambiarMonto={!ultima}
+          onListo={(r) => { onCambiar({ adjunto: r, ...(r.montoNuevo != null ? { monto: String(r.montoNuevo) } : {}) }); setAdjuntando(false); }}
+          onCancelar={() => setAdjuntando(false)} />
+      ) : null}
       {varias ? (
         <Pressable onPress={onQuitar} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
           <Text style={{ color: MARCA.rojo, fontSize: 15 }}>Quitar esta forma</Text>

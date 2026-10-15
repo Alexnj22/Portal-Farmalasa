@@ -39,6 +39,7 @@ import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { enviarDocumentoPorCorreo } from '../../componentes/torogoz/fiscal/papel';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../componentes/torogoz/soloConsulta';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 50;
@@ -200,6 +201,8 @@ export default function Facturacion() {
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {docs ? (

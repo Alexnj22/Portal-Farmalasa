@@ -27,6 +27,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { PETROLEO, colorDe, guardarElegida, useEmisor } from '../../componentes/torogoz/comercial/Piezas';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const POR_PAGINA = 40;
 
@@ -128,6 +129,8 @@ export default function ClientesTorogoz() {
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FiltrosActivos grupos={grupos} />
         <FilaDeKpis>
           <Kpi icono="Users" rotulo="Clientes" valor={String(stats.activos)} color={PETROLEO} apoyo="activos" />

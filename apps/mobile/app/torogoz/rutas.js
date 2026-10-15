@@ -19,6 +19,7 @@ import Segmentos from '../../componentes/Segmentos';
 import Hoy from '../../componentes/torogoz/rutas/Hoy';
 import Armar from '../../componentes/torogoz/rutas/Armar';
 import Camiones from '../../componentes/torogoz/rutas/Camiones';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const VISTAS = [
   { id: 'hoy', label: 'Hoy' },
@@ -54,6 +55,8 @@ export default function TorogozRutas() {
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => setVuelta((v) => v + 1)} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Segmentos opciones={vistas} activa={vista} onCambiar={(v) => router.setParams({ rutas: v })} />
         <FiltrosActivos grupos={grupos} />
         {vista === 'hoy' ? (

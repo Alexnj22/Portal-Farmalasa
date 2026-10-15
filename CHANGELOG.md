@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1298.3 — Puntos: sin la aclaración bajo el saldo
+
+Pedido del usuario: se quita «Es lo único que se puede canjear.» del modal del
+cliente. Queda «Hasta $X de descuento.» bajo el saldo.
+
 ## v2.1298.2 — Puntos: las acciones del saldo, juntas y en su lugar
 
 Pedido del usuario: los botones de «Dar o quitar puntos» y «Unir con otra

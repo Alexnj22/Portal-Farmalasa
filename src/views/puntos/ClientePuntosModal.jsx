@@ -268,7 +268,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                         {pts(cuenta?.saldo)}
                                     </p>
                                     <p className="text-body-sm text-content-2 mt-2">
-                                        Hasta <span className="font-black tabular-nums">{dolares(cuenta?.saldo)}</span> de descuento. Es lo único que se puede canjear.
+                                        Hasta <span className="font-black tabular-nums">{dolares(cuenta?.saldo)}</span> de descuento.
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-2">

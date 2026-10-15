@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.3 — La app: seguro de vida, bajas por sala y ficha de personal como en el portal
+
+Paridad de la app (grupo Personas).
+- **Personal**: franja y pantalla nativa del seguro de vida colectivo (póliza,
+  pago del año, solventes/sin cubrir, pagos anteriores, comprobante, registrar
+  o corregir un pago); las bajas van aparte al final de cada sala; el filtro
+  de sala incluye a quien la cubre (`assigned_branch_ids`).
+- **Ficha**: edad, tardanzas del mes, almuerzo/receso en el horario y
+  «Reimprimir el carné de plástico» (`carne_temporal` can_edit, AirPrint).
+- La impresión del teléfono dibuja CODE128 sin librería (los tickets en PDF
+  también llevan sus barras).
+- Núcleo: `subirArchivoDelSeguro` acepta el archivo de la app.
+
 ## v2.1292.2 — La app: mis documentos y encuestas como en el portal
 
 Paridad de la app (grupo Personas, `docs/AUDITORIA-PARIDAD-APP-2026-10-15.md`).

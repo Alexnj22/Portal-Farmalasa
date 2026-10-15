@@ -21,6 +21,11 @@
 // la contraseña (`fijarContrasenaDeEmpleado`), el carné del día —imprimirlo
 // en la caja de una sala o anular el vigente— y, si está de baja,
 // «Recontratar» (`empleado/recontratar`).
+//
+// Como las tarjetas del perfil del portal, también la edad, las tardanzas
+// acumuladas del mes y el almuerzo/receso del horario; y, con el permiso del
+// carné del día, «Reimprimir el carné de plástico» (la etiqueta de 85 × 30 mm
+// con el PIN permanente, por AirPrint — `plataforma/carnePrint`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -37,6 +42,9 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { calcAge } from '@nucleo/utils/ageUtils';
+import { fetchCredenciales } from '@nucleo/data/employees';
+import { imprimirEtiquetaDeCarne } from '../../plataforma/carnePrint';
 import { anotar } from '@nucleo/data/audit';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 import { anularCarneTemporal, carneVigente, fetchCarnesTemporales } from '@nucleo/data/carneTemporal';
@@ -102,6 +110,22 @@ export default function Empleado() {
   const cumple = cumpleEn(emp.birth_date || emp.birthDate, hoy);
   const areas = (emp.assigned_branch_ids || []).map((b) => (sucursales || []).find((s) => String(s.id) === String(b))?.name).filter(Boolean);
   const inactiva = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(emp.status);
+  // Lo mismo que las tarjetas de arriba del perfil del portal: la edad y las
+  // tardanzas acumuladas de las marcas que trae la ficha.
+  const edad = calcAge(emp.birth_date || emp.birthDate, hoy);
+  const tardanzas = (emp.attendance || []).filter((a) => a.type === 'LATE').length;
+  // El carné de PLÁSTICO (85 × 30 mm, con el PIN permanente): el PIN no viaja
+  // con la ficha —es una credencial— y se pide al apretar, como en el portal.
+  // Sale por AirPrint, nunca por la caja de la sala.
+  const reimprimirPlastico = async () => {
+    trabajando('Preparando la etiqueta…');
+    try {
+      const mapa = await fetchCredenciales([emp.id]);
+      const r = await imprimirEtiquetaDeCarne(null, { nombre: emp.name, valor: mapa.get(emp.id)?.kiosk_pin });
+      if (r.ok) listo('Etiqueta lista', 'Se mandó a la impresora.');
+      else fallo('No se pudo imprimir el carné', r.motivo);
+    } catch (e) { fallo('No se pudo imprimir el carné', mensajeAmigable(e, 'Intenta de nuevo.')); }
+  };
   // Restablecer la contraseña: la MISMA del portal (`set-employee-password`).
   // Si el servidor da una temporal, se muestra una sola vez y se puede compartir.
   const restablecer = () => Alert.alert('Restablecer la contraseña', `¿Restablecer la contraseña de ${shortEmployeeName(emp)}? Deberá cambiarla en su próximo acceso.`, [
@@ -169,7 +193,7 @@ export default function Empleado() {
         ) : null}
 
         {semana.length ? (
-          <Seccion titulo="Horario de esta semana">
+          <Seccion titulo="Horario de esta semana" pie={semana.some((d) => d.turno) ? 'Almuerzo / receso: definido por ley en cada día con turno.' : null}>
             <View style={{ flexDirection: 'row', gap: 5 }}>
               {semana.map((d) => {
                 const esHoy = d.fecha === hoy;
@@ -194,6 +218,7 @@ export default function Empleado() {
           {emp.code ? <Dato rotulo="Código" valor={String(emp.code)} /> : null}
           <Dato rotulo="Ingreso" valor={fecha(emp.hire_date || emp.hireDate)} />
           <Dato rotulo="En la empresa" valor={tiempoEnLaEmpresa(emp.hire_date || emp.hireDate, hoy)} />
+          <Dato rotulo="Tardanzas (mes)" valor={`${tardanzas} acumulada${tardanzas === 1 ? '' : 's'}`} fuerte={tardanzas > 0} />
           {emp.contract_type ? <Dato rotulo="Contrato" valor={emp.contract_type} /> : null}
           {emp.weekly_hours ? <Dato rotulo="Horas por semana" valor={String(emp.weekly_hours)} /> : null}
           <Dato rotulo="Estado" valor={emp.status || '—'} />
@@ -201,6 +226,7 @@ export default function Empleado() {
 
         <Seccion titulo="Personal y contacto">
           <Dato primero rotulo="Nacimiento" valor={`${fecha(emp.birth_date || emp.birthDate)}${cumple ? ` · cumple ${cumple}` : ''}`} />
+          <Dato rotulo="Edad" valor={edad != null ? `${edad} años` : 'N/D'} />
           {emp.blood_type ? <Dato rotulo="Tipo de sangre" valor={emp.blood_type} /> : null}
           <Dato rotulo="Celular" valor={emp.phone || '—'} />
           {emp.email ? <Dato rotulo="Correo" valor={emp.email} /> : null}
@@ -265,6 +291,7 @@ export default function Empleado() {
                 onPress={() => imprimirCarne({ employeeId: emp.id, nombre: emp.name, cargo: emp.role || '', sala: sala?.name || '', motivo: 'Desde el perfil', alTerminar: leerCarne })} />
               {carne ? <Accion icono="Ban" rotulo="Anular el vigente" color={MARCA.rojo} onPress={anularCarne} /> : null}
             </View>
+            <BotonGrande texto="Reimprimir el carné de plástico" borde color={MARCA.azulClaro} onPress={reimprimirPlastico} />
           </Seccion>
         ) : null}
         {hasPermission?.('staff_list', 'can_edit') && inactiva ? (

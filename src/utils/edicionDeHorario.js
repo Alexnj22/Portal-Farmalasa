@@ -12,6 +12,7 @@
 // resuelve en UN solo sitio): acá sólo se arma lo que se le pasa y lo que sale.
 import { aMinutos, resolverTurnoDelDia, reparosDelDia } from './turnoDelDia';
 import { tokenMatch } from './searchUtils';
+import { hora12 } from './hora';
 
 const hhmm = (t) => (t ? String(t).substring(0, 5) : '');
 const horaLimpia = (t) => String(t || '').replace(/[^0-9:]/g, '').trim();
@@ -178,4 +179,115 @@ export function revisionDelTurno(form, turnos, editando = null) {
         autoName: nombre, activeAlerts: alertas, hasBlockingError: bloqueante,
         primerReparo: alertas.find((x) => x.type === 'error')?.text || alertas[0]?.text || null,
     };
+}
+
+// ── Lo que le falta al catálogo, mirado contra el horario de cada sala ──────
+//
+// Vivía dentro de `TabShifts` del portal; la app lo necesita igual (las
+// tarjetas «Sugerencia» / «Falta un dato» con «Crear este turno» e «Ignorar
+// aviso»). Se agrupa por firma para no repetir el mismo aviso por sala, y se
+// devuelven a lo sumo seis. `ignoradas` = las claves que el usuario descartó.
+
+const SIN_SALA_DE_ATENCION = ['bodega', 'administracion', 'externos'];
+const aHHMM = (mins) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+const horaRedonda = (mins) => hora12(`${((Math.floor(mins / 60) % 24) + 24) % 24}:00`);
+
+function enumerarSalas(nombres) {
+    if (!nombres || nombres.length === 0) return '';
+    if (nombres.length === 1) return nombres[0];
+    if (nombres.length === 2) return `${nombres[0]} y ${nombres[1]}`;
+    return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`;
+}
+
+/** Las salas que atienden público (sin bodega, administración ni externos). */
+export function salasDeAtencion(sucursales) {
+    return (sucursales || []).filter((b) => {
+        const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return !SIN_SALA_DE_ATENCION.some((x) => n.includes(x));
+    });
+}
+
+/** Apertura más temprana y cierre más tarde de la semana de una sala, en minutos. */
+export function limitesDeLaSalaParaElCatalogo(sala) {
+    let minOpen = 1440, maxClose = 0, hasValidHours = false;
+    let sch = sala?.weekly_hours;
+    if (typeof sch === 'string') { try { sch = JSON.parse(sch); } catch { sch = null; } }
+    if (sch && typeof sch === 'object' && Object.keys(sch).length > 0) {
+        Object.values(sch).forEach((d) => {
+            if (d?.isOpen && d.start && d.end) {
+                const ini = horaLimpia(d.start);
+                const fin = horaLimpia(d.end);
+                if (ini && fin) {
+                    const o = aMinutos(ini);
+                    let c = aMinutos(fin);
+                    if (c < o) c += 1440;
+                    if (o < minOpen) minOpen = o;
+                    if (c > maxClose) maxClose = c;
+                    hasValidHours = true;
+                }
+            }
+        });
+    }
+    return { minOpen, maxClose, hasValidHours, branchName: sala?.name };
+}
+
+/**
+ * Las tarjetas del catálogo: `[{ key, type: 'error'|'suggestion', branch, text,
+ * action: { start, end } | null }]`.
+ */
+export function sugerenciasDelCatalogo(turnos, sucursales, ignoradas = new Set()) {
+    const activos = (turnos || []).filter((s) => s.is_active !== false && s.isActive !== false);
+    if (activos.length === 0) {
+        return [{ key: 'empty_catalog', type: 'suggestion', branch: 'El catálogo está vacío', text: 'Todavía no hay ningún turno. Sin catálogo no se puede publicar ningún horario. Empieza por el de apertura (7:00 am a 4:00 pm).', action: { start: '07:00', end: '16:00' } }];
+    }
+    const catalogo = activos.map((s) => {
+        const ini = aMinutos(s.start_time?.substring(0, 5) || s.start);
+        let fin = aMinutos(s.end_time?.substring(0, 5) || s.end);
+        if (fin < ini) fin += 1440;
+        return { id: s.id, start: ini, end: fin };
+    });
+
+    const map = {};
+    salasDeAtencion(sucursales).forEach((b) => {
+        const limits = limitesDeLaSalaParaElCatalogo(b);
+        if (!limits.hasValidHours) {
+            const sig = 'error_no_hours';
+            if (!map[sig]) map[sig] = { type: 'error', branches: [], reason: 'no_hours', action: null };
+            map[sig].branches.push(b.name);
+            return;
+        }
+        const caben = catalogo.filter((s) => s.start >= limits.minOpen && s.end <= limits.maxClose);
+        if (caben.length === 0) {
+            const sig = `error_no_valid_${limits.minOpen}_${limits.maxClose}`;
+            if (!map[sig]) map[sig] = { type: 'error', branches: [], reason: 'no_valid_shifts', limits, action: { start: aHHMM(limits.minOpen), end: aHHMM(Math.min(limits.minOpen + 540, limits.maxClose)) } };
+            map[sig].branches.push(b.name);
+            return;
+        }
+        let minStart = 1440, maxEnd = 0;
+        caben.forEach((s) => { if (s.start < minStart) minStart = s.start; if (s.end > maxEnd) maxEnd = s.end; });
+        if (minStart > limits.minOpen + 30) {
+            const sig = `sug_apertura_${limits.minOpen}_${minStart}`;
+            if (!map[sig]) map[sig] = { type: 'suggestion', branches: [], reason: 'apertura_global', limits, branchMinStart: minStart, action: { start: aHHMM(limits.minOpen), end: aHHMM(Math.min(limits.minOpen + 540, limits.maxClose)) } };
+            map[sig].branches.push(b.name);
+        }
+        if (maxEnd < limits.maxClose - 30) {
+            const sig = `sug_cierre_${limits.maxClose}_${maxEnd}`;
+            if (!map[sig]) map[sig] = { type: 'suggestion', branches: [], reason: 'cierre_global', limits, branchMaxEnd: maxEnd, action: { start: aHHMM(Math.max(limits.maxClose - 540, limits.minOpen)), end: aHHMM(limits.maxClose) } };
+            map[sig].branches.push(b.name);
+        }
+    });
+
+    return Object.entries(map)
+        .filter(([key]) => !ignoradas.has(key))
+        .map(([key, val]) => {
+            const plural = val.branches.length > 1;
+            const branch = enumerarSalas([...val.branches]);
+            let text = '';
+            if (val.reason === 'no_hours') text = plural ? 'No tienen su horario operativo configurado. Configúralo en Sucursales para poder revisar el catálogo.' : 'No tiene su horario operativo configurado. Configúralo en Sucursales para poder revisar el catálogo.';
+            else if (val.reason === 'no_valid_shifts') text = `${plural ? 'Operan' : 'Opera'} de ${horaRedonda(val.limits.minOpen)} a ${horaRedonda(val.limits.maxClose)}. Ningún turno del catálogo cabe en ese horario.`;
+            else if (val.reason === 'apertura_global') text = `${plural ? 'Abren' : 'Abre'} a las ${horaRedonda(val.limits.minOpen)} pero los turnos válidos empiezan a las ${horaRedonda(val.branchMinStart)}. Crea un turno de apertura exacto.`;
+            else if (val.reason === 'cierre_global') text = `${plural ? 'Cierran' : 'Cierra'} a las ${horaRedonda(val.limits.maxClose)} pero los turnos válidos terminan a las ${horaRedonda(val.branchMaxEnd)}. Crea un turno de cierre exacto.`;
+            return { key, type: val.type, branch, text, action: val.action };
+        })
+        .slice(0, 6);
 }

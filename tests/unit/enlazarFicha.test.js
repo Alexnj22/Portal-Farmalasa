@@ -16,7 +16,7 @@
 // ¿por qué no se ponen los datos que ya están guardados?».
 
 import { describe, it, expect } from 'vitest';
-import { aplicarFichaEnlazada, hayHomonimo } from '../../src/components/forms/EmployeeFormModal';
+import { aplicarFichaEnlazada, hayHomonimo } from '@nucleo/utils/fichaDelEmpleado';
 
 const FICHA = {
     id: 'uuid-adriana',

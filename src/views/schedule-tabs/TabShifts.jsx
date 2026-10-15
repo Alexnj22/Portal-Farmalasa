@@ -11,7 +11,7 @@ import { formatTime12h } from '@nucleo/utils/helpers';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    formatHourAMPM, timeToMins, resolverTurnoDelDia,
+    resolverTurnoDelDia,
     HORAS_JORNADA_DIURNA, MINUTOS_DE_PAUSA,
 } from '@nucleo/utils/scheduleHelpers';
 import usePulsacionLarga from '@nucleo/hooks/usePulsacionLarga';
@@ -26,22 +26,8 @@ import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { EmptyState } from '../../components/common/StateViews';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { gruposDelCatalogo, revisionDelTurno } from '@nucleo/utils/edicionDeHorario';
+import { gruposDelCatalogo, revisionDelTurno, sugerenciasDelCatalogo } from '@nucleo/utils/edicionDeHorario';
 import { clickable } from '@nucleo/utils/clickable';
-
-const minsToTimeStr = (mins) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-};
-
-const formatBranchNames = (names) => {
-    if (!names || names.length === 0) return '';
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return `${names[0]} y ${names[1]}`;
-    const last = names[names.length - 1];
-    return `${names.slice(0, -1).join(', ')} y ${last}`;
-};
 
 // ============================================================================
 // TARJETA DE SUGERENCIA DEL CATÁLOGO
@@ -246,101 +232,12 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
         }
     }, [currentForm.start, currentForm.end]);
 
-    const validBranches = useMemo(() => {
-        if (!branches) return [];
-        return branches.filter(b => {
-            const name = (b.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            return !name.includes('bodega') && !name.includes('administracion') && !name.includes('externos');
-        });
-    }, [branches]);
-
-    const getBranchLimits = useCallback((branchId) => {
-        const b = validBranches.find(br => String(br.id) === String(branchId));
-        let minO = 1440, maxC = 0, hasValidHours = false;
-
-        if (b) {
-            let sch = b.weekly_hours;
-            if (typeof sch === 'string') { try { sch = JSON.parse(sch); } catch { sch = null; } }
-            if (sch && typeof sch === 'object' && Object.keys(sch).length > 0) {
-                Object.values(sch).forEach(d => {
-                    if (d?.isOpen && d.start && d.end) {
-                        const cleanStart = String(d.start).replace(/[^0-9:]/g, '').trim();
-                        const cleanEnd   = String(d.end).replace(/[^0-9:]/g, '').trim();
-                        if (cleanStart && cleanEnd) {
-                            const oMins = timeToMins(cleanStart);
-                            let cMins   = timeToMins(cleanEnd);
-                            if (cMins < oMins) cMins += 1440;
-                            if (oMins < minO) minO = oMins;
-                            if (cMins > maxC) maxC = cMins;
-                            hasValidHours = true;
-                        }
-                    }
-                });
-            }
-        }
-        return { minOpen: minO, maxClose: maxC, hasValidHours, branchName: b?.name };
-    }, [validBranches]);
-
     // ── Lo que le falta al catálogo, mirado contra el horario de cada sala ──
+    // Núcleo (`sugerenciasDelCatalogo`), la misma cuenta de la app.
     const globalInsights = useMemo(() => {
         if (editingGroup || currentForm.start) return [];
-        const activeShifts = shifts.filter(s => s.is_active !== false && s.isActive !== false);
-
-        if (activeShifts.length === 0) {
-            return [{ key: 'empty_catalog', type: 'suggestion', branch: 'El catálogo está vacío', text: 'Todavía no hay ningún turno. Sin catálogo no se puede publicar ningún horario. Empieza por el de apertura (7:00 am a 4:00 pm).', action: { start: '07:00', end: '16:00' } }];
-        }
-
-        const catalogMins = activeShifts.map(s => {
-            const sMins = timeToMins(s.start_time?.substring(0, 5) || s.start);
-            let eMins   = timeToMins(s.end_time?.substring(0, 5)   || s.end);
-            if (eMins < sMins) eMins += 1440;
-            return { id: s.id, start: sMins, end: eMins };
-        });
-
-        const map = {};
-        validBranches.forEach(b => {
-            const limits = getBranchLimits(b.id);
-            if (!limits.hasValidHours) {
-                const sig = 'error_no_hours';
-                if (!map[sig]) map[sig] = { type: 'error', branches: [], reason: 'no_hours', action: null };
-                map[sig].branches.push(b.name);
-                return;
-            }
-            const validForBranch = catalogMins.filter(s => s.start >= limits.minOpen && s.end <= limits.maxClose);
-            if (validForBranch.length === 0) {
-                const sig = `error_no_valid_${limits.minOpen}_${limits.maxClose}`;
-                if (!map[sig]) map[sig] = { type: 'error', branches: [], reason: 'no_valid_shifts', limits, action: { start: minsToTimeStr(limits.minOpen), end: minsToTimeStr(Math.min(limits.minOpen + 540, limits.maxClose)) } };
-                map[sig].branches.push(b.name);
-                return;
-            }
-            let branchMinStart = 1440, branchMaxEnd = 0;
-            validForBranch.forEach(s => { if (s.start < branchMinStart) branchMinStart = s.start; if (s.end > branchMaxEnd) branchMaxEnd = s.end; });
-            if (branchMinStart > limits.minOpen + 30) {
-                const sig = `sug_apertura_${limits.minOpen}_${branchMinStart}`;
-                if (!map[sig]) map[sig] = { type: 'suggestion', branches: [], reason: 'apertura_global', limits, branchMinStart, action: { start: minsToTimeStr(limits.minOpen), end: minsToTimeStr(Math.min(limits.minOpen + 540, limits.maxClose)) } };
-                map[sig].branches.push(b.name);
-            }
-            if (branchMaxEnd < limits.maxClose - 30) {
-                const sig = `sug_cierre_${limits.maxClose}_${branchMaxEnd}`;
-                if (!map[sig]) map[sig] = { type: 'suggestion', branches: [], reason: 'cierre_global', limits, branchMaxEnd, action: { start: minsToTimeStr(Math.max(limits.maxClose - 540, limits.minOpen)), end: minsToTimeStr(limits.maxClose) } };
-                map[sig].branches.push(b.name);
-            }
-        });
-
-        return Object.entries(map)
-            .filter(([key]) => !dismissedSugs.has(key))
-            .map(([key, val]) => {
-                const isPlural = val.branches.length > 1;
-                const branch = formatBranchNames([...val.branches]);
-                let text = '';
-                if (val.reason === 'no_hours') text = isPlural ? 'No tienen su horario operativo configurado. Configúralo en Sucursales para poder revisar el catálogo.' : 'No tiene su horario operativo configurado. Configúralo en Sucursales para poder revisar el catálogo.';
-                else if (val.reason === 'no_valid_shifts') text = isPlural ? `Operan de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno del catálogo cabe en ese horario.` : `Opera de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno del catálogo cabe en ese horario.`;
-                else if (val.reason === 'apertura_global') text = isPlural ? `Abren a las ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} pero los turnos válidos empiezan a las ${formatHourAMPM(Math.floor(val.branchMinStart/60))}. Crea un turno de apertura exacto.` : `Abre a las ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} pero los turnos válidos empiezan a las ${formatHourAMPM(Math.floor(val.branchMinStart/60))}. Crea un turno de apertura exacto.`;
-                else if (val.reason === 'cierre_global') text = isPlural ? `Cierran a las ${formatHourAMPM(Math.floor(val.limits.maxClose/60))} pero los turnos válidos terminan a las ${formatHourAMPM(Math.floor(val.branchMaxEnd/60))}. Crea un turno de cierre exacto.` : `Cierra a las ${formatHourAMPM(Math.floor(val.limits.maxClose/60))} pero los turnos válidos terminan a las ${formatHourAMPM(Math.floor(val.branchMaxEnd/60))}. Crea un turno de cierre exacto.`;
-                return { key, type: val.type, branch, text, action: val.action };
-            })
-            .slice(0, 6);
-    }, [validBranches, shifts, editingGroup, currentForm.start, getBranchLimits, dismissedSugs]);
+        return sugerenciasDelCatalogo(shifts, branches, dismissedSugs);
+    }, [branches, shifts, editingGroup, currentForm.start, dismissedSugs]);
 
     // La revisión del turno (nombre automático, reglamento, repetidos):
     // núcleo (`revisionDelTurno`), la misma de la app.

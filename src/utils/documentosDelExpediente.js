@@ -460,3 +460,88 @@ export function estadoDelDocumento(doc, { conVencimiento = true } = {}) {
     if (vence) return { label: vence.label, variant: vence.variant, listo: vence.daysLeft >= 0 };
     return { label: 'Completo', variant: 'success', listo: true };
 }
+
+// ── Cómo llega cada papel (2026-10-15: vivía en el formulario del portal; la
+// app lo necesita para el expediente del teléfono) ──────────────────────────
+
+/* ── Documentos que no caben en un solo archivo ─────────────────────────────
+ *
+ * Pedido del usuario: «las licencias, carnés de las juntas tienen 2 lados… y el
+ * currículum tiene múltiples hojas». Hasta hoy cada documento era UN archivo, y
+ * el reverso de una licencia no tenía dónde ir: o se perdía, o alguien lo subía
+ * encima del frente —que además archiva el frente como si fuera una versión
+ * vieja, porque el portal lee un reemplazo donde hubo un agregado—.
+ *
+ * Son dos listas y no una porque son dos cosas distintas:
+ *
+ *  · DOS CARAS es un número FIJO y con nombre. Una licencia tiene frente y
+ *    reverso, no «hojas»: nombrarlos es lo que hace que alguien note que le
+ *    falta el reverso. Un botón «agregar hoja» sobre una licencia no dice nada.
+ *  · VARIAS HOJAS es abierto y sin nombre. Un currículum tiene las que tenga.
+ *
+ * El DUI no está acá: sus dos caras son categorías propias desde antes
+ * (`DUI_FRENTE`/`DUI_REVERSO`) porque además se leen juntas con un modelo, y
+ * mudarlo sería tocar ese circuito para no ganar nada. */
+export const DOS_CARAS = new Set([
+    'LICENCIA_MOTO', 'LICENCIA_CARRO',
+    'SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA',
+    'TARJETA_ISSS', 'TARJETA_AFP',
+]);
+/* ── Documentos que NO son de una sola persona ──────────────────────────────
+ *
+ * El acuse sellado del Ministerio de Trabajo por una recontratación nombra a
+ * TODOS los que entran en esa tanda: es un papel de la empresa, no de cada
+ * quien. Subirlo a una ficha y después repetirlo ficha por ficha era el único
+ * camino, y nada decía a quiénes cubre.
+ *
+ * Es una lista y no un `if` sobre `ACUSE_MTPS` porque el mecanismo es general:
+ * el día que aparezca otro papel colectivo se agrega acá y funciona. Hoy hay
+ * uno solo, que es el que nombró el usuario. */
+export const COMPARTIBLES = new Set(['ACUSE_MTPS']);
+
+export const VARIAS_HOJAS = new Set([
+    'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS', 'CONTRATO_REGENCIA',
+    'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION',
+    'CERTIFICACION_DISCAPACIDAD', 'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
+]);
+
+/* Los papeles que NO vencen.
+ *
+ * *«hay documentos que no vencen, el CV no vence, sólo se puede actualizar»*
+ * (usuario, 2026-08-30). Hasta hoy el campo de vencimiento salía en TODOS menos
+ * los cuatro del DUI, que lo apagaban con una bandera en cada llamada — o sea
+ * que la respuesta vivía repartida en los sitios donde se dibuja el documento,
+ * y un documento nuevo nacía con el campo puesto sin que nadie lo decidiera.
+ *
+ * Acá está la lista entera, en un solo lugar, y el criterio con el que se armó:
+ * **se quita el campo sólo cuando el papel no puede traer una fecha**. Un campo
+ * opcional de más es ruido; uno de menos pierde un dato, y encima lo saca del
+ * aviso de documentos por vencer.
+ *
+ *   · CV, solicitud de empleo, acuse del Ministerio — son constancias de un
+ *     hecho que ya pasó. No caducan: se reemplazan por una versión nueva.
+ *   · NIT, tarjeta del ISSS, tarjeta de la AFP — son números de afiliación de
+ *     por vida. La tarjeta se repone, el número no vence.
+ *   · DUI (entero, frente, reverso, y el documento alterno del menor) — el DUI
+ *     sí vence, pero su fecha vive en la FICHA (`dui_expiry`) al lado del
+ *     número, no en cada archivo.
+ *   · Contrato de trabajo — un contrato a plazo termina, y esa fecha ya es
+ *     `contract_end_date` de la ficha, con sus prórrogas. Pedirla otra vez acá
+ *     crearía dos verdades para el mismo hecho, que es exactamente lo que se
+ *     corrigió con el rótulo de los cargos.
+ *
+ * Los que SÍ quedan con campo son los que traen la fecha impresa: las dos
+ * licencias, los cuatro carnés de junta, las dos anualidades, la acreditación
+ * de dependiente, la certificación de discapacidad, el contrato de regencia y
+ * los dos exámenes médicos —el anual y el del menor—, que son justamente los
+ * que el aviso de vencimientos tiene que ver. */
+export const SIN_VENCIMIENTO = new Set([
+    'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS',
+    'COPIA_NIT', 'TARJETA_ISSS', 'TARJETA_AFP',
+    'DOCUMENTO_IDENTIDAD', 'DUI_COMPLETO', 'DUI_FRENTE', 'DUI_REVERSO',
+    // 2026-10-14: la oferta, la declaración ética y la inducción son
+    // constancias de un hecho; el certificado del seguro «es único y no
+    // cambia» (usuario) — lo que vence cada año es el PAGO de la póliza, que
+    // es de la empresa y se vigila aparte.
+    'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION', 'CERTIFICADO_SEGURO_VIDA',
+]);

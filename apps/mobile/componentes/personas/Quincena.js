@@ -11,8 +11,15 @@
 // que se ven —la sala elegida, o todas—: pide escribir CERRAR, porque desde ahí
 // la planilla se arma con esas horas. La suma sale del núcleo
 // (`resumenDeQuincena`).
+//
+// Igual que el portal: un turno extra declarado se puede CONFIRMAR tal cual,
+// EDITAR las horas antes de aplicarlo, o RECHAZAR con motivo —también el que
+// no declaró horario, que sólo marcó entrada—. Con `time_audit_descargar`, la
+// quincena se exporta en CSV (mismas columnas del portal, anotada como salida
+// de datos), y una quincena pasada y cerrada ofrece «Ver planilla».
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { approveTimesheetsBulk, closeQuincenaTimesheets, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra } from '@nucleo/data/attendanceAudit';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -30,6 +37,8 @@ import { BotonGrande } from '../formulario/Piezas';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { fallo, listo } from '../Progreso';
+import { compartirCsv } from '../fiscal/csv';
+import Hora from './Hora';
 import { Encabezado, PasoDePeriodo, PildoraDeCargo } from './Piezas';
 
 const h = (n) => `${(Number(n) || 0).toFixed(1)} h`;
@@ -43,13 +52,14 @@ function Cifra({ valor, rotulo, color }) {
   );
 }
 
-export default function Quincena({ empleados, sucursales, puedeEditar, usuario, onRecargar, salaNombre = null }) {
+export default function Quincena({ empleados, sucursales, puedeEditar, puedeDescargar = false, usuario, onRecargar, salaNombre = null }) {
   const anotar = useStaffStore((s) => s.appendAuditLog);
   const [inicio, setInicio] = useState(() => getCurrentQuincenaStart());
   const fin = getQuincenaEnd(inicio);
   const [ts, setTs] = useState(null);
   const [turnosExtra, setTurnosExtra] = useState([]);
   const [ocupado, setOcupado] = useState(null);
+  const [editando, setEditando] = useState(null); // { id, inicio, fin }
 
   const cargar = useCallback(async () => {
     const [{ data }, extra] = await Promise.all([
@@ -118,16 +128,18 @@ export default function Quincena({ empleados, sucursales, puedeEditar, usuario, 
       ], 'plain-text');
   };
 
-  const resolver = async (req, aprobar, motivo = '') => {
+  // `horas` = { inicio, fin } cuando se editaron antes de aplicar; si no, las declaradas.
+  const resolver = async (req, aprobar, motivo = '', horas = null) => {
     const m = req.metadata || {};
     setOcupado(req.id);
     try {
       const { error, yaResuelta } = await resolverTurnoExtra(req, aprobar, {
-        confirmedStart: aprobar ? m.declaredStart : null, confirmedEnd: aprobar ? m.declaredEnd : null,
+        confirmedStart: aprobar ? (horas?.inicio ?? m.declaredStart) : null, confirmedEnd: aprobar ? (horas?.fin ?? m.declaredEnd) : null,
         motivo, approverId: usuario?.id, approverName: usuario?.name,
       });
       if (error) throw error;
       setTurnosExtra((prev) => prev.filter((r) => r.id !== req.id));
+      setEditando(null);
       if (yaResuelta) fallo('Ya estaba resuelta', 'Alguien la decidió antes, así que no se volvió a aplicar.');
       else listo(aprobar ? 'Confirmado' : 'Rechazado', aprobar ? 'Turno extra aplicado al empleado.' : 'Solicitud rechazada.');
     } catch (err) {
@@ -141,6 +153,25 @@ export default function Quincena({ empleados, sucursales, puedeEditar, usuario, 
       resolver(req, false, String(motivo).trim());
     } },
   ], 'plain-text');
+
+  const aplicarEditado = (req) => {
+    if (!editando?.inicio || !editando?.fin) { fallo('Faltan las horas', 'Elige la entrada y la salida.'); return; }
+    resolver(req, true, '', { inicio: editando.inicio, fin: editando.fin });
+  };
+
+  // El mismo CSV del portal: una fila por persona que se ve, con su suma.
+  const exportar = () => {
+    const filas = porSala.flatMap(([k, lista]) => lista.map(({ e, r }) => [
+      nombreSala(k), e.name || '', e.role || '—', r.regular.toFixed(1), r.overtime.toFixed(1), r.late, r.absent, r.approved, r.total,
+    ]));
+    compartirCsv({
+      headers: ['Sucursal', 'Nombre', 'Cargo', 'Horas Regulares', 'Horas extra', 'Tardanzas (min)', 'Ausencias', 'Aprobados', 'Total días'],
+      rows: filas, nombre: `quincena-${inicio}`, modulo: 'asistencia', detalle: { quincena: inicio },
+    }).catch((e) => fallo('No se pudo exportar', mensajeAmigable(e)));
+  };
+  // Una quincena PASADA, con días y todo aprobado: como el portal, el atajo a la planilla.
+  const pasada = inicio < getCurrentQuincenaStart();
+  const quincenaCerrada = (ts || []).length > 0 && (ts || []).every((t) => t.status === 'APPROVED');
 
   return (
     <View style={{ gap: 12 }}>
@@ -168,6 +199,17 @@ export default function Quincena({ empleados, sucursales, puedeEditar, usuario, 
                 : <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '700', textAlign: 'center' }}>Quincena cerrada: todo aprobado</Text>}
             </View>
           ) : null}
+          {pasada && quincenaCerrada ? (
+            <View style={{ marginHorizontal: 16 }}>
+              <BotonGrande texto="Ver planilla" color={MARCA.verde} onPress={() => router.push('/nomina')} />
+            </View>
+          ) : null}
+          {puedeDescargar && porSala.length ? (
+            <Pressable onPress={exportar} accessibilityRole="button"
+              style={({ pressed }) => ({ alignSelf: 'center', minHeight: 44, paddingHorizontal: 18, borderRadius: 22, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}2E`, opacity: pressed ? 0.7 : 1 })}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Exportar CSV</Text>
+            </Pressable>
+          ) : null}
 
           {turnosExtra.length ? (
             <View style={{ gap: 8 }}>
@@ -185,17 +227,46 @@ export default function Quincena({ empleados, sucursales, puedeEditar, usuario, 
                             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{emp ? shortEmployeeName(emp) : (m.employeeName || 'Empleado')}</Text>
                             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                               {[m.date ? fechaTexto(m.date, { weekday: 'long', day: 'numeric', month: 'long' }) : null,
-                                m.declaredStart && m.declaredEnd ? `declara ${m.declaredStart} – ${m.declaredEnd}` : null,
+                                m.declaredStart && m.declaredEnd ? `declara ${m.declaredStart} – ${m.declaredEnd}` : 'no declaró horario — sólo registró entrada',
                                 m.pinOmitido ? 'sin PIN' : null].filter(Boolean).join(' · ')}
                             </Text>
                           </View>
                         </View>
-                        {puedeEditar && m.declaredStart && m.declaredEnd ? (
+                        {puedeEditar && editando?.id === req.id ? (
+                          <View style={{ gap: 8 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                              <Text style={{ color: colorSistema.texto2, fontSize: 14, width: 52 }}>Entra</Text>
+                              <Hora valor={editando.inicio} onCambiar={(v) => setEditando((x) => ({ ...x, inicio: v }))} />
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                              <Text style={{ color: colorSistema.texto2, fontSize: 14, width: 52 }}>Sale</Text>
+                              <Hora valor={editando.fin} onCambiar={(v) => setEditando((x) => ({ ...x, fin: v }))} />
+                            </View>
+                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                              <Pressable disabled={!!ocupado} onPress={() => aplicarEditado(req)}
+                                style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.verde, opacity: ocupado ? 0.5 : pressed ? 0.8 : 1 })}>
+                                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{ocupado === req.id ? '…' : 'Aplicar'}</Text>
+                              </Pressable>
+                              <Pressable onPress={() => setEditando(null)}
+                                style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed ? 0.8 : 1 })}>
+                                <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>Cancelar</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        ) : puedeEditar ? (
                           <View style={{ flexDirection: 'row', gap: 10 }}>
-                            <Pressable disabled={!!ocupado} onPress={() => resolver(req, true)}
-                              style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.verde, opacity: ocupado ? 0.5 : pressed ? 0.8 : 1 })}>
-                              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Confirmar</Text>
-                            </Pressable>
+                            {m.declaredStart && m.declaredEnd ? (
+                              <>
+                                <Pressable disabled={!!ocupado} onPress={() => resolver(req, true)}
+                                  style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.verde, opacity: ocupado ? 0.5 : pressed ? 0.8 : 1 })}>
+                                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Confirmar</Text>
+                                </Pressable>
+                                <Pressable disabled={!!ocupado} onPress={() => setEditando({ id: req.id, inicio: m.declaredStart, fin: m.declaredEnd })}
+                                  style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(105,41,196,0.22)', opacity: ocupado ? 0.5 : pressed ? 0.8 : 1 })}>
+                                  <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>Editar</Text>
+                                </Pressable>
+                              </>
+                            ) : null}
                             <Pressable disabled={!!ocupado} onPress={() => rechazar(req)}
                               style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: MARCA.rojo, opacity: ocupado ? 0.5 : pressed ? 0.8 : 1 })}>
                               <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '700' }}>Rechazar</Text>

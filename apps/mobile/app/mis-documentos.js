@@ -8,7 +8,11 @@
 // Como el portal, cada ficha trae sus datos —vigencia o período, días,
 // guardado o solicitado, emitido, vence, versiones anteriores
 // (`datosDelDocumento`)— y si vence pronto, el vencimiento ocupa el lugar del
-// estado. En el menú: estado y período.
+// estado. En el menú: estado y período; el período trae los atajos del portal
+// (este mes, mes anterior, 3 y 6 meses) y «Elegir fechas…», que abre el desde
+// y el hasta para mirar cualquier tramo del pasado. Debajo de la nota de quien
+// pidió va la RESPUESTA de quien resolvió (`approver_note`): en un rechazo es lo
+// único que hay para leer.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -22,7 +26,8 @@ import {
 import { grupoDeCategoria, nombreDelIconoDeCategoria } from '@nucleo/utils/documentosDelExpediente';
 import { getExpiryBadge } from '@nucleo/utils/documentExpiry';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
-import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { correrMes, fechaTexto, hoySV, mesSV, rangoDelMes, sumarDias } from '@nucleo/utils/fecha';
+import Fecha from '../componentes/formulario/Fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -41,6 +46,15 @@ const ICONO_TIPO = { DISABILITY: ['Stethoscope', MARCA.rojo], CERTIFICATE: ['Fil
 const COLOR_ESTADO = { EN_EXPEDIENTE: MARCA.azul, APPROVED: MARCA.verde, PENDING: MARCA.ambar, REJECTED: MARCA.rojo, CANCELLED: colorSistema.texto2 };
 const COLOR_VENCE = { danger: MARCA.rojo, warning: MARCA.ambar };
 
+// El período elegido como [desde, hasta] (AAAA-MM-DD, '' = sin tope).
+function rangoDelPeriodo(periodo, libreDesde, libreHasta) {
+  if (periodo === 'todo') return ['', ''];
+  if (periodo === 'mes') return rangoDelMes(mesSV());
+  if (periodo === 'anterior') return rangoDelMes(correrMes(mesSV(), -1));
+  if (periodo === 'libre') return [libreDesde || '', libreHasta || ''];
+  return [sumarDias(hoySV(), -Number(periodo)), ''];
+}
+
 export default function MisDocumentos() {
   const { user } = useAuth();
   const empleados = useStaffStore((s) => s.employees);
@@ -49,6 +63,8 @@ export default function MisDocumentos() {
   const [texto, setTexto] = useState('');
   const [estado, setEstado] = useState('');
   const [periodo, setPeriodo] = useState('todo');
+  const [libreDesde, setLibreDesde] = useState(() => sumarDias(hoySV(), -30));
+  const [libreHasta, setLibreHasta] = useState(() => hoySV());
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -62,13 +78,15 @@ export default function MisDocumentos() {
   const todos = useMemo(() => [...documentosDelExpediente(yo), ...(solicitudes || [])], [yo, solicitudes]);
   const pestanas = useMemo(() => pestanasDeDocumentos(todos), [todos]);
   const activa = pestanas.some((t) => t.key === pestana) ? pestana : 'ALL';
-  const desde = periodo === 'todo' ? '' : sumarDias(hoySV(), -Number(periodo));
-  const visibles = useMemo(() => filtrarDocumentos(todos, { pestana: activa, busqueda: texto, estado, desde }), [todos, activa, texto, estado, desde]);
+  const [desde, hasta] = rangoDelPeriodo(periodo, libreDesde, libreHasta);
+  const visibles = useMemo(() => filtrarDocumentos(todos, { pestana: activa, busqueda: texto, estado, desde, hasta }), [todos, activa, texto, estado, desde, hasta]);
   const grupos = [
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: '', onCambiar: setEstado,
       opciones: [{ id: '', label: 'Todos' }, ...Object.entries(ESTADO_DOC).map(([k, v]) => ({ id: k, label: v }))] },
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'todo', onCambiar: setPeriodo,
-      opciones: [{ id: 'todo', label: 'Todo' }, { id: '30', label: 'Últimos 30 días' }, { id: '90', label: 'Últimos 3 meses' }, { id: '365', label: 'Último año' }] },
+      opciones: [{ id: 'todo', label: 'Todo' }, { id: 'mes', label: 'Este mes' }, { id: 'anterior', label: 'Mes anterior' },
+        { id: '90', label: 'Últimos 3 meses' }, { id: '180', label: 'Últimos 6 meses' }, { id: '365', label: 'Último año' },
+        { id: 'libre', label: periodo === 'libre' ? `${fecha(libreDesde)} – ${fecha(libreHasta)}` : 'Elegir fechas…' }] },
   ];
 
   const abrir = async (d) => {
@@ -91,6 +109,22 @@ export default function MisDocumentos() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
+        {periodo === 'libre' ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <Vidrio radio={20}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: 12, flexWrap: 'wrap' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Desde</Text>
+                  <Fecha valor={libreDesde} hasta={libreHasta} onCambiar={setLibreDesde} />
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Hasta</Text>
+                  <Fecha valor={libreHasta} desde={libreDesde} hasta={hoySV()} onCambiar={setLibreHasta} />
+                </View>
+              </View>
+            </Vidrio>
+          </View>
+        ) : null}
         {pestanas.length > 2 ? (
           <Segmentos activa={activa} onCambiar={setPestana}
             opciones={pestanas.map((t) => ({ id: t.key, label: t.key === 'ALL' ? `Todos · ${t.cuenta}` : t.label.replace('Del expediente', 'Expediente') }))} />
@@ -111,7 +145,12 @@ export default function MisDocumentos() {
                   <Chip icono={icono} color={color} tamano={40} />
                   <View style={{ flex: 1, gap: 3 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{titulo}</Text>
-                    {sub ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{sub}</Text> : null}
+                    {sub ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={2}>{sub}</Text> : null}
+                    {d.approver_note ? (
+                      <Text style={{ color: colorSistema.texto, fontSize: 13 }} numberOfLines={3}>
+                        <Text style={{ fontWeight: '800', color: colorSistema.texto2 }}>RESPUESTA · </Text>{d.approver_note}
+                      </Text>
+                    ) : null}
                     <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                       {/* Como el portal: si vence pronto, el vencimiento ocupa el lugar del estado. */}
                       {vence ? <Pildora texto={vence.label} color={COLOR_VENCE[vence.variant] ?? MARCA.ambar} />

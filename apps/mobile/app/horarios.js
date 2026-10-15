@@ -379,6 +379,13 @@ export default function Horarios() {
         )}
 
         <GraficaTx stats={stats} dia={dia} nombreDelDia={nombreDia} />
+        {/* «Expandir análisis» del portal: el Monitor de ventas de la sala. */}
+        {sala ? (
+          <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/monitor-ventas', params: { sala: String(sala) } }); }} accessibilityRole="button"
+            style={({ pressed }) => ({ alignSelf: 'flex-end', marginHorizontal: 16, minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}2E`, opacity: pressed ? 0.7 : 1 })}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Expandir análisis ›</Text>
+          </Pressable>
+        ) : null}
 
         {puedeEditar && semana ? (
           <View style={{ marginHorizontal: 16, gap: 10, marginTop: 4 }}>

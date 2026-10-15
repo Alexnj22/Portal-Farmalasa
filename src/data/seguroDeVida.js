@@ -77,12 +77,16 @@ export async function guardarPoliza(poliza) {
 /**
  * Sube un archivo del seguro (la póliza o el listado de un pago) y devuelve la
  * URL formato-public que se guarda.
- * @param {File} archivo
+ * El `File` del navegador, o el «archivo de la app» del teléfono
+ * (`{ name, body: ArrayBuffer, contentType }`): el teléfono no tiene `File`.
+ * @param {File|{name: string, body: ArrayBuffer, contentType?: string}} archivo
  * @param {string} sub  'poliza' | `pago-<año>`
  */
 export async function subirArchivoDelSeguro(archivo, sub) {
     const limpio = String(archivo?.name || 'archivo').replace(/[^\w.-]+/g, '_');
-    return subirArchivo('documents', `${CARPETA}/${sub}/${Date.now()}_${limpio}`, archivo);
+    const ruta = `${CARPETA}/${sub}/${Date.now()}_${limpio}`;
+    if (archivo?.body) return subirArchivo('documents', ruta, archivo.body, { contentType: archivo.contentType });
+    return subirArchivo('documents', ruta, archivo);
 }
 
 /**

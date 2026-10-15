@@ -21,6 +21,82 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.9 — App: paridad de Personas con el portal
+
+### La app: alta y edición de personal completas, con enlace a la ficha existente
+
+Paridad de la app (grupo Personas): el formulario de empleado de la app ya
+tiene lo mismo que el del portal, en tres pestañas.
+- **Enlazar con la ficha existente** al dar de alta (recontratación o posible
+  duplicado): aviso de homónimo, el formulario se llena con su ficha y pide lo
+  protegido; no deja guardar hasta tenerlo. Al terminar dice si quedó sobre la
+  ficha, la contraseña temporal (copiada) o lo que faltó.
+- **Personal**: DUI por caras con el lector (o un solo archivo; documento
+  alterno del menor), lugar/fecha de expedición y vencimiento, nacionalidad,
+  estado civil, varios teléfonos, correos y direcciones con distrito, tipo de
+  sangre, condiciones crónicas, discapacidad, contactos de emergencia,
+  dependientes, cursos y vehículos.
+- **Laboral**: salas que cubre, contrato del Art. 23 (base legal, firma,
+  estipulación, medio, lugar y período de pago, prórrogas, plazos de firma y
+  del Ministerio), acreditaciones (con provisional/definitiva y el carné
+  digital de dependiente por QR), ISSS/AFP con NUP y herramientas entregadas.
+- **Nómina y acceso**: cuenta, usuario (con propuesta al cambiar el nombre),
+  «todavía no tiene carné», código con «Generar» y el PIN para copiar.
+- Al editar, sala, cargos, ingreso, tipo e inicio de contrato y salario se ven
+  bloqueados como en el portal («Acción RRHH»).
+- **Expediente** de la app: reverso de los documentos de dos caras, hojas de
+  los de varias, «Otros documentos», y elegir foto o PDF también en Android.
+- Núcleo: `utils/fichaDelEmpleado.js` (enlazar, listas, validaciones),
+  `traerLoQueFaltaDeLaFicha` en `data/employees.js` y `DOS_CARAS` /
+  `VARIAS_HOJAS` / `SIN_VENCIMIENTO` / `COMPARTIBLES` en
+  `documentosDelExpediente.js`; el formulario del portal los importa de ahí
+  (sin cambio de comportamiento).
+
+### La app: auditoría de tiempos, horarios, cargos y permisos como en el portal
+
+Paridad de la app (grupo Personas).
+- **Auditoría de tiempos**: CSV de la quincena (`time_audit_descargar`, anotado
+  como egreso); turnos extra con horas editables antes de aprobar y «Rechazar»
+  siempre disponible (también sin horas declaradas); atajo «Ver planilla» con
+  la quincena cerrada.
+- **Horarios**: sugerencias del catálogo por sala («Crear este turno» /
+  «Ignorar»); «Expandir análisis» abre el Monitor de ventas.
+- **Cargos**: exportar el organigrama como PNG.
+- **Permisos**: al delegar dice a quién le llegan las decisiones; cuántos
+  módulos ve cada cargo.
+- Núcleo: `edicionDeHorario.js` (`sugerenciasDelCatalogo`…) y
+  `permisosDeCargo.js` (`modulosQueVe`, `aQuienLlegaLaDelegacion`); el portal
+  usa los mismos. Un cargo sin superior ya no lista como «se hace cargo» a
+  empleados sin cargo.
+
+### La app: seguro de vida, bajas por sala y ficha de personal como en el portal
+
+Paridad de la app (grupo Personas).
+- **Personal**: franja y pantalla nativa del seguro de vida colectivo (póliza,
+  pago del año, solventes/sin cubrir, pagos anteriores, comprobante, registrar
+  o corregir un pago); las bajas van aparte al final de cada sala; el filtro
+  de sala incluye a quien la cubre (`assigned_branch_ids`).
+- **Ficha**: edad, tardanzas del mes, almuerzo/receso en el horario y
+  «Reimprimir el carné de plástico» (`carne_temporal` can_edit, AirPrint).
+- La impresión del teléfono dibuja CODE128 sin librería (los tickets en PDF
+  también llevan sus barras).
+- Núcleo: `subirArchivoDelSeguro` acepta el archivo de la app.
+
+### La app: mis documentos y encuestas como en el portal
+
+Paridad de la app (grupo Personas, `docs/AUDITORIA-PARIDAD-APP-2026-10-15.md`).
+- **Mis documentos**: cada solicitud muestra la respuesta de quien aprobó, y
+  el período ofrece meses anteriores, último año o un rango desde/hasta.
+- **Clima organizacional**: filtro por sucursal para quien ve todas; por
+  pregunta, el texto de cada opción con su cuenta; el bloque 2 con «Empleados
+  evaluando a su jefe/a de sala» y «Jefes evaluando a su jefe inmediato»; cada
+  bloque dice a quién va dirigido y cuántas preguntas tiene.
+- **Gestión de encuestas**: quien sólo lee puede abrir lo que respondió una
+  persona (con su comentario); puntaje por bloque de cada persona; la tarjeta
+  lleva descripción, año y el atajo «Ver análisis».
+- Núcleo: `climaLaboral.js` suma `SUPERVISOR_DE_JEFE`, `personasPorOpcion` y
+  `evaluacionDeJefes`; el portal usa los mismos.
+
 ## v2.1294.8 — App: paridad de Clientes y comercial con el portal
 
 ### App: marketing con flujo, pauta, galería, filtros, fechas especiales, versiones, duplicar e informe PDF

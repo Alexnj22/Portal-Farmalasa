@@ -110,3 +110,112 @@ export function mensajeDePublicacion(res, dejadasAparte = 0) {
         : frenadas > 0 ? ` · ${frenadas.toLocaleString()} no, vienen de una solicitud` : '';
     return { texto: `Se publicaron ${label}${cola}`, aviso: frenadas > 0 || dejadasAparte > 0 };
 }
+
+// ── El motivo de un ajuste a mano ───────────────────────────────────────────
+// Lo usan el diálogo del portal (`MotivoAjusteModal`) y la pantalla del
+// teléfono: los mismos frenos que aplica el CHECK de la base, dichos antes de
+// que la base los rechace — un error de guardado no explica qué falta.
+
+/** Qué le falta al motivo para poder guardarse, o `null` si está completo. */
+export function faltaEnMotivoDeAjuste({ motivo, nota = '', unidades = '', dias = '' }) {
+    if (!motivo) return null;
+    if (motivo === 'otro' && !String(nota).trim()) return 'Escribe qué pasa con este producto.';
+    if (motivo === 'cliente_fijo' && !(parseInt(unidades, 10) > 0 && parseInt(dias, 10) > 0)) {
+        return 'Faltan las unidades y cada cuántos días las compra.';
+    }
+    return null;
+}
+
+/** Lo que se escribe en `product_stock_params` al guardar el motivo. */
+export function patchDeMotivoDeAjuste({ motivo, nota = '', unidades = '', dias = '' }) {
+    const esClienteFijo = motivo === 'cliente_fijo';
+    return {
+        manual_motivo: motivo || null,
+        manual_nota:   motivo ? (String(nota).trim() || null) : null,
+        manual_cliente_unidades: esClienteFijo ? parseInt(unidades, 10) : null,
+        manual_cliente_dias:     esClienteFijo ? parseInt(dias, 10)     : null,
+    };
+}
+
+// ── Ordenar la tabla de una sala ────────────────────────────────────────────
+/** Las columnas por las que se puede ordenar, con su nombre. */
+export const ORDENES_DE_MINMAX = [
+    { key: 'product_name',  label: 'Producto' },
+    { key: 'laboratorio',   label: 'Laboratorio' },
+    { key: 'abc_xyz',       label: 'Clase ABC·XYZ' },
+    { key: 'current_stock', label: 'Existencia' },
+    { key: 'coverage',      label: 'Cobertura' },
+    { key: 'effective_min', label: 'MIN' },
+    { key: 'effective_max', label: 'MAX' },
+    { key: 'revenue_6m',    label: 'Ingreso 6 meses' },
+    { key: 'ventas',        label: 'Venta por día' },
+];
+
+/** Una copia de `filas` ordenada por `clave` (ver `ORDENES_DE_MINMAX`). */
+export function ordenarFilasDeMinMax(filas, clave, dir = 'asc') {
+    if (!clave) return filas;
+    const valor = (r) => {
+        switch (clave) {
+            case 'product_name':  return r.product_name || '';
+            case 'laboratorio':   return r.laboratorio_nombre || '';
+            case 'abc_xyz':       return `${r.draft_abc_class || r.abc_class || 'D'}${normXyz(r.draft_demand_variability || r.demand_variability)}`;
+            case 'current_stock': return Number(r.current_stock);
+            case 'coverage':      return r.daily_velocity > 0 ? Number(r.current_stock) / Number(r.daily_velocity) : Infinity;
+            case 'effective_min': return Number(r.effective_min);
+            case 'effective_max': return Number(r.effective_max);
+            case 'revenue_6m':    return Number(r.revenue_6m);
+            case 'ventas':        return Number(r.daily_velocity);
+            default:              return null;
+        }
+    };
+    return [...filas].sort((a, b) => {
+        const av = valor(a), bv = valor(b);
+        if (av == null || bv == null) return 0;
+        if (typeof av === 'string') return dir === 'asc' ? av.localeCompare(bv, 'es') : bv.localeCompare(av, 'es');
+        return dir === 'asc' ? av - bv : bv - av;
+    });
+}
+
+// ── Ocultar lo filtrado ─────────────────────────────────────────────────────
+/**
+ * Las filas que se escriben para ocultar productos en una sala. Upsert y no
+ * update: un producto sin movimiento puede no tener fila todavía.
+ *
+ * Oculto queda en -/- PUBLICADO, no en un borrador de 0/0: un borrador oculto
+ * es inalcanzable —la tabla no lista ocultos— y `calculate_stock_params` se
+ * salta la sucursal ENTERA ante un solo pendiente.
+ */
+export function filasParaOcultar(ids, erpSucursalId, ahora = new Date().toISOString()) {
+    return ids.map((id) => ({
+        erp_product_id: id,
+        erp_sucursal_id: erpSucursalId,
+        is_hidden: true,
+        min_units: null,
+        max_units: null,
+        draft_min: null,
+        draft_max: null,
+        draft_status: 'none',
+        updated_at: ahora,
+    }));
+}
+
+/**
+ * Lo que la sala cuenta para sus filtros de estado: los que piden datos,
+ * los que la regla de despacho traba, los A en falta, los ocultos y los
+ * ajustes a mano por estado. Los ocultos no entran en los demás.
+ */
+export function conteosDeEstadoDeLaSala(filas) {
+    const ajustes = {};
+    let sinDatos = 0, riesgo = 0, criticoA = 0, ocultos = 0, ajustadas = 0, publicado = false, bodegaPendientes = 0;
+    for (const r of filas ?? []) {
+        if (r.is_hidden) { ocultos++; continue; }
+        if (r.published_by != null) publicado = true;
+        if (r.draft_status === 'sparse_data') sinDatos++;
+        if (r.draft_status === 'pending' && r._erp_sucursal_id === 6) bodegaPendientes++;
+        if (hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo)) riesgo++;
+        if (r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')) criticoA++;
+        const est = estadoAjuste(r);
+        if (est) { ajustadas++; ajustes[est] = (ajustes[est] ?? 0) + 1; }
+    }
+    return { sinDatos, riesgo, criticoA, ocultos, ajustadas, ajustes, publicado, bodegaPendientes };
+}

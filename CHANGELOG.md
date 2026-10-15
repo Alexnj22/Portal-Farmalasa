@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.2 — App: Min·Máx con motivo del ajuste, 0 en todas las salas e historial
+
+Paridad de la app con el portal en Min·Máx (auditoría del 2026-10-15):
+
+- Pantallas nuevas: motivo del ajuste a mano (`minmax-motivo`), «0 en todas
+  las salas» con su porqué obligatorio (`minmax-cero`) e historial de cambios
+  del par —vigente, motivo, solicitud, firmas— (`minmax-historial`).
+- Revisión de la sala: tarjetas de costo, filtro de estado (poca venta, regla
+  de despacho, crítico A, ocultos, ajustes a mano), orden por columna, la
+  regla de despacho con su sugerencia, publicar un solo borrador, ocultar lo
+  filtrado, restaurar ocultos, recalcular todas las sucursales, el aviso de
+  Bodega y el equivalente en la presentación principal.
+- Núcleo: los rótulos del historial (`HISTORIAL_MINMAX_META`), el freno y lo
+  que se escribe del motivo, el orden, las filas para ocultar, los conteos de
+  estado y el recálculo de todas las salas pasan al núcleo; el portal los usa
+  sin cambiar de comportamiento.
+
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 
 - Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»

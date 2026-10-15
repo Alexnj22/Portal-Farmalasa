@@ -11,6 +11,7 @@ import { Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPendingApprovalRequests } from '@nucleo/data/dashboard';
+import { fetchPresentesPorDia } from '@nucleo/data/employees';
 import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import { getTodayAttendanceStatus } from '@nucleo/utils/helpers';
 import { empleadosActivos, presentesEl, problemaDeSucursal } from '@nucleo/utils/inicio';
@@ -32,16 +33,44 @@ const DIAS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
 // ── Asistencia de la semana ─────────────────────────────────────────────────
 // Cuántas personas marcaron cada día de los últimos siete. Hoy va resaltado.
+// Como el portal, se puede ir a semanas anteriores (‹ ›): esas no están en la
+// copia del store (trae los últimos días), así que se leen de la base
+// (`fetchPresentesPorDia`, paginada).
 export function Tendencia({ ctx }) {
   const emps = deLaSala(ctx, 'dash_trend');
+  const [atras, setAtras] = useState(0);
   const hoy = hoySV();
-  const dias = Array.from({ length: 7 }, (_, i) => sumarDias(hoy, i - 6));
-  const cuentas = dias.map((d) => presentesEl(emps, d));
+  const fin = sumarDias(hoy, -7 * atras);
+  const dias = Array.from({ length: 7 }, (_, i) => sumarDias(fin, i - 6));
+  const { dato: viejas, cargando } = useDato(atras ? `asistencia:${dias[0]}` : null, async () => {
+    const r = await fetchPresentesPorDia(dias[0], dias[6]);
+    if (!r) throw new Error('No se pudo leer la asistencia');
+    return r;
+  });
+  const ids = new Set(emps.map((e) => String(e.id)));
+  const cuentas = atras
+    ? dias.map((d) => [...(viejas?.[d] || [])].filter((id) => ids.has(id)).length)
+    : dias.map((d) => presentesEl(emps, d));
   const max = Math.max(1, ...cuentas, emps.length);
   const vacia = cuentas.every((c) => !c);
+  const rango = `${fechaTexto(dias[0], { day: 'numeric', month: 'short' })} – ${fechaTexto(dias[6], { day: 'numeric', month: 'short' })}`;
+  const flecha = (texto, onPress, deshabilitada) => (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} disabled={deshabilitada} hitSlop={8}
+      accessibilityRole="button" accessibilityLabel={texto === '‹' ? 'Semana anterior' : 'Semana siguiente'}
+      style={({ pressed }) => ({ minWidth: 36, minHeight: 32, alignItems: 'center', justifyContent: 'center', opacity: deshabilitada ? 0.3 : pressed ? 0.6 : 1 })}>
+      <Text style={{ color: MARCA.azulClaro, fontSize: 22, fontWeight: '600' }}>{texto}</Text>
+    </Pressable>
+  );
   return (
     <Widget titulo="Asistencia de la semana" icono="Activity" color={MARCA.azul} onAbrir={ctx.puede('time_audit') ? () => ctx.abrir('/auditoria-de-tiempos') : null}>
-      {vacia ? <Vacio texto="Sin marcaciones esta semana" /> : (
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+        {flecha('‹', () => setAtras((n) => n + 1), false)}
+        <Pressable onPress={() => setAtras(0)} disabled={!atras} style={{ flex: 1 }}>
+          <Text style={{ textAlign: 'center', color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{atras ? `${rango} · volver a esta semana` : 'Esta semana'}</Text>
+        </Pressable>
+        {flecha('›', () => setAtras((n) => Math.max(0, n - 1)), !atras)}
+      </View>
+      {atras && cargando && !viejas ? <Esqueleto lineas={3} /> : vacia ? <Vacio texto={atras ? 'Sin marcaciones en esa semana' : 'Sin marcaciones esta semana'} /> : (
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 110 }}>
           {dias.map((d, i) => {
             const esHoy = d === hoy;

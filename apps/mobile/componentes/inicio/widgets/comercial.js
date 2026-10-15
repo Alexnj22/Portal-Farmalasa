@@ -1,6 +1,7 @@
 // Los widgets de la pestaña Comercial, nativos — los del tablero del portal
 // (`PESTANAS_TEMATICAS.comercial`): facturación de hoy, cotizaciones, los
 // productos que más venden, quién está vendiendo y los cortes de caja.
+import { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { fetchRecentCotizaciones, fetchTodayInvoicesSummary } from '@nucleo/data/dashboard';
 import { fetchTopProductosDelMes } from '@nucleo/data/ventas';
@@ -10,12 +11,16 @@ import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '@nucleo/data/b
 import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { hora12 } from '@nucleo/utils/hora';
 import { conTramoPorSalaYDia, resumenDeCortes } from '@nucleo/utils/cortesDiagnostico';
-import { formatMoney } from '@nucleo/utils/formatNumber';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { ORDENES_RANKING, SUFIJO_RANKING, rankingDeVendedores } from '@nucleo/utils/metasUtils';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import Widget, { Esqueleto, Renglon, Vacio } from '../Widget';
 import { useDato, datos } from '../useDato';
 import { colorSistema } from '../../Formulario';
 import { MARCA } from '../marca';
+import Segmentos from '../../Segmentos';
+import SelectorDeSala, { salasDeVenta } from '../SelectorDeSala';
+import { BRANCH_A_ERP, ERP_ORDEN } from '@nucleo/constants/erp';
 
 const dinero0 = (v) => formatMoney(v, { decimales: 0 });
 
@@ -113,33 +118,58 @@ export function TopProductos({ ctx }) {
 }
 
 // ── Quién está vendiendo ────────────────────────────────────────────────────
-// El ranking del mes. Sin el permiso de ver montos, cada quien aparece con su
-// parte de la venta de la sala (igual que el portal).
+// El ranking del mes con las cuentas del núcleo (`rankingDeVendedores`, las
+// mismas de `RankingVendedores` del portal): «Total» o «Por día trabajado»
+// (y «Por hora» cuando el horario publicado alcanza a toda la lista), el
+// PROMEDIO de la sala —la raya de cada barra— y en rojo quien va bajo él.
+// Sin `dash_vendedores_vista_completa`, cada quien aparece con su parte de la
+// venta de la sala y el ticket de la sala en vez del promedio en dólares.
 export function Vendedores({ ctx }) {
   const todas = ctx.getScope?.('dash_vendedores') === 'ALL';
   const { dato, cargando } = useDato(`vendedores:${todas ? 'todas' : ctx.sala}`, () => fetchMesEnCurso(todas ? ctx.sala : null));
   const montos = ctx.puede('dash_vendedores_vista_completa');
-  const filas = [...(dato?.vendedores || [])].map((v) => ({ ...v, venta: Number(v.venta) || 0 })).sort((a, b) => b.venta - a.venta);
-  const total = filas.reduce((s, v) => s + v.venta, 0) || 1;
-  const max = filas[0]?.venta || 1;
+  const [orden, setOrden] = useState('total');
+  const r = useMemo(() => rankingDeVendedores(dato, orden), [dato, orden]);
+  const opciones = ORDENES_RANKING.filter((o) => o.value !== 'hora' || r.horaDisponible).map((o) => ({ id: o.value, label: o.label === 'Por día' ? 'Por día trabajado' : o.label }));
+  const sufijo = SUFIJO_RANKING[r.ordenActivo];
   return (
     <Widget titulo="Quién está vendiendo" icono="Users" color={MARCA.verde} onAbrir={ctx.puede('metas') ? () => ctx.abrir('/metas') : null}>
-      {cargando && !dato ? <Esqueleto lineas={4} /> : filas.length ? (
+      {cargando && !dato ? <Esqueleto lineas={4} /> : r.filas.length ? (
         <View style={{ gap: 9 }}>
-          {filas.slice(0, 6).map((v, i) => (
-            <View key={`${v.nombre}-${i}`} style={{ gap: 4 }}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Text style={{ width: 16, color: i < 2 ? MARCA.verde : colorSistema.texto2, fontSize: 13, fontWeight: '800' }}>{i + 1}</Text>
-                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>{v.nombre}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
-                  {montos ? dinero0(v.venta) : `${Math.round((v.venta / total) * 100)}%`}
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+            {montos
+              ? `${r.filas.length} persona${r.filas.length === 1 ? '' : 's'} · promedio ${formatMoney(r.promedio)}${sufijo}${dato?.promedio_ticket != null ? ` · ticket ${formatMoney(dato.promedio_ticket)}` : ''}`
+              : dato?.promedio_ticket != null ? `Ticket de la sala ${formatMoney(dato.promedio_ticket)}` : `${r.filas.length} persona${r.filas.length === 1 ? '' : 's'}`}
+          </Text>
+          {opciones.length > 1 ? <Segmentos margen={0} activa={r.ordenActivo} onCambiar={setOrden} opciones={opciones} /> : null}
+          {r.filas.slice(0, 6).map((v, i) => {
+            const valor = v[r.clave];
+            const bajo = valor < r.promedio;
+            const top = i < 2;
+            const ancho = r.maximo > 0 ? Math.max(4, (valor / r.maximo) * 100) : 0;
+            const marca = r.maximo > 0 ? Math.min(100, (r.promedio / r.maximo) * 100) : 0;
+            return (
+              <View key={`${v.employee_id}-${v.sala}-${i}`} style={{ gap: 4 }}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Text style={{ width: 16, color: top ? MARCA.verde : bajo ? MARCA.rojo : colorSistema.texto2, fontSize: 13, fontWeight: '800' }}>{i + 1}</Text>
+                  <Text style={{ flex: 1, color: bajo ? MARCA.rojo : colorSistema.texto, fontSize: 14 }} numberOfLines={1}>
+                    {v.nombre}{todas && v.sala ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{` · ${v.sala}`}</Text> : null}
+                  </Text>
+                  <Text style={{ color: bajo ? MARCA.rojo : colorSistema.texto2, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                    {montos ? dinero0(valor) : formatPct(r.total > 0 ? (valor / r.total) * 100 : 0)}
+                  </Text>
+                </View>
+                <Text style={{ marginLeft: 24, color: colorSistema.texto2, fontSize: 11 }}>
+                  {`${v.dias} día${v.dias === 1 ? '' : 's'} · ${bajo ? 'bajo el promedio' : 'sobre el promedio'}`}
                 </Text>
+                <View style={{ marginLeft: 24, height: 5, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.18)' }}>
+                  <View style={{ width: `${ancho}%`, height: '100%', borderRadius: 3, backgroundColor: top ? MARCA.verde : bajo ? MARCA.rojo : MARCA.azul }} />
+                  <View style={{ position: 'absolute', left: `${marca}%`, top: -3, bottom: -3, width: 2, borderRadius: 1, backgroundColor: colorSistema.texto }} />
+                </View>
               </View>
-              <View style={{ marginLeft: 24, height: 5, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.18)' }}>
-                <View style={{ width: `${Math.max(4, (v.venta / max) * 100)}%`, height: '100%', borderRadius: 3, backgroundColor: i < 2 ? MARCA.verde : MARCA.azul }} />
-              </View>
-            </View>
-          ))}
+            );
+          })}
+          {r.filas.length > 6 ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`y ${r.filas.length - 6} más · la raya de cada barra es el promedio`}</Text> : null}
         </View>
       ) : <Vacio texto="Sin ventas este mes" />}
     </Widget>
@@ -148,16 +178,20 @@ export function Vendedores({ ctx }) {
 
 // ── Cortes de caja del mes ──────────────────────────────────────────────────
 // Cuántos cuadraron, cuántos sobraron y cuántos faltaron, con el mismo juez
-// del portal (`conTramoPorSalaYDia` + `resumenDeCortes`).
+// del portal (`conTramoPorSalaYDia` + `resumenDeCortes`). Con alcance TODAS,
+// como el tablero del portal, se elige la sala (vacío = todas).
 export function Cortes({ ctx }) {
   const hoy = hoySV();
   const todas = ctx.getScope?.('dash_cortes_sala') === 'ALL';
+  const [elegida, setElegida] = useState('');
   const { dato, cargando } = useDato(`cortes-mes:${hoy}`, async () => fetchCortesResumen({ desde: `${hoy.slice(0, 7)}-01`, hasta: hoy }));
-  const deLaSala = (dato || []).filter((c) => todas || String(c.branch_id) === String(ctx.sala));
+  const salas = salasDeVenta(ctx.sucursales, ERP_ORDEN.map((erp) => Object.keys(BRANCH_A_ERP).find((b) => BRANCH_A_ERP[b] === erp)).filter(Boolean));
+  const deLaSala = (dato || []).filter((c) => (todas ? (!elegida || String(c.branch_id) === elegida) : String(c.branch_id) === String(ctx.sala)));
   const r = resumenDeCortes(conTramoPorSalaYDia(deLaSala));
   return (
     <Widget titulo="Cortes de caja del mes" icono="Wallet" color={MARCA.verde} cuenta={r.pendientes}
       onAbrir={ctx.puede('cortes_caja') ? () => ctx.abrir('/cortes') : null}>
+      {todas ? <SelectorDeSala salas={salas} activa={elegida} onCambiar={setElegida} todas /> : null}
       {cargando && !dato ? <Esqueleto lineas={2} /> : r.vivos ? (
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>

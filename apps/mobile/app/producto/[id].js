@@ -2,7 +2,9 @@
 // portal (`ExpandedProductRow`) más la consulta de existencias de la app:
 //
 //   · la foto grande (y, con el permiso del catálogo, tomarla o cambiarla);
-//   · cuánto hay, en qué salas y en qué lotes —lo que vence primero, primero—;
+//   · cuánto hay, en qué salas y en qué lotes —lo que vence primero, primero—,
+//     y «Pedir» en cada sala que no es la propia, incluida el área de vencidos
+//     de Bodega (origen `6:V`), como el «Solicitar» de la consulta del portal;
 //   · el aviso de «pérdida» o «margen bajo <15 %» (núcleo: `alertaDeMargen`);
 //   · cada presentación con su costo y factor, sus precios y su margen;
 //   · la ficha: devolutivo/ND, categoría, principios activos y ubicaciones;
@@ -25,7 +27,8 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { COLUMNAS_DE_PRECIO, alertaDeMargen, nivelesVisibles, specialLossLabel } from '@nucleo/utils/preciosDeProducto';
 import { lotesEnUnidades, unidadesDe } from '@nucleo/utils/unidadesInventario';
 import { diasHasta, fmtVence } from '@nucleo/utils/pedirTraslado';
-import { ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
+import { BRANCH_A_ERP, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
+import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { formatQty as formatNumber } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -52,6 +55,15 @@ const colorVence = (d) => {
 
 const uds = (n) => `${formatNumber(n)} ${n === 1 ? 'unidad' : 'unidades'}`;
 
+function BotonPedir({ onPress }) {
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} hitSlop={6} accessibilityRole="button"
+      style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999, backgroundColor: `${MARCA.azulClaro}26`, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Pedir</Text>
+    </Pressable>
+  );
+}
+
 function Titulo({ texto }) {
   return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16, marginTop: 6 }}>{texto}</Text>;
 }
@@ -65,12 +77,14 @@ const textoUbicacion = (u) => {
 export default function Producto() {
   const { id, nombre } = useLocalSearchParams();
   const productId = Number(id);
-  const { maxPriceLevel, hasPermission } = useAuth();
+  const { maxPriceLevel, hasPermission, user } = useAuth();
   const conCosto = hasPermission('productos_ver_costos');
   const puedeEditar = hasPermission('productos_tab_catalogo');
   const branches = useStaffStore((s) => s.branches);
   const [ficha, setFicha] = useState(null);
   const [filas, setFilas] = useState(null);
+  const [vencidas, setVencidas] = useState([]);
+  const miErp = BRANCH_A_ERP[salaDelUsuario(user)] ?? null;
   const [detalle, setDetalle] = useState(null);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [error, setError] = useState(null);
@@ -88,6 +102,7 @@ export default function Producto() {
         fetchUbicacionesDeProducto(productId),
       ]);
       setFilas((inv || []).filter((x) => !x.is_vencidos));
+      setVencidas((inv || []).filter((x) => x.is_vencidos && unidadesDe(x) > 0));
       setFicha(f?.data ?? null);
       const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }, { data: precioHistory }] = det;
       setDetalle({ precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [], precioHistory: precioHistory || [] });
@@ -125,6 +140,10 @@ export default function Producto() {
       return { id: s, nombre: ERP_NAMES[s] ?? `Sala ${s}`, lotes, unidades: lotes.reduce((a, l) => a + l.unidades, 0) };
     }).filter((s) => s.unidades > 0);
   }, [filas]);
+
+  const vencidosDeBodega = useMemo(() => lotesEnUnidades(vencidas).filter((l) => l.unidades > 0), [vencidas]);
+  // Pedir a otra sala con el producto y el estante ya elegidos.
+  const pedir = (origen) => router.push({ pathname: '/pedir-traslado', params: { producto: String(productId), descripcion: ficha?.nombre ?? filas?.[0]?.descripcion ?? nombre ?? '', origen } });
 
   const niveles = useMemo(() => nivelesVisibles(maxPriceLevel), [maxPriceLevel]);
   const alerta = useMemo(() => (conCosto && detalle ? alertaDeMargen(detalle.precios, niveles) : { peor: null, especiales: [] }), [conCosto, detalle, niveles]);
@@ -204,8 +223,9 @@ export default function Producto() {
             </Vidrio>
             {salas.length ? salas.map((s) => (
               <Vidrio key={s.id} radio={20}><View style={{ paddingHorizontal: 14 }}>
-                <View style={{ flexDirection: 'row', paddingVertical: 12, alignItems: 'baseline' }}>
+                <View style={{ flexDirection: 'row', paddingVertical: 12, alignItems: 'center', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{s.nombre}</Text>
+                  {miErp && Number(s.id) !== Number(miErp) ? <BotonPedir onPress={() => pedir(String(s.id))} /> : null}
                   <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatNumber(s.unidades)}</Text>
                 </View>
                 {s.lotes.map((l) => (
@@ -219,6 +239,22 @@ export default function Producto() {
             )) : (
               <Text style={{ color: colorSistema.texto2, textAlign: 'center' }}>Sin existencias en ninguna sala.</Text>
             )}
+            {vencidosDeBodega.length ? (
+              <Vidrio radio={20} tinte={`${MARCA.rojo}14`}><View style={{ paddingHorizontal: 14 }}>
+                <View style={{ flexDirection: 'row', paddingVertical: 12, alignItems: 'center', gap: 10 }}>
+                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>Bodega · Área de vencidos</Text>
+                  {miErp && Number(miErp) !== 6 ? <BotonPedir onPress={() => pedir('6:V')} /> : null}
+                  <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatNumber(vencidosDeBodega.reduce((a, l) => a + l.unidades, 0))}</Text>
+                </View>
+                {vencidosDeBodega.map((l) => (
+                  <View key={l.clave} style={{ flexDirection: 'row', gap: 10, paddingVertical: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+                    <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 14 }}>{l.lote ? `Lote ${l.lote}` : 'Sin lote'}</Text>
+                    <Text style={{ color: colorVence(l.vence), fontSize: 14 }}>{l.vence ? `${diasHasta(l.vence) < 0 ? 'venció' : 'vence'} ${fmtVence(l.vence)}` : 'sin fecha'}</Text>
+                    <Text style={{ color: colorSistema.texto, fontSize: 14, fontVariant: ['tabular-nums'], minWidth: 44, textAlign: 'right' }}>{formatNumber(l.unidades)}</Text>
+                  </View>
+                ))}
+              </View></Vidrio>
+            ) : null}
             {salas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>{uds(total)} · lo que vence primero va primero</Text> : null}
             <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/minmax-producto', params: { producto: String(productId), nombre: titulo } }); }}
               hitSlop={8} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}>

@@ -21,7 +21,7 @@
 // quién firmó (con su cara y la hora), los cobros de crédito uno por uno con su
 // hora y «Qué revisar» (`sugerenciasDeCorte`). Todo sale del núcleo
 // (`cortesDiagnostico`), las mismas funciones del portal.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -55,9 +55,11 @@ const TONO = { ok: MARCA.verde, sobra: MARCA.ambar, falta: MARCA.rojo };
 const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : n < 0 ? `−${formatMoney(Math.abs(n))}` : formatMoney(0));
 
 export default function Corte() {
-  // `accion`: desde la tarjeta del aviso, con Confirmar o Descartar ya
-  // apretado — se arranca UNA vez, cuando el corte cargó y se puede firmar.
-  const { id, fecha: fechaParam, accion: accionParam } = useLocalSearchParams();
+  // `accion` (confirmar | descartar): llegó desde el botón de la tarjeta de la
+  // lista, como el «Confirmar»/«Descartar» de `TarjetaCorte` del portal. Si
+  // cuadra, confirmar es de un clic; si no, se lee la diferencia acá primero.
+  const { id, fecha: fechaParam, accion } = useLocalSearchParams();
+  const [accionHecha, setAccionHecha] = useState(false);
   const { user, hasPermission, getScope } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const [corte, setCorte] = useState(undefined);
@@ -189,15 +191,14 @@ export default function Corte() {
       [{ text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: confirmar }]);
   };
 
-  const accionArrancada = useRef(false);
+  // La acción pedida desde la tarjeta: una sola vez, y sólo si sigue pendiente.
   useEffect(() => {
-    if (accionArrancada.current || !corte || !accionParam) return;
-    accionArrancada.current = true;
+    if (accionHecha || !corte || !accion) return;
+    setAccionHecha(true); // eslint-disable-line react-hooks/set-state-in-effect -- se consume una vez
     if (!puedeFirmar) return;
-    if (accionParam === 'descartar') setModo('descartar');
-    else if (accionParam === 'confirmar') alConfirmar();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corte, accionParam, puedeFirmar]);
+    if (accion === 'confirmar' && !sinConteo) alConfirmar();
+    else if (accion === 'descartar') { setMotivo(MOTIVOS[0]); setModo('descartar'); }
+  }, [accion, accionHecha, corte]); // eslint-disable-line react-hooks/exhaustive-deps -- alConfirmar y puedeFirmar salen del mismo corte
 
   if (corte === undefined) return <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Corte' }} />;
   if (corte === null) {

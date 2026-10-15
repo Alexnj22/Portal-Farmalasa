@@ -11,7 +11,8 @@
 // salario devuelve vacío en vez de error.
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
-import { diaSV } from '../utils/fecha';
+import { diaSV, sumarDias } from '../utils/fecha';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 // ── Catálogo educativo/médico (upsert best-effort, ignora duplicados) ──────
 
@@ -231,6 +232,26 @@ export function insertEmployeeEventRaw(payload) {
 
 export function fetchAttendanceSince(sinceIso) {
     return supabase.from('attendance').select('*').gte('timestamp', sinceIso);
+}
+
+/**
+ * Quiénes marcaron cada día entre `desde` y `hasta` (AAAA-MM-DD, días de El
+ * Salvador): `{ 'AAAA-MM-DD': Set(employee_id) }`. Es lo que necesita
+ * «Asistencia de la semana» para ir a semanas anteriores: la copia del store
+ * sólo trae los últimos días. Una semana de toda la red pasa de 1000
+ * marcaciones, así que se pagina (`fetchAllRows`); devuelve null si falla.
+ */
+export async function fetchPresentesPorDia(desde, hasta) {
+    // El día de El Salvador empieza a las 06:00 UTC (UTC−6, sin horario de verano).
+    const filas = await fetchAllRows(() => supabase.from('attendance').select('id, employee_id, timestamp')
+        .gte('timestamp', `${desde}T06:00:00Z`).lt('timestamp', `${sumarDias(hasta, 1)}T06:00:00Z`).order('id'), { completo: true });
+    if (!filas) return null;
+    const porDia = {};
+    for (const a of filas) {
+        const dia = diaSV(a.timestamp);
+        (porDia[dia] ??= new Set()).add(String(a.employee_id));
+    }
+    return porDia;
 }
 
 /**

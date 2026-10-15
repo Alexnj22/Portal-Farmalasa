@@ -32,7 +32,7 @@ export async function leerVentasDeHoy(fecha) {
 const suave = (p) => Promise.resolve().then(() => p).catch((e) => { console.warn('inicio', e?.message ?? e); return null; });
 
 export default function useDatosInicio() {
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, getScope } = useAuth();
   const cargarAsistencia = useStaffStore((s) => s.loadAttendanceLastDays);
   // `hoy` desde el primer dibujo: las secciones cuentan «de hoy» antes de que
   // lleguen los datos.
@@ -57,9 +57,11 @@ export default function useDatosInicio() {
       // Siete días: los usa «Asistencia de la semana».
       suave(cargarAsistencia?.(7)),
     ]);
-    setDatos({ hoy, ventas, solicitudes, traslados, cortes, meta, ausencias, facturas, cotizaciones });
+    // Con alcance TODAS la meta la lee el widget, por la sala que se elija.
+    const metaTodas = puede('dash_meta_sala') && getScope?.('dash_meta_sala') === 'ALL';
+    setDatos({ hoy, ventas, solicitudes, traslados, cortes, meta, metaTodas, ausencias, facturas, cotizaciones });
     setCargando(false);
-  }, [user, puede, cargarAsistencia]);
+  }, [user, puede, getScope, cargarAsistencia]);
 
   useEffect(() => { cargar(); }, [cargar]);
   return { datos, cargando, recargar: cargar, puede };

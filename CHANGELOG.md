@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.5 — App: paridad de Caja y ventas con el portal
+
+### App: Cortes con las fichas de apertura y confirmar desde la tarjeta
+
+- App, Cortes: «Las cajas» arriba de la lista — quién abrió cada caja, el
+  cruce con su marcación, la venta del día y el efectivo del cajón (montos
+  sólo con alcance todas, como el portal).
+- Una tarjeta pendiente trae «Confirmar» (de un clic si cuadra) y «Descartar».
+- Núcleo: las cuentas de las fichas pasan de `FichasDeCaja.jsx` a
+  `utils/fichasDeCaja.js`; el portal las importa de ahí sin cambio visible.
+
+### App: Ventas con período libre, puntos, orden, tipo de precio y cambios
+
+- App, Ventas: período libre («Fechas…»), filtro por estado de los puntos y
+  «Canjeó puntos» (también tocando la cifra de puntos canjeados), el estado de
+  los puntos en cada fila, ordenar por columna y el aviso de los cobros que no
+  son venta de productos.
+- La venta: el tipo de precio cobrado en cada renglón y los «Cambios
+  registrados» (forma de pago, sello) con el valor anterior y el nuevo.
+- Lo que se vendió de un producto: el nivel cobrado, «precio cambió» y los
+  filtros por tipo de documento. Productos: cifra y columna de costo y la
+  última venta; Vendedores: variación de facturas contra el período anterior.
+- Núcleo: `detectTier`, `tierDelRenglon`, los rótulos del changelog y
+  `lineasDelDrill` pasan de `VentasView` a `utils/ventasPeriodo` (el portal los
+  importa de ahí, sin cambio de comportamiento).
+
+### App: Inicio con selector de sala, semanas anteriores y ranking por día
+
+- App, Inicio: «Meta del mes» y «Cortes de caja del mes» con selector de sala
+  cuando el alcance es TODAS (como el tablero del portal).
+- «Asistencia de la semana» va a semanas anteriores; el núcleo suma
+  `fetchPresentesPorDia` (paginada: una semana de la red pasa de 1000 marcas).
+- «Quién está vendiendo»: total / por día trabajado (y por hora), promedio de
+  la sala y quién va bajo él, con las cuentas de `rankingDeVendedores`.
+
 ## v2.1294.4 — App: paridad de Sistema, solicitudes y marco con el portal
 
 ### La app: diagnóstico de la sucursal, orden de la auditoría, franja del portal y estado de los datos

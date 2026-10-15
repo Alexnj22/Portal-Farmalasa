@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.3 — Rutas en la app: no se pudo entregar, cerrar con motivo, cifras y filtros
+
+- App, ruta de reparto: quien gestiona rutas puede marcar «No se pudo
+  entregar» una parada (con motivo; la sala vuelve a quedar disponible) y
+  «Cerrar ruta» con paradas pendientes (con motivo), como el portal
+  (`marcarParadaNoEntregada`, `cerrarRutaConMotivo`).
+- App: iniciar una ruta pendiente y marcar entregada una parada también para
+  quien gestiona rutas (antes sólo el conductor); «Volver a base» cuando no
+  quedan pendientes aunque se hayan devuelto paradas.
+- App, lista de rutas: cifras «En la calle / Por salir / Completadas hoy» y
+  filtros de estado, período y conductor.
+- Núcleo: `cifrasDeRutas`, `completadasEnPeriodo`, `conductoresDeRutas` y
+  `PERIODOS_RUTAS` mudados de `TabRutas`; el portal los usa igual.
+
 ## v2.1292.2 — Gestión de stock en la app: armar envío nativo, descargas y filtros del portal
 
 - App, Gestión de stock → «Sin venta»: «Armar envío» ya no abre el portal.

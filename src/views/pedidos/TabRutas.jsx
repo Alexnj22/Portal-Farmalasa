@@ -23,7 +23,10 @@ import Badge from '../../components/common/Badge';
 import { iniciarRuta, completarRuta, updateRutaPedidoEntregado } from '@nucleo/data/pedidos';
 import { fetchRutasDeEntrega } from '@nucleo/data/rutasDeEntrega';
 import { marcarParadaNoEntregada, cerrarRutaConMotivo, MSG_FUNCION_DE_RUTA_FALTA } from '@nucleo/data/rutas';
-import { estadoDeRuta, distanciaTexto, ordenarParadas, avanceDeEntrega, filtrarRutas, separarRutas } from '@nucleo/utils/rutasDeEntrega';
+import {
+  estadoDeRuta, distanciaTexto, ordenarParadas, avanceDeEntrega, filtrarRutas, separarRutas,
+  cifrasDeRutas, completadasEnPeriodo, conductoresDeRutas, PERIODOS_RUTAS,
+} from '@nucleo/utils/rutasDeEntrega';
 import { hora12 } from '@nucleo/utils/hora';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
 
@@ -365,23 +368,15 @@ export default function TabRutas({ searchTerm = '' }) {
   // conductor, y entran cerradas. Los tres filtros viven en la dirección.
   const [params, setParams] = useSearchParams();
   const ESTADOS  = ['activas', 'completadas', 'todas'];
-  const PERIODOS = { hoy: 0, '7d': 7, '30d': 30 };
   const estado    = ESTADOS.includes(params.get('estado')) ? params.get('estado') : 'activas';
-  const periodo   = Object.hasOwn(PERIODOS, params.get('periodo') ?? '') ? params.get('periodo') : '7d';
+  const periodo   = Object.hasOwn(PERIODOS_RUTAS, params.get('periodo') ?? '') ? params.get('periodo') : '7d';
   const conductor = params.get('conductor') ?? '';
   const ponerParam = useCallback((clave, valor, porDefecto) => setParams(p => {
     if (!valor || valor === porDefecto) p.delete(clave); else p.set(clave, valor);
     return p;
   }, { replace: true }), [setParams]);
 
-  const conductores = useMemo(() =>
-    [...new Set(rutas.map(r => r.conductor_nombre).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
-      .map(n => ({ value: n, label: n })), [rutas]);
-
-  const desde = useMemo(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - PERIODOS[periodo]);
-    return d.getTime();
-  }, [periodo]); // eslint-disable-line react-hooks/exhaustive-deps
+  const conductores = useMemo(() => conductoresDeRutas(rutas).map(n => ({ value: n, label: n })), [rutas]);
 
   // La búsqueda (número o conductor) es la del núcleo, `filtrarRutas`; el
   // conductor elegido en el filtro se aplica encima.
@@ -389,19 +384,12 @@ export default function TabRutas({ searchTerm = '' }) {
     .filter(r => !conductor || r.conductor_nombre === conductor), [rutas, searchTerm, conductor]);
 
   const { activas: active, completadas: completadasTodas } = separarRutas(filtered);
-  const completed = completadasTodas.filter(r =>
-    new Date(r.vuelta_base_at ?? r.salida_at ?? r.created_at).getTime() >= desde);
+  const completed = completadasEnPeriodo(completadasTodas, periodo);
   const verActivas     = estado !== 'completadas';
   const verCompletadas = estado !== 'activas';
 
   // Las cifras de arriba: lo que pasa HOY, sin importar el filtro.
-  const inicioHoy = new Date(); inicioHoy.setHours(0, 0, 0, 0);
-  const enCalle      = rutas.filter(r => r.status === 'en_ruta' || r.status === 'con_alerta');
-  const pendientes   = rutas.filter(r => r.status === 'pendiente');
-  const cerradasHoy  = rutas.filter(r => r.status === 'completada'
-    && new Date(r.vuelta_base_at ?? r.salida_at ?? r.created_at) >= inicioHoy);
-  const paradasVivas = [...enCalle, ...pendientes].flatMap(r => r.ruta_pedidos ?? []);
-  const entregadasVivas = paradasVivas.filter(p => p.entregado_at).length;
+  const { enCalle, pendientes, cerradasHoy, paradasVivas, entregadasVivas } = cifrasDeRutas(rutas);
 
   const activosFiltro = (estado !== 'activas' ? 1 : 0) + (conductor ? 1 : 0) + (verCompletadas && periodo !== '7d' ? 1 : 0);
 
@@ -415,7 +403,7 @@ export default function TabRutas({ searchTerm = '' }) {
       <div className="flex flex-col lg:flex-row lg:items-center gap-3">
         <CarrilCards className="flex-1" ariaLabel="Rutas de hoy">
           <StatCard icon={Truck} label="En la calle" value={enCalle.length} loading={loading}
-            iconBg="bg-chart-3/10" iconCls="text-chart-3-text" sub={`${entregadasVivas}/${paradasVivas.length} paradas entregadas`}
+            iconBg="bg-chart-3/10" iconCls="text-chart-3-text" sub={`${entregadasVivas}/${paradasVivas} paradas entregadas`}
             active={estado === 'activas'} onClick={() => ponerParam('estado', 'activas', 'activas')} />
           <StatCard icon={Clock} label="Por salir" value={pendientes.length} loading={loading}
             sub="rutas armadas, sin salir" />

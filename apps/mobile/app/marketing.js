@@ -22,18 +22,32 @@
 // solicitud), se rechazan o se marcan entregadas con su respuesta. Además el
 // objetivo y el presupuesto de pauta del mes (el presupuesto, quien aprueba) y
 // los Ajustes del calendario (`marketing-ajustes`).
+//
+// Como el portal, también: el Flujo (las piezas por estado, y moverlas), la
+// Pauta (presupuesto, sin asignar, gastado, costo por mensaje y las piezas
+// pautadas), la Galería en modo gestión (liberar para las salas)
+// — `componentes/marketing/Vistas` —; los filtros del calendario (marca,
+// formato, liberada y estado); las fechas especiales del mes dentro del
+// calendario (quien edita planifica una pieza desde ella); duplicar varias
+// piezas o el mes entero (`marketing-duplicar`); y el informe PDF del mes con
+// el efecto de las piezas en las ventas (`construirInformeHtml`, el mismo
+// documento del portal).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
-  actualizarMes, aprobarMes, crearMes, fetchCatalogos, fetchMes, fetchPiezas, fetchSolicitudes, firmarDisenos, publicarMes, responderSolicitud,
+  actualizarMes, aprobarMes, crearMes, fetchCatalogos, fetchEfectoEnVentas, fetchFechasEspeciales, fetchMes, fetchPiezas, fetchPromocionesLigables,
+  fetchSolicitudes, firmarDisenos, publicarMes, responderSolicitud,
 } from '@nucleo/data/marketing';
+import { construirInformeHtml } from '@nucleo/utils/marketingInforme';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
-  ESTADOS_MES, estadoDe, estadoSolicitudDe, formatoDe, piezasPorDia, prellenadoDeSolicitud, prioridadDe, resumenDelMes, ROTULO_CORTO, tipoDeArchivo, totalesDePauta,
+  ESTADOS_MES, ESTADOS_PIEZA, FORMATOS, esDeMarca, estadoDe, estadoSolicitudDe, fechasEspecialesDelMes, formatoDe, piezasPorDia, prellenadoDeSolicitud, prioridadDe,
+  resumenDelMes, ROTULO_CORTO, tipoDeArchivo, totalesDePauta,
 } from '@nucleo/utils/marketing';
 import { etiquetaMes, fechaTexto, mesSV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
@@ -41,6 +55,9 @@ import PasoDeMes from '../componentes/PasoDeMes';
 import Ideas from '../componentes/marketing/Ideas';
 import Biblioteca from '../componentes/marketing/Biblioteca';
 import Feed from '../componentes/marketing/Feed';
+import { Flujo, GaleriaGestion, Pauta } from '../componentes/marketing/Vistas';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
+import { compartirPdf } from '../componentes/pdf';
 import { guardar as guardarElegido } from '../componentes/comercial/elegido';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -56,7 +73,7 @@ import { fallo, listo } from '../componentes/Progreso';
 import Tocable from '../componentes/Tocable';
 
 export default function Marketing() {
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, user, isSU } = useAuth();
   const yoId = user?.id;
   const puedeEditar = hasPermission('marketing', 'can_edit');
   const puedeAprobar = hasPermission('marketing', 'can_approve');
@@ -70,6 +87,13 @@ export default function Marketing() {
   const [abierta, setAbierta] = useState(null);
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  // Filtros del calendario (y del flujo, la pauta y la galería), como el portal.
+  const [fMarca, setFMarca] = useState('');
+  const [fFormato, setFFormato] = useState('');
+  const [fLiberada, setFLiberada] = useState('');
+  const [fEstado, setFEstado] = useState('');
+  const [especiales, setEspeciales] = useState([]);
+  const [generando, setGenerando] = useState(false);
 
   const cargar = useCallback(async () => {
     try {
@@ -84,12 +108,60 @@ export default function Marketing() {
   // Al volver de una pieza se relee: lo aprobado allá tiene que verse acá.
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const cargarSolicitudes = useCallback(() => { fetchSolicitudes().then(setSolicitudes).catch(() => setSolicitudes([])); }, []);
-  useEffect(() => { cargarSolicitudes(); fetchCatalogos().then(setCatalogos).catch(() => {}); }, [cargarSolicitudes]);
+  useEffect(() => {
+    cargarSolicitudes(); fetchCatalogos().then(setCatalogos).catch(() => {});
+    fetchFechasEspeciales().then(setEspeciales).catch(() => setEspeciales([]));
+  }, [cargarSolicitudes]);
   useFocusEffect(useCallback(() => { setVuelta((v) => v + 1); }, []));
 
   const resumen = useMemo(() => resumenDelMes(datos?.piezas), [datos]);
-  const porDia = useMemo(() => piezasPorDia(datos?.piezas), [datos]);
-  const dias = Object.keys(porDia).sort();
+  const visibles = useMemo(() => (datos?.piezas || [])
+    .filter((p) => !fMarca || esDeMarca(p, fMarca))
+    .filter((p) => !fFormato || p.formato === fFormato)
+    .filter((p) => !fLiberada || (fLiberada === 'si' ? p.liberada : !p.liberada)), [datos, fMarca, fFormato, fLiberada]);
+  const porDia = useMemo(() => piezasPorDia(fEstado ? visibles.filter((p) => p.estado === fEstado) : visibles), [visibles, fEstado]);
+  // Las fechas especiales del mes, en su día del calendario (`fechasEspecialesDelMes`, núcleo).
+  const fechasDelMes = useMemo(() => fechasEspecialesDelMes(especiales, mes), [especiales, mes]);
+  const dias = [...new Set([...Object.keys(porDia), ...Object.keys(fechasDelMes)])].sort();
+  const filtrosDelMes = ['calendario', 'flujo', 'pauta', 'galeria'].includes(vista);
+  const grupos = filtrosDelMes ? [
+    ...(catalogos.marcas.length > 1 ? [{ id: 'marca', titulo: 'Marca', activa: fMarca, porDefecto: '', onCambiar: setFMarca,
+      opciones: [{ id: '', label: 'Todas las marcas' }, ...catalogos.marcas.map((m) => ({ id: String(m.id), label: m.nombre }))] }] : []),
+    { id: 'formato', titulo: 'Formato', activa: fFormato, porDefecto: '', onCambiar: setFFormato,
+      opciones: [{ id: '', label: 'Todos los formatos' }, ...FORMATOS.map((f) => ({ id: f.value, label: f.label }))] },
+    { id: 'liberada', titulo: 'Salas', activa: fLiberada, porDefecto: '', onCambiar: setFLiberada,
+      opciones: [{ id: '', label: 'Liberadas o no' }, { id: 'si', label: 'Liberadas' }, { id: 'no', label: 'Sin liberar' }] },
+    ...(vista === 'calendario' ? [{ id: 'estado', titulo: 'Estado', activa: fEstado, porDefecto: '', onCambiar: setFEstado,
+      opciones: [{ id: '', label: 'Todos los estados' }, ...ESTADOS_PIEZA.map((e) => ({ id: e.value, label: e.label }))] }] : []),
+  ] : [];
+  // Sólo quien creó la pieza la mueve en el flujo (la base lo vuelve a exigir).
+  const puedeMoverla = (p) => puedeEditar && (!p.created_by || p.created_by === yoId || isSU);
+  // Una pieza nueva ya escrita desde una fecha especial (como el portal).
+  const planificarFecha = (f) => {
+    guardarElegido('marketing-prellenado', { titulo: f.nombre, pilar: 'fecha_especial', notas: f.idea || '', fecha: f.fecha });
+    router.push({ pathname: '/marketing-editar', params: { mes, desde: 'fecha' } });
+  };
+  // El informe del mes en PDF, con el efecto en ventas de las piezas ligadas a
+  // una promoción medido al generarlo (lo mismo que el portal).
+  const informe = async () => {
+    if (!datos?.fila) return;
+    setGenerando(true);
+    try {
+      const piezas = datos.piezas;
+      const [efectos, promos] = await Promise.all([
+        Promise.all(piezas.filter((p) => p.promocion_id).map(async (p) => [p.id, await fetchEfectoEnVentas(p.id).catch(() => null)])).then(Object.fromEntries),
+        fetchPromocionesLigables().catch(() => []),
+      ]);
+      const html = construirInformeHtml({
+        mes: datos.fila, piezas, marcas: Object.fromEntries(catalogos.marcas.map((m) => [m.id, m])), redes: catalogos.redes, efectos,
+        promociones: Object.fromEntries((promos || []).map((x) => [x.id, x])),
+      });
+      if (await compartirPdf({ html, nombre: `Marketing ${etiquetaMes(mes)}` })) {
+        registrarEgreso('marketing', { formato: 'pdf', filas: piezas.length, detalle: { mes, via: 'app' } });
+      }
+    } catch (e) { fallo('No se pudo generar el informe', mensajeAmigable(e, 'Intenta de nuevo.')); }
+    setGenerando(false);
+  };
   const estadoMes = datos?.fila ? ESTADOS_MES[datos.fila.estado] : null;
   const abiertasSol = (solicitudes || []).filter((s) => s.estado === 'nueva' || s.estado === 'aceptada').length;
   const fila = datos?.fila;
@@ -171,12 +243,15 @@ export default function Marketing() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Marketing', headerLargeTitle: true }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[
-          { id: 'calendario', label: 'Calendario' }, { id: 'feed', label: 'Feed' }, { id: 'ideas', label: 'Ideas' },
-          { id: 'solicitudes', label: abiertasSol ? `Solicitudes · ${abiertasSol}` : 'Solicitudes' }, { id: 'biblioteca', label: 'Marca' },
+          { id: 'calendario', label: 'Calendario' }, { id: 'flujo', label: 'Flujo' }, { id: 'feed', label: 'Feed' }, { id: 'pauta', label: 'Pauta' },
+          { id: 'ideas', label: 'Ideas' }, { id: 'solicitudes', label: abiertasSol ? `Solicitudes · ${abiertasSol}` : 'Solicitudes' },
+          ...(puedeEditar || puedeAprobar ? [{ id: 'galeria', label: 'Galería' }] : []), { id: 'biblioteca', label: 'Marca' },
         ]} />
+        <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vista === 'calendario' ? (
           <>
@@ -211,12 +286,33 @@ export default function Marketing() {
                     {puedeAprobarMes ? <View style={{ flex: 1 }}><BotonGrande texto="Aprobar el mes" color={MARCA.verde} onPress={() => decidirMes('aprobar')} deshabilitado={ocupado} /></View> : null}
                   </View>
                 ) : null}
+                {resumen.total ? (
+                  <View style={{ marginHorizontal: 16, flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+                    <Tocable onPress={generando ? undefined : informe} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: generando ? 0.5 : 1 }}>
+                      <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{generando ? 'Generando el informe…' : 'Informe PDF del mes'}</Text>
+                    </Tocable>
+                    {puedeEditar ? (
+                      <Tocable onPress={() => router.push({ pathname: '/marketing-duplicar', params: { mes } })} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                        <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Duplicar a otro mes</Text>
+                      </Tocable>
+                    ) : null}
+                  </View>
+                ) : null}
                 {dias.map((d) => (
                   <View key={d} style={{ gap: 8 }}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
                       {fechaTexto(d, { weekday: 'long', day: 'numeric', month: 'short' })}
                     </Text>
-                    {porDia[d].map((p) => {
+                    {(fechasDelMes[d] || []).map((f) => (
+                      <Tocable key={`f-${f.id}`} disabled={!puedeEditar} onPress={() => planificarFecha(f)} style={{ marginHorizontal: 16 }}>
+                        <View style={{ padding: 10, borderRadius: 14, borderWidth: 1, borderStyle: 'dashed', borderColor: MARCA.violetaClaro, gap: 2 }}>
+                          <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>{`★ ${f.nombre}`}</Text>
+                          {f.idea ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{f.idea}</Text> : null}
+                          {puedeEditar ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>Toca para planificar una pieza</Text> : null}
+                        </View>
+                      </Tocable>
+                    ))}
+                    {(porDia[d] || []).map((p) => {
                       const est = estadoDe(p.estado);
                       const imagenes = (p.archivos || []).filter((a) => tipoDeArchivo(a) === 'imagen' && datos.firmas.get(a.url));
                       const abiertaEsta = abierta === p.id;
@@ -251,6 +347,22 @@ export default function Marketing() {
               </>
             )}
           </>
+        ) : vista === 'flujo' ? (
+          <>
+            <PasoDeMes mes={mes} onCambiar={setMes} />
+            {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : <Flujo piezas={visibles} puedeMoverla={puedeMoverla} onAbrir={abrirPieza} onMovida={cargar} />}
+          </>
+        ) : vista === 'pauta' ? (
+          <>
+            <PasoDeMes mes={mes} onCambiar={setMes} />
+            {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+              <Pauta piezas={visibles} presupuestoMes={fila?.presupuesto_pauta} redes={catalogos.redes}
+                onAbrir={(p) => { if (puedeEditar) { guardarPieza(p, fila, datos.firmas); router.push('/marketing-pauta'); } else abrirPieza(p); }} />
+            )}
+          </>
+        ) : vista === 'galeria' ? (
+          <GaleriaGestion marca={fMarca} formato={fFormato} liberada={fLiberada} busqueda="" puedeLiberar={puedeEditar || puedeAprobar} recarga={vuelta}
+            onAbrir={(p) => { setMes(String(p.fecha).slice(0, 7)); setVista('calendario'); }} />
         ) : vista === 'feed' ? (
           <>
             <PasoDeMes mes={mes} onCambiar={setMes} />

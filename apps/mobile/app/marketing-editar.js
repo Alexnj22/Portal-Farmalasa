@@ -86,7 +86,7 @@ export default function EditarPiezaDeMarketing() {
   } : {
     ...PIEZA_VACIA, fecha: `${mesTexto}-01`,
     ...(pre ? { titulo: pre.titulo || '', notas: pre.notas || '', formato: pre.formato || PIEZA_VACIA.formato, marcas: pre.marca_id ? [pre.marca_id] : [],
-      fecha: pre.fecha || `${mesTexto}-01`, ...(pre.solicitud_id ? { solicitud_id: pre.solicitud_id } : {}) } : {}),
+      fecha: pre.fecha || `${mesTexto}-01`, ...(pre.pilar ? { pilar: pre.pilar } : {}), ...(pre.solicitud_id ? { solicitud_id: pre.solicitud_id } : {}) } : {}),
   }));
   const [archivos, setArchivos] = useState(pieza?.archivos ?? []);
   const [firmas, setFirmas] = useState(sel?.firmas ?? new Map());

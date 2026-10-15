@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.6 — App: marketing con flujo, pauta, galería, filtros, fechas especiales, versiones, duplicar e informe PDF
+
+- App, Marketing: pestañas Flujo (por estado, mover con la regla del portal),
+  Pauta (presupuesto, sin asignar, gastado, costo por mensaje) y Galería en
+  modo gestión (liberar); filtros de marca, formato, salas y estado; las
+  fechas especiales dentro del calendario (planificar una pieza desde ella);
+  duplicar varias piezas o el mes entero; versiones de un diseño (comparar y
+  subir la siguiente); y el informe PDF del mes.
+- App, Galería: filtro por marca.
+- Núcleo: `puedeMoverA` (regla del Flujo, la usa `TabTablero`) y
+  `construirInformeHtml` (el mismo informe traducido del documento de pdfmake).
+
 ## v2.1292.5 — App: chat con etiqueta, preferentes, estado de la farmacia, calificaciones, ajustes e incumplimientos
 
 - App, Chat con clientes: filtro por etiqueta y «Preferentes» (Platino y

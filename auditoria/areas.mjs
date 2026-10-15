@@ -891,9 +891,12 @@ export const AREAS = [
                  // porque su motivo de existir es el cálculo: sin saber qué días
                  // un producto estuvo en cero, la velocidad no puede distinguir
                  // «dejó de venderse» de «faltó», y esas dos piden lo contrario.
-                 'inventory_daily'],
+                 'inventory_daily',
+                 // La cola del cambio de factor (2026-10-15): qué producto cambió de
+                 // presentación y qué se le convirtió del historial y del MIN·MAX.
+                 'cambios_de_factor'],
         edge: ['auto-calculate-minmax'],
-        crons: ['auto-calculate-minmax-monthly',
+        crons: ['auto-calculate-minmax-monthly', 'procesar-cambios-de-factor',
                 'inventory-daily-snapshot', 'inventory-daily-particiones'],
         docs: ['docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md', 'docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
                'docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md'],

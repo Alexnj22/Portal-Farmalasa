@@ -656,6 +656,10 @@ const CRONS = [
   // alarma, que es el orden que el diseño quería.
   { job: 'auto-copy-weekly-roster',             slug: 'auto-copy-weekly-roster',     cadencia: '0 16 * * 6', corridasDia: 0, sistema: 0, motivo: 'Semanal.' },
   { job: 'purchases-fastbackfill-semanal',      slug: 'sync-erp-purchases',          cadencia: '0 9 * * 0',  corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Semanal.' },
+  // Cada 10 min, pero con la cola vacía es una lectura de índice; con un
+  // cambio de factor recalcula ese producto en las seis salas (~9 s). Todo en
+  // la base: no le pide nada al sistema de origen.
+  { job: 'procesar-cambios-de-factor',          slug: null,                          cadencia: '5-59/10 * * * *', corridasDia: 144, sistema: 0, motivo: 'Sólo base: cola del cambio de factor.' },
   { job: 'auto-calculate-minmax-monthly',       slug: 'auto-calculate-minmax',       cadencia: '0 9 1 * *',  corridasDia: 0, sistema: 0, motivo: 'Mensual, sólo base.' },
   { job: 'corte-z-mensual',                     slug: 'sync-corte-z',                cadencia: '0 9 1 * *',  corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual.' },
   { job: 'dte-resync-month-popular', slug: 'backfill-dte-sales', cadencia: '0 5 1 * *', corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual, una sala.' },

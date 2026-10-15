@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1295.0 — El cambio de presentación de un producto se reprocesa solo
+
+URO VAXOM 6 MG pasó de CAJA 1X30 a CAJA 1x1 y su MIN·MAX quedó en tabletas
+(Salud 2: 19·34): el pedido iba a pedir 34 cajas donde hacía falta 1.
+
+- **Detecta**: la carga de precios anota el producto en `cambios_de_factor`
+  cuando cambia un factor o se prende/apaga una presentación.
+- **Procesa** (`procesar_cambios_de_factor`, cron cada 10 min): pasa las
+  ventas viejas a la unidad nueva, convierte el MIN·MAX guardado, recalcula
+  ese producto en las seis salas y lo publica. Sólo cuando uno de los dos
+  factores es 1; un cambio entre dos tamaños queda para revisar. Las
+  recargas no se tocan.
+- **Avisa** a quien aprueba MIN·MAX: qué cambió y qué existencia revisar (la
+  caja no convierte su existencia).
+- `calculate_stock_params` acepta una lista de productos;
+  `publish_stock_params` lo puede llamar el servidor.
+- `mv_product_factor` no la refrescaba nadie (3 factores viejos, 128
+  combinaciones faltantes): ahora se refresca en cada corrida.
+- Aplicado a los 7 que ya habían cambiado: 197 ventas convertidas; Uro Vaxom
+  Salud 2 19·34 → 1·2.
+
 ## v2.1294.2 — Ficha de empleado: avisos sin repetir, acreditaciones ordenadas y modal más limpio
 
 - El aviso de pendientes decía el DUI vencido TRES veces (frente, reverso y la

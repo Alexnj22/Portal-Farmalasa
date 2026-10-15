@@ -4746,6 +4746,33 @@ export type Database = {
           },
         ]
       }
+      cambios_de_factor: {
+        Row: {
+          created_at: string
+          detectado_at: string
+          erp_product_id: number
+          id: number
+          procesado_at: string | null
+          resultado: Json | null
+        }
+        Insert: {
+          created_at?: string
+          detectado_at?: string
+          erp_product_id: number
+          id?: never
+          procesado_at?: string | null
+          resultado?: Json | null
+        }
+        Update: {
+          created_at?: string
+          detectado_at?: string
+          erp_product_id?: number
+          id?: never
+          procesado_at?: string | null
+          resultado?: Json | null
+        }
+        Relationships: []
+      }
       capturas_de_foto: {
         Row: {
           created_at: string
@@ -26909,7 +26936,7 @@ export type Database = {
         Returns: number
       }
       calculate_stock_params: {
-        Args: { p_erp_sucursal_id?: number }
+        Args: { p_erp_product_ids?: number[]; p_erp_sucursal_id?: number }
         Returns: Json
       }
       cancelar_envio: {
@@ -30857,6 +30884,10 @@ export type Database = {
       notify_missing_roster: { Args: never; Returns: undefined }
       nuevo_folio_de_bolsa: { Args: { p_branch_id: number }; Returns: string }
       numeros_de_caja: { Args: { p: Json }; Returns: string }
+      par_min_max_convertido: {
+        Args: { p_max: number; p_min: number; p_razon: number }
+        Returns: number[]
+      }
       paso_de_monto: { Args: { p_monto: number }; Returns: number }
       pedir_dato_a_la_sala: {
         Args: {
@@ -30898,6 +30929,7 @@ export type Database = {
         Args: { p_secreto: string; p_usuario: string }
         Returns: Json
       }
+      procesar_cambios_de_factor: { Args: never; Returns: Json }
       productos_parados_de_sala: {
         Args: { p_erp_sucursal_id: number }
         Returns: Json

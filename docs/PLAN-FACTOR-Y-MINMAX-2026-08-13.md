@@ -1,5 +1,44 @@
 # El factor de presentación y el MIN·MAX — hallazgo y plan (2026-08-13)
 
+## 2026-10-15 — el cambio de factor se reprocesa SOLO
+
+El §5 («arreglar sin reprocesar») pasó de verdad: URO VAXOM 6 MG y
+ACETAMINOFEN FORTE X 16 pasaron a CAJA 1x1 el 13-oct. Su MIN·MAX quedó en
+tabletas (Salud 2: 19·34) y el pedido, leyendo el factor nuevo, iba a pedir
+34 cajas donde hacía falta 1. Hoy el §6 corre sin nadie:
+
+1. **Detecta** `upsert_product_precios_batch`: un factor distinto, una fila
+   que se prende o se apaga, o una fila nueva activa → el producto entra a
+   `cambios_de_factor`. **La caja no cambia el factor en la misma fila**:
+   desactiva la presentación vieja y activa otra con otro id. Por eso se mira
+   el producto, no la fila.
+2. **Procesa** `procesar_cambios_de_factor()`, cron
+   `procesar-cambios-de-factor` (minuto 5 de cada 10, después del sync), todo
+   en UNA transacción:
+   - reescribe `factor_unidades` de las ventas cuya presentación tiene hoy UN
+     solo factor activo distinto del guardado **y donde uno de los dos es 1**
+     (30 → 1, 1 → 10). Un cambio entre dos tamaños (50 → 52, 12 → 8) puede ser
+     una caja distinta de verdad: queda como estaba y va al aviso. Las
+     recargas no se tocan;
+   - convierte el MIN·MAX guardado con la razón de la ventana con que se
+     calculó (`par_min_max_convertido`): ventas viejas de 30 → 1/30; un cambio
+     de hace meses que el recálculo ya absorbió → 1, no se toca;
+   - recalcula ESE producto en las seis salas
+     (`calculate_stock_params(sala, ARRAY[producto])`) y lo **publica**: es un
+     cambio de unidad, no de demanda, y el freno del 40% lo dejaría en
+     borrador para siempre. Una decisión de una persona (solicitud aprobada o
+     motivo) no se publica encima: queda convertida;
+   - refresca `product_sales_rollup` y **`mv_product_factor`**.
+3. **Avisa** a quien aprueba MIN·MAX: qué se convirtió, el par antes y
+   después, y **la existencia a revisar**. La caja no convierte su
+   existencia: Salud 2 mostraba 16 «cajas» de Acetaminofén Forte que eran una
+   caja de 16. Eso se corrige allá, con un ajuste.
+
+**`mv_product_factor` no la refrescaba nadie** —ni cron ni función—. Medido
+el 15-oct: 3 factores viejos y 128 combinaciones faltantes, que el pedido
+cubría leyendo el texto de la presentación. Ahora se refresca en cada corrida
+con trabajo.
+
 **Estado al 2026-09-22: (A) aplicada; falta que el recálculo del 1-oct la tome.**
 
 - **§7 decidido: (A).** El usuario corrigió en el sistema de la caja el texto de

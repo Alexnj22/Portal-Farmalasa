@@ -112,6 +112,11 @@
       "deuda": true,
       "motivo": "Declarada el 2026-10-01: el recálculo de Mín·Máx de TODO el catálogo (cron auto-calculate-minmax-monthly, el 1 de cada mes, y a mano desde Mín·Máx). 281,689 bloques (2.2 GB) por llamada, 6 llamadas en la ventana del gate, 858 ms. Leer mucho es su trabajo: recorre las ventas de cada producto en cada sala para recalcular velocidad, ABC y XYZ. NO auditada con EXPLAIN; techo = 1.3x lo medido para vigilar que no crezca."
     },
+    "procesar_cambios_de_factor": {
+      "bloques": 2300000,
+      "deuda": true,
+      "motivo": "Declarada el 2026-10-15. Con la cola vacía es una lectura de índice; cuando un producto cambia de factor llama a calculate_stock_params UNA vez por sala (6 llamadas de ~282K bloques: el cálculo rankea ABC/XYZ contra la sala entera aunque escriba sólo ese producto) más refresh_product_sales_rollup. Pasa pocas veces al mes. Techo = 6 recálculos + el rollup, 1.3x. NO auditada con EXPLAIN."
+    },
     "app_catalogo_rehacer_destacados": {
       "bloques": 165000,
       "motivo": "AUDITADA y CORREGIDA el 2026-10-12 (migración 20261012171839). Los 300 más vendidos de los últimos 60 días para la Tienda de la app, una vez AL DÍA (cron app-catalogo-destacados, 08:40 UTC = 02:40 SV). Antes leía 585,908 bloques (4.6 GB, 8.4 s): el plan entraba por producto y traía por idx_sii_product_invoice el historial ENTERO de los ~4,234 elegibles (599,833 renglones para quedarse con 61,522) porque products se estimaba en 2,193 filas contra 4,386 reales. Ahora agrega primero la ventana (CTE MATERIALIZED por fecha de factura): 126,341 bloques, 140 ms, md5 idéntico en las 300 filas. Lo que queda es el trabajo real: 115,797 bloques de idx_sii_invoice_covering sobre las ~38,500 facturas de 60 días. Techo 1.3x. Ventana fija: no crece con la historia. Si pasara a correr más de una vez al día, llevarla a un rollup diario."

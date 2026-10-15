@@ -4,9 +4,15 @@
 // reduce a 800 px en JPEG, se sube a `product-photos/<id>.jpg` (pisando la
 // anterior) y se guarda la URL pública con un sello de tiempo para que nadie
 // vea la vieja en caché.
+//
+// Como en el portal, además de tomarla o elegirla, se puede PEGAR una imagen
+// copiada (del navegador, de WhatsApp…); el recorte cuadrado lo da el editor
+// del sistema al tomar o elegir, y tocar la foto la amplía.
 import { useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, Modal, Pressable, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
+import { File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as Haptics from 'expo-haptics';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
@@ -28,12 +34,31 @@ async function elegir(desdeCamara) {
   return r.assets[0].uri;
 }
 
+// La imagen copiada, escrita a un archivo para pasarla por el mismo camino.
+async function pegada() {
+  if (!(await Clipboard.hasImageAsync())) {
+    Alert.alert('No hay imagen copiada', 'Copia una imagen (mantén presionada una foto › Copiar) y vuelve a intentarlo.');
+    return null;
+  }
+  const img = await Clipboard.getImageAsync({ format: 'jpeg', jpegQuality: 1 });
+  const b64 = String(img?.data ?? '').replace(/^data:[^,]*,/, '');
+  if (!b64) return null;
+  const bin = globalThis.atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+  const f = new File(Paths.cache, `pegada-${Date.now()}.jpg`);
+  f.create();
+  f.write(bytes);
+  return f.uri;
+}
+
 export default function Foto({ productId, url, puedeCambiar, onCambiada }) {
   const [viendo, setViendo] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
 
-  const cambiar = async (desdeCamara) => {
-    const uri = await elegir(desdeCamara);
+  const cambiar = async (desdeCamara, pegar = false) => {
+    let uri = null;
+    try { uri = pegar ? await pegada() : await elegir(desdeCamara); } catch (e) { fallo('No se pudo leer la imagen', mensajeAmigable(e)); return; }
     if (!uri) return;
     setSubiendo(true);
     trabajando('Guardando la foto…');
@@ -56,8 +81,8 @@ export default function Foto({ productId, url, puedeCambiar, onCambiada }) {
   const menu = () => {
     Haptics.selectionAsync().catch(() => {});
     ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Tomar foto', 'Elegir de la galería', 'Cancelar'], cancelButtonIndex: 2 },
-      (i) => { if (i === 0) cambiar(true); else if (i === 1) cambiar(false); },
+      { options: ['Tomar foto', 'Elegir de la galería', 'Pegar la imagen copiada', 'Cancelar'], cancelButtonIndex: 3 },
+      (i) => { if (i === 0) cambiar(true); else if (i === 1) cambiar(false); else if (i === 2) cambiar(false, true); },
     );
   };
 

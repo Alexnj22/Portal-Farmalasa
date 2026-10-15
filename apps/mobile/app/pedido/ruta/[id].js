@@ -5,9 +5,12 @@
 // Quien CONDUCE ve su punto y, mientras esta pantalla está abierta, su
 // posición se anota cada 30 s (la primera enseguida), igual que el portal: es
 // la que ve Bodega «en vivo». Quien NO conduce ve dónde va el camión, con la
-// última posición y si es reciente. Las acciones del conductor —iniciar la
-// ruta, «Entregué», volver a base— son las mismas funciones del núcleo y se
-// confirman. El trazo es en línea recta entre paradas: el recálculo por calles
+// última posición y si es reciente. Las acciones —iniciar la ruta, «Entregué»,
+// volver a base— son las mismas funciones del núcleo y se confirman; las hace
+// el conductor o quien gestiona rutas (`pedidos_tab_rutas` can_edit), como en
+// el portal. Quien gestiona además puede marcar «No se pudo entregar» una
+// parada (vuelve a quedar disponible para otra ruta) y cerrar la ruta con
+// paradas pendientes; las dos piden motivo (`data/rutas`). El trazo es en línea recta entre paradas: el recálculo por calles
 // del portal usa el servicio de Google y no está en el teléfono.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
@@ -17,6 +20,7 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 import SinMapa, { hayMapa } from '../../../componentes/SinMapa';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { completarRuta, fetchRutaLocationSingle, iniciarRuta, updateRutaPedidoEntregado, upsertRutaLocation } from '@nucleo/data/pedidos';
+import { cerrarRutaConMotivo, marcarParadaNoEntregada, MSG_FUNCION_DE_RUTA_FALTA } from '@nucleo/data/rutas';
 import { fetchCoordenadasDeSucursales, fetchRutasDeEntrega } from '@nucleo/data/rutasDeEntrega';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
 import { INTERVALO_POSICION_CONDUCTOR_MS, avanceDeEntrega, conductorEnVivo, distanciaTexto, estadoDeRuta, ordenarParadas, trazoDeReparto } from '@nucleo/utils/rutasDeEntrega';
@@ -143,7 +147,10 @@ export default function RutaDeReparto() {
   }, [ruta, conductor, id]);
 
   const paradas = useMemo(() => (ruta ? ordenarParadas(ruta) : []), [ruta]);
-  const { entregadas, total, completa } = avanceDeEntrega(paradas);
+  const { entregadas, total } = avanceDeEntrega(paradas);
+  // Pendiente = ni entregada ni devuelta («No se pudo entregar»).
+  const pendientes = paradas.filter((p) => !p.entregado_at && !p.no_entregado_at).length;
+  const gestiona = canEdit && !deSala;
   const trazo = useMemo(() => trazoDeReparto(coords.bodega, paradas, coords.porSucursal), [coords, paradas]);
   const region = useMemo(() => encuadre([...trazo, ...(mio ? [mio] : []), ...(camion ? [camion] : [])]), [trazo, mio, camion]);
   // Los pines fijos (bodega y paradas) se arman una vez por cambio de la ruta,
@@ -176,26 +183,58 @@ export default function RutaDeReparto() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           listo(exito);
           await cargar();
-        } catch (e) { fallo(`No se pudo: ${boton.toLowerCase()}`, mensajeAmigable(e)); }
+        } catch (e) { fallo(`No se pudo: ${boton.toLowerCase()}`, e?.falta ? MSG_FUNCION_DE_RUTA_FALTA : mensajeAmigable(e)); }
         finally { setOcupado(null); }
       } },
     ]);
   };
-  const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, 'La sala recibe el aviso de que llegaste.', 'Entregué',
+  const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.',
+    conductor ? 'Entregué' : 'Marcar entregada',
     () => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }), 'Parada entregada');
-  const iniciar = () => hacer(`Iniciar ruta #${ruta.numero}`, 'Las salas reciben el aviso de que vas en camino, y tu ubicación se ve en el mapa aun con la app cerrada hasta que vuelvas a base.', 'Iniciar',
+  // Las dos salidas con motivo: el motivo es obligatorio (queda anotado).
+  const conMotivo = (titulo, mensaje, boton, accion, exito) => {
+    Alert.prompt(titulo, mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: boton, style: 'destructive', onPress: async (m) => {
+        const motivo = String(m ?? '').trim();
+        if (!motivo) { fallo('Falta el motivo', 'Escribe qué pasó para poder seguir.'); return; }
+        setOcupado(boton);
+        trabajando(`${boton}…`);
+        try {
+          const { error: e } = await accion(motivo);
+          if (e) throw e;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          listo(exito);
+          await cargar();
+        } catch (e) { fallo(`No se pudo: ${boton.toLowerCase()}`, e?.falta ? MSG_FUNCION_DE_RUTA_FALTA : mensajeAmigable(e)); }
+        finally { setOcupado(null); }
+      } },
+    ], 'plain-text');
+  };
+  const noEntregada = (p) => conMotivo('No se pudo entregar', `${p.suc_name} vuelve a quedar disponible para otra ruta. ¿Qué pasó? (ej.: la sala estaba cerrada)`,
+    'Devolver la parada', (motivo) => marcarParadaNoEntregada({ rutaId: ruta.id, pedidoId: p.pedido_id, sucursalId: p.erp_sucursal_id, motivo }),
+    `${p.suc_name} queda disponible para otra ruta`);
+  const cerrarConPendientes = () => conMotivo('Cerrar ruta', `Quedan ${pendientes} parada${pendientes !== 1 ? 's' : ''} sin entregar. La ruta se cierra igual y queda anotado el motivo.`,
+    'Cerrar ruta', async (motivo) => {
+      const r = await cerrarRutaConMotivo({ rutaId: ruta.id, motivo });
+      if (!r?.error && conductor) await Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
+      return r;
+    }, 'Ruta cerrada');
+  const iniciar = () => hacer(`Iniciar ruta #${ruta.numero}`, conductor
+    ? 'Las salas reciben el aviso de que vas en camino, y tu ubicación se ve en el mapa aun con la app cerrada hasta que vuelvas a base.'
+    : `Se inicia en nombre de ${ruta.conductor_nombre ?? 'el conductor'}: las salas reciben el aviso de que va en camino.`, 'Iniciar',
     async () => {
       const r = await iniciarRuta(ruta.id, { desde: 'app' });
-      if (!r?.error) {
+      if (!r?.error && conductor) {
         const modo = await Promise.resolve(activarRutaDeFondo('reparto', { rutaId: String(ruta.id) })).catch(() => 'sin-fondo');
         setSinFondo(modo === 'fondo' ? null : modo);
       }
       return r;
     }, 'Ruta iniciada');
-  const volver = () => hacer('Volver a base', 'Se cierra la ruta: todas las paradas están entregadas. Se deja de anotar tu ubicación.', 'Cerrar ruta',
+  const volver = () => hacer('Volver a base', conductor ? 'Se cierra la ruta: no quedan paradas pendientes. Se deja de anotar tu ubicación.' : 'Se cierra la ruta: no quedan paradas pendientes.', 'Cerrar ruta',
     async () => {
       const r = await completarRuta(ruta.id, { desde: 'app' });
-      if (!r?.error) await Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
+      if (!r?.error && conductor) await Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
       return r;
     }, 'Ruta cerrada');
 
@@ -265,13 +304,22 @@ export default function RutaDeReparto() {
                         p.distancia_desde_anterior_m != null ? `${distanciaTexto(p.distancia_desde_anterior_m)} desde ${i === 0 ? 'bodega' : `parada ${i}`}` : null,
                         p.entregado_at ? `Entregado ${hora12(p.entregado_at)}` : null].filter(Boolean).join(' · ')}
                     </Text>
+                    {!p.entregado_at && p.no_entregado_at ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>No entregada</Text> : null}
                   </View>
-                  {conductor && !deSala && !p.entregado_at && ruta.status === 'en_ruta' ? (
-                    <Pressable onPress={() => entregar(p)} disabled={!!ocupado} accessibilityRole="button" accessibilityLabel={`Entregué en ${p.suc_name}`}
-                      style={({ pressed }) => ({ minHeight: 38, paddingHorizontal: 14, borderRadius: 19, justifyContent: 'center', backgroundColor: MARCA.verde,
-                        opacity: ocupado ? 0.5 : pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Entregué</Text>
-                    </Pressable>
+                  {(conductor || canEdit) && !deSala && !p.entregado_at && !p.no_entregado_at && ruta.status === 'en_ruta' ? (
+                    <View style={{ gap: 6, alignItems: 'flex-end' }}>
+                      <Pressable onPress={() => entregar(p)} disabled={!!ocupado} accessibilityRole="button" accessibilityLabel={`${conductor ? 'Entregué' : 'Marcar entregada'} en ${p.suc_name}`}
+                        style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: MARCA.verde,
+                          opacity: ocupado ? 0.5 : pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{conductor ? 'Entregué' : 'Marcar entregada'}</Text>
+                      </Pressable>
+                      {gestiona ? (
+                        <Pressable onPress={() => noEntregada(p)} disabled={!!ocupado} accessibilityRole="button" accessibilityLabel={`No se pudo entregar en ${p.suc_name}`}
+                          style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', opacity: ocupado ? 0.5 : pressed ? 0.6 : 1 })}>
+                          <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>No se pudo entregar</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
                   ) : null}
                 </View>
               ))}
@@ -280,9 +328,14 @@ export default function RutaDeReparto() {
 
             {!deSala ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>
-                {ruta.status === 'pendiente' && conductor ? <BotonGrande texto="Iniciar ruta" color={INDIGO} deshabilitado={!!ocupado} onPress={iniciar} /> : null}
-                {ruta.status === 'en_ruta' && (conductor || canEdit) && completa ? (
+                {ruta.status === 'pendiente' && (conductor || canEdit) ? <BotonGrande texto="Iniciar ruta" color={INDIGO} deshabilitado={!!ocupado} onPress={iniciar} /> : null}
+                {/* Sin `total > 0`: si todas las paradas se devolvieron, la ruta
+                    queda vacía en la calle y necesita volver igual. */}
+                {ruta.status === 'en_ruta' && (conductor || canEdit) && pendientes === 0 ? (
                   <BotonGrande texto="Volver a base" color={MARCA.azul} deshabilitado={!!ocupado} onPress={volver} />
+                ) : null}
+                {ruta.status === 'en_ruta' && gestiona && pendientes > 0 ? (
+                  <BotonGrande texto="Cerrar ruta" borde color={MARCA.rojo} deshabilitado={!!ocupado} onPress={cerrarConPendientes} />
                 ) : null}
                 {ruta.vuelta_base_at ? <Aviso texto={`Llegó a base a las ${hora12(ruta.vuelta_base_at)}.`} /> : null}
               </View>

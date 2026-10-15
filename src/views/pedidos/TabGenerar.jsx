@@ -20,7 +20,7 @@ import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { printPerSucursal, getExactPageGroups } from '@nucleo/utils/pedidoPrint';
 import { capturarHojasDelPedido, confirmarPedidoDirecto, vistaPreviaDePedido } from '@nucleo/data/accionesDePedido';
-import { nivelDeUrgenciaDeSala, salaSinMinMaxPublicado, urgenciaDeSala } from '@nucleo/utils/tableroDePedidos';
+import { nivelDeUrgenciaDeSala, ordenarSinBodega, salaSinMinMaxPublicado, ultimoPedidoDeSala, urgenciaDeSala } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import { fetchActiveEmployeesBasic, fetchTableroParaGenerarPedido } from '@nucleo/data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
@@ -37,19 +37,6 @@ function friendlyError(e) {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtTimeSince(iso) {
-    if (!iso) return null;
-    const d = Math.floor((Date.now() - new Date(iso)) / 86_400_000);
-    // `<= 0`: una fecha apenas en el futuro (reloj del equipo, zona horaria)
-    // daba «hace -1 días».
-    if (d <= 0) return 'hoy';
-    if (d === 1) return 'ayer';
-    // Palabras completas: «hace 3m» se leía como minutos.
-    if (d < 14)  return `hace ${d} días`;
-    if (d < 60)  return `hace ${Math.floor(d / 7)} semanas`;
-    return `hace ${Math.floor(d / 30)} meses`;
-}
 
 // Los cortes de urgencia (productos bajo mínimo que Bodega puede mandar) y el
 // % de la barra salen del núcleo (`urgenciaDeSala`, `nivelDeUrgenciaDeSala`
@@ -298,14 +285,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         const { results, isFuzzy } = !searchTerm.trim()
             ? { results: sinBodega, isFuzzy: false }
             : smartFilter(searchTerm, sinBodega, r => [r.product_name, r.laboratorio]);
-        const dir = sinSortDir === 'asc' ? 1 : -1;
-        const sorted = [...results].sort((a, b) => {
-            if (sinSortKey === 'product_name' || sinSortKey === 'laboratorio') {
-                return (a[sinSortKey] || '').localeCompare(b[sinSortKey] || '', 'es') * dir;
-            }
-            return (Number(a[sinSortKey] || 0) - Number(b[sinSortKey] || 0)) * dir;
-        });
-        return { results: sorted, isFuzzy };
+        return { results: ordenarSinBodega(results, sinSortKey, sinSortDir), isFuzzy };
     }, [sinBodega, searchTerm, sinSortKey, sinSortDir]);
 
     const sinTotalPages     = Math.max(1, Math.ceil(sinFiltered.length / sinPageSize));
@@ -415,13 +395,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                             ? 'suc-pop border-chart-1/70 ring-2 ring-chart-1/45 shadow-[var(--shadow-glass-3)] bg-[var(--card-tint-base)]'
                             : 'border-divider bg-[var(--card-tint-base-soft)] hover:border-content-3/30 hover:shadow-[var(--shadow-elevation-sm)]';
 
-                        const ultimo = stat ? fmtTimeSince(stat.last_pedido_at) : null;
-                        const dias = stat?.last_pedido_at
-                            ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
-                            : null;
-                        const ultimoCls = dias == null ? 'text-content-3'
-                            : dias <= 7 ? 'text-success-text'
-                            : dias <= 14 ? 'text-warning-text' : 'text-danger-text';
+                        // «Último pedido hace X» y su color: núcleo (`ultimoPedidoDeSala`).
+                        const up = stat ? ultimoPedidoDeSala(stat.last_pedido_at) : { texto: null, nivel: null };
+                        const ultimo = up.texto;
+                        const ultimoCls = up.nivel == null ? 'text-content-3'
+                            : up.nivel === 'bien' ? 'text-success-text'
+                            : up.nivel === 'cuidado' ? 'text-warning-text' : 'text-danger-text';
 
                         return (
                             <button

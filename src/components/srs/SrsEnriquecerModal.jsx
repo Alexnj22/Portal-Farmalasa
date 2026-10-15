@@ -7,166 +7,26 @@ import {
 } from 'lucide-react';
 import SrsBuscadorWidget from './SrsBuscadorWidget';
 import Badge from '../common/Badge';
+import { updateProductSinPrincipioActivo, fetchProductsWithoutPrincipioActivo } from '@nucleo/data/productos';
 import {
-    deleteProductActivePrinciples, insertProductActivePrinciples, updateProductPrincipioActivo,
-    updateProductSinPrincipioActivo, fetchProductsWithoutPrincipioActivo,
-} from '@nucleo/data/productos';
+    parecidoSrs, principiosDeSrs, SRS_AUTO_MIN, SRS_CANDIDATOS, SRS_CONCURRENCIA, SRS_LOTE, SRS_PAUSA_MS, SRS_REVISION_MIN,
+} from '@nucleo/utils/enriquecerSrs';
 import PortalInput from '../common/PortalInput';
-import { buscarEnSrs } from '@nucleo/data/srs';
+import { aplicarPrincipiosDeSrs, buscarEnSrsParaProducto } from '@nucleo/data/srs';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const CONCURRENCY      = 5;
-const BATCH_SIZE       = 300;   // products per run
-const DELAY_MS         = 80;    // ms between launches (polite rate limiting)
-const AUTO_MIN         = 0.70;  // >= auto-apply (high confidence)
-const REVIEW_MIN       = 0;     // everything with any SRS result goes to review
-const TOP_CANDIDATES   = 3;     // SRS candidates shown per review card
-
-// ── Matching helpers ──────────────────────────────────────────────────────────
-
-const SKIP_TOKENS = new Set([
-    // Dose units
-    'MG','ML','MCG','UG','G','UI','IU','GR','MEQ',
-    // Prepositions / articles
-    'X','CX','DE','Y','CON','POR','EL','LA','LOS','LAS','AL',
-    // Lab / brand names
-    'MK','SAIMED','MEGALAB','GENFAR','LAFRANCOL','PFIZER','NOVARTIS',
-    'ROCHE','BAYER','MERCK','SYNTOFARMA','ROEMMERS','SIEGFRIED','LIOMONT',
-    'DENMARK','PISA',
-    // Modifiers
-    'ULTRA','FORTE','PLUS','MAX','MINI',
-    // Pharma forms & descriptors — add no identity info, inflate union only
-    'TAB','TABS','CAP','CAPS','COMP','AMP','INY','SOL','SUS','JAR','GTS','SUSP',
-    'TABLETA','TABLETAS','CAPSULA','CAPSULAS','COMPRIMIDO','COMPRIMIDOS',
-    'AMPOLLA','AMPOLLAS','INYECTABLE','SOLUCION','SUSPENSION','JARABE',
-    'GOTAS','CREMA','UNGUENTO','OVULO','OVULOS','SUPOSITORIO','SUPOSITORIOS',
-    'BLANDA','BLANDAS','DURA','DURAS','GELATINA','RECUBIERTA','RECUBIERTO',
-    'MASTICABLE','EFERVESCENTE','SUBLINGUAL','RETARD','LIBERACION',
-    // Packaging units
-    'CAJA','FRASCO','BLISTER','BLIS','VIAL','VIALES','SOBRE','SOBRES',
-    'TUBO','TUBOS','SACHET','SACHETS','ENVASE','POMO','UNIDAD','UNIDADES',
-]);
-
-function normalize(str = '') {
-    return str
-        .toUpperCase()
-        .normalize('NFD').replace(/[̀-ͯ]/g, '')
-        .replace(/(\d+)([A-Z]+)/g, '$1 $2')   // split fused "500MG" → "500 MG"
-        .replace(/[^\w\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-function getTokens(str) {
-    // Strip "X NNN" quantity patterns before scoring so "X 30 TAB" doesn't penalise Jaccard
-    const clean = normalize(str).replace(/\bX\s*\d+\b/g, ' ');
-    return clean.split(' ').filter(t => t.length >= 2 && !SKIP_TOKENS.has(t));
-}
-
-// Returns array of clean drug-name tokens (no lab, no form, no quantity)
-function buildQueryTokens(nombre) {
-    const clean = normalize(nombre).replace(/\bX\s*\d+\b/g, ' ');
-    return clean.split(/\s+/).filter(t => t.length >= 2 && !SKIP_TOKENS.has(t));
-}
-
-// Extracts the short identifier word from a lab name ("Laboratorios MK S.A." → "MK")
-const CORP_WORDS = new Set([
-    'LABORATORIO','LABORATORIOS','FARMACEUTICA','FARMACEUTICOS','FARMACEUTICO',
-    'INDUSTRIA','INDUSTRIAS','PRODUCTOS','COMERCIAL','INTERNACIONAL',
-    'SA','SL','SRL','SAS','CIA','CO','CV','NV','INC','LTD','LLC','CORP',
-    'DE','LA','EL','LOS','Y','DEL',
-]);
-function getLabToken(labNombre = '') {
-    if (!labNombre) return '';
-    return normalize(labNombre).split(' ')
-        .find(w => w.length >= 2 && w.length <= 12 && !CORP_WORDS.has(w) && !/^\d+$/.test(w)) || '';
-}
-
-// Try up to 3 search strategies, return first that has SRS results
-async function srsFetchMulti(product) {
-    const tokens   = buildQueryTokens(product.nombre);
-    const labToken = getLabToken(product.laboratorios?.nombre);
-
-    const strategies = [];
-
-    // 1. drug + dosage + lab  →  "ACETAMINOFEN 500 MK"
-    if (tokens.length > 0 && labToken) {
-        strategies.push([...tokens.slice(0, 4), labToken].join(' '));
-    }
-
-    // 2. drug + dosage only  →  "ACETAMINOFEN 500"
-    if (tokens.length > 0) {
-        strategies.push(tokens.slice(0, 4).join(' '));
-    }
-
-    // 3. concatenated non-numeric short tokens  →  "ACI TIP" → "ACITIP" (finds "ACI-TIP")
-    const brandParts = tokens.filter(t => !/^\d+$/.test(t)).slice(0, 2);
-    if (brandParts.length === 2 && brandParts.every(t => t.length <= 6)) {
-        strategies.push(brandParts.join(''));
-    }
-
-    // Deduplicate, try each until results are found
-    const seen = new Set();
-    for (const q of strategies) {
-        if (seen.has(q) || !q.trim()) continue;
-        seen.add(q);
-        const json = await buscarEnSrs(q, { porPagina: 15 });
-        if ((json.data || []).length > 0) return json;
-    }
-    return { data: [], total: 0 };
-}
-
-function scoreMatch(dbName, srsName) {
-    const a = new Set(getTokens(dbName));
-    const b = new Set(getTokens(srsName));
-    if (a.size === 0 || b.size === 0) return 0;
-
-    const inter = [...a].filter(t => b.has(t)).length;
-    const union = new Set([...a, ...b]).size;
-    let s = inter / union;
-
-    // Boost if dosage numbers all match
-    const aNums = [...a].filter(t => /^\d+$/.test(t));
-    const bNums = new Set([...b].filter(t => /^\d+$/.test(t)));
-    if (aNums.length > 0 && aNums.every(n => bNums.has(n))) {
-        s = Math.min(1, s * 1.3);
-    }
-    return s;
-}
-
-function parsePrincipios(srs) {
-    const paRaw   = (srs.principio_activo || '').trim();
-    const concRaw = (srs.concentracion    || '').trim();
-    if (!paRaw) return [];
-
-    const nombres = paRaw.split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
-    const concs   = concRaw.split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
-
-    return nombres.map((nombre, i) => ({
-        nombre,
-        concentracion: concs[i] || '',
-        orden: i,
-    }));
-}
-
-function buildPaText(principios) {
-    return principios.map(p => [p.nombre, p.concentracion].filter(Boolean).join(' ')).join(', ');
-}
-
-
-// ── Save to Supabase ──────────────────────────────────────────────────────────
-
-async function applyPrincipios(productId, principios) {
-    const text = buildPaText(principios);
-    await deleteProductActivePrinciples(productId);
-    if (principios.length > 0) {
-        await insertProductActivePrinciples(
-            principios.map(p => ({ product_id: productId, ...p }))
-        );
-    }
-    await updateProductPrincipioActivo(productId, text);
-}
+// ── La cuenta y las escrituras: núcleo (2026-10-15) ──────────────────────────
+// Búsquedas, parecido y principios en `utils/enriquecerSrs`; leer y guardar en
+// `data/srs`. La app recorre lo mismo. Acá quedan los nombres de siempre.
+const CONCURRENCY    = SRS_CONCURRENCIA;
+const BATCH_SIZE     = SRS_LOTE;
+const DELAY_MS       = SRS_PAUSA_MS;
+const AUTO_MIN       = SRS_AUTO_MIN;
+const REVIEW_MIN     = SRS_REVISION_MIN;
+const TOP_CANDIDATES = SRS_CANDIDATOS;
+const srsFetchMulti  = buscarEnSrsParaProducto;
+const scoreMatch     = parecidoSrs;
+const parsePrincipios = principiosDeSrs;
+const applyPrincipios = (productId, principios) => aplicarPrincipiosDeSrs(productId, principios);
 
 // ── Confidence badge ──────────────────────────────────────────────────────────
 

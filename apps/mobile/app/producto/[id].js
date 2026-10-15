@@ -179,6 +179,7 @@ export default function Producto() {
           {ficha ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {ficha.es_antibiotico ? <Pildora texto="Bajo Receta" color={MARCA.rojo} /> : null}
+              {ficha.requiere_receta ? <Pildora texto="Receta" color={MARCA.rojo} /> : null}
               {ficha.activo === false ? <Pildora texto="Inactivo" color={colorSistema.texto2} /> : null}
               {!devolutivo ? <Pildora texto="No devolutivo (ND)" color={MARCA.ambar} /> : null}
               {ficha.perecedero ? <Pildora texto="Perecedero" color={MARCA.azulClaro} /> : null}

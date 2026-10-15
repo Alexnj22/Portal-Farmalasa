@@ -21,6 +21,78 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.6 — App: paridad de Inventario: productos, pedidos, gestión de stock e inventario con el portal
+
+### Productos e inventario en la app: filtros, orden, marcas de la fila, SRS y pegar foto
+
+- App, Productos: filtro por laboratorio; orden por producto, laboratorio,
+  categoría o estado; cada fila con las marcas del portal (Pérdida / Margen
+  bajo, «Pérd. <precio especial>», «cambios», «ND», «Receta»).
+- App, Productos: «Enriquecer SRS» nativo (aplicar los parecidos, revisar uno
+  por uno con candidatos, marcar «no lleva principio activo»); al editar
+  principios activos, buscador del registro SRS que copia el principio.
+- App, ficha de producto: marca «Receta»; la foto se puede pegar desde lo
+  copiado (además de tomarla o elegirla con recorte, y ampliarla).
+- App, Inventario: filtro por laboratorio (`p_lab_id`) y orden por sucursal
+  (con todas las salas), laboratorio, producto o unidades, en los dos sentidos.
+- Núcleo: `fetchIndicadoresDeCatalogo` (de `TabCatalogo`), `utils/srs`
+  (`resultadoDeSrs`, del buscador SRS), `utils/enriquecerSrs` y la sección
+  «Enriquecer SRS» de `data/srs` (del modal); el portal los usa igual. Al
+  aplicar desde «Enriquecer SRS» ahora se revisa el error y se anota
+  `UPDATE_PRODUCT_PRINCIPLES` (antes un fallo contaba como aplicado).
+
+### Pedidos en la app: revisar antes de confirmar, sin stock en Bodega, buscador, en vivo, lotes y presentación al recibir, orden de reglas
+
+- App, Generar: cada sala dice «N bajo mínimo · N en cero» y «Último pedido
+  hace X»; «Generar» calcula la vista previa y abre «Revisa antes de
+  confirmar» con el resumen por sala, y «Confirmar» guarda esa misma vista
+  previa (`confirmarPedidoDirecto`). Abajo, «Productos sin stock en Bodega»
+  con buscador y orden.
+- App, lista de pedidos: buscador por número, se actualiza sola cuando cambia
+  un pedido y avisa a la sala cuando Bodega le manda uno nuevo.
+- App, recibir: cada renglón dice de qué lotes debe venir, se puede contar en
+  otra presentación, «¿Necesitas un producto ya?» busca en todo el pedido y
+  dice en qué hoja cayó, y una hoja larga tiene buscador.
+- App, reglas de despacho: ordenar por laboratorio, producto, estado o regla.
+- Núcleo: `ultimoPedidoDeSala`, `ordenarSinBodega` (de `TabGenerar`),
+  `opcionesDePresentacionDeRenglon` y `lotesQueDebenVenir` (de
+  `RecepcionModal`); el portal los usa sin cambio de comportamiento.
+
+### Rutas en la app: no se pudo entregar, cerrar con motivo, cifras y filtros
+
+- App, ruta de reparto: quien gestiona rutas puede marcar «No se pudo
+  entregar» una parada (con motivo; la sala vuelve a quedar disponible) y
+  «Cerrar ruta» con paradas pendientes (con motivo), como el portal
+  (`marcarParadaNoEntregada`, `cerrarRutaConMotivo`).
+- App: iniciar una ruta pendiente y marcar entregada una parada también para
+  quien gestiona rutas (antes sólo el conductor); «Volver a base» cuando no
+  quedan pendientes aunque se hayan devuelto paradas.
+- App, lista de rutas: cifras «En la calle / Por salir / Completadas hoy» y
+  filtros de estado, período y conductor.
+- Núcleo: `cifrasDeRutas`, `completadasEnPeriodo`, `conductoresDeRutas` y
+  `PERIODOS_RUTAS` mudados de `TabRutas`; el portal los usa igual.
+
+### Gestión de stock en la app: armar envío nativo, descargas y filtros del portal
+
+- App, Gestión de stock → «Sin venta»: «Armar envío» ya no abre el portal.
+  Abre el formulario nativo de envío ARMADO, como el `precarga` del portal:
+  sala de origen, destino, «Baja rotación», la nota escrita y cada producto
+  con todo lo que hay (a Bodega, sólo presentaciones completas). Lo que salió
+  y tenía Min/Max se pide en 0/0 y se anota `ENVIO_SUGERIDO_SIN_VENTA`.
+- App, «Sin venta»: tarjetas «A otra sala» / «A Bodega» que filtran, filtro
+  «Con Min/Max», nota de la unidad de despacho por fila, aviso de que el envío
+  lo arma quien trabaja en esa sala, y descarga CSV.
+- App, «Sin Min/Max»: indicadores (total, venta 6 meses, Agregar y Evaluar que
+  filtran), orden por venta/unidades/producto en los dos sentidos, descarga
+  CSV, y pedir/aplicar sólo donde la sugerencia es agregar o evaluar (igual
+  que el portal).
+- Núcleo: la regla del envío sugerido (`productosDeEnvioSugerido`,
+  `renglonesDeEnvioSugerido`, `notaDeEnvioSugerido`), las descargas
+  (`csvDeParados`, `csvSinMinMax`), el orden (`ordenarSinMinMax`),
+  `renglonesQueSalieron` y `pedirQuitarMinMaxDeEnviados` se mudaron de
+  `TabParados`/`TabSinMinMax`/`EnviarProductoModal` al núcleo; el portal los
+  usa sin cambio de comportamiento.
+
 ## v2.1294.5 — App: paridad de Caja y ventas con el portal
 
 ### App: Cortes con las fichas de apertura y confirmar desde la tarjeta

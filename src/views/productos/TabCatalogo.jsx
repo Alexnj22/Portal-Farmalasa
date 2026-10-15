@@ -34,7 +34,7 @@ import {
     guardarPrincipiosActivos,
     updateProductCategoria, insertProductCategory, guardarUbicacionesProducto,
     updateProductDevolutivo, updateProductFoto, fetchVisibleEnApp, setVisibleEnApp, fetchProductCounts,
-    fetchIdsModificadosDesde, fetchIdsPorMargen, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
+    fetchIdsModificadosDesde, fetchIdsPorMargen, fetchProductsList, fetchIndicadoresDeCatalogo, fetchProductDetail,
 } from '@nucleo/data/productos';
 import PortalInput from '../../components/common/PortalInput';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
@@ -1499,24 +1499,13 @@ export default function TabCatalogo({
 
             if (rows.length > 0) {
                 const ids = rows.map(r => r.id);
-                const [{ data: pc, error: pcErr }, { data: prc, error: prcErr }, { data: pp, error: ppErr }] = await fetchProductChangeAndMarginData(ids);
-                if (pcErr) throw pcErr;
-                if (prcErr) throw prcErr;
-                if (ppErr) throw ppErr;
-                if (rid !== loadRef.current) return;
-                const visiblePrc = (prc || []).filter(c => !(CHANGELOG_HIDDEN.has(c.campo) && !c.valor_anterior));
-                setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...visiblePrc.map(c => c.product_id)]));
-                const mm  = {};
-                const slm = {};
+                // Las marcas de la fila: núcleo (`fetchIndicadoresDeCatalogo`), las mismas de la app.
                 const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
-                (pp || []).forEach(row => {
-                    const w = worstMarginOf(row, marginCheckFields);
-                    if (w !== null && (mm[row.product_id] === undefined || w < mm[row.product_id])) mm[row.product_id] = w;
-                    specialLossKeys(row).forEach(k => {
-                        if (!slm[row.product_id]) slm[row.product_id] = new Set();
-                        slm[row.product_id].add(k);
-                    });
-                });
+                const ind = await fetchIndicadoresDeCatalogo(ids, marginCheckFields, CHANGELOG_HIDDEN);
+                if (rid !== loadRef.current) return;
+                setChangedIds(ind.cambiados);
+                const mm = ind.margen;
+                const slm = ind.perdidaEspecial;
                 setMarginMap(mm);
                 setSpecialLossMap(slm);
             } else {

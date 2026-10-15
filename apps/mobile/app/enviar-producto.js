@@ -14,15 +14,25 @@
 //
 // Al transferir se crea el envío y se despacha (`enviarAOtraSala`, que ya
 // anota en la bitácora); el ticket de la bolsa sale por la caja de la sala.
+//
+// Con `?sugerido=1` llega ARMADO desde Gestión de stock → «Sin venta» (el
+// `precarga` del portal): sala de origen, destino, «Baja rotación», la nota y
+// los productos, cada uno con todo lo que hay en su presentación más chica (a
+// Bodega, en la de despacho) — `renglonesDeEnvioSugerido`, la misma regla del
+// portal. No sale solo: la sala quita lo que no quiera y aprieta Transferir.
+// Lo que salió y tenía Min/Max se pide en 0/0 (`pedirQuitarMinMaxDeEnviados`,
+// que anota ENVIO_SUGERIDO_SIN_VENTA).
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
-import { buscarInventarioGlobalV2, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
+import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
-import { MAX_FOTOS_ENVIO, TOPE_RENGLONES_ENVIO, enviarAOtraSala, envioNecesitaFoto, motivosEnvioPorDireccion } from '@nucleo/data/envios';
+import { MAX_FOTOS_ENVIO, TOPE_RENGLONES_ENVIO, enviarAOtraSala, envioNecesitaFoto, motivosEnvioPorDireccion, renglonesQueSalieron } from '@nucleo/data/envios';
+import { pedirQuitarMinMaxDeEnviados } from '@nucleo/data/minmaxRequests';
+import { renglonesDeEnvioSugerido } from '@nucleo/utils/gestionDeStock';
 import { BUCKET_EVIDENCIA } from '@nucleo/data/evidencia';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '@nucleo/utils/unidadesInventario';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
@@ -40,6 +50,7 @@ import { MenuDeFiltros } from '../componentes/Filtros';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { imprimirEnLaSala } from '../componentes/imprimir';
+import { olvidarEnvioSugerido, verEnvioSugerido } from '../componentes/inventario/envioSugerido';
 
 const estante = (erp, vencidos) => `${ERP_NAMES[erp] ?? erp}${vencidos ? ' · vencidos' : ''}`;
 
@@ -48,9 +59,15 @@ export default function EnviarProducto() {
   const todas = getScope?.('traslados') === 'ALL';
   const miSala = salaDelUsuario(user);
   const miErp = BRANCH_A_ERP[Number(miSala)] ?? null;
-  const clave = `envio_app_${miSala ?? 'todas'}`;
+  const { sugerido: conSugerido } = useLocalSearchParams();
+  // Se lee al montar y se olvida en un efecto (ver `envioSugerido.js`).
+  const [sugerido] = useState(() => (String(conSugerido) === '1' ? verEnvioSugerido() : null));
+  useEffect(() => { if (sugerido) olvidarEnvioSugerido(); }, [sugerido]);
+  // Un envío sugerido guarda su borrador aparte: si compartiera la clave con
+  // el envío a mano, abrir la sugerencia pisaría lo que la sala venía armando.
+  const clave = sugerido ? `envio_sugerido_app_${miSala ?? 'todas'}` : `envio_app_${miSala ?? 'todas'}`;
 
-  const [origenErp, setOrigenErp] = useState(miErp ?? ERP_ORDEN[0]);
+  const [origenErp, setOrigenErp] = useState(sugerido ? Number(sugerido.origenErp) : (miErp ?? ERP_ORDEN[0]));
   const [vencidos, setVencidos] = useState(false);
   const [destino, setDestino] = useState(null);
   const [texto, setTexto, aplicado] = useBusqueda();
@@ -65,12 +82,40 @@ export default function EnviarProducto() {
   const [fotos, setFotos] = useState([]);
   const [despacho, setDespacho] = useState(new Map());
   const [enviando, setEnviando] = useState(false);
+  const [precargando, setPrecargando] = useState(!!sugerido);
+  const [sinArmar, setSinArmar] = useState([]);
+
+  // El envío sugerido: cada producto con todo lo que hay, repartido en lotes.
+  useEffect(() => {
+    if (!sugerido) return undefined;
+    let vivo = true;
+    const productos = (sugerido.productos ?? []).slice(0, TOPE_RENGLONES_ENVIO);
+    const ids = productos.map((p) => Number(p.erp_product_id));
+    Promise.all([fetchExistenciasDeProductos(Number(sugerido.origenErp), ids), fetchPresentaciones(ids)])
+      .then(([filas, pres]) => {
+        if (!vivo) return;
+        if (pres.error) throw pres.error;
+        const { listos, fuera } = renglonesDeEnvioSugerido(productos, filas, pres.porProducto);
+        setRenglones(listos.map((r) => ({
+          erp_product_id: r.erp_product_id, descripcion: r.descripcion, presentacion_tipo: r.presentacion_tipo,
+          factor: r.factor, cantidad: r.cantidad, unidades: r.unidades, lotes: r.lotes,
+        })));
+        setSinArmar(fuera);
+        setDestino(Number(sugerido.destino));
+        setMotivo(sugerido.motivo ?? null);
+        setNota(sugerido.nota ?? '');
+      })
+      .catch((e) => { if (vivo) fallo('No se pudo armar el envío', e?.message); })
+      .finally(() => { if (vivo) setPrecargando(false); });
+    return () => { vivo = false; };
+  }, [sugerido]);
 
   useEffect(() => {
+    if (sugerido) return;   // la sugerencia manda
     const b = loadDraft(clave);
     if (b?.renglones?.length) { setRenglones(b.renglones); setDestino(b.destino ?? null); setMotivo(b.motivo ?? null); setNota(b.nota ?? ''); }
-  }, [clave]);
-  useEffect(() => { saveDraft(clave, { renglones, destino, motivo, nota }); }, [clave, renglones, destino, motivo, nota]);
+  }, [clave, sugerido]);
+  useEffect(() => { if (!precargando) saveDraft(clave, { renglones, destino, motivo, nota }); }, [clave, renglones, destino, motivo, nota, precargando]);
 
   // Buscar en el estante de origen.
   useEffect(() => {
@@ -187,10 +232,26 @@ export default function EnviarProducto() {
       const fallos = (s.fallos ?? []).length;
       const papel = ticket ? await ticket : null;
       clearDraft(clave);
+      let avisoMinMax = null;
+      let minMaxFallo = false;
+      if (sugerido && enviadas) {
+        const { conMinMax, fallidas } = await pedirQuitarMinMaxDeEnviados({
+          filas: sugerido.filas, enviados: renglonesQueSalieron(renglones, salidas), sala: Number(origenErp),
+          nombreSala: ERP_NAMES[origenErp], nombreDestino: ERP_NAMES[destino], user, desde: 'app',
+        });
+        if (conMinMax) {
+          minMaxFallo = fallidas.length > 0;
+          avisoMinMax = fallidas.length
+            ? `No se pudo pedir quitar el Min/Max de: ${fallidas.join(', ')}. Pídelo a mano.`
+            : `Se pidió quitar el Min/Max de ${conMinMax} producto${conMinMax === 1 ? '' : 's'}; lo aprueba quien aprueba Min/Max.`;
+        }
+        sugerido.alTerminar?.();
+      }
       if (!enviadas) fallo('No salió nada', s.error ?? 'El envío quedó creado pero no se despachó. Reintenta desde Envíos.');
       else if (fallos) fallo('Salió una parte', `${enviadas} renglón(es) salieron y ${fallos} no. Revisa el envío en Traslados → Envíos.`);
       else if (papel && !papel.ok) fallo('Producto en camino, pero el ticket no salió', papel.detalle);
-      else listo('Producto en camino', `A ${ERP_NAMES[destino]} · pega el ticket en la bolsa`);
+      else if (minMaxFallo) fallo('Producto en camino', avisoMinMax);
+      else listo('Producto en camino', [`A ${ERP_NAMES[destino]} · pega el ticket en la bolsa`, avisoMinMax].filter(Boolean).join('\n'));
       router.back();
     } catch (e) {
       fallo('No se pudo enviar', e?.message);
@@ -214,6 +275,10 @@ export default function EnviarProducto() {
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           {!todas && miErp == null ? <Aviso tono="freno" texto="Tu usuario no tiene una sala desde la cual enviar." /> : null}
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Sale de ${estante(origenErp, vencidos)}`}</Text>
+          {precargando ? <Aviso tono="nota" texto="Armando el envío sugerido…" /> : null}
+          {sinArmar.length ? (
+            <Aviso tono="cuidado" texto={`No entran en el envío: ${sinArmar.map((f) => `${f.descripcion} (${f.motivo})`).join(', ')}.`} />
+          ) : null}
 
           <Seccion titulo={`Productos · ${renglones.length} de ${TOPE_RENGLONES_ENVIO}`}>
             {renglones.map((r, i) => (

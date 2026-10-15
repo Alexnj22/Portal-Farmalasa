@@ -10,13 +10,19 @@
 // que filtran, filtran igual (núcleo: `fetchIdsModificadosDesde`,
 // `fetchIdsPorMargen`). La ficha edita foto, devolutivo, categoría, principios
 // activos y ubicaciones. Las presentaciones se ven en `presentaciones`.
-import { memo, useEffect, useState } from 'react';
+//
+// Como el portal: filtro por laboratorio, orden por producto, laboratorio,
+// categoría o estado, y las marcas de cada fila — margen (pérdida / bajo),
+// «Pérd. <precio especial>», «cambios», «ND» (no devolutivo) y «Receta» —
+// que salen de `fetchIndicadoresDeCatalogo` (núcleo), lo mismo que el portal.
+import { memo, useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchIdsModificadosDesde, fetchIdsPorMargen, fetchProductCounts, fetchProductsList } from '@nucleo/data/productos';
+import { fetchIdsModificadosDesde, fetchIdsPorMargen, fetchIndicadoresDeCatalogo, fetchProductCounts, fetchProductsList } from '@nucleo/data/productos';
+import { fetchLaboratoriosBasic } from '@nucleo/data/laboratorios';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { nivelesVisibles } from '@nucleo/utils/preciosDeProducto';
+import { marginLabel, nivelesVisibles, specialLossLabel } from '@nucleo/utils/preciosDeProducto';
 import { fetchProductCategories } from '@nucleo/data/inventarioTab';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import Segmentos from '../componentes/Segmentos';
@@ -32,10 +38,20 @@ import { MARCA } from '../componentes/inicio/marca';
 import { TrasLaTransicion } from '../componentes/trasLaTransicion';
 
 const POR_PAGINA = 30;
+const ORDENES = [
+  { id: 'nombre:asc', label: 'Producto, A → Z' }, { id: 'nombre:desc', label: 'Producto, Z → A' },
+  { id: 'lab:asc', label: 'Laboratorio, A → Z' }, { id: 'lab:desc', label: 'Laboratorio, Z → A' },
+  { id: 'categoria:asc', label: 'Categoría, A → Z' }, { id: 'categoria:desc', label: 'Categoría, Z → A' },
+  { id: 'activo:desc', label: 'Activos primero' }, { id: 'activo:asc', label: 'Inactivos primero' },
+];
+const SIN_MARCAS = { margen: undefined, especial: null, cambios: false };
 
 // El catálogo son miles: lista virtualizada que pide la página siguiente al
 // llegar abajo, y fila memoizada.
-const FilaProducto = memo(function FilaProducto({ p }) {
+const FilaProducto = memo(function FilaProducto({ p, marcas = SIN_MARCAS }) {
+  const m = marcas.margen !== undefined ? marginLabel(marcas.margen) : null;
+  const especial = marcas.especial ? [...marcas.especial] : [];
+  const conMarcas = p.es_antibiotico || p.requiere_receta || !p.activo || p.tipo_medicamento || m || especial.length || marcas.cambios || p.devolutivo === false;
   return (
     <Pressable
       onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/producto/[id]', params: { id: String(p.id), nombre: p.nombre } }); }}
@@ -50,9 +66,14 @@ const FilaProducto = memo(function FilaProducto({ p }) {
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
               {[p.laboratorios?.nombre, p.principio_activo].filter(Boolean).join(' · ') || 'Sin laboratorio'}
             </Text>
-            {p.es_antibiotico || !p.activo || p.tipo_medicamento ? (
+            {conMarcas ? (
               <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                {m ? <Pildora texto={m.label} color={m.variante === 'danger' ? MARCA.rojo : MARCA.ambar} /> : null}
+                {especial.map((k) => <Pildora key={k} texto={`Pérd. ${specialLossLabel(k)}`} color={MARCA.violeta} />)}
+                {marcas.cambios ? <Pildora texto="cambios" color={MARCA.ambar} /> : null}
+                {p.devolutivo === false ? <Pildora texto="ND · no devolutivo" color={MARCA.ambar} /> : null}
                 {p.es_antibiotico ? <Pildora texto="Bajo Receta" color={MARCA.violeta} /> : null}
+                {p.requiere_receta ? <Pildora texto="Receta" color={MARCA.rojo} /> : null}
                 {!p.activo ? <Pildora texto="Inactivo" color={colorSistema.texto2} /> : null}
                 {p.tipo_medicamento ? <Pildora texto={p.tipo_medicamento} color={colorSistema.texto2} /> : null}
               </View>
@@ -70,6 +91,11 @@ export default function Productos() {
   const [estado, setEstado] = useState('activos');
   const [categoria, setCategoria] = useState('todas');
   const [categorias, setCategorias] = useState([]);
+  const [lab, setLab] = useState('todos');
+  const [labs, setLabs] = useState([]);
+  const [orden, setOrden] = useState('nombre:asc');
+  // Las marcas de las filas cargadas, por id (se suman página a página).
+  const [marcas, setMarcas] = useState({});
   // La cuenta y el «parecidos» los dice la última página que llegó.
   const [resumen, setResumen] = useState({ total: null, aproximado: false });
   const { hasPermission, maxPriceLevel } = useAuth();
@@ -89,6 +115,18 @@ export default function Productos() {
     }
   }, [conCosto, maxPriceLevel]);
 
+  useEffect(() => { fetchLaboratoriosBasic().then(({ data }) => setLabs((data || []).map((l) => ({ id: String(l.id), label: l.nombre })))).catch(() => {}); }, []);
+  const camposMargen = nivelesVisibles(maxPriceLevel).filter((f) => f.key !== 'precio_7' && f.key !== 'premium');
+  const marcar = useCallback((filas) => {
+    const ids = filas.map((p) => p.id);
+    if (!ids.length) return;
+    // Si la lectura falla, la fila se ve sin marcas: nunca bloquea la lista.
+    fetchIndicadoresDeCatalogo(ids, camposMargen).then((ind) => setMarcas((m) => {
+      const n = { ...m };
+      for (const id of ids) n[id] = { margen: ind.margen[id], especial: ind.perdidaEspecial[id] ?? null, cambios: ind.cambiados.has(id) };
+      return n;
+    })).catch(() => {});
+  }, [maxPriceLevel]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { fetchProductCategories().then(({ data }) => setCategorias((data || []).map((r) => r.nombre))).catch(() => {}); }, []);
 
   // Una página de la base (`fetchProductsList`, la misma del portal). Los
@@ -103,18 +141,24 @@ export default function Productos() {
     if (ids && !ids.length) { setResumen({ total: 0, aproximado: false }); return []; }
     const ahora = new Date();
     const { data, count, error, aproximado } = await fetchProductsList({
-      search: busqueda || null, page: Math.floor(desde / porPagina) + 1, pageSize: porPagina, filterActivo: estado, laboratorioId: null,
+      search: busqueda || null, page: Math.floor(desde / porPagina) + 1, pageSize: porPagina, filterActivo: estado, laboratorioId: lab === 'todos' ? null : Number(lab),
       categoria: categoria === 'todas' ? null : categoria,
       filterNuevos: foco === 'nuevos' ? new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString() : null,
-      effectiveBids: ids, sortField: 'nombre', sortDir: 'asc',
+      effectiveBids: ids, sortField: orden.split(':')[0], sortDir: orden.split(':')[1],
     });
     if (error) return { error };
     setResumen({ total: count || 0, aproximado: !!aproximado });
+    marcar(data || []);
     return data || [];
   };
 
-  const grupos = [{ id: 'categoria', titulo: 'Categoría', activa: categoria, porDefecto: 'todas', onCambiar: setCategoria,
-    opciones: [{ id: 'todas', label: 'Todas' }, ...categorias.map((c) => ({ id: c, label: c }))] }];
+  const grupos = [
+    { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,
+      opciones: [{ id: 'todos', label: 'Todos' }, ...labs] },
+    { id: 'categoria', titulo: 'Categoría', activa: categoria, porDefecto: 'todas', onCambiar: setCategoria,
+      opciones: [{ id: 'todas', label: 'Todas' }, ...categorias.map((c) => ({ id: c, label: c }))] },
+    { id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'nombre:asc', onCambiar: setOrden, opciones: ORDENES },
+  ];
 
   return (
     <>
@@ -128,8 +172,8 @@ export default function Productos() {
       <MenuDeFiltros grupos={grupos} />
       <TrasLaTransicion>
       <ListaPaginada porPagina={30} cargarPagina={cargarPagina}
-        dependencias={[busqueda, estado, categoria, foco, modificados, margen]}
-        keyExtractor={(p) => String(p.id)} renderItem={(p) => <FilaProducto p={p} />}
+        dependencias={[busqueda, estado, categoria, foco, modificados, margen, lab, orden]}
+        keyExtractor={(p) => String(p.id)} renderItem={(p) => <FilaProducto p={p} marcas={marcas[p.id]} />} extraData={marcas}
         vacio={busqueda ? 'Ningún producto con esa búsqueda' : 'Sin productos'}
         cabecera={(
           <View style={{ gap: 10, marginBottom: 2 }}>
@@ -155,7 +199,10 @@ export default function Productos() {
                 );
               })}
             </ScrollView>
-            <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Presentaciones" borde onPress={() => router.push('/presentaciones')} /></View>
+            <View style={{ marginHorizontal: 16, gap: 8 }}>
+              <BotonGrande texto="Presentaciones" borde onPress={() => router.push('/presentaciones')} />
+              <BotonGrande texto="Enriquecer SRS" borde color={MARCA.violetaClaro} onPress={() => router.push('/producto/enriquecer-srs')} />
+            </View>
             <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Todos' }]} />
             {resumen.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran productos parecidos." /></View> : null}
             {resumen.total != null ? (

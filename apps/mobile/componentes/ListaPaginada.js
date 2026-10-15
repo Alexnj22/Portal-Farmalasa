@@ -48,6 +48,7 @@ export default function ListaPaginada({
   cargarPagina, porPagina = 50, dependencias = [], renderItem, keyExtractor,
   cabecera = null, vacio = 'Sin resultados', minAnchoColumna = 360,
   alCargar, // recibe TODAS las filas cargadas hasta ahora, después de cada página
+  extraData, // lo que, además de las filas, cambia cómo se pinta una fila (FlatList no lo ve solo)
 }) {
   const columnas = useColumnas(minAnchoColumna);
   const [filas, setFilas] = useState([]);
@@ -111,6 +112,7 @@ export default function ListaPaginada({
     <FlatList
       key={`col-${columnas}`}
       data={filas}
+      extraData={extraData}
       numColumns={columnas}
       columnWrapperStyle={columnas > 1 ? { gap: 10, paddingHorizontal: 16 } : undefined}
       renderItem={({ item, index }) => (

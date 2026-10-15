@@ -6,7 +6,8 @@
 // (`agregar_extra_a_pedido`), así que la lista se siembra de lo que ya está
 // anotado: reabrir la pantalla lo encuentra.
 
-import { etiquetaDePresentacion } from './recepcionDePedido';
+import { conteoInicial, etiquetaDePresentacion } from './recepcionDePedido';
+import { lotesAsignadosToDispatch } from './papelDePedido';
 
 const PRES_DE_DESPACHO = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Unidad', caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja', unidad: 'Unidad' };
 
@@ -49,3 +50,44 @@ export const extrasDeRenglones = (rows = []) => rows
         // Con una propuesta en curso, la cantidad es la que aceptó la otra parte.
         bloqueado: r.resolucion_status != null,
     }));
+
+// ── Lo que se le muestra al renglón que se cuenta (2026-10-15) ──────────────
+// Mudado de `RecepcionModal` para que la app cuente con las MISMAS opciones y
+// muestre los mismos lotes.
+
+/**
+ * Las presentaciones que se le pueden poner a un renglón, con la del despacho
+ * primero. `presMap` = id de producto → [{ factor, label }]
+ * (`presentacionesDeRenglones` / `mapaDePresentaciones`). `incluir`: factores
+ * que TIENEN que estar aunque el catálogo no los traiga — la unidad del
+ * sistema cuando lo enviado no cabe exacto en la presentación de despacho.
+ */
+export function opcionesDePresentacionDeRenglon(r, presMap = {}, incluir = []) {
+    const erpFactor  = Number(r.factor) || 1;
+    const dispFactor = Number(r.dispatch_factor) || erpFactor;
+    const dispOpt    = { factor: dispFactor, label: rotuloDeDespacho(r.dispatch_tipo, dispFactor) };
+    const vistos = new Set();
+    const opts = [];
+    if (r.dispatch_tipo && dispFactor !== erpFactor) { opts.push(dispOpt); vistos.add(dispFactor); }
+    (presMap?.[r.erp_product_id] ?? []).forEach((o) => {
+        if (!vistos.has(o.factor)) { opts.push(o); vistos.add(o.factor); }
+    });
+    if (!opts.length) { opts.push(dispOpt); vistos.add(dispFactor); }
+    [conteoInicial(r).fPres, ...incluir].forEach((f) => {
+        if (!vistos.has(f)) { opts.push({ factor: f, label: rotuloDeDespacho('UNIDAD', f) }); vistos.add(f); }
+    });
+    return opts;
+}
+
+/**
+ * Los lotes que DEBEN venir en un renglón (`lotes_asignados`, lo que Bodega
+ * calculó al generar), en la presentación de despacho: `[{ lote, fecha_vencimiento, take }]`.
+ * «Deben venir», no «vinieron»: nadie confirma cuáles salieron.
+ */
+export function lotesQueDebenVenir(row) {
+    const crudos = Array.isArray(row?.lotes_asignados) ? row.lotes_asignados : [];
+    if (!crudos.length) return [];
+    const erpFactor  = Number(row.factor) || 1;
+    const dispFactor = Number(row.dispatch_factor) || erpFactor;
+    return lotesAsignadosToDispatch(crudos, erpFactor, dispFactor);
+}

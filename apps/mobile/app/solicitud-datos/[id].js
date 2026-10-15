@@ -18,7 +18,8 @@ import {
   erroresDeForma, faltaParaRecibir, fetchSolicitudes, formularioDeSolicitud, guardarSolicitud, llenarConPersona, plazoDe,
   resumenDeCliente, terminoDeBusqueda,
 } from '@nucleo/data/solicitudesDatos';
-import { papelDeRespuesta } from '@nucleo/utils/respuestaDeDatos';
+import { filasParaPortabilidad, papelDeRespuesta } from '@nucleo/utils/respuestaDeDatos';
+import { compartirCsv } from '../../componentes/sistema/csv';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -170,6 +171,21 @@ function Cuerpo({ solicitud }) {
     });
   };
 
+  // «Descargar en archivo» (derecho de portabilidad): el MISMO CSV del portal
+  // —Grupo, Dato, Valor; `filasParaPortabilidad`— a la hoja de compartir. Se
+  // anota como entrega y como salida de datos (`compartirCsv`).
+  const archivo = async () => {
+    const filas = filasParaPortabilidad({
+      cliente: hallazgo?.cliente ?? null, empleado: hallazgo?.empleado ?? null, resumen: hallazgo?.resumen ?? null,
+    });
+    try {
+      const ok = await compartirCsv({ headers: ['Grupo', 'Dato', 'Valor'], rows: filas, nombre: `datos-${solicitud.folio_txt}`, modulo: 'datos_personales' });
+      if (ok) useStaffStore.getState().appendAuditLog?.('ENTREGAR_DATOS_SOLICITUD', String(solicitud.id), { folio: solicitud.folio_txt, formato: 'csv', filas: filas.length });
+    } catch (e) {
+      fallo('No se pudo preparar el archivo', mensajeAmigable(e));
+    }
+  };
+
   const dia = diaDe(f.recibida_at);
   const hora = horaDe(f.recibida_at);
 
@@ -264,6 +280,7 @@ function Cuerpo({ solicitud }) {
                   valor={d.falló ? 'no se pudo consultar' : !d.filas.length ? 'sin coincidencias' : d.filas.length === 1 ? (comoPersona(d.clave, d.filas[0]).nombre || '1 coincidencia') : `${d.filas.length} coincidencias`} />
               ))}
               <BotonGrande texto="Imprimir o compartir la respuesta" borde color={MARCA.azulClaro} onPress={respuesta} />
+              {(f.derechos ?? []).includes('portabilidad') ? <BotonGrande texto="Descargar en archivo (CSV)" borde color={MARCA.azulClaro} onPress={archivo} /> : null}
             </>
           )}
         </Seccion>

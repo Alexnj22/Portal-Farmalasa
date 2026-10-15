@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.1 — Tarjeta nítida al terminar de girar
+
+- La tarjeta queda nítida apenas termina de girar (antes ~1.3 s borrosa): el resorte del giro tardaba en apagarse y la cara seguía con una fracción de grado de perspectiva, que obligaba a componerla en 3D. A menos de 0.9° de la cara se la da por asentada e iOS la dibuja píxel a píxel.
+
 ## v2.1294.0 — App de clientes: volver a pedir, dónde lo hay, mis créditos, reserva en pantalla bloqueada y código de barras
 
 - **Volver a pedir** (Mis compras y Mis tratamientos): arma el carrito con lo de esa compra o la última presentación del tratamiento, con precios de hoy, y dice qué no se pudo agregar y por qué. Lo bajo receta sigue pidiendo la foto al reservar. Acción nueva `volver_a_pedir`.

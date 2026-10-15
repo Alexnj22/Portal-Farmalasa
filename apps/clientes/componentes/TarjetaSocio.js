@@ -64,6 +64,21 @@ const RADIO = 22;
 // tarjeta respecto de su ancho: una de verdad mide 0,76 mm sobre 85,6 mm
 // (0,9 %); un poco más, para que en la pantalla se lea.
 const PERSPECTIVA = 1000;
+
+// El resorte del giro llega en ~0.3 s pero se APAGA mucho después: Reanimated
+// lo da por terminado con energía relativa 6e-9, o sea a ~0.008° del final, y
+// con este amortiguamiento eso son ~1.3 s (2026-10-15, «al girar se ve borroso,
+// pasa 1 segundo y queda nítido»). Todo ese rato el valor es 0.9997 y no 1: la
+// cara seguía con perspectiva y giro, iOS la componía en 3D y re-muestreaba el
+// texto y el QR. Después del primer rebote el resorte ya no se aleja más de
+// 0.3° de la cara, así que a menos de 0.9° se la da por ASENTADA: identidad
+// exacta desde ~0.45 s, sin salto que se vea.
+const asentado = (g) => {
+  'worklet';
+  if (Math.abs(g) < 0.005) return 0;
+  if (Math.abs(g - 1) < 0.005) return 1;
+  return g;
+};
 const GROSOR = 0.011;
 const limitar = (v) => { 'worklet'; return Math.max(-1, Math.min(1, v)); };
 // Nitidez (2026-10-14, «que todo en la card se vea ultra nítido»): una capa
@@ -370,7 +385,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
   const ladeo = useAnimatedStyle(() => {
     // 0 en las caras, 1 a mitad del giro. En 0 o 1 exactos, 0 exacto: sin(π)
     // no da 0 en coma flotante.
-    const g = giro.value;
+    const g = asentado(giro.value);
     const medio = g === 0 || g === 1 ? 0 : Math.sin(g * Math.PI);
     // Con el QR a la vista la tarjeta queda PLANA (2026-10-14, «el código sale
     // pixeleado»): ladeada, el código se re-muestrea por la perspectiva y
@@ -411,17 +426,23 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
     // (al llegar al reverso) o de 0 (al volver al frente), y la placa quedaba
     // a opacidad plena justo con la cara ladeada unos grados por el rebote —
     // asomaba por el lado que se aleja como un filo liso del color de la placa.
-    opacity: Math.max(0, 1 - Math.abs(Math.sin(giro.value * Math.PI)) * 5),
+    opacity: Math.max(0, 1 - Math.abs(Math.sin(asentado(giro.value) * Math.PI)) * 5),
   }));
   // La cara que se ve, en reposo, sin perspectiva ni giro (2026-10-14,
   // nitidez): `rotateY(360deg)` con perspectiva es «casi» la identidad y
   // obligaba a componer el reverso —el QR— en 3D.
-  const frente = useAnimatedStyle(() => (giro.value === 0
-    ? { transform: [{ rotateY: '0deg' }] }
-    : { transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }] }));
-  const reverso = useAnimatedStyle(() => (giro.value === 1
-    ? { transform: [{ rotateY: '0deg' }] }
-    : { transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(giro.value, [0, 1], [180, 360])}deg` }] }));
+  const frente = useAnimatedStyle(() => {
+    const g = asentado(giro.value);
+    return g === 0
+      ? { transform: [{ rotateY: '0deg' }] }
+      : { transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(g, [0, 1], [0, 180])}deg` }] };
+  });
+  const reverso = useAnimatedStyle(() => {
+    const g = asentado(giro.value);
+    return g === 1
+      ? { transform: [{ rotateY: '0deg' }] }
+      : { transform: [{ perspective: PERSPECTIVA }, { rotateY: `${interpolate(g, [0, 1], [180, 360])}deg` }] };
+  });
 
   // Primer nombre + primer apellido, la regla del portal (`shortEmployeeName`):
   // con 4 palabras el apellido es la tercera; con 3, la segunda.

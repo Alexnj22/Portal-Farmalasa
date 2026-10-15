@@ -2,10 +2,12 @@
 // portal (`PESTANAS_TEMATICAS.operacion`) con los mismos datos del núcleo:
 // consulta de inventario, traslados, facturas de la sala, bitácoras, recetas
 // pendientes y los atajos para pedir un ajuste.
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchSalasQueCubro } from '@nucleo/data/traslados';
 import { fetchFacturasSala } from '@nucleo/data/facturasSala';
+import { fetchFaltantesConStockEnOtraSala } from '@nucleo/data/inventory';
+import { BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { fetchBitacoraDia, fetchLibro, pendientesDelDia } from '@nucleo/data/bitacoras';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -13,6 +15,7 @@ import Widget, { Chip, Cuenta, Esqueleto, Renglon, Vacio } from '../Widget';
 import { Avance } from '../Kpi';
 import { useDato } from '../useDato';
 import { MARCA } from '../marca';
+import { colorSistema } from '../../Formulario';
 
 // ── Pedir un ajuste ─────────────────────────────────────────────────────────
 // Los tres widgets del portal para pedir algo (anulación o cambio de una
@@ -40,12 +43,39 @@ export function PedirAjuste({ ctx }) {
 
 // ── Consulta de inventario ──────────────────────────────────────────────────
 // En el portal es un buscador dentro del widget; en la app la búsqueda vive en
-// su pestaña (la de iOS 26), así que acá es la puerta hacia ella.
-export function ConsultaInventario() {
+// su pestaña (la de iOS 26), así que acá es la puerta hacia ella. Debajo, como
+// el portal, lo que a MI sala le falta y otra sala tiene
+// (`get_faltantes_con_stock_en_otra_sala`), cada uno con «Solicitar» — abre
+// el pedido a otra sala con el producto ya elegido. Sólo para quien está en
+// una sala: sin sala no hay «lo que me falta» (decisión del 2026-08-06). Pedir
+// desde una sala concreta —incluida el área de vencidos de Bodega— se hace en
+// la ficha del producto.
+export function ConsultaInventario({ ctx }) {
+  const miErp = BRANCH_A_ERP[ctx?.sala] ?? null;
+  const { dato, cargando } = useDato(miErp ? `faltantes-otra-sala:${miErp}` : null, async () => {
+    const { filas, error } = await fetchFaltantesConStockEnOtraSala(miErp, 20);
+    if (error) throw error;
+    return filas;
+  });
+  const faltantes = dato || [];
+  const pedir = (f) => router.push({ pathname: '/pedir-traslado', params: { producto: String(f.erp_product_id), descripcion: f.descripcion } });
   return (
     <Widget titulo="Consulta de inventario" icono="Package" color={MARCA.azul} onAbrir={() => router.navigate('/buscar')} accion="Buscar">
       <Renglon primero titulo="Busca un producto o su principio activo" detalle="Existencias por sala y por lote"
         izquierda={<Chip icono="Search" color={MARCA.azul} tamano={30} />} onPress={() => router.navigate('/buscar')} />
+      {miErp && cargando && !dato ? <Esqueleto lineas={2} /> : null}
+      {faltantes.length ? (
+        <>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 8, marginBottom: 2 }}>Sin existencia, puedes solicitar en estas sucursales</Text>
+          {faltantes.map((f, i) => (
+            <Renglon key={f.erp_product_id} primero={!i} titulo={f.descripcion}
+              detalle={`${(f.donde ?? []).slice(0, 3).map((d) => `${d.sala} ${d.unidades}`).join(' · ')}${f.min_units != null ? ` · mín ${f.min_units}` : ''}`}
+              izquierda={<Chip icono="PackageMinus" color={MARCA.ambar} tamano={26} />}
+              derecha={<Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Solicitar</Text>}
+              onPress={() => pedir(f)} />
+          ))}
+        </>
+      ) : null}
     </Widget>
   );
 }

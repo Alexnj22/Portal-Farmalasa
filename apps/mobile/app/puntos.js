@@ -19,7 +19,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchAvisosDePuntos, fetchClientesConPuntos } from '@nucleo/data/puntos';
+import { fetchAvisosDePuntos, fetchClientesConPuntos, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
 import { avisoDePuntos, dolaresDePuntos, puntosTexto } from '@nucleo/utils/puntosTexto';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -114,7 +114,9 @@ function Avisos() {
         const x = avisoDePuntos(a);
         return (
           <Pressable key={`${a.tipo}-${a.invoice_id ?? a.customer_id ?? i}-${a.cuando}`} disabled={!a.customer_id}
-            onPress={() => router.push({ pathname: '/puntos-cliente/[id]', params: { id: String(a.customer_id), nombre: a.cliente } })}
+            // El aviso viaja entero: la cuenta pinta arriba la venta que lo
+            // originó (productos y quién vendió), como el portal.
+            onPress={() => router.push({ pathname: '/puntos-cliente/[id]', params: { id: String(a.customer_id), nombre: a.cliente, aviso: JSON.stringify(a) } })}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
             <Vidrio radio={18} interactivo={!!a.customer_id}>
               <View style={{ padding: 12, gap: 5 }}>
@@ -159,7 +161,12 @@ export default function Puntos() {
   // (`puntos_panel_clientes` ordena en la base).
   const [orden, setOrden] = useState('saldo.desc');
   const [ordenCol, ordenDir] = orden.split('.');
-  const grupos = pestana === 'consulta' ? [{
+  // «Por qué no pasó»: el mismo filtro de motivo que la pestaña del portal.
+  const [motivo, setMotivo] = useState('TODOS');
+  const grupos = pestana === 'por_asignar' ? [{
+    id: 'motivo', titulo: 'Por qué no pasó', activa: motivo, porDefecto: 'TODOS', onCambiar: setMotivo,
+    opciones: [{ id: 'TODOS', label: 'Todos' }, ...Object.keys(QUE_HACER_POR_MOTIVO).map((m) => ({ id: m, label: m.charAt(0).toUpperCase() + m.slice(1) }))],
+  }] : pestana === 'consulta' ? [{
     id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'saldo.desc', onCambiar: setOrden,
     opciones: [
       { id: 'saldo.desc', label: 'Más puntos' }, { id: 'saldo.asc', label: 'Menos puntos' },
@@ -188,7 +195,7 @@ export default function Puntos() {
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a Puntos." /></View>
           : pestana === 'resumen' ? <Resumen key={llave} onIrA={(p) => { if (pestanas.some((x) => x.id === p)) setPestana(p); }} />
             : pestana === 'consulta' ? <Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} masRef={masConsulta} />
-              : pestana === 'por_asignar' ? <PorAsignar key={llave} busqueda={busqueda} />
+              : pestana === 'por_asignar' ? <PorAsignar key={llave} busqueda={busqueda} motivo={motivo} />
                 : (<><Traspasos key={`t${llave}`} puedeResolver={hasPermission('puntos_ajustar', 'can_view')} /><Avisos key={llave} /></>)}
       </ScrollView>
     </>

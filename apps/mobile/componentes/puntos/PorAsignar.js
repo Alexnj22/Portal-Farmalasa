@@ -14,18 +14,19 @@ import { colorSistema } from '../Formulario';
 import { Aviso } from '../formulario/Piezas';
 import Vidrio from '../Vidrio';
 
-export default function PorAsignar({ busqueda = '' }) {
+export default function PorAsignar({ busqueda = '', motivo = 'TODOS' }) {
   const [lista, setLista] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
     Promise.resolve(fetchCuentasPorAsignar()).then((r) => setLista(Array.isArray(r) ? r : [])).catch((e) => { setError(mensajeAmigable(e)); setLista([]); });
   }, []);
-  const visibles = useMemo(() => (lista || []).filter((c) => !busqueda.trim() || tokenMatch(busqueda, c.nombre, c.dui, c.telefono, String(c.id_cliente))), [lista, busqueda]);
+  const visibles = useMemo(() => (lista || []).filter((c) => (motivo === 'TODOS' || c.motivo === motivo)
+    && (!busqueda.trim() || tokenMatch(busqueda, c.nombre, c.dui, c.telefono, String(c.id_cliente)))), [lista, busqueda, motivo]);
   if (lista == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
   return (
     <View style={{ gap: 10 }}>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {!visibles.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={busqueda.trim() ? 'Sin coincidencias.' : 'Sin cuentas por asignar.'} /></View> : null}
+      {!visibles.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={busqueda.trim() || motivo !== 'TODOS' ? 'Sin coincidencias.' : 'Sin cuentas por asignar.'} /></View> : null}
       {visibles.slice(0, 200).map((c) => (
         <Pressable key={c.id_cliente} onPress={() => router.push({ pathname: '/asignar-cuenta', params: { cuenta: JSON.stringify(c) } })}
           style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>

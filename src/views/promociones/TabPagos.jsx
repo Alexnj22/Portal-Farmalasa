@@ -6,12 +6,9 @@ import Notice from '../../components/common/Notice';
 import TituloSeccion from './TituloSeccion';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchPagosBonoProducto } from '@nucleo/data/bonosProducto';
-import { fmtMoneda, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
+import { PAGO_BONO_HECHO as PAGADO, csvPagosBono, fmtMoneda, mensajeDeCarga, pagoBonoPendiente as tienePendiente } from '@nucleo/utils/promocionesUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { hoySV } from '@nucleo/utils/fecha';
-
-const PAGADO = new Set(['pagado', 'fuera_del_portal']);
 
 /**
  * Cómo va el pago del bono de las promociones que terminaron —
@@ -24,9 +21,8 @@ const PAGADO = new Set(['pagado', 'fuera_del_portal']);
  *
  * Esta pestaña es de lectura: el pago se hace en «Mi caja» de cada sala.
  */
-/* ¿Le queda algo por pagar a esta promoción? Vendedores en sala o bodega. */
-const tienePendiente = (p) => (p.salas || []).some((s) => Number(s.pendientes) > 0)
-    || (p.bodega && !PAGADO.has(p.bodega.estado) && Number(p.bodega.monto) > 0);
+/* ¿Le queda algo por pagar? `pagoBonoPendiente` del núcleo (vendedores en sala
+   o bodega), la misma que usa la app. */
 
 export default function TabPagos({ busqueda = '', soloPendientes = false, onResumen, onExportable }) {
     const [todas, setTodas] = useState([]);
@@ -63,18 +59,10 @@ export default function TabPagos({ busqueda = '', soloPendientes = false, onResu
     }, [promos, onResumen]);
 
     useEffect(() => {
-        onExportable?.(promos.length ? () => exportCsv(
-            ['PROMOCION', 'PARTE', 'SALA', 'PERSONAS', 'BONO', 'PAGADO', 'ESTADO'],
-            promos.flatMap((p) => [
-                ...(p.salas || []).map((x) => [p.promocion, 'Vendedores', x.sala, x.personas, x.total, x.pagado,
-                    Number(x.pendientes) > 0 ? `${x.pendientes} por pagar` : 'Pagado']),
-                ...(p.bodega ? [[p.promocion, 'Bodega', 'Salud 3', '', p.bodega.monto, '',
-                    PAGADO.has(p.bodega.estado) ? 'Pagado' : 'Por pagar']] : []),
-                ...(Number(p.administracion) > 0 ? [[p.promocion, 'Administracion', 'Planilla', '', p.administracion, '', '']] : []),
-            ]),
-            `promociones_pagos_${hoySV()}.csv`,
-            'promociones',
-        ) : null);
+        onExportable?.(promos.length ? () => {
+            const c = csvPagosBono(promos);
+            exportCsv(c.headers, c.rows, `${c.nombre}.csv`, 'promociones');
+        } : null);
     }, [promos, onExportable]);
 
     if (cargando) return <LoadingState label="Cargando los pagos…" />;

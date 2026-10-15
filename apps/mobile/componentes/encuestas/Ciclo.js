@@ -40,6 +40,7 @@ export function botonesDelCiclo(encuesta, { puedeEditar, puedeAprobar, sinProble
   if (encuesta.estado === 'aprobada' && puedeEditar) b.push({ k: 'publicar', label: 'Publicar', color: MARCA.azul });
   if (encuesta.estado === 'publicada' && puedeEditar) b.push({ k: 'cerrar', label: 'Cerrar ahora', color: MARCA.rojo, borde: true });
   if (puedeEditar && encuesta.estado !== 'borrador') b.push({ k: 'version', label: 'Nueva versión', color: MARCA.azulClaro, borde: true });
+  if (puedeEditar) b.push({ k: 'plantilla', label: 'Guardar como plantilla', color: MARCA.azulClaro, borde: true });
   if (['borrador', 'aprobada', 'cerrada'].includes(encuesta.estado) && puedeEditar) b.push({ k: 'archivar', label: 'Archivar', color: colorSistema.texto2, borde: true });
   if (encuestaBorrable(encuesta, puedeEditar)) b.push({ k: 'borrar', label: 'Borrar el borrador', color: MARCA.rojo, borde: true });
   return b;
@@ -120,6 +121,9 @@ export default function CicloDeEncuesta({ encuesta, sinProblemas = true, onHecho
         } catch (e) { fallo('No se pudo borrar', mensajeAmigable(e, 'Intenta de nuevo.')); }
         setOcupado(false);
       }
+    } else if (k === 'plantilla') {
+      // Como el portal: la copia queda en «Plantillas» y se sigue en ésta.
+      correr(async () => { await duplicarEncuesta(encuesta.id, true); }, 'Plantilla guardada');
     } else if (k === 'version' || k === 'usar') {
       correr(() => duplicarEncuesta(encuesta.id), k === 'usar' ? 'Encuesta creada' : 'Versión nueva creada');
     }

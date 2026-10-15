@@ -13,7 +13,8 @@ import { fetchOfertaDeDescuento } from '@nucleo/data/ofertasClientes';
 import { decidirExcedente, fetchExcedentes } from '@nucleo/data/promociones';
 import { fetchPagosBonoProducto } from '@nucleo/data/bonosProducto';
 import {
-  SECCIONES_DE_DESCUENTOS, descuentosPorEstado, estadoDescuento, fmtMoneda, fmtUnidades, fmtVigencia, mensajeDeCarga, ofertaDesdeDescuento,
+  PAGO_BONO_HECHO, SECCIONES_DE_DESCUENTOS, csvExcedentes, csvPagosBono, descuentosPorEstado, estadoDescuento, fmtMoneda, fmtUnidades, fmtVigencia,
+  mensajeDeCarga, ofertaDesdeDescuento, pagoBonoPendiente,
 } from '@nucleo/utils/promocionesUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -31,8 +32,22 @@ import { guardar } from '../comercial/elegido';
 import { guardarOferta } from '../ofertas/acentos';
 import { fallo, listo } from '../Progreso';
 import Tocable from '../Tocable';
+import { compartirCsv } from '../fiscal/csv';
 
 const Vacio = ({ texto }) => <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>{texto}</Text>;
+// «Descargar CSV» de lo que se ve, con el mismo archivo del portal (núcleo).
+export function DescargarCsv({ cuenta, csv }) {
+  const compartir = () => { compartirCsv({ ...csv(), modulo: 'promociones' }).catch((e) => fallo('No se pudo compartir', e?.message || '')); };
+  return (
+    <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center' }}>
+      <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{cuenta}</Text>
+      <Tocable onPress={compartir} hitSlop={8} accessibilityRole="button">
+        <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Descargar CSV</Text>
+      </Tocable>
+    </View>
+  );
+}
+
 const Tarjeta = ({ children }) => <View style={{ marginHorizontal: 16 }}><Vidrio radio={18}><View style={{ padding: 14, gap: 6 }}>{children}</View></Vidrio></View>;
 
 // ── Descuentos: lo que baja el precio en la caja ────────────────────────────
@@ -40,17 +55,20 @@ const Tarjeta = ({ children }) => <View style={{ marginHorizontal: 16 }}><Vidrio
 // terminados), y con permiso «Corregir» (`descuento/[id]`), «Borrar» (no hay
 // «apagar» en la caja: o se mueve el fin, o se borra) y «En la app» (arma la
 // oferta de la app de clientes desde el descuento, con la foto del momento).
-export function Descuentos({ busqueda, salaDe, puedeEditar = false, puedeApp = false }) {
+export function Descuentos({ busqueda, salaDe, sala = '', estado = '', onAlcance, puedeEditar = false, puedeApp = false }) {
   const [datos, setDatos] = useState(null);
   const [alcanceTodo, setAlcanceTodo] = useState(false);
   const [error, setError] = useState(null);
   const [ocupado, setOcupado] = useState(null);
   const cargar = useCallback(() => fetchDescuentos()
-    .then((d) => { setDatos(d.descuentos); setAlcanceTodo(d.alcanceTodo === true); setError(null); })
+    .then((d) => { setDatos(d.descuentos); setAlcanceTodo(d.alcanceTodo === true); onAlcance?.(d.alcanceTodo === true); setError(null); })
     .catch((e) => { setError(mensajeDeCarga(e, 'No se pudieron cargar los descuentos.')); setDatos((x) => x ?? []); }), []);
   useEffect(() => { cargar(); }, [cargar]);
   const hoy = hoySV();
-  const filas = useMemo(() => (datos || []).filter((d) => !busqueda || tokenMatch(busqueda, d.descripcion, ...(d.productos || []).map((p) => p.nombre))), [datos, busqueda]);
+  // Como el portal: «En todas las salas» también descuenta en la sala elegida.
+  const filas = useMemo(() => (datos || []).filter((d) => (!busqueda || tokenMatch(busqueda, d.descripcion, ...(d.productos || []).map((p) => p.nombre)))
+    && (!sala || d.todas_las_salas || String(d.branch_id) === String(sala))
+    && (!estado || estadoDescuento(d, hoy).clave === estado)), [datos, busqueda, sala, estado, hoy]);
   const porEstado = useMemo(() => descuentosPorEstado(filas, hoy), [filas, hoy]);
 
   const corregir = (d) => { guardar('descuento-alcance', alcanceTodo); router.push({ pathname: '/descuento/[id]', params: { id: String(d.id) } }); };
@@ -86,8 +104,12 @@ export function Descuentos({ busqueda, salaDe, puedeEditar = false, puedeApp = f
     <>
       <FilaDeKpis>
         <Kpi icono="Percent" rotulo="Descontando" valor={String(porEstado.activos.length)} color={MARCA.verde} />
-        <Kpi icono="CalendarClock" rotulo="Programados" valor={String(porEstado.programados.length)} color={MARCA.azulClaro}
-          apoyo={`${porEstado.terminados.length} terminados`} />
+        <Kpi icono="CalendarClock" rotulo="Programados" valor={String(porEstado.programados.length)} color={MARCA.azulClaro} />
+      </FilaDeKpis>
+      <FilaDeKpis>
+        <Kpi icono="CheckCircle2" rotulo="Terminados" valor={String(porEstado.terminados.length)} color={colorSistema.texto2} />
+        <Kpi icono="Package" rotulo="Productos" valor={fmtUnidades(new Set(filas.flatMap((d) => (d.productos || []).map((p) => p.id))).size)} color={MARCA.azulClaro}
+          apoyo="distintos con descuento" />
       </FilaDeKpis>
       <View style={{ marginHorizontal: 16 }}><Aviso texto="Los descuentos nacen al crear la promoción. Aquí se ven todos —incluidos los que se cargaron sin promoción— y se corrigen o se quitan." /></View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -107,6 +129,9 @@ export function Descuentos({ busqueda, salaDe, puedeEditar = false, puedeApp = f
                   {[d.tipo === '%' ? `${d.monto}%` : d.monto != null ? `${formatMoney(d.monto)} por unidad` : null, fmtVigencia(d.inicio, d.fin), d.todas_las_salas ? 'Todas las salas' : (salaDe(d.branch_id) ?? d.sala_rotulo), `${productos.length} producto${productos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
                 </Text>
                 {d.promocion ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>{`De la promoción «${d.promocion}»`}</Text> : null}
+                {/* `en_app`: null = sin oferta; true publicada; false armada sin publicar. */}
+                {d.en_app === true ? <Pildora texto="En la app" color={MARCA.verde} />
+                  : d.en_app === false ? <Pildora texto="App: sin publicar" color={colorSistema.texto2} /> : null}
                 {productos.slice(0, 6).map((p) => (
                   <Text key={p.id ?? p.nombre} style={{ color: colorSistema.texto, fontSize: 13 }}>
                     {`· ${p.nombre}${p.precio != null ? ` — ${formatMoney(p.precio)}` : ''}`}
@@ -125,7 +150,7 @@ export function Descuentos({ busqueda, salaDe, puedeEditar = false, puedeApp = f
           })}
         </View>
       ) : null))}
-      {!filas.length && !error ? <Vacio texto={busqueda ? 'Ningún descuento con esa búsqueda' : 'Sin descuentos'} /> : null}
+      {!filas.length && !error ? <Vacio texto={busqueda || sala || estado ? 'Ningún descuento con ese filtro' : 'Sin descuentos'} /> : null}
     </>
   );
 }
@@ -178,6 +203,7 @@ export function Excedentes({ busqueda, puedeAprobar }) {
         </View>
       ) : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
+      {filas.length ? <DescargarCsv cuenta={`${filas.length} por decidir`} csv={() => csvExcedentes(filas)} /> : null}
       {filas.map((f) => (
         <Tarjeta key={f.id}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
@@ -207,8 +233,7 @@ export function Excedentes({ busqueda, puedeAprobar }) {
 }
 
 // ── Pagos: el bono de las promociones terminadas ────────────────────────────
-const PAGADO = new Set(['pagado', 'fuera_del_portal']);
-const tienePendiente = (p) => (p.salas || []).some((s) => Number(s.pendientes) > 0);
+const PAGADO = PAGO_BONO_HECHO;
 
 export function Pagos({ busqueda, soloPendientes }) {
   const [todas, setTodas] = useState(null);
@@ -218,9 +243,11 @@ export function Pagos({ busqueda, soloPendientes }) {
     fetchPagosBonoProducto().then((d) => { if (vivo) setTodas(d); }).catch((e) => { if (vivo) { setError(mensajeDeCarga(e, 'No se pudieron cargar los pagos.')); setTodas([]); } });
     return () => { vivo = false; };
   }, []);
-  const promos = useMemo(() => (todas || []).filter((p) => (!soloPendientes || tienePendiente(p)) && (!busqueda || tokenMatch(busqueda, p.promocion))), [todas, busqueda, soloPendientes]);
+  const promos = useMemo(() => (todas || []).filter((p) => (!soloPendientes || pagoBonoPendiente(p))
+    && (!busqueda || tokenMatch(busqueda, p.promocion, ...(p.salas || []).map((x) => x.sala)))), [todas, busqueda, soloPendientes]);
   if (todas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
   const pendiente = promos.reduce((a, p) => a + (p.salas || []).reduce((b, s) => b + Number(s.total || 0) - Number(s.pagado || 0), 0), 0);
+  const planilla = promos.reduce((a, p) => a + Number(p.administracion || 0), 0);
   return (
     <>
       <View style={{ marginHorizontal: 16 }}>
@@ -229,8 +256,10 @@ export function Pagos({ busqueda, soloPendientes }) {
       {promos.length ? (
         <FilaDeKpis>
           <Kpi icono="Wallet" rotulo="Por pagar en salas" valor={fmtMoneda(pendiente)} color={pendiente > 0 ? MARCA.ambar : MARCA.verde} pide={pendiente > 0} apoyo={`${promos.length} promoción${promos.length === 1 ? '' : 'es'}`} />
+          <Kpi icono="Landmark" rotulo="A planilla" valor={fmtMoneda(planilla)} color={MARCA.azulClaro} apoyo="administración" />
         </FilaDeKpis>
       ) : null}
+      {promos.length ? <DescargarCsv cuenta={`${promos.length} promoción${promos.length === 1 ? '' : 'es'}`} csv={() => csvPagosBono(promos)} /> : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {promos.map((p) => (
         <Tarjeta key={p.promocion_id}>

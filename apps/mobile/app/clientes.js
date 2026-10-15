@@ -124,7 +124,13 @@ function Fila({ c, verMontos }) {
               {c.erp_id && !c.mostrador ? <Pildora texto={`Código ${c.erp_id}`} color={MARCA.azulClaro} /> : null}
               {c.dui_sospechoso ? <Pildora texto="DUI inválido" color={MARCA.rojo} /> : null}
               {c.nombre_corrupto ? <Pildora texto="Nombre dañado" color={MARCA.ambar} /> : null}
+              {c.dup_con ? <Pildora texto="Duplicado" color={MARCA.ambar} /> : null}
             </View>
+            {/* `dup_con` sólo viene con el filtro «Duplicados» (calcularlo
+                siempre cuesta). En el portal va en el `title`; acá no hay
+                hover, así que se escribe: es la única forma de saber con
+                quién choca cuando el par cae en otra letra. */}
+            {c.dup_con ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '600' }}>{`Choca con ${c.dup_con}`}</Text> : null}
           </View>
           <View style={{ alignItems: 'flex-end', gap: 2 }}>
             {verMontos && c.total != null ? <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(c.total, { decimales: 0 })}</Text> : null}

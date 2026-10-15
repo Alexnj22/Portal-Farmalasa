@@ -39,7 +39,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/carnes-del-dia': true, // carnés de papel vivos: anularlos e imprimir
   '/encuesta-admin': true, // las encuestas internas y sus puntajes por persona
   '/encuestas-clientes': true, // lista y resultados (NPS, temas, sucursales, comentarios)
-  '/encuestas-aplicar': true, // entrevistar a un cliente desde el teléfono; modo tablet en el portal
+  '/encuestas-aplicar': true, // entrevistar a un cliente desde el teléfono, y el modo tablet (la encuesta pública a pantalla completa)
   '/marketing': true, // el mes de contenido, las piezas con sus diseños y las solicitudes
   '/galeria': true, // el material liberado para las salas, listo para compartir
   '/solicitudes-datos': true, // los plazos de las solicitudes ARCO; imprimir y responder en el portal

@@ -21,10 +21,11 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPromociones } from '@nucleo/data/promociones';
 import {
-  conteoDePromociones, diasRestantes, esLaboratorio, estadoVisible, fmtLote, fmtUnidades, fmtVigencia,
+  conteoDePromociones, csvListaDePromociones, diasRestantes, esLaboratorio, estadoVisible, fmtLote, fmtUnidades, fmtVigencia,
   mensajeDeCarga, rotuloMes, textoBuscable,
 } from '@nucleo/utils/promocionesUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import Segmentos from '../componentes/Segmentos';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -37,7 +38,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { Icono, TresDatos } from '../componentes/promociones/Piezas';
 import { alternarPromocion, duplicarConPreguntas } from '../componentes/promociones/acciones';
-import { Descuentos, Excedentes, Pagos } from '../componentes/promociones/Listas';
+import { DescargarCsv, Descuentos, Excedentes, Pagos } from '../componentes/promociones/Listas';
 import { guardarPromocion } from '../componentes/promociones/elegida';
 
 function TarjetaPromocion({ p, puedeEditar, onAbrir, onMenu }) {
@@ -98,6 +99,10 @@ export default function Promociones() {
   const [fTipo, setFTipo] = useState('todos');
   const [fLab, setFLab] = useState('todos');
   const [fPagos, setFPagos] = useState('pendientes');
+  // Descuentos: sala (sólo para quien ve todas, lo dice la base) y estado.
+  const [fDescSala, setFDescSala] = useState('todas');
+  const [fDescEstado, setFDescEstado] = useState('todos');
+  const [alcanceTodo, setAlcanceTodo] = useState(false);
   const [recargando, setRecargando] = useState(false);
   const [vuelta, setVuelta] = useState(0); // remonta las pestañas hijas al deslizar
 
@@ -124,12 +129,18 @@ export default function Promociones() {
   const recortaLista = pestana === 'activas' || pestana === 'historico';
   const grupos = [
     ...(pestana === 'activas' ? [{ id: 'estado', titulo: 'Estado', activa: fEstado, porDefecto: 'todos', onCambiar: setFEstado,
-      opciones: [{ id: 'todos', label: 'Todos los estados' }, { id: 'activa', label: 'Activa' }, { id: 'por_vencer', label: 'Por vencer' }, { id: 'borrador', label: 'Borrador' }] }] : []),
+      opciones: [{ id: 'todos', label: 'Todos los estados' }, { id: 'activa', label: 'Activa' }, { id: 'por_vencer', label: 'Por vencer' }, { id: 'vencida', label: 'Vencida' }, { id: 'borrador', label: 'Borrador' }] }] : []),
     ...(recortaLista ? [
       { id: 'tipo', titulo: 'Tipo', activa: fTipo, porDefecto: 'todos', onCambiar: setFTipo,
         opciones: [{ id: 'todos', label: 'Todos los tipos' }, { id: 'producto', label: 'Por producto' }, { id: 'laboratorio', label: 'Por laboratorio' }] },
       { id: 'lab', titulo: 'Laboratorio', activa: fLab, porDefecto: 'todos', onCambiar: setFLab,
         opciones: [{ id: 'todos', label: 'Todos los laboratorios' }, ...labsDisponibles.map((l) => ({ id: l, label: l }))] },
+    ] : []),
+    ...(pestana === 'descuentos' ? [
+      ...(alcanceTodo ? [{ id: 'dsala', titulo: 'Sucursal', activa: fDescSala, porDefecto: 'todas', onCambiar: setFDescSala,
+        opciones: [{ id: 'todas', label: 'Todas las salas' }, ...SALAS_VENTA.map((id) => (branches || []).find((b) => Number(b.id) === id)).filter(Boolean).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      { id: 'destado', titulo: 'Estado', activa: fDescEstado, porDefecto: 'todos', onCambiar: setFDescEstado,
+        opciones: [{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Descontando' }, { id: 'programados', label: 'Programados' }, { id: 'terminados', label: 'Terminados' }] },
     ] : []),
     ...(pestana === 'pagos' ? [{ id: 'pagos', titulo: 'Pagos', activa: fPagos, porDefecto: 'pendientes', onCambiar: setFPagos,
       opciones: [{ id: 'pendientes', label: 'Sólo con algo por pagar' }, { id: 'todas', label: 'Todas' }] }] : []),
@@ -186,6 +197,7 @@ export default function Promociones() {
                 <Kpi icono="FileText" rotulo="En borrador" valor={String(c.borrador)} color={colorSistema.texto2} onPress={() => setFEstado(fEstado === 'borrador' ? 'todos' : 'borrador')} />
                 <Kpi icono="Package" rotulo="Abiertos" valor={fmtUnidades(c.abiertos)} color={MARCA.azulClaro} apoyo={`${c.bajanPrecio} bajan el precio`} />
               </FilaDeKpis>
+              {vivas.length ? <DescargarCsv cuenta={`${vivas.length} vigente${vivas.length === 1 ? '' : 's'}`} csv={() => csvListaDePromociones(vivas, 'vigentes')} /> : null}
               {vivas.map((p) => <TarjetaPromocion key={p.id} p={p} puedeEditar={puedeEditar} onAbrir={() => abrir(p)} onMenu={() => menu(p)} />)}
               {!vivas.length ? (
                 <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>
@@ -206,13 +218,15 @@ export default function Promociones() {
                 <Kpi icono="Package" rotulo="Productos" valor={fmtUnidades(terminadas.reduce((a, p) => a + (Number(p.renglones) || 0), 0))} color={MARCA.azulClaro}
                   apoyo={`${new Set(terminadas.flatMap((p) => p.laboratorios || [])).size} laboratorios`} />
               </FilaDeKpis>
+              {terminadas.length ? <DescargarCsv cuenta={`${terminadas.length} terminada${terminadas.length === 1 ? '' : 's'}`} csv={() => csvListaDePromociones(terminadas, 'terminadas')} /> : null}
               {terminadas.map((p) => <TarjetaPromocion key={p.id} p={p} puedeEditar={puedeEditar} onAbrir={() => abrir(p)} onMenu={() => menu(p)} />)}
               {!terminadas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin promociones terminadas</Text> : null}
             </>
           )
         ) : null}
 
-        {pestana === 'descuentos' ? <Descuentos key={`d${vuelta}`} busqueda={q} salaDe={salaDe} puedeEditar={puedeEditar} puedeApp={hasPermission('ofertas_clientes', 'can_edit')} /> : null}
+        {pestana === 'descuentos' ? <Descuentos key={`d${vuelta}`} busqueda={q} salaDe={salaDe}
+          sala={fDescSala === 'todas' ? '' : fDescSala} estado={fDescEstado === 'todos' ? '' : fDescEstado} onAlcance={setAlcanceTodo} puedeEditar={puedeEditar} puedeApp={hasPermission('ofertas_clientes', 'can_edit')} /> : null}
         {pestana === 'excedentes' ? <Excedentes key={`e${vuelta}`} busqueda={q} puedeAprobar={puedeAprobar} /> : null}
         {pestana === 'pagos' ? <Pagos key={`p${vuelta}`} busqueda={q} soloPendientes={fPagos === 'pendientes'} /> : null}
 

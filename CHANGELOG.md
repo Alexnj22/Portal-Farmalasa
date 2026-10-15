@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.8 — App: paridad de Clientes y comercial con el portal
+
+### App: marketing con flujo, pauta, galería, filtros, fechas especiales, versiones, duplicar e informe PDF
+
+- App, Marketing: pestañas Flujo (por estado, mover con la regla del portal),
+  Pauta (presupuesto, sin asignar, gastado, costo por mensaje) y Galería en
+  modo gestión (liberar); filtros de marca, formato, salas y estado; las
+  fechas especiales dentro del calendario (planificar una pieza desde ella);
+  duplicar varias piezas o el mes entero; versiones de un diseño (comparar y
+  subir la siguiente); y el informe PDF del mes.
+- App, Galería: filtro por marca.
+- Núcleo: `puedeMoverA` (regla del Flujo, la usa `TabTablero`) y
+  `construirInformeHtml` (el mismo informe traducido del documento de pdfmake).
+
+### App: chat con etiqueta, preferentes, estado de la farmacia, calificaciones, ajustes e incumplimientos
+
+- App, Chat con clientes: filtro por etiqueta y «Preferentes» (Platino y
+  Mayoristas) con su orden y su insignia; arriba, el estado de la farmacia, el
+  promedio de calificaciones de 30 días y los accesos a «Incumplimientos»
+  (supervisión o quien edita el chat) y «Ajustes del chat» (las respuestas
+  automáticas, con {abre}/{cierra} y vista previa).
+- Núcleo: `useFarmaciaEstado` se mudó a `src/hooks`; el portal lo reexporta.
+
+### App: ofertas con nivel, envío a domicilio, precio tachado y medida de imagen
+
+- App, Ofertas para clientes: «Exclusiva para» (nivel mínimo de Puntos Salud)
+  en el editor y su insignia en las tarjetas; el panel «Entrega a domicilio» en
+  Reservas; precio original tachado en las ofertas de un descuento; historias y
+  banners miden la foto antes de subirla (1080×1920 / 1200×500).
+- Núcleo: `FORMATOS_DE_IMAGEN` y `revisarMedidaDeImagen` en `ofertasClientes`;
+  el portal (`FormatoImagen`) los usa desde ahí.
+
+### App: promociones con CSV, sucursal en descuentos, A planilla y Vencida
+
+- App, Promociones: «Descargar CSV» en Activas, Histórico, Excedentes y Pagos
+  (el mismo archivo del portal); estado «Vencida»; en Descuentos, filtro por
+  sucursal (quien ve todas) y por estado, tarjetas Terminados y Productos, y
+  la etiqueta «En la app» / «App: sin publicar»; en Pagos, la tarjeta «A planilla».
+- Núcleo: los CSV de Promociones (`csvListaDePromociones`, `csvExcedentes`,
+  `csvPagosBono`) y `pagoBonoPendiente` se mudaron a `promocionesUtils`; el
+  portal los usa desde ahí.
+
+### App: bitácora de inyecciones con período, estado, sucursal y CSV
+
+- App, Inyecciones · Bitácora: período del cobro como el portal (30 días por
+  defecto, hoy, 7 días, este mes, mes anterior u otras fechas), las tarjetas
+  Pagadas / Aplicadas / Pendientes que filtran, y «Descargar CSV».
+- App, Bitácora y Pendientes: filtro por sucursal para quien ve todas las salas.
+- Núcleo: el filtro de estado y el CSV de la bitácora se mudaron de
+  `TabBitacora` a `inyeccionesPendientes`; el portal los usa desde ahí.
+
 ## v2.1294.7 — App: paridad de Inventario: Min·Máx, conteos, bitácoras y traslados con el portal
 
 ### App: traslados con ticket, recibir un grupo junto, filtro de sala y recibir por número

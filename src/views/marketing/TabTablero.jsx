@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Badge from '../../components/common/Badge';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA } from '@nucleo/utils/marketing';
+import { ESTADOS_PIEZA, ESTADOS_DEL_DISENADOR, ESTADOS_DE_SALIDA, puedeMoverA } from '@nucleo/utils/marketing';
 import FichaDePieza from './FichaDePieza';
 
 /**
@@ -23,10 +23,8 @@ export default function TabTablero({ piezas, marcasDe, comentariosPorPieza, ulti
 
     // Sólo quien creó la pieza la mueve (lo exige también la base).
     const admite = (destino, pieza) => {
-        if (!pieza || !puedeMoverla(pieza) || pieza.estado === destino) return false;
-        if (ESTADOS_DEL_DISENADOR.includes(destino)) return !['aprobado', 'programado', 'publicado'].includes(pieza.estado);
-        if (destino === 'programado') return pieza.estado === 'aprobado';
-        return destino === 'publicado' && ['aprobado', 'programado'].includes(pieza.estado);
+        // La regla de a dónde sale del núcleo (`puedeMoverA`), la misma de la app.
+        return !!pieza && puedeMoverla(pieza) && puedeMoverA(pieza, destino);
     };
 
     const soltar = (destino) => (e) => {

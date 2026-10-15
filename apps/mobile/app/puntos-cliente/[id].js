@@ -10,7 +10,7 @@
 // y dar o quitar puntos a mano (`componentes/puntos/AjustarPuntos`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchPuntosCliente } from '@nucleo/data/puntos';
@@ -32,6 +32,8 @@ import Grafica, { BarraDePartes } from '../../componentes/metas/Graficas';
 import { COLOR_ACUMULADO, COLOR_CANJEADO, ejeDe, etiquetaMes } from '../../componentes/puntos/Resumen';
 import CodigoDeAcceso from '../../componentes/puntos/CodigoDeAcceso';
 import AjustarPuntos from '../../componentes/puntos/AjustarPuntos';
+import VentaDelAviso from '../../componentes/puntos/VentaDelAviso';
+import { anotar } from '@nucleo/data/audit';
 
 const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
 const MINIMO = 100;
@@ -40,7 +42,9 @@ const NOMBRE_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'juli
 const mesLargo = (clave) => { const [a, m] = clave.split('-').map(Number); return `${NOMBRE_MES[m - 1]} ${a}`; };
 
 export default function PuntosCliente() {
-  const { id, nombre } = useLocalSearchParams();
+  const { id, nombre, aviso: avisoCrudo } = useLocalSearchParams();
+  // Se abrió desde un aviso: la venta que lo originó va arriba de la cuenta.
+  const aviso = useMemo(() => { try { return avisoCrudo ? JSON.parse(String(avisoCrudo)) : null; } catch { return null; } }, [avisoCrudo]);
   const { hasPermission } = useAuth();
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
@@ -122,6 +126,15 @@ export default function PuntosCliente() {
               <View style={{ padding: 18, gap: 6 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }} numberOfLines={2}>{titulo}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[d.cliente?.dui, d.cliente?.telefono].filter(Boolean).join(' · ') || 'Sin datos de contacto'}</Text>
+                {d.cliente?.id != null ? (
+                  // La ficha se abre en la MISMA pantalla que usa Clientes;
+                  // ahí se edita si el cargo puede (`clientes` can_edit).
+                  <Pressable accessibilityRole="button" hitSlop={6}
+                    onPress={() => { Haptics.selectionAsync().catch(() => {}); anotar('CLIENTES_VER_FICHA', String(d.cliente.id), { nombre: d.cliente.nombre, desde: 'puntos' }); router.push({ pathname: '/cliente/[id]', params: { id: String(d.cliente.id) } }); }}
+                    style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: `${MARCA.azul}2E`, opacity: pressed ? 0.7 : 1, marginTop: 4 })}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{hasPermission('clientes', 'can_edit') ? 'Editar cliente' : 'Ver ficha'}</Text>
+                  </Pressable>
+                ) : null}
                 <Text style={{ color: colorSistema.texto, fontSize: 40, fontWeight: '800', marginTop: 6 }}>{dolaresDePuntos(saldo)}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${puntosTexto(saldo)} puntos de descuento`}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
@@ -137,6 +150,7 @@ export default function PuntosCliente() {
                 ) : null}
               </View>
             </Vidrio>
+            {aviso ? <VentaDelAviso aviso={aviso} /> : null}
             <Grilla celdas={[
               { rotulo: 'Acumulados', valor: `${puntosTexto(cuenta.ganados)}\n${dolaresDePuntos(cuenta.ganados)}` },
               { rotulo: 'Canjeados', valor: `${puntosTexto(reparto.canjeado)}\n${dolaresDePuntos(reparto.canjeado)}` },

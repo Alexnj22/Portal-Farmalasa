@@ -4,18 +4,36 @@
 // calcular al reservar (`reservar_carrito`).
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
+import { guardar as guardarEnAlmacen, leer as leerDelAlmacen } from './almacen';
 
 const CLAVE = 'puntos_salud_carrito';
 export const MAX_PRODUCTOS = 10;
 export const MAX_UNIDADES = 5;
 
-const guardar = (items) => SecureStore.setItemAsync(CLAVE, JSON.stringify(items)).catch(() => {});
+// Vive en `almacen` (archivos) desde el 2026-10-15: en SecureStore cada toque
+// de «+» reescribía el carrito entero cifrado, y uno lleno pasaba su tope de
+// 2048 bytes. La primera vez se muda lo que había allá y se borra de allá.
+const guardar = (items) => guardarEnAlmacen(CLAVE, items);
+async function leerGuardado() {
+  const items = await leerDelAlmacen(CLAVE);
+  if (items) return items;
+  try {
+    const viejo = await SecureStore.getItemAsync(CLAVE);
+    if (!viejo) return [];
+    const lista = JSON.parse(viejo);
+    await guardarEnAlmacen(CLAVE, lista);
+    await SecureStore.deleteItemAsync(CLAVE).catch(() => {});
+    return lista;
+  } catch { return []; }
+}
 const llave = (x) => `${x.id}|${x.factor}`;
 
 export const useCarrito = create((set, get) => ({
   items: [],
   cargar: async () => {
-    try { set({ items: JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? '[]') }); } catch { /* vacío */ }
+    const items = await leerGuardado();
+    // Si mientras se leía ya se agregó algo, gana lo de la pantalla.
+    if (Array.isArray(items) && !get().items.length) set({ items });
   },
   /** Agrega (o suma) un producto en una presentación. Devuelve false si no cabe. */
   agregar: (p, cantidad = 1) => {
@@ -32,7 +50,9 @@ export const useCarrito = create((set, get) => ({
     set({ items }); guardar(items);
   },
   quitar: (p) => { const items = get().items.filter((x) => llave(x) !== llave(p)); set({ items }); guardar(items); },
-  vaciar: () => { set({ items: [] }); guardar([]); },
+  // Al cerrar sesión también se borra la copia VIEJA de SecureStore, si quedó:
+  // si no, la mudanza la traería de vuelta para la cuenta siguiente.
+  vaciar: () => { set({ items: [] }); guardar(null); SecureStore.deleteItemAsync(CLAVE).catch(() => {}); },
 }));
 
 useCarrito.getState().cargar();

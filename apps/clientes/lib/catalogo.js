@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { guardar, leer } from './almacen';
 
 // Lo que comparten el catálogo y la ficha de un producto (2026-10-07).
 
@@ -30,18 +31,31 @@ export const BUSQUEDAS = [
 ];
 
 // Vistos recientemente (2026-10-07): los últimos 12 productos abiertos, en el
-// teléfono, para volver a ellos desde la Tienda.
+// teléfono, para volver a ellos desde la Tienda. En `almacen` desde el
+// 2026-10-15 (SecureStore tiene tope de 2048 bytes y doce productos con su foto
+// firmada lo pasan); la primera vez se muda lo que había allá.
 const CLAVE_VISTOS = 'puntos_salud_vistos';
 export async function leerVistos() {
-  try { return JSON.parse((await SecureStore.getItemAsync(CLAVE_VISTOS)) ?? '[]'); } catch { return []; }
+  const lista = await leer(CLAVE_VISTOS);
+  if (Array.isArray(lista)) return lista;
+  try {
+    const viejo = await SecureStore.getItemAsync(CLAVE_VISTOS);
+    if (!viejo) return [];
+    const mudada = JSON.parse(viejo);
+    if (!Array.isArray(mudada)) return [];
+    await guardar(CLAVE_VISTOS, mudada);
+    await SecureStore.deleteItemAsync(CLAVE_VISTOS).catch(() => {});
+    return mudada;
+  } catch { return []; }
 }
 export async function recordarVisto(p) {
   if (!p?.id) return;
   const lista = (await leerVistos()).filter((x) => x.id !== p.id);
   lista.unshift({ id: p.id, nombre: p.nombre, foto: p.foto ?? null, precio: p.precio ?? null, precio_vip: p.precio_vip ?? null });
-  await SecureStore.setItemAsync(CLAVE_VISTOS, JSON.stringify(lista.slice(0, 12))).catch(() => {});
+  await guardar(CLAVE_VISTOS, lista.slice(0, 12));
 }
 
 export async function olvidarVistos() {
+  await guardar(CLAVE_VISTOS, null);
   await SecureStore.deleteItemAsync(CLAVE_VISTOS).catch(() => {});
 }

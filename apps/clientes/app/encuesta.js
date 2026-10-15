@@ -13,6 +13,7 @@ import { useSesion } from '../lib/sesion';
 import { useCuenta } from '../lib/cuenta';
 import { entero } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
+import { copiaParaEmpezar, retocar } from '../lib/sinConexion';
 
 // El mismo juez que `public.encuesta_cliente_cumple`.
 function cumple(cond, r) {
@@ -35,10 +36,16 @@ export default function Encuesta() {
   const [d, setD] = useState(null);
   const [r, setR] = useState({});
   const [enviando, setEnviando] = useState(false);
+  const enviandoYa = useRef(false); // un doble toque no manda dos veces (el estado llega un render tarde)
   const [hecho, setHecho] = useState(null);
   const inicio = useRef(Date.now());
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
-  const cargar = useCallback(() => pedir('mis_encuestas').then((x) => setD((a) => (x?.ok || !a?.ok ? x : a))), [pedir]);
+  // Lo de la vez anterior se pinta al instante mientras llega lo fresco
+  // (2026-10-15). Contestar sí exige señal: la copia sólo sirve para leer.
+  const cargar = useCallback(async () => {
+    copiaParaEmpezar('mis_encuestas', {}).then((c) => { if (c) setD((a) => a ?? c); });
+    const x = await pedir('mis_encuestas'); setD((a) => (x?.ok || !a?.ok ? x : a));
+  }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   // La pedida y sólo ésa (2026-10-12): si ya no está, se dice; antes abría
   // OTRA encuesta en su lugar. Sin `id` (desde el menú), la primera.
@@ -61,11 +68,23 @@ export default function Encuesta() {
     const falta = visibles.findIndex((p) => p.obligatoria && vacia(r[p.id]));
     if (falta >= 0) { Alert.alert('Falta una respuesta', `Contesta la pregunta ${falta + 1}.`); return; }
     const limpias = Object.fromEntries(visibles.filter((p) => !vacia(r[p.id])).map((p) => [p.id, r[p.id]]));
-    setEnviando(true);
+    if (enviandoYa.current) return;
+    enviandoYa.current = true; setEnviando(true);
     const res = await pedir('responder_encuesta', { id: enc.id, respuestas: limpias, duracion: Math.round((Date.now() - inicio.current) / 1000) });
-    setEnviando(false);
-    if (!res?.ok) { Alert.alert('No se pudo enviar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+    enviandoYa.current = false; setEnviando(false);
+    if (!res?.ok) {
+      Alert.alert('No se pudo enviar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      // Lo que se veía podía ser la copia guardada (ya contestada, o ya
+      // cerrada): con señal se vuelve a preguntar, y si ya no está, se dice.
+      if (!res?.sinConexion) cargar();
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    // La contestada sale de la copia guardada: sin señal no puede volver a
+    // aparecer como pendiente, ni mandarse otra vez.
+    const sinEsta = (x) => (x?.ok ? { ...x, encuestas: (x.encuestas ?? []).filter((e) => String(e.id) !== String(enc.id)) } : x);
+    retocar('mis_encuestas', {}, sinEsta);
+    setD(sinEsta);
     setHecho(res);
   };
 

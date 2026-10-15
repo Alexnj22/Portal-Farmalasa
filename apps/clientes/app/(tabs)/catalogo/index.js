@@ -8,7 +8,7 @@
 // Las tarjetas NO son de vidrio: son muchas en una lista que se desplaza, y el
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect, Stack } from 'expo-router';
@@ -34,6 +34,16 @@ const POR_PAGINA = 20;
 // página que empiece más allá devolvía la misma de antes y «Siguiente» quedaba
 // trabado desde la página 51 (2026-10-12).
 const DESDE_MAX = 1000;
+// Sin buscar, la primera página se pide de 50 (el tope del servidor): de esas
+// mismas salen la página 1 y la fila «Mayor ahorro». Antes eran dos pedidos
+// iguales al abrir, uno de 50 y otro de 20 (2026-10-15).
+const PRIMERA_SIN_BUSCAR = 50;
+
+// Los de mayor ahorro VIP (en %), de los que hay en existencia.
+function mayorAhorro(productos) {
+  return productos.filter((p) => p.precio_vip != null && p.disponible)
+    .sort((a, b) => (b.precio - b.precio_vip) / b.precio - (a.precio - a.precio_vip) / a.precio).slice(0, 10);
+}
 
 export default function Catalogo() {
   const t = useTema();
@@ -54,13 +64,6 @@ export default function Catalogo() {
   // Las filas de arriba (sin buscar): mayor ahorro VIP y vistos recientemente.
   const [ahorro, setAhorro] = useState([]);
   const [vistos, setVistos] = useState([]);
-  useEffect(() => {
-    llamar('catalogo', { q: '', desde: 0, limite: 50, ...datosDePrecio() }).then((r) => {
-      if (!r?.ok) return;
-      setAhorro(r.productos.filter((p) => p.precio_vip != null && p.disponible)
-        .sort((a, b) => (b.precio - b.precio_vip) / b.precio - (a.precio - a.precio_vip) / a.precio).slice(0, 10));
-    });
-  }, []);
   useFocusEffect(useCallback(() => { leerVistos().then(setVistos); }, []));
 
   // La búsqueda sale 300 ms después de la última tecla.
@@ -69,11 +72,17 @@ export default function Catalogo() {
   const cargar = useCallback(async (p) => {
     const n = ++pedido.current;
     setError(false);
-    const r = await llamar('catalogo', { q, desde: p * POR_PAGINA, limite: POR_PAGINA, ...datosDePrecio() });
+    // La página 1 sin buscar trae 50: alcanza para «Mayor ahorro». La página 2
+    // sigue pidiéndose desde 20, igual que antes.
+    const primera = p === 0 && !q;
+    const r = await llamar('catalogo', { q, desde: p * POR_PAGINA, limite: primera ? PRIMERA_SIN_BUSCAR : POR_PAGINA, ...datosDePrecio() });
     if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
     if (!r?.ok) { setError(true); return; }
-    setLista(r.productos);
-    setHayMas(!!r.hay_mas && (p + 1) * POR_PAGINA <= DESDE_MAX);
+    const productos = r.productos ?? [];
+    if (primera) setAhorro(mayorAhorro(productos));
+    setLista(primera ? productos.slice(0, POR_PAGINA) : productos);
+    const masAlla = primera ? productos.length > POR_PAGINA || !!r.hay_mas : !!r.hay_mas;
+    setHayMas(masAlla && (p + 1) * POR_PAGINA <= DESDE_MAX);
     setPagina(p);
   }, [q]);
   // Otra búsqueda: de vuelta a la página 1.
@@ -91,60 +100,74 @@ export default function Catalogo() {
   // primera carga fallaba no había forma de reintentar.
   const refrescar = async () => { setRefrescando(true); await cargar(lista ? pagina : 0); setRefrescando(false); };
 
-  const encabezado = (
+  // El encabezado en piezas memorizadas (2026-10-15): cada tecla cambia
+  // `texto` y redibuja la pantalla; sólo las categorías dependen de él (su
+  // marca de activa), así que el carrusel y las filas no se rehacen.
+  const filas = useMemo(() => (q ? null : (
+    <>
+      <FilaProductos titulo="Mayor ahorro con tu tarjeta de Puntos Salud" sf="tag.fill" productos={ahorro} />
+      <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
+        accion={{ texto: 'Limpiar', alTocar: () => { olvidarVistos(); setVistos([]); } }} />
+    </>
+  )), [q, ahorro, vistos]);
+  const categorias = useMemo(() => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 2 }}>
+      {/* «Todo»: quita la categoría o la búsqueda y vuelve a lo más vendido. */}
+      {(() => {
+        const activa = !texto;
+        return (
+          <Presionable key="todo" onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }}
+            accessibilityRole="button" accessibilityLabel="Todo, quitar el filtro" accessibilityState={{ selected: activa }}
+            style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+            <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
+              <View style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.07)' }}>
+                <Icono sf={activa ? 'square.grid.2x2.fill' : 'xmark'} respaldo="" tam={24} color={colorSistema.texto} />
+              </View>
+            </View>
+            <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
+              {activa ? 'Todo' : 'Quitar filtro'}
+            </Text>
+          </Presionable>
+        );
+      })()}
+      {BUSQUEDAS.map((b, i) => {
+        const activa = q === b.q && texto === b.q;
+        const [c1, c2] = tonoDe(i);
+        return (
+          <Presionable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
+            accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
+            style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+            <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
+              <LinearGradient colors={[c1, c2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center' }}>
+                <Icono sf={b.sf} respaldo="" tam={26} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+            <Text numberOfLines={2} maxFontSizeMultiplier={1.2}
+              style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
+              {b.texto}
+            </Text>
+          </Presionable>
+        );
+      })}
+    </ScrollView>
+  ), [q, texto, t]);
+  const encabezado = useMemo(() => (
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos /> : null}
       {/* Categorías: mosaicos con su color y su ícono; tocar uno busca y
           tocarlo otra vez lo quita. */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 2 }}>
-        {/* «Todo»: quita la categoría o la búsqueda y vuelve a lo más vendido. */}
-        {(() => {
-          const activa = !texto;
-          return (
-            <Presionable key="todo" onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }}
-              accessibilityRole="button" accessibilityLabel="Todo, quitar el filtro" accessibilityState={{ selected: activa }}
-              style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-              <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
-                <View style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.07)' }}>
-                  <Icono sf={activa ? 'square.grid.2x2.fill' : 'xmark'} respaldo="" tam={24} color={colorSistema.texto} />
-                </View>
-              </View>
-              <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
-                {activa ? 'Todo' : 'Quitar filtro'}
-              </Text>
-            </Presionable>
-          );
-        })()}
-        {BUSQUEDAS.map((b, i) => {
-          const activa = q === b.q && texto === b.q;
-          const [c1, c2] = tonoDe(i);
-          return (
-            <Presionable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
-              accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
-              style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-              <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
-                <LinearGradient colors={[c1, c2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icono sf={b.sf} respaldo="" tam={26} color="#FFFFFF" />
-                </LinearGradient>
-              </View>
-              <Text numberOfLines={2} maxFontSizeMultiplier={1.2}
-                style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
-                {b.texto}
-              </Text>
-            </Presionable>
-          );
-        })}
-      </ScrollView>
+      {categorias}
       {/* Debajo de las categorías (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
-      {!q ? <FilaProductos titulo="Mayor ahorro con tu tarjeta de Puntos Salud" sf="tag.fill" productos={ahorro} /> : null}
-      {!q ? <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
-        accion={{ texto: 'Limpiar', alTocar: () => { olvidarVistos(); setVistos([]); } }} /> : null}
+      {filas}
       <Seccion>{q ? `Resultados para «${q}»` : 'Lo más vendido'}</Seccion>
     </View>
-  );
+  ), [q, categorias, filas]);
+  // Estable: con una función nueva en cada render, la lista redibujaba todas
+  // las tarjetas a cada tecla.
+  const renderItem = useCallback(({ item }) => <TarjetaProducto p={item} sola={columnas === 1} />, [columnas]);
 
   return (
     <>
@@ -175,7 +198,7 @@ export default function Catalogo() {
         initialNumToRender={8}
         windowSize={7}
         removeClippedSubviews
-        renderItem={({ item }) => <TarjetaProducto p={item} sola={columnas === 1} />}
+        renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
         ListEmptyComponent={
           error ? (
@@ -198,7 +221,8 @@ export default function Catalogo() {
   );
 }
 
-function TarjetaProducto({ p, sola = false }) {
+// `memo`: con el mismo producto no se redibuja al escribir en la búsqueda.
+const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
   const t = useTema();
   const final = precioFinal(p);
   const ahorro = final < p.precio ? p.precio - final : 0;
@@ -268,7 +292,7 @@ function TarjetaProducto({ p, sola = false }) {
       </View>
     </Presionable>
   );
-}
+});
 
 // «‹ Anterior · Página 2 · Siguiente ›», como un paginador del sistema.
 function Paginas({ pagina, hayMas, cargando, alAnterior, alSiguiente }) {

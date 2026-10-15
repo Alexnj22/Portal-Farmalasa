@@ -21,8 +21,24 @@ async function posicionActual() {
   // La última conocida contesta al instante; si es vieja (o no hay), una nueva
   // con precisión equilibrada: para ordenar seis sucursales sobran 100 metros.
   const ultima = await Location.getLastKnownPositionAsync({ maxAge: 5 * 60_000, requiredAccuracy: 1000 }).catch(() => null);
-  const p = ultima ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+  const p = ultima ?? await conTope();
   return { lat: p.coords.latitude, lng: p.coords.longitude };
+}
+
+// La posición nueva con tope (2026-10-15): bajo techo o con el GPS apagado
+// podía no contestar nunca y «Buscando…» quedaba girando. A los 10 s se usa la
+// última conocida aunque sea vieja o imprecisa; si tampoco hay, falla y la
+// lista queda sin ordenar.
+const TOPE_MS = 10_000;
+async function conTope() {
+  let reloj = null;
+  const tope = new Promise((resolve) => { reloj = setTimeout(() => resolve(null), TOPE_MS); });
+  const nueva = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+  const p = await Promise.race([nueva, tope]).finally(() => clearTimeout(reloj));
+  if (p?.coords) return p;
+  const vieja = await Location.getLastKnownPositionAsync().catch(() => null);
+  if (vieja?.coords) return vieja;
+  throw new Error('sin posición');
 }
 
 export function useUbicacionMientrasSeUsa() {

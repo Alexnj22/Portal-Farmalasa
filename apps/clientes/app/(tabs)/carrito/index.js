@@ -463,8 +463,20 @@ function Contador({ valor, alCambiar }) {
       <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={13} color={colorSistema.texto} />
     </Presionable>
   );
+  // Para VoiceOver/TalkBack es UN control ajustable (2026-10-15): se desliza
+  // arriba/abajo para sumar o restar y anuncia «Cantidad, 2», en vez de tres
+  // elementos sueltos.
+  const ajustar = (e) => {
+    const a = e.nativeEvent.actionName;
+    if (a === 'increment' && valor < MAX_UNIDADES) alCambiar(valor + 1);
+    else if (a === 'decrement' && valor > 1) alCambiar(valor - 1);
+  };
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+      accessible accessibilityRole="adjustable" accessibilityLabel="Cantidad"
+      accessibilityValue={{ min: 1, max: MAX_UNIDADES, now: valor, text: `${valor}` }}
+      accessibilityActions={[{ name: 'increment', label: 'Más' }, { name: 'decrement', label: 'Menos' }]}
+      onAccessibilityAction={ajustar}>
       {boton('minus', valor - 1, valor > 1)}
       <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto, minWidth: 16, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{valor}</Text>
       {boton('plus', valor + 1, valor < MAX_UNIDADES)}

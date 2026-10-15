@@ -8,6 +8,7 @@ import { llamar } from './api';
 import { olvidarTodo } from './sinConexion';
 import { useCarrito } from './carrito';
 import { olvidarTomas } from './tomas';
+import { olvidarVistos } from './catalogo';
 
 const CLAVE = 'puntos_salud_sesion';
 
@@ -59,6 +60,8 @@ export const useSesion = create((set, get) => ({
       // Los recordatorios de tomas, igual (2026-10-12): en un teléfono
       // compartido, a quien entra después no le suena la medicina del anterior.
       await olvidarTomas();
+      // Y los productos vistos: son de quien los buscó, no del teléfono.
+      await olvidarVistos().catch(() => {});
     }
     set({ token: null });
   },

@@ -7,7 +7,7 @@
 // se siente vivo. Un ciclo completo dura entre 18 y 26 s por mancha.
 import { useEffect } from 'react';
 import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
-import { BlurMask, Canvas, Circle, Group } from '@shopify/react-native-skia';
+import { Canvas, Circle, Group, RadialGradient, vec } from '@shopify/react-native-skia';
 import { useDerivedValue, useFrameCallback, useReducedMotion, useSharedValue } from 'react-native-reanimated';
 import tokens from '@nucleo/constants/tokens.json';
 import { LIVIANO } from '../lib/rendimiento';
@@ -16,6 +16,27 @@ import { useDespierta } from './reposo';
 const T = tokens.temas.solid;
 // Vaivén de 0 a 1 y de vuelta, suave en los extremos (el `Easing.sin` de antes).
 const vaiven = (s, dur) => { 'worklet'; return 0.5 - 0.5 * Math.cos((s / dur) * Math.PI); };
+
+// Las manchas eran círculos con un `BlurMask` de pantalla completa (radio r,
+// desenfoque 0.6·r): el desenfoque más caro que hay, tres veces, en cada
+// pestaña montada. Ahora cada mancha es un DEGRADADO RADIAL con el mismo perfil
+// (2026-10-15): la intensidad de un disco de radio `a` convolucionado con una
+// gaussiana de sigma 0.6 (en unidades de r), muestreada en 13 puntos de 0 a
+// `a + 1.8` (tres sigmas: más allá ya no queda nada). Medido con la integral,
+// no a ojo: el centro de la mancha grande queda en 75 % y no en 100 %, como lo
+// dejaba el desenfoque. El último punto va en cero para que no haya borde.
+const PASOS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => i / 12);
+const PERFIL_GRANDE = [0.751, 0.725, 0.651, 0.54, 0.411, 0.283, 0.176, 0.097, 0.048, 0.021, 0.008, 0.003, 0];
+const PERFIL_CHICO = [0.633, 0.609, 0.54, 0.441, 0.329, 0.224, 0.137, 0.076, 0.038, 0.017, 0.007, 0.002, 0];
+const ALCANCE_GRANDE = 2.8; // r · (1 + 1.8)
+const ALCANCE_CHICO = 2.65; // r · (0.85 + 1.8)
+function rgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+const verdeGrande = PERFIL_GRANDE.map((a) => rgba(T['logo-green'], a));
+const magentaGrande = PERFIL_GRANDE.map((a) => rgba(T['logo-magenta'], a));
+const verdeChico = PERFIL_CHICO.map((a) => rgba(T['logo-green'], a));
 
 export default function Aurora({ activa = true }) {
   const oscuro = useColorScheme() === 'dark';
@@ -43,21 +64,24 @@ export default function Aurora({ activa = true }) {
   const c = useDerivedValue(() => vaiven(s.value, 26));
   const r = Math.max(w, h) * 0.42;
 
-  const verdeX = useDerivedValue(() => w * (0.05 + 0.25 * a.value));
-  const verdeY = useDerivedValue(() => h * (0.05 + 0.18 * b.value));
-  const magentaX = useDerivedValue(() => w * (0.95 - 0.3 * b.value));
-  const magentaY = useDerivedValue(() => h * (0.3 + 0.2 * c.value));
-  const verde2X = useDerivedValue(() => w * (0.75 - 0.35 * c.value));
-  const verde2Y = useDerivedValue(() => h * (0.95 - 0.15 * a.value));
+  // El mismo centro para el círculo y para su degradado: el degradado se
+  // dibuja en las coordenadas del lienzo, no en las del círculo.
+  const verde = useDerivedValue(() => vec(w * (0.05 + 0.25 * a.value), h * (0.05 + 0.18 * b.value)));
+  const magenta = useDerivedValue(() => vec(w * (0.95 - 0.3 * b.value), h * (0.3 + 0.2 * c.value)));
+  const verde2 = useDerivedValue(() => vec(w * (0.75 - 0.35 * c.value), h * (0.95 - 0.15 * a.value)));
+  const rG = r * ALCANCE_GRANDE;
+  const rC = r * ALCANCE_CHICO;
 
   const fuerza = oscuro ? 0.42 : 0.3;
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: oscuro ? '#0A090E' : '#F5F4F8' }]}>
       <Canvas style={StyleSheet.absoluteFill}>
         <Group opacity={fuerza}>
-          <Circle cx={verdeX} cy={verdeY} r={r} color={T['logo-green']}><BlurMask blur={r * 0.6} style="normal" /></Circle>
-          <Circle cx={magentaX} cy={magentaY} r={r} color={T['logo-magenta']}><BlurMask blur={r * 0.6} style="normal" /></Circle>
-          <Circle cx={verde2X} cy={verde2Y} r={r * 0.85} color={T['logo-green']}><BlurMask blur={r * 0.6} style="normal" /></Circle>
+          {/* Las tres en un solo grupo con la opacidad, como antes: donde se
+              cruzan se mezclan igual que las manchas desenfocadas. */}
+          <Circle c={verde} r={rG}><RadialGradient c={verde} r={rG} colors={verdeGrande} positions={PASOS} /></Circle>
+          <Circle c={magenta} r={rG}><RadialGradient c={magenta} r={rG} colors={magentaGrande} positions={PASOS} /></Circle>
+          <Circle c={verde2} r={rC}><RadialGradient c={verde2} r={rC} colors={verdeChico} positions={PASOS} /></Circle>
         </Group>
       </Canvas>
     </View>

@@ -152,7 +152,12 @@ export const useBloqueo = create((set, get) => ({
     // El propio Face ID saca la app de «activa» un instante. Esa vuelta no es
     // «la persona se fue»: se marca para que el vigilante no la cuente.
     ultimoDesbloqueo = Date.now();
-    set(ok ? { bloqueada: false, verificando: false } : { verificando: false });
+    // Al desbloquear se quita también la tapa (2026-10-15). En Android la
+    // pantalla de bloqueo es un <Modal> (componentes/PantallaBloqueo): al
+    // aparecer le quitó el foco a la actividad (`blur` → tapa puesta) y el
+    // `focus` que la quitaría no llega mientras el Modal sigue arriba — sin
+    // esto, al desbloquear quedaba la tapa sin botón.
+    set(ok ? { bloqueada: false, cubierta: false, verificando: false } : { verificando: false });
   },
   bloquearSiHaceFalta: () => { if (get().activo) set({ bloqueada: true }); },
 }));

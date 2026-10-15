@@ -8,7 +8,7 @@
 //     que la tarjeta se vea viva aunque el teléfono esté quieto.
 //
 // `x` e `y` van de −1 a 1 (ya suavizados por quien llama); `barrido` de 0 a 1.
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Canvas, LinearGradient, RadialGradient, Rect, RoundedRect, vec } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
@@ -27,7 +27,7 @@ const ARCOIRIS = [
 // tarjeta de verdad. Su reflejo corre con la inclinación y, con `giro`
 // (0 frente · 1 reverso), se enciende al ponerse de canto —donde una tarjeta
 // real atrapa la luz— en vez de dejar ver un borde sin material.
-export default function BrilloTarjeta({ x, y, barrido, sinArcoiris = false, aro = null, giro = null, esquina = 22 }) {
+function BrilloTarjeta({ x, y, barrido, sinArcoiris = false, aro = null, giro = null, esquina = 22 }) {
   const [t, setT] = useState({ w: 0, h: 0 });
   const { w, h } = t;
 
@@ -74,3 +74,7 @@ export default function BrilloTarjeta({ x, y, barrido, sinArcoiris = false, aro 
     </View>
   );
 }
+
+// Memorizado (2026-10-15): sólo valores compartidos y constantes; el lienzo no
+// se rehace porque la tarjeta se repinte.
+export default memo(BrilloTarjeta);

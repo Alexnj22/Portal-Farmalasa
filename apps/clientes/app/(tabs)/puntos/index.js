@@ -586,15 +586,19 @@ function TratamientosInicio({ lista }) {
           Cuando compres un medicamento con regularidad, te avisamos aquí antes de que se te acabe.
         </Text>
       ) : lista.map((x) => {
+        // Sin fecha estimada (`se_acaba` nulo) no hay plazo que contar: sin la
+        // línea y sin marcarlo urgente (antes decía «Se te acaba en null días»).
         const d = diasHasta(x.se_acaba);
-        const urge = d <= 3;
+        const urge = d != null && d <= 3;
         return (
           <View key={x.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ flex: 1, gap: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={1}>{nombrePropio(x.nombre)}</Text>
-              <Text style={{ fontSize: 13, fontWeight: urge ? '700' : '400', color: urge ? t.color.magentaTexto : colorSistema.texto2 }}>
-                {d < 0 ? `Se te acabó hace ${-d} día${d === -1 ? '' : 's'}` : d === 0 ? 'Se te acaba hoy' : `Se te acaba en ${d} día${d === 1 ? '' : 's'}`}
-              </Text>
+              {d != null ? (
+                <Text style={{ fontSize: 13, fontWeight: urge ? '700' : '400', color: urge ? t.color.magentaTexto : colorSistema.texto2 }}>
+                  {d < 0 ? `Se te acabó hace ${-d} día${d === -1 ? '' : 's'}` : d === 0 ? 'Se te acaba hoy' : `Se te acaba en ${d} día${d === 1 ? '' : 's'}`}
+                </Text>
+              ) : null}
             </View>
             <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${x.product_id}`); }} accessibilityRole="button"
               accessibilityLabel={`Reservar ${nombrePropio(x.nombre)}`} hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}

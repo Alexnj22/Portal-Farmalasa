@@ -80,7 +80,7 @@
 //     por globo (fechas, enlaces) se calcula una vez. En desarrollo se anota
 //     en la consola cuánto tardó el primer cuadro y de dónde salió el hilo.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, FlatList, InteractionManager, Keyboard, KeyboardAvoidingView, Modal, Platform, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Dimensions, FlatList, InteractionManager, Keyboard, Modal, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
@@ -102,7 +102,7 @@ import { nombreProducto } from '../lib/catalogo';
 import { datosDePrecio } from '../lib/precioTuyo';
 import { LIVIANO } from '../lib/rendimiento';
 import { usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
-import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Reacciones, Respondiendo, useMedir } from '../componentes/ChatPiezas';
+import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Reacciones, Respondiendo, subidaConTeclado, useMedir } from '../componentes/ChatPiezas';
 import { BuscadorProducto, Calificar, ProductoPendiente, Sugerencias, TarjetaProducto, TextoConEnlaces } from '../componentes/ChatConsultas';
 import { suave, useTema } from '../tema/tema';
 import { useMiNivel } from '../lib/exclusiva';
@@ -158,6 +158,32 @@ const fechaCorta = (iso) => {
 };
 
 const claveDe = (f) => f.clave;
+
+// Lo que ya está en pantalla no se vuelve a poner (2026-10-15): el sondeo trae
+// cada 3–5 s un objeto NUEVO de `conversacion` y `horario` aunque no haya
+// cambiado nada, y ponerlo tal cual redibujaba la pantalla entera y el título.
+const igualA = (a, b) => a === b || (a != null && b != null && JSON.stringify(a) === JSON.stringify(b));
+const siCambio = (nuevo) => (ant) => (igualA(ant, nuevo) ? ant : nuevo);
+
+// La foto que firma el servidor cambia de URL en cada respuesta: la caché de
+// la imagen se ata a la RUTA estable (`<campo>_clave`), no a la URL, y así no
+// se vuelve a bajar al abrir el chat (2026-10-15). Un servidor viejo no la
+// manda: entonces la caché sigue por URL, como antes.
+const fuenteFoto = (uri, clave) => (clave ? { uri, cacheKey: clave } : { uri });
+
+// ¿Este mensaje del servidor es el que se mandó? Para cuando la respuesta de
+// `chat_enviar` no llegó (2026-10-15): el mensaje pudo haber entrado igual, y
+// ofrecer «Reintentar» sin mirar lo mandaría dos veces. Es del cliente,
+// posterior al último id que se conocía al mandarlo, y con el mismo contenido.
+const mismoTexto = (a, b) => String(a ?? '').trim() === String(b ?? '').trim();
+function esElEnviado(m, e) {
+  if (!e || !m || m.autor !== 'cliente' || typeof m.id !== 'number' || m.id <= (e.idAntes ?? 0)) return false;
+  if (!mismoTexto(m.texto, e.texto) || !!m.foto_url !== !!e.uri) return false;
+  const prodDe = m.adjunto?.tipo === 'producto' ? Number(m.adjunto.id) : null;
+  if (prodDe !== (e.prod ? Number(e.prod.id) : null)) return false;
+  // La cita, sólo si el servidor la trae (puede no resolverla).
+  return !m.responde_a || !e.cita || m.responde_a.id === e.cita.id;
+}
 const CONTENIDO_LISTA = { paddingBottom: 8, paddingHorizontal: 10, paddingTop: 12 };
 const MANTENER_POSICION = { minIndexForVisible: 0, autoscrollToTopThreshold: 80 };
 
@@ -207,7 +233,7 @@ export default function Chat() {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [cargandoViejos, setCargandoViejos] = useState(false);
-  const [fotoGrande, setFotoGrande] = useState(null);
+  const [fotoGrande, setFotoGrande] = useState(null); // { uri, cacheKey? }
   const lista = useRef(null);
   const campo = useRef(null);
   const ultimoId = useRef(0);
@@ -276,9 +302,9 @@ export default function Chat() {
     if (!r?.ok) { setError(r?.mensaje ?? 'Revisa tu conexión.'); setMensajes((x) => x ?? []); return; }
     setError(null);
     setFuera(!!r.fuera_de_horario);
-    if (r.horario) setHorario(r.horario);
+    if (r.horario) setHorario(siCambio(r.horario));
     if ('vivo' in r) anotarVivo(r.vivo);
-    if (r.conversacion) setConversacion(r.conversacion);
+    if (r.conversacion) setConversacion(siCambio(r.conversacion));
     setHayMas(!!r.hay_mas);
     anotarUltimo(r.mensajes);
     // La franja de lo nuevo se calcula ANTES de marcar leído (2026-10-13).
@@ -303,13 +329,13 @@ export default function Chat() {
       const r = await pedir('chat_mensajes', { desde_id: ultimoId.current });
       // Lo «en vivo» cambia aunque no haya mensajes nuevos.
       if (r?.ok && 'vivo' in r) anotarVivo(r.vivo);
-      if (r?.ok && r.conversacion) setConversacion(r.conversacion);
+      if (r?.ok && r.conversacion) setConversacion(siCambio(r.conversacion));
       if (!r?.ok || !r.mensajes?.length) {
         if (r?.ok) { setFuera(!!r.fuera_de_horario); desdeCache.current = false; }
         return;
       }
       setFuera(!!r.fuera_de_horario);
-      if (r.horario) setHorario(r.horario);
+      if (r.horario) setHorario(siCambio(r.horario));
       anotarUltimo(r.mensajes);
       // Lo que de verdad es nuevo se cuenta contra lo que hay en pantalla (el
       // actualizador de `setMensajes` corre después, en el próximo render).
@@ -326,7 +352,11 @@ export default function Chat() {
       }
       setMensajes((ant) => {
         const vistos = new Set((ant ?? []).map((m) => m.id));
-        return [...(ant ?? []), ...r.mensajes.filter((m) => !vistos.has(m.id))];
+        const llegados = r.mensajes.filter((m) => !vistos.has(m.id));
+        // Un envío que quedó «sin confirmar» y que en realidad entró: llega
+        // por acá, y su globo fallido se va (no queda repetido).
+        const base = (ant ?? []).filter((m) => !(m.dudoso && llegados.some((n) => esElEnviado(n, m.reintento))));
+        return [...base, ...llegados];
       });
       // Con la lista subida, lo que llega suma en el botón ↓ (como WhatsApp).
       if (llegaron && !alFondo.current) setSinVer((n) => n + llegaron);
@@ -443,11 +473,33 @@ export default function Chat() {
 
   // Enviar: aparece al instante (temporal) y se reemplaza por el del servidor.
   // Si falla, se queda marcado «No se envió» y se reintenta tocándolo.
+  //
+  // Sin confirmar (2026-10-15): un envío sin respuesta se corta a los ~30 s
+  // (`sinConfirmar`, lib/api) y el mensaje PUDO haber entrado. Antes de
+  // ofrecer «Reintentar» se busca en el hilo; si no se pudo mirar, el globo
+  // queda «Sin confirmar», el sondeo lo quita si aparece y el reintento vuelve
+  // a mirar antes de mandar. Así no se manda dos veces.
   const enviarYa = useRef(false);
-  const mandar = async ({ texto: tx = null, uri = null, prod = null, cita = null, reemplaza = null }) => {
+  // Busca el mensaje mandado: en pantalla (el sondeo pudo traerlo) o en lo
+  // nuevo del servidor. `null` = no se pudo mirar; `false` = no está.
+  const buscarEnviado = async (envio) => {
+    const enPantalla = (mensajesRef.current ?? []).find((m) => esElEnviado(m, envio));
+    if (enPantalla) return enPantalla;
+    const r = await pedir('chat_mensajes', { desde_id: envio.idAntes });
+    if (!r?.ok) return null;
+    return (r.mensajes ?? []).find((m) => esElEnviado(m, envio)) ?? false;
+  };
+  // El globo temporal pasa a ser el del servidor (sin repetirlo si ya estaba).
+  const ponerEnviado = (tmpId, real) => {
+    setMensajes((ant) => (ant ?? []).filter((m) => m.id !== real.id).map((m) => (m.id === tmpId ? real : m)));
+  };
+  const mandar = async ({ texto: tx = null, uri = null, prod = null, cita = null, reemplaza = null, previo = null }) => {
     if (enviarYa.current) return false;
     enviarYa.current = true;
     setEnviando(true);
+    // Lo mandado y el último id conocido ANTES de mandarlo: lo que se busque
+    // después, si la respuesta no llega, tiene que ser posterior a él.
+    const envio = { texto: tx, uri, prod, cita, idAntes: ultimoId.current };
     const tmp = { id: reemplaza ?? `tmp-${Date.now()}`, autor: 'cliente', texto: tx, foto_url: uri, created_at: new Date().toISOString(), enviando: true,
       adjunto: prod ? { tipo: 'producto', ...prod } : null,
       responde_a: cita ? { id: cita.id, autor: cita.autor, texto: cita.texto, foto: cita.foto } : null, reacciones: [] };
@@ -456,6 +508,13 @@ export default function Chat() {
     recien.current.add(tmp.id);
     setMensajes((ant) => (reemplaza ? (ant ?? []).map((m) => (m.id === reemplaza ? tmp : m)) : [...(ant ?? []), tmp]));
     try {
+      // El reintento de un envío sin confirmar: primero se mira si entró.
+      if (previo) {
+        const ya = await buscarEnviado(previo);
+        if (ya) { ponerEnviado(tmp.id, ya); return true; }
+        // Todavía no se puede mirar: mandarlo a ciegas podría repetirlo.
+        if (ya === null) throw Object.assign(new Error('Todavía no pudimos confirmar si se envió. Revisa tu conexión.'), { dudoso: true });
+      }
       let fotoRuta = null;
       if (uri) {
         const s = await subirFoto(pedir, 'chat_subir_url', {}, uri);
@@ -463,10 +522,17 @@ export default function Chat() {
         fotoRuta = s.ruta;
       }
       const r = await pedir('chat_enviar', { texto: tx, foto_ruta: fotoRuta, ...(cita ? { respuesta_a: cita.id } : {}), ...(prod ? { producto_id: prod.id } : {}) });
+      if (!r?.ok && r?.sinConfirmar) {
+        const ya = await buscarEnviado(envio);
+        if (ya) { ponerEnviado(tmp.id, ya); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); return true; }
+        // No se pudo mirar: queda en duda, no como «no se envió».
+        if (ya === null) throw Object.assign(new Error(r.mensaje ?? 'No pudimos confirmar si se envió.'), { dudoso: true });
+        throw new Error('No se envió. Revisa tu conexión.');
+      }
       if (!r?.ok) throw new Error(r?.mensaje ?? 'No se pudo enviar. Revisa tu conexión.');
       if (typeof r.fuera_de_horario === 'boolean') setFuera(r.fuera_de_horario);
-      if (r.horario) setHorario(r.horario);
-      if (r.conversacion) setConversacion(r.conversacion);
+      if (r.horario) setHorario(siCambio(r.horario));
+      if (r.conversacion) setConversacion(siCambio(r.conversacion));
       anotarUltimo([r.mensaje]);
       recien.current.add(r.mensaje.id);
       setMensajes((ant) => {
@@ -478,7 +544,9 @@ export default function Chat() {
       return true;
     } catch (e) {
       setMensajes((ant) => (ant ?? []).map((m) => (m.id === tmp.id
-        ? { ...m, enviando: false, fallido: e?.message ?? 'Revisa tu conexión.', reintento: { texto: tx, uri, prod, cita } } : m)));
+        ? { ...m, enviando: false, fallido: e?.message ?? 'Revisa tu conexión.', dudoso: !!e?.dudoso,
+          // Un reintento de algo en duda sigue en duda respecto del PRIMER envío.
+          reintento: e?.dudoso && previo ? previo : envio } : m)));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       return false;
     } finally {
@@ -488,12 +556,13 @@ export default function Chat() {
   };
   const reintentar = (m) => {
     const elegir = (i) => {
-      if (i === 0) mandar({ ...m.reintento, reemplaza: m.id });
+      // En duda: el reintento primero mira si el primero entró.
+      if (i === 0) mandar({ ...m.reintento, reemplaza: m.id, previo: m.dudoso ? m.reintento : null });
       if (i === 1) setMensajes((ant) => (ant ?? []).filter((x) => x.id !== m.id));
     };
-    const titulo = `No se envió: ${m.fallido}`;
+    const titulo = m.dudoso ? `Sin confirmar: ${m.fallido}` : `No se envió: ${m.fallido}`;
     if (Platform.OS === 'web') {
-      Alert.alert('No se envió', m.fallido, [{ text: 'Eliminar', style: 'destructive', onPress: () => elegir(1) }, { text: 'Reintentar', onPress: () => elegir(0) }]);
+      Alert.alert(m.dudoso ? 'Sin confirmar' : 'No se envió', m.fallido, [{ text: 'Eliminar', style: 'destructive', onPress: () => elegir(1) }, { text: 'Reintentar', onPress: () => elegir(0) }]);
       return;
     }
     ActionSheetIOS.showActionSheetWithOptions({ title: titulo, options: ['Reintentar', 'Eliminar', 'Cancelar'], destructiveButtonIndex: 1, cancelButtonIndex: 2 }, elegir);
@@ -742,6 +811,40 @@ export default function Chat() {
     </View>
   ), [resuelta, verCalificar, escribiendoNombre, enviarCalificacion, alCerrarCalificar]);
 
+  // Las opciones del título, ESTABLES (2026-10-15): `Stack.Screen` llama a
+  // `setOptions` cada vez que recibe un objeto nuevo, y antes cada dibujo
+  // —también cada sondeo— armaba uno con un `headerTitle` nuevo: la barra se
+  // volvía a dibujar entera. Ahora cambian sólo si cambia lo que muestran.
+  const atiendeNombre = vivo.atiende ? nombrePropio(vivo.atiende) : null;
+  const conPreferencia = !!preferente;
+  const opcionesTitulo = useMemo(() => ({ title: 'Farmacia Salud', headerTitle: () => (
+    <TituloChat fuera={fuera} atiende={atiendeNombre} escribiendo={escribiendoNombre} preferente={conPreferencia} />
+  ) }), [fuera, atiendeNombre, escribiendoNombre, conPreferencia]);
+  // El teclado en iOS, con transformaciones y no con el alto (ver «El teclado», al pie).
+  const insAbajo = Math.max(ins.bottom, 8);
+  const subida = useAnimatedStyle(() => ({ transform: [{ translateY: tecladoAlto ? -subidaConTeclado(tecladoAlto.value, insAbajo) : 0 }] }));
+  // Lo que la subida esconde ARRIBA de la lista se recupera como margen del
+  // desplazamiento (en la lista invertida, el «abajo» nativo es arriba en
+  // pantalla): así los mensajes más viejos se siguen pudiendo leer con el
+  // teclado abierto. Cambia una vez por apertura, no cuadro a cuadro.
+  const [margenTeclado, setMargenTeclado] = useState(0);
+  useEffect(() => {
+    if (!IOS) return undefined;
+    // Lo que el teclado TAPA (desde dónde empieza hasta abajo): un teclado
+    // que se va también avisa un cambio de marco, con su alto pero fuera de
+    // la pantalla.
+    const poner = (e) => {
+      const y = e?.endCoordinates?.screenY;
+      const alto = Number.isFinite(y) ? Math.max(0, Dimensions.get('window').height - y) : (e?.endCoordinates?.height ?? 0);
+      setMargenTeclado(Math.round(subidaConTeclado(alto, insAbajo)));
+    };
+    const a = Keyboard.addListener('keyboardWillShow', poner);
+    const b = Keyboard.addListener('keyboardWillChangeFrame', poner);
+    const c = Keyboard.addListener('keyboardWillHide', () => setMargenTeclado(0));
+    return () => { a.remove(); b.remove(); c.remove(); };
+  }, [insAbajo]);
+  const insetLista = useMemo(() => ({ top: 0, left: 0, right: 0, bottom: margenTeclado }), [margenTeclado]);
+
   if (pendiente) {
     return (
       <View style={{ flex: 1, padding: 16, paddingTop: IOS ? arriba + 8 : 16 }}>
@@ -751,12 +854,7 @@ export default function Chat() {
       </View>
     );
   }
-  const titulo = (
-    <Stack.Screen options={{ title: 'Farmacia Salud', headerTitle: () => (
-      <TituloChat fuera={fuera} atiende={vivo.atiende ? nombrePropio(vivo.atiende) : null} escribiendo={vivo.escribiendo ? nombrePropio(vivo.escribiendo) : null}
-        preferente={!!preferente} />
-    ) }} />
-  );
+  const titulo = <Stack.Screen options={opcionesTitulo} />;
   // El esqueleto sólo la primera vez: con el hilo en memoria se pinta enseguida.
   if (mensajes == null) return <View style={{ flex: 1 }}>{titulo}<Esqueleto arriba={arriba} /></View>;
   // Los atajos: con la conversación vacía o justo después de la respuesta automática.
@@ -789,44 +887,50 @@ export default function Chat() {
   };
 
   return (
-    <Pantalla tecladoAlto={tecladoAlto}>
+    <View style={{ flex: 1 }}>
       {titulo}
       {/* La lista empieza debajo de la barra de título (que es transparente
-          sobre la aurora): nada pasa por detrás de ella. */}
-      <View style={{ flex: 1, marginTop: arriba }}>
-        <FlatList
-          ref={lista}
-          data={datos}
-          inverted
-          keyExtractor={claveDe}
-          style={estiloLista}
-          // Lo de la primera pantalla, no el hilo entero: el resto se dibuja al subir.
-          initialNumToRender={Math.max(12, iNuevos + 4)}
-          maxToRenderPerBatch={10}
-          updateCellsBatchingPeriod={50}
-          windowSize={9}
-          // Android: las filas fuera de la ventana se sueltan del árbol nativo.
-          // En iOS no: con la lista invertida recorta globos al volver a subir.
-          removeClippedSubviews={!IOS}
-          // Invertida: el relleno de ARRIBA de la pantalla es el de abajo del contenido.
-          contentContainerStyle={CONTENIDO_LISTA}
-          // La lista empieza debajo de la barra: no hay nada que iOS ajuste ni difumine.
-          contentInsetAdjustmentBehavior="never"
-          automaticallyAdjustKeyboardInsets={false}
-          // Con la lista abajo, lo que llega se ve; subida, no se mueve lo que se lee.
-          maintainVisibleContentPosition={MANTENER_POSICION}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          onScroll={alDesplazar}
-          scrollEventThrottle={100}
-          onContentSizeChange={alCambiarAlto}
-          onScrollToIndexFailed={alFallarIndice}
-          ListFooterComponent={pie}
-          renderItem={renderItem}
-          ListHeaderComponent={encabezado}
-        />
-        {/* Ir al final, con cuántas respuestas llegaron mientras se leía arriba. */}
-        {lejos && listo ? <BotonAlFinal n={sinVer} alTocar={alFinal} /> : null}
+          sobre la aurora): nada pasa por detrás de ella. Con el teclado, la
+          lista SUBE (transformación) dentro de esta caja, que la recorta debajo
+          del título: nada pasa por detrás de él tampoco. */}
+      <View style={{ flex: 1, marginTop: arriba, overflow: 'hidden' }}>
+        <Animated.View style={[{ flex: 1 }, subida]}>
+          <FlatList
+            ref={lista}
+            data={datos}
+            inverted
+            keyExtractor={claveDe}
+            style={estiloLista}
+            // Lo de la primera pantalla, no el hilo entero: el resto se dibuja al subir.
+            initialNumToRender={Math.max(12, iNuevos + 4)}
+            maxToRenderPerBatch={10}
+            updateCellsBatchingPeriod={50}
+            windowSize={9}
+            // Android: las filas fuera de la ventana se sueltan del árbol nativo.
+            // En iOS no: con la lista invertida recorta globos al volver a subir.
+            removeClippedSubviews={!IOS}
+            // Invertida: el relleno de ARRIBA de la pantalla es el de abajo del contenido.
+            contentContainerStyle={CONTENIDO_LISTA}
+            // La lista empieza debajo de la barra: no hay nada que iOS ajuste ni difumine.
+            contentInsetAdjustmentBehavior="never"
+            automaticallyAdjustKeyboardInsets={false}
+            contentInset={insetLista}
+            scrollIndicatorInsets={insetLista}
+            // Con la lista abajo, lo que llega se ve; subida, no se mueve lo que se lee.
+            maintainVisibleContentPosition={MANTENER_POSICION}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            onScroll={alDesplazar}
+            scrollEventThrottle={100}
+            onContentSizeChange={alCambiarAlto}
+            onScrollToIndexFailed={alFallarIndice}
+            ListFooterComponent={pie}
+            renderItem={renderItem}
+            ListHeaderComponent={encabezado}
+          />
+          {/* Ir al final, con cuántas respuestas llegaron mientras se leía arriba. */}
+          {lejos && listo ? <BotonAlFinal n={sinVer} alTocar={alFinal} /> : null}
+        </Animated.View>
       </View>
 
       {/* La barra para escribir, como iMessage (componentes/ChatPiezas). */}
@@ -848,7 +952,7 @@ export default function Chat() {
             style={{ alignSelf: 'flex-end', paddingHorizontal: 18, minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>Cerrar</Text>
           </Presionable>
-          {fotoGrande ? <Image source={{ uri: fotoGrande }} style={{ flex: 1 }} contentFit="contain" accessibilityLabel="Foto" /> : null}
+          {fotoGrande ? <Image source={fotoGrande} cachePolicy="memory-disk" style={{ flex: 1 }} contentFit="contain" accessibilityLabel="Foto" /> : null}
         </View>
       </Modal>
       {foto.vista}
@@ -865,18 +969,19 @@ export default function Chat() {
             if (copiar(nombreProducto(m.adjunto?.nombre))) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           }} />
       ) : null}
-    </Pantalla>
+    </View>
   );
 }
 
-// La pantalla entera sube con el teclado. En iOS, cuadro a cuadro con el del
-// sistema (`useAnimatedKeyboard`, también al bajarlo arrastrando la lista); en
-// Android la ventana ya se redimensiona sola.
-function Pantalla({ tecladoAlto, children }) {
-  const empuje = useAnimatedStyle(() => ({ paddingBottom: tecladoAlto ? tecladoAlto.value : 0 }));
-  if (!tecladoAlto) return <KeyboardAvoidingView style={{ flex: 1 }} behavior={undefined}>{children}</KeyboardAvoidingView>;
-  return <Animated.View style={[{ flex: 1 }, empuje]}>{children}</Animated.View>;
-}
+// El teclado (2026-10-15, antes `Pantalla`). En iOS la lista y la barra lo
+// siguen cuadro a cuadro (`useAnimatedKeyboard`, también al bajarlo
+// arrastrando la lista), pero con `translateY` y no con el ALTO: antes un
+// `paddingBottom` animado volvía a medir la pantalla —y la lista— en cada
+// cuadro de la animación. Ahora nada cambia de tamaño: la lista sube dentro
+// de una caja que la recorta bajo el título, la barra sube con ella
+// (`subidaConTeclado`, la MISMA cuenta en las dos) y lo que queda tapado
+// arriba se recupera con `contentInset`. En Android la ventana ya se
+// redimensiona sola (adjustResize) y no se hace nada.
 
 // El título: la farmacia como un contacto — logo, nombre y, debajo, el estado.
 function TituloChat({ fuera, atiende, escribiendo, preferente = false }) {
@@ -1104,8 +1209,8 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
         <View style={{ width: 28 }}>
           {ultimo ? (
             m.equipo?.foto_url ? (
-              <Image source={{ uri: m.equipo.foto_url }} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colorSistema.separador }} contentFit="cover"
-                cachePolicy="memory-disk" recyclingKey={m.equipo.foto_url} accessibilityLabel={`Foto de ${nombre}`} />
+              <Image source={fuenteFoto(m.equipo.foto_url, m.equipo.foto_clave)} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colorSistema.separador }} contentFit="cover"
+                cachePolicy="memory-disk" recyclingKey={m.equipo.foto_clave || m.equipo.foto_url} accessibilityLabel={`Foto de ${nombre}`} />
             ) : (
               <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.3 : 0.16) }}>
                 <Text maxFontSizeMultiplier={1.1} style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>{iniciales(nombre)}</Text>
@@ -1134,9 +1239,9 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
                 <View style={{ maxWidth: 260 }}><Cita c={m.responde_a} mio={false} nombreEquipo={nombreCitado} alTocar={() => alIrA(m.responde_a.id)} /></View>
               ) : null}
               {m.foto_url ? (
-                <Presionable onPress={() => alVerFoto(m.foto_url)} accessibilityRole="imagebutton" accessibilityLabel="Ver foto">
-                  <Image source={{ uri: m.foto_url }} style={{ width: 210, height: 250, borderRadius: R, backgroundColor: colorSistema.separador, opacity: m.enviando ? 0.6 : 1 }}
-                    contentFit="cover" transition={150} cachePolicy="memory-disk" recyclingKey={m.foto_url} />
+                <Presionable onPress={() => alVerFoto(fuenteFoto(m.foto_url, m.foto_clave))} accessibilityRole="imagebutton" accessibilityLabel="Ver foto">
+                  <Image source={fuenteFoto(m.foto_url, m.foto_clave)} style={{ width: 210, height: 250, borderRadius: R, backgroundColor: colorSistema.separador, opacity: m.enviando ? 0.6 : 1 }}
+                    contentFit="cover" transition={150} cachePolicy="memory-disk" recyclingKey={m.foto_clave || m.foto_url} />
                 </Presionable>
               ) : null}
               {m.adjunto ? (m.adjunto.tipo === 'producto' ? <TarjetaProducto a={m.adjunto} mio={mio} /> : <Oferta a={m.adjunto} />) : null}
@@ -1154,7 +1259,7 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
         </Deslizable>
         <Reacciones lista={m.reacciones} mio={mio} alTocar={alReaccionar} />
         {m.fallido ? (
-          <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.rojo, marginHorizontal: 6 }}>No se envió · toca para reintentar</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.rojo, marginHorizontal: 6 }}>{m.dudoso ? 'Sin confirmar · toca para revisar' : 'No se envió · toca para reintentar'}</Text>
         ) : m.enviando ? (
           ultimo ? <Text style={{ fontSize: 11, color: colorSistema.texto3, marginHorizontal: 6 }}>Enviando…</Text> : null
         ) : ultimo || verHora ? (

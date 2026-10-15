@@ -10,6 +10,7 @@ import Aurora from '../componentes/Aurora';
 import { useAppActiva } from '../lib/visible';
 import { BARRA_NATIVA, barraAndroid } from '../componentes/PilaDePestana';
 import * as SystemUI from 'expo-system-ui';
+import * as SplashScreen from 'expo-splash-screen';
 import { useSesion } from '../lib/sesion';
 import { conReporte } from '../lib/errores';
 import { llamar } from '../lib/api';
@@ -58,6 +59,26 @@ const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
 const ABIERTAS = new Set(['vitrina', 'sucursales', 'oferta', 'o', 'producto', 'mis-puntos', 'legal']);
 const WEB = Platform.OS === 'web';
 let entradaAutomaticaHecha = false;
+
+// El TELÓN (2026-10-15, auditoría): la pantalla de arranque se queda puesta
+// hasta saber qué mostrar —la sesión leída del llavero y si el bloqueo está
+// encendido—. Sin esto se soltaba con el primer cuadro y, con el bloqueo
+// encendido, el saldo guardado alcanzaba a asomar antes que la pantalla de
+// Face ID. Se pide al cargar el módulo, antes de cualquier render, y con un
+// tope: pase lo que pase (un llavero que no contesta, un error al montar) a
+// los 3 s se suelta, para que la app nunca quede pegada en el logo.
+let relojTelon = null;
+let telonSuelto = false;
+function soltarTelon() {
+  if (telonSuelto) return;
+  telonSuelto = true;
+  clearTimeout(relojTelon);
+  SplashScreen.hideAsync().catch(() => {});
+}
+if (!WEB) {
+  SplashScreen.preventAutoHideAsync().catch(() => {});
+  relojTelon = setTimeout(soltarTelon, 3_000);
+}
 
 // En el navegador (la vista previa con `expo start --web`) el documento tiene
 // su propio fondo, que es lo que Safari pinta bajo la barra de estado y bajo
@@ -111,15 +132,32 @@ function Guardia() {
 
 // Tocar un aviso abre la pantalla de la que habla (`data.url`: /puntos,
 // /inyecciones, /oferta/…). También el aviso que abrió la app en frío.
+// Con la app bloqueada (o con el bloqueo todavía sin leer) el aviso ESPERA al
+// desbloqueo (2026-10-15): la pantalla de bloqueo tapa lo que ya estaba
+// presentado, pero una oferta abierta como modal DESPUÉS quedaría encima de
+// ella (componentes/PantallaBloqueo).
+const bloqueoTapa = (s) => s.bloqueada || !s.listo;
 function AbrirAviso() {
   const token = useSesion((s) => s.token);
+  const tapada = useBloqueo(bloqueoTapa);
+  const pendiente = useRef(null);
+  useEffect(() => {
+    if (!token) { pendiente.current = null; return; }
+    if (tapada || !pendiente.current) return;
+    const url = pendiente.current;
+    pendiente.current = null;
+    navegar(url);
+  }, [tapada, token]);
   useEffect(() => {
     if (WEB || !token) return undefined;
     const ir = (r) => {
       // Un botón del recordatorio de tomas no abre nada: lo atiende lib/tomas.
       if (esAccionDeToma(r)) return;
       const url = r?.notification?.request?.content?.data?.url;
-      if (typeof url === 'string' && url.startsWith('/')) navegar(url);
+      if (typeof url === 'string' && url.startsWith('/')) {
+        if (bloqueoTapa(useBloqueo.getState())) pendiente.current = url;
+        else navegar(url);
+      }
       // Atendido: que no se vuelva a abrir al entrar de nuevo en esta ejecución.
       Notifications.clearLastNotificationResponseAsync?.().catch?.(() => {});
     };
@@ -220,7 +258,7 @@ function AuroraRaiz() {
 // El bloqueo con Face ID, encima de todo, sólo con sesión abierta.
 function Bloqueo() {
   const token = useSesion((s) => s.token);
-  const { bloqueada, activo, cargar } = useBloqueo();
+  const { bloqueada, activo, listo, cargar } = useBloqueo();
   // Con el bloqueo encendido, al salir de la app se tapa el contenido: la foto
   // que iOS toma para el selector de apps mostraba el saldo y el QR aunque la
   // app «estuviera bloqueada» (revisión 2026-10-06). Igual que Wallet o un banco.
@@ -229,7 +267,24 @@ function Bloqueo() {
   useEffect(() => { cargar(); return vigilarCicloDeVida(); }, [cargar]);
   if (!token) return null;
   if (bloqueada) return <PantallaBloqueo />;
-  return cubierta ? <PantallaBloqueo soloCubrir /> : null;
+  // Con sesión y el bloqueo todavía sin leer del llavero no se sabe si hay que
+  // bloquear: se tapa, para que el saldo guardado no asome ni un cuadro antes
+  // que la pantalla de Face ID (2026-10-15).
+  return cubierta || !listo ? <PantallaBloqueo soloCubrir /> : null;
+}
+
+// Suelta el telón (ver `soltarTelon`) cuando ya se sabe qué mostrar: la sesión
+// leída y el bloqueo leído. Un cuadro después, para que la pantalla de bloqueo
+// —o la tapa— ya esté pintada debajo cuando el logo se vaya.
+function Telon() {
+  const lista = useSesion((s) => s.lista);
+  const listo = useBloqueo((s) => s.listo);
+  useEffect(() => {
+    if (WEB || !lista || !listo) return undefined;
+    const cuadro = requestAnimationFrame(soltarTelon);
+    return () => cancelAnimationFrame(cuadro);
+  }, [lista, listo]);
+  return null;
 }
 
 function Raiz() {
@@ -308,6 +363,7 @@ function Raiz() {
           <AvisoEnApp />
           <Presentacion />
           <Bloqueo />
+          <Telon />
           <HojasAndroid />
         </GestureHandlerRootView>
       </SafeAreaProvider>

@@ -13,6 +13,9 @@ const VIGENCIA_MS = 5 * 60_000;
 // El pedido EN CURSO (2026-10-14): la pestaña y el carrusel de la Tienda lo
 // piden a la vez al abrir; sin esto salían dos pedidos idénticos.
 let enCurso = null;
+// Sube con cada `limpiar` (cerrar sesión, 2026-10-15): lo pedido antes de
+// cerrar que llega después no vuelve a pintar las ofertas de la otra persona.
+let vuelta = 0;
 
 export const useOfertas = create((set, get) => ({
   datos: null,
@@ -30,16 +33,21 @@ export const useOfertas = create((set, get) => ({
     if (enCurso && !forzar) return enCurso;
     const accion = ahora === 'sesion' ? 'ofertas' : 'ofertas_publicas';
     const pedido = (async () => {
+      const miVuelta = vuelta;
+      const token = useSesion.getState().token;
+      const vigente = () => miVuelta === vuelta && (!token || useSesion.getState().token === token);
       // En frío, lo de la vez anterior se pinta YA (2026-10-14): la pestaña
       // esperaba a la red con la ruedita, que con mala señal eran segundos.
       if (!datos || de !== ahora) {
         const copia = await copiaParaEmpezar(accion, extra);
-        if (copia && !get().datos?.ok) set({ datos: copia, de: ahora, prueba: clavePrueba, cargadoAt: 0 });
+        if (copia && vigente() && !get().datos?.ok) set({ datos: copia, de: ahora, prueba: clavePrueba, cargadoAt: 0 });
       }
       // Sin sesión, la vitrina pública (lo exclusivo se anuncia sin detalle).
       const r = ahora === 'sesion'
         ? await useSesion.getState().pedir('ofertas', extra)
         : await llamar('ofertas_publicas');
+      // Se cerró sesión mientras se pedía: se devuelve, pero no se guarda.
+      if (!vigente()) return r;
       const previo = get();
       // Si falla y ya había ofertas de este mismo «quién mira», se conservan.
       if (!r?.ok && previo.datos?.ok && previo.de === ahora) return previo.datos;
@@ -49,5 +57,5 @@ export const useOfertas = create((set, get) => ({
     enCurso = pedido;
     try { return await pedido; } finally { if (enCurso === pedido) enCurso = null; }
   },
-  limpiar: () => set({ datos: null, cargadoAt: 0 }),
+  limpiar: () => { vuelta += 1; enCurso = null; set({ datos: null, cargadoAt: 0 }); },
 }));

@@ -6,7 +6,7 @@
 // Sólo corre el reloj con la tarjeta a la vista (`activa`): fuera de pantalla
 // el material queda quieto y no gasta batería. Si el shader no compilara,
 // no dibuja nada y queda el degradado de debajo.
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Canvas, Group, Rect, Shader, Skia } from '@shopify/react-native-skia';
 import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
@@ -59,7 +59,19 @@ const ESCALA = ANDROID && !LIVIANO ? 0.75 : 1;
 //   · no se dibuja nada hasta conocer el tamaño.
 const SOBRA = 0.06;
 
-export default function Mineral({ material, x, y, activa = true }) {
+// `pausa` (valor compartido, 2026-10-15): mientras vale `true` —la pantalla se
+// desplaza— el reloj no avanza y el lienzo no se redibuja. Es un valor del
+// hilo de la interfaz y no una prop booleana: así el desplazamiento no vuelve
+// a pintar a nadie con React (componentes/movimiento.js, `useMoviendoValor`).
+//
+// `luzSola` (el cupón, 2026-10-15): sin giroscopio, la luz va y viene sola
+// sobre el material. Antes eran dos `withRepeat` que cambiaban en CADA cuadro
+// de la pantalla —60 a 120 por segundo— y, como son uniformes del shader,
+// redibujaban el material saltándose este reloj de 30. Ahora la luz sale del
+// mismo reloj `t`, con la misma curva: un `Easing.inOut(sin)` de ida y vuelta
+// es exactamente un coseno (x: ±0.6 cada 4.2 s; y: ±0.3 cada 5.6 s, y arranca
+// donde arrancaba, en −0.6 / 0.3).
+function Mineral({ material, x, y, activa = true, pausa = null, luzSola = false }) {
   const efecto = efectoDe(material);
   const [caja, setCaja] = useState(null);
   const tam = useSharedValue({ width: 1, height: 1 });
@@ -71,6 +83,7 @@ export default function Mineral({ material, x, y, activa = true }) {
   // destellos titilen. Se acumula y se publica cada 1/30 s; el lienzo sólo se
   // redibuja cuando cambia `t` (o la inclinación, que va por su lado).
   const reloj = useFrameCallback((f) => {
+    if (pausa && pausa.value) return;
     const paso = Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000);
     cuadro.value += paso;
     if (cuadro.value >= 0.032) { t.value += cuadro.value; cuadro.value = 0; }
@@ -79,7 +92,9 @@ export default function Mineral({ material, x, y, activa = true }) {
   const uniforms = useDerivedValue(() => ({
     res: [Math.max(1, tam.value.width), Math.max(1, tam.value.height)],
     t: t.value,
-    tilt: [x ? x.value : 0, y ? y.value : 0],
+    tilt: luzSola
+      ? [-0.6 * Math.cos((Math.PI * (t.value - 3)) / 4.2), 0.3 * Math.cos((Math.PI * (t.value - 3)) / 5.6)]
+      : [x ? x.value : 0, y ? y.value : 0],
   }));
   if (!efecto) return null;
   const alMedir = (e) => {
@@ -118,3 +133,7 @@ export default function Mineral({ material, x, y, activa = true }) {
     </View>
   );
 }
+
+// Memorizado (2026-10-15): sus props son valores compartidos y constantes; que
+// la tarjeta se repinte no tiene por qué rehacer el lienzo.
+export default memo(Mineral);

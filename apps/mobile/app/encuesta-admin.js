@@ -13,6 +13,13 @@
 // (`encuesta-interna/editar`) y capturar o corregir la respuesta de una persona
 // (`encuesta-interna/respuesta`), con a quién va (todos, sucursales,
 // jefaturas, personas). El detalle dice quiénes faltan por responder.
+//
+// Como el portal, cualquiera que entra (también quien sólo lee) toca a una
+// persona y ve sus respuestas —datos generales, cada bloque con su puntaje y la
+// opción que eligió en cada pregunta— y su comentario; quien edita, además, la
+// corrige desde ahí. Cada persona lleva su puntaje por bloque debajo del
+// nombre. La tarjeta trae la descripción, el año y, en las de clima, el atajo
+// «Ver análisis».
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -20,7 +27,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { guardarEncuestaInterna } from '../componentes/encuestas/interna';
 import * as Haptics from 'expo-haptics';
 import { fetchEmployeesForSurvey, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponseCounts, fetchSurveyResponses, fetchSurveys } from '@nucleo/data/encuestas';
-import { ESTADO_ENCUESTA, indicesInvertidos, nivelDePuntaje, pendientesDelAlcance, preguntaDeLaBase, promedioPorPersona, puntajeDePersona, TIPO_ENCUESTA } from '@nucleo/utils/climaLaboral';
+import { ESTADO_ENCUESTA, indicesInvertidos, OPCIONES_POR_DEFECTO, nivelDePuntaje, pendientesDelAlcance, preguntaDeLaBase, promedioPorPersona, puntajeDePersona, TIPO_ENCUESTA } from '@nucleo/utils/climaLaboral';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
@@ -37,8 +44,66 @@ const COLOR_ESTADO = { activa: MARCA.verde, cerrada: MARCA.azulClaro, borrador: 
 const puntos = (s) => (s == null ? '—' : String(s));
 const colorDe = (s) => (s == null ? colorSistema.texto2 : colorDeVariante(nivelDePuntaje(s).severidad));
 
+const LETRAS = ['A', 'B', 'C', 'D'];
+const COLOR_LETRA = { A: MARCA.verde, B: MARCA.azulClaro, C: MARCA.ambar, D: MARCA.rojo };
+
+// Lo que contestó una persona, pregunta por pregunta (la fila abierta del portal).
+function RespuestasDePersona({ r, bloques, preguntas, inv }) {
+  const resp = r.responses || [];
+  const opcion = (p, v) => {
+    if (!v) return '—';
+    const i = LETRAS.indexOf(v);
+    return i >= 0 ? `${v} · ${p.opciones?.[i] || OPCIONES_POR_DEFECTO[i] || v}` : String(v);
+  };
+  const colorDeRespuesta = (p, v) => {
+    if (!v) return colorSistema.texto2;
+    if (p.tipo === 'numerica') { const n = Number(v); return n >= 9 ? MARCA.verde : n >= 7 ? MARCA.azulClaro : n >= 5 ? MARCA.ambar : MARCA.rojo; }
+    return COLOR_LETRA[v] ?? colorSistema.texto;
+  };
+  const filaDe = (p) => (
+    <View key={`${p.bloque}-${p.id}`} style={{ gap: 2 }}>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${p.id}. ${p.texto}`}</Text>
+      <Text style={{ color: colorDeRespuesta(p, resp[p.idx]), fontSize: 14, fontWeight: '700' }}>
+        {p.tipo === 'numerica' ? (resp[p.idx] ? `${resp[p.idx]} de 10` : '—') : p.bloque == null ? (resp[p.idx] && p.opciones ? (p.opciones[LETRAS.indexOf(resp[p.idx])] || resp[p.idx]) : (resp[p.idx] || '—')) : opcion(p, resp[p.idx])}
+      </Text>
+    </View>
+  );
+  const generales = preguntas.filter((p) => p.bloque == null && p.tipo !== 'sucursal');
+  return (
+    <View style={{ gap: 10, paddingLeft: 10, paddingVertical: 6, borderLeftWidth: 2, borderLeftColor: colorSistema.separador }}>
+      {generales.length ? (
+        <View style={{ gap: 6 }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '800' }}>Datos generales</Text>
+          {generales.map(filaDe)}
+        </View>
+      ) : null}
+      {bloques.map((b) => {
+        const ps = preguntas.filter((p) => p.bloque === b.numero && p.tipo !== 'sucursal');
+        if (!ps.length) return null;
+        const sb = puntajeDePersona(resp, b.indices || [], inv);
+        return (
+          <View key={b.id} style={{ gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13, fontWeight: '800' }}>{`B${b.numero} · ${b.nombre}`}</Text>
+              <Text style={{ color: colorDe(sb), fontSize: 14, fontWeight: '800' }}>{puntos(sb)}</Text>
+            </View>
+            {ps.map(filaDe)}
+          </View>
+        );
+      })}
+      {r.comentario ? (
+        <View style={{ gap: 2 }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '800' }}>Comentario</Text>
+          <Text style={{ color: colorSistema.texto, fontSize: 14, lineHeight: 20 }}>{r.comentario}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function Detalle({ encuesta, puedeEditar }) {
   const [d, setD] = useState(null);
+  const [persona, setPersona] = useState(null);
   useEffect(() => {
     Promise.all([fetchSurveyBloques(encuesta.id), fetchSurveyPreguntas(encuesta.id), fetchSurveyResponses(encuesta.id), fetchEmployeesForSurvey()]).then(([b, p, r, e]) => {
       setD({ bloques: b.data || [], preguntas: (p.data || []).map((x) => preguntaDeLaBase(x, b.data || [])), filas: r.data || [], empleados: e.data || [] });
@@ -60,16 +125,36 @@ function Detalle({ encuesta, puedeEditar }) {
       {personas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginTop: 8 }}>Por persona</Text> : null}
       {personas.map(({ r, s }) => {
         const emp = r.employee ? { id: r.employee.id, name: `${r.employee.first_names ?? ''} ${r.employee.last_names ?? ''}`.trim() } : { name: r.display_name || '—' };
+        const abiertaEsta = persona === r.id;
+        const porBloque = d.bloques.map((b) => ({ b, v: puntajeDePersona(r.responses || [], b.indices || [], inv) })).filter((x) => x.v != null);
         return (
-          <Pressable key={r.id} disabled={!puedeEditar}
-            onPress={() => { Haptics.selectionAsync().catch(() => {}); guardarEncuestaInterna(encuesta, r); router.push('/encuesta-interna/respuesta'); }}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.6 : 1 })}>
-            {encuesta.anonima ? null : <Avatar empleado={emp} tamano={24} />}
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>
-              {`${encuesta.anonima ? 'Anónimo' : shortEmployeeName(emp)}${r.is_jefe ? ' · jefe' : ''}${r.employee?.branch?.name ? ` · ${r.employee.branch.name}` : ''}`}
-            </Text>
-            <Text style={{ color: colorDe(s), fontSize: 15, fontWeight: '800' }}>{puntos(s)}</Text>
-          </Pressable>
+          <View key={r.id} style={{ gap: 6 }}>
+            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setPersona(abiertaEsta ? null : r.id); }}
+              style={({ pressed }) => ({ gap: 2, opacity: pressed ? 0.6 : 1, minHeight: 44, justifyContent: 'center' })}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {encuesta.anonima ? null : <Avatar empleado={emp} tamano={24} />}
+                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>
+                  {`${encuesta.anonima ? 'Anónimo' : shortEmployeeName(emp)}${r.is_jefe ? ' · jefe' : ''}${r.employee?.branch?.name ? ` · ${r.employee.branch.name}` : ''}`}
+                </Text>
+                <Text style={{ color: colorDe(s), fontSize: 15, fontWeight: '800' }}>{puntos(s)}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{abiertaEsta ? '⌃' : '›'}</Text>
+              </View>
+              {porBloque.length ? (
+                <Text style={{ color: colorSistema.texto2, fontSize: 12, marginLeft: encuesta.anonima ? 0 : 32 }}>
+                  {porBloque.map(({ b, v }) => `B${b.numero} ${v}`).join(' · ')}
+                </Text>
+              ) : null}
+            </Pressable>
+            {abiertaEsta ? (
+              <>
+                <RespuestasDePersona r={r} bloques={d.bloques} preguntas={d.preguntas} inv={inv} />
+                {puedeEditar ? (
+                  <BotonGrande texto="Corregir esta respuesta" borde color={MARCA.ambar}
+                    onPress={() => { guardarEncuestaInterna(encuesta, r); router.push('/encuesta-interna/respuesta'); }} />
+                ) : null}
+              </>
+            ) : null}
+          </View>
         );
       })}
       {!personas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nadie respondió todavía.</Text> : null}
@@ -98,6 +183,7 @@ function Detalle({ encuesta, puedeEditar }) {
 export default function EncuestaAdmin() {
   const { hasPermission } = useAuth();
   const puedeEditar = hasPermission('encuesta_admin', 'can_edit');
+  const veAnalisis = hasPermission('encuesta', 'can_view');
   const [version, setVersion] = useState(0);
   const [encuestas, setEncuestas] = useState(null);
   const [cuentas, setCuentas] = useState({});
@@ -141,11 +227,19 @@ export default function EncuestaAdmin() {
                     <Pildora texto={ESTADO_ENCUESTA[e.estado] ?? e.estado ?? 'Sin estado'} color={COLOR_ESTADO[e.estado] ?? colorSistema.texto2} />
                     {e.tipo ? <Pildora texto={TIPO_ENCUESTA[e.tipo] ?? e.tipo} color={MARCA.violeta} /> : null}
                     {e.anonima ? <Pildora texto="Anónima" color={MARCA.ambar} /> : null}
+                    {e.año ? <Pildora texto={String(e.año)} color={colorSistema.texto2} /> : null}
                   </View>
+                  {e.descripcion ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={abiertaEsta ? undefined : 2}>{e.descripcion}</Text> : null}
                   {e.fecha_inicio || e.fecha_fin ? (
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
                       {[e.fecha_inicio ? `desde ${fechaTexto(e.fecha_inicio)}` : null, e.fecha_fin ? `hasta ${fechaTexto(e.fecha_fin)}` : null].filter(Boolean).join(' · ')}
                     </Text>
+                  ) : null}
+                  {e.tipo === 'clima' && veAnalisis ? (
+                    <Pressable hitSlop={6} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/encuesta'); }}
+                      style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                      <Text style={{ color: MARCA.violeta, fontSize: 14, fontWeight: '700' }}>Ver análisis ›</Text>
+                    </Pressable>
                   ) : null}
                   {abiertaEsta ? <Detalle key={`${e.id}-${version}`} encuesta={e} puedeEditar={puedeEditar} /> : null}
                 </View>

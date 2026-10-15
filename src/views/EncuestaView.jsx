@@ -25,18 +25,10 @@ import { clickable } from '@nucleo/utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { seccionesDelResumen } from '@nucleo/utils/resumenDeComentarios';
-import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregunta, filasPorSucursal, IDX_INCONFORMIDADES, IDX_RAZONES, indiceDeAutocalificacion, indicesInvertidos, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase } from '@nucleo/utils/climaLaboral';
+import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregunta, filasPorSucursal, IDX_INCONFORMIDADES, IDX_RAZONES, indiceDeAutocalificacion, indicesInvertidos, personasPorOpcion, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase, SUPERVISOR_DE_JEFE } from '@nucleo/utils/climaLaboral';
 
-// Jefe inmediato de cada sucursal — configuración de org-chart
-const SUPERVISOR_DE_JEFE = {
-    'La Popular': 'Supervisor/a de Ventas',
-    'Salud 1':    'Supervisor/a de Ventas',
-    'Salud 2':    'Supervisor/a de Ventas',
-    'Salud 3':    'Supervisor/a de Ventas',
-    'Salud 4':    'Supervisor/a de Ventas',
-    'Salud 5':    'Supervisor/a de Ventas',
-    'Bodega':     'Administración / Jefe de Logística',
-};
+// Jefe inmediato de cada sucursal: `SUPERVISOR_DE_JEFE` vive en el núcleo
+// (`climaLaboral`), el mismo que lee la app.
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -134,13 +126,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
     const pct = (n) => Math.round((n / total) * 100);
 
     // Map each option to the people who chose it
-    const namesByOption = { A: [], B: [], C: [], D: [] };
-    rows.forEach(r => {
-        const v = r.r[pregunta.idx];
-        if (v && namesByOption[v] !== undefined) {
-            namesByOption[v].push({ nombre: r.nombre, isJefe: r.isJefe, sucursal: r.sucursal, photo: r.photo });
-        }
-    });
+    const namesByOption = personasPorOpcion(rows, pregunta.idx);
 
     return (
         <div className="border-b border-divider last:border-0">

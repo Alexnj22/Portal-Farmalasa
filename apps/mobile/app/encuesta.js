@@ -1,7 +1,8 @@
 // Clima organizacional, NATIVO — los resultados de la encuesta (`EncuestaView`):
 // el índice global con su nivel, quiénes participaron, el puntaje de cada
 // bloque y, al tocar uno, cómo se repartieron las respuestas de cada pregunta;
-// y los comentarios. Quien sólo ve su sala, ve su sala.
+// y los comentarios. Quien sólo ve su sala, ve su sala; quien ve todas, puede
+// recortar a una sucursal desde el menú de filtros.
 //
 // Puntuar sale del núcleo (`climaLaboral`), lo mismo del portal. Resumen,
 // Segmentos e Individuos están en `componentes/encuestas/AnalisisClima`. Y el
@@ -19,7 +20,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchSurveyAiSummaries, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView, fetchSurveys, generarResumenDeComentarios } from '@nucleo/data/encuestas';
 import { segmentosDeComentarios, seccionesDelResumen, tonoDeSeccion } from '@nucleo/utils/resumenDeComentarios';
 import {
-  bloqueDeLaBase, distribucionDePregunta, indicesInvertidos, nivelDePuntaje, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase,
+  bloqueDeLaBase, distribucionDePregunta, evaluacionDeJefes, indicesInvertidos, OPCIONES_POR_DEFECTO, personasPorOpcion, nivelDePuntaje, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase,
 } from '@nucleo/utils/climaLaboral';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -32,6 +33,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 const COLOR_OPCION = { A: MARCA.verde, B: MARCA.azulClaro, C: MARCA.ambar, D: MARCA.rojo };
 
@@ -39,6 +41,128 @@ function Barra({ pct, color }) {
   return (
     <View style={{ height: 8, borderRadius: 4, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>
       <View style={{ width: `${Math.max(0, Math.min(100, pct || 0))}%`, height: 8, backgroundColor: color }} />
+    </View>
+  );
+}
+
+// Un bloque de la encuesta: su puntaje, cuántas preguntas tiene y a quién va
+// dirigido; abierto, la nota de a quién va dirigido, en el bloque 2 cómo
+// evalúan los empleados a su jefe de sala y los jefes a su jefe inmediato, y
+// cada pregunta —que al tocarla muestra el texto de cada opción y quiénes la
+// eligieron—. Como `PreguntaRow` del portal. En una encuesta anónima no se
+// nombra a nadie (como Individuos).
+const INVERSA = { A: 'D', B: 'C', C: 'B', D: 'A' };
+function Bloque({ bloque: b, filas, preguntas, inv, abierto, onAbrir, anonima }) {
+  const [pregunta, setPregunta] = useState(null);
+  const s = puntajeDeBloque(filas, b.indices, inv);
+  const n = s != null ? nivelDePuntaje(s) : null;
+  const jefes = abierto && b.id === 2 ? evaluacionDeJefes(filas, b.indices, inv) : null;
+  const tono = (x) => (x == null ? colorSistema.texto2 : colorDeVariante(nivelDePuntaje(x).severidad));
+  const quien = (nombre, i) => (anonima ? `Respuesta ${i + 1}` : shortEmployeeName(nombre));
+  return (
+    <View style={{ marginHorizontal: 16 }}>
+      <Vidrio radio={18}>
+        <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onAbrir(); }} style={({ pressed }) => ({ padding: 12, gap: 6, opacity: pressed ? 0.7 : 1 })}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{b.nombre}</Text>
+            <Text style={{ color: n ? colorDeVariante(n.severidad) : colorSistema.texto2, fontSize: 17, fontWeight: '800' }}>{s != null ? Math.round(s) : '—'}</Text>
+          </View>
+          <Barra pct={s} color={n ? colorDeVariante(n.severidad) : colorSistema.texto2} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            <Pildora texto={`${preguntas.length} pregunta${preguntas.length === 1 ? '' : 's'}`} color={MARCA.azulClaro} />
+            {b.ctx?.dirigido ? <Pildora texto={`→ ${b.ctx.dirigido}`} color={MARCA.violeta} /> : null}
+            {n ? <Pildora texto={n.label} color={colorDeVariante(n.severidad)} /> : null}
+          </View>
+          {b.desc ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={abierto ? undefined : 1}>{b.desc}</Text> : null}
+        </Pressable>
+        {abierto ? (
+          <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 10 }}>
+            {b.ctx?.nota ? (
+              <Text style={{ color: colorSistema.texto, fontSize: 13, lineHeight: 18 }}>
+                <Text style={{ fontWeight: '800' }}>¿A quién va dirigido? </Text>{b.ctx.nota}
+              </Text>
+            ) : null}
+            {jefes ? (
+              <>
+                <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>Empleados evaluando a su jefe/a de sala</Text>
+                  {jefes.porSala.filter((x) => x.sColabs).map((x) => (
+                    <View key={x.suc} style={{ gap: 3 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>
+                          {x.suc}<Text style={{ color: colorSistema.texto2, fontWeight: '400' }}>{` · ${x.jefe && !anonima ? shortEmployeeName(x.jefe.nombre) : '–'} · ${x.colabRows.length} eval.`}</Text>
+                        </Text>
+                        <Text style={{ color: tono(x.sColabs), fontSize: 15, fontWeight: '800' }}>{`${Math.round(x.sColabs)}%`}</Text>
+                      </View>
+                      <Barra pct={x.sColabs} color={tono(x.sColabs)} />
+                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                        {x.individuales.map((r, i) => `${quien(r.nombre, i)} ${r.puntaje != null ? `${Math.round(r.puntaje)}%` : '–'}`).join(' · ')}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
+                  <Text style={{ color: MARCA.violeta, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>Jefes evaluando a su jefe inmediato</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Cada jefe evalúa a quien reporta directamente. Bodega reporta a Administración; las salas al Supervisor/a de Ventas.</Text>
+                  {jefes.porSupervisor.map((g) => (
+                    <View key={g.supervisor} style={{ gap: 4 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13, fontWeight: '800' }}>{`→ ${g.supervisor}`}</Text>
+                        {g.puntaje != null ? <Text style={{ color: tono(g.puntaje), fontSize: 13, fontWeight: '800' }}>{`${Math.round(g.puntaje)}% · ${nivelDePuntaje(g.puntaje).label}`}</Text> : null}
+                      </View>
+                      {g.jefes.map((j, i) => (
+                        <View key={`${j.sucursal}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ width: 130, color: colorSistema.texto, fontSize: 13 }} numberOfLines={1}>
+                            {anonima ? j.sucursal : `${shortEmployeeName(j.nombre)} · ${j.sucursal}`}
+                          </Text>
+                          <View style={{ flex: 1 }}><Barra pct={j.puntaje} color={tono(j.puntaje)} /></View>
+                          <Text style={{ width: 40, textAlign: 'right', color: tono(j.puntaje), fontSize: 13, fontWeight: '800' }}>{j.puntaje != null ? `${Math.round(j.puntaje)}%` : '–'}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Puntaje global de los jefes</Text>
+                    <Text style={{ color: MARCA.violeta, fontSize: 15, fontWeight: '800' }}>{jefes.global != null ? `${Math.round(jefes.global)}%` : '—'}</Text>
+                  </View>
+                </View>
+              </>
+            ) : null}
+            {preguntas.map((p) => {
+              const d = distribucionDePregunta(filas, p.idx);
+              const esta = pregunta === p.id;
+              const quienes = esta ? personasPorOpcion(filas, p.idx) : null;
+              const colorDe = (k) => COLOR_OPCION[p.invertida ? INVERSA[k] : k];
+              return (
+                <Pressable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setPregunta(esta ? null : p.id); }}
+                  style={({ pressed }) => ({ gap: 4, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8, opacity: pressed ? 0.7 : 1 })}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${p.id}. ${p.texto}${p.invertida ? ' (invertida)' : ''}`}</Text>
+                  {d.total ? (
+                    <View style={{ flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden' }}>
+                      {['A', 'B', 'C', 'D'].map((k) => d[k] ? <View key={k} style={{ flex: d[k], backgroundColor: colorDe(k) }} /> : null)}
+                    </View>
+                  ) : null}
+                  {!esta ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{['A', 'B', 'C', 'D'].map((k) => `${k} ${d[k]}`).join(' · ')}</Text> : null}
+                  {esta ? ['A', 'B', 'C', 'D'].map((k, i) => (
+                    <View key={k} style={{ gap: 2, paddingLeft: 8, borderLeftWidth: 3, borderLeftColor: colorDe(k) }}>
+                      <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '700' }}>
+                        {`${k} · ${d[k]}${d.total ? ` (${Math.round((d[k] / d.total) * 100)}%)` : ''}`}
+                        <Text style={{ fontWeight: '400', color: colorSistema.texto2 }}>{`  ${p.opciones?.[i] || OPCIONES_POR_DEFECTO[i]}`}</Text>
+                      </Text>
+                      {quienes[k].length ? (
+                        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                          {anonima ? `${quienes[k].length} persona${quienes[k].length === 1 ? '' : 's'}`
+                            : quienes[k].map((x) => `${shortEmployeeName(x.nombre)}${x.isJefe ? ' (J)' : ''}${x.sucursal ? ` · ${x.sucursal}` : ''}`).join(', ')}
+                        </Text>
+                      ) : null}
+                    </View>
+                  )) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </Vidrio>
     </View>
   );
 }
@@ -93,14 +217,22 @@ export default function Encuesta() {
     segmentos.forEach((seg) => { if (!resumenes[seg.key] && seg.comments.length && !pedidos.current.has(seg.key)) resumir(seg); });
   }, [vista, resumenes, segmentos, todas]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const filas = useMemo(() => (datos?.respuestas || []).filter((r) => todas || r.sucursal === salaPropia), [datos, todas, salaPropia]);
+  // Quien ve todas las salas puede recortar a una (como el portal); quien no,
+  // ve sólo la suya.
+  const [sala, setSala] = useState('');
+  const salasDeLaEncuesta = useMemo(() => [...new Set((datos?.respuestas || []).map((r) => r.sucursal).filter(Boolean))].sort(), [datos]);
+  const filas = useMemo(() => (datos?.respuestas || []).filter((r) => (todas ? (!sala || r.sucursal === sala) : r.sucursal === salaPropia)), [datos, todas, sala, salaPropia]);
   const inv = useMemo(() => indicesInvertidos(datos?.preguntas), [datos]);
   const global = datos ? puntajeGlobal(filas, datos.bloques, inv) : null;
   const nivel = global != null ? nivelDePuntaje(global) : null;
   const comentarios = filas.filter((r) => r.comentario?.trim());
   const encuestaActual = (encuestas || []).find((e) => e.id === encuestaId);
-  const grupos = (encuestas || []).length > 1 ? [{ id: 'encuesta', titulo: 'Encuesta', activa: String(encuestaId), porDefecto: String(encuestas[0].id), onCambiar: (v) => setEncuestaId(Number(v) || v),
-    opciones: encuestas.map((e) => ({ id: String(e.id), label: e.nombre || e.titulo || `Encuesta ${e.año ?? ''}` })) }] : [];
+  const grupos = [
+    ...(todas && salasDeLaEncuesta.length > 1 ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: '', onCambiar: setSala,
+      opciones: [{ id: '', label: 'Todas' }, ...salasDeLaEncuesta.map((x) => ({ id: x, label: x }))] }] : []),
+    ...((encuestas || []).length > 1 ? [{ id: 'encuesta', titulo: 'Encuesta', activa: String(encuestaId), porDefecto: String(encuestas[0].id), onCambiar: (v) => { setSala(''); setEncuestaId(Number(v) || v); },
+      opciones: encuestas.map((e) => ({ id: String(e.id), label: `${e.nombre || e.titulo || 'Encuesta'}${e.año ? ` (${e.año})` : ''}` })) }] : []),
+  ];
 
   return (
     <>
@@ -115,7 +247,7 @@ export default function Encuesta() {
             <View style={{ marginHorizontal: 16 }}>
               <Vidrio radio={24} tinte={nivel ? `${colorDeVariante(nivel.severidad)}22` : undefined}>
                 <View style={{ padding: 18, alignItems: 'center', gap: 4 }}>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase' }}>{todas ? 'Índice global' : `Índice de ${salaPropia}`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase' }}>{todas ? (sala ? `Índice de ${sala}` : 'Índice global') : `Índice de ${salaPropia}`}</Text>
                   <Text style={{ color: colorSistema.texto, fontSize: 52, fontWeight: '800' }}>{global != null ? Math.round(global) : '—'}</Text>
                   {nivel ? <View style={{ alignSelf: 'center' }}><Pildora texto={nivel.label} color={colorDeVariante(nivel.severidad)} /></View> : null}
                 </View>
@@ -132,40 +264,10 @@ export default function Encuesta() {
             {vista === 'resumen' ? <Resumen filas={filas} bloques={datos.bloques} preguntas={datos.preguntas} inv={inv} /> : null}
             {vista === 'segmentos' ? <SegmentosDeClima filas={filas} bloques={datos.bloques} inv={inv} /> : null}
             {vista === 'personas' ? <Individuos filas={filas} bloques={datos.bloques} preguntas={datos.preguntas} inv={inv} anonima={!!encuestaActual?.anonima} /> : null}
-            {vista === 'bloques' ? datos.bloques.map((b) => {
-              const s = puntajeDeBloque(filas, b.indices, inv);
-              const n = s != null ? nivelDePuntaje(s) : null;
-              const abiertoEste = abierto === b.id;
-              const preguntas = datos.preguntas.filter((p) => p.bloque === b.id);
-              return (
-                <Pressable key={b.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(abiertoEste ? null : b.id); }} style={{ marginHorizontal: 16 }}>
-                  <Vidrio radio={18} interactivo>
-                    <View style={{ padding: 12, gap: 6 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{b.nombre}</Text>
-                        <Text style={{ color: n ? colorDeVariante(n.severidad) : colorSistema.texto2, fontSize: 17, fontWeight: '800' }}>{s != null ? Math.round(s) : '—'}</Text>
-                      </View>
-                      <Barra pct={s} color={n ? colorDeVariante(n.severidad) : colorSistema.texto2} />
-                      {b.desc ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={abiertoEste ? undefined : 1}>{b.desc}</Text> : null}
-                      {abiertoEste ? preguntas.map((p) => {
-                        const d = distribucionDePregunta(filas, p.idx);
-                        return (
-                          <View key={p.id} style={{ gap: 4, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
-                            <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${p.id}. ${p.texto}${p.invertida ? ' (invertida)' : ''}`}</Text>
-                            {d.total ? (
-                              <View style={{ flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden' }}>
-                                {['A', 'B', 'C', 'D'].map((k) => d[k] ? <View key={k} style={{ flex: d[k], backgroundColor: COLOR_OPCION[p.invertida ? { A: 'D', B: 'C', C: 'B', D: 'A' }[k] : k] }} /> : null)}
-                              </View>
-                            ) : null}
-                            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{['A', 'B', 'C', 'D'].map((k) => `${k} ${d[k]}`).join(' · ')}</Text>
-                          </View>
-                        );
-                      }) : null}
-                    </View>
-                  </Vidrio>
-                </Pressable>
-              );
-            }) : vista === 'comentarios' ? (
+            {vista === 'bloques' ? datos.bloques.map((b) => (
+              <Bloque key={b.id} bloque={b} filas={filas} preguntas={datos.preguntas.filter((p) => p.bloque === b.id && p.tipo !== 'sucursal')} inv={inv}
+                abierto={abierto === b.id} onAbrir={() => setAbierto(abierto === b.id ? null : b.id)} anonima={!!encuestaActual?.anonima} />
+            )) : vista === 'comentarios' ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>
                 {segmentos.filter((seg) => seg.comments.length).map((seg) => {
                   const texto = resumenes?.[seg.key];

@@ -212,3 +212,64 @@ export function filasPorSucursal(filas) {
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([name, rows]) => [name, [...rows].sort((a, b) => (b.isJefe ? 1 : 0) - (a.isJefe ? 1 : 0))]);
 }
+
+// ── Quién eligió qué, y el bloque 2 (la evaluación de los jefes) ─────────────
+// Vivía escrito dentro de la pantalla del portal; la app lo necesita igual, así
+// que se mudó acá y las dos lo leen de un solo lado.
+
+/** Jefe inmediato de cada sucursal — configuración del organigrama. */
+export const SUPERVISOR_DE_JEFE = {
+    'La Popular': 'Supervisor/a de Ventas',
+    'Salud 1':    'Supervisor/a de Ventas',
+    'Salud 2':    'Supervisor/a de Ventas',
+    'Salud 3':    'Supervisor/a de Ventas',
+    'Salud 4':    'Supervisor/a de Ventas',
+    'Salud 5':    'Supervisor/a de Ventas',
+    'Bodega':     'Administración / Jefe de Logística',
+};
+
+/** Los textos por defecto de las cuatro opciones, si la pregunta no trae los suyos. */
+export const OPCIONES_POR_DEFECTO = [
+    'Siempre / Totalmente de acuerdo', 'Frecuentemente / De acuerdo',
+    'A veces / En desacuerdo', 'Nunca / Totalmente en desacuerdo',
+];
+
+/** Por opción (A–D), las personas que la eligieron en la pregunta `idx`. */
+export function personasPorOpcion(filas, idx) {
+    const por = { A: [], B: [], C: [], D: [] };
+    (filas || []).forEach((r) => {
+        const v = r.r?.[idx];
+        if (v && por[v] !== undefined) por[v].push({ nombre: r.nombre, isJefe: r.isJefe, sucursal: r.sucursal, photo: r.photo });
+    });
+    return por;
+}
+
+/**
+ * El bloque 2 desarmado como lo lee Talento Humano:
+ *  - `porSala`: en cada sala con jefe, cómo lo evalúan sus empleados (de peor a
+ *    mejor), con el puntaje de cada uno;
+ *  - `porSupervisor`: los jefes agrupados por a quién reportan, con su puntaje;
+ *  - `global`: el puntaje de todos los jefes juntos.
+ */
+export function evaluacionDeJefes(filas, indices, invertidas = new Set()) {
+    const rows = filas || [];
+    const jefes = rows.filter((r) => r.isJefe);
+    const porSala = [...new Set(jefes.map((r) => r.sucursal))].map((suc) => {
+        const colabRows = rows.filter((r) => r.sucursal === suc && !r.isJefe);
+        const jefe = rows.find((r) => r.sucursal === suc && r.isJefe);
+        return {
+            suc, jefe, colabRows,
+            sColabs: puntajeDeBloque(colabRows, indices, invertidas),
+            sJefe: jefe ? puntajeDeBloque([jefe], indices, invertidas) : null,
+            individuales: colabRows.map((r) => ({ nombre: r.nombre, puntaje: puntajeDeBloque([r], indices, invertidas) })),
+        };
+    }).sort((a, b) => (a.sColabs ?? 0) - (b.sColabs ?? 0));
+    const grupos = {};
+    jefes.forEach((j) => { const sup = SUPERVISOR_DE_JEFE[j.sucursal] || 'Sin definir'; (grupos[sup] ||= []).push(j); });
+    const porSupervisor = Object.entries(grupos).map(([supervisor, js]) => ({
+        supervisor,
+        puntaje: puntajeDeBloque(js, indices, invertidas),
+        jefes: js.map((j) => ({ ...j, puntaje: puntajeDeBloque([j], indices, invertidas) })),
+    }));
+    return { porSala, porSupervisor, global: puntajeDeBloque(jefes, indices, invertidas) };
+}

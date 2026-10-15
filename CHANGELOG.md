@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.2 — La app: mis documentos y encuestas como en el portal
+
+Paridad de la app (grupo Personas, `docs/AUDITORIA-PARIDAD-APP-2026-10-15.md`).
+- **Mis documentos**: cada solicitud muestra la respuesta de quien aprobó, y
+  el período ofrece meses anteriores, último año o un rango desde/hasta.
+- **Clima organizacional**: filtro por sucursal para quien ve todas; por
+  pregunta, el texto de cada opción con su cuenta; el bloque 2 con «Empleados
+  evaluando a su jefe/a de sala» y «Jefes evaluando a su jefe inmediato»; cada
+  bloque dice a quién va dirigido y cuántas preguntas tiene.
+- **Gestión de encuestas**: quien sólo lee puede abrir lo que respondió una
+  persona (con su comentario); puntaje por bloque de cada persona; la tarjeta
+  lleva descripción, año y el atajo «Ver análisis».
+- Núcleo: `climaLaboral.js` suma `SUPERVISOR_DE_JEFE`, `personasPorOpcion` y
+  `evaluacionDeJefes`; el portal usa los mismos.
+
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 
 - Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»

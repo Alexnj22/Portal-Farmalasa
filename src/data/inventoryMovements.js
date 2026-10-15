@@ -308,7 +308,13 @@ export function insertMovimientoInventario(payload, contexto = {}) {
 }
 
 /**
- * ¿La sala está contando?
+ * ¿La sala está contando, y qué?
+ *
+ * Devuelve `{ en_conteo, conteo_abierto, sala, productos }`. Desde el
+ * 2026-10-15 el freno es por PRODUCTO: `productos` son los `erp_product_id` de
+ * los conteos abiertos y sólo ésos no se pueden ajustar. `en_conteo` conserva
+ * su significado de antes —la sala ENTERA está frenada— y hoy sólo es `true`
+ * con un conteo abierto que todavía no tiene renglones.
  *
  * La regla la aplica el trigger `frenar_ajuste_si_hay_conteo_abierto` sobre
  * `approval_requests` — el alta es un INSERT directo del navegador, así que un

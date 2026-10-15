@@ -200,7 +200,12 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const [fotos, setFotos]       = useState([]);   // File[] sin subir todavía
     const [subiendo, setSubiendo] = useState(false);
 
-    // ── Mientras la sala cuenta, no se le mueve el inventario ────────────
+    // ── Mientras la sala cuenta, no se mueve lo que se está contando ─────
+    // Desde el 2026-10-15 el freno es por PRODUCTO: un conteo cíclico lleva una
+    // parte del catálogo, y trabar la sala entera frenaba productos que nadie
+    // contaba. `enConteo.en_conteo` sigue diciendo «la sala ENTERA está
+    // frenada» (un conteo abierto que todavía no tiene renglones);
+    // `enConteo.productos` son los que no se pueden agregar.
     // La regla la aplica el trigger `frenar_ajuste_si_hay_conteo_abierto`: el
     // alta es un INSERT directo contra `approval_requests`, así que la pantalla
     // no puede ser la guarda. Lo que SÍ le toca a la pantalla es decirlo antes
@@ -214,6 +219,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
         fetchSucursalEnConteo(branchId).then((r) => { if (vivo) setEnConteo(r); });
         return () => { vivo = false; };
     }, [branchId]);
+    const enElConteo = useMemo(() => new Set(enConteo?.productos ?? []), [enConteo]);
     const [enviando, setEnviando] = useState(false);
     const [error, setError]       = useState('');
     const [listo, setListo]       = useState(false);
@@ -470,7 +476,11 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     // exigir además un párrafo es lo que hace que la gente escriba "x".
     // La causa la exige la base SIEMPRE (`causaObligatoria`, utils/ajusteInventario).
     const detalleObligatorio = causaObligatoria(opKey, motivo);
+    // Una línea puede haber entrado antes de que el conteo la tomara (o al
+    // cambiar de sala): no se manda, y se dice cuál.
+    const lineasEnConteo = lineas.filter(l => enElConteo.has(l.erp_product_id));
     const puedeEnviar = totales.lineas > 0 && incompletas.length === 0
+        && lineasEnConteo.length === 0
         && (!motivos || Boolean(motivo))
         && (!detalleObligatorio || causa.trim().length > 0)
         && (!pideFoto || fotos.length > 0)
@@ -574,6 +584,13 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     lineas={totales.lineas} unidades={totales.unidades}
                 />
             </EncabezadoModal>
+
+            {enConteo?.conteo_abierto && (
+                <p className="shrink-0 flex items-center gap-1 text-micro text-content-3 font-semibold px-1">
+                    <ClipboardList size={12} strokeWidth={2.5} />
+                    Hay un conteo abierto en la sala: lo que se está contando no se puede agregar.
+                </p>
+            )}
 
             {/* ── Dos lugares, no una franja ────────────────────────────────
                 Reportado: «¿cómo agrego más? si agrego uno, que se vaya a un
@@ -1046,7 +1063,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     // el duplicado exacto lo pone el compositor, que sí sabe qué
                     // lote se eligió.
                     const yaEsta = lineas.some(l => l.erp_product_id === f.erp_product_id);
-                    const bloqueada = false;
+                    const bloqueada = enElConteo.has(f.erp_product_id);
                     return (
                         <ListRow
                             key={`${f.erp_product_id}|${f.lote ?? ''}|${f.fecha_vencimiento ?? ''}`}
@@ -1068,6 +1085,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                     // así que el 0 de la derecha necesita decir de qué
                                     // es: sin esto se lee como un dato faltante.
                                     esCarga && f.cantidad === 0 ? 'no hay en la sala' : null,
+                                    bloqueada ? 'se está contando' : null,
                                     yaEsta ? 'ya agregado' : null,
                                 ].filter(Boolean).join(' · ')}
                             </span>
@@ -1105,6 +1123,14 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         <p className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1">
                             <AlertTriangle size={12} strokeWidth={2.5} />
                             {incompletas.length} {incompletas.length === 1 ? 'línea sin completar' : 'líneas sin completar'}
+                        </p>
+                    )}
+                    {lineasEnConteo.length > 0 && (
+                        <p className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1">
+                            <AlertTriangle size={12} strokeWidth={2.5} />
+                            {lineasEnConteo.length === 1
+                                ? `${lineasEnConteo[0].descripcion} se está contando: quítalo para enviar`
+                                : `${lineasEnConteo.length} productos se están contando: quítalos para enviar`}
                         </p>
                     )}
 

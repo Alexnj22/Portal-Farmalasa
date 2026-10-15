@@ -97,7 +97,10 @@ export default function Ajuste() {
     return () => clearTimeout(t);
   }, [claveBorrador, opKey, lineas, causa, motivo]);
 
+  // El freno es por PRODUCTO (2026-10-15): `en_conteo` = la sala entera
+  // frenada (conteo abierto sin renglones); `productos` = los que se cuentan.
   useEffect(() => { fetchSucursalEnConteo(branchId).then(setEnConteo); }, [branchId]);
+  const enElConteo = useMemo(() => new Set(enConteo?.productos ?? []), [enConteo]);
 
   useEffect(() => {
     const q = aplicado.trim();
@@ -144,7 +147,8 @@ export default function Ajuste() {
     setBorrador(null); setTexto('');
   };
 
-  const puedeEnviar = lineas.length > 0 && (!motivos || !!motivo) && (!causaObligatoria(opKey, motivo) || causa.trim())
+  const lineasEnConteo = lineas.filter((l) => enElConteo.has(l.erp_product_id));
+  const puedeEnviar = lineas.length > 0 && !lineasEnConteo.length && (!motivos || !!motivo) && (!causaObligatoria(opKey, motivo) || causa.trim())
     && (!pideFoto || fotos.length > 0) && erpSucursalId != null && erpUbicacionId != null;
 
   const enviar = async () => {
@@ -233,13 +237,18 @@ export default function Ajuste() {
           {!borrador ? (
             <Seccion titulo={lineas.length ? 'Agregar otro producto' : 'Producto'}>
               <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder={esCarga ? 'Busca en el catálogo' : 'Busca en lo que tiene la sala'} autoCorrect={false} />
-              {candidatos.slice(0, 12).map((f) => (
-                <Pressable key={f.erp_product_id} onPress={() => abrirBorrador(f)}
-                  style={({ pressed }) => ({ flexDirection: 'row', gap: 10, paddingTop: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
-                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={2}>{f.descripcion}</Text>
-                  {f.cantidad != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{f.cantidad} en sala</Text> : null}
-                </Pressable>
-              ))}
+              {enConteo?.conteo_abierto ? <Aviso tono="cuidado" texto="Hay un conteo abierto en la sala: lo que se está contando no se puede agregar." /> : null}
+              {candidatos.slice(0, 12).map((f) => {
+                const contando = enElConteo.has(f.erp_product_id);
+                return (
+                  <Pressable key={f.erp_product_id} disabled={contando} onPress={() => abrirBorrador(f)}
+                    style={({ pressed }) => ({ flexDirection: 'row', gap: 10, paddingTop: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, opacity: contando ? 0.4 : pressed ? 0.6 : 1 })}>
+                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={2}>{f.descripcion}</Text>
+                    {contando ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>se está contando</Text>
+                      : f.cantidad != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{f.cantidad} en sala</Text> : null}
+                  </Pressable>
+                );
+              })}
             </Seccion>
           ) : (
             <Seccion titulo="Producto">
@@ -290,6 +299,7 @@ export default function Ajuste() {
           </Seccion>
           {pideFoto ? <Seccion titulo="Fotos del producto dañado (obligatorio)"><Fotos fotos={fotos} onCambiar={setFotos} max={MAX_FOTOS_AJUSTE} /></Seccion> : null}
 
+          {lineasEnConteo.length ? <Aviso tono="freno" texto={lineasEnConteo.length === 1 ? `${lineasEnConteo[0].descripcion} se está contando: quítalo para enviar.` : `${lineasEnConteo.length} productos se están contando: quítalos para enviar.`} /> : null}
           <BotonGrande texto={`Enviar solicitud${lineas.length ? ` · ${lineas.length}` : ''}`} color={esCarga ? MARCA.verde : MARCA.rojo}
             deshabilitado={enviando || !puedeEnviar || !!enConteo?.en_conteo} onPress={enviar} />
         </ScrollView>

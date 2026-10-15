@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1299.0 — Ajuste de inventario con conteo abierto: se frena sólo lo que se cuenta
+
+Pedido del usuario: se puede solicitar un ajuste de inventario aunque la sala
+tenga un conteo abierto, siempre que el producto no esté en ese conteo.
+
+- Base (`20261015222101`): `frenar_ajuste_si_hay_conteo_abierto` rechaza sólo
+  las solicitudes que tocan un producto de un conteo abierto de la sala, y
+  nombra cuáles. Un conteo abierto todavía sin renglones sigue frenando la
+  sala entera. `sucursal_en_conteo` devuelve además `conteo_abierto` y
+  `productos`; `en_conteo` conserva su significado («sala entera frenada»).
+- Portal y app: el formulario se abre con conteo abierto; los productos que
+  se están contando salen deshabilitados («se está contando») y, si alguno
+  quedó en la solicitud, no se puede enviar hasta quitarlo.
+- Medido al aplicar: las 4 salas que estaban contando tenían el ajuste
+  bloqueado entero; ahora sólo los 200 productos de cada conteo.
+
 ## v2.1298.3 — Puntos: sin la aclaración bajo el saldo
 
 Pedido del usuario: se quita «Es lo único que se puede canjear.» del modal del

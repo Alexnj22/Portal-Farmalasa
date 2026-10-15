@@ -228,3 +228,33 @@ export function filasParaDelegar(permisos, roleId, valor, familias = CLAVES_DE_D
 /** ¿Delega hoy? */
 export const delegaDecisiones = (permisos, roleId, familias = CLAVES_DE_DECIDIR) =>
     [...familias, 'requests'].some(k => (permisos || {})[`${roleId}:${k}`]?.delega_en_ausencia);
+
+/** Cuántos módulos principales (sin pestañas ni capacidades) ve un cargo. */
+export function modulosQueVe(permisos, roleId, moduleGroups) {
+    const principales = (moduleGroups || []).flatMap(g => g.modules || []);
+    return {
+        ve: principales.filter(m => (permisos || {})[`${roleId}:${m.key}`]?.can_view).length,
+        total: principales.length,
+    };
+}
+
+/**
+ * A quién le llegan las decisiones de un cargo cuando delega: el suplente que
+ * nombró cada titular y, del resto, quien ocupa el cargo de arriba en el
+ * organigrama. Sin esto, «Delegar» reparte facultades a alguien que no se
+ * nombra en ningún lado, y una delegación anónima no se puede auditar.
+ * Devuelve PERSONAS (filas de `employees`): cómo se escribe el nombre lo
+ * decide quien pinta. Un cargo sin superior no tiene a nadie arriba (antes se
+ * comparaba contra `String(null)` y podía colar a quien no tuviera cargo).
+ */
+export function aQuienLlegaLaDelegacion(roleId, roles, empleados) {
+    const cargoPadreId = (roles || []).find(r => String(r.id) === String(roleId))?.parent_role_id ?? null;
+    const activos = (empleados || []).filter(e => e.status === 'ACTIVO');
+    const porOrganigrama = cargoPadreId == null ? []
+        : activos.filter(e => String(e.role_id) === String(cargoPadreId));
+    const conSuplente = activos
+        .filter(e => String(e.role_id) === String(roleId) && e.suplente_id)
+        .map(e => ({ titular: e, suplente: activos.find(s => String(s.id) === String(e.suplente_id)) || null }))
+        .filter(p => p.suplente);
+    return { conSuplente, porOrganigrama };
+}

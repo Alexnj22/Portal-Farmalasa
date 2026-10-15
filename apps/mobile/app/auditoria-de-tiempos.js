@@ -9,7 +9,8 @@
 // Dos vistas, como el portal: el DÍA (con flechas o el calendario del sistema)
 // y la QUINCENA (`componentes/personas/Quincena`): horas regulares, extra,
 // nocturnas, tardanza y ausencias por persona y por sala, «Aprobar todo» y los
-// turnos extra declarados. En el día, las marcas pendientes de Talento Humano
+// turnos extra declarados (confirmar, editar las horas o rechazar), el CSV y el
+// atajo a la planilla. En el día, las marcas pendientes de Talento Humano
 // se dan por revisadas (`marcarMarcajesRevisados`) y se CORRIGEN agregando una
 // marca con su motivo (`componentes/personas/CorregirMarcas`, la acción del
 // portal). Cerrar la quincena está en la vista de Quincena.
@@ -59,6 +60,8 @@ function senales(a) {
 export default function AuditoriaDeTiempos() {
   const { user, getScope, hasPermission } = useAuth();
   const puedeEditar = !!hasPermission?.('time_audit', 'can_edit');
+  // El CSV se lleva las marcaciones fuera: la misma llave que el portal.
+  const puedeDescargar = !!hasPermission?.('time_audit_descargar');
   const [vista, setVista] = useState('dia');
   const [revisados, setRevisados] = useState(() => new Set());
   const [eligiendoDia, setEligiendoDia] = useState(false);
@@ -134,7 +137,7 @@ export default function AuditoriaDeTiempos() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarAsistencia?.(35); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'dia', label: 'Día' }, { id: 'quincena', label: 'Quincena' }]} />
-        {vista === 'quincena' ? <Quincena empleados={personas} sucursales={sucursales} puedeEditar={puedeEditar} usuario={user}
+        {vista === 'quincena' ? <Quincena empleados={personas} sucursales={sucursales} puedeEditar={puedeEditar} puedeDescargar={puedeDescargar} usuario={user}
           salaNombre={sala === 'ALL' ? null : (sucursales || []).find((b) => String(b.id) === sala)?.name} /> : (
         <>
         <PasoDePeriodo titulo={dia === hoySV() ? 'Hoy' : fechaTexto(dia, { weekday: 'long', day: 'numeric', month: 'long' })}

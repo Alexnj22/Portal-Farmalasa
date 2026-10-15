@@ -6,6 +6,10 @@
 // Es más ancho que el teléfono casi siempre, así que vive dentro de un
 // ScrollView horizontal (lo vertical lo desplaza la pantalla) que se acerca con
 // los dedos (`maximumZoomScale`, propio de iOS). Tocar una caja avisa a la pantalla.
+//
+// `svgRef` deja a la pantalla sacar la imagen (`toDataURL`, el PNG del propio
+// SVG: el «Exportar PNG» del portal). Con `fondo`, se pinta un fondo sólido
+// detrás —una imagen transparente se ve negra en muchos visores—.
 import { useMemo } from 'react';
 import { ScrollView, useColorScheme, useWindowDimensions } from 'react-native';
 import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
@@ -31,7 +35,7 @@ function renglones(nombre) {
   return [a.join(' ') || segundo.slice(0, 18), a.length ? (segundo.length > 18 ? `${segundo.slice(0, 17)}…` : segundo) : ''];
 }
 
-export default function Organigrama({ roles, ocupantes = {}, onTocar, elegido }) {
+export default function Organigrama({ roles, ocupantes = {}, onTocar, elegido, svgRef, fondo = null }) {
   const { width } = useWindowDimensions();
   // SVG no lee los colores del sistema (`PlatformColor`): se eligen por el modo.
   const oscuro = useColorScheme() === 'dark';
@@ -47,7 +51,8 @@ export default function Organigrama({ roles, ocupantes = {}, onTocar, elegido })
   return (
     <ScrollView horizontal style={{ flexGrow: 0 }} contentContainerStyle={{ minWidth: width }} maximumZoomScale={2.5} minimumZoomScale={0.4}
       showsHorizontalScrollIndicator={false}>
-      <Svg width={ancho} height={alto}>
+      <Svg ref={svgRef} width={ancho} height={alto}>
+        {fondo ? <Rect x={0} y={0} width={ancho} height={alto} fill={fondo} /> : null}
         {d.lineas.map((l) => {
           const a = pos[l.desde];
           const b = pos[l.hasta];

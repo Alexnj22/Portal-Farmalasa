@@ -12,6 +12,10 @@
 //
 // Cambiarle la hora a un turno mueve el horario de todos los que lo usan; por
 // eso guardar una edición pide confirmación.
+//
+// Arriba, como el portal, lo que le falta al catálogo contra el horario de cada
+// sala (`sugerenciasDelCatalogo`, núcleo): «Crear este turno» abre el formulario
+// con esas horas e «Ignorar» lo esconde hasta salir de la pantalla.
 import { useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
@@ -19,7 +23,7 @@ import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { gruposDelCatalogo, revisionDelTurno } from '@nucleo/utils/edicionDeHorario';
+import { gruposDelCatalogo, revisionDelTurno, sugerenciasDelCatalogo } from '@nucleo/utils/edicionDeHorario';
 import { MINUTOS_DE_PAUSA } from '@nucleo/utils/turnoDelDia';
 import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -40,6 +44,8 @@ export default function Turnos() {
   const { hasPermission } = useAuth();
   const puedeEditar = !!hasPermission?.('schedules', 'can_edit');
   const turnos = useStaffStore((s) => s.shifts);
+  const sucursales = useStaffStore((s) => s.branches);
+  const [ignoradas, setIgnoradas] = useState(() => new Set());
   const addShift = useStaffStore((s) => s.addShift);
   const updateShift = useStaffStore((s) => s.updateShift);
   const archiveShift = useStaffStore((s) => s.archiveShift);
@@ -50,6 +56,12 @@ export default function Turnos() {
   const [guardando, setGuardando] = useState(false);
 
   const grupos = useMemo(() => gruposDelCatalogo(turnos, { archivados: pestana === 'archivados', busqueda: busca }), [turnos, pestana, busca]);
+  const sugerencias = useMemo(() => sugerenciasDelCatalogo(turnos, sucursales, ignoradas), [turnos, sucursales, ignoradas]);
+  const crearSugerido = (accion) => {
+    Haptics.selectionAsync().catch(() => {});
+    setForm({ ...VACIO, start: accion.start, end: accion.end, grupo: null });
+    listo('Sugerencia aplicada', 'Revisa las horas y guarda el turno.');
+  };
   const revision = useMemo(() => (form ? revisionDelTurno(form, turnos, form.grupo) : null), [form, turnos]);
   const cambiar = (k) => (v) => setForm((x) => ({ ...x, [k]: v }));
 
@@ -120,6 +132,33 @@ export default function Turnos() {
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nuevo turno', onPress: abrirNuevo } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'archivados', label: 'Archivados' }]} />
+        {pestana === 'activos' && !busca ? sugerencias.map((sg) => {
+          const error = sg.type === 'error';
+          const color = error ? MARCA.rojo : MARCA.violetaClaro;
+          return (
+            <View key={sg.key} style={{ marginHorizontal: 16 }}>
+              <Vidrio radio={18} tinte={error ? 'rgba(240,68,56,0.12)' : 'rgba(105,41,196,0.14)'}>
+                <View style={{ padding: 14, gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ flex: 1, color, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>{error ? 'Falta un dato' : 'Sugerencia'}</Text>
+                    <Pressable onPress={() => setIgnoradas((prev) => new Set(prev).add(sg.key))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ignorar aviso"
+                      style={{ minHeight: 44, minWidth: 44, alignItems: 'flex-end', justifyContent: 'center' }}>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 14, fontWeight: '600' }}>Ignorar</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>{sg.branch}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{sg.text}</Text>
+                  {sg.action && puedeEditar ? (
+                    <Pressable onPress={() => crearSugerido(sg.action)} accessibilityRole="button"
+                      style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 16, borderRadius: 20, justifyContent: 'center', backgroundColor: `${color}2E`, opacity: pressed ? 0.7 : 1 })}>
+                      <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{`Crear este turno · ${hora12(sg.action.start)} – ${hora12(sg.action.end)}`}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </Vidrio>
+            </View>
+          );
+        }) : null}
         {grupos.map((g) => (
           <Pressable key={g.groupId} onPress={() => (pestana === 'activos' && puedeEditar ? abrirEditar(g) : menu(g))} onLongPress={() => menu(g)} delayLongPress={350}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>

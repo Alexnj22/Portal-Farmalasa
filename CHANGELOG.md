@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.4 — La app: auditoría de tiempos, horarios, cargos y permisos como en el portal
+
+Paridad de la app (grupo Personas).
+- **Auditoría de tiempos**: CSV de la quincena (`time_audit_descargar`, anotado
+  como egreso); turnos extra con horas editables antes de aprobar y «Rechazar»
+  siempre disponible (también sin horas declaradas); atajo «Ver planilla» con
+  la quincena cerrada.
+- **Horarios**: sugerencias del catálogo por sala («Crear este turno» /
+  «Ignorar»); «Expandir análisis» abre el Monitor de ventas.
+- **Cargos**: exportar el organigrama como PNG.
+- **Permisos**: al delegar dice a quién le llegan las decisiones; cuántos
+  módulos ve cada cargo.
+- Núcleo: `edicionDeHorario.js` (`sugerenciasDelCatalogo`…) y
+  `permisosDeCargo.js` (`modulosQueVe`, `aQuienLlegaLaDelegacion`); el portal
+  usa los mismos. Un cargo sin superior ya no lista como «se hace cargo» a
+  empleados sin cargo.
+
 ## v2.1292.3 — La app: seguro de vida, bajas por sala y ficha de personal como en el portal
 
 Paridad de la app (grupo Personas).

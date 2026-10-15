@@ -40,11 +40,12 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
-import { fetchPuntosCliente, ajustarPuntos } from '@nucleo/data/puntos';
+import { fetchPuntosCliente, ajustarPuntos, fetchUnionesDeCuenta } from '@nucleo/data/puntos';
 import { claveDeMovimiento, detalleDeMovimiento, montoDeVenta, rotuloDeMovimiento, valeTexto, MOTIVOS_DE_AJUSTE_PUNTOS } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import CodigoDeAcceso from './CodigoDeAcceso';
 import VentaDelAviso from './VentaDelAviso';
+import UnirCuentas, { AvisoDeUniones } from './UnirCuentas';
 
 // `recharts` viaja en su chunk: el modal se abre sin esperarlo.
 const GraficaCliente = lazy(() => import('./GraficasPuntos').then((m) => ({ default: m.GraficaCliente })));
@@ -77,6 +78,25 @@ const nombreMes = (clave) => {
     return `${MESES[m - 1]} ${a}`;
 };
 
+/**
+ * Lo que ya pasó: si esta cuenta se unió a otra (entonces no se le dan ni
+ * quitan puntos acá: todo cae en la otra) o si recibió otras. Devuelve
+ * `fusionadaEn` para que el modal oculte el ajuste en una cuenta que ya no lleva saldo.
+ */
+function useUnionesDeCuenta(customerId, version) {
+    const [uniones, setUniones] = useState([]);
+    useEffect(() => {
+        let vivo = true;
+        fetchUnionesDeCuenta(customerId)
+            .then((u) => { if (vivo) setUniones(u); })
+            .catch((e) => console.warn('[puntos] uniones', e?.message));
+        return () => { vivo = false; };
+    }, [customerId, version]);
+    const fusionadaEn = uniones.find((u) => u.origen === customerId) ?? null;
+    const recibidas = uniones.filter((u) => u.destino === customerId);
+    return { fusionadaEn, recibidas };
+}
+
 // `aviso` (opcional): se abrió desde la pestaña Avisos, y la venta del aviso va
 // arriba del perfil — `{ fila, rotulo, variante, puntosTexto }`.
 export default function ClientePuntosModal({ open, customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar, onClose, aviso = null }) {
@@ -102,6 +122,8 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
     // Sube después de un ajuste: se relee el estado de cuenta entero, así el
     // saldo que se ve es el que la base dice, no una suma hecha acá.
     const [version, setVersion] = useState(0);
+    // Si esta cuenta se unió a otra, o reunió otras (2026-10-15).
+    const { fusionadaEn, recibidas } = useUnionesDeCuenta(customerId, version);
 
     useEffect(() => {
         let vivo = true;
@@ -227,6 +249,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                 Esta ficha es de un convenio: sus compras no acumulan puntos.
                             </Notice>
                         )}
+                        <AvisoDeUniones fusionadaEn={fusionadaEn} recibidas={recibidas} />
 
                         {/* ── 1 · El saldo, y en qué se fue lo acumulado ─────
                             Una sola tarjeta: el saldo manda y los cuatro datos lo
@@ -270,10 +293,16 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                         <CodigoDeAcceso customerId={cliente.id} nombre={cliente.nombre || ''}
                             telefono={cliente.telefono} puedeEditar={puedeEditarFicha} />
 
-                        {puedeAjustar && (
+                        {/* Una cuenta unida a otra ya no lleva saldo: lo que se le dé
+                            cae en la otra. Se ajusta y se une desde esa. */}
+                        {puedeAjustar && !fusionadaEn && (
                             <AjustarPuntos customerId={cliente.id} nombre={cliente.nombre}
                                 saldo={Number(cuenta?.saldo) || 0} habilitado={enPortal}
                                 onHecho={() => setVersion((v) => v + 1)} />
+                        )}
+                        {puedeAjustar && !fusionadaEn && (
+                            <UnirCuentas customerId={cliente.id} nombre={cliente.nombre}
+                                habilitado={enPortal} onHecho={() => setVersion((v) => v + 1)} />
                         )}
 
                         {/* ── 2 · La historia por mes (tocar un mes filtra) ── */}

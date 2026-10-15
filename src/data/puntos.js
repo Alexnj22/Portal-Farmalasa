@@ -248,6 +248,37 @@ export const ajustarPuntos = async ({ customerId, puntos, motivo, nota = null },
     return r;
 };
 
+/**
+ * Unir la cuenta de `origen` a la de `destino`: la misma persona con dos fichas
+ * (2026-10-15). Todo el libro de `origen` pasa a `destino` con sus fechas, y lo
+ * que se le venda después a `origen` también cae en `destino`. Las fichas no se
+ * tocan. Con `simular` contesta qué pasaría sin escribir nada. Mismo permiso
+ * que el ajuste (`puntos_ajustar`); la base lo vuelve a exigir.
+ */
+export const fusionarCuentasDePuntos = async ({ origen, destino, nota = null, simular = true }, contexto = {}) => {
+    const r = await rpc('puntos_fusionar_cuentas', {
+        p_origen: origen, p_destino: destino, p_nota: nota?.trim() || null, p_simular: simular,
+    });
+    if (!simular) {
+        anotar('PUNTOS_FUSION', destino, {
+            ...contexto, origen, destino, nota: nota?.trim() || null,
+            saldo_origen: r?.origen?.saldo, saldo_final: r?.saldo_final,
+        });
+    }
+    return r;
+};
+
+/** Las uniones donde participa un cliente: si su cuenta se unió a otra, o si recibió otras. */
+export async function fetchUnionesDeCuenta(customerId) {
+    const { data, error } = await supabase.from('puntos_fusion')
+        .select('id, created_at, origen, destino, origen_nombre, destino_nombre, saldo_origen')
+        .or(`origen.eq.${customerId},destino.eq.${customerId}`)
+        .order('created_at', { ascending: false })
+        .limit(50);
+    if (error) throw error;
+    return data ?? [];
+}
+
 /** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
 export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });
 

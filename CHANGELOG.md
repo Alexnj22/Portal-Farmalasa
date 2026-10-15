@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1297.0 — Puntos: unir dos cuentas de la misma persona
+
+Pedido del usuario: «Ana Eduviges Calderón y Ana Calderón es la misma persona,
+pero tiene puntos en ambas». En la cuenta de un cliente (vista Puntos), quien
+tiene el permiso de dar o quitar puntos ve «Unir con otra cuenta»: busca la
+otra, ve los dos saldos y el resultado, y confirma.
+
+- `puntos_fusionar_cuentas`: pasa todo el libro (lotes y salidas, con sus
+  fechas y vencimientos) de la otra cuenta a ésta. Las fichas no se tocan.
+- Lo que se le venda DESPUÉS a la ficha que se unió también cae en ésta: tres
+  triggers redirigen lotes, salidas y cambios de saldo; `puntos_consumir` y
+  `puntos_consumir_canje` consumen de la cuenta que se queda, y el cumpleaños
+  no se regala a una cuenta unida.
+- Cada unión queda en `puntos_fusion` (quién, cuándo, saldos de antes) y en la
+  bitácora como `PUNTOS_FUSION`. No se deshace desde la pantalla.
+
 ## v2.1296.0 — Revisión de factor en Productos: lo que no cuadra y la existencia por corregir
 
 Pedido del usuario: ver en un lugar cuándo cambia el tamaño de una presentación

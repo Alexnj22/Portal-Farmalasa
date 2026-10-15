@@ -50,9 +50,8 @@ export function AvisoDeUniones({ fusionadaEn, recibidas }) {
     );
 }
 
-export default function UnirCuentas({ customerId, nombre, habilitado, onHecho }) {
+export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
-    const [abierto, setAbierto] = useState(false);
     const [busqueda, setBusqueda] = useState('');
     const [resultados, setResultados] = useState([]);
     const [buscando, setBuscando] = useState(false);
@@ -65,7 +64,7 @@ export default function UnirCuentas({ customerId, nombre, habilitado, onHecho })
     // cada tecla.
     useEffect(() => {
         const q = busqueda.trim();
-        if (!abierto || q.length < 3) { setResultados([]); return undefined; }
+        if (q.length < 3) { setResultados([]); return undefined; }
         let vivo = true;
         setBuscando(true);
         const t = setTimeout(async () => {
@@ -79,7 +78,7 @@ export default function UnirCuentas({ customerId, nombre, habilitado, onHecho })
             }
         }, 350);
         return () => { vivo = false; clearTimeout(t); };
-    }, [busqueda, abierto, customerId, showToast]);
+    }, [busqueda, customerId, showToast]);
 
     // Al elegir la otra cuenta, la base dice qué pasaría.
     useEffect(() => {
@@ -91,21 +90,6 @@ export default function UnirCuentas({ customerId, nombre, habilitado, onHecho })
         return () => { vivo = false; };
     }, [otra, customerId]);
 
-    if (!habilitado) return null;
-    if (!abierto) {
-        return (
-            <div>
-                <Button variant="secondary" size="sm" icon={Merge} onClick={() => setAbierto(true)}>
-                    Unir con otra cuenta
-                </Button>
-            </div>
-        );
-    }
-
-    const cerrar = () => {
-        setAbierto(false); setBusqueda(''); setOtra(null); setNota('');
-    };
-
     const unir = async () => {
         setGuardando(true);
         try {
@@ -114,7 +98,6 @@ export default function UnirCuentas({ customerId, nombre, habilitado, onHecho })
                 { origen: otra.customer_id, destino: customerId, nota, simular: false },
                 { nombre, origen_nombre: otra.nombre });
             showToast('Cuentas unidas', `Ahora tiene ${pts(r?.saldo_final)} puntos.`, 'success');
-            cerrar();
             onHecho?.();
         } catch (e) {
             showToast('No se pudieron unir', mensajeAmigable(e), 'error');
@@ -126,8 +109,10 @@ export default function UnirCuentas({ customerId, nombre, habilitado, onHecho })
     return (
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-4 min-w-0">
             <div>
-                <h3 className="text-body font-black text-content flex items-center gap-2">
-                    <Merge size={16} className="text-content-3 shrink-0" /> Unir con otra cuenta
+                {/* Mismo encabezado que «Dar o quitar puntos»: los dos paneles se
+                    abren en el mismo lugar y tienen que leerse como hermanos. */}
+                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                    <Merge size={14} /> Unir con otra cuenta
                 </h3>
                 <p className="text-caption text-content-3 mt-1">
                     Para la misma persona con dos fichas. Los puntos de la otra cuenta pasan a ésta con sus
@@ -198,7 +183,7 @@ export default function UnirCuentas({ customerId, nombre, habilitado, onHecho })
                         Elegir otra
                     </Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={cerrar} disabled={guardando}>Cancelar</Button>
+                <Button variant="ghost" size="sm" onClick={onCerrar} disabled={guardando}>Cancelar</Button>
                 {otra && vista && !vista.error && (
                     <Button variant="primary" size="sm" icon={Merge} onClick={unir} disabled={guardando} loading={guardando}>
                         Unir cuentas

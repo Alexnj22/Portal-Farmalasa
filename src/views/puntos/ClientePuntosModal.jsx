@@ -23,7 +23,7 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
     Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, History, CalendarClock, IdCard, Phone,
-    ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal, ArrowLeftRight,
+    ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal, ArrowLeftRight, Merge,
 } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
@@ -40,6 +40,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fetchPuntosCliente, ajustarPuntos, fetchUnionesDeCuenta } from '@nucleo/data/puntos';
 import { claveDeMovimiento, detalleDeMovimiento, montoDeVenta, rotuloDeMovimiento, valeTexto, MOTIVOS_DE_AJUSTE_PUNTOS } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
@@ -122,6 +123,10 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
     // Sube después de un ajuste: se relee el estado de cuenta entero, así el
     // saldo que se ve es el que la base dice, no una suma hecha acá.
     const [version, setVersion] = useState(0);
+    // Qué acción sobre el saldo está abierta: una a la vez, debajo de la tarjeta.
+    const [accion, setAccion] = useState(null);
+    const alternar = (a) => setAccion((x) => (x === a ? null : a));
+    const hecho = () => { setAccion(null); setVersion((v) => v + 1); };
     // Si esta cuenta se unió a otra, o reunió otras (2026-10-15).
     const { fusionadaEn, recibidas } = useUnionesDeCuenta(customerId, version);
 
@@ -288,25 +293,47 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                     valor={ultimaCompra ? fechaTexto(ultimaCompra.fecha, { day: 'numeric', month: 'short' }) : '—'}
                                     sub={ultimaCompra ? (sala(ultimaCompra.sucursal) ?? '') : 'Sin compras'} />
                             </dl>
+                            {/* Las acciones sobre el saldo viven con el saldo, en una fila al pie
+                                de la tarjeta (2026-10-15:
+                                sueltas debajo del acceso se veían «mal y mal ubicadas»).
+                                Una cuenta unida a otra ya no lleva saldo: se ajusta y se
+                                une desde esa. */}
+                            {puedeAjustar && !fusionadaEn && (enPortal ? (
+                                <div className="md:col-span-2 flex flex-wrap gap-2 pt-4 border-t border-divider">
+                                    <Button size="sm" icon={SlidersHorizontal}
+                                        variant={accion === 'ajustar' ? 'primary' : 'secondary'}
+                                        aria-pressed={accion === 'ajustar'} onClick={() => alternar('ajustar')}>
+                                        Dar o quitar puntos
+                                    </Button>
+                                    <Button size="sm" icon={Merge}
+                                        variant={accion === 'unir' ? 'primary' : 'secondary'}
+                                        aria-pressed={accion === 'unir'} onClick={() => alternar('unir')}>
+                                        Unir con otra cuenta
+                                    </Button>
+                                </div>
+                            ) : (
+                                <p className="md:col-span-2 text-caption text-content-3 flex items-center gap-2 pt-4 border-t border-divider">
+                                    <SlidersHorizontal size={14} className="shrink-0" />
+                                    Dar o quitar puntos se habilita cuando el programa pasa al portal.
+                                </p>
+                            ))}
                         </div>
+
+                        {accion === 'ajustar' && (
+                            <AjustarPuntos customerId={cliente.id} nombre={cliente.nombre}
+                                saldo={Number(cuenta?.saldo) || 0}
+                                onCerrar={() => setAccion(null)} onHecho={hecho} />
+                        )}
+                        {accion === 'unir' && (
+                            <UnirCuentas customerId={cliente.id} nombre={cliente.nombre}
+                                onCerrar={() => setAccion(null)} onHecho={hecho} />
+                        )}
 
                         {/* El acceso sube, justo debajo del saldo (pedido del usuario,
                             2026-09-28): es lo que se usa con el cliente enfrente —
                             «¿cuánto tengo?, mándamelo»—, no un dato del fondo. */}
                         <CodigoDeAcceso customerId={cliente.id} nombre={cliente.nombre || ''}
                             telefono={cliente.telefono} puedeEditar={puedeEditarFicha} />
-
-                        {/* Una cuenta unida a otra ya no lleva saldo: lo que se le dé
-                            cae en la otra. Se ajusta y se une desde esa. */}
-                        {puedeAjustar && !fusionadaEn && (
-                            <AjustarPuntos customerId={cliente.id} nombre={cliente.nombre}
-                                saldo={Number(cuenta?.saldo) || 0} habilitado={enPortal}
-                                onHecho={() => setVersion((v) => v + 1)} />
-                        )}
-                        {puedeAjustar && !fusionadaEn && (
-                            <UnirCuentas customerId={cliente.id} nombre={cliente.nombre}
-                                habilitado={enPortal} onHecho={() => setVersion((v) => v + 1)} />
-                        )}
 
                         {/* ── 2 · La historia por mes (tocar un mes filtra) ── */}
                         {meses.length > 0 && (
@@ -468,32 +495,13 @@ const MOTIVOS_DE_AJUSTE = MOTIVOS_DE_AJUSTE_PUNTOS.map((m) => ({ value: m, label
  * rechaza quitar más de lo que el cliente tiene. Antes del arranque la base lo
  * rechaza —el saldo todavía lo manda el sistema anterior— y acá se dice por qué.
  */
-function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
+function AjustarPuntos({ customerId, nombre, saldo, onCerrar, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
-    const [abierto, setAbierto] = useState(false);
     const [sentido, setSentido] = useState('dar');
     const [cantidad, setCantidad] = useState('');
     const [motivo, setMotivo] = useState('');
     const [nota, setNota] = useState('');
     const [guardando, setGuardando] = useState(false);
-
-    if (!habilitado) {
-        return (
-            <p className="text-caption text-content-3 flex items-center gap-2">
-                <SlidersHorizontal size={14} className="shrink-0" />
-                Dar o quitar puntos se habilita el 1 de octubre, cuando el programa pasa al portal.
-            </p>
-        );
-    }
-    if (!abierto) {
-        return (
-            <div>
-                <Button variant="secondary" size="sm" icon={SlidersHorizontal} onClick={() => setAbierto(true)}>
-                    Dar o quitar puntos
-                </Button>
-            </div>
-        );
-    }
 
     const n = Number(cantidad) || 0;
     const quitaDeMas = sentido === 'quitar' && n > saldo;
@@ -509,7 +517,6 @@ function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
             const r = await ajustarPuntos({ customerId, puntos: sentido === 'dar' ? n : -n, motivo, nota }, { nombre });
             showToast(sentido === 'dar' ? 'Puntos dados' : 'Puntos quitados',
                 `Ahora tiene ${pts(r?.saldo)} puntos.`, 'success');
-            setAbierto(false); setCantidad(''); setMotivo(''); setNota('');
             onHecho?.();
         } catch (e) {
             showToast('No se pudo ajustar', mensajeAmigable(e), 'error');
@@ -531,7 +538,8 @@ function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
                     onChange={(e) => setCantidad(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     helperText={n ? `Equivalen a ${dolares(n)}` : undefined} />
                 <div className="flex flex-col gap-1.5 min-w-0">
-                    <span className="text-caption font-bold text-content-2">Motivo</span>
+                    {/* El mismo rótulo que «Puntos» y «Detalle» (`PortalInput`). */}
+                    <span className={rotuloCampo()}>Motivo</span>
                     <LiquidSelect value={motivo} onChange={setMotivo} options={MOTIVOS_DE_AJUSTE}
                         placeholder="Elegir motivo" clearable={false} ariaLabel="Motivo del ajuste" />
                 </div>
@@ -544,7 +552,7 @@ function AjustarPuntos({ customerId, nombre, saldo, habilitado, onHecho }) {
                     {falta ?? `${sentido === 'dar' ? 'Se le darán' : 'Se le quitarán'} ${pts(n)} puntos (${dolares(n)}). Quedará con ${pts(sentido === 'dar' ? saldo + n : saldo - n)}.`}
                 </p>
                 <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setAbierto(false)} disabled={guardando}>Cancelar</Button>
+                    <Button variant="ghost" size="sm" onClick={onCerrar} disabled={guardando}>Cancelar</Button>
                     <Button variant="primary" size="sm" onClick={guardar} disabled={!!falta || guardando} loading={guardando}>
                         {sentido === 'dar' ? 'Dar puntos' : 'Quitar puntos'}
                     </Button>

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1298.2 — Puntos: las acciones del saldo, juntas y en su lugar
+
+Pedido del usuario: los botones de «Dar o quitar puntos» y «Unir con otra
+cuenta» se veían mal y mal ubicados (sueltos, uno debajo del otro, después del
+acceso a Mis puntos).
+
+- Los dos viven ahora en una fila al pie de la tarjeta del saldo; el que está
+  abierto se marca, y su formulario se abre justo debajo, uno a la vez.
+- Los dos formularios usan el mismo encabezado, y «Motivo» el mismo rótulo que
+  los demás campos.
+- El aviso «Esta cuenta reúne también los puntos de…» no aparecía: a
+  `puntos_fusion` le faltaba el permiso de lectura (migración
+  `puntos_fusion_lectura`).
+
 ## v2.1298.1 — Puntos: lo que se puede canjear, separado del historial
 
 En la tabla de clientes y en el modal, «Acumulados 7,003 · $70.03» al lado del

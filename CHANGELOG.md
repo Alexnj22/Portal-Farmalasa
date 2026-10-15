@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.2 — App · Facturación: solventadas de Observaciones, pagos confirmados, PDF y marca de visitados
+
+Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).
+- Observaciones: la sección «N solventadas» con quién, cuándo, la nota y los
+  códigos. La regla sale del núcleo (`observacionesSolventadas`) y el portal
+  pasa a usarla.
+- No efectivo: los pagos ya confirmados (quién, cuándo, nota, comprobante) con
+  filtros por forma de pago y sala; el comprobante acepta también un PDF.
+- Hacienda, Observaciones y Anuladas: tocar el ID interno lo copia y marca el
+  documento como visitado; «Limpiar marcas». La marca se mudó al núcleo
+  (`@nucleo/hooks/useVisitados`) con la misma clave de siempre.
+
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 
 - Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»

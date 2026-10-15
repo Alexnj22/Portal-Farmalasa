@@ -1673,7 +1673,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
          * dice `analyzingDocs`, que es lo que mira `FileField` (`busy`). */
         setAnalyzingDocs(prev => ({ ...prev, [category]: true }));
         try {
-            const folder = formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
+            // Un papel colectivo (el acuse del MTPS) no es de una carpeta: va a
+            // `compartidos/` y cada ficha que lo nombra apunta ahí. En la
+            // carpeta de uno, los demás que nombra no lo podían abrir.
+            const folder = COMPARTIBLES.has(category) ? 'compartidos'
+                : formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
             const url = await uploadFileToStorage(file, 'documents', folder);
             if (!url) throw new Error('La subida no devolvió una URL.');
             const stored = getStoragePathFromUrl(url);

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1291.4 — Documentos compartidos en una carpeta común: cada persona ve el suyo
+
+- El acuse del MTPS (papel colectivo) se sube a `compartidos/` y cada ficha
+  que lo nombra apunta ahí. Guardado en la carpeta de uno, los demás que
+  nombra no lo podían abrir desde su perfil: la carpeta `employees/<id>/`
+  sólo la lee su dueño.
+- `documents_select` (migración 20261015145927): un archivo de
+  `compartidos/` lo lee quien tiene `staff_detail` y la persona cuya propia
+  ficha lo nombra — nadie más.
+- `ordenar-documentos-de-personal` promueve a `compartidos/` todo archivo
+  con más de un dueño (o reservado en «por asignar»), reescribe a todos los
+  que lo nombran y borra lo de esa carpeta que ya nadie nombra. Ya movió los
+  dos acuses de octubre.
+
 ## v2.1291.3 — Expediente: el barrido nocturno ya no borra hojas ni documentos compartidos
 
 - `ordenar-documentos-de-personal` miraba sólo `url` de cada documento: los

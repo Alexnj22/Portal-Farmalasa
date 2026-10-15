@@ -78,6 +78,11 @@ const BUCKET = 'documents';
  * alta; la raíz la usaban los adjuntos de evento de RRHH hasta v2.973.1. */
 const SIN_DUENO = 'employee-documents/unassigned';
 
+/* Los documentos de VARIOS dueños (el acuse del MTPS de una recontratación).
+ * Viven una sola vez y cada ficha apunta acá; la policy `documents_select` deja
+ * leer cada uno a quien su propia ficha lo nombra (migración 20261015145927). */
+const COMPARTIDOS = 'compartidos';
+
 /* El tercer buzón: los adjuntos de las solicitudes personales (la constancia de
  * una incapacidad). Acá la ruta SÍ lleva el dueño —`solicitudes/<id>/…` desde
  * v2.974.5— así que no hay nada que mover; lo que falta es borrar el archivo de
@@ -167,10 +172,11 @@ Deno.serve(async (req: Request) => {
       const duenos = duenosDe.get(ruta);
 
       /* Compartido entre varias fichas, o reservado para una que todavía no
-       * existe: se queda donde está. No hay UNA carpeta correcta para él, y
-       * cualquier mudanza deja a alguien con un enlace roto. */
+       * existe: no tiene UNA carpeta correcta, así que va a `compartidos/`,
+       * que lee cada persona cuya ficha lo nombra. */
       if ((duenos && duenos.size > 1) || reservados.has(ruta)) {
-        esperando.push(`${ruta} (compartido: ${duenos?.size ?? 0} fichas${reservados.has(ruta) ? ' + por asignar' : ''})`);
+        if (enSeco) { movidos.push(`${ruta} -> ${COMPARTIDOS}/`); continue; }
+        movidos.push(await promover(admin, ruta, duenos, reservados.has(ruta)));
         continue;
       }
 
@@ -202,6 +208,38 @@ Deno.serve(async (req: Request) => {
 
       // Sin dueño: se borra, pero recién cuando ya nadie lo puede estar por
       // guardar.
+      if (new Date(o.created_at ?? 0).getTime() >= corte) { esperando.push(ruta); continue; }
+      if (enSeco) { borrados.push(ruta); continue; }
+      const { error: errBorrar } = await admin.storage.from(BUCKET).remove([ruta]);
+      if (errBorrar) { esperando.push(`${ruta} (no se pudo borrar: ${errBorrar.message})`); continue; }
+      borrados.push(ruta);
+    }
+
+    // ── Lo compartido que quedó en la carpeta de UNO ───────────────────────
+    // `employees/<id>/` sólo la lee <id>. Un archivo ahí que nombra otra ficha
+    // —o que espera en «por asignar»— es invisible para los demás: se promueve
+    // a `compartidos/`. Así quedaron los acuses del MTPS de octubre de 2026,
+    // movidos a la carpeta de uno por la versión vieja de este barrido.
+    const enCarpetaAjena = new Set<string>();
+    for (const [ruta, duenos] of duenosDe) {
+      if (!ruta.startsWith('employees/')) continue;
+      const carpeta = ruta.split('/')[1];
+      if ([...duenos].some((id) => id !== carpeta)) enCarpetaAjena.add(ruta);
+    }
+    for (const ruta of reservados) if (ruta.startsWith('employees/')) enCarpetaAjena.add(ruta);
+    for (const ruta of enCarpetaAjena) {
+      if (enSeco) { movidos.push(`${ruta} -> ${COMPARTIDOS}/`); continue; }
+      movidos.push(await promover(admin, ruta, duenosDe.get(ruta), reservados.has(ruta)));
+    }
+
+    // ── `compartidos/`: se borra sólo lo que ya nadie nombra ───────────────
+    const { data: enCompartidos, error: errComp } = await admin.storage.from(BUCKET)
+      .list(COMPARTIDOS, { limit: 1000 });
+    if (errComp) return json({ ok: false, error: 'NO_SE_PUDO_LISTAR_COMPARTIDOS', detalle: errComp.message }, 500);
+    for (const o of enCompartidos ?? []) {
+      if (!o?.name) continue;
+      const ruta = `${COMPARTIDOS}/${o.name}`;
+      if (duenosDe.has(ruta) || reservados.has(ruta)) continue;
       if (new Date(o.created_at ?? 0).getTime() >= corte) { esperando.push(ruta); continue; }
       if (enSeco) { borrados.push(ruta); continue; }
       const { error: errBorrar } = await admin.storage.from(BUCKET).remove([ruta]);
@@ -274,6 +312,41 @@ function rutaDeLaUrl(url: string | null): string | null {
   if (!url) return null;
   const m = url.match(/\/documents\/(.+?)(\?|$)/);
   return m ? decodeURIComponent(m[1]) : null;
+}
+
+/**
+ * Lleva un archivo a `compartidos/` y reescribe a TODOS los que lo nombran
+ * (fichas y «por asignar»). El original se borra sólo si todas las
+ * reescrituras entraron: si alguna falla, las dos copias existen y nadie queda
+ * apuntando a nada — la próxima corrida termina el trabajo.
+ */
+async function promover(
+  admin: SupabaseAdmin, ruta: string, duenos: Set<string> | undefined, reservado: boolean,
+): Promise<string> {
+  const destino = `${COMPARTIDOS}/${ruta.split('/').pop()}`;
+  const { error: errCopiar } = await admin.storage.from(BUCKET).copy(ruta, destino);
+  // Ya copiado en una corrida anterior que no terminó: se sigue con lo demás.
+  if (errCopiar && !/exist/i.test(errCopiar.message)) return `${ruta} (no se pudo copiar: ${errCopiar.message})`;
+
+  let todo = true;
+  for (const id of duenos ?? []) {
+    if (!(await reescribirUrl(admin, id, ruta, destino))) todo = false;
+  }
+  if (reservado) {
+    const { data: filas, error } = await admin
+      .from('documentos_por_asignar').select('id, documento').is('aplicado_a', null)
+      .returns<{ id: string; documento: unknown }[]>();
+    if (error) todo = false;
+    for (const f of filas ?? []) {
+      if (!rutasDe(f.documento).includes(ruta)) continue;
+      const { error: errUpd } = await admin.from('documentos_por_asignar')
+        .update({ documento: reemplazarRuta(f.documento, ruta, destino) } as never).eq('id', f.id);
+      if (errUpd) todo = false;
+    }
+  }
+  if (!todo) return `${ruta} -> ${destino} (copiado; alguna ficha no se reescribió, el original queda)`;
+  const { error: errQuitar } = await admin.storage.from(BUCKET).remove([ruta]);
+  return errQuitar ? `${ruta} -> ${destino} (el original quedó: ${errQuitar.message})` : `${ruta} -> ${destino}`;
 }
 
 /** Todas las rutas del bucket que nombra un valor, a cualquier profundidad

@@ -190,6 +190,57 @@ export function construirInformeDoc({ mes, piezas, marcas, redes, efectos = {}, 
     };
 }
 
+// ── El mismo informe en HTML (2026-10-15) ───────────────────────────────────
+// La app no tiene pdfmake: imprime HTML a PDF con el sistema. Para que los dos
+// papeles digan EXACTAMENTE lo mismo, el HTML no se escribe aparte: se traduce
+// del documento de pdfmake de arriba (sólo las piezas que ese documento usa:
+// texto con estilo, tablas y columnas). Un cambio al informe se hace una vez.
+const escapar = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function estiloCss(nodo, estilos) {
+    const e = { ...(nodo?.style ? estilos[nodo.style] : null), ...nodo };
+    const css = [];
+    if (e.fontSize) css.push(`font-size:${e.fontSize}pt`);
+    if (e.bold) css.push('font-weight:700');
+    if (e.color) css.push(`color:${e.color}`);
+    if (e.alignment) css.push(`text-align:${e.alignment}`);
+    if (Array.isArray(e.margin)) css.push(`margin:${e.margin[1]}pt 0 ${e.margin[3]}pt 0`);
+    return css.join(';');
+}
+
+function textoAHtml(t, estilos) {
+    if (t == null) return '';
+    if (typeof t === 'string' || typeof t === 'number') return escapar(t).replace(/\n/g, '<br>');
+    if (Array.isArray(t)) return t.map((x) => textoAHtml(x, estilos)).join('');
+    return `<span style="${estiloCss(t, estilos)}">${textoAHtml(t.text, estilos)}</span>`;
+}
+
+function nodoAHtml(n, estilos) {
+    if (n == null) return '';
+    if (typeof n === 'string') return `<p>${escapar(n)}</p>`;
+    if (n.table) {
+        const [cab, ...filas] = n.table.body;
+        const celda = (c, tag) => `<${tag} style="${typeof c === 'object' && c ? estiloCss(c, estilos) : ''}">${textoAHtml(typeof c === 'object' && c ? c.text : c, estilos)}</${tag}>`;
+        return `<table><thead><tr>${cab.map((c) => celda(c, 'th')).join('')}</tr></thead><tbody>${filas.map((f) => `<tr>${f.map((c) => celda(c, 'td')).join('')}</tr>`).join('')}</tbody></table>`;
+    }
+    if (n.columns) return `<div class="cols">${n.columns.map((c) => `<div>${(c.stack || []).map((x) => nodoAHtml(x, estilos)).join('')}</div>`).join('')}</div>`;
+    return `<div style="${estiloCss(n, estilos)}">${textoAHtml(n.text, estilos)}</div>`;
+}
+
+/** El informe del mes como HTML para imprimir a PDF (la app). Mismos datos que `descargarInformePdf`. */
+export function construirInformeHtml(datos) {
+    const doc = construirInformeDoc(datos);
+    return `<!doctype html><html><head><meta charset="utf-8"><style>
+@page { size: letter; margin: 40pt 40pt 36pt 40pt; }
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 9pt; color: #111; }
+table { width: 100%; border-collapse: collapse; margin: 0 0 12pt 0; }
+th, td { padding: 3pt 4pt; border-bottom: 0.5pt solid #ccc; vertical-align: top; font-size: 8.5pt; }
+th { font-size: 8pt; font-weight: 700; color: #555; text-align: left; }
+.cols { display: flex; gap: 16pt; margin-bottom: 8pt; } .cols > div { flex: 1; }
+p { margin: 0 0 6pt 0; }
+</style></head><body>${doc.content.map((n) => nodoAHtml(n, doc.styles)).join('')}</body></html>`;
+}
+
 export async function descargarInformePdf(datos) {
     const pdfMake = await getPdfMake();
     pdfMake.createPdf(construirInformeDoc(datos)).download(`Marketing_${String(datos.mes.mes).slice(0, 7)}.pdf`);

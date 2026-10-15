@@ -6,7 +6,7 @@
 // qué poner sólidos?»).
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
@@ -66,7 +66,13 @@ function Buscador({ onElegir, enLaSolicitud, onRevisar }) {
 }
 
 export default function PedirTraslado() {
-  const p = usePedirTraslado({ alCerrar: () => {}, alTerminar: () => router.back() });
+  // Abierta desde un renglón (un faltante del Inicio, o una sala en la ficha
+  // del producto): llega con el producto y, si se apretó sobre una sala, el
+  // estante de origen (`6:V` = el área de vencidos de Bodega), como el
+  // «Solicitar» del portal.
+  const { producto: idInicial, descripcion: descInicial, origen } = useLocalSearchParams();
+  const [inicial] = useState(() => (idInicial ? { erp_product_id: Number(idInicial), descripcion: descInicial || '', origen_sugerido: origen || null } : null));
+  const p = usePedirTraslado({ productoInicial: inicial, alCerrar: () => {}, alTerminar: () => router.back() });
   const { producto, setElegido, donde, origenId, setOrigenId, opcionesPres, presIdx, setPresIdx, cantidad, setCantidad,
     esAntibiotico, avisoVence, lotesDeSala, descartados, setDescartados, reparto, hayLotes, avisos,
     renglones, quitarDelStore, causa, setCausa, agregar, lineaLista, yaEstaEnLaLista, puedeEnviar, enviar, enviando, listo, resumen, error, miErp } = p;

@@ -10,6 +10,13 @@
 //     persona se prueba con su carné (`Identidad`) y la base no deja que reciba
 //     quien firma ni que se mezclen salas (`entregar_bolsas`).
 //
+// «Diferencias» (como la pestaña del portal): las bolsas de la sala que ya se
+// entregaron, se contaron y NO cuadraron, y nadie anotó la causa. La sala
+// CONTESTA: «Anotar la causa» (justificar, repuesto o retirado, con foto) —
+// `resolver_diferencia_bolsa` acepta `bolsas` can_edit sobre su sala. Lo que
+// faltó o sobró se ve aunque falte `bolsas_ver_montos`, igual que el portal:
+// el permiso esconde el saldo, no cuánto hay que buscar.
+//
 // «Sacar dinero» abre `app/sacar-dinero.js`: sale primero del cajón y sólo si
 // no alcanza de las bolsas (regla del usuario del 3-sep, «todo debe pasar
 // desde efectivo»).
@@ -19,8 +26,8 @@ import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cerrarBolsa, entregarBolsas, fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '@nucleo/data/bolsas';
-import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { cerrarBolsa, entregarBolsas, fetchBolsas, fetchBolsasConDiferencia, fetchCortesPorEmbolsar, fetchSaldos } from '@nucleo/data/bolsas';
+import { diferenciaDeBolsa, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
@@ -36,6 +43,8 @@ import Identidad from '../componentes/Identidad';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { etiquetaDeLaBolsa, reimprimirEtiqueta } from '../componentes/cortes/papel';
+import ResolverDiferencia from '../componentes/caja/ResolverDiferencia';
+import { Pildora } from '../componentes/avisos/Piezas';
 
 const DIAS_DE_ALARMA = 4;
 const rotularDia = (f) => {
@@ -74,25 +83,29 @@ export default function BolsasDeLaSala() {
   const [dias, setDias] = useState(null);         // Set de fechas a entregar
   const [identidad, setIdentidad] = useState(null);
   const [ocupado, setOcupado] = useState(false);
+  const [resolviendo, setResolviendo] = useState(null);
 
   const cargar = useCallback(async () => {
     const hoy = hoySV();
-    const [abiertas, faltan] = await Promise.all([
+    const [abiertas, faltan, conDif] = await Promise.all([
       fetchBolsas({ estados: ['ABIERTA'] }),
       fetchCortesPorEmbolsar({ desde: sumarDias(hoy, -1), hasta: hoy }),
+      fetchBolsasConDiferencia(),
     ]);
-    if (!abiertas) { setDatos({ error: true, bolsas: [], faltan: [] }); return; }
-    const saldos = await fetchSaldos(abiertas.map((b) => b.id));
-    setDatos({ bolsas: abiertas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })), faltan: faltan || [] });
+    if (!abiertas) { setDatos({ error: true, bolsas: [], faltan: [], diferencias: [] }); return; }
+    const saldos = await fetchSaldos([...abiertas, ...(conDif || [])].map((b) => b.id));
+    const conSaldo = (b) => ({ ...b, ...(saldos.get(b.id) || {}) });
+    setDatos({ bolsas: abiertas.map(conSaldo), faltan: faltan || [], diferencias: (conDif || []).map(conSaldo) });
   }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const nombre = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sala ${id}`;
-  const salasConAlgo = useMemo(() => [...new Set([...(datos?.bolsas || []), ...(datos?.faltan || [])].map((x) => String(x.branch_id)))]
+  const salasConAlgo = useMemo(() => [...new Set([...(datos?.bolsas || []), ...(datos?.faltan || []), ...(datos?.diferencias || [])].map((x) => String(x.branch_id)))]
     .sort((a, b) => ordenDeSala(a) - ordenDeSala(b)), [datos]);
   const sala = todas ? (salaElegida ?? (salasConAlgo.includes(miSala) ? miSala : salasConAlgo[0] ?? null)) : miSala;
   const enSala = (datos?.bolsas || []).filter((b) => String(b.branch_id) === String(sala));
   const faltan = (datos?.faltan || []).filter((c) => String(c.branch_id) === String(sala));
+  const diferencias = (datos?.diferencias || []).filter((b) => String(b.branch_id) === String(sala));
   const hoy = hoySV();
   const total = enSala.reduce((a, b) => a + saldoDeBolsa(b), 0);
   const vencidas = enSala.filter((b) => diasEntre(b.fecha, hoy) >= DIAS_DE_ALARMA).length;
@@ -180,6 +193,28 @@ export default function BolsasDeLaSala() {
                 derecha={puedeGuardar ? 'Guardar ›' : (verMontos ? formatMoney(c.sugerida) : null)} colorDerecha={puedeGuardar ? colorSistema.acento : null}
                 onPress={puedeGuardar ? () => guardar(c) : null} />
             ))}
+          </Seccion>
+        ) : null}
+
+        {diferencias.length ? (
+          <Seccion titulo={`Diferencias por resolver · ${diferencias.length}`} pie="Estas bolsas se contaron y el dinero no coincidió. Ya no están en la sala: al anotar qué pasó, la diferencia queda explicada.">
+            {diferencias.map((b, i) => {
+              const dif = diferenciaDeBolsa(b) ?? 0;
+              return (
+                <View key={b.id} style={{ gap: 8, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>{b.folio}</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${rotularDia(b.fecha)}${b.hora ? ` · ${hora12(b.hora)}` : ''}${b.contado_at ? ` · contada el ${fechaTexto(String(b.contado_at).slice(0, 10), { day: 'numeric', month: 'short' })}, ${hora12(b.contado_at)}` : ''}`}</Text>
+                    </View>
+                    <Pildora texto={`${dif < 0 ? 'Faltó' : 'Sobró'} ${formatMoney(Math.abs(dif))}`} color={dif < 0 ? MARCA.rojo : MARCA.ambar} />
+                  </View>
+                  {puedeGuardar ? (resolviendo === b.id
+                    ? <ResolverDiferencia bolsa={b} userId={user?.id} onCancelar={() => setResolviendo(null)} onResuelta={() => { setResolviendo(null); cargar(); }} />
+                    : <BotonGrande texto="Anotar la causa" borde onPress={() => setResolviendo(b.id)} />) : null}
+                </View>
+              );
+            })}
           </Seccion>
         ) : null}
 

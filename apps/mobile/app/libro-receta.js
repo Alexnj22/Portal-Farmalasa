@@ -5,6 +5,12 @@
 //
 // Lo que se lee acá es el libro que exige la norma: cada renglón dice su folio,
 // el producto, cuánto se entregó, a quién y quién lo recetó.
+//
+// Como en el portal, son DOS libros —Antibióticos y Otros bajo receta— cada uno
+// con su cuenta y su CSV; el buscador acepta el folio en cualquiera de sus
+// formas, el medicamento, el lote, el paciente, el médico o la junta; el orden
+// se elige en el menú de filtros; y tocar un renglón abre el folio entero
+// (`app/folio.js`).
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useEnTramos } from '../componentes/alFinal';
@@ -12,7 +18,10 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ESTADO_RENGLON, faltantesDelRenglon, fetchLibro } from '@nucleo/data/bitacoras';
+import { CLASE_ANTIBIOTICO, ESTADO_RENGLON, LIBROS, faltantesDelRenglon, fetchLibro } from '@nucleo/data/bitacoras';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { correrMes, etiquetaMes, fechaTexto, hoySV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
@@ -40,6 +49,10 @@ export default function LibroReceta() {
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [clase, setClase] = useState(CLASE_ANTIBIOTICO);
+  const [orden, setOrden] = useState('folio:desc');
+  const [texto, setTexto] = useState('');
+  const busca = useTextoRebotado(texto).trim();
 
   const cargar = useCallback(async () => {
     const hoy = hoySV();
@@ -50,18 +63,45 @@ export default function LibroReceta() {
   }, [sala, mes]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
-  const cuenta = useMemo(() => {
-    const c = { pendiente: 0, completa: 0, todas: 0 };
-    for (const r of filas || []) { c.todas += 1; if (r.estado === 'pendiente') c.pendiente += 1; if (r.estado === 'completa') c.completa += 1; }
+  // Cuántos hay en cada libro, para que el que no se mira no desaparezca.
+  const porLibro = useMemo(() => {
+    const c = {};
+    for (const r of filas || []) { const k = r.clase || CLASE_ANTIBIOTICO; c[k] = (c[k] ?? 0) + 1; }
     return c;
   }, [filas]);
-  const visibles = (filas || []).filter((r) => vista === 'todas' || r.estado === vista);
-  const tramo = useEnTramos(visibles, 40, vista);
+  const delLibro = useMemo(() => (filas || []).filter((r) => (r.clase || CLASE_ANTIBIOTICO) === clase), [filas, clase]);
+  const cuenta = useMemo(() => {
+    const c = { pendiente: 0, completa: 0, todas: 0 };
+    for (const r of delLibro) { c.todas += 1; if (r.estado === 'pendiente') c.pendiente += 1; if (r.estado === 'completa') c.completa += 1; }
+    return c;
+  }, [delLibro]);
+  const visibles = useMemo(() => {
+    const base = delLibro
+      .filter((r) => vista === 'todas' || r.estado === vista)
+      .filter((r) => !busca || tokenMatch(busca, r.folio_txt, String(r.folio), r.producto_nombre, r.lote, r.paciente,
+        r.medico, r.numero_junta, r.cliente, r.vendedor, r.correlativo_doc));
+    // El mismo orden que la tabla del portal: por el campo crudo, vacíos al final.
+    const [campo, dir] = orden.split(':');
+    const signo = dir === 'asc' ? 1 : -1;
+    return [...base].sort((a, b) => {
+      const ka = a[campo]; const kb = b[campo];
+      if (ka === kb) return 0;
+      if (ka == null) return 1;
+      if (kb == null) return -1;
+      return (ka > kb ? 1 : -1) * signo;
+    });
+  }, [delLibro, vista, busca, orden]);
+  const grupos = [{ id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: 'folio:desc', onCambiar: setOrden, opciones: [
+    ['folio', 'Folio'], ['fecha', 'Fecha'], ['producto_nombre', 'Medicamento'], ['cantidad', 'Cantidad'], ['lote', 'Lote'], ['paciente', 'Paciente'], ['estado', 'Estado'],
+  ].flatMap(([k, l]) => [{ id: `${k}:desc`, label: `${l} ↓` }, { id: `${k}:asc`, label: `${l} ↑` }]) }];
+  const tramo = useEnTramos(visibles, 40, `${vista}|${clase}|${busca}|${orden}`);
   const esEsteMes = mes === hoySV().slice(0, 7);
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Libro bajo receta', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Libro bajo receta', headerLargeTitle: true,
+        headerSearchBarOptions: { placeholder: 'Folio, medicamento, lote, paciente o médico', hideWhenScrolling: false, onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') } }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -71,15 +111,17 @@ export default function LibroReceta() {
           <Text style={{ flex: 1, textAlign: 'center', color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{etiquetaMes(mes)}</Text>
           <Paso texto="›" deshabilitado={esEsteMes} onPress={() => setMes((m) => correrMes(m, 1))} />
         </View>
+        <Segmentos activa={clase} onCambiar={setClase} opciones={LIBROS.map((l) => ({ id: l.clave, label: `${l.corto} · ${porLibro[l.clave] ?? 0}` }))} />
+        <FiltrosActivos grupos={grupos} />
         <Segmentos activa={vista} onCambiar={setVista} opciones={[
           { id: 'pendiente', label: `Pendientes · ${cuenta.pendiente}` },
           { id: 'completa', label: `Completos · ${cuenta.completa}` },
           { id: 'todas', label: 'Todos' },
         ]} />
-        {filas?.length ? (
+        {delLibro.length ? (
           <Pressable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}
-            onPress={() => compartirCsv({ ...csvDelLibroBajoReceta(filas, { sucursalNombre: nombre, periodo: mes }), modulo: 'bitacoras' }).catch((e) => fallo('No se pudo compartir', e?.message || ''))}>
-            <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Descargar el libro (CSV)</Text>
+            onPress={() => compartirCsv({ ...csvDelLibroBajoReceta(delLibro, { clase, sucursalNombre: nombre, periodo: mes }), modulo: 'bitacoras' }).catch((e) => fallo('No se pudo compartir', e?.message || ''))}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Descargar ${LIBROS.find((l) => l.clave === clase)?.label.toLowerCase() ?? 'el libro'} (CSV)`}</Text>
           </Pressable>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -88,10 +130,10 @@ export default function LibroReceta() {
           const faltan = faltantesDelRenglon(r);
           const tocable = r.estado === 'pendiente' && puedeCompletar;
           return (
-            <Pressable key={r.id} disabled={!tocable}
-              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/receta/[id]', params: { id: String(r.id), sala, fecha: String(r.fecha).slice(0, 10) } }); }}
+            <Pressable key={r.id}
+              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/folio', params: { sala, anio: String(r.anio), folio: String(r.folio), clase: r.clase || CLASE_ANTIBIOTICO, id: String(r.id), fecha: String(r.fecha).slice(0, 10) } }); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-              <Vidrio radio={20} interactivo={tocable}>
+              <Vidrio radio={20} interactivo>
                 <View style={{ padding: 14, gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{r.producto_nombre}</Text>
@@ -104,7 +146,7 @@ export default function LibroReceta() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Pildora texto={estado.label} color={COLOR[estado.variant] ?? MARCA.azulClaro} />
                     {faltan.length ? <Text style={{ color: MARCA.ambar, fontSize: 13, flex: 1 }}>{`Falta ${faltan.join(', ')}`}</Text> : null}
-                    {tocable ? <Text style={{ color: colorSistema.acento, fontSize: 14 }}>Completar ›</Text> : null}
+                    <Text style={{ color: colorSistema.acento, fontSize: 14 }}>{tocable ? 'Completar ›' : 'Ver ›'}</Text>
                   </View>
                 </View>
               </Vidrio>

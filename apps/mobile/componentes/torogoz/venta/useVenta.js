@@ -6,13 +6,16 @@
 // `@nucleo/utils/distribucionVenta` (`armarVenta`), las mismas que usa el
 // portal, así un carrito no puede facturarse en uno y frenarse en el otro.
 //
-// Lo que el teléfono NO hace (y el portal sí), a propósito:
-//   · adjuntar el comprobante de un pago en la venta: se adjunta después desde
-//     el pedido, igual que cuando la subida falla en el portal;
-//   · mandar el documento por correo apenas se sella: el PDF se arma con la
-//     librería del navegador; queda «pendiente de enviar» en Facturación;
-//   · imprimir el ticket provisional de una venta sin señal: la venta queda
-//     en la cola con su código de generación, que se muestra en pantalla.
+// Lo mismo que hace el portal al cobrar (paridad, 2026-10-15):
+//   · los comprobantes elegidos en el cobro (`pagos[i].adjunto`) se suben
+//     cuando el pedido ya existe; si uno falla, la venta sigue y ese pago
+//     queda pendiente — se adjunta después desde el pedido;
+//   · con el sello de Hacienda, el documento se le manda al cliente por correo
+//     si tiene correo (`enviarDocumentoPorCorreo`, el PDF armado en el
+//     teléfono); si falla, queda «pendiente de enviar» en Facturación;
+//   · una venta sin señal devuelve también su ticket provisional
+//     (`ticketProvisional`, núcleo) para imprimirlo o compartirlo.
+// Todo eso cuelga de facturar, que sigue detrás de `ACCIONES_DE_DINERO`.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,7 +25,11 @@ import {
   fetchEmisor, fetchClientes, fetchCatalogo, fetchListasYPrecios, fetchPedidoParaCorregir, fetchPedidos,
   crearPedido, actualizarPedido, facturarPedido, mensajeDeDistribucion, guardarPagos,
   pedirDescuento, anularPedido, reservar, fetchReservasVigentes, fetchCreditoCliente, fetchMiCaja,
+  adjuntarComprobante, fetchDocumento,
 } from '@nucleo/data/distribucion';
+import { ticketProvisional } from '@nucleo/utils/distribucionDocumento';
+import { MARCA_PAPEL } from '@nucleo/utils/distribucionMarca';
+import { TIPO_DOCUMENTO } from '@nucleo/utils/distribucionComun';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import { guardarVentaSinSenal, esErrorDeRed, uuidV4 } from '@nucleo/data/distribucionSinSenal';
 import { filaNueva } from '@nucleo/utils/distribucionPagos';
@@ -35,7 +42,9 @@ import {
 } from '@nucleo/utils/distribucionVenta';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { listo } from '../../Progreso';
+import { fallo, listo } from '../../Progreso';
+import { subirFotos } from '../../formulario/Fotos';
+import { enviarDocumentoPorCorreo } from '../fiscal/papel';
 import { ACCIONES_DE_DINERO } from '../soloConsulta';
 
 const anotar = (accion, id, detalle) => useStaffStore.getState().appendAuditLog?.(accion, String(id), { ...detalle, desde: 'app' });
@@ -376,9 +385,17 @@ export default function useVenta({ pedidoId = null, desde = null, clienteInicial
         resumen: { cliente: cliente.nombre, total: venta.total, productos: lineas.length },
       });
       anotar('DISTRIBUCION_VENTA_SIN_SENAL', entrada.codigo_generacion, { cliente: cliente.id, total: venta.total });
+      const pagosDeLaVenta = pagosParaGuardar(pagos);
+      const ticket = ticketProvisional({
+        marca: MARCA_PAPEL, emisor, tipoNombre: TIPO_DOCUMENTO[tipoDoc]?.largo?.toUpperCase() ?? 'FACTURA',
+        cliente: cliente.nombre, emitidoAt: entrada.emitido_at, codigoGeneracion: entrada.codigo_generacion,
+        renglones: lineas.filter(l => l.doc).map(l => ({ cantidad: l.n, descripcion: l.p?.nombre ?? '', precio: l.doc.precioUni, total: l.doc.importe })),
+        total: venta.total,
+        pagos: pagosDeLaVenta.map((p, i) => ({ ...p, monto: i === pagosDeLaVenta.length - 1 && p.monto == null ? venta.total : p.monto })),
+      });
       descartar();
       empezarOtra();
-      return { sinSenal: entrada };
+      return { sinSenal: entrada, ticket };
     };
     try {
       let id = pedido?.pedido.id;
@@ -395,13 +412,25 @@ export default function useVenta({ pedidoId = null, desde = null, clienteInicial
           .catch(e => console.error('venta: reserva de la preventa', e));
       }
       const filasDePago = pagosParaGuardar(pagos);
-      await guardarPagos(id, pagos.map((f, i) => ({
+      const guardados = await guardarPagos(id, pagos.map((f, i) => ({
         ...filasDePago[i],
-        ...(f.existente?.comprobante_url ? {
+        ...(f.existente?.comprobante_url && !f.adjunto ? {
           comprobante_url: f.existente.comprobante_url, lectura: f.existente.lectura,
           monto_leido: f.existente.monto_leido, verificacion: f.existente.verificacion, nota: f.existente.nota,
         } : {}),
       })));
+      // Los comprobantes elegidos en el cobro se suben ahora que el pedido existe.
+      for (const [i, f] of pagos.entries()) {
+        if (!f.adjunto || !guardados?.[i]?.id) continue;
+        try {
+          const [url] = await subirFotos([f.adjunto.foto], { bucket: 'dist-comprobantes', carpeta: `distribucion/${id}` });
+          await adjuntarComprobante(guardados[i].id, { url, lectura: f.adjunto.lectura, montoLeido: f.adjunto.montoLeido,
+            verificacion: f.adjunto.verificacion, nota: f.adjunto.nota });
+          anotar('DISTRIBUCION_COMPROBANTE', guardados[i].id, { verificacion: f.adjunto.verificacion, pedido: id });
+        } catch (e) {
+          fallo('Falta un comprobante', `No se pudo guardar (${mensajeDeDistribucion(e)}). Adjúntalo desde el pedido.`);
+        }
+      }
       let pedida = false;
       if (porAprobar.length || esperandoAprobacion) {
         try {
@@ -422,6 +451,12 @@ export default function useVenta({ pedidoId = null, desde = null, clienteInicial
         const factura = await facturarPedido(id);
         if (factura.estado === 'sellado') {
           listo('Recibido por Hacienda', `Sello listo · ${factura.numero_control}`);
+          // Con el sello, se le manda al cliente sin esperar a nadie. Si no
+          // tiene correo o falla, queda pendiente en Facturación.
+          fetchDocumento(factura.dte_id)
+            .then(doc => (doc?.dist_clientes?.correo ? enviarDocumentoPorCorreo(doc) : null))
+            .then(r => { if (r?.enviado) listo('Documento enviado al cliente', r.destinatario ?? ''); })
+            .catch(e => console.error('correo al facturar', e));
         } else if (factura.estado === 'rechazado') {
           aviso('Hacienda lo rechazó', 'Corrige lo que indica y vuelve a facturar. La mercadería sigue apartada para este pedido.');
         } else {

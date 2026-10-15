@@ -14,6 +14,7 @@ import { DESTINOS_DE_LA_APP, bannerValido, filaDeBanner } from '@nucleo/utils/of
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
+import FormatoImagen from '../../componentes/ofertas/FormatoImagen';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
@@ -47,7 +48,7 @@ export default function Banner() {
     if (r.canceled || !r.assets?.[0]) return;
     const a = r.assets[0];
     Haptics.selectionAsync().catch(() => {});
-    setFoto({ uri: a.uri, tipo: a.mimeType || 'image/jpeg', nombre: a.fileName || `banner-${Date.now()}.jpg` });
+    setFoto({ uri: a.uri, tipo: a.mimeType || 'image/jpeg', nombre: a.fileName || `banner-${Date.now()}.jpg`, ancho: a.width, alto: a.height });
   };
 
   const guardar = () => Alert.alert(nuevo ? 'Crear el banner' : 'Guardar el banner',
@@ -83,6 +84,8 @@ export default function Banner() {
             </View>
           </Pressable>
           {banner.imagen_path && !foto ? <Aviso texto="Ya tiene imagen; toca la foto para reemplazarla." /> : null}
+          {/* Se mide ANTES de subir, como el portal: una foto con otra forma se recorta en el teléfono del cliente. */}
+          <FormatoImagen tipo="banner" medida={foto?.ancho ? { ancho: foto.ancho, alto: foto.alto } : null} />
           <Seccion titulo="Título" pie="Lo lee VoiceOver y sirve para encontrarlo aquí.">
             <Campo multiline={false} maxLength={60} placeholder="Ej. Semana del bebé" value={f.titulo} onChangeText={cambiar('titulo')} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

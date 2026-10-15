@@ -734,3 +734,53 @@ export function csvMatrizDeLaboratorio(datos, promocionId) {
         nombre: `promocion_laboratorio_${String(datos?.nombre || promocionId).replace(/\W+/g, '_')}_${datos?.mes_medido || datos?.year_month || ''}`,
     };
 }
+
+// ── Los CSV de las listas de Promociones ────────────────────────────────────
+// Vivían escritos en cada pestaña del portal; se mudaron el 2026-10-15 para
+// que la app descargue el MISMO archivo. Devuelven `{ headers, rows, nombre }`
+// (el nombre sin extensión: el portal le agrega `.csv`, la app también).
+
+/** Activas (vigentes) o Histórico (terminadas): lo que se ve, una fila por promoción. */
+export function csvListaDePromociones(lista, nombre) {
+    return {
+        headers: ['PROMOCION', 'TIPO', 'ESTADO', 'INICIO', 'FIN', 'LABORATORIOS', 'PRODUCTOS', 'ABIERTOS', 'LOTE', 'BAJA EL PRECIO'],
+        rows: (lista || []).map((p) => [
+            p.nombre, esLaboratorio(p) ? 'Laboratorio' : 'Producto', estadoVisible(p).rotulo,
+            p.inicio || '', p.fin || '', (p.laboratorios || []).join(' / '),
+            esLaboratorio(p) ? '' : (p.renglones ?? ''), esLaboratorio(p) ? '' : (p.abiertos ?? ''),
+            p.lote_total ?? '', p.descuentos > 0 ? 'Si' : 'No',
+        ]),
+        nombre: `promociones_${nombre}_${hoySV()}`,
+    };
+}
+
+/** Los excedentes por decidir. */
+export function csvExcedentes(filas) {
+    return {
+        headers: ['PERSONA', 'SALA', 'PROMOCION', 'PRODUCTO', 'UNIDADES DE MAS', 'LOTE', 'SERIA'],
+        rows: (filas || []).map((f) => [f.persona, f.sala || '', f.promocion, f.producto, f.unidades, f.lote_total ?? '', f.monto]),
+        nombre: `promociones_excedentes_${hoySV()}`,
+    };
+}
+
+/** Estados del pago de bodega que ya no deben nada. */
+export const PAGO_BONO_HECHO = new Set(['pagado', 'fuera_del_portal']);
+
+/** ¿Le queda algo por pagar a esta promoción? Las salas o la bodega. */
+export const pagoBonoPendiente = (p) => (p?.salas || []).some((s) => Number(s.pendientes) > 0)
+    || (!!p?.bodega && !PAGO_BONO_HECHO.has(p.bodega.estado) && Number(p.bodega.monto) > 0);
+
+/** Los pagos de bono: una fila por parte (vendedores por sala, bodega, administración). */
+export function csvPagosBono(promos) {
+    return {
+        headers: ['PROMOCION', 'PARTE', 'SALA', 'PERSONAS', 'BONO', 'PAGADO', 'ESTADO'],
+        rows: (promos || []).flatMap((p) => [
+            ...(p.salas || []).map((x) => [p.promocion, 'Vendedores', x.sala, x.personas, x.total, x.pagado,
+                Number(x.pendientes) > 0 ? `${x.pendientes} por pagar` : 'Pagado']),
+            ...(p.bodega ? [[p.promocion, 'Bodega', 'Salud 3', '', p.bodega.monto, '',
+                PAGO_BONO_HECHO.has(p.bodega.estado) ? 'Pagado' : 'Por pagar']] : []),
+            ...(Number(p.administracion) > 0 ? [[p.promocion, 'Administracion', 'Planilla', '', p.administracion, '', '']] : []),
+        ]),
+        nombre: `promociones_pagos_${hoySV()}`,
+    };
+}

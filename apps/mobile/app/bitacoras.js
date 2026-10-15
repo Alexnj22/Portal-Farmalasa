@@ -8,9 +8,9 @@
 // La sala va en el menú de filtros de la barra (sólo con alcance todas) y el
 // día con el selector del sistema; la bitácora de mañana no existe, así que no
 // se avanza de hoy.
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActionSheetIOS, ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -18,7 +18,8 @@ import { bloquesDeLaRonda, fetchBitacoraDia, pendientesDelDia } from '@nucleo/da
 import { momentosDelDia, resumenDelMomento, salasDeBitacora } from '@nucleo/utils/rondaDeBitacora';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
-import { rango12 } from '@nucleo/utils/hora';
+import { hora12, rango12 } from '@nucleo/utils/hora';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Ronda from '../componentes/bitacoras/Ronda';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -38,7 +39,16 @@ const METRICAS = [
 ];
 const TONO = { warning: MARCA.ambar, danger: MARCA.rojo, success: MARCA.verde };
 
-function Momento({ momento, areas, puedeAnotar, cerrado, onRonda }) {
+// Quién lo anotó, a qué hora y si entró tarde — la firma de la matriz del
+// portal (`MatrizDelDia`). La lectura trae `registrado_por_*`; la limpieza,
+// `realizada_por_*`.
+function firmaDe(reg, tipo) {
+  const pre = tipo === 'lectura' ? 'registrado_por' : 'realizada_por';
+  const nombre = shortEmployeeName({ name: reg[`${pre}_nombre`], first_names: reg[`${pre}_nombres`], last_names: reg[`${pre}_apellidos`] });
+  return [nombre, reg.registrado_at ? hora12(reg.registrado_at) : null].filter(Boolean).join(' · ');
+}
+
+function Momento({ momento, areas, puedeAnotar, cerrado, onRonda, onCorregir }) {
   const r = resumenDelMomento(momento, areas);
   if (!r.bloques.length) return null;
   const color = TONO[r.tono] ?? (r.completo ? MARCA.verde : MARCA.azulClaro);
@@ -53,19 +63,41 @@ function Momento({ momento, areas, puedeAnotar, cerrado, onRonda }) {
           <Pildora texto={`${r.hechos} de ${r.bloques.length}`} color={color} />
         </View>
         {r.bloques.map(({ area, bloque, tipo }, i) => {
-          const listo = bloque.lectura || bloque.registro;
+          const reg = bloque.lectura || bloque.registro;
+          const listo = Boolean(reg);
+          // Lo anotado se corrige (y la limpieza, también se quita) tocándolo,
+          // como el lápiz de la matriz del portal: con permiso y mes abierto.
+          const corregible = listo && puedeAnotar && !cerrado;
           return (
-            <View key={`${area.id}-${tipo}-${bloque.clave}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+            <Pressable key={`${area.id}-${tipo}-${bloque.clave}`} disabled={!corregible}
+              onPress={() => { Haptics.selectionAsync().catch(() => {}); onCorregir(area, bloque, tipo); }}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingVertical: 4, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
               <Text style={{ width: 18, color: listo ? MARCA.verde : colorSistema.texto2, fontSize: 16, fontWeight: '800' }}>{listo ? '✓' : '○'}</Text>
-              <Text numberOfLines={1} style={{ flex: 1, color: listo ? colorSistema.texto2 : colorSistema.texto, fontSize: 15, fontWeight: listo ? '400' : '600' }}>
-                {area.nombre}{tipo === 'limpieza' ? <Text style={{ color: colorSistema.texto2 }}> · limpieza</Text> : null}
-              </Text>
-              {bloque.lectura ? (
-                <Text style={{ fontWeight: '800', fontVariant: ['tabular-nums'], fontSize: 15, color: bloque.lectura.fuera_de_rango ? MARCA.rojo : colorSistema.texto }}>
-                  {`${Number(bloque.lectura.temperatura)} °C`}
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={{ color: listo ? colorSistema.texto2 : colorSistema.texto, fontSize: 15, fontWeight: listo ? '400' : '600' }}>
+                  {area.nombre}{tipo === 'limpieza' ? <Text style={{ color: colorSistema.texto2 }}> · limpieza</Text> : null}
                 </Text>
+                {reg ? (
+                  <Text numberOfLines={1} style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                    {firmaDe(reg, tipo)}
+                    {reg.tarde ? <Text style={{ color: MARCA.ambar, fontWeight: '700' }}> · tarde</Text> : null}
+                    {reg.corregida_at ? <Text style={{ color: MARCA.ambar, fontWeight: '700' }}> · corregida</Text> : null}
+                  </Text>
+                ) : null}
+                {bloque.lectura?.fuera_de_rango ? (
+                  <Text numberOfLines={2} style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>{bloque.lectura.accion_correctiva || 'Sin acción anotada'}</Text>
+                ) : null}
+              </View>
+              {bloque.lectura ? (
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontWeight: '800', fontVariant: ['tabular-nums'], fontSize: 15, color: bloque.lectura.fuera_de_rango ? MARCA.rojo : colorSistema.texto }}>
+                    {`${Number(bloque.lectura.temperatura)} °C`}
+                  </Text>
+                  {bloque.lectura.humedad != null ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontVariant: ['tabular-nums'] }}>{`${Number(bloque.lectura.humedad)}% HR`}</Text> : null}
+                </View>
               ) : null}
-            </View>
+              {corregible ? <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text> : null}
+            </Pressable>
           );
         })}
         {puedeAnotar && !cerrado && !r.completo && (r.abiertos > 0 || r.vencidos > 0)
@@ -110,6 +142,23 @@ export default function Bitacoras() {
     setDia(d); setError(e); setCargando(false);
   }, [sala, fecha]);
   useEffect(() => { cargar(); }, [cargar]);
+  // Al volver de una corrección, el día se relee.
+  const yaEnfocada = useRef(false);
+  useFocusEffect(useCallback(() => {
+    if (yaEnfocada.current) cargar(); else yaEnfocada.current = true;
+  }, [cargar]));
+
+  const corregir = (area, bloque, tipo) => {
+    const params = { sala: String(sala), fecha: dia?.fecha ?? fecha, area: String(area.id), clave: bloque.clave, tipo };
+    if (tipo === 'lectura') { router.push({ pathname: '/bitacora-correccion', params: { ...params, modo: 'corregir' } }); return; }
+    ActionSheetIOS.showActionSheetWithOptions({
+      title: `${area.nombre} · ${bloque.label}`, options: ['Corregir la limpieza', 'Quitar la limpieza', 'Cancelar'],
+      destructiveButtonIndex: 1, cancelButtonIndex: 2,
+    }, (i) => {
+      if (i === 0) router.push({ pathname: '/bitacora-correccion', params: { ...params, modo: 'corregir' } });
+      if (i === 1) router.push({ pathname: '/bitacora-correccion', params: { ...params, modo: 'quitar' } });
+    });
+  };
 
   const areas = dia?.areas || VACIO;
   const activas = useMemo(() => areas.filter((a) => a.aplica_hoy !== false), [areas]);
@@ -168,9 +217,10 @@ export default function Bitacoras() {
               ))}
             </View>
             {cerrado ? <Aviso tono="cuidado" texto="El mes de este día ya se cerró: no se puede anotar." /> : null}
+            {puedeAnotar && !cerrado ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>Toca lo anotado para corregirlo.</Text> : null}
             {puedeAnotar && !cerrado && ronda.length > 0 ? <BotonGrande texto={`Pasar la ronda · ${ronda.length}`} color={MARCA.azul} onPress={() => setEnRonda(true)} /> : null}
             {momentos.map((m) => (
-              <Momento key={m.clave} momento={m} areas={activas} puedeAnotar={puedeAnotar} cerrado={cerrado} onRonda={() => setEnRonda(true)} />
+              <Momento key={m.clave} momento={m} areas={activas} puedeAnotar={puedeAnotar} cerrado={cerrado} onRonda={() => setEnRonda(true)} onCorregir={corregir} />
             ))}
             {enPausa.length ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>

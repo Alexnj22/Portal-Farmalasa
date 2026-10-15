@@ -5,6 +5,10 @@
 // la búsqueda con su regla (`fetchProductsWithLabPage`, paginada en el
 // servidor). Los laboratorios ocultos en MIN·MAX no aparecen, igual que allá.
 //
+// El orden es el de las columnas del portal: laboratorio y producto los
+// ordena la base; estado y regla, sobre lo ya cargado (igual que allá, que los
+// ordena sobre la página visible).
+//
 // Tocar un producto abre su regla (`pedido/regla/[id]`); editar pide
 // `pedidos_tab_reglas` con permiso de edición.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -25,6 +29,12 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 
 const POR_PAGINA = 40;
+const ORDENES = [
+  { id: 'laboratorio_nombre:asc', label: 'Laboratorio, A → Z' }, { id: 'laboratorio_nombre:desc', label: 'Laboratorio, Z → A' },
+  { id: 'nombre:asc', label: 'Producto, A → Z' }, { id: 'nombre:desc', label: 'Producto, Z → A' },
+  { id: 'estado:desc', label: 'Con regla primero' }, { id: 'estado:asc', label: 'Sin regla primero' },
+  { id: 'despacho:asc', label: 'Regla de despacho, A → Z' }, { id: 'despacho:desc', label: 'Regla de despacho, Z → A' },
+];
 
 function Cuenta({ rotulo, valor, color }) {
   return (
@@ -45,6 +55,8 @@ export default function ReglasDeDespacho() {
   const [conRegla, setConRegla] = useState('');
   const [nuevos, setNuevos] = useState('no');
   const [lab, setLab] = useState('todos');
+  const [orden, setOrden] = useState('laboratorio_nombre:asc');
+  const [campo, dir] = orden.split(':');
   const [labs, setLabs] = useState(null);
   const [ocultos, setOcultos] = useState(null);
   const [reglas, setReglas] = useState(null);
@@ -79,7 +91,7 @@ export default function ReglasDeDespacho() {
     }
   }, []);
   useFocusEffect(useCallback(() => { cargarReglas(); }, [cargarReglas]));
-  useEffect(() => { setPagina(1); }, [busqueda, conRegla, nuevos, lab]);
+  useEffect(() => { setPagina(1); }, [busqueda, conRegla, nuevos, lab, orden]);
 
   const idsConRegla = useMemo(() => Object.keys(reglas ?? {}).map(Number), [reglas]);
   const cargar = useCallback(async () => {
@@ -89,7 +101,8 @@ export default function ReglasDeDespacho() {
     try {
       const { data, count, error: e } = await fetchProductsWithLabPage({
         offset: (pagina - 1) * POR_PAGINA, pageSize: POR_PAGINA, hiddenLabs: ocultos, labId: lab === 'todos' ? null : Number(lab),
-        sortKey: 'laboratorio_nombre', ascending: true, term: busqueda.length >= 2 ? busqueda : '',
+        // estado y despacho no son columnas de la base: ahí manda el laboratorio.
+        sortKey: campo === 'estado' || campo === 'despacho' ? 'laboratorio_nombre' : campo, ascending: dir !== 'desc', term: busqueda.length >= 2 ? busqueda : '',
         ruleFilter: conRegla, ruleIds: idsConRegla, soloNuevos: nuevos === 'si', newIds: cuentas.idsNuevos,
       });
       if (yo !== pedido.current) return;
@@ -101,7 +114,16 @@ export default function ReglasDeDespacho() {
     } finally {
       if (yo === pedido.current) setCargando(false);
     }
-  }, [reglas, ocultos, pagina, lab, busqueda, conRegla, idsConRegla, nuevos, cuentas.idsNuevos]);
+  }, [reglas, ocultos, pagina, lab, busqueda, conRegla, idsConRegla, nuevos, cuentas.idsNuevos, campo, dir]);
+  const filas = useMemo(() => {
+    if (campo !== 'estado' && campo !== 'despacho') return datos.filas;
+    const asc = dir !== 'desc';
+    return [...datos.filas].sort((a, b) => {
+      if (campo === 'estado') { const av = reglas?.[a.id] ? 1 : 0; const bv = reglas?.[b.id] ? 1 : 0; return asc ? av - bv : bv - av; }
+      const at = rotuloDeRegla(reglas?.[a.id]) ?? ''; const bt = rotuloDeRegla(reglas?.[b.id]) ?? '';
+      return asc ? at.localeCompare(bt, 'es') : bt.localeCompare(at, 'es');
+    });
+  }, [datos.filas, campo, dir, reglas]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const conCuenta = idsConRegla.length;
@@ -112,6 +134,7 @@ export default function ReglasDeDespacho() {
       opciones: [{ id: 'no', label: 'Todos los productos' }, { id: 'si', label: `Sólo los nuevos de ${fechaTexto(hoySV(), { month: 'long' })}` }] },
     { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,
       opciones: [{ id: 'todos', label: 'Todos' }, ...(labs ?? [])] },
+    { id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'laboratorio_nombre:asc', onCambiar: setOrden, opciones: ORDENES },
   ];
 
   return (
@@ -130,7 +153,7 @@ export default function ReglasDeDespacho() {
         <View style={{ marginHorizontal: 16 }}>
           <Vidrio radio={22}>
             <View style={{ paddingVertical: 4 }}>
-              {datos.filas.map((p, i) => {
+              {filas.map((p, i) => {
                 const regla = reglas?.[p.id];
                 const rot = rotuloDeRegla(regla);
                 return (

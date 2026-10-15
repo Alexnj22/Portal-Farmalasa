@@ -13,11 +13,16 @@
 // mismo que expande la fila del portal), con un enlace a la ficha completa.
 // En Bodega, la tarjeta «Área vencidos» cuenta los productos que hay en esa
 // ubicación y filtra. Debajo de las cifras, cuándo se actualizó la sala.
+//
+// Como el portal: filtro por laboratorio (`p_lab_id`), y el orden por
+// laboratorio, producto, unidades o —con todas las salas— sucursal, en los dos
+// sentidos.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { fetchLaboratoriosBasic } from '@nucleo/data/laboratorios';
 import {
   fetchAllVencidosInventory, fetchExpiredInventoryCount, fetchInventarioAgrupado,
   fetchInventarioInversion, fetchInventarioProximosAVencer, fetchInventoryDetail, fetchInventorySyncLog, fetchProductCategories,
@@ -148,7 +153,9 @@ export default function Inventario() {
   const [sala, setSala] = useState(miErp == null ? 'todas' : String(miErp));
   const [vista, setVista] = useState('todo');
   const [categoria, setCategoria] = useState('todas');
-  const [orden, setOrden] = useState('laboratorio');
+  const [orden, setOrden] = useState('laboratorio:asc');
+  const [lab, setLab] = useState('todos');
+  const [labs, setLabs] = useState([]);
   const [areaVencidos, setAreaVencidos] = useState('no');
   const [texto, setTexto] = useState('');
   const busqueda = useTextoRebotado(texto, 350);
@@ -168,8 +175,13 @@ export default function Inventario() {
   const enArea = esBodega && areaVencidos === 'si';
   const cat = categoria === 'todas' ? null : categoria;
   const q = busqueda.trim() || null;
+  const labId = lab === 'todos' ? null : Number(lab);
+  const [campoOrden, dirOrden] = orden.split(':');
+  // «Sucursal» sólo tiene sentido con todas las salas: al elegir una, vuelve al laboratorio.
+  useEffect(() => { if (erp != null && campoOrden === 'sucursal') setOrden('laboratorio:asc'); }, [erp, campoOrden]);
 
   useEffect(() => {
+    fetchLaboratoriosBasic().then(({ data }) => setLabs((data || []).map((l) => ({ id: String(l.id), label: l.nombre })))).catch(() => {});
     fetchProductCategories().then(({ data }) => setCategorias((data || []).map((r) => r.nombre))).catch(() => {});
     fetchInventorySyncLog().then(({ data }) => setSincronias(data || [])).catch(() => {});
   }, []);
@@ -178,16 +190,16 @@ export default function Inventario() {
     fetchAllVencidosInventory(erp).then((d) => { if (vivo) setVencidas(unidadesVencidasPorProducto(d)); }).catch(() => {});
     return () => { vivo = false; };
   }, [erp]);
-  useEffect(() => { setPagina(1); }, [erp, vista, cat, orden, enArea, q]);
+  useEffect(() => { setPagina(1); }, [erp, vista, cat, orden, enArea, q, labId]);
 
   // Las cuatro cifras no dependen de la página ni de la vista.
   const cargarCifras = useCallback(async () => {
-    const base = { p_erp_id: erp, p_lab_id: null, p_categoria: cat, p_search: q };
+    const base = { p_erp_id: erp, p_lab_id: labId, p_categoria: cat, p_search: q };
     const [prox, inv, venc] = await Promise.all([
       fetchInventarioProximosAVencer(base), fetchInventarioInversion(base), fetchExpiredInventoryCount(erp, hoySV()),
     ]);
     setCifras({ proximos: Number(prox.data) || 0, inversion: Number(inv.data) || 0, vencidos: venc.count ?? 0 });
-  }, [erp, cat, q]);
+  }, [erp, cat, q, labId]);
   useEffect(() => { cargarCifras().catch(() => setCifras(null)); }, [cargarCifras]);
 
   const cargar = useCallback(async () => {
@@ -197,7 +209,7 @@ export default function Inventario() {
       const [{ data, error: e }, parecidos] = await Promise.all([
         fetchInventarioAgrupado({
           p_erp_id: erp, p_vencidos: vista === 'vencidos', p_proximos: vista === 'proximos', p_area_vencidos: enArea,
-          p_lab_id: null, p_categoria: cat, p_search: q, p_sort: orden, p_sort_dir: orden === 'unidades' ? 'desc' : 'asc',
+          p_lab_id: labId, p_categoria: cat, p_search: q, p_sort: campoOrden, p_sort_dir: dirOrden,
           p_limit: POR_PAGINA, p_offset: (pagina - 1) * POR_PAGINA,
         }),
         q ? buscarIdsDeProducto(q, { limite: 1, soloActivos: false }) : { aproximado: false },
@@ -216,7 +228,7 @@ export default function Inventario() {
     } finally {
       if (yo === pedido.current) setCargando(false);
     }
-  }, [erp, vista, enArea, cat, q, orden, pagina]);
+  }, [erp, vista, enArea, cat, q, campoOrden, dirOrden, labId, pagina]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const recargar = async () => {
@@ -230,10 +242,17 @@ export default function Inventario() {
       opciones: [{ id: 'todas', label: 'Todas las salas' }, ...ERP_ORDEN.map((id) => ({ id: String(id), label: ERP_NAMES[id] }))] },
     ...(esBodega ? [{ id: 'area', titulo: 'Ubicación', activa: areaVencidos, porDefecto: 'no', onCambiar: setAreaVencidos,
       opciones: [{ id: 'no', label: 'Toda la bodega' }, { id: 'si', label: 'Sólo área de vencidos' }] }] : []),
+    { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,
+      opciones: [{ id: 'todos', label: 'Todos' }, ...labs] },
     { id: 'categoria', titulo: 'Categoría', activa: categoria, porDefecto: 'todas', onCambiar: setCategoria,
       opciones: [{ id: 'todas', label: 'Todas' }, ...categorias.map((c) => ({ id: c, label: c }))] },
-    { id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'laboratorio', onCambiar: setOrden,
-      opciones: [{ id: 'laboratorio', label: 'Laboratorio' }, { id: 'descripcion', label: 'Producto' }, { id: 'unidades', label: 'Más unidades' }] },
+    { id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'laboratorio:asc', onCambiar: setOrden,
+      opciones: [
+        ...(erp == null ? [{ id: 'sucursal:asc', label: 'Sucursal' }, { id: 'sucursal:desc', label: 'Sucursal, al revés' }] : []),
+        { id: 'laboratorio:asc', label: 'Laboratorio, A → Z' }, { id: 'laboratorio:desc', label: 'Laboratorio, Z → A' },
+        { id: 'descripcion:asc', label: 'Producto, A → Z' }, { id: 'descripcion:desc', label: 'Producto, Z → A' },
+        { id: 'unidades:desc', label: 'Más unidades' }, { id: 'unidades:asc', label: 'Menos unidades' },
+      ] },
   ];
   const quedan = datos.total > datos.filas.length;
   // Al llegar abajo pide la página siguiente sola; «Ver más» queda de respaldo.

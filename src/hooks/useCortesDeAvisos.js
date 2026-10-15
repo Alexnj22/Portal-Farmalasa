@@ -13,6 +13,17 @@ import { conTramoPorSalaYDia } from '../utils/cortesDiagnostico';
 export const AVISOS_DE_CORTE = new Set(['CORTE_NUEVO', 'CORTE_PENDIENTE']);
 
 /**
+ * El corte del aviso, sólo si de verdad hay algo que resolver desde la tarjeta:
+ * el cierre del día (Z) no se confirma, y uno ya resuelto tampoco. Una sola
+ * regla para la campana del portal y la bandeja de la app.
+ */
+export function corteResolubleDelAviso(n, porId, puedeResolver) {
+    if (!puedeResolver || !AVISOS_DE_CORTE.has(n?.type)) return null;
+    const c = porId?.get(String(n.metadata?.corte_id));
+    return c && c.tipo === 'C' && c.estado === 'PENDIENTE' ? c : null;
+}
+
+/**
  * Los cortes que nombran esos avisos, con su tramo.
  *
  * El aviso trae el id del corte, no el corte: la fila de `notifications` es una

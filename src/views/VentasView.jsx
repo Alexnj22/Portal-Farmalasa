@@ -38,7 +38,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { filaDeProductoVendido as mapAggRow, precioALaVista, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos } from '@nucleo/utils/ventasPeriodo';
+import { filaDeProductoVendido as mapAggRow, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos, DRILL_TIERS, DRILL_TIER_ORDER, detectTier, RELEVANT_CAMPOS, CAMPO_LABELS, fmtCampoVal, lineasDelDrill } from '@nucleo/utils/ventasPeriodo';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -59,13 +59,7 @@ const CANCELLED_ESTADOS = ['NULA', 'DTE INVALIDADO EN MH'];
 // Ver `isSearching` en TabVentas: por debajo de 3 el índice de texto no entra.
 const MIN_LETRAS_BUSQUEDA = 3;
 // Only these changelog campos are surfaced in the row indicator
-const RELEVANT_CAMPOS = new Set(['tipo_pago', 'recibido_mh']);
-const CAMPO_LABELS = { tipo_pago: 'Forma de pago', recibido_mh: 'Sello MH' };
-const fmtCampoVal = (campo, val) => {
-    if (val == null) return 'Sin registro';
-    if (campo === 'recibido_mh') return val === true || val === 'true' ? 'Recibido' : `Recibido (${val})`;
-    return String(val);
-};
+// `RELEVANT_CAMPOS`, `CAMPO_LABELS` y `fmtCampoVal` viven en el núcleo (`ventasPeriodo`): la app los usa.
 
 function fmtQty(n) {
     const f = parseFloat(n || 0);
@@ -1454,16 +1448,7 @@ const COLS_VENTAS = [
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
 // `color` pasa a ser el NOMBRE de la variante de `Badge` (2026-07-28, D3.5).
-const DRILL_TIERS = [
-    { key: 'vip',         label: 'VIP',     variante: 'chart-3', num: 3 },
-    { key: 'clinica',     label: 'Clínica', variante: 'warning', num: 4 },
-    { key: 'mayoreo',     label: 'Mayoreo', variante: 'chart-4', num: 5 },
-    { key: 'premium',     label: 'Premium', variante: 'warning', num: 6 },
-    { key: 'descuento_1', label: 'Desc.',   variante: 'success', num: 2 },
-    { key: 'precio_7',    label: 'P7',      variante: 'chart-9', num: 7 },
-    { key: 'vineta',      label: 'Viñeta',  variante: 'neutral', num: 1 },
-];
-const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
+// `DRILL_TIERS`, `DRILL_TIER_ORDER` y `detectTier` viven en el núcleo (`ventasPeriodo`): la app los usa.
 const PAGO_STYLE = {
     efectivo:      'bg-success/10 text-success-text',
     tarjeta:       'bg-chart-1/10 text-chart-1-text',
@@ -1472,54 +1457,8 @@ const PAGO_STYLE = {
     cheque:        'bg-chart-9/10 text-chart-9-text',
     bitcoin:       'bg-chart-4/10 text-chart-4-text',
 };
-function detectTier(precioUnitario, preciosRow, tiers = DRILL_TIERS) {
-    if (!preciosRow || !precioUnitario) return null;
-    const p = parseFloat(precioUnitario);
-    // Prices may be stored with or without IVA; try both and take the closest match.
-    const candidates = tiers
-        .map(t => {
-            const gross = parseFloat(preciosRow[t.key] || 0);
-            if (!gross) return null;
-            const net   = gross / 1.13;
-            const diff  = Math.min(Math.abs(gross - p) / gross, Math.abs(net - p) / net);
-            return { ...t, diff };
-        })
-        .filter(Boolean);
-    if (!candidates.length) return null;
-    const best = candidates.reduce((a, b) => b.diff < a.diff ? b : a);
-    if (best.diff > 0.10) return { label: 'Especial', color: 'bg-chart-6/10 text-chart-6-text' };
-    return best;
-}
-
-// Normalize a presentacion name for loose matching: "UNIDAD 1x1" → "UNIDAD 1X1"
-function presKey(tipo, descripcion) {
-    return `${tipo ?? ''} ${descripcion ?? ''}`.toUpperCase().replace(/\s+/g, ' ').trim();
-}
-
-// Find the price record active on a given date (YYYY-MM-DD) from a pre-filtered list.
-function findHistFromList(list, fechaStr) {
-    const matches = (list || []).filter(h => {
-        const from  = h.valid_from.slice(0, 10);
-        const until = h.valid_until ? h.valid_until.slice(0, 10) : null;
-        return from <= fechaStr && (until === null || until > fechaStr);
-    });
-    return matches.sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0] ?? null;
-}
-
-// Find the price record that was active on a given date (YYYY-MM-DD string).
-// valid_from/valid_until are UTC ISO timestamps — we compare date prefix only.
-function findHistPrices(history, idPresentacion, fechaStr) {
-    return findHistFromList((history || []).filter(h => h.id_presentacion === idPresentacion), fechaStr);
-}
-
-// Find the earliest price change AFTER a given date for a given id_presentacion list.
-function findFirstChangeSince(history, idPresentaciones, fechaStr) {
-    const ids = Array.isArray(idPresentaciones) ? idPresentaciones : [idPresentaciones];
-    const later = (history || [])
-        .filter(h => ids.includes(h.id_presentacion) && h.valid_from.slice(0, 10) > fechaStr)
-        .sort((a, b) => a.valid_from.localeCompare(b.valid_from));
-    return later[0]?.valid_from ?? null;
-}
+// `presKey`, `findHistFromList`, `findHistPrices` y `findFirstChangeSince`
+// viven en el núcleo (`ventasPeriodo`, `lineasDelDrill`): la app los usa.
 
 function UltimaVentaCell({ row, filterBranch, branches }) {
     const now    = useNowTick();
@@ -1990,64 +1929,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 }),
             ]);
             if (e) throw e;
-            const preciosMap = new Map((precios || []).map(p => [p.id_presentacion, p]));
-            // Secondary lookup by presentation name — handles ERP duplicate IDs
-            // (e.g. "UNIDAD 1x1" stored as id=1 in product_precios but id=102 in sales)
-            const preciosNameMap = new Map();
-            for (const p of (precios || [])) {
-                const k = presKey(p.presentaciones?.tipo, p.descripcion);
-                if (k) preciosNameMap.set(k, p);
-            }
-            // descripcion lives in product_precios (per-product), not in presentaciones (catalog)
-            const presDescMap = new Map((precios || []).map(p => [p.id_presentacion, p.descripcion]));
-            // Group history by name for the same reason
-            const histNameMap = new Map();
-            for (const h of (history || [])) {
-                const k = presKey(h.presentaciones?.tipo, presDescMap.get(h.id_presentacion));
-                if (k) { if (!histNameMap.has(k)) histNameMap.set(k, []); histNameMap.get(k).push(h); }
-            }
-            const fallbackCurr = (precios || []).length === 1 ? precios[0] : null;
-
-            const mappedData = (data || []).map(row => {
-                const idPres    = row.id_presentacion;
-                const saleKey   = (row.presentacion || '').toUpperCase().replace(/\s+/g, ' ').trim();
-                const currPrices = preciosMap.get(idPres) ?? preciosNameMap.get(saleKey) ?? fallbackCurr;
-                const histById   = findHistPrices(history || [], idPres, row.fecha);
-                const histByName = histById ? null : findHistFromList(histNameMap.get(saleKey) || [], row.fecha);
-                const histPrices = histById ?? histByName;
-                const resolvedHistId = histById ? idPres
-                    : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
-                    : idPres;
-                // RPC normalizes everything to s/IVA; multiply back for non-CCF display (COF carries IVA)
-                const { precio: precio_display, neto: neto_display } = precioALaVista(row);
-                const tier        = detectTier(precio_display, histPrices ?? currPrices, allowedDrillTiers);
-                const currentTier = detectTier(precio_display, currPrices, allowedDrillTiers);
-                const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
-                const tierChangedAt = tierChanged
-                    ? findFirstChangeSince(history || [], [idPres, resolvedHistId], row.fecha)
-                    : null;
-                return {
-                    id:               row.item_id,
-                    fecha:            row.fecha,
-                    erp_invoice_id:   row.erp_invoice_id,
-                    correlativo:      row.correlativo,
-                    presentacion:     row.presentacion,
-                    id_presentacion:  idPres,
-                    cantidad:         row.cantidad,
-                    precio_unitario:  row.precio_unitario,
-                    precio_display,
-                    neto:             row.neto,
-                    neto_display,
-                    cliente:          row.cliente,
-                    branch_id:        row.branch_id,
-                    tipo_documento:   row.tipo_documento,
-                    cod_vendedor:     row.cod_vendedor,
-                    tipo_pago:        row.tipo_pago,
-                    lote:             row.lote,
-                    fecha_vencimiento: row.fecha_vencimiento,
-                    tier, currentTier, tierChanged, tierChangedAt,
-                };
-            });
+            // El cruce con los precios (el nivel cobrado, el de hoy y si cambió)
+            // vive en el núcleo: la app lo usa igual.
+            const mappedData = lineasDelDrill(data, precios, history, allowedDrillTiers);
             const mappedMonthly = (monthly || []).map(m => ({
                 month:    m.month,
                 neto:     parseFloat(m.neto     || 0),

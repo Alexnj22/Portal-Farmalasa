@@ -18,7 +18,11 @@
 //     la caja (`recibirProductoSuelto`): para venderlo ya;
 //   · lo ya contado se puede CORREGIR (`corregirRecepcionDeItem`): no mueve
 //     existencias, deja la diferencia para hablarla con Bodega;
-//   · lo que llegó y no venía se anota en `pedido/extras`.
+//   · lo que llegó y no venía se anota en `pedido/extras`;
+//   · cada renglón dice de qué LOTES debe venir (`lotesQueDebenVenir`) y se
+//     puede contar en otra presentación (`opcionesDePresentacionDeRenglon`);
+//   · «¿Necesitas un producto ya?» lo busca en TODO el pedido (dice en qué
+//     hoja cayó) para recibirlo solo, y dentro de una hoja larga hay buscador.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -28,10 +32,13 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { avanzarEtapaDePedidoEnSala, fetchApoyoForPedido, fetchEmployeeByKioskPin, fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchPedidosEnCurso, recibirTrasladoPedido, upsertPedidoApoyo } from '@nucleo/data/pedidos';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Escaner from '../../componentes/Escaner';
-import { corregirRecepcionDeItem, marcarHojasRecibidas, recibirPedidoDeSucursal, recibirProductoSuelto } from '@nucleo/data/recepcion';
+import { corregirRecepcionDeItem, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, recibirPedidoDeSucursal, recibirProductoSuelto } from '@nucleo/data/recepcion';
+import { lotesQueDebenVenir, opcionesDePresentacionDeRenglon } from '@nucleo/utils/extrasDeRecepcion';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { construirCajasEspeciales } from '@nucleo/utils/cajasEspeciales';
 import { estadoDeHojas } from '@nucleo/utils/hojasRecepcion';
-import { conteoInicial, enPresentacion, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
+import { conteoInicial, enPresentacion, mapaDePresentaciones, presentacionesDeRenglones, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -53,27 +60,60 @@ const presentacion = (r) => {
   return f > 1 ? `${l} ×${f}` : l;
 };
 const SIN_VALOR = {};
+const SIN_PRES = {};
+// Fecha sin hora, armada en LOCAL para que el huso no la corra un mes.
+const vence = (iso) => {
+  const [y, m] = String(iso ?? '').slice(0, 10).split('-').map(Number);
+  return y && m ? fechaTexto(new Date(y, m - 1, 1), { month: 'short', year: '2-digit' }) : null;
+};
+const textoDeLotes = (r) => {
+  const ls = lotesQueDebenVenir(r);
+  if (!ls.length) return null;
+  return `${ls.length === 1 ? 'Debe venir del lote' : `Debe venir de ${ls.length} lotes`}: ${ls.map((l) => [l.lote || 'sin lote', vence(l.fecha_vencimiento) ? `vence ${vence(l.fecha_vencimiento)}` : null, (l.take ?? l.cantidad ?? l.packs) != null ? String(l.take ?? l.cantidad ?? l.packs) : null].filter(Boolean).join(' · ')).join(' — ')}`;
+};
 const PROBLEMAS = [['danado', 'Dañado'], ['vencido', 'Vencido'], ['otro', 'Otro']];
 
 // Memoizado y con callbacks estables: «todo el pedido» son cientos de
 // renglones, y tocar «+» en uno no tiene por qué repintar los demás.
-const Renglon = memo(function Renglon({ r, valor, onCambiar: cambiarDe, primero, onSolo: soloDe, ocupado }) {
+const Renglon = memo(function Renglon({ r, valor, onCambiar: cambiarDe, primero, onSolo: soloDe, ocupado, presMap = SIN_PRES, donde = null }) {
   const onCambiar = (p) => cambiarDe(r.id, p);
   const onSolo = soloDe ? () => soloDe(r) : null;
   const ini = conteoInicial(r);
   const esperado = ini.fQty;
   const qty = valor.fQty ?? esperado;
-  const distinto = qty !== esperado || !!valor.problema;
-  const paso = (d) => { Haptics.selectionAsync().catch(() => {}); onCambiar({ fQty: Math.max(0, qty + d), fPres: ini.fPres }); };
+  const pres = valor.fPres ?? ini.fPres;
+  // Como el portal: lo que vale es lo contado en UNIDADES del sistema.
+  const erpF = Number(r.factor) || 1;
+  const distinto = Math.round(qty * pres / erpF) !== Math.round(esperado * ini.fPres / erpF) || !!valor.problema;
+  const paso = (d) => { Haptics.selectionAsync().catch(() => {}); onCambiar({ fQty: Math.max(0, qty + d), fPres: pres }); };
+  const opciones = opcionesDePresentacionDeRenglon(r, presMap, [pres]);
+  const lotes = textoDeLotes(r);
   return (
     <View style={{ gap: 8, paddingVertical: 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{r.products?.nombre ?? `Producto ${r.erp_product_id}`}</Text>
+      {donde ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>{donde}</Text> : null}
+      {lotes ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{lotes}</Text> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`Vienen ${esperado} · ${presentacion(r)}`}</Text>
         <Boton texto="−" onPress={() => paso(-1)} />
         <Text style={{ width: 44, textAlign: 'center', color: distinto ? MARCA.ambar : colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{qty}</Text>
         <Boton texto="+" onPress={() => paso(1)} />
       </View>
+      {opciones.length > 1 ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Contado en</Text>
+          {opciones.map((o) => {
+            const activo = o.factor === pres;
+            return (
+              <Pressable key={o.factor} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar({ fQty: qty, fPres: o.factor }); }}
+                accessibilityRole="button" accessibilityState={{ selected: activo }}
+                style={{ minHeight: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: activo ? MARCA.azul : 'rgba(127,127,127,0.16)' }}>
+                <Text style={{ color: activo ? '#fff' : colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {PROBLEMAS.map(([id, rotulo]) => {
           const activo = valor.problema === id;
@@ -150,6 +190,9 @@ export default function Recibir() {
   const [apoyo, setApoyo] = useState([]);
   const [escaneando, setEscaneando] = useState(false);
   const [avisoApoyo, setAvisoApoyo] = useState(null);
+  const [presMap, setPresMap] = useState(SIN_PRES);
+  const [buscarYa, setBuscarYa] = useState('');      // «¿Necesitas un producto ya?»
+  const [buscarHoja, setBuscarHoja] = useState('');  // dentro de la hoja abierta
 
   const cargar = useCallback(async () => {
     const [items, { data: pss }, { data: activos }] = await Promise.all([
@@ -159,6 +202,14 @@ export default function Recibir() {
     ]);
     const fila = (activos ?? []).find((r) => r.pedido_id === pedidoId && Number(r.erp_sucursal_id) === sucId) ?? {};
     setDatos({ items: items ?? [], paginaItems: pss?.pagina_items ?? {}, paginas: pss?.paginas ?? [], recibidas: pss?.hojas_recibidas ?? [], fila });
+    // Las presentaciones para contar: de los renglones mismos si traen el
+    // catálogo; si no, una consulta aparte (como el portal).
+    const desde = presentacionesDeRenglones(items ?? []);
+    if (desde) setPresMap(desde);
+    else {
+      const ids = [...new Set((items ?? []).map((r) => r.erp_product_id))];
+      if (ids.length) fetchProductPreciosOptsForProducts(ids).then((f) => setPresMap(mapaDePresentaciones(f ?? []))).catch(() => {});
+    }
     const { data: ap } = await fetchApoyoForPedido(pedidoId, sucId);
     setApoyo((ap ?? []).filter((a) => a.tipo === 'recepcion'));
   }, [pedidoId, sucId]);
@@ -208,6 +259,17 @@ export default function Recibir() {
     if (abierto.tipo === 'hoja') return derivado.porContar.filter((r) => derivado.idsPorHoja[abierto.hoja].includes(r.id));
     return derivado.porContar;
   }, [abierto, derivado]);
+  // El buscador de la hoja sólo ESCONDE: confirmar cuenta la hoja entera.
+  const filasVistas = useMemo(() => (buscarHoja.trim().length < 2 ? filasAbiertas
+    : filasAbiertas.filter((r) => tokenMatch(buscarHoja.trim(), r.products?.nombre))), [filasAbiertas, buscarHoja]);
+  // En qué hoja (o caja especial) cayó un renglón, para la búsqueda rápida.
+  const dondeEsta = useCallback((id) => {
+    if (!derivado) return null;
+    const esp = derivado.especiales.find((e) => e.item.id === id);
+    if (esp) return `Caja ${esp.labels.join('–')}`;
+    const n = derivado.hojaNums.find((h) => (datos?.paginaItems?.[String(h)] ?? []).includes(id));
+    return n != null ? `Hoja ${n}` : null;
+  }, [derivado, datos]);
 
   const terminar = async (diferencia) => {
     const { error } = await avanzarEtapaDePedidoEnSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });
@@ -326,12 +388,19 @@ export default function Recibir() {
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
             contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-            <Pressable onPress={() => { setAbierto(null); setValores({}); }} style={{ minHeight: 36, justifyContent: 'center' }}>
+            <Pressable onPress={() => { setAbierto(null); setValores({}); setBuscarHoja(''); }} style={{ minHeight: 44, justifyContent: 'center' }}>
               <Text style={{ color: colorSistema.acento, fontSize: 15 }}>‹ Volver a las hojas</Text>
             </Pressable>
-            <Seccion titulo={`${filasAbiertas.length} producto${filasAbiertas.length === 1 ? '' : 's'}`}>
-              {filasAbiertas.map((r, i) => (
-                <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? SIN_VALOR} ocupado={guardando}
+            {filasAbiertas.length > 8 ? (
+              <Campo multiline={false} value={buscarHoja} onChangeText={setBuscarHoja} placeholder="Buscar en esta hoja" autoCorrect={false} />
+            ) : null}
+            <Seccion titulo={filasVistas.length !== filasAbiertas.length
+              ? `${filasVistas.length} de ${filasAbiertas.length} productos`
+              : `${filasAbiertas.length} producto${filasAbiertas.length === 1 ? '' : 's'}`}
+              pie={filasVistas.length !== filasAbiertas.length ? 'La búsqueda sólo esconde: al confirmar se cuenta la hoja entera.' : undefined}>
+              {!filasVistas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Ningún producto de esta hoja coincide.</Text> : null}
+              {filasVistas.map((r, i) => (
+                <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? SIN_VALOR} ocupado={guardando} presMap={presMap}
                   onSolo={filasAbiertas.length > 1 ? solo : null} onCambiar={cambiar} />
               ))}
             </Seccion>
@@ -348,8 +417,36 @@ export default function Recibir() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
         {!porContar.length ? <Aviso tono="nota" texto="No queda nada por contar en este pedido." /> : null}
+        {(() => {
+          // «¿Necesitas un producto ya?»: buscarlo en todo el pedido y recibirlo
+          // solo, contado (no dando por bueno el papel). Lo ya contado también sale.
+          const term = buscarYa.trim();
+          const contados = (datos.items ?? []).filter((r) => !r.es_extra && ['recibido', 'con_diferencia'].includes(r.status));
+          const hits = term.length < 2 ? [] : porContar.filter((r) => tokenMatch(term, r.products?.nombre)).slice(0, 4);
+          const ya = term.length < 2 ? [] : contados.filter((r) => tokenMatch(term, r.products?.nombre)).slice(0, 4);
+          return (porContar.length || contados.length) ? (
+            <View style={{ gap: 8 }}>
+              <Campo multiline={false} value={buscarYa} onChangeText={setBuscarYa} placeholder="¿Necesitas un producto ya? Búscalo…" autoCorrect={false} />
+              {term.length >= 2 && !hits.length && !ya.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>Sin resultados entre lo que llegó.</Text> : null}
+              {hits.length ? (
+                <Seccion titulo="Recibirlo ahora">
+                  {hits.map((r, i) => (
+                    <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? SIN_VALOR} ocupado={guardando} presMap={presMap}
+                      donde={dondeEsta(r.id)} onSolo={solo} onCambiar={cambiar} />
+                  ))}
+                </Seccion>
+              ) : null}
+              {ya.length ? (
+                <Seccion titulo="Ya contados">
+                  {ya.map((r, i) => <Contado key={r.id} r={r} primero={!i} ocupado={guardando} onCorregir={corregir} />)}
+                </Seccion>
+              ) : null}
+            </View>
+          ) : null;
+        })()}
         {hayHojas ? (
           <Seccion titulo={`Hojas · ${contadas} de ${hojaNums.filter((n) => estado[n] !== 'reenvio').length} contadas`}>
             {hojaNums.map((n, i) => {

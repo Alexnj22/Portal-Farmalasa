@@ -4,13 +4,17 @@
 // cuestionario en el teléfono para leerle las preguntas al cliente.
 //
 // El cuestionario es `componentes/encuestas/Formulario`, con el recorrido del
-// núcleo. El modo tablet (que el cliente conteste solo) sigue en el portal.
+// núcleo. Como el portal, también salen las que se aplican sólo por tablet:
+// «Modo tablet» abre la encuesta pública de esa sucursal (`enlaceDeEncuesta`,
+// núcleo) a pantalla completa para que el cliente conteste solo. Y cada
+// tarjeta dice su incentivo (muestra médica o N puntos).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { fetchParaAplicar, guardarEntrevista, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
-import { preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
+import { enlaceDeEncuesta, preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -18,7 +22,8 @@ import { Aviso, BotonGrande, Opciones } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
-import { listo } from '../componentes/Progreso';
+import { fallo, listo } from '../componentes/Progreso';
+import { PORTAL_URL } from '../plataforma/config';
 import Formulario from '../componentes/encuestas/Formulario';
 
 export default function EncuestasAplicar() {
@@ -32,7 +37,7 @@ export default function EncuestasAplicar() {
   const cargar = useCallback(async () => {
     try {
       const [es, sala] = await Promise.all([fetchParaAplicar(), salaDeHoy().catch(() => null)]);
-      setEncuestas(es.filter((e) => e.canales.includes('entrevista')));
+      setEncuestas(es.filter((e) => e.canales.includes('entrevista') || e.canales.includes('kiosco')));
       setMiSala(sala != null ? Number(sala) : null);
       setError(null);
     } catch (e) { setError(e?.message || 'No se pudieron cargar las encuestas.'); setEncuestas([]); }
@@ -86,13 +91,22 @@ export default function EncuestasAplicar() {
                   <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                     <Pildora texto={`${preguntasEnOrden(e.cuestionario).length} preguntas`} color={MARCA.azulClaro} />
                     {e.fecha_fin ? <Pildora texto={`Hasta el ${fechaTexto(e.fecha_fin, { day: 'numeric', month: 'short' })}`} color={MARCA.violeta} /> : null}
+                    {e.incentivo_tipo === 'muestra' ? <Pildora texto="🎁 Muestra médica" color={MARCA.verde} /> : null}
+                    {e.incentivo_tipo === 'puntos' ? <Pildora texto={`🎁 ${e.incentivo_puntos} puntos`} color={MARCA.verde} /> : null}
                   </View>
                   {e.sucursales.length > 1 ? (
                     <Opciones valor={b} onCambiar={(v) => setElegida((m) => ({ ...m, [e.id]: Number(v) }))}
                       opciones={e.sucursales.map((x) => ({ id: x.branch_id, label: x.nombre, detalle: x.branch_id === miSala ? 'donde estás hoy' : null }))} />
                   ) : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{s?.nombre}</Text>}
                   {s ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${s.respuestas} respuesta${s.respuestas === 1 ? '' : 's'} en esta sucursal${s.meta ? ` de ${s.meta}` : ''}`}</Text> : null}
-                  <BotonGrande texto="Entrevistar" color={MARCA.azul} deshabilitado={!b} onPress={() => setEntrevista({ encuesta: e, branchId: b })} />
+                  {e.canales.includes('entrevista') ? (
+                    <BotonGrande texto="Entrevistar" color={MARCA.azul} deshabilitado={!b} onPress={() => setEntrevista({ encuesta: e, branchId: b })} />
+                  ) : null}
+                  {e.canales.includes('kiosco') && s ? (
+                    <BotonGrande texto="Modo tablet: que el cliente conteste solo" borde color={MARCA.azulClaro}
+                      onPress={() => WebBrowser.openBrowserAsync(enlaceDeEncuesta(s.token, true, PORTAL_URL), { presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN })
+                        .catch((err) => fallo('No se pudo abrir', err?.message || ''))} />
+                  ) : null}
                 </View>
               </Vidrio>
             </View>
@@ -101,7 +115,7 @@ export default function EncuestasAplicar() {
         {encuestas && !encuestas.length ? (
           <View style={{ marginHorizontal: 24, marginTop: 40, gap: 6 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>Sin encuestas para aplicar</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Cuando marketing publique una encuesta para entrevista, aparece aquí.</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Cuando marketing publique una encuesta para entrevista o tablet, aparece aquí.</Text>
           </View>
         ) : null}
       </ScrollView>

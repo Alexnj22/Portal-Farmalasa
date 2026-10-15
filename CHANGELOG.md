@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1295.1 — Unión con main (cambio de presentación)
+
+Sin cambios propios: une v2.1295.0 con las entregas de la app (v2.1294.3–v2.1294.10) que llegaron a main en el medio.
+
 ## v2.1295.0 — El cambio de presentación de un producto se reprocesa solo
 
 URO VAXOM 6 MG pasó de CAJA 1X30 a CAJA 1x1 y su MIN·MAX quedó en tabletas
@@ -41,6 +45,342 @@ URO VAXOM 6 MG pasó de CAJA 1X30 a CAJA 1x1 y su MIN·MAX quedó en tabletas
   combinaciones faltantes): ahora se refresca en cada corrida.
 - Aplicado a los 7 que ya habían cambiado: 197 ventas convertidas; Uro Vaxom
   Salud 2 19·34 → 1·2.
+
+## v2.1294.10 — App: paridad de Personas con el portal
+
+### La app: alta y edición de personal completas, con enlace a la ficha existente
+
+Paridad de la app (grupo Personas): el formulario de empleado de la app ya
+tiene lo mismo que el del portal, en tres pestañas.
+- **Enlazar con la ficha existente** al dar de alta (recontratación o posible
+  duplicado): aviso de homónimo, el formulario se llena con su ficha y pide lo
+  protegido; no deja guardar hasta tenerlo. Al terminar dice si quedó sobre la
+  ficha, la contraseña temporal (copiada) o lo que faltó.
+- **Personal**: DUI por caras con el lector (o un solo archivo; documento
+  alterno del menor), lugar/fecha de expedición y vencimiento, nacionalidad,
+  estado civil, varios teléfonos, correos y direcciones con distrito, tipo de
+  sangre, condiciones crónicas, discapacidad, contactos de emergencia,
+  dependientes, cursos y vehículos.
+- **Laboral**: salas que cubre, contrato del Art. 23 (base legal, firma,
+  estipulación, medio, lugar y período de pago, prórrogas, plazos de firma y
+  del Ministerio), acreditaciones (con provisional/definitiva y el carné
+  digital de dependiente por QR), ISSS/AFP con NUP y herramientas entregadas.
+- **Nómina y acceso**: cuenta, usuario (con propuesta al cambiar el nombre),
+  «todavía no tiene carné», código con «Generar» y el PIN para copiar.
+- Al editar, sala, cargos, ingreso, tipo e inicio de contrato y salario se ven
+  bloqueados como en el portal («Acción RRHH»).
+- **Expediente** de la app: reverso de los documentos de dos caras, hojas de
+  los de varias, «Otros documentos», y elegir foto o PDF también en Android.
+- Núcleo: `utils/fichaDelEmpleado.js` (enlazar, listas, validaciones),
+  `traerLoQueFaltaDeLaFicha` en `data/employees.js` y `DOS_CARAS` /
+  `VARIAS_HOJAS` / `SIN_VENCIMIENTO` / `COMPARTIBLES` en
+  `documentosDelExpediente.js`; el formulario del portal los importa de ahí
+  (sin cambio de comportamiento).
+
+### La app: auditoría de tiempos, horarios, cargos y permisos como en el portal
+
+Paridad de la app (grupo Personas).
+- **Auditoría de tiempos**: CSV de la quincena (`time_audit_descargar`, anotado
+  como egreso); turnos extra con horas editables antes de aprobar y «Rechazar»
+  siempre disponible (también sin horas declaradas); atajo «Ver planilla» con
+  la quincena cerrada.
+- **Horarios**: sugerencias del catálogo por sala («Crear este turno» /
+  «Ignorar»); «Expandir análisis» abre el Monitor de ventas.
+- **Cargos**: exportar el organigrama como PNG.
+- **Permisos**: al delegar dice a quién le llegan las decisiones; cuántos
+  módulos ve cada cargo.
+- Núcleo: `edicionDeHorario.js` (`sugerenciasDelCatalogo`…) y
+  `permisosDeCargo.js` (`modulosQueVe`, `aQuienLlegaLaDelegacion`); el portal
+  usa los mismos. Un cargo sin superior ya no lista como «se hace cargo» a
+  empleados sin cargo.
+
+### La app: seguro de vida, bajas por sala y ficha de personal como en el portal
+
+Paridad de la app (grupo Personas).
+- **Personal**: franja y pantalla nativa del seguro de vida colectivo (póliza,
+  pago del año, solventes/sin cubrir, pagos anteriores, comprobante, registrar
+  o corregir un pago); las bajas van aparte al final de cada sala; el filtro
+  de sala incluye a quien la cubre (`assigned_branch_ids`).
+- **Ficha**: edad, tardanzas del mes, almuerzo/receso en el horario y
+  «Reimprimir el carné de plástico» (`carne_temporal` can_edit, AirPrint).
+- La impresión del teléfono dibuja CODE128 sin librería (los tickets en PDF
+  también llevan sus barras).
+- Núcleo: `subirArchivoDelSeguro` acepta el archivo de la app.
+
+### La app: mis documentos y encuestas como en el portal
+
+Paridad de la app (grupo Personas, `docs/AUDITORIA-PARIDAD-APP-2026-10-15.md`).
+- **Mis documentos**: cada solicitud muestra la respuesta de quien aprobó, y
+  el período ofrece meses anteriores, último año o un rango desde/hasta.
+- **Clima organizacional**: filtro por sucursal para quien ve todas; por
+  pregunta, el texto de cada opción con su cuenta; el bloque 2 con «Empleados
+  evaluando a su jefe/a de sala» y «Jefes evaluando a su jefe inmediato»; cada
+  bloque dice a quién va dirigido y cuántas preguntas tiene.
+- **Gestión de encuestas**: quien sólo lee puede abrir lo que respondió una
+  persona (con su comentario); puntaje por bloque de cada persona; la tarjeta
+  lleva descripción, año y el atajo «Ver análisis».
+- Núcleo: `climaLaboral.js` suma `SUPERVISOR_DE_JEFE`, `personasPorOpcion` y
+  `evaluacionDeJefes`; el portal usa los mismos.
+
+## v2.1294.9 — App: paridad de Clientes y comercial con el portal
+
+### App: marketing con flujo, pauta, galería, filtros, fechas especiales, versiones, duplicar e informe PDF
+
+- App, Marketing: pestañas Flujo (por estado, mover con la regla del portal),
+  Pauta (presupuesto, sin asignar, gastado, costo por mensaje) y Galería en
+  modo gestión (liberar); filtros de marca, formato, salas y estado; las
+  fechas especiales dentro del calendario (planificar una pieza desde ella);
+  duplicar varias piezas o el mes entero; versiones de un diseño (comparar y
+  subir la siguiente); y el informe PDF del mes.
+- App, Galería: filtro por marca.
+- Núcleo: `puedeMoverA` (regla del Flujo, la usa `TabTablero`) y
+  `construirInformeHtml` (el mismo informe traducido del documento de pdfmake).
+
+### App: chat con etiqueta, preferentes, estado de la farmacia, calificaciones, ajustes e incumplimientos
+
+- App, Chat con clientes: filtro por etiqueta y «Preferentes» (Platino y
+  Mayoristas) con su orden y su insignia; arriba, el estado de la farmacia, el
+  promedio de calificaciones de 30 días y los accesos a «Incumplimientos»
+  (supervisión o quien edita el chat) y «Ajustes del chat» (las respuestas
+  automáticas, con {abre}/{cierra} y vista previa).
+- Núcleo: `useFarmaciaEstado` se mudó a `src/hooks`; el portal lo reexporta.
+
+### App: ofertas con nivel, envío a domicilio, precio tachado y medida de imagen
+
+- App, Ofertas para clientes: «Exclusiva para» (nivel mínimo de Puntos Salud)
+  en el editor y su insignia en las tarjetas; el panel «Entrega a domicilio» en
+  Reservas; precio original tachado en las ofertas de un descuento; historias y
+  banners miden la foto antes de subirla (1080×1920 / 1200×500).
+- Núcleo: `FORMATOS_DE_IMAGEN` y `revisarMedidaDeImagen` en `ofertasClientes`;
+  el portal (`FormatoImagen`) los usa desde ahí.
+
+### App: promociones con CSV, sucursal en descuentos, A planilla y Vencida
+
+- App, Promociones: «Descargar CSV» en Activas, Histórico, Excedentes y Pagos
+  (el mismo archivo del portal); estado «Vencida»; en Descuentos, filtro por
+  sucursal (quien ve todas) y por estado, tarjetas Terminados y Productos, y
+  la etiqueta «En la app» / «App: sin publicar»; en Pagos, la tarjeta «A planilla».
+- Núcleo: los CSV de Promociones (`csvListaDePromociones`, `csvExcedentes`,
+  `csvPagosBono`) y `pagoBonoPendiente` se mudaron a `promocionesUtils`; el
+  portal los usa desde ahí.
+
+### App: bitácora de inyecciones con período, estado, sucursal y CSV
+
+- App, Inyecciones · Bitácora: período del cobro como el portal (30 días por
+  defecto, hoy, 7 días, este mes, mes anterior u otras fechas), las tarjetas
+  Pagadas / Aplicadas / Pendientes que filtran, y «Descargar CSV».
+- App, Bitácora y Pendientes: filtro por sucursal para quien ve todas las salas.
+- Núcleo: el filtro de estado y el CSV de la bitácora se mudaron de
+  `TabBitacora` a `inyeccionesPendientes`; el portal los usa desde ahí.
+
+## v2.1294.8 — App: paridad de Inventario: Min·Máx, conteos, bitácoras y traslados con el portal
+
+### App: traslados con ticket, recibir un grupo junto, filtro de sala y recibir por número
+
+Paridad de la app con el portal en Traslados (auditoría del 2026-10-15):
+
+- «Imprimir el ticket» desde un traslado en camino y desde un envío: el mismo
+  papel del portal, a la caja de la sala de quien lo pide.
+- «Recibir» junta lo pedido a varias salas a la vez, con cuántas respondieron
+  y «Ya llegaron las N completas» (de una en una, como el portal).
+- Con alcance de todas: filtro de sala en «Recibir» y el historial cortado por
+  sala de origen y desenlace.
+- Recibir una caja escribiendo su número cuando la cámara no lee el ticket.
+- Núcleo: `ticketDeEnvioParaImprimir`, la pareja de `ticketParaReimprimir`
+  para los envíos.
+
+### App: conteo de inventario con estantes, recuento a ciegas, orden y hoja compacta
+
+Paridad de la app con el portal en Conteo de inventario (auditoría del
+2026-10-15):
+
+- El conteo separa «Inventario» y «Área de vencidos» con lo que falta en cada
+  uno; el encabezado dice «En vivo» o «Según la hoja» y el alcance; avisos de
+  conteo ciego y de conteo parcial; orden por columna; «Modo recuento» a
+  ciegas sobre lo que tiene diferencia, en orden de estante.
+- La lista de conteos tiene buscador, filtro de sucursal y eliminar
+  manteniendo presionado.
+- Núcleo: `hojaDeConteoHtml` acepta `compacta` (dos productos por renglón,
+  apaisada, sin notas), la misma hoja compacta del portal.
+
+### App: Min·Máx con motivo del ajuste, 0 en todas las salas e historial
+
+Paridad de la app con el portal en Min·Máx (auditoría del 2026-10-15):
+
+- Pantallas nuevas: motivo del ajuste a mano (`minmax-motivo`), «0 en todas
+  las salas» con su porqué obligatorio (`minmax-cero`) e historial de cambios
+  del par —vigente, motivo, solicitud, firmas— (`minmax-historial`).
+- Revisión de la sala: tarjetas de costo, filtro de estado (poca venta, regla
+  de despacho, crítico A, ocultos, ajustes a mano), orden por columna, la
+  regla de despacho con su sugerencia, publicar un solo borrador, ocultar lo
+  filtrado, restaurar ocultos, recalcular todas las sucursales, el aviso de
+  Bodega y el equivalente en la presentación principal.
+- Núcleo: los rótulos del historial (`HISTORIAL_MINMAX_META`), el freno y lo
+  que se escribe del motivo, el orden, las filas para ocultar, los conteos de
+  estado y el recálculo de todas las salas pasan al núcleo; el portal los usa
+  sin cambiar de comportamiento.
+
+## v2.1294.7 — App: paridad de Inventario: productos, pedidos, gestión de stock e inventario con el portal
+
+### Productos e inventario en la app: filtros, orden, marcas de la fila, SRS y pegar foto
+
+- App, Productos: filtro por laboratorio; orden por producto, laboratorio,
+  categoría o estado; cada fila con las marcas del portal (Pérdida / Margen
+  bajo, «Pérd. <precio especial>», «cambios», «ND», «Receta»).
+- App, Productos: «Enriquecer SRS» nativo (aplicar los parecidos, revisar uno
+  por uno con candidatos, marcar «no lleva principio activo»); al editar
+  principios activos, buscador del registro SRS que copia el principio.
+- App, ficha de producto: marca «Receta»; la foto se puede pegar desde lo
+  copiado (además de tomarla o elegirla con recorte, y ampliarla).
+- App, Inventario: filtro por laboratorio (`p_lab_id`) y orden por sucursal
+  (con todas las salas), laboratorio, producto o unidades, en los dos sentidos.
+- Núcleo: `fetchIndicadoresDeCatalogo` (de `TabCatalogo`), `utils/srs`
+  (`resultadoDeSrs`, del buscador SRS), `utils/enriquecerSrs` y la sección
+  «Enriquecer SRS» de `data/srs` (del modal); el portal los usa igual. Al
+  aplicar desde «Enriquecer SRS» ahora se revisa el error y se anota
+  `UPDATE_PRODUCT_PRINCIPLES` (antes un fallo contaba como aplicado).
+
+### Pedidos en la app: revisar antes de confirmar, sin stock en Bodega, buscador, en vivo, lotes y presentación al recibir, orden de reglas
+
+- App, Generar: cada sala dice «N bajo mínimo · N en cero» y «Último pedido
+  hace X»; «Generar» calcula la vista previa y abre «Revisa antes de
+  confirmar» con el resumen por sala, y «Confirmar» guarda esa misma vista
+  previa (`confirmarPedidoDirecto`). Abajo, «Productos sin stock en Bodega»
+  con buscador y orden.
+- App, lista de pedidos: buscador por número, se actualiza sola cuando cambia
+  un pedido y avisa a la sala cuando Bodega le manda uno nuevo.
+- App, recibir: cada renglón dice de qué lotes debe venir, se puede contar en
+  otra presentación, «¿Necesitas un producto ya?» busca en todo el pedido y
+  dice en qué hoja cayó, y una hoja larga tiene buscador.
+- App, reglas de despacho: ordenar por laboratorio, producto, estado o regla.
+- Núcleo: `ultimoPedidoDeSala`, `ordenarSinBodega` (de `TabGenerar`),
+  `opcionesDePresentacionDeRenglon` y `lotesQueDebenVenir` (de
+  `RecepcionModal`); el portal los usa sin cambio de comportamiento.
+
+### Rutas en la app: no se pudo entregar, cerrar con motivo, cifras y filtros
+
+- App, ruta de reparto: quien gestiona rutas puede marcar «No se pudo
+  entregar» una parada (con motivo; la sala vuelve a quedar disponible) y
+  «Cerrar ruta» con paradas pendientes (con motivo), como el portal
+  (`marcarParadaNoEntregada`, `cerrarRutaConMotivo`).
+- App: iniciar una ruta pendiente y marcar entregada una parada también para
+  quien gestiona rutas (antes sólo el conductor); «Volver a base» cuando no
+  quedan pendientes aunque se hayan devuelto paradas.
+- App, lista de rutas: cifras «En la calle / Por salir / Completadas hoy» y
+  filtros de estado, período y conductor.
+- Núcleo: `cifrasDeRutas`, `completadasEnPeriodo`, `conductoresDeRutas` y
+  `PERIODOS_RUTAS` mudados de `TabRutas`; el portal los usa igual.
+
+### Gestión de stock en la app: armar envío nativo, descargas y filtros del portal
+
+- App, Gestión de stock → «Sin venta»: «Armar envío» ya no abre el portal.
+  Abre el formulario nativo de envío ARMADO, como el `precarga` del portal:
+  sala de origen, destino, «Baja rotación», la nota escrita y cada producto
+  con todo lo que hay (a Bodega, sólo presentaciones completas). Lo que salió
+  y tenía Min/Max se pide en 0/0 y se anota `ENVIO_SUGERIDO_SIN_VENTA`.
+- App, «Sin venta»: tarjetas «A otra sala» / «A Bodega» que filtran, filtro
+  «Con Min/Max», nota de la unidad de despacho por fila, aviso de que el envío
+  lo arma quien trabaja en esa sala, y descarga CSV.
+- App, «Sin Min/Max»: indicadores (total, venta 6 meses, Agregar y Evaluar que
+  filtran), orden por venta/unidades/producto en los dos sentidos, descarga
+  CSV, y pedir/aplicar sólo donde la sugerencia es agregar o evaluar (igual
+  que el portal).
+- Núcleo: la regla del envío sugerido (`productosDeEnvioSugerido`,
+  `renglonesDeEnvioSugerido`, `notaDeEnvioSugerido`), las descargas
+  (`csvDeParados`, `csvSinMinMax`), el orden (`ordenarSinMinMax`),
+  `renglonesQueSalieron` y `pedirQuitarMinMaxDeEnviados` se mudaron de
+  `TabParados`/`TabSinMinMax`/`EnviarProductoModal` al núcleo; el portal los
+  usa sin cambio de comportamiento.
+
+## v2.1294.6 — App: paridad de Caja y ventas con el portal
+
+### App: Cortes con las fichas de apertura y confirmar desde la tarjeta
+
+- App, Cortes: «Las cajas» arriba de la lista — quién abrió cada caja, el
+  cruce con su marcación, la venta del día y el efectivo del cajón (montos
+  sólo con alcance todas, como el portal).
+- Una tarjeta pendiente trae «Confirmar» (de un clic si cuadra) y «Descartar».
+- Núcleo: las cuentas de las fichas pasan de `FichasDeCaja.jsx` a
+  `utils/fichasDeCaja.js`; el portal las importa de ahí sin cambio visible.
+
+### App: Ventas con período libre, puntos, orden, tipo de precio y cambios
+
+- App, Ventas: período libre («Fechas…»), filtro por estado de los puntos y
+  «Canjeó puntos» (también tocando la cifra de puntos canjeados), el estado de
+  los puntos en cada fila, ordenar por columna y el aviso de los cobros que no
+  son venta de productos.
+- La venta: el tipo de precio cobrado en cada renglón y los «Cambios
+  registrados» (forma de pago, sello) con el valor anterior y el nuevo.
+- Lo que se vendió de un producto: el nivel cobrado, «precio cambió» y los
+  filtros por tipo de documento. Productos: cifra y columna de costo y la
+  última venta; Vendedores: variación de facturas contra el período anterior.
+- Núcleo: `detectTier`, `tierDelRenglon`, los rótulos del changelog y
+  `lineasDelDrill` pasan de `VentasView` a `utils/ventasPeriodo` (el portal los
+  importa de ahí, sin cambio de comportamiento).
+
+### App: Inicio con selector de sala, semanas anteriores y ranking por día
+
+- App, Inicio: «Meta del mes» y «Cortes de caja del mes» con selector de sala
+  cuando el alcance es TODAS (como el tablero del portal).
+- «Asistencia de la semana» va a semanas anteriores; el núcleo suma
+  `fetchPresentesPorDia` (paginada: una semana de la red pasa de 1000 marcas).
+- «Quién está vendiendo»: total / por día trabajado (y por hora), promedio de
+  la sala y quién va bajo él, con las cuentas de `rankingDeVendedores`.
+
+## v2.1294.5 — App: paridad de Sistema, solicitudes y marco con el portal
+
+### La app: diagnóstico de la sucursal, orden de la auditoría, franja del portal y estado de los datos
+
+Paridad de la app con el portal, grupo «Sistema, solicitudes y marco» (segunda
+parte). Lo que toca el núcleo es una sola regla para las dos puntas:
+
+- **Diagnóstico inteligente de la sucursal**: la foto que se le manda a la IA
+  sale de `datosParaElDiagnostico` (`utils/sucursales`); la ficha de la app lo
+  pide a la misma función (`analyze-branch`). El historial de la ficha suma el
+  filtro «Otros».
+- **Auditoría**: `fetchBitacoraPagina` acepta `orden` (hora, usuario, acción)
+  aplicado en la base; la app lo ofrece en «Ordenar».
+- **Estado de los datos**: `utils/estadoDeSincronizacion` (qué corrida vale por
+  sala y cuándo está atrasada o caída) lo usan `SidebarSyncStatus` y el
+  recuadro nuevo del Menú de la app. El Menú y el Inicio muestran además la
+  franja de aviso del portal.
+
+### La app al día con Sistema y avisos: cortes desde el aviso, diagnóstico de la sucursal, orden de auditoría, franja y estado de los datos
+
+Paridad de la app con el portal, grupo «Sistema, solicitudes y marco»:
+
+- **Cortes desde el aviso**: `corteResolubleDelAviso` (`hooks/useCortesDeAvisos`)
+  decide qué aviso ofrece Confirmar / Descartar; la campana del portal y la
+  bandeja y el historial de la app lo usan. En la app, los dos botones abren el
+  corte con la acción ya empezada (entrega de la caja o motivo del descarte).
+## v2.1294.4 — La reserva en pantalla bloqueada vive en la extensión del widget
+
+- La Live Activity de la reserva pasa a la extensión del widget de saldo (`targets/saldo/Reserva.swift`, un solo `WidgetBundle`). `@bacons/apple-targets` admite una extensión por tipo: con dos «widget» la segunda pisaba a la primera y el prebuild de iOS fallaba (`removeFromProject` de undefined). Compilada y subida como iOS 60.
+
+## v2.1294.3 — App: paridad de Compras, fiscal y Torogoz con el portal
+
+### App · Libros IVA: buscador y orden en el detalle de cada libro
+
+Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).
+- El detalle de cada libro en la app tiene buscador y orden por cualquier
+  columna, con el N.º legal de cada renglón.
+- El mapa de columnas de la tabla (`ACCESO`) se mudó de `LibrosIvaView` al
+  núcleo (`ACCESO_DEL_LIBRO`, `accesoDelLibro`, `numerarLibro`,
+  `buscarYOrdenarLibro` en `utils/libroIva`) y el portal pasa a usarlo: las dos
+  puntas buscan y ordenan con la misma regla. El CSV sigue saliendo del libro
+  entero en su orden legal.
+
+### App · Facturación: solventadas de Observaciones, pagos confirmados, PDF y marca de visitados
+
+Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).
+- Observaciones: la sección «N solventadas» con quién, cuándo, la nota y los
+  códigos. La regla sale del núcleo (`observacionesSolventadas`) y el portal
+  pasa a usarla.
+- No efectivo: los pagos ya confirmados (quién, cuándo, nota, comprobante) con
+  filtros por forma de pago y sala; el comprobante acepta también un PDF.
+- Hacienda, Observaciones y Anuladas: tocar el ID interno lo copia y marca el
+  documento como visitado; «Limpiar marcas». La marca se mudó al núcleo
+  (`@nucleo/hooks/useVisitados`) con la misma clave de siempre.
 
 ## v2.1294.2 — Ficha de empleado: avisos sin repetir, acreditaciones ordenadas y modal más limpio
 

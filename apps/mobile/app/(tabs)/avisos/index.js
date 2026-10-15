@@ -20,8 +20,12 @@
 //   3. Los avisos se deslizan: a la izquierda se ELIMINAN (con «Deshacer»), a
 //      la derecha se marcan leídos. Eliminar es ocultar (`deleted_at`): sigue en
 //      el historial, de donde se puede devolver.
+//
+// «Borrar todas» es el de la campana del portal (`deleteAllNotifications`):
+// oculta en la base TODO lo de la persona hasta el corte capturado al tocar
+// —no sólo lo cargado—, con la misma ventana de «Deshacer» que uno suelto.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutAnimation, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, LayoutAnimation, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -31,6 +35,7 @@ import { avisoEsperaDecisionConMayoristas } from '@nucleo/utils/accionesDeAviso'
 import { ordenarBandeja } from '@nucleo/utils/bandejaDeAvisos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCortesDeAvisos';
 import { colorSistema } from '../../../componentes/Formulario';
 import { abrirRuta } from '../../../pantallas';
 import { usePorDecidir } from '../../../componentes/porDecidir';
@@ -78,6 +83,7 @@ export default function Notificaciones() {
   const marcarLeido = useStaffStore((s) => s.markNotificationRead);
   const marcarTodos = useStaffStore((s) => s.markAllNotificationsRead);
   const eliminar = useStaffStore((s) => s.deleteNotificationsByIds);
+  const eliminarTodas = useStaffStore((s) => s.deleteAllNotifications);
   const [detalles, setDetalles] = useState({});      // id del aviso → detalle recortado
   const [recargando, setRecargando] = useState(false);
   const [ocultos, setOcultos] = useState(() => new Set());   // borrados que esperan el «Deshacer»
@@ -100,6 +106,9 @@ export default function Notificaciones() {
   const esperaDecision = useCallback((n) => avisoEsperaDecisionConMayoristas(n, hasPermission, mayoristasSolicitados),
     [hasPermission, mayoristasSolicitados]);
   const visibles = useMemo(() => avisos.filter((n) => !ocultos.has(n.id)), [avisos, ocultos]);
+  // Los cortes que nombran los avisos, releídos (la campana hace lo mismo).
+  const { porId: cortesPorId } = useCortesDeAvisos(visibles, true);
+  const puedeResolverCortes = hasPermission('cortes_caja', 'can_edit');
   const { pendientes, sinLeer, decididos, totalPorDecidir } = useMemo(
     () => ordenarBandeja(visibles, porDecidir, esperaDecision), [visibles, porDecidir, esperaDecision]);
 
@@ -131,11 +140,11 @@ export default function Notificaciones() {
     if (!p) return;
     clearTimeout(p.reloj);
     deshacer.current = null;
-    Promise.resolve(eliminar(p.ids)).catch(() => {}).finally(() => {
+    Promise.resolve(p.corte ? eliminarTodas(p.corte) : eliminar(p.ids)).catch(() => {}).finally(() => {
       setOcultos((s) => { const c = new Set(s); p.ids.forEach((id) => c.delete(id)); return c; });
     });
     setAviso(null);
-  }, [eliminar]);
+  }, [eliminar, eliminarTodas]);
 
   const borrar = useCallback((n) => {
     if (deshacer.current) confirmarBorrado();   // uno a la vez: el anterior ya no se deshace
@@ -144,6 +153,24 @@ export default function Notificaciones() {
     deshacer.current = { ids: [n.id], reloj: setTimeout(confirmarBorrado, DESHACER_MS) };
     setAviso('Aviso eliminado');
   }, [confirmarBorrado]);
+
+  // El corte se toma AHORA, antes de la ventana: lo que llegue en vivo durante
+  // el «Deshacer» no se lo lleva (mismo contrato que la campana del portal).
+  const borrarTodas = () => {
+    Alert.alert('¿Borrar todos los avisos?', 'Salen de la bandeja. Siguen en el historial, de donde se pueden devolver.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Borrar todos', style: 'destructive', onPress: () => {
+        if (deshacer.current) confirmarBorrado();
+        const ids = visibles.map((n) => n.id);
+        if (!ids.length) return;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        animar();
+        setOcultos((s) => { const c = new Set(s); ids.forEach((id) => c.add(id)); return c; });
+        deshacer.current = { ids, corte: new Date().toISOString(), reloj: setTimeout(confirmarBorrado, DESHACER_MS) };
+        setAviso(`${ids.length} aviso${ids.length === 1 ? '' : 's'} eliminado${ids.length === 1 ? '' : 's'}`);
+      } },
+    ]);
+  };
 
   const deshacerBorrado = () => {
     const p = deshacer.current;
@@ -168,6 +195,7 @@ export default function Notificaciones() {
   const tarjeta = (n, { deslizar }) => {
     const t = (
       <TarjetaDeAviso n={n} persona={persona} detalle={detalles[n.id]} margen={deslizar ? 0 : 16}
+        corte={corteResolubleDelAviso(n, cortesPorId, puedeResolverCortes)}
         onAbrir={() => abrirAviso(n, { conservar: esperaDecision(n) })} />
     );
     if (!deslizar) return <View key={n.id}>{t}</View>;
@@ -226,6 +254,7 @@ export default function Notificaciones() {
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, paddingTop: 8 }}>
           <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />
           <Enlace texto="Comunicados" onPress={() => abrirRuta('/mis-avisos')} />
+          {visibles.length ? <Enlace texto="Borrar todas" onPress={borrarTodas} /> : null}
         </View>
       </ScrollView>
 

@@ -21,6 +21,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import { useColumnas } from '../../componentes/ListaPaginada';
 import { useRastreoDeRuta } from '../../componentes/torogoz/rutas/rastreo';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 // El color de la marca de la distribuidora (COLORES_DISTRIBUIDORA.petroleo).
 const PETROLEO = '#0f6e7d';
@@ -100,6 +101,8 @@ export default function Torogoz() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Torogoz', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal automatico />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>La distribuidora: ventas en ruta, facturación y bodega.</Text>
         {enRuta ? (
           <Pressable onPress={() => router.push('/torogoz/rutas')} accessibilityRole="button" accessibilityLabel="En ruta: ver la ruta de hoy">

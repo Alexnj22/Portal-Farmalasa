@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
+import { useVisitados } from '@nucleo/hooks/useVisitados';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
@@ -52,7 +53,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { diasEntre, hoySV, relojSV } from '@nucleo/utils/fecha';
 import {
-    conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver,
+    conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, observacionesSolventadas, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver,
     claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
 } from '@nucleo/utils/colasDeFacturacion';
 function avisarFalloAlSolventar(error, contexto) {
@@ -269,32 +270,7 @@ function monthOptions() {
 // es del DOCUMENTO, no de la lista donde se lo encontró. Era el mismo bloque
 // copiado en Anuladas y en Pendiente MH; Observaciones habría sido la tercera
 // copia (pedido del usuario, 2026-07-31).
-const VISITED_KEY = 'facturacion_visited';
-
-function useVisitados() {
-    const [visitedIds, setVisitedIds] = useState(() => {
-        try { return new Set(JSON.parse(localStorage.getItem(VISITED_KEY) || '[]')); }
-        catch { return new Set(); }
-    });
-
-    const toggleVisited = useCallback((erpId) => {
-        if (!erpId) return;
-        setVisitedIds(prev => {
-            const next = new Set(prev);
-            const key = String(erpId);
-            if (next.has(key)) next.delete(key); else next.add(key);
-            try { localStorage.setItem(VISITED_KEY, JSON.stringify([...next])); } catch { /* localStorage no disponible (privado/cuota) */ }
-            return next;
-        });
-    }, []);
-
-    const clearVisited = useCallback(() => {
-        setVisitedIds(new Set());
-        try { localStorage.removeItem(VISITED_KEY); } catch { /* localStorage no disponible (privado/cuota) */ }
-    }, []);
-
-    return { visitedIds, toggleVisited, clearVisited };
-}
+// Vive en el núcleo (`@nucleo/hooks/useVisitados`) para que la app la use igual.
 
 // ─── Sort hook ────────────────────────────────────────────────────────────────
 function useSortable(defaultKey, defaultDir = 'asc') {
@@ -2507,22 +2483,14 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
 
     // Una factura puede tener varias resoluciones (la tabla es append-only);
     // manda la más reciente, y el orden del select ya viene por resolved_at desc.
-    const resueltasMap = useMemo(() => {
-        const m = new Map();
-        for (const x of resoluciones) if (!m.has(x.invoice_id)) m.set(x.invoice_id, x);
-        return m;
-    }, [resoluciones]);
-
     // `|| !esSolventable(r)`: una resolución vieja no puede tapar un rechazo de
     // Hacienda que llegó después. La tabla no distingue por código, así que la
     // distinción se hace acá.
     const pendientes = useMemo(() => observacionesPendientes(rows, resoluciones), [rows, resoluciones]);
 
-    const resueltas = useMemo(() =>
-        rows.filter(r => resueltasMap.has(r.id) && esSolventable(r))
-            .map(r => ({ ...r, resolution: resueltasMap.get(r.id) }))
-            .sort((a, b) => String(b.resolution?.resolved_at || '').localeCompare(String(a.resolution?.resolved_at || ''))),
-        [rows, resueltasMap]);
+    // Manda la resolución más reciente (la tabla es append-only). La regla vive
+    // en el núcleo para que la app pinte el mismo historial.
+    const resueltas = useMemo(() => observacionesSolventadas(rows, resoluciones), [rows, resoluciones]);
 
     const conteos = useMemo(() => conteoDeObservaciones(pendientes), [pendientes]);
 

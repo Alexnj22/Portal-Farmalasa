@@ -19,6 +19,15 @@
 // cuánto quedó sin cuadrar. Tocar una bolsa abre su detalle (salidas, vales,
 // comprobantes y bitácora).
 //
+// Filtros (como el portal): período de «Contadas» (7, 30, 90 días o fechas
+// libres), sucursal y un buscador por folio, caja o persona; en «Contadas»,
+// además, «sólo sin resolver» y la tanda de conteo. La cuarta cifra, «El
+// corte y su bolsa» (`get_bolsas_invariante`), cuenta los días en que el
+// efectivo de un corte confirmado no llegó entero a una bolsa.
+//
+// Contando, una bolsa anotada que no cuadró se puede «Anotar la causa» antes
+// de confirmar, y «Contar de nuevo» pregunta (borra el conteo y la causa).
+//
 // La sala ve sólo su etapa: con alcance de sala esta pantalla manda a
 // `bolsas-sala`. El monto que se cuenta se compara contra el SALDO
 // (`saldoDeBolsa`), no contra lo guardado, y el servidor rechaza si no coincide
@@ -30,8 +39,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchPorDepositar, fetchSaldos, marcarConteoBolsa, recibirBolsas,
-  resolverDiferenciaBolsa,
+  confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchInvariante, fetchPorDepositar, fetchSaldos, marcarConteoBolsa, recibirBolsas,
 } from '@nucleo/data/bolsas';
 import { contadoDeBolsa, diferenciaDeBolsa, rotuloDeVia, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { contadoDeBolsas } from '@nucleo/utils/depositoDeEfectivo';
@@ -46,14 +54,16 @@ import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo } from '../componentes/formulario/Piezas';
-import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
+import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import RangoDeFechas from '../componentes/formulario/RangoDeFechas';
+import { MenuDeFiltros } from '../componentes/Filtros';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import DetalleDeBolsa from '../componentes/caja/DetalleDeBolsa';
+import Resolver from '../componentes/caja/ResolverDiferencia';
 
 // Las contadas de 30 días son cientos (362 medidas el 2026-10-09): se pintan
 // de a 40 para que la lista no se trabe en un teléfono chico.
@@ -70,25 +80,58 @@ function porSala(lista) {
   return [...m.entries()];
 }
 
-function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar }) {
+function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar, userId, onResuelta }) {
   const marcado = contadoDeBolsa(bolsa);
   const [texto, setTexto] = useState('');
+  const [resolviendo, setResolviendo] = useState(false);
   const saldo = saldoDeBolsa(bolsa);
   if (marcado != null) {
     const dif = diferenciaDeBolsa(bolsa);
     const cuadra = Math.abs(dif) < 0.01;
+    const resuelta = !!bolsa.dif_at;
+    // Volver a contar BORRA lo anotado —el monto y, si ya se anotó, la causa y
+    // su foto—, y por eso pregunta (igual que el portal).
+    const contarDeNuevo = () => Alert.alert(`¿Volver a contar ${bolsa.folio}?`, [
+      verMontos ? `Se borra el conteo de ${formatMoney(marcado)} y la bolsa vuelve a quedar sin contar.` : 'Se borra el conteo y la bolsa vuelve a quedar sin contar.',
+      resuelta ? 'También se borra la causa anotada y su foto de respaldo.' : '',
+    ].filter(Boolean).join(' '), [
+      { text: 'Dejarlo como está', style: 'cancel' },
+      { text: 'Volver a contar', style: 'destructive', onPress: () => { setResolviendo(false); onDesmarcar(bolsa); } },
+    ]);
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Pildora texto={cuadra ? `Cuadra · ${formatMoney(marcado)}` : `${formatMoney(marcado)} · ${dif > 0 ? '+' : ''}${formatMoney(dif)}`} color={cuadra ? MARCA.verde : MARCA.rojo} />
-        <View style={{ flex: 1 }} />
-        <Pressable disabled={ocupado} onPress={() => onDesmarcar(bolsa)} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', opacity: ocupado ? 0.5 : 1 }}>
-          <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Deshacer</Text>
-        </Pressable>
+      <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Pildora texto={cuadra ? 'Cuadró' : `${dif < 0 ? 'Faltó' : 'Sobró'}${verMontos ? ` ${formatMoney(Math.abs(dif))}` : ''}`} color={cuadra ? MARCA.verde : dif < 0 ? MARCA.rojo : MARCA.ambar} />
+          {!cuadra && verMontos ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Se contaron ${formatMoney(marcado)}`}</Text> : null}
+          {resuelta ? <Pildora texto={rotuloDeVia(bolsa.dif_via)} color={colorSistema.texto2} /> : null}
+          <View style={{ flex: 1 }} />
+          <Pressable disabled={ocupado} onPress={contarDeNuevo} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', opacity: ocupado ? 0.5 : 1 }}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Contar de nuevo</Text>
+          </Pressable>
+        </View>
+        {resuelta && bolsa.dif_causa ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{bolsa.dif_causa}</Text> : null}
+        {!cuadra && !resuelta ? (resolviendo
+          ? <Resolver bolsa={bolsa} userId={userId} onCancelar={() => setResolviendo(false)} onResuelta={() => { setResolviendo(false); onResuelta?.(); }} />
+          : <BotonGrande texto="Anotar la causa" borde onPress={() => setResolviendo(true)} />) : null}
       </View>
     );
   }
   const valor = Number(texto.replace(',', '.'));
   const valido = texto.trim() !== '' && Number.isFinite(valor) && valor >= 0;
+  // Contar CERO sobre una bolsa con dinero casi nunca es un conteo: es un
+  // retiro que no se registró. Pregunta una vez y no bloquea (como el portal);
+  // el aviso no dice el monto, para no revelarlo sin `bolsas_ver_montos`.
+  const anotar = () => {
+    const monto = Math.round(valor * 100) / 100;
+    const seguir = () => { onMarcar(bolsa, monto); setTexto(''); };
+    if (monto === 0 && saldo >= 0.01) {
+      Alert.alert('Anotar cero dice que la bolsa vino vacía',
+        'Si alguien retiró ese efectivo, eso es una salida y va con su vale: se registra desde Efectivo → «Sacar dinero», y entonces el conteo cuadra solo. Anotarlo aquí deja una diferencia que hay que explicar a mano.',
+        [{ text: 'Cancelar', style: 'cancel' }, { text: 'Sí, vino vacía', onPress: seguir }]);
+      return;
+    }
+    seguir();
+  };
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       {verMontos ? (
@@ -98,50 +141,12 @@ function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar }) {
         </Pressable>
       ) : null}
       <TextInput value={texto} onChangeText={(v) => setTexto(v.replace(/[^\d.,]/g, ''))} placeholder="Contado $" placeholderTextColor={colorSistema.texto2}
-        keyboardType="decimal-pad" returnKeyType="done"
+        keyboardType="decimal-pad" returnKeyType="done" onSubmitEditing={() => { if (valido && !ocupado) anotar(); }}
         style={{ flex: 1, minHeight: 44, borderRadius: 12, paddingHorizontal: 12, color: colorSistema.texto, fontSize: 17, fontWeight: '700', backgroundColor: 'rgba(255,255,255,0.08)', textAlign: 'right' }} />
-      <Pressable disabled={!valido || ocupado} onPress={() => { onMarcar(bolsa, Math.round(valor * 100) / 100); setTexto(''); }}
+      <Pressable disabled={!valido || ocupado} onPress={anotar}
         style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: 'rgba(52,120,246,0.22)', opacity: !valido || pressed || ocupado ? 0.5 : 1 })}>
         <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Anotar</Text>
       </Pressable>
-    </View>
-  );
-}
-
-/** La causa de una diferencia: justificar, o repuesto/retirado, con foto opcional
- *  de respaldo. La foto se sube ANTES de resolver: saldar diciendo que hay
- *  respaldo cuando no llegó es peor que no adjuntarlo (igual que el portal). */
-function Resolver({ bolsa, userId, onResuelta, onCancelar }) {
-  const [causa, setCausa] = useState('');
-  const [fotos, setFotos] = useState([]);
-  const [ocupado, setOcupado] = useState(false);
-  const dif = diferenciaDeBolsa(bolsa) ?? 0;
-  const falta = dif < 0;
-  const saldar = (via) => Alert.alert(`¿${rotuloDeVia(via)}?`, `${bolsa.folio}: ${falta ? 'faltaron' : 'sobraron'} ${formatMoney(Math.abs(dif))}.\n«${causa.trim()}»`, [
-    { text: 'Cancelar', style: 'cancel' },
-    { text: rotuloDeVia(via), onPress: async () => {
-      setOcupado(true);
-      try {
-        const url = fotos.length
-          ? (await subirFotos(fotos, { bucket: 'payment-proofs', carpeta: `bolsas/${bolsa.branch_id ?? 'sin-sala'}/${userId ?? 'anon'}` }))[0] ?? null : null;
-        const { error } = await resolverDiferenciaBolsa(bolsa.id, via, causa.trim(), url);
-        if (error) throw error;
-        listo(`${bolsa.folio} · ${rotuloDeVia(via).toLowerCase()}`);
-        onResuelta();
-      } catch (e) {
-        fallo('No se pudo resolver', mensajeAmigable(e));
-      } finally { setOcupado(false); }
-    } },
-  ]);
-  return (
-    <View style={{ gap: 8 }}>
-      <Campo value={causa} onChangeText={setCausa} placeholder={falta ? 'Por qué faltó y qué se hizo…' : 'Por qué sobró y qué se hizo…'} />
-      <Fotos fotos={fotos} onCambiar={setFotos} max={1} />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={{ flex: 1 }}><BotonGrande texto="Justificar" borde deshabilitado={ocupado || !causa.trim()} onPress={() => saldar('JUSTIFICA')} /></View>
-        <View style={{ flex: 1 }}><BotonGrande texto={falta ? 'Repuesto' : 'Retirado'} color={MARCA.verde} deshabilitado={ocupado || !causa.trim()} onPress={() => saldar(falta ? 'REPONE' : 'RETIRA')} /></View>
-      </View>
-      <BotonGrande texto="Cancelar" borde color={colorSistema.texto2} onPress={onCancelar} />
     </View>
   );
 }
@@ -154,6 +159,7 @@ export default function Bolsas() {
   const puedeContar = hasPermission('bolsas_conteo', 'can_edit');
   const verMontos = hasPermission('bolsas_ver_montos');
   const puedeEntregar = hasPermission('bolsas', 'can_edit');
+  const verCards = hasPermission('bolsas_ver_cards');
   const [resolviendo, setResolviendo] = useState(null);
   const [porDepositar, setPorDepositar] = useState([]);
   const [etapa, setEtapa] = useState('camino');
@@ -168,20 +174,31 @@ export default function Bolsas() {
   const [elegidas, setElegidas] = useState(() => new Set());
   const [ocupado, setOcupado] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  // Filtros: período de «Contadas» (por fecha de conteo), sala, texto, y en
+  // «Contadas» sólo sin resolver o una tanda.
+  const [periodo, setPeriodo] = useState('30');
+  const [rango, setRango] = useState(() => ({ desde: sumarDias(hoySV(), -29), hasta: hoySV() }));
+  const [salaFiltro, setSalaFiltro] = useState('todas');
+  const [buscar, setBuscar] = useState('');
+  const [tanda, setTanda] = useState('todas');
+  const [invariante, setInvariante] = useState([]);
+  const desdeContadas = periodo === 'rango' ? rango.desde : sumarDias(hoySV(), -(Number(periodo) - 1));
+  const hastaContadas = periodo === 'rango' ? rango.hasta : hoySV();
 
   useEffect(() => { if (getScope && !alcanceTodos) router.replace('/bolsas-sala'); }, [alcanceTodos, getScope]);
 
   const cargar = useCallback(async () => {
-    const hoy = hoySV();
-    const [vivas, conDif, contadas, paraBanco] = await Promise.all([
+    const [vivas, conDif, contadas, paraBanco, invar] = await Promise.all([
       fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'RECIBIDA'] }),
       fetchBolsasConDiferencia(),
       // Las contadas por FECHA DE CONTEO: la de un corte del martes que se
       // cuenta hoy no puede desaparecer al firmarla.
-      fetchBolsas({ desde: sumarDias(hoy, -29), hasta: hoy, estados: ['CONTADA'], porFechaDeConteo: true }),
+      fetchBolsas({ desde: desdeContadas, hasta: hastaContadas, estados: ['CONTADA'], porFechaDeConteo: true }),
       // Sin rango a propósito: efectivo confirmado que nadie cerró es un pendiente.
       puedeContar ? fetchPorDepositar() : Promise.resolve([]),
+      fetchInvariante({ desde: desdeContadas, hasta: hastaContadas }),
     ]);
+    setInvariante(invar || []);
     setPorDepositar(paraBanco || []);
     const todas = [...(vivas || []), ...(conDif || []), ...(contadas || [])];
     const saldos = await fetchSaldos([...new Set(todas.map((b) => b.id))]);
@@ -189,7 +206,7 @@ export default function Bolsas() {
     setBolsas((vivas || []).map(conSaldo));
     setDiferencias((conDif || []).map(conSaldo));
     setContadas((contadas || []).map(conSaldo));
-  }, [puedeContar]);
+  }, [puedeContar, desdeContadas, hastaContadas]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
   const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`;
@@ -200,7 +217,23 @@ export default function Bolsas() {
   const enCamino = useMemo(() => (bolsas || []).filter((b) => b.estado === 'ENTREGADA'), [bolsas]);
   const porContar = useMemo(() => (bolsas || []).filter((b) => b.estado === 'RECIBIDA'), [bolsas]);
   const marcadas = porContar.filter((b) => contadoDeBolsa(b) != null);
-  const lista = etapa === 'sala' ? enSala : etapa === 'camino' ? enCamino : etapa === 'contar' ? porContar : etapa === 'contadas' ? contadas : diferencias;
+  // Sala y texto filtran TODAS las etapas; tanda y «sólo sin resolver», «Contadas».
+  const q = buscar.trim().toLowerCase();
+  const pasa = (b) => {
+    if (salaFiltro !== 'todas' && String(b.branch_id) !== salaFiltro) return false;
+    if (!q) return true;
+    const personas = [b.cerrada_por, b.entregada_por, b.recibida_por, b.contado_por].map((id) => quien(id) || '').join(' ');
+    return [b.folio, b.caja, nombreDeSala(b.branch_id), personas].join(' ').toLowerCase().includes(q);
+  };
+  const tandas = useMemo(() => {
+    const m = new Map();
+    for (const b of contadas) if (b.conteo_id != null && !m.has(String(b.conteo_id))) m.set(String(b.conteo_id), b.contado_at || b.fecha);
+    return [...m.entries()].sort((x, y) => String(y[1]).localeCompare(String(x[1])));
+  }, [contadas]);
+  const contadasVistas = tanda === 'sin-resolver' ? diferencias : tanda === 'todas' ? contadas : contadas.filter((b) => String(b.conteo_id) === tanda);
+  const lista = (etapa === 'sala' ? enSala : etapa === 'camino' ? enCamino : etapa === 'contar' ? porContar : etapa === 'contadas' ? contadasVistas : diferencias).filter(pasa);
+  // «El corte y su bolsa»: los días cuyo efectivo declarado no llegó entero a una bolsa.
+  const diasQueNoCuadran = invariante.filter((d) => (salaFiltro === 'todas' || String(d.branch_id) === salaFiltro) && Math.abs(Number(d.descuadre || 0)) >= 0.01);
   // Contar y recibir necesitan todas a la vista (se eligen y se anotan una por una).
   const paginar = etapa === 'contadas' || etapa === 'diferencias';
   const sinRecibir = [...enSala, ...enCamino];
@@ -252,7 +285,18 @@ export default function Bolsas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas', headerLargeTitle: true,
+        headerSearchBarOptions: { placeholder: 'Folio, caja, sala o persona', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
+      <MenuDeFiltros grupos={[
+        { id: 'sala', titulo: 'Sucursal', activa: salaFiltro, porDefecto: 'todas', onCambiar: setSalaFiltro,
+          opciones: [{ id: 'todas', label: 'Todas' }, ...[...new Set([...(bolsas || []), ...contadas, ...diferencias].map((b) => String(b.branch_id)))]
+            .sort((x, y) => ordenDeSala(x) - ordenDeSala(y)).map((id) => ({ id, label: nombreDeSala(id) }))] },
+        { id: 'periodo', titulo: 'Contadas y el corte y su bolsa', activa: periodo, porDefecto: '30', onCambiar: setPeriodo,
+          opciones: [{ id: '7', label: 'Últimos 7 días' }, { id: '30', label: 'Últimos 30 días' }, { id: '90', label: 'Últimos 90 días' }, { id: 'rango', label: 'Fechas…' }] },
+        ...(etapa === 'contadas' ? [{ id: 'tanda', titulo: 'Contadas', activa: tanda, porDefecto: 'todas', onCambiar: setTanda,
+          opciones: [{ id: 'todas', label: 'Todas' }, { id: 'sin-resolver', label: 'Sólo sin resolver' },
+            ...tandas.map(([id, cuando]) => ({ id, label: `Tanda del ${fechaTexto(String(cuando).slice(0, 10), { day: 'numeric', month: 'short' })}${cuando && String(cuando).length > 10 ? ` · ${hora12(cuando)}` : ''}` }))] }] : []),
+      ]} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -277,6 +321,25 @@ export default function Bolsas() {
               onPress={diferencias.length ? () => { setEtapa('diferencias'); setElegidas(new Set()); } : undefined} />
           </FilaDeKpis>
         ) : null}
+        {bolsas && verCards ? (
+          <FilaDeKpis>
+            <Kpi icono="ShieldCheck" rotulo="El corte y su bolsa" color={diasQueNoCuadran.length ? MARCA.rojo : MARCA.verde} pide={diasQueNoCuadran.length > 0}
+              valor={String(diasQueNoCuadran.length)}
+              apoyo={invariante.length ? (diasQueNoCuadran.length ? `${diasQueNoCuadran.length === 1 ? 'día' : 'días'} sin guardar · ${invariante.length} revisados` : `${invariante.length} ${invariante.length === 1 ? 'día revisado' : 'días revisados'}`) : 'sin días que revisar'} />
+          </FilaDeKpis>
+        ) : null}
+        {diasQueNoCuadran.length ? (
+          <View style={{ marginHorizontal: 16, gap: 4 }}>
+            <Aviso tono="freno" texto={diasQueNoCuadran.every((d) => Number(d.bolsas) === 0)
+              ? `${diasQueNoCuadran.length === 1 ? 'Un día cerró' : `${diasQueNoCuadran.length} días cerraron`} sin guardar nada del efectivo que declaró el corte: ese efectivo nunca entró al circuito.`
+              : `${diasQueNoCuadran.length === 1 ? 'Un día no cuadra' : `${diasQueNoCuadran.length} días no cuadran`} entre lo que declaró el corte y lo que se guardó en bolsas. Hay que revisar la caja de esa sala.`} />
+            {diasQueNoCuadran.map((d) => (
+              <Text key={`${d.branch_id}-${d.fecha}`} style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>
+                {`${nombreDeSala(d.branch_id)} · ${dia(d.fecha)} · ${Number(d.bolsas) === 0 ? (verMontos ? `${formatMoney(d.declarado)} sin guardar · ninguna bolsa` : 'ninguna bolsa') : (verMontos ? `${Number(d.descuadre) > 0 ? 'sobran' : 'faltan'} ${formatMoney(Math.abs(Number(d.descuadre)))} de ${formatMoney(d.declarado)}` : (Number(d.descuadre) > 0 ? 'se guardó de más' : 'se guardó de menos'))}`}
+              </Text>
+            ))}
+          </View>
+        ) : null}
         {puedeContar && porDepositar.length ? (
           <View style={{ marginHorizontal: 16 }}>
             <Vidrio radio={20}>
@@ -298,10 +361,11 @@ export default function Bolsas() {
           { id: 'contadas', label: 'Contadas' },
           { id: 'diferencias', label: 'Cuadre' },
         ]} />
+        {periodo === 'rango' ? <RangoDeFechas desde={rango.desde} hasta={rango.hasta} onCambiar={setRango} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
           {[
             etapa === 'sala' ? 'En la sala, esperando que la entreguen' : etapa === 'camino' ? 'Entregadas, esperando recepción'
-              : etapa === 'contar' ? `Por contar · ${marcadas.length} de ${porContar.length} anotadas` : etapa === 'contadas' ? 'Contadas en los últimos 30 días' : 'Contadas que no cuadraron',
+              : etapa === 'contar' ? `Por contar · ${marcadas.length} de ${porContar.length} anotadas` : etapa === 'contadas' ? (tanda === 'sin-resolver' ? 'Contadas sin resolver (de cualquier fecha)' : `Contadas ${periodo === 'rango' ? `del ${dia(rango.desde)} al ${dia(rango.hasta)}` : `en los últimos ${periodo} días`}`) : 'Contadas que no cuadraron',
             `${lista.length} bolsa${lista.length === 1 ? '' : 's'}`,
             verMontos && lista.length ? formatMoney(suma(lista)) : null,
           ].filter(Boolean).join(' · ')}
@@ -355,7 +419,7 @@ export default function Bolsas() {
                       {verMontos ? <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{formatMoney(saldoDeBolsa(b))}</Text> : null}
                     </View>
                     {etapa === 'contar' && puedeContar
-                      ? <Contar bolsa={b} verMontos={verMontos} ocupado={ocupado === b.id || ocupado === 'confirmar'} onMarcar={marcar} onDesmarcar={desmarcar} />
+                      ? <Contar bolsa={b} verMontos={verMontos} ocupado={ocupado === b.id || ocupado === 'confirmar'} onMarcar={marcar} onDesmarcar={desmarcar} userId={user?.id} onResuelta={cargar} />
                       : null}
                     {etapa === 'contadas' && dif != null && Math.abs(dif) >= 0.01 ? (
                       <Pildora texto={`${dif > 0 ? 'Sobraron' : 'Faltaron'} ${formatMoney(Math.abs(dif))}`} color={MARCA.ambar} />
@@ -396,8 +460,13 @@ export default function Bolsas() {
         {bolsas && !lista.length ? (
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
             {etapa === 'sala' ? 'Ninguna bolsa en las salas' : etapa === 'camino' ? 'No hay bolsas esperando recepción' : etapa === 'contar' ? 'No hay bolsas por contar'
-              : etapa === 'contadas' ? 'Ninguna contada en 30 días' : 'Sin diferencias por resolver'}
+              : etapa === 'contadas' ? 'Ninguna contada en ese período' : 'Sin diferencias por resolver'}
           </Text>
+        ) : null}
+        {puedeEntregar ? (
+          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+            <BotonGrande texto="Bolsas de una sala: entregar y sacar dinero" borde color={MARCA.azulClaro} onPress={() => router.push('/bolsas-sala')} />
+          </View>
         ) : null}
         {verMontos ? (
           <View style={{ marginHorizontal: 16, marginTop: 8, flexDirection: 'row', gap: 10 }}>

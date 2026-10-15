@@ -5,7 +5,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { puedeDecidirAviso, trasladoPorResolver as trasladoPorResolverRegla } from '@nucleo/utils/accionesDeAviso';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useDecidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
-import useCortesDeAvisos, { AVISOS_DE_CORTE } from '@nucleo/hooks/useCortesDeAvisos';
+import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCortesDeAvisos';
 import useResolverCorte from '../cortes/useResolverCorte';
 import { seConfirmaDeUnClic } from '@nucleo/utils/cortesDiagnostico';
 import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '@nucleo/data/solicitudDeAviso';
@@ -78,11 +78,8 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
 
     /* El corte del aviso, sólo si de verdad hay algo que resolver: el cierre del
        día (Z) no se confirma, y uno ya resuelto tampoco. */
-    const corteDe = useCallback((n) => {
-        if (!AVISOS_DE_CORTE.has(n.type) || !puedeResolverCortes) return null;
-        const c = cortesPorId.get(String(n.metadata?.corte_id));
-        return c && c.tipo === 'C' && c.estado === 'PENDIENTE' ? c : null;
-    }, [cortesPorId, puedeResolverCortes]);
+    const corteDe = useCallback((n) => corteResolubleDelAviso(n, cortesPorId, puedeResolverCortes),
+        [cortesPorId, puedeResolverCortes]);
 
     const abrirCorte = useCallback((n, corte, modo) => {
         // `quitar: false`: marcar leído acá es el arranque de una ACCIÓN, no

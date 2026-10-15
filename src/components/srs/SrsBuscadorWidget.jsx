@@ -7,6 +7,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { buscarEnSrs } from '@nucleo/data/srs';
+import { resultadoDeSrs } from '@nucleo/utils/srs';
 
 
 // ── SrsBuscadorWidget ─────────────────────────────────────────────────────────
@@ -114,31 +115,9 @@ export default function SrsBuscadorWidget({
 
 // ── SrsResultCard ─────────────────────────────────────────────────────────────
 
-// Strips non-printable characters and Private Use Area / Object Replacement glyphs
-// that macOS fonts substitute silently but Windows/Edge renders as OBJ boxes.
-function sanitize(v) {
-    if (v == null) return '';
-    const s = typeof v === 'object'
-        ? String(v.nombre ?? v.name ?? v.value ?? '')
-        : String(v);
-    // Strip: control chars, Unicode PUA (E000-F8FF), Specials incl. OBJ char (FFF0-FFFF)
-    // Using new RegExp() so the build tool doesn't try to parse supplementary chars.
-    return s
-        // eslint-disable-next-line no-control-regex -- intencional: limpia basura binaria/PUA de lectores de código de barras
-        .replace(new RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\uE000-\uF8FF\uFFF0-\uFFFF]', 'g'), '')
-        .replace(/\u00A0/g, ' ')
-        .trim();
-}
-
 function SrsResultCard({ product: p, onSelect }) {
-    const estatus    = sanitize(p.estatus ?? p.Activo ?? '');
-    const activo     = estatus === 'A';
-    const nombre     = sanitize(p.nombre_comercial ?? p.nombreComercial ?? '');
-    const lab        = sanitize(p.laboratorio ?? '');
-    const forma      = sanitize(p.NOMBRE_FORMA_FARMACEUTICA ?? '');
-    const principio  = sanitize(p.principio_activo ?? p.formula ?? '');
-    const conc       = sanitize(p.concentracion ?? '');
-    const noregistro = sanitize(p.noregistro ?? '');
+    // La lectura del resultado (y su limpieza) es del núcleo: la app lee lo mismo.
+    const { activo, nombre, lab, forma, principio, conc, noregistro } = resultadoDeSrs(p);
 
     let fechaStr = '';
     try {

@@ -22,7 +22,7 @@ import Fecha from '../formulario/Fecha';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 
-export default function AccionDeRenglon({ item, modo, onCerrar, onHecho }) {
+export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar, onHecho }) {
   const editarLote = useStaffStore((s) => s.editarLoteConteoItem);
   const recontar = useStaffStore((s) => s.recontarConteoItem);
   const [lote, setLote] = useState('');
@@ -117,7 +117,9 @@ export default function AccionDeRenglon({ item, modo, onCerrar, onHecho }) {
               <>
                 <Seccion titulo="Primer conteo">
                   <Text style={{ color: colorSistema.texto, fontSize: 16 }}>
-                    {`Físico ${item?.fisico_cantidad ?? '—'}${item?.ver_sistema && item?.sistema_cantidad != null ? ` · sistema ${item.sistema_cantidad}` : ''}`}
+                    {aCiegas && !item?.recontado_at
+                      ? 'A ciegas: el primer conteo y el sistema se ven después de registrar el tuyo.'
+                      : `Físico ${item?.fisico_cantidad ?? '—'}${item?.ver_sistema && item?.sistema_cantidad != null ? ` · sistema ${item.sistema_cantidad}` : ''}`}
                   </Text>
                 </Seccion>
                 <Seccion titulo="Recuento">

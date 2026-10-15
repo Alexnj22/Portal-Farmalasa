@@ -10,7 +10,7 @@ import { EmptyState } from '../../components/common/StateViews';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { insertMinMaxChangeRequest } from '@nucleo/data/minmaxRequests';
+import { pedirQuitarMinMaxDeEnviados } from '@nucleo/data/minmaxRequests';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { exportCsv } from '@nucleo/utils/csvExport';
@@ -20,12 +20,12 @@ import { nombreDeDespacho, paraBodega, esPocoParaMandar } from '@nucleo/utils/un
 import { ERP_NAMES, ERP_ORDER, ERP_BODEGA, MI_ERP_POR_BRANCH, SUC_VARIANTE } from './salasDeStock';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { fetchProductosParadosDeSala } from '@nucleo/data/inventarioTab';
-import { gruposPorDestino, totalesDeParados } from '@nucleo/utils/gestionDeStock';
+import {
+    csvDeParados, cuantosArmables, gruposPorDestino, notaDeEnvioSugerido, POR_ENVIO, productosDeEnvioSugerido, totalesDeParados,
+} from '@nucleo/utils/gestionDeStock';
 
 const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
 
-/** Lo que admite un envío (`TOPE_RENGLONES_ENVIO`): lo que sobra va en el siguiente. */
-const POR_ENVIO = 20;
 /** Filas a la vista por destino; el resto detrás de «Ver los N». */
 const VISIBLES = 8;
 
@@ -161,55 +161,19 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
      * directo: un cambio de MIN·MAX lo aprueba otra persona (usuario, 24-sep).
      * Sólo para los que tenían MIN·MAX: pedir 0/0 donde no hay nada es ruido. */
     const alEnviar = useCallback(async ({ enviados = [], destino } = {}) => {
-        const porId = new Map(filas.map(r => [Number(r.erp_product_id), r]));
-        const conMinMax = enviados.map(e => porId.get(Number(e.erp_product_id))).filter(r => r?.en_minmax);
-        const nombre = ERP_NAMES[destino] || 'otra sala';
-        const fallidas = [];
-        for (const r of conMinMax) {
-            const { error: e } = await insertMinMaxChangeRequest({
-                erp_product_id:       Number(r.erp_product_id),
-                erp_sucursal_id:      Number(sala),
-                product_name:         r.producto,
-                current_min:          r.min_qty ?? null,
-                current_max:          r.max_qty ?? null,
-                current_sales_6m:     0,
-                current_ultima_venta: r.ultima_venta ?? null,
-                current_existencia:   Number(r.existencia) || 0,
-                requested_min:        0,
-                requested_max:        0,
-                reason: `Se envió a ${nombre} por baja rotación: sin venta en esta sala desde `
-                      + `${r.desde ?? 'hace más de 6 meses'} (${porQueDesde(r)}).`,
-                requested_by:      user?.email ?? '',
-                requested_by_id:   user?.id ?? null,
-                requested_by_name: user?.name ?? null,
-            });
-            if (e) fallidas.push(r.producto);
-        }
-        setAvisoEnvio(conMinMax.length === 0 ? null : fallidas.length
-            ? { variant: 'warning', texto: `El envío salió, pero no se pudo pedir el cambio de Min/Max de: ${fallidas.join(', ')}. Pídelo a mano.` }
-            : { variant: 'success', texto: `Se pidió quitar el Min/Max de ${conMinMax.length} ${conMinMax.length === 1 ? 'producto' : 'productos'}; lo aprueba quien aprueba los ajustes de Min/Max.` });
-        useStaff.getState().appendAuditLog('ENVIO_SUGERIDO_SIN_VENTA', null, {
-            sucursal: ERP_NAMES[sala], destino: nombre,
-            enviados: enviados.length, minmax_pedidos: conMinMax.length - fallidas.length,
+        const { conMinMax, fallidas } = await pedirQuitarMinMaxDeEnviados({
+            filas, enviados, sala, nombreSala: ERP_NAMES[sala], nombreDestino: ERP_NAMES[destino], user,
         });
+        setAvisoEnvio(conMinMax === 0 ? null : fallidas.length
+            ? { variant: 'warning', texto: `El envío salió, pero no se pudo pedir el cambio de Min/Max de: ${fallidas.join(', ')}. Pídelo a mano.` }
+            : { variant: 'success', texto: `Se pidió quitar el Min/Max de ${conMinMax} ${conMinMax === 1 ? 'producto' : 'productos'}; lo aprueba quien aprueba los ajustes de Min/Max.` });
         cargar();
     }, [filas, sala, user, cargar]);
 
     const exportar = useCallback(() => {
         const suc = ERP_NAMES[sala] || `Suc.${sala}`;
-        const dia = (f) => f ? fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-        const headers = ['Sucursal', 'Enviar a', 'Producto', 'Laboratorio', 'Unidades', 'Costo',
-                         'Cuenta desde', 'Por qué esa fecha', 'Días', 'Vendidas allá (6m)', 'Min', 'Max'];
-        const rows = grupos.flatMap(g => g.filas.map(r => [
-            suc, ERP_NAMES[g.destino] || '', r.producto || '', r.laboratorio || '',
-            Number(r.existencia) || 0, (Number(r.costo) || 0).toFixed(2),
-            dia(r.desde), porQueDesde(r), r.dias ?? '',
-            r.destino_unidades != null ? Number(r.destino_unidades) : '',
-            r.en_minmax && r.min_qty != null ? Number(r.min_qty) : '',
-            r.en_minmax && r.max_qty != null ? Number(r.max_qty) : '',
-        ]));
-        const hoy = hoySV();
-        exportCsv(headers, rows, `productos_parados_${suc.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${hoy}.csv`, 'inventario_sin_venta');
+        const { headers, rows, nombre } = csvDeParados(grupos, sala, ERP_NAMES, hoySV());
+        exportCsv(headers, rows, nombre, 'inventario_sin_venta');
         useStaff.getState().appendAuditLog('EXPORT_SIN_VENTA', null, {
             vista: 'parados', sucursal: suc, filtro, busqueda: searchTerm || null, count: rows.length,
         });
@@ -217,25 +181,11 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
 
     /* A Bodega sólo lo que completa su unidad de despacho, y en esa
      * presentación; lo suelto se queda en la sala (usuario, 24-sep). A otra
-     * sala, todo, en la presentación más chica. */
-    const devolvibles = (g) => g.filas
-        .map(r => ({ r, b: paraBodega(r.existencia, despacho.get(Number(r.erp_product_id))) }))
-        .filter(x => x.b.completos > 0);
+     * sala, todo, en la presentación más chica. La regla vive en el núcleo
+     * (`productosDeEnvioSugerido`): la app arma el mismo envío. */
     const armar = (g) => {
         setAvisoEnvio(null);
-        const productos = g.destino === ERP_BODEGA
-            ? devolvibles(g).slice(0, POR_ENVIO).map(({ r, b }) => {
-                const u = despacho.get(Number(r.erp_product_id));
-                // Si se despacha de a 1 no hay regla que cumplir: va todo, en la
-                // presentación más chica. El «UNIDAD» de la base es un rótulo, no
-                // el nombre de una presentación real (CARBIMEN no la tiene).
-                return Number(u?.unidades) > 1
-                    ? { erp_product_id: r.erp_product_id, descripcion: r.producto,
-                        presentacion: { tipo: u.tipo, factor: u.factor, cantidad: b.cantidad } }
-                    : { erp_product_id: r.erp_product_id, descripcion: r.producto };
-            })
-            : g.filas.slice(0, POR_ENVIO).map(r => ({ erp_product_id: r.erp_product_id, descripcion: r.producto }));
-        setEnvio({ destino: g.destino, productos });
+        setEnvio({ destino: g.destino, productos: productosDeEnvioSugerido(g, despacho, ERP_BODEGA, POR_ENVIO) });
     };
 
     const alternar = (destino) => setAbiertos(prev => {
@@ -352,7 +302,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                                 </p>
                             </div>
                             {puedeArmar && (() => {
-                                const n = esBodega ? devolvibles(g).length : g.filas.length;
+                                const n = cuantosArmables(g, despacho, ERP_BODEGA);
                                 return (
                                     <Button icon={Send} variant={esBodega ? 'secondary' : 'primary'}
                                         disabled={n === 0 || (esBodega && despacho.size === 0)}
@@ -423,9 +373,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                             motivo: 'Baja rotación',
                             // El «por qué» es obligatorio en el envío y es el mismo para
                             // todos: se deja escrito, y la sala lo puede cambiar.
-                            nota: envio.destino === ERP_BODEGA
-                                ? `Seis meses sin venderse en ${nombreSala}, y ninguna sala vendió 3 o más.`
-                                : `Seis meses sin venderse en ${nombreSala}; en ${ERP_NAMES[envio.destino]} sí se vende.`,
+                            nota: notaDeEnvioSugerido(envio.destino, ERP_BODEGA, nombreSala, ERP_NAMES[envio.destino]),
                             productos: envio.productos,
                         }}
                         onClose={() => setEnvio(null)}

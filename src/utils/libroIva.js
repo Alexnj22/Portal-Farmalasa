@@ -18,6 +18,8 @@
 
 import { formatearNit, formatearNrc } from './nitUtils';
 import { fechaNumerica } from './fecha';
+import { tokenMatch } from './searchUtils';
+import { debitoDeConsumidor } from './librosIva';
 
 // DD/MM/YYYY: el formato del libro. Se parte la cadena en vez de construir un
 // Date — `new Date('2026-06-01')` es UTC y en El Salvador (−6) retrocede un día.
@@ -419,4 +421,128 @@ export function faltantesDelLibro(d) {
             anulados: anulados.filter(r => !r.numero_control).length,
         },
     };
+}
+
+// ── Cómo se saca el valor de cada columna (mudado de `LibrosIvaView`, 2026-10-15) ──
+// UN solo mapa por pestaña, y no dos listas (una para ordenar y otra para
+// buscar). Con dos, el día que se agrega una columna se actualiza una y no la
+// otra, y el síntoma es mudo: la columna existe, se ve, y simplemente no
+// aparece en los resultados de búsqueda. Acá una columna sin entrada no se
+// puede ordenar y no se busca — las dos cosas a la vez, por construcción.
+//
+// El tipo del valor decide el resto: los `number` ordenan por magnitud y no
+// entran al buscador (nadie busca "1129.55"); los `string` ordenan con
+// `localeCompare` en español y sí forman el corpus de búsqueda.
+// La pestaña sin mapa propio usa el de consumidor, como siempre hizo la vista.
+export const ACCESO_DEL_LIBRO = {
+    consumidor: (nom) => ({
+        fecha:    r => r.fecha,
+        sucursal: r => nom(r.branch_id),
+        del:      r => soloNumero(r.correlativo_del),
+        al:       r => soloNumero(r.correlativo_al),
+        docs:     r => Number(r.documentos || 0),
+        exentas:  r => Number(r.ventas_exentas || 0),
+        gravadas: r => Number(r.ventas_gravadas || 0),
+        debito:   r => debitoDeConsumidor(Number(r.ventas_gravadas || 0)),
+        total:    r => Number(r.total_diario || 0),
+    }),
+    contribuyente: () => ({
+        n:        r => r._n,
+        fecha:    r => r.fecha,
+        ccf:      r => soloNumero(r.correlativo),
+        cliente:  r => r.cliente || '',
+        // Este export es el espejo de la tabla, así que el NIT va formateado
+        // igual que en pantalla. El CSV FISCAL no pasa por acá: usa `docId()`,
+        // que quita los guiones.
+        nrc:      r => formatearNrc(r.nrc),
+        nit:      r => formatearNit(r.nit),
+        exentas:  r => Number(r.ventas_exentas || 0),
+        gravadas: r => Number(r.ventas_gravadas || 0),
+        debito:   r => Number(r.debito_fiscal || 0),
+        total:    r => Number(r.total || 0),
+    }),
+    anulados: () => ({
+        n:       r => r._n,
+        fecha:   r => r.fecha,
+        tipo:    r => r.tipo_documento || '',
+        corr:    r => soloNumero(r.correlativo),
+        cg:      r => r.codigo_generacion || '',
+        cliente: r => r.cliente || '',
+        total:   r => Number(r.total || 0),
+    }),
+    compras: (nom) => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        sucursal:  r => nom(r.branch_id),
+        // Ordena por lo que se VE, no por lo que guarda la tabla: la celda
+        // muestra el número de control real cuando existe (C3).
+        doc:       r => r.numero_control || r.documento_numero || '',
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        gravadas:  r => Number(r.compras_gravadas || 0),
+        credito:   r => Number(r.credito_fiscal || 0),
+        total:     r => Number(r.total || 0),
+    }),
+    percepcion: (nom) => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        sucursal:  r => nom(r.branch_id),
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        doc:       r => r.documento_numero || '',
+        sujeto:    r => Number(r.monto_sujeto || 0),
+        impuesto:  r => Number(r.percepcion_iva || 0),
+    }),
+    retencion: (nom) => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        sucursal:  r => nom(r.branch_id),
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        doc:       r => r.documento_numero || '',
+        sujeto:    r => Number(r.monto_sujeto || 0),
+        impuesto:  r => Number(r.retencion_iva || 0),
+    }),
+    notas: () => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        tipo:      r => (r.tipo_dte === '05' ? 'Crédito' : 'Débito'),
+        doc:       r => r.numero_control || '',
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        corrige:   r => r.documento_corregido || '',
+        compra:    r => (r.vinculo === 'ligada' ? r.compra_documento : r.vinculo),
+        monto:     r => Number(r.monto || 0),
+        iva:       r => Number(r.iva || 0),
+    }),
+};
+
+/** Las funciones de cada columna del libro `tab`; `nom(branchId)` da el nombre de la sala. */
+export const accesoDelLibro = (tab, nom) => (ACCESO_DEL_LIBRO[tab] || ACCESO_DEL_LIBRO.consumidor)(nom);
+
+/** El número de orden se fija sobre el libro TAL COMO VINO y viaja pegado a la fila. */
+export const numerarLibro = (filas) => (filas || []).map((r, i) => (r._n === i + 1 ? r : { ...r, _n: i + 1 }));
+
+/**
+ * Buscar y ordenar recortan LO QUE SE VE, nunca lo que se declara (el CSV sale
+ * del libro entero en su orden legal). Busca en los valores de texto del mapa;
+ * ordena los números por magnitud y el texto con `localeCompare` en español.
+ * `orden = { key, dir: 'asc' | 'desc' }`; sin `key`, el orden del libro.
+ */
+export function buscarYOrdenarLibro(filas, acceso, busqueda, orden) {
+    const textos = Object.values(acceso);
+    let out = String(busqueda || '').trim()
+        ? filas.filter(r => tokenMatch(busqueda,
+            ...textos.map(fn => fn(r)).filter(v => typeof v === 'string')))
+        : filas;
+    const fn = orden?.key && acceso[orden.key];
+    if (fn) {
+        const signo = orden.dir === 'asc' ? 1 : -1;
+        out = [...out].sort((a, b) => {
+            const va = fn(a), vb = fn(b);
+            if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * signo;
+            return String(va ?? '').localeCompare(String(vb ?? ''), 'es') * signo;
+        });
+    }
+    return out;
 }

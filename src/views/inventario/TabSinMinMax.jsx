@@ -19,7 +19,9 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { ERP_NAMES, ERP_ORDER } from './salasDeStock';
 import { hoySV } from '@nucleo/utils/fecha';
 import { fetchVendidosSinMinMax } from '@nucleo/data/inventarioTab';
-import { conteosMinMax, FILTROS_MINMAX, motivoDeMinMax, problemaDeMinMax, sugerenciaMinMax } from '@nucleo/utils/gestionDeStock';
+import {
+    conteosMinMax, csvSinMinMax, FILTROS_MINMAX, motivoDeMinMax, ordenarSinMinMax, problemaDeMinMax, sugerenciaMinMax,
+} from '@nucleo/utils/gestionDeStock';
 
 // Qué hacer con cada fila: `sugerenciaMinMax` (núcleo), la misma de la app.
 const sugerencia = sugerenciaMinMax;
@@ -111,14 +113,7 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
             ? filas.filter(r => ignorados.has(r.erp_product_id))
             : filas.filter(r => !ignorados.has(r.erp_product_id) && sugerencia(r).level === filtro);
         if (searchTerm) rows = smartFilter(searchTerm, rows, r => [r.product_name, r.laboratorio]).results;
-        return [...rows].sort((a, b) => {
-            if (sortField === 'product_name') {
-                const cmp = (a.product_name || '').localeCompare(b.product_name || '', 'es');
-                return sortDir === 'asc' ? cmp : -cmp;
-            }
-            const av = Number(a[sortField] || 0), bv = Number(b[sortField] || 0);
-            return sortDir === 'asc' ? av - bv : bv - av;
-        });
+        return ordenarSinMinMax(rows, sortField, sortDir);
     }, [filas, filtro, ignorados, searchTerm, sortField, sortDir]);
 
     const onSort = useCallback((campo) => {
@@ -190,19 +185,8 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
 
     const exportar = useCallback(() => {
         const suc = ERP_NAMES[sala] || `Suc.${sala}`;
-        const headers = ['Sucursal', 'Producto', 'Laboratorio', 'Meses con venta', 'Unidades (6m)', 'Unidades/mes',
-                         'Venta (6m)', 'Venta/mes', 'Facturas', 'Unidades/factura', 'Qué hacer', 'Motivo', 'Min sugerido', 'Max sugerido'];
-        const rows = filtradas.map(r => {
-            const s = sugerencia(r);
-            const ign = ignorados.has(r.erp_product_id);
-            const units = Number(r.units_sold) || 0, rev = Number(r.revenue) || 0;
-            return [suc, r.product_name || '', r.laboratorio || '', `${s.months}/6`, units, (units / 6).toFixed(1),
-                rev.toFixed(2), (rev / 6).toFixed(2), s.invoices, s.avgPerInv.toFixed(1),
-                ign ? 'Descartado' : FILTROS.find(f => f.value === s.level)?.label, ign ? 'Descartado a mano' : s.reason,
-                s.minSug ?? '', s.maxSug ?? ''];
-        });
-        const hoy = hoySV();
-        exportCsv(headers, rows, `sin_minmax_${suc.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${hoy}.csv`, 'inventario_sin_venta');
+        const { headers, rows, nombre } = csvSinMinMax(filtradas, ignorados, sala, ERP_NAMES, hoySV());
+        exportCsv(headers, rows, nombre, 'inventario_sin_venta');
         useStaff.getState().appendAuditLog('EXPORT_SIN_VENTA', null, {
             vista: 'sin_minmax', sucursal: suc, filtro, busqueda: searchTerm || null, count: rows.length,
         });

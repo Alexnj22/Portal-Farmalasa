@@ -6,6 +6,9 @@
  * aplican 2 → «2 de 5». Cada grupo lleva los ids de sus aplicaciones en el
  * orden de la base, y se marcan aplicadas las PRIMERAS `n`.
  */
+import { fechaHora12 } from './hora';
+import { shortEmployeeName } from './nameUtils';
+import { fmtMl } from './inyeccionDosis';
 
 /** Días enteros desde una fecha (0 si es futura o no hay fecha). */
 export const diasDesde = (f, ahora = Date.now()) => (f ? Math.max(0, Math.floor((ahora - new Date(f).getTime()) / 86_400_000)) : 0);
@@ -38,4 +41,33 @@ export function resumenDePendientes(filas, salaPropia = null, ahora = Date.now()
         viejas: lista.filter((p) => diasDesde(p.pagada_at, ahora) >= 7).length,
         deOtras: salaPropia ? lista.filter((p) => p.branch_id !== salaPropia).length : 0,
     };
+}
+
+// ── La bitácora de aplicaciones: estado y CSV ────────────────────────────────
+// Vivían en `TabBitacora`; se mudaron el 2026-10-15 para que la app filtre y
+// descargue lo mismo que el portal.
+
+/** Los estados de una aplicación pagada, para el filtro de la bitácora. */
+export const ESTADOS_BITACORA = [
+    { value: 'todas',     label: 'Todas' },
+    { value: 'APLICADA',  label: 'Aplicadas' },
+    { value: 'PENDIENTE', label: 'Pendientes' },
+];
+
+export const filtrarBitacora = (filas, estado) => (filas || []).filter((f) => estado === 'todas' || f.estado === estado);
+
+const horaBitacora = (ts) => (ts ? fechaHora12(ts) : '—');
+const nombreBitacora = (n) => (n ? shortEmployeeName(n) : '—');
+const facturaBitacora = (c) => String(c || '').replace(/^0+/, '');
+
+export const CABECERA_CSV_BITACORA = ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'PRECIO', 'COBRADA POR',
+    'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN'];
+
+export function filasCsvBitacora(filas) {
+    return (filas || []).map((f) => [
+        horaBitacora(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', facturaBitacora(f.correlativo), f.venta_sala || '',
+        f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto, f.precio, nombreBitacora(f.cobrada_por),
+        f.estado, f.aplicada_at ? horaBitacora(f.aplicada_at) : '', f.aplicada_por ? nombreBitacora(f.aplicada_por) : '',
+        f.aplicada_en || '',
+    ]);
 }

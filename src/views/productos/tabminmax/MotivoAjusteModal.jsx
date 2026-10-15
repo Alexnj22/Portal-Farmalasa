@@ -8,6 +8,7 @@ import PortalInput from '../../../components/common/PortalInput';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { MOTIVO_AJUSTE, ERP_NAMES } from './constants';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { faltaEnMotivoDeAjuste, patchDeMotivoDeAjuste } from '@nucleo/utils/revisionDeSala';
 
 /**
  * Por qué este MIN·MAX está puesto a mano.
@@ -35,15 +36,10 @@ export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando,
     if (!open || !row) return null;
 
     const esClienteFijo = motivo === 'cliente_fijo';
-    const nUnidades = parseInt(unidades, 10);
-    const nDias     = parseInt(dias, 10);
 
     // Los mismos frenos que aplica el CHECK de la base, dichos antes de que la
-    // base los rechace: un error de guardado no explica qué falta.
-    const falta = !motivo ? null
-        : motivo === 'otro' && !nota.trim() ? 'Escribe qué pasa con este producto.'
-        : esClienteFijo && !(nUnidades > 0 && nDias > 0) ? 'Faltan las unidades y cada cuántos días las compra.'
-        : null;
+    // base los rechace (núcleo: los mismos que usa la app del teléfono).
+    const falta = faltaEnMotivoDeAjuste({ motivo, nota, unidades, dias });
 
     const opciones = [
         { value: '', label: 'Sin motivo — se revisa a mano' },
@@ -54,12 +50,7 @@ export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando,
 
     const guardar = () => {
         if (falta) return;
-        onGuardar({
-            manual_motivo: motivo || null,
-            manual_nota:   motivo ? (nota.trim() || null) : null,
-            manual_cliente_unidades: esClienteFijo ? nUnidades : null,
-            manual_cliente_dias:     esClienteFijo ? nDias     : null,
-        });
+        onGuardar(patchDeMotivoDeAjuste({ motivo, nota, unidades, dias }));
     };
 
     return (

@@ -56,3 +56,37 @@ export const ESTADOS_DE_AJUSTE = [
     { key: 'respetado',        label: 'Respetado',
       ayuda: 'El ajuste sigue en pie y el cálculo no lo contradice.' },
 ];
+
+// ── El historial de un MIN·MAX ───────────────────────────────────────────────
+// Las acciones de la bitácora que cuentan qué le pasó al par de un producto en
+// una sala, y cómo se rotula cada una. Vivían en la pantalla del portal; la
+// app del teléfono pinta el mismo historial, así que van acá. Cada acción que
+// se agrega a la lista necesita su rótulo: sin él la píldora publica el código
+// crudo (pasó con `MINMAX_REQUEST_APPROVED`, 2026-08-14).
+export const ACCIONES_DEL_HISTORIAL_MINMAX = [
+    'MINMAX_LIVE_EDIT', 'MINMAX_DRAFT_EDIT',
+    'MINMAX_BODEGA_MANUAL_OVERRIDE', 'MINMAX_BODEGA_RESET_MANUAL',
+    'MINMAX_UPDATED_FROM_PEDIDO',
+    'MINMAX_RESET_CALC', 'MINMAX_RESET_CLEAR', 'MINMAX_DISCARD_DRAFT',
+    'MINMAX_ZERO_OUT', 'MINMAX_LIVE_ZERO', 'MINMAX_ZERO_ALL_BRANCHES',
+    'MINMAX_REQUEST_APPROVED', 'MINMAX_MOTIVO_AJUSTE',
+];
+
+/** Rótulo y tono (`success`/`warning`/`danger`/`neutral`) de cada acción. */
+export const HISTORIAL_MINMAX_META = {
+    MINMAX_LIVE_EDIT:               { label: 'EN VIVO',        variante: 'success' },
+    MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       variante: 'warning' },
+    MINMAX_BODEGA_MANUAL_OVERRIDE:  { label: 'MANUAL BODEGA',  variante: 'neutral' },
+    MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     variante: 'success' },
+    MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  variante: 'neutral' },
+    MINMAX_RESET_CALC:              { label: 'RESTAURADO',     variante: 'success' },
+    MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       variante: 'neutral' },
+    MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     variante: 'neutral' },
+    MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    variante: 'danger' },
+    MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    variante: 'danger' },
+    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODAS LAS SALAS', variante: 'danger' },
+    MINMAX_REQUEST_APPROVED:        { label: 'SOLICITUD APROBADA', variante: 'success' },
+    // Ésta NO trae old_min/new_min: no cambia números, declara POR QUÉ el
+    // número está donde está. Quien la pinte la trata aparte.
+    MINMAX_MOTIVO_AJUSTE:           { label: 'MOTIVO',         variante: 'neutral' },
+};

@@ -13,10 +13,10 @@ import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { fetchBitacoraDeAplicaciones } from '@nucleo/data/inyecciones';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fmtMl } from '@nucleo/utils/inyeccionDosis';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { hoySV } from '@nucleo/utils/fecha';
+import { CABECERA_CSV_BITACORA, ESTADOS_BITACORA, filasCsvBitacora, filtrarBitacora } from '@nucleo/utils/inyeccionesPendientes';
 import { fechaHora12 } from '@nucleo/utils/hora';
 
 /*
@@ -35,11 +35,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
  * moderno»), y la venta dice de qué sala es cuando no es la del cobro.
  */
 
-const ESTADOS = [
-    { value: 'todas',      label: 'Todas' },
-    { value: 'APLICADA',   label: 'Aplicadas' },
-    { value: 'PENDIENTE',  label: 'Pendientes' },
-];
+const ESTADOS = ESTADOS_BITACORA;
 
 function rangoPorDefecto() {
     const hoy = hoySV();
@@ -49,7 +45,6 @@ function rangoPorDefecto() {
 }
 
 const horaDe = (ts) => (ts ? fechaHora12(ts) : '—');
-const nombre = (n) => (n ? shortEmployeeName(n) : '—');
 const factura = (c) => String(c || '').replace(/^0+/, '');
 
 export default function TabBitacora({ filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm }) {
@@ -74,7 +69,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al cambiar filtros
 
     const visibles = useMemo(
-        () => (filas || []).filter((f) => estado === 'todas' || f.estado === estado),
+        () => filtrarBitacora(filas, estado),
         [filas, estado],
     );
     const aplicadas = (filas || []).filter((f) => f.estado === 'APLICADA').length;
@@ -86,14 +81,8 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
     const pagina = visibles.slice((page - 1) * pageSize, page * pageSize);
 
     const descargar = () => exportCsv(
-        ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'PRECIO', 'COBRADA POR',
-         'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN'],
-        visibles.map((f) => [
-            horaDe(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', factura(f.correlativo), f.venta_sala || '',
-            f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto, f.precio, nombre(f.cobrada_por),
-            f.estado, f.aplicada_at ? horaDe(f.aplicada_at) : '', f.aplicada_por ? nombre(f.aplicada_por) : '',
-            f.aplicada_en || '',
-        ]),
+        CABECERA_CSV_BITACORA,
+        filasCsvBitacora(visibles),
         `aplicaciones_${desde}_${hasta}.csv`,
         'inyecciones',
     );

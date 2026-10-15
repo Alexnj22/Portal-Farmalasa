@@ -17,6 +17,11 @@
 // decisiones en ausencia», con las MISMAS funciones y las filas del núcleo
 // (`filasParaActivarTodo`, `filasDeSeccion`, `filasParaDelegar`).
 //
+// Como el portal, al delegar se dice A QUIÉN le llegan las decisiones (el
+// suplente de cada titular y quien está arriba en el organigrama:
+// `aQuienLlegaLaDelegacion`), y el menú de cargos dice cuántos módulos ve
+// cada uno (`modulosQueVe`).
+//
 // Lo que se pinta cambia antes de que conteste el servidor; si la escritura
 // falla, se recarga del servidor (la pantalla nunca muestra un permiso que
 // nadie guardó).
@@ -26,6 +31,8 @@ import Conmutador from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
   fetchRolePermissions, fetchRolesForPermissions, guardarPermisoDeCargo, upsertRolePermission, upsertRolePermissionsBulk,
   cambiarNivelDePrecioDeCargo, cambiarSuperUsuarioDeCargo, cambiarTiempoDeInactividadDeCargo, copiarPermisosDeCargo,
@@ -36,6 +43,7 @@ import { cargosNivelANivel } from '@nucleo/utils/jerarquiaDeCargos';
 import {
   MAX_INACTIVIDAD, MIN_INACTIVIDAD, ROTULO_ALCANCE, filasCopiadasDe, mapaDePermisos, permisoEnPalabras, planDeCambioDePermiso,
   delegaDecisiones, filasDeSeccion, filasParaActivarTodo, filasParaDelegar, modulosDelGrupo, seccionEncendida,
+  aQuienLlegaLaDelegacion, modulosQueVe,
 } from '@nucleo/utils/permisosDeCargo';
 import { NIVELES_DE_PRECIO } from '@nucleo/utils/preciosDeProducto';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -76,6 +84,7 @@ export default function Permisos() {
   const [vista, setVista] = useState('con');
   const [texto, setTexto] = useState('');
   const [guardando, setGuardando] = useState(null);
+  const empleados = useStaffStore((s) => s.employees);
 
   const cargar = useCallback(async () => {
     const [r, p] = await Promise.all([fetchRolesForPermissions(), fetchRolePermissions()]);
@@ -97,9 +106,13 @@ export default function Permisos() {
     ...g,
     modules: g.modules.filter((m) => (vista === 'todos' || de(m.key)?.can_view) && (!texto.trim() || tokenMatch(texto.trim(), m.label, g.group, ...(m.sub || []).map((s) => s.label)))),
   })).filter((g) => g.modules.length), [mapa, cargoId, vista, texto]); // eslint-disable-line react-hooks/exhaustive-deps
-  const conAcceso = MODULE_GROUPS.reduce((s, g) => s + g.modules.filter((m) => de(m.key)?.can_view).length, 0);
+  const { ve: conAcceso, total: totalModulos } = modulosQueVe(mapa, cargoId, MODULE_GROUPS);
   const filtros = roles?.length ? [{ id: 'cargo', titulo: 'Cargo', activa: cargoId, porDefecto: String(roles[0].id), onCambiar: setCargoId,
-    opciones: roles.map((r) => ({ id: String(r.id), label: r.name })) }] : [];
+    opciones: roles.map((r) => ({ id: String(r.id), label: `${r.name} · ${modulosQueVe(mapa, r.id, MODULE_GROUPS).ve} de ${totalModulos}` })) }] : [];
+  // A quién le llegan las decisiones cuando este cargo delega.
+  const delegando = !!mapa && !!cargoId && delegaDecisiones(mapa, cargoId);
+  const llega = useMemo(() => (delegando ? aQuienLlegaLaDelegacion(roleId, roles, empleados) : null), [delegando, roleId, roles, empleados]);
+  const listar = (arr) => (arr.length <= 1 ? (arr[0] || '') : `${arr.slice(0, -1).join(', ')} y ${arr[arr.length - 1]}`);
 
   // ── Cambiar un permiso, con su cascada ──
   const cambiar = async (moduleKey, permType, value) => {
@@ -218,7 +231,7 @@ export default function Permisos() {
               <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{cargo.name}</Text>
               <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                 {cargo.is_su ? <Pildora texto="Super Usuario" color={MARCA.ambar} /> : null}
-                <Pildora texto={`${conAcceso} módulos`} color={MARCA.azulClaro} />
+                <Pildora texto={`${conAcceso} de ${totalModulos} módulos`} color={MARCA.azulClaro} />
                 {guardando ? <Pildora texto="Guardando…" color={MARCA.violetaClaro} /> : null}
               </View>
             </View>
@@ -230,7 +243,25 @@ export default function Permisos() {
                 <Elegir rotulo="Cerrar la sesión sin uso después de" valor={String(minutos)} opciones={opcionesTiempo} onCambiar={cambiarInactividad} deshabilitado={bloqueado} />
                 <Elegir rotulo="Nivel de precio máximo" valor={cargo.max_price_level ?? ''} opciones={opcionesPrecio} onCambiar={cambiarPrecio} deshabilitado={bloqueado} />
                 <Interruptor titulo="Delegar las decisiones en ausencia" detalle="Cuando falta, las solicitudes que decide este cargo pasan a su superior o a su suplente."
-                  valor={delegaDecisiones(mapa, cargoId)} onCambiar={delegar} deshabilitado={bloqueado} />
+                  valor={delegando} onCambiar={delegar} deshabilitado={bloqueado} />
+                {llega ? (
+                  <View style={{ gap: 4 }}>
+                    {llega.conSuplente.map((p) => (
+                      <Text key={p.titular.id} style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                        {`› A ${shortEmployeeName(p.titular)} lo cubre ${shortEmployeeName(p.suplente)}`}
+                      </Text>
+                    ))}
+                    {llega.porOrganigrama.length ? (
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                        {`› ${llega.conSuplente.length ? 'Del resto se hace cargo' : 'Se hace cargo'} ${listar(llega.porOrganigrama.map((e) => shortEmployeeName(e)))}`}
+                      </Text>
+                    ) : (
+                      <Text style={{ color: MARCA.ambar, fontSize: 13 }}>
+                        {`${llega.conSuplente.length ? 'Del resto no se hace cargo nadie' : 'No se hace cargo nadie'}: arriba de este cargo no hay ninguna persona activa. Revisa el organigrama: a este cargo le falta alguien encima, o quien está no figura como activo.`}
+                      </Text>
+                    )}
+                  </View>
+                ) : null}
                 {puedeEditar ? (
                   <Elegir rotulo="Copiar los permisos de otro cargo" valor="" vacio="Elegir cargo…"
                     opciones={roles.filter((r) => r.id !== roleId).map((r) => ({ id: String(r.id), label: r.name }))} onCambiar={(v) => v && copiarDesde(v)} deshabilitado={bloqueado} />

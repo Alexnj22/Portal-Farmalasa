@@ -32,7 +32,7 @@ import {
 } from '@nucleo/data/permissions';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { cargosNivelANivel } from '@nucleo/utils/jerarquiaDeCargos';
-import { MAX_INACTIVIDAD, MIN_INACTIVIDAD, filasCopiadasDe, filasParaDelegar, filasParaActivarTodo, filasDeSeccion, mapaDePermisos, planDeCambioDePermiso } from '@nucleo/utils/permisosDeCargo';
+import { MAX_INACTIVIDAD, MIN_INACTIVIDAD, filasCopiadasDe, filasParaDelegar, filasParaActivarTodo, filasDeSeccion, mapaDePermisos, planDeCambioDePermiso, aQuienLlegaLaDelegacion, modulosQueVe } from '@nucleo/utils/permisosDeCargo';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).
@@ -327,16 +327,12 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
     // A quién le llegan estos permisos cuando el interruptor está encendido.
     // Sin esto, «Delegar» reparte facultades a alguien que no se nombra en
     // ningún lado de la pantalla, y una delegación anónima no se puede auditar.
+    // Quiénes son sale del núcleo (`aQuienLlegaLaDelegacion`), lo mismo de la app.
     const nombresDe = (lista) => lista.map(e => e.name).filter(Boolean);
-    const cargoPadreId = roles.find(r => String(r.id) === String(roleId))?.parent_role_id ?? null;
-    const activos = employees.filter(e => e.status === 'ACTIVO');
-    const porOrganigrama = nombresDe(activos.filter(e => String(e.role_id) === String(cargoPadreId)));
-    const conSuplente = activos
-        .filter(e => String(e.role_id) === String(roleId) && e.suplente_id)
-        .map(e => ({
-            titular: e.name,
-            suplente: activos.find(s => String(s.id) === String(e.suplente_id))?.name,
-        }))
+    const llega = aQuienLlegaLaDelegacion(roleId, roles, employees);
+    const porOrganigrama = nombresDe(llega.porOrganigrama);
+    const conSuplente = llega.conSuplente
+        .map(p => ({ titular: p.titular.name, suplente: p.suplente.name }))
         .filter(p => p.suplente);
     const listar = (arr) => arr.length <= 1 ? (arr[0] || '')
         : `${arr.slice(0, -1).join(', ')} y ${arr[arr.length - 1]}`;
@@ -1126,7 +1122,7 @@ const PermissionsView = () => {
                             // selección porque "acceso irrestricto" hay que verlo
                             // aunque el cargo no sea el que se está editando.
                             const cs = isSURol ? SUPER_USUARIO : SELECCION;
-                            const viewCount = MAIN_MODULES.filter(m => permissions[`${r.id}:${m.key}`]?.can_view).length;
+                            const viewCount = modulosQueVe(permissions, r.id, MODULE_GROUPS).ve;
                             return (
                                 <button
                                     key={r.id}

@@ -6,14 +6,14 @@
 // para un estado de WhatsApp.
 //
 // Qué entra a la galería, el texto y los archivos vigentes salen del núcleo
-// (`marketing`), lo mismo del portal.
+// (`marketing`), lo mismo del portal. Se filtra por formato y por marca (`esDeMarca`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Modal, RefreshControl, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
 import { useEnTramos } from '../componentes/alFinal';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchGaleria, firmarDisenos } from '@nucleo/data/marketing';
-import { aptoParaWhatsApp, esDeGaleria, formatoDe, FORMATOS, mediosDe, textoParaPublicar, tipoDeArchivo } from '@nucleo/utils/marketing';
+import { fetchCatalogos, fetchGaleria, firmarDisenos } from '@nucleo/data/marketing';
+import { aptoParaWhatsApp, esDeGaleria, esDeMarca, formatoDe, FORMATOS, mediosDe, textoParaPublicar, tipoDeArchivo } from '@nucleo/utils/marketing';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { correrMes, fechaTexto, mesSV } from '@nucleo/utils/fecha';
 import { registrarEgreso } from '@nucleo/data/egreso';
@@ -66,6 +66,9 @@ export default function Galeria() {
   const [error, setError] = useState(null);
   const [texto, setTexto] = useState('');
   const [formato, setFormato] = useState('');
+  const [marca, setMarca] = useState('');
+  const [marcas, setMarcas] = useState([]);
+  useEffect(() => { fetchCatalogos().then((c) => setMarcas(c?.marcas || [])).catch(() => {}); }, []);
   const [abierta, setAbierta] = useState(null);
   const [recargando, setRecargando] = useState(false);
 
@@ -79,11 +82,14 @@ export default function Galeria() {
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const visibles = useMemo(() => (piezas || []).filter((p) => (!formato || p.formato === formato) && (!texto.trim() || tokenMatch(texto.trim(), p.titulo, p.copy, p.hashtags))), [piezas, formato, texto]);
-  const tramo = useEnTramos(visibles, 40, `${formato}|${texto}`);
+  const visibles = useMemo(() => (piezas || []).filter((p) => (!formato || p.formato === formato) && (!marca || esDeMarca(p, marca))
+    && (!texto.trim() || tokenMatch(texto.trim(), p.titulo, p.copy, p.hashtags))), [piezas, formato, marca, texto]);
+  const tramo = useEnTramos(visibles, 40, `${formato}|${marca}|${texto}`);
   const lado = (width - 16 * 2 - 10) / 2;
   const grupos = [{ id: 'formato', titulo: 'Formato', activa: formato, porDefecto: '', onCambiar: setFormato,
-    opciones: [{ id: '', label: 'Todos' }, ...FORMATOS.map((f) => ({ id: f.value, label: f.label }))] }];
+    opciones: [{ id: '', label: 'Todos' }, ...FORMATOS.map((f) => ({ id: f.value, label: f.label }))] },
+  ...(marcas.length > 1 ? [{ id: 'marca', titulo: 'Marca', activa: marca, porDefecto: '', onCambiar: setMarca,
+    opciones: [{ id: '', label: 'Todas' }, ...marcas.map((m) => ({ id: String(m.id), label: m.nombre }))] }] : [])];
 
   return (
     <>

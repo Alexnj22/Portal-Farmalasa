@@ -14,6 +14,9 @@
 // mismas funciones: `updateProveedorManual` (alias, contacto, teléfono 2,
 // nombre para cheques, notas, activo, percepción, retención),
 // `setProveedorCategoria` y `setProveedorClasificacionFiscal`.
+// «Registrado como»: con qué proveedor registrado está vinculada la ficha, y
+// vincularla, cambiarla o quitarla (`setProveedorSupplier`, como el portal).
+// Si ese proveedor ya lo tiene otra ficha, el aviso nombra a la otra.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
@@ -21,15 +24,17 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
-  fetchProveedorCategorias, fetchProveedoresMaestro, setProveedorCategoria, setProveedorClasificacionFiscal, updateProveedorManual,
+  fetchProveedorCategorias, fetchProveedoresMaestro, setProveedorCategoria, setProveedorClasificacionFiscal, setProveedorSupplier, updateProveedorManual,
 } from '@nucleo/data/proveedores';
 import { fetchCuentasPorPagar } from '@nucleo/data/cuentasPorPagar';
+import { fetchSuppliersBasic } from '@nucleo/data/compras';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { CLASE_LABELS, optionToPercibe, PERCIBE_OPTIONS, percibeToOption, REGIMEN_HINT, REGIMEN_LABELS, telefonoParaMarcar } from '@nucleo/utils/proveedorFicha';
 import { CLASIFICACION_OPTIONS, DEDUCIBLE_OPTIONS, ESTADO_CLASIF, SECTOR_OPTIONS, clasificacionLabel, sectorLabel, tipoCostoGastoLabel, tiposCostoGasto } from '@nucleo/utils/f07Catalogos';
 import { FORMAS_DE_PAGO } from '@nucleo/utils/cuentasPorPagar';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { mensajeAmigable, mensajeConPrefijo } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
@@ -63,6 +68,9 @@ export default function Proveedor() {
   const [form, setForm] = useState(null);
   const [fiscal, setFiscal] = useState(null);
   const [ocupado, setOcupado] = useState(false);
+  const [registrados, setRegistrados] = useState([]);
+  const [vinculando, setVinculando] = useState(false);
+  const [qReg, setQReg] = useState('');
 
   const cargar = useCallback(async (forzar = false) => {
     try {
@@ -70,14 +78,28 @@ export default function Proveedor() {
       const x = proveedorGuardado(id);
       setP(x);
       if (!x) { setError('No se encontró el proveedor.'); return; }
-      const [c, cxp] = await Promise.all([fetchProveedorCategorias(), x.nit ? fetchCuentasPorPagar(null) : Promise.resolve({ filas: [] })]);
+      const [c, cxp, sup] = await Promise.all([fetchProveedorCategorias(), x.nit ? fetchCuentasPorPagar(null) : Promise.resolve({ filas: [] }), fetchSuppliersBasic()]);
       setCategorias(c.data || []);
+      setRegistrados(sup.data || []);
       setDeuda((cxp.filas || []).find((f) => f.emisor_nit === x.nit) ?? false);
     } catch (e) { setError(mensajeAmigable(e)); }
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const categoria = useMemo(() => categorias.find((c) => String(c.id) === String(p?.categoria_id)), [categorias, p]);
+  const registrado = useMemo(() => registrados.find((s) => String(s.id) === String(p?.supplier_id)), [registrados, p]);
+  const candidatosReg = useMemo(() => (qReg.trim().length >= 2 ? registrados.filter((s) => tokenMatch(qReg, s.nombre)).slice(0, 10) : []), [qReg, registrados]);
+  const ponerRegistrado = async (sid) => {
+    setOcupado(true);
+    try {
+      await setProveedorSupplier(p.id, sid, { nombre: p.nombre, desde: 'app' });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      listo(sid ? 'Vinculado' : 'Vinculación quitada', sid ? (registrados.find((s) => s.id === sid)?.nombre ?? '') : '');
+      setVinculando(false); setQReg('');
+      cargar(true);
+    } catch (e) { fallo('No se guardó', mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pudo guardar la vinculación')); }
+    finally { setOcupado(false); }
+  };
   const tel = telefonoParaMarcar(p?.telefono);
   const tel2 = telefonoParaMarcar(p?.telefono2);
 
@@ -200,6 +222,28 @@ export default function Proveedor() {
                 {p.clasificado_por_nombre ? <Dato rotulo="Clasificó" valor={`${p.clasificado_por_nombre}${p.clasificado_at ? ` · ${fecha(String(p.clasificado_at).slice(0, 10))}` : ''}`} /> : null}
                 {p.clasificacion_base_legal ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{p.clasificacion_base_legal}</Text> : null}
                 {canEdit ? <BotonGrande texto="Cambiar la categoría" borde color={MARCA.azulClaro} onPress={elegirCategoria} /> : null}
+              </Seccion>
+
+              <Seccion titulo="Registrado como">
+                <Dato primero rotulo="Proveedor registrado" valor={p.supplier_id ? (registrado?.nombre ?? 'Vinculado') : 'Sin vincular'} />
+                {canEdit && vinculando ? (
+                  <View style={{ gap: 6 }}>
+                    <Campo multiline={false} autoFocus value={qReg} onChangeText={setQReg} placeholder="Buscar proveedor registrado" />
+                    {!registrados.length ? <ActivityIndicator /> : candidatosReg.map((s) => (
+                      <Pressable key={s.id} disabled={ocupado} onPress={() => ponerRegistrado(s.id)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed || ocupado ? 0.6 : 1 })}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{s.nombre}</Text>
+                      </Pressable>
+                    ))}
+                    {p.supplier_id ? (
+                      <Pressable disabled={ocupado} onPress={() => ponerRegistrado(null)} style={{ minHeight: 40, justifyContent: 'center' }}>
+                        <Text style={{ color: MARCA.rojo, fontSize: 15 }}>Quitar la vinculación</Text>
+                      </Pressable>
+                    ) : null}
+                    <Pressable onPress={() => { setVinculando(false); setQReg(''); }} style={{ minHeight: 40, justifyContent: 'center' }}>
+                      <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Cancelar</Text>
+                    </Pressable>
+                  </View>
+                ) : canEdit ? <BotonGrande texto={p.supplier_id ? 'Cambiar la vinculación' : 'Vincular'} borde color={MARCA.azulClaro} onPress={() => setVinculando(true)} /> : null}
               </Seccion>
 
               <Seccion titulo="Compras">

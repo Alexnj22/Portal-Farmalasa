@@ -211,8 +211,8 @@ export default function NuevaPersonal() {
               </Fila>
               {fin ? <Dato rotulo="Último día" valor={largo(fin)} fuerte /> : null}
               {fin && choqueEnRango(incapacidades, payload.startDate, fin) ? <Aviso tono="freno" texto="Se cruza con una incapacidad ya aprobada." /> : null}
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{Number(payload.days) > 3 ? 'Boleta del ISSS (desde el cuarto día)' : 'Boleta o constancia (opcional)'}</Text>
-              <Fotos fotos={fotos} onCambiar={setFotos} max={1} />
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{Number(payload.days) > 3 ? 'Boleta del ISSS (desde el cuarto día) — foto o PDF' : 'Boleta o constancia (opcional) — foto o PDF'}</Text>
+              <Fotos fotos={fotos} onCambiar={setFotos} max={1} pdf />
             </Seccion>
           ) : null}
 

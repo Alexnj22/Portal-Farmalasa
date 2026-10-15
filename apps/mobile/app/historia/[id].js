@@ -14,6 +14,7 @@ import { DESTINOS_DE_LA_APP, filaDeHistoria, historiaValida } from '@nucleo/util
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
+import FormatoImagen from '../../componentes/ofertas/FormatoImagen';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
@@ -45,7 +46,7 @@ export default function Historia() {
     if (r.canceled || !r.assets?.[0]) return;
     const a = r.assets[0];
     Haptics.selectionAsync().catch(() => {});
-    setFoto({ uri: a.uri, tipo: a.mimeType || 'image/jpeg', nombre: a.fileName || `historia-${Date.now()}.jpg` });
+    setFoto({ uri: a.uri, tipo: a.mimeType || 'image/jpeg', nombre: a.fileName || `historia-${Date.now()}.jpg`, ancho: a.width, alto: a.height });
   };
 
   const guardar = () => Alert.alert(nueva ? 'Crear la historia' : 'Guardar la historia',
@@ -78,6 +79,8 @@ export default function Historia() {
             </View>
           </Pressable>
           {historia.imagen_path && !foto ? <Aviso texto="Ya tiene imagen; toca la foto para reemplazarla." /> : null}
+          {/* Se mide ANTES de subir, como el portal: una foto con otra forma se recorta en el teléfono del cliente. */}
+          <FormatoImagen tipo="historia" medida={foto?.ancho ? { ancho: foto.ancho, alto: foto.alto } : null} />
           <Seccion titulo="Título">
             <Campo multiline={false} maxLength={60} placeholder="Ej. Semana del bebé" value={f.titulo} onChangeText={cambiar('titulo')} />
           </Seccion>

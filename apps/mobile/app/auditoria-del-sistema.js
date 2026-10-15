@@ -11,6 +11,9 @@
 // (`COLUMNAS_CSV_BITACORA`) y se anota como salida de datos. Filtro, orden y
 // columnas salen del núcleo (`bitacora`), con el día de El Salvador. Como en
 // el portal, quien ve la auditoría puede exportarla.
+//
+// «Ordenar» son las columnas ordenables de la tabla del portal (hora, usuario,
+// acción), aplicadas en la base (`fetchBitacoraPagina({ orden })`).
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../componentes/Interruptor';
@@ -41,6 +44,13 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 
 const POR_PAGINA = 50;
+// `clave.direccion` → el `sortConfig` del portal.
+const ORDENES = [
+  { id: 'created_at.desc', label: 'Más recientes' }, { id: 'created_at.asc', label: 'Más antiguos' },
+  { id: 'user_name.asc', label: 'Usuario (A–Z)' }, { id: 'user_name.desc', label: 'Usuario (Z–A)' },
+  { id: 'action.asc', label: 'Acción (A–Z)' }, { id: 'action.desc', label: 'Acción (Z–A)' },
+];
+const ordenDe = (id) => { const [key, direction] = String(id).split('.'); return { key, direction }; };
 const SEVERIDAD = { CRITICAL: 'Crítico', WARNING: 'Aviso' };
 
 function Ficha({ l, quien, onCerrar }) {
@@ -87,6 +97,7 @@ function Ficha({ l, quien, onCerrar }) {
 export default function AuditoriaDelSistema() {
   const empleados = useStaffStore((s) => s.employees);
   const [accion, setAccion] = useState('ALL');
+  const [orden, setOrden] = useState('created_at.desc');
   const [periodo, setPeriodo] = useState('hoy');
   const [rango, setRango] = useState({ desde: sumarDias(hoySV(), -30), hasta: hoySV() });
   const [texto, setTexto] = useState('');
@@ -109,7 +120,7 @@ export default function AuditoriaDelSistema() {
   // Los filtros van a la BASE (`fetchBitacoraPagina`): antes se bajaban los
   // últimos 1000 y se filtraba acá, así que «Todo» o un rango viejo mostraban
   // sólo lo que cabía en esos 1000.
-  const filtro = { accion, desde, hasta, texto };
+  const filtro = { accion, desde, hasta, texto, orden: ordenDe(orden) };
 
   const exportar = async () => {
     setExportando(true);
@@ -129,7 +140,8 @@ export default function AuditoriaDelSistema() {
   };
 
   const grupos = [{ id: 'accion', titulo: 'Acción', activa: accion, porDefecto: 'ALL', onCambiar: setAccion,
-    opciones: ACCIONES_DE_BITACORA.map((a) => ({ id: a.value, label: a.label })) }];
+    opciones: ACCIONES_DE_BITACORA.map((a) => ({ id: a.value, label: a.label })) },
+  { id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: 'created_at.desc', onCambiar: setOrden, opciones: ORDENES }];
   const cabecera = (
     <View style={{ gap: 10, paddingBottom: 2 }}>
       <FiltrosActivos grupos={grupos} />
@@ -170,7 +182,7 @@ export default function AuditoriaDelSistema() {
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'square.and.arrow.up', etiqueta: 'Exportar', onPress: exportar }} />
       <ListaPaginada
         porPagina={POR_PAGINA}
-        dependencias={[accion, desde, hasta, texto, tic]}
+        dependencias={[accion, desde, hasta, texto, orden, tic]}
         cargarPagina={(desdeFila, limite) => fetchBitacoraPagina({ ...filtro, desdeFila, limite })}
         alCargar={(p) => setCargados(p.length)}
         cabecera={cabecera}

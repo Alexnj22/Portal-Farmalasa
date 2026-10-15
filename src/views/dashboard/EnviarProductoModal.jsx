@@ -14,10 +14,11 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
 import { renglonCompleto, nombreDeDespacho } from '@nucleo/utils/unidadDeDespacho';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
-import { enviarAOtraSala, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '@nucleo/data/envios';
+import { enviarAOtraSala, renglonesQueSalieron, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '@nucleo/data/envios';
 import { lotesEnUnidades, repartirPedido, sumaUnidades } from '@nucleo/utils/unidadesInventario';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { renglonesDeEnvioSugerido } from '@nucleo/utils/gestionDeStock';
 import { clickable } from '@nucleo/utils/clickable';
 import { imprimirTicketDeTraslado } from '@nucleo/utils/imprimirTraslado';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -200,52 +201,15 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             .then(([filas, pres]) => {
                 if (cancelado) return;
                 if (pres.error) throw pres.error;
-                const porProducto = new Map();
-                for (const f of filas) {
-                    const id = Number(f.erp_product_id);
-                    if (!porProducto.has(id)) porProducto.set(id, []);
-                    porProducto.get(id).push(f);
-                }
-                const listos = [];
-                const fuera = [];
-                for (const p of productos) {
-                    const id = Number(p.erp_product_id);
-                    const fs = porProducto.get(id) ?? [];
-                    const total = sumaUnidades(fs);
-                    const lista = pres.porProducto.get(id) ?? [];
-                    /* Si quien arma el envío dijo en qué presentación va —a
-                     * Bodega, la de despacho del producto—, ésa manda; si no,
-                     * la más chica con todo lo que hay. */
-                    const pedida = p.presentacion
-                        ? lista.find(x => x.tipo === p.presentacion.tipo && Number(x.factor) === Number(p.presentacion.factor))
-                        : null;
-                    const pr = p.presentacion ? pedida : lista[0];   // la más chica: ver `fetchPresentaciones`
-                    const cant = !pr ? 0
-                        : p.presentacion ? Math.min(Number(p.presentacion.cantidad) || 0, Math.floor(total / Number(pr.factor)))
-                        : Math.floor(total / Number(pr.factor));
-                    if (!total || !pr || cant <= 0) {
-                        fuera.push({ descripcion: p.descripcion, motivo: !total ? 'ya no hay existencia'
-                            : p.presentacion && !pedida ? `no tiene la presentación ${p.presentacion.tipo}` : 'no tiene presentación' });
-                        continue;
-                    }
-                    const unidades = cant * Number(pr.factor);
-                    const rep = repartirPedido(lotesEnUnidades(fs), unidades);
-                    listos.push({
-                        erp_product_id: id,
-                        descripcion: fs[0]?.descripcion ?? p.descripcion,
-                        origen_erp: origenErp,
-                        origen_vencidos: false,
-                        origen_clave: claveOrigen(origenErp, false),
-                        origen_nombre: nombreEstante(origenErp, false),
-                        presentacion_tipo: pr.tipo,
-                        factor: Number(pr.factor),
-                        cantidad: cant,
-                        unidades,
-                        lotes: rep.reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma })),
-                        existencia: total,
-                        presentaciones: lista,
-                    });
-                }
+                // La regla del envío sugerido vive en el núcleo: la app arma el mismo.
+                const { listos: armados, fuera } = renglonesDeEnvioSugerido(productos, filas, pres.porProducto);
+                const listos = armados.map(r => ({
+                    ...r,
+                    origen_erp: origenErp,
+                    origen_vencidos: false,
+                    origen_clave: claveOrigen(origenErp, false),
+                    origen_nombre: nombreEstante(origenErp, false),
+                }));
                 setRenglones(listos);
                 setSinArmar(fuera);
                 setDestino(String(precarga.destino ?? ''));
@@ -863,15 +827,10 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                 fallos,
                 aviso: avisos.length ? avisos.join(' · ') : null,
             });
-            /* Qué salió de verdad, por producto. El despacho contesta por nombre
-             * (`hechas[].producto`), así que se cruza con los renglones por la
-             * descripción. Quien abrió un envío sugerido lo necesita para
-             * pedir que esos productos salgan del MIN·MAX de la sala. */
-            const salieron = new Set(salidas.flatMap(x => x?.hechas ?? [])
-                .filter(h => h?.id_traslado)
-                .map(h => String(h.producto ?? '').replace(/\s+/g, ' ').trim().toUpperCase()));
-            const enviados = renglones.filter(r =>
-                salieron.has(String(r.descripcion ?? '').replace(/\s+/g, ' ').trim().toUpperCase()));
+            /* Qué salió de verdad, por producto (`renglonesQueSalieron`). Quien
+             * abrió un envío sugerido lo necesita para pedir que esos productos
+             * salgan del MIN·MAX de la sala. */
+            const enviados = renglonesQueSalieron(renglones, salidas);
             setRenglones([]);
             onListo?.({ enviados, destino: erpDestino, motivo });
         } catch (e) {

@@ -26,6 +26,8 @@ import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, fetchEnv
 import { buscadorDePersonas, desdeHace } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
+import { ticketDeEnvioParaImprimir } from '@nucleo/utils/imprimirTraslado';
+import { imprimirEnLaSala } from '../../componentes/imprimir';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
 import { Pildora, Ruta } from '../../componentes/traslados/Tarjeta';
@@ -145,6 +147,14 @@ export default function Envio() {
   };
 
   const salioAlgo = lineas.some((l) => l.enviado_at);
+  // El ticket de la bolsa, el mismo papel del portal, a la caja de quien lo pide.
+  const imprimir = async () => {
+    const papel = ticketDeEnvioParaImprimir({ envio, quien: user?.name ?? user?.nombre ?? null });
+    if (!papel) { fallo('Sin ticket', 'Esta bolsa no tiene número: se recibe buscándola en la lista.'); return; }
+    trabajando('Mandando a imprimir…');
+    const r = await imprimirEnLaSala(papel.ticket, salaDelUsuario(user) ?? null, papel.titulo);
+    if (r.ok) listo('Ticket', r.detalle); else fallo('No se pudo imprimir', r.detalle);
+  };
 
   return (
     <>
@@ -229,6 +239,10 @@ export default function Envio() {
               </Vidrio>
             );
           })}
+
+          {salioAlgo && envio.codigo_bolsa ? (
+            <BotonGrande texto="Imprimir el ticket" color={MARCA.azulClaro} borde deshabilitado={ocupado} onPress={imprimir} />
+          ) : null}
 
           {momento === 'por_decidir' && porDecidir.length ? (
             <View style={{ gap: 12 }}>

@@ -20,7 +20,7 @@ import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { borrarOferta, fetchOfertas, fetchPreregistros, fetchSalas, publicarOferta } from '@nucleo/data/ofertasClientes';
-import { ESTADOS_DE_OFERTA, estadoDeOferta, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
+import { ESTADOS_DE_OFERTA, estadoDeOferta, etiquetaDeDescuento, nivelDeOferta } from '@nucleo/utils/ofertasClientes';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -40,6 +40,7 @@ import { fallo, listo } from '../componentes/Progreso';
 import Historias, { ESTADOS_DE_HISTORIA, abrirHistoria } from '../componentes/ofertas/Historias';
 import Banners, { abrirBanner } from '../componentes/ofertas/Banners';
 import Reservas from '../componentes/ofertas/Reservas';
+import Envio from '../componentes/ofertas/Envio';
 
 const rango = (o) => `${fechaTexto(o.inicio, { day: 'numeric', month: 'short' })} – ${fechaTexto(o.fin, { day: 'numeric', month: 'short' })}`;
 
@@ -144,7 +145,7 @@ export default function OfertasClientes() {
 
         {pestana === 'historias' ? <Historias busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
           : pestana === 'banners' ? <Banners busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
-          : pestana === 'reservas' ? <Reservas todas recarga={vuelta} />
+          : pestana === 'reservas' ? <><Envio puedeEditar={puedeEditar} /><Reservas todas recarga={vuelta} /></>
           : pestana === 'ofertas' ? (
           ofertas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
             <>
@@ -154,6 +155,7 @@ export default function OfertasClientes() {
               </FilaDeKpis>
               {visibles.map((o) => {
                 const acento = colorDeAcento(o.acento);
+                const nivel = nivelDeOferta(o);
                 const detalle = [o.etiqueta, o.descuento_tipo ? `Descuento ${etiquetaDeDescuento(o.descuento_tipo, o.descuento_monto)}` : null, o.exclusiva ? 'Exclusiva para socios' : null].filter(Boolean);
                 return (
                   <Pressable key={o.id} onPress={() => abrir(o)} onLongPress={() => menu(o)} delayLongPress={350}
@@ -172,7 +174,10 @@ export default function OfertasClientes() {
                       <View style={{ padding: 14, gap: 6, borderLeftWidth: o.imagen_url ? 0 : 4, borderLeftColor: acento, borderTopLeftRadius: 20, borderBottomLeftRadius: 20 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{o.titulo}</Text>
-                          <Pildora texto={o._estado.label} color={colorDeVariante(o._estado.variant)} />
+                          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                            <Pildora texto={o._estado.label} color={colorDeVariante(o._estado.variant)} />
+                            {nivel ? <Pildora texto={`♛ ${nivel.corto}`} color={colorDeVariante(nivel.variant)} /> : null}
+                          </View>
                         </View>
                         {detalle.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{detalle.join(' · ')}</Text> : null}
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>

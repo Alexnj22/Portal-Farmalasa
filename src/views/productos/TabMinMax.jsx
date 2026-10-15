@@ -57,6 +57,7 @@ import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { HISTORIAL_MINMAX_META } from '@nucleo/constants/minmax';
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
@@ -69,30 +70,9 @@ const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 // ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS: extraídos a
 // ./tabminmax/constants.js (Bloque 6.C, continuación) — importados arriba.
 
-// Historial MIN/MAX: label + color por tipo de acción. Todas comparten la misma
-// forma de datos (old_min/old_max/new_min/new_max) — un solo render las cubre.
-const MINMAX_HISTORY_ACTION_META = {
-    MINMAX_LIVE_EDIT:               { label: 'EN VIVO',        variante: 'success' },
-    MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       variante: 'warning' },
-    MINMAX_BODEGA_MANUAL_OVERRIDE:  { label: 'MANUAL BODEGA',  variante: 'neutral' },
-    MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     variante: 'success' },
-    MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  variante: 'neutral' },
-    MINMAX_RESET_CALC:              { label: 'RESTAURADO',     variante: 'success' },
-    MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       variante: 'neutral' },
-    MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     variante: 'neutral' },
-    MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    variante: 'danger' },
-    MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    variante: 'danger' },
-    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODAS LAS SALAS', variante: 'danger' },
-    // Faltaba, así que el historial mostraba el código crudo
-    // `MINMAX_REQUEST_APPROVED` dentro de la píldora — reportado el 2026-08-14.
-    // Cada acción que se agrega al filtro de `openHistory` necesita su entrada
-    // acá: el `|| { label: log.action }` de más abajo no falla, publica.
-    MINMAX_REQUEST_APPROVED:        { label: 'SOLICITUD APROBADA', variante: 'success' },
-    // Ésta NO trae old_min/new_min: no cambia números, declara POR QUÉ el
-    // número está donde está. Por eso el render de abajo la trata aparte —
-    // pintarle «MIN — MAX —» diría que alguien los dejó vacíos.
-    MINMAX_MOTIVO_AJUSTE:           { label: 'MOTIVO',         variante: 'neutral' },
-};
+// Historial MIN/MAX: label + color por tipo de acción. Vive en el núcleo
+// (`constants/minmax`) porque la app del teléfono pinta el mismo historial.
+const MINMAX_HISTORY_ACTION_META = HISTORIAL_MINMAX_META;
 
 // STAT_CFGS, VISIBLE_STAT_KEYS: extraídos a ./tabminmax/constants.js (Bloque
 // 6.C, continuación) — usados aquí (render de chips) y en useMinMaxData.js

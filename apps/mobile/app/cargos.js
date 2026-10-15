@@ -9,8 +9,12 @@
 //
 // La jerarquía, la disposición del dibujo y las reglas de guardar/eliminar
 // salen del núcleo (`jerarquiaDeCargos`), las mismas del portal.
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+//
+// «Exportar PNG», como el portal: la imagen del organigrama dibujado (el PNG
+// del propio SVG) a la hoja de compartir del sistema.
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Appearance, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { File, Paths } from 'expo-file-system';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -28,6 +32,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import EditorDeCargo from '../componentes/sistema/EditorDeCargo';
 import Organigrama from '../componentes/sistema/Organigrama';
+import { fallo } from '../componentes/Progreso';
 
 export default function Cargos() {
   const { hasPermission } = useAuth();
@@ -42,6 +47,28 @@ export default function Cargos() {
   const lista = useMemo(() => ordenarPorJerarquia(roles || [], (roles || []).filter((r) => !texto.trim() || tokenMatch(texto.trim(), r.name))), [roles, texto]);
   const cuantos = useMemo(() => Object.fromEntries((roles || []).map((r) => [r.id, ocupantesDelCargo(activos, r.id).length])), [roles, activos]);
   const elegido = (roles || []).find((r) => r.id === abierto);
+  const svg = useRef(null);
+  const [exportando, setExportando] = useState(false);
+
+  // Con el fondo ya pintado (un cuadro después de pedirlo), se saca el PNG.
+  useEffect(() => {
+    if (!exportando) return undefined;
+    const t = setTimeout(() => {
+      if (!svg.current?.toDataURL) { setExportando(false); fallo('No se pudo exportar', 'El organigrama todavía no está dibujado.'); return; }
+      svg.current.toDataURL(async (b64) => {
+        try {
+          const f = new File(Paths.cache, `organigrama-${Date.now()}.png`);
+          if (f.exists) f.delete();
+          f.create();
+          f.write(b64, { encoding: 'base64' });
+          await Share.share({ url: f.uri, title: 'Organigrama' });
+        } catch (e) {
+          fallo('No se pudo exportar', e?.message || 'Hubo un problema al generar la imagen.');
+        } finally { setExportando(false); }
+      });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [exportando]);
 
   const abrirEditor = (cargo) => { Haptics.selectionAsync().catch(() => {}); setEditor({ abierto: true, cargo }); };
 
@@ -108,7 +135,12 @@ export default function Cargos() {
             <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
               Línea continua: superior directo · punteada: matricial. Toca un cargo para ver su ficha.
             </Text>
-            <Organigrama roles={roles || []} ocupantes={cuantos} elegido={abierto}
+            <Pressable disabled={exportando} onPress={() => { Haptics.selectionAsync().catch(() => {}); setExportando(true); }} accessibilityRole="button"
+              style={({ pressed }) => ({ alignSelf: 'flex-start', marginHorizontal: 16, minHeight: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}2E`, opacity: exportando ? 0.5 : pressed ? 0.7 : 1 })}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{exportando ? 'Procesando…' : 'Exportar PNG'}</Text>
+            </Pressable>
+            <Organigrama roles={roles || []} ocupantes={cuantos} elegido={exportando ? null : abierto} svgRef={svg}
+              fondo={exportando ? (Appearance.getColorScheme() === 'dark' ? '#131218' : '#F5F4F9') : null}
               onTocar={(id) => { Haptics.selectionAsync().catch(() => {}); setAbierto(id); }} />
             {elegido ? ficha(elegido, 0) : null}
           </>

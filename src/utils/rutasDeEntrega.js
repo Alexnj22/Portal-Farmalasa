@@ -103,3 +103,37 @@ export function conductorEnVivo(actualizadaEl, ahora = Date.now()) {
     if (!actualizadaEl) return false;
     return (ahora - new Date(actualizadaEl).getTime()) / 60_000 < MINUTOS_EN_VIVO;
 }
+
+// ── Las cifras y los filtros de la pestaña (2026-10-15) ─────────────────────
+// Mudados de `TabRutas` para que la app muestre las mismas tres cifras y
+// filtre igual (estado, período de las completadas, conductor).
+
+/** Días hacia atrás de cada período de las completadas. */
+export const PERIODOS_RUTAS = { hoy: 0, '7d': 7, '30d': 30 };
+
+/** Cuándo una ruta se cuenta como hecha: al volver a base, o lo más cercano. */
+const momentoDeRuta = (r) => new Date(r.vuelta_base_at ?? r.salida_at ?? r.created_at);
+
+/** Las tres cifras de lo que pasa HOY, sin importar el filtro. */
+export function cifrasDeRutas(rutas, ahora = new Date()) {
+    const inicioHoy = new Date(ahora); inicioHoy.setHours(0, 0, 0, 0);
+    const enCalle = (rutas ?? []).filter(r => r.status === 'en_ruta' || r.status === 'con_alerta');
+    const pendientes = (rutas ?? []).filter(r => r.status === 'pendiente');
+    const cerradasHoy = (rutas ?? []).filter(r => r.status === 'completada' && momentoDeRuta(r) >= inicioHoy);
+    const paradasVivas = [...enCalle, ...pendientes].flatMap(r => r.ruta_pedidos ?? []);
+    return {
+        enCalle, pendientes, cerradasHoy,
+        paradasVivas: paradasVivas.length,
+        entregadasVivas: paradasVivas.filter(p => p.entregado_at).length,
+    };
+}
+
+/** Las completadas dentro del período (`PERIODOS_RUTAS`). */
+export function completadasEnPeriodo(completadas, periodo, ahora = new Date()) {
+    const d = new Date(ahora); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (PERIODOS_RUTAS[periodo] ?? 7));
+    return (completadas ?? []).filter(r => momentoDeRuta(r).getTime() >= d.getTime());
+}
+
+/** Los conductores que aparecen en las rutas, para el filtro. */
+export const conductoresDeRutas = (rutas) =>
+    [...new Set((rutas ?? []).map(r => r.conductor_nombre).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));

@@ -21,7 +21,8 @@ import {
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Avatar from '../Avatar';
@@ -81,6 +82,9 @@ export default function Semestral({ canApprove }) {
   }, [sem, intento]);
 
   const r = useMemo(() => resumenDelSemestre(hoja, ymActual), [hoja, ymActual]);
+  // Como el portal: los totales cuentan a TODOS; la búsqueda sólo recorta la lista.
+  const [buscar, setBuscar] = useState('');
+  const filtradas = useMemo(() => (buscar.trim() ? r.personas.filter((p) => tokenMatch(buscar, p.nombre, p.code)) : r.personas), [r, buscar]);
   const nombreDe = useCallback((p) => {
     const emp = (empleados || []).find((e) => e.id === p.employee_id);
     return shortEmployeeName(emp || { name: p.nombre });
@@ -152,7 +156,13 @@ export default function Semestral({ canApprove }) {
           {r.informativo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Las bonificaciones están apagadas: estos montos dicen lo que se habría ganado; se vuelven dinero cuando se activan en la pestaña Bono." /></View> : null}
           {!r.aprobado && !r.terminado ? <View style={{ marginHorizontal: 16 }}><Aviso texto="El semestre sigue abierto: los meses cerrados ya no cambian y el mes en curso se mueve con cada venta. Se aprueba cuando cierre el último mes (el cierre corre el día 5)." /></View> : null}
 
-          {r.personas.map((p) => (
+          {r.personas.length > 1 ? (
+            <View style={{ marginHorizontal: 16 }}>
+              <Campo multiline={false} value={buscar} onChangeText={setBuscar} placeholder="Buscar persona por nombre o código" autoCorrect={false} />
+            </View>
+          ) : null}
+          {buscar.trim() && !filtradas.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`Nadie coincide con «${buscar.trim()}».`} /></View> : null}
+          {filtradas.map((p) => (
             <View key={p.employee_id} style={{ marginHorizontal: 16 }}>
               <Vidrio radio={18}>
                 <View style={{ padding: 12, gap: 8 }}>

@@ -9,10 +9,10 @@ import { planDeGuardadoMinMax, planDeRestaurarMinMax } from '../utils/minmaxGuar
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
-import { normXyz, hasDispatchRisk } from '../utils/minmaxTabla';
+import { hasDispatchRisk } from '../utils/minmaxTabla';
 import { ERP_NAMES, ERP_ORDEN as ERP_ORDER } from '../constants/erp';
-import { ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '../constants/minmax';
-import { calcularMinMaxDeSala, descartarBorradorDeFila, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../data/stockParams';
+import { ACCIONES_DEL_HISTORIAL_MINMAX, ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '../constants/minmax';
+import { calcularMinMaxDeSala, calcularMinMaxDeTodasLasSalas, descartarBorradorDeFila, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../data/stockParams';
 import { fetchSolicitudesDeProducto } from '../data/minmaxRequests';
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
@@ -42,7 +42,7 @@ const warnIfOutrageous = (field, numVal, row) => {
 
 // `estadoAjuste` y el filtro de la sala viven en el núcleo (`revisionDeSala`):
 // la app del teléfono revisa la sala con las mismas reglas.
-import { estadoAjuste, filaPasaFiltros, cuentaADescartar, motivoDeSaltoDelCalculo, mensajeDePublicacion } from '../utils/revisionDeSala';
+import { estadoAjuste, filaPasaFiltros, cuentaADescartar, motivoDeSaltoDelCalculo, mensajeDePublicacion, ordenarFilasDeMinMax, filasParaOcultar } from '../utils/revisionDeSala';
 export { estadoAjuste };
 
 export function useMinMaxData({ searchTerm = '', lockedErpId }) {
@@ -334,21 +334,12 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         const wasPublished = hasPublishedData;
         setCalculating(true); setCalcMode('all'); setConfigChanged(false);
         const ids = ERP_ORDER.filter(id => id !== 6); // Bodega se actualiza sola vía trigger + publish_stock_params
-        let totalRows = 0;
-        const failed = [];
-        const saltadas = [];
-        for (let i = 0; i < ids.length; i++) {
-            const id = ids[i];
-            setCalcProgress({ current: i + 1, total: ids.length, name: ERP_NAMES[id] });
-            try {
-                const { data: res, error: e } = await calcularMinMaxDeSala({ p_erp_sucursal_id: id });
-                if (e) throw e;
-                if (motivoDeSalto(res)) { saltadas.push(ERP_NAMES[id]); continue; }
-                totalRows += res?.rows ?? 0;
-            } catch {
-                failed.push(ERP_NAMES[id]);
-            }
-        }
+        // El recorrido sala por sala: núcleo, el mismo que usa la app.
+        const r = await calcularMinMaxDeTodasLasSalas(ids,
+            (current, total, id) => setCalcProgress({ current, total, name: ERP_NAMES[id] }));
+        const totalRows = r.filas;
+        const failed = r.fallidas.map(id => ERP_NAMES[id]);
+        const saltadas = r.saltadas.map(id => ERP_NAMES[id]);
         setCalcProgress(null);
         if (failed.length > 0 || saltadas.length > 0) {
             const partes = [];
@@ -818,14 +809,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         // cruza por `request_id`. Sin él, la única respuesta a «¿por qué este
         // número?» era el `title` del badge, que en un teléfono no existe.
         const [{ data: logs }, { data: emps }, { data: sols }] = await Promise.all([
-            fetchAuditLogsForProduct([
-                'MINMAX_LIVE_EDIT', 'MINMAX_DRAFT_EDIT',
-                'MINMAX_BODEGA_MANUAL_OVERRIDE', 'MINMAX_BODEGA_RESET_MANUAL',
-                'MINMAX_UPDATED_FROM_PEDIDO',
-                'MINMAX_RESET_CALC', 'MINMAX_RESET_CLEAR', 'MINMAX_DISCARD_DRAFT',
-                'MINMAX_ZERO_OUT', 'MINMAX_LIVE_ZERO', 'MINMAX_ZERO_ALL_BRANCHES',
-                'MINMAX_REQUEST_APPROVED', 'MINMAX_MOTIVO_AJUSTE',
-            ], row.erp_product_id, row._erp_sucursal_id),
+            fetchAuditLogsForProduct(ACCIONES_DEL_HISTORIAL_MINMAX, row.erp_product_id, row._erp_sucursal_id),
             fetchEmployeesBasic(),
             fetchSolicitudesDeProducto(row.erp_product_id, row._erp_sucursal_id),
         ]);
@@ -1062,19 +1046,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             // pendiente para siempre, y calculate_stock_params se salta la sucursal
             // ENTERA ante un solo pendiente: eso dejó el recálculo mensual sin correr
             // desde junio en las 6 sucursales.
-            await upsertStockParamsBulk(
-                ids.map(id => ({
-                    erp_product_id: id,
-                    erp_sucursal_id: selectedErp,
-                    is_hidden: true,
-                    min_units: null,
-                    max_units: null,
-                    draft_min: null,
-                    draft_max: null,
-                    draft_status: 'none',
-                    updated_at: new Date().toISOString(),
-                }))
-            );
+            await upsertStockParamsBulk(filasParaOcultar(ids, selectedErp));
             setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
             setData(prev => prev.map(r =>
                 ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp
@@ -1105,30 +1077,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         setPage(1);
     }, []);
 
-    const sorted = useMemo(() => {
-        if (!sortBy) return filtered;
-        return [...filtered].sort((a, b) => {
-            let av, bv;
-            if (sortBy === 'product_name')  { av = a.product_name || ''; bv = b.product_name || ''; }
-            else if (sortBy === 'laboratorio') { av = a.laboratorio_nombre || ''; bv = b.laboratorio_nombre || ''; }
-            else if (sortBy === 'abc_xyz') {
-                av = `${a.draft_abc_class || a.abc_class || 'D'}${normXyz(a.draft_demand_variability || a.demand_variability)}`;
-                bv = `${b.draft_abc_class || b.abc_class || 'D'}${normXyz(b.draft_demand_variability || b.demand_variability)}`;
-            }
-            else if (sortBy === 'current_stock') { av = Number(a.current_stock); bv = Number(b.current_stock); }
-            else if (sortBy === 'coverage') {
-                av = a.daily_velocity > 0 ? Number(a.current_stock) / Number(a.daily_velocity) : Infinity;
-                bv = b.daily_velocity > 0 ? Number(b.current_stock) / Number(b.daily_velocity) : Infinity;
-            }
-            else if (sortBy === 'effective_min') { av = Number(a.effective_min); bv = Number(b.effective_min); }
-            else if (sortBy === 'effective_max') { av = Number(a.effective_max); bv = Number(b.effective_max); }
-            else if (sortBy === 'revenue_6m')    { av = Number(a.revenue_6m);    bv = Number(b.revenue_6m);    }
-            else if (sortBy === 'ventas')        { av = Number(a.daily_velocity); bv = Number(b.daily_velocity); }
-            else return 0;
-            if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv, 'es') : bv.localeCompare(av, 'es');
-            return sortDir === 'asc' ? av - bv : bv - av;
-        });
-    }, [filtered, sortBy, sortDir]);
+    // El orden: núcleo (`ordenarFilasDeMinMax`), el mismo que usa la app.
+    const sorted = useMemo(() => ordenarFilasDeMinMax(filtered, sortBy, sortDir), [filtered, sortBy, sortDir]);
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);

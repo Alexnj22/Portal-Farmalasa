@@ -16,12 +16,18 @@
 // se confirma en `pedido/reenvio`. Las rutas de reparto, con su mapa, en
 // `pedido/rutas`; finalizar (las cajas y hojas), el papel, el reenvío y armar
 // la ruta, desde la ficha. Las reglas de despacho, en `pedido/reglas`.
-import { useCallback, useMemo, useState } from 'react';
+//
+// Como el tablero del portal: buscador por número (y nota), la lista se
+// actualiza sola cuando cambia un pedido (`escucharCambios`) y, para una sala,
+// un aviso cuando Bodega le manda un pedido nuevo.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchPedidosEnCurso } from '@nucleo/data/pedidos';
+import { escucharCambios } from '@nucleo/data/tiempoReal';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { ESTADOS_DEL_TABLERO, filtrarPedidos, pedidosPorSala, rangoDeMes, tieneObservacion } from '@nucleo/utils/tableroDePedidos';
 import { BRANCH_A_ERP, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -101,6 +107,8 @@ export default function Pedidos() {
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [buscar, setBuscar] = useState('');
+  const [nuevo, setNuevo] = useState(null);   // { numero } del pedido que acaba de salir a mi sala
 
   const cargar = useCallback(async () => {
     const { data, error: e } = await fetchPedidosEnCurso();
@@ -109,14 +117,42 @@ export default function Pedidos() {
   }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
+  // En vivo, como el portal: un cambio de un pedido o del estado de una sala
+  // recarga (juntando ráfagas en una sola lectura). A una sala, además, se le
+  // avisa cuando Bodega le manda un pedido nuevo.
+  const espera = useRef(null);
+  const aviso = useRef(null);
+  const avisados = useRef(new Set());
+  useEffect(() => {
+    const recargar = () => { clearTimeout(espera.current); espera.current = setTimeout(cargar, 800); };
+    const quitar = escucharCambios('pedidos-app', [
+      { tabla: 'pedidos', alCambiar: (payload) => {
+        recargar();
+        const ids = payload.new?.sucursal_ids ?? [];
+        if (!todas && miErp != null && payload.new?.status === 'enviado' && ids.map(Number).includes(Number(miErp))
+          && !avisados.current.has(payload.new.id)) {
+          avisados.current.add(payload.new.id);   // un pedido avisa una vez, aunque se siga actualizando
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          setNuevo({ numero: payload.new.numero });
+          clearTimeout(aviso.current);
+          aviso.current = setTimeout(() => setNuevo(null), 8000);
+        }
+      } },
+      { tabla: 'pedido_sucursal_status', alCambiar: recargar },
+    ]);
+    return () => { quitar(); clearTimeout(espera.current); clearTimeout(aviso.current); };
+  }, [cargar, todas, miErp]);
+
   const rango = PERIODOS.find((p) => p.id === periodo)?.rango() ?? null;
   // Lo de mi alcance: mi sala, o la elegida, o todas.
   const mias = useMemo(() => (filas || []).filter((r) => (todas
     ? (salaElegida === 'todas' || String(r.erp_sucursal_id) === salaElegida)
     : Number(r.erp_sucursal_id) === Number(miErp))), [filas, todas, salaElegida, miErp]);
+  const q = buscar.trim();
   const visibles = useMemo(() => filtrarPedidos(mias, { estado, rango })
+    .filter((r) => !q || tokenMatch(q, String(r.numero ?? ''), r.codigo, r.notes))
     .sort((a, b) => ERP_ORDEN.indexOf(Number(a.erp_sucursal_id)) - ERP_ORDEN.indexOf(Number(b.erp_sucursal_id)) || (b.numero ?? 0) - (a.numero ?? 0)),
-  [mias, estado, rango]);
+  [mias, estado, rango, q]);
   const porSala = useMemo(() => {
     const c = pedidosPorSala(mias, rango);
     return ERP_ORDEN.filter((id) => c.get(id)).map((id) => ({ id, nombre: ERP_NAMES[id], total: c.get(id) }));
@@ -134,7 +170,11 @@ export default function Pedidos() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedidos', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedidos', headerLargeTitle: true,
+        headerSearchBarOptions: vista === 'metricas' ? undefined : {
+          placeholder: 'Número de pedido', hideWhenScrolling: false,
+          onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),
+        } }} />
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
@@ -143,6 +183,7 @@ export default function Pedidos() {
         {vista === 'metricas' ? <Metricas /> : (
           <>
             <FiltrosActivos grupos={grupos} />
+            {nuevo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Bodega te mandó el pedido #${nuevo.numero}: ya va en camino.`} /></View> : null}
             {!todas && miErp == null ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu ficha no está asignada a una sala que reciba pedidos." /></View> : null}
             {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
             {filas && porSala.length ? (
@@ -175,7 +216,7 @@ export default function Pedidos() {
               ? visibles.map((r) => <Tarjeta key={`${r.pedido_id}-${r.erp_sucursal_id}`} r={r} todas={todas} puede={puede} />)
               : (
                 <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 50, fontSize: 15 }}>
-                  {estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}
+                  {q ? `Ningún pedido coincide con «${q}».` : estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}
                 </Text>
               )}
             {(todas && puede) || verRutas || verReglas ? (

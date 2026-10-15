@@ -76,7 +76,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
           <Kpi icono="TrendingUp" rotulo="Total" valor={montoPrivado(formatMoney(ranking.total, { decimales: 0 }), privado)} color={MARCA.verde}
             apoyo={previo ? conSigno(variacionPorDia(ranking.total, dias, previo.total, previo.dias)) : null} />
           <Kpi icono="Users" rotulo="Vendedores" valor={String(ranking.conocidos.length)} color={MARCA.azul}
-            apoyo={`${ranking.facturas.toLocaleString('es-SV')} facturas`} />
+            apoyo={[`${ranking.facturas.toLocaleString('es-SV')} facturas`, previo ? conSigno(variacionPorDia(ranking.facturas, dias, previo.facturas, previo.dias)) : null].filter(Boolean).join(' · ')} />
         </FilaDeKpis>
       ) : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}

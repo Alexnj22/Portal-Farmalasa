@@ -9,6 +9,9 @@
 // numerado (el mismo papel del portal, `papelDeSolicitudDeDatos`) por AirPrint
 // o en PDF; cada solicitud se reimprime, se registra y se resuelve en
 // `solicitud-datos/[id]`, donde se arma también la respuesta.
+//
+// Como el portal, se filtra además por estado y por período (la fecha en que
+// se recibió, o se imprimió si todavía no llegó): `filtrarSolicitudes`.
 import { useCallback, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useEnTramos } from '../componentes/alFinal';
@@ -19,7 +22,8 @@ import { papelDeSolicitudDeDatos } from '@nucleo/generated/formularioDatos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -59,6 +63,8 @@ export default function SolicitudesDatos() {
   const [texto, setTexto] = useState('');
   const [abierta, setAbierta] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [estado, setEstado] = useState('TODOS');
+  const [periodo, setPeriodo] = useState('todo');
 
   const cargar = useCallback(async () => {
     try { setFilas(await fetchSolicitudes()); setError(null); } catch (e) { setError(e?.message || 'No se pudo cargar.'); setFilas([]); }
@@ -81,8 +87,15 @@ export default function SolicitudesDatos() {
       } },
     ]);
 
-  const visibles = useMemo(() => filtrarSolicitudes(filas, { pestana, texto }, tokenMatch), [filas, pestana, texto]);
-  const tramo = useEnTramos(visibles, 40, `${pestana}|${texto}`);
+  const desde = periodo === 'todo' ? '' : periodo === 'mes' ? `${hoySV().slice(0, 7)}-01` : sumarDias(hoySV(), -(Number(periodo) - 1));
+  const visibles = useMemo(() => filtrarSolicitudes(filas, { pestana, estado, desde, texto }, tokenMatch), [filas, pestana, estado, desde, texto]);
+  const tramo = useEnTramos(visibles, 40, `${pestana}|${estado}|${desde}|${texto}`);
+  const grupos = [
+    { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'todo', onCambiar: setPeriodo,
+      opciones: [{ id: 'todo', label: 'Todo' }, { id: '7', label: 'Últimos 7 días' }, { id: '30', label: 'Últimos 30 días' }, { id: 'mes', label: 'Este mes' }, { id: '365', label: 'Último año' }] },
+    { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'TODOS', onCambiar: setEstado,
+      opciones: [{ id: 'TODOS', label: 'Todos' }, ...Object.entries(ESTADOS).map(([k, v]) => ({ id: k, label: v.rotulo }))] },
+  ];
   const { vencidas, apremian } = useMemo(() => alarmasDePlazo(filas), [filas]);
 
   return (
@@ -94,10 +107,12 @@ export default function SolicitudesDatos() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'tramite', label: 'En trámite' }, { id: 'resueltas', label: 'Resueltas' }, { id: 'todas', label: 'Todas' }]} />
+        <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vencidas || apremian ? (
           <View style={{ marginHorizontal: 16 }}>

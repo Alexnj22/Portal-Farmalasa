@@ -165,3 +165,32 @@ export function ahoraEnSV(ms = Date.now()) {
     const d = relojSV(ms);
     return { dia: d.getUTCDay(), hora: `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}` };
 }
+
+/**
+ * Lo que se le manda al «Diagnóstico Inteligente» (edge function
+ * `analyze-branch`, vía `analizarSucursal` de `data/ia`): la foto de la sala
+ * en ese momento. Una sola versión para el portal y la app — si cambia lo que
+ * se le cuenta a la IA, cambia en las dos.
+ *
+ * @param {object} p
+ * @param {object} p.branch     la sucursal
+ * @param {boolean} p.inactiva  sin gente Y sin kioscos
+ * @param {string}  p.estado    rótulo de `abiertaAhora`
+ * @param {string}  p.horario   `horarioDeHoy`
+ * @param {number}  p.empleados cuántas personas asignadas
+ * @param {number}  p.kioscos   kioscos activos
+ * @param {{list: Array<{level: string, message: string}>}} p.alertas  `alertasDeSucursal`
+ * @param {{legal: number, property: number, services: number}} p.completitud  `completitudDelPerfil`
+ */
+export function datosParaElDiagnostico({ branch, inactiva, estado, horario, empleados, kioscos, alertas, completitud }) {
+    const lista = alertas?.list || [];
+    return {
+        nombre: branch?.name,
+        estadoDeApertura: inactiva ? 'Inactiva' : estado,
+        horarioDeHoy: horario,
+        empleadosAsignados: empleados,
+        kioscosActivos: kioscos,
+        alertas: lista.length > 0 ? lista.map(a => `${String(a.level).toUpperCase()}: ${a.message}`) : ['Ninguna alerta, todo en orden.'],
+        progresoExpediente: `Documentos Legales: ${completitud?.legal}%, Datos del Local: ${completitud?.property}%, Servicios Básicos: ${completitud?.services}%`,
+    };
+}

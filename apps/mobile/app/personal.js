@@ -18,9 +18,20 @@
 // Con `staff_list_descargar`, «Exportar el directorio» comparte el MISMO CSV
 // del portal (`tablaDelDirectorio`) con lo que está a la vista; las columnas
 // que la llave no deja llenar no van.
-import { useEffect, useMemo, useState } from 'react';
+//
+// Como el portal: quien ya no trabaja acá va APARTE al final de su sala («Ya no
+// trabajan aquí») — dentro del reparto podía salir como jefatura y contaba en
+// el pulso —; el filtro de sala incluye a quien la CUBRE (`assigned_branch_ids`)
+// aunque su sede sea otra; y arriba, la franja del seguro de vida colectivo
+// («Pago 2026 pendiente», «3 sin cubrir») abre su vista (`/seguro-de-vida`).
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { Host, Icon } from '@expo/ui';
+import { fetchPoliza, fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
+import { periodoVigente, estadoEnElSeguro } from '@nucleo/utils/seguroDeVida';
+import { iconoDe } from '../tema/iconos';
+import { colorDeVariante } from '../componentes/colorDeVariante';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { soloNoEmpleados, soloPersonalEnPlanilla, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
@@ -42,6 +53,56 @@ import TarjetaPersona, { PuestoVacante, TarjetaPracticante } from '../componente
 
 const INACTIVOS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const salaDe = (e) => Number(e.branchId ?? e.branch_id) || 0;
+const esDeBaja = (e) => INACTIVOS.includes(e?.status);
+// ¿Trabaja en esta sala? La principal o cualquiera de las que cubre. Sólo para
+// el FILTRO: la sección sigue siendo la sala principal (como `cubreLaSala` del
+// portal).
+const cubreLaSala = (e, sala) => String(salaDe(e)) === String(sala)
+  || (e.assigned_branch_ids || []).some((id) => String(id) === String(sala));
+
+/** La franja del seguro de vida: el estado del pago del año en una línea. */
+function FranjaDelSeguro({ personas }) {
+  const [resumen, setResumen] = useState(null);   // null = cargando
+  useFocusEffect(useCallback(() => {
+    let vivo = true;
+    fetchPoliza()
+      .then(async (poliza) => {
+        const anio = periodoVigente(new Date(), poliza?.mes_de_pago || 11);
+        const pago = await fetchPagoDelAnio(anio);
+        if (vivo) setResumen({ anio, pago });
+      })
+      .catch(() => { if (vivo) setResumen({ fallo: true }); });
+    return () => { vivo = false; };
+  }, []));
+  const alDia = resumen?.pago ? personas.filter((e) => estadoEnElSeguro(e.id, resumen.pago).clave === 'solvente').length : 0;
+  const estado = !resumen ? null
+    : resumen.fallo ? { texto: 'No se pudo leer', variante: 'neutral' }
+      : !resumen.pago ? { texto: `Pago ${resumen.anio} pendiente`, variante: 'warning' }
+        : alDia === personas.length ? { texto: 'Todos solventes', variante: 'success' }
+          : { texto: `${personas.length - alDia} sin cubrir`, variante: 'warning' };
+  const detalle = !resumen ? 'Cargando…' : resumen.fallo ? 'Póliza y pago anual'
+    : resumen.pago ? `${alDia} de ${personas.length} solventes` : `${personas.length} personas en planilla`;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="Abrir el seguro de vida colectivo" onPress={() => router.push('/seguro-de-vida')}
+      style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <Vidrio radio={18} interactivo>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, minHeight: 44 }}>
+          <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${MARCA.violetaClaro}26`, alignItems: 'center', justifyContent: 'center' }}>
+            <Host matchContents><Icon name={iconoDe('ShieldCheck')} size={18} color={MARCA.violetaClaro} /></Host>
+          </View>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>Seguro de vida colectivo</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+              {estado ? <Pildora texto={estado.texto} color={colorDeVariante(estado.variante)} /> : null}
+              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle}</Text>
+            </View>
+          </View>
+          <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text>
+        </View>
+      </Vidrio>
+    </Pressable>
+  );
+}
 
 /** «12 personas · 2 vacaciones · 1 incapacidad» — el `PulsoDeSala` del portal. */
 function pulso(personas) {
@@ -83,11 +144,14 @@ export default function Personal() {
     }
     let personas = (tipo === 'externos' ? soloNoEmpleados(base) : soloPersonalEnPlanilla(base))
       .filter((e) => (vista === 'activos' ? !estaAusenteHoy(e) && !INACTIVOS.includes(e.status) : vista === 'ausentes' ? estaAusenteHoy(e) : true))
-      .filter((e) => sala === 'todas' || String(salaDe(e)) === sala);
+      .filter((e) => sala === 'todas' || cubreLaSala(e, sala));
     if (texto.trim()) personas = smartFilter(texto, personas, (e) => [e.name, e.role, e.secondary_role, nombreDe.get(salaDe(e))]).results;
     const porSala = new Map();
     personas.forEach((e) => { const k = salaDe(e); if (!porSala.has(k)) porSala.set(k, []); porSala.get(k).push(e); });
-    return [...porSala.entries()].map(([id, gente]) => {
+    return [...porSala.entries()].map(([id, todosEnSala]) => {
+      // Al reparto entra sólo quien trabaja acá; las bajas van al final, aparte.
+      const gente = todosEnSala.filter((e) => !esDeBaja(e));
+      const bajas = todosEnSala.filter(esDeBaja);
       const r = repartirSala({ personas: gente, todos: plantilla, roles: roles || [], sucursalId: id || null });
       const filas = [];
       if (r.jefe) filas.push({ k: `j${r.jefe.id}`, emp: r.jefe, destacada: true });
@@ -98,11 +162,15 @@ export default function Personal() {
         filas.push({ k: `t${id}`, titulo: 'También en esta sala' });
         r.adscritos.forEach((e) => filas.push({ k: `a${e.id}`, emp: e, conSuperior: true }));
       }
+      if (bajas.length) {
+        filas.push({ k: `b${id}`, titulo: 'Ya no trabajan aquí' });
+        bajas.forEach((e) => filas.push({ k: `x${e.id}`, emp: e }));
+      }
       const sinSede = id === 0;
       return {
         id, sinSede, titulo: sinSede ? 'Sin sucursal asignada' : (nombreDe.get(id) || 'Sin sala'),
-        pulso: pulso(gente), sinJefatura: !r.jefe && !sinSede,
-        soloCuentas: gente.length > 0 && gente.every(esFichaQueNoEsEmpleado), data: filas,
+        pulso: `${pulso(gente)}${bajas.length ? ` · ${bajas.length} de baja` : ''}`, sinJefatura: !r.jefe && !sinSede && gente.length > 0,
+        soloCuentas: todosEnSala.length > 0 && todosEnSala.every(esFichaQueNoEsEmpleado), data: filas,
       };
     }).sort((a, b) => (a.sinSede !== b.sinSede ? (a.sinSede ? 1 : -1) : pesoDeSucursal(a.titulo) - pesoDeSucursal(b.titulo) || a.titulo.localeCompare(b.titulo)));
   }, [tipo, practicantes, todas, user?.branchId, sala, texto, nombreDe, base, vista, plantilla, roles]);
@@ -115,6 +183,8 @@ export default function Personal() {
       opciones: [{ id: 'personal', label: 'Personal en planilla' }, { id: 'practicantes', label: 'Practicantes' }, { id: 'externos', label: 'Externos y sistema' }] },
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: 'todas', onCambiar: setSala, opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas] }] : []),
   ];
+  // Quién entra en la póliza: la misma lista que usa la vista del seguro.
+  const enPlanilla = useMemo(() => soloPersonalEnPlanilla((empleados || []).filter((e) => e.status === 'ACTIVO')), [empleados]);
   const total = secciones.reduce((n, s) => n + s.data.filter((f) => f.emp || f.practicante).length, 0);
   const puedeExportar = !!hasPermission?.('staff_list_descargar');
   const exportar = () => {
@@ -128,6 +198,7 @@ export default function Personal() {
   const Cabecera = (
     <View style={{ gap: 12, paddingTop: 12, paddingBottom: 4 }}>
       <FiltrosActivos grupos={grupos} />
+      {tipo === 'personal' && (vista === 'todos' || vista === 'activos') ? <FranjaDelSeguro personas={enPlanilla} /> : null}
       {tipo === 'personal' ? (
         <Segmentos activa={vista} onCambiar={setVista}
           opciones={[{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Activos' }, { id: 'ausentes', label: ausentes ? `Ausentes · ${ausentes}` : 'Ausentes' }]} />

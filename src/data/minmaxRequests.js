@@ -7,6 +7,7 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { anotar, conBitacora } from './audit';
+import { porQueDesde } from '../utils/productosParados';
 
 export function fetchProductPreciosForMinMax(productId) {
     return supabase.from('product_precios')
@@ -305,4 +306,48 @@ export async function solicitarMinMax(payload, { aplicar = false } = {}, context
     const r = await decidirMinMax(data.id, true, 'Aplicado desde Gestión de stock');
     anotar('MINMAX_DESDE_GESTION_STOCK', data.id, { aplicado: r.ok, ...contexto });
     return { ok: true, aplicado: r.ok, error: r.ok ? null : r.error };
+}
+
+/**
+ * Lo que salió en un envío sugerido de «Sin venta» deja de estar en el MIN·MAX
+ * de la sala — por SOLICITUD de 0/0, no directo: un cambio de MIN·MAX lo
+ * aprueba otra persona (usuario, 24-sep). Sólo para los que tenían MIN·MAX:
+ * pedir 0/0 donde no hay nada es ruido. Anota `ENVIO_SUGERIDO_SIN_VENTA`.
+ *
+ * Mudado de `TabParados` (2026-10-15) para que la app haga lo mismo.
+ * `filas` = las filas de `productos_parados_de_sala`; `enviados` = los
+ * renglones que salieron (`renglonesQueSalieron`).
+ * Devuelve `{ pedidos, fallidas }` (`fallidas` = nombres de producto).
+ */
+export async function pedirQuitarMinMaxDeEnviados({ filas, enviados = [], sala, nombreSala, nombreDestino, user, desde = null }) {
+    const porId = new Map((filas || []).map((r) => [Number(r.erp_product_id), r]));
+    const conMinMax = enviados.map((e) => porId.get(Number(e.erp_product_id))).filter((r) => r?.en_minmax);
+    const nombre = nombreDestino || 'otra sala';
+    const fallidas = [];
+    for (const r of conMinMax) {
+        const { error } = await insertMinMaxChangeRequest({
+            erp_product_id:       Number(r.erp_product_id),
+            erp_sucursal_id:      Number(sala),
+            product_name:         r.producto,
+            current_min:          r.min_qty ?? null,
+            current_max:          r.max_qty ?? null,
+            current_sales_6m:     0,
+            current_ultima_venta: r.ultima_venta ?? null,
+            current_existencia:   Number(r.existencia) || 0,
+            requested_min:        0,
+            requested_max:        0,
+            reason: `Se envió a ${nombre} por baja rotación: sin venta en esta sala desde `
+                  + `${r.desde ?? 'hace más de 6 meses'} (${porQueDesde(r)}).`,
+            requested_by:      user?.email ?? '',
+            requested_by_id:   user?.id ?? null,
+            requested_by_name: user?.name ?? null,
+        });
+        if (error) fallidas.push(r.producto);
+    }
+    anotar('ENVIO_SUGERIDO_SIN_VENTA', null, {
+        sucursal: nombreSala, destino: nombre,
+        enviados: enviados.length, minmax_pedidos: conMinMax.length - fallidas.length,
+        ...(desde ? { desde } : {}),
+    });
+    return { pedidos: conMinMax.length - fallidas.length, conMinMax: conMinMax.length, fallidas };
 }

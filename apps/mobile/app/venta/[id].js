@@ -4,14 +4,19 @@
 // descuento por puntos y los renglones repetidos salen del núcleo
 // (`renglonesDeLaVenta`), igual que en el portal; en un crédito fiscal se
 // desglosa el IVA y la retención.
+//
+// Como la fila del portal: el TIPO DE PRECIO cobrado en cada renglón (VIP,
+// Clínica, Mayoreo, Premium, P7, Viñeta, Especial…; núcleo: `tierDelRenglon`)
+// y los «Cambios registrados» de la factura (forma de pago, sello de
+// Hacienda) con el valor anterior y el nuevo.
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchCualesVanBajoReceta, fetchInvoiceById, fetchInvoiceItemsForInvoice } from '@nucleo/data/ventas';
+import { fetchCualesVanBajoReceta, fetchInvoiceById, fetchInvoiceChangelog, fetchInvoiceItemsForInvoice, fetchProductPreciosActivos } from '@nucleo/data/ventas';
 import { tieneSelloMh } from '@nucleo/data/facturacion';
 import { ROTULO_PUNTOS } from '@nucleo/data/puntos';
-import { renglonesDeLaVenta } from '@nucleo/utils/ventasPeriodo';
+import { CAMPO_LABELS, RELEVANT_CAMPOS, fmtCampoVal, renglonesDeLaVenta, tierDelRenglon } from '@nucleo/utils/ventasPeriodo';
 import { ESTADOS_ANULADA, ROTULO_PAGO } from '@nucleo/utils/solicitudFacturacion';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -33,18 +38,27 @@ export default function Venta() {
   const [v, setV] = useState(undefined);
   const [items, setItems] = useState(null);
   const [receta, setReceta] = useState(new Set());
+  const [precios, setPrecios] = useState(null);   // product_id → filas de precio
+  const [cambios, setCambios] = useState([]);
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
-    const [{ data: inv }, { data: renglones }] = await Promise.all([
-      fetchInvoiceById(Number(id)), fetchInvoiceItemsForInvoice(Number(id)),
-    ]).catch(() => [{ data: null }, { data: null }]);
+    const [{ data: inv }, { data: renglones }, { data: log }] = await Promise.all([
+      fetchInvoiceById(Number(id)), fetchInvoiceItemsForInvoice(Number(id)), Promise.resolve(fetchInvoiceChangelog([Number(id)])).catch(() => ({ data: [] })),
+    ]).catch(() => [{ data: null }, { data: null }, { data: [] }]);
     setV(inv ?? null);
     setItems(renglones ?? []);
+    setCambios((log || []).filter((c) => RELEVANT_CAMPOS.has(c.campo)));
     const ids = [...new Set((renglones || []).map((it) => it.erp_product_id).filter((x) => x && x > 0))];
     if (ids.length) {
-      const { data } = await fetchCualesVanBajoReceta(ids);   // sin respuesta, sin etiqueta: no frena la pantalla
+      // Sin respuesta, sin etiqueta: ninguna de las dos frena la pantalla.
+      const [{ data }, { data: filasPrecio }] = await Promise.all([
+        fetchCualesVanBajoReceta(ids), Promise.resolve(fetchProductPreciosActivos(ids)).catch(() => ({ data: [] })),
+      ]);
       setReceta(new Set((data || []).map((p) => p.id)));
+      const porProducto = new Map();
+      for (const p of filasPrecio || []) { if (!porProducto.has(p.product_id)) porProducto.set(p.product_id, []); porProducto.get(p.product_id).push(p); }
+      setPrecios(porProducto);
     }
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
@@ -96,13 +110,16 @@ export default function Venta() {
         ) : null}
         {items ? (
           <Seccion titulo={`Productos · ${productos.length}`}>
-            {productos.length ? productos.map((it, i) => (
+            {productos.length ? productos.map((it, i) => { const tier = precios ? tierDelRenglon(it.precio_unitario, precios.get(it.erp_product_id)) : null; return (
               <View key={i} style={{ gap: 5, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{it.descripcion}</Text>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(it.total_linea)}</Text>
                 </View>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${cantidad(it.cantidad)} × ${formatMoney(it.precio_unitario)}`}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${cantidad(it.cantidad)} × ${formatMoney(it.precio_unitario)}`}</Text>
+                  {tier ? <Pildora texto={`Precio ${tier.label}${tier.num != null ? ` ${tier.num}` : ''}`} color={tier.key === 'especial' ? MARCA.violeta : tier.key === 'vineta' ? colorSistema.texto2 : MARCA.ambar} /> : null}
+                </View>
                 {receta.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento ? (
                   <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                     {receta.has(it.erp_product_id) ? <Pildora texto="Bajo Receta" color={MARCA.violeta} /> : null}
@@ -112,13 +129,26 @@ export default function Venta() {
                   </View>
                 ) : null}
               </View>
-            )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Esta sala todavía no tiene el detalle de productos.</Text>}
+            ); }) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Esta sala todavía no tiene el detalle de productos.</Text>}
             {descuento > 0 ? (
               <View style={{ flexDirection: 'row', paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
                 <Text style={{ flex: 1, color: MARCA.ambar, fontSize: 15, fontWeight: '700' }}>Descuento por puntos</Text>
                 <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{`−${formatMoney(descuento)}`}</Text>
               </View>
             ) : null}
+          </Seccion>
+        ) : null}
+        {cambios.length ? (
+          <Seccion titulo="Cambios registrados">
+            {cambios.map((c, i) => (
+              <View key={i} style={{ gap: 2, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{CAMPO_LABELS[c.campo] ?? c.campo}</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 15 }}>
+                  <Text style={{ color: colorSistema.texto2, textDecorationLine: 'line-through' }}>{fmtCampoVal(c.campo, c.valor_anterior)}</Text>
+                  {` → ${fmtCampoVal(c.campo, c.valor_nuevo)}`}
+                </Text>
+              </View>
+            ))}
           </Seccion>
         ) : null}
         {fiscal ? (

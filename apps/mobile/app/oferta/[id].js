@@ -16,14 +16,14 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { guardarOferta, subirImagen } from '@nucleo/data/ofertasClientes';
-import { ACENTOS_DE_OFERTA, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
+import { ACENTOS_DE_OFERTA, NIVELES_DE_OFERTA, etiquetaDeDescuento } from '@nucleo/utils/ofertasClientes';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeAcento, ofertaElegida } from '../../componentes/ofertas/acentos';
@@ -50,7 +50,7 @@ export default function EditarOferta() {
     titulo: oferta.titulo ?? '', etiqueta: oferta.etiqueta ?? '', descripcion: oferta.descripcion ?? '',
     condiciones: oferta.condiciones ?? '', inicio: oferta.inicio ?? hoySV(), fin: oferta.fin ?? hoySV(),
     exclusiva: oferta.exclusiva ?? false, branch_ids: oferta.branch_ids ?? [], publicada: oferta.publicada ?? false,
-    acento: oferta.acento ?? 'magenta',
+    acento: oferta.acento ?? 'magenta', nivel_minimo: oferta.nivel_minimo ?? '',
   });
   const [foto, setFoto] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -81,6 +81,7 @@ export default function EditarOferta() {
       await guardarOferta(oferta.id, {
         titulo: f.titulo.trim(), etiqueta: f.etiqueta.trim() || null, descripcion: f.descripcion.trim() || null,
         condiciones: f.condiciones.trim() || null, exclusiva: f.exclusiva, publicada: f.publicada, imagen_path, acento: f.acento,
+        nivel_minimo: f.nivel_minimo || null,
         ...(deDescuento ? {
           descuento_erp_id: oferta.descuento_erp_id, promocion_id: oferta.promocion_id ?? null,
           descuento_tipo: oferta.descuento_tipo, descuento_monto: oferta.descuento_monto,
@@ -148,7 +149,18 @@ export default function EditarOferta() {
               <Dato primero rotulo="Fechas" valor={`${fechaTexto(oferta.inicio, { day: 'numeric', month: 'short' })} – ${fechaTexto(oferta.fin, { day: 'numeric', month: 'short' })}`} />
               <Dato rotulo="Salas" valor={oferta.branch_ids?.length ? oferta.branch_ids.map(nombreSala).filter(Boolean).join(', ') : 'Todas'} />
               {oferta.descuento_tipo ? <Dato rotulo="Descuento" valor={etiquetaDeDescuento(oferta.descuento_tipo, oferta.descuento_monto)} /> : null}
-              {productos.map((p, i) => <Dato key={`${p.nombre}-${i}`} rotulo={p.nombre} valor={p.precio != null ? formatMoney(p.precio) : '—'} />)}
+              {/* El precio de antes tachado y el de ahora, como lo verá el cliente. */}
+              {productos.map((p, i) => (
+                <View key={`${p.nombre}-${i}`} style={{ flexDirection: 'row', gap: 10, paddingTop: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+                  <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 15 }}>{p.nombre}</Text>
+                  {p.precio != null ? (
+                    <Text style={{ fontVariant: ['tabular-nums'], fontSize: 15 }}>
+                      {p.precio_descuento != null ? <Text style={{ color: colorSistema.texto2, textDecorationLine: 'line-through' }}>{`${formatMoney(p.precio)}  `}</Text> : null}
+                      <Text style={{ color: colorSistema.texto, fontWeight: '700' }}>{formatMoney(p.precio_descuento ?? p.precio)}</Text>
+                    </Text>
+                  ) : <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>—</Text>}
+                </View>
+              ))}
             </Seccion>
           ) : (
             <>
@@ -178,6 +190,10 @@ export default function EditarOferta() {
               </Seccion>
             </>
           )}
+
+          <Seccion titulo="Exclusiva para" pie="Todos la ven; sólo quien llega a ese nivel de Puntos Salud la puede reservar.">
+            <Opciones valor={f.nivel_minimo} onCambiar={cambiar('nivel_minimo')} opciones={NIVELES_DE_OFERTA.map((n) => ({ id: n.value, label: n.label }))} />
+          </Seccion>
 
           <Seccion>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

@@ -2,15 +2,20 @@
 // permiso pide y cómo se dibuja; el Inicio las ordena por uso
 // (`ordenPorUso`) dentro de cada pestaña. «Hoy» va siempre primero: son los
 // números del día y no compiten.
+import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Host, Icon } from '@expo/ui';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { fetchMetaSala } from '@nucleo/data/metas';
+import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cumplenEl, empleadosActivos, presentesEl, problemaDeSucursal, sumarSalas } from '@nucleo/utils/inicio';
 import { Titulo } from './Tarjeta';
-import Widget, { Chip, Cuenta, Renglon, Vacio } from './Widget';
+import Widget, { Chip, Cuenta, Esqueleto, Renglon, Vacio } from './Widget';
+import SelectorDeSala, { salasDeVenta } from './SelectorDeSala';
+import { useDato } from './useDato';
 import { COLOR_VOLUMEN, RejillaDeSalas } from './MiniSala';
 import * as W from './widgets/rrhh';
 import * as C from './widgets/comercial';
@@ -143,10 +148,35 @@ function Anillo({ pct, color }) {
 // Igual que `WidgetMetaSala` del portal: con `dash_meta_sala_vista_completa`
 // habla en dólares; sin ella, en porcentajes. El ritmo diario sobrevive en las
 // dos porque es una instrucción, no el resultado de nadie.
+//
+// Con alcance TODAS (`dash_meta_sala`), como el tablero del portal, se elige
+// la sala (las de venta, en el orden de la red; arranca en la propia si es una
+// de ellas) y el widget lee la suya. Con alcance de sala no hay selector: la
+// base devuelve la sala propia.
 export function Meta({ datos, ctx }) {
+  const todas = ctx.getScope?.('dash_meta_sala') === 'ALL';
+  const salas = salasDeVenta(ctx.sucursales, SALAS_VENTA);
+  const [elegida, setElegida] = useState(() => (SALAS_VENTA.includes(Number(ctx.sala)) ? String(ctx.sala) : String(SALAS_VENTA[0])));
+  const { dato: deLaElegida, cargando } = useDato(todas ? `meta:${elegida}` : null, () => fetchMetaSala(elegida));
+  if (todas) {
+    return (
+      <MetaDe m={deLaElegida} cargando={cargando} ctx={ctx}
+        selector={<SelectorDeSala salas={salas} activa={elegida} onCambiar={setElegida} />} />
+    );
+  }
+  return datos.meta ? <MetaDe m={datos.meta} ctx={ctx} /> : null;
+}
+
+function MetaDe({ m, ctx, selector = null, cargando = false }) {
   const vistaCompleta = useAuth().hasPermission('dash_meta_sala_vista_completa');
-  const m = datos.meta;
-  if (!m) return null;
+  if (!m) {
+    return (
+      <Widget titulo="Meta del mes" icono="Target" color={MARCA.azul} onAbrir={ctx.puede('metas') ? () => ctx.abrir('/metas') : null}>
+        {selector}
+        {cargando ? <Esqueleto lineas={2} /> : <Vacio texto="Esta sala no tiene meta este mes" />}
+      </Widget>
+    );
+  }
   const pct = Number(m.pct_cumplimiento) || 0;
   const color = pct >= 100 ? MARCA.verde : pct >= 70 ? MARCA.azul : MARCA.ambar;
   const dias = `${m.dias_restantes} día${m.dias_restantes !== 1 ? 's' : ''}`;
@@ -154,6 +184,7 @@ export function Meta({ datos, ctx }) {
   const chico = { color: colorSistema.texto2, fontSize: 14, fontVariant: ['tabular-nums'] };
   return (
     <Widget titulo="Meta del mes" icono="Target" color={color} onAbrir={ctx.puede('metas') ? () => ctx.abrir('/metas') : null}>
+      {selector}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
         <View>
           <Anillo pct={pct} color={color} />
@@ -229,12 +260,32 @@ export function Avisos({ ctx }) {
 // portal (pedido del usuario del 2026-09-30: «no me salen todos los
 // widgets»); el orden por uso sube los que más se abren. `permiso` puede ser
 // una lista: basta con uno.
+// Qué widget del portal es cada sección (`WIDGET_DEFS` de `DashboardView`):
+// el encendido/apagado se comparte con el portal (`user_dashboard_prefs.widgets`).
+// «Pendientes» y «Pedir un ajuste» no tienen un widget propio que apagar.
+export const WIDGET_WEB = {
+  ventas: 'sales', ventas_hora: 'sales', meta: 'meta_sala', equipo: 'shifts', sucursales: 'branches', datos_pedidos: 'dato_pedido',
+  avisos: 'announcements', facturacion: 'facturacion', vendedores: 'vendedores', top: 'top_productos', cortes: 'cortes_sala',
+  bolsas: 'bolsas_sala', cotizaciones: 'cotizaciones', reservas: 'reservas', turnos: 'shifts', tendencia: 'trend',
+  ausencias: 'absences', solicitudes: 'requests', cumpleanos: 'birthdays', calendario: 'calendar', consulta: 'inv_search',
+  traslados: 'traslados', bitacoras: 'bitacoras', recetas: 'recetas_pend', facturas_sala: 'facturas_sala',
+};
+/** Los rótulos del portal, para la pantalla de personalizar. */
+export const ROTULO_WIDGET = {
+  sales: 'Ventas por día y hora', meta_sala: 'Meta del mes', shifts: 'Equipo y estado de turnos', branches: 'Alertas de sucursales',
+  dato_pedido: 'Datos que faltan', announcements: 'Avisos recientes', facturacion: 'Facturación hoy', vendedores: 'Venta por vendedor',
+  top_productos: 'Top productos del mes', cortes_sala: 'Cortes de caja', bolsas_sala: 'Bolsas de efectivo', cotizaciones: 'Cotizaciones activas',
+  reservas: 'Reservas de mi sala', trend: 'Tendencia de asistencia', absences: 'Ausencias activas', requests: 'Solicitudes pendientes',
+  birthdays: 'Cumpleaños del mes', calendar: 'Calendario', inv_search: 'Consulta de inventario', traslados: 'Traslados entre salas',
+  bitacoras: 'Bitácoras de mi sala', recetas_pend: 'Recetas pendientes', facturas_sala: 'Facturas de mi sala',
+};
+
 export const SECCIONES = [
   { id: 'pendientes', pestanas: ['general', 'operacion'], visible: (d) => d.solicitudes != null || d.traslados != null || d.cortes != null, Componente: Pendientes },
   { id: 'ventas', pestanas: ['general', 'comercial'], permiso: 'dash_sales', Componente: Ventas },
   { id: 'ventas_hora', pestanas: ['general', 'comercial'], permiso: 'dash_sales', Componente: VentasPorHora },
   { id: 'pedir_ajuste', pestanas: ['general', 'operacion'], permiso: O.PERMISOS_DE_AJUSTE, Componente: O.PedirAjuste },
-  { id: 'meta', pestanas: ['general', 'comercial'], permiso: 'dash_meta_sala', visible: (d) => !!d.meta, Componente: Meta },
+  { id: 'meta', pestanas: ['general', 'comercial'], permiso: 'dash_meta_sala', visible: (d) => !!d.meta || d.metaTodas, Componente: Meta },
   { id: 'equipo', pestanas: ['general'], permiso: 'dash_shifts', Componente: Equipo },
   { id: 'sucursales', pestanas: ['general'], permiso: 'dash_branches', Componente: W.AlertasSucursales },
   { id: 'datos_pedidos', pestanas: ['general', 'comercial'], permiso: 'dash_dato_pedido', Componente: G.DatosQueFaltan },

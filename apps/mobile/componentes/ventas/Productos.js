@@ -1,7 +1,9 @@
 // La vista «Productos» de Ventas en la app — la pestaña del mismo nombre del
 // portal: qué se vendió en el período, de más a menos, con sus unidades (las
 // presentaciones por su factor), lo que dejó sin IVA, el costo y el margen.
-// Arriba los totales del período, contra el período anterior equivalente.
+// Arriba los totales del período (ingresos, costo y utilidad), contra el
+// período anterior equivalente. Cada fila dice además su costo y su última
+// venta (en qué sala, si es una sola), como las columnas del portal.
 // La fila y los totales salen del núcleo (`filaDeProductoVendido`,
 // `totalesDeProductos`); los que alguien ocultó de Ventas no salen, igual que
 // en el portal. Tocar uno abre lo que vendió por sala, por vendedor y por mes.
@@ -22,6 +24,8 @@ import {
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
@@ -38,12 +42,23 @@ export const ORDENES_DE_PRODUCTOS = [
   { id: 'utilidad', label: 'Más utilidad' }, { id: 'margen', label: 'Mayor margen' },
 ];
 
+// La última venta: la fecha y hace cuánto; con una sola sala, cuál.
+function ultimaVenta(r, nombreDeSala) {
+  if (!r.ultima_venta) return 'sin ventas antes';
+  const dias = Math.max(0, diasEntre(String(r.ultima_venta).slice(0, 10), hoySV()));
+  const salas = (r.ultima_venta_por_suc || []).filter((s) => s.fecha);
+  const donde = salas.length === 1 ? ` en ${nombreDeSala(salas[0].branch_id)}` : salas.length > 1 ? ` (${salas.length} salas)` : '';
+  return `última venta ${fechaTexto(String(r.ultima_venta).slice(0, 10), { day: 'numeric', month: 'short', year: '2-digit' })}, hace ${dias} d${donde}`;
+}
+
 export default function Productos({ fini, ffin, sala, busqueda, verCifras, orden = 'neto', verOcultos = false, laboratorio = 'todos', onLaboratorios, privado = false }) {
   const [todas, setTodas] = useState(null);
   const [vuelta, setVuelta] = useState(0);
   const [previo, setPrevio] = useState(null);
   const [error, setError] = useState(null);
   const [cuantos, setCuantos] = useState(POR_PAGINA);
+  const sucursales = useStaffStore((s) => s.branches);
+  const nombreDeSala = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sala ${id}`;
 
   useEffect(() => {
     let vivo = true;
@@ -105,6 +120,10 @@ export default function Productos({ fini, ffin, sala, busqueda, verCifras, orden
             <Kpi icono="Wallet" rotulo="Utilidad" valor={m(formatMoney(tot.utilidad, { decimales: 0 }))} color={MARCA.verde}
               apoyo={privado ? null : `margen ${tot.margen.toFixed(1)}%`} />
           </FilaDeKpis>
+          <FilaDeKpis>
+            <Kpi icono="TrendingDown" rotulo="Costo" valor={m(formatMoney(tot.costo, { decimales: 0 }))} color={MARCA.rojo}
+              apoyo={privado ? null : `con IVA ${formatMoney(tot.conIva, { decimales: 0 })} de ingreso`} />
+          </FilaDeKpis>
         </>
       ) : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -124,6 +143,9 @@ export default function Productos({ fini, ffin, sala, busqueda, verCifras, orden
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{r.descripcion}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
                     {[r.laboratorio_nombre, `${r.cantidad_base.toLocaleString('es-SV')} unidades`].filter(Boolean).join(' · ')}
+                  </Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>
+                    {[r.costo_total != null && !privado ? `costo ${formatMoney(r.costo_total)}` : null, ultimaVenta(r, nombreDeSala)].filter(Boolean).join(' · ')}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>

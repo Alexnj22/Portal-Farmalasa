@@ -5,7 +5,8 @@
 // semana entera y la lista de alertas.
 //
 // Horario, apertura y alertas salen del núcleo (`sucursales`), los mismos del
-// portal. Editar una se hace desde su ficha; crearla y el análisis con IA, en el portal.
+// portal. Editar una y su «Diagnóstico inteligente» (IA) están en su ficha;
+// crearla, con el + de la barra.
 //
 // Como el portal: los kioscos activos «N / 3» de cada una, la dirección con
 // municipio y departamento, y en el menú «Alquiladas / Propias». Inactiva =

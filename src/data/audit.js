@@ -114,13 +114,22 @@ export function fetchAuditLogs(limit) {
  * `filtrarBitacora`. La búsqueda exige cada palabra en alguna de las cuatro
  * columnas, como `tokenMatch`.
  *
- * @param {{accion?: string, desde?: string, hasta?: string, texto?: string, desdeFila?: number, limite?: number}} f
+ * `orden` es el de las columnas de la tabla del portal (`ordenarBitacora`):
+ * `{ key: 'created_at' | 'user_name' | 'action', direction: 'asc' | 'desc' }`,
+ * aplicado en la base para que la página sea la de ese orden y no un orden
+ * sobre lo ya bajado. Dentro del mismo usuario o acción, lo más reciente arriba.
+ *
+ * @param {{accion?: string, desde?: string, hasta?: string, texto?: string, desdeFila?: number, limite?: number,
+ *          orden?: {key?: string, direction?: string}}} f
  */
-export function fetchBitacoraPagina({ accion = 'ALL', desde = '', hasta = '', texto = '', desdeFila = 0, limite = 50 } = {}) {
+export function fetchBitacoraPagina({ accion = 'ALL', desde = '', hasta = '', texto = '', desdeFila = 0, limite = 50, orden = null } = {}) {
+    const clave = ['user_name', 'action'].includes(orden?.key) ? orden.key : 'created_at';
+    const asc = orden?.direction === 'asc';
     let q = supabase.from('audit_logs')
-        .select('id,user_id,user_name,action,target_id,details,source,severity,branch_id,branch_name,device_name,input_method,created_at')
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
+        .select('id,user_id,user_name,action,target_id,details,source,severity,branch_id,branch_name,device_name,input_method,created_at');
+    if (clave !== 'created_at') q = q.order(clave, { ascending: asc, nullsFirst: false });
+    q = q.order('created_at', { ascending: clave === 'created_at' ? asc : false })
+        .order('id', { ascending: clave === 'created_at' ? asc : false })
         .range(desdeFila, desdeFila + limite - 1);
     if (accion && accion !== 'ALL') q = q.eq('action', accion);
     if (desde) q = q.gte('created_at', `${desde}T00:00:00-06:00`);

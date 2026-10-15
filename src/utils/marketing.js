@@ -87,6 +87,20 @@ export const ESTADOS_DE_SALIDA = ['programado', 'publicado'];
 /** Los estados que el diseñador mueve a mano. */
 export const ESTADOS_DEL_DISENADOR = ['pendiente', 'en_proceso', 'finalizado'];
 
+/**
+ * ¿Se puede mover la pieza a `destino` desde el Flujo? Sólo entre los estados
+ * del diseñador y, ya aprobada, a programado o publicado. Aprobar y pedir
+ * cambios no se hace moviendo: lo hace quien revisa, con su comentario. (Quién
+ * puede moverla —sólo quien la creó— lo decide la pantalla y la base.) Vivía
+ * en `TabTablero`; se mudó el 2026-10-15 para que la app use la misma regla.
+ */
+export function puedeMoverA(pieza, destino) {
+    if (!pieza || pieza.estado === destino) return false;
+    if (ESTADOS_DEL_DISENADOR.includes(destino)) return !['aprobado', 'programado', 'publicado'].includes(pieza.estado);
+    if (destino === 'programado') return pieza.estado === 'aprobado';
+    return destino === 'publicado' && ['aprobado', 'programado'].includes(pieza.estado);
+}
+
 export const ESTADOS_MES = {
     planificando: { label: 'Planificando', variant: 'neutral', texto: 'El diseñador está armando el mes. Se ve el avance; los diseños, cuando lo envíe a revisión.' },
     en_revision:  { label: 'En revisión',  variant: 'info',    texto: 'El calendario está listo para revisar: comenta cada pieza, pide cambios o apruébalo.' },

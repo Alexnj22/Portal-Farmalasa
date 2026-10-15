@@ -12,9 +12,13 @@
 // Mismas funciones del núcleo: `fetchFacturasSala`, `reclamarFactura`,
 // `soltarFactura`, `resumenRenglones`. El PDF se abre con el visor del
 // teléfono (URL firmada al momento, `openStoredFile`).
+//
+// Con el módulo `facturas_sala`, el botón de la barra abre el panel de
+// supervisión (`facturas-sala-panel`): todas las tomadas por estado, quién las
+// tomó y liberarlas.
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -107,7 +111,8 @@ function Grupo({ titulo, lista, sala, onCambio }) {
 }
 
 export default function FacturasSala() {
-  const { user, getScope } = useAuth();
+  const { user, getScope, hasPermission } = useAuth();
+  const verPanel = hasPermission('facturas_sala');
   const sucursales = useStaffStore((s) => s.branches);
   const todas = getScope?.('dash_facturas_sala') === 'ALL';
   const propia = String(salaDelUsuario(user) ?? '');
@@ -140,7 +145,7 @@ export default function FacturasSala() {
         ...BARRA_NATIVA, title: 'Facturas de mi sala', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Monto, proveedor o producto…', onChangeText: (e) => setBusqueda(e.nativeEvent.text), onCancelButtonPress: () => setBusqueda('') },
       }} />
-      {todas ? <MenuDeFiltros grupos={grupos} /> : null}
+      {todas || verPanel ? <MenuDeFiltros grupos={grupos} extra={verPanel ? { icono: 'list.bullet.rectangle', etiqueta: 'Todas las tomadas', onPress: () => router.push('/facturas-sala-panel') } : null} /> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40, gap: 18 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>

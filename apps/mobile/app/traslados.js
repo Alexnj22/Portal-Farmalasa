@@ -18,17 +18,24 @@
 // otra sala, recibir una caja, enviar producto, llevar productos y faltantes —
 // todo nativo.
 //
+// Como el portal: «Recibir» junta lo que se pidió a varias salas a la vez
+// (con «Ya llegaron las N completas»), con alcance de todas se filtra por sala,
+// el historial con alcance de todas se corta por sala de ORIGEN y desenlace, y
+// una caja se puede recibir escribiendo su número si la cámara no la lee.
+//
 // Los datos son las mismas lecturas del portal (`data/traslados`,
 // `data/envios`) y el alcance es el mismo: con «todas las salas» se ven todas;
 // si no, la mía más las que estoy cubriendo ahora.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
-import { fetchSalasQueCubro, fetchTrasladosHistorial, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchTrasladoPorCodigo } from '@nucleo/data/traslados';
+import { fetchEstadoDeGrupos, fetchSalasQueCubro, fetchTrasladosHistorial, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchTrasladoPorCodigo, recibirTraslado } from '@nucleo/data/traslados';
+import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { BotonGrande } from '../componentes/formulario/Piezas';
 import { fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio } from '@nucleo/data/envios';
 import { buscadorDePersonas, motivoDeRechazoCorto } from '@nucleo/utils/movimientoTexto';
 import { textoBuscable } from '@nucleo/utils/trasladoTexto';
@@ -110,6 +117,8 @@ export default function Traslados() {
   const [busqueda, setBusqueda] = useState('');
   const [escaneando, setEscaneando] = useState(false);
   const [aviso, setAviso] = useState(null);
+  const [salaRecibir, setSalaRecibir] = useState(null);
+  const [grupos, setGrupos] = useState({});
 
   const todas = getScope?.('traslados') === 'ALL';
   const miSala = salaDelUsuario(user);
@@ -120,11 +129,18 @@ export default function Traslados() {
     const salas = todas ? null : [String(miSala), ...(cubro || []).map((s) => String(s.branch_id ?? s))];
     const [c, r, e] = await Promise.all([
       decide ? fetchTrasladosPorConfirmar({ branchIds: salas }) : { filas: [] },
-      fetchTrasladosPorRecibir({ branchId: todas ? null : miSala }),
+      // Con alcance de todas, el recorte por sala lo hace la CONSULTA, como en
+      // el portal: «en camino» mira el destino.
+      fetchTrasladosPorRecibir({ branchId: todas ? salaRecibir : miSala }),
       fetchEnviosVivos(),
     ]);
     setDatos({ piden: c.filas || [], recibir: r.filas || [], envios: e.envios || [] });
-  }, [todas, miSala, decide]);
+    // El estado de los grupos va después y sólo por los que aparecen: es adorno;
+    // si falla, las tarjetas se ven igual, sin el encabezado.
+    const ids = (r.filas || []).map((f) => f.metadata?.grupo_id).filter(Boolean);
+    const g = await fetchEstadoDeGrupos(ids).catch(() => ({ grupos: {} }));
+    setGrupos(g.grupos || {});
+  }, [todas, miSala, decide, salaRecibir]);
 
   // El historial pide la SEMANA elegida (y la sala) a la consulta: arriba hay
   // un tope de filas, y un tope se aplica antes del filtro. Recortar acá afuera
@@ -161,6 +177,21 @@ export default function Traslados() {
     const { traslado, error } = await fetchTrasladoPorCodigo(codigo);
     if (error || !traslado) { setAviso({ tono: 'error', texto: `No encontramos ${codigo}, o es de otra sala.` }); return false; }
     if (traslado.es_de_un_pedido) { setAviso({ tono: 'info', texto: 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.' }); return false; }
+    return abrirCaja(traslado, codigo);
+  };
+  // Escribir el número a mano, para cuando la cámara no lee el ticket (arrugado,
+  // mojado, mal impreso). El número es el mismo que va en las barras.
+  const escribirNumero = () => {
+    Alert.prompt('Recibir por número', 'Escribe el número que trae el ticket de la caja.', async (t) => {
+      const codigo = String(t ?? '').trim();
+      if (!codigo) return;
+      const { traslado, error } = await fetchTrasladoPorCodigo(codigo);
+      if (error || !traslado) { fallo('No se encontró', `No encontramos ${codigo}, o es de otra sala.`); return; }
+      if (traslado.es_de_un_pedido) { fallo('Es de un pedido', 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.'); return; }
+      abrirCaja(traslado, codigo);
+    }, 'plain-text', '', 'number-pad');
+  };
+  const abrirCaja = (traslado, codigo) => {
     setEscaneando(false);
     setAviso(null);
     // Una bolsa ya recibida, dentro de las 48 h: se puede anotar lo que faltó.
@@ -180,6 +211,69 @@ export default function Traslados() {
   const abrir = (f) => router.push({ pathname: '/traslado/[id]', params: { id: String(f.id) } });
 
   const historialVisto = filtrar(historial ?? []).filter((f) => desenlace === 'todos' || f.status === desenlace);
+  // Con alcance de todas y sin sala elegida, el historial se corta por sala de
+  // ORIGEN —la que despachó o rechazó— ordenada por cuántos cerró, y dentro de
+  // cada una por desenlace. Igual que el portal (`HistorialTraslados`).
+  const historialPorSala = useMemo(() => {
+    if (!todas || salaFiltro) return null;
+    const mapa = new Map();
+    for (const f of historialVisto) {
+      const sala = f.metadata?.origen_branch_name || 'Sin sala';
+      if (!mapa.has(sala)) mapa.set(sala, []);
+      mapa.get(sala).push(f);
+    }
+    return [...mapa.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historial, busqueda, desenlace, todas, salaFiltro]);
+
+  // «En camino», partido en lo que se pidió junto y lo que no. Sólo se agrupa
+  // lo que TIENE hermanas en la lista: un grupo de uno no es un grupo.
+  const bloques = useMemo(() => {
+    const porGrupo = new Map();
+    const sueltas = [];
+    for (const f of recibir) {
+      const g = f.metadata?.grupo_id;
+      if (!g) { sueltas.push(f); continue; }
+      if (!porGrupo.has(g)) porGrupo.set(g, []);
+      porGrupo.get(g).push(f);
+    }
+    const lista = [];
+    for (const [grupoId, filas] of porGrupo) {
+      if (filas.length > 1) lista.push({ grupoId, filas }); else sueltas.push(...filas);
+    }
+    return { grupos: lista, sueltas };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datos, busqueda]);
+  const puedeRecibir = hasPermission('traslados', 'can_approve');
+  // Recibir las N cajas de un grupo DE UNA EN UNA: cada recepción es un viaje
+  // al sistema de origen. Si una falla, las anteriores ya quedaron; esa se
+  // reintenta desde su tarjeta.
+  const recibirGrupo = (filas) => Alert.alert(`Ya llegaron las ${filas.length} completas`,
+    'Se reciben todas sin faltantes. Si a una le faltó algo, recíbela desde su propia tarjeta: ahí se dice qué no venía.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Recibir todas', onPress: async () => {
+        let hechas = 0;
+        for (const f of filas) {
+          trabajando(`Recibiendo ${f.metadata?.origen_branch_name ?? 'la otra sala'}… (${hechas} de ${filas.length})`);
+          const r = await recibirTraslado(f.id);
+          if (!r?.ok && r?.codigo !== 'YA_RECIBIDO') {
+            fallo('No entraron todas', `Entraron ${hechas} de ${filas.length}. ${f.metadata?.origen_branch_name ?? 'Una sala'}: ${r?.error ?? 'no se pudo recibir'}. Vuelve a intentar sólo esa desde su tarjeta.`);
+            break;
+          }
+          hechas += 1;
+        }
+        if (hechas === filas.length) listo('Recibidas', `Las ${filas.length} cajas quedaron recibidas.`);
+        if (hechas > 0) cargar();
+      } },
+    ]);
+  const tarjetaRecibir = (f) => {
+    const salio = f.metadata?.erp_traslado?.at ?? f.updated_at;
+    const tarde = (Date.now() - new Date(salio).getTime()) / 3600000 > HORAS_EN_CAMINO_ALERTA;
+    return (
+      <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} desdeCuando={salio} alerta={tarde}
+        estado={{ texto: 'En camino', color: MARCA.azulClaro }} onPress={() => abrir(f)} />
+    );
+  };
   // Los envíos cerrados: los 200 más recientes, como en el portal. NO se
   // recortan por semana ni por sala acá afuera: la consulta trae un tope, y
   // recortar después de un tope esconde sin avisar (la regla de las 1000 filas).
@@ -188,10 +282,10 @@ export default function Traslados() {
     return smartFilter(busqueda, [e], (x) => [[x.origen_branch_name, x.branch_name, x.motivo_tipo, x.reason, ...(x.lineas || []).map((l) => l.descripcion)].filter(Boolean).join(' ')]).results.length > 0;
   });
   const nombreDeSala = (sid) => (sucursales || []).find((b) => String(b.id) === String(sid))?.name ?? `Sala ${sid}`;
-  const elegirSala = () => {
+  const elegirSala = (poner = setSalaFiltro) => {
     const salas = (sucursales || []).filter((b) => b.type === 'FARMACIA' || b.type === 'BODEGA');
     ActionSheetIOS.showActionSheetWithOptions({ title: 'Sala', options: ['Todas las salas', ...salas.map((b) => b.name), 'Cancelar'], cancelButtonIndex: salas.length + 1 },
-      (i) => { if (i === 0) setSalaFiltro(null); else if (i <= salas.length) setSalaFiltro(String(salas[i - 1].id)); });
+      (i) => { if (i === 0) poner(null); else if (i <= salas.length) poner(String(salas[i - 1].id)); });
   };
   const escanear = () => { Haptics.selectionAsync().catch(() => {}); setAviso(null); setEscaneando(true); };
 
@@ -215,6 +309,7 @@ export default function Traslados() {
             {enLaSolicitud ? `Seguir la solicitud (${enLaSolicitud})` : 'Pedir a otra sala'}
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction icon="barcode.viewfinder" onPress={escanear}>Recibir una caja</Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction icon="number" onPress={escribirNumero}>Recibir escribiendo el número</Stack.Toolbar.MenuAction>
           {hasPermission('traslados', 'can_edit') ? (
             <Stack.Toolbar.MenuAction icon="shippingbox" onPress={() => router.push('/enviar-producto')}>Enviar producto</Stack.Toolbar.MenuAction>
           ) : null}
@@ -236,14 +331,43 @@ export default function Traslados() {
         ) : null}
 
         {vista === 'recibir' ? (
-          recibir.length ? recibir.map((f) => {
-            const salio = f.metadata?.erp_traslado?.at ?? f.updated_at;
-            const tarde = (Date.now() - new Date(salio).getTime()) / 3600000 > HORAS_EN_CAMINO_ALERTA;
-            return (
-              <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} desdeCuando={salio} alerta={tarde}
-                estado={{ texto: 'En camino', color: MARCA.azulClaro }} onPress={() => abrir(f)} />
-            );
-          }) : datos ? <Vacio titulo="Nada en camino" detalle="Cuando una sala despache lo que pediste, aparece acá. También puedes escanear la caja." /> : null
+          <>
+            {todas ? (
+              <Pressable onPress={() => elegirSala(setSalaRecibir)} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{salaRecibir ? `Sala: ${nombreDeSala(salaRecibir)}  ✕` : 'Todas las salas ▾'}</Text>
+              </Pressable>
+            ) : null}
+            <Pressable onPress={escribirNumero} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+              <Text style={{ color: colorSistema.acento, fontSize: 15 }}>¿La cámara no lee el ticket? Escribe el número</Text>
+            </Pressable>
+            {recibir.length ? (
+              <>
+                {bloques.grupos.map(({ grupoId, filas }) => {
+                  const g = grupos[grupoId];
+                  const salas = g?.total ?? filas.length;
+                  const sinResponder = g?.sinResponder ?? 0;
+                  return (
+                    <View key={grupoId} style={{ gap: 10 }}>
+                      <Titulo texto={`Lo pediste a ${salas} salas`} />
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 32, marginTop: -6 }}>
+                        {(sinResponder > 0 ? `${salas - sinResponder} de ${salas} respondieron · ${sinResponder} sin responder` : `Las ${salas} respondieron`)
+                          + (g?.rechazadas > 0 ? ` · ${g.rechazadas} no pudo mandarlo` : '')}
+                      </Text>
+                      {filas.map(tarjetaRecibir)}
+                      {puedeRecibir && sinResponder === 0 ? (
+                        <View style={{ marginHorizontal: 16, gap: 4 }}>
+                          <BotonGrande texto={`Ya llegaron las ${filas.length} completas`} color={MARCA.verde} onPress={() => recibirGrupo(filas)} />
+                          <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 4 }}>Si a una le faltó algo, recíbela desde su propia tarjeta: ahí se dice qué no venía.</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
+                {bloques.grupos.length && bloques.sueltas.length ? <Titulo texto="Las demás" n={bloques.sueltas.length} /> : null}
+                {bloques.sueltas.map(tarjetaRecibir)}
+              </>
+            ) : datos ? <Vacio titulo="Nada en camino" detalle="Cuando una sala despache lo que pediste, aparece acá. También puedes escanear la caja." /> : null}
+          </>
         ) : null}
 
         {vista === 'envios' ? (
@@ -266,18 +390,23 @@ export default function Traslados() {
               { id: 'todos', label: 'Todos' }, { id: 'APPROVED', label: 'Recibidos' }, { id: 'REJECTED', label: 'Rechazados' },
             ]} />
             {todas ? (
-              <Pressable onPress={elegirSala} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+              <Pressable onPress={() => elegirSala()} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
                 <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{salaFiltro ? `Sala: ${nombreDeSala(salaFiltro)}  ✕` : 'Todas las salas ▾'}</Text>
               </Pressable>
             ) : null}
             {historial == null ? null : historialVisto.length ? (
               <>
                 <Titulo texto="Traslados" n={historialVisto.length} />
-                {historialVisto.map((f) => (
-                  <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} desdeCuando={f.updated_at} onPress={() => abrir(f)}
-                    estado={f.status === 'REJECTED'
-                      ? { texto: motivoDeRechazoCorto(f) || 'Rechazado', color: MARCA.rojo }
-                      : f.metadata?.erp_recibido ? { texto: 'Recibido', color: MARCA.verde } : { texto: 'En camino', color: MARCA.azulClaro }} />
+                {(historialPorSala ?? [[null, historialVisto]]).map(([sala, deLaSala]) => (
+                  <View key={sala ?? 'todas'} style={{ gap: 10 }}>
+                    {sala ? <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', marginHorizontal: 32, marginTop: 6 }}>{`${sala} · ${deLaSala.length}`}</Text> : null}
+                    {[...deLaSala].sort((a, b) => (a.status === 'REJECTED') - (b.status === 'REJECTED')).map((f) => (
+                      <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} desdeCuando={f.updated_at} onPress={() => abrir(f)}
+                        estado={f.status === 'REJECTED'
+                          ? { texto: motivoDeRechazoCorto(f) || 'Rechazado', color: MARCA.rojo }
+                          : f.metadata?.erp_recibido ? { texto: 'Recibido', color: MARCA.verde } : { texto: 'En camino', color: MARCA.azulClaro }} />
+                    ))}
+                  </View>
                 ))}
               </>
             ) : <Vacio titulo="Nada esa semana" detalle="Usa las flechas para mirar otra semana." />}

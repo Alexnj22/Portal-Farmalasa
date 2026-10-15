@@ -18,7 +18,7 @@ import { fetchDescuentos } from '@nucleo/data/descuentos';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { conteoDePromociones, estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
+import { conteoDePromociones, csvListaDePromociones, estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import TabActivas from './TabActivas';
@@ -399,17 +399,10 @@ export default function PromocionesView() {
        mismo terminan diciendo cosas distintas. */
     /* Exportar lo que se ve. Faltaba en todas las pestañas salvo «Quién
        vendió»: lo que se negocia con un laboratorio se manda en planilla. */
-    const exportarLista = (lista, nombre) => exportCsv(
-        ['PROMOCION', 'TIPO', 'ESTADO', 'INICIO', 'FIN', 'LABORATORIOS', 'PRODUCTOS', 'ABIERTOS', 'LOTE', 'BAJA EL PRECIO'],
-        lista.map((p) => [
-            p.nombre, esLaboratorio(p) ? 'Laboratorio' : 'Producto', estadoVisible(p).rotulo,
-            p.inicio || '', p.fin || '', (p.laboratorios || []).join(' / '),
-            esLaboratorio(p) ? '' : (p.renglones ?? ''), esLaboratorio(p) ? '' : (p.abiertos ?? ''),
-            p.lote_total ?? '', p.descuentos > 0 ? 'Si' : 'No',
-        ]),
-        `promociones_${nombre}_${hoySV()}.csv`,
-        'promociones',
-    );
+    const exportarLista = (lista, nombre) => {
+        const c = csvListaDePromociones(lista, nombre);
+        exportCsv(c.headers, c.rows, `${c.nombre}.csv`, 'promociones');
+    };
     const exportador = tab === 'activas' && vivas.length ? () => exportarLista(vivas, 'vigentes')
         : tab === 'historico' && terminadas.length ? () => exportarLista(terminadas, 'terminadas')
             : exportadorTab;

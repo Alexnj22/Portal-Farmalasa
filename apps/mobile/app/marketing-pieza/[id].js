@@ -38,7 +38,7 @@ import { Pildora } from '../../componentes/avisos/Piezas';
 import Avatar from '../../componentes/Avatar';
 import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
-import { piezaElegida } from '../../componentes/marketing/elegida';
+import { piezaElegida, guardarPieza } from '../../componentes/marketing/elegida';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
 
@@ -218,6 +218,14 @@ export default function PiezaDeMarketing() {
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>
                   {n ? `Ver y comentar sobre el diseño · ${n} ${n === 1 ? 'marca' : 'marcas'}` : 'Marcar y comentar sobre el diseño'}
                 </Text>
+                {/* Las versiones (V2, V3…) lado a lado y subir la siguiente, como `VersionesModal`. */}
+                {(a.version > 1 || puedeEditar) ? (
+                  <Tocable accessibilityRole="button" hitSlop={6}
+                    onPress={() => { Haptics.selectionAsync().catch(() => {}); guardarPieza(pieza, mes, firmas); router.push({ pathname: '/marketing-versiones', params: { archivo: String(a.id) } }); }}
+                    style={{ minHeight: 32, justifyContent: 'center', marginHorizontal: 4 }}>
+                    <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '600' }}>{a.version > 1 ? `Versiones · V${a.version} (comparar)` : 'Subir otra versión'}</Text>
+                  </Tocable>
+                ) : null}
               </Tocable>
             );
           })}

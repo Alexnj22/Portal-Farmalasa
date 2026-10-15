@@ -11,14 +11,21 @@
 //
 // Cada tarjeta: hora, quién lo hizo y a quién se entregó, la cifra del TRAMO
 // (`conTramoPorSalaYDia`) con su color y el estado. Tocar una abre
-// `corte/[id]`, donde se lee el detalle y se confirma o se descarta.
+// `corte/[id]`, donde se lee el detalle y se confirma o se descarta. Como
+// `TarjetaCorte` del portal, una pendiente trae además «Confirmar» (de un clic
+// si cuadra; si no, abre el detalle con la diferencia) y «Descartar» (abre el
+// detalle: descartar pide el motivo).
+//
+// Arriba de la lista, «Las cajas» (`FichasDeCaja`): quién abrió cada caja,
+// el cruce con su marcación, la venta del día y el efectivo del cajón.
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchCortes } from '@nucleo/data/cortes';
+import { fetchAperturas, fetchCortes, fetchEntradasParaCruce, fetchPiezasDelCajon, fetchVentasPorPago } from '@nucleo/data/cortes';
+import FichasDeCaja from '../componentes/cortes/FichasDeCaja';
 import { conTramoPorSalaYDia, diferenciaDelCorte, filtrarCortes, noContoEfectivo, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -60,7 +67,9 @@ function rangoDe(periodo, libre) {
   return libre.desde <= libre.hasta ? [libre.desde, libre.hasta] : [libre.hasta, libre.desde];
 }
 
-function Tarjeta({ c, sala, conSala, conFecha }) {
+function Tarjeta({ c, sala, conSala, conFecha, puedeResolver }) {
+  const abrir = (accion) => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/corte/[id]', params: { id: String(c.id), fecha: c.fecha, ...(accion ? { accion } : {}) } }); };
+  const acciones = puedeResolver && c.estado === 'PENDIENTE' && c.tipo !== 'Z' && c.tipo !== 'X';
   const sinConteo = noContoEfectivo(c);
   const descartado = c.estado === 'DESCARTADO';
   const dif = descartado ? diferenciaDelCorte(c).valor : c.tramo;
@@ -69,7 +78,7 @@ function Tarjeta({ c, sala, conSala, conFecha }) {
   const quien = c.hizo?.name ? shortEmployeeName({ name: c.hizo.name }) : (c.empleado_texto || 'Desde la caja');
   const encabezado = [conSala ? sala : null, conFecha ? fechaTexto(c.fecha, { weekday: 'short', day: 'numeric', month: 'short' }) : null, hora12(c.hora)].filter(Boolean).join(' · ');
   return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/corte/[id]', params: { id: String(c.id), fecha: c.fecha } }); }}
+    <Pressable onPress={() => abrir(null)}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Vidrio radio={22} interactivo>
         <View style={{ padding: 14, gap: 8 }}>
@@ -91,6 +100,20 @@ function Tarjeta({ c, sala, conSala, conFecha }) {
             </Text>
             <Pildora texto={estado} color={color} />
           </View>
+          {acciones ? (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {!sinConteo ? (
+                <Pressable onPress={() => abrir('confirmar')} hitSlop={4} accessibilityRole="button"
+                  style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999, backgroundColor: `${MARCA.verde}26`, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                  <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>Confirmar</Text>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={() => abrir('descartar')} hitSlop={4} accessibilityRole="button"
+                style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999, backgroundColor: `${MARCA.rojo}1F`, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '700' }}>Descartar</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       </Vidrio>
     </Pressable>
@@ -98,7 +121,9 @@ function Tarjeta({ c, sala, conSala, conFecha }) {
 }
 
 export default function Cortes() {
-  const { user, getScope } = useAuth();
+  const { user, getScope, hasPermission } = useAuth();
+  const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+  const [cajas, setCajas] = useState(null);
   const sucursales = useStaffStore((s) => s.branches);
   const todas = getScope?.('cortes_caja') === 'ALL';
   const miSala = String(salaDelUsuario(user) ?? '');
@@ -125,7 +150,15 @@ export default function Cortes() {
     setError('');
     setFilas(conTramoPorSalaYDia(r || []));
     setCuantos(POR_PAGINA);
-  }, [desde, hasta]);
+    // Las fichas de apertura van aparte: si fallan, los cortes se ven igual.
+    Promise.all([
+      fetchAperturas({ desde, hasta, branchId: todas ? null : miSala || null }),
+      fetchEntradasParaCruce({ desde, hasta }),
+      fetchVentasPorPago({ desde, hasta }),
+      fetchPiezasDelCajon({ desde, hasta, branchId: todas ? null : miSala || null }),
+    ]).then(([aper, asis, porPago, piezas]) => setCajas({ aperturas: aper || [], entradas: asis?.filas || [], pude: asis?.pude !== false, ventas: porPago || [], piezas: piezas || [] }))
+      .catch(() => setCajas(null));
+  }, [desde, hasta, todas, miSala]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const nombreSala = useMemo(() => Object.fromEntries((sucursales || []).map((b) => [b.id, b.name])), [sucursales]);
@@ -180,6 +213,10 @@ export default function Cortes() {
             {variosDias ? `${fechaTexto(desde, { day: 'numeric', month: 'short' })} – ${fechaTexto(hasta, { day: 'numeric', month: 'short' })}` : fechaTexto(desde, { weekday: 'long', day: 'numeric', month: 'long' })}
           </Text>
         )}
+        {cajas ? (
+          <FichasDeCaja aperturas={(cajas.aperturas || []).filter((a) => !sala || String(a.branch_id) === sala)} entradas={cajas.entradas} pudeLeerAsistencia={cajas.pude}
+            salas={new Map((sucursales || []).map((b) => [b.id, b.name]))} ventas={cajas.ventas} piezas={cajas.piezas} veLosMontos={todas} />
+        ) : null}
         {filas ? (
           <>
             <FilaDeKpis>
@@ -212,7 +249,7 @@ export default function Cortes() {
         {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : error ? null : visibles.length ? (
           <>
             {visibles.slice(0, cuantos).map((c) => (
-              <Tarjeta key={c.id} c={c} sala={nombre(c.branch_id)} conSala={todas && !sala} conFecha={variosDias} />
+              <Tarjeta key={c.id} c={c} sala={nombre(c.branch_id)} conSala={todas && !sala} conFecha={variosDias} puedeResolver={puedeResolver} />
             ))}
             {visibles.length > cuantos ? (
               <View style={{ marginHorizontal: 16 }}>

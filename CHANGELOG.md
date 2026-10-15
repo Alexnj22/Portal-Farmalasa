@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.2 — App: Inicio con selector de sala, semanas anteriores y ranking por día
+
+- App, Inicio: «Meta del mes» y «Cortes de caja del mes» con selector de sala
+  cuando el alcance es TODAS (como el tablero del portal).
+- «Asistencia de la semana» va a semanas anteriores; el núcleo suma
+  `fetchPresentesPorDia` (paginada: una semana de la red pasa de 1000 marcas).
+- «Quién está vendiendo»: total / por día trabajado (y por hora), promedio de
+  la sala y quién va bajo él, con las cuentas de `rankingDeVendedores`.
+
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 
 - Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»

@@ -118,13 +118,38 @@ Deno.serve(async (req: Request) => {
       .returns<FichaConDocs[]>();
     if (errFichas) return json({ ok: false, error: 'NO_SE_PUDO_LEER_FICHAS', detalle: errFichas.message }, 500);
 
-    const duenoDe = new Map<string, string>();   // ruta -> employee_id
+    /* TODAS las rutas que nombra un documento, no sólo `url` (2026-10-15).
+     *
+     * Miraba sólo `d.url`, y un documento también nombra archivos en `hojas`
+     * (el reverso de un carné, la hoja 2 de un CV) y en `historial` (la versión
+     * reemplazada). Esos se leían como huérfanos y se BORRABAN: en dos noches se
+     * fueron los reversos de dos licencias y de un carné de enfermería, y una
+     * tarjeta de AFP entera. Se recorre el documento completo buscando rutas,
+     * así una clave nueva que guarde un archivo no vuelve a quedar afuera.
+     *
+     * Y una ruta puede tener VARIOS dueños: el acuse del MTPS se reparte entre
+     * todos los que nombra y las fichas comparten su dirección. Moverlo a la
+     * carpeta de uno y borrar el original dejaba a los demás apuntando a nada. */
+    const duenosDe = new Map<string, Set<string>>();   // ruta -> employee_ids
     for (const f of fichas ?? []) {
       for (const d of f.employee_documents ?? []) {
-        const ruta = rutaDeLaUrl(d?.url ?? null);
-        if (ruta) duenoDe.set(ruta, f.id);
+        for (const ruta of rutasDe(d)) {
+          if (!duenosDe.has(ruta)) duenosDe.set(ruta, new Set());
+          duenosDe.get(ruta)!.add(f.id);
+        }
       }
     }
+
+    /* Lo que espera en «documentos por asignar» (un acuse que nombra a alguien
+     * sin ficha todavía) tampoco es huérfano: lo va a reclamar el alta de esa
+     * persona. Si la lectura falla se sale sin tocar nada — un mapa a medias
+     * borra lo que no alcanzó a leer. */
+    const { data: porAsignar, error: errPorAsignar } = await admin
+      .from('documentos_por_asignar').select('documento').is('aplicado_a', null)
+      .returns<{ documento: unknown }[]>();
+    if (errPorAsignar) return json({ ok: false, error: 'NO_SE_PUDO_LEER_POR_ASIGNAR', detalle: errPorAsignar.message }, 500);
+    const reservados = new Set<string>();
+    for (const p of porAsignar ?? []) for (const ruta of rutasDe(p.documento)) reservados.add(ruta);
 
     // ── Lo que hay en el buzón ──────────────────────────────────────────────
     const { data: enElBuzon, error: errListar } = await admin.storage.from(BUCKET)
@@ -139,8 +164,17 @@ Deno.serve(async (req: Request) => {
     for (const o of enElBuzon ?? []) {
       if (!o?.name) continue;
       const ruta = `${SIN_DUENO}/${o.name}`;
-      const dueno = duenoDe.get(ruta);
+      const duenos = duenosDe.get(ruta);
 
+      /* Compartido entre varias fichas, o reservado para una que todavía no
+       * existe: se queda donde está. No hay UNA carpeta correcta para él, y
+       * cualquier mudanza deja a alguien con un enlace roto. */
+      if ((duenos && duenos.size > 1) || reservados.has(ruta)) {
+        esperando.push(`${ruta} (compartido: ${duenos?.size ?? 0} fichas${reservados.has(ruta) ? ' + por asignar' : ''})`);
+        continue;
+      }
+
+      const dueno = duenos ? [...duenos][0] : null;
       if (dueno) {
         if (enSeco) { movidos.push(ruta); continue; }
         const destino = `employees/${dueno}/documents/${o.name}`;
@@ -242,9 +276,36 @@ function rutaDeLaUrl(url: string | null): string | null {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
+/** Todas las rutas del bucket que nombra un valor, a cualquier profundidad
+ *  (`url`, `hojas[].url`, `historial[].url`, …). */
+function rutasDe(valor: unknown, salida: string[] = []): string[] {
+  if (typeof valor === 'string') {
+    if (valor.includes('/documents/')) { const r = rutaDeLaUrl(valor); if (r) salida.push(r); }
+  } else if (Array.isArray(valor)) {
+    for (const v of valor) rutasDe(v, salida);
+  } else if (valor && typeof valor === 'object') {
+    for (const v of Object.values(valor)) rutasDe(v, salida);
+  }
+  return salida;
+}
+
+/** Copia de `valor` con cada cadena que nombre `rutaVieja` apuntando a `rutaNueva`. */
+function reemplazarRuta(valor: unknown, rutaVieja: string, rutaNueva: string): unknown {
+  if (typeof valor === 'string') {
+    return rutaDeLaUrl(valor) === rutaVieja
+      ? valor.replace(encodeURI(rutaVieja), encodeURI(rutaNueva)).replace(rutaVieja, rutaNueva)
+      : valor;
+  }
+  if (Array.isArray(valor)) return valor.map((v) => reemplazarRuta(v, rutaVieja, rutaNueva));
+  if (valor && typeof valor === 'object') {
+    return Object.fromEntries(Object.entries(valor).map(([k, v]) => [k, reemplazarRuta(v, rutaVieja, rutaNueva)]));
+  }
+  return valor;
+}
+
 /**
- * Cambia la ruta vieja por la nueva DENTRO del jsonb de la ficha, dejando
- * intacto todo lo demás de cada documento (categoría, vencimiento, historial).
+ * Cambia la ruta vieja por la nueva DENTRO del jsonb de la ficha —en `url`, en
+ * las hojas y en el historial—, dejando intacto todo lo demás.
  *
  * Relee la ficha en vez de confiar en la copia del mapa: entre que se armó el
  * mapa y este momento alguien pudo haber guardado el expediente, y reescribir
@@ -261,10 +322,9 @@ async function reescribirUrl(
   const docs = data.employee_documents ?? [];
   let toco = false;
   const nuevos = docs.map((d) => {
-    if (rutaDeLaUrl(d?.url ?? null) !== rutaVieja) return d;
+    if (!rutasDe(d).includes(rutaVieja)) return d;
     toco = true;
-    const url = d.url as string;
-    return { ...d, url: url.replace(encodeURI(rutaVieja), encodeURI(rutaNueva)).replace(rutaVieja, rutaNueva) };
+    return reemplazarRuta(d, rutaVieja, rutaNueva) as DocDeFicha;
   });
   // Si ya no lo nombra, alguien lo cambió en el medio: no se escribe nada y el
   // archivo viejo queda para el barrido, que es el resultado correcto.

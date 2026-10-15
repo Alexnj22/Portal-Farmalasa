@@ -1091,7 +1091,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (name === 'education_level') {
                 newData.education_grade_completed = '';
                 newData.education_specialty = '';
-                if (!LEVELS_WITH_PROFESSION.includes(value)) newData.profession = '';
+                // Un título universitario no es el oficio de un bachiller, así
+                // que se suelta al BAJAR de universitario. Entre otros niveles
+                // el oficio se queda: el Art. 23 nº1 lo pide a todos, y borrarlo
+                // dejaba 7 fichas «incompletas» sin un campo donde llenarlo.
+                if (LEVELS_WITH_PROFESSION.includes(prev.education_level) && !LEVELS_WITH_PROFESSION.includes(value)) newData.profession = '';
                 if (!LEVELS_WITH_STUDY_TOGGLE.includes(value)) {
                     newData.is_studying = false;
                     newData.study_start_date = '';
@@ -3435,6 +3439,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </>
                                     );
                                 })()}
+
+                                {/* Sin título universitario, el oficio (Art. 23 nº1:
+                                    «profesión u oficio») se escribe. El expediente
+                                    lo exige a todos y, sin este campo, a un
+                                    bachiller no había dónde ponérselo. */}
+                                {!LEVELS_WITH_PROFESSION.includes(formData.education_level) && (
+                                    <PortalInput label="Profesión u oficio" name="profession"
+                                        value={formData.profession || ''} onChange={handleChange}
+                                        placeholder="Ej. Dependiente de farmacia" required
+                                        hasError={!formData.profession} />
+                                )}
 
                                 {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && !(formData.education_level === 'UNIVERSITARIO' && formData.has_maestria) && (
                                     <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/30 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">

@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
 
     const { data: employees, error: empErr } = await supabase
       .from('employees')
-      .select('id, name, first_names, last_names, branch_id, status, employee_documents')
+      .select('id, name, first_names, last_names, branch_id, status, employee_documents, dui_fecha_vencimiento')
       .neq('status', 'INACTIVO');
     if (empErr) throw empErr;
 
@@ -74,6 +74,13 @@ Deno.serve(async (req) => {
 
       for (const doc of docs) {
         if (!doc?.url || !doc?.expiry_date) continue;
+        // El DUI ya lo avisa `avisar_dui_por_vencer` (cron de las 7:00, lee
+        // `dui_fecha_vencimiento`). Avisarlo también acá mandaba TRES avisos
+        // por un mismo DUI: frente, reverso y el del cron (2026-10-15). El
+        // reverso nunca se avisa —trae la misma fecha que el frente—, y el
+        // frente sólo cuando la ficha no tiene la fecha y el cron no lo ve.
+        if (doc.category === 'DUI_REVERSO') continue;
+        if ((doc.category === 'DUI_FRENTE' || doc.category === 'DUI_COMPLETO') && emp.dui_fecha_vencimiento) continue;
         const exp = new Date(doc.expiry_date + 'T12:00:00');
         if (isNaN(exp.getTime())) continue;
 

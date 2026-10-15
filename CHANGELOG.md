@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1291.3 — Expediente: el barrido nocturno ya no borra hojas ni documentos compartidos
+
+- `ordenar-documentos-de-personal` miraba sólo `url` de cada documento: los
+  reversos y hojas extra (`hojas`) y las versiones anteriores (`historial`)
+  subidos al enlazar una ficha se leían como huérfanos y se borraban. Se
+  perdieron 4 archivos (reversos de dos licencias y de un carné de
+  enfermería, y una tarjeta AFP). Ahora recorre el documento entero, y un
+  archivo compartido entre fichas o reservado en «por asignar» se queda donde
+  está — antes se movía a la carpeta de uno y los demás quedaban apuntando a
+  nada (un acuse del MTPS y tres pendientes, ya reparados en la base).
+- `check-employee-doc-expiry` ya no avisa el DUI (lo avisa
+  `avisar_dui_por_vencer`): eran tres avisos por un mismo DUI vencido.
+- «Profesión u oficio» se puede escribir sin título universitario: el
+  expediente lo exige a todos (Art. 23 nº1) y 7 fichas quedaban incompletas
+  sin un campo donde llenarlo.
+
 ## v2.1291.2 — El cuadre de compras trae solo lo que falta
 
 `check-purchases-reconciliation` (01:20 SV) ya no sólo avisa: cuando el origen

@@ -914,6 +914,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     // del canónico sin pelearse: 85vh es menor que su 88dvh.
     const getModalHeightClass = () => fillHeight ? 'h-[85vh]' : 'h-fit';
     const hidesHeader = HIDES_HEADER.has(type);
+    const esFichaDeEmpleado = type === 'newEmployee' || type === 'editEmployee';
     const hidesFooter = HIDES_FOOTER.has(type);
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-sm bg-surface-card-hover";
 
@@ -921,9 +922,16 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-modal" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
 
                 {!hidesHeader && (
-                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-divider flex flex-col gap-4 relative z-base shrink-0">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4">
+                    /* En el teléfono el alta de empleado es un formulario de cuatro
+                       pestañas y lo que importa es el campo, no el marco: medido
+                       en un iPhone 13, encabezado (título en dos renglones, nombre
+                       en dos, pasos) y pie (tres botones en dos filas) se comían
+                       ~70% del alto y el formulario quedaba en una franja. Para
+                       ese modal el encabezado se compacta y el ícono se guarda. */
+                    <div className={`flex-none bg-transparent border-b border-divider flex flex-col relative z-base shrink-0
+                        ${esFichaDeEmpleado ? 'px-5 py-3.5 gap-3 md:px-10 md:py-6 md:gap-4' : 'px-6 md:px-10 py-6 gap-4'}`}>
+                        <div className="flex justify-between items-center gap-3">
+                            <div className={`flex items-center gap-4 min-w-0 ${esFichaDeEmpleado ? '[&>*:first-child]:hidden sm:[&>*:first-child]:flex' : ''}`}>
 
                                 {(() => {
                                     if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-success`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
@@ -944,12 +952,12 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     return <div className={`${squircleClass} text-content-3`}><Settings size={22} strokeWidth={2.5} /></div>;
                                 })()}
 
-                                <div>
-                                    <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-snug mb-1">
+                                <div className="min-w-0">
+                                    <h3 className={`font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-snug mb-1 ${esFichaDeEmpleado ? 'truncate' : ''}`}>
                                         {getModalTitle()}
                                     </h3>
                                     {getModalSubtitle() && (
-                                        <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                                        <p className={`text-caption md:text-label font-bold text-content-3 uppercase ${esFichaDeEmpleado ? 'truncate tracking-[0.12em] md:tracking-[0.2em]' : 'tracking-[0.2em]'}`}>{getModalSubtitle()}</p>
                                     )}
                                 </div>
                             </div>
@@ -965,7 +973,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     return (
                                         <React.Fragment key={step.key}>
                                             {idx > 0 && (
-                                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-[var(--dur-lento)] ${empStepCompletion[EMP_STEPS[idx - 1].key] ? 'bg-success' : 'bg-divider'}`} />
+                                                <div className={`h-[2px] w-5 sm:w-10 md:w-16 mx-1 rounded-full transition-all duration-[var(--dur-lento)] ${empStepCompletion[EMP_STEPS[idx - 1].key] ? 'bg-success' : 'bg-divider'}`} />
                                             )}
                                             <button
                                                 type="button"
@@ -995,7 +1003,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                                    redondo, así que el aro también. */
                                                 className="flex flex-col items-center gap-1.5 group min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.97]"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-[var(--dur-slow)] border-2 shadow-sm group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--focus-ring-color)] ${isComplete ? 'bg-success-solid border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
+                                                <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all duration-[var(--dur-slow)] border-2 shadow-sm group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--focus-ring-color)] ${isComplete ? 'bg-success-solid border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
                                                 <span className={`text-micro font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand-text' : isComplete ? 'text-success' : 'text-content-2'}`}>
@@ -1108,7 +1116,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     cuatro pestañas el campo que falta puede estar en
                                     otra. Se dice acá, al lado del botón apagado. */}
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <Button variant="secondary" disabled={isSaving} onClick={onClose}>Cancelar</Button>
+                                    {/* En el teléfono no: la ✕ y el gesto de bajar la hoja ya
+                                        cierran, y como tercer botón ocupaba una fila entera. */}
+                                    <span className="hidden sm:inline-flex">
+                                        <Button variant="secondary" disabled={isSaving} onClick={onClose}>Cancelar</Button>
+                                    </span>
                                     {empSaveDisabled && !isSaving && empSaveTitle && (
                                         <p className="hidden sm:block min-w-0 max-w-[26rem] text-label font-medium text-warning-text leading-snug">
                                             {empSaveTitle}

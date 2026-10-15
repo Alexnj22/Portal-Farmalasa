@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1294.2 — App: paridad de Compras, fiscal y Torogoz con el portal
+## v2.1294.3 — App: paridad de Compras, fiscal y Torogoz con el portal
 
 ### App · Libros IVA: buscador y orden en el detalle de cada libro
 
@@ -46,6 +46,27 @@ Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).
   documento como visitado; «Limpiar marcas». La marca se mudó al núcleo
   (`@nucleo/hooks/useVisitados`) con la misma clave de siempre.
 
+## v2.1294.2 — Ficha de empleado: avisos sin repetir, acreditaciones ordenadas y modal más limpio
+
+- El aviso de pendientes decía el DUI vencido TRES veces (frente, reverso y la
+  fecha de la ficha) y contaba «2» sobre tres píldoras. Ahora es UN «DUI
+  vencido» (manda la fecha de la ficha; sin ella, la de las caras), el número
+  cuenta lo mismo que la lista, y lo vencido (rojo) va aparte de lo que falta.
+- «Acción RRHH» pasa de aviso ámbar a una nota gris con candado.
+- `renderDocUploadArea` devuelve UNA caja: como fragmento, dentro de la
+  cuadrícula de Acreditaciones cada pieza caía en otra celda («Frente» sin
+  archivo, el archivo bajo el número). La tarjeta de la junta va en dos
+  columnas: número y «¿Cuál tiene?» a la izquierda, el papel a la derecha.
+- Sin el rectángulo de filo al pasar el cursor por los pasos del encabezado.
+- Casillas con el ícono en línea y en minúsculas normales; las cajas moradas
+  de estudio y la sección «Salud» en rojo pasan a islas como las demás; la
+  tarjeta de kiosco igual a su vecina.
+- ISSS/AFP «no se preguntó» como nota compacta; NUP con un placeholder que
+  entra; la fecha del contrato en dd/mm/aaaa; el botón «Usar …» debajo del
+  texto; «Vence» con un rótulo que no se corta.
+- En el teléfono: encabezado compacto (sin ícono, título y nombre en un
+  renglón, pasos más chicos) y sin «Cancelar» en el pie (cierran la ✕ y el
+  gesto): el formulario recupera ~250px de alto.
 ## v2.1294.1 — Tarjeta nítida al terminar de girar
 
 - La tarjeta queda nítida apenas termina de girar (antes ~1.3 s borrosa): el resorte del giro tardaba en apagarse y la cara seguía con una fracción de grado de perspectiva, que obligaba a componerla en 3D. A menos de 0.9° de la cara se la da por asentada e iOS la dibuja píxel a píxel.

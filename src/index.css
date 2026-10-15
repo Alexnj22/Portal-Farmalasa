@@ -3829,6 +3829,16 @@ button[data-foco="hijo"]:focus-visible,
 [role="button"][data-foco="hijo"]:focus-visible {
   outline: none;
 }
+/* Y por el MISMO motivo, sin filo de hover (2026-10-15). El filo que corre al
+   apuntar un botón se pinta en el `::after` de su caja, y en estos botones la
+   caja es la columna entera: al pasar el cursor por un paso aparecía un
+   rectángulo con una raya debajo del rótulo — el mismo «recuadro que rompe
+   que es redondo el icono» que la regla de arriba ya había quitado del foco.
+   La respuesta al hover la da el hijo (`group-hover:`). */
+[data-surface] button[data-foco="hijo"]::after,
+[data-surface] [role="button"][data-foco="hijo"]::after {
+  display: none;
+}
 
 
 /* ═══════════════════════════════════════════════════════════════

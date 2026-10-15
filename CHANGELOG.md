@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1291.1 — El aviso del libro de compras nombra la sucursal
+
+El aviso «Libro de compras no cuadra» decía «Sucursal 25» —el id interno— en
+vez de «Salud 2». `check-purchases-reconciliation` ahora busca el nombre en
+`branches`; si esa consulta falla, el aviso sale igual con el número.
+
+El aviso del 15-oct era real: una compra de Salud 2 del 5-oct (Telefónica,
+$99.99) registrada tarde, fuera de la ventana ayer+hoy del sync. Se trajo con
+el sync normal de la sucursal sobre el 1–14 oct; el mes quedó en 3 documentos
+y $543.82, igual que el origen. La misma corrida destapó un faltante viejo
+de septiembre en Salud 2 ($47.00, ya avisado el 8-oct y sin atender): se trajo
+igual y el mes quedó en 9 documentos y $1,401.76.
+
 ## v2.1291.0 — Metas: el ojo oculta los montos
 
 La píldora de filtros del Tablero de Metas lleva el mismo ojo que Ventas. Al

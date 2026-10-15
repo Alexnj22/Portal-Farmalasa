@@ -233,8 +233,21 @@ Deno.serve(async (req) => {
       recipientIds = (recipients ?? []).map((e: { id: string }) => e.id);
     }
 
+    // El aviso se lee en pantalla: «Sucursal 25» es el id interno y nadie sabe
+    // que es Salud 2. Si la consulta falla, el aviso sale igual con el número —
+    // perder la alerta por no tener el nombre sería el peor de los dos errores.
+    const nombreSala = new Map<number, string>();
+    if (hallazgos.length > 0) {
+      const { data: salas, error: salasErr } = await supabase
+        .from('branches').select('id, name')
+        .in('id', [...new Set(hallazgos.map(h => h.branchId))]);
+      if (salasErr) problemas.push(`branches: ${salasErr.message}`);
+      for (const s of salas ?? []) nombreSala.set(s.id, s.name);
+    }
+
     let enviadas = 0;
     for (const h of hallazgos) {
+      const sala   = nombreSala.get(h.branchId) ?? `Sucursal ${h.branchId}`;
       const faltan = h.erpN - h.portalN;
       const plata  = (h.erpTotal - h.portalTotal).toFixed(2);
       // La clave incluye la MEDIDA de la diferencia: mientras no cambie no se
@@ -262,8 +275,8 @@ Deno.serve(async (req) => {
         p_type: 'COMPRAS_CUADRE',
         p_title: `⚠️ Libro de compras no cuadra — ${h.mes}`,
         p_body: faltan !== 0
-          ? `Sucursal ${h.branchId}: al libro le faltan ${faltan} documento(s) y $${plata}.`
-          : `Sucursal ${h.branchId}: mismo conteo (${h.erpN}) pero $${plata} de diferencia — hay un documento que se editó después de registrarlo.`,
+          ? `${sala}: al libro le faltan ${faltan} documento(s) y $${plata}.`
+          : `${sala}: mismo conteo (${h.erpN}) pero $${plata} de diferencia — hay un documento que se editó después de registrarlo.`,
         p_link: '/libros-iva?tab=compras',
         p_metadata: { branch_id: h.branchId, mes: h.mes, alert_key: alertKey },
         p_push: true,

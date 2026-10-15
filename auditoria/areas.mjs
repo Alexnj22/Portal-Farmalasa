@@ -470,6 +470,10 @@ export const AREAS = [
             'src/views/PuntosView.jsx',
             'src/views/puntos/',
             'src/utils/codigoDePuntos.js',
+            // Escanear la tarjeta del cliente (2026-10-15): qué es lo que leyó
+            // el lector y cómo se dice cada dato del expediente. Lo usan la
+            // pestaña «Escanear» de Puntos y la app del personal.
+            'src/utils/expedienteDelCliente.js',
         ],
         tablas: ['sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',

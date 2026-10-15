@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1296.0 — Escanear la tarjeta del cliente en el portal; tarjeta con QR y barras; avisos privados
+
+- **Puntos → Escanear** (portal y app del personal): se escanea la tarjeta del cliente con el lector de la sala (código de barras o QR), o se escribe un DUI o teléfono, y abre el expediente: datos, puntos y nivel, puntos por vencer, si tiene la app, reservas y encargos vivos, tratamientos, últimas compras, y —con su propio permiso— créditos e inyecciones pendientes. Funciones nuevas `cliente_por_tarjeta` y `cliente_expediente` (permiso `puntos_tab_consulta`). Cada consulta queda anotada (`CLIENTES_ESCANEO`).
+- **Tarjeta de la app de clientes**: el reverso muestra siempre el QR y debajo el código de barras casi de borde a borde (sin selector), con módulos en píxeles enteros.
+- **Avisos privados**: el nombre del producto o medicamento no aparece con el teléfono bloqueado. iOS: título genérico y el detalle en el cuerpo con la categoría `privado` (se ve al desbloquear). Android: el aviso del sistema no lleva el producto (se ve en la app). Los recordatorios de tomas: título «Hora de tu medicina» y canal `tomas-privadas` que no aparece en la pantalla bloqueada.
+
 ## v2.1295.1 — Unión con main (cambio de presentación)
 
 Sin cambios propios: une v2.1295.0 con las entregas de la app (v2.1294.3–v2.1294.10) que llegaron a main en el medio.

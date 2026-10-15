@@ -24,7 +24,11 @@ import { nombrePropio } from './formato';
 export const DISPONIBLE = Platform.OS !== 'web';
 const ARCHIVO = FS.documentDirectory ? `${FS.documentDirectory}tomas.json` : null;
 const CATEGORIA = 'toma';
-const CANAL = 'tomas';
+// Canal nuevo (2026-10-15, privacidad): el nombre del medicamento no se ve con
+// el teléfono bloqueado. En Android un canal no se puede cambiar una vez
+// creado, así que el viejo `tomas` queda sin uso. SECRET = con el teléfono
+// bloqueado no aparece (suena igual); desbloqueado se ve completo.
+const CANAL = 'tomas-privadas';
 export const ACCION_TOMADO = 'toma_tomado';
 export const ACCION_LUEGO = 'toma_luego';
 const TOPE_TOTAL = 60; // de los 64 de iOS: 4 quedan para los «Más tarde»
@@ -279,12 +283,15 @@ async function asegurarCategoria() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(CANAL, {
       name: 'Recordatorio de tomas', importance: Notifications.AndroidImportance.HIGH, sound: 'default',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.SECRET,
     }).catch(() => {});
   }
   await Notifications.setNotificationCategoryAsync(CATEGORIA, [
     { identifier: ACCION_TOMADO, buttonTitle: 'Tomado', options: { opensAppToForeground: false } },
     { identifier: ACCION_LUEGO, buttonTitle: `Más tarde (${POSPONER_MIN} min)`, options: { opensAppToForeground: false } },
-  ]).catch(() => {});
+  // iOS: con «Vista previa: al desbloquear» (la de fábrica) se ve sólo el
+  // título, que no nombra el medicamento; desbloqueado, todo.
+  ], { showTitle: true, previewPlaceholder: 'Toca para ver cuál' }).catch(() => {});
   categoriaLista = true;
 }
 
@@ -293,11 +300,12 @@ const pocas = (c, dia) => !!c.se_acaba && diasEntre(dia, c.se_acaba) <= 3;
 
 function contenido(c, dia, extra = '') {
   const quedanPocas = pocas(c, dia);
-  const partes = [c.nota?.trim() || 'Toca «Tomado» cuando lo tomes.'];
+  const partes = [`${nombreCorto(c.nombre)}.`, c.nota?.trim() || 'Toca «Tomado» cuando lo tomes.'];
   if (quedanPocas) partes.push('Te quedan pocas, ¿lo reservamos?');
   if (extra) partes.push(extra);
   return {
-    title: `Hora de tu ${nombreCorto(c.nombre)}`,
+    // El nombre va en el cuerpo, nunca en el título (privacidad, 2026-10-15).
+    title: 'Hora de tu medicina 💊',
     body: partes.join(' '),
     sound: 'default',
     categoryIdentifier: CATEGORIA,

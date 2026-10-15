@@ -4,8 +4,9 @@
 //   · Frente: degradado con los colores del logo, un brillo que se mueve con
 //     la inclinación del teléfono, el nombre, «socio desde» y el saldo.
 //   · Al tocarla gira en 3D (resorte) y por detrás muestra el QR con el código
-//     de 7 letras: la MISMA dirección que lleva el QR del ticket
-//     (`/mis-puntos?codigo=`), así que en sala se lee igual.
+//     de 7 letras —la MISMA dirección que lleva el QR del ticket
+//     (`/mis-puntos?codigo=`), así que en sala se lee igual— y, debajo, el
+//     mismo código en barras para el lector de mano de la caja.
 //
 // Movimiento (rehecho el 2026-10-06, a pedido: «que se vea mucho más
 // increíble»), todo en el hilo de la interfaz con Reanimated y Skia:
@@ -129,10 +130,65 @@ export const COLORES_NIVEL = {
 // La pista de «tócala para girarla»: el asomo es una vez por sesión de la app.
 let yaGiro = false;
 const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
-// QR o barras en el reverso (2026-10-15): se recuerda la última elección.
+// La elección QR / barras que guardaba el selector del reverso (quitado el
+// 2026-10-15: ahora se ven los dos). Se borra una vez por sesión, sin más.
 const CLAVE_VISTA = 'puntos_salud_tarjeta_vista';
+let vistaBorrada = false;
 // El código letra por letra: junto, VoiceOver lo leía como una palabra.
 const deletrear = (c) => String(c).split('').join(' ');
+
+// Las medidas del reverso (2026-10-15, «el código de barras que siempre esté
+// visible, abajo del código, ocupando casi todo el espacio horizontal»): arriba
+// el QR con el código a su lado, abajo las barras de borde a borde (menos 14 pt
+// de cada lado) con el código legible debajo. Se calculan con el ancho y el
+// alto MEDIDOS de la tarjeta para que nada se encime ni se recorte: en un
+// teléfono de 320 pt la tarjeta mide 288 × 181 y ahí todo va justo.
+//
+// De arriba abajo: margen · placa del QR (QR + 2·relleno) · aire · placa de las
+// barras (relleno, barras, código legible, relleno) · margen. Lo que sobra del
+// alto se reparte primero a las barras (40–52 pt: al láser le importa más el
+// ancho que el alto) y el resto al QR (hasta 118 pt pedidos). El QR se cuenta
+// por lo que de verdad va a medir: `CodigoQR` redondea el módulo a píxeles
+// enteros, así que a 3× crece de a 11 pt y a 2× de a 16,5 — lo que el
+// redondeo le quita vuelve a las barras (hasta 52) y el resto queda de aire.
+// Si el QR no llega a 88 pt, el código legible de debajo de las barras se
+// quita —el mismo código va grande junto al QR— antes que achicar el QR.
+const MARGEN_REVERSO = 14;
+const LEGIBLE = 15; // la línea del código bajo las barras: 13 de alto + 2 de aire
+// Los módulos del QR de la tarjeta: la dirección con un código de 7 caracteres
+// es siempre un QR versión 4 (33 × 33) con corrección M. Si algún día cambia,
+// el QR sigue nítido; sólo esta cuenta de espacio queda aproximada.
+const MODULOS_QR = 33;
+const qrReal = (pedido) => (Math.max(1, Math.floor((pedido * DENSIDAD) / MODULOS_QR)) * MODULOS_QR) / DENSIDAD;
+function medidasReverso(w, h) {
+  const holgada = h >= 215;
+  const mv = holgada ? 14 : 10;   // margen arriba y abajo
+  const pq = holgada ? 8 : 6;     // relleno blanco del QR (su zona de silencio)
+  const aire = holgada ? 10 : 6;  // entre el QR y las barras
+  const relleno = 10;             // arriba (6) y abajo (4) de la placa de barras
+  const reparte = (legible, barrasPedidas) => {
+    const libre = h - 2 * mv - 2 * pq - aire - relleno - (legible ? LEGIBLE : 0);
+    const pedidas = barrasPedidas ?? Math.max(40, Math.min(52, Math.round(libre * 0.33)));
+    const qr = Math.min(118, Math.floor(libre - pedidas));
+    const real = qrReal(qr);
+    return { legible, qr, real, barras: Math.max(40, Math.min(52, Math.floor(libre - real))) };
+  };
+  let r = reparte(true);
+  if (r.real < 88) r = reparte(false);
+  // Aun así corto: las barras ceden hasta su mínimo antes que el QR.
+  if (r.real < 88) r = reparte(false, 40);
+  const placaQr = Math.ceil(r.real) + 2 * pq;
+  return {
+    mv, pq, placaQr,
+    legible: r.legible,
+    qr: r.qr,
+    barras: r.barras,
+    anchoBarras: Math.floor(w) - 2 * MARGEN_REVERSO,
+    // La ayuda junto al QR sólo si la columna tiene alto para el rótulo, el
+    // código y dos renglones.
+    ayuda: placaQr >= 108,
+  };
+}
 
 function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material' }) {
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
@@ -312,34 +368,19 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
   const vivaReverso = viva && (caras & 2) !== 0;
   // El tamaño de la tarjeta, para el canto que se ve al girar (`Canto`).
   const tam = useSharedValue({ w: 0, h: 0 });
-  // El ancho en React, para medir el código de barras: lo más ancho que quepa
-  // (hasta 300 pt), con el módulo en píxeles enteros. 0 hasta el primer layout.
-  const [anchoTarjeta, setAnchoTarjeta] = useState(0);
-
-  // QR o código de BARRAS en el reverso (2026-10-15): los lectores de mano de
-  // la sala son de una dimensión y no leen el QR. Los dos no caben juntos sin
-  // achicar el QR (118 pt) por debajo de lo que se lee seguro, así que el
-  // reverso lleva un selector y recuerda la última elección. Las dos vistas
-  // quedan MONTADAS (dibujos estáticos, baratos) y se funden: la que se ve
-  // queda con opacidad 1 exacta —sin re-muestreo—.
-  const [vista, setVista] = useState('qr');
-  const modo = useSharedValue(0); // 0 = QR, 1 = barras
+  // El ancho y el alto en React, para las medidas del reverso (QR y barras,
+  // con sus módulos en píxeles enteros). Redondeados hacia ABAJO: medio punto
+  // de más bastaba para que las barras pidieran un módulo que no cabe. 0 hasta
+  // el primer layout.
+  const [caja, setCaja] = useState({ w: 0, h: 0 });
+  const medidas = useMemo(() => (caja.w > 0 && caja.h > 0 ? medidasReverso(caja.w, caja.h) : null), [caja]);
+  // Los dos códigos van juntos (2026-10-15): la elección del selector viejo
+  // ya no sirve; se borra una vez, si estaba.
   useEffect(() => {
-    SecureStore.getItemAsync(CLAVE_VISTA).then((v) => {
-      if (v === 'barras') { setVista('barras'); modo.value = 1; }
-    }).catch(() => {});
-  }, [modo]);
-  const cambiarVista = (nueva) => {
-    if (nueva === vista) return;
-    despertar();
-    Haptics.selectionAsync().catch(() => {});
-    setVista(nueva);
-    modo.value = reducir ? (nueva === 'barras' ? 1 : 0) : withTiming(nueva === 'barras' ? 1 : 0, { duration: 220, easing: Easing.out(Easing.cubic) });
-    SecureStore.setItemAsync(CLAVE_VISTA, nueva).catch(() => {});
-    AccessibilityInfo.announceForAccessibility(nueva === 'barras' ? 'Código de barras' : 'Código QR');
-  };
-  const capaQr = useAnimatedStyle(() => ({ opacity: 1 - modo.value }));
-  const capaBarras = useAnimatedStyle(() => ({ opacity: modo.value }));
+    if (vistaBorrada) return;
+    vistaBorrada = true;
+    SecureStore.deleteItemAsync(CLAVE_VISTA).catch(() => {});
+  }, []);
 
   // Mantenerla presionada (2026-10-14): una ráfaga de luz la cruza y el
   // teléfono responde con dos golpes hápticos. Sólo de frente.
@@ -347,9 +388,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
   // Armados una sola vez (2026-10-15): antes se rehacían en cada render y el
   // detector de gestos se reconfiguraba con cada cambio de la tarjeta. Todo lo
   // que leen son valores compartidos (estables) o funciones estables.
-  // `toque` sale aparte: el selector QR/barras lo BLOQUEA (si no, tocar el
-  // selector también giraba la tarjeta).
-  const { gestos, toque } = useMemo(() => {
+  const gestos = useMemo(() => {
     // Arrastrar de lado la inclina; un deslizamiento rápido la gira. Lo
     // vertical se lo deja a la pantalla (que hace scroll).
     const arrastre = Gesture.Pan()
@@ -371,7 +410,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
       rafaga.value = withTiming(1, { duration: 950, easing: Easing.out(Easing.cubic) });
       runOnJS(alRafaga)();
     });
-    return { gestos: Gesture.Race(arrastre, largo, toque), toque };
+    return Gesture.Race(arrastre, largo, toque);
   }, [dedoX, dedoY, giro, rafaga, alVoltear]);
   // Profundidad (Platino): el contenido flota sobre el material y el logo un
   // poco más; al inclinar, cada capa se corre distinto — paralaje.
@@ -457,16 +496,13 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
         onLayout={(e) => {
           const { width: w, height: h } = e.nativeEvent.layout;
           tam.value = { w, h };
-          const wr = Math.round(w);
-          setAnchoTarjeta((a) => (a === wr ? a : wr));
+          const wr = Math.floor(w);
+          const hr = Math.floor(h);
+          setCaja((a) => (a.w === wr && a.h === hr ? a : { w: wr, h: hr }));
         }}
         accessible accessibilityRole="button"
-        // La tarjeta es UN elemento para VoiceOver, así que el selector QR/barras
-        // no se alcanza adentro: va como acción de la tarjeta.
-        accessibilityActions={deReves ? [{ name: 'cambiarCodigo', label: vista === 'qr' ? 'Mostrar código de barras' : 'Mostrar código QR' }] : []}
-        onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'cambiarCodigo') cambiarVista(vista === 'qr' ? 'barras' : 'qr'); }}
         accessibilityLabel={deReves
-          ? `Tu código: ${codigo ? deletrear(codigo) : 'sin código'}. Muéstralo en caja para usar tus puntos.`
+          ? `Tu código: ${codigo ? deletrear(codigo) : 'sin código'}. Lleva un código QR y un código de barras: muéstralo en caja para usar tus puntos.`
           : `Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', del Team Farmacia Salud' : ''}. Saldo ${dolares(equivale)}. Toca para ver tu código.`}
         accessibilityHint={deReves ? 'Gira la tarjeta al frente' : 'Gira la tarjeta'} onAccessibilityTap={voltear}>
         {/* La sombra, en su propia placa OPACA (iPhone, 2026-10-14): una sombra
@@ -572,44 +608,39 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
             : <EfectoPausable nivel={nivel} activa={vivaReverso} x={reversoX} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
           <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
-          {/* El QR: para la cámara de un teléfono (abre «Mis puntos»). */}
-          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, capaQr]}>
-            <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
-              <View style={estilos.qr}>
-                {/* Módulos de píxeles enteros (componentes/CodigoQR.js): nítido a 3×. */}
-                {codigo ? <CodigoQR value={QR_DE(codigo)} size={118} color="#1A0822" backgroundColor="#FFFFFF" /> : null}
+          {/* Los DOS códigos, siempre a la vista (2026-10-15): arriba el QR
+              —para la cámara de un teléfono, abre «Mis puntos»— con el código
+              a su lado; abajo las barras, de borde a borde, para el lector de
+              mano de la caja (de una dimensión: no lee el QR). Dibujos
+              estáticos: no se redibujan con el giro ni con la inclinación.
+              Medidas en `medidasReverso`. */}
+          {medidas ? (
+            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { paddingHorizontal: MARGEN_REVERSO, paddingVertical: medidas.mv, justifyContent: 'space-between' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, height: medidas.placaQr }}>
+                <View style={[estilos.qr, { padding: medidas.pq }]}>
+                  {/* Módulos de píxeles enteros (componentes/CodigoQR.js): nítido a 3×. */}
+                  {codigo ? <CodigoQR value={QR_DE(codigo)} size={medidas.qr} color="#1A0822" backgroundColor="#FFFFFF" /> : null}
+                </View>
+                <View style={{ flex: 1, gap: 4, justifyContent: 'center', overflow: 'hidden', maxHeight: medidas.placaQr }}>
+                  <Text maxFontSizeMultiplier={1.15} style={estilos.socio}>TU CÓDIGO</Text>
+                  <Text maxFontSizeMultiplier={1.15} style={estilos.codigo} adjustsFontSizeToFit numberOfLines={1}>{codigo ?? '—'}</Text>
+                  {medidas.ayuda ? <Text maxFontSizeMultiplier={1.15} style={estilos.ayuda} numberOfLines={2}>Muéstralo en caja para usar tus puntos.</Text> : null}
+                </View>
               </View>
-              <View style={{ flex: 1, gap: 6 }}>
-                <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>TU CÓDIGO</Text>
-                <Text maxFontSizeMultiplier={1.3} style={estilos.codigo} adjustsFontSizeToFit numberOfLines={1}>{codigo ?? '—'}</Text>
-                <Text maxFontSizeMultiplier={1.3} style={estilos.ayuda}>Muéstralo en caja para usar tus puntos.</Text>
-              </View>
-            </View>
-          </Animated.View>
-          {/* Las barras: para el lector de mano de la caja. El código PELADO
-              (sin la dirección del QR), que es lo que el lector «teclea».
-              Placa blanca de borde a borde del dibujo: la zona de silencio de
-              10 módulos va adentro del código, en blanco. Barras negras puras:
-              el láser rojo necesita el mayor contraste posible. */}
-          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, capaBarras]}>
-            <View style={[estilos.contenido, { alignItems: 'center' }]}>
-              <Text maxFontSizeMultiplier={1.2} style={[estilos.socio, { alignSelf: 'flex-start' }]}>TU CÓDIGO</Text>
-              {codigo && anchoTarjeta > 0 ? (
+              {/* Las barras: el código PELADO (sin la dirección del QR), que es
+                  lo que el lector «teclea». Placa blanca de borde a borde: la
+                  zona de silencio de 10 módulos va adentro del dibujo, y lo que
+                  sobra al redondear el módulo a píxeles enteros queda blanco a
+                  los lados. Barras negras puras: el láser rojo necesita el mayor
+                  contraste posible. */}
+              {codigo ? (
                 <View style={estilos.placaBarras}>
-                  <CodigoBarras value={codigo} ancho={Math.min(300, anchoTarjeta - 32)}
-                    alto={Math.max(48, Math.min(64, Math.floor(anchoTarjeta / 1.586) - 140))} />
-                  <Text maxFontSizeMultiplier={1.2} style={estilos.codigoBarras}>{codigo}</Text>
+                  <CodigoBarras value={codigo} ancho={medidas.anchoBarras} alto={medidas.barras} />
+                  {medidas.legible ? <Text maxFontSizeMultiplier={1} numberOfLines={1} style={estilos.codigoBarras}>{codigo}</Text> : null}
                 </View>
               ) : null}
-              <Text maxFontSizeMultiplier={1.2} style={[estilos.ayuda, { fontSize: 12, lineHeight: 16 }]}>Muéstralo en caja para usar tus puntos.</Text>
             </View>
-          </Animated.View>
-          {/* El selector, arriba a la derecha en las dos vistas. Sólo responde
-              con el reverso a la vista: de frente, el reverso girado queda
-              debajo del dedo y un toque «a ciegas» cambiaría la vista. */}
-          <View pointerEvents={deReves ? 'box-none' : 'none'} style={estilos.selectorCaja}>
-            <SelectorCodigo vista={vista} activo={deReves} bloquea={toque} alCambiar={cambiarVista} />
-          </View>
+          ) : null}
         </Animated.View>
         </View>
         {/* El grueso de la tarjeta, visto de canto al girar (ver `Canto`). */}
@@ -650,39 +681,6 @@ function ChipOro({ x }) {
         <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(255,255,240,0.85)', 'rgba(255,255,255,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
     </View>
-  );
-}
-
-// El selector QR · BARRAS del reverso (2026-10-15): una píldora de vidrio
-// oscuro con el segmento elegido en blanco, del tamaño de los rótulos de la
-// tarjeta. Cada segmento es su propio toque y BLOQUEA el toque de la tarjeta
-// (`bloquea`): sin eso, elegir «Barras» también la giraba al frente.
-function SelectorCodigo({ vista, activo, bloquea, alCambiar }) {
-  return (
-    <View style={estilos.selector}>
-      {[['qr', 'QR'], ['barras', 'BARRAS']].map(([clave, rotulo]) => (
-        <Segmento key={clave} rotulo={rotulo} elegido={vista === clave} activo={activo} bloquea={bloquea}
-          alTocar={() => alCambiar(clave)} />
-      ))}
-    </View>
-  );
-}
-
-function Segmento({ rotulo, elegido, activo, bloquea, alTocar }) {
-  // La función cambia en cada render; el gesto llama a la última.
-  const ultima = useRef(alTocar);
-  ultima.current = alTocar;
-  const llamar = useCallback(() => { ultima.current?.(); }, []);
-  const gesto = useMemo(() => Gesture.Tap().enabled(activo).maxDuration(400)
-    .hitSlop({ top: 12, bottom: 12, left: 4, right: 4 })
-    .blocksExternalGesture(bloquea)
-    .onEnd((_e, ok) => { if (ok) runOnJS(llamar)(); }), [activo, bloquea, llamar]);
-  return (
-    <GestureDetector gesture={gesto}>
-      <View style={[estilos.segmento, elegido && estilos.segmentoElegido]}>
-        <Text maxFontSizeMultiplier={1.2} style={[estilos.segmentoTexto, elegido && { color: '#1A0822' }]}>{rotulo}</Text>
-      </View>
-    </GestureDetector>
   );
 }
 
@@ -871,16 +869,13 @@ const estilos = StyleSheet.create({
   saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 9, textShadowOffset: { width: 0, height: 1 } },
   puntos: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', opacity: 0.95, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   qr: { backgroundColor: '#FFFFFF', padding: 10, borderRadius: 14 },
-  // Sin relleno a los lados: la zona de silencio ya va blanca dentro del dibujo.
-  placaBarras: { backgroundColor: '#FFFFFF', borderRadius: 12, overflow: 'hidden', alignItems: 'center', paddingTop: 10, paddingBottom: 6 },
-  codigoBarras: { color: '#1A0822', fontSize: 13, fontWeight: '800', letterSpacing: 5, marginTop: 4, fontVariant: ['tabular-nums'] },
-  selectorCaja: { position: 'absolute', top: 14, right: 14 },
-  selector: { flexDirection: 'row', padding: 2, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.38)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.28)' },
-  segmento: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  segmentoElegido: { backgroundColor: '#FFFFFF' },
-  segmentoTexto: { color: 'rgba(255,255,255,0.85)', fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
+  // Sin relleno a los lados: la zona de silencio ya va blanca dentro del
+  // dibujo. Arriba 6 y abajo 4 (los 10 de `medidasReverso`); el código legible
+  // mide 13 + 2 de aire (`LEGIBLE`).
+  placaBarras: { backgroundColor: '#FFFFFF', borderRadius: 12, overflow: 'hidden', alignItems: 'center', paddingTop: 6, paddingBottom: 4 },
+  codigoBarras: { color: '#1A0822', fontSize: 11, lineHeight: 13, height: 13, fontWeight: '800', letterSpacing: 4, marginTop: 2, fontVariant: ['tabular-nums'] },
   codigo: { color: '#FFFFFF', fontSize: 32, fontWeight: '900', letterSpacing: 6, fontVariant: ['tabular-nums'] },
-  ayuda: { color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 18 },
+  ayuda: { color: 'rgba(255,255,255,0.75)', fontSize: 12, lineHeight: 16 },
 });
 
 // Memorizada (2026-10-15): la pantalla que la contiene se repinta por muchas

@@ -5,7 +5,11 @@
 //     puntos o en dólares (`componentes/puntos/Resumen`).
 //   · Consulta: los clientes con su saldo, lo acumulado y lo canjeado,
 //     ordenados como la tabla del portal. Tocar uno abre su cuenta
-//     (`puntos-cliente/[id]`).
+//     (`puntos-cliente/[id]`). Arriba, «Escanear tarjeta» (2026-10-15): la
+//     cámara lee el código de barras o el QR de la tarjeta del cliente y abre
+//     su cuenta con TODO lo suyo (`como` → `componentes/puntos/Expediente`),
+//     como la pestaña «Escanear» del portal. Si el código es de varias fichas
+//     (un teléfono compartido) se elige aquí.
 //   · Avisos: lo que hay que revisar (canjes sin saldo, anulaciones con puntos
 //     gastados, movimientos fuera de lo normal).
 //
@@ -19,7 +23,9 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchAvisosDePuntos, fetchClientesConPuntos, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
+import { buscarClientePorTarjeta, fetchAvisosDePuntos, fetchClientesConPuntos, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
+import { leerEntradaDeTarjeta, NOMBRE_DE_ENTRADA } from '@nucleo/utils/expedienteDelCliente';
+import Escaner from '../componentes/Escaner';
 import { avisoDePuntos, dolaresDePuntos, puntosTexto } from '@nucleo/utils/puntosTexto';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -39,6 +45,61 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Resumen, { COLOR_ACUMULADO, COLOR_CANJEADO } from '../componentes/puntos/Resumen';
 
 const COLOR = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro };
+
+const abrirEscaneado = (c, modo) => router.push({
+  pathname: '/puntos-cliente/[id]', params: { id: String(c.customer_id), nombre: c.nombre, como: modo },
+});
+
+// El botón de escanear y, si el código es de varias fichas, la lista para elegir.
+function EscanearTarjeta() {
+  const [abierto, setAbierto] = useState(false);
+  const [aviso, setAviso] = useState(null);
+  const [candidatos, setCandidatos] = useState(null);
+  // `false` deja el escáner abierto: el código no era una tarjeta conocida.
+  const alEscanear = async (codigo) => {
+    const leido = leerEntradaDeTarjeta(codigo);
+    if (leido.tipo === 'nada') { setAviso('Ese código no es una tarjeta de cliente.'); return false; }
+    try {
+      const r = await buscarClientePorTarjeta(leido.valor);
+      const lista = r?.clientes ?? [];
+      const modo = r?.modo ?? leido.tipo;
+      if (!lista.length) {
+        setAviso(modo === 'codigo' ? 'Esa tarjeta no está registrada.' : `Ningún cliente con ${NOMBRE_DE_ENTRADA[modo] ?? 'ese dato'}.`);
+        return false;
+      }
+      setAbierto(false);
+      setAviso(null);
+      if (lista.length === 1) { setCandidatos(null); abrirEscaneado(lista[0], modo); }
+      else setCandidatos({ modo, clientes: lista });
+      return true;
+    } catch (e) {
+      setAviso(mensajeAmigable(e));
+      return false;
+    }
+  };
+  return (
+    <View style={{ marginHorizontal: 16, gap: 10 }}>
+      <BotonGrande texto="Escanear tarjeta del cliente" onPress={() => { setAviso(null); setAbierto(true); }} />
+      {candidatos ? (
+        <Vidrio radio={18}>
+          <View style={{ padding: 12, gap: 8 }}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${candidatos.clientes.length} clientes con ${NOMBRE_DE_ENTRADA[candidatos.modo] ?? 'ese dato'}: pregúntale su nombre.`}</Text>
+            {candidatos.clientes.map((c) => (
+              <Pressable key={c.customer_id} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setCandidatos(null); abrirEscaneado(c, candidatos.modo); }}
+                style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{c.nombre || 'Sin nombre'}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{[c.dui, c.telefono].filter(Boolean).join(' · ') || 'Sin documento'}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Vidrio>
+      ) : null}
+      <Escaner visible={abierto} titulo="Tarjeta del cliente" ayuda="Apunta al código de barras o al QR de su tarjeta"
+        onCodigo={alEscanear} onCerrar={() => { setAbierto(false); setAviso(null); }}
+        pie={aviso ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{aviso}</Text> : null} />
+    </View>
+  );
+}
 const POR_PAGINA = 30;
 
 function Consulta({ busqueda, orden, dir, masRef }) {
@@ -194,7 +255,7 @@ export default function Puntos() {
         <FiltrosActivos grupos={grupos} />
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a Puntos." /></View>
           : pestana === 'resumen' ? <Resumen key={llave} onIrA={(p) => { if (pestanas.some((x) => x.id === p)) setPestana(p); }} />
-            : pestana === 'consulta' ? <Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} masRef={masConsulta} />
+            : pestana === 'consulta' ? (<><EscanearTarjeta /><Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} masRef={masConsulta} /></>)
               : pestana === 'por_asignar' ? <PorAsignar key={llave} busqueda={busqueda} motivo={motivo} />
                 : (<><Traspasos key={`t${llave}`} puedeResolver={hasPermission('puntos_ajustar', 'can_view')} /><Avisos key={llave} /></>)}
       </ScrollView>

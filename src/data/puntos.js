@@ -251,6 +251,35 @@ export const ajustarPuntos = async ({ customerId, puntos, motivo, nota = null },
 /** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
 export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });
 
+// ── Escanear la tarjeta del cliente (2026-10-15) ───────────────────────────
+//
+// Dos lecturas: RESOLVER lo que leyó el lector (código, QR, DUI o teléfono) y
+// traer el EXPEDIENTE de una ficha. Separadas porque un teléfono puede ser de
+// dos fichas y la persona tiene que elegir: la base devuelve candidatos y no
+// «el primero». Las dos exigen `puntos_tab_consulta` adentro; créditos e
+// inyecciones, además, el permiso de su propia pantalla (vienen `null` si no).
+
+/**
+ * `entrada` es lo que devolvió `leerEntradaDeTarjeta` (`valor`). Devuelve
+ * `{ modo, clientes: [{ customer_id, nombre, dui, telefono }] }`.
+ */
+export const buscarClientePorTarjeta = (entrada) => rpc('cliente_por_tarjeta', { p_entrada: entrada });
+
+/**
+ * Todo lo de un cliente para atenderlo: identidad, marcas (empleado,
+ * mayorista, convenio), puntos y nivel, la app, reservas, encargos,
+ * tratamientos, créditos, inyecciones por aplicar y últimas compras.
+ *
+ * Mirar el expediente de una persona es mirar sus datos: queda anotado con
+ * quién, a quién y cómo se llegó (`como`: codigo / dui / telefono). Se anota
+ * acá y no en cada pantalla, así el portal y la app no pueden olvidarlo.
+ */
+export const fetchExpedienteDelCliente = async (customerId, { como = null, nombre = null } = {}) => {
+    const r = await rpc('cliente_expediente', { p_customer_id: customerId });
+    if (r) anotar('CLIENTES_ESCANEO', String(customerId), { nombre: r.cliente?.nombre ?? nombre, como });
+    return r;
+};
+
 /**
  * Qué pasaría con los puntos si una venta cambia de cliente: cuántos se le
  * quitan al actual, cuántos ya gastó y cuántos recibe el nuevo. Es la MISMA

@@ -27134,7 +27134,9 @@ export type Database = {
         Returns: string
       }
       cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
+      cliente_expediente: { Args: { p_customer_id: number }; Returns: Json }
       cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }
+      cliente_por_tarjeta: { Args: { p_entrada: string }; Returns: Json }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
       clientes_sin_distrito_corregibles: {
         Args: never

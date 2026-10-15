@@ -35,6 +35,7 @@ import { enlaceGoogleWallet, googleWalletListo } from "../_shared/paseGoogle.ts"
 import { nivelDeCliente } from "../_shared/nivel.ts";
 import { validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
+import { mensajePush } from "../_shared/avisoPrivado.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -2557,7 +2558,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // ver la notificación y la pantalla que abre.
     if (accion === "prueba_aviso") {
       if (!(await esDePrueba(customerId))) return json({ ok: false, mensaje: "Sólo en la cuenta de prueba." });
-      const TIPOS: Record<string, { tipo: string; titulo: string; cuerpo: string; url: string }> = {
+      const TIPOS: Record<string, { tipo: string; titulo: string; cuerpo: string; url: string; cuerpoPublico?: string }> = {
         cumpleanos: { tipo: "cumpleanos", titulo: "¡Feliz cumpleaños! 🎂", cuerpo: "Te regalamos puntos para celebrar. Ábrela y míralos.", url: "/puntos?cumple=1" },
         puntos: { tipo: "ganado", titulo: "Ganaste 25 puntos", cuerpo: "Gracias por tu compra. Mira tu saldo en la app.", url: "/puntos" },
         cupon: { tipo: "ganado", titulo: "Tu cupón del mes 🎟️", cuerpo: "Ya llegó: ráspalo en la app para descubrir cuánto ganaste.", url: "/puntos" },
@@ -2567,8 +2568,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         precio: { tipo: "mayoreo", titulo: "Ahora tienes precio Mayoreo Plus 🏷️", cuerpo: "Desde hoy pagas a precio Mayoreo Plus en todas las sucursales.", url: "/puntos?precio=1" },
         mayoreo: { tipo: "mayoreo", titulo: "¡Bienvenido a precio de mayoreo! 💎", cuerpo: "Te aprobamos como cliente de mayoreo. Mira tu precio y tu rango.", url: "/puntos?mayoreo=1" },
         restado: { tipo: "restado", titulo: "Usaste 500 puntos 💳", cuerpo: "Ahorraste $5.00 en Salud 1. Te quedan 1,200 puntos.", url: "/puntos" },
-        tratamiento: { tipo: "tratamiento", titulo: "¿Ya te toca otra vez? 💊", cuerpo: "Se te está por acabar tu medicamento. Resérvalo y lo tenemos listo.", url: "/tratamientos" },
-        reserva: { tipo: "reserva", titulo: "Tu reserva está lista", cuerpo: "Pasa a retirarla con tu código.", url: "/reservas" },
+        // Con un producto de muestra (2026-10-15): para comprobar que bloqueado
+        // no se ve y desbloqueado sí (_shared/avisoPrivado.ts).
+        tratamiento: { tipo: "tratamiento", titulo: "¿Ya te toca otra vez? 💊", cuerpo: "Se te está por acabar Losartan 50 mg. Resérvalo y lo tenemos listo.", cuerpoPublico: "Resérvalo y lo tenemos listo. Toca para ver cuál.", url: "/tratamientos" },
+        reserva: { tipo: "reserva", titulo: "Tu reserva está lista en Salud 1 🛍️", cuerpo: "Ibuprofeno 400 mg te espera. Pasa a retirarlo antes de mañana a las 6:00 p. m.", cuerpoPublico: "Pasa a retirarla antes de mañana a las 6:00 p. m.", url: "/reservas" },
         // Mis créditos (2026-10-15): el mismo texto que manda avisos-clientes, sin montos.
         credito: { tipo: "credito", titulo: "Tienes un crédito vencido", cuerpo: "Toca para ver el detalle. ¿Dudas? Escríbenos por el chat de la app.", url: "/creditos" },
       };
@@ -2577,14 +2580,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { error: eA } = await admin.from("app_cliente_avisos").insert({ customer_id: customerId, tipo: a.tipo, ref: `prueba:${Date.now()}`,
         titulo: a.titulo, cuerpo: a.cuerpo, url: a.url, enviado: true });
       if (eA) throw eA;
-      const { data: sesiones, error: eS } = await admin.from("app_cliente_sesiones").select("push_token")
+      const { data: sesiones, error: eS } = await admin.from("app_cliente_sesiones").select("push_token, plataforma")
         .eq("customer_id", customerId).is("revocada_at", null).eq("acepta_avisos", true).not("push_token", "is", null);
       if (eS) throw eS;
-      const tokens = (sesiones ?? []).map((x: any) => x.push_token);
+      const tokens = (sesiones ?? []) as { push_token: string; plataforma: string | null }[];
       if (!tokens.length) return json({ ok: false, mensaje: "Activa los avisos en Cuenta para recibirlo." });
+      // Armado igual que el aviso real: lo que nombra un producto no se lee bloqueado.
       const r = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify(tokens.map((to: string) => ({ to, title: a.titulo, body: a.cuerpo, sound: "default", data: { url: a.url } }))),
+        body: JSON.stringify(tokens.map((t) => mensajePush(a, t.push_token, t.plataforma))),
       });
       return json({ ok: r.ok, enviados: tokens.length });
     }

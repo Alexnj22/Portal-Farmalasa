@@ -6,6 +6,11 @@
 // movimiento con quién lo hizo, filtrable por Todos / Acumulados / Canjes.
 // Las cuentas salen del núcleo (`puntosCuenta`), las mismas del portal.
 //
+// Si se llegó ESCANEANDO su tarjeta (`como`, desde Puntos), debajo del saldo
+// va todo lo demás para atenderlo (`componentes/puntos/Expediente`): la app,
+// reservas, encargos, créditos, inyecciones, tratamientos y compras. Lo mismo
+// que la pestaña «Escanear» del portal; abrirlo queda en la bitácora.
+//
 // Abajo, el código de acceso del cliente (`componentes/puntos/CodigoDeAcceso`)
 // y dar o quitar puntos a mano (`componentes/puntos/AjustarPuntos`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -13,7 +18,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } 
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchPuntosCliente } from '@nucleo/data/puntos';
+import { fetchExpedienteDelCliente, fetchPuntosCliente } from '@nucleo/data/puntos';
 import { claveDeMovimiento, detalleDeMovimiento, dolaresDePuntos, montoDeVenta, puntosTexto, rotuloDeMovimiento, valeTexto } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, partesDelReparto, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
@@ -33,6 +38,7 @@ import { COLOR_ACUMULADO, COLOR_CANJEADO, ejeDe, etiquetaMes } from '../../compo
 import CodigoDeAcceso from '../../componentes/puntos/CodigoDeAcceso';
 import AjustarPuntos from '../../componentes/puntos/AjustarPuntos';
 import VentaDelAviso from '../../componentes/puntos/VentaDelAviso';
+import Expediente from '../../componentes/puntos/Expediente';
 import { anotar } from '@nucleo/data/audit';
 
 const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
@@ -42,7 +48,7 @@ const NOMBRE_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'juli
 const mesLargo = (clave) => { const [a, m] = clave.split('-').map(Number); return `${NOMBRE_MES[m - 1]} ${a}`; };
 
 export default function PuntosCliente() {
-  const { id, nombre, aviso: avisoCrudo } = useLocalSearchParams();
+  const { id, nombre, aviso: avisoCrudo, como } = useLocalSearchParams();
   // Se abrió desde un aviso: la venta que lo originó va arriba de la cuenta.
   const aviso = useMemo(() => { try { return avisoCrudo ? JSON.parse(String(avisoCrudo)) : null; } catch { return null; } }, [avisoCrudo]);
   const { hasPermission } = useAuth();
@@ -58,6 +64,18 @@ export default function PuntosCliente() {
     try { setD(await fetchPuntosCliente(Number(id))); setError(null); } catch (e) { setError(mensajeAmigable(e)); }
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
+  // El expediente, sólo cuando se escaneó. Una vez por apertura: recargar el
+  // saldo no vuelve a anotar en la bitácora que se miró al cliente.
+  const [exp, setExp] = useState(null);
+  const [errorExp, setErrorExp] = useState(null);
+  useEffect(() => {
+    if (!como) return undefined;
+    let vivo = true;
+    fetchExpedienteDelCliente(Number(id), { como: String(como), nombre: nombre ? String(nombre) : null })
+      .then((r) => { if (vivo) setExp(r); })
+      .catch((e) => { if (vivo) setErrorExp(mensajeAmigable(e)); });
+    return () => { vivo = false; };
+  }, [id, como, nombre]);
 
   const cuenta = d?.cuenta || {};
   const saldo = Number(cuenta.saldo) || 0;
@@ -151,6 +169,9 @@ export default function PuntosCliente() {
               </View>
             </Vidrio>
             {aviso ? <VentaDelAviso aviso={aviso} /> : null}
+            {errorExp ? <Aviso tono="freno" texto={errorExp} /> : null}
+            {como && !exp && !errorExp ? <ActivityIndicator /> : null}
+            {exp ? <Expediente exp={exp} /> : null}
             <Grilla celdas={[
               { rotulo: 'Acumulados', valor: `${puntosTexto(cuenta.ganados)}\n${dolaresDePuntos(cuenta.ganados)}` },
               { rotulo: 'Canjeados', valor: `${puntosTexto(reparto.canjeado)}\n${dolaresDePuntos(reparto.canjeado)}` },

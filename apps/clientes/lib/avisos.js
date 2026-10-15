@@ -33,6 +33,27 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// ── Avisos con el nombre de un producto (2026-10-15) ────────────────────────
+// Decisión del dueño: el producto no se lee con el teléfono bloqueado. El
+// servidor (supabase/functions/_shared/avisoPrivado.ts) los manda con estos
+// dos nombres; si se cambian acá, se cambian allá.
+//   · iPhone: la categoría `privado` muestra el TÍTULO (genérico) aunque la
+//     vista previa esté oculta, y en lugar del cuerpo pone «Toca para ver el
+//     detalle». Con «Mostrar vista previa: Al desbloquear», desbloqueado se ve
+//     entero. Se registra al arrancar —antes de que llegue un aviso— y volver
+//     a registrarla es inofensivo (la reemplaza).
+//   · Android: el canal `privados` (pantalla bloqueada: privada). El cuerpo ya
+//     llega sin el producto; el texto entero viene en `data.cuerpo` y lo pinta
+//     el banner de la app. Un canal no se puede cambiar una vez creado: por eso
+//     es uno nuevo y no `ofertas`. Se crea junto con el token (abajo).
+export const CATEGORIA_PRIVADA = 'privado';
+const CANAL_PRIVADO = 'privados';
+if (Platform.OS === 'ios') {
+  Notifications.setNotificationCategoryAsync(CATEGORIA_PRIVADA, [], {
+    showTitle: true, previewPlaceholder: 'Toca para ver el detalle',
+  }).catch(() => { /* sin la categoría iOS esconde título y cuerpo: nunca peor */ });
+}
+
 // Quien quiera enterarse de un aviso que llegó con la app abierta: el banner,
 // la campana (para sumar uno) y la bandeja (para recargarse si está a la vista).
 const oyentes = new Set();
@@ -43,7 +64,10 @@ export function alLlegarAviso(fn) {
     escuchando = true;
     Notifications.addNotificationReceivedListener((n) => {
       const c = n?.request?.content ?? {};
-      const aviso = { id: n?.request?.identifier ?? String(Date.now()), titulo: c.title ?? '', cuerpo: c.body ?? '', url: c.data?.url ?? null, tipo: c.data?.tipo ?? null };
+      // `data.cuerpo`: el texto entero de un aviso con producto (en Android el
+      // `body` llega genérico). Con la app abierta el teléfono está desbloqueado.
+      const cuerpo = typeof c.data?.cuerpo === 'string' && c.data.cuerpo ? c.data.cuerpo : (c.body ?? '');
+      const aviso = { id: n?.request?.identifier ?? String(Date.now()), titulo: c.title ?? '', cuerpo, url: c.data?.url ?? null, tipo: c.data?.tipo ?? null };
       for (const f of oyentes) { try { f(aviso); } catch { /* un oyente roto no tapa a los demás */ } }
     });
   }
@@ -71,6 +95,10 @@ export async function pedirTokenDeAvisos() {
     await Notifications.setNotificationChannelAsync('ofertas', {
       name: 'Ofertas y puntos', importance: Notifications.AndroidImportance.DEFAULT,
     });
+    await Notifications.setNotificationChannelAsync(CANAL_PRIVADO, {
+      name: 'Reservas y tratamientos', importance: Notifications.AndroidImportance.DEFAULT,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
+    }).catch(() => { /* sin el canal, el aviso sale por el de siempre: igual sin el producto */ });
   }
   if (!(await pedirPermisoDeAvisos())) return { error: 'Activa las notificaciones en los ajustes del teléfono.' };
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;

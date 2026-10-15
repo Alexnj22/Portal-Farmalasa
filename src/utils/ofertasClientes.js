@@ -108,3 +108,32 @@ export const NIVELES_DE_OFERTA = [
 
 /** El nivel exigido por una oferta, o `null` si es para todos. */
 export const nivelDeOferta = (o) => NIVELES_DE_OFERTA.find((n) => n.value && n.value === o?.nivel_minimo) ?? null;
+
+// ── El formato de la imagen de una historia o un banner ─────────────────────
+// Vivía en `FormatoImagen.jsx`; se mudó el 2026-10-15 para que la app mida la
+// foto elegida con las MISMAS reglas antes de subirla. Una foto con otra forma
+// se recorta en el teléfono del cliente y lo importante puede quedar afuera.
+export const FORMATOS_DE_IMAGEN = {
+    historia: {
+        nombre: 'Historia', ancho: 1080, alto: 1920, proporcion: '9 : 16',
+        zona: 'Deja libre arriba ~250 px (el nombre y las barras) y abajo ~600 px (título, texto y botones).',
+    },
+    banner: {
+        nombre: 'Banner', ancho: 1200, alto: 500, proporcion: '2.4 : 1',
+        zona: 'Lo importante al centro: los bordes pueden recortarse un poco según el teléfono.',
+    },
+};
+
+/**
+ * ¿La imagen medida tiene el formato? `{ formaMal, chica, bien }` — la forma
+ * se tolera un 12 % y es «chica» por debajo del 60 % del ancho esperado.
+ * Sin medida, todo en `false`: no se sabe.
+ */
+export function revisarMedidaDeImagen(tipo, medida) {
+    const f = FORMATOS_DE_IMAGEN[tipo];
+    if (!f || !medida?.ancho || !medida?.alto) return { formaMal: false, chica: false, bien: false };
+    const esperada = f.ancho / f.alto;
+    const formaMal = Math.abs(medida.ancho / medida.alto - esperada) / esperada > 0.12;
+    const chica = medida.ancho < f.ancho * 0.6;
+    return { formaMal, chica, bien: !formaMal && !chica };
+}

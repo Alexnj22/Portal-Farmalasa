@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { RectangleHorizontal, RectangleVertical } from 'lucide-react';
 import Notice from '../../components/common/Notice';
+import { FORMATOS_DE_IMAGEN, revisarMedidaDeImagen } from '@nucleo/utils/ofertasClientes';
 
 /**
  * El formato correcto de una imagen para la app, y si la que se eligió lo
@@ -9,19 +10,12 @@ import Notice from '../../components/common/Notice';
  * antes de subirla: una foto con otra forma se recorta en el teléfono y lo
  * importante puede quedar afuera.
  */
-const FORMATOS = {
-    historia: {
-        icono: RectangleVertical, nombre: 'Historia', ancho: 1080, alto: 1920, proporcion: '9 : 16',
-        zona: 'Deja libre arriba ~250 px (el nombre y las barras) y abajo ~600 px (título, texto y botones).',
-    },
-    banner: {
-        icono: RectangleHorizontal, nombre: 'Banner', ancho: 1200, alto: 500, proporcion: '2.4 : 1',
-        zona: 'Lo importante al centro: los bordes pueden recortarse un poco según el teléfono.',
-    },
-};
+// Los números y la regla salen del núcleo (`ofertasClientes`), los mismos que
+// usa la app; acá sólo se le pone el ícono.
+const ICONOS = { historia: RectangleVertical, banner: RectangleHorizontal };
 
 export default function FormatoImagen({ tipo, archivo }) {
-    const f = FORMATOS[tipo];
+    const f = FORMATOS_DE_IMAGEN[tipo];
     const [medida, setMedida] = useState(null);
     useEffect(() => {
         if (!archivo) { setMedida(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- sin archivo no hay medida
@@ -33,11 +27,8 @@ export default function FormatoImagen({ tipo, archivo }) {
         return () => URL.revokeObjectURL(url);
     }, [archivo]);
 
-    const Icono = f.icono;
-    const esperada = f.ancho / f.alto;
-    const real = medida ? medida.ancho / medida.alto : null;
-    const formaMal = real != null && Math.abs(real - esperada) / esperada > 0.12;
-    const chica = medida && medida.ancho < f.ancho * 0.6;
+    const Icono = ICONOS[tipo];
+    const { formaMal, chica } = revisarMedidaDeImagen(tipo, medida);
 
     return (
         <div className="space-y-2">

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.4 — App: ofertas con nivel, envío a domicilio, precio tachado y medida de imagen
+
+- App, Ofertas para clientes: «Exclusiva para» (nivel mínimo de Puntos Salud)
+  en el editor y su insignia en las tarjetas; el panel «Entrega a domicilio» en
+  Reservas; precio original tachado en las ofertas de un descuento; historias y
+  banners miden la foto antes de subirla (1080×1920 / 1200×500).
+- Núcleo: `FORMATOS_DE_IMAGEN` y `revisarMedidaDeImagen` en `ofertasClientes`;
+  el portal (`FormatoImagen`) los usa desde ahí.
+
 ## v2.1292.3 — App: promociones con CSV, sucursal en descuentos, A planilla y Vencida
 
 - App, Promociones: «Descargar CSV» en Activas, Histórico, Excedentes y Pagos

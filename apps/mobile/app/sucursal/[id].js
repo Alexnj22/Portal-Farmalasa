@@ -23,7 +23,8 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchBranchExpensesHistory, fetchBranchKiosks } from '@nucleo/data/branches';
 import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
-import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
+import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, datosParaElDiagnostico, horarioDeHoy, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
+import { analizarSucursal } from '@nucleo/data/ia';
 import { documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
 import { gastosPorMes, serviciosDeSucursal, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 import { DIMENSIONES_DEL_HISTORIAL, dimensionDelRegistro, historialConApertura, lecturaDelRegistro, rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
@@ -77,6 +78,52 @@ function Barra({ rotulo, pct }) {
   );
 }
 
+// «Diagnóstico Inteligente» — el resumen con IA de la tarjeta del portal
+// (`BranchesView`), sólo en farmacias como allá. La foto de la sala sale del
+// núcleo (`datosParaElDiagnostico`) y la pide la misma edge function
+// (`analyze-branch`, por `analizarSucursal`).
+function Diagnostico({ b, gente, kioscos, alertas, comp }) {
+  const [estado, setEstado] = useState(null);   // null | 'pensando' | { texto } | { error }
+  const pedir = async () => {
+    Haptics.selectionAsync().catch(() => {});
+    setEstado('pensando');
+    const { dia, hora } = ahoraEnSV();
+    const datos = datosParaElDiagnostico({
+      branch: b, inactiva: gente.length === 0 && !kioscos, estado: abiertaAhora(b, dia, hora).label,
+      horario: horarioDeHoy(b, dia), empleados: gente.length, kioscos: kioscos ?? 0, alertas, completitud: comp,
+    });
+    try {
+      const { data, error } = await analizarSucursal({ branchName: b.name, branchData: JSON.stringify(datos) });
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error('Fallo en la generación del resumen.');
+      setEstado({ texto: String(data.aiSummary || '') });
+    } catch {
+      setEstado({ error: 'No se pudo generar el diagnóstico. Intenta de nuevo.' });
+    }
+  };
+  return (
+    <Seccion titulo="Diagnóstico inteligente">
+      {estado === 'pensando' ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <ActivityIndicator />
+          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Analizando la sucursal…</Text>
+        </View>
+      ) : estado?.texto ? (
+        estado.texto.split('\n').filter((p) => p.trim()).map((p, i) => (
+          <Text key={i} selectable style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{p.replace(/\*\*/g, '')}</Text>
+        ))
+      ) : estado?.error ? <Text style={{ color: MARCA.rojo, fontSize: 14 }}>{estado.error}</Text>
+        : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Un resumen de cómo está la sala ahora: apertura, personal, kioscos, alertas y expediente.</Text>}
+      {estado !== 'pensando' ? (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Boton texto={estado?.texto ? 'Volver a analizar' : 'Generar diagnóstico'} color={MARCA.violetaClaro} onPress={pedir} />
+          {estado ? <Boton texto="Cerrar" color={MARCA.azulClaro} onPress={() => setEstado(null)} /> : null}
+        </View>
+      ) : null}
+    </Seccion>
+  );
+}
+
 function Resumen({ b, gente, kioscos, puedeEditar }) {
   const { dia, hora } = ahoraEnSV();
   const alertas = alertasDeSucursal(b, Date.now(), gente);
@@ -104,6 +151,7 @@ function Resumen({ b, gente, kioscos, puedeEditar }) {
           ))}
         </Seccion>
       ) : <Aviso texto="Operativa: sin alertas." />}
+      {tipo === 'FARMACIA' ? <Diagnostico b={b} gente={gente} kioscos={kioscos} alertas={alertas} comp={comp} /> : null}
       <Seccion titulo="Dónde está">
         <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{ubicacion || 'Dirección no registrada'}</Text>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
@@ -282,7 +330,7 @@ function Historial({ b, empleados }) {
   return (
     <>
       <Segmentos activa={dim} onCambiar={(v) => { setDim(v); setCuantos(40); }}
-        opciones={[{ id: 'ALL', label: 'Todo' }, ...DIMENSIONES_DEL_HISTORIAL.slice(0, 4).map((d) => ({ id: d.value, label: d.label }))]} />
+        opciones={[{ id: 'ALL', label: 'Todo' }, ...DIMENSIONES_DEL_HISTORIAL.map((d) => ({ id: d.value, label: d.label }))]} />
       {visibles.slice(0, cuantos).map((item, i) => {
         const l = lecturaDelRegistro(item);
         const persona = l.actor ? (porId.get(String(l.actor.id)) ?? porNombre.get(String(l.actor.name).toLowerCase()) ?? { name: l.actor.name }) : null;

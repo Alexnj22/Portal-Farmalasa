@@ -20,6 +20,8 @@ import Vidrio from '../../../componentes/Vidrio';
 import { colorSistema } from '../../../componentes/Formulario';
 import { iconoDe } from '../../../tema/iconos';
 import { abrirModulo } from '../../../pantallas';
+import FranjaDelPortal from '../../../componentes/FranjaDelPortal';
+import EstadoDeDatos from '../../../componentes/EstadoDeDatos';
 
 // Lo que ya vive en otra pestaña (Inicio, Avisos, Yo) no se repite acá.
 const EN_LA_BARRA = new Set(['overview', 'emp_announcements', 'emp_profile', 'emp_documents', 'requests_personales']);
@@ -76,6 +78,7 @@ export default function Menu() {
     <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingVertical: 8, paddingBottom: 32, gap: 22 }}
       refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await refreshPermissions?.(user); setRecargando(false); }} />}>
+      <FranjaDelPortal />
       {bloques.map((b, i) => (
         <View key={b.key} style={{ gap: 7, marginHorizontal: 16 }}>
           {b.titulo ? (
@@ -98,6 +101,8 @@ export default function Menu() {
           </Vidrio>
         </View>
       ) : null}
+      {/* El estado de los datos, como el recuadro del menú de Ajustes del portal. */}
+      <EstadoDeDatos />
     </ScrollView>
   );
 }

@@ -21,15 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1292.2 — La app al día con Sistema y avisos: cortes desde el aviso, diagnóstico de la sucursal, orden de auditoría, franja y estado de los datos
+## v2.1292.3 — La app: diagnóstico de la sucursal, orden de la auditoría, franja del portal y estado de los datos
 
-Paridad de la app con el portal, grupo «Sistema, solicitudes y marco». Lo que
-toca el núcleo pasó a ser una sola regla para las dos puntas:
+Paridad de la app con el portal, grupo «Sistema, solicitudes y marco» (segunda
+parte). Lo que toca el núcleo es una sola regla para las dos puntas:
 
-- **Cortes desde el aviso**: `corteResolubleDelAviso` (`hooks/useCortesDeAvisos`)
-  decide qué aviso ofrece Confirmar / Descartar; la campana del portal y la
-  bandeja y el historial de la app lo usan. En la app, los dos botones abren el
-  corte con la acción ya empezada (entrega de la caja o motivo del descarte).
 - **Diagnóstico inteligente de la sucursal**: la foto que se le manda a la IA
   sale de `datosParaElDiagnostico` (`utils/sucursales`); la ficha de la app lo
   pide a la misma función (`analyze-branch`). El historial de la ficha suma el
@@ -40,6 +36,15 @@ toca el núcleo pasó a ser una sola regla para las dos puntas:
   sala y cuándo está atrasada o caída) lo usan `SidebarSyncStatus` y el
   recuadro nuevo del Menú de la app. El Menú y el Inicio muestran además la
   franja de aviso del portal.
+
+## v2.1292.2 — La app al día con Sistema y avisos: cortes desde el aviso, diagnóstico de la sucursal, orden de auditoría, franja y estado de los datos
+
+Paridad de la app con el portal, grupo «Sistema, solicitudes y marco»:
+
+- **Cortes desde el aviso**: `corteResolubleDelAviso` (`hooks/useCortesDeAvisos`)
+  decide qué aviso ofrece Confirmar / Descartar; la campana del portal y la
+  bandeja y el historial de la app lo usan. En la app, los dos botones abren el
+  corte con la acción ya empezada (entrega de la caja o motivo del descarte).
 
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 

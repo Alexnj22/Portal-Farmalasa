@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.5 — Productos e inventario en la app: filtros, orden, marcas de la fila, SRS y pegar foto
+
+- App, Productos: filtro por laboratorio; orden por producto, laboratorio,
+  categoría o estado; cada fila con las marcas del portal (Pérdida / Margen
+  bajo, «Pérd. <precio especial>», «cambios», «ND», «Receta»).
+- App, Productos: «Enriquecer SRS» nativo (aplicar los parecidos, revisar uno
+  por uno con candidatos, marcar «no lleva principio activo»); al editar
+  principios activos, buscador del registro SRS que copia el principio.
+- App, ficha de producto: marca «Receta»; la foto se puede pegar desde lo
+  copiado (además de tomarla o elegirla con recorte, y ampliarla).
+- App, Inventario: filtro por laboratorio (`p_lab_id`) y orden por sucursal
+  (con todas las salas), laboratorio, producto o unidades, en los dos sentidos.
+- Núcleo: `fetchIndicadoresDeCatalogo` (de `TabCatalogo`), `utils/srs`
+  (`resultadoDeSrs`, del buscador SRS), `utils/enriquecerSrs` y la sección
+  «Enriquecer SRS» de `data/srs` (del modal); el portal los usa igual. Al
+  aplicar desde «Enriquecer SRS» ahora se revisa el error y se anota
+  `UPDATE_PRODUCT_PRINCIPLES` (antes un fallo contaba como aplicado).
+
 ## v2.1292.4 — Pedidos en la app: revisar antes de confirmar, sin stock en Bodega, buscador, en vivo, lotes y presentación al recibir, orden de reglas
 
 - App, Generar: cada sala dice «N bajo mínimo · N en cero» y «Último pedido

@@ -6,7 +6,7 @@
 import { supabase } from '../supabaseClient';
 import { buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { anotar, conBitacora } from './audit';
-import { worstMarginOf } from '../utils/preciosDeProducto';
+import { specialLossKeys, worstMarginOf } from '../utils/preciosDeProducto';
 
 // Las escrituras de la ficha anotan su propia entrada en la bitácora (D3,
 // 2026-09-28): cualquier cliente que las llame la deja. `contexto` son los
@@ -305,6 +305,34 @@ export function fetchProductChangeAndMarginData(ids) {
         supabase.from('products_changelog').select('product_id, campo, valor_anterior').in('product_id', ids),
         preciosConCosto(ids).then(r => ({ ...r, data: r.data && r.data.filter(p => Number(p.costo) > 0) })),
     ]);
+}
+
+/**
+ * Las marcas de cada fila del catálogo (2026-10-15, mudado de `TabCatalogo`
+ * para que la app las muestre igual): `{ cambiados: Set, margen: {id: peor},
+ * perdidaEspecial: {id: Set<'premium'|'precio_7'>} }`. `camposMargen` = los
+ * niveles de precio que mira el margen (sin precio_7 ni premium). Los cambios
+ * de laboratorio sin valor anterior no cuentan (alta, no cambio). Lanza si
+ * alguna lectura falla: decir «sin cambios» por una lectura que no llegó sería
+ * mentir.
+ */
+export async function fetchIndicadoresDeCatalogo(ids, camposMargen, ocultos = new Set(['laboratorio_id'])) {
+    if (!ids?.length) return { cambiados: new Set(), margen: {}, perdidaEspecial: {} };
+    const [{ data: pc, error: e1 }, { data: prc, error: e2 }, { data: pp, error: e3 }] = await fetchProductChangeAndMarginData(ids);
+    if (e1 || e2 || e3) throw e1 || e2 || e3;
+    const visibles = (prc || []).filter((c) => !(ocultos.has(c.campo) && !c.valor_anterior));
+    const cambiados = new Set([...(pc || []).map((c) => c.product_id), ...visibles.map((c) => c.product_id)]);
+    const margen = {};
+    const perdidaEspecial = {};
+    for (const row of pp || []) {
+        const w = worstMarginOf(row, camposMargen);
+        if (w !== null && (margen[row.product_id] === undefined || w < margen[row.product_id])) margen[row.product_id] = w;
+        for (const k of specialLossKeys(row)) {
+            if (!perdidaEspecial[row.product_id]) perdidaEspecial[row.product_id] = new Set();
+            perdidaEspecial[row.product_id].add(k);
+        }
+    }
+    return { cambiados, margen, perdidaEspecial };
 }
 
 /** Los precios de un producto por presentación, sin costos: para quien sólo

@@ -20,6 +20,8 @@ import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import Tocable from '../Tocable';
+import { colorDeVariante } from '../colorDeVariante';
+import { metaObs } from '@nucleo/utils/colasDeFacturacion';
 
 const COLUMNAS = 'id, correlativo, erp_invoice_id, branch_id, tipo_documento, cliente, fecha, total';
 
@@ -102,6 +104,58 @@ export default function Resueltas({ cola, sala, nombreSala, verMontos, recarga }
             </Tocable>
           </>
         )
+      ) : null}
+    </View>
+  );
+}
+
+// Observaciones · «N solventadas», NATIVO — la sección plegable de
+// `TabObservaciones` del portal: lo que alguien revisó y dejó constancia, con
+// quién, cuándo, su nota y los códigos que tenía. Lo que se solventa sale de la
+// lista de arriba; sin esto desaparecería sin rastro, y la observación sigue
+// existiendo en la factura. Las filas llegan armadas del núcleo
+// (`observacionesSolventadas`), las mismas del portal.
+export function ObservacionesSolventadas({ filas, nombreSala, verMontos }) {
+  const [abierto, setAbierto] = useState(false);
+  const [cuantas, setCuantas] = useState(40);
+  if (!filas?.length) return null;
+  const visibles = filas.slice(0, cuantas);
+  return (
+    <View style={{ marginHorizontal: 16, gap: 8, marginTop: 8 }}>
+      <Tocable onPress={() => setAbierto((v) => !v)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
+        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>
+          {`${abierto ? '▾' : '▸'} ${filas.length} solventada${filas.length === 1 ? '' : 's'}`}
+        </Text>
+      </Tocable>
+      {abierto ? (
+        <>
+          {visibles.map((r) => {
+            const res = r.resolution || {};
+            return (
+              <Vidrio key={r.id} radio={16}>
+                <View style={{ padding: 12, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{`${r.tipo_documento ?? ''} ${r.correlativo ?? ''}${r.erp_invoice_id ? ` · #${r.erp_invoice_id}` : ''}`}</Text>
+                    {verMontos && r.total != null ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '800' }}>{formatMoney(r.total)}</Text> : null}
+                  </View>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[r.cliente, nombreSala(r.branch_id)].filter(Boolean).join(' · ')}</Text>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                    {(r.observaciones || []).map((c) => <Pildora key={c} texto={metaObs(c).label} color={colorDeVariante(metaObs(c).variant)} />)}
+                  </View>
+                  {res.comment ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`«${res.comment}»`}</Text> : null}
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                    {`${res.resolved_by ? shortEmployeeName({ name: res.resolved_by }) : 'Solventada'}${res.resolved_at ? ` · ${fechaHora12(res.resolved_at, { month: 'short', day: '2-digit' })}` : ''}`}
+                  </Text>
+                </View>
+              </Vidrio>
+            );
+          })}
+          {filas.length > visibles.length ? (
+            <Tocable onPress={() => setCuantas((n) => n + 40)} hitSlop={8} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Ver más · quedan ${filas.length - visibles.length}`}</Text>
+            </Tocable>
+          ) : null}
+        </>
       ) : null}
     </View>
   );

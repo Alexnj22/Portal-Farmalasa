@@ -53,7 +53,7 @@ function Fila({ titulo, detalle, derecha, onPress, elegida }) {
 }
 
 /** Elegir el cliente: los activos (y el elegido), con el mismo detalle que el portal. */
-export function ElegirCliente({ clientes, clienteId, onElegir, onCerrar }) {
+export function ElegirCliente({ clientes, clienteId, onElegir, onCerrar, onNuevo = null }) {
   const [q, setQ] = useState('');
   const filas = useMemo(() => {
     const t = q.trim();
@@ -65,6 +65,12 @@ export function ElegirCliente({ clientes, clienteId, onElegir, onCerrar }) {
     <Hoja titulo="Cliente" subtitulo="Lo que se le puede vender depende de él." onCerrar={onCerrar}>
       <View style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
         <Campo multiline={false} value={q} onChangeText={setQ} placeholder="Nombre, ruta, NIT o NRC" autoCorrect={false} autoFocus clearButtonMode="while-editing" />
+        {/* «Cliente nuevo» sin salir de la venta, como el botón al lado del cliente en el portal. */}
+        {onNuevo ? (
+          <Pressable onPress={onNuevo} accessibilityRole="button" hitSlop={6} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ color: PETROLEO, fontSize: 16, fontWeight: '700' }}>＋ Cliente nuevo</Text>
+          </Pressable>
+        ) : null}
       </View>
       <FlatList data={filas} keyExtractor={c => String(c.id)} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         ListEmptyComponent={<Text style={{ color: colorSistema.texto2, padding: 20 }}>Ningún cliente coincide.</Text>}

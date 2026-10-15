@@ -12,9 +12,9 @@
 //
 // Rutas: `/torogoz/venta` (nueva; `?cliente=` y `?desde=` como en el portal)
 // y `/torogoz/venta/<pedido>` (finalizar o corregir una preventa).
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -42,6 +42,8 @@ import { ElegirCliente, Pendientes } from './Hojas';
 import { Desglose, Eleccion, Etiqueta, PETROLEO } from './Piezas';
 import { AvisoSinSenal, useColaSinSenal } from './SinSenal';
 import { ACCIONES_DE_DINERO } from '../soloConsulta';
+import { tomarClienteNuevo } from '../pedidos/elegido';
+import { compartirTicket, imprimirTicket } from '../fiscal/papel';
 
 const RESULTADOS = 8;
 
@@ -83,6 +85,14 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
     lineas, venta, conIva, porAprobar, montoPorAprobar, unidadesTotal, bloqueoGuardar, puedeGuardar, guardando, pedido,
   } = s;
 
+  // El cliente dado de alta desde la hoja «Cliente» vuelve elegido, como el
+  // `alCrearCliente` del portal.
+  const { releerClientes } = s;
+  useFocusEffect(useCallback(() => {
+    const nuevo = tomarClienteNuevo();
+    if (nuevo) releerClientes(nuevo).catch(() => {});
+  }, [releerClientes]));
+
   const resultados = useMemo(() => {
     const q = buscar.trim();
     if (!q || !cliente) return [];
@@ -121,8 +131,17 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
     if (r.inicio) { setVerCobro(false); router.replace('/torogoz/pedidos'); return; }
     if (r.sinSenal) {
       setVerCobro(false);
+      // El ticket provisional (`ticketProvisional`, núcleo), como el portal:
+      // a la impresora o compartido como PDF.
+      const nombre = `Provisional ${r.sinSenal.codigo_generacion.slice(0, 8)}`;
+      const papel = (fn) => () => Promise.resolve(fn()).catch((e) => Alert.alert('No se pudo', e?.message ?? String(e)));
       Alert.alert('Venta guardada sin señal',
-        `Se factura en contingencia sola al volver la señal.\nCódigo de generación ${r.sinSenal.codigo_generacion.slice(0, 8)}…`);
+        `Se factura en contingencia sola al volver la señal.\nCódigo de generación ${r.sinSenal.codigo_generacion.slice(0, 8)}…`,
+        r.ticket ? [
+          { text: 'Imprimir el ticket provisional', onPress: papel(() => imprimirTicket(r.ticket)) },
+          { text: 'Compartir el ticket (PDF)', onPress: papel(() => compartirTicket(r.ticket, nombre)) },
+          { text: 'Listo', style: 'cancel' },
+        ] : undefined);
       return;
     }
     if (r.otra) { setVerCobro(false); if (corrigiendo) router.replace('/torogoz/venta'); }
@@ -356,6 +375,7 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
 
       {verCliente ? (
         <ElegirCliente clientes={s.clientes} clienteId={s.clienteId} onCerrar={() => setVerCliente(false)}
+          onNuevo={puedeVender ? () => { setVerCliente(false); router.push({ pathname: '/torogoz/cliente/[id]', params: { id: 'nuevo', paraVenta: '1' } }); } : null}
           onElegir={(id) => { s.cambiarCliente(id); setVerCliente(false); }} />
       ) : null}
       {verPendientes ? (

@@ -30,6 +30,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { Aviso } from '../../componentes/formulario/Piezas';
 import { Dona, FilaRanking, FormasDePago, Puesto, Punto, Variacion, colorDe } from '../../componentes/torogoz/tablero/Piezas';
 import { TrasLaTransicion } from '../../componentes/trasLaTransicion';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const PETROLEO = '#0f6e7d';
 const VISIBLES = 5;
@@ -101,6 +102,8 @@ export default function TorogozInicio() {
       <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Segmentos opciones={OPCIONES_PERIODO} activa={periodo} onCambiar={(v) => router.setParams({ periodo: v })} />
         <FiltrosActivos grupos={grupos} />
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>

@@ -8,29 +8,28 @@
 // —incluido «quedó firmado y sin enviar», que NO es lo mismo que emitido—.
 // Anular pide el motivo y vuelve a confirmar.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  LLEVA_COMPROBANTE, anularPedido, facturarPedido, fetchItemsDePedido, fetchPagos, fetchPedidos, mensajeDeDistribucion, reintentarDocumento,
+  anularPedido, facturarPedido, fetchItemsDePedido, fetchPedidos, mensajeDeDistribucion, reintentarDocumento,
 } from '@nucleo/data/distribucion';
 import { ESTADO_DOCUMENTO, FORMA_PAGO, TIPO_DOCUMENTO, rotuloTipoCliente } from '@nucleo/utils/distribucionComun';
 import { VENTANA_PEDIDOS_DIAS, accionesDePedido, estadoDePedido } from '@nucleo/utils/distribucionPedidos';
 import { calcularVenta } from '@nucleo/utils/distribucionMotor';
-import { VERIFICACION_PAGO, nombreFormaPago } from '@nucleo/utils/distribucionFacturacion';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../../componentes/formulario/Piezas';
 import { Esqueleto } from '../../../componentes/inicio/Widget';
 import { MARCA } from '../../../componentes/inicio/marca';
 import Etiqueta from '../../../componentes/torogoz/rutas/Etiqueta';
+import PagosDelPedido from '../../../componentes/torogoz/fiscal/PagosDelPedido';
 import { pedidoRecordado } from '../../../componentes/torogoz/pedidos/elegido';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torogoz/soloConsulta';
 
@@ -43,7 +42,6 @@ export default function DetallePedido() {
   const puedeVender = !!hasPermission?.('distribucion', 'can_edit');
   const [pedido, setPedido] = useState(() => pedidoRecordado(id));
   const [items, setItems] = useState(null);
-  const [pagos, setPagos] = useState(null);
   const [error, setError] = useState('');
   const [ocupado, setOcupado] = useState(null);
   const [anulando, setAnulando] = useState(false);
@@ -59,8 +57,7 @@ export default function DetallePedido() {
         if (!p) { setError('No se encontró este pedido (sólo se miran los últimos 60 días).'); return; }
         setPedido(p);
       }
-      const [it, pg] = await Promise.all([fetchItemsDePedido(id), fetchPagos(id)]);
-      setItems(it); setPagos(pg);
+      setItems(await fetchItemsDePedido(id));
     } catch (e) {
       setError(mensajeDeDistribucion(e));
     }
@@ -179,34 +176,10 @@ export default function DetallePedido() {
           ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin productos.</Text>}
         </Seccion>
 
-        {pagos?.length ? (
-          <Seccion titulo="Pagos">
-            {pagos.map((p, k) => {
-              const v = LLEVA_COMPROBANTE.has(p.forma) ? (VERIFICACION_PAGO[p.verificacion] ?? VERIFICACION_PAGO.pendiente) : null;
-              return (
-                <View key={p.id} style={{ gap: 6, paddingTop: k ? 9 : 0, borderTopWidth: k ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{`${nombreFormaPago(p.forma)}${p.referencia ? ` · ${p.referencia}` : ''}`}</Text>
-                      {p.nota ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{p.nota}</Text> : null}
-                    </View>
-                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{p.monto != null ? formatMoney(p.monto) : 'El resto'}</Text>
-                  </View>
-                  {v ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <Etiqueta variante={v.variant} texto={v.label} />
-                      {p.comprobante_url ? (
-                        <Pressable hitSlop={8} onPress={() => openStoredFile(p.comprobante_url).catch((e) => Alert.alert('No se pudo abrir el comprobante', e?.message ?? String(e)))}>
-                          <Text style={{ color: PETROLEO, fontSize: 14, fontWeight: '700' }}>Ver comprobante</Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })}
-          </Seccion>
-        ) : null}
+        {/* Los pagos y sus comprobantes, con «Adjuntar / Cambiar comprobante» como
+            el `PedidoModal` del portal (adjuntar marca la verificación del pago:
+            queda detrás de `ACCIONES_DE_DINERO`, dentro de `PagosDelPedido`). */}
+        <PagosDelPedido pedidoId={pedido.id} puedeEditar={puedeVender && pedido.estado !== 'anulado'} onCambio={cargar} />
 
         {anulando ? (
           <Seccion titulo="Motivo de la anulación">

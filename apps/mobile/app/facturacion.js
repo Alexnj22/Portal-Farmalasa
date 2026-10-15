@@ -7,6 +7,11 @@
 //   · Anuladas: por solventar, con Pendientes / CCF urgentes / Solventadas.
 //   · En Hacienda y Anuladas, el historial de lo resuelto (`fiscal/Resueltas`):
 //     selladas del mes, resueltas a mano y las «solventadas internamente».
+//     En Observaciones, «N solventadas»: quién, cuándo, la nota y los códigos.
+//   · En Hacienda, Observaciones y Anuladas, tocar el ID interno lo COPIA y
+//     marca el documento como «visitado» (se apaga y se tacha); otro toque
+//     quita la marca, y «Limpiar marcas» las borra todas. Es la misma marca
+//     del portal (`useVisitados`, núcleo), del documento y no de la cola.
 //   · Saltos (solventar saltos y campos nulos, con su historial) y No efectivo
 //     (confirmar pagos con comprobante).
 //
@@ -26,6 +31,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { Stack } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -34,10 +40,11 @@ import {
   insertInvoiceResolution, insertObservationResolution, regularizarDte,
 } from '@nucleo/data/facturacion';
 import {
-  conteoDeObservaciones, diasQuedanDelMes, esSolventable, metaObs, observacionesPendientes, resumenDeRegularizacion,
+  conteoDeObservaciones, observacionesSolventadas, diasQuedanDelMes, esSolventable, metaObs, observacionesPendientes, resumenDeRegularizacion,
   resumenDeRegularizarUna, sinResolver, tonoDeDiasQuedan,
 } from '@nucleo/utils/colasDeFacturacion';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { useVisitados } from '@nucleo/hooks/useVisitados';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { diasEntre, fechaTexto, hoySV, relojSV } from '@nucleo/utils/fecha';
@@ -55,7 +62,7 @@ import { colorDeVariante } from '../componentes/colorDeVariante';
 import { fallo, listo } from '../componentes/Progreso';
 import Saltos from '../componentes/fiscal/Saltos';
 import NoEfectivo from '../componentes/fiscal/NoEfectivo';
-import Resueltas from '../componentes/fiscal/Resueltas';
+import Resueltas, { ObservacionesSolventadas } from '../componentes/fiscal/Resueltas';
 import Tocable from '../componentes/Tocable';
 import { TrasLaTransicion } from '../componentes/trasLaTransicion';
 
@@ -90,6 +97,16 @@ export default function Facturacion() {
   const [nota, setNota] = useState('');
   const [ocupado, setOcupado] = useState(null);
   const [recargaHija, setRecargaHija] = useState(0);
+  const { visitedIds, toggleVisited, clearVisited } = useVisitados();
+  const copiarId = (erpId) => {
+    if (!erpId) return;
+    if (!visitedIds.has(String(erpId))) {
+      Promise.resolve(Clipboard.setStringAsync(String(erpId))).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      listo('ID copiado', String(erpId));
+    } else Haptics.selectionAsync().catch(() => {});
+    toggleVisited(erpId);
+  };
 
   const cargar = useCallback(async () => {
     setError(null);
@@ -97,7 +114,7 @@ export default function Facturacion() {
       const hoy = hoySV();
       const [mh, resHist, obs, resObs, nulas, confirmadas] = await Promise.all([
         fetchPendingMhInvoices(sala), fetchInvoiceResolutionsHistorial('invoice_id, resolved_at'),
-        fetchInvoiceObservations('2000-01-01', '2099-12-31', sala), fetchObservationResolutions('invoice_id, resolved_at'),
+        fetchInvoiceObservations('2000-01-01', '2099-12-31', sala), fetchObservationResolutions('invoice_id, comment, resolved_by, resolved_at'),
         fetchNulaInvoices(sala),
         // Lo que Hacienda ya selló este mes (sello válido: `SELLO_MH_LIKE`), como el portal.
         Promise.resolve(countConfirmedMhInvoices(sala, `${hoy.slice(0, 7)}-01`, hoy)).then((r) => r.count ?? null).catch(() => null),
@@ -109,11 +126,12 @@ export default function Facturacion() {
       setDatos({
         mh: sinResolver(mh, res).sort((a, b) => (a.tipo_documento === 'CCF' ? 0 : 1) - (b.tipo_documento === 'CCF' ? 0 : 1) || String(a.fecha).localeCompare(String(b.fecha))),
         obs: observacionesPendientes(obs.data, resObs.data),
+        obsSolventadas: observacionesSolventadas(obs.data, resObs.data),
         nulas: sinResolver(nulas || [], res),
         nulasSolventadasMes: res.filter((r) => idsNulas.has(r.invoice_id) && String(r.resolved_at || '').startsWith(mes)).length,
         confirmadasMes: confirmadas,
       });
-    } catch (e) { setError(e?.message || 'No se pudo cargar'); setDatos({ mh: [], obs: [], nulas: [], nulasSolventadasMes: 0 }); }
+    } catch (e) { setError(e?.message || 'No se pudo cargar'); setDatos({ mh: [], obs: [], obsSolventadas: [], nulas: [], nulasSolventadasMes: 0 }); }
   }, [sala]);
   useEffect(() => { setDatos(null); cargar(); }, [cargar]);
   useEffect(() => { setPaginas(1); setAbierta(null); }, [cola, texto, obsCode, salaElegida]);
@@ -130,6 +148,8 @@ export default function Facturacion() {
   const diasQuedan = diasQuedanDelMes(relojSV());
   const masVieja = (datos?.obs || []).reduce((m, r) => Math.max(m, r.fecha ? diasEntre(r.fecha, hoySV()) : 0), 0);
 
+  const salasOrdenadas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
+  const marcadas = useMemo(() => (datos?.[cola] || []).filter((r) => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length, [datos, cola, visitedIds]);
   const grupos = [
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
       opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
@@ -209,7 +229,7 @@ export default function Facturacion() {
         {ocupado === 'todas' ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Enviando a Hacienda… puede tardar un par de minutos." /></View> : null}
 
         {cola === 'saltos' ? <Saltos sala={sala} nombreSala={nombreSala} recarga={recargaHija} canEdit={canEdit} user={user} /> : null}
-        {cola === 'noef' ? <NoEfectivo sala={sala} nombreSala={nombreSala} texto={texto} canEdit={canEdit} user={user} verMontos={verMontos} /> : null}
+        {cola === 'noef' ? <NoEfectivo sala={sala} nombreSala={nombreSala} salas={salasOrdenadas} texto={texto} canEdit={canEdit} user={user} verMontos={verMontos} /> : null}
 
         {['mh', 'obs', 'nulas'].includes(cola) && datos ? (
           <>
@@ -239,13 +259,24 @@ export default function Facturacion() {
               </FilaDeKpis>
             ) : null}
 
+            {marcadas ? (
+              <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${marcadas} marcada${marcadas === 1 ? '' : 's'} como visitada${marcadas === 1 ? '' : 's'}`}</Text>
+                <Tocable onPress={() => Alert.alert('Limpiar marcas', 'Quita la marca de visitado de todos los documentos.', [
+                  { text: 'Cancelar', style: 'cancel' }, { text: 'Limpiar', style: 'destructive', onPress: clearVisited },
+                ])} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Limpiar marcas</Text>
+                </Tocable>
+              </View>
+            ) : null}
             {visibles.map((r) => {
               const esCcf = r.tipo_documento === 'CCF';
               const abierto = abierta === r.id;
               const d = r.fecha ? diasEntre(r.fecha, hoySV()) : 0;
               const solventable = cola !== 'obs' || esSolventable(r);
+              const visitada = !!r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id));
               return (
-                <View key={r.id} style={{ marginHorizontal: 16 }}>
+                <View key={r.id} style={{ marginHorizontal: 16, opacity: visitada ? 0.5 : 1 }}>
                   <Vidrio radio={18} tinte={esCcf ? 'rgba(240,68,56,0.10)' : undefined}>
                     <Tocable disabled={!canEdit || !solventable} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); }} style={{ padding: 12, gap: 5 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -253,8 +284,16 @@ export default function Facturacion() {
                         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{verMontos ? formatMoney(r.total || 0) : '—'}</Text>
                       </View>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                        {[r.cliente || 'Sin cliente', todas ? nombreSala(r.branch_id) : null, r.fecha ? fechaTexto(r.fecha, { day: 'numeric', month: 'short', year: 'numeric' }) : null, r.erp_invoice_id ? `ID ${r.erp_invoice_id}` : null].filter(Boolean).join(' · ')}
+                        {[r.cliente || 'Sin cliente', todas ? nombreSala(r.branch_id) : null, r.fecha ? fechaTexto(r.fecha, { day: 'numeric', month: 'short', year: 'numeric' }) : null].filter(Boolean).join(' · ')}
                       </Text>
+                      {r.erp_invoice_id ? (
+                        <Tocable onPress={() => copiarId(r.erp_invoice_id)} hitSlop={6} accessibilityLabel={visitada ? 'Quitar la marca de visitado' : 'Copiar el ID interno'}
+                          style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
+                          <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], textDecorationLine: visitada ? 'line-through' : 'none' }}>
+                            {visitada ? `ID ${r.erp_invoice_id} · visitado` : `ID ${r.erp_invoice_id} · copiar`}
+                          </Text>
+                        </Tocable>
+                      ) : null}
                       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                         {cola !== 'obs' ? <Pildora texto={d ? `${d} día${d === 1 ? '' : 's'} esperando` : 'de hoy'} color={d > 3 ? MARCA.rojo : d ? MARCA.ambar : MARCA.verde} /> : null}
                         {r.cliente_categoria ? <Pildora texto={r.cliente_categoria} color={MARCA.azulClaro} /> : null}
@@ -286,6 +325,7 @@ export default function Facturacion() {
             ) : null}
             {!lista.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Nada pendiente aquí</Text> : null}
             {cola === 'mh' || cola === 'nulas' ? <Resueltas cola={cola} sala={sala} nombreSala={nombreSala} verMontos={verMontos} recarga={recargaHija} /> : null}
+            {cola === 'obs' ? <ObservacionesSolventadas filas={datos.obsSolventadas || []} nombreSala={nombreSala} verMontos={verMontos} /> : null}
           </>
         ) : ['mh', 'obs', 'nulas'].includes(cola) ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
       </ScrollView>

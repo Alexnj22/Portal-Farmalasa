@@ -26,6 +26,7 @@ import { fallo, listo } from '../../componentes/Progreso';
 import VentaPerdida from '../../componentes/torogoz/bodega/VentaPerdida';
 import { Chapa, Ficha, PETROLEO, Vacio, confirmar } from '../../componentes/torogoz/bodega/piezas';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const OPCIONES = VISTAS_PERDIDAS.map((v) => ({ id: v.key, label: v.label }));
 const PAGINA = 60;
@@ -101,6 +102,8 @@ export default function VentasPerdidas() {
       <MenuDeFiltros grupos={[]} extra={extra} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Segmentos opciones={OPCIONES} activa={vista} onCambiar={(v) => router.setParams({ estado: v })} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
           Lo que los clientes pidieron y no se les pudo vender: la lista de lo que hay que comprar.

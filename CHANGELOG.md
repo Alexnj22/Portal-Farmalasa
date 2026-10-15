@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.2 — App: paridad de Compras, fiscal y Torogoz con el portal
+
+### App · Libros IVA: buscador y orden en el detalle de cada libro
+
+Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).
+- El detalle de cada libro en la app tiene buscador y orden por cualquier
+  columna, con el N.º legal de cada renglón.
+- El mapa de columnas de la tabla (`ACCESO`) se mudó de `LibrosIvaView` al
+  núcleo (`ACCESO_DEL_LIBRO`, `accesoDelLibro`, `numerarLibro`,
+  `buscarYOrdenarLibro` en `utils/libroIva`) y el portal pasa a usarlo: las dos
+  puntas buscan y ordenan con la misma regla. El CSV sigue saliendo del libro
+  entero en su orden legal.
+
+### App · Facturación: solventadas de Observaciones, pagos confirmados, PDF y marca de visitados
+
+Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).
+- Observaciones: la sección «N solventadas» con quién, cuándo, la nota y los
+  códigos. La regla sale del núcleo (`observacionesSolventadas`) y el portal
+  pasa a usarla.
+- No efectivo: los pagos ya confirmados (quién, cuándo, nota, comprobante) con
+  filtros por forma de pago y sala; el comprobante acepta también un PDF.
+- Hacienda, Observaciones y Anuladas: tocar el ID interno lo copia y marca el
+  documento como visitado; «Limpiar marcas». La marca se mudó al núcleo
+  (`@nucleo/hooks/useVisitados`) con la misma clave de siempre.
+
 ## v2.1294.1 — Tarjeta nítida al terminar de girar
 
 - La tarjeta queda nítida apenas termina de girar (antes ~1.3 s borrosa): el resorte del giro tardaba en apagarse y la cara seguía con una fracción de grado de perspectiva, que obligaba a componerla en 3D. A menos de 0.9° de la cara se la da por asentada e iOS la dibuja píxel a píxel.

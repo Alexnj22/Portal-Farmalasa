@@ -10,8 +10,16 @@
 //
 // ⚠️ Mandar la cola FACTURA en contingencia y avisa a Hacienda: es la misma
 // acción que el portal hace solo, con la hora real de cada venta.
-import { useCallback, useEffect, useRef, useState } from 'react';
+//
+// `BandaSinSenal` es el aviso del MARCO de Torogoz en el portal
+// (`TorogozLayout`): «N ventas sin señal» con «Enviar» en cada pantalla de la
+// distribuidora, no sólo dentro de la venta. Como la pila deja montadas varias
+// pantallas a la vez, el freno contra dos envíos simultáneos es del MÓDULO
+// (`enviandoAhora`) y no de cada instancia: mandar dos veces la misma cola
+// facturaría dos veces.
+import { useCallback, useEffect, useState } from 'react';
 import { AppState, Pressable, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { escuchar } from '@plataforma/eventos';
 import { ventasSinSenal, enviarVentasSinSenal, EVENTO_SIN_SENAL } from '@nucleo/data/distribucionSinSenal';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
@@ -21,16 +29,16 @@ import Vidrio from '../../Vidrio';
 import { colorSistema } from '../../Formulario';
 import { MARCA } from '../../inicio/marca';
 import { fallo, listo } from '../../Progreso';
-import { SeHaceEnElPortal } from '../soloConsulta';
+import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
+
+let enviandoAhora = false;
 
 export function useColaSinSenal({ automatico = true } = {}) {
   const [lista, setLista] = useState(ventasSinSenal);
   const [enviando, setEnviando] = useState(false);
-  const ocupado = useRef(false);
-
   const enviar = useCallback(async ({ avisar = false } = {}) => {
-    if (ocupado.current || !ventasSinSenal().length) return null;
-    ocupado.current = true;
+    if (enviandoAhora || !ventasSinSenal().length) return null;
+    enviandoAhora = true;
     setEnviando(true);
     try {
       const r = await enviarVentasSinSenal();
@@ -43,7 +51,7 @@ export function useColaSinSenal({ automatico = true } = {}) {
       fallo('No se pudieron mandar', mensajeDeDistribucion(e));
       return null;
     } finally {
-      ocupado.current = false;
+      enviandoAhora = false;
       setEnviando(false);
       setLista(ventasSinSenal());
     }
@@ -89,5 +97,36 @@ export function AvisoSinSenal({ lista, enviando, onEnviar }) {
         </Pressable> : null}
       </View>
     </Vidrio>
+  );
+}
+
+/**
+ * La franja del marco: una línea con cuántas hay y «Enviar» (detrás de
+ * `ACCIONES_DE_DINERO`, como en la venta). Sin la acción, tocarla lleva a la
+ * venta, donde se ve la lista. No pinta nada si la cola está vacía.
+ */
+export function BandaSinSenal({ automatico = false, style }) {
+  const { lista, enviando, enviar } = useColaSinSenal({ automatico: automatico && ACCIONES_DE_DINERO });
+  if (!lista.length) return null;
+  const conError = lista.some((v) => v.error);
+  return (
+    <View style={style}>
+      <Vidrio radio={16}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: `${conError ? MARCA.rojo : MARCA.ambar}1F` }}>
+          <Pressable style={{ flex: 1, minHeight: 40, justifyContent: 'center' }} accessibilityRole="button" onPress={() => router.push('/torogoz/venta')}>
+            <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
+              <Text style={{ fontWeight: '800' }}>{`${lista.length} venta${lista.length === 1 ? '' : 's'} sin señal`}</Text>
+              {conError ? ' · con error' : ' · se envían al volver la señal'}
+            </Text>
+          </Pressable>
+          {ACCIONES_DE_DINERO ? (
+            <Pressable onPress={() => enviar({ avisar: true })} disabled={enviando} accessibilityRole="button" hitSlop={6}
+              style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', opacity: enviando ? 0.5 : pressed ? 0.6 : 1 })}>
+              <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '700' }}>{enviando ? 'Enviando…' : 'Enviar'}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </Vidrio>
+    </View>
   );
 }

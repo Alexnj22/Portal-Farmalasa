@@ -53,6 +53,21 @@ export function observacionesPendientes(rows, resoluciones) {
     return (rows || []).filter((r) => !resueltas.has(r.id) || !esSolventable(r));
 }
 
+/**
+ * El historial de las solventadas: la otra mitad de `observacionesPendientes`.
+ * Cada fila lleva su `resolution` —la MÁS RECIENTE, porque `resoluciones` llega
+ * por `resolved_at` desc—, de la última solventada a la primera. Lo usan la
+ * sección «N solventadas» del portal y la de la app.
+ */
+export function observacionesSolventadas(rows, resoluciones) {
+    const ultima = new Map();
+    for (const x of resoluciones || []) if (!ultima.has(x.invoice_id)) ultima.set(x.invoice_id, x);
+    return (rows || [])
+        .filter((r) => ultima.has(r.id) && esSolventable(r))
+        .map((r) => ({ ...r, resolution: ultima.get(r.id) }))
+        .sort((a, b) => String(b.resolution?.resolved_at || '').localeCompare(String(a.resolution?.resolved_at || '')));
+}
+
 /** Cuántas pendientes hay de cada observación, de la más frecuente a la menos. */
 export function conteoDeObservaciones(pendientes) {
     const m = new Map();

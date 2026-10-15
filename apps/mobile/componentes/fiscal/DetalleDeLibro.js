@@ -3,19 +3,25 @@
 // cada día, en consumidor) con su número, quién, NRC y los montos de la
 // columna que importa en ese libro. Paginado de 40 en 40.
 //
+// Buscador y orden por columna, como la tabla del portal, con el MISMO mapa
+// de columnas (`accesoDelLibro` / `buscarYOrdenarLibro`, núcleo): se busca en
+// los valores de texto y se ordena cualquier columna. Recortan lo que se VE;
+// el CSV sale siempre del libro entero en su orden legal. El N.º de cada fila
+// se fija sobre el libro tal como vino (`numerarLibro`) y viaja con ella.
+//
 // Los avisos de cumplimiento salen del núcleo (`faltantesDelLibro`): CCF sin
 // NRC del cliente (Art. 85), compras sin NRC del proveedor (Art. 86), compras
 // sin número ni percepción, filas sin número de control. Y «Exportar CSV»
 // arma el archivo con `construirLibro` —el ÚNICO camino que produce el anexo
 // que se presenta, el mismo del portal— y lo pasa a la hoja de compartir.
-import { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
-import { construirLibro, CSV_RET_VENTAS_HEADERS, csvRetencionVentas, faltantesDelLibro, fmtFecha, soloNumero } from '@nucleo/utils/libroIva';
+import { useEffect, useMemo, useState } from 'react';
+import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
+import { accesoDelLibro, buscarYOrdenarLibro, construirLibro, CSV_RET_VENTAS_HEADERS, csvRetencionVentas, faltantesDelLibro, fmtFecha, numerarLibro, soloNumero } from '@nucleo/utils/libroIva';
 import { debitoDeConsumidor } from '@nucleo/utils/librosIva';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { etiquetaMes } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
@@ -25,6 +31,25 @@ import { compartirArchivoDelDte, compartirPaqueteDelDte } from './archivosDelDte
 import Tocable from '../Tocable';
 
 const PAGINA = 40;
+
+// Cómo se llama cada columna del mapa en el menú de orden.
+const ROTULO = {
+  n: 'N.º', fecha: 'Fecha', sucursal: 'Sala', del: 'Del N.º', al: 'Al N.º', docs: 'Documentos', exentas: 'Exentas',
+  gravadas: 'Gravadas', debito: 'Débito', total: 'Total', ccf: 'N.º CCF', cliente: 'Cliente', nrc: 'NRC', nit: 'NIT',
+  tipo: 'Tipo', corr: 'Correlativo', cg: 'Código de generación', doc: 'Documento', proveedor: 'Proveedor',
+  credito: 'Crédito', sujeto: 'Monto sujeto', impuesto: 'Impuesto', corrige: 'Corrige a', compra: 'Compra', monto: 'Monto', iva: 'IVA',
+};
+
+function elegirOrden(claves, orden, alElegir) {
+  const ops = [{ id: null, label: 'Orden del libro' }, ...claves.map((k) => ({ id: k, label: ROTULO[k] ?? k }))];
+  const textos = ops.map((o) => (o.id && o.id === orden.key ? `${o.label} ${orden.dir === 'asc' ? '↑' : '↓'}` : o.label));
+  if (Platform.OS === 'ios') {
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Ordenar por', message: 'Tocar la misma columna invierte el orden.', options: [...textos, 'Cancelar'], cancelButtonIndex: textos.length },
+      (i) => { if (i < ops.length) alElegir(ops[i].id); });
+  } else {
+    Alert.alert('Ordenar por', 'Tocar la misma columna invierte el orden.', [...ops.map((o, i) => ({ text: textos[i], onPress: () => alElegir(o.id) })), { text: 'Cancelar', style: 'cancel' }]);
+  }
+}
 
 // Qué se lee de cada renglón según el libro: título, detalle y el monto.
 function renglon(tab, r, nombreSala) {
@@ -81,7 +106,13 @@ function renglon(tab, r, nombreSala) {
 
 export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufijo, nombreSala, puedeExportar }) {
   const [paginas, setPaginas] = useState(1);
+  const [busqueda, setBusqueda] = useState('');
+  const [orden, setOrden] = useState({ key: null, dir: 'asc' });
   const filas = useMemo(() => libros[tab] || [], [libros, tab]);
+  const acceso = useMemo(() => accesoDelLibro(tab, nombreSala), [tab, nombreSala]);
+  const vistas = useMemo(() => buscarYOrdenarLibro(numerarLibro(filas), acceso, busqueda, orden), [filas, acceso, busqueda, orden]);
+  useEffect(() => { setPaginas(1); }, [busqueda, orden, tab]);
+  const ordenarPor = (key) => setOrden((o) => (!key ? { key: null, dir: 'asc' } : o.key === key ? { key, dir: o.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
   const falt = useMemo(() => faltantesDelLibro(libros), [libros]);
   const sinNumero = falt.sinNumeroControl[tab] ?? 0;
 
@@ -105,13 +136,28 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
       {tab === 'notas' && filas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`Estas ${filas.length} notas no están dentro del libro de compras: llegaron por correo y nunca se registraron como documento de compra.`} /></View> : null}
       {sinNumero > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${sinNumero} de ${filas.length} filas van sin número de control. Es columna obligatoria del libro: ${etiquetaMes(mes)} todavía no se puede presentar.`} /></View> : null}
       {puedeExportar && filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Exportar CSV" borde color={MARCA.azulClaro} onPress={exportar} /></View> : null}
-      {filas.slice(0, paginas * PAGINA).map((r, i) => {
+      {filas.length > 1 ? (
+        <View style={{ marginHorizontal: 16, gap: 6 }}>
+          <Campo multiline={false} value={busqueda} onChangeText={setBusqueda} placeholder="Buscar en este libro" clearButtonMode="while-editing" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
+              {busqueda.trim() ? `${vistas.length} de ${filas.length} renglones` : ''}
+            </Text>
+            <Tocable onPress={() => elegirOrden(Object.keys(acceso), orden, ordenarPor)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>
+                {orden.key ? `Orden: ${ROTULO[orden.key] ?? orden.key} ${orden.dir === 'asc' ? '↑' : '↓'}` : 'Ordenar'}
+              </Text>
+            </Tocable>
+          </View>
+        </View>
+      ) : null}
+      {vistas.slice(0, paginas * PAGINA).map((r, i) => {
         const x = renglon(tab, r, nombreSala);
         return (
           <View key={`${tab}-${i}-${r.codigo_generacion ?? r.fecha ?? ''}`} style={{ marginHorizontal: 16 }}>
             <Vidrio radio={16} tinte={x.falta ? 'rgba(247,144,9,0.10)' : undefined}>
               <View style={{ padding: 12, gap: 4 }}>
-                <Text selectable style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{x.titulo}</Text>
+                <Text selectable style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${r._n && tab !== 'consumidor' ? `${r._n}. ` : ''}${x.titulo}`}</Text>
                 {x.detalle ? <Text selectable style={{ color: colorSistema.texto2, fontSize: 13 }}>{x.detalle}</Text> : null}
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
                   {x.montos.map(([k, v]) => (
@@ -137,8 +183,9 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
           </View>
         );
       })}
-      {filas.length > paginas * PAGINA ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${filas.length - paginas * PAGINA}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View> : null}
+      {vistas.length > paginas * PAGINA ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${vistas.length - paginas * PAGINA}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View> : null}
       {!filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600', textAlign: 'center', marginTop: 12 }}>Sin renglones este mes</Text> : null}
+      {filas.length > 0 && !vistas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 12 }}>{`Sin coincidencias para «${busqueda.trim()}»`}</Text> : null}
     </View>
   );
 }

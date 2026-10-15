@@ -6,11 +6,21 @@
 // teléfono (URL firmada al momento, `openStoredFile`). Si llegó sin proveedor,
 // se vincula al maestro desde aquí (`setPurchaseDteProveedor`), como el
 // «Emparejar» del portal.
+//
+// Si llegó «Sin JSON» (se confirmó desde Revisión con sólo el PDF), las dos
+// salidas del portal: «Detectar código» lee el código de generación dentro
+// del PDF y, si ya hay un documento con ese código, los une; «Adjuntar JSON»
+// lo une con el duplicado que sí trajo el JSON, elegido a mano entre los del
+// mes (los más cercanos al correo primero). Las dos con
+// `mergePurchaseDteDocuments`, la misma función del portal.
+//
+// Si el proveedor la invalidó y la anulación vino con su respaldo, «Ver el
+// documento de la anulación» abre ese PDF (`facturas_compra_abrir`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchPurchaseDteDocuments, setPurchaseDteProveedor } from '@nucleo/data/facturasCompra';
+import { fetchPurchaseDteDocuments, mergePurchaseDteDocuments, setPurchaseDteProveedor } from '@nucleo/data/facturasCompra';
 import { fetchProveedoresMaestro } from '@nucleo/data/proveedores';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -28,6 +38,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { documentoGuardado, guardarDocumentos } from '../../componentes/compras/documentos';
 import { fallo, listo } from '../../componentes/Progreso';
+import DetectarCodigo from '../../componentes/compras/DetectarCodigo';
 
 const cant = (n) => (n == null ? '' : String(Math.round(n * 1000) / 1000));
 
@@ -42,7 +53,12 @@ export default function FacturaCompra() {
   const [json, setJson] = useState(undefined);   // undefined = cargando · null = no se pudo
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
-  const puedeVincular = useAuth().hasPermission('facturas_compra', 'can_edit');
+  const { hasPermission } = useAuth();
+  const puedeVincular = hasPermission('facturas_compra', 'can_edit');
+  const puedeAbrir = hasPermission('facturas_compra_abrir');
+  const [adjuntando, setAdjuntando] = useState(false);
+  const [delMes, setDelMes] = useState(null);
+  const [qJson, setQJson] = useState('');
   const [vinculando, setVinculando] = useState(false);
   const [maestro, setMaestro] = useState([]);
   const [qProv, setQProv] = useState('');
@@ -61,6 +77,41 @@ export default function FacturaCompra() {
         listo('Vinculada', p.nombre);
       } catch (e) { fallo('No se pudo vincular', mensajeAmigable(e)); }
     } },
+  ]);
+
+  // Los documentos del mes que SÍ traen JSON: los candidatos a duplicado.
+  // Lista amplia a propósito, como el portal (un reenvío con PDF+JSON también
+  // vale), ordenada por cercanía al correo de éste.
+  useEffect(() => {
+    if (!adjuntando || delMes) return;
+    const [desde, hasta] = rangoDelMes(String(doc?.fecha_emision || fecha || '').slice(0, 7));
+    Promise.resolve(fetchPurchaseDteDocuments(desde, hasta)).then((l) => setDelMes(l || [])).catch((e) => { setDelMes([]); fallo('No se pudieron traer los documentos', mensajeAmigable(e)); });
+  }, [adjuntando, delMes, doc?.fecha_emision, fecha]);
+  const candidatosJson = useMemo(() => {
+    const ancla = doc?.received_at ? new Date(doc.received_at).getTime() : null;
+    const lista = (delMes || []).filter((d) => d.json_path && d.id !== doc?.id)
+      .filter((d) => !qJson.trim() || tokenMatch(qJson, d.proveedor_nombre, d.supplier_nombre, d.emisor_nombre, d.codigo_generacion, d.numero_control));
+    if (ancla != null) lista.sort((a, b) => (a.received_at ? Math.abs(new Date(a.received_at).getTime() - ancla) : Infinity) - (b.received_at ? Math.abs(new Date(b.received_at).getTime() - ancla) : Infinity));
+    return lista.slice(0, 12);
+  }, [delMes, qJson, doc?.received_at, doc?.id]);
+
+  // Después de unir, el documento cambia (trae el JSON): se relee del mes.
+  const releer = async () => {
+    const [desde, hasta] = rangoDelMes(String(doc?.fecha_emision || fecha || '').slice(0, 7));
+    const lista = await fetchPurchaseDteDocuments(desde, hasta);
+    guardarDocumentos(lista);
+    setDoc(documentoGuardado(id) ?? doc);
+  };
+  const unir = async (otro, via) => {
+    await mergePurchaseDteDocuments(doc.id, otro.id, { ...(via ? { via } : {}), desde: 'app' });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    listo('JSON adjuntado', otro.proveedor_nombre || otro.emisor_nombre || '');
+    setAdjuntando(false); setDelMes(null);
+    await releer().catch(() => {});
+  };
+  const adjuntar = (d) => Alert.alert('Adjuntar el JSON', `Une este documento con ${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || 'el duplicado'} · ${formatMoney(d.monto_total)}`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Unir', onPress: () => unir(d).catch((e) => fallo('No se pudo fusionar', mensajeAmigable(e))) },
   ]);
 
   const cargarDoc = useCallback(async () => {
@@ -130,6 +181,34 @@ export default function FacturaCompra() {
                 <Pressable onPress={() => setVinculando(false)} style={{ minHeight: 40, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Cancelar</Text></Pressable>
               </Seccion>
             ) : <BotonGrande texto="Vincular a un proveedor" borde color={MARCA.ambar} onPress={() => setVinculando(true)} />) : null}
+
+            {doc.invalidado && puedeAbrir && doc.invalidacion_source?.file_path ? (
+              <BotonGrande texto="Ver el documento de la anulación" borde color={MARCA.rojo} onPress={() => abrir(doc.invalidacion_source.file_path)} />
+            ) : null}
+
+            {!doc.json_path && puedeVincular ? (
+              <Seccion titulo="Sin JSON" pie="Se confirmó sólo con el PDF. Únelo con el documento que sí trae el JSON.">
+                {puedeAbrir && doc.pdf_path ? <DetectarCodigo pdfPath={doc.pdf_path} accion="Unir" onEncontrado={(m) => unir(m, 'detect_code')} /> : null}
+                {adjuntando ? (
+                  <View style={{ gap: 6 }}>
+                    <Campo multiline={false} autoFocus value={qJson} onChangeText={setQJson} placeholder="Buscar el documento duplicado" />
+                    {delMes == null ? <ActivityIndicator /> : !candidatosJson.length ? (
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Ningún documento con JSON en el mes.</Text>
+                    ) : candidatosJson.map((d) => (
+                      <Pressable key={d.id} onPress={() => adjuntar(d)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || '—'} · ${formatMoney(d.monto_total)}`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${fechaTexto(d.fecha_emision, { day: 'numeric', month: 'short', year: 'numeric' })} · ${d.codigo_generacion ?? 'sin código'}`}</Text>
+                      </Pressable>
+                    ))}
+                    <Pressable onPress={() => { setAdjuntando(false); setQJson(''); }} style={{ minHeight: 40, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Cancelar</Text></Pressable>
+                  </View>
+                ) : (
+                  <Pressable onPress={() => setAdjuntando(true)} style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Adjuntar JSON</Text>
+                  </Pressable>
+                )}
+              </Seccion>
+            ) : null}
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {doc.pdf_path ? <View style={{ flex: 1 }}><BotonGrande texto="Ver el PDF" color={MARCA.azul} onPress={() => abrir(doc.pdf_path)} /></View> : null}

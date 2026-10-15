@@ -15,6 +15,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import Lotes from '../../componentes/torogoz/bodega/Lotes';
 import Reposicion from '../../componentes/torogoz/bodega/Reposicion';
 import Conteo from '../../componentes/torogoz/bodega/Conteo';
+import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const VISTAS = [
   { id: 'lotes', label: 'Lotes' },
@@ -57,6 +58,8 @@ export default function Inventario() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
+        {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
+        <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Segmentos opciones={VISTAS} activa={vista} onCambiar={cambiar} />
         {emisor === null && puedeVender ? (
           <View style={{ marginHorizontal: 20 }}>

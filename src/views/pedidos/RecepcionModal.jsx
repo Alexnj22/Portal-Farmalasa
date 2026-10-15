@@ -18,7 +18,7 @@ import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../plataforma/useSearchToggle';
-import { extrasDeRenglones, opcionesDeExtra, opcionesDelCatalogo, rotuloDeDespacho } from '@nucleo/utils/extrasDeRecepcion';
+import { extrasDeRenglones, lotesQueDebenVenir, opcionesDeExtra, opcionesDelCatalogo, opcionesDePresentacionDeRenglon } from '@nucleo/utils/extrasDeRecepcion';
 import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, quitarExtraDePedido, recibirPedidoDeSucursal, recibirProductoSuelto, searchAvailableProducts } from '@nucleo/data/recepcion';
 import { recibirTrasladoPedido } from '@nucleo/data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -28,7 +28,6 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { alcanceDeRecepcion, construirCajasEspeciales } from '@nucleo/utils/cajasEspeciales';
 import { estadoDeHojas, hojasContables, hojasContadas } from '@nucleo/utils/hojasRecepcion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
-import { lotesAsignadosToDispatch } from '@nucleo/utils/pedidoPrint';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { conteoInicial, enPresentacion, enviadoDe, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 
@@ -39,8 +38,6 @@ import { conteoInicial, enPresentacion, enviadoDe, mapaDePresentaciones, present
 // `enviadoDe`, `conteoInicial` y `enPresentacion` viven en el núcleo
 // (`utils/recepcionDePedido`).
 
-// Rótulo de la presentación de despacho: núcleo (`extrasDeRecepcion`).
-const fmtDispatchLabel = rotuloDeDespacho;
 
 /**
  * Los lotes del renglón, para quien tiene la caja en la mano.
@@ -71,11 +68,8 @@ function fmtVence(iso) {
 }
 
 function LotesDelRenglon({ row }) {
-    const crudos = Array.isArray(row.lotes_asignados) ? row.lotes_asignados : [];
-    if (!crudos.length) return null;
-    const erpFactor  = Number(row.factor) || 1;
-    const dispFactor = Number(row.dispatch_factor) || erpFactor;
-    const lotes = lotesAsignadosToDispatch(crudos, erpFactor, dispFactor);
+    // Los lotes en la presentación de despacho: núcleo (`lotesQueDebenVenir`).
+    const lotes = lotesQueDebenVenir(row);
     if (!lotes.length) return null;
 
     return (
@@ -110,20 +104,9 @@ function LotesDelRenglon({ row }) {
 // despacho (ver `enPresentacion`): el conteo arranca en ella, y un `LiquidSelect`
 // con un valor que no está entre sus opciones se queda en blanco.
 function opcionesDePresentacion(r, presMap, incluir = []) {
-    const erpFactor  = Number(r.factor) || 1;
-    const dispFactor = Number(r.dispatch_factor) || erpFactor;
-    const dispOpt    = { factor: dispFactor, label: fmtDispatchLabel(r.dispatch_tipo, dispFactor) };
-    const vistos = new Set();
-    const opts = [];
-    if (r.dispatch_tipo && dispFactor !== erpFactor) { opts.push(dispOpt); vistos.add(dispFactor); }
-    (presMap[r.erp_product_id] ?? []).forEach(o => {
-        if (!vistos.has(o.factor)) { opts.push(o); vistos.add(o.factor); }
-    });
-    if (!opts.length) { opts.push(dispOpt); vistos.add(dispFactor); }
-    [conteoInicial(r).fPres, ...incluir].forEach(f => {
-        if (!vistos.has(f)) { opts.push({ factor: f, label: fmtDispatchLabel('UNIDAD', f) }); vistos.add(f); }
-    });
-    return opts;
+    // La regla vive en el núcleo (`opcionesDePresentacionDeRenglon`): la app
+    // ofrece las mismas opciones al contar.
+    return opcionesDePresentacionDeRenglon(r, presMap, incluir);
 }
 
 /** «2 × Blíster ×10», o «25 × Unidad» si no cabe exacto. */

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.4 — Pedidos en la app: revisar antes de confirmar, sin stock en Bodega, buscador, en vivo, lotes y presentación al recibir, orden de reglas
+
+- App, Generar: cada sala dice «N bajo mínimo · N en cero» y «Último pedido
+  hace X»; «Generar» calcula la vista previa y abre «Revisa antes de
+  confirmar» con el resumen por sala, y «Confirmar» guarda esa misma vista
+  previa (`confirmarPedidoDirecto`). Abajo, «Productos sin stock en Bodega»
+  con buscador y orden.
+- App, lista de pedidos: buscador por número, se actualiza sola cuando cambia
+  un pedido y avisa a la sala cuando Bodega le manda uno nuevo.
+- App, recibir: cada renglón dice de qué lotes debe venir, se puede contar en
+  otra presentación, «¿Necesitas un producto ya?» busca en todo el pedido y
+  dice en qué hoja cayó, y una hoja larga tiene buscador.
+- App, reglas de despacho: ordenar por laboratorio, producto, estado o regla.
+- Núcleo: `ultimoPedidoDeSala`, `ordenarSinBodega` (de `TabGenerar`),
+  `opcionesDePresentacionDeRenglon` y `lotesQueDebenVenir` (de
+  `RecepcionModal`); el portal los usa sin cambio de comportamiento.
+
 ## v2.1292.3 — Rutas en la app: no se pudo entregar, cerrar con motivo, cifras y filtros
 
 - App, ruta de reparto: quien gestiona rutas puede marcar «No se pudo

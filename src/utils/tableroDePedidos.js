@@ -743,3 +743,27 @@ export function nivelDeUrgenciaDeSala(stat) {
     if (pct >= (URG_NARANJA_BAJO_MIN / URG_ROJO_BAJO_MIN) * 100) return 'mid';
     return 'low';
 }
+
+/**
+ * «Último pedido hace X» de una sala en Generar (2026-10-15, mudado de
+ * `TabGenerar` para que la app diga lo mismo). `{ texto, dias, nivel }`:
+ * `nivel` = 'bien' (≤ 7 días) | 'cuidado' (≤ 14) | 'tarde' | null (sin pedidos).
+ * Palabras completas: «hace 3m» se leía como minutos; `<= 0` es «hoy» (una
+ * fecha apenas en el futuro, por el reloj del equipo, daba «hace -1 días»).
+ */
+export function ultimoPedidoDeSala(iso, ahora = Date.now()) {
+    if (!iso) return { texto: null, dias: null, nivel: null };
+    const d = Math.floor((ahora - new Date(iso)) / 86_400_000);
+    const texto = d <= 0 ? 'hoy' : d === 1 ? 'ayer' : d < 14 ? `hace ${d} días`
+        : d < 60 ? `hace ${Math.floor(d / 7)} semanas` : `hace ${Math.floor(d / 30)} meses`;
+    return { texto, dias: d, nivel: d <= 7 ? 'bien' : d <= 14 ? 'cuidado' : 'tarde' };
+}
+
+/** «Productos sin stock en Bodega» de Generar: ordenados por una columna. */
+export function ordenarSinBodega(filas, campo = 'total_necesidad', dir = 'desc') {
+    const s = dir === 'asc' ? 1 : -1;
+    return [...(filas ?? [])].sort((a, b) => {
+        if (campo === 'product_name' || campo === 'laboratorio') return (a[campo] || '').localeCompare(b[campo] || '', 'es') * s;
+        return (Number(a[campo] || 0) - Number(b[campo] || 0)) * s;
+    });
+}

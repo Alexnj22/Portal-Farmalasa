@@ -13,6 +13,10 @@ import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
 import { faltantesDelExpediente } from '@nucleo/utils/expediente';
 import { TEMPORAL_LEGAL_BASIS_OPTIONS } from '@nucleo/utils/reingresoYRecontratacion';
 import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI } from '@nucleo/utils/duiLeido';
+import { SIEMPRE_DE_LA_FICHA, vacioParaEnlazar, hayHomonimo, aplicarFichaEnlazada,
+    GENDER_OPTIONS, BLOOD_TYPE_OPTIONS, MARITAL_STATUS_OPTIONS, ESTADO_HERRAMIENTA_OPTIONS, PERIODO_PAGO_OPTIONS,
+    ALT_ID_DOCUMENT_TYPE_OPTIONS, PARENTESCO_OPTIONS, DISABILITY_GRADE_OPTIONS, AFP_OPTIONS, ACCOUNT_TYPE_OPTIONS,
+    isValidEmail, isValidSVPhone, isValidPersonName, MIN_WORK_AGE, MAX_WORK_AGE } from '@nucleo/utils/fichaDelEmpleado';
 import { ACREDITACIONES, acreditacionesDe, pendientesPrevisionales, ESTADO_PREVISIONAL_OPTIONS,
     TIPO_ACREDITACION_OPTIONS, tipoDeAcreditacion, promoverADefinitiva, fijarTipoAcreditacion } from '@nucleo/utils/acreditaciones';
 import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
@@ -41,7 +45,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
     codigoDeCarneLibre, duiDisponible, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
-    fetchIdentidades, fetchSalarios,
+    traerLoQueFaltaDeLaFicha,
 } from '@nucleo/data/employees';
 import { revisarNup } from '@nucleo/utils/nupAfp';
 import { BANCOS } from '@nucleo/constants/bancos';
@@ -51,7 +55,7 @@ import { fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
 import { getStoragePathFromUrl } from '@nucleo/utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
-import { ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado,
+import { DOS_CARAS, COMPARTIBLES, VARIAS_HOJAS, SIN_VENCIMIENTO, ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado,
     POR_ANIO_CALENDARIO, vencimientoDelAnio, anioDelVencimiento, anioQueCubre, estadoDelDocumento } from '@nucleo/utils/documentosDelExpediente';
 import TarjetaDeDocumento from './TarjetaDeDocumento';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '@nucleo/utils/economicDependents';
@@ -68,213 +72,9 @@ import QrDeCaptura from '../common/QrDeCaptura';
    cortaría los bordes. */
 const CATEGORIAS_DE_DUI = new Set(['DUI_FRENTE', 'DUI_REVERSO', 'DUI_COMPLETO']);
 
-/* ── Lo que NO se copia al enlazar con una ficha que ya existe ─────────────
- *
- * `id` es el más importante y el menos obvio: con `id` puesto, el modal deja de
- * ser un alta y se va por el camino de EDITAR, que es otro guardado. El enlace
- * viaja aparte, en `enlazar_con_id`.
- *
- * `name` se arma solo de nombres + apellidos. `photo` es una URL firmada que
- * caduca —la foto entra como vista previa, más abajo—. Y `status` no se hereda:
- * quien vuelve entra ACTIVO, no con el estado que tenía el día que se fue. El
- * resto —horas debidas, bloqueos, horario— es historia de la ficha vieja y la
- * conserva ella; no es algo que se esté dando de alta hoy. */
-const NO_SE_HEREDA = new Set([
-    'id', 'created_at', 'name', 'photo', 'status',
-    'hours_owed', 'weekly_schedule', 'exceptions',
-    'blocked_until', 'blocked_reason', 'blocked_at', 'blocked_by',
-]);
+/* Enlazar con una ficha que ya existe: vive en el núcleo desde el 2026-10-15
+ * (`utils/fichaDelEmpleado.js`, `data/employees.js`) porque la app lo usa igual. */
 
-/* Los tres que se respetan si ya estaban elegidos: son justamente los que uno
- * cambia MIENTRAS enlaza —se puede estar reincorporando a alguien en otra sala
- * o con otro cargo—, así que lo tecleado gana. Todo lo demás viene de la ficha,
- * porque todo lo demás es la misma persona. */
-const ELEGIBLES_AL_ENLAZAR = ['branch_id', 'role_id', 'secondary_role_id'];
-
-/**
- * Trae la ficha de quien ya trabajaba acá.
- *
- * ── Por qué copia TODO y no sólo tres campos ───────────────────────────────
- *
- * Copiaba sala, cargo y foto, y nada más. El usuario lo vio en pantalla: «si
- * agrego a un empleado que ya está, ¿por qué no se ponen los datos que ya están
- * guardados?».
- *
- * Y lo que había no era sólo incómodo: era PELIGROSO. El aviso de esa misma
- * tarjeta dice —con razón— que al guardar «lo que esa ficha tenía escrito antes
- * se reemplaza». Con el formulario en blanco, eso significa reemplazar el DUI,
- * la dirección, el salario y el banco de esa persona **por vacío**. O sea que el
- * camino natural —elegir a quien vuelve y guardar— le borraba el expediente, sin
- * ningún error y sin que nada en la pantalla lo dijera.
- *
- * Traer la ficha entera arregla las dos cosas de una vez: se ve lo que ya está,
- * y lo que se guarda encima es lo mismo que había salvo lo que alguien cambie a
- * propósito.
- *
- * @param {object} prev   el formulario de ahora
- * @param {string} val    id elegido (cadena vacía = se quitó el enlace)
- * @param {object|null} ficha  la ficha de esa persona, si se encontró
- */
-/**
- * ¿Ya hay alguien registrado con este mismo nombre completo?
- *
- * ── A quién NO se acusa ────────────────────────────────────────────────────
- *
- * A la ficha que se está editando, y —desde el 2026-08-28— a la que se acaba de
- * ENLAZAR. Faltaba la segunda, y el aviso salía siempre: decía «si es la misma
- * persona, enlázala abajo» sobre alguien a quien ya se había enlazado ahí mismo,
- * dos centímetros más abajo en la pantalla.
- *
- * Antes no se notaba porque enlazar dejaba el formulario vacío, así que no había
- * nombre con qué chocar. Al empezar a traer la ficha entera —que es lo que se
- * pidió— el nombre pasó a venir de esa misma ficha, y el choque quedó
- * garantizado: el aviso saltaba el 100% de las veces.
- *
- * La exclusión ya existía en el chequeo del DUI repetido, con este mismo motivo
- * escrito al lado. No llegó a su gemelo — es
- * [[feedback_el_arreglo_de_un_canonico_no_llega_a_su_gemelo]].
- *
- * Lo que SÍ se sigue avisando: que exista un TERCERO con ese nombre. Ahí el
- * aviso es correcto y sigue haciendo falta.
- */
-export function hayHomonimo(formData, employees) {
-    if (!formData?.first_names || !formData?.last_names) return false;
-    const norm = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    const nombreActual = `${norm(formData.first_names)} ${norm(formData.last_names)}`;
-    return (employees || []).some(emp => {
-        if (String(emp.id) === String(formData.id)) return false;
-        if (formData.enlazar_con_id && String(emp.id) === String(formData.enlazar_con_id)) return false;
-        return norm(emp.name) === nombreActual;
-    });
-}
-
-/**
- * Los doce campos que el padrón del navegador NO puede traer.
- *
- * ── Por qué hace falta pedirlos aparte ─────────────────────────────────────
- *
- * `employees_safe` —de donde sale la lista de personal— deja DOCE columnas
- * afuera a propósito: el DUI y sus datos de expedición, el documento alterno,
- * los números de ISSS y AFP, el salario, el banco, la cuenta, el código de
- * carné y el PIN del kiosco. Salieron el 2026-08-24 porque viajaban a cualquier
- * sesión y porque esa lista se guarda en `localStorage` de computadoras
- * compartidas.
- *
- * O sea que «traer la ficha entera» al enlazar traía **dos tercios** de la
- * ficha, y el tercio que falta es el que más cuesta volver a teclear. Lo
- * reportó el usuario: «guardé algunos datos de Carlos Renderos, pero al abrirlo
- * de nuevo no me salen». Verificado contra la base: los datos SÍ estaban
- * guardados — lo que fallaba era leerlos de vuelta.
- *
- * ── Y el que hacía daño de verdad: el CÓDIGO ───────────────────────────────
- *
- * El formulario en blanco se autogenera un código de carné de cuatro dígitos.
- * Si al enlazar no llega el de la persona, ese aleatorio se queda — y guardar
- * **le cambia el código con el que entra al portal y marca en el kiosco**. Sin
- * error, sin aviso, y sin que nada en la pantalla lo insinúe.
- *
- * Cada RPC decide por su cuenta qué devuelve según quien pregunta: sin la llave
- * del expediente vuelven vacías, y el formulario simplemente no completa esos
- * campos — que es lo mismo que pasaba antes, no una regresión.
- */
-const vacioParaEnlazar = (v) => v === null || v === undefined || String(v).trim() === '';
-
-/* El código de carné es la EXCEPCIÓN: se toma siempre el de la persona.
- *
- * El resto sólo llena lo que quedó vacío, para no pisar lo que alguien haya
- * escrito mientras la consulta viajaba. Pero el código nunca está vacío —el
- * formulario en blanco se autogenera uno de cuatro dígitos al azar— así que con
- * esa regla el aleatorio se quedaría, y guardar le cambiaría a la persona el
- * código con el que entra al portal y marca en el kiosco.
- *
- * Un código autogenerado no es la elección de nadie: es un relleno. El de quien
- * ya trabajaba acá sí. */
-const SIEMPRE_DE_LA_FICHA = new Set(['code', 'kiosk_pin']);
-
-/* LANZA si alguna lectura falla (2026-10-14). Antes cada una caía a un `Map`
- * vacío, y «no pude leer» se veía igual que «no tiene»: el formulario quedaba
- * con el sueldo, la cuenta y el ISSS en blanco y el código aleatorio, y
- * guardar escribía ESO sobre la ficha existente. Quien llama marca la ficha
- * como cargada sólo cuando esto vuelve bien, y hasta entonces no se guarda. */
-export async function traerLoQueFaltaDeLaFicha(id) {
-    if (!id) return {};
-    const [ident, sal, cred] = await Promise.all([
-        fetchIdentidades([id], { lanzar: true }),
-        fetchSalarios([id], { lanzar: true }),
-        fetchCredenciales([id], { lanzar: true }),
-    ]);
-    const i = ident.get(id) || {};
-    const s = sal.get(id) || {};
-    const c = cred.get(id) || {};
-    const fuera = {
-        dui: i.dui, alt_identity_document: i.alt_identity_document,
-        isss_number: i.isss_number, afp_number: i.afp_number,
-        dui_lugar_expedicion: i.dui_lugar_expedicion,
-        dui_fecha_expedicion: i.dui_fecha_expedicion,
-        dui_fecha_vencimiento: i.dui_fecha_vencimiento,
-        base_salary: s.base_salary, bank_name: s.bank_name, account_number: s.account_number,
-        code: c.code, kiosk_pin: c.kiosk_pin,
-    };
-    // Un `null` no se propone: dejaría el campo vacío igual y además pisaría lo
-    // que alguien acabe de escribir mientras esto viajaba por la red.
-    return Object.fromEntries(Object.entries(fuera).filter(([, v]) => v !== null && v !== undefined && v !== ''));
-}
-
-/* Lo que vino de la ficha enlazada, para poder DESHACERLO al cambiar de
- * persona (2026-10-14). Enlazar con A y después corregir a B dejaba los datos de
- * A donde B tenía `null` —el bucle salta los nulos— y, en los protegidos, donde
- * B no estaba vacía la regla «sólo llena lo vacío» dejaba la cuenta y el sueldo
- * de A. Guardar los escribía sobre B. Al cambiar, se vacía todo lo que sigue
- * valiendo lo que trajo A; lo que alguien ya corrigió a mano se respeta. */
-function soltarFichaAnterior(prev) {
-    const traido = prev?._deLaFicha || {};
-    const next = { ...prev };
-    for (const [campo, valor] of Object.entries(traido)) {
-        if (next[campo] === valor) next[campo] = Array.isArray(valor) ? [] : '';
-    }
-    delete next._deLaFicha;
-    delete next._fichaCargada;
-    delete next._fichaFallo;
-    return next;
-}
-
-export function aplicarFichaEnlazada(prevOriginal, val, ficha) {
-    const cambia = prevOriginal?.enlazar_con_id && String(prevOriginal.enlazar_con_id) !== String(val);
-    const prev = cambia ? soltarFichaAnterior(prevOriginal) : prevOriginal;
-    // Los datos protegidos de la ficha todavía no llegaron: hasta que lleguen,
-    // no se puede guardar (ver `motivoNoGuardable`).
-    const next = { ...prev, enlazar_con_id: val, _fichaCargada: null, _fichaFallo: null, _deLaFicha: {} };
-    if (!val) { delete next._deLaFicha; delete next._fichaCargada; delete next._fichaFallo; return next; }
-    if (!ficha) return next;
-
-    for (const [campo, valor] of Object.entries(ficha)) {
-        if (NO_SE_HEREDA.has(campo)) continue;
-        if (ELEGIBLES_AL_ENLAZAR.includes(campo) && prev[campo]) continue;
-        if (valor === null || valor === undefined) continue;
-        next[campo] = valor;
-        next._deLaFicha[campo] = valor;
-    }
-
-    /* La foto entra como vista previa y no como archivo: no hay `File` que
-     * subir, la imagen ya está guardada.
-     *
-     * ── La condición mira `file`, NO `photoPreview` ────────────────────────
-     *
-     * Miraba los dos, y por eso al CAMBIAR de persona enlazada la foto se
-     * quedaba en la del anterior: después del primer enlace ya había vista
-     * previa, así que la guarda la daba por «puesta a mano» y no la tocaba. Lo
-     * vio el usuario: «cambié de persona a enlazar y la foto no se actualizó
-     * (los datos sí)» — o sea la cara de alguien sobre el expediente de otro.
-     *
-     * `file` es el discriminador correcto y ya existía: se llena SÓLO cuando
-     * alguien eligió una imagen o la tomó con el teléfono. Una vista previa sin
-     * archivo no puede venir de otro lado que de un enlace, así que pisarla es
-     * exactamente lo que hay que hacer. */
-    if (!prev.file) {
-        next.photoPreview = ficha.photo || ficha.photo_url || null;
-    }
-    return next;
-}
 import ModalShell from '../common/ModalShell';
 import FileField from '../common/FileField';
 import CarneDeDependiente from '../common/CarneDeDependiente';
@@ -292,9 +92,6 @@ import { analizarDocumento, leerDui } from '@nucleo/data/ia';
 // ficha, no credenciales) — email/username/teléfonos/DUI quedan fuera.
 const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'emergency_contact_name']);
 
-const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
-const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
-const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
 // «Prácticas» (contrato de aprendizaje, Art. 61-70) se quitó el 2026-08-26:
 // el usuario confirmó que no contratan aprendices pagados. Ojo con la
 // diferencia si alguna vez vuelve — el formulario de practicantes NO es esto:
@@ -438,87 +235,8 @@ function HistorialDeDocumento({ entrada }) {
 
 // Las secciones del expediente: núcleo (`SECCIONES_DE_DOCUMENTOS`), las mismas de la app.
 
-/* ── Documentos que no caben en un solo archivo ─────────────────────────────
- *
- * Pedido del usuario: «las licencias, carnés de las juntas tienen 2 lados… y el
- * currículum tiene múltiples hojas». Hasta hoy cada documento era UN archivo, y
- * el reverso de una licencia no tenía dónde ir: o se perdía, o alguien lo subía
- * encima del frente —que además archiva el frente como si fuera una versión
- * vieja, porque el portal lee un reemplazo donde hubo un agregado—.
- *
- * Son dos listas y no una porque son dos cosas distintas:
- *
- *  · DOS CARAS es un número FIJO y con nombre. Una licencia tiene frente y
- *    reverso, no «hojas»: nombrarlos es lo que hace que alguien note que le
- *    falta el reverso. Un botón «agregar hoja» sobre una licencia no dice nada.
- *  · VARIAS HOJAS es abierto y sin nombre. Un currículum tiene las que tenga.
- *
- * El DUI no está acá: sus dos caras son categorías propias desde antes
- * (`DUI_FRENTE`/`DUI_REVERSO`) porque además se leen juntas con un modelo, y
- * mudarlo sería tocar ese circuito para no ganar nada. */
-const DOS_CARAS = new Set([
-    'LICENCIA_MOTO', 'LICENCIA_CARRO',
-    'SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA',
-    'TARJETA_ISSS', 'TARJETA_AFP',
-]);
-/* ── Documentos que NO son de una sola persona ──────────────────────────────
- *
- * El acuse sellado del Ministerio de Trabajo por una recontratación nombra a
- * TODOS los que entran en esa tanda: es un papel de la empresa, no de cada
- * quien. Subirlo a una ficha y después repetirlo ficha por ficha era el único
- * camino, y nada decía a quiénes cubre.
- *
- * Es una lista y no un `if` sobre `ACUSE_MTPS` porque el mecanismo es general:
- * el día que aparezca otro papel colectivo se agrega acá y funciona. Hoy hay
- * uno solo, que es el que nombró el usuario. */
-const COMPARTIBLES = new Set(['ACUSE_MTPS']);
-
-const VARIAS_HOJAS = new Set([
-    'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS', 'CONTRATO_REGENCIA',
-    'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION',
-    'CERTIFICACION_DISCAPACIDAD', 'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
-]);
-
-/* Los papeles que NO vencen.
- *
- * *«hay documentos que no vencen, el CV no vence, sólo se puede actualizar»*
- * (usuario, 2026-08-30). Hasta hoy el campo de vencimiento salía en TODOS menos
- * los cuatro del DUI, que lo apagaban con una bandera en cada llamada — o sea
- * que la respuesta vivía repartida en los sitios donde se dibuja el documento,
- * y un documento nuevo nacía con el campo puesto sin que nadie lo decidiera.
- *
- * Acá está la lista entera, en un solo lugar, y el criterio con el que se armó:
- * **se quita el campo sólo cuando el papel no puede traer una fecha**. Un campo
- * opcional de más es ruido; uno de menos pierde un dato, y encima lo saca del
- * aviso de documentos por vencer.
- *
- *   · CV, solicitud de empleo, acuse del Ministerio — son constancias de un
- *     hecho que ya pasó. No caducan: se reemplazan por una versión nueva.
- *   · NIT, tarjeta del ISSS, tarjeta de la AFP — son números de afiliación de
- *     por vida. La tarjeta se repone, el número no vence.
- *   · DUI (entero, frente, reverso, y el documento alterno del menor) — el DUI
- *     sí vence, pero su fecha vive en la FICHA (`dui_expiry`) al lado del
- *     número, no en cada archivo.
- *   · Contrato de trabajo — un contrato a plazo termina, y esa fecha ya es
- *     `contract_end_date` de la ficha, con sus prórrogas. Pedirla otra vez acá
- *     crearía dos verdades para el mismo hecho, que es exactamente lo que se
- *     corrigió con el rótulo de los cargos.
- *
- * Los que SÍ quedan con campo son los que traen la fecha impresa: las dos
- * licencias, los cuatro carnés de junta, las dos anualidades, la acreditación
- * de dependiente, la certificación de discapacidad, el contrato de regencia y
- * los dos exámenes médicos —el anual y el del menor—, que son justamente los
- * que el aviso de vencimientos tiene que ver. */
-const SIN_VENCIMIENTO = new Set([
-    'CV', 'CONTRATO', 'SOLICITUD_EMPLEO', 'ACUSE_MTPS',
-    'COPIA_NIT', 'TARJETA_ISSS', 'TARJETA_AFP',
-    'DOCUMENTO_IDENTIDAD', 'DUI_COMPLETO', 'DUI_FRENTE', 'DUI_REVERSO',
-    // 2026-10-14: la oferta, la declaración ética y la inducción son
-    // constancias de un hecho; el certificado del seguro «es único y no
-    // cambia» (usuario) — lo que vence cada año es el PAGO de la póliza, que
-    // es de la empresa y se vigila aparte.
-    'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION', 'CERTIFICADO_SEGURO_VIDA',
-]);
+// Qué documentos tienen dos caras, varias hojas, son colectivos o no vencen:
+// núcleo (`documentosDelExpediente`), lo usa también el expediente de la app.
 
 const FIXED_DOCUMENT_CATEGORIES = [
     // Dice «con sus atestados» porque acá el currículum hace de SOBRE: los
@@ -526,54 +244,6 @@ const FIXED_DOCUMENT_CATEGORIES = [
     // piden como documentos aparte (27-ago-2026, decisión del usuario).
     { key: 'CV', label: ROTULOS.CV },
     { key: 'CONTRATO', label: ROTULOS.CONTRATO },
-];
-// Art. 23 nº10 CT: el numeral pide «cantidad, CALIDAD Y ESTADO». Es una lista
-// cerrada y no texto libre porque el valor de este campo está en poder
-// compararlo el día de la devolución, y «bueno», «Bueno» y «b» no se comparan.
-const ESTADO_HERRAMIENTA_OPTIONS = [
-    { value: 'NUEVO', label: 'Nuevo' },
-    { value: 'BUENO', label: 'Bueno' },
-    { value: 'USADO', label: 'Usado' },
-    { value: 'DETERIORADO', label: 'Deteriorado' },
-];
-// Art. 23 nº9 CT: «forma, PERÍODO y lugar de pago».
-const PERIODO_PAGO_OPTIONS = [
-    { value: 'SEMANAL', label: 'Semanal' },
-    { value: 'QUINCENAL', label: 'Quincenal' },
-    { value: 'MENSUAL', label: 'Mensual' },
-];
-// El documento de identidad (DUI frente/reverso para adultos, o el documento
-// alterno para menores — Art. 23.2) se renderiza aparte del resto, en un
-// único bloque agrupado, para que quede claro que son partes del MISMO
-// documento y no archivos independientes.
-const ALT_ID_DOCUMENT_TYPE_OPTIONS = [
-    { value: 'PARTIDA_NACIMIENTO', label: 'Partida de Nacimiento' },
-    { value: 'CARNET_MINORIDAD', label: 'Carné de Minoridad' },
-    { value: 'PASAPORTE', label: 'Pasaporte' },
-    { value: OTRA_ESPECIALIDAD, label: 'Otro documento legal...' },
-];
-// Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
-const PARENTESCO_OPTIONS = [
-    { value: 'CONYUGE', label: 'Cónyuge / pareja' },
-    { value: 'HIJO_A', label: 'Hijo/a' },
-    { value: 'PADRE', label: 'Padre' },
-    { value: 'MADRE', label: 'Madre' },
-    { value: 'HERMANO_A', label: 'Hermano/a' },
-    { value: 'ABUELO_A', label: 'Abuelo/a' },
-    { value: 'NIETO_A', label: 'Nieto/a' },
-    { value: 'SUEGRO_A', label: 'Suegro/a' },
-    { value: 'CUNADO_A', label: 'Cuñado/a' },
-    { value: 'TIO_A', label: 'Tío/a' },
-    { value: 'SOBRINO_A', label: 'Sobrino/a' },
-    { value: 'PRIMO_A', label: 'Primo/a' },
-    { value: 'OTRO', label: 'Otro' },
-];
-// Escala de 3 niveles usada en El Salvador (ISRI / Encuesta Nacional de Salud) para
-// clasificar severidad de discapacidad — no es un catálogo abierto, es una escala fija.
-const DISABILITY_GRADE_OPTIONS = [
-    { value: 'LEVE', label: 'Leve' },
-    { value: 'MODERADA', label: 'Moderada' },
-    { value: 'SEVERA', label: 'Severa' },
 ];
 // "Universitario" ya no distingue Estudiante/Graduado como niveles separados
 // — eso lo define el toggle "¿Actualmente estudiando?" de abajo. Maestría /
@@ -585,39 +255,6 @@ const DISABILITY_GRADE_OPTIONS = [
 const MONTH_OPTIONS = NOMBRES_DE_MES.map((m, i) => ({ value: String(i + 1).padStart(2, '0'), label: m }));
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => CURRENT_YEAR + 1 - i).map(y => ({ value: String(y), label: String(y) }));
-
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email || '');
-
-// Numeración de El Salvador: 8 dígitos, celular inicia en 6/7, fijo en 2.
-// (No valida contra un rango exacto por operador — solo el primer dígito.)
-const isValidSVPhone = (phone) => {
-    const digits = (phone || '').replace(/\D/g, '');
-    if (digits.length !== 8) return false;
-    return /^[267]/.test(digits);
-};
-
-// Nombres/Apellidos: solo letras (con acentos/Ñ), espacios, guiones y apóstrofes;
-// mínimo 2 caracteres. Cubre "apellido de casada" (ej. "Pérez de García") sin
-// necesitar un campo aparte — es texto libre normal.
-const isValidPersonName = (val) => {
-    const v = (val || '').trim();
-    if (v.length < 2) return false;
-    return /^[A-Za-zÀ-ÖØ-öø-ÿÑñ'’\-\s.]+$/.test(v);
-};
-
-// Rango laboral válido: 16-90 (calcAge compartido en utils/ageUtils.js).
-const MIN_WORK_AGE = 16;
-const MAX_WORK_AGE = 90;
-
-const AFP_OPTIONS = [
-    { value: 'CRECER', label: 'AFP Crecer' },
-    { value: 'CONFIA', label: 'AFP Confía' },
-];
-const ACCOUNT_TYPE_OPTIONS = [
-    { value: 'AHORRO',     label: 'Cuenta de ahorro' },
-    { value: 'CORRIENTE',  label: 'Cuenta corriente' },
-    { value: 'ELECTRONICA',label: 'Cuenta electrónica' },
-];
 
 // La lista vive en el núcleo desde el 2026-10-14: la usa también la orden de
 // descuento. Ver `constants/bancos.js`.

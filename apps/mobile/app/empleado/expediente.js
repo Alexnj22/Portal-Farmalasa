@@ -12,20 +12,26 @@
 //    qué pide cada uno salen del núcleo).
 //  · Banco: sólo con la llave de salarios (`salario_conocido`), como el portal.
 //
+//  · Las hojas que siguen a la primera, como en el portal: el REVERSO de los
+//    documentos de dos caras (`DOS_CARAS`: licencias, carnés de junta,
+//    tarjetas ISSS/AFP) y las hojas de los de varias (`VARIAS_HOJAS`: CV,
+//    contrato…). Agregar una hoja NO archiva la primera como versión vieja.
+//  · «Otros documentos» (`EXTRA_*`), con su nombre.
+//
 // Todo se guarda con `updateEmployee`, la misma función del portal (que manda
-// el banco por la función protegida y deja la bitácora). Lo que no es de
-// captura simple —las dos caras del DUI con su lector, las hojas de un
-// currículum, los datos del contrato del Art. 23— sigue en el portal.
+// el banco por la función protegida y deja la bitácora). El DUI por caras con
+// su lector y los datos del contrato del Art. 23 están en «Editar la ficha».
 import { useMemo, useState } from 'react';
-import { Alert, ActionSheetIOS, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ActionSheetIOS, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { EDUCATION_OPTIONS, LEVELS_WITH_PROFESSION, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, SECCIONES_DE_DOCUMENTOS,
-  documentoReemplazado, rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+import { DOS_CARAS, EDUCATION_OPTIONS, LEVELS_WITH_PROFESSION, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, SECCIONES_DE_DOCUMENTOS,
+  VARIAS_HOJAS, documentoReemplazado, rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+import { elegirYSubir } from '../../componentes/personas/ficha/documentos';
 import { openStoredFile, subirArchivo } from '@nucleo/utils/storageFiles';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -51,10 +57,15 @@ async function elegirFoto(camara) {
   const a = r.assets[0];
   return { uri: a.uri, tipo: a.mimeType || 'image/jpeg', ext: (a.fileName?.split('.').pop() || 'jpg').toLowerCase() };
 }
-const preguntarFoto = () => new Promise((resolve) => ActionSheetIOS.showActionSheetWithOptions(
-  { options: ['Tomar foto', 'Elegir de la galería', 'Cancelar'], cancelButtonIndex: 2 },
-  async (i) => resolve(i === 2 ? null : await elegirFoto(i === 0)),
-));
+// iPhone: la hoja de acciones del sistema; Android: el diálogo de Material.
+const preguntarFoto = () => new Promise((resolve) => {
+  const elegir = async (i) => { try { resolve(i === 2 ? null : await elegirFoto(i === 0)); } catch { resolve(null); } };
+  if (Platform.OS === 'ios') {
+    ActionSheetIOS.showActionSheetWithOptions({ options: ['Tomar foto', 'Elegir de la galería', 'Cancelar'], cancelButtonIndex: 2 }, elegir);
+  } else {
+    Alert.alert('Foto', '', [{ text: 'Tomar foto', onPress: () => elegir(0) }, { text: 'Elegir de la galería', onPress: () => elegir(1) }, { text: 'Cancelar', style: 'cancel', onPress: () => elegir(2) }]);
+  }
+});
 const bytes = async (uri) => (await fetch(uri)).arrayBuffer();
 
 export default function Expediente() {
@@ -69,6 +80,7 @@ export default function Expediente() {
   }));
   const [banco, setBanco] = useState(() => ({ bank_name: emp?.bank_name || '', account_type: emp?.account_type || 'AHORRO', account_number: emp?.account_number || '' }));
   const [ocupado, setOcupado] = useState(false);
+  const [nuevoExtra, setNuevoExtra] = useState('');
   if (!emp) return <Aviso tono="freno" texto="No se encontró la ficha." />;
 
   const docs = Array.isArray(emp.employee_documents) ? emp.employee_documents : [];
@@ -100,16 +112,62 @@ export default function Expediente() {
   // Un documento: el archivo nuevo va al bucket `documents` en la carpeta del
   // portal, y la lista entera se guarda con la traza del reemplazo.
   const subirDocumento = async (cat) => {
-    const f = await preguntarFoto();
-    if (!f) return;
     try {
-      trabajando('Subiendo el documento…');
-      const url = await subirArchivo('documents', `employees/${emp.id}/documents/${azar()}.${f.ext}`, await bytes(f.uri), { contentType: f.tipo });
-      const lista = documentoReemplazado(docs, cat, { url, file_name: `${rotuloDelDocumento(cat)}.${f.ext}` }, { quien: user?.name || '', hoy: hoySV() });
+      const r = await elegirYSubir(emp.id);
+      if (!r) return;
+      trabajando('Guardando el documento…');
+      const lista = documentoReemplazado(docs, cat, r, { quien: user?.name || '', quienId: user?.id || null, hoy: hoySV() });
       await guardar({ employee_documents: lista }, 'Documento guardado');
     } catch (e) { fallo('No se pudo subir el documento', e?.message || ''); }
   };
-  const cambiarVencimiento = (cat, fecha) => guardar({ employee_documents: documentoReemplazado(docs, cat, { expiry_date: fecha }, { quien: user?.name || '', hoy: hoySV() }) }, 'Vencimiento guardado');
+
+  // Las hojas que siguen a la primera viven en `hojas` (la primera, en `url`).
+  // No pasan por `documentoReemplazado`: agregar el reverso NO es reemplazar el
+  // frente, y archivarlo como versión vieja sería mentir en el historial.
+  const conHojas = (lista, cat, cambiarHojas) => {
+    const l = [...lista];
+    const i = l.findIndex((d) => d.category === cat);
+    const base = i >= 0 ? l[i] : { category: cat, title: rotuloDelDocumento(cat), file_name: '', url: null, expiry_date: '' };
+    const nuevo = { ...base, hojas: cambiarHojas([...(base.hojas || [])]) };
+    if (i >= 0) l[i] = nuevo; else l.push(nuevo);
+    return l;
+  };
+  const subirHoja = async (cat, idx) => {
+    try {
+      const r = await elegirYSubir(emp.id);
+      if (!r) return;
+      trabajando('Guardando la hoja…');
+      await guardar({ employee_documents: conHojas(docs, cat, (h) => { while (h.length <= idx) h.push({ url: null, file_name: '' }); h[idx] = r; return h; }) }, 'Hoja guardada');
+    } catch (e) { fallo('No se pudo subir la hoja', e?.message || ''); }
+  };
+  const quitarHoja = (cat, idx, fija) => Alert.alert('Quitar la hoja', '¿Quitar esta hoja del documento?', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Quitar', style: 'destructive', onPress: () => guardar({ employee_documents: conHojas(docs, cat, (h) => {
+      if (fija) h[idx] = { url: null, file_name: '' }; else h.splice(idx, 1);
+      return h;
+    }) }, 'Hoja quitada') },
+  ]);
+
+  // «Otros documentos»: categoría `EXTRA_<marca>` con el nombre que se le dé.
+  const extras = docs.filter((d) => d.category?.startsWith('EXTRA_'));
+  const agregarExtra = async () => {
+    const titulo = nuevoExtra.trim();
+    if (!titulo) { fallo('Falta el nombre', 'Escribe cómo se llama el documento.'); return; }
+    try {
+      const r = await elegirYSubir(emp.id);
+      if (!r) return;
+      trabajando('Guardando el documento…');
+      const cat = `EXTRA_${Date.now()}`;
+      const ok = await guardar({ employee_documents: [...docs, { category: cat, title: titulo, expiry_date: '', ...r,
+        subido_por: user?.name || '', subido_por_id: user?.id || null, subido_el: hoySV() }] }, 'Documento guardado');
+      if (ok) setNuevoExtra('');
+    } catch (e) { fallo('No se pudo subir el documento', e?.message || ''); }
+  };
+  const quitarExtra = (cat) => Alert.alert('Quitar el documento', '¿Quitarlo del expediente?', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Quitar', style: 'destructive', onPress: () => guardar({ employee_documents: docs.filter((d) => d.category !== cat) }, 'Documento quitado') },
+  ]);
+  const cambiarVencimiento = (cat, fecha) => guardar({ employee_documents: documentoReemplazado(docs, cat, { expiry_date: fecha }, { quien: user?.name || '', quienId: user?.id || null, hoy: hoySV() }) }, 'Vencimiento guardado');
   const abrir = async (url) => { try { await openStoredFile(url); } catch (e) { fallo('No se pudo abrir', e?.message || ''); } };
 
   const nivel = estudios.nivel;
@@ -164,11 +222,45 @@ export default function Expediente() {
                         </View>
                       ) : d?.expiry_date ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 'auto' }}>{`Vence ${fechaTexto(d.expiry_date, { day: 'numeric', month: 'short', year: 'numeric' })}`}</Text> : null}
                     </View>
+                    {DOS_CARAS.has(cat) ? (
+                      <Hoja rotulo="Reverso" hoja={d?.hojas?.[0]} puede={puedeEditar} ocupado={ocupado}
+                        onVer={abrir} onSubir={() => subirHoja(cat, 0)} onQuitar={() => quitarHoja(cat, 0, true)} />
+                    ) : null}
+                    {VARIAS_HOJAS.has(cat) ? (
+                      <>
+                        {(d?.hojas || []).map((h, k) => (
+                          <Hoja key={k} rotulo={`Hoja ${k + 2}`} hoja={h} puede={puedeEditar} ocupado={ocupado}
+                            onVer={abrir} onSubir={() => subirHoja(cat, k)} onQuitar={() => quitarHoja(cat, k, false)} />
+                        ))}
+                        {puedeEditar && d?.url ? (
+                          <Pressable onPress={() => subirHoja(cat, (d?.hojas || []).length)} disabled={ocupado} hitSlop={6}>
+                            <Text style={{ color: colorSistema.acento, fontSize: 15 }}>Agregar hoja</Text>
+                          </Pressable>
+                        ) : null}
+                      </>
+                    ) : null}
                   </View>
                 );
               })}
             </Seccion>
           ))}
+
+          <Seccion titulo="Otros documentos">
+            {!extras.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin documentos adicionales.</Text> : null}
+            {extras.map((d) => (
+              <View key={d.category} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 40 }}>
+                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{d.title || 'Documento'}</Text>
+                {d.url ? <Pressable onPress={() => abrir(d.url)} hitSlop={6}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Ver</Text></Pressable> : null}
+                {puedeEditar ? <Pressable onPress={() => quitarExtra(d.category)} disabled={ocupado} hitSlop={6}><Text style={{ color: MARCA.rojo, fontSize: 15 }}>Quitar</Text></Pressable> : null}
+              </View>
+            ))}
+            {puedeEditar ? (
+              <>
+                <Campo multiline={false} value={nuevoExtra} onChangeText={setNuevoExtra} placeholder="Nombre del documento" />
+                <BotonGrande texto="Agregar documento" borde color={MARCA.azulClaro} onPress={agregarExtra} deshabilitado={ocupado} />
+              </>
+            ) : null}
+          </Seccion>
 
           <Seccion titulo="Estudios">
             {EDUCATION_OPTIONS.map((o, i) => (
@@ -208,5 +300,17 @@ export default function Expediente() {
         </ScrollView>
       </KeyboardAvoidingView>
     </>
+  );
+}
+
+/** Una hoja que sigue a la primera (el reverso, la hoja 2…): ver, subir o cambiar, quitar. */
+function Hoja({ rotulo, hoja, puede, ocupado, onVer, onSubir, onQuitar }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingLeft: 12 }}>
+      <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 14 }}>{`${rotulo} · ${hoja?.url ? 'cargado' : 'falta'}`}</Text>
+      {hoja?.url ? <Pressable onPress={() => onVer(hoja.url)} hitSlop={6}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Ver</Text></Pressable> : null}
+      {puede ? <Pressable onPress={onSubir} disabled={ocupado} hitSlop={6}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>{hoja?.url ? 'Cambiar' : 'Subir'}</Text></Pressable> : null}
+      {puede && hoja?.url ? <Pressable onPress={onQuitar} disabled={ocupado} hitSlop={6}><Text style={{ color: MARCA.rojo, fontSize: 15 }}>Quitar</Text></Pressable> : null}
+    </View>
   );
 }

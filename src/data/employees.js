@@ -282,3 +282,40 @@ export async function cuentaDeAcceso(employeeId, action) {
             : `El cambio quedó registrado, pero no se pudo reabrir su acceso al portal (${motivo}). Avísale a soporte.`), { userFacing: true });
     }
 }
+
+// ── Al ENLAZAR un alta con una ficha que ya existe ──────────────────────────
+//
+// Trae los doce campos que el padrón no publica (DUI y su expedición, el
+// documento alterno, ISSS, AFP, sueldo, banco, cuenta, código y PIN): sin
+// ellos, guardar el enlace los escribiría en blanco sobre la persona. Ver
+// `utils/fichaDelEmpleado.js` (vive acá desde el 2026-10-15: lo usan el portal
+// y la app).
+//
+// LANZA si alguna lectura falla (2026-10-14). Antes cada una caía a un `Map`
+// vacío, y «no pude leer» se veía igual que «no tiene»: el formulario quedaba
+// con el sueldo, la cuenta y el ISSS en blanco y el código aleatorio, y
+// guardar escribía ESO sobre la ficha existente. Quien llama marca la ficha
+// como cargada sólo cuando esto vuelve bien, y hasta entonces no se guarda.
+export async function traerLoQueFaltaDeLaFicha(id) {
+    if (!id) return {};
+    const [ident, sal, cred] = await Promise.all([
+        fetchIdentidades([id], { lanzar: true }),
+        fetchSalarios([id], { lanzar: true }),
+        fetchCredenciales([id], { lanzar: true }),
+    ]);
+    const i = ident.get(id) || {};
+    const s = sal.get(id) || {};
+    const c = cred.get(id) || {};
+    const fuera = {
+        dui: i.dui, alt_identity_document: i.alt_identity_document,
+        isss_number: i.isss_number, afp_number: i.afp_number,
+        dui_lugar_expedicion: i.dui_lugar_expedicion,
+        dui_fecha_expedicion: i.dui_fecha_expedicion,
+        dui_fecha_vencimiento: i.dui_fecha_vencimiento,
+        base_salary: s.base_salary, bank_name: s.bank_name, account_number: s.account_number,
+        code: c.code, kiosk_pin: c.kiosk_pin,
+    };
+    // Un `null` no se propone: dejaría el campo vacío igual y además pisaría lo
+    // que alguien acabe de escribir mientras esto viajaba por la red.
+    return Object.fromEntries(Object.entries(fuera).filter(([, v]) => v !== null && v !== undefined && v !== ''));
+}

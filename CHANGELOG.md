@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.5 — La app: alta y edición de personal completas, con enlace a la ficha existente
+
+Paridad de la app (grupo Personas): el formulario de empleado de la app ya
+tiene lo mismo que el del portal, en tres pestañas.
+- **Enlazar con la ficha existente** al dar de alta (recontratación o posible
+  duplicado): aviso de homónimo, el formulario se llena con su ficha y pide lo
+  protegido; no deja guardar hasta tenerlo. Al terminar dice si quedó sobre la
+  ficha, la contraseña temporal (copiada) o lo que faltó.
+- **Personal**: DUI por caras con el lector (o un solo archivo; documento
+  alterno del menor), lugar/fecha de expedición y vencimiento, nacionalidad,
+  estado civil, varios teléfonos, correos y direcciones con distrito, tipo de
+  sangre, condiciones crónicas, discapacidad, contactos de emergencia,
+  dependientes, cursos y vehículos.
+- **Laboral**: salas que cubre, contrato del Art. 23 (base legal, firma,
+  estipulación, medio, lugar y período de pago, prórrogas, plazos de firma y
+  del Ministerio), acreditaciones (con provisional/definitiva y el carné
+  digital de dependiente por QR), ISSS/AFP con NUP y herramientas entregadas.
+- **Nómina y acceso**: cuenta, usuario (con propuesta al cambiar el nombre),
+  «todavía no tiene carné», código con «Generar» y el PIN para copiar.
+- Al editar, sala, cargos, ingreso, tipo e inicio de contrato y salario se ven
+  bloqueados como en el portal («Acción RRHH»).
+- **Expediente** de la app: reverso de los documentos de dos caras, hojas de
+  los de varias, «Otros documentos», y elegir foto o PDF también en Android.
+- Núcleo: `utils/fichaDelEmpleado.js` (enlazar, listas, validaciones),
+  `traerLoQueFaltaDeLaFicha` en `data/employees.js` y `DOS_CARAS` /
+  `VARIAS_HOJAS` / `SIN_VENCIMIENTO` / `COMPARTIBLES` en
+  `documentosDelExpediente.js`; el formulario del portal los importa de ahí
+  (sin cambio de comportamiento).
+
 ## v2.1292.4 — La app: auditoría de tiempos, horarios, cargos y permisos como en el portal
 
 Paridad de la app (grupo Personas).

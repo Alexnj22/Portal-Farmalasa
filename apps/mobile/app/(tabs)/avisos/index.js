@@ -35,6 +35,7 @@ import { avisoEsperaDecisionConMayoristas } from '@nucleo/utils/accionesDeAviso'
 import { ordenarBandeja } from '@nucleo/utils/bandejaDeAvisos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
+import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCortesDeAvisos';
 import { colorSistema } from '../../../componentes/Formulario';
 import { abrirRuta } from '../../../pantallas';
 import { usePorDecidir } from '../../../componentes/porDecidir';
@@ -105,6 +106,9 @@ export default function Notificaciones() {
   const esperaDecision = useCallback((n) => avisoEsperaDecisionConMayoristas(n, hasPermission, mayoristasSolicitados),
     [hasPermission, mayoristasSolicitados]);
   const visibles = useMemo(() => avisos.filter((n) => !ocultos.has(n.id)), [avisos, ocultos]);
+  // Los cortes que nombran los avisos, releídos (la campana hace lo mismo).
+  const { porId: cortesPorId } = useCortesDeAvisos(visibles, true);
+  const puedeResolverCortes = hasPermission('cortes_caja', 'can_edit');
   const { pendientes, sinLeer, decididos, totalPorDecidir } = useMemo(
     () => ordenarBandeja(visibles, porDecidir, esperaDecision), [visibles, porDecidir, esperaDecision]);
 
@@ -191,6 +195,7 @@ export default function Notificaciones() {
   const tarjeta = (n, { deslizar }) => {
     const t = (
       <TarjetaDeAviso n={n} persona={persona} detalle={detalles[n.id]} margen={deslizar ? 0 : 16}
+        corte={corteResolubleDelAviso(n, cortesPorId, puedeResolverCortes)}
         onAbrir={() => abrirAviso(n, { conservar: esperaDecision(n) })} />
     );
     if (!deslizar) return <View key={n.id}>{t}</View>;

@@ -11,6 +11,8 @@
 // La lista es `ListaPaginada`: virtualizada, pide la página siguiente al
 // acercarse al final y trae los estados de carga, vacío y error con reintento.
 import { useState } from 'react';
+import { useAuth } from '@nucleo/context/AuthContext';
+import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCortesDeAvisos';
 import { Pressable, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -36,10 +38,20 @@ export default function Notificaciones() {
   const busca = useTextoRebotado(texto);
   const [total, setTotal] = useState(null);
   const [vuelta, setVuelta] = useState(0); // al devolver un aviso, la lista se relee desde la página 1
+  // Los avisos ya cargados, para releer sus cortes y ofrecer Confirmar /
+  // Descartar como el historial del portal.
+  const [cargados, setCargados] = useState([]);
+  const { hasPermission } = useAuth();
+  const { porId: cortesPorId } = useCortesDeAvisos(cargados, true);
+  const puedeResolverCortes = hasPermission('cortes_caja', 'can_edit');
 
   const cargarPagina = async (desdeFila, porPagina) => {
     const r = await fetchNotificationsPage({ estado, busca: busca.trim() || null, pagina: Math.floor(desdeFila / porPagina), porPagina });
-    if (!r.error) setTotal(r.count ?? 0);
+    if (!r.error) {
+      setTotal(r.count ?? 0);
+      const filas = r.data || [];
+      setCargados((ya) => (desdeFila === 0 ? filas : [...ya, ...filas]));
+    }
     return r;
   };
 
@@ -71,6 +83,7 @@ export default function Notificaciones() {
         )}
         renderItem={(n) => (
           <TarjetaDeAviso n={n} margen={0} onAbrir={() => abrirAviso(n)} sinAcciones={!!n.deleted_at}
+            corte={corteResolubleDelAviso(n, cortesPorId, puedeResolverCortes)}
             pie={n.deleted_at ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{`Fuera de la bandeja desde las ${cuandoLlego(n.deleted_at)}`}</Text>

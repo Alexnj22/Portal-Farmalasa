@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.3 — App · Libros IVA: buscador y orden en el detalle de cada libro
+
+Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).
+- El detalle de cada libro en la app tiene buscador y orden por cualquier
+  columna, con el N.º legal de cada renglón.
+- El mapa de columnas de la tabla (`ACCESO`) se mudó de `LibrosIvaView` al
+  núcleo (`ACCESO_DEL_LIBRO`, `accesoDelLibro`, `numerarLibro`,
+  `buscarYOrdenarLibro` en `utils/libroIva`) y el portal pasa a usarlo: las dos
+  puntas buscan y ordenan con la misma regla. El CSV sigue saliendo del libro
+  entero en su orden legal.
+
 ## v2.1292.2 — App · Facturación: solventadas de Observaciones, pagos confirmados, PDF y marca de visitados
 
 Paridad de la app con el portal (auditoría 2026-10-15, grupo Compras y fiscal).

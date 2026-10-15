@@ -498,8 +498,10 @@ describe('el vencimiento del documento de identidad', () => {
     });
 
     it('avisa cuando está por vencer o vencido, con la escala de siempre', () => {
-        expect(form).toMatch(/getExpiryBadge\(formData\?\.dui_fecha_vencimiento\)/);
-        expect(form).toMatch(/Documento de identidad: vencido/);
+        // Manda la fecha de la ficha; sin ella, la de las caras (2026-10-15).
+        expect(form).toMatch(/const venceElDui = formData\?\.dui_fecha_vencimiento/);
+        expect(form).toMatch(/getExpiryBadge\(venceElDui\)/);
+        expect(form).toMatch(/'DUI vencido'/);
     });
 });
 

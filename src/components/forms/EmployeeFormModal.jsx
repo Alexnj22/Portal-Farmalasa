@@ -282,7 +282,7 @@ import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { NOMBRES_DE_MES, fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { NOMBRES_DE_MES, fechaTexto, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { analizarDocumento, leerDui } from '@nucleo/data/ia';
 
 // ============================================================================
@@ -962,17 +962,28 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      * expediente (`getExpiryBadge`): 60 días avisa, 30 alarma, y vencido es
      * vencido. Reusar el canónico y no escribir umbrales propios es lo que
      * evita que la misma urgencia se vea de dos maneras en la misma ficha. */
-    const avisoDuiVence = useMemo(
-        () => getExpiryBadge(formData?.dui_fecha_vencimiento),
-        [formData?.dui_fecha_vencimiento]);
+    /* UN vencimiento del DUI, no tres (2026-10-15). El aviso decía «DUI —
+     * frente: vencido · DUI — reverso: vencido · Documento de identidad:
+     * vencido»: las dos caras llevan la fecha del documento y la ficha la
+     * guarda aparte, así que el mismo hecho salía tres veces. Manda la fecha de
+     * la ficha; si no la tiene, la de las caras. */
+    const venceElDui = formData?.dui_fecha_vencimiento
+        || (formData?.employee_documents || [])
+            .filter(d => CATEGORIAS_DE_DUI.has(d?.category) && d?.expiry_date)
+            .map(d => d.expiry_date).sort()[0]
+        || null;
+    const avisoDuiVence = useMemo(() => getExpiryBadge(venceElDui), [venceElDui]);
 
     const vencimientos = useMemo(
-        () => getExpiringDocuments(formData?.employee_documents || []).map(doc => ({
-            campo: `venc_${doc.category}`,
-            label: doc.daysLeft < 0
-                ? `${doc.title || doc.category}: vencido`
-                : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`,
-        })),
+        () => getExpiringDocuments((formData?.employee_documents || [])
+            .filter(d => !CATEGORIAS_DE_DUI.has(d?.category)))
+            .map(doc => ({
+                campo: `venc_${doc.category}`,
+                vencido: doc.daysLeft < 0,
+                label: doc.daysLeft < 0
+                    ? `${doc.title || doc.category}: vencido`
+                    : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`,
+            })),
         [formData?.employee_documents]);
 
     /* Y también arriba, en la lista que se lee de un vistazo. La insignia del
@@ -982,9 +993,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const vencimientoDelDui = useMemo(() => (
         avisoDuiVence
             ? [{ campo: 'venc_dui',
+                 vencido: avisoDuiVence.daysLeft < 0,
                  label: avisoDuiVence.daysLeft < 0
-                     ? 'Documento de identidad: vencido'
-                     : `Documento de identidad: ${avisoDuiVence.label.toLowerCase()}` }]
+                     ? 'DUI vencido'
+                     : `DUI: ${avisoDuiVence.label.toLowerCase()}` }]
             : []
     ), [avisoDuiVence]);
 
@@ -2026,8 +2038,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const hasFile = !!doc.url;
         const expiryBadge = getExpiryBadge(doc.expiry_date);
         const hojas = Array.isArray(doc.hojas) ? doc.hojas : [];
+        /* UNA caja y no un fragmento (2026-10-15). Devolvía las piezas sueltas
+           —rótulo, archivo, reverso, vencimiento—, y donde el llamador lo pone
+           dentro de una cuadrícula de dos columnas (Acreditaciones) cada pieza
+           caía en una celda distinta: «Frente» a la derecha sin su archivo, el
+           archivo a la izquierda debajo del número, y el vencimiento suelto. */
         return (
-            <>
+            <div className="flex min-w-0 flex-col gap-2">
                 {/* Canónico `FileField` (2c, 2026-07-27). `busy` conserva el
                     "Subiendo y analizando con IA…" que este modal ya mostraba:
                     la subida dispara `analyze-document` y puede tardar varios
@@ -2152,13 +2169,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 {showExpiry && hasFile && !isAnalyzing && !POR_ANIO_CALENDARIO.has(category) && (
                     <div className="mt-2">
                         <label className={rotuloCampo('text-content-2', { denso: true })}>
-                            <span>Fecha de Vencimiento (opcional) — la lee el portal si el documento la trae</span>
+                            {/* El rótulo es corto a propósito: en mayúsculas espaciadas
+                                el largo («… — la lee el portal si el documento la
+                                trae») se cortaba con «…» en media columna. */}
+                            <span>Vence <span className="normal-case tracking-normal font-medium text-content-3">· se llena sola si el documento la trae</span></span>
                             {expiryBadge && <Badge variant={expiryBadge.variant} size="sm" uppercase={false} className="ml-1 shrink-0">{expiryBadge.label}</Badge>}
                         </label>
                         <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(category, { expiry_date: date })} />
                     </div>
                 )}
-            </>
+            </div>
         );
     };
 
@@ -2611,40 +2631,70 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 </div>
             )}
 
-            {/* Contado y plegado, no enumerado. Ver el comentario de `pendientes`. */}
-            {fichaEmpezada && (pendientes.length + vencimientos.length + vencimientoDelDui.length) > 0 && (
-                <div className="mb-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl shadow-sm animate-in slide-in-from-top-2">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle size={16} className="text-warning shrink-0" strokeWidth={2.5} />
-                        <p className="text-label text-warning-text font-medium leading-tight flex-1 min-w-0">
-                            <span className="font-black">{pendientes.length + vencimientos.length} pendiente{(pendientes.length + vencimientos.length + vencimientoDelDui.length) === 1 ? '' : 's'}</span>
-                            {' '}en el expediente. Se puede guardar así y completarlo después.
-                        </p>
-                        <Button variant="ghost" size="sm" onClick={() => setVerPendientes(v => !v)}>
-                            {verPendientes ? 'Ocultar' : 'Ver cuáles'}
-                        </Button>
+            {/* Contado y plegado, no enumerado. Ver el comentario de `pendientes`.
+                Dos grupos y no una sola fila de píldoras grises: lo VENCIDO es
+                un problema de hoy y lo que FALTA es trabajo pendiente — en la
+                misma tira gris se leían igual. Y el número cuenta lo mismo que
+                la lista (decía «2 pendientes» sobre tres píldoras). */}
+            {fichaEmpezada && (pendientes.length + vencimientos.length + vencimientoDelDui.length) > 0 && (() => {
+                const avisos = [...vencimientoDelDui, ...vencimientos];
+                const nAvisos = avisos.length;
+                const nFaltan = pendientes.length;
+                const resumen = [
+                    nAvisos && `${nAvisos} ${avisos.every(v => v.vencido) ? (nAvisos === 1 ? 'vencido' : 'vencidos') : 'por renovar'}`,
+                    nFaltan && `${nFaltan} ${nFaltan === 1 ? 'dato por completar' : 'datos por completar'}`,
+                ].filter(Boolean).join(' · ');
+                return (
+                    <div className={`mb-3 rounded-2xl border p-3 animate-in slide-in-from-top-2
+                        ${nAvisos ? 'border-danger/25 bg-danger/5' : 'border-warning/30 bg-warning/10'}`}>
+                        <div className="flex items-center gap-3">
+                            <AlertCircle size={16} strokeWidth={2.5}
+                                className={`shrink-0 ${nAvisos ? 'text-danger-text' : 'text-warning-text'}`} />
+                            <p className="min-w-0 flex-1 text-label font-medium leading-tight text-content-2">
+                                <span className="font-black text-content">{resumen}</span>
+                                <span className="text-content-3"> · se puede guardar y completar después</span>
+                            </p>
+                            <Button variant="ghost" size="sm" onClick={() => setVerPendientes(v => !v)}>
+                                {verPendientes ? 'Ocultar' : 'Ver cuáles'}
+                            </Button>
+                        </div>
+                        {verPendientes && (
+                            <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
+                                {!!nAvisos && (
+                                    <ul className="flex flex-wrap gap-1.5">
+                                        {avisos.map(f => (
+                                            <li key={f.campo}>
+                                                <Badge variant={f.vencido ? 'danger' : 'warning'} size="sm" uppercase={false}>{f.label}</Badge>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                {!!nFaltan && (
+                                    <ul className="flex flex-wrap gap-1.5">
+                                        {pendientes.map(f => (
+                                            <li key={f.campo}>
+                                                <Badge variant="neutral" size="sm" uppercase={false}>{f.label}</Badge>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    {verPendientes && (
-                        <ul className="mt-3 flex flex-wrap gap-1.5 animate-in fade-in">
-                            {[...pendientes, ...vencimientos, ...vencimientoDelDui].map(f => (
-                                <li key={f.campo}
-                                    className="text-micro font-bold bg-surface-card border border-border-card rounded-full px-2 py-0.5 text-content-2">
-                                    {f.label}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            )}
+                );
+            })()}
 
-            {/* AVISO EN MODO EDICIÓN */}
+            {/* AVISO EN MODO EDICIÓN — una nota, no una alarma: no avisa de un
+                problema, explica por qué cuatro campos están bloqueados. En
+                ámbar competía con el de arriba, que sí es un problema. */}
             {isEditMode && (
-                <div className="mb-4 bg-warning/10 border border-warning/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm">
-                    <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <p className="text-label text-warning-text font-medium leading-tight">
-                        Los campos marcados con <span className="font-black">Acción RRHH</span> (sucursal, cargo, salario, contrato) solo se pueden modificar mediante una acción de personal desde el perfil del empleado.
-                    </p>
-                </div>
+                <p className="mb-4 flex items-start gap-2 px-1 text-micro font-medium leading-snug text-content-3">
+                    <Lock size={13} strokeWidth={2.5} className="mt-0.5 shrink-0" />
+                    <span>
+                        Sucursal, cargo, salario y contrato llevan <span className="font-black text-content-2">Acción RRHH</span>:
+                        se cambian con una acción de personal desde el perfil, para que quede en su historial.
+                    </span>
+                </p>
             )}
 
             {/* CONTENEDOR ANIMADO */}
@@ -3459,11 +3509,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
 
                                 {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && !(formData.education_level === 'UNIVERSITARIO' && formData.has_maestria) && (
-                                    <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/30 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
+                                    <div data-surface="card" className="md:col-span-2 p-3.5 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                         <Checkbox
                                 checked={!!formData.is_studying}
                                 onChange={(v) => handleSelectChange('is_studying', v)}
-                                label={<span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Actualmente estudiando?</span>}
+                                label={<span className="text-label font-bold text-content">¿Actualmente estudiando?</span>}
                             />
 
                                         {!!formData.is_studying && (
@@ -3492,11 +3542,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && (() => {
                                     const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
                                     return (
-                                        <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/20 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
+                                        <div data-surface="card" className="md:col-span-2 p-3.5 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                             <Checkbox
                                 checked={!!formData.has_maestria}
                                 onChange={(v) => handleSelectChange('has_maestria', v)}
-                                label={<span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>}
+                                label={<span className="text-label font-bold text-content">¿Tiene Maestría / Postgrado?</span>}
                             />
                                             {!!formData.has_maestria && (
                                                 <div className="mt-3 grid grid-cols-1 gap-3">
@@ -3531,7 +3581,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <Checkbox
                                 checked={!!formData.maestria_is_studying}
                                 onChange={(v) => handleSelectChange('maestria_is_studying', v)}
-                                label={<span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Maestría en curso?</span>}
+                                label={<span className="text-label font-bold text-content">¿Maestría en curso?</span>}
                             />
 
                                                         {!!formData.maestria_is_studying && (
@@ -3620,22 +3670,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <Checkbox
                                 checked={!!formData.has_motorcycle}
                                 onChange={(v) => handleSelectChange('has_motorcycle', v)}
-                                label={<><Bike size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Posee Moto</span></>}
+                                label={<span className="inline-flex items-center gap-2"><Bike size={15} strokeWidth={2.5} className="shrink-0 text-content-3" /><span className="text-label font-bold text-content">Tiene moto</span></span>}
                             />
                                 <Checkbox
                                 checked={!!formData.has_car}
                                 onChange={(v) => handleSelectChange('has_car', v)}
-                                label={<><Car size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Posee Carro</span></>}
+                                label={<span className="inline-flex items-center gap-2"><Car size={15} strokeWidth={2.5} className="shrink-0 text-content-3" /><span className="text-label font-bold text-content">Tiene carro</span></span>}
                             />
                                 <Checkbox
                                 checked={!!formData.has_motorcycle_license}
                                 onChange={(v) => handleSelectChange('has_motorcycle_license', v)}
-                                label={<><Bike size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Licencia de Motocicleta</span></>}
+                                label={<span className="inline-flex items-center gap-2"><Bike size={15} strokeWidth={2.5} className="shrink-0 text-content-3" /><span className="text-label font-bold text-content">Licencia de moto</span></span>}
                             />
                                 <Checkbox
                                 checked={!!formData.has_car_license}
                                 onChange={(v) => handleSelectChange('has_car_license', v)}
-                                label={<><Car size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Licencia de Automóvil</span></>}
+                                label={<span className="inline-flex items-center gap-2"><Car size={15} strokeWidth={2.5} className="shrink-0 text-content-3" /><span className="text-label font-bold text-content">Licencia de carro</span></span>}
                             />
                             </div>
                             {(formData.has_motorcycle_license || formData.has_car_license) && (
@@ -3703,50 +3753,58 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 ? <Badge variant="warning" size="sm" className="shrink-0">Provisional</Badge>
                                                 : !formData[a.campo] && <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>}
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                                            <PortalInput
-                                                aria-label={`Número de ${a.junta}`} icon={Hash}
-                                                value={formData[a.campo] || ''}
-                                                onChange={(e) => handleSelectChange(a.campo, e.target.value)}
-                                                placeholder={`N° ${a.junta}`} />
-                                            {renderDocUploadArea(a.doc)}
-                                        </div>
-
-                                        {/* ── Cuál sello tiene ──────────────────────────
-                                            La junta inscribe con carácter provisional a quien
-                                            ya terminó la carrera y todavía no tiene el título;
-                                            la definitiva llega con el título. Verificado en el
-                                            formulario de la junta de enfermería, y coincide
-                                            con el sello provisional del médico en su práctica.
-                                            Para químico farmacéutico y contaduría no está
-                                            verificado — por eso la pantalla NO afirma cuándo
-                                            se obtiene cada una: sólo pregunta cuál tiene esta
-                                            persona, que es lo que Talento Humano sí sabe. */}
-                                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                                            <div className="relative z-content">
-                                                <label className={rotuloCampo('text-content-3')}>¿Cuál tiene?</label>
-                                                <LiquidSelect
-                                                    value={tipo || ''}
-                                                    onChange={(val) => setFormData(prev => ({ ...prev, ...fijarTipoAcreditacion(prev, a.id, val) }))}
-                                                    options={TIPO_ACREDITACION_OPTIONS}
-                                                    placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
-                                            </div>
-                                            {esProvisional && (
-                                                <div className="flex flex-col justify-end gap-2">
-                                                    <p className="text-micro text-content-3 font-medium leading-snug ml-1">
-                                                        Al graduarse hay que reemplazarla por la definitiva.
-                                                    </p>
-                                                    <Button
-                                                        type="button" variant="secondary" size="sm"
-                                                        icon={RefreshCw}
-                                                        onClick={() => setFormData(prev => ({
-                                                            ...prev,
-                                                            ...promoverADefinitiva(prev, a.id, a.campo, hoySV()),
-                                                        }))}>
-                                                        Ya se graduó
-                                                    </Button>
+                                        {/* Dos columnas que se leen por separado: a la izquierda lo
+                                            que se ESCRIBE (número y cuál tiene), a la derecha el
+                                            papel. Antes el número y «¿Cuál tiene?» iban en dos
+                                            renglones de cuadrícula distintos, y la columna del
+                                            papel —más alta— dejaba un hueco vacío entre los dos. */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 items-start">
+                                            <div className="flex min-w-0 flex-col gap-3">
+                                                <div>
+                                                    <label className={rotuloCampo('text-content-3')}>Número</label>
+                                                    <PortalInput
+                                                        aria-label={`Número de ${a.junta}`} icon={Hash}
+                                                        value={formData[a.campo] || ''}
+                                                        onChange={(e) => handleSelectChange(a.campo, e.target.value)}
+                                                        placeholder={`N° ${a.junta}`} />
                                                 </div>
-                                            )}
+
+                                                {/* ── Cuál sello tiene ──────────────────────────
+                                                    La junta inscribe con carácter provisional a quien
+                                                    ya terminó la carrera y todavía no tiene el título;
+                                                    la definitiva llega con el título. Verificado en el
+                                                    formulario de la junta de enfermería, y coincide
+                                                    con el sello provisional del médico en su práctica.
+                                                    Para químico farmacéutico y contaduría no está
+                                                    verificado — por eso la pantalla NO afirma cuándo
+                                                    se obtiene cada una: sólo pregunta cuál tiene esta
+                                                    persona, que es lo que Talento Humano sí sabe. */}
+                                                <div className="relative z-content">
+                                                    <label className={rotuloCampo('text-content-3')}>¿Cuál tiene?</label>
+                                                    <LiquidSelect
+                                                        value={tipo || ''}
+                                                        onChange={(val) => setFormData(prev => ({ ...prev, ...fijarTipoAcreditacion(prev, a.id, val) }))}
+                                                        options={TIPO_ACREDITACION_OPTIONS}
+                                                        placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
+                                                </div>
+                                                {esProvisional && (
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="text-micro text-content-3 font-medium leading-snug ml-1 flex-1 min-w-[10rem]">
+                                                            Al graduarse hay que reemplazarla por la definitiva.
+                                                        </p>
+                                                        <Button
+                                                            type="button" variant="secondary" size="sm"
+                                                            icon={RefreshCw}
+                                                            onClick={() => setFormData(prev => ({
+                                                                ...prev,
+                                                                ...promoverADefinitiva(prev, a.id, a.campo, hoySV()),
+                                                            }))}>
+                                                            Ya se graduó
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {renderDocUploadArea(a.doc)}
                                         </div>
 
                                         {/* El número provisional queda guardado, no se pierde:
@@ -3775,7 +3833,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <Checkbox
                                         checked={!!formData.tiene_acreditacion_dependiente}
                                         onChange={(v) => handleSelectChange('tiene_acreditacion_dependiente', v)}
-                                        label={<><ShieldCheck size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Acreditación de dependiente de farmacia</span></>}
+                                        label={<span className="inline-flex items-center gap-2"><ShieldCheck size={15} strokeWidth={2.5} className="shrink-0 text-content-3" /><span className="text-label font-bold text-content">Acreditación de dependiente de farmacia</span></span>}
                                     />
                                     {formData.tiene_acreditacion_dependiente && (
                                         <div className="mt-3 animate-in fade-in zoom-in-95 flex flex-col gap-4">
@@ -3875,7 +3933,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 // El marcador de posición era el DUI mismo, en gris: el
                                                 // campo PARECÍA lleno y se guardaba vacío. 7 de 8 fichas
                                                 // con «tiene AFP» quedaron sin NUP (2026-10-14).
-                                                placeholder="Sin escribir — el DUI, o 12 dígitos si es de antes de 2023"
+                                                placeholder="El DUI, o 12 dígitos (antes de 2023)"
 
                                                 hasError={!nupRevisado.ok}
                                                 errorMessage={nupRevisado.motivo || ''}
@@ -3922,7 +3980,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {pendientesDePrevision.length > 0 && (
                                     <div className="mt-3 flex flex-col gap-2">
                                         {pendientesDePrevision.map(t => (
-                                            <Notice key={t.clave} variant={t.estado === 'SIN_PREGUNTAR' ? 'info' : 'warning'} icon={AlertCircle}>
+                                            /* «Todavía no se preguntó» es una nota y no un aviso:
+                                               en azul brillante, dos seguidos dominaban la sección
+                                               por encima de los campos que explican. */
+                                            <Notice key={t.clave} compact variant={t.estado === 'SIN_PREGUNTAR' ? 'neutral' : 'warning'} icon={AlertCircle}>
                                                 <span className="font-black">{t.label}:</span>{' '}
                                                 {t.estado === 'SIN_PREGUNTAR'
                                                     ? 'Todavía no se preguntó.'
@@ -4037,17 +4098,25 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <Button variant="ghost" icon={Plus} onClick={addDependent}>Agregar Persona</Button>
                         </div>
 
-                        <div className={`bg-danger/10 rounded-3xl p-4 md:p-5 border border-danger/30 shadow-[var(--shadow-elevation-xs)] transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md`}>
-                            <h4 className="text-body-sm font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2"><HeartPulse size={16} strokeWidth={2.5} /> Salud y a quién avisar</h4>
+                        <div className={`${islandClass}`}>
+                            {/* Una sección como las demás (2026-10-15): entera en rojo se leía
+                                como un ERROR del formulario, y es sólo el tema. El rojo queda en
+                                el ícono, que es donde dice «salud». */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-danger/10 text-danger-text rounded-xl border border-danger/20 shadow-[var(--shadow-shine)]">
+                                    <HeartPulse size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Salud y a quién avisar</h4>
+                            </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="relative z-base">
-                                    <label className={rotuloCampo('text-danger/80')}>Tipo de Sangre</label>
-                                    <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearable={false} {...portalSelectProps} />
+                                    <label className={rotuloCampo('text-content-3')}>Tipo de Sangre</label>
+                                    <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Sin dato" clearable={false} {...portalSelectProps} />
                                 </div>
                             </div>
 
-                            <p className="text-caption font-black uppercase tracking-widest text-danger/70 mt-4 mb-3 pt-4 border-t border-danger/30 flex items-center gap-1.5">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-3 mt-4 mb-3 pt-4 border-t border-divider flex items-center gap-1.5">
                                 <HeartPulse size={12} strokeWidth={2.5} /> Enfermedad Crónica / Condición Médica
                             </p>
                             {(formData.chronic_conditions || []).some(c => c && c !== OTRA_ESPECIALIDAD) && (
@@ -4055,7 +4124,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     {(formData.chronic_conditions || []).map((cond, idx) => {
                                         if (!cond || cond === OTRA_ESPECIALIDAD) return null;
                                         return (
-                                            <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-danger/30 text-danger text-label font-bold shadow-sm animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
+                                            <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-border-card text-content text-label font-bold shadow-sm animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                 {cond}
                                                 <Button variant="ghost" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
                                             </span>
@@ -4096,21 +4165,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             )}
                             <Button variant="ghost" icon={Plus} onClick={addChronicCondition}>Agregar Condición</Button>
 
-                            <p className="text-caption font-black uppercase tracking-widest text-danger/70 mt-4 mb-3 pt-4 border-t border-danger/30 flex items-center gap-1.5">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-3 mt-4 mb-3 pt-4 border-t border-divider flex items-center gap-1.5">
                                 <ShieldCheck size={12} strokeWidth={2.5} /> Discapacidad
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Checkbox
                                 checked={!!formData.has_disability}
                                 onChange={(v) => handleSelectChange('has_disability', v)}
-                                label={<span className="text-label font-black text-content-2 uppercase tracking-wide">¿Tiene alguna discapacidad?</span>}
+                                label={<span className="text-label font-bold text-content">¿Tiene alguna discapacidad?</span>}
                             />
                                 {formData.has_disability && (() => {
                                     const isOtherDisability = isCatalogOther(formData.disability_type, tipoDiscapacidadOptions);
                                     return (
                                         <>
                                             <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                <label className={rotuloCampo('text-danger/80')}>
+                                                <label className={rotuloCampo('text-content-3')}>
                                                     <span>Tipo de Discapacidad</span>
                                                     {!formData.disability_type && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
@@ -4125,7 +4194,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 />
                                             </div>
                                             <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                <label className={rotuloCampo('text-danger/80')}>
+                                                <label className={rotuloCampo('text-content-3')}>
                                                     <span>Grado</span>
                                                     {!formData.disability_grade && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
@@ -4134,11 +4203,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <Checkbox
                                 checked={!!formData.disability_has_certification}
                                 onChange={(v) => handleSelectChange('disability_has_certification', v)}
-                                label={<span className="text-label font-black text-content-2 uppercase tracking-wide">Cuenta con certificación (ISRI / CONAIPD)</span>}
+                                label={<span className="text-label font-bold text-content">Cuenta con certificación (ISRI / CONAIPD)</span>}
                             />
                                             {isOtherDisability && (
                                                 <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
-                                                    <label className={rotuloCampo('text-danger/80')}>
+                                                    <label className={rotuloCampo('text-content-3')}>
                                                         <span>Especifica el Tipo de Discapacidad</span>
                                                         {formData.disability_type === OTRA_ESPECIALIDAD && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                     </label>
@@ -4152,20 +4221,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 </div>
                                             )}
                                             {formData.disability_has_certification && (
-                                                <p className="text-micro text-danger-text/90 font-bold -mt-1 ml-1 md:col-span-3">El documento correspondiente ya está disponible para subir en la pestaña Documentos.</p>
+                                                <p className="text-micro text-content-3 font-bold -mt-1 ml-1 md:col-span-3">El documento correspondiente ya está disponible para subir en la pestaña Documentos.</p>
                                             )}
                                         </>
                                     );
                                 })()}
                             </div>
 
-                            <p className="text-caption font-black uppercase tracking-widest text-danger/70 mt-4 mb-3 pt-4 border-t border-danger/30 flex items-center gap-1.5">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-3 mt-4 mb-3 pt-4 border-t border-divider flex items-center gap-1.5">
                                 <Phone size={12} strokeWidth={2.5} /> Contacto de Emergencia
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <PortalInput label="Avisar a" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Nombre" />
                                 <div className="relative z-base">
-                                    <label className={rotuloCampo('text-danger/80')}>Parentesco</label>
+                                    <label className={rotuloCampo('text-content-3')}>Parentesco</label>
                                     <LiquidSelect value={formData.emergency_contact_relationship} onChange={(val) => handleSelectChange('emergency_contact_relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
 
@@ -4202,9 +4271,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 que lee el resto del portal—; éstos se guardan en
                                 `emergency_contacts` JUNTO CON ÉL, de modo que esa columna es
                                 la lista completa y no una mitad. */}
-                            <div className="mt-4 pt-4 border-t border-danger/30">
+                            <div className="mt-4 pt-4 border-t border-divider">
                                 <div className="flex items-center justify-between gap-3 mb-3">
-                                    <p className="text-caption font-black uppercase tracking-widest text-danger/70 flex items-center gap-1.5">
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                                         <Users size={12} strokeWidth={2.5} /> Otros contactos
                                     </p>
                                     <Button variant="ghost" icon={Plus} onClick={addContactoExtra}>Agregar contacto</Button>
@@ -4728,7 +4797,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         icon={CalendarClock} className="mt-4">
                                         <span className="font-black">
                                             {firma.vencido
-                                                ? `El contrato debió firmarse el ${firma.limite}.`
+                                                ? `El contrato debió firmarse el ${fechaNumerica(firma.limite)}.`
                                                 : firma.diasRestantes === 0
                                                     ? 'El contrato se firma hoy.'
                                                     : `Quedan ${firma.diasRestantes} días para firmar el contrato.`}
@@ -4922,14 +4991,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <PortalInput label={formData?.id ? 'Usuario' : 'Usuario (Auto-generado)'} name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
                                 {usuarioQuedoViejo && (
-                                    <Notice variant="warning" bloque className="mt-3"
-                                        action={<Button size="sm" tone="warning" soft
-                                            onClick={() => setFormData(prev => ({ ...prev, username: usuarioSugerido }))}>
-                                            Usar {usuarioSugerido}
-                                        </Button>}>
+                                    /* El botón va DEBAJO del texto y no al lado: en media
+                                       columna, al lado dejaba el párrafo en tiras de tres
+                                       palabras. */
+                                    <Notice variant="warning" bloque className="mt-3">
                                         El usuario ya no corresponde al nombre. Con él entra al portal:
                                         si lo cambias a <strong>{usuarioSugerido}</strong>, desde la próxima
                                         vez tendrá que entrar con ese. La contraseña no cambia.
+                                        <span className="mt-2 block">
+                                            <Button size="sm" tone="warning" soft
+                                                onClick={() => setFormData(prev => ({ ...prev, username: usuarioSugerido }))}>
+                                                Usar {usuarioSugerido}
+                                            </Button>
+                                        </span>
                                     </Notice>
                                 )}
                                 {/* ── El documento de bienvenida, a elección ─────────
@@ -5021,10 +5095,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
                             </div>
 
-                            <div className={`bg-brand/5 rounded-3xl p-4 md:p-5 border border-brand/20 shadow-[var(--shadow-glow-brand)] transition-all hover:translate-y-[var(--lift-card)] hover:shadow-md`}>
+                            {/* La misma isla que su vecina «Login de app móvil»: con su
+                                propio fondo azul, resplandor y título de color, las dos
+                                mitades del mismo tema (cómo entra la persona) parecían
+                                de pantallas distintas. */}
+                            <div className={islandClass}>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-brand text-white rounded-xl shadow-[var(--shadow-glow-brand)]"><Lock size={16} strokeWidth={2.5} /></div>
-                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text">Seguridad Kiosko</h4>
+                                    <div className="p-2 bg-brand text-white rounded-xl shadow-[var(--shadow-shine)]"><Lock size={16} strokeWidth={2.5} /></div>
+                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Seguridad kiosko</h4>
                                 </div>
                                 <div>
                                     {/* El botón de regenerar iba DENTRO del campo, encimado

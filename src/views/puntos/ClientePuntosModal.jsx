@@ -258,26 +258,29 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                         <div data-surface="card" className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-5 min-w-0">
                             <div className="flex flex-col gap-4 min-w-0">
                                 <div>
-                                    <p className="text-caption font-bold text-content-3">Puntos disponibles</p>
+                                    <p className="text-caption font-bold text-content-3">Puede canjear hoy</p>
                                     <p className="text-4xl sm:text-5xl font-black tabular-nums text-content leading-none mt-2">
                                         {pts(cuenta?.saldo)}
                                     </p>
                                     <p className="text-body-sm text-content-2 mt-2">
-                                        Equivalen a <span className="font-black tabular-nums">{dolares(cuenta?.saldo)}</span> de descuento
+                                        Hasta <span className="font-black tabular-nums">{dolares(cuenta?.saldo)}</span> de descuento. Es lo único que se puede canjear.
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <p className="text-caption font-bold text-content-3">
-                                        De los {pts(cuenta?.ganados)} acumulados
+                                        Qué pasó con los {pts(cuenta?.ganados)} que ha ganado
                                     </p>
                                     <Reparto ganados={Number(cuenta?.ganados) || 0} saldo={Number(cuenta?.saldo) || 0} {...reparto} />
                                 </div>
                             </div>
                             <dl className="grid grid-cols-2 gap-x-4 gap-y-4 content-center md:border-l md:border-divider md:pl-5">
-                                <Dato icono={TrendingUp} rotulo="Acumulados"
-                                    valor={pts(cuenta?.ganados)} sub={dolares(cuenta?.ganados)} />
-                                <Dato icono={Gift} rotulo="Canjeados"
-                                    valor={pts(reparto.canjeado)} sub={dolares(reparto.canjeado)} />
+                                {/* Historial, no saldo: «Acumulados 7,003 · $70.03» al lado del
+                                    disponible se leía como lo que se puede canjear (2026-10-15).
+                                    Por eso sin dólares en lo ganado: el dinero sólo va en el saldo. */}
+                                <Dato icono={TrendingUp} rotulo="Ganados en total"
+                                    valor={pts(cuenta?.ganados)} sub="historial, no es saldo" />
+                                <Dato icono={Gift} rotulo="Ya canjeados"
+                                    valor={pts(reparto.canjeado)} sub={`${dolares(reparto.canjeado)} descontados`} />
                                 <Dato icono={CalendarClock} rotulo="Próximo vencimiento"
                                     valor={proximo ? pts(proximo.puntos) : '—'}
                                     sub={proximo ? fechaTexto(proximo.vence_el, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Nada por vencer'} />
@@ -428,7 +431,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
 function Reparto({ ganados, saldo, canjeado, vencido, anulado }) {
     if (ganados <= 0) return null;
     const partes = [
-        { clave: 'saldo',    rotulo: 'Disponibles', valor: saldo,    color: 'bg-[var(--chart-1)]' },
+        { clave: 'saldo',    rotulo: 'Para canjear', valor: saldo,    color: 'bg-[var(--chart-1)]' },
         { clave: 'canjeado', rotulo: 'Canjeados',   valor: canjeado, color: 'bg-[var(--chart-6)]' },
         { clave: 'vencido',  rotulo: 'Vencidos',    valor: vencido,  color: 'bg-content-3' },
         { clave: 'anulado',  rotulo: 'Anulados',    valor: anulado,  color: 'bg-danger' },

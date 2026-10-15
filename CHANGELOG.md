@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1298.1 — Puntos: lo que se puede canjear, separado del historial
+
+En la tabla de clientes y en el modal, «Acumulados 7,003 · $70.03» al lado del
+saldo se leía como lo que el cliente puede canjear. El mismo día una caja aplicó
+1,550 puntos a un cliente que tenía 370.
+
+- Tabla: «Puntos» → **Puede canjear**; «Acumulados»/«Canjeados» →
+  **Ganados (total)** / **Canjeados (total)**, en gris.
+- Modal: «Puede canjear hoy», con la aclaración de que es lo único canjeable;
+  «Ganados en total» ya no lleva dólares (dice «historial, no es saldo»), y la
+  barra rotula «Para canjear».
+
 ## v2.1298.0 — Puntos: unir dos cuentas de la misma persona
 
 Pedido del usuario: «Ana Eduviges Calderón y Ana Calderón es la misma persona,

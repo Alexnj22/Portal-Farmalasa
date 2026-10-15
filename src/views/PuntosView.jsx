@@ -742,9 +742,9 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
                     { key: 'nombre',     label: 'Cliente',            sortable: true },
                     { key: 'dui',        label: 'DUI',                sortable: true },
                     { key: 'telefono',   label: 'Teléfono',           sortable: true },
-                    { key: 'saldo',      label: 'Puntos',             sortable: true },
-                    { key: 'acumulados', label: 'Acumulados',         sortable: true },
-                    { key: 'canjeados',  label: 'Canjeados',          sortable: true },
+                    { key: 'saldo',      label: 'Puede canjear',      sortable: true },
+                    { key: 'acumulados', label: 'Ganados (total)',    sortable: true },
+                    { key: 'canjeados',  label: 'Canjeados (total)',  sortable: true },
                     { key: 'ultima',     label: 'Última acumulación', sortable: true },
                 ]}
                 sortKey={orden}
@@ -765,8 +765,11 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
                             <span className="font-black tabular-nums text-content">{pts(c.saldo)}</span>
                             <span className="text-caption text-content-3 ml-1.5">{dolares(c.saldo)}</span>
                         </DataCell>
-                        <DataCell><span className="tabular-nums">{pts(c.acumulados)}</span></DataCell>
-                        <DataCell><span className="tabular-nums">{pts(c.canjeados)}</span></DataCell>
+                        {/* Historial, apagado a propósito: «Acumulados 7,003» junto al
+                            saldo se leía como lo que el cliente puede canjear (2026-10-15).
+                            Lo único que se canjea es la columna de arriba. */}
+                        <DataCell><span className="tabular-nums text-content-3">{pts(c.acumulados)}</span></DataCell>
+                        <DataCell><span className="tabular-nums text-content-3">{pts(c.canjeados)}</span></DataCell>
                         <DataCell>{fechaCorta(c.ultima_acumulacion)}</DataCell>
                     </DataRow>
                 ))}

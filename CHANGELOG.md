@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.2 — App: bitácora de inyecciones con período, estado, sucursal y CSV
+
+- App, Inyecciones · Bitácora: período del cobro como el portal (30 días por
+  defecto, hoy, 7 días, este mes, mes anterior u otras fechas), las tarjetas
+  Pagadas / Aplicadas / Pendientes que filtran, y «Descargar CSV».
+- App, Bitácora y Pendientes: filtro por sucursal para quien ve todas las salas.
+- Núcleo: el filtro de estado y el CSV de la bitácora se mudaron de
+  `TabBitacora` a `inyeccionesPendientes`; el portal los usa desde ahí.
+
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 
 - Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»

@@ -204,6 +204,21 @@ export async function imprimirTicketDeEnvio({ envio, sala, quien = null }) {
     return imprimirTicketDeTraslado({ sala, ...datos });
 }
 
+/**
+ * El ticket de una bolsa de envío listo para mandar a la caja desde cualquier
+ * cliente (el teléfono lo encola con su propio impresor) — la pareja de
+ * `ticketParaReimprimir` para los envíos. `null` si la bolsa no tiene número:
+ * sin barras no se puede escanear al recibir.
+ *
+ * @returns {{ ticket: object, titulo: string } | null}
+ */
+export function ticketDeEnvioParaImprimir({ envio, quien = null }) {
+    const datos = datosDelTicketDeEnvio(envio, { quien });
+    if (!datos.codigo) return null;
+    const titulo = ['ENVIO', datos.codigo, datos.destino].filter(Boolean).join(' ');
+    return { ticket: construirTicketDeTraslado(datos), titulo };
+}
+
 export async function reimprimirTicketDeTraslado({ metadata, pide, sala, familia = 'solicitud' }) {
     const datos = datosDelTicketGuardado(metadata, { pide, familia });
     if (!datos) {

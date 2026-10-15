@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.4 — App: traslados con ticket, recibir un grupo junto, filtro de sala y recibir por número
+
+Paridad de la app con el portal en Traslados (auditoría del 2026-10-15):
+
+- «Imprimir el ticket» desde un traslado en camino y desde un envío: el mismo
+  papel del portal, a la caja de la sala de quien lo pide.
+- «Recibir» junta lo pedido a varias salas a la vez, con cuántas respondieron
+  y «Ya llegaron las N completas» (de una en una, como el portal).
+- Con alcance de todas: filtro de sala en «Recibir» y el historial cortado por
+  sala de origen y desenlace.
+- Recibir una caja escribiendo su número cuando la cámara no lee el ticket.
+- Núcleo: `ticketDeEnvioParaImprimir`, la pareja de `ticketParaReimprimir`
+  para los envíos.
+
 ## v2.1292.3 — App: conteo de inventario con estantes, recuento a ciegas, orden y hoja compacta
 
 Paridad de la app con el portal en Conteo de inventario (auditoría del

@@ -27,6 +27,8 @@ import { buscadorDePersonas, desdeHace, motivoDeRechazo } from '@nucleo/utils/mo
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fmtVence } from '@nucleo/utils/pedirTraslado';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
+import { ticketParaReimprimir } from '@nucleo/utils/imprimirTraslado';
+import { imprimirEnLaSala } from '../../componentes/imprimir';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
 import Evidencia from '../../componentes/traslados/Evidencia';
@@ -163,6 +165,17 @@ export default function Traslado() {
   const llegaron = loQueLlego(m);
   const faltantes = llegaron.map((l) => ({ posicion: l.posicion, cantidad: Number(faltan[l.posicion]) || 0, nota: notaFalta.trim() }))
     .filter((f) => f.cantidad > 0);
+  // Volver a sacar el MISMO ticket de la bolsa, y nada más: lo que se arregla
+  // es una impresora, no un hecho del negocio (portal: «Imprimir el ticket»).
+  // Sale en la caja de quien lo pide. Sin número no hay barras: no se ofrece.
+  const imprimir = async () => {
+    const papel = ticketParaReimprimir({ metadata: m, pide: pide?.name ?? null, familia: 'solicitud' });
+    if (!papel) { fallo('Sin ticket', 'Ese traslado no tiene número: su ticket se confirma a mano.'); return; }
+    trabajando('Mandando a imprimir…');
+    const r = await imprimirEnLaSala(papel.ticket, miSala || null, papel.titulo);
+    if (r.ok) listo('Ticket', r.detalle); else fallo('No se pudo imprimir', r.detalle);
+  };
+
   const recibir = async () => {
     setOcupado(true); trabajando('Recibiendo…');
     const r = await recibirTraslado(fila.id, faltantes);
@@ -285,6 +298,9 @@ export default function Traslado() {
               <BotonGrande texto={faltantes.length ? 'Recibir y anotar lo que faltó' : 'Ya llegó, recibir'} color={MARCA.verde}
                 deshabilitado={ocupado} onPress={recibir} />
             </Bloque>
+          ) : null}
+          {enCamino && m.erp_traslado?.id_traslado ? (
+            <BotonGrande texto="Imprimir el ticket" color={MARCA.azulClaro} borde deshabilitado={ocupado} onPress={imprimir} />
           ) : null}
 
           {/* ── Cómo terminó ── */}

@@ -8,6 +8,9 @@
 // resolver) y el orden por urgencia salen del núcleo (`useDiasConDiferencia`,
 // `porSigno`, `desgloseDelDia`, `ordenarDias`), igual que en el portal.
 // Tocar un día abre su ficha con los cortes que no cuadraron.
+//
+// El buscador de la barra (como el portal) busca por sala, fecha, monto, quién
+// responde y la causa anotada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -16,8 +19,9 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import useDiasConDiferencia from '@nucleo/hooks/useDiasConDiferencia';
 import {
-  desgloseDelDia, diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, responsablesDelDia, resumenDeDias,
+  desgloseDelDia, diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, responsablesDelDia, resumenDeDias,
 } from '@nucleo/utils/diferenciasDeCaja';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { etiquetaMes, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -44,6 +48,7 @@ export default function CajaDiferencias() {
   const [mes, setMes] = useState(() => hoySV().slice(0, 7));
   const [salaElegida, setSala] = useState('todas');
   const [recargando, setRecargando] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
   const { dias, resoluciones, cargando, error, recargar } = useDiasConDiferencia({ activo: true, hasta: hoySV() });
   const puedeAnotar = hasPermission?.('cortes_caja_resolver');
   useFocusEffect(useCallback(() => { recargar(); }, [recargar]));
@@ -57,7 +62,11 @@ export default function CajaDiferencias() {
   const nombreDeSala = useMemo(() => new Map((sucursales || []).map((b) => [String(b.id), b.name])), [sucursales]);
   const delMes = useMemo(() => porSigno(dias, signo)
     .filter((d) => !sala || String(d.branch_id) === String(sala))
-    .filter((d) => diaEnMes(d, mes)), [dias, signo, sala, mes]);
+    .filter((d) => diaEnMes(d, mes))
+    // Igual que `diasDelRecorte` del portal: sala, fecha, monto, quién y la causa.
+    .filter((d) => tokenMatch(busqueda, nombreDeSala.get(String(d.branch_id)), d.fecha, String(d.neto),
+      ...(d.cortes || []).flatMap((c) => [String(c.tramo), c.empleado_texto,
+        ...resolucionesDe(c).flatMap((r) => [r.causa, ...(r.personas || []).map((p) => p.nombre)])]))), [dias, signo, sala, mes, busqueda, nombreDeSala]);
   const resumen = useMemo(() => resumenDeDias(delMes), [delMes]);
   const porAnotar = useMemo(() => pendientesDeRegistrar(resoluciones, { sala }), [resoluciones, sala]);
   const visibles = useMemo(() => ordenarDias(delMes.filter((d) => diaEnFiltro(d, filtro))), [delMes, filtro]);
@@ -81,7 +90,9 @@ export default function CajaDiferencias() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Diferencias', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Diferencias', headerLargeTitle: true,
+        headerSearchBarOptions: { placeholder: 'Sala, fecha, responsable o monto', hideWhenScrolling: false,
+          onChangeText: (e) => setBusqueda(e.nativeEvent.text), onCancelButtonPress: () => setBusqueda('') } }} />
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"

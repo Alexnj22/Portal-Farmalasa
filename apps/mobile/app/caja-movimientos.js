@@ -7,6 +7,11 @@
 // alguien editó después de guardarlo, o que desapareció de la caja (la fila se
 // queda: es lo único que queda de él). La lista y el filtro salen del núcleo
 // (`renglonesDeMovimientos`, `filtrarMovimientos`), los mismos del portal.
+//
+// Como el portal, además: período libre («Fechas…»), los totales «Entró» y
+// «Salió» (sin los que ya no están en la caja; tocarlos filtra), y en cada
+// renglón anotado desde el portal, quién lo anotó, su hora exacta, su concepto
+// completo y la boleta (`fetchAnotadosDelPortal`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -14,7 +19,8 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas } from '@nucleo/data/cortes';
 import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
-import { fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
+import { fetchAnotadosDelPortal, fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
+import RangoDeFechas from '../componentes/formulario/RangoDeFechas';
 import { filtrarMovimientos, fueEditado, historiaPorMovimiento, renglonesDeMovimientos } from '@nucleo/utils/movimientosDeCaja';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -34,8 +40,9 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
 const POR_PAGINA = 40;
-const PERIODOS = [{ id: '0', label: 'Hoy' }, { id: '1', label: 'Ayer' }, { id: '7', label: 'Últimos 7 días' }];
-const rango = (p, hoy = hoySV()) => (p === '0' ? [hoy, hoy] : p === '1' ? [sumarDias(hoy, -1), sumarDias(hoy, -1)] : [sumarDias(hoy, -6), hoy]);
+const PERIODOS = [{ id: '0', label: 'Hoy' }, { id: '1', label: 'Ayer' }, { id: '7', label: 'Últimos 7 días' }, { id: 'rango', label: 'Fechas…' }];
+const rango = (p, hoy = hoySV(), libre = null) => (p === 'rango' && libre ? [libre.desde, libre.hasta] : p === '0' ? [hoy, hoy] : p === '1' ? [sumarDias(hoy, -1), sumarDias(hoy, -1)] : [sumarDias(hoy, -6), hoy]);
+const sinFolioDelPortal = (t) => String(t || '').replace(/^P\d+\s+/, '');
 const horaDeIso = (iso) => (iso ? hora12(iso) : null);
 
 function Renglon({ titulo, detalle, monto, entra, tachado, pildoras = [], quien, sala }) {
@@ -72,6 +79,7 @@ export default function CajaMovimientos() {
   const puedeVerBolsas = hasPermission('bolsas', 'can_view');
   const miSala = String(user?.branchId ?? user?.branch_id ?? '');
   const [periodo, setPeriodo] = useState('0');
+  const [libre, setLibre] = useState(() => ({ desde: sumarDias(hoySV(), -6), hasta: hoySV() }));
   const [salaElegida, setSala] = useState('todas');
   const [tipo, setTipo] = useState('TODOS');
   const [estado, setEstado] = useState('TODOS');
@@ -84,35 +92,40 @@ export default function CajaMovimientos() {
   const alFinal = useMasAlFinal(() => setCuantos((n) => n + POR_PAGINA));
   const [recargando, setRecargando] = useState(false);
   const sala = todas ? (salaElegida === 'todas' ? null : salaElegida) : miSala;
-  const [desde, hasta] = useMemo(() => rango(periodo), [periodo]);
+  const [desde, hasta] = useMemo(() => rango(periodo, hoySV(), libre), [periodo, libre]);
 
   useEffect(() => { fetchTiposDeSalida().then((t) => setTiposDeSalida(t || [])).catch(() => {}); }, []);
   const cargar = useCallback(async () => {
-    const [movimientos, historial, cobros, salidas] = await Promise.all([
+    const [movimientos, historial, cobros, salidas, anotados] = await Promise.all([
       fetchMovimientosDeCaja({ desde, hasta, branchId: sala }),
       fetchHistorialDeMovimientos({ desde, hasta, branchId: sala }),
       fetchCobrosDelPortal({ desde, hasta, branchId: sala }),
       puedeVerBolsas ? fetchSalidasDeBolsaDelRango({ desde, hasta, branchId: sala }) : Promise.resolve([]),
-    ]).catch(() => [null, [], [], []]);
-    setDatos(movimientos ? { movimientos, historial: historial || [], cobros: cobros || [], salidas: salidas || [] } : { error: true });
+      Promise.resolve(fetchAnotadosDelPortal({ desde, hasta, branchId: sala })).catch(() => []),
+    ]).catch(() => [null, [], [], [], []]);
+    setDatos(movimientos ? { movimientos, historial: historial || [], cobros: cobros || [], salidas: salidas || [], anotados: anotados || [] } : { error: true });
     setCuantos(POR_PAGINA);
-    const quienes = await fetchPersonas([...(cobros || []).map((c) => c.abonado_por), ...(salidas || []).map((o) => o.registrado_por)]).catch(() => []);
+    const quienes = await fetchPersonas([...(cobros || []).map((c) => c.abonado_por), ...(salidas || []).map((o) => o.registrado_por), ...(anotados || []).map((a) => a.registrado_por)]).catch(() => []);
     setPersonas(new Map((quienes || []).map((q) => [q.id, q])));
   }, [desde, hasta, sala, puedeVerBolsas]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const nombreDeSala = useMemo(() => new Map((sucursales || []).map((b) => [b.id, b.name])), [sucursales]);
   const porMov = useMemo(() => historiaPorMovimiento(datos?.historial), [datos]);
-  const renglones = useMemo(() => (datos?.movimientos ? renglonesDeMovimientos({ movimientos: datos.movimientos, cobros: datos.cobros, salidasDeBolsa: datos.salidas }) : []), [datos]);
+  const renglones = useMemo(() => (datos?.movimientos ? renglonesDeMovimientos({ movimientos: datos.movimientos, cobros: datos.cobros, salidasDeBolsa: datos.salidas, anotados: datos.anotados }) : []), [datos]);
   const etiquetaDeSalida = useCallback((c) => tiposDeSalida.find((t) => t.codigo === c)?.etiqueta || c || 'Salida', [tiposDeSalida]);
   const visibles = useMemo(() => filtrarMovimientos(renglones, {
     tipo, estado, busqueda: texto, salas: nombreDeSala, cobraron: personas, sacaron: personas, etiquetaDeSalida, porMov,
   }), [renglones, tipo, estado, texto, nombreDeSala, personas, etiquetaDeSalida, porMov]);
   const cuenta = useMemo(() => {
     const movs = datos?.movimientos || [];
+    // «Entró» y «Salió» como el portal (`resumenMovs`): lo que ya no está en la caja no suma.
+    const vivos = movs.filter((m) => !m.desaparecido_at);
     return {
       editados: movs.filter((m) => fueEditado(porMov, m)).length,
       borrados: movs.filter((m) => m.desaparecido_at).length,
+      entradas: vivos.filter((m) => m.tipo === 'ENTRADA').reduce((a, m) => a + (Number(m.monto) || 0), 0),
+      salidas: vivos.filter((m) => m.tipo !== 'ENTRADA').reduce((a, m) => a + (Number(m.monto) || 0), 0),
     };
   }, [datos, porMov]);
 
@@ -140,9 +153,18 @@ export default function CajaMovimientos() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
+        {periodo === 'rango' ? <RangoDeFechas desde={libre.desde} hasta={libre.hasta} onCambiar={setLibre} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
           {desde === hasta ? fechaTexto(desde, { weekday: 'long', day: 'numeric', month: 'long' }) : `${fechaTexto(desde, { day: 'numeric', month: 'short' })} – ${fechaTexto(hasta, { day: 'numeric', month: 'short' })}`}
         </Text>
+        {datos && !datos.error ? (
+          <FilaDeKpis>
+            <Kpi icono="TrendingUp" rotulo="Entró" valor={formatMoney(cuenta.entradas)} color={MARCA.verde} pide={tipo === 'ENTRADA'}
+              apoyo="a las cajas" onPress={() => setTipo((t) => (t === 'ENTRADA' ? 'TODOS' : 'ENTRADA'))} />
+            <Kpi icono="TrendingDown" rotulo="Salió" valor={formatMoney(cuenta.salidas)} color={MARCA.ambar} pide={tipo === 'SALIDA'}
+              apoyo="de las cajas" onPress={() => setTipo((t) => (t === 'SALIDA' ? 'TODOS' : 'SALIDA'))} />
+          </FilaDeKpis>
+        ) : null}
         {datos && !datos.error ? (
           <FilaDeKpis>
             <Kpi icono="PenLine" rotulo="Editados" valor={String(cuenta.editados)} color={cuenta.editados ? MARCA.ambar : MARCA.azul}
@@ -176,12 +198,16 @@ export default function CajaMovimientos() {
             );
           }
           const m = it.mv;
+          const an = it.anotado;
           const editado = fueEditado(porMov, m);
           return (
             <Renglon key={it.clave} entra={m.tipo === 'ENTRADA'} tachado={!!m.desaparecido_at} sala={salaTxt} monto={m.monto}
-              titulo={m.concepto || (m.tipo === 'ENTRADA' ? 'Entrada' : 'Salida')}
-              detalle={[fechaTexto(m.fecha, { day: 'numeric', month: 'short' }), horaDeIso(m.created_at)].filter(Boolean).join(' · ')}
+              titulo={an?.detalle || an?.concepto || sinFolioDelPortal(m.concepto) || (m.tipo === 'ENTRADA' ? 'Entrada' : 'Salida')}
+              detalle={[fechaTexto(m.fecha, { day: 'numeric', month: 'short' }), horaDeIso(an?.registrado_at || m.created_at), an?.numero_boleta ? `boleta ${an.numero_boleta}` : null].filter(Boolean).join(' · ')}
+              quien={an ? personas.get(an.registrado_por) : null}
               pildoras={[
+                ...(an ? [['Anotado desde el portal', MARCA.azulClaro]] : []),
+                ...(an?.monto_origen === 'FOTO_SIN_CONFIRMAR' ? [['Leído de la boleta, sin confirmar', MARCA.ambar]] : an?.monto_origen === 'A_MANO' ? [['Monto escrito a mano', MARCA.ambar]] : []),
                 ...(m.desaparecido_at ? [['Ya no está en la caja', MARCA.rojo]] : []),
                 ...(editado ? [['Editado', MARCA.ambar]] : []),
                 ...(it.cobro ? [[`Cobro · ${it.cobro.cliente || ''}`.trim(), MARCA.azulClaro]] : []),

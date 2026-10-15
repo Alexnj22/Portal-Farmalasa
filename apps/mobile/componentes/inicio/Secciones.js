@@ -260,6 +260,26 @@ export function Avisos({ ctx }) {
 // portal (pedido del usuario del 2026-09-30: «no me salen todos los
 // widgets»); el orden por uso sube los que más se abren. `permiso` puede ser
 // una lista: basta con uno.
+// Qué widget del portal es cada sección (`WIDGET_DEFS` de `DashboardView`):
+// el encendido/apagado se comparte con el portal (`user_dashboard_prefs.widgets`).
+// «Pendientes» y «Pedir un ajuste» no tienen un widget propio que apagar.
+export const WIDGET_WEB = {
+  ventas: 'sales', ventas_hora: 'sales', meta: 'meta_sala', equipo: 'shifts', sucursales: 'branches', datos_pedidos: 'dato_pedido',
+  avisos: 'announcements', facturacion: 'facturacion', vendedores: 'vendedores', top: 'top_productos', cortes: 'cortes_sala',
+  bolsas: 'bolsas_sala', cotizaciones: 'cotizaciones', reservas: 'reservas', turnos: 'shifts', tendencia: 'trend',
+  ausencias: 'absences', solicitudes: 'requests', cumpleanos: 'birthdays', calendario: 'calendar', consulta: 'inv_search',
+  traslados: 'traslados', bitacoras: 'bitacoras', recetas: 'recetas_pend', facturas_sala: 'facturas_sala',
+};
+/** Los rótulos del portal, para la pantalla de personalizar. */
+export const ROTULO_WIDGET = {
+  sales: 'Ventas por día y hora', meta_sala: 'Meta del mes', shifts: 'Equipo y estado de turnos', branches: 'Alertas de sucursales',
+  dato_pedido: 'Datos que faltan', announcements: 'Avisos recientes', facturacion: 'Facturación hoy', vendedores: 'Venta por vendedor',
+  top_productos: 'Top productos del mes', cortes_sala: 'Cortes de caja', bolsas_sala: 'Bolsas de efectivo', cotizaciones: 'Cotizaciones activas',
+  reservas: 'Reservas de mi sala', trend: 'Tendencia de asistencia', absences: 'Ausencias activas', requests: 'Solicitudes pendientes',
+  birthdays: 'Cumpleaños del mes', calendar: 'Calendario', inv_search: 'Consulta de inventario', traslados: 'Traslados entre salas',
+  bitacoras: 'Bitácoras de mi sala', recetas_pend: 'Recetas pendientes', facturas_sala: 'Facturas de mi sala',
+};
+
 export const SECCIONES = [
   { id: 'pendientes', pestanas: ['general', 'operacion'], visible: (d) => d.solicitudes != null || d.traslados != null || d.cortes != null, Componente: Pendientes },
   { id: 'ventas', pestanas: ['general', 'comercial'], permiso: 'dash_sales', Componente: Ventas },

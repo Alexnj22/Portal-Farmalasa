@@ -8,12 +8,18 @@
 // su total (ver `CorteZView`). Las cifras van detrás de `corte_z_ver_montos`
 // también acá. El PDF es el MISMO papel del portal (`corteZHtml` traduce su
 // documento) y sale a la hoja de compartir: una sucursal o todas, una por hoja.
+//
+// Como el portal, además: con alcance todas, el filtro por sucursal (las que
+// tienen Corte Z del período), y en la que difiere «Ver día por día» — las
+// ventas con factura de cada día con documentos, total y rango de N.º de
+// control (`get_corte_z_dias`), para enfrentarlo al reporte diario.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchCortesZ } from '@nucleo/data/corteZ';
+import { fetchCortesZ, fetchCorteZDias } from '@nucleo/data/corteZ';
+import { MenuDeFiltros } from '../componentes/Filtros';
 import { causaDeCorteZ, cuadraZ, documentosQueDifieren, FILAS_DECLARACION, totalesCorteZ } from '@nucleo/utils/corteZ';
 import { EMPRESA } from '@nucleo/constants/empresa';
 import { correrMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
@@ -36,6 +42,12 @@ const dif = (n) => (cuadraZ(n) ? '—' : formatMoney(n));
 
 function Tarjeta({ f, verMontos }) {
   const [ticket, setTicket] = useState(false);
+  const [dias, setDias] = useState(null);
+  const [cargandoDias, setCargandoDias] = useState(false);
+  const verDias = async () => {
+    setCargandoDias(true);
+    try { setDias(await fetchCorteZDias(f.branch_id, f.periodo)); } catch (e) { fallo('No se pudo cargar el detalle por día', mensajeAmigable(e, '')); } finally { setCargandoDias(false); }
+  };
   const ok = cuadraZ(f.dif_total);
   const { docs, sinExplicar } = documentosQueDifieren(f);
   const comprobaciones = Array.isArray(f.comprobaciones) ? f.comprobaciones : [];
@@ -128,6 +140,23 @@ function Tarjeta({ f, verMontos }) {
             </Text>
           )}
           {docs.length && sinExplicar >= 0.005 ? <Aviso tono="cuidado" texto={`Quedan ${formatMoney(sinExplicar)} sin explicar: hay que revisarlos a mano contra el reporte del día.`} /> : null}
+          {!dias ? (
+            <BotonGrande texto={cargandoDias ? 'Cargando…' : 'Ver día por día'} borde deshabilitado={cargandoDias} onPress={verDias} />
+          ) : (
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Ventas con factura, día por día — para enfrentarlo al reporte diario.</Text>
+              {dias.map((d) => (
+                <View key={d.fecha} style={{ gap: 2, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 6 }}>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{d.fecha}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${d.documentos} docs`}</Text>
+                    <Text style={{ minWidth: 86, textAlign: 'right', color: colorSistema.texto, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(d.total)}</Text>
+                  </View>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontFamily: 'Menlo' }}>{`${String(d.numero_control_del || '—').slice(-9)} → ${String(d.numero_control_al || '—').slice(-9)}`}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </Seccion>
       ) : null}
       {f.ticket ? (
@@ -149,7 +178,12 @@ function Tarjeta({ f, verMontos }) {
 export default function CorteZ() {
   const { getScope, user, hasPermission } = useAuth();
   const verMontos = hasPermission('corte_z_ver_montos');
-  const sala = getScope?.('corte_z') !== 'ALL' ? String(user?.branchId || '') : '';
+  const puedeElegirSucursal = getScope?.('corte_z') === 'ALL';
+  const [sucursal, setSucursal] = useState('todas');
+  const sala = !puedeElegirSucursal ? String(user?.branchId || '') : (sucursal === 'todas' ? '' : sucursal);
+  // Las sucursales que TIENEN Corte Z del período (como el portal), recordadas
+  // al elegir una para que el menú no se quede con una sola opción.
+  const [conCorte, setConCorte] = useState([]);
   const [mes, setMes] = useState(() => correrMes(mesSV(), -1));
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(null);
@@ -159,6 +193,7 @@ export default function CorteZ() {
     try { setFilas(await fetchCortesZ(desde, hasta, sala)); setError(null); } catch (e) { setError(mensajeAmigable(e, 'No se pudo cargar el Corte Z')); setFilas([]); }
   }, [desde, hasta, sala]);
   useEffect(() => { setFilas(null); cargar(); }, [cargar]);
+  useEffect(() => { if (!sala && filas?.length) setConCorte(filas.map((f) => ({ id: String(f.branch_id), label: f.sucursal }))); }, [filas, sala]); // eslint-disable-line react-hooks/set-state-in-effect -- se recuerdan sin filtro
   const t = useMemo(() => totalesCorteZ(filas || []), [filas]);
 
   // El PDF: una sucursal o todas (una por hoja), el mismo papel del portal.
@@ -187,6 +222,8 @@ export default function CorteZ() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Corte Z', headerLargeTitle: true }} />
+      <MenuDeFiltros grupos={puedeElegirSucursal && conCorte.length > 1 ? [{ id: 'sucursal', titulo: 'Sucursal', activa: sucursal, porDefecto: 'todas', onCambiar: setSucursal,
+        opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...conCorte] }] : []} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>

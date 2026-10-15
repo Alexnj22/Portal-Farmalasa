@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.3 — App: conteo de inventario con estantes, recuento a ciegas, orden y hoja compacta
+
+Paridad de la app con el portal en Conteo de inventario (auditoría del
+2026-10-15):
+
+- El conteo separa «Inventario» y «Área de vencidos» con lo que falta en cada
+  uno; el encabezado dice «En vivo» o «Según la hoja» y el alcance; avisos de
+  conteo ciego y de conteo parcial; orden por columna; «Modo recuento» a
+  ciegas sobre lo que tiene diferencia, en orden de estante.
+- La lista de conteos tiene buscador, filtro de sucursal y eliminar
+  manteniendo presionado.
+- Núcleo: `hojaDeConteoHtml` acepta `compacta` (dos productos por renglón,
+  apaisada, sin notas), la misma hoja compacta del portal.
+
 ## v2.1292.2 — App: Min·Máx con motivo del ajuste, 0 en todas las salas e historial
 
 Paridad de la app con el portal en Min·Máx (auditoría del 2026-10-15):

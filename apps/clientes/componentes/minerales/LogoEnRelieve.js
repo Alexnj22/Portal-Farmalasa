@@ -6,6 +6,7 @@
 // los colores de la marca, para que se lea sobre cualquier material.
 //
 // Si el shader no compila o la imagen no carga, queda el logo plano.
+import { memo } from 'react';
 import { Image, View } from 'react-native';
 import { Canvas, Fill, FilterMode, ImageShader, MipmapMode, Shader, Skia, useImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
@@ -73,7 +74,7 @@ const FUENTE = require('../../assets/icono.png');
 // se arman una vez por imagen; cada cuadro cuesta lo mismo.
 const MUESTREO = { filter: FilterMode.Linear, mipmap: MipmapMode.Linear };
 
-export default function LogoEnRelieve({ tam, x, y, estilo = 'material' }) {
+function LogoEnRelieve({ tam, x, y, estilo = 'material' }) {
   const img = useImage(FUENTE);
   const fx = efectoLogo();
   const uniforms = useDerivedValue(() => ({
@@ -98,3 +99,6 @@ export default function LogoEnRelieve({ tam, x, y, estilo = 'material' }) {
     </View>
   );
 }
+
+// Memorizado (2026-10-15), como el material: no se rehace con la tarjeta.
+export default memo(LogoEnRelieve);

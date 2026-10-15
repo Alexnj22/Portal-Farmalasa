@@ -42,6 +42,7 @@ import { useCuenta } from '../lib/cuenta';
 import { subirReceta } from '../lib/fotos';
 import { PISTA_RECETA, usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
 import { sinBloquear } from '../lib/bloqueo';
+import { useVisible } from '../lib/visible';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -174,7 +175,12 @@ export default function Reservas() {
       cargar();
     } },
   ]);
-  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  // Se recarga cada vez que la pantalla vuelve a verse (2026-10-15): al
+  // enfocarla, al volver la app a primer plano y al cambiar de filtro. Antes
+  // sólo al enfocarla: quien dejaba la app en segundo plano con una reserva
+  // «en preparación» volvía y no veía que ya estaba lista.
+  const visible = useVisible();
+  useEffect(() => { if (visible) cargar(); }, [visible, cargar]);
   useFocusEffect(useCallback(() => { pedir('pago_preparar'); }, [pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
@@ -202,7 +208,16 @@ export default function Reservas() {
       setSubiendo(null);
     }
   };
-  useEffect(() => { const id = setInterval(() => setAhora(Date.now()), 30000); return () => clearInterval(id); }, []);
+  // El reloj de la cuenta regresiva corre SÓLO mientras alguien la ve
+  // (2026-10-15): con la pantalla tapada o la app en segundo plano el
+  // intervalo seguía despertando cada 30 s. Al volver se pone al día al
+  // instante, sin esperar el siguiente tic.
+  useEffect(() => {
+    if (!visible) return undefined;
+    setAhora(Date.now());
+    const id = setInterval(() => setAhora(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, [visible]);
 
   // Un pedido se cancela entero: cada renglón por su cuenta (la misma acción
   // del servidor, que sólo cancela los suyos, abiertos y sin pagar en línea).

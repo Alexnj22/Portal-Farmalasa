@@ -5,7 +5,7 @@
 // relieve. Lienzo chico (el ancho del rótulo): no cuesta lo que el material.
 //
 // Si la fuente del sistema no se resuelve, queda el texto plano de siempre.
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Platform, Text } from 'react-native';
 import { Canvas, Group, LinearGradient, matchFont, Text as TextoSkia, vec } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
@@ -13,7 +13,7 @@ import { useDerivedValue } from 'react-native-reanimated';
 const FAMILIA = Platform.select({ ios: 'Helvetica Neue', default: 'sans-serif' });
 const LAMINA = ['#8E96A3', '#F4F7FB', '#B9C7E6', '#FFFFFF', '#E4C9F0', '#9AA2AF', '#F2F5FA'];
 
-export default function RotuloLamina({ texto, tam = 15, espacio = 3, x, y, estiloRespaldo }) {
+function RotuloLamina({ texto, tam = 15, espacio = 3, x, y, estiloRespaldo }) {
   const fuente = useMemo(() => {
     try { return matchFont({ fontFamily: FAMILIA, fontSize: tam, fontWeight: '900' }); } catch { return null; }
   }, [tam]);
@@ -49,3 +49,5 @@ export default function RotuloLamina({ texto, tam = 15, espacio = 3, x, y, estil
     </Canvas>
   );
 }
+
+export default memo(RotuloLamina);

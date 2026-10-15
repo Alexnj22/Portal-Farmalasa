@@ -72,13 +72,28 @@ function useTecladoAbierto() {
   return abierto;
 }
 
+/**
+ * Cuánto sube la barra (y la lista) con el teclado a `h` px del borde de
+ * abajo. La barra lleva debajo el margen del indicador de inicio (`insAbajo`);
+ * con el teclado, 6 px. Mientras el teclado sólo cubre ese margen la barra no
+ * se mueve; después lo sigue. La usan la barra y la lista (app/chat): si cada
+ * una hiciera su cuenta, entre las dos quedaría una franja o se pisarían.
+ */
+export function subidaConTeclado(h, insAbajo) {
+  'worklet';
+  return Math.max(0, h + Math.max(6, insAbajo - h) - insAbajo);
+}
+
 // `listo`: hay algo para mandar aunque el texto esté vacío (un producto elegido).
 //
 // `tecladoAlto` (2026-10-14): la altura del teclado como valor animado
 // (`useAnimatedKeyboard`), cuadro a cuadro con el del sistema —también al
 // bajarlo arrastrando la lista—. Con él, el margen de abajo pasa del indicador
 // de inicio a 6 px DURANTE el movimiento, en vez de saltar cuando llega el
-// aviso del teclado (el parpadeo). En iOS 26 la barra es una cápsula de
+// aviso del teclado (el parpadeo). Desde el 2026-10-15 la barra SUBE
+// (`translateY`) y el margen queda fijo: antes se animaba su alto, y eso
+// volvía a medir la barra y la lista en cada cuadro. El margen que sobra
+// queda detrás del teclado. En iOS 26 la barra es una cápsula de
 // Liquid Glass separada de los bordes, como el teclado flotante: sin franjas
 // vacías a los costados ni bordes duros.
 export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false, tecladoAlto = null }) {
@@ -89,10 +104,10 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
   const tinte = t.color.magenta;
   const abajoFijo = teclado ? 6 : Math.max(ins.bottom, 8);
   const insAbajo = Math.max(ins.bottom, 8);
-  const margen = useAnimatedStyle(() => ({
-    height: tecladoAlto ? Math.max(6, insAbajo - tecladoAlto.value) : 0,
+  const subida = useAnimatedStyle(() => ({
+    transform: [{ translateY: tecladoAlto ? -subidaConTeclado(tecladoAlto.value, insAbajo) : 0 }],
   }));
-  const espacio = tecladoAlto ? <Animated.View style={margen} /> : null;
+  const espacio = tecladoAlto ? <View style={{ height: insAbajo }} /> : null;
   const contenido = (
     <>
       {encima}
@@ -121,22 +136,24 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
   );
   if (IOS26) {
     return (
-      <View style={{ paddingHorizontal: 8, paddingTop: 4 }}>
+      <Animated.View style={[{ paddingHorizontal: 8, paddingTop: 4 }, subida]}>
         <View style={{ borderRadius: 26, overflow: 'hidden', backgroundColor: t.oscuro ? 'rgba(28,28,30,0.55)' : 'rgba(255,255,255,0.6)' }}>
           <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} pointerEvents="none" />
           {contenido}
         </View>
         {espacio ?? <View style={{ height: abajoFijo }} />}
-      </View>
+      </Animated.View>
     );
   }
   if (IOS) {
     return (
-      <BlurView intensity={80} tint={t.oscuro ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-        style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
-        {contenido}
-        {espacio}
-      </BlurView>
+      <Animated.View style={subida}>
+        <BlurView intensity={80} tint={t.oscuro ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+          style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
+          {contenido}
+          {espacio}
+        </BlurView>
+      </Animated.View>
     );
   }
   return <View style={{ backgroundColor: t.oscuro ? '#1E1B24' : '#FFFFFF', elevation: 8 }}>{contenido}</View>;
@@ -294,6 +311,7 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
 }
 
 // ── Reacciones bajo el globo ────────────────────────────────────────────
+const TOQUE_V = 9; // 26 + 9 + 9 = 44
 export function Reacciones({ lista, mio, alTocar }) {
   const t = useTema();
   const grupos = [];
@@ -302,10 +320,19 @@ export function Reacciones({ lista, mio, alTocar }) {
     if (g) { g.n += 1; g.mia = g.mia || r.mia; } else grupos.push({ emoji: r.emoji, n: 1, mia: !!r.mia });
   }
   if (!grupos.length) return null;
+  // El toque de 44 (2026-10-15): la píldora mide 26 de alto y su `hitSlop`
+  // suma 9 arriba y 9 abajo. La fila se agranda esos 9 con relleno y los
+  // devuelve con margen negativo (se ve igual): un `hitSlop` fuera de la caja
+  // de su padre no recibe toques. `box-none`: el relleno no le quita toques
+  // al globo de arriba. A los costados, sólo la mitad del espacio entre
+  // píldoras (nunca la de al lado), y más en las puntas.
+  const ultima = grupos.length - 1;
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: -6, justifyContent: mio ? 'flex-end' : 'flex-start', paddingHorizontal: 6 }}>
-      {grupos.map((g) => (
-        <Presionable key={g.emoji} onPress={() => alTocar(g.emoji)} hitSlop={4} accessibilityRole="button"
+    <View pointerEvents="box-none" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: -6 - TOQUE_V, marginBottom: -TOQUE_V, paddingVertical: TOQUE_V,
+      justifyContent: mio ? 'flex-end' : 'flex-start', paddingHorizontal: 6 }}>
+      {grupos.map((g, i) => (
+        <Presionable key={g.emoji} onPress={() => alTocar(g.emoji)} accessibilityRole="button"
+          hitSlop={{ top: TOQUE_V, bottom: TOQUE_V, left: i === 0 ? 6 : 2, right: i === ultima ? 6 : 2 }}
           accessibilityLabel={`${g.emoji} ${g.n > 1 ? g.n : ''}${g.mia ? ', tu reacción. Toca para quitarla' : '. Toca para reaccionar igual'}`}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 26, paddingHorizontal: 7, borderRadius: 13,
             backgroundColor: g.mia ? suave(t.color.magenta, t.oscuro ? 0.35 : 0.18) : (t.oscuro ? '#2C2C2E' : '#FFFFFF'),

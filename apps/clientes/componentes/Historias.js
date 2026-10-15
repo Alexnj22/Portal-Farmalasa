@@ -18,6 +18,7 @@ import { Image as ImagenCache } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
+import { guardar, leer } from '../lib/almacen';
 import Animated, { cancelAnimation, Easing, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,6 +42,26 @@ const DURACION = 6000;
 let pedidasAt = 0;
 let pedidasPara = null;
 
+// Lo visto vive en el almacén común (lib/almacen), no en SecureStore: hasta
+// 100 ids pasan de los 2048 bytes que SecureStore admite por valor, y no es
+// un dato secreto (2026-10-15). La primera vez se muda lo que había allá.
+function aLista(v) {
+  if (Array.isArray(v)) return v;
+  try { const l = JSON.parse(v ?? '[]'); return Array.isArray(l) ? l : []; } catch { return []; }
+}
+async function leerVistas() {
+  const v = await leer(CLAVE).catch(() => null);
+  if (v != null) return aLista(v);
+  const viejo = await SecureStore.getItemAsync(CLAVE).catch(() => null);
+  if (viejo == null) return [];
+  const lista = aLista(viejo);
+  try {
+    await guardar(CLAVE, lista);
+    await SecureStore.deleteItemAsync(CLAVE);
+  } catch { /* se reintenta la próxima vez */ }
+  return lista;
+}
+
 export default function Historias({ generacion = 0 }) {
   const t = useTema();
   const token = useSesion((s) => s.token);
@@ -57,7 +78,7 @@ export default function Historias({ generacion = 0 }) {
     pedidasPara = clave;
     pedidasAt = Date.now();
     (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) { setLista(r.historias ?? []); if (r.whatsapp) whatsapp = r.whatsapp; } });
-    SecureStore.getItemAsync(CLAVE).catch(() => null).then((v) => { try { setVistas(new Set(JSON.parse(v ?? '[]'))); } catch { /* vacío */ } });
+    leerVistas().then((l) => setVistas(new Set(l.map(String)))).catch(() => {});
   }, [token, pedir, generacion])); // eslint-disable-line react-hooks/exhaustive-deps -- `lista` sólo decide si hace falta pedir
 
   // Anota en el servidor que se vio (o que se tocó un botón), para que el
@@ -71,7 +92,7 @@ export default function Historias({ generacion = 0 }) {
     if (prev.has(String(id))) return prev;
     anotar(id);
     const nuevo = new Set(prev).add(String(id));
-    SecureStore.setItemAsync(CLAVE, JSON.stringify([...nuevo].slice(-100))).catch(() => {});
+    guardar(CLAVE, [...nuevo].slice(-100)).catch(() => {});
     return nuevo;
   });
 
@@ -145,7 +166,13 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
   useEffect(() => {
     alVer(h.id);
     avance.value = 0;
-    if (historias[i + 1]?.imagen) ImagenCache.prefetch(historias[i + 1].imagen, 'memory-disk').catch(() => {});
+    // `loadAsync` con la `cacheKey` (como lib/fotoPerfil): el `prefetch` sólo
+    // conoce la URL firmada y la guardaba bajo otra clave que la que usa la
+    // vista (`imagen_clave`), así que la precarga no servía.
+    const prox = historias[i + 1];
+    if (prox?.imagen) {
+      try { ImagenCache.loadAsync({ uri: prox.imagen, cacheKey: prox.imagen_clave ?? undefined }).catch(() => {}); } catch { /* sin precarga */ }
+    }
     arrancar();
     return () => cancelAnimation(avance);
   }, [i]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -173,7 +200,9 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
     transform: [{ translateY: caida.value }, { scale: 1 - Math.min(caida.value / H, 0.15) }],
     borderRadius: Math.min(caida.value / 4, 30),
   }));
-  const barra = useAnimatedStyle(() => ({ width: `${avance.value * 100}%` }));
+  // Escala en X desde la izquierda, no `width`: animar el ancho rehacía el
+  // layout en cada cuadro durante los 6 s. La pista ya recorta y redondea.
+  const barra = useAnimatedStyle(() => ({ transform: [{ scaleX: avance.value }] }));
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={cerrar} statusBarTranslucent>
@@ -194,7 +223,7 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                 {historias.map((x, n) => (
                   <View key={x.id} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)', overflow: 'hidden' }}>
                     {n < i ? <View style={{ flex: 1, backgroundColor: '#FFF' }} />
-                      : n === i ? <Animated.View style={[{ height: 3, backgroundColor: '#FFF' }, barra]} /> : null}
+                      : n === i ? <Animated.View style={[{ height: 3, width: '100%', backgroundColor: '#FFF', transformOrigin: 'left' }, barra]} /> : null}
                   </View>
                 ))}
               </View>

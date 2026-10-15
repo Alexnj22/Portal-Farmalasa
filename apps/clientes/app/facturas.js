@@ -43,6 +43,7 @@ import { armarZip, base64ABytes, bytesABase64 } from '../lib/zip';
 import { htmlVisorPdf, htmlVisorPdfArchivo, ORIGEN_PDFJS } from '../lib/visorPdf';
 import { suave, useTema } from '../tema/tema';
 import { sinBloquear } from '../lib/bloqueo';
+import { copiaParaEmpezar } from '../lib/sinConexion';
 
 const TIPO = {
   consumidor_final: { texto: 'Consumidor final', sf: 'doc.text.fill', archivo: 'Factura' },
@@ -118,6 +119,12 @@ export default function Facturas() {
   const d = porPeriodo[periodo];
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const cargar = useCallback(async () => {
+    // Lo de la vez anterior se pinta al instante mientras llega lo fresco
+    // (2026-10-15). `recibidas: 0`: sus direcciones firmadas se dan por
+    // vencidas, así que ver o bajar un documento pide una nueva.
+    copiaParaEmpezar('mis_facturas', { periodo }).then((c) => {
+      if (c) setPorPeriodo((ant) => (ant[periodo] ? ant : { ...ant, [periodo]: { ...c, recibidas: 0 } }));
+    });
     const r = await pedir('mis_facturas', { periodo });
     // Cuándo llegó (para saber si sus direcciones firmadas siguen vigentes).
     const conHora = r?.ok ? { ...r, recibidas: r.sinConexion ? (r.guardadoEn ?? 0) : Date.now() } : r;

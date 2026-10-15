@@ -5,7 +5,7 @@
 //
 // No avanza solo: un carrusel que se mueve mientras uno lee distrae y gasta
 // batería. Los puntos de abajo dicen cuántas hay.
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from './Presionable';
 import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -22,7 +22,13 @@ import { navegar } from '../lib/navegar';
 let ultimos = null;
 let pedidosAt = 0;
 
-export default function BannerPromos() {
+// Fuera del render: un componente creado en cada render se desmonta y monta de
+// nuevo entre banner y banner (2026-10-15).
+function Separador() { return <View style={{ width: 10 }} />; }
+
+// `memo`: no recibe props, así que el catálogo puede redibujarse (cada tecla
+// de la búsqueda) sin arrastrar el carrusel.
+export default memo(function BannerPromos() {
   const t = useTema();
   const { width } = useWindowDimensions();
   const { datos, cargar } = useOfertas();
@@ -57,7 +63,7 @@ export default function BannerPromos() {
         decelerationRate="fast"
         snapToInterval={ancho + 10}
         showsHorizontalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
+        ItemSeparatorComponent={Separador}
         onScroll={alDesplazar}
         scrollEventThrottle={16}
         renderItem={({ item: o }) => {
@@ -101,7 +107,7 @@ export default function BannerPromos() {
       ) : null}
     </View>
   );
-}
+});
 
 // Un punto del indicador: se ensancha y se aclara según cuánto se ve su banner.
 function Punto({ i, x, paso }) {

@@ -53,7 +53,14 @@ export function barraAndroid(principal = false) {
 // una vez y no se anima. Detrás de una lista larga que se desplaza, cada
 // cuadro de la aurora obligaba a recomponer todo lo translúcido de encima; y
 // como las manchas se mueven tan lento, quieta se ve igual.
-export default function PilaDePestana({ titulo, auroraQuieta = false }) {
+//
+// (2026-10-15) Quieta en TODAS las pestañas, no sólo en el Inicio: cada una
+// deja montada su aurora, y las demás —Tienda, Ofertas, Carrito, Cuenta— se
+// redibujaban a 15 cuadros por segundo durante 20 s después de cada toque,
+// detrás de listas que también se desplazan. Viva queda sólo la de la entrada
+// (bienvenida, entrar, registro: app/_layout.js, `AuroraRaiz`), que no se
+// desplaza. `auroraQuieta={false}` la vuelve a animar en una pestaña concreta.
+export default function PilaDePestana({ titulo, auroraQuieta = true }) {
   useColorScheme();
   // La aurora de esta pestaña sólo se mueve mientras se ve.
   const visible = useVisible() && !auroraQuieta;

@@ -19,7 +19,7 @@
 //   · la sombra se corre al lado contrario de la inclinación;
 //   · tocarla, o deslizarla rápido de lado, la GIRA: se levanta, se encoge un
 //     poco a mitad del giro y vibra cuando muestra la otra cara.
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import EfectoNivel from './EfectoNivel';
 import Mineral, { MATERIALES } from './minerales/Mineral';
@@ -28,6 +28,7 @@ import SelloEquipo from './minerales/SelloEquipo';
 import RotuloLamina from './minerales/RotuloLamina';
 import { despertar, useDespierta } from './reposo';
 import { useMoviendo } from '../lib/desplazamiento';
+import { useMoviendoValor } from './movimiento';
 import { Momento, vibrarMomento } from './momentos';
 import { AccessibilityInfo, Image, PixelRatio, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -74,6 +75,13 @@ const alPixel = (v) => { 'worklet'; return Math.round(v * DENSIDAD) / DENSIDAD; 
 // Menos de una décima de grado no se ve, pero obliga a re-muestrear la capa.
 const grados = (v) => { 'worklet'; return Math.abs(v) < 0.1 ? 0 : v; };
 const vibrar = (fuerte) => Haptics.impactAsync(fuerte ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+// La ráfaga al mantenerla presionada: despierta y dos golpes hápticos. Fuera
+// del componente: no depende de nada suyo y los gestos la capturan una vez.
+const alRafaga = () => {
+  despertar();
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+  setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), 140);
+};
 
 // Los colores de cada nivel (plan aprobado 2026-10-07): morada (Cliente VIP),
 // plata, dorada y platino. El texto queda blanco en las cuatro.
@@ -108,7 +116,7 @@ const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
 // El código letra por letra: junto, VoiceOver lo leía como una palabra.
 const deletrear = (c) => String(c).split('').join(' ');
 
-export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material' }) {
+function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material' }) {
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.vip;
@@ -127,8 +135,12 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // Inicio se siente lento») el material, la luz que pasa y el giroscopio se
   // quedan quietos donde están: el shader recalculado en el mismo cuadro que
   // el desplazamiento era lo que hacía perder cuadros. Al soltar, siguen.
-  const moviendo = useMoviendo();
-  const viva = activa && !reducir && despierta && !moviendo;
+  // Como VALOR COMPARTIDO (2026-10-15): con el booleano de React la tarjeta
+  // entera se repintaba dos veces por cada gesto de desplazamiento. Ahora lo
+  // leen los worklets —el reloj del material, el barrido, el giroscopio— y
+  // React no se entera.
+  const moviendo = useMoviendoValor();
+  const viva = activa && !reducir && despierta;
   const giro = useSharedValue(0);              // 0 = frente, 1 = reverso
   const entrada = useSharedValue(0);
   const barrido = useSharedValue(0);
@@ -184,21 +196,33 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
       withSpring(0, GIRO),
     ));
   }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
-  // La franja de luz: al llegar y cada ~6 s, sólo mientras se ve.
-  useEffect(() => {
-    if (!viva) { cancelAnimation(barrido); barrido.value = 0; return; }
+  // La franja de luz: al llegar y cada ~6 s, sólo mientras se ve y la
+  // pantalla no se desplaza. Se arranca y se para en el hilo de la interfaz
+  // (2026-10-15): `moviendo` es un valor compartido, y `vivaUI` la copia de
+  // `viva` que el worklet puede leer.
+  const vivaUI = useSharedValue(viva);
+  useEffect(() => { vivaUI.value = viva; }, [viva, vivaUI]);
+  useAnimatedReaction(() => vivaUI.value && !moviendo.value, (ahora, antes) => {
+    if (ahora === antes) return;
+    cancelAnimation(barrido);
     barrido.value = 0;
+    if (!ahora) return;
     barrido.value = withDelay(500, withRepeat(withSequence(
       withTiming(1, { duration: 1300, easing: Easing.inOut(Easing.cubic) }),
       withDelay(5000, withTiming(0, { duration: 0 })),
     ), -1));
-  }, [viva, barrido]);
+  });
 
   // El brillo se pide AL TOCAR, no a mitad del giro (2026-10-08): desde la
   // reacción del giro no llegaba siempre, y el QR quedaba con la pantalla oscura.
   // Qué cara se ve, para VoiceOver (2026-10-13): con el reverso a la vista
   // el rótulo tiene que leer el código, no el saldo del frente.
   const [deReves, setDeReves] = useState(false);
+  // Los gestos se arman UNA vez (2026-10-15) y llaman a `alVoltear`, estable,
+  // que a su vez llama a la última `voltear` — ésta lee `pista` y `codigo`,
+  // que cambian.
+  const voltearRef = useRef(null);
+  const alVoltear = useCallback(() => { voltearRef.current?.(); }, []);
   const voltear = () => {
     yaGiro = true;
     if (pista) { setPista(false); SecureStore.setItemAsync(CLAVE_PISTA, '1').catch(() => {}); }
@@ -209,6 +233,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
     setDeReves(aReverso);
     if (aReverso && codigo) AccessibilityInfo.announceForAccessibility(`Tu código: ${deletrear(codigo)}`);
   };
+  voltearRef.current = voltear;
   // Con el QR a la vista, la pantalla al máximo (como Wallet), para que el
   // lector de la caja lo lea a la primera; al girarla de vuelta, como estaba.
   const brilloAntes = useRef(null);
@@ -270,42 +295,44 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
   // El tamaño de la tarjeta, para el canto que se ve al girar (`Canto`).
   const tam = useSharedValue({ w: 0, h: 0 });
 
-  // Arrastrar de lado la inclina; un deslizamiento rápido la gira. Lo vertical
-  // se lo deja a la pantalla (que hace scroll).
-  const arrastre = Gesture.Pan()
-    .activeOffsetX([-8, 8]).failOffsetY([-14, 14])
-    .onBegin(() => { runOnJS(despertar)(); })
-    .onUpdate((e) => {
-      dedoX.value = limitar(e.translationX / 160);
-      dedoY.value = limitar(-e.translationY / 160);
-    })
-    .onEnd((e) => {
-      dedoX.value = withSpring(0, SOLTAR);
-      dedoY.value = withSpring(0, SOLTAR);
-      if (Math.abs(e.velocityX) > 700) runOnJS(voltear)();
-    });
-  const toque = Gesture.Tap().maxDuration(300).onEnd((_e, ok) => { if (ok) runOnJS(voltear)(); });
   // Mantenerla presionada (2026-10-14): una ráfaga de luz la cruza y el
   // teléfono responde con dos golpes hápticos. Sólo de frente.
   const rafaga = useSharedValue(0);
-  const alRafaga = () => {
-    despertar();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
-    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), 140);
-  };
-  const largo = Gesture.LongPress().minDuration(420).onStart(() => {
-    if (giro.value > 0.5) return;
-    rafaga.value = 0;
-    rafaga.value = withTiming(1, { duration: 950, easing: Easing.out(Easing.cubic) });
-    runOnJS(alRafaga)();
-  });
-  const gestos = Gesture.Race(arrastre, largo, toque);
+  // Armados una sola vez (2026-10-15): antes se rehacían en cada render y el
+  // detector de gestos se reconfiguraba con cada cambio de la tarjeta. Todo lo
+  // que leen son valores compartidos (estables) o funciones estables.
+  const gestos = useMemo(() => {
+    // Arrastrar de lado la inclina; un deslizamiento rápido la gira. Lo
+    // vertical se lo deja a la pantalla (que hace scroll).
+    const arrastre = Gesture.Pan()
+      .activeOffsetX([-8, 8]).failOffsetY([-14, 14])
+      .onBegin(() => { runOnJS(despertar)(); })
+      .onUpdate((e) => {
+        dedoX.value = limitar(e.translationX / 160);
+        dedoY.value = limitar(-e.translationY / 160);
+      })
+      .onEnd((e) => {
+        dedoX.value = withSpring(0, SOLTAR);
+        dedoY.value = withSpring(0, SOLTAR);
+        if (Math.abs(e.velocityX) > 700) runOnJS(alVoltear)();
+      });
+    const toque = Gesture.Tap().maxDuration(300).onEnd((_e, ok) => { if (ok) runOnJS(alVoltear)(); });
+    const largo = Gesture.LongPress().minDuration(420).onStart(() => {
+      if (giro.value > 0.5) return;
+      rafaga.value = 0;
+      rafaga.value = withTiming(1, { duration: 950, easing: Easing.out(Easing.cubic) });
+      runOnJS(alRafaga)();
+    });
+    return Gesture.Race(arrastre, largo, toque);
+  }, [dedoX, dedoY, giro, rafaga, alVoltear]);
   // Profundidad (Platino): el contenido flota sobre el material y el logo un
   // poco más; al inclinar, cada capa se corre distinto — paralaje.
   // Corridos a píxel entero (2026-10-14): a una fracción de píxel el texto se
   // dibuja entre dos píxeles y se ve suave. El paso de 1/3 pt no se nota.
-  const capaTexto = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: alPixel(-x.value * 3) }, { translateY: alPixel(y.value * 2) }] } : {}));
-  const capaLogo = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: alPixel(-x.value * 6) }, { translateY: alPixel(y.value * 4) }] } : {}));
+  // Con la copia del FRENTE (2026-10-15): con el QR a la vista estas capas no
+  // se ven, y con la inclinación cruda se recalculaban con el giroscopio igual.
+  const capaTexto = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: alPixel(-frenteX.value * 3) }, { translateY: alPixel(frenteY.value * 2) }] } : {}));
+  const capaLogo = useAnimatedStyle(() => (exclusiva ? { transform: [{ translateX: alPixel(-frenteX.value * 6) }, { translateY: alPixel(frenteY.value * 4) }] } : {}));
 
   const ladeo = useAnimatedStyle(() => {
     // 0 en las caras, 1 a mitad del giro. En 0 o 1 exactos, 0 exacto: sin(π)
@@ -370,7 +397,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
 
   return (
     <>
-    {activa && !reducir ? <Sensor key={despierta ? 'viva' : 'reposo'} salidaX={sx} salidaY={sy} enReposo={!despierta} pausado={moviendo} /> : null}
+    {activa && !reducir ? <Sensor key={despierta ? 'viva' : 'reposo'} salidaX={sx} salidaY={sy} enReposo={!despierta} pausa={moviendo} /> : null}
     <GestureDetector gesture={gestos}>
       <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, ladeo]}
         onLayout={(e) => { const { width: w, height: h } = e.nativeEvent.layout; tam.value = { w, h }; }}
@@ -418,8 +445,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
               vivo con la inclinación. El degradado de arriba queda de respaldo. */}
           {/* `key`: al cambiar de nivel o rango el lienzo se rehace entero; sin
               eso podía quedar pintado el material anterior. */}
-          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={frenteX} y={frenteY} activa={vivaFrente} />
-            : <EfectoNivel nivel={nivel} activa={vivaFrente} x={frenteX} />}
+          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={frenteX} y={frenteY} activa={vivaFrente} pausa={moviendo} />
+            : <EfectoPausable nivel={nivel} activa={vivaFrente} x={frenteX} />}
           {/* Una sombra suave abajo: el nombre y el saldo se leen sobre cualquier material. */}
           <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
             locations={[0, 0.28, 0.55, 1]} style={StyleSheet.absoluteFill} />
@@ -428,7 +455,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, capaLogo]}>
-            <LogoEnRelieve tam={84} x={x} y={y} estilo={estiloLogo} />
+            <LogoEnRelieve tam={84} x={frenteX} y={frenteY} estilo={estiloLogo} />
           </Animated.View>
 
           <Animated.View style={[estilos.contenido, capaTexto]}>
@@ -445,7 +472,7 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
                   {['jade', 'zafiro', 'rubi', 'diamante'].includes(nivel) ? 'MAYOREO' : 'CLIENTE'}
                 </Text>
                 {exclusiva
-                  ? <RotuloLamina texto={paleta.rotulo} tam={15} espacio={3} x={x} y={y} estiloRespaldo={estilos.socio} />
+                  ? <RotuloLamina texto={paleta.rotulo} tam={15} espacio={3} x={frenteX} y={frenteY} estiloRespaldo={estilos.socio} />
                   : <Text maxFontSizeMultiplier={1.3} style={estilos.socio}>{paleta.rotulo}</Text>}
               </View>
             </View>
@@ -453,8 +480,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
             {/* El «chip», como en una tarjeta de verdad; al personal, a su lado
                 derecho, el sello holográfico de PERSONAL (2026-10-08). */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <ChipOro x={x} />
-              {equipo ? <SelloEquipo x={x} y={y} activa={viva} /> : null}
+              <ChipOro x={frenteX} />
+              {equipo ? <SelloEquipo x={frenteX} y={frenteY} activa={vivaFrente} pausa={moviendo} /> : null}
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -478,8 +505,8 @@ export default function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDes
           <LinearGradient colors={paleta.reverso} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           {/* El mismo material del frente, más oscuro para que el código se lea.
               Vivo mientras el reverso puede verse (`caras`); de frente, quieto. */}
-          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={reversoX} y={reversoY} activa={vivaReverso} />
-            : <EfectoNivel nivel={nivel} activa={vivaReverso} x={reversoX} />}
+          {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={reversoX} y={reversoY} activa={vivaReverso} pausa={moviendo} />
+            : <EfectoPausable nivel={nivel} activa={vivaReverso} x={reversoX} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
           <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
           <View style={[estilos.contenido, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
@@ -652,15 +679,16 @@ function useEspejo(fuente, giro, deFrente) {
 // En reposo (2026-10-14) lee 4 veces por segundo y no mueve nada: sólo mira
 // si la volvieron a inclinar para despertarla. Las primeras lecturas se
 // saltan: un sensor recién montado arranca en cero y parecería un movimiento.
-// `pausado` (la pantalla se está desplazando): no mueve nada ni despierta —
-// al desplazar, el teléfono se inclina—; la tarjeta queda como estaba.
-function Sensor({ salidaX, salidaY, enReposo, pausado = false }) {
+// `pausa` (valor compartido: la pantalla se está desplazando): no mueve nada
+// ni despierta —al desplazar, el teléfono se inclina—; la tarjeta queda como
+// estaba. Se lee en el worklet: cambiarlo no repinta ni remonta el sensor.
+function Sensor({ salidaX, salidaY, enReposo, pausa }) {
   const { x, y } = useInclinacion(enReposo ? 250 : 33);
   const lecturas = useSharedValue(0);
   const refX = useSharedValue(0);
   const refY = useSharedValue(0);
   useAnimatedReaction(() => [x.value, y.value], ([a, b]) => {
-    if (pausado) return;
+    if (pausa.value) return;
     lecturas.value += 1;
     if (!enReposo) {
       // Recién montado, el sensor arranca en cero: la tarjeta se iba plana y
@@ -670,8 +698,16 @@ function Sensor({ salidaX, salidaY, enReposo, pausado = false }) {
     }
     if (lecturas.value <= 3) { refX.value = a; refY.value = b; return; }
     if (Math.abs(a - refX.value) + Math.abs(b - refY.value) > 0.09) runOnJS(despertar)();
-  }, [enReposo, pausado]);
+  }, [enReposo]);
   return null;
+}
+
+// El acabado sin shader (`EfectoNivel`, para un nivel que no tenga material):
+// sus destellos van por React, así que éste sí escucha el desplazamiento como
+// booleano — y lo que se repinta es sólo él, no la tarjeta.
+function EfectoPausable({ nivel, activa, x }) {
+  const moviendo = useMoviendo();
+  return <EfectoNivel nivel={nivel} activa={activa && !moviendo} x={x} />;
 }
 
 // La ráfaga de luz al mantenerla presionada: una franja ancha cruza en
@@ -715,3 +751,9 @@ const estilos = StyleSheet.create({
   codigo: { color: '#FFFFFF', fontSize: 32, fontWeight: '900', letterSpacing: 6, fontVariant: ['tabular-nums'] },
   ayuda: { color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 18 },
 });
+
+// Memorizada (2026-10-15): la pantalla que la contiene se repinta por muchas
+// cosas (avisos, el resumen que llega, el refresco) y la tarjeta —dos
+// lienzos de material, dos de luz y el logo— sólo tiene que rehacerse cuando
+// cambian SUS datos.
+export default memo(TarjetaSocio);

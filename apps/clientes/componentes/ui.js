@@ -4,7 +4,7 @@
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
 import { useEffect, useRef } from 'react';
-import { Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { FlatList, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
 import IndicadorCarga from './IndicadorCarga';
 import Presionable from './Presionable';
 import * as Haptics from 'expo-haptics';
@@ -86,6 +86,57 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     >
       {children}
     </ScrollView>
+    </SinVidrio.Provider>
+    </ContextoDesplazamiento.Provider>
+  );
+}
+
+// El hueco entre tarjetas de `PantallaLista`: el mismo `gap` de `Pantalla`.
+// Como separador y no como `gap` del contenedor: la lista virtual mete vistas
+// de relleno donde no pinta filas, y el `gap` también las separaría.
+const HUECO = 14;
+function SeparadorLista() { return <View style={{ height: HUECO }} />; }
+
+/**
+ * `Pantalla` para una lista que puede crecer (2026-10-15): la misma pantalla
+ * —márgenes, tope de ancho, títulos grandes, deslizar para refrescar, el lugar
+ * de la burbuja y el estado del desplazamiento para lo que se pausa— pero en
+ * una FlatList, que sólo pinta las filas cerca de la vista. `encabezado` es lo
+ * que va arriba de la lista (con el mismo hueco que entre filas).
+ */
+export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alRefrescar, refrescando = false, conPestanas = true,
+  conBurbuja = true, sinVidrio = false, initialNumToRender = 6, windowSize = 7, maxToRenderPerBatch = 4 }) {
+  const ins = useSafeAreaInsets();
+  const t = useTema();
+  const desp = useRef(null);
+  if (!desp.current) desp.current = crearDesplazamiento();
+  const d = desp.current;
+  useEffect(() => () => d.soltarTodo(), [d]);
+  return (
+    <ContextoDesplazamiento.Provider value={d}>
+    <SinVidrio.Provider value={sinVidrio}>
+    <FlatList
+      data={datos}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      initialNumToRender={initialNumToRender}
+      maxToRenderPerBatch={maxToRenderPerBatch}
+      windowSize={windowSize}
+      ItemSeparatorComponent={SeparadorLista}
+      ListHeaderComponent={encabezado ? <View style={{ gap: HUECO, marginBottom: datos?.length ? HUECO : 0 }}>{encabezado}</View> : null}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{
+        padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom) + (conBurbuja && Platform.OS !== 'web' ? ESPACIO_BURBUJA : 0),
+        width: '100%', maxWidth: 560, alignSelf: 'center',
+      }}
+      keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={d.empezar}
+      onScrollEndDrag={d.soltar}
+      onMomentumScrollBegin={d.inercia}
+      onMomentumScrollEnd={d.terminar}
+      refreshControl={alRefrescar ? <RefreshControl refreshing={refrescando} onRefresh={alRefrescar}
+        colors={[t.color.magenta]} progressBackgroundColor={ANDROID ? colorSistema.superficieAlta : undefined} /> : undefined}
+    />
     </SinVidrio.Provider>
     </ContextoDesplazamiento.Provider>
   );

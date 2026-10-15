@@ -6,7 +6,7 @@
 import { Text, View } from 'react-native';
 import { Canvas, Fill, Shader, Skia } from '@shopify/react-native-skia';
 import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 
 const SKSL = `
 uniform float2 res;
@@ -37,12 +37,15 @@ const efectoSello = () => {
   return efecto;
 };
 
-export default function SelloEquipo({ x, y, activa = true, ancho = 64, alto = 30 }) {
+// `pausa`: valor compartido; mientras la pantalla se desplaza el reloj no avanza
+// (como el material, minerales/Mineral.js).
+function SelloEquipo({ x, y, activa = true, pausa = null, ancho = 64, alto = 30 }) {
   const fx = efectoSello();
   const t = useSharedValue(0);
   // A 30 cuadros por segundo, como el material (2026-10-14).
   const acum = useSharedValue(0);
   const reloj = useFrameCallback((f) => {
+    if (pausa && pausa.value) return;
     acum.value += Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000);
     if (acum.value >= 0.032) { t.value += acum.value; acum.value = 0; }
   }, false);
@@ -62,3 +65,5 @@ export default function SelloEquipo({ x, y, activa = true, ancho = 64, alto = 30
     </View>
   );
 }
+
+export default memo(SelloEquipo);

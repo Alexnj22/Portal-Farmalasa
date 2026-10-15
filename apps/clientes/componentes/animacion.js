@@ -65,15 +65,27 @@ export function NumeroAnimado({ valor, formato = 'dolares', duracion = 900, esti
 }
 
 /** La barra que se llena con resorte. `avance` entre 0 y 1. */
+// Se DESPLAZA en vez de cambiar de ancho (2026-10-15): animar `width` rehacía
+// el layout en cada cuadro. El relleno mide lo mismo que la pista y entra desde
+// la izquierda; la pista recorta, así que la punta redondeada de la derecha se
+// ve igual que antes (con `scaleX` se habría deformado).
 export function BarraAnimada({ avance, color, fondo, alto = 8 }) {
   const v = useSharedValue(0);
+  const ancho = useSharedValue(0);
   useEffect(() => {
     v.value = withSpring(Math.max(0, Math.min(1, avance)), { damping: 18, stiffness: 90 });
   }, [avance, v]);
-  const estilo = useAnimatedStyle(() => ({ width: `${v.value * 100}%` }));
+  const estilo = useAnimatedStyle(() => {
+    // El resorte se pasa un poco de 1: con `width` lo recortaba la pista, aquí
+    // se topa para no dejar un hueco a la izquierda.
+    const p = Math.max(0, Math.min(1, v.value));
+    // Antes de medir la pista no se sabe cuánto correrlo: no se dibuja.
+    return { opacity: ancho.value > 0 ? 1 : 0, transform: [{ translateX: (p - 1) * ancho.value }] };
+  });
   return (
-    <View style={{ height: alto, borderRadius: alto / 2, backgroundColor: fondo, overflow: 'hidden' }}>
-      <Animated.View style={[{ height: alto, borderRadius: alto / 2, backgroundColor: color }, estilo]} />
+    <View style={{ height: alto, borderRadius: alto / 2, backgroundColor: fondo, overflow: 'hidden' }}
+      onLayout={(e) => { ancho.value = e.nativeEvent.layout.width; }}>
+      <Animated.View style={[{ height: alto, width: '100%', borderRadius: alto / 2, backgroundColor: color }, estilo]} />
     </View>
   );
 }

@@ -2,6 +2,7 @@
 // de 7 letras del ticket. La forma es la del sistema: control segmentado,
 // formulario agrupado como Ajustes y el botón nativo (ver componentes/sistema.js).
 import { useEffect, useRef, useState } from 'react';
+import { InputAccessoryView, Platform, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as Device from 'expo-device';
 import Segmentos from '../componentes/Segmentos';
@@ -17,6 +18,12 @@ import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } 
 // El alfabeto del código no tiene letras ni números que se confundan
 // (sin O/0, I/1, S/5…), igual que el que emite la sala.
 const ALFABETO = /[^ACDEFGHJKMNPQRTUVWXY34679]/g;
+
+// El teclado numérico de iOS no tiene tecla de «siguiente» ni de «ir»: sin una
+// barra encima, desde el DUI no había cómo pasar al teléfono (2026-10-15).
+const BARRA_DUI = 'entrar-dui';
+const BARRA_TEL = 'entrar-tel';
+const IOS = Platform.OS === 'ios';
 
 export default function Entrar() {
   const t = useTema();
@@ -92,6 +99,9 @@ export default function Entrar() {
             placeholder="DUI"
             keyboardType="number-pad"
             autoCorrect={false}
+            autoComplete="off"
+            textContentType="none"
+            inputAccessoryViewID={IOS ? BARRA_DUI : undefined}
             value={documento}
             onChangeText={(v) => setDocumento(documentoEscrito(v))}
             returnKeyType="next"
@@ -103,6 +113,8 @@ export default function Entrar() {
             placeholder="Teléfono"
             keyboardType="phone-pad"
             textContentType="telephoneNumber"
+            autoComplete="tel"
+            inputAccessoryViewID={IOS ? BARRA_TEL : undefined}
             value={telefono}
             onChangeText={(v) => setTelefono(v.replace(/[^\d ]/g, '').slice(0, 9))}
             returnKeyType="go"
@@ -123,11 +135,34 @@ export default function Entrar() {
           />
         </Grupo>
       )}
+      {IOS && modo === 'dui' ? (
+        <>
+          <BarraTeclado id={BARRA_DUI} etiqueta="Siguiente" color={t.color.magentaTexto} alTocar={() => telRef.current?.focus()} />
+          <BarraTeclado id={BARRA_TEL} etiqueta={listo ? 'Entrar' : 'Listo'} color={t.color.magentaTexto}
+            alTocar={() => { telRef.current?.blur(); if (listo) entrar(); }} />
+        </>
+      ) : null}
       {error ? <Aviso>{error}</Aviso> : null}
       <BotonSistema etiqueta={enviando ? 'Entrando…' : 'Entrar'} alTocar={entrar} deshabilitado={!listo || enviando} color={t.color.magenta} />
       <Texto nivel={2} estilo={{ textAlign: 'center', marginHorizontal: 32, color: colorSistema.texto2, fontSize: 13 }}>
         ¿No te reconoce? Pregunta en cualquiera de nuestras salas: revisamos tu ficha.
       </Texto>
     </Formulario>
+  );
+}
+
+// La barra sobre el teclado numérico (sólo iOS): un botón a la derecha, como
+// la de los formularios del sistema.
+function BarraTeclado({ id, etiqueta, color, alTocar }) {
+  return (
+    <InputAccessoryView nativeID={id}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 8,
+        backgroundColor: colorSistema.barra, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+        <Pressable onPress={alTocar} accessibilityRole="button" hitSlop={6}
+          style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, opacity: pressed ? 0.5 : 1 })}>
+          <Text style={{ fontSize: 17, fontWeight: '600', color }}>{etiqueta}</Text>
+        </Pressable>
+      </View>
+    </InputAccessoryView>
   );
 }

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.0 — App de clientes: más rápida, bloqueo que tapa todo y animaciones más livianas
+
+- **Sin conexión y al instante**: Invitar, Encuesta y Facturas abren con lo último guardado y se actualizan detrás. Una encuesta ya no se puede enviar dos veces. La clave de la copia sin conexión ordena las claves en todos los niveles (antes todas las páginas de reservas/facturas compartían un archivo) y no reescribe una copia idéntica.
+- **Inicio**: `resumen` corre en un solo `Promise.all` (eran ~20 consultas en fila) y la app ya no lo pide dos veces al arrancar. Sucursales en caché por instancia (5 min); `mis_reservas` en paralelo; el sondeo del chat ya no firma una foto de perfil que nadie usaba.
+- **Escrituras con tope de 30 s**: devuelven `sinConfirmar` y la pantalla revisa antes de reintentar (el chat busca si el mensaje llegó, sin duplicar).
+- **Bloqueo**: en iOS va en `FullWindowOverlay`, por encima de modales (PDF de factura, foto de receta) y de la vista de apps; en Android, en un `Modal` que el botón atrás no cierra. El splash se retiene hasta saber la sesión y el bloqueo: el saldo ya no asoma antes.
+- **Animaciones**: la aurora usa degradados radiales en vez de desenfoque y queda quieta fuera de las pantallas de entrada; la tarjeta y el cupón ya no se re-renderizan al desplazar (pausa en el hilo de la interfaz); el raspado del cupón corre en el worklet; barras y corte del cupón animan transformaciones, no layout.
+- **Varios**: Ofertas en lista virtual; fotos del chat e historias con `cacheKey` estable; carrito, vistos e historias pasan de SecureStore a archivos (`lib/almacen.js`); al cerrar sesión se olvidan los vistos y una respuesta tardía no repone el saldo del anterior en el widget; la ubicación tiene tope de 10 s; reservas sólo cuenta el tiempo a la vista; teclado del DUI con «Siguiente», autocompletado en Android; reacciones del chat con blanco de 44 pt; «Se te acaba en null días» corregido; ícono adaptativo de Android con margen.
+- **Medición**: `app-clientes` escribe una línea `{"traza":"app-clientes","accion",…,"ms"}` por petición.
+
 ## v2.1291.4 — Documentos compartidos en una carpeta común: cada persona ve el suyo
 
 - El acuse del MTPS (papel colectivo) se sube a `compartidos/` y cada ficha

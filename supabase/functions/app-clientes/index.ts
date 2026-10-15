@@ -151,26 +151,54 @@ async function firmarRutas(admin: any, bucket: string, rutas: string[], segundos
 // más de 2 h; con eso la URL es la misma entre aperturas y la caché de
 // imágenes del teléfono la reconoce.
 const FIRMA_SEG = 12 * 3600;
-const firmasOfertas = new Map<string, { url: string; vence: number }>();
+// Una sola guarda para todos los buckets (2026-10-15): la clave es
+// `bucket/ruta`, así que dos buckets con la misma ruta no se pisan. El chat la
+// usa también (fotos de mensajes y del equipo): cada sondeo de 5 s volvía a
+// firmar todo y la URL cambiaba en cada uno.
+const firmasGuardadas = new Map<string, { url: string; vence: number }>();
+/** Como `firmarRutas`, pero reusa la firma mientras le quede más de `margenSeg`. */
 // deno-lint-ignore no-explicit-any
-async function firmarOfertas(admin: any, rutas: string[]): Promise<Map<string, string>> {
+async function firmarGuardando(admin: any, bucket: string, rutas: string[], segundos: number, margenSeg: number): Promise<Map<string, string>> {
   const ahora = Date.now();
   const firmadas = new Map<string, string>();
   const faltan: string[] = [];
   for (const r of new Set(rutas.filter(Boolean))) {
-    const g = firmasOfertas.get(r);
-    if (g && g.vence - ahora > 2 * 3600_000) firmadas.set(r, g.url); else faltan.push(r);
+    const g = firmasGuardadas.get(`${bucket}/${r}`);
+    if (g && g.vence - ahora > margenSeg * 1000) firmadas.set(r, g.url); else faltan.push(r);
   }
   if (!faltan.length) return firmadas;
-  const { data, error } = await admin.storage.from("ofertas-clientes").createSignedUrls(faltan, FIRMA_SEG);
-  if (error) { console.error("no se pudieron firmar las imágenes:", error.message); return firmadas; }
-  if (firmasOfertas.size > 2000) firmasOfertas.clear(); // tope de memoria
+  const { data, error } = await admin.storage.from(bucket).createSignedUrls(faltan, segundos);
+  if (error) { console.error(`no se pudieron firmar archivos de ${bucket}:`, error.message); return firmadas; }
+  if (firmasGuardadas.size > 2000) firmasGuardadas.clear(); // tope de memoria
   for (const f of data ?? []) {
     if (!f.path || !f.signedUrl || f.error) continue;
     firmadas.set(f.path, f.signedUrl);
-    firmasOfertas.set(f.path, { url: f.signedUrl, vence: ahora + FIRMA_SEG * 1000 });
+    firmasGuardadas.set(`${bucket}/${f.path}`, { url: f.signedUrl, vence: ahora + segundos * 1000 });
   }
   return firmadas;
+}
+// deno-lint-ignore no-explicit-any
+const firmarOfertas = (admin: any, rutas: string[]) => firmarGuardando(admin, "ofertas-clientes", rutas, FIRMA_SEG, 2 * 3600);
+// Las del chat (bucket privado del cliente y fotos del equipo): 6 h, reusadas
+// mientras les quede más de 1 h — una conversación abierta no se queda con
+// una URL vencida entre dos sondeos.
+// deno-lint-ignore no-explicit-any
+const firmarChat = (admin: any, bucket: string, rutas: string[]) => firmarGuardando(admin, bucket, rutas, 6 * 3600, 3600);
+
+// Las sucursales (id, nombre, dirección, tipo, código de puntos), guardadas
+// 5 min por instancia (2026-10-15), como `horarioFarmacia`: el resumen, los
+// movimientos, las reservas, las ofertas y la ficha de producto las leían en
+// cada llamada y cambian una vez al año. Devuelve `{ data, error }` para que
+// cada lector conserve su manejo del error; un error no se guarda.
+// deno-lint-ignore no-explicit-any
+let salasCache: { en: number; v: any[] } | null = null;
+// deno-lint-ignore no-explicit-any
+async function salasDeLaRed(admin: any): Promise<{ data: any[] | null; error: any }> {
+  if (salasCache && Date.now() - salasCache.en < 5 * 60_000) return { data: salasCache.v, error: null };
+  const { data, error } = await admin.from("branches").select("id, name, address, type, codigo_puntos");
+  if (error) return { data: null, error };
+  salasCache = { en: Date.now(), v: data ?? [] };
+  return { data: salasCache.v, error: null };
 }
 // La foto de un empleado se guarda como URL «formato público» del bucket
 // privado `empleados` (regla 10 del CLAUDE.md): se saca el bucket y la ruta
@@ -291,8 +319,46 @@ const plataformaValida = (p: unknown) => (["ios", "android", "web"].includes(Str
 // Freno por IP de `reportar_error` (ver la acción).
 const topeErrores = new Map<string, { n: number; desde: number }>();
 
+// ── La traza de cada pedido (2026-10-15) ─────────────────────────────────
+// Una línea JSON por pedido en los registros de la función: qué acción, cuánto
+// tardó y cómo terminó. Sin esto el registro sólo decía «POST app-clientes» y
+// no había forma de medir la latencia por acción (p. ej. `ofertas`). NUNCA
+// lleva datos de la persona: ni documento, ni teléfono, ni token, ni el
+// cuerpo — sólo el nombre de la acción, y sólo si tiene forma de nombre (lo
+// manda el cliente: un texto arbitrario podría traer cualquier cosa).
+// Cuesta un console.log; no escribe en la base.
+type Traza = { accion: string; fallo: boolean };
+const nombreDeAccion = (v: unknown) => {
+  const a = String(v ?? "");
+  return /^[a-z0-9_]{1,40}$/.test(a) ? a : a ? "no_valida" : "sin_accion";
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  const t0 = performance.now();
+  const traza: Traza = { accion: "sin_accion", fallo: false };
+  let estado = 500;
+  try {
+    const res = await atender(req, traza);
+    estado = res.status;
+    return res;
+  } catch (e) {
+    // No debería llegar aquí (el cuerpo tiene su propio catch), pero si llega
+    // la traza lo anota como falla y el error sigue su curso.
+    traza.fallo = true;
+    throw e;
+  } finally {
+    console.log(JSON.stringify({
+      traza: "app-clientes",
+      accion: traza.accion,
+      ms: Math.round(performance.now() - t0),
+      estado,
+      ok: !traza.fallo && estado < 400,
+    }));
+  }
+});
+
+async function atender(req: Request, traza: Traza): Promise<Response> {
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
   // La tarjeta de Wallet: Safari abre este enlace (lo da la acción
@@ -318,6 +384,7 @@ Deno.serve(async (req) => {
 
 
   if (enlaceWallet) {
+    traza.accion = "wallet";
     try {
       const id = await clienteDelEnlace(enlaceWallet);
       if (!id) return new Response("Este enlace ya venció. Vuelve a tocar «Agregar a Wallet» en la app.", { status: 410, headers: { "Content-Type": "text/plain; charset=utf-8" } });
@@ -332,6 +399,7 @@ Deno.serve(async (req) => {
       } });
     } catch (e) {
       console.error("[wallet]", (e as Error)?.message ?? e);
+      traza.fallo = true;
       return new Response("No se pudo crear la tarjeta.", { status: 500 });
     }
   }
@@ -344,6 +412,7 @@ Deno.serve(async (req) => {
     ?? "").trim() || "desconocida";
   const body = await req.json().catch(() => ({} as any));
   const accion = String(body?.accion ?? "");
+  traza.accion = nombreDeAccion(accion);
 
   // ── El freno, compartido con `mis-puntos` ────────────────────────────────
   // Devuelve una Response si hay que cortar; si no, null.
@@ -611,7 +680,7 @@ Deno.serve(async (req) => {
           ? admin.from("customers").select("acepta_programa_puntos, acumula_puntos").eq("id", customerId).maybeSingle()
             .then(({ data: c, error: eC }: any) => { if (eC) throw eC; return c?.acepta_programa_puntos !== false && c?.acumula_puntos !== false; })
           : Promise.resolve(false),
-        admin.from("branches").select("id, name"),
+        salasDeLaRed(admin),
         muestrasDe(admin, customerId, "oferta"),
       ]);
       if (error) throw error;
@@ -809,7 +878,7 @@ Deno.serve(async (req) => {
       if (!Number.isInteger(id) || id <= 0) return json({ ok: false, mensaje: "Producto no válido." });
       const [{ data, error }, { data: salas, error: eS }, cond] = await Promise.all([
         admin.rpc("app_catalogo_producto", { p_id: id }),
-        admin.from("branches").select("id, name").eq("type", "FARMACIA"),
+        salasDeLaRed(admin).then((r) => ({ ...r, data: r.data?.filter((b: any) => b.type === "FARMACIA") ?? null })),
         condicionDePrecio(),
       ]);
       if (error) throw error;
@@ -1178,35 +1247,55 @@ Deno.serve(async (req) => {
         puede_calificar: resuelta && !vigente,
       };
     };
+    // Cada foto firmada viaja con su `foto_clave` (la ruta en Storage, que no
+    // cambia): la app la usa como `cacheKey` de la imagen, así una firma nueva
+    // no obliga a bajar otra vez la misma foto. Las firmas además se reusan
+    // por instancia (`firmarChat`), y los pasos independientes —el equipo con
+    // sus fotos, las fotos de los mensajes, reacciones y citas— van a la vez.
     // deno-lint-ignore no-explicit-any
     const armarMensajes = async (filas: any[]) => {
       const idsEq = [...new Set(filas.map((m) => m.employee_id).filter(Boolean))];
-      // deno-lint-ignore no-explicit-any
-      let equipo: any[] = [];
-      if (idsEq.length) {
+      const idsMsg = filas.map((m) => m.id);
+      const idsCita = [...new Set(filas.map((m) => m.respuesta_a).filter(Boolean))];
+      // El equipo y sus fotos (bucket privado, firmadas por bucket a la vez).
+      const equipoConFotos = async () => {
+        // deno-lint-ignore no-explicit-any
+        const persona = new Map<any, { nombre: string; foto_url: string | null; foto_clave: string | null }>();
+        if (!idsEq.length) return persona;
         const { data, error } = await admin.from("employees").select("id, first_names, last_names, name, photo_url").limit(100).in("id", idsEq);
         if (error) console.error("chat: no se pudo leer el equipo:", error.message);
-        equipo = data ?? [];
-      }
-      // Las fotos del equipo: bucket privado, se firman (6 h) por bucket.
-      const porBucket = new Map<string, string[]>();
-      const rutaFoto = new Map<string, { bucket: string; ruta: string }>();
-      for (const e of equipo) {
-        const m = RUTA_STORAGE.exec(String(e.photo_url ?? ""));
-        if (!m) continue;
-        const ruta = decodeURIComponent(m[2]);
-        rutaFoto.set(e.id, { bucket: m[1], ruta });
-        porBucket.set(m[1], [...(porBucket.get(m[1]) ?? []), ruta]);
-      }
-      const firmadasEq = new Map<string, string>();
-      for (const [bucket, rutas] of porBucket) {
-        for (const [ruta, url] of await firmarRutas(admin, bucket, rutas, 6 * 3600)) firmadasEq.set(`${bucket}/${ruta}`, url);
-      }
-      const persona = new Map(equipo.map((e) => {
-        const f = rutaFoto.get(e.id);
-        return [e.id, { nombre: nombreCortoEmpleado(e), foto_url: f ? firmadasEq.get(`${f.bucket}/${f.ruta}`) ?? null : null }];
-      }));
-      const fotos = await firmarRutas(admin, BUCKET_ARCHIVOS, filas.map((m) => m.foto_ruta).filter(Boolean), 6 * 3600);
+        // deno-lint-ignore no-explicit-any
+        const equipo: any[] = data ?? [];
+        const porBucket = new Map<string, string[]>();
+        const rutaFoto = new Map<string, { bucket: string; ruta: string }>();
+        for (const e of equipo) {
+          const m = RUTA_STORAGE.exec(String(e.photo_url ?? ""));
+          if (!m) continue;
+          const ruta = decodeURIComponent(m[2]);
+          rutaFoto.set(e.id, { bucket: m[1], ruta });
+          porBucket.set(m[1], [...(porBucket.get(m[1]) ?? []), ruta]);
+        }
+        const firmadasEq = new Map<string, string>();
+        const porCada = await Promise.all([...porBucket].map(async ([bucket, rutas]) => [bucket, await firmarChat(admin, bucket, rutas)] as const));
+        for (const [bucket, mapa] of porCada) for (const [ruta, url] of mapa) firmadasEq.set(`${bucket}/${ruta}`, url);
+        for (const e of equipo) {
+          const f = rutaFoto.get(e.id);
+          const url = f ? firmadasEq.get(`${f.bucket}/${f.ruta}`) ?? null : null;
+          persona.set(e.id, { nombre: nombreCortoEmpleado(e), foto_url: url, foto_clave: url && f ? `${f.bucket}/${f.ruta}` : null });
+        }
+        return persona;
+      };
+      // Reacciones y citas (2026-10-12): cada mensaje trae sus reacciones
+      // (emoji, de quién, y si es la mía) y, si responde a otro, un resumen
+      // del citado.
+      const [persona, fotos, { data: reacs, error: eR }, { data: citas, error: eCi }] = await Promise.all([
+        equipoConFotos(),
+        firmarChat(admin, BUCKET_ARCHIVOS, filas.map((m) => m.foto_ruta).filter(Boolean)),
+        idsMsg.length ? admin.from("app_chat_reacciones").select("mensaje_id, autor, employee_id, emoji").limit(900).in("mensaje_id", idsMsg)
+          : Promise.resolve({ data: [], error: null }),
+        idsCita.length ? admin.from("app_chat_mensajes").select("id, autor, texto, foto_ruta, conversacion_id").limit(200).in("id", idsCita)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
       // deno-lint-ignore no-explicit-any
       const adjunto = (a: any) => {
         if (!a || typeof a !== "object") return null;
@@ -1218,17 +1307,6 @@ Deno.serve(async (req) => {
         if (a.tipo === "oferta" && a.id != null) return { tipo: "oferta", id: String(a.id), titulo: String(a.titulo ?? "") };
         return null;
       };
-      // Reacciones y citas (2026-10-12): cada mensaje trae sus reacciones
-      // (emoji, de quién, y si es la mía) y, si responde a otro, un resumen
-      // del citado.
-      const idsMsg = filas.map((m) => m.id);
-      const idsCita = [...new Set(filas.map((m) => m.respuesta_a).filter(Boolean))];
-      const [{ data: reacs, error: eR }, { data: citas, error: eCi }] = await Promise.all([
-        idsMsg.length ? admin.from("app_chat_reacciones").select("mensaje_id, autor, employee_id, emoji").limit(900).in("mensaje_id", idsMsg)
-          : Promise.resolve({ data: [], error: null }),
-        idsCita.length ? admin.from("app_chat_mensajes").select("id, autor, texto, foto_ruta, conversacion_id").limit(200).in("id", idsCita)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
       if (eR) console.error("chat: reacciones", eR.message);
       if (eCi) console.error("chat: citas", eCi.message);
       // deno-lint-ignore no-explicit-any
@@ -1241,18 +1319,24 @@ Deno.serve(async (req) => {
       const citaPor = new Map<number, any>((citas ?? []).map((c: any) => [Number(c.id), {
         id: Number(c.id), autor: c.autor, texto: c.texto ? String(c.texto).slice(0, 140) : null, foto: !!c.foto_ruta,
       }]));
-      return filas.map((m) => ({
+      return filas.map((m) => {
+        const foto_url = m.foto_ruta ? fotos.get(m.foto_ruta) ?? null : null;
+        return {
         id: Number(m.id), autor: m.autor, texto: m.texto ?? null, created_at: m.created_at,
-        foto_url: m.foto_ruta ? fotos.get(m.foto_ruta) ?? null : null,
+        foto_url,
+        foto_clave: foto_url ? `${BUCKET_ARCHIVOS}/${m.foto_ruta}` : null,
         adjunto: adjunto(m.adjunto),
-        equipo: m.autor === "equipo" ? persona.get(m.employee_id) ?? { nombre: "Farmacia Salud", foto_url: null } : null,
+        equipo: m.autor === "equipo" ? persona.get(m.employee_id) ?? { nombre: "Farmacia Salud", foto_url: null, foto_clave: null } : null,
         reacciones: reacPor.get(Number(m.id)) ?? [],
         responde_a: m.respuesta_a ? citaPor.get(Number(m.respuesta_a)) ?? null : null,
-      }));
+        };
+      });
     };
     if (accion === "chat_mensajes") {
-      const [cv, mia, hor] = await Promise.all([convDe(), fotoDePerfil(), horarioFarmacia(admin)]);
-      const base = { ok: true, fuera_de_horario: !hor.abierta, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado }, mi_foto: mia.url,
+      // Sin `mi_foto` (2026-10-15): la app no la leía y firmarla en cada
+      // sondeo de 5 s costaba una consulta y un viaje a Storage.
+      const [cv, hor] = await Promise.all([convDe(), horarioFarmacia(admin)]);
+      const base = { ok: true, fuera_de_horario: !hor.abierta, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado },
         conversacion: estadoConversacion(cv) };
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
@@ -1532,35 +1616,40 @@ Deno.serve(async (req) => {
       const antes = body?.antes && typeof body.antes === "object" ? body.antes : null;
       const cursorOk = antes && /^\d{4}-\d{2}-\d{2}T[\d:.]+([+-]\d{2}:?\d{2}|Z)?$/.test(String(antes.created_at ?? "")) && Number.isFinite(Number(antes.id));
 
-      // Las abiertas: todas de una vez, sólo en la primera página.
-      let abiertas: any[] = [];
-      if ((filtro === "todas" || filtro === "abiertas") && !antes) {
-        const { data, error } = await admin.from("app_reservas").select(COLS).limit(200) // tope deliberado: son pocas
-          .eq("customer_id", customerId).in("estado", ABIERTAS)
-          .order("created_at", { ascending: false }).order("id", { ascending: false });
-        if (error) throw error;
-        abiertas = data ?? [];
-      }
-      // Las terminadas, por página.
-      let terminadas: any[] = [];
+      // Las abiertas (todas de una vez, sólo en la primera página), las
+      // terminadas de esta página y las sucursales van A LA VEZ (2026-10-15):
+      // ninguna depende de otra. Sólo la firma de las recetas espera a saber
+      // qué filas hay.
+      const [abiertas, terminadas, { data: salas, error: eS }] = await Promise.all([
+        (async () => {
+          if (!((filtro === "todas" || filtro === "abiertas") && !antes)) return [] as any[];
+          const { data, error } = await admin.from("app_reservas").select(COLS).limit(200) // tope deliberado: son pocas
+            .eq("customer_id", customerId).in("estado", ABIERTAS)
+            .order("created_at", { ascending: false }).order("id", { ascending: false });
+          if (error) throw error;
+          return (data ?? []) as any[];
+        })(),
+        // Las terminadas, por página.
+        (async () => {
+          if (filtro === "abiertas") return [] as any[];
+          let q = admin.from("app_reservas").select(COLS).limit(20) // = POR_PAGINA
+            .eq("customer_id", customerId).in("estado", TERMINADAS[filtro])
+            .order("created_at", { ascending: false }).order("id", { ascending: false });
+          if (cursorOk) {
+            const C = String(antes.created_at), I = Number(antes.id);
+            q = q.or(`created_at.lt."${C}",and(created_at.eq."${C}",id.lt.${I})`);
+          }
+          const { data, error } = await q;
+          if (error) throw error;
+          return (data ?? []) as any[];
+        })(),
+        salasDeLaRed(admin),
+      ]);
       let siguiente: { created_at: string; id: number } | null = null;
-      if (filtro !== "abiertas") {
-        let q = admin.from("app_reservas").select(COLS).limit(20) // = POR_PAGINA
-          .eq("customer_id", customerId).in("estado", TERMINADAS[filtro])
-          .order("created_at", { ascending: false }).order("id", { ascending: false });
-        if (cursorOk) {
-          const C = String(antes.created_at), I = Number(antes.id);
-          q = q.or(`created_at.lt."${C}",and(created_at.eq."${C}",id.lt.${I})`);
-        }
-        const { data, error } = await q;
-        if (error) throw error;
-        terminadas = data ?? [];
-        const ultima = terminadas[terminadas.length - 1];
-        if (terminadas.length === POR_PAGINA && ultima) siguiente = { created_at: ultima.created_at, id: Number(ultima.id) };
-      }
+      const ultima = terminadas[terminadas.length - 1];
+      if (terminadas.length === POR_PAGINA && ultima) siguiente = { created_at: ultima.created_at, id: Number(ultima.id) };
       const data = [...abiertas, ...terminadas];
 
-      const { data: salas, error: eS } = await admin.from("branches").select("id, name, address");
       if (eS) throw eS;
       const sala = new Map((salas ?? []).map((b: any) => [Number(b.id), b]));
       // Lo que se cobra de un pedido del carrito: sus renglones abiertos + el envío una vez.
@@ -2700,56 +2789,116 @@ Deno.serve(async (req) => {
 
     if (accion === "resumen") {
       const { data: c, error: eC } = await admin.from("customers")
-        .select("name, acepta_programa_puntos, acepta_promociones").eq("id", customerId).maybeSingle();
+        .select("name, acepta_programa_puntos, acepta_promociones, fecha_nacimiento").eq("id", customerId).maybeSingle();
       if (eC) throw eC;
       if (!c) return json({ ok: false, motivo: "sin_sesion" }, 401);
 
-      const { data: est, error: eEst } = await admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId });
-      if (eEst) throw eEst;
-      const { data: salas, error: eSalas } = await admin.from("branches").select("codigo_puntos, name");
-      if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
-      const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), sucursal(b.name)]));
-      const saldo = Number(est?.saldo ?? 0);
-
-      // «Socio desde»: la primera vez que ganó puntos (la ficha puede ser más
-      // nueva que su historia: se sincroniza desde la caja).
-      const { data: primero, error: ePri } = await admin.from("puntos_lote")
-        .select("ganado_el").eq("customer_id", customerId).order("ganado_el", { ascending: true }).limit(1).maybeSingle();
-      if (ePri) console.error("no se pudo leer el primer lote:", ePri.message);
-      let codigo: string | null = null;
-      try { codigo = await codigoDelCliente(customerId, c.name); }
-      catch (e) { console.error("no se pudo obtener el código:", (e as Error)?.message); }
-
+      // Todo lo demás es independiente y va en UNA tanda (2026-10-15): antes
+      // eran ~20 consultas EN SERIE y el Inicio esperaba la suma de todas.
+      // Cada pieza conserva su manejo del error de antes: las que tumbaban el
+      // resumen lo siguen tumbando; las que sólo se anotaban, igual.
       // ¿Es su cumpleaños hoy (hora de El Salvador)? La app lo celebra. La
       // muestra `cumpleanos` lo fuerza, para ver la tarjeta sin esperar al día.
       const hoyMD = new Date(Date.now() - 6 * 3600_000).toISOString().slice(5, 10);
-      const { data: nac, error: eNac } = await admin.from("customers").select("fecha_nacimiento").eq("id", customerId).maybeSingle();
-      if (eNac) console.error("no se pudo leer el cumpleaños:", eNac.message);
-      const { data: cfgP, error: eCfg } = await admin.from("puntos_config").select("puntos_cumpleanos").limit(1).maybeSingle();
-      const nivel = await nivelDeCliente(admin, customerId);
       // El cupón del mes (Platino): puntos que vencen a fin de mes.
       const inicioMes = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 8) + "01";
-      const { data: cup, error: eCup } = await admin.from("puntos_lote").select("id, puntos, restantes, vence_el, motivo, raspado_el")
-        .eq("customer_id", customerId).eq("origen", "cupon").gte("ganado_el", inicioMes).maybeSingle();
+      const [
+        { data: est, error: eEst },
+        { data: salas, error: eSalas },
+        { data: primero, error: ePri },
+        codigo,
+        { data: cfgP, error: eCfg },
+        nivel,
+        { data: cup, error: eCup },
+        { data: resAb, error: eRA },
+        { data: conv, error: eCv },
+        horChat,
+        mayorista,
+        empleado,
+        tratamientos,
+        encuesta,
+        inyeccionesReales,
+        muestras,
+      ] = await Promise.all([
+        admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId }),
+        salasDeLaRed(admin),
+        // «Socio desde»: la primera vez que ganó puntos (la ficha puede ser más
+        // nueva que su historia: se sincroniza desde la caja).
+        admin.from("puntos_lote")
+          .select("ganado_el").eq("customer_id", customerId).order("ganado_el", { ascending: true }).limit(1).maybeSingle(),
+        codigoDelCliente(customerId, c.name)
+          .catch((e) => { console.error("no se pudo obtener el código:", (e as Error)?.message); return null; }),
+        admin.from("puntos_config").select("puntos_cumpleanos").limit(1).maybeSingle(),
+        nivelDeCliente(admin, customerId),
+        admin.from("puntos_lote").select("id, puntos, restantes, vence_el, motivo, raspado_el")
+          .eq("customer_id", customerId).eq("origen", "cupon").gte("ganado_el", inicioMes).maybeSingle(),
+        // Con el producto: la app avisa «ya tienes una reserva de este producto»
+        // al agregarlo al carrito o reservarlo otra vez (2026-10-09). Son pocas
+        // filas (tope de 3 reservas activas), así que viajan en el resumen.
+        admin.from("app_reservas").select("id, estado, producto_id, producto_nombre, pago_estado, pedido")
+          .eq("customer_id", customerId).in("estado", ["en_revision", "pendiente", "lista"]),
+        // Mensajes del chat sin leer (2026-10-12): el punto de «Pregúntale a la farmacia».
+        admin.from("app_chat_conversaciones").select("sin_leer_cliente")
+          .eq("customer_id", customerId).maybeSingle(),
+        // La burbuja del chat (2026-10-14) dice si la farmacia está en línea:
+        // el mismo `horarioFarmacia` del chat, con su minuto de caché por
+        // instancia (no agrega una consulta por resumen).
+        horarioFarmacia(admin),
+        // Cliente Mayorista (2026-10-08): estado, precio y rango (Condiciones).
+        (async () => {
+          const { data, error } = await admin.rpc("mayorista_de", { p_customer: customerId });
+          if (error) { console.error("resumen mayorista:", error.message); return null; }
+          return data ?? null;
+        })(),
+        // Empleado activo (por DUI): tarjeta de Equipo, precio Mayoreo Plus (2026-10-08).
+        (async () => {
+          const { data, error } = await admin.rpc("cliente_es_empleado", { p_customer: customerId });
+          if (error) { console.error("resumen empleado:", error.message); return false; }
+          return data === true;
+        })(),
+        // Los tratamientos activos, los que se acaban primero (Inicio, 2026-10-08).
+        (async () => {
+          const { data, error } = await admin.rpc("app_tratamientos_de", { p_customer: customerId });
+          if (error) { console.error("resumen tratamientos:", error.message); return []; }
+          return ((data ?? []) as any[]).filter((x) => x.estado === "activo").slice(0, 3);
+        })(),
+        // Encuestas por responder (para la tarjeta del Inicio).
+        (async () => {
+          const { data, error } = await admin.rpc("encuesta_app_disponibles", { p_customer: customerId });
+          if (error) { console.error("resumen encuesta:", error.message); return null; }
+          const e = (data ?? [])[0];
+          return e ? { id: e.id, nombre: e.nombre, puntos: e.puntos } : null;
+        })(),
+        // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
+        (async () => {
+          const { count, error: eIn } = await admin.from("inyeccion_aplicaciones").select("id", { count: "exact", head: true })
+            .eq("customer_id", customerId).eq("confirmada", true).is("aplicada_at", null).is("mezcla_de", null);
+          if (eIn) throw eIn;
+          return count ?? 0;
+        })(),
+        // La cuenta de prueba es la ÚNICA que tiene muestras (`esDePrueba`
+        // mira justo eso): se pregunta una vez y, si no lo es, las tres
+        // lecturas de muestras ni se hacen.
+        esDePrueba(customerId).then(async (prueba) => {
+          if (!prueba) return { prueba, cumpleanos: [], inyeccion: [], vencimiento: [] };
+          const [cumpleanos, inyeccion, vencimiento] = await Promise.all([
+            muestrasDe(admin, customerId, "cumpleanos"),
+            muestrasDe(admin, customerId, "inyeccion"),
+            muestrasDe(admin, customerId, "vencimiento"),
+          ]);
+          return { prueba, cumpleanos, inyeccion, vencimiento };
+        }),
+      ]);
+      if (eEst) throw eEst;
+      if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
+      const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), sucursal(b.name)]));
+      const saldo = Number(est?.saldo ?? 0);
+      if (ePri) console.error("no se pudo leer el primer lote:", ePri.message);
       if (eCup) throw eCup;
       if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
-      const cumpleanos = String(nac?.fecha_nacimiento ?? "").slice(5, 10) === hoyMD
-        || (await muestrasDe(admin, customerId, "cumpleanos")).length > 0;
-
-      // Con el producto: la app avisa «ya tienes una reserva de este producto»
-      // al agregarlo al carrito o reservarlo otra vez (2026-10-09). Son pocas
-      // filas (tope de 3 reservas activas), así que viajan en el resumen.
-      const { data: resAb, error: eRA } = await admin.from("app_reservas").select("id, estado, producto_id, producto_nombre, pago_estado, pedido")
-        .eq("customer_id", customerId).in("estado", ["en_revision", "pendiente", "lista"]);
+      const cumpleanos = String(c.fecha_nacimiento ?? "").slice(5, 10) === hoyMD || muestras.cumpleanos.length > 0;
       if (eRA) console.error("no se pudieron leer las reservas:", eRA.message);
-      // Mensajes del chat sin leer (2026-10-12): el punto de «Pregúntale a la farmacia».
-      const { data: conv, error: eCv } = await admin.from("app_chat_conversaciones").select("sin_leer_cliente")
-        .eq("customer_id", customerId).maybeSingle();
       if (eCv) console.error("no se pudo leer el chat:", eCv.message);
-      // La burbuja del chat (2026-10-14) dice si la farmacia está en línea:
-      // el mismo `horarioFarmacia` del chat, con su minuto de caché por
-      // instancia (no agrega una consulta por resumen).
-      const horChat = await horarioFarmacia(admin);
 
       return json({
         ok: true,
@@ -2771,40 +2920,18 @@ Deno.serve(async (req) => {
         nivel,
         // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
         // Cliente Mayorista (2026-10-08): estado, precio y rango (Condiciones).
-        mayorista: await (async () => {
-          const { data, error } = await admin.rpc("mayorista_de", { p_customer: customerId });
-          if (error) { console.error("resumen mayorista:", error.message); return null; }
-          return data ?? null;
-        })(),
+        mayorista,
         // Empleado activo (por DUI): tarjeta de Equipo, precio Mayoreo Plus (2026-10-08).
-        empleado: await (async () => {
-          const { data, error } = await admin.rpc("cliente_es_empleado", { p_customer: customerId });
-          if (error) { console.error("resumen empleado:", error.message); return false; }
-          return data === true;
-        })(),
+        empleado,
         // Los tratamientos activos, los que se acaban primero (Inicio, 2026-10-08).
-        tratamientos: await (async () => {
-          const { data, error } = await admin.rpc("app_tratamientos_de", { p_customer: customerId });
-          if (error) { console.error("resumen tratamientos:", error.message); return []; }
-          return ((data ?? []) as any[]).filter((x) => x.estado === "activo").slice(0, 3);
-        })(),
+        tratamientos,
         // Encuestas por responder (para la tarjeta del Inicio).
-        encuesta: await (async () => {
-          const { data, error } = await admin.rpc("encuesta_app_disponibles", { p_customer: customerId });
-          if (error) { console.error("resumen encuesta:", error.message); return null; }
-          const e = (data ?? [])[0];
-          return e ? { id: e.id, nombre: e.nombre, puntos: e.puntos } : null;
-        })(),
-        inyecciones_pendientes: await (async () => {
-          const { count, error: eIn } = await admin.from("inyeccion_aplicaciones").select("id", { count: "exact", head: true })
-            .eq("customer_id", customerId).eq("confirmada", true).is("aplicada_at", null).is("mezcla_de", null);
-          if (eIn) throw eIn;
-          // Más las de muestra (cuenta de prueba): la pantalla las muestra, y el
-          // Inicio decía «Al día» mientras adentro había 3 (2026-10-07).
-          return (count ?? 0) + (await muestrasDe(admin, customerId, "inyeccion")).length;
-        })(),
+        encuesta,
+        // Más las de muestra (cuenta de prueba): la pantalla las muestra, y el
+        // Inicio decía «Al día» mientras adentro había 3 (2026-10-07).
+        inyecciones_pendientes: inyeccionesReales + muestras.inyeccion.length,
         // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
-        prueba: await esDePrueba(customerId),
+        prueba: muestras.prueba,
         cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo, raspado: !!cup.raspado_el } : null,
         regalo_cumpleanos: nivel.clave === "vip" ? Number(cfgP?.puntos_cumpleanos ?? 0) : nivel.cumpleanos,
         codigo,
@@ -2817,7 +2944,7 @@ Deno.serve(async (req) => {
         // meses y el aviso de lo que vence en 90 días. Antes iban sólo 3.
         vencimientos: [
           ...(est?.vencimientos ?? []).map((v: any) => ({ vence: v.vence_el, puntos: Number(v.puntos) })),
-          ...(await muestrasDe(admin, customerId, "vencimiento")).map((v: any) => ({ vence: v.vence, puntos: Number(v.puntos) })),
+          ...muestras.vencimiento.map((v: any) => ({ vence: v.vence, puntos: Number(v.puntos) })),
         ].sort((a, b) => String(a.vence).localeCompare(String(b.vence))).slice(0, 36),
         // Paginados: los primeros 10 acá y el resto con `movimientos` de a 20.
         // Un cliente de años tiene cientos y la app no debe bajar ni pintar
@@ -2848,9 +2975,13 @@ Deno.serve(async (req) => {
     // Más movimientos, de a 20 desde `desde`.
     if (accion === "movimientos") {
       const desde = Math.max(0, Number(body?.desde) || 0);
-      const { data: est, error } = await admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId });
+      // `puntos_estado_cuenta` es la FUENTE de la lista (no hay otra consulta
+      // que pagine los movimientos), así que cada página la necesita.
+      const [{ data: est, error }, { data: salas, error: eSalas }] = await Promise.all([
+        admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId }),
+        salasDeLaRed(admin),
+      ]);
       if (error) throw error;
-      const { data: salas, error: eSalas } = await admin.from("branches").select("codigo_puntos, name");
       if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
       const porCodigo = new Map((salas ?? []).map((b: any) => [String(b.codigo_puntos), sucursal(b.name)]));
       const todos = est?.movimientos ?? [];
@@ -2954,6 +3085,7 @@ Deno.serve(async (req) => {
     return json({ ok: false, mensaje: "Acción desconocida." }, 400);
   } catch (e) {
     console.error("app-clientes:", accion, (e as any)?.message ?? e);
+    traza.fallo = true;
     return json({ ok: false, mensaje: "No se pudo completar. Intenta en un rato." }, 503);
   }
-});
+}

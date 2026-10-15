@@ -5,17 +5,17 @@
 //   · Usado: en gris, con el sello «USADO» (o lo que queda, si se usó una parte).
 // Se usa en caja como cualquier saldo, mostrando la tarjeta.
 import { useDespierta } from './reposo';
-import { useMoviendo } from '../lib/desplazamiento';
-import { ANDROID, LIVIANO } from '../lib/rendimiento';
+import { useMoviendoValor } from './movimiento';
+import { LIVIANO } from '../lib/rendimiento';
 import { useSesion } from '../lib/sesion';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
-import { Canvas, Group, LinearGradient as SkGradiente, Path, Rect, Skia, vec } from '@shopify/react-native-skia';
+import { Canvas, Group, LinearGradient as SkGradiente, notifyChange, Path, Rect, Skia, vec } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { cancelAnimation, Easing, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, Easing, interpolate, runOnJS, runOnUI, useAnimatedReaction, useAnimatedStyle, useFrameCallback, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Icono from './Icono';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import Mineral, { MATERIALES } from './minerales/Mineral';
@@ -49,18 +49,14 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   // y el brillo se quedan quietos; tocar la pantalla los despierta.
   // Y quietos mientras la pantalla se desplaza (lib/desplazamiento.js,
   // 2026-10-14): el material se recalculaba en los mismos cuadros del scroll.
-  const moviendo = useMoviendo();
-  const enUso = useDespierta(activa) && !moviendo;
-  const luzX = useSharedValue(-0.6);
-  const luzY = useSharedValue(0.3);
-  // Se PARA al dejar de verse (2026-10-13): antes el `return` sólo dejaba de
-  // arrancarla, y la luz seguía yendo y viniendo —y redibujando el material—
-  // con el cupón en otra pestaña. En un Android liviano queda quieta.
-  useEffect(() => {
-    if (!enUso || (ANDROID && LIVIANO)) { cancelAnimation(luzX); cancelAnimation(luzY); return; }
-    luzX.value = withRepeat(withTiming(0.6, { duration: 4200, easing: Easing.inOut(Easing.sin) }), -1, true);
-    luzY.value = withRepeat(withTiming(-0.3, { duration: 5600, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, [enUso]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Como valor compartido (2026-10-15): lo leen los worklets y el cupón no se
+  // repinta dos veces por cada gesto de desplazamiento.
+  const moviendo = useMoviendoValor();
+  const enUso = useDespierta(activa);
+  // La luz que va y viene ya no son dos `withRepeat` aparte (2026-10-15): la
+  // calcula el material con su propio reloj de 30 cuadros (`luzSola`), así
+  // que se para con él —al dejar de verse, en reposo, al desplazar— y en un
+  // teléfono liviano queda quieta, como el resto del material.
   const estiloDestello = useAnimatedStyle(() => ({ opacity: destello.value }));
   useEffect(() => {
     if (!demo) return;
@@ -108,10 +104,16 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   // izquierda en vez de moverse, así su borde derecho no se mueve nunca. Sin
   // giro, sin desplazamiento vertical y sin escala fuera de su caja.
   const ancho = medida?.ancho ?? 0;
-  const estiloParte = useAnimatedStyle(() => {
-    const abre = Math.max(0, corte.value) * RANURA;
-    return { left: CORTE + abre, width: Math.max(0, ancho - CORTE - abre), opacity: 1 - Math.max(0, corte.value) * 0.08 };
-  }, [ancho]);
+  // Con TRANSFORMACIONES (2026-10-15), no con `left`/`width`: animar la
+  // posición y el ancho rehacía el layout en cada cuadro del corte. Ahora la
+  // ventana de la parte grande se corre `abre` a la derecha y su contenido lo
+  // mismo a la izquierda —queda quieto—; lo que sobra a la derecha lo recorta
+  // la caja fija de afuera, que es la que lleva las esquinas redondeadas.
+  const estiloParte = useAnimatedStyle(() => ({
+    opacity: 1 - Math.max(0, corte.value) * 0.08,
+    transform: [{ translateX: Math.max(0, corte.value) * RANURA }],
+  }));
+  const estiloContenidoParte = useAnimatedStyle(() => ({ transform: [{ translateX: -Math.max(0, corte.value) * RANURA }] }));
   // El sello cae con poca escala (1.35 → 1): se nota sin cubrir media pantalla.
   const estiloSello = useAnimatedStyle(() => ({
     opacity: Math.min(1, sello.value * 1.6),
@@ -150,7 +152,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
           style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 104 }}>
           {!usado && MATERIALES.includes(nivel) ? (
             <>
-              <Mineral material={nivel} x={luzX} y={luzY} activa={enUso && !LIVIANO} />
+              <Mineral material={nivel} luzSola pausa={moviendo} activa={enUso && !LIVIANO} />
               <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.22)' }]} />
             </>
           ) : null}
@@ -194,7 +196,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
               <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>Al canjear, primero se usa el cupón y después tus puntos.</Text>
             ) : null}
           </View>
-          {!usado && raspado ? <Brillo activa={enUso && !LIVIANO} /> : null}
+          {!usado && raspado ? <Brillo activa={enUso && !LIVIANO} pausa={moviendo} /> : null}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }, estiloDestello]} />
         </LinearGradient>
   );
@@ -209,12 +211,20 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
           <View style={{ position: 'absolute', left: 0, top: 0, width: CORTE, height: medida.alto, overflow: 'hidden', borderTopLeftRadius: 22, borderBottomLeftRadius: 22 }}>
             <View style={{ width: medida.ancho }}>{cara}</View>
           </View>
-          <Animated.View style={[{ position: 'absolute', top: 0, height: medida.alto, overflow: 'hidden',
-            borderTopLeftRadius: 4, borderBottomLeftRadius: 4, borderTopRightRadius: 22, borderBottomRightRadius: 22 }, estiloParte]}>
-            {/* Anclada a la derecha: al angostarse la parte, su contenido no se corre. */}
-            <View style={{ position: 'absolute', right: 0, top: 0, width: medida.ancho }}>{cara}</View>
-            {sello_}
-          </Animated.View>
+          {/* La caja fija: el lugar de la parte grande y sus esquinas de la derecha. */}
+          <View style={{ position: 'absolute', left: CORTE, top: 0, width: Math.max(0, ancho - CORTE), height: medida.alto, overflow: 'hidden',
+            borderTopRightRadius: 22, borderBottomRightRadius: 22 }}>
+            {/* La ventana que se corre: su borde izquierdo es la ranura. */}
+            <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: Math.max(0, ancho - CORTE), height: medida.alto, overflow: 'hidden',
+              borderTopLeftRadius: 4, borderBottomLeftRadius: 4 }, estiloParte]}>
+              {/* Anclada a la derecha y corrida al revés que la ventana: al
+                  abrirse la ranura, el contenido —y el sello— no se mueven. */}
+              <Animated.View style={[{ position: 'absolute', right: 0, top: 0, width: medida.ancho, height: medida.alto }, estiloContenidoParte]}>
+                {cara}
+                {sello_}
+              </Animated.View>
+            </Animated.View>
+          </View>
         </View>
       ) : (
         <View style={{ borderRadius: 22, overflow: 'hidden' }}
@@ -232,13 +242,20 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   );
 }
 
-// El brillo que cruza el cupón vigente cada ~4 s.
-function Brillo({ activa }) {
+// El brillo que cruza el cupón vigente cada ~4 s. Quieto mientras la pantalla
+// se desplaza (`pausa`, valor compartido): se para y arranca en el hilo de la
+// interfaz, sin repintar el cupón.
+function Brillo({ activa, pausa }) {
   const x = useSharedValue(-1);
-  useEffect(() => {
-    if (!activa) { cancelAnimation(x); x.value = -1; return; }
+  const vivo = useSharedValue(activa);
+  useEffect(() => { vivo.value = activa; }, [activa, vivo]);
+  useAnimatedReaction(() => vivo.value && !pausa.value, (ahora, antes) => {
+    if (ahora === antes) return;
+    cancelAnimation(x);
+    x.value = -1;
+    if (!ahora) return;
     x.value = withRepeat(withSequence(withTiming(-1, { duration: 0 }), withDelay(2600, withTiming(1.4, { duration: 1100, easing: Easing.inOut(Easing.cubic) }))), -1);
-  }, [activa, x]);
+  });
   const estilo = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * 360 }, { rotate: '20deg' }] }));
   return (
     <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: -40, bottom: -40, width: 70 }, estilo]}>
@@ -252,10 +269,34 @@ function Brillo({ activa }) {
 // mismo sitio contaban como raspar todo—: se descubre con el 70 % de la
 // superficie limpia. Mientras se raspa salta polvo plateado del dedo, la
 // leyenda se apaga y el teléfono vibra.
+//
+// Todo en el hilo de la interfaz (2026-10-15): antes cada evento del dedo
+// cruzaba a JavaScript, copiaba el trazo ENTERO (que crece con cada evento),
+// lo guardaba en el estado y repintaba; y cada pizca de polvo era un
+// componente nuevo montado por estado. Ahora el trazo es un valor compartido
+// que el gesto alarga en su lugar (`notifyChange` avisa al lienzo), las celdas
+// se marcan en el mismo worklet y el polvo es una reserva fija de pizcas que
+// el worklet reutiliza. A JavaScript sólo se cruza para vibrar y al llegar a
+// la meta.
 const GROSOR = 24;
 const COLS = 14;
 const FILAS = 5;
 const META = 0.7;
+const CELDAS = COLS * FILAS;
+// Cuántas pizcas de polvo puede haber a la vez (antes, las últimas 24 + 3).
+const PIZCAS = 24;
+const VIDA_PIZCA = 520;
+// Worklets: se llaman también en el hilo de la interfaz, al limpiar.
+const celdasVacias = () => { 'worklet'; return new Array(CELDAS + 1).fill(0); }; // la última posición es la cuenta
+const pizcasVacias = () => {
+  'worklet';
+  const v = [];
+  for (let k = 0; k < PIZCAS; k++) v.push({ x: 0, y: 0, dx: 0, dy: 0, t: 5, nace: -1 });
+  return v;
+};
+const tocarSuave = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); };
+const tocarMeta = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); };
+const tocarSeleccion = () => { Haptics.selectionAsync().catch(() => {}); };
 
 // Si no se termina de raspar, la capa VUELVE a cubrirse (2026-10-09, pedido del
 // usuario): sólo vale un cupón raspado completo. El premio ya está asignado en
@@ -263,108 +304,159 @@ const META = 0.7;
 // terminar, y también al salir de la pantalla.
 function Raspable({ alDescubrir, auto = false, activa = true }) {
   const [tam, setTam] = useState(null);
-  const [trazo, setTrazo] = useState(() => Skia.Path.Make());
-  const [polvo, setPolvo] = useState([]);
-  const celdas = useRef(new Set());
-  const desdeToque = useRef(0);
-  const desdePolvo = useRef(0);
-  const ultimo = useRef(null);
-  const listo = useRef(false);
-  const idPolvo = useRef(0);
+  const tamUI = useSharedValue({ w: 0, h: 0 });
+  const trazoInicial = useMemo(() => Skia.Path.Make(), []);
+  const trazo = useSharedValue(trazoInicial);
+  const celdas = useSharedValue(celdasVacias());
+  const polvo = useSharedValue(pizcasVacias());
+  const siguiente = useSharedValue(0);
+  const ahora = useSharedValue(0);
+  // El último punto del dedo y lo recorrido desde la última vibración / pizca.
+  const hay = useSharedValue(false);
+  const ux = useSharedValue(0);
+  const uy = useSharedValue(0);
+  const desdeToque = useSharedValue(0);
+  const desdePolvo = useSharedValue(0);
+  const listo = useSharedValue(false);
   const capa = useSharedValue(1);
   const leyenda = useSharedValue(1);
   const recubre = useSharedValue(0);
   const espera = useRef(null);
-  const limpiar = () => {
-    celdas.current = new Set(); ultimo.current = null;
-    setTrazo(Skia.Path.Make()); setPolvo([]);
+  // `alDescubrir` cambia con cada render del cupón: el worklet llama a ésta, estable.
+  const descubrirRef = useRef(alDescubrir);
+  descubrirRef.current = alDescubrir;
+  const terminar = useMemo(() => () => descubrirRef.current?.(), []);
+
+  // El reloj del polvo: corre sólo mientras el dedo raspa y un rato después.
+  const reloj = useFrameCallback(() => { ahora.value = Date.now(); }, false);
+  const apagarReloj = useRef(null);
+
+  const limpiarUI = () => {
+    'worklet';
+    trazo.value.reset();
+    notifyChange(trazo);
+    celdas.value = celdasVacias();
+    polvo.value = pizcasVacias();
+    hay.value = false;
     recubre.value = 0;
   };
+  const limpiar = () => runOnUI(limpiarUI)();
   const restablecer = () => {
-    if (listo.current || celdas.current.size === 0) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (listo.value || celdas.value[CELDAS] === 0) return;
+    tocarSuave();
     leyenda.value = withTiming(1, { duration: 450 });
-    recubre.value = withTiming(1, { duration: 450, easing: Easing.inOut(Easing.quad) }, (fin) => { if (fin) runOnJS(limpiar)(); });
+    recubre.value = withTiming(1, { duration: 450, easing: Easing.inOut(Easing.quad) }, (fin) => { if (fin) limpiarUI(); });
   };
-  useEffect(() => { if (!activa && !listo.current) { clearTimeout(espera.current); limpiar(); leyenda.value = 1; } }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => clearTimeout(espera.current), []);
+  useEffect(() => { if (!activa && !listo.value) { clearTimeout(espera.current); limpiar(); leyenda.value = 1; } }, [activa]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { clearTimeout(espera.current); clearTimeout(apagarReloj.current); }, []);
 
-  const marcar = (x, y) => {
-    // Las celdas que cubre el círculo del dedo.
-    const cw = tam.w / COLS; const ch = tam.h / FILAS; const r = GROSOR / 2;
-    for (let cx = Math.max(0, Math.floor((x - r) / cw)); cx <= Math.min(COLS - 1, Math.floor((x + r) / cw)); cx++) {
-      for (let cy = Math.max(0, Math.floor((y - r) / ch)); cy <= Math.min(FILAS - 1, Math.floor((y + r) / ch)); cy++) {
-        const mx = (cx + 0.5) * cw; const my = (cy + 0.5) * ch;
-        if (Math.hypot(mx - x, my - y) <= r + Math.min(cw, ch) * 0.35) celdas.current.add(cy * COLS + cx);
-      }
-    }
-  };
-
-  const agregar = (x, y, nuevo) => {
-    if (listo.current || !tam) return;
-    const p = trazo.copy();
+  // Al apoyar el dedo (una vez por gesto): no se recubre y el polvo tiene reloj.
+  const empezar = () => {
     clearTimeout(espera.current);
-    if (nuevo || !ultimo.current) {
-      p.moveTo(x, y); p.lineTo(x + 0.1, y + 0.1);
-      Haptics.selectionAsync().catch(() => {});
-      leyenda.value = withTiming(0, { duration: 250 });
-      marcar(x, y);
-    } else {
-      const d = Math.hypot(x - ultimo.current.x, y - ultimo.current.y);
-      p.lineTo(x, y);
-      // Las celdas del tramo, cada pocos puntos.
-      const pasos = Math.max(1, Math.ceil(d / 6));
-      for (let k = 1; k <= pasos; k++) marcar(ultimo.current.x + ((x - ultimo.current.x) * k) / pasos, ultimo.current.y + ((y - ultimo.current.y) * k) / pasos);
-      desdeToque.current += d;
-      if (desdeToque.current > 28) { desdeToque.current = 0; Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); }
-      desdePolvo.current += d;
-      if (desdePolvo.current > 18) {
-        desdePolvo.current = 0;
-        const nuevos = Array.from({ length: 3 }, () => ({ id: idPolvo.current++, x, y, dx: (Math.random() - 0.5) * 70, dy: 10 + Math.random() * 50, t: 3 + Math.random() * 4 }));
-        setPolvo((v) => [...v.slice(-24), ...nuevos]);
-      }
-    }
-    ultimo.current = { x, y };
-    setTrazo(p);
-    if (celdas.current.size >= COLS * FILAS * META) {
-      listo.current = true;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      capa.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) }, (fin) => { if (fin) runOnJS(alDescubrir)(); });
-    }
+    clearTimeout(apagarReloj.current);
+    reloj.setActive(true);
   };
   const soltar = () => {
-    ultimo.current = null;
     clearTimeout(espera.current);
-    if (!listo.current && !auto) espera.current = setTimeout(restablecer, 2500);
+    clearTimeout(apagarReloj.current);
+    apagarReloj.current = setTimeout(() => reloj.setActive(false), VIDA_PIZCA + 100);
+    if (!listo.value && !auto) espera.current = setTimeout(restablecer, 2500);
+  };
+
+  // Un punto del dedo, en el hilo de la interfaz. `nuevo`: empieza otra raya.
+  const agregarUI = (x, y, nuevo) => {
+    'worklet';
+    const { w, h } = tamUI.value;
+    if (listo.value || !w) return;
+    const cw = w / COLS; const ch = h / FILAS; const r = GROSOR / 2;
+    const tolera = r + Math.min(cw, ch) * 0.35;
+    const desde = nuevo || !hay.value ? null : { x: ux.value, y: uy.value };
+    // Las celdas que cubre el círculo del dedo, a lo largo del tramo.
+    celdas.modify((c) => {
+      'worklet';
+      const marcar = (px, py) => {
+        for (let cx = Math.max(0, Math.floor((px - r) / cw)); cx <= Math.min(COLS - 1, Math.floor((px + r) / cw)); cx++) {
+          for (let cy = Math.max(0, Math.floor((py - r) / ch)); cy <= Math.min(FILAS - 1, Math.floor((py + r) / ch)); cy++) {
+            const i = cy * COLS + cx;
+            if (!c[i] && Math.hypot((cx + 0.5) * cw - px, (cy + 0.5) * ch - py) <= tolera) { c[i] = 1; c[CELDAS] += 1; }
+          }
+        }
+      };
+      if (!desde) marcar(x, y);
+      else {
+        const pasos = Math.max(1, Math.ceil(Math.hypot(x - desde.x, y - desde.y) / 6));
+        for (let k = 1; k <= pasos; k++) marcar(desde.x + ((x - desde.x) * k) / pasos, desde.y + ((y - desde.y) * k) / pasos);
+      }
+      return c;
+    }, false);
+    if (!desde) {
+      trazo.value.moveTo(x, y);
+      trazo.value.lineTo(x + 0.1, y + 0.1);
+      runOnJS(tocarSeleccion)();
+      leyenda.value = withTiming(0, { duration: 250 });
+    } else {
+      trazo.value.lineTo(x, y);
+      const d = Math.hypot(x - desde.x, y - desde.y);
+      desdeToque.value += d;
+      if (desdeToque.value > 28) { desdeToque.value = 0; runOnJS(tocarSuave)(); }
+      desdePolvo.value += d;
+      if (desdePolvo.value > 18) {
+        desdePolvo.value = 0;
+        const nace = Date.now();
+        polvo.modify((v) => {
+          'worklet';
+          for (let k = 0; k < 3; k++) {
+            const q = v[siguiente.value];
+            q.x = x; q.y = y; q.dx = (Math.random() - 0.5) * 70; q.dy = 10 + Math.random() * 50; q.t = 3 + Math.random() * 4; q.nace = nace;
+            siguiente.value = (siguiente.value + 1) % PIZCAS;
+          }
+          return v;
+        });
+      }
+    }
+    notifyChange(trazo);
+    hay.value = true; ux.value = x; uy.value = y;
+    if (celdas.value[CELDAS] >= CELDAS * META) {
+      listo.value = true;
+      runOnJS(tocarMeta)();
+      capa.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) }, (fin) => { if (fin) runOnJS(terminar)(); });
+    }
   };
 
   // Modo demostración: un dedo invisible raspa en zigzag.
   useEffect(() => {
     if (!auto || !tam) return undefined;
+    reloj.setActive(true);
     let k = 0; const total = 90;
     const t = setInterval(() => {
-      if (listo.current || k > total * 1.6) { clearInterval(t); return; }
+      if (listo.value || k > total * 1.6) { clearInterval(t); reloj.setActive(false); return; }
       const fila = Math.floor(k / 15); const avance = (k % 15) / 14;
       const x = (fila % 2 ? 1 - avance : avance) * tam.w;
       const y = ((fila % (FILAS + 1)) + 0.5) * (tam.h / (FILAS + 1)) + Math.sin(k) * 4;
-      agregar(Math.max(4, Math.min(tam.w - 4, x)), y, k === 0);
+      runOnUI(agregarUI)(Math.max(4, Math.min(tam.w - 4, x)), y, k === 0);
       k++;
     }, 22);
-    return () => clearInterval(t);
-  }, [auto, tam]); // eslint-disable-line react-hooks/exhaustive-deps -- `agregar` lee refs
+    return () => { clearInterval(t); reloj.setActive(false); };
+  }, [auto, tam]); // eslint-disable-line react-hooks/exhaustive-deps -- `agregarUI` sólo lee valores compartidos
 
-  const gesto = Gesture.Pan().minDistance(0)
-    .onBegin((e) => runOnJS(agregar)(e.x, e.y, true))
-    .onUpdate((e) => runOnJS(agregar)(e.x, e.y, false))
-    .onFinalize(() => runOnJS(soltar)());
+  // Armado una vez por tamaño (y por `auto`, que lee `soltar`): los worklets
+  // leen valores compartidos.
+  const gesto = useMemo(() => Gesture.Pan().minDistance(0)
+    .onBegin((e) => { runOnJS(empezar)(); agregarUI(e.x, e.y, true); })
+    .onUpdate((e) => { agregarUI(e.x, e.y, false); })
+    .onFinalize(() => { hay.value = false; runOnJS(soltar)(); }),
+  [tam, auto]); // eslint-disable-line react-hooks/exhaustive-deps
   const estilo = useAnimatedStyle(() => ({ opacity: capa.value, transform: [{ scale: 1 + (1 - capa.value) * 0.06 }] }));
   const estiloLeyenda = useAnimatedStyle(() => ({ opacity: leyenda.value }));
 
   return (
     <GestureDetector gesture={gesto}>
-      <Animated.View style={[StyleSheet.absoluteFill, estilo]} onLayout={(e) => setTam({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
+      <Animated.View style={[StyleSheet.absoluteFill, estilo]} onLayout={(e) => {
+        const medida = { w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height };
+        tamUI.value = medida; setTam(medida);
+      }}
         accessible accessibilityRole="button" accessibilityLabel="Cupón por descubrir. Raspa con el dedo." accessibilityActions={[{ name: 'activate', label: 'Descubrir' }]}
-        onAccessibilityAction={() => { listo.current = true; alDescubrir(); }}>
+        onAccessibilityAction={() => { listo.value = true; alDescubrir(); }}>
         {tam ? (
           <Canvas style={StyleSheet.absoluteFill}>
             <Group layer>
@@ -384,23 +476,35 @@ function Raspable({ alDescubrir, auto = false, activa = true }) {
           <Text style={{ color: '#4A505A', fontSize: 15, fontWeight: '900', letterSpacing: 2 }}>RASPA TU CUPÓN</Text>
           <Text style={{ color: '#5A606A', fontSize: 12, fontWeight: '600' }}>¿Cuánto ganaste este mes?</Text>
         </Animated.View>
-        {polvo.map((q) => <Particula key={q.id} q={q} alTerminar={() => setPolvo((v) => v.filter((z) => z.id !== q.id))} />)}
+        {tam ? Array.from({ length: PIZCAS }, (_, i) => <Particula key={i} i={i} polvo={polvo} ahora={ahora} />) : null}
       </Animated.View>
     </GestureDetector>
   );
 }
 
-// Una pizca de polvo plateado que salta del dedo y cae.
-function Particula({ q, alTerminar }) {
-  const v = useSharedValue(0);
-  useEffect(() => {
-    v.value = withTiming(1, { duration: 520, easing: Easing.out(Easing.quad) }, (fin) => { if (fin) runOnJS(alTerminar)(); });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const estilo = useAnimatedStyle(() => ({
-    opacity: 1 - v.value,
-    transform: [{ translateX: q.dx * v.value }, { translateY: q.dy * v.value * v.value }, { rotate: `${v.value * 200}deg` }],
-  }));
+// Una pizca de polvo plateado que salta del dedo y cae: un lugar fijo de la
+// reserva (`polvo[i]`), que el worklet del raspado vuelve a lanzar. Montada
+// siempre; sin pizca viva, transparente. Se mueve sólo con transformaciones
+// (el tamaño de cada pizca es una escala sobre un cuadrado de 10 pt).
+const BASE_PIZCA = 10;
+function Particula({ i, polvo, ahora }) {
+  const estilo = useAnimatedStyle(() => {
+    const q = polvo.value[i];
+    const p = q.nace < 0 ? 1 : (ahora.value - q.nace) / VIDA_PIZCA;
+    if (p < 0 || p >= 1) return { opacity: 0, transform: [{ translateX: -100 }, { translateY: -100 }] };
+    // La curva de antes (`Easing.out(Easing.quad)`).
+    const v = 1 - (1 - p) * (1 - p);
+    return {
+      opacity: 1 - v,
+      transform: [
+        { translateX: q.x - BASE_PIZCA / 2 + q.dx * v },
+        { translateY: q.y - BASE_PIZCA / 2 + q.dy * v * v },
+        { rotate: `${v * 200}deg` },
+        { scale: q.t / BASE_PIZCA },
+      ],
+    };
+  });
   return (
-    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: q.x - q.t / 2, top: q.y - q.t / 2, width: q.t, height: q.t, borderRadius: 1.5, backgroundColor: '#C9CED6' }, estilo]} />
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: BASE_PIZCA, height: BASE_PIZCA, borderRadius: 3, backgroundColor: '#C9CED6', opacity: 0 }, estilo]} />
   );
 }

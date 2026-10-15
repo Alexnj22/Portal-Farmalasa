@@ -18,6 +18,7 @@ import { useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import Icono from '../componentes/Icono';
 import { sinBloquear } from '../lib/bloqueo';
+import { copiaParaEmpezar } from '../lib/sinConexion';
 
 const ENLACE_APP = 'https://portal.farmasalud.lat/mis-puntos';
 
@@ -25,9 +26,14 @@ export default function Invitar() {
   const t = useTema();
   const pedir = useSesion((s) => s.pedir);
   const [d, setD] = useState(null);
-  const cargar = useCallback(() => pedir('referido').then(setD), [pedir]);
+  const [refrescando, setRefrescando] = useState(false);
+  // Lo de la vez anterior se pinta al instante mientras llega lo fresco
+  // (2026-10-15), y un fallo de red no cambia el código por una pantalla de error.
+  const cargar = useCallback(async () => {
+    copiaParaEmpezar('referido', {}).then((c) => { if (c) setD((ant) => ant ?? c); });
+    const r = await pedir('referido'); setD((ant) => (r?.ok || !ant?.ok ? r : ant)); }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  const reintentar = () => { setD(null); cargar(); };
+  const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   if (!d) return <Cargando />;
   // Sin ficha todavía (2026-10-12): el código de invitación llega con el registro.
@@ -35,7 +41,7 @@ export default function Invitar() {
     return <Pantalla conPestanas={false}><Vacio titulo="Tu código llega con tu registro" icono="person.2.fill" respaldo="🤝">Cuando completes tu registro en cualquier sucursal tendrás tu código para invitar a tus amigos.</Vacio></Pantalla>;
   }
   if (!d.ok || !d.codigo) {
-    return <Pantalla conPestanas={false}><Vacio titulo="No se pudo cargar tu código" accion="Reintentar" alAccion={reintentar}>{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
+    return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudo cargar tu código" accion="Reintentar" alAccion={refrescar}>{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
   }
 
   // El enlace (2026-10-13): no hay todavía un enlace de tienda en el repo; el de
@@ -48,7 +54,7 @@ export default function Invitar() {
   };
 
   return (
-    <Pantalla conPestanas={false}>
+    <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
       <Entrada indice={0}>
         <LinearGradient colors={['#2B0B3A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={{ borderRadius: RADIO.tarjeta, padding: 22, gap: 10, alignItems: 'center' }}>

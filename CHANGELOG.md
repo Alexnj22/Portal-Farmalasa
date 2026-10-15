@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.4 — La reserva en pantalla bloqueada vive en la extensión del widget
+
+- La Live Activity de la reserva pasa a la extensión del widget de saldo (`targets/saldo/Reserva.swift`, un solo `WidgetBundle`). `@bacons/apple-targets` admite una extensión por tipo: con dos «widget» la segunda pisaba a la primera y el prebuild de iOS fallaba (`removeFromProject` de undefined). Compilada y subida como iOS 60.
+
 ## v2.1294.3 — App: paridad de Compras, fiscal y Torogoz con el portal
 
 ### App · Libros IVA: buscador y orden en el detalle de cada libro

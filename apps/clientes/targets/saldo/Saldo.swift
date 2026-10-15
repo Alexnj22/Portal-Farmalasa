@@ -245,5 +245,9 @@ struct Saldo: Widget {
 
 @main
 struct Widgets: WidgetBundle {
-  var body: some Widget { Saldo() }
+  var body: some Widget {
+    Saldo()
+    // La reserva en la pantalla bloqueada y la Dynamic Island (Reserva.swift).
+    ReservaEnVivo()
+  }
 }

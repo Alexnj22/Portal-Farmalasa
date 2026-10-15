@@ -1,5 +1,5 @@
 // La reserva en la pantalla bloqueada (2026-10-15): la Live Activity que
-// dibuja targets/reserva. Este módulo sólo la arranca, la pone al día y la
+// dibuja targets/saldo/Reserva.swift. Este módulo sólo la arranca, la pone al día y la
 // termina; la lógica de CUÁNDO vive en modules/reserva-viva/index.js.
 //
 // Se actualiza sólo desde la app (al abrirla, al volver a primer plano o al
@@ -8,7 +8,7 @@
 // regresiva y la barra corren solas en el sistema (Text(timerInterval:)), y
 // `staleDate` = el vencimiento hace que el sistema la redibuje como vencida.
 //
-// Desde iOS 17, como la extensión (targets/reserva/expo-target.config.js):
+// Desde iOS 17, como la extensión (targets/saldo/expo-target.config.js):
 // en 16.x la actividad se podría pedir pero no habría quién la dibuje.
 import ExpoModulesCore
 import ActivityKit

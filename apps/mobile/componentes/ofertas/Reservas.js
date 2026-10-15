@@ -9,11 +9,14 @@
 // Buscar por código (R-000123 o el pedido P-XXXXXX, con el escáner o a mano) y
 // sumar el pedido salen del núcleo (`reservasDeSala`). `todas`: todas las salas
 // (la pestaña de Ofertas para clientes); si no, la sala de quien la abre.
+// Las que tienen receta por revisar abren `reserva-receta` (aprobar, pedir
+// otra foto o rechazar), como el «Ver receta» del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe,
+  cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
 import { pilaDelCliente, reservasPendientes, reservasPorCodigo, resumenDelPedido } from '@nucleo/utils/reservasDeSala';
 import { hora12 } from '@nucleo/utils/hora';
@@ -86,12 +89,16 @@ export default function Reservas({ sala, todas = false, recarga }) {
   const visibles = useMemo(() => reservasPorCodigo(filas, codigo), [filas, codigo]);
   const pedido = useMemo(() => resumenDelPedido(visibles, codigo), [visibles, codigo]);
   const pendientes = reservasPendientes(filas);
+  const recetas = (filas || []).filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
+  const ahora = Date.now();
+  const verReceta = (r) => router.push({ pathname: '/reserva-receta', params: todas ? { id: String(r.id), todas: '1' } : { id: String(r.id), sala: String(sala) } });
 
   if (filas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
   if (!sala && !todas) return <View style={{ marginHorizontal: 16 }}><Aviso texto="Las reservas son de una sala de ventas, y tu ficha no tiene sala." /></View>;
   return (
     <>
       <View style={{ marginHorizontal: 16, gap: 8 }}>
+        {recetas ? <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>{`${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}`}</Text> : null}
         {pendientes ? <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>{`${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte`}</Text> : null}
         <Campo multiline={false} autoCapitalize="characters" autoCorrect={false} placeholder="Código de la reserva (R-… o P-…)" value={codigo} onChangeText={setCodigo} />
         {pedido.renglones.length ? (
@@ -111,24 +118,33 @@ export default function Reservas({ sala, todas = false, recarga }) {
         ) : null}
         {codigo.trim() && !visibles.length ? <Aviso texto="No hay una reserva abierta con ese código." /> : null}
       </View>
-      {visibles.map((r) => (
+      {visibles.map((r) => {
+        const enRevision = r.estado === 'en_revision';
+        const horas = enRevision && r.receta_subida_at ? (ahora - Date.parse(r.receta_subida_at)) / 3600000 : 0;
+        const urgente = enRevision && r.receta_estado === 'pendiente' && horas >= HORAS_RECETA_URGENTE;
+        return (
         <View key={r.id} style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18} tinte={r.estado === 'pendiente' ? 'rgba(247,144,9,0.12)' : undefined}>
+          <Vidrio radio={18} tinte={urgente ? 'rgba(240,68,56,0.12)' : r.estado === 'pendiente' || enRevision ? 'rgba(247,144,9,0.12)' : undefined}>
             <View style={{ padding: 12, gap: 6 }}>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{`${r.cantidad} × ${r.producto}`}</Text>
-                <Pildora texto={r.estado === 'pendiente' ? 'Por apartar' : 'Lista'} color={r.estado === 'pendiente' ? MARCA.ambar : MARCA.verde} />
+                <Pildora texto={enRevision ? (r.receta_estado === 'otra_foto' ? 'Esperando foto' : urgente ? 'Receta urgente' : 'Receta por revisar') : r.estado === 'pendiente' ? 'Por apartar' : 'Lista'} color={urgente ? MARCA.rojo : enRevision || r.estado === 'pendiente' ? MARCA.ambar : MARCA.verde} />
               </View>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                 {[todas && r.sala ? r.sala : null, r.pedido, codigoDeReserva(r.id), pilaDelCliente(r),
                   r.estado === 'lista' ? `retira antes de las ${hora12(r.vence_at)}` : null, r.avisado_via === 'whatsapp' ? 'avisado por WhatsApp' : null].filter(Boolean).join(' · ')}
               </Text>
               <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                {r.pago_estado === 'pagado' ? <Pildora texto="Pagada en línea" color={MARCA.verde} /> : null}
+                {r.pago_estado === 'pagado' ? <Pildora texto={r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'} color={MARCA.verde} /> : null}
+                {r.pago_estado === 'anticipo' && Number(r.anticipo) > 0 ? <Pildora texto={`Anticipo ${formatMoney(Number(r.anticipo))}`} color={MARCA.ambar} /> : null}
                 {r.documento === 'credito_fiscal' ? <Pildora texto="CCF" color={MARCA.azulClaro} /> : null}
               </View>
               <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-                {r.estado === 'pendiente' ? (
+                {enRevision ? (r.receta_ruta ? (
+                  <Tocable onPress={() => verReceta(r)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Ver receta</Text>
+                  </Tocable>
+                ) : null) : r.estado === 'pendiente' ? (
                   <Tocable disabled={ocupada === r.id} onPress={() => mover(r, 'lista')} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Apartar y avisar</Text>
                   </Tocable>
@@ -151,7 +167,8 @@ export default function Reservas({ sala, todas = false, recarga }) {
             </View>
           </Vidrio>
         </View>
-      ))}
+        );
+      })}
       {!filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin reservas: cuando un cliente aparte algo desde la app, aparece aquí</Text> : null}
     </>
   );

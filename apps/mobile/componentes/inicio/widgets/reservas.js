@@ -21,17 +21,19 @@ export function Reservas({ ctx }) {
   const { dato, cargando } = useDato(`reservas:${sala ?? 'todas'}`, async () => ((sala || todas) ? fetchReservasDeSucursal(sala, true) : []));
   const filas = dato || [];
   const pendientes = reservasPendientes(filas);
+  const recetas = filas.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
   const abrir = () => router.push({ pathname: '/reservas-sala', params: todas ? { todas: '1' } : {} });
   return (
-    <Widget titulo="Reservas de mi sala" icono="ShoppingBag" color={MARCA.ambar} cuenta={pendientes || null} onAbrir={abrir}>
+    <Widget titulo="Reservas de mi sala" icono="ShoppingBag" color={MARCA.ambar} cuenta={(pendientes + recetas) || null} onAbrir={abrir}>
       {cargando && !dato ? <Esqueleto lineas={2} /> : !sala && !todas ? <Vacio texto="Las reservas son de una sala de ventas." /> : !filas.length ? <Vacio texto="Sin reservas" bien /> : (
         <>
+          {recetas ? <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '700', marginBottom: 2 }}>{`${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}`}</Text> : null}
           {pendientes ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginBottom: 2 }}>{`${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte`}</Text> : null}
           {filas.slice(0, PRIMERAS).map((r, i) => (
             <Renglon key={r.id} primero={i === 0} onPress={abrir}
               titulo={`${r.cantidad} × ${r.producto}`}
               detalle={`${todas && r.sala ? `${r.sala} · ` : ''}${codigoDeReserva(r.id)} · ${pilaDelCliente(r)}`}
-              derecha={r.estado === 'pendiente' ? 'Por apartar' : 'Lista'} colorDerecha={r.estado === 'pendiente' ? MARCA.ambar : MARCA.verde} />
+              derecha={r.estado === 'en_revision' ? 'Receta' : r.estado === 'pendiente' ? 'Por apartar' : 'Lista'} colorDerecha={r.estado === 'pendiente' || r.estado === 'en_revision' ? MARCA.ambar : MARCA.verde} />
           ))}
           {filas.length > PRIMERAS ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginTop: 4 }}>{`y ${filas.length - PRIMERAS} más`}</Text> : null}
         </>

@@ -8,8 +8,11 @@
 //   · confirmar un PDF aunque nunca llegue su JSON, o descartarlo.
 // Arriba, «Buscar correos» trae lo nuevo del buzón (`buscarCorreosDeCompras`).
 //
-// La detección del código dentro del PDF (leerlo con el lector del navegador)
-// sigue en el portal; acá se empareja eligiendo el documento.
+// «Detectar código» (`componentes/compras/DetectarCodigo`): si el servidor ya
+// encontró el código de generación en el PDF, sólo se busca el documento; si
+// no, se lee el PDF en el teléfono. Con el documento hallado, se empareja con
+// un toque — como el portal, que empareja directo sin pasar por «confirmado
+// sin JSON». Necesita, como allá, el permiso de abrir el documento.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
@@ -29,6 +32,7 @@ import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando, cerrarProgreso } from '../../componentes/Progreso';
+import DetectarCodigo from '../../componentes/compras/DetectarCodigo';
 
 const TIPO = { orphan_pdf: ['PDF sin JSON', MARCA.azulClaro], invalidacion_pendiente: ['Invalidación pendiente', MARCA.violetaClaro], orphan_zip: ['ZIP sin abrir', MARCA.ambar] };
 const CLASIFICAR = [{ id: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' }, { id: 'otro', label: 'Otro documento relacionado — sólo vincula' }];
@@ -128,6 +132,17 @@ export default function RevisionDeFacturas() {
                     {puede ? <Accion texto="Descartar" color={MARCA.rojo}
                       onPress={() => confirmar('Descartar', r.filename, 'Descartar', () => resolvePurchaseDteReview(r.id, 'descartado', null, { kind: r.kind, filename: r.filename, desde: 'app' }))} /> : null}
                   </View>
+                  {puede && abrir && r.kind === 'orphan_pdf' && r.file_path && !esta ? (
+                    <DetectarCodigo pdfPath={r.file_path} accion="Emparejar"
+                      detectado={r.ai_suggested?.detected_codigo_generacion ?? null}
+                      revisado={r.ai_suggested !== null && r.ai_suggested !== undefined}
+                      onEncontrado={async (m) => {
+                        await resolvePurchaseDteReview(r.id, 'emparejado', m.id, { filename: r.filename, via: 'detect_code', desde: 'app' });
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                        listo('Emparejado', m.proveedor_nombre || '');
+                        await cargar();
+                      }} />
+                  ) : null}
                   {esta?.modo === 'clasificar' ? (
                     <View style={{ gap: 6 }}>
                       {CLASIFICAR.map((c) => (

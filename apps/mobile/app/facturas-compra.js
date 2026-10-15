@@ -11,8 +11,9 @@
 // `facturas_compra_ver_montos`. Insignias: invalidado (con fecha y motivo),
 // «Sin JSON», nota que corrige a otro documento. Orden por fecha, proveedor,
 // tipo o monto. Desde la ficha de un proveedor llega con `busca` (su NIT).
-// La pestaña Revisión y «Buscar correos» son `factura-compra/revision`. El ZIP
-// del período y detectar el código dentro de un PDF siguen en el portal.
+// La pestaña Revisión y «Buscar correos» son `factura-compra/revision`.
+// «Detectar código» y «Adjuntar JSON» de un documento «Sin JSON», y «Ver el
+// documento de la anulación» de uno invalidado, viven en su ficha.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { compartirZipDeFacturas } from '../componentes/compras/zipDeFacturas';

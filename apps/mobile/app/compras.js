@@ -3,7 +3,8 @@
 //     del documento), ítems y total; tocar una abre su detalle (`compra/[id]`)
 //     con cada producto, cantidad, costo, lote y vencimiento. Filtro por
 //     proveedor en el menú, y el aviso «N facturas sin proveedor vinculado»
-//     que filtra al tocarlo, como el portal.
+//     que filtra al tocarlo, como el portal. Mes por mes o un rango libre
+//     desde/hasta, como el selector de fechas del portal.
 //   · Productos: el historial de compra de cada producto
 //     (`componentes/fiscal/ProductosComprados`).
 // Todo el dinero, sólo con `compras_ver_montos`. Vincular un proveedor sigue
@@ -23,6 +24,8 @@ import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import PasoDeMes from '../componentes/PasoDeMes';
+import Fecha from '../componentes/formulario/Fecha';
+import Tocable from '../componentes/Tocable';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarCompras } from '../componentes/compras/compras';
 import Segmentos from '../componentes/Segmentos';
@@ -55,9 +58,16 @@ export default function Compras() {
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
   const pedido = useRef(0);
-  const [desde, hasta] = useMemo(() => rangoDelMes(mes), [mes]);
+  // Mes a mes, o un rango libre desde/hasta como el `LiquidDatePicker` del
+  // portal. El rango arranca en el mes que se estaba mirando.
+  const [libre, setLibre] = useState(null);
+  const [desde, hasta] = useMemo(() => (libre ? [libre.desde, libre.hasta] : rangoDelMes(mes)), [mes, libre]);
+  const ponerLibre = (cambio) => setLibre((r) => {
+    const n = { ...(r || { desde, hasta }), ...cambio };
+    return n.desde > n.hasta ? ('desde' in cambio ? { ...n, hasta: n.desde } : { ...n, desde: n.hasta }) : n;
+  });
 
-  useEffect(() => { setPagina(0); }, [mes, busqueda, proveedorId, sinProveedor]);
+  useEffect(() => { setPagina(0); }, [desde, hasta, busqueda, proveedorId, sinProveedor]);
   useEffect(() => {
     fetchSuppliersBasic().then(({ data }) => setProveedores(data || []));
     fetchUnlinkedPurchaseReceiptsCount().then(({ count }) => setSinVincular(count || 0));
@@ -98,7 +108,17 @@ export default function Compras() {
         {!tab ? <Text style={{ marginHorizontal: 20, color: colorSistema.texto2, fontSize: 15 }}>No tienes acceso a ninguna pestaña de Compras.</Text> : null}
         {tab === 'productos' ? <ProductosComprados busqueda={busqueda} verMontos={verMontos} /> : null}
         {tab === 'facturas' ? (<>
-        <PasoDeMes mes={mes} onCambiar={setMes} />
+        {libre ? (
+          <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Desde</Text>
+            <Fecha valor={libre.desde} onCambiar={(v) => ponerLibre({ desde: v })} />
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>hasta</Text>
+            <Fecha valor={libre.hasta} onCambiar={(v) => ponerLibre({ hasta: v })} />
+          </View>
+        ) : <PasoDeMes mes={mes} onCambiar={setMes} />}
+        <Tocable onPress={() => setLibre((r) => (r ? null : { desde, hasta }))} hitSlop={8} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{libre ? 'Volver a mes por mes' : 'Elegir un rango de fechas'}</Text>
+        </Tocable>
         <FiltrosActivos grupos={grupos} />
         {sinVincular > 0 ? (
           <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setSinProveedor((v) => !v); setProveedorId('todos'); }} style={{ marginHorizontal: 16 }}>
@@ -111,8 +131,8 @@ export default function Compras() {
         ) : null}
         {!cargando || datos.filas.length ? (
           <FilaDeKpis>
-            <Kpi icono="ShoppingCart" rotulo="Compras" valor={datos.total.toLocaleString('es-SV')} color={MARCA.azul} apoyo={sinProveedor ? 'sin proveedor' : 'en el mes'} />
-            {verMontos ? <Kpi icono="DollarSign" rotulo="Total" valor={datos.filas.length === datos.total ? formatMoney(totalMes) : '…'} color={MARCA.violeta} apoyo={datos.filas.length === datos.total ? 'del mes' : 'carga todas para sumar'} /> : null}
+            <Kpi icono="ShoppingCart" rotulo="Compras" valor={datos.total.toLocaleString('es-SV')} color={MARCA.azul} apoyo={sinProveedor ? 'sin proveedor' : libre ? 'en el rango' : 'en el mes'} />
+            {verMontos ? <Kpi icono="DollarSign" rotulo="Total" valor={datos.filas.length === datos.total ? formatMoney(totalMes) : '…'} color={MARCA.violeta} apoyo={datos.filas.length === datos.total ? (libre ? 'del rango' : 'del mes') : 'carga todas para sumar'} /> : null}
           </FilaDeKpis>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -143,7 +163,7 @@ export default function Compras() {
         {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         {!cargando && datos.total > datos.filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.filas.length && !error ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{busqueda ? 'Ninguna compra con esa búsqueda' : sinProveedor ? 'Ninguna sin proveedor este mes' : 'Sin compras este mes'}</Text>
+          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{busqueda ? 'Ninguna compra con esa búsqueda' : sinProveedor ? `Ninguna sin proveedor ${libre ? 'en el rango' : 'este mes'}` : `Sin compras ${libre ? 'en el rango' : 'este mes'}`}</Text>
         ) : null}
         </>) : null}
       </ScrollView>

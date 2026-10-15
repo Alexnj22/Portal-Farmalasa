@@ -411,3 +411,17 @@ export function momentoDelEnvio(envio, miBranch) {
     if (hay('enviada'))                    return soyOrigen ? 'en_camino' : 'por_decidir';
     return 'cerrado';
 }
+
+/**
+ * Qué renglones salieron de verdad (2026-10-15, mudado de `EnviarProductoModal`).
+ * El despacho contesta por nombre (`hechas[].producto`), así que se cruza con
+ * los renglones por la descripción. Lo usa el envío sugerido de «Sin venta»
+ * para pedir que esos productos salgan del MIN·MAX de la sala.
+ */
+export function renglonesQueSalieron(renglones, salidas) {
+    const norm = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+    const salieron = new Set((salidas || []).flatMap((x) => x?.hechas ?? [])
+        .filter((h) => h?.id_traslado)
+        .map((h) => norm(h.producto)));
+    return (renglones || []).filter((r) => salieron.has(norm(r.descripcion)));
+}

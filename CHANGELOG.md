@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.2 — Gestión de stock en la app: armar envío nativo, descargas y filtros del portal
+
+- App, Gestión de stock → «Sin venta»: «Armar envío» ya no abre el portal.
+  Abre el formulario nativo de envío ARMADO, como el `precarga` del portal:
+  sala de origen, destino, «Baja rotación», la nota escrita y cada producto
+  con todo lo que hay (a Bodega, sólo presentaciones completas). Lo que salió
+  y tenía Min/Max se pide en 0/0 y se anota `ENVIO_SUGERIDO_SIN_VENTA`.
+- App, «Sin venta»: tarjetas «A otra sala» / «A Bodega» que filtran, filtro
+  «Con Min/Max», nota de la unidad de despacho por fila, aviso de que el envío
+  lo arma quien trabaja en esa sala, y descarga CSV.
+- App, «Sin Min/Max»: indicadores (total, venta 6 meses, Agregar y Evaluar que
+  filtran), orden por venta/unidades/producto en los dos sentidos, descarga
+  CSV, y pedir/aplicar sólo donde la sugerencia es agregar o evaluar (igual
+  que el portal).
+- Núcleo: la regla del envío sugerido (`productosDeEnvioSugerido`,
+  `renglonesDeEnvioSugerido`, `notaDeEnvioSugerido`), las descargas
+  (`csvDeParados`, `csvSinMinMax`), el orden (`ordenarSinMinMax`),
+  `renglonesQueSalieron` y `pedirQuitarMinMaxDeEnviados` se mudaron de
+  `TabParados`/`TabSinMinMax`/`EnviarProductoModal` al núcleo; el portal los
+  usa sin cambio de comportamiento.
+
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 
 - Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»

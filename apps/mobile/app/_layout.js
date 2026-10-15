@@ -19,6 +19,8 @@ import { colorSistema } from '../componentes/Formulario';
 import { MotorPedido } from '../componentes/pedidos/motorPedido';
 import BurbujaFlotante from '../componentes/chat/BurbujaFlotante';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
+import AvisoDeInactividad from '../componentes/AvisoDeInactividad';
+import { aplicarTemaGuardado } from '../tema/preferencia';
 // Define la tarea del GPS de fondo de las rutas: iOS relanza la app sin pantalla
 // para entregar posiciones, y la tarea tiene que existir desde el arranque.
 import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
@@ -27,6 +29,9 @@ import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../platafor
 // Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
 // que cualquier pantalla los pida (ver componentes/HojasAndroid).
 instalarHojasAndroid();
+// El modo elegido en Yo › Apariencia (claro u oscuro fijo) manda desde el
+// primer dibujo, antes de que cualquier pantalla lea el esquema de colores.
+aplicarTemaGuardado();
 
 // Lo que hace `App.jsx` del portal alrededor de las pantallas:
 //  - al entrar, cargar salas, personal y catálogos al store (`fetchBoot`); sin
@@ -117,6 +122,9 @@ export default function Raiz() {
           {/* La burbuja del chat con clientes, como la del portal: flota sobre todo. */}
           <BurbujaFlotante />
           <CapaDeProgreso />
+          {/* «¿Sigues ahí?» un minuto antes del cierre por inactividad (la
+              sesión decide cuándo; ver componentes/AvisoDeInactividad). */}
+          <AvisoDeInactividad />
           <HojasAndroid />
           {/* La imprenta del pedido: no carga nada hasta que alguien imprime o finaliza. */}
           <MotorPedido />

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { kioscosActivos } from '@nucleo/utils/kioscos';
-import { abiertaAhora, alertasDeSucursal, completitudDelPerfil, horarioDefinido, horarioDeHoy, leerAjustes, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from "@nucleo/utils/sucursales";
+import { abiertaAhora, alertasDeSucursal, completitudDelPerfil, datosParaElDiagnostico, horarioDefinido, horarioDeHoy, leerAjustes, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from "@nucleo/utils/sucursales";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -149,15 +149,11 @@ const BranchCard = memo(({
         setIsGeneratingAi(true);
 
         try {
-            const snapshotData = {
-                nombre: branch.name,
-                estadoDeApertura: isInactive ? 'Inactiva' : currentStatus.label,
-                horarioDeHoy: todaySchedule,
-                empleadosAsignados: count,
-                kioscosActivos: activeKiosks,
-                alertas: alertStatus.list.length > 0 ? alertStatus.list.map(a => `${a.level.toUpperCase()}: ${a.message}`) : ['Ninguna alerta, todo en orden.'],
-                progresoExpediente: `Documentos Legales: ${completion.legal}%, Datos del Local: ${completion.property}%, Servicios Básicos: ${completion.services}%`
-            };
+            // La foto que se le cuenta a la IA: núcleo (`sucursales`), la misma de la app.
+            const snapshotData = datosParaElDiagnostico({
+                branch, inactiva: isInactive, estado: currentStatus.label, horario: todaySchedule,
+                empleados: count, kioscos: activeKiosks, alertas: alertStatus, completitud: completion,
+            });
 
             const { data: aiResponse, error: aiError } = await analizarSucursal({ branchName: branch.name, branchData: JSON.stringify(snapshotData) });
 

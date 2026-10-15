@@ -20,7 +20,13 @@
 // solicitud ahí mismo (`DetalleDeAviso`), «Ver los N…» despliega la lista
 // entera, y Aprobar / Rechazar deciden sin salir de la bandeja con la misma
 // regla de quién puede (`utils/accionesDeAviso`).
+//
+// Un corte por confirmar trae Confirmar / Descartar (como la campana): quien
+// dibuja la lista pasa `corte` —el corte RELEÍDO, no la foto del aviso, con
+// `corteResolubleDelAviso` del núcleo— y los dos abren el corte con la acción
+// ya empezada: la entrega de la caja y el motivo del descarte viven ahí.
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -84,10 +90,11 @@ function Fallback({ n, detalle, expandida }) {
 }
 
 // `margen`: 16 en la bandeja; 0 dentro de `ListaPaginada`, que ya pone el suyo.
-export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcciones = false, margen = 16 }) {
+export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcciones = false, margen = 16, corte = null }) {
   const { user, hasPermission } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const marcarResuelto = useStaffStore((s) => s.marcarAvisoDeSolicitudResuelto);
+  const marcarLeido = useStaffStore((s) => s.markNotificationRead);
   const [expandida, setExpandida] = useState(false);
   const [ocupado, setOcupado] = useState(false);
 
@@ -124,6 +131,13 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
       marcarResuelto?.(n.metadata?.request_id, modo === 'approve' ? 'APPROVED' : 'REJECTED');
       usePorDecidir.getState().quitar?.(clave);
     }
+  };
+
+  // `quitar: false`: marcar leído acá es el arranque de una acción (igual que
+  // la campana), no que alguien haya leído el aviso.
+  const abrirCorte = (accionDelCorte) => {
+    if (!n.read_at) marcarLeido?.(n.id, { quitar: false });
+    router.push({ pathname: '/corte/[id]', params: { id: String(corte.id), fecha: corte.fecha ?? n.metadata?.fecha ?? '', accion: accionDelCorte } });
   };
 
   return (
@@ -166,6 +180,11 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
             </View>
           ) : traslado ? (
             <Boton texto="Revisar el traslado" principal onPress={onAbrir} />
+          ) : !sinAcciones && corte ? (
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Boton texto="Confirmar" principal color={MARCA.verde} onPress={() => abrirCorte('confirmar')} />
+              <Boton texto="Descartar" onPress={() => abrirCorte('descartar')} />
+            </View>
           ) : !sinAcciones && difMeToca ? (
             <Boton texto="Resolver la diferencia" principal onPress={onAbrir} />
           ) : null}

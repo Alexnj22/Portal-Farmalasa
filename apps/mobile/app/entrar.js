@@ -3,15 +3,22 @@
 // con sus mismos mensajes y las mismas reglas de contraseña. La forma es la
 // del sistema: un formulario agrupado como el de Ajustes (ver
 // componentes/Formulario.js) y el botón nativo de @expo/ui.
+//
+// «Entrar con el carné», como el lector y la cámara del portal (`LoginView`):
+// la cámara del teléfono lee el código del carné y lo manda a la MISMA
+// función (`login`), que lo trata como contraseña. El código leído no se
+// muestra en ningún lado: la pantalla de entrada es pública.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Host, Icon } from '@expo/ui';
 import Vidrio from '../componentes/Vidrio';
+import Escaner from '../componentes/Escaner';
 import { colorSistema, FilaCampo, Formulario, Grupo } from '../componentes/Formulario';
 
 const ICONO_FACE = Icon.select({ ios: 'faceid', android: require('@expo/material-symbols/face.xml') });
 const ICONO_HUELLA = Icon.select({ ios: 'touchid', android: require('@expo/material-symbols/fingerprint.xml') });
+const ICONO_CARNE = Icon.select({ ios: 'barcode.viewfinder', android: require('@expo/material-symbols/barcode_scanner.xml') });
 import { useAuth } from '@nucleo/context/AuthContext';
 import { esFalloDeCredencial } from '@nucleo/utils/sesionDelNavegador';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -33,7 +40,8 @@ async function ofrecerBiometria(usuario, clave) {
 }
 
 export default function Entrar() {
-  const { loginWithUsername, cambioDeClave, cambiarClaveInicial } = useAuth();
+  const { login, loginWithUsername, cambioDeClave, cambiarClaveInicial } = useAuth();
+  const [escaneando, setEscaneando] = useState(false);
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
   // Quien debe cambiar la contraseña: lo dice el contexto, que también cierra
@@ -120,6 +128,30 @@ export default function Entrar() {
     }
   };
 
+  // El carné leído por la cámara. Mismo trato que el portal: en mayúsculas y
+  // sin espacios. Si no lo reconoce, la cámara se cierra y se dice por qué: si
+  // siguiera abierta, volvería a leer el mismo carné cada pocos segundos y cada
+  // lectura sería un intento de entrada más.
+  const entrarConCarne = async (leido) => {
+    const codigo = String(leido ?? '').trim().toUpperCase();
+    if (!codigo || ocupado) return false;
+    setError('');
+    setOcupado(true);
+    try {
+      const r = await login(codigo);
+      setEscaneando(false);
+      if (!r?.ok) { setError(r?.error || 'Carné no reconocido.'); return false; }
+      router.replace('/inicio');
+      return true;
+    } catch {
+      setEscaneando(false);
+      setError('Error de conexión. Intenta de nuevo.');
+      return false;
+    } finally {
+      setOcupado(false);
+    }
+  };
+
   const cambiar = async () => {
     if (ocupado) return;
     setError('');
@@ -201,6 +233,24 @@ export default function Entrar() {
             : <Button variant="filled" label={ocupado ? 'Entrando…' : 'Entrar'} disabled={ocupado || !usuario || !clave} onPress={entrar} />}
         </Host>
       </View>
+
+      {!pendiente ? (
+        <View style={{ marginHorizontal: 16 }}>
+          <Pressable onPress={() => { setError(''); setEscaneando(true); }} disabled={ocupado} accessibilityRole="button"
+            style={({ pressed }) => ({ opacity: pressed || ocupado ? 0.7 : 1 })}>
+            <Vidrio radio={26} interactivo>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 14 }}>
+                <Host matchContents><Icon name={ICONO_CARNE} size={22} color={colorSistema.acento} /></Host>
+                <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>Entrar con el carné</Text>
+              </View>
+            </Vidrio>
+          </Pressable>
+        </View>
+      ) : null}
+
+      <Escaner visible={escaneando} titulo="Entrar con el carné" ayuda="Acerca el código de tu carné a la cámara."
+        onCodigo={entrarConCarne} onCerrar={() => setEscaneando(false)}
+        pie={ocupado ? <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', textAlign: 'center' }}>Verificando…</Text> : null} />
     </Formulario>
   );
 }

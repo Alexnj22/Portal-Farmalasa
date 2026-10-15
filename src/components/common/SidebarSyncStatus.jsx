@@ -5,17 +5,15 @@ import { usePushSubscription } from '../../plataforma/usePushSubscription';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
+// Qué corrida vale por sala y cuándo está al día: núcleo, lo mismo de la app.
+import { conCorridaNueva, nivelDeSala, resumenDeSincronizacion, ultimaPorSala, veEstadoDeDatos } from '@nucleo/utils/estadoDeSincronizacion';
 
-const WARN_MINS  = 8;
-const STALE_MINS = 15;
-
-function dotClass(minsAgo, hasError) {
-  if (hasError || minsAgo === null || minsAgo > STALE_MINS)
-    return 'bg-danger shadow-[var(--shadow-glow-danger-sm)]';
-  if (minsAgo > WARN_MINS)
-    return 'bg-warning shadow-[var(--shadow-glow-warning-sm)]';
-  return 'bg-success shadow-[var(--shadow-glow-success-sm)]';
-}
+const CLASE_DE_NIVEL = {
+  caida: 'bg-danger shadow-[var(--shadow-glow-danger-sm)]',
+  atrasada: 'bg-warning shadow-[var(--shadow-glow-warning-sm)]',
+  bien: 'bg-success shadow-[var(--shadow-glow-success-sm)]',
+};
+const dotClass = (minsAgo, hasError) => CLASE_DE_NIVEL[nivelDeSala(minsAgo, hasError)];
 
 export default function SidebarSyncStatus() {
   const [branches, setBranches] = useState([]);
@@ -25,7 +23,7 @@ export default function SidebarSyncStatus() {
   // los demás el recuadro no se pide ni se dibuja — vacío se leería como «los
   // datos no se actualizan». La campana de al lado es de todos y no cambia.
   const { hasPermission } = useAuth();
-  const veDatos = hasPermission('inventario', 'can_view') || hasPermission('sync_health', 'can_view');
+  const veDatos = veEstadoDeDatos(hasPermission);
   const { permission, subscribed, subscribe, isSupported } = usePushSubscription();
 
   const fetchLatest = useCallback(async () => {
@@ -33,11 +31,7 @@ export default function SidebarSyncStatus() {
     if (error) console.error('SidebarSyncStatus: fetch inventory_sync_log failed:', error.message);
 
     if (!data) return;
-    const byBranch = {};
-    for (const row of data) {
-      if (!byBranch[row.erp_sucursal_id]) byBranch[row.erp_sucursal_id] = row;
-    }
-    setBranches(Object.values(byBranch).sort((a, b) => a.erp_sucursal_id - b.erp_sucursal_id));
+    setBranches(ultimaPorSala(data));
   }, []);
 
   // El evento YA trae la fila nueva: se aplica tal cual en vez de volver a
@@ -47,9 +41,7 @@ export default function SidebarSyncStatus() {
   // que `fetchInventorySyncLogRecent`: sólo las corridas de existencias, no las
   // de vencidos. El intervalo de 90 s queda como red por si se pierde un evento.
   const aplicarEvento = useCallback(({ new: fila }) => {
-    if (!fila?.erp_sucursal_id || fila.is_vencidos) return;
-    setBranches(prev => [...prev.filter(b => b.erp_sucursal_id !== fila.erp_sucursal_id), fila]
-      .sort((a, b) => a.erp_sucursal_id - b.erp_sucursal_id));
+    setBranches(prev => conCorridaNueva(prev, fila));
   }, []);
 
   useEffect(() => {
@@ -61,13 +53,9 @@ export default function SidebarSyncStatus() {
     return () => { clearInterval(timer); cerrar(); };
   }, [fetchLatest, aplicarEvento, veDatos]);
 
-  const now       = useNowTick();
-  const hasErrors = branches.some(b => !b.success);
-  const anyStale  = branches.some(b => (now - new Date(b.synced_at).getTime()) / 60000 > STALE_MINS);
-  const allGood   = branches.length > 0 && !hasErrors && !anyStale;
-
-  const latestMs      = branches.length ? Math.max(...branches.map(b => new Date(b.synced_at).getTime())) : null;
-  const minsAgoLatest = latestMs ? Math.round((now - latestMs) / 60000) : null;
+  const now = useNowTick();
+  const { conErrores: hasErrors, algunaVieja: anyStale, todoBien: allGood, minutosDesdeLaUltima: minsAgoLatest } =
+    resumenDeSincronizacion(branches, now);
 
   const bellGranted = subscribed && permission === 'granted';
   const bellDenied  = permission === 'denied';

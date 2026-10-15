@@ -5,6 +5,7 @@
 import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { usePreferenciaDeTema } from '../tema/preferencia';
 
 const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
@@ -16,7 +17,18 @@ const Tinte = ({ color, radio }) => (color ? <View pointerEvents="none" style={[
 
 export default function Vidrio({ style, children, radio = 22, interactivo = false, tinte }) {
   const oscuro = useColorScheme() === 'dark';
+  // Estilo «Sólido» (Yo › Apariencia, el tema Solid del portal): la superficie
+  // opaca de las filas del sistema, sin vidrio ni desenfoque.
+  const solido = usePreferenciaDeTema((s) => s.estilo === 'solido');
   const forma = { borderRadius: radio, overflow: 'hidden' };
+  if (solido && Platform.OS === 'ios') {
+    return (
+      <View style={[forma, { backgroundColor: oscuro ? '#1C1C1E' : '#FFFFFF' }, style]}>
+        <Tinte color={tinte} radio={radio} />
+        {children}
+      </View>
+    );
+  }
   if (HAY_VIDRIO) {
     return (
       <GlassView glassEffectStyle="regular" isInteractive={interactivo} tintColor={tinte}

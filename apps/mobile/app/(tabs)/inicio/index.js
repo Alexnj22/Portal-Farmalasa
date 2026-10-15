@@ -23,6 +23,7 @@ import { anotar, ordenar } from '../../../componentes/inicio/uso';
 import { Hoy, SECCIONES } from '../../../componentes/inicio/Secciones';
 import { abrirRuta, abrirSolicitud } from '../../../pantallas';
 import { Recarga } from '../../../componentes/inicio/useDato';
+import FranjaDelPortal from '../../../componentes/FranjaDelPortal';
 
 const PESTANAS = [
   { id: 'general', label: 'General' },
@@ -74,6 +75,7 @@ export default function Inicio() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingBottom: 24, gap: 16 }}
       refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
+      <FranjaDelPortal />
       <Encabezado sala={nombreSala} />
       <Pestanas opciones={pestanas} activa={pestana} onCambiar={setPestana} />
       {puede('dash_kpi') ? <Hoy pestana={pestana} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion('hoy', r) }} /> : null}

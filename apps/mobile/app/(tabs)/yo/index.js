@@ -1,7 +1,12 @@
 // Yo: lo personal —perfil, documentos, solicitudes— y salir. Es lo que en el
 // portal vive en el menú del empleado y en la esquina del usuario.
+//
+// También lo del menú de Ajustes de la barra del portal: el código del kiosco
+// y el SU para copiarlos (mismos permisos: `kiosk_pin` y `su_pin`, ver
+// `componentes/perfil/codigoDeKiosco`) y la apariencia —los cuatro temas del
+// portal, Estilo × Modo— que se guarda en el teléfono (`tema/preferencia`).
 import { useEffect, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Switch as SwitchRN, Text, useColorScheme, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Switch as SwitchRN, Text, useColorScheme, View } from 'react-native';
 import Interruptor from '../../../componentes/Interruptor';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon, ListItem, Switch } from '@expo/ui';
@@ -19,6 +24,27 @@ import { ICONO_SALIR, iconoDe } from '../../../tema/iconos';
 import { abrirModulo } from '../../../pantallas';
 import { biometriaActiva, nombreBiometria, olvidarBiometria } from '../../../componentes/biometria';
 import { soltarAvisos } from '../../../componentes/avisos';
+import * as Clipboard from 'expo-clipboard';
+import { useCodigoDeKiosco } from '../../../componentes/perfil/codigoDeKiosco';
+import { ESTILOS, MODOS, usePreferenciaDeTema } from '../../../tema/preferencia';
+import { listo } from '../../../componentes/Progreso';
+
+const ES_IOS = Platform.OS === 'ios';
+
+function copiar(texto, que) {
+  if (!texto || texto.includes('·')) return;
+  Clipboard.setStringAsync(texto).then(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    listo('Copiado', que);
+  }).catch(() => {});
+}
+
+function elegir(titulo, opciones, onElegir) {
+  ActionSheetIOS.showActionSheetWithOptions(
+    { title: titulo, options: [...opciones.map((o) => o.label), 'Cancelar'], cancelButtonIndex: opciones.length },
+    (i) => { if (i < opciones.length) onElegir(opciones[i].id); },
+  );
+}
 
 const PERSONALES = ['emp_profile', 'emp_documents', 'requests_personales'];
 
@@ -28,6 +54,18 @@ export default function Yo() {
   const tema = useTema();
   const oscuro = useColorScheme() === 'dark';
   const [biometria, setBiometria] = useState({ nombre: null, activa: false });
+  const verPin = hasPermission('kiosk_pin', 'can_view');
+  const verSu = hasPermission('su_pin', 'can_view');
+  const { codigo, sufijo } = useCodigoDeKiosco(verPin);
+  const { modo, estilo, ponerModo, ponerEstilo } = usePreferenciaDeTema();
+  const rotuloModo = MODOS.find((m) => m.id === modo)?.label;
+  const rotuloEstilo = ESTILOS.find((m) => m.id === estilo)?.label;
+  const codigos = [
+    ...(verPin ? [{ id: 'pin', titulo: 'Código de kiosco', valor: codigo }] : []),
+    ...(verSu ? [{ id: 'su', titulo: 'Código SU', valor: `${codigo}${sufijo}` }] : []),
+  ];
+  const elegirModo = () => elegir('Modo', MODOS, ponerModo);
+  const elegirEstilo = () => elegir('Estilo', ESTILOS, ponerEstilo);
   useEffect(() => {
     (async () => setBiometria({ nombre: await nombreBiometria(), activa: await biometriaActiva() }))();
   }, []);
@@ -58,7 +96,8 @@ export default function Yo() {
 
   if (Platform.OS !== 'ios') {
     return <YoAndroid nombre={shortEmployeeName(user)} detalle={[cargo, sala].filter(Boolean).join(' · ')} modulos={modulos}
-      biometria={biometria} cambiarBiometria={cambiarBiometria} salir={salir} tema={tema} />;
+      biometria={biometria} cambiarBiometria={cambiarBiometria} salir={salir} tema={tema}
+      codigos={codigos} rotuloModo={rotuloModo} elegirModo={elegirModo} />;
   }
 
   return (
@@ -87,6 +126,28 @@ export default function Yo() {
             </ListItem>
           </Seccion>
         ) : null}
+        {codigos.length ? (
+          <Seccion>
+            {codigos.map((c) => (
+              <ListItem key={c.id} onPress={() => copiar(c.valor, c.titulo)} supporting={`${c.valor} · toca para copiar · cambia cada hora`}
+                leading={<Icon name={iconoDe('Lock')} size={20} color={tema.color.marca} />}>
+                {c.titulo}
+              </ListItem>
+            ))}
+          </Seccion>
+        ) : null}
+        <Seccion>
+          <ListItem onPress={elegirModo} supporting={rotuloModo}
+            leading={<Icon name={iconoDe(oscuro ? 'Moon' : 'Sun')} size={20} color={tema.color.marca} />}>
+            Modo
+          </ListItem>
+          {ES_IOS ? (
+            <ListItem onPress={elegirEstilo} supporting={rotuloEstilo}
+              leading={<Icon name={iconoDe('Layers')} size={20} color={tema.color.marca} />}>
+              Estilo
+            </ListItem>
+          ) : null}
+        </Seccion>
         <Seccion>
           <ListItem onPress={salir} leading={<Icon name={ICONO_SALIR} size={20} color={tema.color.peligro} />}>
             Salir
@@ -117,7 +178,7 @@ function Renglon({ icono, color, texto, alTocar, primero, derecha, peligro }) {
   );
 }
 
-function YoAndroid({ nombre, detalle, modulos, biometria, cambiarBiometria, salir, tema }) {
+function YoAndroid({ nombre, detalle, modulos, biometria, cambiarBiometria, salir, tema, codigos, rotuloModo, elegirModo }) {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 22 }}>
       <Vidrio radio={22}>
@@ -146,6 +207,22 @@ function YoAndroid({ nombre, detalle, modulos, biometria, cambiarBiometria, sali
           </View>
         </Vidrio>
       ) : null}
+      {codigos.length ? (
+        <Vidrio radio={22}>
+          <View style={{ paddingVertical: 2 }}>
+            {codigos.map((c, i) => (
+              <Renglon key={c.id} primero={!i} icono={iconoDe('Lock')} color={tema.color.marca} texto={c.titulo} alTocar={() => copiar(c.valor, c.titulo)}
+                derecha={<Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: 1 }}>{c.valor}</Text>} />
+            ))}
+          </View>
+        </Vidrio>
+      ) : null}
+      <Vidrio radio={22}>
+        <View style={{ paddingVertical: 2 }}>
+          <Renglon primero icono={iconoDe('Moon')} color="#6929C4" texto="Modo" alTocar={elegirModo}
+            derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rotuloModo}</Text>} />
+        </View>
+      </Vidrio>
       <Vidrio radio={22}>
         <View style={{ paddingVertical: 2 }}>
           <Renglon primero icono={ICONO_SALIR} color={tema.color.peligro} texto="Salir" alTocar={salir} peligro />

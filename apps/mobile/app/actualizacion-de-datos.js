@@ -1,11 +1,16 @@
 // Actualización de datos, NATIVO — `SyncHealthView`: arriba, cada dato que se
 // actualiza solo (productos, Min/Max, compras, respaldo) con su última corrida
 // y, si falló, desde cuándo no tiene una buena; abajo, las corridas recientes
-// con su alcance y el detalle del error. Se refresca sola cada 30 segundos.
+// con su alcance, su origen y el detalle del error. Se refresca sola cada 30
+// segundos.
+//
+// El historial es el MISMO que pagina el portal (todo lo que trae
+// `fetchSyncHealthRecent`): acá se muestra de a `POR_PAGINA` con «Ver más», en
+// vez de cortarse en las primeras.
 //
 // Rótulos, alcance y el estado por dominio salen del núcleo (`data/syncHealth`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { alcanceDeCorrida, estadoPorDominio, fetchSyncHealthRecent, ROTULO_DE_DOMINIO, SYNC_HEALTH_DOMAINS } from '@nucleo/data/syncHealth';
@@ -18,13 +23,14 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
-const TOPE = 60;
+const POR_PAGINA = 60;
 
 export default function ActualizacionDeDatos() {
   const sucursales = useStaffStore((s) => s.branches);
   const [filas, setFilas] = useState(null);
   const [dominio, setDominio] = useState('todos');
   const [recargando, setRecargando] = useState(false);
+  const [cuantas, setCuantas] = useState(POR_PAGINA);
 
   const cargar = useCallback(async () => {
     const { data } = await fetchSyncHealthRecent();
@@ -60,22 +66,27 @@ export default function ActualizacionDeDatos() {
                 );
               })}
             </View>
-            <Segmentos activa={dominio} onCambiar={setDominio} opciones={[{ id: 'todos', label: 'Todos' }, ...SYNC_HEALTH_DOMAINS.map((d) => ({ id: d, label: ROTULO_DE_DOMINIO[d] }))]} />
+            <Segmentos activa={dominio} onCambiar={(d) => { setDominio(d); setCuantas(POR_PAGINA); }} opciones={[{ id: 'todos', label: 'Todos' }, ...SYNC_HEALTH_DOMAINS.map((d) => ({ id: d, label: ROTULO_DE_DOMINIO[d] }))]} />
             <View style={{ marginHorizontal: 16 }}>
               <Vidrio radio={20}>
                 <View style={{ padding: 12, gap: 10 }}>
-                  {visibles.slice(0, TOPE).map((r, i) => (
+                  {visibles.slice(0, cuantas).map((r, i) => (
                     <View key={`${r.domain}-${r.checked_at}-${i}`} style={{ gap: 2, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{`${ROTULO_DE_DOMINIO[r.domain] ?? r.domain} · ${alcanceDeCorrida(r, nombreDeSala, ERP_NAMES)}`}</Text>
                         <Pildora texto={r.success ? 'OK' : 'Falló'} color={r.success ? MARCA.verde : MARCA.rojo} />
                       </View>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fechaHora12(r.checked_at)}</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[fechaHora12(r.checked_at), r.source].filter(Boolean).join(' · ')}</Text>
                       {r.error_msg ? <Text style={{ color: MARCA.rojo, fontSize: 12 }} numberOfLines={3}>{r.error_msg}</Text> : null}
                     </View>
                   ))}
                   {!visibles.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin actualizaciones registradas.</Text> : null}
-                  {visibles.length > TOPE ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Se muestran las ${TOPE} más recientes de ${visibles.length}.`}</Text> : null}
+                  {visibles.length > cuantas ? (
+                    <Pressable onPress={() => setCuantas((n) => n + POR_PAGINA)} hitSlop={6}
+                      style={({ pressed }) => ({ minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                      <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Ver ${Math.min(POR_PAGINA, visibles.length - cuantas)} más · ${cuantas} de ${visibles.length}`}</Text>
+                    </Pressable>
+                  ) : visibles.length > POR_PAGINA ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Las ${visibles.length} corridas.`}</Text> : null}
                 </View>
               </Vidrio>
             </View>

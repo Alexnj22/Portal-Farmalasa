@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.5 — App: chat con etiqueta, preferentes, estado de la farmacia, calificaciones, ajustes e incumplimientos
+
+- App, Chat con clientes: filtro por etiqueta y «Preferentes» (Platino y
+  Mayoristas) con su orden y su insignia; arriba, el estado de la farmacia, el
+  promedio de calificaciones de 30 días y los accesos a «Incumplimientos»
+  (supervisión o quien edita el chat) y «Ajustes del chat» (las respuestas
+  automáticas, con {abre}/{cierra} y vista previa).
+- Núcleo: `useFarmaciaEstado` se mudó a `src/hooks`; el portal lo reexporta.
+
 ## v2.1292.4 — App: ofertas con nivel, envío a domicilio, precio tachado y medida de imagen
 
 - App, Ofertas para clientes: «Exclusiva para» (nivel mínimo de Puntos Salud)

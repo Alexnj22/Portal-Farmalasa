@@ -345,6 +345,32 @@ export const fetchAnalisisDeStock = (params) => supabase.rpc('get_stock_analysis
 /** Recalcula el borrador de MIN·MAX de una sala. */
 export const calcularMinMaxDeSala = (params) => supabase.rpc('calculate_stock_params', params);
 
+/**
+ * Recalcula el borrador de TODAS las salas, de a una (Bodega no: se arma sola
+ * con la suma de las salas al publicar). Una sala que se niega —tiene
+ * borradores sin revisar— o que falla no frena a las demás: se devuelve en su
+ * lista para que quien llamó lo diga. `alAvanzar(i, total, id)` va antes de
+ * cada sala.
+ */
+export async function calcularMinMaxDeTodasLasSalas(salas, alAvanzar) {
+    let filas = 0;
+    const saltadas = [];
+    const fallidas = [];
+    for (let i = 0; i < salas.length; i++) {
+        const id = salas[i];
+        alAvanzar?.(i + 1, salas.length, id);
+        try {
+            const { data: res, error } = await calcularMinMaxDeSala({ p_erp_sucursal_id: id });
+            if (error) throw error;
+            if (res?.skipped) { saltadas.push(id); continue; }
+            filas += res?.rows ?? 0;
+        } catch {
+            fallidas.push(id);
+        }
+    }
+    return { filas, saltadas, fallidas };
+}
+
 /** Deja un producto en MIN·MAX cero en todas las salas. */
 export const ponerEnCeroProductoEnTodasLasSalas = (params) => supabase.rpc('zero_out_product_all_branches', params);
 

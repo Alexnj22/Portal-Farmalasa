@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.7 — App: paridad de Inventario: Min·Máx, conteos, bitácoras y traslados con el portal
+
+### App: traslados con ticket, recibir un grupo junto, filtro de sala y recibir por número
+
+Paridad de la app con el portal en Traslados (auditoría del 2026-10-15):
+
+- «Imprimir el ticket» desde un traslado en camino y desde un envío: el mismo
+  papel del portal, a la caja de la sala de quien lo pide.
+- «Recibir» junta lo pedido a varias salas a la vez, con cuántas respondieron
+  y «Ya llegaron las N completas» (de una en una, como el portal).
+- Con alcance de todas: filtro de sala en «Recibir» y el historial cortado por
+  sala de origen y desenlace.
+- Recibir una caja escribiendo su número cuando la cámara no lee el ticket.
+- Núcleo: `ticketDeEnvioParaImprimir`, la pareja de `ticketParaReimprimir`
+  para los envíos.
+
+### App: conteo de inventario con estantes, recuento a ciegas, orden y hoja compacta
+
+Paridad de la app con el portal en Conteo de inventario (auditoría del
+2026-10-15):
+
+- El conteo separa «Inventario» y «Área de vencidos» con lo que falta en cada
+  uno; el encabezado dice «En vivo» o «Según la hoja» y el alcance; avisos de
+  conteo ciego y de conteo parcial; orden por columna; «Modo recuento» a
+  ciegas sobre lo que tiene diferencia, en orden de estante.
+- La lista de conteos tiene buscador, filtro de sucursal y eliminar
+  manteniendo presionado.
+- Núcleo: `hojaDeConteoHtml` acepta `compacta` (dos productos por renglón,
+  apaisada, sin notas), la misma hoja compacta del portal.
+
+### App: Min·Máx con motivo del ajuste, 0 en todas las salas e historial
+
+Paridad de la app con el portal en Min·Máx (auditoría del 2026-10-15):
+
+- Pantallas nuevas: motivo del ajuste a mano (`minmax-motivo`), «0 en todas
+  las salas» con su porqué obligatorio (`minmax-cero`) e historial de cambios
+  del par —vigente, motivo, solicitud, firmas— (`minmax-historial`).
+- Revisión de la sala: tarjetas de costo, filtro de estado (poca venta, regla
+  de despacho, crítico A, ocultos, ajustes a mano), orden por columna, la
+  regla de despacho con su sugerencia, publicar un solo borrador, ocultar lo
+  filtrado, restaurar ocultos, recalcular todas las sucursales, el aviso de
+  Bodega y el equivalente en la presentación principal.
+- Núcleo: los rótulos del historial (`HISTORIAL_MINMAX_META`), el freno y lo
+  que se escribe del motivo, el orden, las filas para ocultar, los conteos de
+  estado y el recálculo de todas las salas pasan al núcleo; el portal los usa
+  sin cambiar de comportamiento.
+
 ## v2.1294.6 — App: paridad de Inventario: productos, pedidos, gestión de stock e inventario con el portal
 
 ### Productos e inventario en la app: filtros, orden, marcas de la fila, SRS y pegar foto

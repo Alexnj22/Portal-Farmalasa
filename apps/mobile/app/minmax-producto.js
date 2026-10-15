@@ -16,9 +16,9 @@
 // salas; un A o B a 0·0 pregunta). Con alcance de una sala, sólo se edita la
 // propia. La revisión de la sala entera (publicar, descartar y recalcular) es
 // `minmax-sala`; la matriz ABC·XYZ y la configuración siguen en el portal.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -129,7 +129,7 @@ function StockMuerto({ fila, productoId }) {
   );
 }
 
-function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, onOcultar, onMostrar }) {
+function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, onOcultar, onMostrar, onHistorial, onMotivo }) {
   const [abierta, setAbierta] = useState(false);
   const [min, setMin] = useState('');
   const [max, setMax] = useState('');
@@ -209,6 +209,12 @@ function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, on
               </View>
             ) : null}
             {fila.is_dead_stock || fila.alert_status === 'dead_stock' ? <StockMuerto fila={fila} productoId={productoId} /> : null}
+            {/* El historial de CAMBIOS (quién, por qué, de qué solicitud) y el
+                motivo del ajuste, como las acciones de la fila del portal. */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}><BotonGrande texto="Historial de cambios" borde color={MARCA.azulClaro} onPress={() => onHistorial(fila)} /></View>
+              {puedeEditar ? <View style={{ flex: 1 }}><BotonGrande texto="Motivo del ajuste" borde color={colorSistema.texto2} onPress={() => onMotivo(fila)} /></View> : null}
+            </View>
             <View style={{ gap: 4 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', letterSpacing: 0.4 }}>HISTORIAL DE CÁLCULOS</Text>
               <Historial producto={productoId} sucursal={fila.erp_sucursal_id} />
@@ -271,6 +277,11 @@ export default function MinMaxProducto() {
     setExtra({ lotes: lotes.data || [], politica: pol.data?.[0] ?? null, compras: compras.data || [], ventas: ventas.data || [] });
   }, [producto, verCostos]);
   useEffect(() => { setFilas(null); setExtra(null); cargar(); }, [cargar]);
+  // Al volver del motivo o de «0 en todas», lo escrito allá se ve acá.
+  const yaEnfocada = useRef(false);
+  useFocusEffect(useCallback(() => {
+    if (yaEnfocada.current) cargar(); else yaEnfocada.current = true;
+  }, [cargar]));
 
   // El piso de Bodega: la suma de lo vigente en las salas.
   const pisos = useMemo(() => {
@@ -401,8 +412,19 @@ export default function MinMaxProducto() {
               {filas == null ? null : filas.length ? filas.map((f) => (
                 <Sala key={f.erp_sucursal_id} fila={f} productoId={producto.id} ciclo={ciclo}
                   onGuardar={guardar} onRestaurar={restaurar} onOcultar={ocultar} onMostrar={mostrar}
+                  onHistorial={(f) => router.push({ pathname: '/minmax-historial', params: { producto: String(producto.id), sala: String(f.erp_sucursal_id), nombre: producto.nombre } })}
+                  onMotivo={(f) => router.push({ pathname: '/minmax-motivo', params: { producto: String(producto.id), sala: String(f.erp_sucursal_id), nombre: producto.nombre } })}
                   puedeEditar={canManage && (todas || Number(f.erp_sucursal_id) === Number(miErp))} />
               )) : <Aviso tono="nota" texto="Este producto no tiene MIN·MAX en ninguna sala." />}
+              {/* «0 en todas las salas», con su motivo obligatorio: lo tiene
+                  quien decide sobre todas o quien recibió esa función sola. */}
+              {filas?.length && canManage && (todas || hasPermission('minmax_cero_en_todas')) ? (
+                <BotonGrande texto="0 en todas las salas" borde color={MARCA.rojo}
+                  onPress={() => {
+                    const ref = filas.find((f) => f.erp_sucursal_id === ERP_BODEGA) ?? filas[0];
+                    router.push({ pathname: '/minmax-cero', params: { producto: String(producto.id), nombre: producto.nombre, clase: ref?.draft_abc_class || ref?.abc_class || '', velocidad: String(ref?.daily_velocity ?? 0) } });
+                  }} />
+              ) : null}
               {extra ? (
                 <>
                   <LotesPorVencer lotes={extra.lotes} politica={extra.politica} />

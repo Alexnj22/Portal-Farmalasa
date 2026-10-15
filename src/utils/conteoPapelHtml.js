@@ -37,9 +37,44 @@ ${esSimple(conteo) ? '<br/>Detalle: solo cantidades' : ''}${FUENTE_LABEL[conteo?
 const producto = (i) => `${esc(i.product_nombre)}${i.es_antibiotico ? ' <span class="rx">BAJO RECETA</span>' : ''}`;
 const vence = (i) => (i.fecha_vencimiento ? esc(fechaTexto(i.fecha_vencimiento, { month: 'short', year: '2-digit' })) : '—');
 
+/**
+ * La hoja compacta: DOS productos por renglón, página apaisada y sin la columna
+ * «Nota» —la única que no hace falta para contar—, como la del portal
+ * (`printHojaConteo` con `compacta`). Los pares se arman DENTRO de cada
+ * laboratorio, nunca cruzándolo: si no, la banda mentiría sobre media fila.
+ */
+function hojaCompactaHtml(conteo, items, { ciego, simple }) {
+    const una = simple
+        ? ['Producto', 'Presentación', ...(ciego ? [] : ['Sistema']), 'Físico']
+        : ['Producto', 'Lote', 'Vence', ...(ciego ? [] : ['Sistema']), 'Físico'];
+    const cols = [...una, ...una];
+    const celdasDe = (i) => {
+        if (!i) return una.map(() => '<td></td>').join('');
+        const c = simple ? [producto(i), esc(i.presentacion || '—')] : [producto(i), esc(i.lote || '—'), vence(i)];
+        if (!ciego) c.push(`<span>${n(i.sistema_cantidad)}</span>`);
+        return `${c.map((x, k) => `<td${k === c.length - 1 && !ciego ? ' class="n"' : ''}>${x}</td>`).join('')}<td class="caja"></td>`;
+    };
+    const porLab = [];
+    for (const i of ordenarRenglonesDeConteo(items)) {
+        const ult = porLab[porLab.length - 1];
+        if (ult && ult.lab === i.laboratorio_nombre) ult.items.push(i);
+        else porLab.push({ lab: i.laboratorio_nombre, items: [i] });
+    }
+    const filas = porLab.map(({ lab, items: its }) => {
+        let html = `<tr><td class="lab" colspan="${cols.length}">${esc(lab || 'Sin laboratorio')}</td></tr>`;
+        for (let k = 0; k < its.length; k += 2) html += `<tr>${celdasDe(its[k])}${celdasDe(its[k + 1])}</tr>`;
+        return html;
+    }).join('');
+    const estilo = ESTILO.replace('@page { margin: 24pt; }', '@page { size: letter landscape; margin: 20pt; }');
+    return `<!doctype html><html><head><meta charset="utf-8"/>${estilo}</head><body>${cabecera(conteo, ciego ? 'Hoja compacta para contar (sin existencia del sistema)' : 'Hoja compacta para contar')}
+<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table>
+<div class="pie"><div>Contó</div><div>Revisó</div></div></body></html>`;
+}
+
 /** La hoja para contar a mano: con «Sistema» sólo si el conteo no es ciego. */
-export function hojaDeConteoHtml(conteo, items = [], { ciego = false } = {}) {
+export function hojaDeConteoHtml(conteo, items = [], { ciego = false, compacta = false } = {}) {
     const simple = esSimple(conteo);
+    if (compacta) return hojaCompactaHtml(conteo, items, { ciego, simple });
     const cols = simple
         ? ['Producto', 'Presentación', ...(ciego ? [] : ['Sistema']), 'Físico', 'Nota']
         : ['Producto', 'Lote', 'Vence', ...(ciego ? [] : ['Sistema']), 'Físico', 'Nota'];

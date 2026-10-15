@@ -16,13 +16,22 @@ import { selectAllPaged } from "../_shared/db.ts";
 // que se declara a Hacienda no es suficiente, y el modo de falla es silencioso:
 // una compra ausente no rompe nada, solo achica el crédito fiscal.
 //
-// **Por qué avisar y no arreglar solo.** Recuperar el documento faltante exige
-// correr el sync normal sobre ese día (`fastBackfill` NO sirve: completa
-// columnas de filas que ya existen, no trae filas nuevas), y eso son 167s por
-// mes de Bodega contra un ERP que serializa. Un cron que lo intentara solo,
-// todos los días, competiría con el sync de cada 10 minutos. Además una
-// diferencia puede ser una anulación legítima, y reescribir sin que nadie mire
-// es peor que avisar.
+// **Lo que falta se trae solo; lo demás se avisa** (2026-10-15). Antes sólo
+// avisaba: bajar el mes entero con el sync normal costaba 167 s en Bodega. Desde
+// el 2026-10-08 el sync tiene modo `incremental`, que cruza la lista barata del
+// ERP contra el portal y baja SÓLO los días con un documento que falta — un
+// documento capturado tarde cuesta segundos. Y el caso "faltan documentos" es
+// seguro de arreglar sin que nadie mire: el incremental sólo AGREGA lo que el
+// ERP lista y el portal no tiene, no reescribe ni borra.
+//
+// Se avisa sólo lo que queda después de intentarlo: un documento que el sync no
+// pudo traer, un monto editado (mismo conteo, otro total — el incremental no lo
+// ve) o el portal con MÁS documentos que el ERP (una anulación). Salud 2 llevaba
+// cuatro avisos desde agosto por compras de servicios capturadas tarde, y uno de
+// septiembre ($47.00) pasó una semana sin que nadie lo atendiera.
+//
+// Corre a la 01:20 SV, cuando el sync de cada 10 minutos duerme, así que no
+// compiten por el ERP.
 //
 // **Ámbito: el mes en curso y el anterior.** Son los dos que todavía se pueden
 // corregir antes de declarar. Más atrás ya se presentó.
@@ -116,6 +125,27 @@ Deno.serve(async (req) => {
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  const arranque = Date.now();
+
+  const contarPortal = async (branchId: number, desde: string, hasta: string, etiqueta: string) => {
+    let propias: any[];
+    try {
+      propias = await selectAllPaged<any>((from, to) => supabase
+        .from('purchase_receipts')
+        .select('total')
+        .eq('branch_id', branchId)
+        .gte('fecha', desde).lte('fecha', hasta)
+        .order('id')
+        .range(from, to));
+    } catch (e) {
+      throw new Error(`purchase_receipts (${branchId}, ${etiqueta}): ${(e as any)?.message ?? e}`);
+    }
+    return {
+      portalN:     propias.length,
+      portalTotal: propias.reduce((s, r: any) => s + (Number(r.total) || 0), 0),
+    };
+  };
+
   try {
     const { username, password } = getPurchaseCreds();
     const cookie   = await getSessionCookie(username, password);
@@ -131,6 +161,7 @@ Deno.serve(async (req) => {
     const hallazgos: Array<{
       branchId: number; mes: string;
       erpN: number; portalN: number; erpTotal: number; portalTotal: number;
+      desde: string; hasta: string;
     }> = [];
     const revisados: any[] = [];
 
@@ -164,25 +195,11 @@ Deno.serve(async (req) => {
         //
         // El error del query NO se descarta: sin esto una consulta fallida
         // daría portalN = 0 y dispararía una alerta falsa por cada sucursal.
-        let propias: any[];
-        try {
-          propias = await selectAllPaged<any>((from, to) => supabase
-            .from('purchase_receipts')
-            .select('total')
-            .eq('branch_id', branchId)
-            .gte('fecha', desde).lte('fecha', hasta)
-            .order('id')
-            .range(from, to));
-        } catch (e) {
-          throw new Error(`purchase_receipts (${branchId}, ${etiqueta}): ${(e as any)?.message ?? e}`);
-        }
-
-        const portalN     = propias.length;
-        const portalTotal = propias.reduce((s, r: any) => s + (Number(r.total) || 0), 0);
+        const { portalN, portalTotal } = await contarPortal(branchId, desde, hasta, etiqueta);
 
         revisados.push({ branchId, mes: etiqueta, erpN, portalN });
         if (erpN !== portalN || Math.abs(erpTotal - portalTotal) > TOLERANCIA) {
-          hallazgos.push({ branchId, mes: etiqueta, erpN, portalN, erpTotal, portalTotal });
+          hallazgos.push({ branchId, mes: etiqueta, erpN, portalN, erpTotal, portalTotal, desde, hasta });
         }
       }
     }
@@ -210,8 +227,49 @@ Deno.serve(async (req) => {
       else duplicados = data ?? [];
     }
 
+    // ── Traer lo que falta ────────────────────────────────────────────────
+    // Sólo cuando el ERP tiene MÁS documentos que el portal: eso es lo único
+    // que el sync incremental sabe arreglar, y lo arregla agregando — nunca
+    // reescribe ni borra. Un monto editado o un portal con documentos de más
+    // siguen como aviso. Después se vuelve a contar: lo que se avisa es lo que
+    // quedó, no lo que se encontró.
+    //
+    // Presupuesto: la respuesta de una Edge Function muere a los 150 s y el
+    // cron espera 140. Si no queda tiempo, el hallazgo se avisa como antes.
+    const PRESUPUESTO_MS = 120_000;
+    const MARGEN_MS      = 15_000;
+    const recuperados: any[] = [];
+    const quedan: typeof hallazgos = [];
+    for (const h of hallazgos) {
+      const restante = PRESUPUESTO_MS - (Date.now() - arranque);
+      if (h.erpN <= h.portalN || restante < MARGEN_MS + 10_000) { quedan.push(h); continue; }
+      try {
+        const r = await fetch(`${supabaseUrl}/functions/v1/sync-erp-purchases`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
+          },
+          body: JSON.stringify({ fini: h.desde, ffin: h.hasta, branchId: h.branchId, incremental: true }),
+          signal: AbortSignal.timeout(restante - MARGEN_MS),
+        });
+        const cuerpo = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(`HTTP ${r.status}: ${JSON.stringify(cuerpo).slice(0, 200)}`);
+
+        const antes = h.portalN;
+        const ahora = await contarPortal(h.branchId, h.desde, h.hasta, h.mes);
+        h.portalN = ahora.portalN; h.portalTotal = ahora.portalTotal;
+        if (h.portalN > antes) recuperados.push({ branchId: h.branchId, mes: h.mes, traidos: h.portalN - antes });
+        if (h.erpN !== h.portalN || Math.abs(h.erpTotal - h.portalTotal) > TOLERANCIA) quedan.push(h);
+      } catch (e: any) {
+        problemas.push(`traer faltantes (${h.branchId}, ${h.mes}): ${e?.message ?? e}`);
+        quedan.push(h);
+      }
+    }
+    hallazgos.splice(0, hallazgos.length, ...quedan);
+
     if (hallazgos.length === 0 && duplicados.length === 0 && problemas.length === 0) {
-      return new Response(JSON.stringify({ ok: true, revisados: revisados.length, diferencias: 0 }), {
+      return new Response(JSON.stringify({ ok: true, revisados: revisados.length, diferencias: 0, recuperados }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -317,7 +375,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         ok: true, revisados: revisados.length, diferencias: hallazgos.length,
-        enviadas, hallazgos,
+        enviadas, hallazgos, recuperados,
         proveedores_duplicados: duplicados.length, duplicados,
         problemas,
       }),

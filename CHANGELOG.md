@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1291.2 — El cuadre de compras trae solo lo que falta
+
+`check-purchases-reconciliation` (01:20 SV) ya no sólo avisa: cuando el origen
+tiene MÁS documentos que el libro, llama al sync de compras en modo
+`incremental` sobre esa sucursal y ese mes —baja sólo los días con un documento
+que falta, y sólo agrega— y vuelve a contar. Se avisa lo que quedó: un
+documento que no se pudo traer, un monto editado (mismo conteo, otro total) o
+el libro con documentos de más. Presupuesto de 120 s; sin tiempo, se avisa como
+antes. Lo traído queda en `recuperados` de la respuesta del cron.
+
 ## v2.1291.1 — El aviso del libro de compras nombra la sucursal
 
 El aviso «Libro de compras no cuadra» decía «Sucursal 25» —el id interno— en

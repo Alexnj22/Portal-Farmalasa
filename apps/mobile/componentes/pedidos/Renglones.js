@@ -127,7 +127,7 @@ export default function Renglones({ items }) {
       <SeccionDeRenglones titulo="Sin inventario en bodega" filas={s.sinStock} modo="sinStock" color={MARCA.ambar}
         nota="No se incluyeron por falta de existencia en bodega al momento del despacho." />
       <SeccionDeRenglones titulo="Revisar regla de despacho" filas={s.porRegla} modo="regla" color={MARCA.rojo}
-        nota="La regla de despacho dejó el producto fuera. El MIN/MAX se corrige en el portal." />
+        nota="La regla de despacho dejó el producto fuera. El MIN/MAX se corrige en Min·Máx." />
     </View>
   );
 }

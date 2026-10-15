@@ -66,7 +66,10 @@ Son fugas de permiso, no faltantes. Van antes que todo lo demás.
 - **Compras**: las pestañas Facturas y Productos no miran `compras_tab_*` —
   `src/views/ComprasView.jsx:464`.
 - **Facturas de sala** (?): el monto se muestra sin mirar
-  `facturas_sala_ver_montos`.
+  `facturas_sala_ver_montos`. → no aplica: el widget del portal hace lo mismo.
+
+✅ **F0 cerrada**: meta, ventas perdidas y compras corregidas; los once
+comentarios de `pantallas.js` y el texto de `Renglones.js` actualizados.
 
 ### Las A (uso diario)
 
@@ -169,10 +172,10 @@ faltantes.
 ## Caja y ventas
 
 ### /inicio — Inicio
-- ☐ [A] **Fuga de permiso**: la meta del mes muestra montos (vendido, meta, falta) aunque la persona no tenga `dash_meta_sala_vista_completa`; la web sólo muestra porcentajes — src/views/dashboard/WidgetMetaSala.jsx
+- ✅ [A] **Fuga de permiso**: la meta del mes muestra montos (vendido, meta, falta) aunque la persona no tenga `dash_meta_sala_vista_completa`; la web sólo muestra porcentajes — src/views/dashboard/WidgetMetaSala.jsx
 - ☐ [A] Reservas: falta «Revisar receta» de las que están `en_revision` (aprobar, pedir otra foto, rechazar) — src/views/dashboard/RevisarReceta.jsx, WidgetReservas.jsx
 - ☐ [A] Reservas: falta «Reservar con anticipo» en el mostrador (≥50 %, 7 días, constancia con código de barras); `abono-apartado` parece otro flujo (?) — src/views/dashboard/NuevaReservaSucursal.jsx
-- ☐ [M] Meta del mes: falta «hoy llevas $X», la proyección de cierre ($ y %) y el ritmo diario necesario — WidgetMetaSala.jsx
+- ✅ [M] Meta del mes: falta «hoy llevas $X», la proyección de cierre ($ y %) y el ritmo diario necesario — WidgetMetaSala.jsx
 - ☐ [M] Meta del mes: falta selector de sala para alcance ALL — src/views/DashboardView.jsx (`meta_sala`)
 - ☐ [M] Consulta de inventario: falta «faltantes de mi sala con existencia en otra sala» y pedir desde el renglón, incluidos los vencidos de Bodega — src/views/dashboard/inventario/PanelDeInventario.jsx
 - ☐ [B] Quién está vendiendo: falta «total / por día trabajado» y el promedio — WidgetVendedores.jsx
@@ -225,7 +228,7 @@ La app sólo trae la versión «widget» (tomar/soltar las de mi sala, 30 días)
 - ☐ [M] Panel por estado (Sin cargar, Atrasadas, Cargadas, Liberadas) con conteos, monto atrasado y aviso — src/views/purchases/FacturasSalaView.jsx
 - ☐ [M] Liberar una factura tomada por cualquier sala (`facturas_sala` can_edit) — FacturasSalaView.jsx
 - ☐ [B] Período 30/90/365 días y columna «La tomó» — FacturasSalaView.jsx
-- ☐ [B] El monto se muestra sin mirar `facturas_sala_ver_montos` (?) — FacturasSalaView.jsx
+- ✅ [B] El monto se muestra sin mirar `facturas_sala_ver_montos` (?) — FacturasSalaView.jsx · **no aplica**: el widget del portal (`WidgetFacturasSala.jsx`) también lo muestra sin ese permiso; la app es el widget
 
 **Total del grupo: A 4 · M 17 · B 19**
 
@@ -285,7 +288,7 @@ La app sólo trae la versión «widget» (tomar/soltar las de mi sala, 30 días)
 - ☐ [B] Equivalente en presentación principal (≈ cajas) — TabMinMax.jsx
 
 ### /ventas-perdidas — Ventas perdidas
-✅ completo · ⚠ permiso: el CSV de la app no exige `ventas_perdidas_descargar` (apps/mobile/app/ventas-perdidas.js:168)
+✅ completo · ✅ F0: el CSV exige `ventas_perdidas_descargar`
 
 ### /conteo-inventario — Conteo de inventario
 - ☐ [M] Pestañas «Inventario» y «Área de vencidos» separadas con lo que falta de cada una — src/views/inventario/ConteoDetailView.jsx
@@ -326,7 +329,7 @@ La app sólo trae la versión «widget» (tomar/soltar las de mi sala, 30 días)
 
 ### /compras — Compras (Bodega)
 - ☐ [B] La web filtra por un rango de fechas libre (desde/hasta); la app solo avanza mes a mes — src/views/ComprasView.jsx (LiquidDatePicker)
-- ☐ [B] La app muestra las pestañas Facturas y Productos sin revisar los permisos `compras_tab_*`, que la web sí exige — src/views/ComprasView.jsx:464
+- ✅ [B] La app muestra las pestañas Facturas y Productos sin revisar los permisos `compras_tab_*`, que la web sí exige — src/views/ComprasView.jsx:464
 
 ### /cuentas-por-pagar — Cuentas por pagar
 ✅ completo (el comentario de `pantallas.js` «registrar un pago: portal» está viejo: la app ya lo hace en `cxp-proveedor/[nit]`)

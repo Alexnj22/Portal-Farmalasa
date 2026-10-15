@@ -30,13 +30,13 @@ export const PANTALLAS_DE_LA_APP = {
   '/avisos': '/gestionar-avisos', // OJO: la pestaña de la app `/avisos` son MIS avisos; esto es gestionarlos
   '/facturacion': true, // las colas: sin sello de Hacienda, observaciones y anuladas
   '/resumen-fiscal': true, // el movimiento de IVA del mes, renglón por renglón
-  '/cierre-periodo': true, // la cadena del remanente; cerrar y reabrir en el portal
+  '/cierre-periodo': true, // la cadena del remanente; cerrar y reabrir
   '/libro-compras-completo': true, // qué se compró y qué es declarable; el CSV en el portal
-  '/libros-iva': true, // cada libro del mes en resumen; detalle y descargas en el portal
-  '/cargos': true, // el organigrama como lista; editar en el portal
-  '/permisos': true, // qué puede cada cargo, módulo por módulo; cambiarlos en el portal
-  '/sesiones': true, // conexiones abiertas y cerrarlas; bloquear en el portal
-  '/carnes-del-dia': true, // carnés de papel vivos y anularlos; imprimir en el portal
+  '/libros-iva': true, // cada libro del mes, su detalle y las descargas
+  '/cargos': true, // el organigrama como lista, y editar
+  '/permisos': true, // qué puede cada cargo, módulo por módulo, y cambiarlos
+  '/sesiones': true, // conexiones abiertas: cerrarlas y bloquear
+  '/carnes-del-dia': true, // carnés de papel vivos: anularlos e imprimir
   '/encuesta-admin': true, // las encuestas internas y sus puntajes por persona
   '/encuestas-clientes': true, // lista y resultados (NPS, temas, sucursales, comentarios)
   '/encuestas-aplicar': true, // entrevistar a un cliente desde el teléfono; modo tablet en el portal
@@ -45,7 +45,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/solicitudes-datos': true, // los plazos de las solicitudes ARCO; imprimir y responder en el portal
   '/actualizacion-de-datos': true, // el estado de cada dato que se actualiza solo
   '/mantenimiento': true, // frenos de mercadería y candados de módulo, con confirmación
-  '/auditoria-del-sistema': true, // la bitácora del sistema; exportar en el portal
+  '/auditoria-del-sistema': true, // la bitácora del sistema y su CSV
   '/notificaciones': true, // el historial: leídas y quitadas, con la misma tarjeta
   '/ofertas-clientes': true, // ofertas de Puntos Salud y pre-registros
   '/torogoz': true, // la distribuidora: su menú y sus secciones (`/torogoz/<seccion>`)
@@ -58,12 +58,12 @@ export const PANTALLAS_DE_LA_APP = {
   '/compras': true, // las compras del mes y su detalle con lote y vencimiento; resumen por producto: portal
   '/sucursales': true, // por tipo: abierta ahora, horario, gente y alertas; editar: portal
   '/proveedores': true, // el directorio y la ficha (con lo que se le debe); clasificar: portal
-  '/laboratorios': true, // dónde está cada laboratorio en la sala, y corregirlo; la política de vencimiento: portal
-  '/cuentas-por-pagar': true, // lo que se debe por proveedor y los pagos (aprobar/anular); registrar un pago: portal
-  '/metas': true, // el tablero del mes por sala; bono, confirmación e histórico: portal
+  '/laboratorios': true, // dónde está cada laboratorio en la sala, y corregirlo; la política de vencimiento
+  '/cuentas-por-pagar': true, // lo que se debe por proveedor, registrar un pago y aprobar/anular
+  '/metas': true, // el tablero del mes por sala, bono, confirmación e histórico
   '/inyecciones': true, // pendientes (marcar aplicadas) y bitácora; por cobrar y ajustes: portal
   '/facturas-compra': true, // los documentos del mes; la ficha con productos y PDF (revisión y vincular: portal)
-  '/corte-z': true, // el Gran Z mensual con su cotejo; el PDF, en el portal
+  '/corte-z': true, // el Gran Z mensual con su cotejo y el PDF
   '/puntos': true, // resumen, consulta del saldo y avisos (asignar cuentas y traspasos: portal)
   '/bolsas': true, // el circuito de administración: recibir, contar y confirmar (la sala va a /bolsas-sala)
   '/gestion-stock': true, // sin venta por destino y vendidos sin Min/Max (pedir o aplicar)

@@ -35,8 +35,13 @@ const POR_PAGINA = 30;
 
 export default function Compras() {
   // Sin `compras_ver_montos` la lista no lleva dinero (igual que el portal).
-  const verMontos = useAuth().hasPermission('compras_ver_montos');
-  const [tab, setTab] = useState('facturas');
+  const { hasPermission } = useAuth();
+  const verMontos = hasPermission('compras_ver_montos');
+  // Cada pestaña con su permiso `compras_tab_*`, como `ComprasView` del portal.
+  const pestanas = [{ id: 'facturas', label: 'Facturas' }, { id: 'productos', label: 'Productos' }]
+    .filter((t) => hasPermission(`compras_tab_${t.id}`));
+  const [tabElegida, setTab] = useState(null);
+  const tab = pestanas.some((t) => t.id === tabElegida) ? tabElegida : (pestanas[0]?.id ?? null);
   const [mes, setMes] = useState(mesSV);
   const [proveedorId, setProveedorId] = useState('todos');
   const [sinProveedor, setSinProveedor] = useState(false);
@@ -89,7 +94,8 @@ export default function Compras() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setPagina(0); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={tab} onCambiar={setTab} opciones={[{ id: 'facturas', label: 'Facturas' }, { id: 'productos', label: 'Productos' }]} />
+        {pestanas.length > 1 ? <Segmentos activa={tab} onCambiar={setTab} opciones={pestanas} /> : null}
+        {!tab ? <Text style={{ marginHorizontal: 20, color: colorSistema.texto2, fontSize: 15 }}>No tienes acceso a ninguna pestaña de Compras.</Text> : null}
         {tab === 'productos' ? <ProductosComprados busqueda={busqueda} verMontos={verMontos} /> : null}
         {tab === 'facturas' ? (<>
         <PasoDeMes mes={mes} onCambiar={setMes} />

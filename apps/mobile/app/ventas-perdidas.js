@@ -32,7 +32,8 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
 function Reportar({ abierto, onCerrar, onListo }) {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
+  const puedeDescargar = hasPermission('ventas_perdidas_descargar');
   const [buscado, setBuscado] = useState('');
   const [cantidad, setCantidad] = useState('1');
   const [laboratorio, setLaboratorio] = useState('');
@@ -165,7 +166,7 @@ export default function VentasPerdidas() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ventas perdidas', headerLargeTitle: true }} />
-      <MenuDeFiltros grupos={grupos} extra={visibles.length ? { icono: 'square.and.arrow.up', etiqueta: 'Exportar CSV', onPress: exportar } : null} />
+      <MenuDeFiltros grupos={grupos} extra={puedeDescargar && visibles.length ? { icono: 'square.and.arrow.up', etiqueta: 'Exportar CSV', onPress: exportar } : null} />
       <FlatList key={`c${columnas}`} numColumns={columnas} columnWrapperStyle={columnas > 1 ? { gap: 10, paddingHorizontal: 16 } : undefined}
         data={filas == null ? [] : visibles} keyExtractor={(r) => String(r.id)}
         renderItem={({ item: r }) => (

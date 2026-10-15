@@ -5,7 +5,8 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Host, Icon } from '@expo/ui';
-import { formatMoney } from '@nucleo/utils/formatNumber';
+import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cumplenEl, empleadosActivos, presentesEl, problemaDeSucursal, sumarSalas } from '@nucleo/utils/inicio';
 import { Titulo } from './Tarjeta';
@@ -139,11 +140,18 @@ function Anillo({ pct, color }) {
   );
 }
 
+// Igual que `WidgetMetaSala` del portal: con `dash_meta_sala_vista_completa`
+// habla en dólares; sin ella, en porcentajes. El ritmo diario sobrevive en las
+// dos porque es una instrucción, no el resultado de nadie.
 export function Meta({ datos, ctx }) {
+  const vistaCompleta = useAuth().hasPermission('dash_meta_sala_vista_completa');
   const m = datos.meta;
   if (!m) return null;
   const pct = Number(m.pct_cumplimiento) || 0;
   const color = pct >= 100 ? MARCA.verde : pct >= 70 ? MARCA.azul : MARCA.ambar;
+  const dias = `${m.dias_restantes} día${m.dias_restantes !== 1 ? 's' : ''}`;
+  const ritmo = m.ritmo_necesario != null ? ` · ${formatMoney(m.ritmo_necesario, { decimales: 0 })} por día` : '';
+  const chico = { color: colorSistema.texto2, fontSize: 14, fontVariant: ['tabular-nums'] };
   return (
     <Widget titulo="Meta del mes" icono="Target" color={color} onAbrir={ctx.puede('metas') ? () => ctx.abrir('/metas') : null}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
@@ -152,8 +160,21 @@ export function Meta({ datos, ctx }) {
           <Text style={{ position: 'absolute', width: 84, top: 30, textAlign: 'center', color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{Math.round(pct)}%</Text>
         </View>
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{formatMoney(m.venta_acumulada, { decimales: 0 })} <Text style={{ color: colorSistema.texto2, fontWeight: '400' }}>de {formatMoney(m.monto_meta, { decimales: 0 })}</Text></Text>
-          {Number(m.falta) > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Faltan {formatMoney(m.falta, { decimales: 0 })} · {m.dias_restantes} días</Text> : <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>¡Meta cumplida!</Text>}
+          {vistaCompleta ? (
+            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{formatMoney(m.venta_acumulada, { decimales: 0 })} <Text style={{ color: colorSistema.texto2, fontWeight: '400' }}>de {formatMoney(m.monto_meta, { decimales: 0 })}</Text></Text>
+          ) : (
+            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{formatPct(pct)} <Text style={{ color: colorSistema.texto2, fontWeight: '400' }}>de la meta</Text></Text>
+          )}
+          {vistaCompleta ? (
+            <Text style={chico}>Hoy llevas {formatMoney(m.venta_hoy, { decimales: 0 })}{m.proyeccion != null ? ` · cierra en ${formatMoney(m.proyeccion, { decimales: 0 })} → ${formatPct(m.pct_proyectado)}` : ''}</Text>
+          ) : m.pct_proyectado != null ? (
+            <Text style={chico}>Cierra en {formatPct(m.pct_proyectado)} de la meta</Text>
+          ) : null}
+          {Number(m.falta) > 0 ? (
+            <Text style={chico}>{vistaCompleta ? `Faltan ${formatMoney(m.falta, { decimales: 0 })}` : `Falta ${formatPct(Math.max(0, 100 - pct))}`} en {dias}{ritmo}</Text>
+          ) : (
+            <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>Meta alcanzada · {vistaCompleta ? `${formatMoney(m.venta_acumulada - m.monto_meta, { decimales: 0 })} por encima` : `${formatPct(Math.max(0, pct - 100))} por encima`}</Text>
+          )}
           {m.bono_tier ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{m.bono_tier}</Text> : null}
         </View>
       </View>

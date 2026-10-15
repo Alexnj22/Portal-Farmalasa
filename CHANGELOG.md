@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.4 — App: Cortes con las fichas de apertura y confirmar desde la tarjeta
+
+- App, Cortes: «Las cajas» arriba de la lista — quién abrió cada caja, el
+  cruce con su marcación, la venta del día y el efectivo del cajón (montos
+  sólo con alcance todas, como el portal).
+- Una tarjeta pendiente trae «Confirmar» (de un clic si cuadra) y «Descartar».
+- Núcleo: las cuentas de las fichas pasan de `FichasDeCaja.jsx` a
+  `utils/fichasDeCaja.js`; el portal las importa de ahí sin cambio visible.
+
 ## v2.1292.3 — App: Ventas con período libre, puntos, orden, tipo de precio y cambios
 
 - App, Ventas: período libre («Fechas…»), filtro por estado de los puntos y

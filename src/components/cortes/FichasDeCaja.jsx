@@ -6,7 +6,7 @@ import Notice from '../common/Notice';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { hora12 } from '@nucleo/utils/hora';
-import { diaSV, relojSV } from '@nucleo/utils/fecha';
+import { aperturasOrdenadas, detalleDelCajon, lineaDeQuien, minutosAntes, piezasPorSalaYDia as piezasPorClave, primeraEntradaPorPersona, ventasPorSalaYDia as ventasPorClave } from '@nucleo/utils/fichasDeCaja';
 
 /**
  * Quién abrió cada caja, desde cuándo y con cuánto — arriba de los cortes.
@@ -50,37 +50,8 @@ const horaReloj = (t) => hora12(t) || '—';
 
 const horaDe = (iso) => hora12(iso) || '—';
 
-/** «06:55:49» y una marcación → cuántos minutos antes (o después) se marcó. */
-function minutosAntes(abiertaA, marcaIso) {
-    if (!abiertaA || !marcaIso) return null;
-    const marca = new Date(marcaIso);
-    const [h, m] = String(abiertaA).split(':').map(Number);
-    // La marcación se compara en hora de sala, que es la del `abierta_a`.
-    const enSala = relojSV(marca);
-    const minutosMarca = enSala.getUTCHours() * 60 + enSala.getUTCMinutes();
-    return (h * 60 + m) - minutosMarca;
-}
-
-/**
- * De dónde sale el efectivo del cajón, en una línea y sólo lo que NO es cero.
- *
- * El total es `apertura + vendido en efectivo + ingresos − vales − bolsas`, y
- * la resta la hace la base (`caja_efectivo_piezas`), no esta línea: acá se
- * NOMBRAN las piezas para que el número se pueda auditar de un vistazo sin
- * abrir el corte. Un día sin ingresos ni vales no gana nada con dos renglones
- * en cero —ahí el cajón vale exactamente lo vendido en efectivo—, así que
- * devuelve cadena vacía y la ficha no pinta la línea.
- */
-function detalleDelCajon(pz) {
-    if (!pz) return '';
-    const partes = [];
-    const cero = (v) => Math.abs(Number(v) || 0) < 0.005;
-    if (!cero(pz.apertura)) partes.push(`abrió con ${formatMoney(pz.apertura)}`);
-    if (!cero(pz.entradas)) partes.push(`+${formatMoney(pz.entradas)} de ingresos`);
-    if (!cero(pz.vales)) partes.push(`−${formatMoney(pz.vales)} de vales`);
-    if (!cero(pz.en_bolsas)) partes.push(`−${formatMoney(pz.en_bolsas)} en bolsas`);
-    return partes.join(' · ');
-}
+// `minutosAntes`, `detalleDelCajon` y las cuentas por sala y día viven en el
+// núcleo (`utils/fichasDeCaja`): la app dibuja las mismas fichas.
 
 function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMontos }) {
     const abierta = !apertura.cerrada_at;
@@ -143,15 +114,7 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMo
                         {quien || 'Sin identificar'}
                     </span>
                     <span className="block text-micro text-content-3">
-                        {!quien
-                            ? 'se abrió desde la caja · no se sabe quién'
-                            : !hayConQueCruzar
-                                ? `turno ${apertura.turno ?? '—'} · caja ${apertura.caja_erp ?? '—'}`
-                                : dif == null
-                                    ? 'no marcó entrada'
-                                    : dif >= 0
-                                        ? `marcó entrada ${dif} min antes`
-                                        : `marcó entrada ${Math.abs(dif)} min después`}
+                        {lineaDeQuien({ quien, hayConQueCruzar, dif, apertura })}
                     </span>
                 </span>
             </div>
@@ -281,15 +244,7 @@ export default function FichasDeCaja({
     // La PRIMERA marcación de entrada de cada persona en cada día. La primera y
     // no la última: quien marca, sale a almorzar y vuelve tiene varias, y la que
     // se compara contra la apertura es con la que llegó.
-    const porPersona = useMemo(() => {
-        const pp = new Map();
-        for (const e of entradas) {
-            const dia = diaSV(e.timestamp);
-            const clave = `${e.employee_id}:${dia}`;
-            if (!pp.has(clave)) pp.set(clave, e.timestamp);
-        }
-        return pp;
-    }, [entradas]);
+    const porPersona = useMemo(() => primeraEntradaPorPersona(entradas), [entradas]);
 
     const hayConQueCruzar = pudeLeerAsistencia && entradas.length > 0;
 
@@ -300,11 +255,7 @@ export default function FichasDeCaja({
      * recorrer la lista para contestarlo. Con período largo son muchas, así que
      * la fila se corta en 12 y el resto vive en la lista de cortes de abajo,
      * que ya trae su sala en cada tarjeta. */
-    const ordenadas = useMemo(() => [...aperturas]
-        .sort((a, b) => (Number(!!a.cerrada_at) - Number(!!b.cerrada_at))
-            || String(b.abierta_el).localeCompare(String(a.abierta_el))
-            || String(salas?.get(a.branch_id) || '').localeCompare(String(salas?.get(b.branch_id) || ''), 'es'))
-        .slice(0, 12), [aperturas, salas]);
+    const ordenadas = useMemo(() => aperturasOrdenadas(aperturas, salas), [aperturas, salas]);
 
 
     /* Lo vendido por sala y por DÍA, no por período: una ficha es la apertura
@@ -316,19 +267,7 @@ export default function FichasDeCaja({
      * entró al cajón. Se suma por descarte y no listando las cuatro: el día que
      * el origen agregue una quinta forma, una lista a mano la perdería en
      * silencio y el total dejaría de cuadrar sin que nada avise. */
-    const ventasPorSalaYDia = useMemo(() => {
-        const m = new Map();
-        for (const v of ventas || []) {
-            const clave = `${v.branch_id}:${v.fecha}`;
-            const acc = m.get(clave) || { efectivo: 0, otras: 0, documentos: 0 };
-            const monto = Number(v.total) || 0;
-            if (String(v.tipo_pago).toLowerCase() === 'efectivo') acc.efectivo += monto;
-            else acc.otras += monto;
-            acc.documentos += Number(v.documentos) || 0;
-            m.set(clave, acc);
-        }
-        return m;
-    }, [ventas]);
+    const ventasPorSalaYDia = useMemo(() => ventasPorClave(ventas), [ventas]);
 
     /* Las piezas del cajón, por sala y día — la MISMA clave que las ventas.
      *
@@ -340,9 +279,7 @@ export default function FichasDeCaja({
      * Vacío no es cero: quien no tiene alcance `ALL` sobre `cortes_caja` no
      * recibe ninguna fila —cuenta ese cajón, así que la respuesta no puede
      * viajarle antes del conteo— y la ficha ya le esconde los montos. */
-    const piezasPorSalaYDia = useMemo(() => new Map(
-        (piezas || []).map((p) => [`${p.branch_id}:${p.fecha}`, p.piezas]),
-    ), [piezas]);
+    const piezasPorSalaYDia = useMemo(() => piezasPorClave(piezas), [piezas]);
 
     // Sin aperturas no se dibuja NADA, ni un vacío: esta fila es el encabezado
     // de los cortes, no una sección con su propia promesa. Un «sin aperturas»

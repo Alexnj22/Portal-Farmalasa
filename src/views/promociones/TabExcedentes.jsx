@@ -13,9 +13,8 @@ import { fetchExcedentes, decidirExcedente } from '@nucleo/data/promociones';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { fmtMoneda, fmtUnidades, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
+import { csvExcedentes, fmtMoneda, fmtUnidades, mensajeDeCarga } from '@nucleo/utils/promocionesUtils';
 
 /**
  * Lo vendido por encima del lote, esperando decisión.
@@ -75,13 +74,10 @@ export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen, 
     }, [filas, personas, onResumen]);
 
     useEffect(() => {
-        onExportable?.(filas.length ? () => exportCsv(
-            ['PERSONA', 'SALA', 'PROMOCION', 'PRODUCTO', 'UNIDADES DE MAS', 'LOTE', 'SERIA'],
-            filas.map((f) => [f.persona, f.sala || '', f.promocion, f.producto,
-                f.unidades, f.lote_total ?? '', f.monto]),
-            `promociones_excedentes_${hoySV()}.csv`,
-            'promociones',
-        ) : null);
+        onExportable?.(filas.length ? () => {
+            const c = csvExcedentes(filas);
+            exportCsv(c.headers, c.rows, `${c.nombre}.csv`, 'promociones');
+        } : null);
     }, [filas, onExportable]);
 
     const decidir = useCallback(async (fila, aprobar, motivo) => {

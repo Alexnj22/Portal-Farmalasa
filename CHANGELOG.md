@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.3 — App: promociones con CSV, sucursal en descuentos, A planilla y Vencida
+
+- App, Promociones: «Descargar CSV» en Activas, Histórico, Excedentes y Pagos
+  (el mismo archivo del portal); estado «Vencida»; en Descuentos, filtro por
+  sucursal (quien ve todas) y por estado, tarjetas Terminados y Productos, y
+  la etiqueta «En la app» / «App: sin publicar»; en Pagos, la tarjeta «A planilla».
+- Núcleo: los CSV de Promociones (`csvListaDePromociones`, `csvExcedentes`,
+  `csvPagosBono`) y `pagoBonoPendiente` se mudaron a `promocionesUtils`; el
+  portal los usa desde ahí.
+
 ## v2.1292.2 — App: bitácora de inyecciones con período, estado, sucursal y CSV
 
 - App, Inyecciones · Bitácora: período del cobro como el portal (30 días por

@@ -15,6 +15,11 @@
 // además, ver los ocultos y el laboratorio. «Ocultar montos» (el ojo de la
 // barra, como el portal) cambia toda cifra por puntos, para mostrar la
 // pantalla sin enseñar el dinero.
+//
+// Como el portal, además: período libre («Fechas…»), el estado de los puntos
+// (filtro y en cada fila), «Canjeó puntos» (el menú o tocar la cifra de
+// puntos canjeados: `get_ventas_con_puntos`), ordenar por columna y el aviso
+// de los cobros que no son venta de productos (`get_ventas_sin_producto`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
@@ -23,9 +28,11 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  fetchInvoicesList, fetchPuntosCanjeados, fetchResumenDeVentas, fetchVentasConReceta,
-  fetchVentasRecetaStats, ventasBusquedaEsAproximada,
+  fetchEstadoPuntosDeVentas, fetchInvoicesList, fetchPuntosCanjeados, fetchResumenDeVentas, fetchVentasConPuntos, fetchVentasConReceta,
+  fetchVentasRecetaStats, fetchVentasSinProducto, ventasBusquedaEsAproximada,
 } from '@nucleo/data/ventas';
+import { OPCIONES_FILTRO_PUNTOS, ROTULO_PUNTOS } from '@nucleo/data/puntos';
+import RangoDeFechas from '../componentes/formulario/RangoDeFechas';
 import { diasDelRango, horaDeCorte, mesEnCurso, montoPrivado, periodoAnterior, variacionPorDia } from '@nucleo/utils/ventasPeriodo';
 import { ESTADOS_ANULADA, ROTULO_PAGO } from '@nucleo/utils/solicitudFacturacion';
 import { correrMes, fechaTexto, hoySV, rangoDelMes, sumarDias } from '@nucleo/utils/fecha';
@@ -51,7 +58,8 @@ const POR_PAGINA = 30;
 const MIN_LETRAS = 3;
 
 // Los rangos del menú, calculados en el día de El Salvador.
-function rangoDe(periodo, hoy = hoySV()) {
+function rangoDe(periodo, hoy = hoySV(), rango = null) {
+  if (periodo === 'rango' && rango) return [rango.desde, rango.hasta];
   if (periodo === 'hoy') return [hoy, hoy];
   if (periodo === 'ayer') return [sumarDias(hoy, -1), sumarDias(hoy, -1)];
   if (periodo === '7') return [sumarDias(hoy, -6), hoy];
@@ -61,12 +69,24 @@ function rangoDe(periodo, hoy = hoySV()) {
 }
 const PERIODOS = [
   { id: 'hoy', label: 'Hoy' }, { id: 'ayer', label: 'Ayer' }, { id: '7', label: 'Últimos 7 días' },
-  { id: 'mes', label: 'Este mes' }, { id: 'anterior', label: 'Mes anterior' },
+  { id: 'mes', label: 'Este mes' }, { id: 'anterior', label: 'Mes anterior' }, { id: 'rango', label: 'Fechas…' },
 ];
+// Ordenar la lista: las columnas del portal (`COLS_VENTAS`), cada una en su
+// sentido natural.
+const ORDENES = [
+  { id: 'fecha|desc', label: 'Más recientes' }, { id: 'fecha|asc', label: 'Más antiguas' },
+  { id: 'total|desc', label: 'Total mayor' }, { id: 'total|asc', label: 'Total menor' },
+  { id: 'cliente|asc', label: 'Cliente (A–Z)' }, { id: 'vendedor|asc', label: 'Vendedor' },
+  { id: 'sucursal|asc', label: 'Sala' }, { id: 'tipo|asc', label: 'Tipo de documento' },
+  { id: 'metodo|asc', label: 'Forma de pago' }, { id: 'id|desc', label: 'Número' },
+];
+const PUNTOS = OPCIONES_FILTRO_PUNTOS.map((o) => ({ id: o.value || 'todos', label: o.label }));
+const estadoDePuntos = (r) => r.puntos_enviados?.estado_puntos ?? r.puntos_enviados?.[0]?.estado_puntos ?? null;
 
 const conSigno = (pct) => (pct == null ? null : `${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}% por día`);
 
-function Fila({ r, sala, vendedor, privado }) {
+function Fila({ r, sala, vendedor, privado, canjeo }) {
+  const puntos = ROTULO_PUNTOS[estadoDePuntos(r)] ?? null;
   const anulada = ESTADOS_ANULADA.includes(r.estado);
   const abrir = () => {
     Haptics.selectionAsync().catch(() => {});
@@ -92,7 +112,8 @@ function Fila({ r, sala, vendedor, privado }) {
             {anulada ? <Pildora texto="Anulada" color={MARCA.rojo} /> : null}
             {r.tipo_documento ? <Pildora texto={r.tipo_documento} color={MARCA.azulClaro} /> : null}
             {r.tipo_pago ? <Pildora texto={ROTULO_PAGO[r.tipo_pago] ?? r.tipo_pago} color={colorSistema.texto2} /> : null}
-            {r.has_puntos ? <Pildora texto="Con puntos" color={MARCA.ambar} /> : null}
+            {r.has_puntos || canjeo ? <Pildora texto="Canjeó puntos" color={MARCA.ambar} /> : null}
+            {puntos ? <Pildora texto={`Puntos ${puntos.label.toLowerCase()}`} color={MARCA.violeta} /> : null}
           </View>
         </View>
       </Vidrio>
@@ -122,6 +143,10 @@ export default function Ventas() {
   const miSala = String(user?.branchId || '');
 
   const [periodo, setPeriodo] = useState('mes');
+  const [rango, setRango] = useState(() => ({ desde: `${hoySV().slice(0, 7)}-01`, hasta: hoySV() }));
+  const [orden, setOrden] = useState('fecha|desc');
+  const [estadoPuntos, setEstadoPuntos] = useState('todos');
+  const [sinProducto, setSinProducto] = useState(null);
   const [salaElegida, setSala] = useState('todas');
   const [mostrar, setMostrar] = useState('todas');
   const [texto, setTexto] = useState('');
@@ -137,7 +162,10 @@ export default function Ventas() {
   const [error, setError] = useState(null);
   const pedido = useRef(0);
 
-  const [fini, ffin] = useMemo(() => rangoDe(periodo), [periodo]);
+  const [fini, ffin] = useMemo(() => rangoDe(periodo, hoySV(), rango), [periodo, rango]);
+  const [sortCol, sortDir] = orden.split('|');
+  const filtroPuntos = estadoPuntos === 'todos' ? '' : estadoPuntos;
+  const canjeo = mostrar === 'canjeo';
   const sala = todas ? (salaElegida === 'todas' ? null : salaElegida) : miSala;
   const receta = mostrar === 'receta';
   const anuladas = mostrar === 'anuladas';
@@ -146,7 +174,16 @@ export default function Ventas() {
   const nombreDeSala = useCallback((id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? null, [sucursales]);
   const porCodigo = useMemo(() => new Map((empleados || []).map((e) => [e.code, e])), [empleados]);
 
-  useEffect(() => { setPagina(1); }, [fini, ffin, sala, mostrar, busqueda]);
+  useEffect(() => { setPagina(1); }, [fini, ffin, sala, mostrar, busqueda, orden, estadoPuntos]);
+
+  // «De este total, tanto no es venta de productos» — por período y sala, como
+  // el portal. Sin el permiso el servidor devuelve null y no se pinta nada.
+  useEffect(() => {
+    let vivo = true;
+    if (!verCifras) return undefined;
+    fetchVentasSinProducto({ fini, ffin, branchId: sala || null }).then((d) => { if (vivo) setSinProducto(d); }).catch(() => { if (vivo) setSinProducto(null); });
+    return () => { vivo = false; };
+  }, [verCifras, fini, ffin, sala]);
 
   const cargarCifras = useCallback(async () => {
     if (!verCifras) return;
@@ -191,20 +228,35 @@ export default function Ventas() {
     setCargando(true);
     try {
       let filas;
-      if (receta || buscando) {
+      if (canjeo && !buscando) {
+        const { data, error: e } = await fetchVentasConPuntos({
+          p_fini: fini, p_ffin: ffin, p_branch_id: sala ? Number(sala) : null,
+          p_offset: (pagina - 1) * POR_PAGINA, p_limit: POR_PAGINA, p_sort_col: sortCol, p_sort_dir: sortDir,
+        });
+        if (e) throw e;
+        filas = data || [];
+      } else if (receta || buscando) {
         const { data, error: e } = await fetchVentasConReceta({
           fini, ffin, branchFilter: sala, anuladas: anuladas ? 'solo' : 'todas', searchTerm: buscando ? busqueda : null,
-          sortCol: 'fecha', sortDir: 'desc', page: pagina, pageSize: POR_PAGINA, soloReceta: receta,
+          sortCol, sortDir, page: pagina, pageSize: POR_PAGINA, soloReceta: receta,
         });
         if (e) throw e;
         filas = data || [];
       } else {
         const { data, error: e } = await fetchInvoicesList({
-          fini, ffin, sortCol: 'fecha', asc: false, filterBranch: sala, filterAnuladas: anuladas, filterPuntosEstado: '',
+          fini, ffin, sortCol, asc: sortDir === 'asc', filterBranch: sala, filterAnuladas: anuladas, filterPuntosEstado: filtroPuntos,
           cancelledEstados: ESTADOS_ANULADA, isSearching: false, searchTerm: '', page: pagina, pageSize: POR_PAGINA,
         });
         if (e) throw e;
         filas = data || [];
+      }
+      // Las ramas que van por función no traen el estado de los puntos: se
+      // completa acá para que la fila diga lo mismo por cualquier camino.
+      const sinEstado = filas.filter((r) => !('puntos_enviados' in r)).map((r) => r.id);
+      if (sinEstado.length) {
+        const { data: estados } = await fetchEstadoPuntosDeVentas(sinEstado);
+        const porId = new Map((estados || []).map((x) => [x.invoice_id, { estado_puntos: x.estado_puntos }]));
+        filas = filas.map((r) => ('puntos_enviados' in r ? r : { ...r, puntos_enviados: porId.get(r.id) ?? null }));
       }
       if (yo !== pedido.current) return;   // llegó tarde: ya se pidió otra cosa
       setError(null);
@@ -214,7 +266,7 @@ export default function Ventas() {
     } finally {
       if (yo === pedido.current) setCargando(false);
     }
-  }, [fini, ffin, sala, receta, anuladas, buscando, busqueda, pagina]);
+  }, [fini, ffin, sala, receta, anuladas, buscando, busqueda, pagina, canjeo, sortCol, sortDir, filtroPuntos]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const recargar = async () => {
@@ -229,7 +281,10 @@ export default function Ventas() {
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
       opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: mostrar, porDefecto: 'todas', onCambiar: setMostrar,
-      opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }] }] : []),
+      opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }, { id: 'canjeo', label: 'Canjeó puntos' }] },
+    // El estado de los puntos va por la lista paginada (como el portal): con búsqueda o receta no aplica.
+    ...(mostrar === 'todas' || mostrar === 'anuladas' ? [{ id: 'puntos', titulo: 'Puntos', activa: estadoPuntos, porDefecto: 'todos', onCambiar: setEstadoPuntos, opciones: PUNTOS }] : []),
+    { id: 'ordenar', titulo: 'Ordenar', activa: orden, porDefecto: 'fecha|desc', onCambiar: setOrden, opciones: ORDENES }] : []),
     ...(vista === 'productos' ? [{ id: 'orden', titulo: 'Ordenar por', activa: ordenProductos, porDefecto: 'neto', onCambiar: setOrdenProductos,
       opciones: ORDENES_DE_PRODUCTOS },
     { id: 'ocultos', titulo: 'Mostrar', activa: verOcultos, porDefecto: 'no', onCambiar: (v) => { setVerOcultos(v); setLaboratorio('todos'); },
@@ -262,6 +317,7 @@ export default function Ventas() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
+        {periodo === 'rango' ? <RangoDeFechas desde={rango.desde} hasta={rango.hasta} onCambiar={setRango} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: fini === ffin ? 'capitalize' : 'none' }}>{rangoTexto}</Text>
         {vistas.length > 1 ? <Segmentos activa={vista} onCambiar={setVista} opciones={vistas} /> : null}
         {vista === 'productos' ? <Productos key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} orden={ordenProductos}
@@ -278,9 +334,18 @@ export default function Ventas() {
             <FilaDeKpis>
               <Kpi icono="ShoppingCart" rotulo="Ticket promedio" valor={formatMoney(ticket)} color={MARCA.violeta}
                 apoyo={ticketPrevio ? `antes ${formatMoney(ticketPrevio)}` : null} />
-              <Kpi icono="Star" rotulo="Puntos canjeados" valor={formatMoney(c.puntos)} color={MARCA.ambar}
-                apoyo={c.previo?.puntos ? `antes ${formatMoney(c.previo.puntos)}` : null} />
+              <Kpi icono="Star" rotulo="Puntos canjeados" valor={formatMoney(c.puntos)} color={MARCA.ambar} pide={canjeo}
+                apoyo={canjeo ? 'mostrando las que canjearon' : c.previo?.puntos ? `antes ${formatMoney(c.previo.puntos)}` : 'toca para ver cuáles'}
+                onPress={() => setMostrar((m) => (m === 'canjeo' ? 'todas' : 'canjeo'))} />
             </FilaDeKpis>
+            {sinProducto && Number(sinProducto.facturas ?? sinProducto.no_producto_facturas ?? 0) > 0 && Number(sinProducto.total ?? sinProducto.no_producto ?? 0) > 0 ? (
+              <View style={{ marginHorizontal: 16, gap: 4 }}>
+                <Aviso tono="cuidado" texto={`El período que se muestra incluye ${formatMoney(Number(sinProducto.total ?? sinProducto.no_producto))} que no son venta de productos (${Number(sinProducto.facturas ?? sinProducto.no_producto_facturas)} ${Number(sinProducto.facturas ?? sinProducto.no_producto_facturas) === 1 ? 'cobro' : 'cobros'}). No cuentan para la meta.`} />
+                {(sinProducto.detalle ?? sinProducto.no_producto_detalle ?? []).map((d, i) => (
+                  <Text key={d.invoice_id ?? i} style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 4 }}>{`${d.cliente}${d.motivo ? ` · ${d.motivo}` : ''} · ${d.fecha}${d.hora ? ` ${hora12(d.hora)}` : ''} · ${formatMoney(Number(d.total))}`}</Text>
+                ))}
+              </View>
+            ) : null}
           </>
         ) : null}
         {corta ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Escribe al menos ${MIN_LETRAS} letras para buscar.`} /></View> : null}
@@ -288,7 +353,7 @@ export default function Ventas() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {datos.filas.map((r) => {
           const emp = porCodigo.get(r.cod_vendedor);
-          return <Fila key={r.id} r={r} sala={todas && !sala ? nombreDeSala(r.branch_id) : null} vendedor={emp ? shortEmployeeName(emp) : null} privado={privado} />;
+          return <Fila key={r.id} r={r} sala={todas && !sala ? nombreDeSala(r.branch_id) : null} vendedor={emp ? shortEmployeeName(emp) : null} privado={privado} canjeo={canjeo} />;
         })}
         {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
         {!cargando && datos.hayMas ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}

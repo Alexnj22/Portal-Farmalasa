@@ -228,3 +228,146 @@ export function laboratoriosDeProductos(filas) {
 
 /** «Ocultar montos»: el monto se reemplaza por puntos, nunca se redondea a otra cosa. */
 export const montoPrivado = (texto, privado) => (privado ? '••••••' : texto);
+
+// ── El tipo de precio que se cobró, y los cambios de una factura ───────────
+// Vivían escritos dentro de `VentasView` (la fila de una venta y el detalle de
+// un producto); la app los necesita iguales, así que pasan acá y la vista los
+// importa. `variante` es el nombre de la variante de `Badge` del portal.
+
+/** Los niveles de precio, con el número con que los nombra la sala. */
+export const DRILL_TIERS = [
+    { key: 'vip',         label: 'VIP',     variante: 'chart-3', num: 3 },
+    { key: 'clinica',     label: 'Clínica', variante: 'warning', num: 4 },
+    { key: 'mayoreo',     label: 'Mayoreo', variante: 'chart-4', num: 5 },
+    { key: 'premium',     label: 'Premium', variante: 'warning', num: 6 },
+    { key: 'descuento_1', label: 'Desc.',   variante: 'success', num: 2 },
+    { key: 'precio_7',    label: 'P7',      variante: 'chart-9', num: 7 },
+    { key: 'vineta',      label: 'Viñeta',  variante: 'neutral', num: 1 },
+];
+/** Del más bajo al más alto: hasta dónde llega cada cargo (`maxPriceLevel`). */
+export const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
+
+/**
+ * Qué nivel de precio se cobró: el más cercano al precio unitario de la venta
+ * (los precios pueden venir con o sin IVA; se prueban los dos). A más de 10 %
+ * de todos, «Especial». `null` si no hay con qué comparar.
+ */
+export function detectTier(precioUnitario, preciosRow, tiers = DRILL_TIERS) {
+    if (!preciosRow || !precioUnitario) return null;
+    const p = parseFloat(precioUnitario);
+    const candidates = tiers
+        .map((t) => {
+            const gross = parseFloat(preciosRow[t.key] || 0);
+            if (!gross) return null;
+            const net = gross / 1.13;
+            const diff = Math.min(Math.abs(gross - p) / gross, Math.abs(net - p) / net);
+            return { ...t, diff };
+        })
+        .filter(Boolean);
+    if (!candidates.length) return null;
+    const best = candidates.reduce((a, b) => (b.diff < a.diff ? b : a));
+    if (best.diff > 0.10) return { key: 'especial', label: 'Especial', color: 'bg-chart-6/10 text-chart-6-text' };
+    return best;
+}
+
+/**
+ * El nivel de un renglón de venta contra TODAS las filas de precio del
+ * producto (la venta y el catálogo usan ids de presentación distintos, así que
+ * no se cruza por presentación): gana la más cercana.
+ */
+export function tierDelRenglon(precioUnitario, filasDePrecio) {
+    const candidatos = (filasDePrecio || []).map((row) => detectTier(parseFloat(precioUnitario), row)).filter(Boolean);
+    if (!candidatos.length) return null;
+    return candidatos.reduce((best, t) => ((t.diff ?? Infinity) < (best.diff ?? Infinity) ? t : best));
+}
+
+/** Los campos de `sales_invoice_changelog` que se le muestran a la sala. */
+export const RELEVANT_CAMPOS = new Set(['tipo_pago', 'recibido_mh']);
+export const CAMPO_LABELS = { tipo_pago: 'Forma de pago', recibido_mh: 'Sello MH' };
+export const fmtCampoVal = (campo, val) => {
+    if (val == null) return 'Sin registro';
+    if (campo === 'recibido_mh') return val === true || val === 'true' ? 'Recibido' : `Recibido (${val})`;
+    return String(val);
+};
+
+// ── El detalle de un producto vendido: el nivel cobrado y si cambió ─────────
+// (Vivía en `VentasView`, `fetchDrillDown`.) Cada venta se cruza con el precio
+// VIGENTE ese día (historial) y con el de hoy: si el nivel no coincide, el
+// precio cambió después — es el filtro «precio cambió» del portal.
+
+// Normalize a presentacion name for loose matching: "UNIDAD 1x1" → "UNIDAD 1X1"
+export function presKey(tipo, descripcion) {
+    return `${tipo ?? ''} ${descripcion ?? ''}`.toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+// Find the price record active on a given date (YYYY-MM-DD) from a pre-filtered list.
+export function findHistFromList(list, fechaStr) {
+    const matches = (list || []).filter(h => {
+        const from  = h.valid_from.slice(0, 10);
+        const until = h.valid_until ? h.valid_until.slice(0, 10) : null;
+        return from <= fechaStr && (until === null || until > fechaStr);
+    });
+    return matches.sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0] ?? null;
+}
+
+// Find the price record that was active on a given date (YYYY-MM-DD string).
+// valid_from/valid_until are UTC ISO timestamps — we compare date prefix only.
+export function findHistPrices(history, idPresentacion, fechaStr) {
+    return findHistFromList((history || []).filter(h => h.id_presentacion === idPresentacion), fechaStr);
+}
+
+// Find the earliest price change AFTER a given date for a given id_presentacion list.
+export function findFirstChangeSince(history, idPresentaciones, fechaStr) {
+    const ids = Array.isArray(idPresentaciones) ? idPresentaciones : [idPresentaciones];
+    const later = (history || [])
+        .filter(h => ids.includes(h.id_presentacion) && h.valid_from.slice(0, 10) > fechaStr)
+        .sort((a, b) => a.valid_from.localeCompare(b.valid_from));
+    return later[0]?.valid_from ?? null;
+}
+
+/**
+ * Las ventas de un producto (`get_product_sales_lines`) con su nivel de precio:
+ * `tier` (el de ese día), `currentTier` (el de hoy), `tierChanged` y desde
+ * cuándo. `precios` = `fetchProductPreciosDetail`, `history` =
+ * `fetchProductPreciosHistory`; `tiers` = los niveles que el cargo puede ver.
+ */
+export function lineasDelDrill(data, precios, history, tiers = DRILL_TIERS) {
+    const preciosMap = new Map((precios || []).map(p => [p.id_presentacion, p]));
+    // Secondary lookup by presentation name — handles ERP duplicate IDs
+    const preciosNameMap = new Map();
+    for (const p of (precios || [])) {
+        const k = presKey(p.presentaciones?.tipo, p.descripcion);
+        if (k) preciosNameMap.set(k, p);
+    }
+    const presDescMap = new Map((precios || []).map(p => [p.id_presentacion, p.descripcion]));
+    const histNameMap = new Map();
+    for (const h of (history || [])) {
+        const k = presKey(h.presentaciones?.tipo, presDescMap.get(h.id_presentacion));
+        if (k) { if (!histNameMap.has(k)) histNameMap.set(k, []); histNameMap.get(k).push(h); }
+    }
+    const fallbackCurr = (precios || []).length === 1 ? precios[0] : null;
+    return (data || []).map(row => {
+        const idPres    = row.id_presentacion;
+        const saleKey   = (row.presentacion || '').toUpperCase().replace(/\s+/g, ' ').trim();
+        const currPrices = preciosMap.get(idPres) ?? preciosNameMap.get(saleKey) ?? fallbackCurr;
+        const histById   = findHistPrices(history || [], idPres, row.fecha);
+        const histByName = histById ? null : findHistFromList(histNameMap.get(saleKey) || [], row.fecha);
+        const histPrices = histById ?? histByName;
+        const resolvedHistId = histById ? idPres
+            : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
+            : idPres;
+        const { precio: precio_display, neto: neto_display } = precioALaVista(row);
+        const tier        = detectTier(precio_display, histPrices ?? currPrices, tiers);
+        const currentTier = detectTier(precio_display, currPrices, tiers);
+        const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
+        const tierChangedAt = tierChanged ? findFirstChangeSince(history || [], [idPres, resolvedHistId], row.fecha) : null;
+        return {
+            id: row.item_id, invoice_id: row.invoice_id, fecha: row.fecha, erp_invoice_id: row.erp_invoice_id, correlativo: row.correlativo,
+            presentacion: row.presentacion, id_presentacion: idPres, cantidad: row.cantidad, precio_unitario: row.precio_unitario,
+            precio_display, neto: row.neto, neto_display, cliente: row.cliente, branch_id: row.branch_id,
+            tipo_documento: row.tipo_documento, cod_vendedor: row.cod_vendedor, tipo_pago: row.tipo_pago,
+            lote: row.lote, fecha_vencimiento: row.fecha_vencimiento,
+            tier, currentTier, tierChanged, tierChangedAt,
+        };
+    });
+}

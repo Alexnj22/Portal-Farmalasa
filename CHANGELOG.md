@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1292.3 — App: Ventas con período libre, puntos, orden, tipo de precio y cambios
+
+- App, Ventas: período libre («Fechas…»), filtro por estado de los puntos y
+  «Canjeó puntos» (también tocando la cifra de puntos canjeados), el estado de
+  los puntos en cada fila, ordenar por columna y el aviso de los cobros que no
+  son venta de productos.
+- La venta: el tipo de precio cobrado en cada renglón y los «Cambios
+  registrados» (forma de pago, sello) con el valor anterior y el nuevo.
+- Lo que se vendió de un producto: el nivel cobrado, «precio cambió» y los
+  filtros por tipo de documento. Productos: cifra y columna de costo y la
+  última venta; Vendedores: variación de facturas contra el período anterior.
+- Núcleo: `detectTier`, `tierDelRenglon`, los rótulos del changelog y
+  `lineasDelDrill` pasan de `VentasView` a `utils/ventasPeriodo` (el portal los
+  importa de ahí, sin cambio de comportamiento).
+
 ## v2.1292.2 — App: Inicio con selector de sala, semanas anteriores y ranking por día
 
 - App, Inicio: «Meta del mes» y «Cortes de caja del mes» con selector de sala

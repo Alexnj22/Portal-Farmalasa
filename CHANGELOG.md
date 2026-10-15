@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1296.0 — Revisión de factor en Productos: lo que no cuadra y la existencia por corregir
+
+Pedido del usuario: ver en un lugar cuándo cambia el tamaño de una presentación
+o hay un producto con el factor mal, que el portal avise, y corregir de un
+solo clic — incluida la existencia, que la caja no convierte.
+
+- Productos → **Revisión de factor** (mismo permiso que Presentaciones):
+  - **Existencia por corregir**, lote por lote: «muestra 30, son 1, se
+    descartan 29», con el porqué. «Corregir en la caja» crea la solicitud de
+    descarte con la causa completa para el kardex y, si quien la pide puede
+    aprobar inventario, la aplica enseguida.
+  - **Factor que no cuadra**: texto vs factor, existencia vs catálogo, y ventas
+    de 30 días con un tamaño que el catálogo ya no tiene.
+  - **Cambios de presentación**: qué se convirtió y el MIN·MAX antes/después.
+- Aviso diario (7:15) SÓLO de lo nuevo que no cuadra; el aviso del cambio de
+  presentación ahora lleva a esta pestaña.
+- Primer día: Uro Vaxom (La Popular 30 → 1) y Acetaminofén Forte X16 (Salud 2
+  16 → 1) por corregir; Acetaminofén Forte X48 se vende en blíster de 12 con el
+  catálogo en 8.
+
 ## v2.1295.1 — Unión con main (cambio de presentación)
 
 Sin cambios propios: une v2.1295.0 con las entregas de la app (v2.1294.3–v2.1294.10) que llegaron a main en el medio.

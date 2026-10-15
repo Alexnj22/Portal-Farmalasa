@@ -34,6 +34,29 @@ tabletas (Salud 2: 19·34) y el pedido, leyendo el factor nuevo, iba a pedir
    existencia: Salud 2 mostraba 16 «cajas» de Acetaminofén Forte que eran una
    caja de 16. Eso se corrige allá, con un ajuste.
 
+### La existencia: Productos → Revisión de factor (mismo día)
+
+Lo que el reproceso no puede hacer solo es la existencia: la caja no la
+convierte y descartar es una decisión. La pestaña **Revisión de factor**
+(`revision_de_presentaciones`, permiso de Presentaciones) muestra tres cosas:
+
+- **Existencia por corregir**, lote por lote: «muestra 30, son 1, se
+  descartan 29», con el porqué. «Corregir en la caja» crea la solicitud de
+  descarte de siempre (`DESCARTE` · Descuadre, con la causa completa escrita
+  para el kardex y `metadata.correccion_de_factor`) y, si quien la pide puede
+  aprobar inventario, la aplica enseguida por `aplicar-movimiento-inventario`.
+  Sólo de cambios RECIENTES (vendido con el tamaño viejo en los últimos 60
+  días) y sólo filas con al menos una caja vieja entera: la prueba acusaba a
+  DOLACO, 1x1 desde 2025.
+- **Factor que no cuadra** (`factores_sospechosos`): texto vs factor del
+  catálogo, existencia vs catálogo, y ventas de 30 días con un tamaño que el
+  catálogo ya no tiene. El primer día salió uno real: ACETAMINOFEN FORTE X 48,
+  blíster vendido de 12 con el catálogo en 8.
+- **Cambios de presentación**: qué se convirtió y el MIN·MAX antes/después.
+
+Cron `avisar-factores-sospechosos` (7:15 SV) avisa SÓLO lo que nadie avisó
+todavía (`factores_sospechosos_avisados`).
+
 **`mv_product_factor` no la refrescaba nadie** —ni cron ni función—. Medido
 el 15-oct: 3 factores viejos y 128 combinaciones faltantes, que el pedido
 cubría leyendo el texto de la presentación. Ahora se refresca en cada corrida

@@ -659,6 +659,8 @@ const CRONS = [
   // Cada 10 min, pero con la cola vacía es una lectura de índice; con un
   // cambio de factor recalcula ese producto en las seis salas (~9 s). Todo en
   // la base: no le pide nada al sistema de origen.
+  // Una vez al día: avisa SÓLO los factores que no cuadran y nadie avisó todavía.
+  { job: 'avisar-factores-sospechosos',         slug: null,                          cadencia: '15 13 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base: factores que no cuadran, una vez.' },
   { job: 'procesar-cambios-de-factor',          slug: null,                          cadencia: '5-59/10 * * * *', corridasDia: 144, sistema: 0, motivo: 'Sólo base: cola del cambio de factor.' },
   { job: 'auto-calculate-minmax-monthly',       slug: 'auto-calculate-minmax',       cadencia: '0 9 1 * *',  corridasDia: 0, sistema: 0, motivo: 'Mensual, sólo base.' },
   { job: 'corte-z-mensual',                     slug: 'sync-corte-z',                cadencia: '0 9 1 * *',  corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual.' },

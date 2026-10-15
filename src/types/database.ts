@@ -13361,6 +13361,24 @@ export type Database = {
           },
         ]
       }
+      factores_sospechosos_avisados: {
+        Row: {
+          avisado_at: string
+          clave: string
+          created_at: string
+        }
+        Insert: {
+          avisado_at?: string
+          clave: string
+          created_at?: string
+        }
+        Update: {
+          avisado_at?: string
+          clave?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       faltas_disciplinarias: {
         Row: {
           activa: boolean
@@ -26599,6 +26617,7 @@ export type Database = {
       avisar_dui_por_vencer: { Args: { p_dias_antes?: number }; Returns: Json }
       avisar_envios_sin_decidir: { Args: { p_dias?: number }; Returns: number }
       avisar_estados_de_venta_desconocidos: { Args: never; Returns: number }
+      avisar_factores_sospechosos: { Args: never; Returns: number }
       avisar_facturas_de_sala: { Args: never; Returns: number }
       avisar_falla_del_consejo: {
         Args: { p_detalle?: string }
@@ -27134,7 +27153,9 @@ export type Database = {
         Returns: string
       }
       cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
+      cliente_expediente: { Args: { p_customer_id: number }; Returns: Json }
       cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }
+      cliente_por_tarjeta: { Args: { p_entrada: string }; Returns: Json }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
       clientes_sin_distrito_corregibles: {
         Args: never
@@ -28341,6 +28362,19 @@ export type Database = {
       }
       extraer_observaciones_mh: { Args: { p_texto: string }; Returns: string[] }
       f_unaccent: { Args: { "": string }; Returns: string }
+      factores_sospechosos: {
+        Args: never
+        Returns: {
+          catalogo: number
+          clave: string
+          dice: number
+          erp_product_id: number
+          filas: number
+          nombre: string
+          presentacion: string
+          tipo: string
+        }[]
+      }
       factura_esta_anulada: { Args: { p_estado: string }; Returns: boolean }
       facturas_sala_guarda: {
         Args: { p_accion: string; p_branch_id: number }
@@ -31986,6 +32020,7 @@ export type Database = {
         Returns: Json
       }
       retiro_soltar: { Args: { p_request_id: string }; Returns: Json }
+      revision_de_presentaciones: { Args: never; Returns: Json }
       revoke_person_sessions: { Args: { p_user_id: string }; Returns: number }
       revoke_session: { Args: { p_session_id: string }; Returns: boolean }
       ruta_parada_no_entregada: {

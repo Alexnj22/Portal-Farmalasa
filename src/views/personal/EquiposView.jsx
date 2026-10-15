@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
   Cake, Medal, CornerDownRight, UserPlus, Download, GraduationCap,
-  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays, AlertTriangle,
+  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays, AlertTriangle, ChevronRight,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -42,6 +42,8 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { SIN_ASIGNAR } from '../../components/common/catalogos/constantes';
+import { fetchPoliza, fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
+import { periodoVigente, estadoEnElSeguro } from '@nucleo/utils/seguroDeVida';
 
 /*
  * Equipos por sucursal — BOCETO (2026-08-26).
@@ -208,15 +210,15 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
       className={`group relative flex gap-3 p-3.5 transition-all duration-[var(--dur-base)]
         active:scale-[0.99] ${destacada ? 'md:col-span-2' : ''}`}
     >
-      <OjoDeTarjeta className="absolute top-3 right-3" />
-
       {/* La foto y su aro. La marca vive en `AvatarConEstado` —y no acá— porque
           el usuario pidió que valga «en todos lados que salga la foto», y son
           48 pantallas: repetirla sería garantizar que once se queden atrás. */}
       <AvatarConEstado emp={emp} px={destacada ? 64 : 48} className="rounded-xl" />
 
       <div className="min-w-0 flex-1 space-y-1.5">
-        <p className={`truncate pr-6 font-black tracking-tight
+        {/* Dos renglones y no `truncate`: en Personal el nombre completo ES el
+            dato, y cortado a la mitad («Luis Romero Hernán…») no se lee. */}
+        <p className={`line-clamp-2 break-words font-black leading-snug tracking-tight
           ${ausente ? 'text-content-2' : 'text-content'}
           ${destacada ? 'text-body' : 'text-body-sm'}`} title={emp.name}>
           {emp.name || shortEmployeeName(emp)}
@@ -270,39 +272,54 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
             `inactiva` en vez de `dado de baja`: la edición rápida está apagada
             para quien ya no trabaja acá —igual que en el listado— porque
             reincorporar es otra cosa y tiene su propio botón. */}
-        <div className="flex items-center gap-2 pt-0.5">
-          <span className="truncate text-micro font-black uppercase tracking-widest text-content-3">
-            {sucursal || SIN_ASIGNAR}
-          </span>
-          <span className="ml-auto flex items-center gap-1.5">
-            {inactiva && puedeEditar && recontratar && (
-              <Button tone="success" size="sm" icon={RefreshCw} iconOnly title="Recontratar"
-                onClick={e => { e.stopPropagation(); recontratar(emp); }} />
+        {/* Sin el nombre de la sucursal: la tarjeta vive DENTRO de la sección
+            que ya lo dice en su encabezado, y repetirlo en cada una era un
+            renglón entero de ruido (2026-10-15). Si cubre otras salas, eso lo
+            dice «Cubre N áreas». */}
+        {(!sucursal || tel.length >= 8) && (
+          <div className="flex items-center gap-2 pt-0.5">
+            {!sucursal && (
+              <span className="truncate text-micro font-black uppercase tracking-widest text-content-3">
+                {SIN_ASIGNAR}
+              </span>
             )}
-            {editar && (
-              <Button tone="warning" size="sm" icon={Pencil} iconOnly title="Edición rápida"
-                disabled={!puedeEditar || inactiva}
-                onClick={e => { e.stopPropagation(); editar(emp); }} />
+            {tel.length >= 8 && (
+              <span className="flex items-center gap-1.5">
+                {/* `stopPropagation`: la tarjeta entera abre la ficha, así que sin
+                    esto llamar por teléfono además navegaría. */}
+                <a href={`https://wa.me/${tel}`} target="_blank" rel="noreferrer"
+                   onClick={e => e.stopPropagation()} title={`WhatsApp a ${emp.name || ''}`}
+                   className="blanco-tactil relative rounded-full bg-success/10 p-1.5 text-success
+                     transition-all hover:scale-110 active:scale-[0.97]">
+                  <MessageCircle size={12} strokeWidth={3} />
+                </a>
+                <a href={`tel:${tel}`} onClick={e => e.stopPropagation()} title={`Llamar a ${emp.name || ''}`}
+                   className="blanco-tactil relative rounded-full bg-brand/10 p-1.5 text-brand-text
+                     transition-all hover:scale-110 active:scale-[0.97]">
+                  <Phone size={12} strokeWidth={3} />
+                </a>
+              </span>
             )}
-          </span>
-          {tel.length >= 8 && (
-            <span className="flex items-center gap-1.5">
-              {/* `stopPropagation`: la tarjeta entera abre la ficha, así que sin
-                  esto llamar por teléfono además navegaría. */}
-              <a href={`https://wa.me/${tel}`} target="_blank" rel="noreferrer"
-                 onClick={e => e.stopPropagation()} title={`WhatsApp a ${emp.name || ''}`}
-                 className="blanco-tactil relative rounded-full bg-success/10 p-1.5 text-success
-                   transition-all hover:scale-110 active:scale-[0.97]">
-                <MessageCircle size={12} strokeWidth={3} />
-              </a>
-              <a href={`tel:${tel}`} onClick={e => e.stopPropagation()} title={`Llamar a ${emp.name || ''}`}
-                 className="blanco-tactil relative rounded-full bg-brand/10 p-1.5 text-brand-text
-                   transition-all hover:scale-110 active:scale-[0.97]">
-                <Phone size={12} strokeWidth={3} />
-              </a>
-            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Las acciones en su propia columna, a la derecha: el ojo arriba y la
+          edición abajo. En un renglón aparte agregaban 44px vacíos a cada
+          tarjeta en el teléfono, donde el lápiz quedaba solo en una fila. */}
+      <div className="flex shrink-0 flex-col items-end justify-between gap-2">
+        <OjoDeTarjeta className="mt-0.5" />
+        <span className="flex items-center gap-1.5">
+          {inactiva && puedeEditar && recontratar && (
+            <Button tone="success" size="sm" icon={RefreshCw} iconOnly title="Recontratar"
+              onClick={e => { e.stopPropagation(); recontratar(emp); }} />
           )}
-        </div>
+          {editar && (
+            <Button tone="warning" soft size="sm" icon={Pencil} iconOnly title="Edición rápida"
+              disabled={!puedeEditar || inactiva}
+              onClick={e => { e.stopPropagation(); editar(emp); }} />
+          )}
+        </span>
       </div>
     </div>
   );
@@ -359,11 +376,13 @@ function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
         </p>
 
         <div className="flex items-center gap-2 pt-0.5">
-          <span className="truncate text-micro font-black uppercase tracking-widest text-content-3">
-            {sucursal || SIN_ASIGNAR}
-          </span>
+          {!sucursal && (
+            <span className="truncate text-micro font-black uppercase tracking-widest text-content-3">
+              {SIN_ASIGNAR}
+            </span>
+          )}
           <span className="ml-auto flex items-center gap-1.5">
-            <Button tone="warning" size="sm" icon={Pencil} iconOnly title="Editar practicante"
+            <Button tone="warning" soft size="sm" icon={Pencil} iconOnly title="Editar practicante"
               disabled={!puedeEditar} onClick={() => onEdit(p)} />
             <Button variant="destructive" size="sm" icon={Trash2} iconOnly title="Eliminar practicante"
               disabled={!puedeEditar} onClick={() => onDelete(p)} />
@@ -422,6 +441,65 @@ function PulsoDeSala({ personas, bajas = 0, estadoDe }) {
       ))}
       {bajas > 0 && <span className="text-content-3"> · {bajas} de baja</span>}
     </p>
+  );
+}
+
+// ── El seguro de vida, en una franja y no en un botón ─────────────────────
+// Vivía como tercera acción rotulada de la barra de filtros, que por eso medía
+// 930px. No es una acción sobre la lista: es un tema de toda la empresa con su
+// propio estado («¿se pagó este año?, ¿cuántos están al día?»), y ese estado es
+// justo lo que un botón no puede decir. Lee dos tablas chicas; `version` la
+// relee al cerrar el modal, donde se registra el pago.
+function FranjaDelSeguro({ personas, onAbrir, version }) {
+  const [resumen, setResumen] = useState(null);   // null = cargando
+  useEffect(() => {
+    let vivo = true;
+    fetchPoliza()
+      .then(async (poliza) => {
+        const anio = periodoVigente(new Date(), poliza?.mes_de_pago || 11);
+        const pago = await fetchPagoDelAnio(anio);
+        if (vivo) setResumen({ anio, pago });
+      })
+      // Un fallo no tapa la franja: sigue abriendo el modal, que dice el error.
+      .catch(() => { if (vivo) setResumen({ fallo: true }); });
+    return () => { vivo = false; };
+  }, [version]);
+
+  const alDia = resumen?.pago
+    ? personas.filter(e => estadoEnElSeguro(e.id, resumen.pago).clave === 'solvente').length
+    : 0;
+  const estado = !resumen ? null
+    : resumen.fallo ? { texto: 'No se pudo leer', variante: 'neutral' }
+    : !resumen.pago ? { texto: `Pago ${resumen.anio} pendiente`, variante: 'warning' }
+    : alDia === personas.length ? { texto: 'Todos solventes', variante: 'success' }
+    : { texto: `${personas.length - alDia} sin cubrir`, variante: 'warning' };
+
+  return (
+    <div data-surface="card" data-franja="seguro"
+      {...clickable(onAbrir, { label: 'Abrir el seguro de vida colectivo' })}
+      className="group flex min-h-[var(--tap-min)] items-center gap-3 px-3.5 py-2.5
+        transition-all duration-[var(--dur-base)] active:scale-[0.99]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-btn bg-chart-9/10">
+        <ShieldCheck size={18} strokeWidth={2.5} className="text-chart-9-text" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-label font-black text-content">Seguro de vida colectivo</p>
+        {/* El estado va DEBAJO del título y no al lado: al lado, en el teléfono,
+            el título quedaba en «Seguro de v…». La pastilla ya dice lo que
+            importa; el renglón chico sólo agrega el conteo. */}
+        <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-micro font-medium text-content-3">
+          {estado && <Badge variant={estado.variante} size="sm" uppercase={false}>{estado.texto}</Badge>}
+          <span className="truncate">
+            {!resumen ? 'Cargando…'
+              : resumen.fallo ? 'Póliza y pago anual'
+              : resumen.pago ? `${alDia} de ${personas.length} solventes`
+              : `${personas.length} personas en planilla`}
+          </span>
+        </p>
+      </div>
+      <ChevronRight size={16} strokeWidth={2.5}
+        className="shrink-0 text-content-3 transition-transform group-hover:translate-x-0.5" />
+    </div>
   );
 }
 
@@ -567,6 +645,10 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
 
   const [modalPracticante, setModalPracticante] = useState(false);
   const [verSeguro, setVerSeguro] = useState(false);
+  // Quién entra en la póliza: la misma lista que usa el modal del seguro.
+  const enPlanilla = useMemo(
+    () => soloPersonalEnPlanilla((employees || []).filter(e => e.status === 'ACTIVO')),
+    [employees]);
   // Se monta la PRIMERA vez que se abre y ya no se desmonta: con el montaje
   // atado a `modalPracticante` el diálogo desaparecería de golpe al cerrar, sin
   // su animación de salida.
@@ -780,7 +862,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     ...(branches || []).map(b => ({ value: String(b.id), label: b.name })),
   ]), [branches]);
 
-  // Las tres acciones de la vista, en la píldora del cuerpo (§17).
+  // Las acciones de la vista, en la píldora del cuerpo (§17).
   const acciones = [
     { key: 'empleado', icon: UserPlus, label: 'Nuevo empleado', variant: 'primary',
       disabled: !canEdit, onClick: () => openModal?.('newEmployee') },
@@ -788,13 +870,16 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     // es la única palabra del portal que no entra por sí sola. Se dice
     // «PASANTE», que es la misma persona en una palabra que sí entra; el nombre
     // completo sigue en el `aria-label` y en la píldora de escritorio.
+    // `soloIcono` en escritorio (2026-10-15): con tres acciones rotuladas en
+    // mayúsculas la barra medía 930px y era más botonera que filtro. La
+    // principal conserva su texto; ésta se reconoce por el birrete y su
+    // `label` sigue de título y en la hoja del teléfono.
     { key: 'practicante', icon: GraduationCap, label: 'Nuevo practicante', rotulo: 'Pasante',
-      tone: 'chart-3', disabled: !canEdit,
+      tone: 'chart-3', soloIcono: true, disabled: !canEdit,
       onClick: () => { setPracticanteEnEdicion(null); setPidioModal(true); setModalPracticante(true); } },
-    // La póliza y el pago anual son de toda la empresa: viven acá y no en
-    // una ficha (pedido del usuario, 2026-10-14).
-    { key: 'seguro', icon: ShieldCheck, label: 'Seguro de vida', rotulo: 'Seguro',
-      tone: 'chart-9', onClick: () => setVerSeguro(true) },
+    // El seguro de vida ya no va acá: no es una acción sobre la lista sino un
+    // tema de toda la empresa con su propio estado, y vive en su franja arriba
+    // de las salas (`FranjaDelSeguro`), en escritorio y en el teléfono.
     // En «Externos y sistema» no se ofrece: lo único que exporta esta vista es
     // el directorio de PERSONAL, y ahí no hay ninguno.
     ...(canDownload && !esExternos && !esPracticantes ? [{ key: 'exportar', icon: Download,
@@ -816,7 +901,15 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     >
       <div className="animate-in fade-in space-y-6 p-4 duration-[var(--dur-lento)] md:p-6 lg:p-8">
 
-        <div className="flex justify-end">
+        {/* La franja del seguro comparte el renglón con la píldora: ese ancho
+            a la izquierda estaba vacío. Con `flex-wrap`, si no entran juntas,
+            la franja baja a su propio renglón en vez de apretar los filtros. */}
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {(vista === 'todos' || vista === 'activos') && (
+            <div className="min-w-[260px] max-w-xl flex-1 basis-[320px]">
+              <FranjaDelSeguro personas={enPlanilla} onAbrir={() => setVerSeguro(true)} version={verSeguro} />
+            </div>
+          )}
           <FilterBar
             onClear={limpiar}
             activeCount={[selectedBranch && selectedBranch !== 'ALL', vista !== 'todos'].filter(Boolean).length}
@@ -839,7 +932,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
             <FilterBar.Section active={vista !== 'todos'} onClear={() => setVista('todos')} label="vista">
               <FilterBar.Opciones
                 label="Vista"
-                icon={ShieldCheck}
+                icon={Users}
                 value={vista}
                 onChange={val => setVista(val || 'todos')}
                 options={VISTAS}

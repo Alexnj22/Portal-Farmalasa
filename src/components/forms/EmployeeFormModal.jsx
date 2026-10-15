@@ -2545,7 +2545,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const usuarioVaACambiar = !!usuarioAlAbrir && usuarioActual !== usuarioAlAbrir;
 
     const islandClass ="bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-    const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
+    const islandHoverClass = "";
+    // (2026-10-15) Sin levantarse al pasar el cursor: una sección de un
+    // FORMULARIO no es una tarjeta que se abre, y saltaba 2px cada vez que el
+    // puntero cruzaba de un campo a otro mientras alguien escribía.
 
     // 🚨 Propiedades base para que los selects floten libres del Modal
     const portalSelectProps = {

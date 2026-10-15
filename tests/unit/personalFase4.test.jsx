@@ -75,7 +75,8 @@ const montar = (props = {}) => render(
     </MemoryRouter>,
 ).container;
 
-const nombres = (c) => [...c.querySelectorAll('[data-surface="card"]')]
+// `:not([data-franja])`: la franja del seguro también es una tarjeta, pero no es una persona.
+const nombres = (c) => [...c.querySelectorAll('[data-surface="card"]:not([data-franja])')]
     .map(t => t.querySelector('p')?.textContent?.trim()).filter(Boolean);
 
 beforeEach(() => { cleanup(); _limpiarCache(); rpc.mockReset(); estado = base(); });

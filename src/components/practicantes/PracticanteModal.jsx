@@ -43,7 +43,9 @@ const buildBranchOpts = (branches) => TYPE_ORDER.flatMap((type) => {
 // Mismas "islas" blancas con header de icono+título que usa EmployeeFormModal
 // para agrupar secciones — ver islandClass/islandHoverClass ahí.
 const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
+const islandHoverClass = "";
+// (2026-10-15) Sin levantarse al pasar el cursor: una sección de un
+// formulario no es una tarjeta que se abre, y saltaba al cruzar de un campo a otro.
 
 const IslandHeader = ({ icon: Icon, title }) => (
     <div className="flex items-center gap-3 mb-4">

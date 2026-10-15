@@ -22,7 +22,7 @@
  * lectura queda sin seguro sin que nadie lo note — justo el día que importa.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ShieldCheck, X, Check, UserCheck, UserPlus, Loader2, AlertTriangle, FileText, Save, Pencil, Plus } from 'lucide-react';
+import { ShieldCheck, X, Check, UserCheck, UserPlus, Loader2, AlertTriangle, FileText, FileWarning, Save, Pencil, Plus } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -170,30 +170,48 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                             </section>
 
                             {/* ── 2. Las personas ─────────────────────────────── */}
+                            {/* Antes: una fila por persona con DOS pastillas, y sin
+                                pago registrado las trece decían lo mismo
+                                («Sin certificado · Pendiente»). Una pastilla igual
+                                en todas no informa: el resumen lo dice una vez y
+                                la fila sólo marca lo que distingue a esa persona. */}
                             <section className="flex flex-col gap-2">
-                                <div>
-                                    <p className="text-caption font-black uppercase tracking-widest text-content-2">Personas</p>
-                                    <p className="text-micro text-content-3 font-medium">
-                                        {solventes} de {activos.length} solventes
-                                        {sinCertificado ? ` · ${sinCertificado} sin certificado de asegurado en su expediente` : ' · todos con certificado'}
-                                    </p>
+                                <p className="text-caption font-black uppercase tracking-widest text-content-2">Personas</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <Cifra rotulo="Solventes" valor={`${solventes}/${activos.length}`}
+                                        tono={pagoVigente && solventes === activos.length ? 'success' : 'warning'} />
+                                    <Cifra rotulo="Sin cubrir" valor={pagoVigente ? activos.length - solventes : '—'}
+                                        tono={pagoVigente && activos.length - solventes > 0 ? 'danger' : 'neutral'} />
+                                    <Cifra rotulo="Certificados" valor={`${activos.length - sinCertificado}/${activos.length}`}
+                                        tono={sinCertificado ? 'warning' : 'success'} />
                                 </div>
-                                <div className="flex flex-col gap-1.5">
+                                {sinCertificado > 0 && (
+                                    <p className="flex items-center gap-1.5 text-micro font-medium text-content-3">
+                                        <FileWarning size={13} strokeWidth={2.5} className="shrink-0 text-warning-text" />
+                                        Le falta el certificado de asegurado en su expediente.
+                                    </p>
+                                )}
+                                <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
                                     {activos.map(e => {
                                         const est = estadoEnElSeguro(e.id, pagoVigente);
                                         const cert = tieneCertificado(e);
                                         return (
-                                            <div key={e.id} data-surface="card" className="px-3 py-2 flex items-center gap-3 min-h-[var(--tap-min)]">
+                                            <div key={e.id} data-surface="card" className="px-3 py-2 flex items-center gap-2.5 min-h-[var(--tap-min)]">
                                                 <AvatarConEstado emp={e} px={28} mostrarChip={false} />
-                                                {/* En el teléfono las pastillas bajan debajo del nombre:
-                                                    al lado le dejaban tres letras («Ros…»). */}
-                                                <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
-                                                    <span className="md:flex-1 min-w-0 text-label font-bold text-content truncate">{shortEmployeeName(e)}</span>
-                                                    <span className="flex flex-wrap gap-1.5">
-                                                        {!cert && <Badge variant="neutral" size="sm">Sin certificado</Badge>}
-                                                        <Badge variant={est.variant} size="sm">{est.clave === 'solvente' ? 'Solvente' : est.clave === 'sin_pago' ? 'Pendiente' : 'No cubierto'}</Badge>
+                                                <span className="flex-1 min-w-0 text-label font-bold text-content truncate">{shortEmployeeName(e)}</span>
+                                                {/* Sin pago registrado todas están igual: eso ya
+                                                    lo dice el aviso de arriba, no cada fila. */}
+                                                {pagoVigente && (
+                                                    <Badge variant={est.variant} size="sm" uppercase={false}>
+                                                        {est.clave === 'solvente' ? 'Solvente' : 'No cubierto'}
+                                                    </Badge>
+                                                )}
+                                                {!cert && (
+                                                    <span role="img" aria-label="Sin certificado de asegurado"
+                                                        className="shrink-0 text-warning-text">
+                                                        <FileWarning size={15} strokeWidth={2.5} />
                                                     </span>
-                                                </div>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -234,6 +252,19 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                     )}
             </LiquidModal.Body>
         </LiquidModal>
+    );
+}
+
+const TONO_CIFRA = {
+    success: 'text-success-text', warning: 'text-warning-text',
+    danger: 'text-danger-text', neutral: 'text-content',
+};
+function Cifra({ rotulo, valor, tono = 'neutral' }) {
+    return (
+        <div data-surface="card" className="px-3 py-2 min-w-0">
+            <p className="text-micro font-black uppercase tracking-widest text-content-3 truncate">{rotulo}</p>
+            <p className={`text-body font-black tabular-nums ${TONO_CIFRA[tono] || TONO_CIFRA.neutral}`}>{valor}</p>
+        </div>
     );
 }
 

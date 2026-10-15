@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1291.5 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
+
+- Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»
+  queda en ícono (con su rótulo de título y en la hoja del teléfono) y el
+  seguro de vida sale de la barra.
+- El seguro de vida es una franja propia junto a la barra, con su estado
+  real («Pago 2025 pendiente», «N de M solventes»), en escritorio y teléfono.
+- Tarjetas: sin la sucursal repetida (ya la dice la sección), el nombre en
+  dos renglones en vez de cortado, y las acciones en columna a la derecha —
+  ~30% más bajas en el teléfono—. El lápiz pasa a tono suave.
+- Modal del seguro: tres cifras (solventes, sin cubrir, certificados) y la
+  lista en dos columnas; sin pago registrado ya no repite «Pendiente» en
+  cada fila, y el certificado faltante es un ícono con su leyenda.
+- Formularios de empleado y practicante: las secciones ya no se levantan al
+  pasar el cursor mientras se escribe.
+
 ## v2.1291.4 — Documentos compartidos en una carpeta común: cada persona ve el suyo
 
 - El acuse del MTPS (papel colectivo) se sube a `compartidos/` y cada ficha

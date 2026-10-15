@@ -13,7 +13,7 @@
 // otra foto o rechazar), como el «Ver receta» del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
@@ -48,6 +48,8 @@ export default function Reservas({ sala, todas = false, recarga }) {
     const t = setInterval(cargar, REFRESCO_MS);
     return () => clearInterval(t);
   }, [cargar, recarga]);
+  // Al volver de revisar una receta, se relee.
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const avisarPorWhatsapp = (r) => {
     const numero = whatsappDe(r.telefono);

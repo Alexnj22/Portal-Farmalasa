@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1294.9 — App: paridad de Personas con el portal
+## v2.1294.10 — App: paridad de Personas con el portal
 
 ### La app: alta y edición de personal completas, con enlace a la ficha existente
 
@@ -97,7 +97,7 @@ Paridad de la app (grupo Personas, `docs/AUDITORIA-PARIDAD-APP-2026-10-15.md`).
 - Núcleo: `climaLaboral.js` suma `SUPERVISOR_DE_JEFE`, `personasPorOpcion` y
   `evaluacionDeJefes`; el portal usa los mismos.
 
-## v2.1294.8 — App: paridad de Clientes y comercial con el portal
+## v2.1294.9 — App: paridad de Clientes y comercial con el portal
 
 ### App: marketing con flujo, pauta, galería, filtros, fechas especiales, versiones, duplicar e informe PDF
 
@@ -148,7 +148,7 @@ Paridad de la app (grupo Personas, `docs/AUDITORIA-PARIDAD-APP-2026-10-15.md`).
 - Núcleo: el filtro de estado y el CSV de la bitácora se mudaron de
   `TabBitacora` a `inyeccionesPendientes`; el portal los usa desde ahí.
 
-## v2.1294.7 — App: paridad de Inventario: Min·Máx, conteos, bitácoras y traslados con el portal
+## v2.1294.8 — App: paridad de Inventario: Min·Máx, conteos, bitácoras y traslados con el portal
 
 ### App: traslados con ticket, recibir un grupo junto, filtro de sala y recibir por número
 
@@ -195,7 +195,7 @@ Paridad de la app con el portal en Min·Máx (auditoría del 2026-10-15):
   estado y el recálculo de todas las salas pasan al núcleo; el portal los usa
   sin cambiar de comportamiento.
 
-## v2.1294.6 — App: paridad de Inventario: productos, pedidos, gestión de stock e inventario con el portal
+## v2.1294.7 — App: paridad de Inventario: productos, pedidos, gestión de stock e inventario con el portal
 
 ### Productos e inventario en la app: filtros, orden, marcas de la fila, SRS y pegar foto
 
@@ -267,7 +267,7 @@ Paridad de la app con el portal en Min·Máx (auditoría del 2026-10-15):
   `TabParados`/`TabSinMinMax`/`EnviarProductoModal` al núcleo; el portal los
   usa sin cambio de comportamiento.
 
-## v2.1294.5 — App: paridad de Caja y ventas con el portal
+## v2.1294.6 — App: paridad de Caja y ventas con el portal
 
 ### App: Cortes con las fichas de apertura y confirmar desde la tarjeta
 
@@ -302,7 +302,7 @@ Paridad de la app con el portal en Min·Máx (auditoría del 2026-10-15):
 - «Quién está vendiendo»: total / por día trabajado (y por hora), promedio de
   la sala y quién va bajo él, con las cuentas de `rankingDeVendedores`.
 
-## v2.1294.4 — App: paridad de Sistema, solicitudes y marco con el portal
+## v2.1294.5 — App: paridad de Sistema, solicitudes y marco con el portal
 
 ### La app: diagnóstico de la sucursal, orden de la auditoría, franja del portal y estado de los datos
 
@@ -328,6 +328,9 @@ Paridad de la app con el portal, grupo «Sistema, solicitudes y marco»:
   decide qué aviso ofrece Confirmar / Descartar; la campana del portal y la
   bandeja y el historial de la app lo usan. En la app, los dos botones abren el
   corte con la acción ya empezada (entrega de la caja o motivo del descarte).
+## v2.1294.4 — La reserva en pantalla bloqueada vive en la extensión del widget
+
+- La Live Activity de la reserva pasa a la extensión del widget de saldo (`targets/saldo/Reserva.swift`, un solo `WidgetBundle`). `@bacons/apple-targets` admite una extensión por tipo: con dos «widget» la segunda pisaba a la primera y el prebuild de iOS fallaba (`removeFromProject` de undefined). Compilada y subida como iOS 60.
 
 ## v2.1294.3 — App: paridad de Compras, fiscal y Torogoz con el portal
 

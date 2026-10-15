@@ -14,7 +14,7 @@ import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.records.Record
 
 // La reserva en curso como notificación FIJA (2026-10-15): el gemelo Android de
-// la Live Activity de iOS (targets/reserva). «Tu reserva R-001234 · Lista para
+// la Live Activity de iOS (targets/saldo/Reserva.swift). «Tu reserva R-001234 · Lista para
 // retirar en Salud 3 · hasta las 3:40 p. m.», con la cuenta regresiva del
 // propio sistema (cronómetro hacia atrás) y que se va sola al vencer
 // (`setTimeoutAfter`), sin despertar a la app.

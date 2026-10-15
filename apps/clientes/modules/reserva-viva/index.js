@@ -1,6 +1,6 @@
 // La reserva en la pantalla bloqueada (2026-10-15): «Tu reserva R-001234 ·
 // Lista para retirar en Salud 3 · quedan 23 h», sin abrir la app.
-//   · iPhone: una Live Activity con su Dynamic Island (targets/reserva).
+//   · iPhone: una Live Activity con su Dynamic Island (targets/saldo/Reserva.swift).
 //   · Android: una notificación fija con la cuenta regresiva del sistema.
 // Las dos las maneja el módulo nativo de esta carpeta; acá se decide CUÁNDO.
 //
@@ -53,7 +53,7 @@ function hasta(venceMs) {
 }
 
 // Los textos de cada estado. Son los MISMOS que dibuja la Live Activity
-// (`aspecto` en targets/reserva/Reserva.swift): si se cambia uno, el otro.
+// (`aspecto` en targets/saldo/Reserva.swift): si se cambia uno, el otro.
 function linea(v) {
   const lugar = v.domicilio ? ' a domicilio' : v.sucursal ? ` en ${v.sucursal}` : '';
   switch (v.estado) {

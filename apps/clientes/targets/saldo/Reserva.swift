@@ -18,12 +18,9 @@ private let verde = Color(red: 52 / 255, green: 199 / 255, blue: 89 / 255)
 private let naranja = Color(red: 1, green: 159 / 255, blue: 10 / 255)
 private let rojo = Color(red: 1, green: 69 / 255, blue: 58 / 255)
 
-@main
-struct ReservaBundle: WidgetBundle {
-  var body: some Widget {
-    ReservaEnVivo()
-  }
-}
+// Vive en la extensión del widget de saldo (targets/saldo): @bacons/apple-targets
+// admite UNA extensión por tipo, y con dos «widget» la segunda pisaba a la
+// primera y el prebuild reventaba. El @main es el `Widgets` de Saldo.swift.
 
 /// Cómo se dice cada estado. Los mismos textos que modules/reserva-viva/index.js
 /// le da a la notificación de Android: si se cambia uno, cambiar el otro.

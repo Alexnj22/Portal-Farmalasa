@@ -89,7 +89,7 @@ export async function pedirTokenDeAvisos() {
 // teléfono se desactivan, ¿por qué?»). Se recuerda la decisión EN EL TELÉFONO
 // y, si el permiso del sistema sigue dado, se vuelven a encender solos.
 
-const CLAVE_AVISOS = 'puntos_salud_avisos_en_este_telefono';
+export const CLAVE_AVISOS = 'puntos_salud_avisos_en_este_telefono';
 let sincronizado = false;
 
 export async function recordarAvisos(acepta) {

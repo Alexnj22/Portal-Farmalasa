@@ -8,6 +8,11 @@
 //
 // Pagar es en la sucursal, al retirar.
 //
+// Por cantidad (2026-10-15): cada sucursal dice si alcanza para las que se
+// piden («Tiene suficiente» / «Tiene 2 de las 4 que pides»), con la misma
+// regla de la ficha (componentes/DondeLoHay). La oferta se reserva en su
+// presentación menor y el servidor cuenta en unidades (`alcance`).
+//
 // Bajo receta (2026-10-12): el servidor dice si el producto la pide
 // (`reserva_existencias.receta`) y entonces el paso 2 lleva «Foto de tu
 // receta»; sin foto no se confirma. La reserva nace «en revisión», se sube la
@@ -33,14 +38,17 @@ import { router } from 'expo-router';
 import RecetaFoto from './RecetaFoto';
 import { subirReceta } from '../lib/fotos';
 import { datosDePrueba } from '../lib/exclusiva';
+import { colorDeTono, estadoDeAlcance, fondoDeTono } from './DondeLoHay';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 // Los colores salen del tema (cambian con el modo oscuro).
-const nivelDe = (t, n) => ({
-  hay: { texto: 'Hay', color: t.color.exitoTexto, fondo: 'rgba(52,199,89,0.16)' },
-  pocas: { texto: 'Quedan pocas', color: t.color.avisoTexto, fondo: 'rgba(255,159,10,0.18)' },
-  sin: { texto: 'Te avisamos cuando llegue', color: colorSistema.texto2, fondo: 'rgba(120,110,130,0.14)' },
-}[n] ?? { texto: 'Te avisamos cuando llegue', color: colorSistema.texto2, fondo: 'rgba(120,110,130,0.14)' });
+// Sin existencia se reserva igual (queda en espera); con existencia, lo que
+// alcanza para la cantidad elegida.
+const nivelDe = (t, s, cantidad) => {
+  if (!s || s.nivel === 'sin') return { texto: 'Te avisamos cuando llegue', color: colorSistema.texto2, fondo: 'rgba(120,110,130,0.14)' };
+  const e = estadoDeAlcance({ alcance: s.alcance ?? null, hayAlgo: true, nivel: s.nivel, cantidad });
+  return { texto: e.texto, color: colorDeTono(t, e.tono), fondo: fondoDeTono(t, e.tono), clave: e.clave };
+};
 
 export default function ReservarHoja({ oferta, producto, alCerrar }) {
   const t = useTema();
@@ -173,7 +181,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             <Seccion>¿Dónde lo retiras?</Seccion>
             <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
               {sucursales.map((s, i) => {
-                const n = nivelDe(t, s.nivel);
+                const n = nivelDe(t, s, cantidad);
                 const activa = s.branch_id === sala;
                 return (
                   <Presionable key={s.branch_id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(s.branch_id); }}
@@ -185,7 +193,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
                       {activa ? <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: t.color.magenta }} /> : null}
                     </View>
                     <Text style={{ flex: 1, fontSize: 16, fontWeight: activa ? '700' : '500', color: colorSistema.texto }}>{s.sala}</Text>
-                    <View style={{ backgroundColor: n.fondo, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <View style={{ maxWidth: '55%', backgroundColor: n.fondo, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: n.color }}>{n.texto}</Text>
                     </View>
                   </Presionable>
@@ -205,6 +213,11 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             {producto.precio_descuento != null ? (
               <Text style={{ fontSize: 15, color: colorSistema.texto2, textAlign: 'center' }}>
                 Total al retirar: <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(producto.precio_descuento * cantidad)}</Text>
+              </Text>
+            ) : null}
+            {elegida && elegida.nivel !== 'sin' && ['parcial', 'corto'].includes(nivelDe(t, elegida, cantidad).clave) ? (
+              <Text style={{ fontSize: 14, color: t.color.avisoTexto, textAlign: 'center' }}>
+                {elegida.sala} no tiene las {cantidad} que pides. Puedes reservar menos, elegir otra sucursal o reservar igual y la sucursal te confirma.
               </Text>
             ) : null}
             {elegida?.nivel === 'sin' ? (

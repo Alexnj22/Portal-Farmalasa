@@ -6,11 +6,15 @@
 // 2026-10-12: lo bajo receta YA se agrega al carrito (al reservar se pide la
 // foto de la receta), y quien tiene precio de mayoreo lo ve como el principal
 // («Mayoreo» / «Mayoreo Plus»), con la viñeta tachada (lib/precioTuyo.js).
+//
+// 2026-10-15: «¿Dónde lo hay?» cuenta por lo que se va a pedir (presentación ×
+// cantidad), dice si la sucursal está abierta y a cuánto queda.
 import { useEffect, useState } from 'react';
 import { Alert, Linking, ScrollView, Text, View } from 'react-native';
 import Presionable from '../../componentes/Presionable';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
 import EncargoHoja from '../../componentes/EncargoHoja';
+import DondeLoHay from '../../componentes/DondeLoHay';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -27,12 +31,6 @@ import { navegar } from '../../lib/navegar';
 import { seguirSiYaReservado } from '../../lib/reservaDuplicada';
 import { datosDePrecio, mayoreoSoloEnCaja, precioFinal, rotuloPrecioTuyo } from '../../lib/precioTuyo';
 import { useSesion } from '../../lib/sesion';
-
-const ESTADO = {
-  hay: { texto: 'Disponible', sf: 'checkmark.circle.fill', tono: 'exito' },
-  pocas: { texto: 'Pocas unidades', sf: 'exclamationmark.circle.fill', tono: 'aviso' },
-  no: { texto: 'Sin existencia', sf: 'xmark.circle', tono: 'neutro' },
-};
 
 export default function Producto() {
   const { id } = useLocalSearchParams();
@@ -76,9 +74,6 @@ export default function Producto() {
   }
   const p = d.producto;
   const nombre = nombreProducto(p.nombre);
-  const hay = new Map((p.existencias ?? []).map((e) => [Number(e.branch_id), e.nivel]));
-  const salas = (p.salas ?? []).map((s) => ({ ...s, nivel: hay.get(Number(s.id)) ?? 'no' }))
-    .sort((a, b) => ['hay', 'pocas', 'no'].indexOf(a.nivel) - ['hay', 'pocas', 'no'].indexOf(b.nivel));
   const consultar = () => {
     const msg = encodeURIComponent(`Hola, quiero consultar por ${nombre}.`);
     Linking.openURL(`https://wa.me/${d.whatsapp ?? '50323010013'}?text=${msg}`).catch(() => {});
@@ -105,7 +100,6 @@ export default function Producto() {
       { text: 'Ir al carrito', onPress: () => { router.back(); setTimeout(() => navegar('/carrito'), 300); } },
     ]);
   };
-  const colorTono = (tono) => ({ exito: t.color.exitoTexto, aviso: t.color.avisoTexto, neutro: colorSistema.texto3 }[tono]);
 
   return (
     <View style={{ flex: 1, backgroundColor: fondo }}>
@@ -207,23 +201,11 @@ export default function Producto() {
           </Text>
         ) : null}
 
-        {/* Dónde hay. */}
-        <Titular texto="En nuestras sucursales" />
-        <View style={{ marginHorizontal: 16, borderRadius: 20, backgroundColor: superficie, overflow: 'hidden' }}>
-          {salas.map((s, i) => {
-            const e = ESTADO[s.nivel];
-            return (
-              <View key={s.id}>
-                {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13 }}>
-                  <Text style={{ flex: 1, fontSize: 15, color: colorSistema.texto }}>{s.sala}</Text>
-                  <Icono sf={e.sf} respaldo="" tam={14} color={colorTono(e.tono)} />
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: colorTono(e.tono) }}>{e.texto}</Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
+        {/* Dónde hay (2026-10-15): por CANTIDAD —la presentación y el «+» de
+            abajo—, si está abierta ahora y a cuánto queda (componentes/DondeLoHay). */}
+        <Titular texto="¿Dónde lo hay?" />
+        <DondeLoHay existencias={p.existencias} salas={p.salas} factor={elegida_factor} cantidad={cant}
+          tipo={elegidaP ? nombreProducto(elegidaP.tipo) : null} superficie={superficie} />
         <Text style={{ fontSize: 13, color: colorSistema.texto3, marginHorizontal: 32, marginTop: 8 }}>
           Las existencias se actualizan cada pocos minutos; confírmalo antes de ir.
         </Text>

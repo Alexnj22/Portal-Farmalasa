@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1294.0 — App de clientes: volver a pedir, dónde lo hay, mis créditos, reserva en pantalla bloqueada y código de barras
+
+- **Volver a pedir** (Mis compras y Mis tratamientos): arma el carrito con lo de esa compra o la última presentación del tratamiento, con precios de hoy, y dice qué no se pudo agregar y por qué. Lo bajo receta sigue pidiendo la foto al reservar. Acción nueva `volver_a_pedir`.
+- **¿Dónde lo hay?** en la ficha del producto, la hoja de reserva y el carrito: por sucursal, según la cantidad pedida (suficiente · tiene X de las N · no completa · agotado), abierta/cerrada y distancia. Las existencias ahora se cuentan en unidades con el factor de cada presentación (antes se sumaban cajas con unidades); al teléfono sólo viaja el alcance, nunca el número.
+- **Mis créditos**: sólo aparece con saldo pendiente. Plazo de 30 días, la misma regla del portal. Alerta en el Inicio si hay uno vencido y aviso push (tipo `credito`) una vez por crédito y recordatorio a los 7 días, sin montos en el texto.
+- **Reserva en la pantalla bloqueada**: Live Activity con Dynamic Island en iOS (extensión `targets/reserva`) y notificación fija en Android (módulo `reserva-viva`). Sin nombre del medicamento. Se actualiza al volver a la app y al llegar un aviso de reserva; la actualización desde el servidor necesita una llave APNs que hoy no hay.
+- **Código de barras en la tarjeta** (Code 128, alineado a píxeles físicos) junto al QR, con selector QR · Barras. Lleva el código de 7 caracteres.
+
+## v2.1293.0 — App de clientes: volver a pedir, dónde lo hay, mis créditos, reserva en pantalla bloqueada y código de barras
+
+_(pendiente de redactar)_
+
 ## v2.1292.1 — Personal: barra de filtros compacta, franja del seguro y tarjetas más bajas
 
 - Barra de filtros de `/personal`: de 930 a ~620px. «Nuevo practicante»

@@ -176,6 +176,14 @@ export default function Puntos() {
         <Campana generacion={generacion} />
       </Entrada>
 
+      {/* Mis créditos (2026-10-15): si alguno pasó su fecha límite, la alerta
+          va ARRIBA de todo. Sin créditos pendientes no se muestra nada. */}
+      {resumen.creditos?.vencidos > 0 ? (
+        <Entrada indice={0}>
+          <AlertaCreditos vencidos={resumen.creditos.vencidos} />
+        </Entrada>
+      ) : null}
+
       {/* Historias: promociones e información, tipo estados. */}
       <Historias generacion={generacion} />
 
@@ -286,6 +294,26 @@ export default function Puntos() {
       {Array.isArray(resumen.tratamientos) ? (
         <Entrada indice={2}>
           <TratamientosInicio lista={resumen.tratamientos} />
+        </Entrada>
+      ) : null}
+
+      {/* Mis créditos al día (2026-10-15): una entrada tranquila, sin alerta. */}
+      {resumen.creditos?.pendientes > 0 && !(resumen.creditos.vencidos > 0) ? (
+        <Entrada indice={2}>
+          <Tocable alTocar={() => navegar('/creditos')} etiqueta="Mis créditos">
+            <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, t.oscuro ? 0.28 : 0.16) }}>
+                <Icono sf="doc.text.fill" respaldo="🧾" tam={20} color={t.color.verdeTexto} />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>Mis créditos</Text>
+                <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
+                  {resumen.creditos.pendientes === 1 ? '1 pendiente' : `${resumen.creditos.pendientes} pendientes`} · al día
+                </Text>
+              </View>
+              <Icono sf="chevron.right" respaldo="›" tam={14} color={colorSistema.texto2} />
+            </Tarjeta>
+          </Tocable>
         </Entrada>
       ) : null}
 
@@ -562,6 +590,26 @@ function VenceCupon({ fecha: f }) {
     <Text style={{ fontSize: 13, fontWeight: dias >= 0 ? '700' : '400', color: dias >= 0 ? t.color.magentaTexto : colorSistema.texto3 }}>
       {dias >= 0 ? `Vencen el ${fechaLarga(vence)} — úsalos este mes` : `Vencieron el ${fechaLarga(vence)}`}
     </Text>
+  );
+}
+
+// La alerta de créditos vencidos (2026-10-15): como el aviso del cupón que
+// vence (reloj naranja), pero tocable y con el rojo del sistema. Sin montos y
+// sin tono de cobro: dice qué pasa y a dónde ir.
+function AlertaCreditos({ vencidos }) {
+  return (
+    <Tocable alTocar={() => navegar('/creditos')} etiqueta={vencidos === 1 ? 'Tienes un crédito vencido. Ver detalle' : `Tienes ${vencidos} créditos vencidos. Ver detalle`}>
+      <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icono sf="exclamationmark.circle.fill" respaldo="!" tam={24} color={colorSistema.rojo} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>
+            {vencidos === 1 ? 'Tienes un crédito vencido' : `Tienes ${vencidos} créditos vencidos`}
+          </Text>
+          <Text style={{ fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>Toca para ver el detalle y ponerte al día.</Text>
+        </View>
+        <Icono sf="chevron.right" respaldo="›" tam={14} color={colorSistema.texto2} />
+      </Tarjeta>
+    </Tocable>
   );
 }
 

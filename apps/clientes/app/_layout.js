@@ -37,6 +37,7 @@ instalarTomas();
 import AvisoEnApp from '../componentes/AvisoEnApp';
 import BurbujaChat from '../componentes/BurbujaChat';
 import { despertar } from '../componentes/reposo';
+import { vigilarReservasVivas } from '../modules/reserva-viva';
 export { default as ErrorBoundary } from '../componentes/ErrorDePantalla';
 
 const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
@@ -101,6 +102,9 @@ function Guardia() {
   const { token, lista, cargar } = useSesion();
   const segmentos = useSegments();
   useEffect(() => { cargar(); }, [cargar]);
+  // La reserva en la pantalla bloqueada se pone al día aunque no se abra Mis
+  // reservas: al volver a la app y al llegar un aviso de reserva (2026-10-15).
+  useEffect(() => { if (token) vigilarReservasVivas(); }, [token]);
   // Sólo en desarrollo (`__DEV__`, nunca en una compilación de tienda), y sólo
   // si el `.env` local trae un código de PRUEBAS: entra solo UNA vez al abrir,
   // para revisar pantallas en el simulador sin teclear. Una vez por arranque y
@@ -345,6 +349,7 @@ function Raiz() {
             <Stack.Screen name="facturas" options={{ title: 'Mis facturas' }} />
             <Stack.Screen name="encuesta" options={{ title: 'Encuesta' }} />
             <Stack.Screen name="tratamientos" options={{ title: 'Mis tratamientos' }} />
+            <Stack.Screen name="creditos" options={{ title: 'Mis créditos' }} />
             {/* El chat (2026-10-14): barra transparente sobre la aurora, como antes,
                 pero SIN los «scroll edge effects» de iOS 26 (difuminaban el hilo,
                 que va invertido) y sin desenfoque propio: la misma barra quieta y

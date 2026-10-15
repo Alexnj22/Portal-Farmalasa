@@ -20,6 +20,12 @@
 // y va en su propia sección, ARRIBA: sin código para retirar y sin pagar
 // (todavía se puede rechazar). Ahí se ve la foto que se mandó, el motivo si la
 // sucursal pidió otra («Subir otra foto»), y en Anteriores, «Rechazada: …».
+//
+// Pantalla bloqueada (2026-10-15): cada vez que se lee la lista, las reservas
+// abiertas se ponen en la pantalla bloqueada (Live Activity en iPhone,
+// notificación fija en Android) y las que terminaron se quitan — ver
+// modules/reserva-viva. Sólo con «Todas» o «Abiertas»: son las lecturas que
+// traen TODAS las abiertas; con otro filtro se darían por terminadas.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
@@ -43,6 +49,7 @@ import { subirReceta } from '../lib/fotos';
 import { PISTA_RECETA, usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
 import { sinBloquear } from '../lib/bloqueo';
 import { useVisible } from '../lib/visible';
+import { sincronizarReservasVivas, vigilarReservasVivas } from '../modules/reserva-viva';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -115,7 +122,11 @@ export default function Reservas() {
   // Desde el aviso «ya tienes una reserva» o el carrito: esa reserva va primero y marcada.
   const { resaltar } = useLocalSearchParams();
   const cargar = useCallback(() => Promise.all([
-    pedir('mis_reservas', datosDe(filtro)).then((r) => setPorFiltro((ant) => ({ ...ant, [filtro]: r?.ok || !ant[filtro]?.ok ? r : ant[filtro] }))),
+    pedir('mis_reservas', datosDe(filtro)).then((r) => {
+      setPorFiltro((ant) => ({ ...ant, [filtro]: r?.ok || !ant[filtro]?.ok ? r : ant[filtro] }));
+      // Lo guardado sin conexión no: podría quitar una que sigue abierta.
+      if (r?.ok && !r.sinConexion && (filtro === 'todas' || filtro === 'abiertas')) sincronizarReservasVivas(r.reservas);
+    }),
     pedir('mis_encargos').then((r) => { if (r?.ok) setEncargos(r.encargos); }),
   ]), [pedir, filtro]);
   // Ver más: desde la última reserva mostrada (cursor), se suma a la lista.
@@ -181,6 +192,9 @@ export default function Reservas() {
   // «en preparación» volvía y no veía que ya estaba lista.
   const visible = useVisible();
   useEffect(() => { if (visible) cargar(); }, [visible, cargar]);
+  // Pone al día la pantalla bloqueada al volver a primer plano y con los
+  // avisos de reserva, aunque después se salga de esta pantalla.
+  useEffect(() => { vigilarReservasVivas({ alArrancar: false }); }, []);
   useFocusEffect(useCallback(() => { pedir('pago_preparar'); }, [pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 

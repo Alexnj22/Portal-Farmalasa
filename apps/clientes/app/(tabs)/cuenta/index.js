@@ -272,6 +272,11 @@ export default function Cuenta() {
       {conFicha ? (
         <Grupo titulo="Perfil">
           <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} />
+          {/* Mis créditos (2026-10-15): sólo si debe algo; la insignia, los vencidos. */}
+          {resumen?.creditos?.pendientes > 0 ? (
+            <FilaAccion sf="creditcard.fill" texto="Mis créditos" insignia={Number(resumen.creditos.vencidos) || 0}
+              alTocar={() => navegar('/creditos')} />
+          ) : null}
           <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} />
           {resumen?.wallet_serial && walletDisponible() && enWallet ? (
             <FilaAccion sf="wallet.pass.fill" texto="Ver mi tarjeta en Apple Wallet" alTocar={() => wallet()} />
@@ -402,7 +407,8 @@ export default function Cuenta() {
         <Grupo titulo="Avisos de prueba" pie="Llegan de verdad a este teléfono (con los avisos activados) y a la campana. Toca el aviso para ver la pantalla que abre.">
           {[['cumpleanos', 'gift.fill', 'Cumpleaños'], ['puntos', 'star.fill', 'Ganaste puntos'], ['cupon', 'ticket.fill', 'Cupón del mes'],
             ['nivel', 'crown.fill', 'Subiste de nivel'], ['rango', 'diamond.fill', 'Subiste de rango (mayoreo)'], ['precio', 'tag.fill', 'Precio Mayoreo Plus'],
-            ['mayoreo', 'sparkles', 'Aprobado en mayoreo'], ['tratamiento', 'pills.fill', 'Tratamiento'], ['restado', 'minus.circle.fill', 'Usaste puntos'], ['reserva', 'bag.fill', 'Reserva lista']].map(([tipo, sf, texto]) => (
+            ['mayoreo', 'sparkles', 'Aprobado en mayoreo'], ['tratamiento', 'pills.fill', 'Tratamiento'], ['restado', 'minus.circle.fill', 'Usaste puntos'], ['reserva', 'bag.fill', 'Reserva lista'],
+            ['credito', 'creditcard.fill', 'Crédito vencido']].map(([tipo, sf, texto]) => (
             <FilaAccion key={tipo} sf={sf} texto={`Recibir aviso: ${texto}`} flecha={false} alTocar={async () => {
               const r = await pedir('prueba_aviso', { tipo });
               Alert.alert(r?.ok ? 'Aviso enviado' : 'No se envió', r?.ok ? 'Llega en unos segundos. Bloquea el teléfono para verlo como notificación.' : (r?.mensaje ?? 'Revisa tu conexión.'));

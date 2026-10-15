@@ -3,6 +3,10 @@
 // recordatorio con un motivo (si vuelve a comprarlo, se reactiva solo).
 // «Recordarme tomarlo» (2026-10-12): avisos de cada toma, sólo en el teléfono
 // (lib/tomas.js, componentes/TomasHoja.js). En la web no aparece.
+// «Volver a pedir» (2026-10-15): reemplaza a «Reservar». Un toque pone el
+// medicamento en el carrito —en la presentación y cantidad de la última
+// compra— y lo abre (componentes/VolverAPedir). La ficha del producto se abre
+// tocando su nombre.
 import { useCallback, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
@@ -19,6 +23,7 @@ import { suave, useTema } from '../tema/tema';
 import TomasHoja from '../componentes/TomasHoja';
 import { DISPONIBLE as TOMAS, quitarRecordatorio, resumenRecordatorio, sincronizarConTratamientos, tomadoHoy, useTomas } from '../lib/tomas';
 import { copiaParaEmpezar } from '../lib/sinConexion';
+import { useVolverAPedir } from '../componentes/VolverAPedir';
 
 const MOTIVOS = ['Terminé el tratamiento', 'El médico me lo cambió', 'Lo compro en otro lugar', 'Otro motivo'];
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
@@ -30,6 +35,9 @@ export default function Tratamientos() {
   const [refrescando, setRefrescando] = useState(false);
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const [tomas, setTomas] = useState(null); // el tratamiento cuya hoja de tomas está abierta
+  const { volver, ocupado } = useVolverAPedir();
+  const [volviendo, setVolviendo] = useState(null); // cuál está esperando al servidor
+  const volverAPedir = async (t) => { setVolviendo(t.id); await volver({ productos: [t.product_id] }); setVolviendo(null); };
   const cargar = useCallback(async () => {
     // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
     copiaParaEmpezar('mis_tratamientos', {}).then((c) => { if (c) setD((a) => a ?? c); });
@@ -96,7 +104,8 @@ export default function Tratamientos() {
       {!activos.length && !apagados.length ? (
         <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí.</Vacio>
       ) : null}
-      {activos.map((t) => <Fila key={t.id} t={t} alReservar={() => navegar(`/producto/${t.product_id}`)} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
+      {activos.map((t) => <Fila key={t.id} t={t} alVer={() => navegar(`/producto/${t.product_id}`)} alVolver={() => volverAPedir(t)}
+        volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
         alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} />)}
       {apagados.length ? <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, marginTop: 8, marginLeft: 4 }}>YA NO LO TOMO</Text> : null}
       {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
@@ -105,7 +114,7 @@ export default function Tratamientos() {
   );
 }
 
-function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar, alPreguntar }) {
+function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar }) {
   const tema = useTema();
   const pid = String(t.product_id);
   const recordatorio = useTomas((s) => s.config[pid]);
@@ -124,13 +133,14 @@ function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar, alPreg
         <View style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, tema.oscuro ? 0.26 : 0.15) }}>
           <Icono sf="pills.fill" respaldo="💊" tam={19} color={urgente ? tema.color.magentaTexto : tema.color.verdeTexto} />
         </View>
-        <View style={{ flex: 1, gap: 2 }}>
+        <Presionable onPress={alVer ? () => { Haptics.selectionAsync().catch(() => {}); alVer(); } : undefined} disabled={!alVer}
+          accessibilityRole={alVer ? 'link' : undefined} accessibilityHint={alVer ? 'Abre el producto' : undefined} style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombrePropio(t.nombre)}</Text>
           <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
             {apagado ? t.motivo : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
           </Text>
           {!apagado ? <Text style={{ fontSize: 13, fontWeight: '700', color: urgente ? tema.color.magentaTexto : colorSistema.texto2 }}>{cuando}</Text> : null}
-        </View>
+        </Presionable>
         {/* Preguntar a la farmacia por este medicamento (2026-10-13): abre el chat con él puesto. */}
         {alPreguntar ? (
           <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alPreguntar(); }} accessibilityRole="button"
@@ -144,7 +154,7 @@ function Fila({ t, apagado, alReservar, alApagar, alEncender, alRecordar, alPreg
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {apagado ? <Boton texto="Volver a recordarme" alTocar={alEncender} /> : (
           <>
-            <Boton texto="Reservar" principal alTocar={alReservar} />
+            <Boton texto={volviendo ? 'Agregando…' : 'Volver a pedir'} sf="arrow.clockwise" principal alTocar={alVolver} deshabilitado={volviendo} />
             <Boton texto="Ya no lo tomo" alTocar={alApagar} />
           </>
         )}
@@ -180,12 +190,15 @@ function Reintentar({ alTocar }) {
   );
 }
 
-function Boton({ texto, alTocar, principal }) {
+function Boton({ texto, alTocar, principal, sf, deshabilitado }) {
   const t = useTema();
   return (
-    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
-      style={({ pressed }) => ({ flex: 1, minHeight: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    <Presionable onPress={() => { if (deshabilitado) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
+      disabled={!!deshabilitado} accessibilityState={{ disabled: !!deshabilitado }}
+      style={({ pressed }) => ({ flex: 1, minHeight: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6,
+        opacity: deshabilitado ? 0.7 : 1,
         backgroundColor: principal ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      {sf ? <Icono sf={sf} respaldo="" tam={13} color={principal ? '#FFFFFF' : colorSistema.texto} /> : null}
       <Text style={{ fontSize: 14, fontWeight: '700', color: principal ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
     </Presionable>
   );

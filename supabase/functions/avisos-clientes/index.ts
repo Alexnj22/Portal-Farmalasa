@@ -39,11 +39,15 @@
 // el aviso de cumpleaños (sin anotarlo), para ver cómo llega.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret } from "../_shared/security.ts";
+import { mensajePush } from "../_shared/avisoPrivado.ts";
 
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 
-interface Aviso { customer_id: number; tipo: string; ref: string; titulo: string; cuerpo: string; url: string }
+// `cuerpoPublico` (2026-10-15): el cuerpo SIN el producto, para la pantalla
+// bloqueada de Android (ver _shared/avisoPrivado.ts). No se guarda en la tabla.
+interface Aviso { customer_id: number; tipo: string; ref: string; titulo: string; cuerpo: string; url: string; cuerpoPublico?: string }
+type Token = { id: string; token: string; plataforma: string | null };
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const fechaCorta = (f: string) => { const [, m, d] = f.split("-"); return `${Number(d)} ${MESES[Number(m) - 1]}`; };
@@ -60,14 +64,14 @@ Deno.serve(async (req) => {
   try {
     // Quién puede recibir: sesiones vivas con token y avisos encendidos.
     const { data: ses, error: eSes } = await admin.from("app_cliente_sesiones")
-      .select("id, customer_id, push_token")
+      .select("id, customer_id, push_token, plataforma")
       .not("customer_id", "is", null).not("push_token", "is", null)
       .is("revocada_at", null).eq("acepta_avisos", true);
     if (eSes) throw eSes;
-    const tokens = new Map<number, { id: string; token: string }[]>();
+    const tokens = new Map<number, Token[]>();
     for (const s of ses ?? []) {
       const l = tokens.get(s.customer_id) ?? [];
-      l.push({ id: s.id, token: s.push_token });
+      l.push({ id: s.id, token: s.push_token, plataforma: s.plataforma ?? null });
       tokens.set(s.customer_id, l);
     }
 
@@ -290,12 +294,15 @@ Deno.serve(async (req) => {
     if (eE) throw eE;
     for (const e of encs ?? []) {
       const cod = `E-${String(e.id).padStart(6, "0")}`;
-      const [titulo, cuerpo] = e.estado === "confirmado"
-        ? [`Tu encargo ${cod} se puede conseguir`, `${e.producto_nombre}: llega aprox. el ${String(e.fecha_estimada).split("-").reverse().join("/")}. Confírmalo pagando el anticipo de $${Number(e.anticipo).toFixed(2)}.`]
+      const llega = `llega aprox. el ${String(e.fecha_estimada).split("-").reverse().join("/")}. Confírmalo pagando el anticipo de $${Number(e.anticipo).toFixed(2)}.`;
+      // El título nunca nombra el producto; el cuerpo público, tampoco (la
+      // nota de la sucursal puede nombrarlo).
+      const [titulo, cuerpo, cuerpoPublico] = e.estado === "confirmado"
+        ? [`Tu encargo ${cod} se puede conseguir`, `${e.producto_nombre}: ${llega}`, `Lo que encargaste ${llega}`]
         : e.estado === "rechazado"
-          ? [`Tu encargo ${cod} no se pudo conseguir`, e.nota_sucursal ?? "Por ahora no lo podemos conseguir."]
-          : [`¡Tu encargo ${cod} ya llegó!`, `${e.producto_nombre} te espera en la sucursal.`];
-      candidatos.push({ customer_id: e.customer_id, tipo: "encargo", ref: `encargo:${e.id}:${e.estado}`, titulo, cuerpo, url: "/reservas" });
+          ? [`Tu encargo ${cod} no se pudo conseguir`, e.nota_sucursal ?? "Por ahora no lo podemos conseguir.", "Toca para ver el detalle."]
+          : [`¡Tu encargo ${cod} ya llegó!`, `${e.producto_nombre} te espera en la sucursal.`, "Te espera en la sucursal. Toca para ver el detalle."];
+      candidatos.push({ customer_id: e.customer_id, tipo: "encargo", ref: `encargo:${e.id}:${e.estado}`, titulo, cuerpo, cuerpoPublico, url: "/reservas" });
     }
 
     // ── Vence: lo que vence dentro de 15 días (ventana de 2 por si una vuelta falla)
@@ -328,6 +335,7 @@ Deno.serve(async (req) => {
         customer_id: a.customer_id, tipo: "inyeccion", ref: `iny:${a.id}`,
         titulo: "Tu inyección te espera 💉",
         cuerpo: `${a.producto} ya está pagada${a.sala ? ` en ${a.sala}` : ""}. Pasa cuando quieras a aplicártela.`,
+        cuerpoPublico: `Ya está pagada${a.sala ? ` en ${a.sala}` : ""}. Pasa cuando quieras a aplicártela.`,
         url: "/inyecciones",
       });
     }
@@ -374,6 +382,8 @@ Deno.serve(async (req) => {
             cuerpo: lista.length === 1
               ? `Se te está por acabar ${enumerar}. Resérvalo y lo tenemos listo.`
               : `${enumerar}. Resérvalos de una vez y te los tenemos listos.`,
+            cuerpoPublico: lista.length === 1 ? "Resérvalo y lo tenemos listo. Toca para ver cuál."
+              : "Resérvalos de una vez y te los tenemos listos. Toca para ver cuáles.",
             url: "/tratamientos",
           });
         }
@@ -441,6 +451,7 @@ Deno.serve(async (req) => {
           customer_id: r.customer_id, tipo: "reserva", ref: `reserva-recibida:${r.id}`,
           titulo: `Recibimos tu reserva R-${String(r.id).padStart(6, "0")}`,
           cuerpo: `${r.cantidad} × ${r.producto_nombre}. Te avisamos cuando la sucursal la tenga lista.`,
+          cuerpoPublico: "Te avisamos cuando la sucursal la tenga lista.",
           url: "/reservas",
         });
       }
@@ -453,13 +464,23 @@ Deno.serve(async (req) => {
         .in("customer_id", clientes).eq("estado", "lista")
         .gte("lista_at", new Date(Date.now() - 2 * 3600_000).toISOString());
       if (eRes) throw eRes;
+      // La sucursal va en el TÍTULO (2026-10-15): es lo que se lee con el
+      // teléfono bloqueado, donde el producto no sale. Sin el nombre, sin ella.
+      const salas = [...new Set((listas ?? []).map((r: any) => r.branch_id).filter((b: unknown) => b != null))];
+      const { data: brs, error: eBr } = salas.length
+        ? await admin.from("branches").select("id, name").in("id", salas) : { data: [], error: null };
+      if (eBr) console.error("no se pudieron leer las sucursales:", eBr.message);
+      const sala = new Map((brs ?? []).map((b: any) => [b.id, String(b.name ?? "").trim()]));
       for (const r of listas ?? []) {
         const hasta = new Date(Date.parse(r.vence_at) - 6 * 3600_000);
         const h = hasta.getUTCHours(), m = String(hasta.getUTCMinutes()).padStart(2, "0");
+        const antesDe = `antes de mañana a las ${h % 12 || 12}:${m} ${h < 12 ? "a. m." : "p. m."}`;
+        const en = sala.get(r.branch_id) ? ` en ${sala.get(r.branch_id)}` : "";
         candidatos.push({
           customer_id: r.customer_id, tipo: "reserva", ref: `reserva-lista:${r.id}`,
-          titulo: "Tu reserva está lista 🛍️",
-          cuerpo: `${r.producto_nombre} te espera. Pasa a retirarlo antes de mañana a las ${h % 12 || 12}:${m} ${h < 12 ? "a. m." : "p. m."}`,
+          titulo: `Tu reserva está lista${en} 🛍️`,
+          cuerpo: `${r.producto_nombre} te espera. Pasa a retirarlo ${antesDe}`,
+          cuerpoPublico: `Pasa a retirarla ${antesDe}`,
           url: "/reservas",
         });
       }
@@ -511,7 +532,7 @@ Deno.serve(async (req) => {
 
     // Anotar primero: lo que ya estaba anotado NO vuelve (la UNIQUE lo frena).
     const { data: nuevos, error: eA } = await admin.from("app_cliente_avisos")
-      .upsert(candidatos, { onConflict: "customer_id,tipo,ref", ignoreDuplicates: true })
+      .upsert(candidatos.map(({ cuerpoPublico: _p, ...a }) => a), { onConflict: "customer_id,tipo,ref", ignoreDuplicates: true })
       .select("id, customer_id, tipo, ref");
     if (eA) throw eA;
     const llave = (a: { customer_id: number; tipo: string; ref: string }) => `${a.customer_id}|${a.tipo}|${a.ref}`;
@@ -531,10 +552,12 @@ Deno.serve(async (req) => {
 });
 
 // deno-lint-ignore no-explicit-any
-async function enviar(admin: any, tokens: Map<number, { id: string; token: string }[]>, avisos: Aviso[]) {
-  const mensajes: { to: string; title: string; body: string; sound: string; data: { url: string }; _c: number; _s: string }[] = [];
+async function enviar(admin: any, tokens: Map<number, Token[]>, avisos: Aviso[]) {
+  // Un mensaje por teléfono: lo que nombra un producto se arma distinto en
+  // iPhone y en Android (_shared/avisoPrivado.ts).
+  const mensajes: (ReturnType<typeof mensajePush> & { _c: number; _s: string })[] = [];
   for (const a of avisos) for (const t of tokens.get(a.customer_id) ?? []) {
-    mensajes.push({ to: t.token, title: a.titulo, body: a.cuerpo, sound: "default", data: { url: a.url }, _c: a.customer_id, _s: t.id });
+    mensajes.push({ ...mensajePush(a, t.token, t.plataforma), _c: a.customer_id, _s: t.id });
   }
   let enviados = 0;
   const errores: string[] = [];

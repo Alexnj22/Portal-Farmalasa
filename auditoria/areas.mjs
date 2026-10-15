@@ -470,6 +470,10 @@ export const AREAS = [
             'src/views/PuntosView.jsx',
             'src/views/puntos/',
             'src/utils/codigoDePuntos.js',
+            // Escanear la tarjeta del cliente (2026-10-15): qué es lo que leyó
+            // el lector y cómo se dice cada dato del expediente. Lo usan la
+            // pestaña «Escanear» de Puntos y la app del personal.
+            'src/utils/expedienteDelCliente.js',
         ],
         tablas: ['sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',
@@ -821,6 +825,9 @@ export const AREAS = [
             'src/views/ProductosView.jsx', 'src/views/productos/TabCatalogo.jsx',
             'src/views/productos/TabLaboratorios.jsx', 'src/views/productos/TabPresentaciones.jsx',
             'src/views/productos/TabPoliticaVencimiento.jsx',
+            // Revisión de factor (2026-10-15): lo que no cuadra en el tamaño de
+            // una presentación y la existencia que dejó un cambio.
+            'src/views/productos/TabRevisionFactor.jsx', 'src/data/revisionFactor.js',
             'src/views/LaboratoriosView.jsx',
             'src/data/productos.js', 'src/data/presentaciones.js', 'src/data/laboratorios.js',
             'src/data/srs.js',   // el registro sanitario (salió de 3 copias en pantallas, F3)
@@ -830,9 +837,10 @@ export const AREAS = [
         tablas: ['products', 'products_changelog', 'products_sync_log', 'presentaciones',
                  'product_active_principles', 'product_categories', 'product_locations',
                  'product_precios', 'product_precios_changelog', 'product_precios_history',
-                 'laboratorios', 'lab_locations'],
+                 'laboratorios', 'lab_locations', 'factores_sospechosos_avisados'],
         edge: ['sync-products', 'notify-new-products-daily'],
-        crons: ['sync-products-10min', 'notify-new-products-daily', 'vacuum-products-hourly'],
+        crons: ['sync-products-10min', 'notify-new-products-daily', 'vacuum-products-hourly',
+                'avisar-factores-sospechosos'],
         docs: ['docs/PRODUCTOS-LA-PRESENTACION-Y-EL-FACTOR-2026-08-24.md'],
     },
     {

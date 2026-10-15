@@ -9,6 +9,12 @@
  *   · Resumen            — ¿funciona? ¿cuánto se acumuló y se canjeó? En
  *                          gráficas, con el mes, los vencimientos y el estado
  *                          del programa (pestaña propia desde el 2026-09-26).
+ *   · Escanear           — la tarjeta del cliente por el lector (o la cámara,
+ *                          o su DUI / teléfono) y todo lo suyo para atenderlo:
+ *                          puntos, app, reservas, encargos, créditos,
+ *                          inyecciones, tratamientos y compras (2026-10-15,
+ *                          `puntos/EscanearCliente`). Usa el permiso de
+ *                          Consulta: es la misma persona, en el mismo mostrador.
  *   · Consulta           — las tarjetas y los clientes con sus puntos: al
  *                          tocar uno se ve todo lo suyo y se edita su ficha
  *                          (el panel de puntos de la ficha se mudó aquí,
@@ -33,7 +39,7 @@
  */
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Star, Search, LayoutDashboard, Trophy, Wallet, ChevronRight, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
+import { Star, Search, ScanLine, LayoutDashboard, Trophy, Wallet, ChevronRight, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -62,6 +68,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import AsignarCuentaModal from './puntos/AsignarCuentaModal';
 import ClientePuntosModal from './puntos/ClientePuntosModal';
 import TraspasosPendientes from './puntos/TraspasosPendientes';
+import EscanearCliente from './puntos/EscanearCliente';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
@@ -77,6 +84,9 @@ import { clickable } from '@nucleo/utils/clickable';
 // la primera que sí.
 const PESTANAS = [
     { key: 'resumen',     label: 'Resumen',             icon: LayoutDashboard },
+    // Antes de Consulta: para la caja (que no ve Resumen) es la pestaña con la
+    // que abre la vista, y lo que hace con el cliente enfrente es escanearlo.
+    { key: 'escanear',    label: 'Escanear',            icon: ScanLine },
     { key: 'consulta',    label: 'Consulta',            icon: Search },
     { key: 'avisos',      label: 'Avisos',              icon: AlertTriangle },
     { key: 'por_asignar', label: 'Cuentas por asignar', icon: UserSearch },
@@ -108,6 +118,9 @@ export default function PuntosView({ openModal }) {
     const permitidas = {
         resumen:     hasPermission('puntos_tab_resumen', 'can_view'),
         consulta:    hasPermission('puntos_tab_consulta', 'can_view'),
+        // El mismo permiso que Consulta, a propósito: la base lo exige igual en
+        // `cliente_por_tarjeta` y `cliente_expediente`.
+        escanear:    hasPermission('puntos_tab_consulta', 'can_view'),
         avisos:      hasPermission('puntos_tab_avisos', 'can_view'),
         por_asignar: hasPermission('puntos_tab_por_asignar', 'can_view'),
     };
@@ -194,14 +207,25 @@ export default function PuntosView({ openModal }) {
     };
     const filtrarMotivo = (v) => { setMotivo(v); pagCuentas.resetPage(); };
 
+    // La ficha se edita en el MISMO modal que usa Clientes. Desde el perfil de
+    // puntos y desde el expediente del escaneo.
+    const abrirFicha = (c, desde) => {
+        openModal?.('editCliente', {
+            id: c.id, nombre: c.nombre, canEdit: puedeEditarFicha,
+            onSaved: () => setVersion((v) => v + 1),
+        });
+        useStaff.getState().appendAuditLog?.('CLIENTES_VER_FICHA', String(c.id), { nombre: c.nombre, desde });
+    };
+
     const filtersContent = (
         <ViewTabBar
             tabs={visibles}
             activeTab={pestana}
             onTabChange={setPestana}
             searchValue={pestana === 'consulta' ? busquedaClientes : busqueda}
-            // Resumen no tiene lista que buscar: sin la lupa.
-            onSearchChange={pestana === 'resumen' ? undefined : buscar}
+            // Resumen no tiene lista que buscar, y Escanear tiene su propio
+            // campo (el del lector): sin la lupa.
+            onSearchChange={pestana === 'resumen' || pestana === 'escanear' ? undefined : buscar}
             placeholder={pestana === 'avisos' ? 'Buscar por cliente, documento o vendedor…'
                 : pestana === 'consulta' ? 'Buscar cliente por nombre, DUI o teléfono…'
                 : 'Buscar por nombre, DUI o teléfono…'}
@@ -217,6 +241,12 @@ export default function PuntosView({ openModal }) {
                         <Resumen resumen={resumen} serie={serie} tablero={tablero} cargando={cargando}
                             irA={setPestana} veTarjetas={veTarjetas} onAbrirCliente={setClienteAbierto} />
                     </>
+                )}
+
+                {pestana === 'escanear' && (
+                    <EscanearCliente puedeEditarFicha={puedeEditarFicha}
+                        onVerPuntos={setClienteAbierto}
+                        onVerFicha={(c) => abrirFicha(c, 'escaneo')} />
                 )}
 
                 {pestana === 'consulta' && (
@@ -377,11 +407,7 @@ export default function PuntosView({ openModal }) {
                 onEditar={(c) => {
                     setClienteAbierto(null);
                     setAvisoAbierto(null);
-                    openModal?.('editCliente', {
-                        id: c.id, nombre: c.nombre, canEdit: puedeEditarFicha,
-                        onSaved: () => setVersion((v) => v + 1),
-                    });
-                    useStaff.getState().appendAuditLog?.('CLIENTES_VER_FICHA', String(c.id), { nombre: c.nombre, desde: 'puntos' });
+                    abrirFicha(c, 'puntos');
                 }}
             />
         </GlassViewLayout>

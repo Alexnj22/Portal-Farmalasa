@@ -32,8 +32,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
 function Reportar({ abierto, onCerrar, onListo }) {
-  const { user, hasPermission } = useAuth();
-  const puedeDescargar = hasPermission('ventas_perdidas_descargar');
+  const { user } = useAuth();
   const [buscado, setBuscado] = useState('');
   const [cantidad, setCantidad] = useState('1');
   const [laboratorio, setLaboratorio] = useState('');
@@ -114,6 +113,8 @@ const Fila = memo(function Fila({ r, quien, sala, pendiente, ocupado, onMarcar, 
 });
 
 export default function VentasPerdidas() {
+  // El CSV exige `ventas_perdidas_descargar`, como en el portal.
+  const puedeDescargar = useAuth().hasPermission('ventas_perdidas_descargar');
   const empleados = useStaffStore((s) => s.employees);
   const sucursales = useStaffStore((s) => s.branches);
   const [estado, setEstado] = useState('pendiente');

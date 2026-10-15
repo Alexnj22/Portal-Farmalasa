@@ -200,6 +200,65 @@ async function salasDeLaRed(admin: any): Promise<{ data: any[] | null; error: an
   salasCache = { en: Date.now(), v: data ?? [] };
   return { data: salasCache.v, error: null };
 }
+
+// Unidades por sucursal (2026-10-15, «¿dónde lo hay?»). `inventory` trae una
+// fila por PRESENTACIÓN y lote —«CAJA X 20: 1» y «UNIDAD: 14» del mismo
+// producto—, así que sumar `cantidad` a secas mezcla cajas con unidades. Se
+// pasa a unidades con el factor de esa presentación (`v_product_factor`, la
+// misma cuenta de `get_pedido_*`): 1 caja de 20 + 14 sueltas = 34. Sin factor
+// conocido, el «x N» del detalle, y si no, 1. Se deduplica con la misma clave
+// que `inv_dedup` de esas funciones.
+// Por tandas de 8 productos: `erp_product_id` se REPITE (hasta 63 filas por
+// producto, medido el 2026-10-15), así que acotar la entrada no acota la
+// respuesta; 8 × 63 = 504, lejos del tope de 1000 de PostgREST.
+// deno-lint-ignore no-explicit-any
+async function unidadesPorSala(admin: any, ids: number[]): Promise<Map<number, Map<number, number>>> {
+  const out = new Map<number, Map<number, number>>();
+  const unicos = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))];
+  if (!unicos.length) return out;
+  const tandas: number[][] = [];
+  for (let i = 0; i < unicos.length; i += 8) tandas.push(unicos.slice(i, i + 8));
+  const [{ data: mapa, error: eM }, { data: factores, error: eF }, ...inv] = await Promise.all([
+    admin.from("erp_sucursal_map").select("erp_sucursal_id, branch_id").eq("es_bodega", false),
+    admin.from("v_product_factor").select("product_id, pres_key, factor").in("product_id", unicos),
+    ...tandas.map((t) => admin.from("inventory")
+      .select("erp_sucursal_id, erp_product_id, presentacion, detalle, lote, fecha_vencimiento, cantidad")
+      .in("erp_product_id", t).or("is_vencidos.is.null,is_vencidos.eq.false").range(0, 999)),
+  ]);
+  if (eM) throw eM;
+  if (eF) throw eF;
+  const sala = new Map((mapa ?? []).map((m: any) => [Number(m.erp_sucursal_id), Number(m.branch_id)]));
+  const factor = new Map((factores ?? []).map((f: any) => [`${f.product_id}|${f.pres_key}`, Number(f.factor) || 1]));
+  const vistas = new Set<string>();
+  for (const { data, error } of inv) {
+    if (error) throw error;
+    // 1000 filas exactas es la firma del corte de PostgREST: mejor fallar que
+    // decir «agotado» de una sala cuyas filas no llegaron.
+    if ((data ?? []).length >= 1000) throw new Error("unidadesPorSala: tanda cortada en 1000 filas");
+    // deno-lint-ignore no-explicit-any
+    for (const r of (data ?? []) as any[]) {
+      const pres = String(r.presentacion ?? "").trim();
+      const clave = [r.erp_sucursal_id, r.erp_product_id, r.lote, r.fecha_vencimiento, pres.toLowerCase(), String(r.detalle ?? "").toLowerCase()].join("|");
+      if (vistas.has(clave)) continue;
+      vistas.add(clave);
+      const b = sala.get(Number(r.erp_sucursal_id));
+      const n = Number(r.cantidad) || 0;
+      if (b == null || n <= 0) continue;
+      const delDetalle = Number(/x\s*(\d+)/i.exec(String(r.detalle ?? ""))?.[1]) || null;
+      const f = factor.get(`${r.erp_product_id}|${pres.toUpperCase()}`) ?? delDetalle ?? 1;
+      const pid = Number(r.erp_product_id);
+      if (!out.has(pid)) out.set(pid, new Map());
+      const m = out.get(pid)!;
+      m.set(b, (m.get(b) ?? 0) + n * f);
+    }
+  }
+  return out;
+}
+// Cuántas de una presentación alcanzan en una sala, con tope en 5 (lo más que
+// se pide de una): la app no muestra existencias exactas, sólo si alcanza para
+// lo que la persona pide o hasta dónde llega.
+const TOPE_ALCANCE = 5;
+const alcanceDe = (unidades: number, factor: number) => Math.max(0, Math.min(TOPE_ALCANCE, Math.floor(unidades / Math.max(1, factor || 1))));
 // La foto de un empleado se guarda como URL «formato público» del bucket
 // privado `empleados` (regla 10 del CLAUDE.md): se saca el bucket y la ruta
 // para firmarla, igual que `getSignedFileUrl` del portal.
@@ -306,6 +365,23 @@ function tokenNuevo(): string {
 
 // Hoy en El Salvador (UTC-6, sin horario de verano).
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+
+// Mis créditos (2026-10-15): la política es la del portal y NO otra. El plazo
+// es un mes desde la fecha del crédito (`DIAS_DE_PLAZO` de src/data/creditos.js
+// y el `> 30` de `creditos_pasados_del_plazo`, que dispara el aviso), y «vence
+// pronto» son los cinco días previos (`DIAS_DE_AVISO`). Vencido exige SALDO:
+// un crédito pagado de hace un año no debe nada. `fecha_limite` es el último
+// día dentro del plazo; desde el siguiente está vencido.
+const PLAZO_CREDITO = 30, AVISO_CREDITO = 5;
+const estadoDeCredito = (fecha: string, saldo: number) => {
+  const base = Date.parse(`${String(fecha).slice(0, 10)}T12:00:00Z`);
+  const dias = Math.round((Date.parse(`${hoySV()}T12:00:00Z`) - base) / 86400_000);
+  const fecha_limite = new Date(base + PLAZO_CREDITO * 86400_000).toISOString().slice(0, 10);
+  const estado = !(saldo > 0.004) ? "pagado"
+    : dias > PLAZO_CREDITO ? "vencido"
+    : dias >= PLAZO_CREDITO - AVISO_CREDITO ? "vence_pronto" : "al_dia";
+  return { dias, fecha_limite, estado };
+};
 
 const limpiarDoc = (v: unknown) => String(v ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 // deno-lint-ignore no-explicit-any
@@ -876,10 +952,11 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     if (accion === "catalogo_producto") {
       const id = Number(body?.id);
       if (!Number.isInteger(id) || id <= 0) return json({ ok: false, mensaje: "Producto no válido." });
-      const [{ data, error }, { data: salas, error: eS }, cond] = await Promise.all([
+      const [{ data, error }, { data: salas, error: eS }, cond, unidades] = await Promise.all([
         admin.rpc("app_catalogo_producto", { p_id: id }),
         salasDeLaRed(admin).then((r) => ({ ...r, data: r.data?.filter((b: any) => b.type === "FARMACIA") ?? null })),
         condicionDePrecio(),
+        unidadesPorSala(admin, [id]).then((m) => m.get(id) ?? new Map<number, number>()),
       ]);
       if (error) throw error;
       if (eS) throw eS;
@@ -901,8 +978,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
             vistas.add(k);
             return true;
           }).map((x: any) => conPrecioTuyo((Number(x?.factor) || 1) === caja ? cond : sinLista)(x)),
+          // `alcance` (2026-10-15): por factor de presentación, cuántas alcanzan en
+          // esa sala (tope 5), contado en UNIDADES — una caja de 100 no cabe en
+          // 40 sueltas —. `nivel` también sale de las unidades: antes una caja
+          // de 100 contaba como «1» y decía «Pocas unidades».
           existencias: (d.existencias ?? []).filter((e: any) => nombre.has(Number(e.branch_id)))
-            .map((e: any) => ({ ...e, sala: nombre.get(Number(e.branch_id)) })),
+            .map((e: any) => {
+              const u = unidades.get(Number(e.branch_id));
+              if (u == null) return { ...e, sala: nombre.get(Number(e.branch_id)) };
+              const alcance = Object.fromEntries([...new Set((d.presentaciones ?? []).map((x: any) => Number(x?.factor) || 1))]
+                .map((f) => [f, alcanceDe(u, f as number)]));
+              return { ...e, nivel: u >= 5 ? "hay" : "pocas", alcance, sala: nombre.get(Number(e.branch_id)) };
+            }),
           salas: [...nombre.entries()].map(([id, n]) => ({ id, sala: n })),
         },
         whatsapp: WHATSAPP_EMPRESA,
@@ -1103,13 +1190,22 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const productoId = Number(body?.producto_id);
       if (!productoId) return json({ ok: false, mensaje: "Producto inválido." }, 400);
       // `receta` (2026-10-12): bajo receta se reserva con foto, y la hoja la pide.
-      const [{ data, error }, { data: prod, error: eP }] = await Promise.all([
+      // `alcance` (2026-10-15): cuántas de las que se piden alcanzan en cada
+      // sala (tope 5). La oferta se reserva en su presentación MENOR —su precio
+      // es el más bajo de viñeta (`productosDeLaFoto`)—, así que se cuenta con
+      // ese factor y en unidades.
+      const [{ data, error }, { data: prod, error: eP }, { data: facs, error: eFa }, unidades] = await Promise.all([
         admin.rpc("app_cliente_existencias", { p_producto_id: productoId }),
         admin.from("products").select("es_antibiotico, requiere_receta").eq("id", productoId).maybeSingle(),
+        admin.from("product_precios").select("factor").eq("product_id", productoId).eq("activo", true).gt("vineta", 0),
+        unidadesPorSala(admin, [productoId]).then((m) => m.get(productoId) ?? new Map<number, number>()),
       ]);
       if (error) throw error;
       if (eP) throw eP;
-      return json({ ok: true, sucursales: conSucursal(data ?? []), receta: !!(prod?.es_antibiotico || prod?.requiere_receta) });
+      if (eFa) throw eFa;
+      const menor = (facs ?? []).length ? Math.max(1, Math.min(...(facs ?? []).map((x: any) => Number(x.factor) || 1))) : 1;
+      const sucursales = (data ?? []).map((s: any) => ({ ...s, alcance: alcanceDe(unidades.get(Number(s.branch_id)) ?? 0, menor) }));
+      return json({ ok: true, sucursales: conSucursal(sucursales), receta: !!(prod?.es_antibiotico || prod?.requiere_receta) });
     }
 
     // El cupón del mes ya se raspó (2026-10-09): queda en el servidor, así en
@@ -1780,16 +1876,25 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const ids = (Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0).slice(0, 20);
       const envio = await ajustesEnvio();
       if (!ids.length) return json({ ok: true, existencias: [], salas: [], envio });
-      const [{ data, error }, { data: salas, error: eS }, { data: rec, error: eRec }] = await Promise.all([
+      const [{ data, error }, { data: salas, error: eS }, { data: rec, error: eRec }, unidades] = await Promise.all([
         admin.rpc("app_carrito_existencias", { p_ids: ids }),
         admin.from("branches").select("id, name, address").eq("type", "FARMACIA").order("name"),
         // `receta_ids` (2026-10-12): los que piden foto de la receta al reservar.
         admin.from("products").select("id").in("id", ids).or("es_antibiotico.eq.true,requiere_receta.eq.true"),
+        unidadesPorSala(admin, ids),
       ]);
       if (error) throw error;
       if (eS) throw eS;
       if (eRec) throw eRec;
-      return json({ ok: true, envio, existencias: data ?? [], receta_ids: (rec ?? []).map((p: any) => Number(p.id)),
+      // `alcance` (2026-10-15): si la app manda `items` ({ id, factor }), por
+      // cada uno y cada sala, cuántos de esa presentación alcanzan (tope 5,
+      // contado en unidades). Así el carrito distingue «tiene todo» de «tiene
+      // 1 de los 3 que pides».
+      const pedidos = (Array.isArray(body?.items) ? body.items : []).slice(0, 20)
+        .map((x: any) => ({ id: Number(x?.id), factor: Number(x?.factor) || 1 })).filter((x: any) => ids.includes(x.id));
+      const alcance = pedidos.flatMap((x: any) => [...(unidades.get(x.id) ?? new Map<number, number>()).entries()]
+        .map(([b, u]) => ({ product_id: x.id, factor: x.factor, branch_id: b, alcance: alcanceDe(u, x.factor) })));
+      return json({ ok: true, envio, existencias: data ?? [], alcance, receta_ids: (rec ?? []).map((p: any) => Number(p.id)),
         salas: (salas ?? []).map((b: any) => ({ id: b.id, sala: sucursal(b.name), direccion: b.address })) });
     }
 
@@ -1927,6 +2032,42 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { data, error } = await admin.rpc("mayorista_solicitar_app", { p_customer: customerId, p_nota: String(body?.nota ?? "") });
       if (error) throw error;
       return json(data);
+    }
+
+    // ── Mis créditos (2026-10-15): sólo LECTURA, sin pagos ──────────────
+    // Los créditos con saldo de ESTA ficha (la de la sesión, nunca una que
+    // mande el teléfono), del espejo `creditos_de_clientes`. El estado sale de
+    // `estadoDeCredito`, la política del portal. El número es el del documento
+    // tal como lo conoce el cliente (el mismo recorte que «Mis facturas»).
+    if (accion === "mis_creditos") {
+      if (!customerId) return json({ ok: true, creditos: [], total: 0, vencidos: 0 });
+      const [{ data, error }, { data: salas, error: eSalas }] = await Promise.all([
+        admin.from("creditos_de_clientes")
+          .select("id, branch_id, numero_doc, tipo_doc, fecha, total, saldo")
+          .eq("customer_id", customerId).gt("saldo", 0.004)
+          .order("fecha", { ascending: true }).limit(200),
+        salasDeLaRed(admin),
+      ]);
+      if (error) throw error;
+      if (eSalas) console.error("mis_creditos: no se pudieron leer las salas:", eSalas.message);
+      const nombreSala = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
+      const numero = (c: unknown) => (c == null ? null : String(c).split("_")[0].replace(/^0+(?=\d)/, ""));
+      const creditos = (data ?? []).map((c: any) => {
+        const saldo = Number(c.saldo);
+        return {
+          id: c.id, numero: numero(c.numero_doc),
+          tipo: String(c.tipo_doc ?? "").toUpperCase() === "CCF" ? "credito_fiscal" : "consumidor_final",
+          fecha: c.fecha, total: Number(c.total), saldo,
+          sala: nombreSala.get(Number(c.branch_id)) ?? null,
+          ...estadoDeCredito(c.fecha, saldo),
+        };
+      });
+      const centavos = creditos.reduce((s: number, c: any) => s + Math.round(c.saldo * 100), 0);
+      return json({
+        ok: true, creditos, total: centavos / 100,
+        vencidos: creditos.filter((c: any) => c.estado === "vencido").length,
+        plazo_dias: PLAZO_CREDITO,
+      });
     }
 
     // ── Recordatorios de tratamiento (2026-10-07) ───────────────────────
@@ -2428,6 +2569,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         restado: { tipo: "restado", titulo: "Usaste 500 puntos 💳", cuerpo: "Ahorraste $5.00 en Salud 1. Te quedan 1,200 puntos.", url: "/puntos" },
         tratamiento: { tipo: "tratamiento", titulo: "¿Ya te toca otra vez? 💊", cuerpo: "Se te está por acabar tu medicamento. Resérvalo y lo tenemos listo.", url: "/tratamientos" },
         reserva: { tipo: "reserva", titulo: "Tu reserva está lista", cuerpo: "Pasa a retirarla con tu código.", url: "/reservas" },
+        // Mis créditos (2026-10-15): el mismo texto que manda avisos-clientes, sin montos.
+        credito: { tipo: "credito", titulo: "Tienes un crédito vencido", cuerpo: "Toca para ver el detalle. ¿Dudas? Escríbenos por el chat de la app.", url: "/creditos" },
       };
       const a = TIPOS[String(body?.tipo ?? "")];
       if (!a) return json({ ok: false, mensaje: "Tipo de aviso desconocido." });
@@ -2819,6 +2962,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         encuesta,
         inyeccionesReales,
         muestras,
+        creditos,
       ] = await Promise.all([
         admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId }),
         salasDeLaRed(admin),
@@ -2888,6 +3032,21 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           ]);
           return { prueba, cumpleanos, inyeccion, vencimiento };
         }),
+        // Créditos con saldo (2026-10-15): sólo cuántos y cuántos vencidos, para
+        // la alerta del Inicio sin otra petición. Usa el índice por ficha y son
+        // pocas filas (los que deben son ~100 en toda la red). Si falla, el
+        // Inicio sigue sin la alerta: no tumba el resumen.
+        (async () => {
+          const { data, error } = await admin.from("creditos_de_clientes").select("fecha, saldo")
+            .eq("customer_id", customerId).gt("saldo", 0.004).limit(200);
+          if (error) { console.error("resumen créditos:", error.message); return null; }
+          const filas = data ?? [];
+          if (!filas.length) return null;
+          return {
+            pendientes: filas.length,
+            vencidos: filas.filter((f: any) => estadoDeCredito(f.fecha, Number(f.saldo)).estado === "vencido").length,
+          };
+        })(),
       ]);
       if (eEst) throw eEst;
       if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
@@ -2930,6 +3089,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // Más las de muestra (cuenta de prueba): la pantalla las muestra, y el
         // Inicio decía «Al día» mientras adentro había 3 (2026-10-07).
         inyecciones_pendientes: inyeccionesReales + muestras.inyeccion.length,
+        // Mis créditos (2026-10-15): null si no debe nada — entonces la app no
+        // muestra nada en ningún lado.
+        creditos,
         // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
         prueba: muestras.prueba,
         cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo, raspado: !!cup.raspado_el } : null,
@@ -2970,6 +3132,106 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { data, error } = await admin.rpc("app_cliente_compras", { p_customer_id: customerId });
       if (error) throw error;
       return json({ ok: true, compras: conSucursal(data ?? []) });
+    }
+
+    // «Volver a pedir» (2026-10-15): lo de una compra (`factura`, el id de Mis
+    // compras) o un medicamento de Mis tratamientos (`productos`) vuelve al
+    // carrito con su presentación y su cantidad. El servidor dice qué se puede
+    // agregar HOY: lo que ya no está en el catálogo, la presentación que ya no
+    // se vende y lo que no hay en ninguna sucursal vuelven en `fuera` con su
+    // motivo, para que la app lo diga en vez de dejarlo afuera callada. El
+    // precio es el del catálogo de hoy (mayoreo sólo en la caja, la regla de
+    // `catalogo_producto`), nunca el de la factura; `reservar_carrito` lo
+    // vuelve a calcular. Lo bajo receta se agrega marcado: la foto se pide al
+    // reservar, como siempre.
+    if (accion === "volver_a_pedir") {
+      if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para usar esta opción." });
+      // factor 0 = no se sabe en qué presentación lo compró: va la mayor, como en la ficha.
+      let lineas: { id: number | null; nombre: string; factor: number; cantidad: number }[] = [];
+      const facturaId = Number(body?.factura);
+      // deno-lint-ignore no-explicit-any
+      const deRenglon = (it: any) => ({ id: it.erp_product_id == null ? null : Number(it.erp_product_id), nombre: String(it.descripcion ?? ""),
+        factor: Number(it.factor_unidades) || 1, cantidad: Math.max(1, Math.round(Number(it.cantidad) || 1)) });
+      if (Number.isInteger(facturaId) && facturaId > 0) {
+        const { data: fac, error: eFac } = await admin.from("sales_invoices").select("id")
+          .eq("id", facturaId).eq("customer_id", customerId).maybeSingle();
+        if (eFac) throw eFac;
+        if (!fac) return json({ ok: false, mensaje: "No encontramos esa compra." });
+        const { data: its, error: eIts } = await admin.from("sales_invoice_items")
+          .select("erp_product_id, descripcion, cantidad, factor_unidades, linea_num").eq("invoice_id", facturaId).order("linea_num");
+        if (eIts) throw eIts;
+        lineas = (its ?? []).map(deRenglon);
+      } else {
+        const pids = [...new Set((Array.isArray(body?.productos) ? body.productos : []).map(Number)
+          .filter((n: number) => Number.isInteger(n) && n > 0))].slice(0, 10) as number[];
+        if (!pids.length) return json({ ok: false, mensaje: "No hay nada que agregar." });
+        // Cómo lo compró la ÚLTIMA vez, entre sus 20 compras más recientes.
+        // 20 facturas × ≤10 productos × los renglones por lote: lejos de 1000.
+        const { data: facs, error: eFs } = await admin.from("sales_invoices").select("id")
+          .eq("customer_id", customerId).order("fecha", { ascending: false }).order("hora", { ascending: false }).limit(20);
+        if (eFs) throw eFs;
+        const orden = new Map((facs ?? []).map((f: any, i: number) => [Number(f.id), i]));
+        // deno-lint-ignore no-explicit-any
+        let its: any[] = [];
+        if (orden.size) {
+          const { data, error } = await admin.from("sales_invoice_items")
+            .select("invoice_id, erp_product_id, descripcion, cantidad, factor_unidades")
+            .in("invoice_id", [...orden.keys()]).in("erp_product_id", pids).range(0, 999);
+          if (error) throw error;
+          if ((data ?? []).length >= 1000) throw new Error("volver_a_pedir: renglones cortados en 1000 filas");
+          its = data ?? [];
+        }
+        for (const pid of pids) {
+          const suyos = its.filter((x) => Number(x.erp_product_id) === pid);
+          const ultima = Math.min(...suyos.map((x) => orden.get(Number(x.invoice_id)) ?? 99), 99);
+          const deEsa = suyos.filter((x) => (orden.get(Number(x.invoice_id)) ?? 99) === ultima);
+          lineas.push(...(deEsa.length ? deEsa.map(deRenglon) : [{ id: pid, nombre: "", factor: 0, cantidad: 1 }]));
+        }
+      }
+      // Los renglones del mismo producto y presentación (un lote por renglón) se juntan.
+      const juntas = new Map<string, { id: number | null; nombre: string; factor: number; cantidad: number }>();
+      for (const l of lineas) {
+        const k = l.id == null ? `x${juntas.size}` : `${l.id}|${l.factor}`;
+        const ya = juntas.get(k);
+        if (ya) ya.cantidad += l.cantidad; else juntas.set(k, { ...l });
+      }
+      const ids = [...new Set([...juntas.values()].map((l) => l.id).filter((n): n is number => n != null))].slice(0, 20);
+      const [cond, ...fichas] = await Promise.all([
+        condicionDePrecio(),
+        ...ids.map((id) => admin.rpc("app_catalogo_producto", { p_id: id })),
+      ]);
+      const ficha = new Map<number, any>();
+      ids.forEach((id, i) => {
+        const { data, error } = fichas[i] as { data: unknown; error: unknown };
+        if (error) throw error;
+        if (data) ficha.set(id, data);
+      });
+      const sinLista = { clave: null, sinPuntos: false };
+      // deno-lint-ignore no-explicit-any
+      const items: any[] = [], fuera: { id: number | null; nombre: string; motivo: string }[] = [];
+      for (const l of juntas.values()) {
+        // deno-lint-ignore no-explicit-any
+        const d: any = l.id == null ? null : ficha.get(l.id);
+        const nombre = String(d?.nombre ?? l.nombre ?? "");
+        if (!d) { fuera.push({ id: l.id, nombre, motivo: "Ya no está a la venta en la app." }); continue; }
+        const pres = Array.isArray(d.presentaciones) ? d.presentaciones : [];
+        const caja = factorMayor(pres);
+        // deno-lint-ignore no-explicit-any
+        const x: any = pres.find((p: any) => (Number(p?.factor) || 1) === (l.factor || caja));
+        if (!x) { fuera.push({ id: l.id, nombre, motivo: "Esa presentación ya no se vende. Elige otra en el producto." }); continue; }
+        if (!(Array.isArray(d.existencias) && d.existencias.length)) {
+          fuera.push({ id: l.id, nombre, motivo: d.bajo_receta ? "No hay en ninguna sucursal ahora." : "No hay en ninguna sucursal ahora. Puedes pedirlo por encargo desde el producto." });
+          continue;
+        }
+        const factor = Number(x.factor) || 1;
+        const conPrecio = conPrecioTuyo(factor === caja ? cond : sinLista)(x);
+        items.push({
+          id: l.id, nombre: d.nombre, foto: d.foto, tipo: x.tipo, factor, precio: x.precio, precio_vip: x.precio_vip,
+          precio_tuyo: conPrecio.precio_tuyo, precio_tuyo_nombre: conPrecio.precio_tuyo_nombre, factor_mayor: caja,
+          receta: !!d.bajo_receta, cantidad: Math.min(TOPE_ALCANCE, l.cantidad), pedida: l.cantidad,
+        });
+      }
+      return json({ ok: true, items, fuera });
     }
 
     // Más movimientos, de a 20 desde `desde`.

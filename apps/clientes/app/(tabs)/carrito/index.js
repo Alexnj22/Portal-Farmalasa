@@ -9,6 +9,11 @@
 // la sucursal la apruebe; la foto se sube contra el primer renglón y el
 // servidor la anota en todos. Precio de mayoreo: el subtotal usa `precio_tuyo`
 // si lo hay (el servidor lo vuelve a calcular al reservar).
+//
+// Por cantidad (2026-10-15): «Tiene todo» quiere decir que alcanza para las
+// cantidades del carrito, contado en unidades por el servidor (`alcance` de
+// `carrito_existencias`); una sucursal con 1 de las 3 cajas pedidas ya no
+// cuenta como que «tiene todo». La regla es la de componentes/DondeLoHay.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
@@ -35,6 +40,7 @@ import RecetaFoto from '../../../componentes/RecetaFoto';
 import { subirReceta } from '../../../lib/fotos';
 import { precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
 import { sinBloquear } from '../../../lib/bloqueo';
+import { estadoDeAlcance } from '../../../componentes/DondeLoHay';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 
@@ -48,7 +54,9 @@ export default function Carrito() {
   // Las reservas abiertas se ven acá también (2026-10-09): al entrar se
   // refresca el resumen (con su caché de un minuto).
   useFocusEffect(useCallback(() => { useCuenta.getState().cargar().catch(() => {}); }, []));
-  const [salas, setSalas] = useState(null);
+  // Lo que dijo el servidor (salas, existencias y alcance); la lista se arma
+  // con las cantidades de AHORA, así «+» y «−» la actualizan sin volver a pedir.
+  const [deSalas, setDeSalas] = useState(null);
   const [errorSalas, setErrorSalas] = useState(false);
   const [sala, setSala] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -80,34 +88,49 @@ export default function Carrito() {
     });
   }, [documento, fiscales, pedir]);
   const problemaFiscal = documento === 'credito_fiscal' ? errorFiscal(f) : null;
+  // Dónde hay de cada producto: se vuelve a preguntar al entrar y si cambia el
+  // carrito (producto o presentación; la cantidad se cuenta acá).
+  const llaves = useMemo(() => [...new Set(items.map((x) => `${x.id}|${Number(x.factor) || 1}`))].sort().join(','), [items]);
+  const cargarSalas = useCallback(async () => {
+    if (!llaves) { setDeSalas({ salas: [], hay: new Map(), alcance: null }); setErrorSalas(false); return; }
+    setErrorSalas(false);
+    const pares = llaves.split(',').map((k) => { const [id, fa] = k.split('|'); return { id: Number(id), factor: Number(fa) || 1 }; });
+    const r = await pedir('carrito_existencias', { ids: [...new Set(pares.map((x) => x.id))], items: pares });
+    // Si falla, «Reintentar» en vez de la rueda girando para siempre (2026-10-12).
+    if (!r?.ok) { setDeSalas(null); setErrorSalas(true); return; }
+    setEnvioCfg(r.envio ?? null);
+    setRecetaIds(new Set((r.receta_ids ?? []).map(Number)));
+    const hay = new Map();
+    for (const e of r.existencias) hay.set(`${e.product_id}|${e.branch_id}`, Number(e.cantidad));
+    // Un servidor viejo no manda `alcance`: entonces vale «hay» o no, como antes.
+    const alcance = Array.isArray(r.alcance)
+      ? new Map(r.alcance.map((a) => [`${a.product_id}|${Number(a.factor) || 1}|${a.branch_id}`, Number(a.alcance)])) : null;
+    setDeSalas({ salas: r.salas, hay, alcance });
+  }, [llaves, pedir]);
+  const salas = useMemo(() => {
+    if (!deSalas) return null;
+    return deSalas.salas.map((s) => {
+      const sin = [], cortos = [];
+      for (const x of items) {
+        const hayAlgo = (deSalas.hay.get(`${x.id}|${s.id}`) ?? 0) > 0;
+        const alcance = deSalas.alcance ? (deSalas.alcance.get(`${x.id}|${Number(x.factor) || 1}|${s.id}`) ?? 0) : null;
+        const e = estadoDeAlcance({ alcance, hayAlgo, cantidad: x.cantidad });
+        if (e.clave === 'agotado') sin.push(x);
+        else if (e.clave !== 'suficiente') cortos.push({ x, e });
+      }
+      return { ...s, faltan: sin.length + cortos.length, sin, cortos };
+    }).sort((a, b) => a.faltan - b.faltan || a.sin.length - b.sin.length);
+  }, [deSalas, items]);
+  // La primera vez, la que tiene todo (la lista ya viene ordenada así).
+  useEffect(() => { if (salas?.length) setSala((ant) => ant ?? salas[0].id); }, [salas]);
   // A la sucursal elegida le falta algo: no se cobra; se envía para confirmar.
   const faltan = salas?.find((x) => x.id === sala)?.faltan ?? 0;
   // Con receta no se cobra antes de que la sucursal la apruebe.
   const pagoReal = faltan || conReceta ? 'al_retirar' : pago;
 
-  // Dónde hay de cada producto: se vuelve a preguntar al entrar y si cambia el carrito.
-  const ids = useMemo(() => [...new Set(items.map((x) => x.id))].sort().join(','), [items]);
-  const cargarSalas = useCallback(async () => {
-    if (!ids) { setSalas([]); setErrorSalas(false); return; }
-    setErrorSalas(false);
-    const r = await pedir('carrito_existencias', { ids: ids.split(',').map(Number) });
-    // Si falla, «Reintentar» en vez de la rueda girando para siempre (2026-10-12).
-    if (!r?.ok) { setSalas(null); setErrorSalas(true); return; }
-    setEnvioCfg(r.envio ?? null);
-    setRecetaIds(new Set((r.receta_ids ?? []).map(Number)));
-    const hay = new Map();
-    for (const e of r.existencias) hay.set(`${e.product_id}|${e.branch_id}`, Number(e.cantidad));
-    const lista = r.salas.map((s) => {
-      // «Hay» o no: las existencias no dicen en qué presentación están contadas.
-      const faltan = items.filter((x) => (hay.get(`${x.id}|${s.id}`) ?? 0) <= 0).length;
-      return { ...s, faltan };
-    }).sort((a, b) => a.faltan - b.faltan);
-    setSalas(lista);
-    setSala((ant) => ant ?? lista[0]?.id ?? null);
-  }, [ids, pedir]); // eslint-disable-line react-hooks/exhaustive-deps -- `items` se lee en el momento
   useFocusEffect(useCallback(() => { cargarSalas(); }, [cargarSalas]));
   // Deja listo el cobro en línea mientras se elige (Wompi responde más rápido al tocar «Pagar»).
-  useFocusEffect(useCallback(() => { if (ids) pedir('pago_preparar'); }, [ids, pedir]));
+  useFocusEffect(useCallback(() => { if (llaves) pedir('pago_preparar'); }, [llaves, pedir]));
 
   const normal = items.reduce((s, x) => s + x.precio * x.cantidad, 0);
   const subtotal = items.reduce((s, x) => s + precioFinal(x) * x.cantidad, 0);
@@ -317,7 +340,7 @@ export default function Carrito() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{s.sala}</Text>
                   <Text style={{ fontSize: 12, color: s.faltan ? t.color.avisoTexto : t.color.exitoTexto }}>
-                    {s.faltan ? `Le ${s.faltan === 1 ? 'falta 1 producto' : `faltan ${s.faltan} productos`}: puede tardar más` : 'Tiene todo'}
+                    {textoFaltan(s)}
                   </Text>
                 </View>
               </View>
@@ -335,7 +358,7 @@ export default function Carrito() {
       </View>
       {faltan ? (
         <Texto nivel={2} estilo={{ fontSize: 13, marginHorizontal: 4 }}>
-          A esta sucursal le {faltan === 1 ? 'falta 1 producto' : `faltan ${faltan} productos`}: la sucursal te confirma antes de cobrar. Si prefieres pagar ahora, elige una sucursal que tenga todo.
+          A esta sucursal no le alcanza para {faltan === 1 ? '1 producto' : `${faltan} productos`} de tu pedido: la sucursal te confirma antes de cobrar. Si prefieres pagar ahora, elige una sucursal que tenga todo.
         </Texto>
       ) : null}
 
@@ -397,6 +420,18 @@ export default function Carrito() {
       </Modal>
     </Pantalla>
   );
+}
+
+// Qué le falta a una sucursal (2026-10-15): lo que no tiene, o lo que tiene
+// pero no alcanza para la cantidad pedida («tiene 1 de las 3 que pides»).
+function textoFaltan(s) {
+  if (!s.faltan) return 'Tiene todo';
+  if (!s.sin.length && s.cortos.length === 1) {
+    const c = s.cortos[0];
+    return `${nombreProducto(c.x.nombre)}: ${c.e.texto.charAt(0).toLowerCase()}${c.e.texto.slice(1)}`;
+  }
+  if (!s.sin.length) return `No le alcanza para ${s.cortos.length} productos: puede tardar más`;
+  return `Le ${s.faltan === 1 ? 'falta 1 producto' : `faltan ${s.faltan} productos`}: puede tardar más`;
 }
 
 // «Tus reservas» (2026-10-09): cuántas hay abiertas, cuántas listas para

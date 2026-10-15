@@ -6,6 +6,9 @@
 // Sin animación de entrada ni de layout sobre el vidrio: el de iOS 26 no
 // siempre se dibuja si nace dentro de una vista que se anima, y algunas
 // tarjetas quedaban TRANSPARENTES (usuario, 2026-10-06).
+//
+// «Volver a pedir» (2026-10-15): un toque en cada compra llena el carrito con
+// esos productos y lo abre (componentes/VolverAPedir).
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -18,6 +21,7 @@ import { useSesion } from '../lib/sesion';
 import { dolares, entero, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { copiaParaEmpezar } from '../lib/sinConexion';
+import BotonVolverAPedir, { useVolverAPedir } from '../componentes/VolverAPedir';
 
 const hora12 = (h) => {
   const m = /^(\d{1,2}):(\d{2})/.exec(String(h ?? ''));
@@ -34,6 +38,7 @@ export default function Compras() {
   const [datos, setDatos] = useState(null);
   const [abierta, setAbierta] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
+  const { volver, ocupado } = useVolverAPedir();
 
   // Lo de la vez anterior se pinta al instante mientras llega lo fresco (2026-10-14).
   const cargar = useCallback(async () => {
@@ -62,8 +67,15 @@ export default function Compras() {
         <Resumen etiqueta="Puntos acumulados" valor={`+${entero(puntos)}`} color={t.color.verdeTexto} />
       </View>
       {datos.compras.map((c) => (
-        <Tocable key={c.id} etiqueta={`Compra en ${c.sala}, ${c.total} dólares`} alTocar={() => setAbierta(abierta === c.id ? null : c.id)}>
-          <Compra compra={c} abierta={abierta === c.id} />
+        // La tarjeta entera es UN botón para el lector de pantalla: «Volver a
+        // pedir» va como acción suya (deslizar arriba/abajo), si no quedaba oculto.
+        <Tocable key={c.id} etiqueta={`Compra en ${c.sala}, ${c.total} dólares`} alTocar={() => setAbierta(abierta === c.id ? null : c.id)}
+          accessibilityActions={(c.productos ?? []).length ? [{ name: 'activate' }, { name: 'volver', label: 'Volver a pedir' }] : undefined}
+          onAccessibilityAction={(e) => {
+            if (e.nativeEvent.actionName === 'volver') volver({ factura: c.id });
+            else if (e.nativeEvent.actionName === 'activate') setAbierta(abierta === c.id ? null : c.id);
+          }}>
+          <Compra compra={c} abierta={abierta === c.id} ocupado={ocupado} alVolver={() => volver({ factura: c.id })} />
         </Tocable>
       ))}
     </Pantalla>
@@ -81,7 +93,7 @@ function Resumen({ etiqueta, valor, color }) {
   );
 }
 
-function Compra({ compra: c, abierta }) {
+function Compra({ compra: c, abierta, ocupado, alVolver }) {
   const t = useTema();
   const productos = c.productos ?? [];
   const inyecciones = productos.filter((p) => p.inyectable).length;
@@ -130,6 +142,13 @@ function Compra({ compra: c, abierta }) {
           ))}
           <Texto nivel={3} estilo={{ fontSize: 12 }}>Factura {c.correlativo}</Texto>
         </Animated.View>
+      ) : null}
+      {/* Un toque: los productos de esta compra al carrito (2026-10-15). */}
+      {productos.length ? (
+        <View style={{ flexDirection: 'row' }}>
+          <BotonVolverAPedir alTocar={alVolver} ocupado={ocupado}
+            etiqueta={productos.length === 1 ? 'Volver a pedir' : `Volver a pedir los ${productos.length}`} />
+        </View>
       ) : null}
     </Tarjeta>
   );

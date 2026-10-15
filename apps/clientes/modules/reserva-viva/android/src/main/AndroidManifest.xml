@@ -1,0 +1,4 @@
+<!-- La reserva en curso como notificación fija (modules/reserva-viva). No
+     declara permisos: POST_NOTIFICATIONS ya lo trae expo-notifications, y si
+     la persona no lo dio la notificación simplemente no se publica. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

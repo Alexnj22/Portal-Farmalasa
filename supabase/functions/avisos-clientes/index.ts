@@ -18,6 +18,9 @@
 //                   Mayoreo Plus (inmediato), y subir de rango (diario).
 //   · receta/chat — (2026-10-12) los escribe la base (`reserva_receta_decidir`,
 //                   `chat_responder`) con `enviado = false`; acá sólo se mandan.
+//   · credito     — (2026-10-15, diario) un crédito pasó el plazo: una vez por
+//                   crédito, y un recordatorio cada 7 días como máximo mientras
+//                   siga vencido. Sin montos (se lee en la pantalla bloqueada).
 //
 // ── Por qué no manda dos veces ─────────────────────────────────────────────
 // Antes de enviar, cada aviso se INSERTA en `app_cliente_avisos`, cuya UNIQUE
@@ -373,6 +376,53 @@ Deno.serve(async (req) => {
               : `${enumerar}. Resérvalos de una vez y te los tenemos listos.`,
             url: "/tratamientos",
           });
+        }
+      }
+    }
+
+    // ── Crédito vencido (2026-10-15): el cliente ve sus créditos en la app ──
+    // «Vencido» lo decide `creditos_pasados_del_plazo(30)`, la MISMA lista que
+    // avisa al personal: el criterio vive en un solo sitio. UN aviso por
+    // cliente aunque tenga varios: la `ref` junta las llaves `cred:<id>` de
+    // los créditos que vencieron desde el último aviso (como `tratamiento`), así
+    // cada crédito se avisa una sola vez. Si no venció ninguno nuevo y el último
+    // aviso de crédito tiene 7 días o más, sale UN recordatorio (`recordatorio:
+    // <día>`). Nunca con montos: el texto se lee en la pantalla bloqueada.
+    if (diario) {
+      const { data: venc, error: eCr } = await admin.rpc("creditos_pasados_del_plazo", { p_dias: 30 });
+      if (eCr) console.error("no se pudieron leer los créditos vencidos:", eCr.message);
+      const porCliente = new Map<number, number[]>();
+      for (const f of (venc ?? []) as { id: number; customer_id: number | null }[]) {
+        const c = Number(f.customer_id);
+        if (!c || !tokens.has(c)) continue;
+        porCliente.set(c, [...(porCliente.get(c) ?? []), Number(f.id)]);
+      }
+      if (porCliente.size) {
+        const { data: previos, error: ePc } = await admin.from("app_cliente_avisos").select("customer_id, ref, created_at")
+          .eq("tipo", "credito").in("customer_id", [...porCliente.keys()]).limit(5000);
+        if (ePc) console.error("no se pudieron leer los avisos de crédito previos:", ePc.message);
+        const avisados = new Set<string>();
+        const ultimo = new Map<number, number>();
+        for (const p of (previos ?? []) as { customer_id: number; ref: string; created_at: string }[]) {
+          for (const k of String(p.ref).split("|")) avisados.add(`${p.customer_id}|${k}`);
+          ultimo.set(Number(p.customer_id), Math.max(ultimo.get(Number(p.customer_id)) ?? 0, Date.parse(p.created_at)));
+        }
+        // Sin la bitácora no se sabe qué ya se avisó: mejor no avisar nada.
+        for (const [cliente, ids] of ePc ? [] : porCliente) {
+          const nuevos = ids.map((id) => `cred:${id}`).filter((k) => !avisados.has(`${cliente}|${k}`)).sort();
+          const varios = ids.length > 1;
+          if (nuevos.length) {
+            candidatos.push({ customer_id: cliente, tipo: "credito", ref: nuevos.join("|"),
+              titulo: varios ? `Tienes ${ids.length} créditos vencidos` : "Tienes un crédito vencido",
+              cuerpo: "Toca para ver el detalle. ¿Dudas? Escríbenos por el chat de la app.",
+              url: "/creditos" });
+          } else if (Date.now() - (ultimo.get(cliente) ?? 0) >= 7 * 86400_000 - 3600_000) {
+            // La hora de margen: la corrida diaria no sale cada día al mismo segundo.
+            candidatos.push({ customer_id: cliente, tipo: "credito", ref: `recordatorio:${hoy}`,
+              titulo: varios ? "Recordatorio: tienes créditos vencidos" : "Recordatorio: tienes un crédito vencido",
+              cuerpo: "Toca para ver el detalle. Si ya pagaste, no te preocupes: se actualiza en unas horas.",
+              url: "/creditos" });
+          }
         }
       }
     }

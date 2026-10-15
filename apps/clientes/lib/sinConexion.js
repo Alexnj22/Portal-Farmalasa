@@ -14,6 +14,7 @@ export const LECTURAS = new Set([
   'bandeja', 'catalogo', 'catalogo_producto', 'banners', 'ofertas', 'ofertas_publicas', 'historias',
   'historias_publicas', 'salas', 'movimientos', 'compras', 'inyecciones', 'textos', 'reserva_terminos',
   'referido', // el código para invitar: se ve sin señal y abre al instante (2026-10-15)
+  'mis_creditos', // lo que se debe: se consulta también sin señal (2026-10-15)
 ]);
 
 const DIR = FS.documentDirectory ? `${FS.documentDirectory}sin-conexion/` : null;

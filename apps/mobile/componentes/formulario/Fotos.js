@@ -2,7 +2,12 @@
 // `max`, con su miniatura y una ✕ para quitarla. Entrega `[{ uri, tipo,
 // nombre }]`; la subida la hace quien envía (`subirFotos`), y sólo al enviar:
 // una foto elegida no es una foto guardada.
+//
+// Con `pdf`, además se puede adjuntar un PDF (la boleta de incapacidad: el
+// portal acepta «PDF, JPG o PNG»). El PDF entra en la misma lista con su
+// `tipo` y se muestra como una tarjeta con el nombre, no como miniatura.
 import { Alert, Image, Pressable, Text, View } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
@@ -23,9 +28,21 @@ async function elegir(desdeCamara) {
   return { uri: a.uri, tipo: a.mimeType || 'image/jpeg', nombre: a.fileName || `foto-${Date.now()}.jpg` };
 }
 
-export default function Fotos({ fotos, onCambiar, max = 3 }) {
+const TOPE_PDF = 10 * 1024 * 1024;
+
+async function elegirPdf() {
+  const r = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true });
+  if (r.canceled || !r.assets?.[0]) return null;
+  const a = r.assets[0];
+  if (a.size != null && a.size > TOPE_PDF) { Alert.alert('Ese archivo no entra', 'El archivo pasa de 10 MB.'); return null; }
+  return { uri: a.uri, tipo: a.mimeType || 'application/pdf', nombre: a.name || `documento-${Date.now()}.pdf` };
+}
+
+const esPdf = (f) => String(f?.tipo || '').includes('pdf') || /\.pdf$/i.test(String(f?.nombre || ''));
+
+export default function Fotos({ fotos, onCambiar, max = 3, pdf = false }) {
   const agregar = async (camara) => {
-    const f = await elegir(camara);
+    const f = camara === 'pdf' ? await elegirPdf() : await elegir(camara);
     if (f) { Haptics.selectionAsync().catch(() => {}); onCambiar([...fotos, f].slice(0, max)); }
   };
   const Boton = ({ texto, camara }) => (
@@ -41,7 +58,13 @@ export default function Fotos({ fotos, onCambiar, max = 3 }) {
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {fotos.map((f, i) => (
             <View key={f.uri}>
-              <Image source={{ uri: f.uri }} style={{ width: 84, height: 84, borderRadius: 12 }} />
+              {esPdf(f) ? (
+                <View style={{ width: 84, height: 84, borderRadius: 12, padding: 6, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: colorSistema.acentoTinte, borderWidth: 0.5, borderColor: colorSistema.separador }}>
+                  <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '800' }}>PDF</Text>
+                  <Text numberOfLines={2} style={{ color: colorSistema.texto2, fontSize: 10, textAlign: 'center' }}>{f.nombre}</Text>
+                </View>
+              ) : <Image source={{ uri: f.uri }} style={{ width: 84, height: 84, borderRadius: 12 }} />}
               <Pressable onPress={() => onCambiar(fotos.filter((_, j) => j !== i))} hitSlop={8}
                 style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800' }}>✕</Text>
@@ -53,6 +76,7 @@ export default function Fotos({ fotos, onCambiar, max = 3 }) {
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Boton texto="Tomar foto" camara />
         <Boton texto="De la galería" />
+        {pdf ? <Boton texto="PDF" camara="pdf" /> : null}
       </View>
       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fotos.length} de {max}</Text>
     </View>

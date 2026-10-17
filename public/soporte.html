@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- La página de soporte de la app Puntos Salud (2026-10-17). App Store
+     Connect exige una «URL de soporte» con una forma de contacto; Google Play
+     también la muestra. Estática a propósito: tiene que abrir aunque el
+     portal no cargue. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Ayuda · Puntos Salud</title>
+<style>
+  :root { --fondo: #ffffff; --texto: #1c1c1e; --suave: #5b5b63; --borde: #e5e5ea; --marca: #C2185B; --tarjeta: #f7f7f9; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo: #000000; --texto: #f2f2f7; --suave: #a1a1aa; --borde: #2c2c2e; --marca: #f06292; --tarjeta: #111113; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.55 -apple-system, system-ui, 'Segoe UI', sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 18px; margin: 32px 0 8px; }
+  p, li { color: var(--suave); }
+  .contacto { display: grid; gap: 10px; margin-top: 20px; }
+  .contacto a { display: block; padding: 14px 16px; border-radius: 14px; background: var(--tarjeta); border: 1px solid var(--borde); color: var(--texto); text-decoration: none; font-weight: 600; }
+  .contacto a span { display: block; font-weight: 400; color: var(--suave); font-size: 14px; }
+  a { color: var(--marca); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ayuda con Puntos Salud</h1>
+  <p>Puntos Salud es la aplicación del programa de puntos de Farmacia Salud. Si algo no funciona o tienes una duda, escríbenos.</p>
+
+  <div class="contacto">
+    <a href="https://wa.me/50323010013">WhatsApp 2301-0013<span>La forma más rápida. Lunes a domingo.</span></a>
+    <a href="tel:+50323010013">Teléfono 2301-0013<span>Llamada en horario de atención.</span></a>
+    <a href="mailto:Farmasalud.sv@gmail.com">Farmasalud.sv@gmail.com<span>Correo electrónico.</span></a>
+  </div>
+
+  <h2>Preguntas frecuentes</h2>
+  <ul>
+    <li><strong>¿Cómo entro?</strong> Con tu DUI y tu teléfono, o con el código de 7 letras que aparece en tu ticket de compra.</li>
+    <li><strong>¿Cómo uso mis puntos?</strong> Toca tu tarjeta en la app y muestra el código de barras en caja.</li>
+    <li><strong>No me aparece una compra.</strong> Los puntos se acreditan cuando la compra se registra con tu DUI. Si pasó más de un día, escríbenos con la fecha y la sala.</li>
+    <li><strong>¿Cómo borro mi cuenta?</strong> En la app: Cuenta › Borrar mi cuenta. Si ya no tienes la app, pídelo por WhatsApp. Qué se borra y qué se conserva está en el <a href="/privacidad#borrar-cuenta">aviso de privacidad</a>.</li>
+  </ul>
+
+  <h2>Documentos</h2>
+  <p><a href="/privacidad">Aviso de privacidad</a> · <a href="/reglamento-puntos">Reglamento del programa de puntos</a></p>
+</main>
+</body>
+</html>

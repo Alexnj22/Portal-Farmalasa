@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.8 — Página de ayuda de la app Puntos Salud
+
+- `/soporte`: contacto (WhatsApp, teléfono, correo) y preguntas frecuentes. Es la «URL de soporte» que exige App Store Connect. Estática, para que abra aunque el portal no cargue.
+
 ## v2.1303.7 — App de puntos: Wompi guarda sólo lo necesario, purga de intentos, borrado sin la app
 
 - **Pagos en línea**: `wompi-pagos` guarda sólo id, monto, estado, forma de

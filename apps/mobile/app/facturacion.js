@@ -7,7 +7,8 @@
 //   · Anuladas: por solventar, con Pendientes / CCF urgentes / Solventadas.
 //   · En Hacienda y Anuladas, el historial de lo resuelto (`fiscal/Resueltas`):
 //     selladas del mes, resueltas a mano y las «solventadas internamente».
-//     En Observaciones, «N solventadas»: quién, cuándo, la nota y los códigos.
+//     En Observaciones, «N solventadas»: quién, cuándo, la nota y los códigos
+//     (las que se cerraron antes; desde el 2026-10-17 ya no se cierran a mano).
 //   · En Hacienda, Observaciones y Anuladas, tocar el ID interno lo COPIA y
 //     marca el documento como «visitado» (se apaga y se tacha); otro toque
 //     quita la marca, y «Limpiar marcas» las borra todas. Es la misma marca
@@ -20,8 +21,12 @@
 //     (`regularizarDte` alcance 'una'); el motivo de Hacienda, palabra por
 //     palabra, si no entró.
 //   · «Resolver» con una nota: registra que alguien la revisó
-//     (`insertInvoiceResolution` / `insertObservationResolution`). El sello
-//     NUNCA se fabrica desde acá: lo trae la sincronización.
+//     (`insertInvoiceResolution`). El sello NUNCA se fabrica desde acá: lo trae
+//     la sincronización.
+//   · Observaciones NO se resuelven a mano (2026-10-17, igual que el portal):
+//     «resolver» sólo anotaba «lo revisé» y la sacaba de la lista sin corregir
+//     nada — una factura sellada y borrada en caja habría desaparecido de la
+//     vista sin estar resuelta. Se va sola cuando el dato se corrige en origen.
 //   · «Solventar todas» (barra): lo que corre solo cada noche, para no
 //     esperar, sobre la sala elegida o todas.
 // Sin tope de filas: se pagina de 40 en 40. Qué está pendiente, los textos y
@@ -37,7 +42,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   countConfirmedMhInvoices, fetchInvoiceObservations, fetchInvoiceResolutionsHistorial, fetchNulaInvoices, fetchObservationResolutions, fetchPendingMhInvoices,
-  insertInvoiceResolution, insertObservationResolution, regularizarDte,
+  insertInvoiceResolution, regularizarDte,
 } from '@nucleo/data/facturacion';
 import {
   conteoDeObservaciones, observacionesSolventadas, diasQuedanDelMes, esSolventable, metaObs, observacionesPendientes, resumenDeRegularizacion,
@@ -172,13 +177,11 @@ export default function Facturacion() {
     setOcupado(r.id);
     const por = user?.name || user?.email || 'Desconocido';
     const payload = { invoice_id: r.id, comment: nota.trim() || null, resolved_by: por };
-    const { error: e } = cola === 'obs'
-      ? await insertObservationResolution(payload, { correlativo: r.correlativo, observaciones: r.observaciones || [], resolved_by: por, desde: 'app' })
-      : await insertInvoiceResolution(payload, undefined, { accion: cola === 'mh' ? 'SOLVENTAR_PENDIENTE_MH' : 'SOLVENTAR_ANULACION', correlativo: r.correlativo, resolved_by: por, desde: 'app' });
+    const { error: e } = await insertInvoiceResolution(payload, undefined, { accion: cola === 'mh' ? 'SOLVENTAR_PENDIENTE_MH' : 'SOLVENTAR_ANULACION', correlativo: r.correlativo, resolved_by: por, desde: 'app' });
     setOcupado(null);
     if (e) { fallo('No se pudo solventar', 'No quedó registrado. Si sigue, tu rol no tiene permiso de edición en Facturación.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    listo(cola === 'obs' ? 'Observación solventada' : cola === 'mh' ? 'Pendiente solventado' : 'Anulación solventada', r.correlativo || '');
+    listo(cola === 'mh' ? 'Pendiente solventado' : 'Anulación solventada', r.correlativo || '');
     setAbierta(null); setNota('');
     cargar();
   };
@@ -273,7 +276,8 @@ export default function Facturacion() {
               const esCcf = r.tipo_documento === 'CCF';
               const abierto = abierta === r.id;
               const d = r.fecha ? diasEntre(r.fecha, hoySV()) : 0;
-              const solventable = cola !== 'obs' || esSolventable(r);
+              // Observaciones se miran, no se resuelven (ver el encabezado).
+              const solventable = cola !== 'obs';
               const visitada = !!r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id));
               return (
                 <View key={r.id} style={{ marginHorizontal: 16, opacity: visitada ? 0.5 : 1 }}>
@@ -301,7 +305,7 @@ export default function Facturacion() {
                         {cola === 'obs' ? (r.observaciones || []).map((c) => <Pildora key={c} texto={metaObs(c).label} color={colorDeVariante(metaObs(c).variant)} />) : null}
                       </View>
                       {cola === 'obs' ? (r.motivos_mh || []).map((m, k) => <Text key={`${k}-${m}`} style={{ color: MARCA.rojo, fontSize: 13 }}>{m}</Text>) : null}
-                      {cola === 'obs' && !solventable ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Se cierra sola cuando llegue el sello.</Text> : null}
+                      {cola === 'obs' && !esSolventable(r) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Se cierra sola cuando llegue el sello.</Text> : null}
                       {canEdit && solventable && !abierto ? <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700' }}>{cola === 'mh' ? 'Solventar o resolver ›' : 'Resolver ›'}</Text> : null}
                     </Tocable>
                     {abierto ? (

@@ -74,7 +74,8 @@ function clase(nivel: string | undefined) {
     programLogo: { sourceUri: { uri: LOGO }, contentDescription: { defaultValue: { language: "es", value: "Farmacia Salud" } } },
     hexBackgroundColor: hex(MATERIALES[clave].fondo),
     reviewStatus: "UNDER_REVIEW",
-    countryCode: "SV",
+    // Sin `countryCode` (2026-10-17): la consola de Google Wallet no ofrece El
+    // Salvador en esa lista, y un código que Google no acepta haría fallar la clase.
     localizedIssuerName: { defaultValue: { language: "es", value: "Farmacia Salud" } },
   };
 }

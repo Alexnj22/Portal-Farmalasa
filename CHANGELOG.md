@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.11 — Google Wallet sin código de país
+
+- La clase de Google Wallet ya no manda `countryCode: "SV"`: la consola de Google no ofrece El Salvador en esa lista, y un código no aceptado podría hacer fallar la clase al guardar la tarjeta.
+
 ## v2.1303.10 — /soporte abre la página de ayuda
 
 - `vercel.json` no tenía la regla `/soporte → /soporte.html`, así que la dirección caía en el portal y se veía en blanco. Igual que `/privacidad`.

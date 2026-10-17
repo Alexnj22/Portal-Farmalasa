@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1299.2 — Órdenes de descuento también al enlazar una ficha y visibles en el alta
+
+La sección de órdenes de descuento (Nómina) sólo salía con `formData.id`, o
+sea al EDITAR. En el alta que enlaza con una ficha existente —la que se está
+usando para registrar a todos— la ficha está en `enlazar_con_id`, y la sección
+no aparecía. Ahora usa esa ficha (y se vuelve a montar si se cambia de persona
+enlazada). En el alta de alguien nuevo se muestra apagada y explica que primero
+se guarda la ficha, en vez de no estar.
+
 ## v2.1299.1 — Títulos de modal canónicos: tamaño de título y mayúscula sólo al inicio
 
 Los seis encabezados de modal escritos a mano (`UnifiedModal` —empleado,

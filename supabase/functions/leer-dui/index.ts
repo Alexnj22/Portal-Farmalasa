@@ -307,12 +307,14 @@ Deno.serve(async (req: Request) => {
         prompt: PROMPT_RECUADRO,
         inlineData: [{ mimeType: mime, data: b64 }],
         jsonOutput: true,
-        /* Sin techo de pensamiento porque NO se midió acá. El de
-         * `_shared/gemini.ts` está medido sobre boletas de POS, y esto es otra
-         * pregunta (geometría sobre una foto de un documento). Son seis
-         * llamadas al día: acotarlo sin medirlo arriesga un recorte peor para
-         * ahorrar centavos. Se mide y recién entonces se le pone número. */
-        thinkingBudget: null,
+        /* 2048, medido el 2026-10-17 sobre 9 fotos reales (DUI, carnés,
+         * certificados) contra sin tope, 128, 512 y 1024. Sin tope gastaba de
+         * 860 a 7,900 tokens pensando y una foto tardó 35 s. Con 512 y 1024 el
+         * GIRO salía al revés en fotos donde sin tope acertaba, y 512 cortó el
+         * encabezado de un certificado; con 2048 el giro coincide en las 9 y las
+         * esquinas quedan a la par, en ≤9 s. Ojo: el giro varía un poco entre
+         * corridas incluso sin tope — por eso el resultado se revisa. */
+        thinkingBudget: 2048,
       })
       const r = parseGeminiJson<Record<string, unknown>>(crudoR)
       const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)

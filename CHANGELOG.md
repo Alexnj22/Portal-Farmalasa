@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1301.1 — Lecturas con tope de pensamiento medido
+
+Medido el 2026-10-17 contra documentos reales del expediente, con el mismo
+modelo e instrucción, sin tope / 128 / 512 / 1024 / 2048:
+
+- `analyze-document` → 512. Igual que sin tope en 10 de 14 documentos y el
+  resto sólo formato; con 128 se equivocaba de dígito. El peor caso pasa de
+  7.5 s a 5.2 s y deja de pagar hasta 1,100 tokens de pensamiento.
+- `leer-dui` (recorte de foto, `soloRecuadro`) → 2048. Sin tope gastaba hasta
+  7,900 tokens y una foto tardó 35 s; con 512 y 1024 el giro salía al revés
+  en fotos donde sin tope acertaba; con 2048 coincide en las 9, en ≤9 s.
+- La lectura del DUI en sí sigue sin tope: no se midió y ahí un dígito mal
+  leído entra a la ficha.
 ## v2.1301.0 — Una factura que el sistema de ventas elimina ya no traba el cierre del día
 
 Salud 3, 16-oct: el ERP eliminó la factura 0000062354_COF ($15.55, efectivo,

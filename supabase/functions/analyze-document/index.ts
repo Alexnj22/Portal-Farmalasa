@@ -89,7 +89,12 @@ ${sinResumen ? '' : `      "aiSummary": "Un resumen muy profesional y directo de
        * del Ministerio es más difícil que una boleta —varias páginas, varias
        * fechas, y hay que elegir cuál vence—, así que el número medido sobre
        * boletas no habla de esto. Ver `_shared/gemini.ts`. */
-      thinkingBudget: null,
+      /* 512, medido el 2026-10-17 sobre 14 documentos reales del expediente
+       * (carnés, licencias, certificados, anualidad, acuses): igual que sin
+       * tope en 10 de 14 y en el resto sólo formato o un dato de más; con 128
+       * se equivocaba de dígito (26 por 28, 08 por 27). Sin tope llegaba a
+       * 1,100 tokens de pensamiento y 7.5 s; con 512, 5.2 s el peor. */
+      thinkingBudget: 512,
     })
     const parsedAI = parseGeminiJson(rawText)
 

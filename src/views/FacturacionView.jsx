@@ -42,7 +42,7 @@ import {
     fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
     fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
     fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation,
-    fetchInvoiceObservations, fetchObservationResolutions, insertObservationResolution,
+    fetchInvoiceObservations, fetchObservationResolutions,
 } from '@nucleo/data/facturacion';
 import { useToastStore } from '@nucleo/store/toastStore';
 
@@ -2367,7 +2367,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 const OBS_DESDE = '2000-01-01';
 const OBS_HASTA = '2099-12-31';
 
-function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, obsCode, onConteos, onCuenta }) {
+function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros, obsCode, onConteos, onCuenta }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -2384,9 +2384,6 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
     const [avisoRes, setAvisoRes] = useState(null);
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const [copiedId, setCopiedId]   = useState(null);
-    const [solvingId, setSolvingId] = useState(null);
-    const [comment, setComment]     = useState('');
-    const [saving, setSaving]       = useState(false);
     const [showResolved, setShowResolved] = useState(false);
     const { visitedIds, toggleVisited, clearVisited } = useVisitados();
     const getBranch = useCallback((id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`, [branches]);
@@ -2472,24 +2469,14 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
         return results;
     }, [pendientes, searchTerm, obsCode]);
 
-    // La resolución NO toca `sales_invoices`: igual que en Pendiente MH, el
-    // portal registra que alguien revisó el caso; el dato de la factura lo
-    // corrige el ERP y lo trae el sync.
-    const handleSolve = async (invoiceId) => {
-        setSaving(true);
-        const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        const inv = rows.find(r => r.id === invoiceId);
-        const { error: err } = await insertObservationResolution({
-            invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
-        }, { correlativo: inv?.correlativo, observaciones: inv?.observaciones || [], resolved_by: resolvedBy });
-        if (err) { avisarFalloAlSolventar(err, 'handleSolve (observaciones)'); setSaving(false); return; }
-        useToastStore.getState().showToast('Observación solventada', inv?.correlativo || '', 'success');
-        setResoluciones(prev => [{
-            invoice_id: invoiceId, comment: comment.trim() || null,
-            resolved_by: resolvedBy, resolved_at: new Date().toISOString(),
-        }, ...prev]);
-        setSolvingId(null); setComment(''); setSaving(false);
-    };
+    // ── Sin «Solventar» (2026-10-17, pedido del usuario: «no tiene sentido») ──
+    // Solventar acá sólo anotaba «lo revisé» y sacaba la factura de la lista:
+    // no corregía nada ni mandaba nada a Hacienda, así que una anomalía real
+    // —una factura sellada y borrada en caja— podía desaparecer de la vista
+    // sin estar resuelta. La pestaña queda para mirar y copiar el número; una
+    // observación se va sola cuando el dato se corrige en origen.
+    // Las resoluciones viejas se siguen leyendo para que lo ya cerrado no
+    // reaparezca, y su historial queda a la vista.
 
     // Mismo agrupado que Pendiente MH: sucursal → fecha → documentos. El RPC ya
     // devuelve ordenado por fecha desc, así que el orden de inserción alcanza.
@@ -2534,18 +2521,10 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                         loading={loading}
                         icon={History} label="Más antigua"
                         value={pendientes.length > 0 ? `${diasMasVieja}d` : '—'}
-                        sub="Sin solventar"
+                        sub="Sigue abierta"
                         iconCls={diasMasVieja > 30 ? 'text-warning-text' : 'text-content-3'}
                         iconBg={diasMasVieja > 30 ? 'bg-warning/10' : 'bg-surface-card-hover'}
                         valueCls={diasMasVieja > 30 ? 'text-warning-text' : 'text-content'}
-                    />
-                    <StatCard
-                        loading={loading}
-                        icon={CheckCircle2} label="Solventadas" value={resueltas.length}
-                        sub="Ya revisadas"
-                        iconBg={resueltas.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
-                        iconCls={resueltas.length > 0 ? 'text-success' : 'text-content-3'}
-                        valueCls={resueltas.length > 0 ? 'text-success' : 'text-content'}
                     />
                     {/* Aparece sólo con algo marcado, igual que en Pendiente MH:
                         es la única forma de soltar la marca de todas a la vez. */}
@@ -2570,7 +2549,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
 
             {avisoRes && (
                 <Notice variant="warning" icon={AlertTriangle}>
-                    No se pudo leer qué observaciones ya fueron solventadas: {avisoRes}. La lista
+                    No se pudo leer qué observaciones ya se cerraron: {avisoRes}. La lista
                     de abajo las incluye a todas.
                 </Notice>
             )}
@@ -2587,7 +2566,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                         : searchTerm && pendientes.length > 0
                             ? `Ninguna observación pendiente coincide con «${searchTerm}».`
                             : resueltas.length > 0
-                                ? 'Todas las observaciones abiertas fueron solventadas.'
+                                ? 'No queda ninguna observación abierta.'
                                 : 'Ninguna factura tiene datos fuera de lo esperado.'} />
             ) : !error && (
                 <div className="space-y-6">
@@ -2598,7 +2577,6 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                         const docs = Object.values(byFecha).flat();
                         const branchHasCCF = docs.some(r => r.tipo_documento === 'CCF');
                         const isCollapsed  = !!collapsedBranches[branchId];
-                        const enCurso = docs.find(x => x.id === solvingId);
                         return (
                             <section key={branchId} className="space-y-2.5">
                                 <EncabezadoSucursal
@@ -2611,28 +2589,15 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                 {!isCollapsed && (<>
                                     <div className={GRILLA_TARJETAS}>
                                                     {docs.map(r => {
-                                                        const isSolving = solvingId === r.id;
                                                         const solventable = esSolventable(r);
                                                         return (
                                                             <TarjetaDocumento
                                                                 tonoFecha={r.tipo_documento === 'CCF' ? 'danger' : null}
                                                                 key={r.id}
                                                                 r={r}
-                                                                tono={isSolving ? 'warning' : undefined}
                                                                 isCopied={copiedId === r.erp_invoice_id}
                                                                 isVisited={visitedIds.has(String(r.erp_invoice_id))}
                                                                 onCopiar={() => copyErpId(r.erp_invoice_id)}
-                                                                acciones={canEdit && solventable && (
-                                                                    <Button
-                                                                        variant="secondary" size="sm"
-                                                                        tone={isSolving ? 'danger' : 'success'} soft={!isSolving}
-                                                                        icon={isSolving ? X : Check}
-                                                                        aria-pressed={isSolving}
-                                                                        onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
-                                                                    >
-                                                                        {isSolving ? 'Cancelar' : 'Solventar'}
-                                                                    </Button>
-                                                                )}
                                                             >
                                                                 {/* Las observaciones: el dato de la pestaña. */}
                                                                 <div className="mt-2 flex flex-wrap gap-1">
@@ -2665,22 +2630,6 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                         );
                                                     })}
                                                 </div>
-                                    {enCurso && (
-                                                    <FormularioSolventar
-                                                        encabezado={<>
-                                                            <span className={`font-mono text-label font-black ${enCurso.tipo_documento === 'CCF' ? 'text-danger-text' : 'text-content-2'}`}>{enCurso.correlativo}</span>
-                                                            {(enCurso.observaciones || []).map(code => {
-                                                                const meta = metaObs(code);
-                                                                return <Badge key={code} variant={meta.variant} size="sm" uppercase={false}>{meta.label}</Badge>;
-                                                            })}
-                                                            <span className="ml-auto text-body-sm font-black text-content-2"><Monto v={enCurso.total} /></span>
-                                                        </>}
-                                                        comment={comment} setComment={setComment} saving={saving}
-                                                        placeholder="Qué se revisó o corrigió (opcional)…"
-                                                        onConfirmar={() => handleSolve(enCurso.id)}
-                                                        onCancelar={() => { setSolvingId(null); setComment(''); }}
-                                                    />
-                                                )}
                                 </>)}
                             </section>
                         );
@@ -2693,8 +2642,8 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                 visible — y la observación sigue existiendo en la factura. */}
             {!loading && resueltas.length > 0 && (
                 <SeccionHistorial
-                    titulo={`${resueltas.length} solventada${resueltas.length !== 1 ? 's' : ''}`}
-                    subtitulo="Observaciones ya revisadas"
+                    titulo={`${resueltas.length} cerrada${resueltas.length !== 1 ? 's' : ''} antes`}
+                    subtitulo="Observaciones que se dieron por revisadas"
                     abierta={showResolved}
                     onToggle={() => setShowResolved(v => !v)}
                 >

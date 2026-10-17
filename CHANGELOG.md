@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.1 — Observaciones sin «Solventar»
+
+Pedido del usuario: «no tiene sentido, mejor quitalo».
+
+En Observaciones, «Solventar» sólo anotaba «lo revisé» y sacaba la factura de
+la lista: no corregía nada ni mandaba nada a Hacienda. El caso que lo destapó:
+la `0000062354_COF` de Salud 3, sellada por Hacienda y borrada después en caja,
+salía como «Estado inválido» con un botón que la habría hecho desaparecer sin
+estar resuelta. La pestaña queda para mirar y copiar el número; una
+observación se va sola cuando el dato se corrige en origen. Las cerradas antes
+siguen ocultas y su historial queda a la vista («cerradas antes»).
+
 ## v2.1303.0 — Recorte de fotos: las esquinas se afinan contra los bordes, y se mide
 
 - **Afinado de esquinas** (`utils/afinarEsquinas.js`, puro): después de que el

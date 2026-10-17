@@ -26,10 +26,34 @@ function archivoDeFirebase(paquete) {
   } catch { return undefined; }
 }
 
+// App Links de Android (2026-10-17): el gemelo de los enlaces universales de
+// iPhone (`ios.associatedDomains` + `public/.well-known/apple-app-site-association`).
+// El QR del ticket (`/mis-puntos?codigo=…`) y una oferta compartida (`/o/<id>`)
+// abren la app si está instalada; si no, la web de siempre. `autoVerify` hace
+// que Android lo compruebe contra `public/.well-known/assetlinks.json` del
+// portal al instalar: sin esa verificación Android pregunta «¿abrir con…?» o
+// se queda en el navegador. Las rutas son las mismas que las del archivo de
+// Apple — al agregar una allá, agregarla acá y viceversa.
+// Vive aquí y no en app.json para no pisar a quien edite ese archivo; si un
+// día app.json trae sus propios intentFilters, se suman, no se reemplazan.
+const ENLACES_DEL_PORTAL = {
+  action: 'VIEW',
+  autoVerify: true,
+  data: [
+    { scheme: 'https', host: 'portal.farmasalud.lat', pathPrefix: '/mis-puntos' },
+    { scheme: 'https', host: 'portal.farmasalud.lat', pathPrefix: '/o/' },
+  ],
+  category: ['BROWSABLE', 'DEFAULT'],
+};
+
 module.exports = ({ config }) => {
   const googleServicesFile = archivoDeFirebase(config.android?.package);
   return {
     ...config,
-    android: { ...config.android, ...(googleServicesFile ? { googleServicesFile } : {}) },
+    android: {
+      ...config.android,
+      intentFilters: [...(config.android?.intentFilters ?? []), ENLACES_DEL_PORTAL],
+      ...(googleServicesFile ? { googleServicesFile } : {}),
+    },
   };
 };

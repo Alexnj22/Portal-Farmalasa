@@ -9,8 +9,9 @@
 // Wallet muestra la tarjeta y la persona toca «Guardar».
 //
 // Lo que dice es lo mismo que la de Apple —sale de `datosDeCliente`, una sola
-// lectura para las dos—: saldo en dólares, puntos, nivel y el
-// QR con la MISMA dirección que el ticket (`/mis-puntos?codigo=`).
+// lectura para las dos—: saldo en dólares, puntos, nivel y el mismo código
+// de barras Code 128 con el código de 7 caracteres, sin el código escrito
+// (2026-10-17, igual que Apple desde v2.1303.2).
 //
 // Secretos de la función (nunca en el repositorio):
 //   GOOGLE_WALLET_ISSUER_ID   el número del emisor (consola de Google Pay & Wallet)
@@ -80,18 +81,29 @@ function clase(nivel: string | undefined) {
 
 const idDeObjeto = (d: DatosPase) => `${emisor()}.socio-${d.customerId}${d.prueba ? `-prueba-${claveDeNivel(d.nivel)}${d.equipo ? "-equipo" : ""}` : ""}`;
 
+// El código de barras: el mismo Code 128 que la tarjeta de Apple y la de la
+// app, con el código de 7 caracteres que lee la caja. Google admite UN solo
+// código (Apple lleva además el QR para el Watch), así que el QR sólo queda
+// para la ficha que todavía no tiene código: la caja también acepta la
+// dirección de `/mis-puntos`. `alternateText` vacío a propósito: el código
+// escrito debajo de las barras deja copiarlo de una foto sin tener la tarjeta.
+function codigoDeBarras(d: DatosPase) {
+  if (d.codigo) return { type: "CODE_128", value: d.codigo, alternateText: "" };
+  return { type: "QR_CODE", value: "https://portal.farmasalud.lat/mis-puntos", alternateText: "" };
+}
+
 function objeto(d: DatosPase) {
-  const qr = d.codigo ? `https://portal.farmasalud.lat/mis-puntos?codigo=${d.codigo}` : "https://portal.farmasalud.lat/mis-puntos";
   return {
     id: idDeObjeto(d),
     classId: clase(d.nivel).id,
     state: "ACTIVE",
-    accountId: d.codigo ?? String(d.customerId),
+    // Sin `accountId`: Google lo pinta en la tarjeta como «ID de miembro», y
+    // ahí iba el código — o sea, el código escrito que el barcode ya no lleva.
     accountName: corto(d.nombre),
     hexBackgroundColor: hex(MATERIALES[claveDeNivel(d.nivel)].fondo),
     loyaltyPoints: { label: "Saldo de puntos", balance: { money: { micros: Math.round(d.equivale * 1_000_000), currencyCode: "USD" } } },
     secondaryLoyaltyPoints: { label: "Puntos", balance: { int: Math.round(d.saldo) } },
-    barcode: { type: "QR_CODE", value: qr, alternateText: d.codigo ?? "" },
+    barcode: codigoDeBarras(d),
     textModulesData: [
       // Igual que en Apple: el personal lleva su nivel con « · TEAM».
       { id: "nivel", header: `${nivelRotulo(d.nivel)}${d.equipo ? " · TEAM" : ""}`, body: corto(d.nombre) },
@@ -143,7 +155,9 @@ export async function actualizarObjetoGoogle(admin: any, customerId: number, tok
   const r = await fetch(`https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(o.id)}`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token ?? await tokenOAuth(cuenta())}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ loyaltyPoints: o.loyaltyPoints, secondaryLoyaltyPoints: o.secondaryLoyaltyPoints, textModulesData: o.textModulesData, hexBackgroundColor: o.hexBackgroundColor }),
+    // El barcode va también: así las tarjetas guardadas con el QR viejo (y el
+    // código escrito debajo) pasan al Code 128 la próxima vez que cambie su saldo.
+    body: JSON.stringify({ loyaltyPoints: o.loyaltyPoints, secondaryLoyaltyPoints: o.secondaryLoyaltyPoints, textModulesData: o.textModulesData, hexBackgroundColor: o.hexBackgroundColor, barcode: o.barcode }),
     // Corre dentro del cron de cada minuto: uno colgado no puede llevarse la vuelta de Apple.
     signal: AbortSignal.timeout(15_000),
   });

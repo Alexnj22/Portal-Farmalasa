@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.3 — App de puntos: enlaces y Wallet en Android
+
+- **App Links de Android.** El QR del ticket (`/mis-puntos?codigo=…`) y una
+  oferta compartida (`/o/<id>`) abren la app Puntos Salud en Android, como ya
+  pasaba en iPhone. Los `intentFilters` (con `autoVerify`) van en
+  `apps/clientes/app.config.js`, y el portal publica
+  `public/.well-known/assetlinks.json` con dos huellas: la de la llave con la
+  que **Google Play firma** lo que instala la gente (Play App Signing, leída de
+  la API de Play sobre los versionCode 19, 22 y 23) y la de la llave de
+  **subida**, para un .apk instalado a mano. `vercel.json` lo sirve como
+  `application/json`. Toma efecto con la próxima compilación de Android y la
+  próxima `npm run publicar`; hoy esa dirección devuelve el HTML del portal.
+- **Google Wallet: el mismo código que Apple.** La tarjeta de Google pasa del
+  QR con el código escrito debajo al Code 128 con el código de 7 caracteres y
+  `alternateText` vacío. Sale también `accountId`, que Google pinta como «ID de
+  miembro» y era el código otra vez en texto. Las tarjetas ya guardadas
+  reciben el código nuevo con la próxima actualización de saldo (el PATCH del
+  cron ahora incluye el barcode).
+
 ## v2.1303.2 — App de puntos: la tarjeta lleva sólo el código de barras, sin el código escrito
 
 - **Reverso de la tarjeta rediseñado.** Fuera el QR y el código escrito (al

@@ -106,6 +106,19 @@ export async function vincularCobro({ cobroId, invoiceId, lineaNum }) {
     return data;
 }
 
+/**
+ * Ponerle la ficha a una aplicación que se cobró sin ella (2026-10-17): con
+ * ella entra al historial del cliente y la ve en su app. Se lleva también las
+ * demás del mismo cobro sin ficha. Devuelve cuántas quedaron asignadas.
+ */
+export async function asignarFichaAAplicacion({ aplicacionId, customerId }) {
+    const { data, error } = await supabase.rpc('inyeccion_asignar_ficha', {
+        p_aplicacion_id: aplicacionId, p_customer_id: customerId,
+    });
+    if (error) throw error;
+    return data;
+}
+
 /** Deshace SÓLO una asignación hecha a mano. */
 export async function desvincularCobro(cobroId) {
     const { data, error } = await supabase.rpc('inyeccion_desvincular_cobro', { p_cobro_id: cobroId });

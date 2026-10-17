@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.4 — App de puntos: borrar la cuenta borra lo personal; inyecciones sin ficha se asignan desde la Bitácora
+
+- **Borrar la cuenta en la app ahora borra lo personal** (lo pide Apple,
+  5.1.1(v)): la foto de perfil (fila y archivo), el contenido del chat y sus
+  fotos, y las fotos de receta de reservas que no se entregaron. La
+  conversación queda con «Mensaje borrado» porque de ella cuelga la medida de
+  respuesta del equipo; la ficha, las facturas y la receta de lo que se retiró
+  se conservan por ley. El aviso de la app dice qué se borra y qué no.
+- **Inyecciones sin ficha → a la app del cliente.** La Bitácora marca «Sin
+  ficha · no sale en su app» y, a quien asigna cobros, ofrece «Asignar a un
+  cliente» (`inyeccion_asignar_ficha`): la ficha la elige una persona, nunca
+  se adivina por el nombre, y se lleva las demás del mismo cobro. Había 28
+  traídas y 3 compradas en esa situación. `BuscarFicha` sale a su propio
+  archivo para usarla en los dos lugares.
+
 ## v2.1303.3 — App de puntos: enlaces y Wallet en Android
 
 - **App Links de Android.** El QR del ticket (`/mis-puntos?codigo=…`) y una

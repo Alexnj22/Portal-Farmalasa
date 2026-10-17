@@ -211,7 +211,9 @@ export default function Cuenta() {
   }
 
   // Qué pasa con los puntos, dicho como es (2026-10-14). `borrar_cuenta` cierra
-  // las sesiones, apaga los avisos y borra el pre-registro; la FICHA no se
+  // las sesiones, apaga los avisos, borra el pre-registro y —desde el
+  // 2026-10-17— la foto de perfil, el contenido del chat y las fotos de receta
+  // de lo que no se entregó (`borrarLoPersonal` en app-clientes); la FICHA no se
   // borra (es un registro fiscal) y con ella quedan los puntos. Con
   // `retirar_permisos` además guarda programa = no y promociones = no
   // (`puntos_guardar_consentimiento`): el Reglamento dice que entonces deja de
@@ -219,8 +221,8 @@ export default function Cuenta() {
   function borrar() {
     Alert.alert(
       '¿Borrar tu cuenta de la app?',
-      'Se cierra la sesión en todos tus teléfonos, dejas de recibir avisos y se borran los datos de tu registro en la app.\n\n'
-        + 'Tu ficha y tus puntos siguen en la farmacia: si compras con tu DUI sigues acumulando, y puedes volver a entrar cuando quieras.\n\n'
+      'Se cierra la sesión en todos tus teléfonos, dejas de recibir avisos y se borran tu registro en la app, tu foto de perfil, tus conversaciones con la farmacia y las fotos de recetas que no se usaron.\n\n'
+        + 'Se conservan, porque la ley lo exige: tu ficha de cliente con tus compras y facturas, y la receta de un medicamento que ya retiraste. Tus puntos siguen ahí: si compras con tu DUI sigues acumulando, y puedes volver a entrar cuando quieras.\n\n'
         + 'Si además quieres dejar de acumular puntos, elige «Retirar mi permiso del programa»: tu saldo queda en pausa (no vence ni se puede canjear) y dejas de recibir promociones, hasta que vuelvas a aceptarlo.',
       [
         { text: 'Cancelar', style: 'cancel' },

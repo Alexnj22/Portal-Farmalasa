@@ -30502,6 +30502,10 @@ export type Database = {
         Args: { p_branch_id?: number; p_ids: number[] }
         Returns: number
       }
+      inyeccion_asignar_ficha: {
+        Args: { p_aplicacion_id: number; p_customer_id: number }
+        Returns: number
+      }
       inyeccion_base_sugerida: {
         Args: { p_descripcion: string; p_erp_product_id: number }
         Returns: number

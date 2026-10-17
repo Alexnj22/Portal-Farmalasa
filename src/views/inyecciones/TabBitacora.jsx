@@ -10,6 +10,8 @@ import FilterBar from '../../components/common/FilterBar';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import AsignarFichaModal from './AsignarFichaModal';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { buscarBitacoraDeAplicaciones } from '@nucleo/data/inyecciones';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -43,6 +45,10 @@ import { fechaHora12 } from '@nucleo/utils/hora';
  * Quién cobró y quién aplicó van con su FOTO (pedido del usuario, 2026-10-03:
  * «mejora visualmente la bitácora, foto del empleado, que se sienta más
  * moderno»), y la venta dice de qué sala es cuando no es la del cobro.
+ *
+ * Sin ficha (2026-10-17): la app del cliente muestra sus inyecciones por
+ * ficha, así que una cobrada sólo con el nombre escrito no sale en ninguna. La
+ * fila lo dice y, a quien puede asignar cobros, le ofrece ponérsela.
  */
 
 const ESTADOS = ESTADOS_BITACORA;
@@ -64,6 +70,9 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
     const [fijados, setFijados] = useState([]);
     const [res, setRes] = useState(null);
     const [error, setError] = useState(null);
+    const [asignando, setAsignando] = useState(null);
+    const { hasPermission } = useAuth();
+    const puedeAsignar = hasPermission('inyecciones_dosis');
     const genRef = useRef(0);
     const dateDirty = monthRange !== defaultRange;
     const filtros = useMemo(() => filtrosEfectivosDeBitacora(fijados, searchTerm), [fijados, searchTerm]);
@@ -209,7 +218,13 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                     : <span>Factura {factura(f.correlativo)}</span>}
                                 {f.venta_sala && <Badge variant="info" size="sm">Venta de {f.venta_sala}</Badge>}
                                 {f.asignada_a_mano && <Badge variant="neutral" size="sm">Asignada después</Badge>}
+                                {f.sin_ficha && <Badge variant="warning" size="sm">Sin ficha · no sale en su app</Badge>}
                             </p>
+                            {f.sin_ficha && puedeAsignar && (
+                                <Button size="xs" variant="ghost" className="mt-1" onClick={() => setAsignando(f)}>
+                                    Asignar a un cliente
+                                </Button>
+                            )}
                         </DataCell>
                         <DataCell className="text-body-sm">
                             <p className="text-content">{f.producto}</p>
@@ -242,6 +257,10 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                     pageSize={pageSize} onPageSizeChange={setPageSize}
                     total={res.total} filteredTotal={total} unit="aplicaciones"
                 />
+            )}
+            {asignando && (
+                <AsignarFichaModal fila={asignando} onClose={() => setAsignando(null)}
+                    onHecho={() => { setAsignando(null); cargar(); }} />
             )}
         </div>
     );

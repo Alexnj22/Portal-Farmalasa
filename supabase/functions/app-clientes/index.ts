@@ -133,6 +133,75 @@ async function archivoExiste(admin: any, ruta: string): Promise<boolean> {
   // deno-lint-ignore no-explicit-any
   return (data ?? []).some((f: any) => f.name === nombre);
 }
+// Lo que «borrar mi cuenta» se lleva de la ficha (2026-10-17). Apple
+// (5.1.1(v)) pide borrar los datos de la cuenta, y la ficha fiscal se conserva
+// porque la ley obliga; pero la foto de perfil, el chat y las fotos de receta
+// no tienen esa razón. Tres reglas, cada una con su motivo:
+//   · Foto de perfil: se borra entera (fila y archivo).
+//   · Chat: se borra el CONTENIDO (texto, fotos, productos adjuntos) y el
+//     archivo de cada foto, pero la conversación y sus renglones quedan con
+//     «Mensaje borrado»: de ellos cuelgan `app_chat_incumplimientos`, la
+//     medida de cuánto tardó el equipo en contestar, que es del personal y no
+//     del cliente. Borrar la conversación los borraría en cascada.
+//   · Recetas: se borran las de reservas que NO se entregaron (vencida,
+//     cancelada, o receta rechazada). La de una reserva RETIRADA respalda una
+//     dispensación bajo receta y se conserva; la de una reserva todavía en
+//     curso también, porque la sala la está usando para decidir.
+// Si un archivo no se puede borrar del almacenamiento, la cuenta se borra
+// igual y queda en el registro: el cliente no puede quedarse sin poder irse
+// por un archivo.
+// deno-lint-ignore no-explicit-any
+async function borrarLoPersonal(admin: any, customerId: number) {
+  const archivos: string[] = [];
+  // Una carpeta entera del bucket (las fotos del chat y las de una receta,
+  // que se suben numeradas y sólo la última queda anotada en la fila).
+  const deCarpeta = async (carpeta: string) => {
+    const { data, error } = await admin.storage.from(BUCKET_ARCHIVOS).list(carpeta, { limit: 500 });
+    if (error) { console.error(`borrar_cuenta: no se pudo listar ${carpeta}:`, error.message); return; }
+    // deno-lint-ignore no-explicit-any
+    for (const f of data ?? []) if (f?.name && f.id) archivos.push(`${carpeta}/${f.name}`);
+  };
+
+  const { data: foto, error: eF } = await admin.from("app_cliente_fotos").select("ruta").eq("customer_id", customerId).maybeSingle();
+  if (eF) throw eF;
+  if (foto?.ruta) archivos.push(foto.ruta);
+  const { error: eFd } = await admin.from("app_cliente_fotos").delete().eq("customer_id", customerId);
+  if (eFd) throw eFd;
+
+  const { data: conv, error: eC } = await admin.from("app_chat_conversaciones").select("id").eq("customer_id", customerId).maybeSingle();
+  if (eC) throw eC;
+  if (conv) {
+    // Una conversación es de UNA persona: cabe en un tope generoso, y si
+    // alguna vez no cabe, la vuelta siguiente del mismo botón termina.
+    const { data: fotos, error: eM } = await admin.from("app_chat_mensajes").select("foto_ruta")
+      .eq("conversacion_id", conv.id).not("foto_ruta", "is", null).limit(5000);
+    if (eM) throw eM;
+    // deno-lint-ignore no-explicit-any
+    for (const m of fotos ?? []) archivos.push((m as any).foto_ruta);
+    const { error: eU } = await admin.from("app_chat_mensajes")
+      .update({ texto: "Mensaje borrado", foto_ruta: null, adjunto: null }).eq("conversacion_id", conv.id);
+    if (eU) throw eU;
+  }
+  await deCarpeta(`chat/${customerId}`);
+
+  const { data: rs, error: eR } = await admin.from("app_reservas").select("id, branch_id, estado, receta_estado")
+    .eq("customer_id", customerId).not("receta_ruta", "is", null).limit(500);
+  if (eR) throw eR;
+  // deno-lint-ignore no-explicit-any
+  const sinEntregar = (rs ?? []).filter((r: any) => r.estado === "vencida" || r.estado === "cancelada" || r.receta_estado === "rechazada");
+  for (const r of sinEntregar) await deCarpeta(`recetas/${Number(r.branch_id)}/${Number(r.id)}`);
+  if (sinEntregar.length) {
+    // deno-lint-ignore no-explicit-any
+    const { error: eRu } = await admin.from("app_reservas").update({ receta_ruta: null }).in("id", sinEntregar.map((r: any) => r.id));
+    if (eRu) throw eRu;
+  }
+
+  const unicos = [...new Set(archivos.filter(Boolean))];
+  for (let i = 0; i < unicos.length; i += 500) {
+    const { error } = await admin.storage.from(BUCKET_ARCHIVOS).remove(unicos.slice(i, i + 500));
+    if (error) console.error(`borrar_cuenta: ${unicos.length} archivo(s) de la ficha ${customerId} sin borrar:`, error.message);
+  }
+}
 /** Firma varias rutas de un bucket privado; las que fallan quedan fuera del mapa. */
 // deno-lint-ignore no-explicit-any
 async function firmarRutas(admin: any, bucket: string, rutas: string[], segundos = 3600): Promise<Map<string, string>> {
@@ -1096,7 +1165,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     }
 
     if (accion === "borrar_cuenta") {
-      // La cuenta de la app es la sesión, los avisos y el pre-registro. La
+      // La cuenta de la app es la sesión, los avisos, el pre-registro y lo
+      // personal que se subió desde la app (`borrarLoPersonal`). La
       // FICHA no se borra: es un registro fiscal que la ley obliga a guardar, y
       // la sala la usa para facturar. Lo que el cliente sí decide sobre ella
       // —sus permisos— se puede retirar en el mismo gesto (`retirar_permisos`).
@@ -1107,6 +1177,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           .eq("customer_id", customerId).is("revocada_at", null);
         if (error) throw error;
         if (body?.retirar_permisos === true) await guardarPermisos(customerId, false, false);
+        await borrarLoPersonal(admin, customerId);
       }
       // El pre-registro se borra aunque ya esté VINCULADO: sus datos (nombre,
       // documento, teléfono, correo, nacimiento) ya viven en la ficha, y

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.6 — App de puntos: la cuenta del revisor ve muestras sin el panel de prueba
+
+- «Tiene muestras» y «es la cuenta de prueba» se separan: la cuenta de prueba
+  se marca con una fila `modo_prueba` en `app_cliente_muestras`. La cuenta del
+  revisor de App Store / Google Play lleva datos de muestra pero no el panel
+  «Modo de prueba», que Apple lee como función de depuración.
+
 ## v2.1303.5 — App de puntos: política de privacidad y manifiesto
 
 - **Aviso de privacidad, versión 2 (vigente desde el 17-oct-2026).** Nueva

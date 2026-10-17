@@ -517,10 +517,23 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
   // La tarjeta de Wallet de una ficha, firmada (ver `_shared/pase.ts`).
   // `oro+equipo`: en prueba, el nivel y además el sello de Equipo.
   const paseDe = async (id: number, nivelDePrueba?: string, equipoPrueba = false) => (await paseDeCliente(admin, id, nivelDePrueba, equipoPrueba)).pase;
-  // La cuenta de PRUEBA es la que tiene muestras (`app_cliente_muestras`): la
-  // única que puede ver la app «como» otro nivel (modo de prueba).
-  const esDePrueba = async (id: number) => {
+  // Dos preguntas distintas desde el 2026-10-17, que antes eran una:
+  //   · ¿tiene MUESTRAS? (`tieneMuestras`) — ve datos de ejemplo. Las tiene
+  //     también la cuenta del revisor de las tiendas, para que la app no se
+  //     vea vacía.
+  //   · ¿es la cuenta de PRUEBA? (`esDePrueba`) — además puede ver la app
+  //     «como» otro nivel, mandarse avisos de muestra y el panel «Modo de
+  //     prueba» de Cuenta. Lo marca una fila `tipo = 'modo_prueba'`. Al
+  //     revisor de Apple ese panel se le lee como una función de depuración,
+  //     y es motivo de rechazo.
+  const tieneMuestras = async (id: number) => {
     const { count, error } = await admin.from("app_cliente_muestras").select("id", { count: "exact", head: true }).eq("customer_id", id);
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  };
+  const esDePrueba = async (id: number) => {
+    const { count, error } = await admin.from("app_cliente_muestras").select("id", { count: "exact", head: true })
+      .eq("customer_id", id).eq("tipo", "modo_prueba");
     if (error) throw error;
     return (count ?? 0) > 0;
   };
@@ -3095,12 +3108,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           if (eIn) throw eIn;
           return count ?? 0;
         })(),
-        // La cuenta de prueba es la ÚNICA que tiene muestras (`esDePrueba`
-        // mira justo eso): se pregunta una vez y, si no lo es, las tres
-        // lecturas de muestras ni se hacen.
-        esDePrueba(customerId).then(async (prueba) => {
-          if (!prueba) return { prueba, cumpleanos: [], inyeccion: [], vencimiento: [] };
-          const [cumpleanos, inyeccion, vencimiento] = await Promise.all([
+        // Casi nadie tiene muestras (`tieneMuestras`): se pregunta una vez y,
+        // si no, las lecturas ni se hacen.
+        tieneMuestras(customerId).then(async (con) => {
+          if (!con) return { prueba: false, cumpleanos: [], inyeccion: [], vencimiento: [] };
+          const [prueba, cumpleanos, inyeccion, vencimiento] = await Promise.all([
+            esDePrueba(customerId),
             muestrasDe(admin, customerId, "cumpleanos"),
             muestrasDe(admin, customerId, "inyeccion"),
             muestrasDe(admin, customerId, "vencimiento"),

@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1302.0 — Facturación: tarjetas en todas las colas, pestañas con número
+
+Pedido del usuario: «mejora visualmente todo el módulo, incluyendo las
+pestañas; que sea informativo, útil y eficiente».
+
+- **Tarjetas en las cuatro colas.** Anuladas, Saltos (saltos y campos nulos) y
+  Observaciones mostraban una hilera de píldoras `#id │ TIPO │ ✓` con el dato
+  —correlativo, cliente, total— escondido en un tooltip, que en el teléfono no
+  existe. Ahora todas usan la tarjeta que Pendiente MH estrenó el 2026-08-16,
+  generalizada como `TarjetaDocumento`: tipo, correlativo, monto, cliente,
+  fecha legible con «hace N días» en el color de su urgencia, forma de pago y
+  las acciones al pie.
+- **Una grilla por sucursal, no una por día.** Con un documento por fecha —lo
+  normal— cada encabezado de día ocupaba una fila entera para una sola tarjeta.
+  La fecha pasó adentro de la tarjeta.
+- **Las pestañas llevan ícono y número** (`cuenta` de `ViewTabBar`): cuánto
+  queda pendiente en cada una. Sólo de las visitadas: las demás no cargan hasta
+  abrirse, y un cero no medido diría que no hay nada.
+- **Métricas que dicen algo.** Anuladas: «Más antigua» y el monto pendiente;
+  «Solventadas» pasa a contar el mes (era el histórico rotulado como actual).
+  Pendiente MH: «Vencidas» (pasada la gracia de 2 días). Saltos: cuántos
+  números faltan, no sólo cuántos huecos. Las tarjetas muestran el esqueleto
+  mientras cargan en vez de un 0.
+- **Cinco copias del formulario de solventar → `FormularioSolventar`**, que en
+  el teléfono pone los botones debajo del comentario. Lo mismo con los
+  historiales (`SeccionHistorial`, `FilaHistorial`): quien solventó sale con
+  foto y nombre corto, como manda el canon.
+- **No Efectivo:** el desglose decía «tarjeta 5» en minúscula; el historial de
+  confirmados era un botón suelto pegado al borde; la foto de quien confirmó
+  nunca salía (preguntaba por un campo que la fila no trae).
+- Avisos escritos a mano → `Notice`; vacíos de Saltos en una línea.
+
 ## v2.1301.3 — El DUI tomado con el teléfono también se endereza solo
 
 Las dos caras del DUI que llegan juntas desde el teléfono se parten y se

@@ -11,7 +11,7 @@ Quien las necesite las lee de ahí.
 
 | tabla | qué | cómo encontrarlo |
 |---|---|---|
-| `customers` | la ficha «CLIENTE DE REVISION» (id 3201016) | `notes` dice que no es una persona |
+| `customers` | la ficha «CLIENTE DEMO» (id 3201016; se llamó «CLIENTE DE REVISION» unas horas, pero la tarjeta muestra las dos primeras palabras) | `notes` dice que no es una persona |
 | `puntos_codigo_acceso` | su código de 7 caracteres | `customer_id = 3201016` |
 | `app_cliente_muestras` | 19 muestras copiadas de la cuenta de prueba (ofertas, inyecciones, vencimientos, facturas, historias) | `customer_id = 3201016` |
 
@@ -36,7 +36,7 @@ Quien las necesite las lee de ahí.
 DELETE FROM app_cliente_muestras  WHERE customer_id = 3201016;
 DELETE FROM puntos_codigo_acceso  WHERE customer_id = 3201016;
 DELETE FROM app_cliente_sesiones  WHERE customer_id = 3201016;
-DELETE FROM customers             WHERE id = 3201016 AND name = 'CLIENTE DE REVISION';
+DELETE FROM customers             WHERE id = 3201016 AND name = 'CLIENTE DEMO';
 ```
 
 Antes de borrar, mirar que no tenga nada más colgado (reservas, chat, avisos):

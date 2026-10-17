@@ -495,7 +495,7 @@ function BotonWallet({ serial, nivelPrueba }) {
   if (BotonWalletNativo && !tiene) {
     return (
       <View style={{ alignSelf: 'center', width: 260, height: 48, opacity: cargando ? 0.6 : 1 }} accessibilityRole="button" accessibilityLabel="Agregar a Apple Wallet">
-        <BotonWalletNativo style={{ width: 260, height: 48 }} onPress={tocar} />
+        <BotonWalletNativo style={{ width: 260, height: 48 }} onAgregar={tocar} />
       </View>
     );
   }

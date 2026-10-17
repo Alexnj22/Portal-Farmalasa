@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.9 — App de puntos: botón de Wallet sin choque de eventos; capturas para la tienda
+
+- **Botón «Agregar a Apple Wallet»**: su evento nativo se llamaba `onPress`,
+  que React Native ya usa como evento que burbujea. En desarrollo la pestaña
+  Puntos reventaba («Event cannot be both direct and bubbling: topPress»); en
+  producción ese chequeo no corre y el choque pasaba callado. Ahora es
+  `onAgregar`. Entra con la próxima compilación.
+- **Capturas de 6.9"** para App Store (`apps/clientes/tienda/capturas/ios-6.9`),
+  tomadas con la cuenta de revisión: Inicio, tarjeta con el código de barras,
+  Ofertas, Tienda, Sucursales, Inyecciones y Facturas. Ya están cargadas en
+  App Store Connect, junto con la descripción, palabras clave, soporte,
+  privacidad y las notas para el revisor.
+
 ## v2.1303.8 — Página de ayuda de la app Puntos Salud
 
 - `/soporte`: contacto (WhatsApp, teléfono, correo) y preguntas frecuentes. Es la «URL de soporte» que exige App Store Connect. Estática, para que abra aunque el portal no cargue.

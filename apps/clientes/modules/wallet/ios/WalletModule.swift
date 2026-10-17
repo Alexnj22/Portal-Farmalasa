@@ -17,8 +17,13 @@ public class WalletModule: Module {
 
     // El botón OFICIAL «Agregar a Apple Wallet» (2026-10-07): las guías de
     // Apple piden PKAddPassButton y no uno dibujado a mano.
+    // El evento se llama `onAgregar` y no `onPress` (2026-10-17): React Native
+    // ya registra `topPress` como evento que BURBUJEA, y uno directo con el
+    // mismo nombre revienta en desarrollo («Event cannot be both direct and
+    // bubbling: topPress»). En producción ese chequeo no corre, así que el
+    // choque pasaba callado.
     View(BotonWalletView.self) {
-      Events("onPress")
+      Events("onAgregar")
     }
 
     Function("disponible") { () -> Bool in
@@ -127,7 +132,7 @@ final class Delegado: NSObject, PKAddPassesViewControllerDelegate {
 }
 
 final class BotonWalletView: ExpoView {
-  let onPress = EventDispatcher()
+  let onAgregar = EventDispatcher()
   private let boton = PKAddPassButton(addPassButtonStyle: .black)
 
   required init(appContext: AppContext? = nil) {
@@ -137,7 +142,7 @@ final class BotonWalletView: ExpoView {
     addSubview(boton)
   }
 
-  @objc private func tocado() { onPress([:]) }
+  @objc private func tocado() { onAgregar([:]) }
 
   override func layoutSubviews() {
     super.layoutSubviews()

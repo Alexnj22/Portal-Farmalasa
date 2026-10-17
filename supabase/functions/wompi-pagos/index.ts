@@ -41,7 +41,16 @@ async function confirmar(admin: any, identificador: string, idTransaccion: strin
     p_es_real: !!tx.esReal,
     p_codigo: tx.codigoAutorizacion ?? null,
     p_forma: tx.formaPago ?? null,
-    p_detalle: tx,
+    // Sólo lo que hace falta para conciliar (2026-10-17). La respuesta de
+    // Wompi trae también datos del pagador —nombre, correo, la tarjeta
+    // enmascarada— que la farmacia no necesita; guardarlos obligaría a
+    // declarar «información de pago» en la ficha de privacidad de las tiendas.
+    p_detalle: {
+      idTransaccion: tx.idTransaccion ?? idTransaccion, monto: tx.monto, esReal: !!tx.esReal,
+      esAprobada: !!tx.esAprobada, formaPago: tx.formaPago ?? null, codigoAutorizacion: tx.codigoAutorizacion ?? null,
+      // deno-lint-ignore no-explicit-any
+      fecha: (tx as any).fechaTransaccion ?? null,
+    },
   });
   if (error) throw error;
   if (!data?.ok) console.error("[wompi] no se confirmó:", identificador, idTransaccion, JSON.stringify(data));

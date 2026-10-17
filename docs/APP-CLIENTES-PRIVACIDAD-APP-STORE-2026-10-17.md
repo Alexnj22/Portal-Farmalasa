@@ -96,7 +96,7 @@ Preguntas generales:
 | ¿Todos los datos se encriptan en tránsito? | **Sí** (todo va por HTTPS) |
 | ¿Qué formas de crear cuenta ofrece? | Nombre de usuario y otra autenticación: **documento + teléfono, o código personal** (sin contraseña). No hay inicio con Google/Apple. |
 | ¿Ofrece una forma de solicitar que se borren los datos? | **Sí**: dentro de la app (Cuenta › Borrar mi cuenta) |
-| URL para pedir el borrado de la cuenta | `https://portal.farmasalud.lat/privacidad` (cláusulas 10.15 y 8: teléfono, correo o sala). Ver nota 3. |
+| URL para pedir el borrado de la cuenta | `https://portal.farmasalud.lat/privacidad#borrar-cuenta` |
 | ¿Puede pedir que se borren algunos datos sin borrar la cuenta? | **Sí**: foto de perfil, correos guardados, permiso de avisos y de promociones |
 
 **Compartidos con terceros: NINGUNO.** Expo, Sentry, Resend, Wompi y Supabase son
@@ -142,24 +142,18 @@ recoja; «Opcional», que depende de una función que él elige usar.
 
 ## Notas — lo que no se pudo verificar o queda abierto
 
-1. **Pago.** La tarjeta se escribe en la página de Wompi y no pasa por el
-   servidor, por eso «Payment Info» va en **No**. Pero `wompi-pagos` guarda en
-   `app_reservas_pagos.detalle` la **transacción completa** que informa Wompi, y
-   no se revisó qué campos trae (puede traer marca y últimos cuatro dígitos, o el
-   correo que el cliente escribió en Wompi). Si los trae, lo correcto es marcar
-   Payment Info / Información de pago del usuario = **Sí** (App Functionality),
-   o recortar `detalle` a lo que hace falta. El aviso ya dice «los demás datos
-   de la operación que Wompi informa, nunca el número completo».
-2. **IP.** `puntos_consulta_intentos` guarda la IP con la huella del documento
-   para frenar a quien prueba documentos ajenos. El comentario de la tabla dice
-   «se purga a los 30 días», **pero no hay cron**: medido el 2026-10-17, la fila
-   más vieja es del 2026-08-30. El aviso no promete un plazo; conviene crear la
-   purga. En Google va dentro de «IDs de dispositivo u otros / Prevención de
-   fraudes»; Apple no la pide si no se usa para ubicar.
-3. **URL de borrado para Google.** Play exige una página web desde la que se
-   pueda pedir el borrado **sin instalar la app**. Hoy `/privacidad` remite a
-   teléfono, correo o sala (cláusula 8), lo que cumple. Una página propia con
-   instrucciones paso a paso sería más clara.
+1. **Pago — RESUELTO el mismo día.** `wompi-pagos` guardaba en
+   `app_reservas_pagos.detalle` la transacción completa de Wompi (que puede
+   traer nombre, correo y tarjeta enmascarada del pagador). Ahora guarda sólo
+   id, monto, estado, forma de pago, código de autorización y fecha. Ningún
+   pago real había entrado todavía (5 filas, todas sin detalle), así que no hay
+   nada viejo que limpiar. «Payment Info» queda en **No** con fundamento.
+2. **IP — RESUELTO.** Cron `purge-puntos-consulta-intentos` (diario, 30 días),
+   migración `20261017165857`.
+3. **URL de borrado para Google — RESUELTO.** La cláusula 10 tiene el ancla
+   `#borrar-cuenta` y dice cómo pedirlo sin la app (WhatsApp 2301-0013, medios
+   de la cláusula 8, o una sala). URL para Play Console:
+   `https://portal.farmasalud.lat/privacidad#borrar-cuenta`.
 4. **Sentry y la IP.** Con `sendDefaultPii: false` el SDK no manda la IP, pero
    Sentry puede inferirla del envío según la configuración del proyecto. Activar
    en Sentry *Settings › Security & Privacy › Prevent Storing of IP Addresses*.

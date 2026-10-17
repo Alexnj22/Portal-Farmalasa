@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.7 — App de puntos: Wompi guarda sólo lo necesario, purga de intentos, borrado sin la app
+
+- **Pagos en línea**: `wompi-pagos` guarda sólo id, monto, estado, forma de
+  pago, autorización y fecha, no la transacción entera de Wompi (que trae
+  datos del pagador). Así «información de pago» va en No en las tiendas.
+- **Intentos de entrar** (`puntos_consulta_intentos`, guardan la IP): cron de
+  borrado a 30 días, lo que su comentario prometía y nada hacía.
+- **Aviso de privacidad**: ancla `#borrar-cuenta` y cómo pedir el borrado sin
+  tener la app (lo exige Google Play).
+- Cuenta del revisor de las tiendas creada en producción (sin credenciales en
+  el repo, que es público): `docs/APP-CLIENTES-CUENTA-DE-REVISION-2026-10-17.md`.
+
 ## v2.1303.6 — App de puntos: la cuenta del revisor ve muestras sin el panel de prueba
 
 - «Tiene muestras» y «es la cuenta de prueba» se separan: la cuenta de prueba

@@ -193,6 +193,11 @@ const CRONS = [
     motivo: 'Retención de 180 días de la bitácora de avisos de la app de clientes.',
   },
   {
+    job: 'purge-puntos-consulta-intentos', slug: null, cadencia: '35 9 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Retención de 30 días de los intentos de entrar a Mis puntos y a la app (guardan la IP).',
+  },
+  {
     job: 'refresh-product-last-sale-daily', slug: null, cadencia: '45 6 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Recalcula `product_last_sale` —la fecha de la última venta de cada producto en cada '

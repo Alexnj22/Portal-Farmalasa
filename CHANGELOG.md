@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.5 — App de puntos: política de privacidad y manifiesto
+
+- **Aviso de privacidad, versión 2 (vigente desde el 17-oct-2026).** Nueva
+  cláusula 10 sobre la app Puntos Salud: cómo se entra (DUI + teléfono o el
+  código del ticket), bloqueo con Face ID/huella (lo verifica el teléfono),
+  avisos (Expo → Apple/Google), chat con la farmacia y sus fotos, fotos de
+  receta (dato de salud), foto de perfil, ubicación (se usa sólo en el
+  teléfono: no se envía ni se guarda), pagos con Wompi (la tarjeta no pasa por
+  la Empresa), Apple/Google Wallet, facturas por correo (Resend), reportes de
+  fallos (Sentry sin nombre ni documento; copia propia 90 días) y qué borra y
+  qué conserva «Borrar mi cuenta». La cláusula 3 suma los usos de la app y la
+  11 dice qué cambió. Fuente `docs/legal/aviso-de-privacidad.html`; regenerados
+  `public/privacidad.html` (`npm run legal:web`) y el PDF de la sala.
+- **Manifiesto de privacidad de iOS** (`ios.privacyManifests` en
+  `apps/clientes/app.json`): 15 tipos de datos recogidos, todos vinculados y
+  sin rastreo; UserDefaults con `1C8F.1` por el App Group del widget. El widget
+  lleva su propio `PrivacyInfo.xcprivacy`.
+- **`docs/APP-CLIENTES-PRIVACIDAD-APP-STORE-2026-10-17.md`**: las respuestas
+  para «App Privacy» de App Store Connect y «Seguridad de los datos» de Google
+  Play, con lo que queda abierto (detalle de Wompi, purga de intentos por IP,
+  versión del aviso aceptado).
+
 ## v2.1303.4 — App de puntos: borrar la cuenta borra lo personal; inyecciones sin ficha se asignan desde la Bitácora
 
 - **Borrar la cuenta en la app ahora borra lo personal** (lo pide Apple,

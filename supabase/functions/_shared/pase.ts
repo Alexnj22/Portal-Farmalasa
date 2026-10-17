@@ -11,9 +11,11 @@
 // el repositorio. El certificado vence el 2027-11-05: renovarlo es crear otro
 // en developer.apple.com con el mismo CSR (`~/.claves-farmalasa`).
 //
-// Qué lleva: el QR con la MISMA dirección que el ticket y la tarjeta de la app
-// (`/mis-puntos?codigo=`), el saldo en dólares al frente, los puntos y el
-// nombre. Se ACTUALIZA SOLA: `wallet-pases` es el servicio web de PassKit.
+// Qué lleva: el código de barras (Code 128) con el código de 7 caracteres
+// pelado —lo que «teclea» el lector de la caja, que es de una dimensión y no
+// lee QR—, el saldo en dólares al frente, los puntos y el nombre. El código NO
+// va escrito en ningún lado (2026-10-17, «para qué lo necesita ver el
+// cliente»). Se ACTUALIZA SOLA: `wallet-pases` es el servicio web de PassKit.
 import forge from "npm:node-forge@1.3.1";
 import { zipSync } from "npm:fflate@0.8.2";
 import { IMAGENES_PASE } from "./imagenesPase.ts";
@@ -154,11 +156,17 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
       backFields: [
         { key: "como", label: "Cómo se usa", value: "Muestra el código en caja: acumulas en cada compra y canjeas desde 100 puntos ($1)." },
         { key: "foto", label: "Saldo", value: "Se actualiza solo cada vez que ganas o usas puntos." },
-        { key: "codigo", label: "Tu código", value: d.codigo ?? "—" },
         { key: "reglamento", label: "Reglamento", value: "https://portal.farmasalud.lat/reglamento-puntos" },
       ],
     },
-    barcodes: [{ format: "PKBarcodeFormatQR", message: qr, messageEncoding: "iso-8859-1", altText: d.codigo ?? "" }],
+    // Wallet usa el PRIMER formato que el aparato sabe dibujar: el iPhone, las
+    // barras; el Apple Watch no dibuja Code 128 y cae al QR de `/mis-puntos`
+    // (la búsqueda de la caja también acepta esa dirección). Sin `altText`: el
+    // código no se muestra debajo.
+    barcodes: [
+      ...(d.codigo ? [{ format: "PKBarcodeFormatCode128", message: d.codigo, messageEncoding: "iso-8859-1" }] : []),
+      { format: "PKBarcodeFormatQR", message: qr, messageEncoding: "iso-8859-1" },
+    ],
     sharingProhibited: true,
   };
 

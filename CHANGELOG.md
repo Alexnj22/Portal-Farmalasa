@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.2 — App de puntos: la tarjeta lleva sólo el código de barras, sin el código escrito
+
+- **Reverso de la tarjeta rediseñado.** Fuera el QR y el código escrito (al
+  lado del QR y debajo de las barras): el lector de la caja es de una
+  dimensión —no lee QR— y el código lo «teclea» él. Ahora: la marca y el
+  nivel arriba, una ventana blanca con las barras altas (74 pt en un teléfono
+  de 320 pt, antes 40–52) enmarcada con el acento del nivel, y «Muéstrala en
+  caja para usar tus puntos» abajo. VoiceOver ya no deletrea el código.
+- **Pase de Wallet**: Code 128 con el código pelado como primer formato (el
+  QR queda sólo de respaldo para el Apple Watch, que no dibuja barras) y sin
+  el código escrito — ni `altText` ni el campo «Tu código» del dorso. Hasta
+  hoy el pase sólo llevaba QR, o sea que el lector de la caja no lo leía.
+
 ## v2.1303.1 — Observaciones sin «Solventar»
 
 Pedido del usuario: «no tiene sentido, mejor quitalo».

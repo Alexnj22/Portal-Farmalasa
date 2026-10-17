@@ -1514,6 +1514,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         setDuiFallo(null);
         setDuiCaras(null);
         try {
+            /* Cada cara se endereza ANTES de subirla (2026-10-17). Este camino
+             * —las dos caras juntas desde el teléfono, partidas acá— subía la
+             * foto tal cual, sin la tubería automática que sí corre en cada
+             * `FileField`: así quedó un DUI guardado de costado, y leído de
+             * costado «TEJADA» salió «TELADA» en todas las mediciones. Si la
+             * detección no encuentra el carné, va la foto original: una ayuda
+             * que falla no puede impedir adjuntar el documento. */
+            const { prepararAutomatico } = await import('@nucleo/data/prepararDocumento');
+            const derecha = async (f) => {
+                const r = await prepararAutomatico(f, 'dui').catch(() => ({ ok: false }));
+                return r?.ok ? r.archivo : f;
+            };
+            [frente, reverso] = await Promise.all([derecha(frente), derecha(reverso)]);
+
             const folder = formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
             const [urlF, urlR] = await Promise.all([
                 uploadFileToStorage(frente, 'documents', folder),

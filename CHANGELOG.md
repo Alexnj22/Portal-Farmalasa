@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1301.3 — El DUI tomado con el teléfono también se endereza solo
+
+Las dos caras del DUI que llegan juntas desde el teléfono se parten y se
+suben; ese camino subía la foto TAL CUAL, sin la tubería automática
+(esquinas, giro, recorte) que sí corre en cada casilla de documento. Así quedó
+un DUI guardado de costado, y leído de costado «TEJADA» salió «TELADA». Ahora
+cada cara pasa por `prepararAutomatico(…, 'dui')` antes de subirse; si no se
+reconoce el carné, va la foto original.
+
 ## v2.1301.2 — Lectura del DUI: medida, se queda sin tope y aprende el orden de las fechas
 
 Medido sobre los 11 DUI reales del expediente contra lo guardado en cada ficha

@@ -163,6 +163,7 @@ REGLAS QUE NO PUEDES ROMPER:
 - El tipo de sangre es OPCIONAL en el DUI: sólo aparece si la persona presentó constancia de laboratorio. Que no esté es normal, devuelve null.
 - No completes el departamento ni el municipio a partir del distrito ni al revés. Devuelve sólo lo que está escrito.
 - Las fechas van en formato YYYY-MM-DD y sólo si las lees completas.
+- En el DUI las fechas están escritas DÍA/MES/AÑO: «08/07/2020» es el 8 de julio de 2020, no el 7 de agosto. Conviértelas a YYYY-MM-DD respetando ese orden.
 - "caras" tiene EXACTAMENTE tantas entradas como ARCHIVOS recibiste, en orden — no como páginas. No la omitas ni la acortes: sirve para avisarle a quien carga que subió dos veces la misma cara o un documento que no es.`
 
 /* Se pregunta SÓLO por las cuatro esquinas, y el recuadro se calcula acá.
@@ -378,7 +379,16 @@ Deno.serve(async (req: Request) => {
       inlineData.push({ mimeType: data.type || 'image/jpeg', data: aBase64(buf) })
     }
 
-    /* `thinkingBudget: null` = el pensamiento de siempre. El techo por defecto
+    /* Medido el 2026-10-17 sobre los 11 DUI reales del expediente contra lo
+     * guardado en cada ficha: sin tope, 512 y 2048 leen igual número, nombres,
+     * nacimiento y sexo; con 512 se duplicó un dígito del número y se invirtió
+     * una fecha, así que se queda SIN tope. La línea «DÍA/MES/AÑO» del prompt
+     * sí entró: sin ella el modelo leyó «08/07/2020» como 1 de agosto en un DUI
+     * fotografiado de costado; con ella, 9/9 expediciones y 11/11
+     * vencimientos. Lo que no arregla es una foto girada: ahí «TEJADA» salió
+     * «TELADA» en todas las variantes.
+     *
+/* `thinkingBudget: null` = el pensamiento de siempre. El techo por defecto
      * está medido sobre boletas, no sobre documentos de identidad, y acá un
      * dígito mal leído entra en la ficha de una persona. Ver la nota de
      * `_shared/gemini.ts`: se mide antes de acotar. */

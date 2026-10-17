@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1301.2 — Lectura del DUI: medida, se queda sin tope y aprende el orden de las fechas
+
+Medido sobre los 11 DUI reales del expediente contra lo guardado en cada ficha
+(sin tope, 512, 2048 y el modelo «lite»): los tres topes leen igual número,
+nombres, nacimiento y sexo. Con 512 se duplicó un dígito del número y se
+invirtió una fecha, así que la lectura del DUI sigue SIN tope. El modelo
+`gemini-2.5-flash-lite` ya no está disponible para cuentas nuevas.
+
+Lo que sí entró: la instrucción dice ahora que en el DUI las fechas van
+DÍA/MES/AÑO. Sin ella, en un DUI fotografiado de costado leyó «08/07/2020»
+como el 1 de agosto; con ella, 9/9 expediciones y 11/11 vencimientos. Lo que
+no arregla es una foto girada: ahí «TEJADA» salió «TELADA» en todas.
+
 ## v2.1301.1 — Lecturas con tope de pensamiento medido
 
 Medido el 2026-10-17 contra documentos reales del expediente, con el mismo

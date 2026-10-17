@@ -18,7 +18,7 @@ import { fallo, listo, trabajando, cerrarProgreso } from '../Progreso';
 
 function elegir(titulo, opciones) {
   return new Promise((resolver) => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS !== 'web') { // en Android lo dibuja HojasAndroid: Alert sólo muestra 3 botones
       ActionSheetIOS.showActionSheetWithOptions(
         { title: titulo, options: [...opciones.map((o) => o.label), 'Cancelar'], cancelButtonIndex: opciones.length },
         (i) => resolver(i < opciones.length ? opciones[i] : null),

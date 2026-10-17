@@ -43,7 +43,7 @@ const ROTULO = {
 function elegirOrden(claves, orden, alElegir) {
   const ops = [{ id: null, label: 'Orden del libro' }, ...claves.map((k) => ({ id: k, label: ROTULO[k] ?? k }))];
   const textos = ops.map((o) => (o.id && o.id === orden.key ? `${o.label} ${orden.dir === 'asc' ? '↑' : '↓'}` : o.label));
-  if (Platform.OS === 'ios') {
+  if (Platform.OS !== 'web') { // en Android lo dibuja HojasAndroid: Alert sólo muestra 3 botones
     ActionSheetIOS.showActionSheetWithOptions({ title: 'Ordenar por', message: 'Tocar la misma columna invierte el orden.', options: [...textos, 'Cancelar'], cancelButtonIndex: textos.length },
       (i) => { if (i < ops.length) alElegir(ops[i].id); });
   } else {

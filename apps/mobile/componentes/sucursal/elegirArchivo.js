@@ -36,7 +36,7 @@ async function desdeArchivos() {
 const OPCIONES = ['Tomar foto', 'Elegir de la galería', 'Elegir un archivo (PDF)'];
 const preguntar = () => new Promise((resolve) => {
   const elegir = async (i) => { try { resolve(i === 2 ? await desdeArchivos() : i === 0 || i === 1 ? await desdeFotos(i === 0) : null); } catch { resolve(null); } };
-  if (Platform.OS === 'ios') {
+  if (Platform.OS !== 'web') { // en Android lo dibuja HojasAndroid: Alert sólo muestra 3 botones
     ActionSheetIOS.showActionSheetWithOptions({ options: [...OPCIONES, 'Cancelar'], cancelButtonIndex: 3 }, elegir);
   } else {
     Alert.alert('Adjuntar', '', [...OPCIONES.map((t, i) => ({ text: t, onPress: () => elegir(i) })), { text: 'Cancelar', style: 'cancel', onPress: () => resolve(null) }]);

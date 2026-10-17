@@ -55,7 +55,7 @@ export default function ObjetosHuerfanos() {
   const elegir = (fila) => {
     if (!puedeEditar || guardando) return;
     const rotulos = OPCIONES.map(([, l]) => l);
-    if (Platform.OS === 'ios') {
+    if (Platform.OS !== 'web') { // en Android lo dibuja HojasAndroid: Alert sólo muestra 3 botones
       ActionSheetIOS.showActionSheetWithOptions({ title: fila.title, options: [...rotulos, 'Cancelar'], cancelButtonIndex: rotulos.length },
         (i) => { if (i < rotulos.length) cambiar(fila, OPCIONES[i][0]); });
     } else {

@@ -60,7 +60,7 @@ async function elegirPdf() {
 // Una pregunta con sus opciones: la hoja de acciones en iOS, el diálogo en Android.
 function elegirUna(titulo, opciones, alElegir) {
   const textos = opciones.map((o) => o.label);
-  if (Platform.OS === 'ios') {
+  if (Platform.OS !== 'web') { // en Android lo dibuja HojasAndroid: Alert sólo muestra 3 botones
     ActionSheetIOS.showActionSheetWithOptions({ title: titulo, options: [...textos, 'Cancelar'], cancelButtonIndex: textos.length },
       (i) => { if (i < textos.length) alElegir(opciones[i].id); });
   } else {

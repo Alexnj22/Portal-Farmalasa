@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1304.1 — Migración de ingresos con forma de pago y tipos de la base
+
+- Migración `20261017175529_ingreso_forma_de_pago` aplicada en producción y tipos de la base regenerados (`src/types/database.ts`).
+
 ## v2.1304.0 — Ingresos de caja con forma de pago: tarjeta y transferencia fuera del cajón, autorización sin comprobante y corrección de la forma de pago
 
 - **Cada ingreso pregunta cómo se pagó** (efectivo por defecto): efectivo,

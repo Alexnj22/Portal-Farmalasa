@@ -4561,15 +4561,22 @@ export type Database = {
           anulado_at: string | null
           anulado_motivo: string | null
           anulado_por: string | null
+          autorizacion: string | null
+          autorizacion_at: string | null
+          autorizacion_nota: string | null
+          autorizacion_por: string | null
+          autorizacion_solicitud: string | null
           bolsa_operacion_id: number | null
           branch_id: number
           clave_envio: string | null
+          comprobante_total: number | null
           concepto: string
           created_at: string
           detalle: string | null
           erp_apertura_id: number | null
           erp_movimiento_id: number | null
           fecha: string
+          forma_pago: string
           foto_lectura: Json | null
           foto_url: string | null
           id: number
@@ -4589,15 +4596,22 @@ export type Database = {
           anulado_at?: string | null
           anulado_motivo?: string | null
           anulado_por?: string | null
+          autorizacion?: string | null
+          autorizacion_at?: string | null
+          autorizacion_nota?: string | null
+          autorizacion_por?: string | null
+          autorizacion_solicitud?: string | null
           bolsa_operacion_id?: number | null
           branch_id: number
           clave_envio?: string | null
+          comprobante_total?: number | null
           concepto: string
           created_at?: string
           detalle?: string | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
           fecha: string
+          forma_pago?: string
           foto_lectura?: Json | null
           foto_url?: string | null
           id?: never
@@ -4617,15 +4631,22 @@ export type Database = {
           anulado_at?: string | null
           anulado_motivo?: string | null
           anulado_por?: string | null
+          autorizacion?: string | null
+          autorizacion_at?: string | null
+          autorizacion_nota?: string | null
+          autorizacion_por?: string | null
+          autorizacion_solicitud?: string | null
           bolsa_operacion_id?: number | null
           branch_id?: number
           clave_envio?: string | null
+          comprobante_total?: number | null
           concepto?: string
           created_at?: string
           detalle?: string | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
           fecha?: string
+          forma_pago?: string
           foto_lectura?: Json | null
           foto_url?: string | null
           id?: never
@@ -27175,6 +27196,18 @@ export type Database = {
         Args: { p_branch_id: number; p_dia: string; p_piezas?: Json }
         Returns: Json
       }
+      caja_ingreso_pedir_autorizacion: {
+        Args: { p_movimiento: number; p_nota?: string; p_pide: string }
+        Returns: string
+      }
+      caja_ingreso_reenviar: {
+        Args: { p_foto_url?: string; p_movimiento: number; p_nota: string }
+        Returns: string
+      }
+      caja_ingreso_resolver: {
+        Args: { p_aprobar: boolean; p_nota?: string; p_solicitud: string }
+        Returns: Json
+      }
       caja_vales_pendientes: {
         Args: never
         Returns: {
@@ -27186,6 +27219,10 @@ export type Database = {
           operacion_id: number
           sala: string
         }[]
+      }
+      caja_vouchers_del_dia: {
+        Args: { p_branch_id: number; p_dia: string }
+        Returns: Json
       }
       calc_credito_declarable: {
         Args: { p_desde: string; p_hasta: string }

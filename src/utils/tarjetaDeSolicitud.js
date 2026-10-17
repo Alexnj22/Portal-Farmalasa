@@ -71,7 +71,16 @@ export function detalleDeSolicitud(s) {
         case 'VENDOR_CHANGE_REQUEST':
             return { contexto: `Cambio de vendedor en ${sala}`, renglones: [[documento(m), dinero(m.total)], ['Vendedor', `${vendedor(m.current_vendor_name, m.current_vendor_code)} → ${vendedor(m.new_vendor_name, m.new_vendor_code)}`]] };
         case 'CAJA_MOVIMIENTO_CHANGE':
+            if (m.que === 'FORMA') {
+                return { contexto: 'Cambiar cómo se pagó', renglones: [[String(m.concepto ?? 'Movimiento'), dinero(m.monto_actual)], ['Pago', `${String(m.forma_actual ?? '?').toLowerCase()} → ${String(m.forma_nueva ?? '?').toLowerCase()}`]] };
+            }
             return { contexto: m.que === 'ANULAR' ? 'Anular movimiento de caja' : 'Corrección de caja', renglones: [[String(m.concepto ?? 'Movimiento'), m.monto_nuevo == null ? dinero(m.monto_actual) : `${dinero(m.monto_actual)} → ${dinero(m.monto_nuevo)}`]] };
+        case 'CAJA_INGRESO_AUTORIZACION':
+            return {
+                contexto: `Ingreso ${m.forma_pago === 'TRANSFERENCIA' ? 'por transferencia' : 'con tarjeta'} sin comprobante`,
+                renglones: [[String(m.detalle || m.concepto || 'Ingreso'), dinero(m.monto)]],
+                pie: s?.note ?? undefined,
+            };
         case 'ABONO_APROBACION':
             return { contexto: 'Abono a crédito', renglones: [[String(m.cliente ?? 'Cliente'), dinero(m.monto)]], pie: m.forma };
         case 'ABONO_CREDITO_CHANGE':

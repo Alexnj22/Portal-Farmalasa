@@ -28,6 +28,8 @@ import {
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
 import BuscarFicha from './BuscarFicha';
+import FormaDePago from './FormaDePago';
+import { estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
 import { useStaffStore } from '@nucleo/store/staffStore';
 
 /**
@@ -91,6 +93,9 @@ const factura = (c) => String(c || '').replace(/^0+/, '');
 export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onCobrar }) {
     const showToast = useToastStore((s) => s.showToast);
     const [modo, setModo] = useState('COMPRADA');
+    // Cómo pagó: la inyección es justo el cobro que a veces entra con tarjeta.
+    // Sólo el efectivo va a la caja (`utils/formaDePago`).
+    const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
     const [precios, setPrecios] = useState(null);
     const [errorPrecios, setErrorPrecios] = useState(null);
 
@@ -216,6 +221,8 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala,
     });
 
+    const estadoPago = estadoDeFormaDePago(pago, monto);
+
     const cuerpoDeCobrar = useRef(null);
     cuerpoDeCobrar.current = async () => {
         setEnviando(true);
@@ -223,6 +230,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
             await onCobrar({
                 clave: claveDeEnvio.current,
                 monto,
+                pago,
                 aplicacion: aplicacionDelCobro({ origen, items, producto, cantidad, ahora, quedan, aNombreDe, ficha }),
             });
         } catch (e) {
@@ -321,7 +329,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
             {idsACanjear.length > 1 ? `Marcar ${idsACanjear.length} aplicadas` : 'Marcar aplicada'}
         </Button>
     ) : (
-        <Button variant="primary" loading={enviando} disabled={ocupado || !valido} onClick={cobrar}>
+        <Button variant="primary" loading={enviando} disabled={ocupado || !valido || !estadoPago.valido} onClick={cobrar}>
             {enviando ? 'Cobrando…' : `Cobrar ${monto != null ? formatMoney(monto) : ''}`}
         </Button>
     );
@@ -564,6 +572,12 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         <span className="text-content-2">{total} × {formatMoney(precio)}</span>
                         <span className="font-black tabular-nums text-content">{formatMoney(monto)}</span>
                     </div>
+                )}
+
+                {/* El cobro lo pone el precio vigente: el voucher sólo prueba
+                    cómo se pagó, y si es por más, el resto es una venta. */}
+                {modo !== 'CANJEAR' && monto != null && total > 0 && (
+                    <FormaDePago valor={pago} onCambiar={setPago} monto={monto} montoFijo />
                 )}
 
                 {modo === 'CANJEAR' && (

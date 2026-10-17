@@ -72,6 +72,8 @@ export const REQUEST_TYPES = {
     ABONO_APROBACION:          { label: 'Abono por aprobar', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     ABONO_CREDITO_CHANGE:      { label: 'Corrección de un abono', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     CAJA_MOVIMIENTO_CHANGE:    { label: 'Corrección de caja',     color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
+    // Un ingreso con tarjeta o transferencia que llegó sin foto del comprobante.
+    CAJA_INGRESO_AUTORIZACION: { label: 'Ingreso sin comprobante', color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     // Vive en otra tabla (`minmax_change_requests`) pero se muestra en el mismo
     // centro: para quien mira la sala es una solicitud más. Ver `adaptarMinMax`.
     MINMAX_CHANGE_REQUEST:     { label: 'Ajuste de Min/Max',      color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
@@ -142,6 +144,16 @@ export const DISTRIBUCION_REQUEST_TYPES = new Set([
     'DIST_DESCUENTO',
 ]);
 
+/**
+ * Un ingreso con tarjeta o transferencia sin foto del comprobante
+ * (2026-10-17). Aprobar y rechazar los hace `caja_ingreso_resolver` en la base:
+ * firma, impide autoaprobar, deja el movimiento en su estado y le avisa a quien
+ * lo anotó. Rechazar NO anula el ingreso: queda para reenviarlo con más pruebas.
+ */
+export const INGRESO_AUTORIZACION_TYPES = new Set([
+    'CAJA_INGRESO_AUTORIZACION',
+]);
+
 /** Las que se aplican en un sistema externo al aprobarlas. */
 export const REQUEST_TYPES_QUE_SE_APLICAN = new Set([
     ...FACTURACION_REQUEST_TYPES,
@@ -176,6 +188,7 @@ export const TIPOS_OPERATIVOS = new Set([
     ...INVENTARIO_REQUEST_TYPES,
     ...CAJA_REQUEST_TYPES,
     ...DISTRIBUCION_REQUEST_TYPES,
+    ...INGRESO_AUTORIZACION_TYPES,
     'INVENTORY_TRANSFER_REQUEST',
 ]);
 
@@ -1309,6 +1322,39 @@ export const createRequestsSlice = (set, get) => ({
      * a `notifyEmployee`: serían dos avisos—. Entra por `await import()` por la
      * misma razón que `data/creditos` arriba: no viajar en el chunk de arranque.
      */
+    /**
+     * Autoriza o no un ingreso con tarjeta o transferencia que llegó sin foto.
+     * Todo pasa en la base (`caja_ingreso_resolver`), incluido el aviso a quien
+     * lo anotó — por eso acá NO se llama a `notifyEmployee`. Entra por
+     * `await import()` para no viajar en el chunk de arranque.
+     */
+    _decidirIngreso: async (requestId, req, approverId, approverNote, aprobar) => {
+        const { resolverAutorizacionDeIngreso } = await import('../../data/bolsas');
+        try {
+            await resolverAutorizacionDeIngreso(requestId, aprobar, approverNote);
+        } catch (e) {
+            useToastStore.getState().showToast(aprobar ? 'No se autorizó' : 'No se rechazó',
+                e?.message || 'El servidor no devolvió respuesta.', 'error');
+            return YA_AVISADO;
+        }
+        const estado = aprobar ? 'APPROVED' : 'REJECTED';
+        set(state => ({
+            requests: state.requests.map(x =>
+                x.id === requestId
+                    ? { ...x, status: estado, ...selloDeQuienDecidio(get, approverId), approver_note: approverNote }
+                    : x
+            ),
+        }));
+        apagarAviso(get, requestId, estado);
+        useToastStore.getState().showToast(
+            aprobar ? 'Ingreso autorizado' : 'Ingreso sin autorizar',
+            aprobar ? 'Se le avisó a quien lo anotó.'
+                    : 'Se le avisó a quien lo anotó: lo puede reenviar con más pruebas.',
+            aprobar ? 'success' : 'info');
+        emitir('requests-updated');
+        return true;
+    },
+
     _decidirDistribucion: async (requestId, req, approverId, approverNote, aprobar) => {
         const { resolverDescuento, mensajeDeDistribucion } = await import('../../data/distribucion');
         try {
@@ -1341,6 +1387,16 @@ export const createRequestsSlice = (set, get) => ({
         const { aviso, aplicado } = r ?? {};
         if (aviso) return ['Se resolvió, con un pero', aviso, 'info', 8000];
 
+        if (tipo === 'CAJA_MOVIMIENTO_CHANGE' && aplicado?.que === 'FORMA') {
+            const nombre = { EFECTIVO: 'efectivo', TARJETA: 'tarjeta', TRANSFERENCIA: 'transferencia' };
+            return ['Forma de pago cambiada',
+                aplicado.forma === 'EFECTIVO'
+                    ? 'Quedó en efectivo y entró a la caja.'
+                    : aplicado.de === 'EFECTIVO'
+                        ? `Quedó con ${nombre[aplicado.forma]} y salió de la caja.`
+                        : `Quedó con ${nombre[aplicado.forma]}.`,
+                'success'];
+        }
         if (tipo === 'CAJA_MOVIMIENTO_CHANGE') {
             return ['Corrección aplicada',
                 aplicado?.que === 'ANULAR'
@@ -1656,6 +1712,10 @@ export const createRequestsSlice = (set, get) => ({
             if (DISTRIBUCION_REQUEST_TYPES.has(req.type))
                 return await get()._decidirDistribucion(requestId, req, approverId, approverNote, true);
 
+            // Un ingreso sin comprobante: autorizarlo, en la base.
+            if (INGRESO_AUTORIZACION_TYPES.has(req.type))
+                return await get()._decidirIngreso(requestId, req, approverId, approverNote, true);
+
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;
             const newApprovals = [...(Array.isArray(req.approvals) ? req.approvals : []), {
@@ -1797,6 +1857,12 @@ export const createRequestsSlice = (set, get) => ({
              * para facturarse sin él. Lo hace la misma función que aprueba. */
             if (req && DISTRIBUCION_REQUEST_TYPES.has(req.type)) {
                 return await get()._decidirDistribucion(requestId, req, approverId, approverNote, false);
+            }
+
+            // Rechazar un ingreso sin comprobante no lo anula: lo deja para que
+            // la sala lo reenvíe con más pruebas. Lo hace la misma función.
+            if (req && INGRESO_AUTORIZACION_TYPES.has(req.type)) {
+                return await get()._decidirIngreso(requestId, req, approverId, approverNote, false);
             }
 
             /* Mismo candado que al aprobar, y por el mismo motivo: rechazar dos

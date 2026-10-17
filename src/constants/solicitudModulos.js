@@ -38,6 +38,10 @@ export const MODULO_QUE_DECIDE = {
     // anotó NO puede deshacerlo: un movimiento ya contado es dinero, y borrarlo
     // en silencio es justamente lo que la bitácora existe para impedir.
     CAJA_MOVIMIENTO_CHANGE:    'requests_caja',
+    // Un ingreso con tarjeta o transferencia sin foto del comprobante. El mismo
+    // público que las correcciones de caja: Supervisión, Talento Humano y
+    // Administración. Espejo de `modulo_de_aprobacion()`.
+    CAJA_INGRESO_AUTORIZACION: 'requests_caja',
     // Anular un abono ya cobrado, o corregirle el monto o la forma de pago.
     // Módulo propio y no `requests_caja`: son dos públicos, y con un solo
     // interruptor dar uno regala el otro.
@@ -83,6 +87,7 @@ export const MODULO_QUE_DECIDE = {
  */
 export const QUIEN_RESUELVE = {
     CAJA_MOVIMIENTO_CHANGE:    'Quien apruebe correcciones de caja',
+    CAJA_INGRESO_AUTORIZACION: 'Quien apruebe correcciones de caja',
     ABONO_CREDITO_CHANGE:      'Quien apruebe cuentas por cobrar',
     ABONO_APROBACION:          'Quien apruebe cuentas por cobrar',
     /* Facturación e inventario, agregadas el 2026-09-04 — la otra mitad del

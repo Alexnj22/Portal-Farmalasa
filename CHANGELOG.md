@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1304.0 — Ingresos de caja con forma de pago: tarjeta y transferencia fuera del cajón, autorización sin comprobante y corrección de la forma de pago
+
+- **Cada ingreso pregunta cómo se pagó** (efectivo por defecto): efectivo,
+  tarjeta o transferencia. Sólo el efectivo va a la caja y al efectivo del
+  cajón; lo demás se anota en el portal y se muestra aparte («no están en el
+  cajón»). Antes todo ingreso era efectivo para la caja: una inyección cobrada
+  con tarjeta nacía como un faltante que no existía.
+- **Tarjeta y transferencia piden la foto del comprobante**; el total y el
+  número salen de la lectura. Un voucher puede cubrir más que el ingreso
+  (voucher de $16 = $15 de venta + $1 de inyección): «Vouchers de este día»
+  busca la venta con tarjeta que cubre el resto y marca los que no cuadran.
+- **Sin comprobante, el ingreso queda pendiente de autorización** de quien
+  tenga el permiso de correcciones de caja. Rechazado no se anula: se avisa y
+  se puede reenviar con más pruebas. Nadie autoriza lo propio.
+- **Corregir un movimiento ahora permite cambiar cómo se pagó**: pasar a
+  tarjeta saca el monto de la caja (exige foto), pasar a efectivo lo mete
+  (sólo con el día abierto). Anular un cobro con tarjeta o cambiarle el monto
+  se hace sólo en el portal, y el monto nuevo no puede pasar del voucher.
+- El cobro de inyecciones también pregunta la forma de pago.
+- Probado en el entorno de pruebas: 58 casos de servidor
+  (`scripts/entorno-pruebas/probar_ingresos_forma_de_pago.mjs`) y 20 en pantalla
+  (`recorrer_ingresos_forma_de_pago.mjs`).
 ## v2.1303.11 — Google Wallet sin código de país
 
 - La clase de Google Wallet ya no manda `countryCode: "SV"`: la consola de Google no ofrece El Salvador en esa lista, y un código no aceptado podría hacer fallar la clase al guardar la tarjeta.

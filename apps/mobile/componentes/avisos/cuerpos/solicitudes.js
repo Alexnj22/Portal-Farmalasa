@@ -117,6 +117,7 @@ const TIPO_DE_SOLICITUD = {
   VENDOR_CHANGE_REQUEST: { color: MARCA.azulClaro, icono: 'User' },
   CLIENT_CHANGE_REQUEST: { color: MARCA.azulClaro, icono: 'Users' },
   CAJA_MOVIMIENTO_CHANGE: { color: MARCA.ambar, icono: 'Wallet' },
+  CAJA_INGRESO_AUTORIZACION: { color: MARCA.ambar, icono: 'Wallet' },
   ABONO_CREDITO_CHANGE: { color: MARCA.ambar, icono: 'HandCoins' },
   ABONO_APROBACION: { color: MARCA.verde, icono: 'HandCoins' },
   DIST_DESCUENTO: { color: MARCA.azulClaro, icono: 'Percent' },

@@ -1054,7 +1054,12 @@ export async function iniciarTurno(sala, { simular = false } = {}) {
 
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null, clave = null,
-    aplicacion = null }) {
+    aplicacion = null, formaPago = 'EFECTIVO', comprobanteTotal = null, motivoSinComprobante = '' }) {
+    // `formaPago`: sólo el EFECTIVO viaja a la caja. Tarjeta y transferencia
+    // se quedan en el portal y, sin foto, piden autorización con
+    // `motivoSinComprobante`. `comprobanteTotal` es el total del voucher, que
+    // puede cubrir además una venta con tarjeta. Ver `utils/formaDePago`.
+    //
     // `aplicacion` sólo con el tipo APLICACION: `{ origen, items | producto,
     // cantidad, aplicar_ahora }`. El servidor recalcula el monto con el precio
     // vigente y escribe las aplicaciones pagadas — ver `data/inyecciones.js`.
@@ -1073,6 +1078,10 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
          * escribir otro: ver `clave_envio` en `operar-caja`. */
         clave_envio: clave,
         ...(aplicacion ? { aplicacion } : {}),
+        forma_pago: formaPago,
+        ...(formaPago !== 'EFECTIVO'
+            ? { comprobante_total: comprobanteTotal, motivo_sin_comprobante: motivoSinComprobante }
+            : {}),
     });
 }
 
@@ -1379,7 +1388,11 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
      * quien lo hizo, no se puede ver la foto». Los tres datos existían. */
     const { data, error } = await supabase.from('caja_movimientos_portal')
         .select('id, tipo, monto, concepto, detalle, numero_boleta, erp_movimiento_id,'
-              + ' anulado_at, registrado_at, registrado_por, foto_url, monto_origen')
+              + ' anulado_at, registrado_at, registrado_por, foto_url, monto_origen,'
+              // Cómo se pagó y si espera autorización (2026-10-17): lo que no
+              // es efectivo no llega a la caja A PROPÓSITO, y la lista tiene
+              // que poder distinguirlo de lo que no llegó por un error.
+              + ' forma_pago, comprobante_total, autorizacion, autorizacion_nota')
         .eq('branch_id', sala).eq('fecha', cual)
         .order('registrado_at', { ascending: false });
     if (error) { console.error('caja: movimientos del portal:', error.message); return []; }
@@ -1535,8 +1548,17 @@ export async function fetchSalidasDeBolsaDelRango({ desde, hasta, branchId = nul
  * decisión de otra persona, así que va por la misma bandeja donde el portal ya
  * resuelve las anulaciones de factura.
  */
-export async function pedirCorreccion({ sala, movimiento, que, motivo, montoNuevo = null }) {
-    return operar({ accion: 'corregir', sala, movimiento, que, motivo, monto_nuevo: montoNuevo });
+export async function pedirCorreccion({ sala, movimiento, que, motivo, montoNuevo = null,
+    formaNueva = null, fotoUrl = null, comprobanteTotal = null, boleta = null }) {
+    // `que: 'FORMA'` cambia cómo se pagó un ingreso (2026-10-17): pasar a
+    // tarjeta o transferencia lo SACA de la caja y exige la foto del
+    // comprobante; pasar a efectivo lo METE. Ver `operar-caja`.
+    return operar({
+        accion: 'corregir', sala, movimiento, que, motivo, monto_nuevo: montoNuevo,
+        ...(que === 'FORMA'
+            ? { forma_nueva: formaNueva, foto_url: fotoUrl, comprobante_total: comprobanteTotal, boleta }
+            : {}),
+    });
 }
 
 /**
@@ -1600,4 +1622,40 @@ export async function anularLaSalidaDeBolsa(operacionId, motivo) {
     }
     const { error } = await anularSalida(operacionId, motivo);
     return error ? { error } : { anulada: true };
+}
+
+// ── Ingresos con tarjeta o transferencia (2026-10-17) ──────────────────────
+// Ver `utils/formaDePago` y `caja_ingreso_resolver` / `caja_ingreso_reenviar` /
+// `caja_vouchers_del_dia` en la base.
+
+/** Autoriza (o no) un ingreso sin comprobante. Lanza con el motivo del servidor. */
+export async function resolverAutorizacionDeIngreso(solicitudId, aprobar, nota = '') {
+    const { data, error } = await supabase.rpc('caja_ingreso_resolver', {
+        p_solicitud: solicitudId, p_aprobar: !!aprobar, p_nota: String(nota ?? '').trim() || null,
+    });
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+/**
+ * Vuelve a pedir la autorización de un ingreso rechazado, con más pruebas: una
+ * foto nueva, una explicación, o las dos. Lanza con el motivo del servidor.
+ */
+export async function reenviarIngreso(movimientoId, nota, fotoUrl = null) {
+    const { data, error } = await supabase.rpc('caja_ingreso_reenviar', {
+        p_movimiento: Number(movimientoId), p_nota: String(nota ?? '').trim(), p_foto_url: fotoUrl,
+    });
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+/**
+ * Los vouchers del día y si cuadran: cada uno con sus ingresos, el resto que
+ * tiene que ser una venta con tarjeta y la venta que lo cubre. Una sala tiene
+ * decenas de vouchers por día a lo sumo, y viaja como un solo JSON.
+ */
+export async function fetchVouchersDelDia(sala, dia) {
+    const { data, error } = await supabase.rpc('caja_vouchers_del_dia', { p_branch_id: Number(sala), p_dia: dia });
+    if (error) { console.error('caja: vouchers del día:', error.message); return null; }
+    return Array.isArray(data) ? data : [];
 }

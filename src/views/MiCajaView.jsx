@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspens
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useSearchParams } from 'react-router-dom';
 import {
-    AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, ChevronDown, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, Scale, ShieldCheck, ShoppingBag, Wallet,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, ChevronDown, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, RefreshCw, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -14,6 +14,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
 import PortalInput from '../components/common/PortalInput';
+import SegmentedControl from '../components/common/SegmentedControl';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -58,8 +59,12 @@ const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 // La aplicación de inyección, por lo mismo: es el ingreso más frecuente, pero
 // su diálogo sólo se carga cuando alguien lo abre.
 const DialogoAplicacion = lazy(() => import('../components/caja/DialogoAplicacion'));
+const DialogoReenviarIngreso = lazy(() => import('../components/caja/DialogoReenviarIngreso'));
 import BonosPorPagar from '../components/caja/BonosPorPagar';
 import EsperaDeLaCaja from '../components/caja/EsperaDeLaCaja';
+import FormaDePago from '../components/caja/FormaDePago';
+import VouchersDelDia from '../components/caja/VouchersDelDia';
+import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO, nombreDelComprobante } from '@nucleo/utils/formaDePago';
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
@@ -223,6 +228,9 @@ export default function MiCajaView({ comoPestana = false }) {
     // aquél nombra de dónde sale el dinero de una BOLSA.
     const [tiposDeCaja, setTiposDeCaja] = useState(VACIO);
     const [corrigiendo, setCorrigiendo] = useState(null);
+    // Un ingreso con tarjeta o transferencia que no se autorizó y se vuelve a
+    // mandar con más pruebas. Ver `DialogoReenviarIngreso`.
+    const [reenviando, setReenviando] = useState(null);
     /* Los cortes del día, COMPLETOS. `estadoDeCaja` ya trae los suyos, pero sin
      * el nombre de quien cortó ni quién lo confirmó — y es justo lo que la sala
      * entra a comprobar: «que todo esté bien» (usuario, 1-sep). Van aparte y no
@@ -665,13 +673,32 @@ export default function MiCajaView({ comoPestana = false }) {
          *
          * Va como advertencia y no como éxito: es lo que hay que atender. */
         if (r.aviso) showToast('Quedó algo pendiente', r.aviso, 'warning');
-        else if (exito) showToast(exito, 'success');
+        // Sin comprobante el ingreso existe pero no está autorizado: decir
+        // «anotado» a secas haría creer que no falta nada.
+        else if (r.movimiento?.autorizacion === 'PENDIENTE') {
+            showToast('Anotado, falta autorizarlo',
+                'No hay comprobante: lo revisa Supervisión o Talento Humano.', 'warning');
+        } else if (exito) showToast(exito, 'success');
         setDialogo(null);
         cargar();
         return r;
     // Memoizada y no una función suelta: `anotarSalidaDelCajon` la lleva en sus
     // dependencias, y una función nueva por render la reharía en cada uno.
     }, [showToast, cargar]);
+
+    /* La foto del voucher o del comprobante de un cobro que no fue en
+     * efectivo, subida antes de anotar. Si la sala TENÍA el papel y no se pudo
+     * subir, se frena: seguir pediría una autorización que nadie pidió. */
+    const idDeUsuario = user?.id;
+    const subirFotoDelPago = useCallback(async (pago) => {
+        if (!pago || pago.forma === 'EFECTIVO' || !pago.foto) return { url: null };
+        try {
+            return { url: await subirComprobante(pago.foto, { salaId: sala, userId: idDeUsuario }) };
+        } catch (e) {
+            showToast('No se subió la foto del comprobante', mensajeAmigable(e), 'error');
+            return { error: true };
+        }
+    }, [sala, idDeUsuario, showToast]);
 
     const opcionesDeSala = useMemo(
         () => salas.map((b) => ({ value: b.id, label: b.name })),
@@ -1143,8 +1170,15 @@ export default function MiCajaView({ comoPestana = false }) {
                             cobros={cobros}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
                             puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
+                            onReenviar={setReenviando}
                             anotaron={anotaron} cortes={cortesDelDia}
                             correcciones={correcciones} />
+
+                        {/* Sólo si hubo algún cobro con tarjeta: sin ellos no
+                            hay nada que cuadrar y la consulta sobra. */}
+                        {(movimientos || []).some((m) => m.forma_pago === 'TARJETA' && !m.anulado_at) && (
+                            <VouchersDelDia sala={sala} dia={estado?.dia} version={movimientos} />
+                        )}
 
                         {!puedeOperar && (
                             <Notice variant="info" icon={Lock}>
@@ -1203,12 +1237,22 @@ export default function MiCajaView({ comoPestana = false }) {
                 </Suspense>
             )}
 
+            {reenviando && (
+                <Suspense fallback={null}>
+                    <DialogoReenviarIngreso movimiento={reenviando} sala={sala} userId={user?.id}
+                        onClose={() => setReenviando(null)}
+                        onReenviado={() => { setReenviando(null); cargar(); }} />
+                </Suspense>
+            )}
+
             {dialogo === 'aplicacion' && (
                 <Suspense fallback={null}>
                     <DialogoAplicacion abierto ocupado={ocupado} sala={sala}
                         onClose={() => setDialogo(null)}
-                        onCobrar={async ({ clave, monto, aplicacion }) => {
+                        onCobrar={async ({ clave, monto, aplicacion, pago }) => {
                             const tipo = tiposDeCaja.find((t) => t.codigo === 'APLICACION') || null;
+                            const comprobante = await subirFotoDelPago(pago);
+                            if (comprobante.error) return;
                             /* El concepto y el monto los rehace el servidor con la
                              * venta y el precio vigente; lo que viaja acá es lo que
                              * la pantalla mostró, para que frene si no coincide. */
@@ -1216,6 +1260,8 @@ export default function MiCajaView({ comoPestana = false }) {
                                 () => anotarIngreso({
                                     sala, monto, clave, tipo: 'APLICACION', aplicacion,
                                     concepto: tipo?.etiqueta || 'Aplicacion de inyeccion',
+                                    fotoUrl: comprobante.url,
+                                    ...datosDeFormaDePago(pago, comprobante.url),
                                 }),
                                 aplicacion.aplicar_ahora > 0
                                     ? 'Aplicación cobrada.'
@@ -1421,10 +1467,18 @@ export default function MiCajaView({ comoPestana = false }) {
 
             <DialogoCorregir movimiento={corrigiendo} ocupado={ocupado}
                 onClose={() => setCorrigiendo(null)}
-                onPedir={(que, motivo, montoNuevo) => correr(
-                    () => pedirCorreccion({ sala, movimiento: corrigiendo.id, que, motivo, montoNuevo }),
-                    'Queda pedido. Alguien tiene que aprobarlo.',
-                ).then(() => setCorrigiendo(null))} />
+                onPedir={async (que, motivo, montoNuevo, forma) => {
+                    // Con foto del comprobante, se sube antes de pedir: quien
+                    // decide la tiene que ver en la solicitud.
+                    const comprobante = forma ? await subirFotoDelPago({ forma: forma.forma, foto: forma.foto }) : { url: null };
+                    if (comprobante.error) return;
+                    await correr(
+                        () => pedirCorreccion({ sala, movimiento: corrigiendo.id, que, motivo, montoNuevo,
+                            formaNueva: forma?.forma ?? null, fotoUrl: comprobante.url }),
+                        'Queda pedido. Alguien tiene que aprobarlo.',
+                    );
+                    setCorrigiendo(null);
+                }} />
 
             {dialogo === 'cerrar' && (
                 <DialogoCerrar sala={sala} ocupado={ocupado} sinCorte={sinCorteHoy} sinConfirmar={corteSinConfirmar}
@@ -1678,6 +1732,14 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                             <div className="pt-1.5 mt-0.5 border-t border-border-card">
                                                 <Renglon rotulo="Total en efectivo" monto={enCaja} fuerte />
                                             </div>
+                                            {/* Debajo del total y apagado: se
+                                                cobró, pero no está en el cajón.
+                                                Mezclarlo arriba sería contar
+                                                billetes que nadie va a encontrar. */}
+                                            {Number(pz.entradas_no_efectivo || 0) > 0.005 && (
+                                                <Renglon rotulo="Ingresos con tarjeta o transferencia (no están en el cajón)"
+                                                    monto={Number(pz.entradas_no_efectivo)} apagado />
+                                            )}
                                         </>
                                     )}
                                 </div>
@@ -1834,7 +1896,7 @@ const CLASE_DE_MOVIMIENTO = {
  * corrección y el reparto entre bolsas. «Corregir» vive adentro: es una acción
  * sobre UN movimiento que ya se está mirando, no un botón repetido en cada fila.
  */
-function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorregir,
+function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorregir, onReenviar,
     foto, firmando, onVerComprobante, onAmpliar }) {
     const { Icono, tono } = l.anulado
         ? { Icono: Ban, tono: 'bg-content-3/10 text-content-3' }
@@ -1889,12 +1951,14 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
                             </span>
                         )}
                     </span>
-                    {(l.anulado || pendiente || corregido || l.sinEfectivo || ROTULO_DE_ORIGEN[l.montoOrigen]) && (
+                    {(l.anulado || pendiente || corregido || l.sinEfectivo || l.autorizacion || ROTULO_DE_ORIGEN[l.montoOrigen]) && (
                         <span className="flex flex-wrap gap-1 mt-1">
                             {l.anulado && <Marca tono="apagada">Anulado</Marca>}
                             {pendiente && <Marca tono="aviso">Corrección pendiente</Marca>}
                             {!pendiente && corregido && <Marca tono="apagada">Corregido</Marca>}
                             {l.sinEfectivo && <Marca tono="apagada">No entra al cajón</Marca>}
+                            {l.autorizacion === 'PENDIENTE' && <Marca tono="aviso">Falta autorizarlo</Marca>}
+                            {l.autorizacion === 'RECHAZADA' && <Marca tono="aviso">No se autorizó</Marca>}
                             {ROTULO_DE_ORIGEN[l.montoOrigen] && (
                                 <Marca tono="aviso">{ROTULO_DE_ORIGEN[l.montoOrigen]}</Marca>
                             )}
@@ -2000,6 +2064,14 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
                                     {foto ? 'Ocultar boleta' : 'Ver boleta'}
                                 </Button>
                             )}
+                            {/* Rechazado no es anulado: queda esperando más pruebas
+                                y quien lo anotó lo puede volver a mandar. */}
+                            {puedeOperar && l.movimiento && !l.anulado && l.autorizacion === 'RECHAZADA' && onReenviar && (
+                                <Button variant="secondary" size="sm" icon={RefreshCw}
+                                    onClick={() => onReenviar(l.movimiento)}>
+                                    Reenviar con más pruebas
+                                </Button>
+                            )}
                             {puedeOperar && l.movimiento && !l.anulado && (
                                 <Button variant="ghost" size="sm" icon={PencilLine}
                                     onClick={() => onCorregir(l.movimiento)}>
@@ -2025,7 +2097,7 @@ function Marca({ tono, children }) {
 }
 
 function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
-    onCorregir, anotaron, cortes, correcciones }) {
+    onCorregir, onReenviar, anotaron, cortes, correcciones }) {
     const etiquetaDe = (codigo) =>
         tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo);
 
@@ -2182,7 +2254,7 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                                 abierto={abierto === l.clave}
                                 onAlternar={() => setAbierto((c) => (c === l.clave ? null : l.clave))}
                                 quien={anotaron?.get(l.quien)}
-                                puedeOperar={puedeOperar} onCorregir={onCorregir}
+                                puedeOperar={puedeOperar} onCorregir={onCorregir} onReenviar={onReenviar}
                                 foto={foto?.clave === l.clave ? foto : null}
                                 firmando={firmando === l.clave}
                                 onVerComprobante={() => verComprobante(l.clave, l.foto)}
@@ -2378,6 +2450,10 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     const [lectura, setLectura] = useState(null);
     // La escotilla, cuando el papel no se deja leer o leyó mal.
     const [aMano, setAMano] = useState(false);
+    /* Cómo pagó, si es un ingreso (2026-10-17). Sólo el efectivo va a la caja;
+     * tarjeta y transferencia se quedan en el portal con su comprobante. Ver
+     * `utils/formaDePago`. */
+    const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
 
     const delSentido = useMemo(
         () => tipos.filter((t) => t.sentido === (entra ? 'ENTRADA' : 'SALIDA')),
@@ -2390,19 +2466,26 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     // que alguien escriba «aplicación» debajo de un desplegable que dice
     // «Aplicacion de inyeccion» es pedir el mismo dato dos veces.
     const exigeDetalle = !tipo || tipo.codigo.startsWith('OTRO');
+    /* Las operaciones del POS Promerica son del agente bancario: el cliente
+     * paga un recibo o retira una remesa EN EFECTIVO por la ventanilla. Su
+     * boleta ya es el respaldo y no tiene «forma de pago» que elegir. */
+    const conFormaDePago = entra && !!tipo && !tipo.codigo.startsWith('POS_');
+    const estadoPago = estadoDeFormaDePago(conFormaDePago ? pago : null, monto);
+    const noEfectivo = conFormaDePago && estadoPago.noEfectivo;
     // Con identidad, el nombre NO se teclea: sale de quien quedó reconocido.
     const identifica = !!tipo?.identifica_receptor;
     const valido = !!tipo
         && Number(monto) > 0
         && (!exigeDetalle || concepto.trim().length > 2)
-        && (!tipo.pide_boleta || boleta.trim().length > 0)
-        && (tipo.foto !== 'OBLIGATORIA' || !!foto)
-        && (!tipo.pide_persona || identifica || recibe.trim().length > 1);
+        && (noEfectivo || !tipo.pide_boleta || boleta.trim().length > 0)
+        && (noEfectivo || tipo.foto !== 'OBLIGATORIA' || !!foto)
+        && (!tipo.pide_persona || identifica || recibe.trim().length > 1)
+        && estadoPago.valido;
 
     // La foto sólo manda la vuelta del cuadro cuando el tipo la pide. Con
     // `foto: 'NO'` —la aplicación, la glucosa— los campos salen directo: pedir
     // una boleta que no existe es lo que hacía que se escribiera a mano.
-    const pedirDatos = tipo && (tipo.foto === 'NO' || !!foto || aMano);
+    const pedirDatos = tipo && (noEfectivo || tipo.foto === 'NO' || !!foto || aMano);
 
     /* Un tipo con comprobante NO se llena acá: cambia de diálogo.
      *
@@ -2486,8 +2569,18 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         enviandoRef.current = true;
         setEnviando(true);
         let fotoUrl = null;
-        if (foto) {
-            try { fotoUrl = await subirComprobante(foto, { salaId: sala, userId }); } catch { fotoUrl = null; }
+        // Con tarjeta o transferencia la foto que vale es la del comprobante
+        // del pago, no la de una boleta.
+        const fotoQueVa = noEfectivo ? pago.foto : foto;
+        if (fotoQueVa) {
+            try { fotoUrl = await subirComprobante(fotoQueVa, { salaId: sala, userId }); } catch { fotoUrl = null; }
+        }
+        /* Sin la foto del comprobante el servidor pediría una autorización
+         * que nadie pidió: la sala SÍ tenía el papel. Se frena y se dice. */
+        if (noEfectivo && pago.foto && !fotoUrl) {
+            setAviso('No se pudo subir la foto del comprobante. Revisa la conexión y vuelve a intentarlo.');
+            enviandoRef.current = false; setEnviando(false);
+            return;
         }
         /* `Promise.resolve(...)` y no `await`: envuelve igual si quien llama
          * devolviera algo que no es una promesa, y así el cerrojo se suelta
@@ -2529,6 +2622,9 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 }),
             // Para el papel: el detalle suelto y quién, sin el rótulo pegado.
             detalle: concepto.trim(),
+            // Cómo se pagó. Con tarjeta o transferencia pisa la boleta y la
+            // lectura: el respaldo es el comprobante del pago.
+            ...(conFormaDePago ? datosDeFormaDePago(pago, fotoUrl) : {}),
         }, tipo, identifica ? persona : null))
             /* Se suelta PASE LO QUE PASE. Si sólo se soltara al salir bien, un
              * fallo de red dejaría el botón muerto con el diálogo todavía
@@ -2570,7 +2666,9 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         <Marco abierto={abierto} onClose={enviando ? undefined : onClose}
             titulo={entra ? 'Anotar un ingreso' : 'Anotar una salida'}
             bajada={entra
-                ? 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.'
+                ? (noEfectivo
+                    ? 'Queda anotado en el portal. No entra al cajón ni a la caja: el dinero llega por otra vía.'
+                    : 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.')
                 : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}
             pie={<>
                 {/* Cancelar se apaga mientras se envía: el movimiento ya salió
@@ -2584,7 +2682,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     vuelve a tocarlo. La foto tarda cientos de ms en subir, así
                     que ese silencio es justo la ventana del doble toque. */}
                 <Button variant="primary" loading={enviando}
-                    disabled={ocupado || leyendo || !valido || !!problemaDeLaBoleta?.bloquea}
+                    disabled={ocupado || leyendo || !valido || (!noEfectivo && !!problemaDeLaBoleta?.bloquea)}
                     onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
                     {identifica ? 'Continuar' : (enviando ? 'Anotando…' : 'Anotar')}
                 </Button>
@@ -2602,10 +2700,16 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 clearable={false} placeholder="Elige de qué se trata" />
             {tipo?.leyenda && <p className="text-caption text-content-2">{tipo.leyenda}</p>}
 
+            {conFormaDePago && (
+                <FormaDePago valor={pago} onCambiar={setPago} monto={monto}
+                    onMontoLeido={(total) => setMonto((m) => (String(m).trim() ? m : String(total)))} />
+            )}
+            {noEfectivo && aviso && <p className="text-caption text-content-2">{aviso}</p>}
+
             {/* La foto sólo cuando el tipo la usa. Ofrecerla siempre es lo que
                 hacía que la aplicación de una inyección —que no tiene boleta—
                 pasara por el aro de «no tengo boleta» seiscientas veces. */}
-            {tipo && tipo.foto !== 'NO' && (
+            {tipo && tipo.foto !== 'NO' && !noEfectivo && (
                 <>
                     <FileField label={tipo.foto === 'OBLIGATORIA' ? 'Foto de la boleta (obligatoria)' : 'Foto de la boleta'}
                         accept="image/*" value={foto}
@@ -2638,9 +2742,10 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
 
             {pedirDatos && (
                 <>
-                    <PortalInput label="Monto" inputMode="decimal" value={monto} readOnly={cerrado('monto')}
+                    <PortalInput label={noEfectivo ? 'Cuánto es de este ingreso' : 'Monto'} inputMode="decimal"
+                        value={monto} readOnly={!noEfectivo && cerrado('monto')}
                         onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
-                    {tipo.pide_boleta && (
+                    {tipo.pide_boleta && !noEfectivo && (
                         <PortalInput label="Número de boleta" value={boleta} readOnly={cerrado('boleta')}
                             onChange={(e) => setBoleta(e.target.value)} placeholder="000375" />
                     )}
@@ -3218,13 +3323,25 @@ function FrenoDeEfectivoSinContar({ sala, falta, pendiente, ocupado, onClose, on
  * la misma bandeja en vez de tener una cola propia donde algo se quede esperando
  * sin que nadie lo mire.
  */
+const NOMBRE_DE_FORMA = { EFECTIVO: 'Efectivo', TARJETA: 'Tarjeta', TRANSFERENCIA: 'Transferencia' };
+
 function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
     const [que, setQue] = useState('ANULAR');
     const [motivo, setMotivo] = useState('');
     const [montoNuevo, setMontoNuevo] = useState('');
+    /* Cambiar cómo se pagó (2026-10-17). Sólo un ingreso: una salida siempre
+     * es efectivo. Salir del efectivo exige la foto del comprobante —es lo que
+     * prueba que el dinero llegó por otra vía—; volver al efectivo no. */
+    const [formaNueva, setFormaNueva] = useState('');
+    const [fotoNueva, setFotoNueva] = useState(null);
     if (!movimiento) return null;
+    const formaActual = movimiento.forma_pago || 'EFECTIVO';
+    const puedeCambiarForma = movimiento.tipo === 'ENTRADA';
+    const otrasFormas = FORMAS_DE_PAGO.filter((f) => f.value !== formaActual);
     const valido = motivo.trim().length >= 5
-        && (que === 'ANULAR' || Number(montoNuevo) > 0);
+        && (que === 'ANULAR'
+            || (que === 'MONTO' && Number(montoNuevo) > 0)
+            || (que === 'FORMA' && !!formaNueva && (formaNueva === 'EFECTIVO' || !!fotoNueva)));
 
     return (
         <Marco abierto onClose={onClose} titulo="Pedir una corrección"
@@ -3232,7 +3349,8 @@ function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
             pie={<>
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button variant="primary" disabled={ocupado || !valido}
-                    onClick={() => onPedir(que, motivo.trim(), que === 'MONTO' ? Number(montoNuevo) : null)}>
+                    onClick={() => onPedir(que, motivo.trim(), que === 'MONTO' ? Number(montoNuevo) : null,
+                        que === 'FORMA' ? { forma: formaNueva, foto: fotoNueva } : null)}>
                     Pedir
                 </Button>
             </>}
@@ -3242,7 +3360,38 @@ function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
                     onClick={() => setQue('ANULAR')}>Anularlo</Button>
                 <Button size="sm" variant={que === 'MONTO' ? 'primary' : 'secondary'}
                     onClick={() => setQue('MONTO')}>Corregir el monto</Button>
+                {puedeCambiarForma && (
+                    <Button size="sm" variant={que === 'FORMA' ? 'primary' : 'secondary'}
+                        onClick={() => setQue('FORMA')}>Cambiar cómo pagó</Button>
+                )}
             </div>
+            {que === 'FORMA' && (
+                <>
+                    <p className="text-caption text-content-2">
+                        Ahora dice <b>{NOMBRE_DE_FORMA[formaActual]}</b>.
+                    </p>
+                    <div>
+                        <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
+                            Cómo pagó en realidad
+                        </p>
+                        <SegmentedControl label="Cómo pagó en realidad" options={otrasFormas}
+                            value={formaNueva} onChange={setFormaNueva} />
+                    </div>
+                    {formaNueva && formaNueva !== 'EFECTIVO' && (
+                        <FileField label={`Foto del ${nombreDelComprobante(formaNueva)} (obligatoria)`}
+                            accept="image/*" value={fotoNueva} onChange={setFotoNueva} />
+                    )}
+                    {formaNueva && (
+                        <p className="text-caption text-content-3">
+                            {formaNueva === 'EFECTIVO'
+                                ? 'Al aprobarse, el monto entra a la caja del día: el cajón tiene que tenerlo.'
+                                : formaActual === 'EFECTIVO'
+                                    ? 'Al aprobarse, el monto sale de la caja: el cajón deja de esperarlo.'
+                                    : 'No toca la caja: sólo cambia el comprobante.'}
+                        </p>
+                    )}
+                </>
+            )}
             {que === 'MONTO' && (
                 <PortalInput label="Monto correcto" inputMode="decimal" value={montoNuevo}
                     onChange={(e) => setMontoNuevo(e.target.value)} placeholder="0.00" />

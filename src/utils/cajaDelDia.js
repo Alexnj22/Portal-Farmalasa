@@ -65,8 +65,16 @@ export const ROTULO_DE_ORIGEN = {
  * @param etiquetaDe  `codigo → rótulo` del catálogo de salidas de bolsa
  * @param correcciones Map `movimiento → solicitudes`, o null si no se sabe
  */
+/** Con tarjeta o transferencia: no va a la caja, y eso NO es un error. */
+const COMO_SE_PAGO = { TARJETA: 'con tarjeta', TRANSFERENCIA: 'por transferencia' };
+const ESTADO_DE_AUTORIZACION = {
+    PENDIENTE: 'falta autorizarlo', APROBADA: 'autorizado', RECHAZADA: 'no se autorizó',
+};
+
 export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMayuscula, correcciones = null }) {
-    const delCajon = (movimientos || []).map((m) => ({
+    const delCajon = (movimientos || []).map((m) => {
+        const otraVia = COMO_SE_PAGO[m.forma_pago] || null;
+        return {
         clave: `caja-${m.id}`,
         cuando: m.registrado_at,
         titulo: m.detalle || m.concepto,
@@ -75,8 +83,10 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
         anulado: !!m.anulado_at,
         origen: 'De la caja',
         detalle: [
-            m.numero_boleta ? `boleta ${m.numero_boleta}` : null,
-            m.erp_movimiento_id ? null : 'sin llegar a la caja',
+            m.numero_boleta ? `${otraVia ? 'comprobante' : 'boleta'} ${m.numero_boleta}` : null,
+            otraVia,
+            otraVia ? ESTADO_DE_AUTORIZACION[m.autorizacion] || null
+                : (m.erp_movimiento_id ? null : 'sin llegar a la caja'),
         ].filter(Boolean),
         quien: m.registrado_por,
         foto: m.foto_url || null,
@@ -84,14 +94,26 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
         correcciones: correcciones?.get(m.id) || [],
         montoOrigen: m.monto_origen || null,
         clase: m.tipo === 'ENTRADA' ? 'entra' : 'sale',
-        tipoTexto: m.tipo === 'ENTRADA' ? 'Ingreso a la caja' : 'Salida de la caja',
-        datos: [
+        tipoTexto: otraVia ? `Ingreso ${otraVia}` : (m.tipo === 'ENTRADA' ? 'Ingreso a la caja' : 'Salida de la caja'),
+        // Lo que no es efectivo no está en el cajón: fuera de la suma del tramo
+        // (`netoDelTramo`) y con la misma marca que un cobro con tarjeta.
+        sinEfectivo: !!otraVia,
+        autorizacion: m.autorizacion || null,
+        datos: otraVia ? [
+            ['Comprobante', m.numero_boleta || null],
+            ['Total del comprobante', m.comprobante_total != null ? Number(m.comprobante_total).toFixed(2) : null],
+            ['En la caja', 'no va a la caja: el dinero llegó por otra vía'],
+            ['Autorización', m.autorizacion
+                ? `${ESTADO_DE_AUTORIZACION[m.autorizacion]}${m.autorizacion_nota ? ` · ${m.autorizacion_nota}` : ''}`
+                : null, m.autorizacion === 'PENDIENTE' || m.autorizacion === 'RECHAZADA'],
+        ] : [
             ['Boleta', m.numero_boleta || null],
             ['En la caja', m.erp_movimiento_id
                 ? `registrado · n.º ${m.erp_movimiento_id}`
                 : 'todavía no llega a la caja', !m.erp_movimiento_id],
         ],
-    }));
+        };
+    });
     const deLasBolsas = (deBolsas || []).map((o) => {
         const total = Math.abs(Number(o.monto || 0));
         const deHoy = Number(o.montoDeHoy || 0);
@@ -168,10 +190,21 @@ export const netoDelTramo = (lineas) => (lineas || []).reduce(
     (t, l) => t + ((l.anulado || l.sinEfectivo) ? 0 : (l.entra ? l.monto : -l.monto)), 0);
 
 /** El título de una corrección pedida sobre un movimiento, en sus tres estados. */
+const NOMBRE_DE_FORMA = { EFECTIVO: 'efectivo', TARJETA: 'tarjeta', TRANSFERENCIA: 'transferencia' };
+
 export function tituloDeCorreccion(dato) {
     const pendiente = dato.estado === 'PENDING';
     const rechazada = dato.estado === 'REJECTED';
     const anula = dato.que === 'ANULAR';
+    // Cambiar la forma de pago no es un cambio de monto: el número no se mueve,
+    // lo que cambia es si el dinero está en el cajón.
+    if (dato.que === 'FORMA') {
+        const a = NOMBRE_DE_FORMA[dato.forma_despues] || dato.forma_despues || '—';
+        const de = NOMBRE_DE_FORMA[dato.forma_antes] || dato.forma_antes || '—';
+        return pendiente ? `Se pidió pasarlo a ${a}`
+            : rechazada ? `No se pasó a ${a}: se rechazó`
+                : `Se pasó de ${de} a ${a}`;
+    }
     return pendiente
         ? (anula ? 'Se pidió anularlo' : `Se pidió cambiarlo a ${formatMoney(dato.monto_despues)}`)
         : rechazada

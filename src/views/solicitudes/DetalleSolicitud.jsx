@@ -1005,7 +1005,10 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         <p className="text-body-sm font-black text-content-2 tabular-nums">
                             {formatMoney(meta.monto_actual)}
                             <span className="text-micro font-bold text-content-3 ml-1.5 uppercase tracking-wide">
-                                {esAbono ? 'vuelve al saldo del crédito' : 'sale de la caja del día'}
+                                {esAbono ? 'vuelve al saldo del crédito'
+                                    : (meta.forma_actual && meta.forma_actual !== 'EFECTIVO')
+                                        ? 'no toca el cajón: no se pagó en efectivo'
+                                        : 'sale de la caja del día'}
                             </span>
                         </p>
                     </Caja>
@@ -1033,6 +1036,18 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     </div>
                 )}
 
+                {/* Cambiar cómo se pagó mueve dinero del esperado: se dice
+                    hacia dónde, porque es lo que quien decide está firmando. */}
+                {!esAbono && meta.que === 'FORMA' && (
+                    <p className="text-micro text-content-3 leading-snug px-1">
+                        {meta.forma_nueva === 'EFECTIVO'
+                            ? 'Aprobarlo mete este monto en la caja del día: el cajón tiene que tenerlo.'
+                            : meta.forma_actual === 'EFECTIVO'
+                                ? 'Aprobarlo saca este monto de la caja: el cajón deja de esperarlo.'
+                                : 'No toca la caja: sólo cambia el comprobante.'}
+                    </p>
+                )}
+
                 {/* Corregir un abono es BORRARLO y volver a hacerlo: el origen
                     abona y borra, no edita. Se dice acá porque cambia qué
                     esperar del historial, no sólo el número. */}
@@ -1043,7 +1058,49 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     </p>
                 )}
 
-                <EvidenciaFotos urls={meta.comprobante_url ? [meta.comprobante_url] : null} />
+                <EvidenciaFotos urls={[meta.comprobante_url, meta.foto_nueva].filter(Boolean).length
+                    ? [meta.comprobante_url, meta.foto_nueva].filter(Boolean) : null} />
+            </div>
+        );
+    }
+
+    /* ── Un ingreso con tarjeta o transferencia sin comprobante ───────────
+     *
+     * Se decide sobre dinero que no está en ningún cajón: lo único que hay es
+     * lo que la sala dice. Así que se muestra todo lo que dijo —cuánto, cómo,
+     * de qué y por qué no hay papel— y, si es un reenvío, por qué se rechazó
+     * antes: sin eso quien decide no sabe qué prueba nueva tiene que buscar. */
+    if (t === 'CAJA_INGRESO_AUTORIZACION') {
+        const forma = meta.forma_pago === 'TRANSFERENCIA' ? 'Por transferencia' : 'Con tarjeta';
+        return (
+            <div className="space-y-2">
+                <Caja tono="hover">
+                    <div className="flex items-start gap-2">
+                        <Banknote size={14} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2} />
+                        <div className="flex-1 min-w-0">
+                            <Rotulo>Ingreso sin comprobante</Rotulo>
+                            <p className="text-body-sm font-bold text-content-2 leading-tight">
+                                {meta.detalle || meta.concepto || 'Sin concepto'}
+                            </p>
+                            <p className="text-micro text-content-3 mt-0.5">
+                                {forma}{meta.fecha ? ` · ${fechaTexto(meta.fecha)}` : ''}
+                                {meta.numero_boleta ? ` · comprobante ${meta.numero_boleta}` : ''}
+                            </p>
+                        </div>
+                        <span className="text-body font-black tabular-nums text-content">{formatMoney(meta.monto)}</span>
+                    </div>
+                </Caja>
+                {meta.reenvio && meta.rechazo_anterior && (
+                    <Caja>
+                        <Rotulo>Se reenvía. Antes no se autorizó porque</Rotulo>
+                        <p className="text-body-sm text-content-2 leading-snug">{meta.rechazo_anterior}</p>
+                    </Caja>
+                )}
+                <p className="text-micro text-content-3 leading-snug px-1">
+                    No entra al cajón. Autorizarlo dice que el dinero sí llegó; si no, explica qué prueba hace
+                    falta y la sala lo puede volver a mandar.
+                </p>
+                <EvidenciaFotos urls={meta.foto_url ? [meta.foto_url] : null} />
             </div>
         );
     }

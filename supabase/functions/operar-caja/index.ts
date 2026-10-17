@@ -433,10 +433,10 @@ Deno.serve(async (req) => {
     // factura, con su aprobador, sus avisos y su bitácora.
     if (accion === "corregir") {
       const movId = Number(body.movimiento);
-      const que = String(body.que ?? "");          // 'ANULAR' | 'MONTO'
+      const que = String(body.que ?? "");          // 'ANULAR' | 'MONTO' | 'FORMA'
       const motivo = String(body.motivo ?? "").trim();
       if (!Number.isFinite(movId)) return json({ ok: false, error: "Falta el movimiento." }, 400);
-      if (!["ANULAR", "MONTO"].includes(que)) return json({ ok: false, error: "Falta qué corregir." }, 400);
+      if (!["ANULAR", "MONTO", "FORMA"].includes(que)) return json({ ok: false, error: "Falta qué corregir." }, 400);
       if (motivo.length < 5) return json({ ok: false, error: "Escribe el motivo." }, 400);
 
       // El movimiento se RELEE de la base, no se recibe: el navegador manda un
@@ -444,7 +444,7 @@ Deno.serve(async (req) => {
       // él mismo inventó.
       const { data: mov, error: errMov } = await supabase
         .from("caja_movimientos_portal")
-        .select("id, branch_id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id")
+        .select("id, branch_id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id, forma_pago, comprobante_total")
         .eq("id", movId).maybeSingle();
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
       if (!mov) return json({ ok: false, error: "Ese movimiento no existe." }, 404);
@@ -462,6 +462,44 @@ Deno.serve(async (req) => {
        * aprobarse se anulan las dos partes) y se vuelve a registrar. */
       if (mov.bolsa_operacion_id && que === "MONTO") {
         return json({ ok: false, error: "Ese movimiento es la parte de la caja de una salida que también sacó de una bolsa: no se le cambia el monto, se anula entera y se vuelve a registrar." }, 409);
+      }
+
+      /* ── Cambiar CÓMO se pagó (2026-10-17) ──────────────────────────────
+       *
+       * No es un rótulo: decide si el dinero está en el cajón. De efectivo a
+       * tarjeta el ingreso SALE de la caja; de tarjeta a efectivo ENTRA. Por
+       * eso va por la misma aprobación que anular, y lo que la sala no puede
+       * hacer sola es exactamente eso: mover dinero del esperado.
+       *
+       * Pasarlo a tarjeta o transferencia exige la foto del comprobante: es
+       * lo que quien decide mira, y sin ella se estaría sacando del cajón
+       * dinero que nadie prueba que llegó por otra vía. */
+      /* El monto nuevo se valida AL PEDIR y no recién al aplicar: una solicitud
+       * imposible llegaba a la bandeja, alguien la aprobaba, y fallaba ahí. Y
+       * un cobro con tarjeta no puede pasar de su voucher (2026-10-17). */
+      if (que === "MONTO") {
+        const n = Number(body.monto_nuevo);
+        if (!(Number.isFinite(n) && n > 0)) return json({ ok: false, error: "Falta el monto correcto." }, 400);
+        if (mov.comprobante_total != null && n > Number(mov.comprobante_total) + 0.004) {
+          return json({ ok: false, error: `El comprobante es por $${Number(mov.comprobante_total).toFixed(2)}: el ingreso no puede pasar de eso.` }, 400);
+        }
+      }
+
+      let formaNueva: string | null = null;
+      if (que === "FORMA") {
+        formaNueva = String(body.forma_nueva ?? "").toUpperCase();
+        if (!["EFECTIVO", "TARJETA", "TRANSFERENCIA"].includes(formaNueva)) {
+          return json({ ok: false, error: "Falta la forma de pago correcta." }, 400);
+        }
+        if (mov.tipo !== "ENTRADA") {
+          return json({ ok: false, error: "Una salida siempre es efectivo: lo que se puede cambiar es el monto, o anularla." }, 409);
+        }
+        if (formaNueva === String(mov.forma_pago ?? "EFECTIVO")) {
+          return json({ ok: false, error: "Ese ingreso ya está con esa forma de pago." }, 409);
+        }
+        if (formaNueva !== "EFECTIVO" && !String(body.foto_url ?? "").trim()) {
+          return json({ ok: false, error: "Para pasarlo a tarjeta o transferencia sube la foto del comprobante." }, 400);
+        }
       }
 
       /* Una sola solicitud viva por movimiento. Faltaba (auditado el 2-sep a
@@ -486,6 +524,17 @@ Deno.serve(async (req) => {
           movimiento_portal: mov.id, branch_id: mov.branch_id,
           que, monto_actual: mov.monto, monto_nuevo: que === "MONTO" ? Number(body.monto_nuevo) : null,
           concepto: mov.concepto, erp_movimiento_id: mov.erp_movimiento_id,
+          // Cómo se pagó, antes y después. Sólo con `FORMA`, pero `forma_actual`
+          // siempre: anular un cobro con tarjeta no le quita nada al cajón, y
+          // quien decide tiene que saberlo.
+          forma_actual: mov.forma_pago ?? "EFECTIVO",
+          ...(formaNueva ? {
+            forma_nueva: formaNueva,
+            foto_nueva: formaNueva !== "EFECTIVO" ? String(body.foto_url).trim() : null,
+            comprobante_total_nuevo: formaNueva !== "EFECTIVO" && Number(body.comprobante_total) > 0
+              ? Number(body.comprobante_total) : null,
+            numero_nuevo: formaNueva !== "EFECTIVO" ? (String(body.boleta ?? "").trim().slice(0, 40) || null) : null,
+          } : {}),
         },
       }).select("id").single();
       if (errSol) {
@@ -516,8 +565,11 @@ Deno.serve(async (req) => {
      * plata se rechazan: no hay nada que probar ahí sin la caja de verdad. */
     const cajaSimulada = !Deno.env.get("ERP_CORTES_CREDS")
       && !String(Deno.env.get("SUPABASE_URL") ?? "").includes(REF_PRODUCCION);
-    if (cajaSimulada && !["estado", "ingreso"].includes(accion)) {
-      return json({ ok: false, error: "En el entorno de pruebas la caja es simulada: sólo se puede mirar y anotar ingresos." }, 409);
+    // Corregir también (2026-10-17): pedir y aplicar una corrección sobre un
+    // ingreso de prueba no toca nada real, y es justo lo que hay que poder
+    // probar del cobro con tarjeta.
+    if (cajaSimulada && !["estado", "ingreso", "corregir", "aplicar_correccion"].includes(accion)) {
+      return json({ ok: false, error: "En el entorno de pruebas la caja es simulada: sólo se puede mirar, anotar ingresos y corregirlos." }, 409);
     }
 
     let cookie = "";
@@ -666,7 +718,7 @@ Deno.serve(async (req) => {
 
       const { data: mov, error: errMov } = await supabase
         .from("caja_movimientos_portal")
-        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id")
+        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id, forma_pago, erp_apertura_id, registrado_por, autorizacion")
         .eq("id", Number(meta.movimiento_portal)).maybeSingle();
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
       if (!mov) return json({ ok: false, error: "Ese movimiento ya no existe." }, 404);
@@ -674,7 +726,12 @@ Deno.serve(async (req) => {
       // Sin el número del sistema no hay qué corregir del otro lado: la fila del
       // portal es un intento que nunca llegó a la caja. Decirlo es mejor que
       // marcar la solicitud como aplicada sobre algo que no está.
-      if (!mov.erp_movimiento_id) {
+      /* Un ingreso con tarjeta o transferencia NUNCA fue a la caja, a propósito
+       * (2026-10-17): se corrige sólo en el portal. Sin esto, anular un cobro
+       * con tarjeta anotado de más era imposible. */
+      const formaAntes = String(mov.forma_pago ?? "EFECTIVO");
+      const soloPortal = formaAntes !== "EFECTIVO";
+      if (!soloPortal && !cajaSimulada && !mov.erp_movimiento_id) {
         return json({ ok: false, error: "Ese movimiento nunca llegó a la caja, así que no hay nada que corregir ahí." }, 409);
       }
 
@@ -703,6 +760,134 @@ Deno.serve(async (req) => {
       }
 
       const anular = meta.que === "ANULAR";
+
+      /* Si quedaba una autorización viva sobre este ingreso, deja de tener
+       * objeto: anulado, o pasado a efectivo, ya no hay comprobante que
+       * esperar. Se CANCELA —no se rechaza: nadie dijo que no— y el ingreso
+       * queda sin autorización pendiente. */
+      const cancelarAutorizacion = async (porque: string) => {
+        if (mov.autorizacion !== "PENDIENTE") return;
+        const { error: errCanc } = await supabase.from("approval_requests")
+          .update({ status: "CANCELLED", approver_note: porque, updated_at: new Date().toISOString() })
+          .eq("type", "CAJA_INGRESO_AUTORIZACION").eq("status", "PENDING")
+          .eq("metadata->>movimiento_portal", String(mov.id));
+        if (errCanc) console.error(`[operar-caja] cancelar autorizacion mov=${mov.id}: ${errCanc.message}`);
+        const { error: errMovAut } = await supabase.from("caja_movimientos_portal")
+          .update({ autorizacion: null, autorizacion_solicitud: null, updated_at: new Date().toISOString() })
+          .eq("id", mov.id);
+        if (errMovAut) console.error(`[operar-caja] limpiar autorizacion mov=${mov.id}: ${errMovAut.message}`);
+      };
+
+      // Cierra la solicitud de corrección como APROBADA, firmada.
+      const cerrarSolicitud = () => supabase.from("approval_requests")
+        .update({
+          status: "APPROVED", approver_id: quien.id,
+          approver_note: String(body.approver_note ?? "").slice(0, 500) || null,
+          approvals: [...(Array.isArray(sol.approvals) ? sol.approvals : []), {
+            level: 1, approverId: quien.id, approvedAt: new Date().toISOString(),
+            approverNote: String(body.approver_note ?? "") || null,
+          }],
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sol.id).eq("status", "PENDING");
+
+      /* ── CAMBIAR LA FORMA DE PAGO ───────────────────────────────────────
+       *
+       * Tres casos, y sólo dos tocan la caja:
+       *   efectivo → tarjeta/transferencia: el ingreso SALE de la caja (se borra allá);
+       *   tarjeta/transferencia → efectivo: ENTRA a la caja ahora;
+       *   tarjeta ↔ transferencia: sólo el portal.
+       *
+       * Entrar a la caja sólo mientras el DÍA de ese ingreso sigue abierto:
+       * meter hoy el efectivo de un día ya cerrado inflaría el esperado de un
+       * día que no lo recibió. */
+      if (meta.que === "FORMA") {
+        const formaNueva = String(meta.forma_nueva ?? "");
+        if (!["EFECTIVO", "TARJETA", "TRANSFERENCIA"].includes(formaNueva)) {
+          return json({ ok: false, error: "La solicitud no trae una forma de pago válida." }, 400);
+        }
+        if (String(meta.forma_actual ?? formaAntes) !== formaAntes) {
+          return json({ ok: false, error: "Ese ingreso ya cambió de forma de pago desde que se pidió. Recházala y vuelve a pedirla." }, 409);
+        }
+        if (formaNueva === formaAntes) {
+          return json({ ok: false, error: "Ese ingreso ya está con esa forma de pago." }, 409);
+        }
+        let erpNuevo: number | null | undefined = undefined;
+        if (formaAntes === "EFECTIVO") {
+          // Sale de la caja.
+          if (mov.erp_movimiento_id && !cajaSimulada) {
+            const r = await (await fetch(BORRAR, {
+              method: "POST",
+              headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+              body: new URLSearchParams({ process: "eliminar", id_movimiento: String(mov.erp_movimiento_id) }).toString(),
+              signal: AbortSignal.timeout(45_000),
+            })).text();
+            if (!exito(r)) {
+              console.error(`[operar-caja] forma mov=${mov.id}: borrar en caja: ${r.slice(0, 1000)}`);
+              return json({ ok: false, error: "La caja no aceptó sacar el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+            }
+          }
+          erpNuevo = null;
+        } else if (formaNueva === "EFECTIVO") {
+          // Entra a la caja, si el día sigue abierto.
+          if (!cajaSimulada && String(mov.erp_apertura_id ?? "") !== String(estado.aper ?? "")) {
+            return json({ ok: false, error: "El día de ese ingreso ya se cerró: no se puede meter ese efectivo en la caja de hoy. Anúlalo y anótalo de nuevo en el día que corresponde." }, 409);
+          }
+          if (!cajaSimulada) {
+            const { data: autor, error: errAutor } = await supabase.from("employees").select("code").eq("id", mov.registrado_por).maybeSingle();
+            // Sin el código el ingreso entraría a nombre de nadie: se frena
+            // antes de tocar la caja, que es cuando todavía no se movió nada.
+            if (errAutor) {
+              console.error(`[operar-caja] forma mov=${mov.id}: autor: ${errAutor.message}`);
+              return json({ ok: false, error: "No se pudo leer quién anotó el ingreso. Vuelve a intentarlo." }, 503);
+            }
+            const r = await (await fetch(INGRESO, {
+              method: "POST",
+              headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+              body: new URLSearchParams({
+                process: "ingreso", id_apertura: estado.aper!, id_empleado: estado.emp!,
+                turno: estado.turno!, monto: dosDecimales(Number(mov.monto)),
+                concepto: `P${mov.id} ${mov.concepto}`.slice(0, 50), id_tipo: ID_TIPO,
+                // A nombre de quien lo ANOTÓ, no de quien aprueba: el ingreso es suyo.
+                codigo_vendedor: String(autor?.code ?? ""),
+              }).toString(),
+              signal: AbortSignal.timeout(45_000),
+            })).text();
+            if (!exito(r)) {
+              console.error(`[operar-caja] forma mov=${mov.id}: ingreso en caja: ${r.slice(0, 1000)}`);
+              return json({ ok: false, error: "La caja no aceptó el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+            }
+            try { erpNuevo = Number(JSON.parse(r)?.id_mov) || null; } catch { erpNuevo = null; }
+          } else {
+            erpNuevo = null;
+          }
+        }
+
+        const paraEfectivo = formaNueva === "EFECTIVO";
+        const { error: errForma } = await supabase.from("caja_movimientos_portal").update({
+          forma_pago: formaNueva,
+          ...(erpNuevo !== undefined ? { erp_movimiento_id: erpNuevo } : {}),
+          ...(paraEfectivo
+            ? { comprobante_total: null }
+            : {
+              ...(meta.foto_nueva ? { foto_url: String(meta.foto_nueva) } : {}),
+              ...(meta.comprobante_total_nuevo ? { comprobante_total: Number(meta.comprobante_total_nuevo) } : {}),
+              ...(meta.numero_nuevo ? { numero_boleta: String(meta.numero_nuevo) } : {}),
+            }),
+          updated_at: new Date().toISOString(),
+        }).eq("id", mov.id);
+        if (errForma) console.error(`[operar-caja] forma mov=${mov.id}: portal: ${errForma.message}`);
+        // Con la foto del comprobante —que este pedido exige para salir del
+        // efectivo— o pasado a efectivo, ya no hay autorización que esperar.
+        await cancelarAutorizacion("Se cambió la forma de pago con una corrección aprobada.");
+        const { error: errCerrarForma } = await cerrarSolicitud();
+        const avisoForma = errForma
+          ? "La caja ya cambió, pero el portal no quedó anotado. Avisa a Sistemas."
+          : errCerrarForma ? "Se aplicó, pero la solicitud no quedó marcada como aprobada." : null;
+        return json({ ok: true, aplicado: { que: "FORMA", forma: formaNueva, de: formaAntes },
+          ...(avisoForma ? { aviso: avisoForma } : {}) });
+      }
+
       const montoNuevo = Number(meta.monto_nuevo);
       if (!anular && !(Number.isFinite(montoNuevo) && montoNuevo > 0)) {
         return json({ ok: false, error: "La solicitud no trae un monto válido." }, 400);
@@ -725,7 +910,7 @@ Deno.serve(async (req) => {
         if (motivoNo) return json({ ok: false, error: String(motivoNo) }, 409);
       }
 
-      const resp = anular
+      const resp = soloPortal || cajaSimulada ? null : anular
         ? await (await fetch(BORRAR, {
             method: "POST",
             headers: {
@@ -755,7 +940,7 @@ Deno.serve(async (req) => {
             signal: AbortSignal.timeout(45_000),
           })).text();
 
-      if (!exito(resp)) {
+      if (resp !== null && !exito(resp)) {
         console.error(`[operar-caja] corrección mov=${meta.erp_movimiento_id}: ${resp.slice(0, 1000)}`);
         return json({ ok: false, error: "La caja no aceptó la corrección. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
       }
@@ -770,6 +955,8 @@ Deno.serve(async (req) => {
       const { error: errPortal } = await supabase.from("caja_movimientos_portal")
         .update({ ...parche, updated_at: new Date().toISOString() })
         .eq("id", mov.id);
+      // Anulado, ya no hay comprobante que esperar.
+      if (anular && !errPortal) await cancelarAutorizacion("Se anuló el ingreso con una corrección aprobada.");
 
       // Quién decidió va en la fila, no sólo en el estado: una decisión sin
       // firma no se puede auditar, y ésta mueve dinero de una caja.
@@ -1218,6 +1405,44 @@ Deno.serve(async (req) => {
       if (!(Number.isFinite(monto) && monto > 0)) return json({ ok: false, error: "Falta el monto." }, 400);
       if (!esAbono && !concepto) return json({ ok: false, error: "Falta el concepto." }, 400);
 
+      /* ── CÓMO SE PAGÓ (2026-10-17) ───────────────────────────────────────
+       *
+       * La caja trata todo ingreso como EFECTIVO: lo suma al esperado del
+       * corte. Una inyección cobrada con tarjeta y mandada allá nacía como un
+       * faltante que no existe. Así que lo que no es efectivo se anota en el
+       * portal y NO viaja a la caja — `caja_efectivo_piezas` tampoco lo suma.
+       *
+       * Una salida siempre es efectivo: sale del cajón. Sin el campo (la app,
+       * el abono a un faltante, las pantallas viejas) es efectivo, que es lo
+       * que era todo hasta hoy.
+       *
+       * El comprobante es la prueba. Sin foto el ingreso igual existe, pero
+       * queda esperando autorización de quien tenga `requests_caja`: el
+       * dinero no está en ningún cajón que alguien pueda contar. */
+      const formaPago = esEntrada ? String(body.forma_pago ?? "EFECTIVO").toUpperCase() : "EFECTIVO";
+      if (!["EFECTIVO", "TARJETA", "TRANSFERENCIA"].includes(formaPago)) {
+        return json({ ok: false, error: "La forma de pago no es válida." }, 400);
+      }
+      const noEfectivo = formaPago !== "EFECTIVO";
+      const sinComprobante = noEfectivo && !String(body.foto_url ?? "").trim();
+      const motivoSinComprobante = String(body.motivo_sin_comprobante ?? "").trim();
+      if (sinComprobante && motivoSinComprobante.length < 5) {
+        return json({ ok: false, error: "Sin foto del comprobante, explica por qué para pedir la autorización." }, 400);
+      }
+      /* El total del voucher puede ser MAYOR que el ingreso: un voucher de $16
+       * cubre $15 de una venta con tarjeta y $1 de una inyección. Lo que sobra
+       * lo cuadra `caja_vouchers_del_dia` contra las ventas con tarjeta. */
+      let comprobanteTotal: number | null = null;
+      if (noEfectivo && body.comprobante_total != null && body.comprobante_total !== "") {
+        comprobanteTotal = Number(body.comprobante_total);
+        if (!Number.isFinite(comprobanteTotal) || comprobanteTotal <= 0) {
+          return json({ ok: false, error: "El total del comprobante no es válido." }, 400);
+        }
+        if (comprobanteTotal < monto - 0.004) {
+          return json({ ok: false, error: "El ingreso no puede ser mayor que el total del comprobante." }, 400);
+        }
+      }
+
       /* ── El MISMO envío no escribe dos movimientos ─────────────────────────
        *
        * `clave_envio` la genera el formulario una sola vez y viaja igual en
@@ -1277,7 +1502,28 @@ Deno.serve(async (req) => {
        * un aviso que el servidor no respeta, o al revés.
        *
        * Va antes de tocar la caja. Después sería tarde: el dinero ya se movió. */
-      if (String(body.boleta ?? "").trim()) {
+      /* Un voucher SÍ se reparte: la inyección y la glucosa del mismo cliente
+       * pueden ir en el mismo pase de tarjeta. Lo que no puede es repartirse
+       * más de lo que dice: la suma de sus partes no pasa de su total. */
+      if (noEfectivo && String(body.boleta ?? "").trim()) {
+        const numero = String(body.boleta).trim().slice(0, 40);
+        const { data: partes, error: errPartes } = await supabase
+          .from("caja_movimientos_portal")
+          .select("monto, comprobante_total")
+          .eq("branch_id", sala).eq("forma_pago", formaPago).eq("numero_boleta", numero)
+          .is("anulado_at", null);
+        if (errPartes) console.error(`[operar-caja] ${accion} voucher sala=${sala}: ${errPartes.message}`);
+        const ya = (partes ?? []).reduce((t: number, p: { monto: number }) => t + Number(p.monto), 0);
+        const tope = Math.max(comprobanteTotal ?? 0,
+          ...(partes ?? []).map((p: { comprobante_total: number | null }) => Number(p.comprobante_total ?? 0)));
+        if (ya > 0 && tope > 0 && ya + monto > tope + 0.004) {
+          return json({
+            ok: false,
+            error: `Ese comprobante ya tiene $${ya.toFixed(2)} anotados de $${tope.toFixed(2)}: no alcanza para $${monto.toFixed(2)} más.`,
+          }, 409);
+        }
+      }
+      if (!noEfectivo && String(body.boleta ?? "").trim()) {
         const { data: repetidas, error: errBoleta } = await supabase
           .rpc("boleta_ya_en_caja", { p_branch_id: sala, p_numero_boleta: String(body.boleta) });
         // Un fallo de lectura no frena el movimiento: es una comprobación, no
@@ -1552,6 +1798,8 @@ Deno.serve(async (req) => {
           clave_envio: claveEnvio,
           // De qué salida de bolsa es el resto, si lo es. Ver `operacionBolsa`.
           bolsa_operacion_id: operacionBolsa?.id ?? null,
+          forma_pago: formaPago,
+          comprobante_total: comprobanteTotal,
         })
         .select("*").single();
 
@@ -1662,6 +1910,42 @@ Deno.serve(async (req) => {
             if (errLiga) console.error(`[operar-caja] aplicacion fila=${fila.id}: ligar ficha ${fichaId}: ${errLiga.message}`);
           }
         }
+      }
+
+      /* ── Lo que no es efectivo termina ACÁ ─────────────────────────────────
+       *
+       * No va a la caja: allá sería efectivo. Las aplicaciones se confirman
+       * ya —el dinero entró, por otra vía— y, sin comprobante, se pide la
+       * autorización con la MISMA función que usa el reenvío. Si pedirla
+       * falla, el ingreso queda escrito sin autorización pedida: se dice, para
+       * que no parezca autorizado. */
+      if (noEfectivo) {
+        let avisoNoEfectivo: string | null = null;
+        if (aplicaciones) {
+          const { error: errConf } = await supabase.from("inyeccion_aplicaciones")
+            .update({ confirmada: true }).eq("cobro_id", fila.id);
+          if (errConf) {
+            console.error(`[operar-caja] aplicacion fila=${fila.id}: confirmar: ${errConf.message}`);
+            avisoNoEfectivo = "El cobro quedó anotado, pero las aplicaciones no quedaron confirmadas. Avisa a Sistemas.";
+          }
+        }
+        if (sinComprobante) {
+          const { error: errAut } = await supabase.rpc("caja_ingreso_pedir_autorizacion", {
+            p_movimiento: fila.id, p_pide: quien.id, p_nota: motivoSinComprobante,
+          });
+          if (errAut) {
+            console.error(`[operar-caja] autorizacion fila=${fila.id}: ${errAut.message}`);
+            avisoNoEfectivo = "El ingreso quedó anotado, pero no se pudo pedir la autorización. Avisa a Supervisión.";
+          }
+        }
+        const { data: escrita, error: errRel } = await supabase.from("caja_movimientos_portal")
+          .select("*").eq("id", fila.id).single();
+        if (errRel) console.error(`[operar-caja] ${accion} fila=${fila.id}: releyendo: ${errRel.message}`);
+        return json({
+          ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: null, abono, aplicaciones,
+          movimiento: escrita ?? fila, no_va_a_caja: true,
+          ...(avisoNoEfectivo ? { aviso: avisoNoEfectivo } : {}),
+        });
       }
 
       // El concepto lleva el número del portal adelante: es lo único que ata

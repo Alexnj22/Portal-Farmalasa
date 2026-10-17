@@ -932,6 +932,7 @@ const TIPO_DE_SOLICITUD = {
     VENDOR_CHANGE_REQUEST:      { tono: 'azul',    Icono: UserRound },
     CLIENT_CHANGE_REQUEST:      { tono: 'azul',    Icono: Users },
     CAJA_MOVIMIENTO_CHANGE:     { tono: 'naranja', Icono: Wallet },
+    CAJA_INGRESO_AUTORIZACION:  { tono: 'naranja', Icono: Wallet },
     ABONO_CREDITO_CHANGE:       { tono: 'naranja', Icono: HandCoins },
     ABONO_APROBACION:           { tono: 'verde',   Icono: HandCoins },
     DIST_DESCUENTO:             { tono: 'azul',    Icono: Tag },

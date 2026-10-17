@@ -10,13 +10,14 @@ import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, Copy, Info,
-    ShieldCheck
+    ChevronDown, CheckCircle2, Paperclip, ExternalLink, Copy, Info,
+    ShieldCheck, Ban, Hash, ArrowRight
 } from 'lucide-react';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { EmptyState, SkeletonText } from '../components/common/StateViews';
+import { EmptyState } from '../components/common/StateViews';
 import { tokenMatch, smartFilter } from '@nucleo/utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import FilterBar from '../components/common/FilterBar';
@@ -51,7 +52,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 // igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { diasEntre, fechaTexto, hoySV, relojSV } from '@nucleo/utils/fecha';
+import { diasEntre, fechaNumerica, fechaTexto, hoySV, relojSV } from '@nucleo/utils/fecha';
 import {
     conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, observacionesSolventadas, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver,
     claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
@@ -83,105 +84,6 @@ const CREDIT_TIPOS    = ['credito'];
 
 // Categórico puro (T7, paleta cerrada cat-1..9) — 5 métodos de pago sin
 // severidad, solo necesitan distinguirse entre sí en la tabla.
-// ── ChipDoc (2026-07-28, D3.3) ───────────────────────────────────────────
-// Este control estaba escrito TRES VECES en este archivo: las facturas
-// pendientes, los saltos de correlativo y las anuladas con campos nulos. Las
-// tres copias tenían la misma anatomía —copiar el id │ etiqueta del medio │
-// resolver— y la misma cascada de ternarios de color, cada una con un estado
-// de más o de menos. Siete de los nueve `<button>` a mano del archivo eran
-// esto.
-//
-// No pasa por `Button` a propósito: son tres segmentos PEGADOS dentro de un
-// borde común (`items-stretch` + `border-r`), y el canónico les daría a cada
-// uno su propio radio y su propia sombra, rompiendo la unión. Lo que sí se
-// arregla es que exista una sola definición.
-//
-// El color deja de ser una cascada de ternarios y pasa a ser una tabla. Es el
-// mismo cambio que se le hizo a `SUC_COLORS` en TabSinVenta: si el estado tiene
-// nombre, el color se busca; si no, se vuelve a escribir en cada copia.
-const CHIP_TONO = {
-    visitado: { copia: 'bg-warning/10 text-warning-text border-warning/30',
-                medio: 'bg-warning/10', medioTxt: 'text-warning-text',
-                borde: 'border-warning/40' },
-    nulos:    { copia: 'bg-chart-3/10 text-chart-3-text border-chart-3/30 hover:bg-chart-3/20',
-                medio: 'bg-chart-3/10', medioTxt: 'text-chart-3-text',
-                borde: 'border-chart-3/40 hover:border-chart-3/60' },
-    salto:    { copia: 'bg-chart-4/10 text-chart-4-text border-chart-4/30',
-                medio: 'bg-surface-card', medioTxt: 'text-content-3',
-                borde: 'border-chart-4/30 hover:border-chart-4/40' },
-    ccf:      { copia: 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10',
-                medio: 'bg-danger/10', medioTxt: 'text-danger-text',
-                borde: 'border-danger/30 hover:border-danger/40' },
-    normal:   { copia: 'bg-surface-card-hover text-content-2 border-divider hover:bg-surface-card-hover',
-                medio: 'bg-surface-card', medioTxt: 'text-content-3',
-                borde: 'border-divider hover:border-divider' },
-};
-
-const ChipDoc = memo(({
-    estado = 'normal',      // visitado · nulos · ccf · normal
-    copiado = false,
-    resuelto = false,
-    onCopiar,
-    onResolver,
-    etiquetaCopia,
-    nombreResolver,         // qué dice el lector de pantalla en el botón de resolver
-    children,               // el segmento del medio
-}) => {
-    const t = CHIP_TONO[estado] || CHIP_TONO.normal;
-    return (
-        // `min-h-[var(--tap-min)]`: los dos botones de este chip medían 29px de
-        // alto, y en un teléfono el piso es 44 (medido en iPhone 13 el
-        // 2026-07-29: 22 targets en esta vista, los únicos de la pasada que
-        // eran deuda real y no un duplicado decorativo). `items-stretch` hace
-        // que los segmentos hereden la altura del riel, así que se corrige acá
-        // una vez en vez de en los tres. En escritorio `--tap-min` es 0: no
-        // cambia nada.
-        <div className={`inline-flex items-stretch min-h-[var(--tap-min)] rounded-xl border overflow-hidden transition-all duration-[var(--dur-fast)] shadow-sm ${
-            resuelto ? 'border-success shadow-emerald-100' : t.borde}`}>
-            {/* Sin `onCopiar` el primer segmento NO es un botón. El de los
-                saltos de correlativo muestra un rango que no se copia, y
-                tenerlo como `<button>` le habría dado foco y voz de control
-                a un dato de solo lectura. */}
-            {onCopiar ? (
-                <button
-                    aria-label={copiado ? 'Copiado' : `Copiar ${etiquetaCopia}`}
-                    onClick={onCopiar}
-                    className={`flex items-center gap-1 px-2 py-1.5 min-h-[var(--tap-min)] font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
-                        copiado ? 'bg-success/10 text-success-text border-success/30' : t.copia}`}>
-                    {copiado || estado === 'visitado' ? <Check size={8} /> : <Copy size={8} />}
-                    {etiquetaCopia}
-                </button>
-            ) : (
-                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-caption font-black ${t.copia}`}>
-                    {etiquetaCopia}
-                </div>
-            )}
-            <div className={`flex items-center gap-1 px-2 py-1.5 border-r border-divider ${t.medio} ${t.medioTxt}`}>
-                {children}
-            </div>
-            {/* Sin `onResolver` no se dibuja el segmento: quien no tiene
-                `can_edit` en Facturación no puede solventar (lo frena el RLS de
-                las tablas de resoluciones), así que tampoco se le ofrece el
-                botón. Mismo criterio que el primer segmento con `onCopiar`. */}
-            {onResolver && (
-                <button
-                    aria-pressed={resuelto}
-                    aria-label={resuelto ? `Cancelar la resolución de ${nombreResolver}` : `Marcar ${nombreResolver} como resuelta`}
-                    onClick={onResolver}
-                    // El acuse, que su hermano de copiar ya tenía y éste no: los
-                    // dos segmentos viven en la misma píldora, así que uno
-                    // confirmaba el toque y el otro —el que RESUELVE, que es el
-                    // que cambia algo— se quedaba mudo.
-                    className={`flex items-center justify-center px-2 py-1.5 min-h-[var(--tap-min)] min-w-[var(--tap-min)] transition-all active:scale-[0.97] ${
-                        resuelto ? 'bg-danger/10 text-danger hover:bg-danger/10'
-                                 : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
-                    {resuelto ? <X size={10} /> : <Check size={10} />}
-                </button>
-            )}
-        </div>
-    );
-});
-
 // Era la paleta SOFT de `Badge` escrita a mano, una fila por forma de pago.
 // Ahora guarda el NOMBRE de la variante y el color lo pone el canónico.
 // El color por tipo de documento. Mismo criterio que en VentasView, pero cada
@@ -260,6 +162,284 @@ function monthOptions() {
     }
     return opts;
 }
+
+// ── Las piezas de las colas (2026-10-17) ─────────────────────────────────
+// Anuladas, Pendiente MH, Saltos y Observaciones tienen la misma anatomía
+// —sucursal → fecha → documento, un formulario para solventar y un
+// historial— y estaba escrita cuatro veces, con cuatro hojas distintas. Tres
+// de ellas eran una píldora `#id │ TIPO │ ✓` cuyo dato (correlativo, cliente,
+// total) vivía en un tooltip, o sea que **en el teléfono no existía**: la
+// lista entera era una hilera de números sin decir de qué documento se trata.
+// Pendiente MH ya lo había resuelto con tarjetas el 2026-08-16; acá se
+// generaliza su tarjeta y las otras tres la usan.
+//
+// `ChipDoc`, el control de tres segmentos que vivía acá, se fue con ellas.
+
+const diasAtrasTexto = (fecha) => {
+    const d = diasDesde(fecha);
+    if (d <= 0) return 'hoy';
+    if (d === 1) return 'ayer';
+    return `hace ${d} días`;
+};
+
+// «jue. 15 oct.» en vez de `2026-10-15`: la fecha cruda es la del dato; ésta
+// es la que se lee.
+const fechaLegible = (fecha) =>
+    fechaTexto(fecha, { weekday: 'short', day: 'numeric', month: 'short' }, fecha || '—');
+
+/** Encabezado de sucursal, plegable. Mismo control en las cuatro colas. */
+function EncabezadoSucursal({ nombre, cuenta, unidad = 'doc', ccf = false, monto = null, plegada, onToggle }) {
+    const { hasPermission } = useAuth();
+    return (
+        <ListRow
+            surface="card"
+            density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent"
+            iconClass={ccf ? 'text-danger' : 'text-content-3'}
+            tone={ccf ? 'danger' : null}
+            title={<span className="flex items-center gap-2">{nombre}{ccf && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
+            onClick={onToggle}
+            aria-expanded={!plegada}
+            trailing={<>
+                {monto != null && hasPermission('facturacion_ver_montos') && (
+                    <span className="hidden sm:inline text-caption font-bold text-content-2 tabular-nums">{fmt(monto)}</span>
+                )}
+                <Badge size="sm" uppercase={false}>{cuenta} {unidad}</Badge>
+                <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${plegada ? '-rotate-90' : ''}`} />
+            </>}
+        />
+    );
+}
+
+/**
+ * El formulario de «solventar»: un comentario y dos botones. Estaba escrito
+ * cinco veces. En el teléfono los botones van DEBAJO del comentario, a lo
+ * ancho: al lado le dejaban al texto menos de la mitad de la pantalla.
+ */
+function FormularioSolventar({ encabezado, comment, setComment, saving, onConfirmar, onCancelar, placeholder = 'Comentario opcional…' }) {
+    return (
+        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-fast)]">
+            {encabezado && <div className="flex items-center gap-2 mb-2.5 flex-wrap min-w-0">{encabezado}</div>}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                <PortalTextarea
+                    className="flex-1"
+                    rows={2}
+                    autoFocus
+                    placeholder={placeholder}
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                />
+                <div className="flex sm:flex-col gap-1.5 shrink-0">
+                    <Button tone="success" disabled={saving} onClick={onConfirmar} className="flex-1 sm:flex-none justify-center">
+                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
+                    </Button>
+                    <Button variant="secondary" icon={X} onClick={onCancelar} className="flex-1 sm:flex-none justify-center">Cancelar</Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Un historial plegable: la fila que lo abre, la lista y un pie opcional.
+ * Las cuatro colas lo tenían, cada una con su copia.
+ */
+function SeccionHistorial({ refSeccion, titulo, subtitulo, abierta, onToggle, children, pie }) {
+    return (
+        <div ref={refSeccion} data-surface="card" className="overflow-hidden">
+            <ListRow
+                icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
+                title={titulo}
+                subtitle={subtitulo}
+                onClick={onToggle}
+                aria-expanded={abierta}
+                className="rounded-none border-x-0 border-t-0"
+                trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${abierta ? 'rotate-180' : ''}`} />}
+            />
+            {abierta && (
+                <div className="border-t border-divider">
+                    {children}
+                    {pie && <div className="px-5 py-3 border-t border-divider flex justify-center">{pie}</div>}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Una fila del historial: quién (foto + nombre corto, el canon del portal),
+ * cuándo, el comentario, y lo que identifica al documento en `children`.
+ * El nombre que trae la fila es el COMPLETO —se guardó así—, y pintarlo
+ * crudo al lado de un avatar con iniciales es lo que el canon prohíbe.
+ */
+function FilaHistorial({ quien, nombre, sinNombre = '—', cuando, cuandoTexto, comentario, primera, children, pie }) {
+    return (
+        <div className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${primera ? '' : 'border-t border-divider'}`}>
+            <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1 min-w-0">{children}</div>
+                {pie}
+                {comentario && <p className="text-body-sm text-content-3 mb-1 break-words">&ldquo;{comentario}&rdquo;</p>}
+                <p className="text-label text-content-3">
+                    {nombre
+                        ? <span className="font-semibold text-content-2">{shortEmployeeName(quien || nombre)}</span>
+                        : sinNombre}
+                    {cuando && <> · {fechaHora12(cuando, { month: 'short', day: '2-digit' })}</>}
+                    {!cuando && cuandoTexto && <> · {cuandoTexto}</>}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+/** El esqueleto de una cola de tarjetas: tiene la FORMA de lo que llega. */
+function EsqueletoCola({ grupos = 2, tarjetas = 2 }) {
+    return (
+        <div className="space-y-6">
+            {Array.from({ length: grupos }).map((_, i) => (
+                <div key={i} className="space-y-2.5">
+                    <div data-surface="card" className="flex items-center justify-between px-4 py-3">
+                        <div className="h-3 w-28 skeleton rounded-full" />
+                        <div className="h-3 w-12 skeleton rounded-full" />
+                    </div>
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
+                        {Array.from({ length: tarjetas }).map((_, j) => (
+                            <div key={j} data-surface="card" className="px-3.5 py-3 space-y-2.5">
+                                <div className="h-3 w-40 skeleton rounded-full" />
+                                <div className="h-3 w-32 skeleton rounded-full" />
+                                <div className="h-7 w-full skeleton rounded-xl" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+/** El botón que copia el número interno y deja la marca de «ya lo fui a buscar». */
+function BotonCopiarId({ erpId, copiado, visitado, onCopiar }) {
+    return (
+        <Button
+            variant="secondary" size="sm"
+            icon={copiado || visitado ? Check : Copy}
+            onClick={onCopiar}
+            disabled={!erpId}
+            aria-label={copiado ? 'Copiado' : `Copiar ${erpId ? `#${erpId}` : 'el número'}`}
+            title={visitado ? 'Ya copiado — tocar de nuevo quita la marca' : 'Copiar el número interno'}
+            className="font-mono"
+        >
+            {erpId ? `#${erpId}` : '—'}
+        </Button>
+    );
+}
+
+const GRILLA_TARJETAS = 'grid grid-cols-1 gap-2.5 sm:grid-cols-2 2xl:grid-cols-3';
+
+// ─── La tarjeta de un documento pendiente de Hacienda (2026-08-16) ──────────
+//
+// Reemplaza la píldora con tooltip. El tooltip tenía tres datos —correlativo,
+// cliente y total— y **en un teléfono no existe**: sin hover, la lista entera
+// era una hilera de `#349572 COF ✓` sin decir de qué documento se trata. En
+// escritorio tampoco servía para comparar: había que apuntar de a uno y el dato
+// desaparecía al mover el puntero.
+//
+// Lo que la tarjeta agrega es lo que hace falta para decidir sin abrir nada:
+// el TIPO DE CLIENTE —a un contribuyente el circuito automático no le corrige
+// la ficha (decisión del 2026-08-09), así que ése se resuelve a mano— y la
+// FORMA DE PAGO.
+//
+// Es una tarjeta CANÓNICA: `data-surface="card"`, no tres clases que le copian
+// el color. La diferencia no es de estilo — el canónico trae el `backdrop-filter`
+// del vidrio, las seis capas de sombra, el realce del borde al apuntarla, el gel
+// al presionarla y el radio del tema. Copiar `bg-surface-card` deja todo eso
+// afuera y en modo claro la tarjeta desaparece contra la página (DESIGN.md
+// §5.0.1). Por eso también dejó de vivir dentro de otra tarjeta: anidarlas era
+// lo que obligaba a pintarla a mano.
+//
+// El estado va por `data-tono`, que es lo que sube la especificidad por encima
+// del canónico (§5.1): un `border-danger/40` suelto NO lo pisa.
+// Desde el 2026-10-17 es la tarjeta de TODAS las colas de documentos (Anuladas,
+// Pendiente MH, Observaciones). Lo que cambia entre ellas son las acciones
+// (`acciones`) y lo que la cola agrega a la hoja (`children`: las
+// observaciones, el motivo de Hacienda). El tipo de cliente y la forma de
+// pago se pintan sólo si la fila los trae — Anuladas no tiene ficha ligada, y
+// un «Sin ficha» ahí diría algo que no se midió.
+const TarjetaDocumento = memo(({
+    r, tono: tonoForzado, tonoFecha = null, isVisited, isCopied, onCopiar, acciones, children,
+}) => {
+    const isCCF = r.tipo_documento === 'CCF';
+    const tono = tonoForzado !== undefined ? tonoForzado : (isCCF ? 'danger' : undefined);
+    const categoria = r.cliente_categoria;
+    const traeCategoria = 'cliente_categoria' in r;
+    return (
+        <div
+            data-surface="card"
+            data-tono={tono}
+            className={`px-3.5 py-3 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)] transition-opacity ${
+                isVisited && tono !== 'warning' ? 'opacity-40 hover:opacity-80' : ''}`}>
+            {/* Documento y monto */}
+            <div className="flex items-start gap-2">
+                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
+                {/* `min-w-0` o el `truncate` no recorta: un hijo de flex no baja
+                    de su ancho de contenido sin él. */}
+                <p className={`flex-1 min-w-0 truncate font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}
+                    title={r.correlativo || undefined}>
+                    {r.correlativo || '—'}
+                </p>
+                <p className={`shrink-0 text-body-sm font-black tabular-nums ${isCCF ? 'text-danger-text' : 'text-content'}`}>
+                    <Monto v={r.total} />
+                </p>
+            </div>
+
+            {/* Cliente */}
+            <p className="mt-1.5 truncate text-label font-semibold text-content-2" title={r.cliente || undefined}>
+                {r.cliente || 'Sin cliente'}
+            </p>
+
+            {/* Cuándo. Vive en la tarjeta y no en un encabezado por día: con un
+                documento por fecha —lo normal en esta cola— cada encabezado
+                ocupaba una fila entera de la grilla para una sola tarjeta. */}
+            {r.fecha && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-micro font-bold text-content-3">
+                    <span className="capitalize">{fechaLegible(r.fecha)}</span>
+                    {r.hora && <span className="tabular-nums">· {hora12(r.hora)}</span>}
+                    <Badge variant={tonoFecha || (diasDesde(r.fecha) === 0 ? 'info' : 'neutral')} size="sm" uppercase={false}>
+                        {diasAtrasTexto(r.fecha)}
+                    </Badge>
+                </div>
+            )}
+
+            {/* Tipo de cliente · forma de pago */}
+            {(traeCategoria || r.tipo_pago) && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {/* Sin ficha ligada NO es lo mismo que sin categoría: se dice,
+                        porque es justo el caso que no se puede corregir solo. */}
+                    {traeCategoria && (
+                        <Badge variant={CATEGORIA_CLIENTE_VARIANTE[categoria] || 'neutral'} size="sm">
+                            {categoria || 'Sin ficha'}
+                        </Badge>
+                    )}
+                    {r.tipo_pago && (
+                        <Badge variant={TIPO_PAGO_VARIANTE[r.tipo_pago] || 'neutral'} size="sm">
+                            {TIPO_PAGO_LABELS[r.tipo_pago] || r.tipo_pago}
+                        </Badge>
+                    )}
+                </div>
+            )}
+
+            {children}
+
+            {/* Acciones — `mt-auto` las alinea al pie en una fila de la grilla
+                donde la tarjeta de al lado es más alta. */}
+            <div className="mt-auto pt-2.5">
+                <div className="flex flex-wrap items-center gap-2 border-t border-divider pt-2.5">
+                    <BotonCopiarId erpId={r.erp_invoice_id} copiado={isCopied} visitado={isVisited} onCopiar={onCopiar} />
+                    {acciones && <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{acciones}</div>}
+                </div>
+            </div>
+        </div>
+    );
+});
 
 // ─── La marca "ya me llevé este id al ERP" ────────────────────────────────────
 //
@@ -418,12 +598,18 @@ function BloqueFormaPago({
                         <React.Fragment key={r.id}>
                             <DataRow index={ri}>
                                 <DataCell>
-                                    <Badge size="sm">{r.tipo_documento}</Badge>
-                                    <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
+                                    {/* En una línea: apilados doblaban el alto de cada fila. */}
+                                    <div className="flex items-center gap-2 whitespace-nowrap">
+                                        <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento}</Badge>
+                                        <span className="font-mono text-body-sm text-content-2">{r.correlativo}</span>
+                                    </div>
                                 </DataCell>
                                 <DataCell hideBelow="md">{nombreSucursal(r.branch_id)}</DataCell>
                                 <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
-                                <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
+                                <DataCell className="whitespace-nowrap tabular-nums">
+                                    {fechaNumerica(r.fecha, { anio: 'corto' })}
+                                    {r.hora && <span className="block text-micro text-content-3">{hora12(r.hora)}</span>}
+                                </DataCell>
                                 <DataCell className="text-body-lg font-bold whitespace-nowrap">{<Monto v={r.total} />}</DataCell>
                                 <DataCell align="right">
                                     {canEdit && (
@@ -512,7 +698,7 @@ async function solventarTodas({ filterBranch, bolsa, onDone }) {
 }
 
 // ─── Tab: Anuladas ────────────────────────────────────────────────────────────
-function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, recargaRef }) {
+function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, recargaRef, onCuenta }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -606,7 +792,6 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
     const now         = relojSV();
-    const todayStr    = now.toISOString().slice(0, 10);
     const currentMonthStr = now.toISOString().slice(0, 7); // YYYY-MM
 
     const resolvedMatchesTerm = useCallback((r, s) =>
@@ -641,16 +826,6 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
             setTimeout(() => setCopiedId(null), 1500);
         }
         toggleVisited(erpId);
-    };
-
-    const daysAgoLabel = (fechaStr) => {
-        const today = relojSV();
-        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
-        const diff = Math.round((todayMidnight - fechaMidnight) / 86400000);
-        if (diff === 0) return 'hoy';
-        if (diff === 1) return 'ayer';
-        return `hace ${diff}d`;
     };
 
     const { filtered, isAnuladasFuzzy } = useMemo(() => {
@@ -689,33 +864,61 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
     }, [filtered]);
 
     const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
+    // La más vieja sin atender: es la métrica que dice si la cola se está
+    // trabajando. Una anulada de ayer es rutina; una de hace tres semanas es
+    // un documento que Hacienda sigue contando como venta.
+    const diasMasVieja = useMemo(() =>
+        filtered.reduce((max, r) => Math.max(max, diasDesde(r.fecha)), 0),
+    [filtered]);
+    const montoPendiente = useMemo(() =>
+        filtered.reduce((a, r) => a + parseFloat(r.total || 0), 0),
+    [filtered]);
+
+    const verMontos = useAuth().hasPermission('facturacion_ver_montos');
+
+    // El número de la pestaña sube a la vista (ver `cuentas` en FacturacionView).
+    useEffect(() => { if (!loading) onCuenta?.(filtered.length); }, [loading, filtered.length, onCuenta]);
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            {/* Carril de métricas + píldora, en UNA fila (§17.0). Las tarjetas
-                eran `<div>` a mano con un cuadrito degradado y su propio juego de
-                clases por estado — o sea el vidrio del portal reescrito, que es
-                justo lo que `StatCard` existe para evitar. El color va donde ES
-                el dato: el número y el ícono. El fondo, nunca. */}
+            {/* Carril de métricas + píldora, en UNA fila (§17.0). El color va
+                donde ES el dato: el número y el ícono. El fondo, nunca. */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de anulaciones">
                     <StatCard
-                        icon={AlertTriangle} label="Pendientes" value={filtered.length}
+                        loading={loading}
+                        icon={Ban} label="Pendientes" value={filtered.length}
+                        sub={filtered.length > 0 ? (verMontos ? fmt(montoPendiente) : 'Por atender') : 'Nada por atender'}
                         iconBg={filtered.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
                         iconCls={filtered.length > 0 ? 'text-danger' : 'text-content-3'}
                         valueCls={filtered.length > 0 ? 'text-danger' : 'text-content'}
                     />
                     <StatCard
+                        loading={loading}
                         icon={AlertTriangle} label="CCF urgentes" value={ccfCount}
+                        sub={ccfCount > 0 ? 'Crédito fiscal' : undefined}
                         iconBg={ccfCount > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
                         iconCls={ccfCount > 0 ? 'text-danger-text' : 'text-content-3'}
                         valueCls={ccfCount > 0 ? 'text-danger-text' : 'text-content'}
                     />
                     <StatCard
-                        icon={CheckCircle2} label="Solventadas" value={resolved.length}
-                        iconBg={resolved.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
-                        iconCls={resolved.length > 0 ? 'text-success' : 'text-content-3'}
-                        valueCls={resolved.length > 0 ? 'text-success' : 'text-content'}
+                        loading={loading}
+                        icon={History} label="Más antigua"
+                        value={filtered.length > 0 ? `${diasMasVieja}d` : '—'}
+                        sub="Sin solventar"
+                        iconCls={diasMasVieja > 7 ? 'text-warning-text' : 'text-content-3'}
+                        iconBg={diasMasVieja > 7 ? 'bg-warning/10' : 'bg-surface-card-hover'}
+                        valueCls={diasMasVieja > 7 ? 'text-warning-text' : 'text-content'}
+                    />
+                    {/* Era el total HISTÓRICO rotulado como si fuera de ahora.
+                        Lo que dice si la cola se mueve es lo de este mes. */}
+                    <StatCard
+                        loading={loading}
+                        icon={CheckCircle2} label="Solventadas" value={resolvedThisMonth.length}
+                        sub="Este mes"
+                        iconBg={resolvedThisMonth.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
+                        iconCls={resolvedThisMonth.length > 0 ? 'text-success' : 'text-content-3'}
+                        valueCls={resolvedThisMonth.length > 0 ? 'text-success' : 'text-content'}
                     />
                     {/* Los marcadores son del usuario, no del dato: la tarjeta
                         solo aparece cuando hay alguno y limpiarlos es su acción.
@@ -735,136 +938,80 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
             </div>
 
             {loading ? (
-                <div className="space-y-3">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} data-surface="card" className="overflow-hidden">
-                            <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
-                                <div className="h-3 w-28 skeleton rounded-full" />
-                                <div className="h-3 w-12 skeleton rounded-full" />
-                            </div>
-                            <div className="px-4 py-3 flex flex-wrap gap-1.5">
-                                {Array.from({ length: 3 }).map((_, j) => (
-                                    <div key={j} className="h-7 w-20 skeleton rounded-xl" />
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <EsqueletoCola />
             ) : filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
-                    title="Todo está al día" subtitle="No hay anulaciones pendientes por atender en este momento." />
+                    title={searchTerm ? 'Sin resultados' : 'Todo está al día'}
+                    subtitle={searchTerm
+                        ? `Ninguna anulación pendiente coincide con «${searchTerm}».`
+                        : 'No hay anulaciones pendientes por atender en este momento.'} />
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-6">
                     {isAnuladasFuzzy && searchTerm && (
                         <Notice variant="warning" icon={Search}>
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </Notice>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
-                        <Info size={13} className="text-brand-text shrink-0" />
-                        Al resolverse la anulación en sistema, el estado se actualiza automáticamente en el portal.
-                    </div>
+                    <Notice variant="info" icon={Info}>
+                        Copia el número para buscar la factura en la caja. Cuando la anulación se resuelve allá, sale sola de esta lista.
+                    </Notice>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
-                        const branchTotal = Object.values(byFecha).flat().length;
-                        const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
+                        const docs = Object.values(byFecha).flat();
+                        const branchHasCCF = docs.some(r => r.tipo_documento === 'CCF');
                         const isCollapsed = !!collapsedBranches[branchId];
+                        const enCurso = docs.find(r => r.id === solvingId);
                         return (
-                            <div key={branchId} data-surface="card">
-                                <ListRow
-                                    density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
-                                    tone={branchHasCCF ? 'danger' : null}
-                                    title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
-                                    onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                    aria-expanded={!isCollapsed}
-                                    className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
-                                    trailing={<>
-                                        <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
-                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
-                                    </>}
+                            <section key={branchId} className="space-y-2.5">
+                                <EncabezadoSucursal
+                                    nombre={getBranch(Number(branchId))}
+                                    cuenta={docs.length} ccf={branchHasCCF}
+                                    monto={docs.reduce((a, r) => a + parseFloat(r.total || 0), 0)}
+                                    plegada={isCollapsed}
+                                    onToggle={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                 />
-                                {!isCollapsed && <div className="divide-y divide-divider">
-                                    {Object.entries(byFecha).map(([fecha, fechaRows]) => {
-                                        const hasCCF   = fechaRows.some(r => r.tipo_documento === 'CCF');
-                                        const isToday  = fecha === todayStr;
-                                        const dLabel   = daysAgoLabel(fecha);
-                                        return (
-                                            <div key={fecha} className="px-4 py-3">
-                                                <div className="flex items-center gap-2 mb-2.5">
-                                                    <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : 'neutral'} size="sm">{dLabel}</Badge>
-                                                </div>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {fechaRows.map(r => {
-                                                        const isCCF     = r.tipo_documento === 'CCF';
+                                {!isCollapsed && (<>
+                                    <div className={GRILLA_TARJETAS}>
+                                                    {docs.map(r => {
                                                         const isSolving = solvingId === r.id;
-                                                        const isCopied  = copiedId === r.erp_invoice_id;
-                                                        const isVisited = visitedIds.has(String(r.erp_invoice_id));
                                                         return (
-                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-[var(--dur-slow)] ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
-                                                                <ChipDoc
-                                                                    estado={isVisited ? 'visitado' : isCCF ? 'ccf' : 'normal'}
-                                                                    copiado={isCopied}
-                                                                    resuelto={isSolving}
-                                                                    onCopiar={() => copyErpId(r.erp_invoice_id)}
-                                                                    etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                                                    nombreResolver="esta factura"
-                                                                    onResolver={canEdit ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
-                                                                >
-                                                                    <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
-                                                                </ChipDoc>
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-[var(--dur-fast)] ease-out w-[210px]">
-                                                                    <div data-surface="card" className="px-3.5 py-3 space-y-2">
-                                                                        <div>
-                                                                            <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                            <p className={`font-mono text-body-sm font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
-                                                                        </div>
-                                                                        {r.cliente && <div>
-                                                                            <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
-                                                                            <p className="text-label font-semibold text-content-2 truncate">{r.cliente}</p>
-                                                                        </div>}
-                                                                        <div className="flex items-center justify-between pt-1 border-t border-divider">
-                                                                            <p className="text-micro font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                            <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{<Monto v={r.total} />}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
-                                                                </div>
-                                                            </div>
+                                                            <TarjetaDocumento
+                                                                tonoFecha={r.tipo_documento === 'CCF' ? 'danger' : null}
+                                                                key={r.id}
+                                                                r={r}
+                                                                tono={isSolving ? 'warning' : undefined}
+                                                                isCopied={copiedId === r.erp_invoice_id}
+                                                                isVisited={visitedIds.has(String(r.erp_invoice_id))}
+                                                                onCopiar={() => copyErpId(r.erp_invoice_id)}
+                                                                acciones={canEdit && (
+                                                                    <Button
+                                                                        variant="secondary" size="sm"
+                                                                        tone={isSolving ? 'danger' : 'success'} soft={!isSolving}
+                                                                        icon={isSolving ? X : Check}
+                                                                        aria-pressed={isSolving}
+                                                                        onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
+                                                                    >
+                                                                        {isSolving ? 'Cancelar' : 'Solventar'}
+                                                                    </Button>
+                                                                )}
+                                                            />
                                                         );
                                                     })}
                                                 </div>
-                                                {fechaRows.some(r => r.id === solvingId) && (() => {
-                                                    const r = fechaRows.find(r => r.id === solvingId);
-                                                    const isCCF = r.tipo_documento === 'CCF';
-                                                    return (
-                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
-                                                            <div className="flex items-center gap-2 mb-2.5">
-                                                                <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
-                                                                {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
-                                                                <span className="ml-auto text-body-sm font-black text-content-2">{<Monto v={r.total} />}</span>
-                                                            </div>
-                                                            <div className="flex items-start gap-3">
- <PortalTextarea
-     textareaClassName="flex-1"
-     rows={2}
-     autoFocus
-     placeholder="Comentario opcional…"
-     value={comment}
-     onChange={e => setComment(e.target.value)}
- />
-                                                                <div className="flex flex-col gap-1.5 shrink-0">
-                                                                    <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                    <Button variant="secondary" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
-                                        );
-                                    })}
-                                </div>}
-                            </div>
+                                    {enCurso && (
+                                                    <FormularioSolventar
+                                                        encabezado={<>
+                                                            <span className={`font-mono text-label font-black ${enCurso.tipo_documento === 'CCF' ? 'text-danger-text' : 'text-content-2'}`}>{enCurso.correlativo}</span>
+                                                            {enCurso.cliente && <span className="text-label text-content-3 truncate min-w-0">· {enCurso.cliente}</span>}
+                                                            <span className="ml-auto text-body-sm font-black text-content-2"><Monto v={enCurso.total} /></span>
+                                                        </>}
+                                                        comment={comment} setComment={setComment} saving={saving}
+                                                        placeholder="Qué se hizo con la anulación (opcional)…"
+                                                        onConfirmar={() => handleSolve(enCurso.id)}
+                                                        onCancelar={() => { setSolvingId(null); setComment(''); }}
+                                                    />
+                                                )}
+                                </>)}
+                            </section>
                         );
                     })}
                 </div>
@@ -872,54 +1019,39 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
 
             {/* Historial */}
             {!loading && resolved.length > 0 && (
-                <div ref={resolvedSectionRef} data-surface="card" className="overflow-hidden">
-                    <ListRow
-                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
-                        title={`${showAllResolved ? resolved.length : resolvedThisMonth.length} solventada${resolved.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
-                        subtitle="Historial de resoluciones"
-                        onClick={() => setShowHistorial(v => !v)}
-                        aria-expanded={showHistorial}
-                        className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showHistorial ? 'rotate-180' : ''}`} />}
-                    />
-                    {showHistorial && (
-                        <div className="border-t border-divider">
-                            {resolvedDisplay.map((r, i) => {
-                                const inv = r.invoice;
-                                const quien = empPhotoMap[r.resolved_by] || null;
-                                return (
-                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <Badge variant="success" uppercase={false}>{inv?.tipo_documento}</Badge>
-                                                {/* «Solventado internamente» no es un matiz del mismo
-                                                    cierre: las demás se cerraron ante Hacienda y ésta
-                                                    NO se le mandó nunca, a propósito. Sin el rótulo,
-                                                    las dos se leen igual en la lista. */}
-                                                {excluidas.has(r.invoice_id) && (
-                                                    <Badge variant="warning" uppercase={false}>Solventado internamente</Badge>
-                                                )}
-                                                {inv?.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{inv.erp_invoice_id}</span>}
-                                                <span className="font-mono text-label text-content-3">{inv?.correlativo}</span>
-                                                <span className="text-label text-content-3">{getBranch(inv?.branch_id)}</span>
-                                                {inv?.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{<Monto v={inv.total} />}</span>}
-                                            </div>
-                                            {r.comment && <p className="text-body-sm text-content-3 mb-1">"{r.comment}"</p>}
-                                            <p className="text-label text-content-3">
-                                                <span className="font-semibold text-content-2">{r.resolved_by || '—'}</span>
-                                                {r.resolved_at && <> · {fechaHora12(r.resolved_at, { month: 'short', day: '2-digit' })}</>}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            <div className="px-5 py-3 border-t border-divider flex justify-center">
-                                <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}</Button>
-                            </div>
-                        </div>
+                <SeccionHistorial
+                    refSeccion={resolvedSectionRef}
+                    titulo={`${showAllResolved ? resolved.length : resolvedThisMonth.length} solventada${(showAllResolved ? resolved.length : resolvedThisMonth.length) !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
+                    subtitulo="Historial de resoluciones"
+                    abierta={showHistorial}
+                    onToggle={() => setShowHistorial(v => !v)}
+                    pie={<Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}</Button>}
+                >
+                    {resolvedDisplay.length === 0 && (
+                        <p className="px-5 py-4 text-label text-content-3">Nada solventado en este período.</p>
                     )}
-                </div>
+                    {resolvedDisplay.map((r, i) => {
+                        const inv = r.invoice;
+                        return (
+                            <FilaHistorial key={r.id} primera={i === 0}
+                                quien={empPhotoMap[r.resolved_by] || null} nombre={r.resolved_by}
+                                cuando={r.resolved_at} comentario={r.comment}>
+                                <Badge variant={VARIANTE_DOC[inv?.tipo_documento] || 'neutral'} size="sm">{inv?.tipo_documento || '—'}</Badge>
+                                {/* «Solventado internamente» no es un matiz del mismo
+                                    cierre: las demás se cerraron ante Hacienda y ésta
+                                    NO se le mandó nunca, a propósito. Sin el rótulo,
+                                    las dos se leen igual en la lista. */}
+                                {excluidas.has(r.invoice_id) && (
+                                    <Badge variant="warning" uppercase={false}>Solventado internamente</Badge>
+                                )}
+                                {inv?.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{inv.erp_invoice_id}</span>}
+                                <span className="font-mono text-label text-content-3">{inv?.correlativo}</span>
+                                <span className="text-label text-content-3">{getBranch(inv?.branch_id)}</span>
+                                {inv?.total != null && <span className="text-body-sm font-bold text-content-2 ml-auto tabular-nums"><Monto v={inv.total} /></span>}
+                            </FilaHistorial>
+                        );
+                    })}
+                </SeccionHistorial>
             )}
         </div>
     );
@@ -938,121 +1070,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
 // marca el vencimiento — de ahí el badge en warning de la fila de fecha.
 const GRACIA_SELLO_DIAS = 2;
 
-// ─── La tarjeta de un documento pendiente de Hacienda (2026-08-16) ──────────
-//
-// Reemplaza la píldora con tooltip. El tooltip tenía tres datos —correlativo,
-// cliente y total— y **en un teléfono no existe**: sin hover, la lista entera
-// era una hilera de `#349572 COF ✓` sin decir de qué documento se trata. En
-// escritorio tampoco servía para comparar: había que apuntar de a uno y el dato
-// desaparecía al mover el puntero.
-//
-// Lo que la tarjeta agrega es lo que hace falta para decidir sin abrir nada:
-// el TIPO DE CLIENTE —a un contribuyente el circuito automático no le corrige
-// la ficha (decisión del 2026-08-09), así que ése se resuelve a mano— y la
-// FORMA DE PAGO.
-//
-// Es una tarjeta CANÓNICA: `data-surface="card"`, no tres clases que le copian
-// el color. La diferencia no es de estilo — el canónico trae el `backdrop-filter`
-// del vidrio, las seis capas de sombra, el realce del borde al apuntarla, el gel
-// al presionarla y el radio del tema. Copiar `bg-surface-card` deja todo eso
-// afuera y en modo claro la tarjeta desaparece contra la página (DESIGN.md
-// §5.0.1). Por eso también dejó de vivir dentro de otra tarjeta: anidarlas era
-// lo que obligaba a pintarla a mano.
-//
-// El estado va por `data-tono`, que es lo que sube la especificidad por encima
-// del canónico (§5.1): un `border-danger/40` suelto NO lo pisa.
-const TarjetaPendienteMH = memo(({
-    r, isCCF, isVisited, isCopied, hasNullCampos, isSolving, canEdit, enviando,
-    onCopiar, onResolver, onSolventar,
-}) => {
-    const tono = isSolving ? 'warning'
-               : isCCF ? 'danger'
-               : hasNullCampos ? 'chart-3'
-               : undefined;
-    const categoria = r.cliente_categoria;
-    return (
-        <div
-            data-surface="card"
-            data-tono={tono}
-            className={`px-3.5 py-3 animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)] ${
-                isVisited && !isSolving ? 'opacity-40' : ''}`}>
-            {/* Documento y monto */}
-            <div className="flex items-start gap-2">
-                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
-                {/* `min-w-0` o el `truncate` no recorta: un hijo de flex no baja
-                    de su ancho de contenido sin él. */}
-                <p className={`flex-1 min-w-0 truncate font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>
-                    {r.correlativo}
-                </p>
-                <p className={`shrink-0 text-body-sm font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>
-                    <Monto v={r.total} />
-                </p>
-            </div>
-
-            {/* Cliente */}
-            <p className="mt-1.5 truncate text-label font-semibold text-content-2">
-                {r.cliente || 'Sin cliente'}
-            </p>
-
-            {/* Tipo de cliente · forma de pago · hora */}
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {/* Sin ficha ligada NO es lo mismo que sin categoría: se dice,
-                    porque es justo el caso que no se puede corregir solo. */}
-                <Badge variant={CATEGORIA_CLIENTE_VARIANTE[categoria] || 'neutral'} size="sm">
-                    {categoria || 'Sin ficha'}
-                </Badge>
-                {r.tipo_pago && (
-                    <Badge variant={TIPO_PAGO_VARIANTE[r.tipo_pago] || 'neutral'} size="sm">
-                        {TIPO_PAGO_LABELS[r.tipo_pago] || r.tipo_pago}
-                    </Badge>
-                )}
-                {r.hora && <span className="text-micro font-bold text-content-3">{hora12(r.hora)}</span>}
-            </div>
-
-            {/* Acciones */}
-            <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-divider pt-2.5">
-                <Button
-                    variant="secondary" size="sm"
-                    icon={isCopied || isVisited ? Check : Copy}
-                    onClick={onCopiar}
-                    aria-label={isCopied ? 'Copiado' : `Copiar ${r.erp_invoice_id ? `#${r.erp_invoice_id}` : 'el número'}`}
-                    className="font-mono"
-                >
-                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                </Button>
-                {canEdit && (<>
-                    {/* La salida manual: quedó atendido por fuera y se anota.
-                        Antes se llamaba «Solventar» y era lo único que había —
-                        o sea que el botón que prometía resolver sólo dejaba una
-                        nota y la factura seguía sin llegar a Hacienda. */}
-                    <Button
-                        variant="secondary" size="sm"
-                        tone={isSolving ? 'danger' : null}
-                        icon={isSolving ? X : Check}
-                        onClick={onResolver}
-                        aria-pressed={isSolving}
-                        className="ml-auto"
-                    >
-                        {isSolving ? 'Cancelar' : 'Marcar revisada'}
-                    </Button>
-                    {/* Solventar de verdad: corrige la ficha si hace falta y
-                        vuelve a mandar el documento. */}
-                    <Button
-                        variant="secondary" size="sm" tone="success" soft
-                        icon={ShieldCheck}
-                        loading={enviando}
-                        onClick={onSolventar}
-                        title="Corregir lo que haga falta y enviar este documento a Hacienda"
-                    >
-                        {enviando ? 'Enviando…' : 'Solventar'}
-                    </Button>
-                </>)}
-            </div>
-        </div>
-    );
-});
-
-function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, recargaRef }) {
+function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, recargaRef, onCuenta }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -1082,7 +1100,6 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const { visitedIds, toggleVisited, clearVisited } = useVisitados();
 
     const now      = relojSV();
-    const todayStr = now.toISOString().slice(0, 10);
     const daysLeft = diasQuedanDelMes(now);
 
     const getBranch   = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
@@ -1094,12 +1111,6 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
             setTimeout(() => setCopiedId(null), 1500);
         }
         toggleVisited(erpId);
-    };
-    const daysAgoLabel = (fechaStr) => {
-        const diff = diasDesde(fechaStr);
-        if (diff === 0) return 'hoy';
-        if (diff === 1) return 'ayer';
-        return `hace ${diff}d`;
     };
 
     const currentMonthStr = relojSV().toISOString().slice(0, 7);
@@ -1297,6 +1308,11 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const daysLeftLabel = daysLeft === 0 ? 'Último día' : daysLeft;
     const daysLeftText  = daysLeft === 0 ? 'text-danger-text' : daysLeft <= 2 ? 'text-danger-text' : daysLeft <= 5 ? 'text-warning-text' : 'text-success-text';
     const daysLeftIconBg = daysLeft <= 2 ? 'bg-danger/10' : daysLeft <= 5 ? 'bg-warning/10' : 'bg-success/10';
+    // Cuántas ya pasaron la gracia de Hacienda: ésas no se van a arreglar
+    // esperando, y son las que hay que mirar primero.
+    const vencidas = useMemo(() => filtered.filter(r => diasDesde(r.fecha) > GRACIA_SELLO_DIAS).length, [filtered]);
+
+    useEffect(() => { if (!loading) onCuenta?.(filtered.length); }, [loading, filtered.length, onCuenta]);
 
     return (
         <div className="p-5 md:p-6 space-y-5">
@@ -1304,19 +1320,32 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de pendientes de Hacienda">
                     <StatCard
-                        icon={Clock} label="Pendientes MH" value={filtered.length}
+                        loading={loading}
+                        icon={Clock} label="Sin sello" value={filtered.length}
+                        sub={filtered.length > 0 ? 'Esperan a Hacienda' : 'Todo sellado'}
                         iconBg={filtered.length > 0 ? 'bg-warning/10' : 'bg-surface-card-hover'}
                         iconCls={filtered.length > 0 ? 'text-warning-text' : 'text-content-3'}
                         valueCls={filtered.length > 0 ? 'text-warning-text' : 'text-content'}
                     />
                     <StatCard
+                        loading={loading}
+                        icon={AlertTriangle} label="Vencidas" value={vencidas}
+                        sub={`Más de ${GRACIA_SELLO_DIAS} días`}
+                        iconBg={vencidas > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
+                        iconCls={vencidas > 0 ? 'text-danger-text' : 'text-content-3'}
+                        valueCls={vencidas > 0 ? 'text-danger-text' : 'text-content'}
+                    />
+                    <StatCard
+                        loading={loading}
                         icon={AlertTriangle} label="CCF urgentes" value={ccfCount}
+                        sub={ccfCount > 0 ? 'Crédito fiscal' : undefined}
                         iconBg={ccfCount > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
                         iconCls={ccfCount > 0 ? 'text-danger-text' : 'text-content-3'}
                         valueCls={ccfCount > 0 ? 'text-danger-text' : 'text-content'}
                     />
                     <StatCard
-                        icon={History} label="Días restantes" value={daysLeftLabel}
+                        icon={History} label="Al cierre" value={daysLeftLabel}
+                        sub={daysLeft === 0 ? 'Hoy cierra el mes' : `día${daysLeft === 1 ? '' : 's'} del mes`}
                         iconBg={daysLeftIconBg} iconCls={daysLeftText} valueCls={daysLeftText}
                     />
                     {activeVisitedCount > 0 && (
@@ -1334,31 +1363,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
             {/* Pending list */}
             {loading ? (
-                // El esqueleto tiene la FORMA de lo que va a llegar: encabezado de
-                // sucursal y una grilla de tarjetas. Con la silueta vieja —una fila
-                // de píldoras— la lista saltaba al cargar.
-                <div className="space-y-6">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                        <div key={i} className="space-y-2.5">
-                            <div data-surface="card" className="flex items-center justify-between px-4 py-3">
-                                <div className="h-3 w-28 skeleton rounded-full" />
-                                <div className="h-3 w-12 skeleton rounded-full" />
-                            </div>
-                            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
-                                {Array.from({ length: 2 }).map((_, j) => (
-                                    <div key={j} data-surface="card" className="px-3.5 py-3 space-y-2.5">
-                                        <div className="h-3 w-40 skeleton rounded-full" />
-                                        <div className="h-3 w-32 skeleton rounded-full" />
-                                        <div className="h-7 w-full skeleton rounded-xl" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <EsqueletoCola />
             ) : filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-chart-3-text" glowClass="bg-chart-3"
-                    title="Sin pendientes" subtitle="Todos los documentos tienen su sello de recepción." />
+                    title={searchTerm ? 'Sin resultados' : 'Sin pendientes'}
+                    subtitle={searchTerm
+                        ? `Ningún documento pendiente coincide con «${searchTerm}».`
+                        : 'Todos los documentos tienen su sello de recepción.'} />
             ) : (
                 <div className="space-y-6">
                     {isPendienteFuzzy && searchTerm && (
@@ -1367,117 +1378,85 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                         </Notice>
                     )}
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
-                        const branchTotal = Object.values(byFecha).flat().length;
-                        const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
+                        const docs = Object.values(byFecha).flat();
+                        const branchHasCCF = docs.some(r => r.tipo_documento === 'CCF');
                         const isCollapsed = !!collapsedBranches[branchId];
+                        const enCurso = docs.find(r => r.id === solvingId);
                         return (
                             // ── Sin tarjeta envolvente, a propósito (2026-08-16) ──
-                            // Antes la sucursal era una tarjeta y los documentos
-                            // vivían adentro, así que el documento NO podía ser una
-                            // tarjeta canónica: anidarlas da dos anillos
-                            // concéntricos (DESIGN.md §5.1) y obliga a pintar la de
-                            // adentro a mano — sin lente, sin sombra, sin el realce
-                            // al apuntarla y sin animación de entrada.
-                            //
-                            // Invertido: la sucursal es un encabezado (`ListRow`,
-                            // que ES el canónico de fila-tarjeta) y cada documento
-                            // es una `data-surface="card"` de verdad.
+                            // La sucursal es un encabezado (`ListRow`, que ES el
+                            // canónico de fila-tarjeta) y cada documento es una
+                            // `data-surface="card"` de verdad: anidarlas da dos
+                            // anillos concéntricos (DESIGN.md §5.1).
                             <section key={branchId} className="space-y-2.5">
-                                {/* Branch header — collapsible */}
-                                <ListRow
-                                    surface="card"
-                                    density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
-                                    tone={branchHasCCF ? 'danger' : null}
-                                    title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
-                                    onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                    aria-expanded={!isCollapsed}
-                                    trailing={<>
-                                        <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
-                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
-                                    </>}
+                                <EncabezadoSucursal
+                                    nombre={getBranch(Number(branchId))}
+                                    cuenta={docs.length} ccf={branchHasCCF}
+                                    monto={docs.reduce((a, r) => a + parseFloat(r.total || 0), 0)}
+                                    plegada={isCollapsed}
+                                    onToggle={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                 />
 
-                                {/* Date sections */}
-                                {!isCollapsed && <div className="space-y-4 pt-0.5">
-                                    {Object.entries(byFecha).map(([fecha, fechaRows]) => {
-                                        const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
-                                        const isToday = fecha === todayStr;
-                                        const dLabel = daysAgoLabel(fecha);
-                                        // Pasada la gracia, "hace 3d" deja de ser un dato y pasa a
-                                        // ser un aviso: el sello ya tendría que estar. Es lo que
-                                        // decía `SIN_SELLO_VENCIDO` en Observaciones, dicho en la
-                                        // pestaña que sí puede hacer algo al respecto.
-                                        const vencida = diasDesde(fecha) > GRACIA_SELLO_DIAS;
-
-                                        return (
-                                            <div key={fecha}>
-                                                {/* Date label */}
-                                                <div className="flex items-center gap-2 mb-2.5 px-1">
-                                                    <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : vencida ? 'warning' : 'neutral'} size="sm">{dLabel}</Badge>
-                                                </div>
-
-                                                {/* Tarjetas — una por documento. Una sola columna en el
-                                                    teléfono; en pantallas anchas entran dos o tres, que
-                                                    es lo que la píldora resolvía a costa de no decir
-                                                    nada hasta que la apuntabas. */}
-                                                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
-                                                    {fechaRows.map(r => {
+                                {!isCollapsed && (<>
+                                    <div className={GRILLA_TARJETAS}>
+                                                    {docs.map(r => {
                                                         const isSolving = solvingId === r.id;
                                                         return (
-                                                            <TarjetaPendienteMH
+                                                            <TarjetaDocumento
+                                                                tonoFecha={r.tipo_documento === 'CCF' ? 'danger' : diasDesde(r.fecha) > GRACIA_SELLO_DIAS ? 'warning' : null}
                                                                 key={r.id}
                                                                 r={r}
-                                                                isCCF={r.tipo_documento === 'CCF'}
-                                                                isSolving={isSolving}
+                                                                tono={isSolving ? 'warning'
+                                                                    : r.tipo_documento === 'CCF' ? 'danger'
+                                                                    : nullCamposIds.has(r.id) ? 'chart-3' : undefined}
                                                                 isCopied={copiedId === r.erp_invoice_id}
                                                                 isVisited={visitedIds.has(String(r.erp_invoice_id))}
-                                                                hasNullCampos={nullCamposIds.has(r.id)}
-                                                                canEdit={canEdit}
-                                                                enviando={enviandoId === r.id}
                                                                 onCopiar={() => copyErpId(r.erp_invoice_id)}
-                                                                onResolver={() => {
-                                                                    if (isSolving) { setSolvingId(null); setComment(''); }
-                                                                    else { setSolvingId(r.id); setComment(''); }
-                                                                }}
-                                                                onSolventar={() => handleRegularizarUna(r)}
+                                                                acciones={canEdit && (<>
+                                                                    {/* La salida manual: quedó atendido por fuera y se
+                                                                        anota. No manda nada a Hacienda. */}
+                                                                    {/* Sólo ícono: con los tres botones con rótulo la fila
+                                                                        no entraba en la tarjeta y se partía en dos. El
+                                                                        nombre va en `title`, que en la hoja táctil vuelve a
+                                                                        ser rótulo. */}
+                                                                    <Button
+                                                                        variant="secondary" size="sm" iconOnly
+                                                                        tone={isSolving ? 'danger' : null}
+                                                                        icon={isSolving ? X : Check}
+                                                                        onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
+                                                                        aria-pressed={isSolving}
+                                                                        title={isSolving ? 'Cancelar' : 'Marcar revisada (atendida por fuera, sin enviar)'}
+                                                                    />
+                                                                    {/* Solventar de verdad: corrige la ficha si hace
+                                                                        falta y vuelve a mandar el documento. */}
+                                                                    <Button
+                                                                        variant="secondary" size="sm" tone="success" soft
+                                                                        icon={ShieldCheck}
+                                                                        loading={enviandoId === r.id}
+                                                                        onClick={() => handleRegularizarUna(r)}
+                                                                        title="Corregir lo que haga falta y enviar este documento a Hacienda"
+                                                                    >
+                                                                        {enviandoId === r.id ? 'Enviando…' : 'Solventar'}
+                                                                    </Button>
+                                                                </>)}
                                                             />
                                                         );
                                                     })}
                                                 </div>
-
-                                                {/* La nota de «Marcar revisada», debajo de las tarjetas */}
-                                                {fechaRows.some(r => r.id === solvingId) && (() => {
-                                                    const r    = fechaRows.find(r => r.id === solvingId);
-                                                    const isCCF = r.tipo_documento === 'CCF';
-                                                    return (
-                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-fast)]">
-                                                            <div className="flex items-center gap-2 mb-2.5">
-                                                                <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
-                                                                {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
-                                                                <span className="ml-auto text-body-sm font-black text-content-2">{<Monto v={r.total} />}</span>
-                                                            </div>
-                                                            <div className="flex items-start gap-3">
-                                                                <PortalTextarea
-                                                                    textareaClassName="flex-1"
-                                                                    rows={2}
-                                                                    autoFocus
-                                                                    placeholder="Comentario opcional…"
-                                                                    value={comment}
-                                                                    onChange={e => setComment(e.target.value)}
-                                                                />
-                                                                <div className="flex flex-col gap-1.5 shrink-0">
-                                                                    <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                    <Button variant="secondary" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
-                                        );
-                                    })}
-                                </div>}
+                                    {enCurso && (
+                                                    <FormularioSolventar
+                                                        encabezado={<>
+                                                            <span className={`font-mono text-label font-black ${enCurso.tipo_documento === 'CCF' ? 'text-danger-text' : 'text-content-2'}`}>{enCurso.correlativo}</span>
+                                                            {enCurso.cliente && <span className="text-label text-content-3 truncate min-w-0">· {enCurso.cliente}</span>}
+                                                            <span className="ml-auto text-body-sm font-black text-content-2"><Monto v={enCurso.total} /></span>
+                                                        </>}
+                                                        comment={comment} setComment={setComment} saving={saving}
+                                                        placeholder="Cómo se atendió (opcional)…"
+                                                        onConfirmar={() => handleSolve(enCurso.id)}
+                                                        onCancelar={() => { setSolvingId(null); setComment(''); }}
+                                                    />
+                                                )}
+                                </>)}
                             </section>
                         );
                     })}
@@ -1486,71 +1465,51 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
             {/* Historial solventados */}
             {!loading && resolved.length > 0 && (
-                <div ref={resolvedSectionRef} data-surface="card" className="overflow-hidden">
-                    <ListRow
-                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
-                        // El número del mes es el del SERVIDOR; el de la lista, lo
-                        // que se está mostrando. Son dos cosas distintas y ahora se
-                        // dicen las dos, que es lo que faltaba cuando el encabezado
-                        // anunciaba «1000» sobre 10,770.
-                        title={`${(confirmadasMes ?? resolvedThisMonth.length).toLocaleString('es-SV')} confirmada${confirmadasMes === 1 ? '' : 's'} por Hacienda este mes`}
-                        subtitle={`Historial de envíos · se muestran ${resolvedDisplay.length.toLocaleString('es-SV')}`}
-                        onClick={() => setShowResolved(v => !v)}
-                        aria-expanded={showResolved}
-                        className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showResolved ? 'rotate-180' : ''}`} />}
-                    />
-                    {showResolved && (
-                        <div className="border-t border-divider">
-                            {resolvedDisplay.map((r, i) => {
-                                const resolvedBy = r.resolution?.resolved_by || null;
-                                const quien = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
-                                return (
-                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento}</Badge>
-                                                {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
-                                                <span className="font-mono text-label text-content-3">{r.correlativo}</span>
-                                                <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
-                                                {r.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{<Monto v={r.total} />}</span>}
-                                            </div>
-                                            {r.resolution?.comment && <p className="text-body-sm text-content-3 mb-1">"{r.resolution.comment}"</p>}
-                                            <p className="text-label text-content-3">
-                                                {resolvedBy
-                                                    ? <span className="font-semibold text-content-2">{resolvedBy}</span>
-                                                    : 'Marcado como recibido'}
-                                                {r.resolution?.resolved_at && <> · {fechaHora12(r.resolution.resolved_at, { month: 'short', day: '2-digit' })}</>}
-                                                {!r.resolution && <> · {r.fecha}</>}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {/* «Ver todos» prometía traer el resto y no podía: la
-                                lista está topeada a propósito. Lo que este botón
-                                hace de verdad es incluir las de meses anteriores
-                                —que son las marcadas a mano—, así que eso dice. */}
-                            {resolved.length > resolvedThisMonth.length && (
-                                <div className="px-5 py-3 border-t border-divider flex justify-center">
-                                    <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>
-                                        {showAllResolved
-                                            ? 'Ver solo este mes'
-                                            : `Ver también meses anteriores (${resolved.length - resolvedThisMonth.length})`}
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
+                <SeccionHistorial
+                    refSeccion={resolvedSectionRef}
+                    // El número del mes es el del SERVIDOR; el de la lista, lo
+                    // que se está mostrando. Son dos cosas distintas y se dicen
+                    // las dos (el encabezado llegó a anunciar «1000» sobre 10,770).
+                    titulo={`${(confirmadasMes ?? resolvedThisMonth.length).toLocaleString('es-SV')} confirmada${confirmadasMes === 1 ? '' : 's'} por Hacienda este mes`}
+                    subtitulo={`Historial de envíos · se muestran ${resolvedDisplay.length.toLocaleString('es-SV')}`}
+                    abierta={showResolved}
+                    onToggle={() => setShowResolved(v => !v)}
+                    // «Ver todos» prometía traer el resto y no podía: la lista
+                    // está topeada a propósito. Lo que hace es incluir las de
+                    // meses anteriores —las marcadas a mano—, así que eso dice.
+                    pie={resolved.length > resolvedThisMonth.length && (
+                        <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>
+                            {showAllResolved
+                                ? 'Ver solo este mes'
+                                : `Ver también meses anteriores (${resolved.length - resolvedThisMonth.length})`}
+                        </Button>
                     )}
-                </div>
+                >
+                    {resolvedDisplay.map((r, i) => {
+                        const resolvedBy = r.resolution?.resolved_by || null;
+                        return (
+                            <FilaHistorial key={r.id} primera={i === 0}
+                                quien={resolvedBy ? (empPhotoMap[resolvedBy] || null) : null}
+                                nombre={resolvedBy} sinNombre="Recibida por Hacienda"
+                                cuando={r.resolution?.resolved_at}
+                                cuandoTexto={!r.resolution ? fechaLegible(r.fecha) : undefined}
+                                comentario={r.resolution?.comment}>
+                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento}</Badge>
+                                {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
+                                <span className="font-mono text-label text-content-3">{r.correlativo}</span>
+                                <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
+                                {r.total != null && <span className="text-body-sm font-bold text-content-2 ml-auto tabular-nums"><Monto v={r.total} /></span>}
+                            </FilaHistorial>
+                        );
+                    })}
+                </SeccionHistorial>
             )}
         </div>
     );
 }
 
 // ─── Tab: Saltos ──────────────────────────────────────────────────────────────
-function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros }) {
+function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros, onCuenta }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -1640,8 +1599,6 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
         setSolvingNull(null); setNullComment(''); setNullSaving(false);
     };
 
-    if (loading) return <div className="flex justify-center py-24"><SkeletonText lines={4} className="w-full max-w-md" /></div>;
-
     const pad7 = correlativo7;
 
     const copyNullId = (val) => {
@@ -1651,7 +1608,8 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
         setTimeout(() => setCopiedNullId(null), 1500);
     };
 
-    // Group gaps by branch_id
+    // Mismo caso que `grouped` de las otras colas: el orden de las secciones lo
+    // decide el id numérico, y hoy coincide con el del negocio de casualidad.
     const gapsByBranch = {};
     for (const g of pendingGaps) {
         if (!gapsByBranch[g.branch_id]) gapsByBranch[g.branch_id] = [];
@@ -1659,15 +1617,20 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
     }
 
     // Los nulos que son sólo de Hacienda van en Pendientes MH (`nulosPendientes`).
-
-    // Mismo caso que `grouped` de arriba: el orden de las secciones lo decide
-    // el id numérico, y hoy coincide con el del negocio de casualidad.
     const activeNulls = nulosPendientes(nulls, nullResolvedIds);
     const nullsByBranch = {};
     for (const n of activeNulls) {
         if (!nullsByBranch[n.branch_id]) nullsByBranch[n.branch_id] = [];
         nullsByBranch[n.branch_id].push(n);
     }
+
+    // Cuántos NÚMEROS faltan, no cuántos huecos: un salto de 1 y uno de 40
+    // contaban igual en la tarjeta.
+    const faltantes = pendingGaps.reduce((a, g) => a + (Number(g.gap_count) || 0), 0);
+
+    useEffect(() => {
+        if (!loading) onCuenta?.(pendingGaps.length + activeNulls.length);
+    }, [loading, pendingGaps.length, activeNulls.length, onCuenta]);
 
     return (
         <div className="p-5 md:p-6 space-y-6">
@@ -1676,146 +1639,143 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de saltos de correlativo">
                     <StatCard
-                        icon={History} label="Saltos" value={gaps.length}
-                        iconBg={gaps.length > 0 ? 'bg-chart-4/10' : 'bg-surface-card-hover'}
-                        iconCls={gaps.length > 0 ? 'text-chart-4-text' : 'text-content-3'}
-                        valueCls={gaps.length > 0 ? 'text-chart-4-text' : 'text-content'}
-                    />
-                    <StatCard
-                        icon={AlertTriangle} label="Sin resolver" value={pendingGaps.length}
+                        loading={loading}
+                        icon={Hash} label="Saltos abiertos" value={pendingGaps.length}
+                        sub={pendingGaps.length > 0 ? `${faltantes} número${faltantes !== 1 ? 's' : ''} faltante${faltantes !== 1 ? 's' : ''}` : 'Correlativos en orden'}
                         iconBg={pendingGaps.length > 0 ? 'bg-danger/10' : 'bg-success/10'}
                         iconCls={pendingGaps.length > 0 ? 'text-danger' : 'text-success'}
                         valueCls={pendingGaps.length > 0 ? 'text-danger' : 'text-success'}
                     />
                     <StatCard
-                        icon={CheckCircle2} label="Solventados" value={resolvedGaps.length}
-                        iconBg={resolvedGaps.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
-                        iconCls={resolvedGaps.length > 0 ? 'text-success' : 'text-content-3'}
-                        valueCls={resolvedGaps.length > 0 ? 'text-success' : 'text-content'}
-                    />
-                    <StatCard
+                        loading={loading}
                         icon={AlertTriangle} label="Campos nulos" value={activeNulls.length}
+                        sub={activeNulls.length > 0 ? 'Documentos incompletos' : undefined}
                         iconBg={activeNulls.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
                         iconCls={activeNulls.length > 0 ? 'text-danger' : 'text-content-3'}
                         valueCls={activeNulls.length > 0 ? 'text-danger' : 'text-content'}
+                    />
+                    <StatCard
+                        loading={loading}
+                        icon={CheckCircle2} label="Solventados" value={resolvedGapsThisMonth.length}
+                        sub={`Este mes · ${resolvedGaps.length} en total`}
+                        iconBg={resolvedGapsThisMonth.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
+                        iconCls={resolvedGapsThisMonth.length > 0 ? 'text-success' : 'text-content-3'}
+                        valueCls={resolvedGapsThisMonth.length > 0 ? 'text-success' : 'text-content'}
                     />
                 </CarrilCards>
                 {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
             </div>
 
+            {loading ? <EsqueletoCola /> : (<>
+
             {/* ── Saltos pendientes ── */}
             <div className="space-y-3">
-                <h3 className="text-label font-black uppercase tracking-widest text-content-3">Saltos en correlativos</h3>
+                <h3 className="text-label font-black uppercase tracking-widest text-content-3 px-1">Saltos en correlativos</h3>
 
                 {pendingGaps.length === 0 ? (
                     <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
-                        title="Sin saltos detectados" subtitle="Los correlativos están en orden. No hay brechas." />
+                        linea title="Sin saltos detectados" subtitle="Los correlativos están en orden. No hay brechas." />
                 ) : (
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
-                            <Info size={13} className="text-brand-text shrink-0" />
-                            Cada salto indica correlativos faltantes entre dos documentos consecutivos.
-                        </div>
+                    <div className="space-y-6">
+                        <Notice variant="info" icon={Info}>
+                            Cada salto son números que faltan entre dos documentos emitidos seguidos. Si se anularon o se usaron en otra caja, se anota y se solventa.
+                        </Notice>
                         {Object.entries(gapsByBranch).map(([branchId, branchGaps]) => {
                             const isCollapsed = !!collapsedGapBranches[branchId];
                             const hasCCF = branchGaps.some(g => g.tipo_documento === 'CCF');
+                            const enCurso = branchGaps.find(g => solvingGap === gapKey(g));
                             return (
-                                <div key={branchId} data-surface="card">
-                                    <ListRow
-                                        density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={hasCCF ? 'text-danger' : 'text-content-3'}
-                                        tone={hasCCF ? 'danger' : null}
-                                        title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{hasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
-                                        onClick={() => setCollapsedGapBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                        aria-expanded={!isCollapsed}
-                                        className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
-                                        trailing={<>
-                                            <span className="text-caption font-black text-content-3">{branchGaps.length} salto{branchGaps.length !== 1 ? 's' : ''}</span>
-                                            <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
-                                        </>}
+                                <section key={branchId} className="space-y-2.5">
+                                    <EncabezadoSucursal
+                                        nombre={getBranch(Number(branchId))}
+                                        cuenta={branchGaps.length} unidad={branchGaps.length !== 1 ? 'saltos' : 'salto'}
+                                        ccf={hasCCF} plegada={isCollapsed}
+                                        onToggle={() => setCollapsedGapBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                     />
-                                    {!isCollapsed && (
-                                        <div className="px-4 py-3">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {branchGaps.map((g, i) => {
-                                                    const key = gapKey(g);
-                                                    const isSolving = solvingGap === key;
-                                                    const isCCF = g.tipo_documento === 'CCF';
-                                                    return (
-                                                        <div key={i} className="relative group/tip">
-                                                            <ChipDoc
-                                                                estado={isCCF ? 'ccf' : 'salto'}
-                                                                resuelto={isSolving}
-                                                                etiquetaCopia={`${pad7(g.gap_from)}–${pad7(g.gap_to)}`}
-                                                                nombreResolver="este salto de correlativo"
-                                                                onResolver={canEdit ? () => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); } : undefined}
-                                                            >
-                                                                <span className="text-micro font-black uppercase select-none">{g.tipo_documento}</span>
-                                                            </ChipDoc>
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-[var(--dur-fast)] ease-out w-[200px]">
-                                                                <div data-surface="card" className="px-3.5 py-3 space-y-2">
-                                                                    <div>
-                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
-                                                                        <p className="font-mono text-label font-black text-content">{pad7(g.gap_from)} → {pad7(g.gap_to)}</p>
-                                                                    </div>
-                                                                    <div className="flex items-center justify-between pt-1 border-t border-divider">
-                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2">Faltantes</p>
-                                                                        <p className="text-body font-black text-chart-4-text">{g.gap_count}</p>
-                                                                    </div>
-                                                                    {g.siguiente_correlativo && <div>
-                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Siguiente</p>
-                                                                        <p className="font-mono text-label font-semibold text-content-2">{g.siguiente_correlativo}</p>
-                                                                    </div>}
-                                                                </div>
-                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                            {/* Un salto que el portal SABE qué era: la factura existió, se
-                                                emitió, y el sistema de ventas la eliminó después (Salud 3,
-                                                16-oct-2026). Va visible y no en el tooltip: en el teléfono el
-                                                tooltip no existe, y es lo que hay que ir a resolver. */}
-                                            {branchGaps.flatMap(g => g.desaparecidas || []).map((d) => (
-                                                <Notice key={d.correlativo} variant={d.con_sello ? 'danger' : 'warning'} icon={AlertTriangle} className="mt-2.5">
-                                                    <span className="font-bold">
-                                                        {d.correlativo?.endsWith('_CCF') ? 'Crédito fiscal' : 'Factura'} {pad7(Number(String(d.correlativo).split('_')[0]))} · se eliminó después de emitida
-                                                    </span>
-                                                    <span className="block mt-0.5 font-normal">
-                                                        {fechaTexto(d.fecha, { day: '2-digit', month: 'short' })} {hora12(d.hora)} · <Monto v={d.total} /> · {d.tipo_pago || '—'} · {d.cliente || '—'}
-                                                    </span>
-                                                    <span className="block mt-0.5 font-normal">
-                                                        {d.con_sello
-                                                            ? 'Hacienda la tiene recibida: hay que invalidarla o restituirla. Ya no cuenta como venta en el portal.'
-                                                            : 'No llegó a Hacienda. Ya no cuenta como venta en el portal.'}
-                                                    </span>
-                                                </Notice>
-                                            ))}
-                                            {branchGaps.some(g => solvingGap === gapKey(g)) && (() => {
-                                                const g = branchGaps.find(g => solvingGap === gapKey(g));
+                                    {!isCollapsed && (<>
+                                        <div className={GRILLA_TARJETAS}>
+                                            {branchGaps.map((g) => {
+                                                const key = gapKey(g);
+                                                const isSolving = solvingGap === key;
+                                                const isCCF = g.tipo_documento === 'CCF';
                                                 return (
-                                                    <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
-                                                        <p className="font-mono text-label font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-chart-4-text">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
-                                                        <div className="flex items-start gap-3">
- <PortalTextarea
-     textareaClassName="flex-1"
-     rows={2}
-     autoFocus
-     placeholder="Comentario opcional…"
-     value={comment}
-     onChange={e => setComment(e.target.value)}
- />
-                                                            <div className="flex flex-col gap-1.5 shrink-0">
-                                                                <Button tone="success" disabled={saving} onClick={() => handleSolveGap(g)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                <Button variant="secondary" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
-                                                            </div>
+                                                    // El rango, cuántos faltan y el documento que
+                                                    // destapó el hueco. Antes vivían en un tooltip,
+                                                    // que en el teléfono no existe.
+                                                    <div key={key} data-surface="card"
+                                                        data-tono={isSolving ? 'warning' : isCCF ? 'danger' : undefined}
+                                                        className="px-3.5 py-3 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant={VARIANTE_DOC[g.tipo_documento] || 'neutral'} size="sm">{g.tipo_documento || '—'}</Badge>
+                                                            <p className="flex-1 min-w-0 flex items-center gap-1.5 font-mono text-label font-black text-content">
+                                                                <span>{pad7(g.gap_from)}</span>
+                                                                <ArrowRight size={11} className="text-content-3 shrink-0" />
+                                                                <span>{pad7(g.gap_to)}</span>
+                                                            </p>
+                                                            <Badge variant="chart-4" size="sm" uppercase={false}>
+                                                                {g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}
+                                                            </Badge>
                                                         </div>
+                                                        {(g.siguiente_correlativo || g.fecha_siguiente) && (
+                                                            <p className="mt-1.5 text-label text-content-3 truncate">
+                                                                Después vino{' '}
+                                                                {g.siguiente_correlativo && <span className="font-mono font-semibold text-content-2">{g.siguiente_correlativo}</span>}
+                                                                {g.fecha_siguiente && <> · <span className="capitalize">{fechaLegible(g.fecha_siguiente)}</span></>}
+                                                            </p>
+                                                        )}
+                                                        {canEdit && (
+                                                            <div className="mt-auto pt-2.5">
+                                                                <div className="flex justify-end border-t border-divider pt-2.5">
+                                                                    <Button
+                                                                        variant="secondary" size="sm"
+                                                                        tone={isSolving ? 'danger' : 'success'} soft={!isSolving}
+                                                                        icon={isSolving ? X : Check}
+                                                                        aria-pressed={isSolving}
+                                                                        onClick={() => { setSolvingGap(isSolving ? null : key); setComment(''); }}
+                                                                    >
+                                                                        {isSolving ? 'Cancelar' : 'Solventar'}
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
-                                            })()}
+                                            })}
                                         </div>
-                                    )}
-                                </div>
+                                        {/* Un salto que el portal SABE qué era: la factura existió, se
+                                            emitió, y el sistema de ventas la eliminó después (Salud 3,
+                                            16-oct-2026). Va visible y no en el tooltip: en el teléfono el
+                                            tooltip no existe, y es lo que hay que ir a resolver. */}
+                                        {branchGaps.flatMap(g => g.desaparecidas || []).map((d) => (
+                                            <Notice key={d.correlativo} variant={d.con_sello ? 'danger' : 'warning'} icon={AlertTriangle}>
+                                                <span className="font-bold">
+                                                    {d.correlativo?.endsWith('_CCF') ? 'Crédito fiscal' : 'Factura'} {pad7(Number(String(d.correlativo).split('_')[0]))} · se eliminó después de emitida
+                                                </span>
+                                                <span className="block mt-0.5 font-normal">
+                                                    {fechaTexto(d.fecha, { day: '2-digit', month: 'short' })} {hora12(d.hora)} · <Monto v={d.total} /> · {d.tipo_pago || '—'} · {d.cliente || '—'}
+                                                </span>
+                                                <span className="block mt-0.5 font-normal">
+                                                    {d.con_sello
+                                                        ? 'Hacienda la tiene recibida: hay que invalidarla o restituirla. Ya no cuenta como venta en el portal.'
+                                                        : 'No llegó a Hacienda. Ya no cuenta como venta en el portal.'}
+                                                </span>
+                                            </Notice>
+                                        ))}
+                                        {enCurso && (
+                                            <FormularioSolventar
+                                                encabezado={
+                                                    <p className="font-mono text-label font-black text-content-2">
+                                                        {getBranch(enCurso.branch_id)} · {enCurso.tipo_documento} {pad7(enCurso.gap_from)} → {pad7(enCurso.gap_to)} · <span className="text-chart-4-text">{enCurso.gap_count} faltante{enCurso.gap_count !== 1 ? 's' : ''}</span>
+                                                    </p>
+                                                }
+                                                comment={comment} setComment={setComment} saving={saving}
+                                                placeholder="Qué pasó con esos números (opcional)…"
+                                                onConfirmar={() => handleSolveGap(enCurso)}
+                                                onCancelar={() => { setSolvingGap(null); setComment(''); }}
+                                            />
+                                        )}
+                                    </>)}
+                                </section>
                             );
                         })}
                     </div>
@@ -1824,100 +1784,73 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
 
             {/* ── Campos nulos ── */}
             <div className="space-y-3">
-                <h3 className="text-label font-black uppercase tracking-widest text-content-3">Campos indefinidos / nulos</h3>
+                <h3 className="text-label font-black uppercase tracking-widest text-content-3 px-1">Campos indefinidos / nulos</h3>
                 {activeNulls.length === 0 ? (
                     <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
-                        title="Sin campos indefinidos" subtitle="Todos los documentos tienen sus campos completos." />
+                        linea title="Sin campos indefinidos" subtitle="Todos los documentos tienen sus campos completos." />
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-6">
                         {Object.entries(nullsByBranch).map(([branchId, branchNulls]) => {
                             const isCollapsed = !!collapsedNullBranches[branchId];
+                            const enCurso = branchNulls.find(n => n.id === solvingNull);
                             return (
-                                <div key={branchId} data-surface="card">
-                                    <ListRow
-                                        density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={'text-content-3'}
-                                        title={getBranch(Number(branchId))}
-                                        onClick={() => setCollapsedNullBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                        aria-expanded={!isCollapsed}
-                                        className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
-                                        trailing={<>
-                                            <span className="text-caption font-black text-content-3">{branchNulls.length} doc</span>
-                                            <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
-                                        </>}
+                                <section key={branchId} className="space-y-2.5">
+                                    <EncabezadoSucursal
+                                        nombre={getBranch(Number(branchId))}
+                                        cuenta={branchNulls.length} plegada={isCollapsed}
+                                        onToggle={() => setCollapsedNullBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                     />
-                                    {!isCollapsed && (
-                                        <div className="px-4 py-3">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {branchNulls.map(n => {
-                                                    const isSolving = solvingNull === n.id;
-                                                    const copyVal = n.erp_invoice_id || n.correlativo;
-                                                    const isCopied = copiedNullId === copyVal;
-                                                    return (
-                                                        <div key={n.id} className="relative group/tip">
-                                                            <ChipDoc
-                                                                estado="ccf"
-                                                                copiado={isCopied}
-                                                                resuelto={isSolving}
-                                                                onCopiar={() => copyNullId(copyVal)}
-                                                                etiquetaCopia={n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
-                                                                nombreResolver="esta anulada"
-                                                                onResolver={canEdit ? () => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); } : undefined}
-                                                            >
-                                                                {(n.campos_nulos || []).slice(0, 2).map(c => (
-                                                                    <span key={c} className="text-micro font-black uppercase">{c}</span>
-                                                                ))}
-                                                                {(n.campos_nulos || []).length > 2 && <span className="text-micro font-black">+{n.campos_nulos.length - 2}</span>}
-                                                            </ChipDoc>
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-[var(--dur-fast)] ease-out w-[200px]">
-                                                                <div data-surface="card" className="px-3.5 py-3 space-y-2">
-                                                                    {n.correlativo && <div>
-                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                        <p className="font-mono text-body-sm font-black text-content">{n.correlativo}</p>
-                                                                    </div>}
-                                                                    {n.fecha && <div>
-                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Fecha</p>
-                                                                        <p className="text-label font-semibold text-content-2">{n.fecha}</p>
-                                                                    </div>}
-                                                                    <div className="pt-1 border-t border-divider">
-                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-1">Campos nulos</p>
-                                                                        <div className="flex flex-wrap gap-1">
-                                                                            {(n.campos_nulos || []).map(c => (
-                                                                                <span key={c} className="text-micro font-bold bg-danger/10 text-danger-text px-1.5 py-0.5 rounded">{c}</span>
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                            {branchNulls.some(n => n.id === solvingNull) && (() => {
-                                                const n = branchNulls.find(n => n.id === solvingNull);
+                                    {!isCollapsed && (<>
+                                        <div className={GRILLA_TARJETAS}>
+                                            {branchNulls.map(n => {
+                                                const isSolving = solvingNull === n.id;
+                                                const copyVal = n.erp_invoice_id || n.correlativo;
                                                 return (
-                                                    <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
-                                                        <p className="font-mono text-label font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
-                                                        <div className="flex items-start gap-3">
- <PortalTextarea
-     textareaClassName="flex-1"
-     rows={2}
-     autoFocus
-     placeholder="Comentario opcional…"
-     value={nullComment}
-     onChange={e => setNullComment(e.target.value)}
- />
-                                                            <div className="flex flex-col gap-1.5 shrink-0">
-                                                                <Button tone="success" disabled={nullSaving} onClick={() => handleSolveNull(n)}>{nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                <Button variant="secondary" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
+                                                    <div key={n.id} data-surface="card"
+                                                        data-tono={isSolving ? 'warning' : 'danger'}
+                                                        className="px-3.5 py-3 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
+                                                        <div className="flex items-start gap-2">
+                                                            <p className="flex-1 min-w-0 truncate font-mono text-label font-black text-content" title={n.correlativo || undefined}>
+                                                                {n.correlativo || `ID ${n.id}`}
+                                                            </p>
+                                                            {n.fecha && <span className="shrink-0 text-micro font-bold text-content-3 capitalize">{fechaLegible(n.fecha)}</span>}
+                                                        </div>
+                                                        <p className="mt-1.5 text-micro font-bold uppercase tracking-widest text-content-3">Le falta</p>
+                                                        <div className="mt-1 flex flex-wrap gap-1">
+                                                            {(n.campos_nulos || []).map(c => (
+                                                                <Badge key={c} variant="danger" size="sm" uppercase={false}>{c}</Badge>
+                                                            ))}
+                                                        </div>
+                                                        <div className="mt-auto pt-2.5">
+                                                            <div className="flex flex-wrap items-center gap-2 border-t border-divider pt-2.5">
+                                                                <BotonCopiarId erpId={copyVal} copiado={copiedNullId === copyVal} onCopiar={() => copyNullId(copyVal)} />
+                                                                {canEdit && (
+                                                                    <Button
+                                                                        variant="secondary" size="sm" className="ml-auto"
+                                                                        tone={isSolving ? 'danger' : 'success'} soft={!isSolving}
+                                                                        icon={isSolving ? X : Check}
+                                                                        aria-pressed={isSolving}
+                                                                        onClick={() => { setSolvingNull(isSolving ? null : n.id); setNullComment(''); }}
+                                                                    >
+                                                                        {isSolving ? 'Cancelar' : 'Solventar'}
+                                                                    </Button>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 );
-                                            })()}
+                                            })}
                                         </div>
-                                    )}
-                                </div>
+                                        {enCurso && (
+                                            <FormularioSolventar
+                                                encabezado={<p className="font-mono text-label font-black text-content-2">{enCurso.correlativo || (enCurso.erp_invoice_id ? `#${enCurso.erp_invoice_id}` : `ID ${enCurso.id}`)}</p>}
+                                                comment={nullComment} setComment={setNullComment} saving={nullSaving}
+                                                onConfirmar={() => handleSolveNull(enCurso)}
+                                                onCancelar={() => { setSolvingNull(null); setNullComment(''); }}
+                                            />
+                                        )}
+                                    </>)}
+                                </section>
                             );
                         })}
                     </div>
@@ -1926,51 +1859,44 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
 
             {/* ── Historial solventados ── */}
             {resolvedGaps.length > 0 && (
-                <div ref={resolvedSectionRef} data-surface="card" className="overflow-hidden">
-                    <ListRow
-                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
-                        title={`${showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto${resolvedGaps.length !== 1 ? 's' : ''} solventado${resolvedGaps.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
-                        subtitle="Historial de resoluciones"
-                        onClick={() => setShowHistorial(v => !v)}
-                        aria-expanded={showHistorial}
-                        className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showHistorial ? 'rotate-180' : ''}`} />}
-                    />
-                    {showHistorial && (
-                        <div className="border-t border-divider">
-                            {resolvedGapsDisplay.map((r, i) => {
-                                const quien = r.resolved_by ? (empPhotoMap[r.resolved_by] || null) : null;
-                                return (
-                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <Badge variant="success" uppercase={false}>{r.tipo_documento}</Badge>
-                                                <span className="text-body font-bold text-content-2">{getBranch(r.branch_id)}</span>
-                                                <span className="font-mono text-label text-content-3">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
-                                            </div>
-                                            {r.comment && <p className="text-body-sm text-content-3 mb-1">"{r.comment}"</p>}
-                                            <p className="text-label text-content-3">
-                                                <span className="font-semibold text-content-2">{r.resolved_by || '—'}</span>
-                                                {r.resolved_at && <> · {fechaHora12(r.resolved_at, { month: 'short', day: '2-digit' })}</>}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            <div className="px-5 py-3 border-t border-divider flex justify-center">
-                                <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedGapsThisMonth.length})` : `Ver todos (${resolvedGaps.length})`}</Button>
-                            </div>
-                        </div>
+                <SeccionHistorial
+                    refSeccion={resolvedSectionRef}
+                    titulo={`${showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto${(showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length) !== 1 ? 's' : ''} solventado${(showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length) !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
+                    subtitulo="Historial de resoluciones"
+                    abierta={showHistorial}
+                    onToggle={() => setShowHistorial(v => !v)}
+                    pie={<Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedGapsThisMonth.length})` : `Ver todos (${resolvedGaps.length})`}</Button>}
+                >
+                    {resolvedGapsDisplay.length === 0 && (
+                        <p className="px-5 py-4 text-label text-content-3">Nada solventado este mes.</p>
                     )}
-                </div>
+                    {resolvedGapsDisplay.map((r, i) => (
+                        <FilaHistorial key={r.id} primera={i === 0}
+                            quien={r.resolved_by ? (empPhotoMap[r.resolved_by] || null) : null}
+                            nombre={r.resolved_by} cuando={r.resolved_at} comentario={r.comment}>
+                            <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento}</Badge>
+                            <span className="text-body font-bold text-content-2">{getBranch(r.branch_id)}</span>
+                            <span className="font-mono text-label text-content-3">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
+                        </FilaHistorial>
+                    ))}
+                </SeccionHistorial>
             )}
+            </>)}
         </div>
     );
 }
 
 // ─── Tab: No Efectivo ─────────────────────────────────────────────────────────
-function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, selectedMonth }) {
+function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, selectedMonth, onCuenta }) {
+    const employees = useStaff((state) => state.employees);
+    // Quién confirmó: la ficha por el nombre guardado, para la foto y el
+    // nombre corto (antes la foto nunca salía: preguntaba por un campo que la
+    // fila no trae).
+    const empPorNombre = useMemo(() => {
+        const m = {};
+        for (const e of employees) if (e.name) m[e.name] = e;
+        return m;
+    }, [employees]);
     const [pending, setPending] = useState([]);
     const [confirmedIds, setConfirmedIds] = useState(new Set());
     const [confirmed, setConfirmed] = useState([]);
@@ -2154,6 +2080,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 
     const totalPending = useMemo(() => pendingFiltered.reduce((a, r) => a + parseFloat(r.total || 0), 0), [pendingFiltered]);
 
+    useEffect(() => { if (!loading) onCuenta?.(pendingFiltered.length); }, [loading, pendingFiltered.length, onCuenta]);
+
     const branchFilterOpts = useMemo(() => [
         { value: '', label: 'Todas las sucursales' },
         ...branches.filter(b => SALES_BRANCH_IDS.includes(b.id)).map(b => ({ value: String(b.id), label: b.name })),
@@ -2188,18 +2116,24 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen de pagos no-efectivo">
                         <StatCard
-                            icon={CreditCard} label="Pendientes" value={pendingFiltered.length}
+                            loading={loading}
+                            icon={CreditCard} label="Por confirmar" value={pendingFiltered.length}
+                            sub={pendingFiltered.length > 0 ? 'Tarjeta, transferencia, crédito…' : 'Todo confirmado'}
                             iconBg={pendingFiltered.length > 0 ? 'bg-chart-1/10' : 'bg-surface-card-hover'}
                             iconCls={pendingFiltered.length > 0 ? 'text-chart-1-text' : 'text-content-3'}
                             valueCls={pendingFiltered.length > 0 ? 'text-chart-1-text' : 'text-content'}
                         />
                         <StatCard
-                            icon={CreditCard} label="Total pendiente" value={<Monto v={totalPending} />}
+                            loading={loading}
+                            icon={CreditCard} label="Monto" value={<Monto v={totalPending} />}
+                            sub="Por confirmar"
                             iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                             valueCls="text-chart-1-text"
                         />
                         <StatCard
+                            loading={loading}
                             icon={CheckCircle2} label="Confirmados" value={confirmed.length}
+                            sub="Historial completo"
                             iconBg={confirmed.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
                             iconCls={confirmed.length > 0 ? 'text-success' : 'text-content-3'}
                             valueCls={confirmed.length > 0 ? 'text-success' : 'text-content'}
@@ -2207,19 +2141,23 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                     </CarrilCards>
                     {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                    {Object.entries(byTipo).map(([tipo, rows]) => (
-                        <Badge key={tipo} variant={TIPO_PAGO_VARIANTE[tipo] || 'neutral'} size="sm">
-                            {tipo} {rows.length}
-                        </Badge>
-                    ))}
-                </div>
+                {/* El desglose por forma de pago: etiquetas, no métricas. Decía
+                    «tarjeta 5» en minúscula — el código crudo, no el rótulo. */}
+                {!loading && Object.keys(byTipo).length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        {Object.entries(byTipo).map(([tipo, rows]) => (
+                            <Badge key={tipo} variant={TIPO_PAGO_VARIANTE[tipo] || 'neutral'} size="sm" uppercase={false}>
+                                {TIPO_PAGO_LABELS[tipo] || tipo} · {rows.length}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {loading ? (
                 <div className="p-4 md:p-6 space-y-5">
                     {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="rounded-2xl border-2 border-divider overflow-hidden">
+                        <div key={i} data-surface="card" className="overflow-hidden">
                             <div className="h-14 skeleton w-full rounded-none" />
                             <div className="p-4 space-y-2">
                                 {Array.from({ length: 4 }).map((_, j) => (
@@ -2235,7 +2173,10 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                 </div>
             ) : pendingFiltered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-chart-1-text" glowClass="bg-chart-1"
-                    title="Sin pagos no-efectivo" subtitle="No hay transacciones pendientes de confirmar en este período." />
+                    title={searchTerm ? 'Sin resultados' : 'Nada por confirmar'}
+                    subtitle={searchTerm
+                        ? `Ningún pago pendiente coincide con «${searchTerm}».`
+                        : 'No hay pagos con tarjeta, transferencia o crédito pendientes de confirmar en este mes.'} />
             ) : (
                 <div className="p-4 md:p-6 space-y-5">
                     {isNoEfectivoFuzzy && searchTerm && (
@@ -2294,13 +2235,17 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                 </div>
             )}
 
-            {/* Confirmados */}
+            {/* Confirmados — misma anatomía que los historiales de las otras
+                colas. Era un `Button` secundario suelto pegado al borde, sin
+                margen, que no se leía como sección. */}
             {confirmed.length > 0 && (
-                <div className="border-t border-divider">
-                    <Button variant="secondary" onClick={() => setShowConfirmed(v => !v)}><span className="flex items-center gap-2"><Check size={12} className="text-chart-1-text" strokeWidth={3} />{confirmed.length} confirmado{confirmed.length !== 1 ? 's' : ''}</span>
-                        {showConfirmed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</Button>
-                    {showConfirmed && (
-                        <div>
+                <div className="px-4 md:px-6 pb-5 md:pb-6">
+                <SeccionHistorial
+                    titulo={`${confirmed.length.toLocaleString('es-SV')} pago${confirmed.length !== 1 ? 's' : ''} confirmado${confirmed.length !== 1 ? 's' : ''}`}
+                    subtitulo="Historial de confirmaciones, con su comprobante"
+                    abierta={showConfirmed}
+                    onToggle={() => setShowConfirmed(v => !v)}
+                >
                             <DataTable
                                 columns={[
                                     { key: 'tipo_pago',     label: 'Tipo Pago',     sortable: true },
@@ -2355,25 +2300,21 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                     return (
                                         <DataRow key={r.id} index={ci}>
                                             <DataCell>
-                                                <Badge variant={TIPO_PAGO_VARIANTE[tipoPago] || 'neutral'} size="sm">{r.tipo_pago}</Badge>
+                                                <Badge variant={TIPO_PAGO_VARIANTE[tipoPago] || 'neutral'} size="sm">{TIPO_PAGO_LABELS[tipoPago] || r.tipo_pago}</Badge>
                                             </DataCell>
                                             <DataCell>
                                                 <div className="font-mono text-body-sm text-content-2">{inv?.correlativo || '—'}</div>
                                             </DataCell>
                                             <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
                                             <DataCell hideBelow="lg" className="max-w-[140px] truncate">{inv?.cliente || '—'}</DataCell>
-                                            <DataCell className="whitespace-nowrap">{inv?.fecha || '—'}</DataCell>
+                                            <DataCell className="whitespace-nowrap tabular-nums">{fechaNumerica(inv?.fecha, { anio: 'corto', vacio: '—' })}</DataCell>
                                             <DataCell className="font-bold whitespace-nowrap">{<Monto v={inv?.total} />}</DataCell>
                                             <DataCell>
                                                 <div className="flex items-center gap-2">
-                                                    {r.confirmed_by_quien ? (
-                                                        <img src={r.confirmed_by_photo} alt="" className="w-7 h-7 rounded-full object-cover border border-divider shrink-0" />
-                                                    ) : (
-                                                        <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center text-content-2 text-caption font-bold shrink-0">
-                                                            {r.confirmed_by?.charAt(0)?.toUpperCase() || '?'}
-                                                        </div>
-                                                    )}
-                                                    <span className="text-body-sm font-semibold text-content-2 whitespace-nowrap">{r.confirmed_by || '—'}</span>
+                                                    <AvatarConEstado emp={empPorNombre[r.confirmed_by] || null} px={28} radio="rounded-full" marco="" />
+                                                    <span className="text-body-sm font-semibold text-content-2 whitespace-nowrap">
+                                                        {r.confirmed_by ? shortEmployeeName(empPorNombre[r.confirmed_by] || r.confirmed_by) : '—'}
+                                                    </span>
                                                 </div>
                                             </DataCell>
                                             <DataCell className="whitespace-nowrap">{dt}</DataCell>
@@ -2387,8 +2328,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                     );
                                 })}
                             </DataTable>
-                        </div>
-                    )}
+                </SeccionHistorial>
                 </div>
             )}
         </div>
@@ -2427,7 +2367,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 const OBS_DESDE = '2000-01-01';
 const OBS_HASTA = '2099-12-31';
 
-function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, obsCode, onConteos }) {
+function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, obsCode, onConteos, onCuenta }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -2469,12 +2409,6 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
         toggleVisited(erpId);
     };
 
-    const daysAgoLabel = (fechaStr) => {
-        const diff = diasDesde(fechaStr);
-        if (diff === 0) return 'hoy';
-        if (diff === 1) return 'ayer';
-        return `hace ${diff}d`;
-    };
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -2579,25 +2513,39 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
         return g;
     }, [filtered]);
 
+    useEffect(() => { if (!loading) onCuenta?.(error ? 0 : filtered.length); }, [loading, error, filtered.length, onCuenta]);
+
     return (
         <div className="p-5 md:p-6 space-y-5">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                {/* Tarjetas FIJAS, tres a lo sumo (§17.0): el carril lo dibuja la
-                    vista, no el dato. El desglose por código —que era una tarjeta
-                    por clase de anomalía, con techo abierto— es ahora la ranura
-                    "Observación" de la píldora, con su conteo por opción. */}
+                {/* Tarjetas FIJAS (§17.0): el carril lo dibuja la vista, no el
+                    dato. El desglose por código es la ranura "Observación" de
+                    la píldora, con su conteo por opción. */}
                 <CarrilCards className="flex-1" ariaLabel="Resumen de observaciones">
                     <StatCard
+                        loading={loading}
                         icon={AlertTriangle} label="Facturas" value={pendientes.length}
-                        sub={obsCode ? `${filtered.length} en el filtro` : undefined}
+                        sub={obsCode ? `${filtered.length} en el filtro` : 'Con anomalías'}
                         iconBg={pendientes.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
                         iconCls={pendientes.length > 0 ? 'text-danger' : 'text-content-3'}
                         valueCls={pendientes.length > 0 ? 'text-danger' : 'text-content'}
                     />
                     <StatCard
+                        loading={loading}
                         icon={History} label="Más antigua"
                         value={pendientes.length > 0 ? `${diasMasVieja}d` : '—'}
                         sub="Sin solventar"
+                        iconCls={diasMasVieja > 30 ? 'text-warning-text' : 'text-content-3'}
+                        iconBg={diasMasVieja > 30 ? 'bg-warning/10' : 'bg-surface-card-hover'}
+                        valueCls={diasMasVieja > 30 ? 'text-warning-text' : 'text-content'}
+                    />
+                    <StatCard
+                        loading={loading}
+                        icon={CheckCircle2} label="Solventadas" value={resueltas.length}
+                        sub="Ya revisadas"
+                        iconBg={resueltas.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
+                        iconCls={resueltas.length > 0 ? 'text-success' : 'text-content-3'}
+                        valueCls={resueltas.length > 0 ? 'text-success' : 'text-content'}
                     />
                     {/* Aparece sólo con algo marcado, igual que en Pendiente MH:
                         es la única forma de soltar la marca de todas a la vez. */}
@@ -2609,7 +2557,9 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                         />
                     )}
                 </CarrilCards>
-                {barraFiltros}
+                <div className="flex items-center justify-end gap-2 min-w-0">
+                    {barraFiltros}
+                </div>
             </div>
 
             {error && (
@@ -2626,184 +2576,113 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
             )}
 
             {loading ? (
-                <div className="space-y-3">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} data-surface="card" className="overflow-hidden">
-                            <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
-                                <div className="h-3 w-28 skeleton rounded-full" />
-                                <div className="h-3 w-12 skeleton rounded-full" />
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                                {Array.from({ length: 3 }).map((_, j) => (
-                                    <div key={j} className="h-7 w-full skeleton rounded-xl" />
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <EsqueletoCola />
             ) : !error && filtered.length === 0 ? (
                 // Vacío por FILTRO no es lo mismo que vacío de verdad: con la
                 // ranura puesta hay pendientes, sólo que ninguna de esa clase.
                 <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
-                    title={obsCode && pendientes.length > 0 ? 'Sin resultados' : 'Sin observaciones'}
+                    title={(obsCode || searchTerm) && pendientes.length > 0 ? 'Sin resultados' : 'Sin observaciones'}
                     subtitle={obsCode && pendientes.length > 0
                         ? `Ninguna de las ${pendientes.length} pendientes cae en "${metaObs(obsCode).label}".`
-                        : resueltas.length > 0 && !searchTerm
-                            ? 'Todas las observaciones abiertas fueron solventadas.'
-                            : 'Ninguna factura tiene datos fuera de lo esperado.'} />
+                        : searchTerm && pendientes.length > 0
+                            ? `Ninguna observación pendiente coincide con «${searchTerm}».`
+                            : resueltas.length > 0
+                                ? 'Todas las observaciones abiertas fueron solventadas.'
+                                : 'Ninguna factura tiene datos fuera de lo esperado.'} />
             ) : !error && (
-                <div className="space-y-3">
+                <div className="space-y-6">
                     {/* Misma anatomía que Pendiente MH: sucursal colapsable → fecha →
-                        documentos. Lo que cambia es la hoja: acá cada documento lleva
+                        tarjetas. Lo que cambia es la hoja: acá cada documento lleva
                         SUS observaciones, que es el dato de la pestaña. */}
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
                         const docs = Object.values(byFecha).flat();
                         const branchHasCCF = docs.some(r => r.tipo_documento === 'CCF');
                         const isCollapsed  = !!collapsedBranches[branchId];
+                        const enCurso = docs.find(x => x.id === solvingId);
                         return (
-                            <div key={branchId} data-surface="card">
-                                <ListRow
-                                    density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent"
-                                    iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
-                                    tone={branchHasCCF ? 'danger' : null}
-                                    title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
-                                    onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                    aria-expanded={!isCollapsed}
-                                    className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
-                                    trailing={<>
-                                        <span className="text-caption font-black text-content-3">{docs.length} doc</span>
-                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
-                                    </>}
+                            <section key={branchId} className="space-y-2.5">
+                                <EncabezadoSucursal
+                                    nombre={getBranch(Number(branchId))}
+                                    cuenta={docs.length} ccf={branchHasCCF}
+                                    plegada={isCollapsed}
+                                    onToggle={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                 />
 
-                                {!isCollapsed && <div className="divide-y divide-divider">
-                                    {Object.entries(byFecha).map(([fecha, fechaRows]) => {
-                                        const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
-                                        return (
-                                            <div key={fecha} className="px-4 py-3">
-                                                <div className="flex items-center gap-2 mb-2.5">
-                                                    <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <Badge variant={hasCCF ? 'danger' : 'neutral'} size="sm">{daysAgoLabel(fecha)}</Badge>
-                                                </div>
-
-                                                <div className="space-y-1.5">
-                                                    {fechaRows.map(r => {
-                                                        const isCCF     = r.tipo_documento === 'CCF';
+                                {!isCollapsed && (<>
+                                    <div className={GRILLA_TARJETAS}>
+                                                    {docs.map(r => {
                                                         const isSolving = solvingId === r.id;
-                                                        const isCopied  = copiedId === r.erp_invoice_id;
-                                                        const isVisited = visitedIds.has(String(r.erp_invoice_id));
                                                         const solventable = esSolventable(r);
                                                         return (
-                                                            // La fila entera se apaga, no sólo el chip: es lo que
-                                                            // deja ver de un vistazo cuánto queda por recorrer.
-                                                            // Mientras se solventa vuelve a opacidad plena — es la
-                                                            // fila con la que se está trabajando.
-                                                            <div key={r.id} className={`flex items-start gap-3 flex-wrap rounded-xl border border-divider bg-surface-card-hover/40 px-3 py-2 transition-opacity duration-[var(--dur-slow)] ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
-                                                                {/* El MISMO control de Pendiente MH: copiar el id del ERP │
-                                                                    tipo de documento │ solventar. Acá el segmento del medio
-                                                                    lleva el tipo, que antes era un `Badge` suelto. */}
-                                                                <ChipDoc
-                                                                    estado={isVisited ? 'visitado' : isCCF ? 'ccf' : 'normal'}
-                                                                    copiado={isCopied}
-                                                                    resuelto={isSolving}
-                                                                    onCopiar={() => copyErpId(r.erp_invoice_id)}
-                                                                    etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                                                    nombreResolver="esta observación"
-                                                                    onResolver={canEdit && solventable ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
-                                                                >
-                                                                    <span className="text-micro font-black uppercase select-none">{r.tipo_documento || '—'}</span>
-                                                                </ChipDoc>
-                                                                <div className="flex flex-wrap gap-1 shrink-0">
+                                                            <TarjetaDocumento
+                                                                tonoFecha={r.tipo_documento === 'CCF' ? 'danger' : null}
+                                                                key={r.id}
+                                                                r={r}
+                                                                tono={isSolving ? 'warning' : undefined}
+                                                                isCopied={copiedId === r.erp_invoice_id}
+                                                                isVisited={visitedIds.has(String(r.erp_invoice_id))}
+                                                                onCopiar={() => copyErpId(r.erp_invoice_id)}
+                                                                acciones={canEdit && solventable && (
+                                                                    <Button
+                                                                        variant="secondary" size="sm"
+                                                                        tone={isSolving ? 'danger' : 'success'} soft={!isSolving}
+                                                                        icon={isSolving ? X : Check}
+                                                                        aria-pressed={isSolving}
+                                                                        onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
+                                                                    >
+                                                                        {isSolving ? 'Cancelar' : 'Solventar'}
+                                                                    </Button>
+                                                                )}
+                                                            >
+                                                                {/* Las observaciones: el dato de la pestaña. */}
+                                                                <div className="mt-2 flex flex-wrap gap-1">
                                                                     {(r.observaciones || []).map(code => {
                                                                         const meta = metaObs(code);
-                                                                        return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
+                                                                        return <Badge key={code} variant={meta.variant} size="sm" uppercase={false}>{meta.label}</Badge>;
                                                                     })}
                                                                 </div>
-                                                                {/* `basis-full` bajo `lg`: la fila ya envolvía, pero este
-                                                                    bloque lleva `flex-1 min-w-0`, o sea que en el resto de
-                                                                    línea que le dejan el chip y las etiquetas se encoge
-                                                                    hasta menos de lo que mide su contenido — y el
-                                                                    correlativo es `font-mono` sin espacios: no envuelve ni
-                                                                    se adapta, así que lo cortaba el `overflow-hidden` de
-                                                                    la tarjeta. Medido: **13 recortados, 43px de sobra
-                                                                    cada uno**, y fue el único hallazgo real que encontró
-                                                                    el recorrido de pestañas.
-                                                                    No se trunca a propósito: un correlativo partido no
-                                                                    identifica ninguna factura (§25.7 — el VALOR nunca se
-                                                                    corta, se le da sitio). En una línea propia entran los
-                                                                    ~118px que necesita de sobra. */}
-                                                                <div className="min-w-0 basis-full lg:basis-auto flex-1">
-                                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                                        <span className={`font-mono text-body-sm font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo || '—'}</span>
-                                                                        {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
+                                                                {/* El valor crudo del sello cuando NO es un sello: es el
+                                                                    dato que delata el problema, así que se muestra. */}
+                                                                {r.recibido_mh && r.recibido_mh.length !== 40 && (
+                                                                    <div className="font-mono text-micro text-danger-text mt-1.5 break-all">sello: &ldquo;{r.recibido_mh}&rdquo;</div>
+                                                                )}
+                                                                {/* Lo que contestó Hacienda, literal y completo. Un
+                                                                    código no dice qué corregir: «[receptor.direccion.
+                                                                    distrito] VALOR NO ES PERMITIDO» sí. */}
+                                                                {(r.motivos_mh || []).length > 0 && (
+                                                                    <div className="mt-1.5 space-y-0.5 rounded-lg bg-danger/10 px-2 py-1.5">
+                                                                        {r.motivos_mh.map((m, i) => (
+                                                                            <div key={`${i}-${m}`} className="text-micro text-danger-text break-words">{m}</div>
+                                                                        ))}
+                                                                        {!solventable && (
+                                                                            <div className="text-micro text-content-3">
+                                                                                Se cierra sola cuando llegue el sello.
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                    {/* El valor crudo del sello cuando NO es un sello: es el
-                                                                        dato que delata el problema, así que se muestra. */}
-                                                                    {r.recibido_mh && r.recibido_mh.length !== 40 && (
-                                                                        <div className="font-mono text-micro text-danger-text mt-0.5">sello: &ldquo;{r.recibido_mh}&rdquo;</div>
-                                                                    )}
-                                                                    {/* Lo que contestó Hacienda, literal y completo. Un
-                                                                        código no dice qué corregir: «[receptor.direccion.
-                                                                        distrito] VALOR NO ES PERMITIDO» sí. Se muestra
-                                                                        tal cual llegó —incluso si es un texto que nadie
-                                                                        previó— por la misma razón que un código
-                                                                        desconocido se pinta crudo. */}
-                                                                    {(r.motivos_mh || []).length > 0 && (
-                                                                        <div className="mt-1 space-y-0.5">
-                                                                            {r.motivos_mh.map((m, i) => (
-                                                                                <div key={`${i}-${m}`} className="text-micro text-danger-text break-words">{m}</div>
-                                                                            ))}
-                                                                            {!solventable && (
-                                                                                <div className="text-micro text-content-3">
-                                                                                    Se cierra sola cuando llegue el sello.
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <span className="text-body-sm font-black text-content-2 shrink-0 ml-auto">{<Monto v={r.total} />}</span>
-                                                            </div>
+                                                                )}
+                                                            </TarjetaDocumento>
                                                         );
                                                     })}
                                                 </div>
-
-                                                {/* Formulario de solventar — debajo del grupo de la fecha,
-                                                    igual que en Pendiente MH. */}
-                                                {fechaRows.some(r => r.id === solvingId) && (() => {
-                                                    const r     = fechaRows.find(x => x.id === solvingId);
-                                                    const isCCF = r.tipo_documento === 'CCF';
-                                                    return (
-                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
-                                                            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                                                                <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
-                                                                {(r.observaciones || []).map(code => {
-                                                                    const meta = metaObs(code);
-                                                                    return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
-                                                                })}
-                                                                <span className="ml-auto text-body-sm font-black text-content-2">{<Monto v={r.total} />}</span>
-                                                            </div>
-                                                            <div className="flex items-start gap-3">
-                                                                <PortalTextarea
-                                                                    textareaClassName="flex-1"
-                                                                    rows={2}
-                                                                    autoFocus
-                                                                    placeholder="Qué se revisó o corrigió (opcional)…"
-                                                                    value={comment}
-                                                                    onChange={e => setComment(e.target.value)}
-                                                                />
-                                                                <div className="flex flex-col gap-1.5 shrink-0">
-                                                                    <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                    <Button variant="secondary" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
-                                        );
-                                    })}
-                                </div>}
-                            </div>
+                                    {enCurso && (
+                                                    <FormularioSolventar
+                                                        encabezado={<>
+                                                            <span className={`font-mono text-label font-black ${enCurso.tipo_documento === 'CCF' ? 'text-danger-text' : 'text-content-2'}`}>{enCurso.correlativo}</span>
+                                                            {(enCurso.observaciones || []).map(code => {
+                                                                const meta = metaObs(code);
+                                                                return <Badge key={code} variant={meta.variant} size="sm" uppercase={false}>{meta.label}</Badge>;
+                                                            })}
+                                                            <span className="ml-auto text-body-sm font-black text-content-2"><Monto v={enCurso.total} /></span>
+                                                        </>}
+                                                        comment={comment} setComment={setComment} saving={saving}
+                                                        placeholder="Qué se revisó o corrigió (opcional)…"
+                                                        onConfirmar={() => handleSolve(enCurso.id)}
+                                                        onCancelar={() => { setSolvingId(null); setComment(''); }}
+                                                    />
+                                                )}
+                                </>)}
+                            </section>
                         );
                     })}
                 </div>
@@ -2813,52 +2692,37 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                 arriba, así que sin esta sección desaparecería sin dejar rastro
                 visible — y la observación sigue existiendo en la factura. */}
             {!loading && resueltas.length > 0 && (
-                <div data-surface="card" className="overflow-hidden">
-                    <ListRow
-                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
-                        title={`${resueltas.length} solventada${resueltas.length !== 1 ? 's' : ''}`}
-                        subtitle="Observaciones ya revisadas"
-                        onClick={() => setShowResolved(v => !v)}
-                        aria-expanded={showResolved}
-                        className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showResolved ? 'rotate-180' : ''}`} />}
-                    />
-                    {showResolved && (
-                        <div className="border-t border-divider">
-                            {resueltas.map((r, i) => {
-                                const resolvedBy = r.resolution?.resolved_by || null;
-                                const quien = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
-                                return (
-                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
-                                        <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
-                                                {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
-                                                <span className="font-mono text-label text-content-3">{r.correlativo}</span>
-                                                <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
-                                                {r.total != null && <span className="text-body-sm font-bold text-content-2 ml-auto">{<Monto v={r.total} />}</span>}
-                                            </div>
-                                            <div className="flex flex-wrap gap-1 mb-1">
-                                                {(r.observaciones || []).map(code => {
-                                                    const meta = metaObs(code);
-                                                    return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
-                                                })}
-                                            </div>
-                                            {r.resolution?.comment && <p className="text-body-sm text-content-3 mb-1">&ldquo;{r.resolution.comment}&rdquo;</p>}
-                                            <p className="text-label text-content-3">
-                                                {resolvedBy
-                                                    ? <span className="font-semibold text-content-2">{resolvedBy}</span>
-                                                    : 'Solventada'}
-                                                {r.resolution?.resolved_at && <> · {fechaHora12(r.resolution.resolved_at, { month: 'short', day: '2-digit' })}</>}
-                                            </p>
-                                        </div>
+                <SeccionHistorial
+                    titulo={`${resueltas.length} solventada${resueltas.length !== 1 ? 's' : ''}`}
+                    subtitulo="Observaciones ya revisadas"
+                    abierta={showResolved}
+                    onToggle={() => setShowResolved(v => !v)}
+                >
+                    {resueltas.map((r, i) => {
+                        const resolvedBy = r.resolution?.resolved_by || null;
+                        return (
+                            <FilaHistorial key={r.id} primera={i === 0}
+                                quien={resolvedBy ? (empPhotoMap[resolvedBy] || null) : null}
+                                nombre={resolvedBy} sinNombre="Solventada"
+                                cuando={r.resolution?.resolved_at}
+                                comentario={r.resolution?.comment}
+                                pie={(r.observaciones || []).length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-1">
+                                        {r.observaciones.map(code => {
+                                            const meta = metaObs(code);
+                                            return <Badge key={code} variant={meta.variant} size="sm" uppercase={false}>{meta.label}</Badge>;
+                                        })}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
+                                )}>
+                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
+                                {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
+                                <span className="font-mono text-label text-content-3">{r.correlativo}</span>
+                                <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
+                                {r.total != null && <span className="text-body-sm font-bold text-content-2 ml-auto tabular-nums"><Monto v={r.total} /></span>}
+                            </FilaHistorial>
+                        );
+                    })}
+                </SeccionHistorial>
             )}
         </div>
     );
@@ -2867,12 +2731,15 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
 // Observaciones va PEGADA a Pendiente MH: las dos miran el mismo documento en la
 // misma ventana de tiempo (una el sello, la otra cualquier otra anomalía) y en la
 // práctica se saltan entre sí. Saltos y No Efectivo son otro trabajo.
+//
+// `tono` es el color del número de la pestaña: rojo donde lo pendiente es un
+// documento fiscal mal cerrado, ámbar donde es algo que espera.
 const TABS = [
-    { key: 'anuladas',      label: 'Anuladas'      },
-    { key: 'pendiente_mh',  label: 'Pendiente MH'  },
-    { key: 'observaciones', label: 'Observaciones' },
-    { key: 'saltos',        label: 'Saltos'        },
-    { key: 'no_efectivo',   label: 'No Efectivo'   },
+    { key: 'anuladas',      label: 'Anuladas',      icon: Ban,           tono: 'danger'  },
+    { key: 'pendiente_mh',  label: 'Pendiente MH',  icon: Clock,         tono: 'warning' },
+    { key: 'observaciones', label: 'Observaciones', icon: AlertTriangle, tono: 'danger'  },
+    { key: 'saltos',        label: 'Saltos',        icon: Hash,          tono: 'warning' },
+    { key: 'no_efectivo',   label: 'No Efectivo',   icon: CreditCard,    tono: 'neutral' },
 ];
 
 export default function FacturacionView() {
@@ -2925,6 +2792,19 @@ export default function FacturacionView() {
     const [visitadas, setVisitadas] = useState(() => new Set([activeTab]));
     if (!visitadas.has(activeTab)) setVisitadas(new Set(visitadas).add(activeTab));
 
+    // ── El número de cada pestaña (2026-10-17) ──────────────────────────────
+    // Cada pestaña reporta cuánto tiene pendiente al terminar de cargar, y la
+    // barra lo pinta en su píldora. Sólo de las VISITADAS: las demás no cargan
+    // hasta que se abren (ver arriba), y un número inventado —o un cero que
+    // no se midió— diría que ahí no hay nada. Una vez visitada se queda
+    // montada y su número sigue al día con el sondeo.
+    const [cuentas, setCuentas] = useState({});
+    const reportarCuenta = useMemo(() => {
+        const m = {};
+        for (const t of TABS) m[t.key] = (n) => setCuentas(prev => (prev[t.key] === n ? prev : { ...prev, [t.key]: n }));
+        return m;
+    }, []);
+
     const [filterBranch, setFilterBranch] = useState(
         getScope('facturacion') !== 'ALL' ? String(currentUser?.branchId || '') : ''
     );
@@ -2968,7 +2848,7 @@ export default function FacturacionView() {
     // lo anuncie como enlace y no como botón.
     const filtersContent = (
         <ViewTabBar
-            tabs={allowedTabs.map(t => ({ key: t.key, label: t.label }))}
+            tabs={allowedTabs.map(t => ({ key: t.key, label: t.label, icon: t.icon, cuenta: cuentas[t.key], tono: cuentas[t.key] ? t.tono : undefined }))}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             showSearch={hasSearch}
@@ -3086,31 +2966,31 @@ export default function FacturacionView() {
             <div data-surface="card" className=" shadow-[var(--shadow-glass-sm)] overflow-hidden">
                 {visitadas.has('anuladas') && (
                     <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                        <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                        <TabAnuladas onCuenta={reportarCuenta.anuladas} canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
                             recargaRef={recargaRef} barraFiltros={activeTab === 'anuladas' ? filtrosCuerpo : null} />
                     </div>
                 )}
                 {visitadas.has('pendiente_mh') && (
                     <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                        <TabPendienteMH canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                        <TabPendienteMH onCuenta={reportarCuenta.pendiente_mh} canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
                             recargaRef={recargaRef} barraFiltros={activeTab === 'pendiente_mh' ? filtrosCuerpo : null} />
                     </div>
                 )}
                 {visitadas.has('saltos') && (
                     <div className={activeTab === 'saltos' ? '' : 'hidden'}>
-                        <TabSaltos canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser}
+                        <TabSaltos onCuenta={reportarCuenta.saltos} canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser}
                             barraFiltros={activeTab === 'saltos' ? filtrosCuerpo : null} />
                     </div>
                 )}
                 {visitadas.has('no_efectivo') && (
                     <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                        <TabNoEfectivo canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                        <TabNoEfectivo onCuenta={reportarCuenta.no_efectivo} canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
                             barraFiltros={activeTab === 'no_efectivo' ? filtrosCuerpo : null} selectedMonth={selectedMonth} />
                     </div>
                 )}
                 {visitadas.has('observaciones') && (
                     <div className={activeTab === 'observaciones' ? '' : 'hidden'}>
-                        <TabObservaciones canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
+                        <TabObservaciones onCuenta={reportarCuenta.observaciones} canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
                             currentUser={currentUser} obsCode={obsCode} onConteos={setObsConteos}
                             barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
                     </div>

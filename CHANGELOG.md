@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.10 — /soporte abre la página de ayuda
+
+- `vercel.json` no tenía la regla `/soporte → /soporte.html`, así que la dirección caía en el portal y se veía en blanco. Igual que `/privacidad`.
+
 ## v2.1303.9 — App de puntos: botón de Wallet sin choque de eventos; capturas para la tienda
 
 - **Botón «Agregar a Apple Wallet»**: su evento nativo se llamaba `onPress`,

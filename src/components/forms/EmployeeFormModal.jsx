@@ -1345,13 +1345,27 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
              * subida, que era lo único que había funcionado. */
             let aiResponse = null;
             let aiError = null;
-            if (stored) {
+            /* Sólo se manda a leer lo que tiene algo que LEERSE (2026-10-17).
+             * De la lectura se usan cuatro cosas: el vencimiento, la fecha de
+             * expedición (los anuales), el número de junta (acreditaciones) y
+             * los nombres (papeles colectivos). Un CV, un contrato, el NIT, las
+             * tarjetas de ISSS/AFP o una cara del DUI no traen ninguna —el DUI
+             * lo lee `leer-dui`—, y se pagaba igual una llamada de ~4 s por cada
+             * uno. Medido el 16-oct: subir un DUI eran 5 llamadas al modelo;
+             * con esto son 3. */
+            const hayQueLeer = !SIN_VENCIMIENTO.has(category)
+                || COMPARTIBLES.has(category)
+                || ACREDITACIONES.some(a => a.doc === category);
+            if (stored && hayQueLeer) {
                 ({ data: aiResponse, error: aiError } = await analizarDocumento({
                     // Los nombres SÓLO en los papeles colectivos: pedirlos en
                     // cada documento agrega trabajo al modelo para una respuesta
                     // que en un carné no se usa, y un campo que nadie mira es un
                     // campo que se llena mal sin que nadie lo note.
                     filePath: stored.path, bucketName: stored.bucket,
+                    // El resumen de dos líneas sólo lo muestra el expediente de
+                    // SUCURSAL; en la ficha nadie lo ve y era la mitad de la salida.
+                    sinResumen: true,
                     ...(COMPARTIBLES.has(category) ? { buscarPersonas: true } : {}),
                 }));
                 if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate

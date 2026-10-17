@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1300.3 — Expediente: sólo se mandan a leer los documentos de los que se usa algo
+
+Auditoría de las lecturas del alta (medido en los registros del 16-oct):
+`analyze-document` corría por CADA archivo subido —~4 s y ~1,500 tokens con su
+pensamiento—, y de la respuesta se usan cuatro cosas: vencimiento, fecha de
+expedición, número de junta y nombres. Un CV, contrato, NIT, tarjetas de
+ISSS/AFP o una cara del DUI no traen ninguna (el DUI lo lee `leer-dui`), así que
+ya no se mandan a leer: subir un DUI pasa de 5 llamadas al modelo a 3. Esto
+además quita la causa del reverso del DUI con vencimiento «2019» (la lectura
+genérica tomaba otra fecha del reverso). Y la ficha ya no pide el resumen de
+dos líneas (`sinResumen`), que sólo usa el expediente de sucursal.
+
 ## v2.1300.2 — La planilla descuenta sola las órdenes de descuento; tipo de sangre sin valor inventado
 
 - **Órdenes de descuento en la planilla.** Al calcular la quincena, la columna

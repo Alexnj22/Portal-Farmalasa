@@ -257,14 +257,16 @@ export default function EditorDeDocumento({
         if (!enderezada) return;
         setGuardando(true);
         try {
-            onConfirm(await aArchivo(enderezada, { doc, acabado, nombre: file?.name }));
+            // El segundo argumento es para MEDIR cuánto movió la persona las
+            // esquinas propuestas (FileField lo anota en la bitácora).
+            onConfirm(await aArchivo(enderezada, { doc, acabado, nombre: file?.name }), { puntos, cuartos });
         } catch (e) {
             console.error('EditorDeDocumento:', e);
             setFallo('No se pudo preparar el archivo. Intenta de nuevo.');
         } finally {
             setGuardando(false);
         }
-    }, [enderezada, acabado, doc, file, onConfirm]);
+    }, [enderezada, acabado, doc, file, onConfirm, puntos, cuartos]);
 
     const enEncuadre = paso === 'encuadre';
 

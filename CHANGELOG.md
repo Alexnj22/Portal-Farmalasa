@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1303.0 — Recorte de fotos: las esquinas se afinan contra los bordes, y se mide
+
+- **Afinado de esquinas** (`utils/afinarEsquinas.js`, puro): después de que el
+  modelo propone las cuatro esquinas, se busca cerca de cada lado la recta
+  donde el salto de brillo papel/mesa es más fuerte (±4% de la foto, ±5°) y
+  cada esquina va al cruce de dos lados. Sólo cambia un lado si su borde es
+  claramente más fuerte que el propuesto y que el promedio de la foto; si el
+  resultado se mueve de más, se tuerce o cambia de tamaño, vuelven las del
+  modelo. Corre en el navegador en ~10-20 ms, sin tokens. Probado sobre fotos
+  reales: en un certificado el modelo cortaba el pie de página y el afinado lo
+  devolvió al borde del papel.
+- **Medición** (`RECORTE_DOCUMENTO` en la bitácora): cada foto anota si se
+  recortó sola, cuántos lados se afinaron, si no se detectó, y si la persona
+  tuvo que «Ajustar» y cuánto movió las esquinas. Sin guardar las fotos
+  originales.
+- Límite conocido: cuando el modelo erra por mucho (un DUI de costado salió con
+  un cuadro torcido que cortaba la tarjeta), el borde real queda fuera de la
+  banda y se conservan sus esquinas.
+
 ## v2.1302.0 — Facturación: tarjetas en todas las colas, pestañas con número
 
 Pedido del usuario: «mejora visualmente todo el módulo, incluyendo las

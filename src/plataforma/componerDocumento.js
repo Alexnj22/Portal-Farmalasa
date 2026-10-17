@@ -23,6 +23,18 @@ import { aplicarAcabado } from './tratamientoDeFoto';
 
 const CALIDAD = 0.92;
 
+/** La foto en grises, achicada a `ladoMax` px: lo que necesita `afinarEsquinas`
+ *  para buscar los bordes del papel. 800 px alcanzan para ubicar un borde con
+ *  precisión de un par de píxeles y el cálculo queda en decenas de ms. */
+export function grisDe(imagen, ladoMax = 800) {
+    const w = imagen.naturalWidth || imagen.width, h = imagen.naturalHeight || imagen.height;
+    const { canvas, ctx } = aEscala(imagen, Math.min(1, ladoMax / Math.max(w, h)));
+    const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const gris = new Float32Array(canvas.width * canvas.height);
+    for (let i = 0, j = 0; j < gris.length; i += 4, j++) gris[j] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    return { gris, ancho: canvas.width, alto: canvas.height };
+}
+
 /** Escala un lienzo. Nunca agranda: estirar una foto chica no agrega nada. */
 export function aEscala(fuente, escala) {
     const salida = document.createElement('canvas');

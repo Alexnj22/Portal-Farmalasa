@@ -31,7 +31,8 @@
  */
 import { DOCS } from '../utils/fotoDocumento';
 import { girarEsquinas, ordenarEsquinas } from '@plataforma/perspectiva';
-import { rectificarPapel, aArchivo } from '@plataforma/componerDocumento';
+import { rectificarPapel, aArchivo, grisDe } from '@plataforma/componerDocumento';
+import { afinarEsquinas } from '../utils/afinarEsquinas';
 import { acabadoPorDefecto } from '@plataforma/tratamientoDeFoto';
 
 /** La foto, cargada como elemento para poder medirla y redibujarla. */
@@ -84,6 +85,18 @@ export async function prepararAutomatico(file, tipo = 'documento') {
          * cuesta ninguna interpolación. */
         const crudas = esquinas.map(p => ({ x: p.x, y: p.y }));
         let orden = ordenarEsquinas(crudas) || crudas;
+
+        /* Las esquinas del modelo se AFINAN contra los bordes reales del papel
+         * (2026-10-17): el modelo las da «a ojo» y el borde de papel contra
+         * mesa está en la foto. Si no encuentra un borde claro, o el resultado
+         * no es razonable, vuelven las del modelo sin cambios. Ver
+         * `utils/afinarEsquinas.js`. */
+        let afinado = null;
+        try {
+            const { gris, ancho, alto } = grisDe(imagen);
+            afinado = afinarEsquinas(gris, ancho, alto, orden);
+            orden = afinado.esquinas;
+        } catch (e) { console.warn('afinarEsquinas:', e?.message || e); }
         const cuartos = ((Math.round((propuesta.giro || 0) / 90) % 4) + 4) % 4;
         for (let i = 0; i < cuartos; i++) orden = girarEsquinas(orden);
 
@@ -98,7 +111,8 @@ export async function prepararAutomatico(file, tipo = 'documento') {
         soltar();
 
         if (!archivo) return { ok: false, motivo: 'no se pudo enderezar' };
-        return { ok: true, archivo, esquinas: orden, formato: r.formato };
+        return { ok: true, archivo, esquinas: orden, formato: r.formato,
+            afinado: afinado ? { lados: afinado.ladosAfinados, movimiento: afinado.movimiento } : null };
     } catch (e) {
         // Una ayuda que se cae no puede impedir adjuntar un papel: quien llama
         // abre el editor y el trabajo sigue.

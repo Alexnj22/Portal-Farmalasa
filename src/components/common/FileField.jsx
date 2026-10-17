@@ -28,6 +28,26 @@ const traspaso = () => import('@nucleo/data/capturaDeFoto');
 /* Preguntar dónde está el papel dentro de la foto. Por `await import()` como
    todo lo demás: sólo corre cuando alguien eligió una imagen. */
 const sugerencia = () => import('@nucleo/data/recorteSugerido');
+
+/* ── Medir el recorte automático (2026-10-17) ─────────────────────────────
+ * Sin las fotos originales no hay forma de saber si el recorte sale bien, y
+ * guardarlas sería guardar copias de documentos de identidad. Lo que sí se
+ * puede anotar es lo que pasó: si se recortó solo, si se afinó contra los
+ * bordes, y —sobre todo— si la persona tuvo que «Ajustar» y cuánto movió las
+ * esquinas. Eso dice cuántos recortes salen mal, que es lo que importa. */
+// El store se pide al anotar y no se importa arriba: este componente viaja en
+// el cierre estático de 21 vistas (ver la nota de los `lazy` de abajo).
+const anotarRecorte = (tipo, detalle) => {
+    import('@nucleo/store/staffStore')
+        .then(({ useStaffStore }) => useStaffStore.getState().appendAuditLog?.('RECORTE_DOCUMENTO', tipo || 'documento', detalle))
+        .catch(() => { /* medir no puede trabar una subida */ });
+};
+/** Lo más que se movió una esquina, en fracción de la foto. */
+const cuantoSeMovio = (antes, despues) => {
+    if (!Array.isArray(antes) || !Array.isArray(despues) || antes.length !== 4 || despues.length !== 4) return null;
+    return Math.round(1000 * Math.max(...despues.map(p =>
+        Math.min(...antes.map(q => Math.hypot(p.x - q.x, p.y - q.y)))))) / 1000;
+};
 /* La tubería automática: detectar las esquinas, enderezar, ajustar al papel y
    dar el acabado, sin preguntarle nada a nadie. */
 const preparado = () => import('@nucleo/data/prepararDocumento');
@@ -296,8 +316,11 @@ const FileField = memo(({
                 setPreparando(false);
                 if (r.ok) {
                     setPreparado({ original: archivo, esquinas: r.esquinas, formato: r.formato });
+                    anotarRecorte(tipoDeDocumento, { modo: 'automatico',
+                        lados_afinados: r.afinado?.lados ?? null, afinado: r.afinado?.movimiento ?? null });
                     onChange?.(r.archivo, { yaPreparado: true });
                 } else {
+                    anotarRecorte(tipoDeDocumento, { modo: 'sin_deteccion', motivo: r.motivo || null });
                     setPorEditar(archivo);
                 }
             })();
@@ -622,7 +645,10 @@ const FileField = memo(({
                            el portal ya hizo bien. */
                         esquinas={ajustando ? preparado_?.esquinas : (sugerido?.esquinas || null)}
                         onCancel={() => { setPorEditar(null); setSugerido(null); setAjustando(false); }}
-                        onConfirm={(listo) => {
+                        onConfirm={(listo, final) => {
+                            anotarRecorte(tipoDeDocumento, ajustando
+                                ? { modo: 'ajustado', movido: cuantoSeMovio(preparado_?.esquinas, final?.puntos), giro: final?.cuartos ?? 0 }
+                                : { modo: 'editor', movido: cuantoSeMovio(sugerido?.esquinas, final?.puntos), giro: final?.cuartos ?? 0 });
                             setPorEditar(null); setSugerido(null); setAjustando(false);
                             entregar(listo);
                         }}

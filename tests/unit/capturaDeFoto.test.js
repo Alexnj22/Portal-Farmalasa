@@ -271,7 +271,9 @@ describe('preparar el documento solo', () => {
     // treinta segundos de trabajo.
     it('si no se reconoce el documento, se abre el editor como antes', () => {
         expect(auto).toMatch(/no se reconoció el documento/);
-        expect(field).toMatch(/} else \{\s*\n\s*setPorEditar\(archivo\);/);
+        // Antes de abrir el editor se anota que no se detectó (medición del
+        // recorte, 2026-10-17): el editor se sigue abriendo igual.
+        expect(field).toMatch(/} else \{\s*\n\s*anotarRecorte\(tipoDeDocumento, \{ modo: 'sin_deteccion'[^\n]*\n\s*setPorEditar\(archivo\);/);
     });
 
     it('lo que hizo se DICE, y «Ajustar» lo reabre donde estaba', () => {

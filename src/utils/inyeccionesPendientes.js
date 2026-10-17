@@ -60,14 +60,45 @@ const horaBitacora = (ts) => (ts ? fechaHora12(ts) : '—');
 const nombreBitacora = (n) => (n ? shortEmployeeName(n) : '—');
 const facturaBitacora = (c) => String(c || '').replace(/^0+/, '');
 
-export const CABECERA_CSV_BITACORA = ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'PRECIO', 'COBRADA POR',
+export const CABECERA_CSV_BITACORA = ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'PRECIO', 'COBRADA POR', 'VENDIO',
     'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN'];
 
 export function filasCsvBitacora(filas) {
     return (filas || []).map((f) => [
         horaBitacora(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', facturaBitacora(f.correlativo), f.venta_sala || '',
-        f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto, f.precio, nombreBitacora(f.cobrada_por),
+        f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto, f.precio, nombreBitacora(f.cobrada_por), f.vendedor ? nombreBitacora(f.vendedor) : '',
         f.estado, f.aplicada_at ? horaBitacora(f.aplicada_at) : '', f.aplicada_por ? nombreBitacora(f.aplicada_por) : '',
         f.aplicada_en || '',
     ]);
 }
+
+// ── Subfiltros de la bitácora (2026-10-17) ──────────────────────────────────
+// Lo que se escribe en el buscador se puede FIJAR como filtro de un campo, y
+// los filtros fijados se suman: «cliente: Ramírez» y después «medicamento:
+// Neurobion». El texto que todavía no se fijó cuenta como «todo». Los mismos
+// campos los entiende `inyecciones_bitacora_buscar` en la base.
+export const CAMPOS_DE_BUSQUEDA_BITACORA = [
+    { id: 'cliente', label: 'Cliente' },
+    { id: 'medicamento', label: 'Medicamento' },
+    { id: 'vendedor', label: 'Vendedor' },
+    { id: 'factura', label: 'Factura' },
+    { id: 'todo', label: 'Todo' },
+];
+const rotuloDeCampo = (id) => CAMPOS_DE_BUSQUEDA_BITACORA.find((c) => c.id === id)?.label || 'Todo';
+
+/** Fijar el texto del buscador como filtro de un campo; no repite uno igual. */
+export function agregarFiltroDeBitacora(filtros, campo, texto) {
+    const t = String(texto || '').trim();
+    if (!t) return filtros || [];
+    const lista = filtros || [];
+    if (lista.some((f) => f.campo === campo && f.texto.toLowerCase() === t.toLowerCase())) return lista;
+    return [...lista, { campo, texto: t }];
+}
+
+export const quitarFiltroDeBitacora = (filtros, i) => (filtros || []).filter((_, j) => j !== i);
+
+/** Los fijados más el texto suelto del buscador (como «todo»). */
+export const filtrosEfectivosDeBitacora = (filtros, texto) =>
+    (String(texto || '').trim() ? [...(filtros || []), { campo: 'todo', texto: String(texto).trim() }] : (filtros || []));
+
+export const rotuloDeFiltroDeBitacora = (f) => (f.campo === 'todo' ? `«${f.texto}»` : `${rotuloDeCampo(f.campo)}: ${f.texto}`);

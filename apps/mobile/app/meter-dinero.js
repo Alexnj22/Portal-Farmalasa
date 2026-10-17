@@ -18,6 +18,7 @@
 // y al elegirlos se abre su pantalla (`DialogoMovimiento` → `onComprobante`):
 // la aplicación de inyección (`APLICACION`) va a `aplicacion-inyeccion` y el
 // resto —el abono para apartar— a `abono-apartado`.
+import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -36,6 +37,7 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento } from '../componentes/cortes/papel';
 
 export default function MeterDinero() {
+  usePantallaDespierta('meter-dinero'); // se cuenta efectivo: la pantalla no se apaga
   const { sala } = useLocalSearchParams();
   const { user } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);

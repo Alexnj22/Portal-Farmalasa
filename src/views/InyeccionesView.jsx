@@ -42,7 +42,7 @@ const TODAS = [
 const PISTAS = {
     'por-cobrar': 'Buscar cliente, factura o inyección...',
     pendientes:   'Buscar cliente, factura o inyección...',
-    bitacora:     'Buscar cliente, factura o inyección...',
+    bitacora:     'Buscar cliente, vendedor, factura o inyección...',
 };
 
 export default function InyeccionesView() {
@@ -85,7 +85,7 @@ export default function InyeccionesView() {
         <GlassViewLayout icon={Syringe} title="Inyecciones" filtersContent={filtersContent}>
             {pestana === 'por-cobrar' && <TabPorCobrar {...comunes} />}
             {pestana === 'pendientes' && <TabPendientes {...comunes} />}
-            {pestana === 'bitacora' && <TabBitacora {...comunes} />}
+            {pestana === 'bitacora' && <TabBitacora {...comunes} limpiarBusqueda={() => setRawSearch('')} />}
             {pestana === 'ajustes' && <TabAjustes />}
         </GlassViewLayout>
     );

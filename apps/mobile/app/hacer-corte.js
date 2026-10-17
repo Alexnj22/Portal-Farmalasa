@@ -16,6 +16,7 @@
 // El corte existe en la caja apenas se aprieta: salir sin firmar lo deja
 // PENDIENTE, y mientras siga así no se puede hacer otro ni cerrar el día. Se
 // dice en pantalla, como el aviso del portal.
+import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -38,6 +39,7 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { imprimirEnLaSala } from '../componentes/imprimir';
 
 export default function HacerCorte() {
+  usePantallaDespierta('hacer-corte'); // se cuenta efectivo: la pantalla no se apaga
   const { sala } = useLocalSearchParams();
   const { user, hasPermission } = useAuth();
   const puedeOperar = hasPermission('caja_vales', 'can_edit');

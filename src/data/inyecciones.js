@@ -135,6 +135,25 @@ export async function fetchBitacoraDeAplicaciones({ sala = null, desde, hasta, b
 }
 
 /**
+ * La bitácora con SUBFILTROS y por PÁGINAS (2026-10-17). `filtros` es una
+ * lista [{ campo, texto }] que se cumple toda: cliente, medicamento, vendedor,
+ * factura o todo. Con algún filtro el período es opcional (null = todo el
+ * historial); sin filtros sigue el tope de tres meses. Devuelve una página y
+ * las cuentas del conjunto completo:
+ * { filas, total, aplicadas, monto, total_filtrado, desde }.
+ */
+export async function buscarBitacoraDeAplicaciones({ sala = null, desde = null, hasta = null, filtros = [], estado = null, limite = 50, offset = 0 }) {
+    const { data, error } = await supabase.rpc('inyecciones_bitacora_buscar', {
+        p_branch_id: sala ? Number(sala) : null, p_desde: desde || null, p_hasta: hasta || null,
+        p_filtros: (filtros || []).filter((f) => f?.texto?.trim()).map((f) => ({ campo: f.campo || 'todo', texto: f.texto.trim() })),
+        p_estado: estado && estado !== 'todas' ? estado : null,
+        p_limite: limite, p_offset: offset,
+    });
+    if (error) throw error;
+    return data ?? { filas: [], total: 0, aplicadas: 0, monto: 0, total_filtrado: 0, desde: null };
+}
+
+/**
  * Marcar a mano si un producto es inyección: `true` lo agrega aunque el nombre
  * no lo diga, `false` lo quita aunque lo diga, `null` vuelve a lo automático.
  */

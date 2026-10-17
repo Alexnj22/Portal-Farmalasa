@@ -20880,6 +20880,7 @@ export type Database = {
           activa: boolean
           created_at: string
           customer_id: number
+          fusionada_en: number | null
           ganados: number
           migrada_at: string | null
           saldo: number
@@ -20890,6 +20891,7 @@ export type Database = {
           activa?: boolean
           created_at?: string
           customer_id: number
+          fusionada_en?: number | null
           ganados?: number
           migrada_at?: string | null
           saldo?: number
@@ -20900,6 +20902,7 @@ export type Database = {
           activa?: boolean
           created_at?: string
           customer_id?: number
+          fusionada_en?: number | null
           ganados?: number
           migrada_at?: string | null
           saldo?: number
@@ -20918,6 +20921,20 @@ export type Database = {
             foreignKeyName: "puntos_cuenta_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_cuenta_fusionada_en_fkey"
+            columns: ["fusionada_en"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_cuenta_fusionada_en_fkey"
+            columns: ["fusionada_en"]
+            isOneToOne: false
             referencedRelation: "dte_rechazos_vigentes"
             referencedColumns: ["customer_id"]
           },
@@ -21011,6 +21028,106 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "ventas_sin_producto"
             referencedColumns: ["invoice_id"]
+          },
+        ]
+      }
+      puntos_fusion: {
+        Row: {
+          created_at: string
+          destino: number
+          destino_nombre: string | null
+          ganados_origen: number
+          id: number
+          lotes: number
+          nota: string | null
+          origen: number
+          origen_nombre: string | null
+          por: string | null
+          renombrados: number
+          saldo_destino: number
+          saldo_destino_antes: number
+          saldo_origen: number
+          salidas: number
+          usados_origen: number
+        }
+        Insert: {
+          created_at?: string
+          destino: number
+          destino_nombre?: string | null
+          ganados_origen: number
+          id?: never
+          lotes: number
+          nota?: string | null
+          origen: number
+          origen_nombre?: string | null
+          por?: string | null
+          renombrados?: number
+          saldo_destino: number
+          saldo_destino_antes: number
+          saldo_origen: number
+          salidas: number
+          usados_origen: number
+        }
+        Update: {
+          created_at?: string
+          destino?: number
+          destino_nombre?: string | null
+          ganados_origen?: number
+          id?: never
+          lotes?: number
+          nota?: string | null
+          origen?: number
+          origen_nombre?: string | null
+          por?: string | null
+          renombrados?: number
+          saldo_destino?: number
+          saldo_destino_antes?: number
+          saldo_origen?: number
+          salidas?: number
+          usados_origen?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puntos_fusion_destino_fkey"
+            columns: ["destino"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_fusion_destino_fkey"
+            columns: ["destino"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_fusion_origen_fkey"
+            columns: ["origen"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_fusion_origen_fkey"
+            columns: ["origen"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_fusion_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_fusion_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -30359,6 +30476,18 @@ export type Database = {
         }
         Returns: Json
       }
+      inyecciones_bitacora_buscar: {
+        Args: {
+          p_branch_id: number
+          p_desde: string
+          p_estado?: string
+          p_filtros?: Json
+          p_hasta: string
+          p_limite?: number
+          p_offset?: number
+        }
+        Returns: Json
+      }
       inyecciones_para_cobrar: {
         Args: { p_branch_id: number; p_buscar?: string; p_dias?: number }
         Returns: Json
@@ -31224,6 +31353,15 @@ export type Database = {
       }
       puntos_estado_cuenta: { Args: { p_customer_id: number }; Returns: Json }
       puntos_fuente: { Args: never; Returns: string }
+      puntos_fusionar_cuentas: {
+        Args: {
+          p_destino: number
+          p_nota?: string
+          p_origen: number
+          p_simular?: boolean
+        }
+        Returns: Json
+      }
       puntos_guardar_consentimiento: {
         Args: {
           p_customer_id: number
@@ -31342,6 +31480,7 @@ export type Database = {
         Args: { p_tope?: number }
         Returns: Json
       }
+      puntos_titular: { Args: { p_customer_id: number }; Returns: number }
       puntos_vence_el: { Args: { p_ganado_el: string }; Returns: string }
       puntos_vencer_lotes: {
         Args: { p_al_dia?: string; p_simular?: boolean }

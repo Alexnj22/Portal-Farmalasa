@@ -6,6 +6,7 @@
 // Corregir no borra: deja el cierre anulado con su motivo y devuelve sus bolsas
 // a «por cerrar», igual que en el portal. La boleta se anexa DESPUÉS de cerrar
 // (sale al volver de la ventanilla) y sólo donde hubo algo al banco.
+import usePantallaDespierta from '../../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -30,6 +31,7 @@ const larga = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short', year: 
 const corta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '');
 
 export default function Deposito() {
+  usePantallaDespierta('deposito'); // se cuenta efectivo: la pantalla no se apaga
   const { id } = useLocalSearchParams();
   const { hasPermission } = useAuth();
   const puedeContar = hasPermission('bolsas_conteo', 'can_edit');

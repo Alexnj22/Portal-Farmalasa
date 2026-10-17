@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1300.0 — Inyecciones: buscar en todo el historial con subfiltros; la pantalla no se apaga al contar efectivo
+
+Pedido del usuario (2026-10-17), en el portal y en la app.
+
+- **Bitácora de inyecciones:** al buscar, ya no se limita a los 30 días: sin un
+  período elegido busca en todo el historial, por páginas que pide la base
+  (función nueva `inyecciones_bitacora_buscar`; la vieja se queda para las apps
+  instaladas). Lo escrito se puede **fijar** como filtro de un campo —cliente,
+  medicamento, vendedor, factura— y los fijados se suman (cliente y después
+  medicamento). «Vendedor» es quien cobró o quien hizo la venta; la app muestra
+  «Vendió» cuando es otra persona. Se compara sin tildes. Las tarjetas cuentan
+  el conjunto completo y el CSV baja todo lo filtrado, con la columna VENDIO.
+- **App:** contar bolsas, hacer y confirmar el corte, finalizar efectivo,
+  depósitos y meter/sacar dinero mantienen la pantalla encendida mientras están
+  a la vista (`usePantallaDespierta`, atado al foco y no al montaje).
+
 ## v2.1299.1 — Títulos de modal canónicos: tamaño de título y mayúscula sólo al inicio
 
 Los seis encabezados de modal escritos a mano (`UnifiedModal` —empleado,

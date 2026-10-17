@@ -14,6 +14,7 @@
 //
 // Mueve dinero y no se deshace desde acá (anular un depósito es otro acto, en
 // `depositos-banco`), así que pide una confirmación que dice el reparto entero.
+import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -52,6 +53,7 @@ function FilaMonto({ rotulo, valor, onCambiar, pie }) {
 }
 
 export default function FinalizarEfectivo() {
+  usePantallaDespierta('finalizar-efectivo'); // se cuenta efectivo: la pantalla no se apaga
   const { hasPermission } = useAuth();
   const puedeContar = hasPermission('bolsas_conteo', 'can_edit');
   const empleados = useStaffStore((s) => s.employees);

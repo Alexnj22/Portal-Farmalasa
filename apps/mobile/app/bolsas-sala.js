@@ -20,6 +20,7 @@
 // «Sacar dinero» abre `app/sacar-dinero.js`: sale primero del cajón y sólo si
 // no alcanza de las bolsas (regla del usuario del 3-sep, «todo debe pasar
 // desde efectivo»).
+import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -70,6 +71,7 @@ function Renglon({ titulo, detalle, derecha, colorDerecha, onPress, primero, mar
 }
 
 export default function BolsasDeLaSala() {
+  usePantallaDespierta('bolsas-sala'); // se cuenta efectivo: la pantalla no se apaga
   const { user, hasPermission, getScope } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const puedeGuardar = hasPermission('bolsas', 'can_edit');

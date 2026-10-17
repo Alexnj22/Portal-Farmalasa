@@ -6,6 +6,7 @@
 // La sección entera va detrás de `bolsas_ver_montos`, como en el portal: un
 // depósito sin sus montos no contesta ninguna de las preguntas por las que
 // existe (cuadrar contra el estado de cuenta, seguir el remanente).
+import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -30,6 +31,7 @@ const POR_PAGINA = 30;
 const corta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '');
 
 export default function DepositosBanco() {
+  usePantallaDespierta('depositos-banco'); // se cuenta efectivo: la pantalla no se apaga
   const { hasPermission } = useAuth();
   const verMontos = hasPermission('bolsas_ver_montos');
   const [rango, setRango] = useState('30');

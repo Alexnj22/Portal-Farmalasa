@@ -32,6 +32,7 @@
 // `bolsas-sala`. El monto que se cuenta se compara contra el SALDO
 // (`saldoDeBolsa`), no contra lo guardado, y el servidor rechaza si no coincide
 // con el suyo.
+import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -152,6 +153,7 @@ function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar, userId, onRe
 }
 
 export default function Bolsas() {
+  usePantallaDespierta('contar-bolsas'); // se cuenta efectivo: la pantalla no se apaga
   const { getScope, hasPermission, user } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const empleados = useStaffStore((s) => s.employees);

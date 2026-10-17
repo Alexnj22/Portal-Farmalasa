@@ -15,14 +15,17 @@
 // Las cuatro pestañas del portal, con sus mismos permisos. Agrupar y contar
 // sale del núcleo (`inyeccionesPendientes`, `inyeccionesPorCobrar`,
 // `inyeccionesAjustes`).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { aplicarPendientes, fetchAplicacionesPendientes, fetchBitacoraDeAplicaciones } from '@nucleo/data/inyecciones';
-import { CABECERA_CSV_BITACORA, ESTADOS_BITACORA, diasDesde, filasCsvBitacora, filtrarBitacora, gruposDePendientes, idsElegidos, resumenDePendientes } from '@nucleo/utils/inyeccionesPendientes';
+import { aplicarPendientes, buscarBitacoraDeAplicaciones, fetchAplicacionesPendientes } from '@nucleo/data/inyecciones';
+import {
+  CABECERA_CSV_BITACORA, CAMPOS_DE_BUSQUEDA_BITACORA, ESTADOS_BITACORA, agregarFiltroDeBitacora, diasDesde, filasCsvBitacora, filtrosEfectivosDeBitacora,
+  gruposDePendientes, idsElegidos, quitarFiltroDeBitacora, resumenDePendientes, rotuloDeFiltroDeBitacora,
+} from '@nucleo/utils/inyeccionesPendientes';
 import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -189,28 +192,48 @@ function rangoDeBitacora(periodo, libre) {
   return [sumarDias(hoy, -30), hoy];
 }
 
-function Bitacora({ busqueda, sala, periodo, libre, setLibre, estado, setEstado }) {
-  const [filas, setFilas] = useState(null);
-  // Treinta días de la red pueden ser cientos de aplicaciones: se pintan de 40 en 40.
-  const [cuantas, setCuantas] = useState(40);
+// Buscar va más allá de los 30 días (pedido del usuario, 2026-10-17): con
+// algún filtro y el período por defecto se busca en TODO el historial, por
+// páginas que pide la base. Lo escrito se puede FIJAR como filtro de un campo
+// —cliente, medicamento, vendedor, factura— y los fijados se suman.
+const POR_PAGINA = 40;
+function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, estado, setEstado }) {
+  const [res, setRes] = useState(null);
+  const [mas, setMas] = useState(false);
   const [error, setError] = useState(null);
-  const [desde, hasta] = rangoDeBitacora(periodo, libre);
+  const [fijados, setFijados] = useState([]);
+  const filtros = useMemo(() => filtrosEfectivosDeBitacora(fijados, busqueda), [fijados, busqueda]);
+  const todoElHistorial = filtros.length > 0 && periodo === '30';
+  const [desde, hasta] = todoElHistorial ? [null, null] : rangoDeBitacora(periodo, libre);
+  const pedir = useCallback((offset) => buscarBitacoraDeAplicaciones({
+    sala: sala || null, desde, hasta, filtros, estado, limite: POR_PAGINA, offset,
+  }), [sala, desde, hasta, filtros, estado]);
   useEffect(() => {
     let vivo = true;
-    setFilas(null); setCuantas(40);
-    fetchBitacoraDeAplicaciones({ sala: sala || null, desde, hasta, buscar: busqueda })
-      .then((d) => { if (vivo) { setFilas(d); setError(null); } })
-      .catch((e) => { if (vivo) { setFilas([]); setError(mensajeAmigable(e, 'No se pudo cargar la bitácora')); } });
+    setRes(null);
+    pedir(0)
+      .then((d) => { if (vivo) { setRes(d); setError(null); } })
+      .catch((e) => { if (vivo) { setRes({ filas: [], total: 0, aplicadas: 0, monto: 0, total_filtrado: 0 }); setError(mensajeAmigable(e, 'No se pudo cargar la bitácora')); } });
     return () => { vivo = false; };
-  }, [busqueda, sala, desde, hasta]);
-  useEffect(() => { setCuantas(40); }, [estado]);
-  const visibles = useMemo(() => filtrarBitacora(filas, estado), [filas, estado]);
-  const aplicadas = (filas || []).filter((f) => f.estado === 'APLICADA').length;
-  const monto = (filas || []).reduce((s, f) => s + Number(f.precio || 0), 0);
+  }, [pedir]);
+  const filas = res?.filas || null;
+  const visibles = filas || [];
+  const totalFiltrado = res?.total_filtrado ?? 0;
+  const verMas = async () => {
+    setMas(true);
+    try {
+      const d = await pedir(visibles.length);
+      setRes((r) => ({ ...r, filas: [...(r?.filas || []), ...(d.filas || [])] }));
+    } catch (e) { fallo('No se pudo cargar', mensajeAmigable(e)); } finally { setMas(false); }
+  };
+  const aplicadas = res?.aplicadas ?? 0;
+  const monto = res?.monto ?? 0;
   const alternar = (v) => setEstado((e) => (e === v ? 'todas' : v));
+  const fijar = (campo) => { Haptics.selectionAsync().catch(() => {}); setFijados((f) => agregarFiltroDeBitacora(f, campo, busqueda)); limpiarBusqueda(); };
   const descargar = async () => {
     try {
-      await compartirCsv({ headers: CABECERA_CSV_BITACORA, rows: filasCsvBitacora(visibles), nombre: `aplicaciones_${desde}_${hasta}`, modulo: 'inyecciones' });
+      const d = await buscarBitacoraDeAplicaciones({ sala: sala || null, desde, hasta, filtros, estado, limite: 5000, offset: 0 });
+      await compartirCsv({ headers: CABECERA_CSV_BITACORA, rows: filasCsvBitacora(d.filas), nombre: `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}`, modulo: 'inyecciones' });
     } catch (e) { fallo('No se pudo compartir', e?.message || ''); }
   };
   return (
@@ -231,30 +254,54 @@ function Bitacora({ busqueda, sala, periodo, libre, setLibre, estado, setEstado 
           {desde === hasta ? fechaTexto(desde, { weekday: 'long', day: 'numeric', month: 'long' }) : `${fechaTexto(desde, { day: 'numeric', month: 'short' })} – ${fechaTexto(hasta, { day: 'numeric', month: 'short', year: 'numeric' })}`}
         </Text>
       )}
+      {fijados.length || busqueda ? (
+        <View style={{ marginHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          {fijados.map((f, i) => (
+            <Tocable key={`${f.campo}-${f.texto}`} accessibilityRole="button" accessibilityLabel={`Quitar ${rotuloDeFiltroDeBitacora(f)}`}
+              onPress={() => { Haptics.selectionAsync().catch(() => {}); setFijados((l) => quitarFiltroDeBitacora(l, i)); }}
+              style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}33` }}>
+              <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{`${rotuloDeFiltroDeBitacora(f)}  ✕`}</Text>
+            </Tocable>
+          ))}
+          {busqueda ? (
+            <>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Fijar «${busqueda}» como`}</Text>
+              {CAMPOS_DE_BUSQUEDA_BITACORA.filter((c) => c.id !== 'todo').map((c) => (
+                <Tocable key={c.id} accessibilityRole="button" onPress={() => fijar(c.id)}
+                  style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', borderWidth: 1, borderColor: `${MARCA.azulClaro}88` }}>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{c.label}</Text>
+                </Tocable>
+              ))}
+            </>
+          ) : null}
+        </View>
+      ) : null}
       {/* Las tres tarjetas del portal, que también filtran: tocar Aplicadas o
           Pendientes deja sólo esas; tocarla otra vez, todas. */}
       <FilaDeKpis>
-        <Kpi icono="ClipboardList" rotulo="Pagadas" valor={filas == null ? '—' : String(filas.length)} color={MARCA.azul}
+        <Kpi icono="ClipboardList" rotulo="Pagadas" valor={filas == null ? '—' : String(res.total)} color={MARCA.azul}
           apoyo={filas == null ? undefined : `${formatMoney(monto)} cobrados`} pide={estado === 'todas'} onPress={() => setEstado('todas')} />
       </FilaDeKpis>
       <FilaDeKpis>
         <Kpi icono="CheckCircle2" rotulo="Aplicadas" valor={filas == null ? '—' : String(aplicadas)} color={MARCA.verde}
           pide={estado === 'APLICADA'} onPress={() => alternar('APLICADA')} />
-        <Kpi icono="Hourglass" rotulo="Pendientes" valor={filas == null ? '—' : String(filas.length - aplicadas)} color={MARCA.ambar}
+        <Kpi icono="Hourglass" rotulo="Pendientes" valor={filas == null ? '—' : String(res.total - aplicadas)} color={MARCA.ambar}
           pide={estado === 'PENDIENTE'} onPress={() => alternar('PENDIENTE')} />
       </FilaDeKpis>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {filas ? (
         <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${visibles.length} aplicaci${visibles.length === 1 ? 'ón' : 'ones'}`}</Text>
-          {visibles.length ? (
+          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
+            {`${totalFiltrado} aplicaci${totalFiltrado === 1 ? 'ón' : 'ones'}${todoElHistorial ? ` · todo el historial${res?.desde ? ` desde ${fechaTexto(res.desde, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}` : ''}`}
+          </Text>
+          {totalFiltrado ? (
             <Tocable onPress={descargar} hitSlop={8} accessibilityRole="button">
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Descargar CSV</Text>
             </Tocable>
           ) : null}
         </View>
       ) : null}
-      {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, cuantas).map((f) => (
+      {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((f) => (
         <View key={f.id} style={{ marginHorizontal: 16 }}>
           <Vidrio radio={18}>
             <View style={{ padding: 12, gap: 4 }}>
@@ -267,14 +314,15 @@ function Bitacora({ busqueda, sala, periodo, libre, setLibre, estado, setEstado 
                 {[f.correlativo ? `Factura ${factura(f.correlativo)}` : null, f.sala, formatMoney(f.precio), fechaHora12(f.cobrada_at)].filter(Boolean).join(' · ')}
               </Text>
               <Persona nombre={f.cobrada_por} id={f.cobrada_por_id} rol="Cobró" />
+              {f.vendedor && f.vendedor_id !== f.cobrada_por_id ? <Persona nombre={f.vendedor} id={f.vendedor_id} rol="Vendió" /> : null}
               {f.estado === 'APLICADA' ? <Persona nombre={f.aplicada_por} id={f.aplicada_por_id} rol={`Aplicó${f.aplicada_en ? ` en ${f.aplicada_en}` : ''} ·`} /> : null}
             </View>
           </Vidrio>
         </View>
       ))}
-      {filas && visibles.length > cuantas ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${visibles.length - cuantas}`} borde onPress={() => setCuantas((n) => n + 40)} /></View> : null}
+      {filas && totalFiltrado > visibles.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={mas ? 'Cargando…' : `Ver más · quedan ${totalFiltrado - visibles.length}`} borde deshabilitado={mas} onPress={verMas} /></View> : null}
       {filas && !visibles.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin aplicaciones en el período</Text>
+        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{filtros.length ? 'Ninguna aplicación cumple esos filtros' : 'Sin aplicaciones en el período'}</Text>
       ) : null}
     </>
   );
@@ -296,6 +344,9 @@ export default function Inyecciones() {
   const salaPropia = getScope?.('inyecciones') !== 'ALL' ? Number(user?.branchId) || null : null;
   const nombreSala = (id) => (sucursales || []).find((b) => b.id === id)?.name || '—';
   const [texto, setTexto] = useState('');
+  // Para vaciar la barra al fijar lo escrito como filtro de la bitácora.
+  const barraRef = useRef(null);
+  const limpiarBusqueda = useCallback(() => { barraRef.current?.clearText?.(); setTexto(''); }, []);
   const busqueda = useTextoRebotado(texto, 350).trim();
   const [llave, setLlave] = useState(0);
   const [recargando, setRecargando] = useState(false);
@@ -327,7 +378,7 @@ export default function Inyecciones() {
       <Stack.Screen options={{
         ...BARRA_NATIVA, title: 'Inyecciones', headerLargeTitle: true,
         headerSearchBarOptions: {
-          placeholder: 'Cliente, factura o inyección', hideWhenScrolling: false,
+          ref: barraRef, placeholder: 'Cliente, vendedor, factura o inyección', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -344,7 +395,7 @@ export default function Inyecciones() {
               ? <Ajustes puedePrecio={puedePrecio} puedeDosis={puedeDosis} recarga={`${llave}-${vuelta}`} />
               : pestana === 'pendientes'
                 ? <Pendientes key={llave} busqueda={busqueda} salaPropia={salaPropia} salaFiltro={salaFiltro === 'todas' ? null : Number(salaFiltro)} nombreSala={nombreSala} puedeAplicar={hasPermission('caja_vales', 'can_edit')} />
-                : <Bitacora key={llave} busqueda={busqueda} sala={salaPorCobrar}
+                : <Bitacora key={llave} busqueda={busqueda} limpiarBusqueda={limpiarBusqueda} sala={salaPorCobrar}
                   periodo={periodoBit} libre={libreBit} setLibre={setLibreBit} estado={estadoBit} setEstado={setEstadoBit} />}
       </ScrollView>
     </>

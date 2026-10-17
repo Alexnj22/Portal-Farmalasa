@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, CheckCircle2, Download, Hourglass, Syringe } from 'lucide-react';
+import { BookOpen, CheckCircle2, Download, Hourglass, Pin, Syringe, X } from 'lucide-react';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import PersonaConFoto from '../../components/caja/PersonaConFoto';
 import Notice from '../../components/common/Notice';
 import StatCard from '../../components/common/StatCard';
@@ -10,13 +11,17 @@ import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { fetchBitacoraDeAplicaciones } from '@nucleo/data/inyecciones';
+import { buscarBitacoraDeAplicaciones } from '@nucleo/data/inyecciones';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { hoySV } from '@nucleo/utils/fecha';
-import { CABECERA_CSV_BITACORA, ESTADOS_BITACORA, filasCsvBitacora, filtrarBitacora } from '@nucleo/utils/inyeccionesPendientes';
+import {
+    CABECERA_CSV_BITACORA, CAMPOS_DE_BUSQUEDA_BITACORA, ESTADOS_BITACORA, agregarFiltroDeBitacora, filasCsvBitacora,
+    filtrosEfectivosDeBitacora, quitarFiltroDeBitacora, rotuloDeFiltroDeBitacora,
+} from '@nucleo/utils/inyeccionesPendientes';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { fechaHora12 } from '@nucleo/utils/hora';
 
 /*
@@ -29,6 +34,11 @@ import { fechaHora12 } from '@nucleo/utils/hora';
  * al cobrarse, así que esto es un hecho y no una estimación.
  *
  * El período es el del COBRO: lo pagado en el rango, se haya aplicado o no.
+ *
+ * Buscar va más allá de los 30 días (pedido del usuario, 2026-10-17): con
+ * algún filtro y sin un período elegido, se busca en TODO el historial, por
+ * páginas que pide la base. Lo escrito se puede FIJAR como filtro de un campo
+ * —cliente, medicamento, vendedor, factura— y los fijados se suman.
  *
  * Quién cobró y quién aplicó van con su FOTO (pedido del usuario, 2026-10-03:
  * «mejora visualmente la bitácora, foto del empleado, que se sienta más
@@ -47,72 +57,84 @@ function rangoPorDefecto() {
 const horaDe = (ts) => (ts ? fechaHora12(ts) : '—');
 const factura = (c) => String(c || '').replace(/^0+/, '');
 
-export default function TabBitacora({ filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm }) {
+export default function TabBitacora({ filterBranch, setFilterBranch, branchOptions, branchLocked, searchTerm, limpiarBusqueda }) {
     const defaultRange = useMemo(() => rangoPorDefecto(), []);
     const [monthRange, setMonthRange] = useState(defaultRange);
     const [estado, setEstado] = useState('todas');
-    const [filas, setFilas] = useState(null);
+    const [fijados, setFijados] = useState([]);
+    const [res, setRes] = useState(null);
     const [error, setError] = useState(null);
     const genRef = useRef(0);
-    const [desde, hasta] = monthRange.split('|');
+    const dateDirty = monthRange !== defaultRange;
+    const filtros = useMemo(() => filtrosEfectivosDeBitacora(fijados, searchTerm), [fijados, searchTerm]);
+    // Con un filtro y sin período elegido, todo el historial: lo acota el filtro.
+    const todoElHistorial = filtros.length > 0 && !dateDirty;
+    const [desde, hasta] = todoElHistorial ? [null, null] : monthRange.split('|');
+
+    const total = res?.total_filtrado ?? 0;
+    const { page, pageSize, totalPages, setPage, setPageSize, resetPage } =
+        usePaginaEnUrl({ total, tamPorDefecto: 50 });
+    const claveFiltros = JSON.stringify(filtros);
+    useEffect(() => { resetPage(); }, [estado, claveFiltros, desde, hasta, filterBranch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const pedir = useCallback((extra) => buscarBitacoraDeAplicaciones({
+        sala: filterBranch || null, desde, hasta, filtros, estado, ...extra,
+    }), [filterBranch, desde, hasta, filtros, estado]);
 
     const cargar = useCallback(async () => {
         const gen = ++genRef.current;
-        setFilas(null);
+        setRes(null);
         try {
-            const d = await fetchBitacoraDeAplicaciones({ sala: filterBranch || null, desde, hasta, buscar: searchTerm });
-            if (gen === genRef.current) { setFilas(d); setError(null); }
+            const d = await pedir({ limite: pageSize, offset: (page - 1) * pageSize });
+            if (gen === genRef.current) { setRes(d); setError(null); }
         } catch (e) {
-            if (gen === genRef.current) { setFilas([]); setError(mensajeAmigable(e, 'No se pudo cargar la bitácora')); }
+            if (gen === genRef.current) { setRes({ filas: [], total: 0, aplicadas: 0, monto: 0, total_filtrado: 0 }); setError(mensajeAmigable(e, 'No se pudo cargar la bitácora')); }
         }
-    }, [filterBranch, desde, hasta, searchTerm]);
-    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al cambiar filtros
+    }, [pedir, page, pageSize]);
+    useEffect(() => { cargar(); }, [cargar]);
 
-    const visibles = useMemo(
-        () => filtrarBitacora(filas, estado),
-        [filas, estado],
-    );
-    const aplicadas = (filas || []).filter((f) => f.estado === 'APLICADA').length;
-    const monto = (filas || []).reduce((s, f) => s + Number(f.precio || 0), 0);
+    const pagina = res?.filas || [];
+    const cargando = res == null;
+    const aplicadas = res?.aplicadas ?? 0;
 
-    const { page, pageSize, totalPages, setPage, setPageSize, resetPage } =
-        usePaginaEnUrl({ total: visibles.length, tamPorDefecto: 50 });
-    useEffect(() => { resetPage(); }, [estado, searchTerm, desde, hasta, filterBranch]); // eslint-disable-line react-hooks/exhaustive-deps
-    const pagina = visibles.slice((page - 1) * pageSize, page * pageSize);
+    const fijar = (campo) => { setFijados((f) => agregarFiltroDeBitacora(f, campo, searchTerm)); limpiarBusqueda?.(); };
 
-    const descargar = () => exportCsv(
-        CABECERA_CSV_BITACORA,
-        filasCsvBitacora(visibles),
-        `aplicaciones_${desde}_${hasta}.csv`,
-        'inyecciones',
-    );
-
-    const dateDirty = monthRange !== defaultRange;
+    // El CSV es el conjunto entero que se está viendo, no la página.
+    const [bajando, setBajando] = useState(false);
+    const descargar = async () => {
+        setBajando(true);
+        try {
+            const d = await pedir({ limite: 5000, offset: 0 });
+            exportCsv(CABECERA_CSV_BITACORA, filasCsvBitacora(d.filas), `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}.csv`, 'inyecciones');
+        } catch (e) {
+            setError(mensajeAmigable(e, 'No se pudo descargar'));
+        } finally { setBajando(false); }
+    };
 
     return (
         <div className="p-4 md:p-6 space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de la bitácora">
                     <StatCard icon={Syringe} label="Aplicaciones pagadas"
-                        value={filas == null ? '—' : filas.length.toLocaleString()}
-                        sub={filas == null ? undefined : `${formatMoney(monto)} cobrados`} loading={filas == null}
+                        value={cargando ? '—' : res.total.toLocaleString()}
+                        sub={cargando ? undefined : `${formatMoney(res.monto)} cobrados`} loading={cargando}
                         active={estado === 'todas'} onClick={() => setEstado('todas')} />
                     <StatCard icon={CheckCircle2} label="Aplicadas" tono="success"
-                        value={filas == null ? '—' : aplicadas.toLocaleString()}
-                        iconBg="bg-success/10" iconCls="text-success" loading={filas == null}
+                        value={cargando ? '—' : aplicadas.toLocaleString()}
+                        iconBg="bg-success/10" iconCls="text-success" loading={cargando}
                         active={estado === 'APLICADA'} onClick={() => setEstado((e) => (e === 'APLICADA' ? 'todas' : 'APLICADA'))} />
                     <StatCard icon={Hourglass} label="Pendientes" tono="warning"
-                        value={filas == null ? '—' : (filas.length - aplicadas).toLocaleString()}
-                        iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text" loading={filas == null}
+                        value={cargando ? '—' : (res.total - aplicadas).toLocaleString()}
+                        iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text" loading={cargando}
                         active={estado === 'PENDIENTE'} onClick={() => setEstado((e) => (e === 'PENDIENTE' ? 'todas' : 'PENDIENTE'))} />
                 </CarrilCards>
                 <div className="flex justify-end min-w-0">
                     <FilterBar
-                        onClear={() => { if (!branchLocked) setFilterBranch(''); setMonthRange(defaultRange); setEstado('todas'); }}
+                        onClear={() => { if (!branchLocked) setFilterBranch(''); setMonthRange(defaultRange); setEstado('todas'); setFijados([]); }}
                         activeCount={[!branchLocked && filterBranch, dateDirty, estado !== 'todas'].filter(Boolean).length}
                         acciones={[{
                             key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true, principal: false,
-                            onClick: descargar, disabled: !visibles.length,
+                            onClick: descargar, disabled: !total || bajando,
                         }]}
                     >
                         {!branchLocked && (
@@ -130,6 +152,33 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                 </div>
             </div>
 
+            {(searchTerm?.trim() || fijados.length > 0) && (
+                <div className="flex flex-wrap items-center gap-2" aria-label="Filtros de la búsqueda">
+                    {fijados.map((f, i) => (
+                        <Button key={`${f.campo}-${f.texto}`} size="xs" variant="secondary" icon={X}
+                            title={`Quitar ${rotuloDeFiltroDeBitacora(f)}`}
+                            onClick={() => setFijados((l) => quitarFiltroDeBitacora(l, i))}>
+                            {rotuloDeFiltroDeBitacora(f)}
+                        </Button>
+                    ))}
+                    {searchTerm?.trim() && (
+                        <>
+                            <span className="text-caption text-content-3 inline-flex items-center gap-1">
+                                <Pin size={12} /> Fijar «{searchTerm.trim()}» como
+                            </span>
+                            {CAMPOS_DE_BUSQUEDA_BITACORA.filter((c) => c.id !== 'todo').map((c) => (
+                                <Button key={c.id} size="xs" variant="ghost" onClick={() => fijar(c.id)}>{c.label}</Button>
+                            ))}
+                        </>
+                    )}
+                    {todoElHistorial && !cargando && (
+                        <span className="text-caption text-content-3">
+                            · en todo el historial{res?.desde ? ` (desde ${fechaTexto(res.desde)})` : ''}
+                        </span>
+                    )}
+                </div>
+            )}
+
             {error && <Notice variant="danger">{error}</Notice>}
 
             <DataTable
@@ -140,9 +189,9 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                     { key: 'precio',   label: 'Precio', align: 'right', hideBelow: 'md' },
                     { key: 'estado',   label: 'Aplicación' },
                 ]}
-                loading={filas == null}
+                loading={cargando}
                 skeletonRows={8}
-                empty={{ icon: BookOpen, message: 'Sin aplicaciones en este período' }}
+                empty={{ icon: BookOpen, message: filtros.length ? 'Ninguna aplicación cumple esos filtros' : 'Sin aplicaciones en este período' }}
                 minWidth="820px"
                 movil={{ identidad: 'cliente', ancla: 'estado', chips: ['producto', 'cobro'] }}
             >
@@ -187,11 +236,11 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                     </DataRow>
                 ))}
             </DataTable>
-            {filas != null && visibles.length > 0 && (
+            {!cargando && total > 0 && (
                 <TablePagination
                     page={page} totalPages={totalPages} onPageChange={setPage}
                     pageSize={pageSize} onPageSizeChange={setPageSize}
-                    total={(filas || []).length} filteredTotal={visibles.length} unit="aplicaciones"
+                    total={res.total} filteredTotal={total} unit="aplicaciones"
                 />
             )}
         </div>

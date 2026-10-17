@@ -21,6 +21,7 @@
 // quién firmó (con su cara y la hora), los cobros de crédito uno por uno con su
 // hora y «Qué revisar» (`sugerenciasDeCorte`). Todo sale del núcleo
 // (`cortesDiagnostico`), las mismas funciones del portal.
+import usePantallaDespierta from '../../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -55,6 +56,7 @@ const TONO = { ok: MARCA.verde, sobra: MARCA.ambar, falta: MARCA.rojo };
 const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : n < 0 ? `−${formatMoney(Math.abs(n))}` : formatMoney(0));
 
 export default function Corte() {
+  usePantallaDespierta('confirmar-corte'); // se cuenta efectivo: la pantalla no se apaga
   // `accion` (confirmar | descartar): llegó desde el botón de la tarjeta de la
   // lista, como el «Confirmar»/«Descartar» de `TarjetaCorte` del portal. Si
   // cuadra, confirmar es de un clic; si no, se lee la diferencia acá primero.

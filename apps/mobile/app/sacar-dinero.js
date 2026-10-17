@@ -11,6 +11,7 @@
 // Cada motivo (`bolsas_tipos_salida`) dice qué pide: a quién o a qué entidad,
 // número de boleta (que no se repita en la sala), foto del comprobante y si
 // quien se lo lleva tiene que identificarse con su carné.
+import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -33,6 +34,7 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento, reimprimirEtiqueta, valeDeLaSalida } from '../componentes/cortes/papel';
 
 export default function SacarDinero() {
+  usePantallaDespierta('sacar-dinero'); // se cuenta efectivo: la pantalla no se apaga
   const { sala } = useLocalSearchParams();
   const { user, hasPermission } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);

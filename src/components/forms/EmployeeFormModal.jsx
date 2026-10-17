@@ -4611,14 +4611,44 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         {/* Las órdenes de descuento (préstamos que la empresa paga por
                             planilla) se guardan en su propia tabla, al momento — no
                             con el botón Guardar de la ficha. Por eso sólo existen
-                            cuando la ficha ya existe. */}
-                        {formData?.id && (
-                            <div className={`${islandClass} ${islandHoverClass}`}>
-                                <OrdenesDeDescuento empleado={{ id: formData.id, name: formData.name,
-                                    first_names: formData.first_names, last_names: formData.last_names }}
-                                    canEdit />
-                            </div>
-                        )}
+                            cuando la ficha ya existe.
+
+                            «Ya existe» incluye ENLAZAR (2026-10-15): la ficha de quien
+                            ya trabajaba aquí está en `enlazar_con_id`, no en `id`, y
+                            mirando sólo `id` la sección no salía justo en el alta que
+                            se está usando para registrar a todos. El `key` la vuelve a
+                            montar si se cambia de persona enlazada, para que lo que
+                            se agregue no caiga en la ficha de antes.
+
+                            Y en un alta de alguien NUEVO se muestra igual, apagada y
+                            diciendo por qué: escondida, parecía que no existía. */}
+                        {(() => {
+                            const idDeFicha = formData?.id || formData?.enlazar_con_id || null;
+                            return (
+                                <div className={`${islandClass} ${islandHoverClass}`}>
+                                    {idDeFicha ? (
+                                        <OrdenesDeDescuento key={idDeFicha}
+                                            empleado={{ id: idDeFicha, name: formData.name || `${formData.first_names || ''} ${formData.last_names || ''}`.trim(),
+                                                first_names: formData.first_names, last_names: formData.last_names }}
+                                            canEdit />
+                                    ) : (
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <div className="p-2 bg-chart-4/10 text-chart-4-text rounded-xl border border-chart-4/30 shadow-[var(--shadow-shine)]">
+                                                <Banknote size={16} strokeWidth={2.5} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Órdenes de descuento</h4>
+                                                <p className="text-micro text-content-3 font-medium">
+                                                    Se agregan cuando la ficha ya existe: guárdala y ábrela de nuevo para cargar el préstamo.
+                                                    Si esta persona ya trabajaba aquí, enlázala con su ficha en Personal y aparecen aquí mismo.
+                                                </p>
+                                            </div>
+                                            <Button size="sm" variant="secondary" icon={Plus} disabled>Agregar orden</Button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className={`${islandClass} ${islandHoverClass}`}>

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1300.1 — Integra main en la búsqueda de inyecciones
+
+Sin cambios propios: junta v2.1300.0 (inyecciones y pantalla despierta) con v2.1299.2 (órdenes de descuento), que salieron en paralelo.
+
 ## v2.1300.0 — Inyecciones: buscar en todo el historial con subfiltros; la pantalla no se apaga al contar efectivo
 
 Pedido del usuario (2026-10-17), en el portal y en la app.
@@ -36,6 +40,14 @@ Pedido del usuario (2026-10-17), en el portal y en la app.
 - **App:** contar bolsas, hacer y confirmar el corte, finalizar efectivo,
   depósitos y meter/sacar dinero mantienen la pantalla encendida mientras están
   a la vista (`usePantallaDespierta`, atado al foco y no al montaje).
+## v2.1299.2 — Órdenes de descuento también al enlazar una ficha y visibles en el alta
+
+La sección de órdenes de descuento (Nómina) sólo salía con `formData.id`, o
+sea al EDITAR. En el alta que enlaza con una ficha existente —la que se está
+usando para registrar a todos— la ficha está en `enlazar_con_id`, y la sección
+no aparecía. Ahora usa esa ficha (y se vuelve a montar si se cambia de persona
+enlazada). En el alta de alguien nuevo se muestra apagada y explica que primero
+se guarda la ficha, en vez de no estar.
 
 ## v2.1299.1 — Títulos de modal canónicos: tamaño de título y mayúscula sólo al inicio
 

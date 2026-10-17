@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1299.1 — Títulos de modal canónicos: tamaño de título y mayúscula sólo al inicio
+
+Los seis encabezados de modal escritos a mano (`UnifiedModal` —empleado,
+sucursales, nómina, proveedores, clientes, kiosco…—, practicante, nuevo conteo,
+metas, gastos y el personal de un cargo) pasan al canónico de DESIGN §7 y
+§26.4: `text-title-sm`, mayúscula sólo en la primera palabra, y el subtítulo en
+texto normal. Iban en mayúsculas comprimidas, que son de los RÓTULOS, no de los
+títulos: el portal decía «Seguro de vida colectivo» en un modal y «ACTUALIZAR
+INFORMACIÓN» en el de al lado, y en el teléfono el título partía en dos
+renglones. Los textos de `getModalTitle`/`getModalSubtitle` también: sin
+`toUpperCase()` y en sentence case («Período de nómina», «Sucursal: …»).
+`TabHistory` queda igual: es el encabezado de un informe impreso, no un modal.
+
 ## v2.1299.0 — Ajuste de inventario con conteo abierto: se frena sólo lo que se cuenta
 
 Pedido del usuario: se puede solicitar un ajuste de inventario aunque la sala

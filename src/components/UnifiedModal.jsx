@@ -332,56 +332,56 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     const getModalTitle = () => {
         switch (type) {
-            case "viewAuditDetail": return "Detalle de Auditoría";
-            case "manageKiosks": return "Dispositivos Kiosco";
+            case "viewAuditDetail": return "Detalle de auditoría";
+            case "manageKiosks": return "Dispositivos del kiosco";
             case "newEmployee": return "Nuevo empleado";
-            case "editEmployee": return "Actualizar Información";
+            case "editEmployee": return "Actualizar información";
             case "rehireEmployee": return "Recontratación";
-            case "vacationRecall": return "Ingreso en Vacaciones";
+            case "vacationRecall": return "Ingreso en vacaciones";
             case "newBranch": return "Nueva sucursal";
-            case "editBranch": return "Configuración General";
-            case "editBranchHorarios": return "Horarios de Atención";
-            case "editBranchLegal": return "Configuración Legal";
-            case "editBranchInmueble": return "Gestión de Inmueble";
-            case "editBranchServicios": return "Servicios Básicos";
+            case "editBranch": return "Configuración general";
+            case "editBranchHorarios": return "Horarios de atención";
+            case "editBranchLegal": return "Configuración legal";
+            case "editBranchInmueble": return "Gestión del inmueble";
+            case "editBranchServicios": return "Servicios básicos";
             case "editSrsPermit": return "Permiso SRS";
-            case "editPharmacyRegent": return "Regencia Farmacéutica";
+            case "editPharmacyRegent": return "Regencia farmacéutica";
             case "editPharmacovigilance": return "Farmacovigilancia";
-            case "editNursingRegents": return "Regencia de Enfermería";
-            case "editBranchLeadership": return `Asignar ${formData?.targetRole || 'Jefatura'}`;
-            case "viewBranchEmployees": return "Personal Asignado";
+            case "editNursingRegents": return "Regencia de enfermería";
+            case "editBranchLeadership": return `Asignar ${formData?.targetRole || 'jefatura'}`;
+            case "viewBranchEmployees": return "Personal asignado";
             case "viewDocument": return formData?.title || "Documento";
-            case "manageService": return "Configurar Servicio / Gasto";
-            case "registerPayment": return "Registrar Pago Real";
-            case "addCustomDocument": return "Nuevo Documento";
-            case "editCustomDocument": return "Actualizar Documento";
+            case "manageService": return "Configurar servicio o gasto";
+            case "registerPayment": return "Registrar pago real";
+            case "addCustomDocument": return "Nuevo documento";
+            case "editCustomDocument": return "Actualizar documento";
             case "viewWfmAnalytics": return "Monitor de ventas";
-            case "setEmployeePassword": return "Establecer Contraseña";
-            case "editContact": return "Editar Perfil";
-            case "newPayrollPeriod": return "Nueva Quincena";
-            case "editPayrollEntry": return "Editar Entrada";
-            case "editProveedor": return formData?.nombre || "Detalle de Proveedor";
+            case "setEmployeePassword": return "Establecer contraseña";
+            case "editContact": return "Editar perfil";
+            case "newPayrollPeriod": return "Nueva quincena";
+            case "editPayrollEntry": return "Editar entrada";
+            case "editProveedor": return formData?.nombre || "Detalle del proveedor";
             case "editCliente": return formData?.nombre || "Ficha del Cliente";
-            default: return "Gestión Administrativa";
+            default: return "Gestión administrativa";
         }
     };
 
     const getModalSubtitle = () => {
         if (type === "manageKiosks") return formData?.name;
         if (type === "newEmployee") return null;
-        if (type === "editEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
-        if (type === "rehireEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
-        if (type === "vacationRecall") return shortEmployeeName(formData?.employee).toUpperCase();
-        if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
-        if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
-        if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "EMPLEADO";
-        if (type === "editContact") return formData?.name?.toUpperCase() || "TU PERFIL";
-        if (type === "newPayrollPeriod") return "PERÍODO DE NÓMINA";
-        if (type === "editPayrollEntry") return shortEmployeeName(formData?._entry?.employee).toUpperCase();
-        if (type === "editProveedor") return formData?.nit || formData?.dui || 'PROVEEDOR';
-        if (type === "editCliente") return "FICHA FISCAL";
-        if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
-        if (type === "viewDocument") return "Vista Previa de Archivo";
+        if (type === "editEmployee") return formData?.name || "Empleado";
+        if (type === "rehireEmployee") return formData?.name || "Empleado";
+        if (type === "vacationRecall") return shortEmployeeName(formData?.employee);
+        if (type === "viewBranchEmployees") return `Sucursal: ${formData?.name || formData?.branchName || 'sin nombre'}`;
+        if (type === "editBranchLeadership") return `Sucursal: ${formData?.branch?.name || 'sin nombre'}`;
+        if (type === "setEmployeePassword") return formData?.name || "Empleado";
+        if (type === "editContact") return formData?.name || "Tu perfil";
+        if (type === "newPayrollPeriod") return "Período de nómina";
+        if (type === "editPayrollEntry") return shortEmployeeName(formData?._entry?.employee);
+        if (type === "editProveedor") return formData?.nit || formData?.dui || 'Proveedor';
+        if (type === "editCliente") return "Ficha fiscal";
+        if (BRANCH_SUBTITLES.has(type)) return `Sucursal: ${formData?.branch?.name || formData?.name || formData?.branchName || 'nueva'}`;
+        if (type === "viewDocument") return "Vista previa del archivo";
         return "Panel de configuración";
     };
 
@@ -953,11 +953,15 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 })()}
 
                                 <div className="min-w-0">
-                                    <h3 className={`font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-snug mb-1 ${esFichaDeEmpleado ? 'truncate' : ''}`}>
+                                    {/* Canónico (DESIGN §7 y §26.4): `text-title-sm` y con
+                                        mayúscula sólo en la primera palabra. Las mayúsculas
+                                        espaciadas son de los RÓTULOS, no de los títulos; acá
+                                        gritaban y en el teléfono partían el título en dos. */}
+                                    <h3 className={`text-title-sm font-black text-content tracking-tight leading-snug ${esFichaDeEmpleado ? 'truncate' : ''}`}>
                                         {getModalTitle()}
                                     </h3>
                                     {getModalSubtitle() && (
-                                        <p className={`text-caption md:text-label font-bold text-content-3 uppercase ${esFichaDeEmpleado ? 'truncate tracking-[0.12em] md:tracking-[0.2em]' : 'tracking-[0.2em]'}`}>{getModalSubtitle()}</p>
+                                        <p className={`text-label font-medium text-content-3 mt-0.5 ${esFichaDeEmpleado ? 'truncate' : ''}`}>{getModalSubtitle()}</p>
                                     )}
                                 </div>
                             </div>

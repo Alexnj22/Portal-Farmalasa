@@ -192,8 +192,8 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-9-text`}><ClipboardCheck size={22} strokeWidth={2.5} /></div>
                     <div>
-                        <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">Nuevo conteo de inventario</h3>
-                        <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Auditoría Física</p>
+                        <h3 className="text-title-sm font-black text-content tracking-tight leading-snug">Nuevo conteo de inventario</h3>
+                        <p className="text-label font-medium text-content-3 mt-0.5">Auditoría física</p>
                     </div>
                 </div>
                 <Button variant="ghost" icon={X} iconOnly onClick={onClose} />

@@ -100,8 +100,8 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
             <div className="flex-none px-6 py-6 border-b border-border-card flex items-center gap-4">
                 <div className={`${squircleClass} text-brand-text`}><Target size={22} strokeWidth={2.5} /></div>
                 <div>
-                    <h3 className="font-black text-content uppercase tracking-tighter text-lg leading-none mb-1">Agregar meta</h3>
-                    <p className="text-caption font-bold text-content-3 uppercase tracking-[0.2em]">Metas por sala</p>
+                    <h3 className="text-title-sm font-black text-content tracking-tight leading-snug">Agregar meta</h3>
+                    <p className="text-label font-medium text-content-3 mt-0.5">Metas por sala</p>
                 </div>
             </div>
 

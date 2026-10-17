@@ -30,11 +30,11 @@ const FormRoleEmployees = ({ formData }) => {
                         <ShieldCheck size={32} strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h3 className="text-title-lg md:text-display font-black text-content uppercase tracking-tighter leading-none mb-1.5 pr-8">
+                        <h3 className="text-title-sm font-black text-content tracking-tight leading-snug pr-8">
                             {role.name}
                         </h3>
-                        <p className="text-caption md:text-label font-black text-brand-text uppercase tracking-widest flex items-center gap-1.5">
-                            Personal Asignado ({employeesInRole.length})
+                        <p className="text-label font-medium text-content-3 mt-0.5 flex items-center gap-1.5">
+                            Personal asignado ({employeesInRole.length})
                         </p>
                     </div>
                 </div>

@@ -177,15 +177,15 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card";
 
     return (
-        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo practicante'}>
+        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="h-fit" ariaLabel={isEditMode ? 'Actualizar practicante' : 'Nuevo practicante'}>
             <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-base shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-3-text`}><GraduationCap size={22} strokeWidth={2.5} /></div>
                     <div>
-                        <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
-                            {isEditMode ? 'Actualizar Practicante' : 'Nuevo practicante'}
+                        <h3 className="text-title-sm font-black text-content tracking-tight leading-snug">
+                            {isEditMode ? 'Actualizar practicante' : 'Nuevo practicante'}
                         </h3>
-                        <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
+                        <p className="text-label font-medium text-content-3 mt-0.5">Horas sociales o pasantía</p>
                     </div>
                 </div>
                 <Button variant="ghost" icon={X} iconOnly onClick={handleClose} />

@@ -31,6 +31,7 @@ import {
     estadoDeCajaEnElOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
+    fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
     subirComprobante, boletaYaEnCaja,
 } from '@nucleo/data/bolsas';
@@ -1426,13 +1427,25 @@ export default function MiCajaView({ comoPestana = false }) {
                 ).then(() => setCorrigiendo(null))} />
 
             {dialogo === 'cerrar' && (
-                <DialogoCerrar ocupado={ocupado} sinCorte={sinCorteHoy} sinConfirmar={corteSinConfirmar}
+                <DialogoCerrar sala={sala} ocupado={ocupado} sinCorte={sinCorteHoy} sinConfirmar={corteSinConfirmar}
                     sinResolver={cortesSinResolver} falta={faltaPorContar}
                     onClose={() => setDialogo(null)}
                     onCortar={() => { setResultado(null); setDialogo('corte'); }}
                     /* El Z se COMPRUEBA y su respuesta se dice. `z: false` llega
                        como `aviso`, que `correr` ahora muestra. */
-                    onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')} />
+                    onCerrar={() => correr(() => cerrarElDia(sala), 'El día quedó cerrado.')}
+                    /* Una venta que el sistema eliminó dejó de contar: se dice
+                       qué fue y se recarga, con lo que la diferencia se va. */
+                    onRevisado={(marcadas) => {
+                        showToast(marcadas.length === 1
+                            ? 'Una venta del día ya no existe'
+                            : `${marcadas.length} ventas del día ya no existen`,
+                        marcadas.map((m) => `Factura ${Number(String(m.correlativo).split('_')[0]) || m.correlativo} · ${formatMoney(m.total)}`).join(' · ')
+                            + '. Dejó de contar en la caja; Facturación ya está avisada.', 'warning');
+                        cargar();
+                    }}
+                    onReconocer={(reconocer) => correr(() => cerrarElDia(sala, { reconocer }),
+                        'El día quedó cerrado, con la diferencia anotada.')} />
             )}
 
             {/* «¿Quién recibe la caja?» al confirmar un corte. Va dentro de
@@ -2964,8 +2977,8 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
  *
  * Lo monta el llamador sólo cuando está abierto.
  */
-function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, falta,
-    onClose, onCortar, onCerrar }) {
+function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, falta,
+    onClose, onCortar, onCerrar, onRevisado, onReconocer }) {
     /* ── NINGUNO PUEDE QUEDAR A MEDIAS (regla del usuario, 6-sep) ───────────
      *
      * Va ANTES del freno de abajo, que sólo pregunta si hay UNO confirmado.
@@ -3047,33 +3060,26 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, f
      * que no se sabe. */
     const noSePudoMedir = falta && falta.medido === false;
     const pendiente = Number(falta?.falta);
-    if (noSePudoMedir || (Number.isFinite(pendiente) && pendiente >= 0.01)) {
+    if (noSePudoMedir) {
         return (
             <Marco abierto onClose={onClose}
-                titulo={noSePudoMedir ? 'No se pudo revisar la caja' : 'Falta contar el efectivo'}
-                bajada={noSePudoMedir
-                    ? 'No se pudo comprobar si quedó dinero sin contar.'
-                    : (falta?.desde
-                        ? `Desde el corte de las ${hora12(falta.desde)} entraron ${formatMoney(pendiente)} que nadie ha contado.`
-                        : `Hoy entraron ${formatMoney(pendiente)} que nadie ha contado.`)}
-                pie={noSePudoMedir ? undefined : <>
-                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                    <Button variant="primary" onClick={onCortar}>Hacer corte</Button>
-                </>}>
+                titulo="No se pudo revisar la caja"
+                bajada="No se pudo comprobar si quedó dinero sin contar.">
                 <Notice variant="warning" icon={AlertTriangle}>
-                    {noSePudoMedir
-                        ? <>El día no se cierra sin saberlo: el cierre no se deshace y la caja
-                            no vuelve a abrir hasta mañana. Vuelve a intentarlo en un momento.</>
-                        : <>Si cierras ahora, ese dinero queda <b>fuera de todo conteo</b>: la caja
-                            no vuelve a abrir hasta mañana y el cierre no se deshace. Haz el corte
-                            primero.</>}
+                    El día no se cierra sin saberlo: el cierre no se deshace y la caja
+                    no vuelve a abrir hasta mañana. Vuelve a intentarlo en un momento.
                 </Notice>
-                {noSePudoMedir && (
-                    <div className="flex justify-end">
-                        <Button variant="primary" onClick={onClose}>Entendido</Button>
-                    </div>
-                )}
+                <div className="flex justify-end">
+                    <Button variant="primary" onClick={onClose}>Entendido</Button>
+                </div>
             </Marco>
+        );
+    }
+    if (Number.isFinite(pendiente) && pendiente >= 0.01) {
+        return (
+            <FrenoDeEfectivoSinContar sala={sala} falta={falta} pendiente={pendiente}
+                ocupado={ocupado} onClose={onClose} onCortar={onCortar}
+                onRevisado={onRevisado} onReconocer={onReconocer} />
         );
     }
 
@@ -3103,6 +3109,103 @@ function DialogoCerrar({ ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, f
                     podrá anotar, y las bolsas de hoy pasan a ser de un día cerrado.
                 </span>
             </Notice>
+        </Marco>
+    );
+}
+
+/**
+ * «Falta contar el efectivo», cuando puede que no haya nada que contar.
+ *
+ * Salud 3, 16-oct-2026: el sistema de ventas eliminó una factura de $15.55
+ * después de emitida. El portal la seguía contando, el freno pedía contarla, y
+ * ningún corte podía: la caja ya no la sumaba. Hicieron cuatro cortes y
+ * cerraron a mano.
+ *
+ * Dos salidas, en este orden:
+ *   1. **Revisar solo, al abrir.** Antes de mandar a nadie a contar, el
+ *      servidor relee las ventas del día; si alguna ya no existe la marca, y la
+ *      diferencia desaparece sin que la sala haga nada (`onRevisado` recarga).
+ *   2. **Cerrar con la diferencia, con motivo fijo** (regla del usuario,
+ *      17-oct). Los motivos salen de su tabla, no de una lista escrita acá, y
+ *      el servidor exige que el monto sea el que la persona está viendo.
+ *
+ * «Hacer corte» sigue siendo el botón principal: casi siempre la diferencia ES
+ * plata sin contar (Salud 2, 6-sep, $159.39), y el freno existe por eso.
+ */
+function FrenoDeEfectivoSinContar({ sala, falta, pendiente, ocupado, onClose, onCortar, onRevisado, onReconocer }) {
+    const [revisando, setRevisando] = useState(true);
+    const [motivos, setMotivos] = useState(VACIO);
+    const [conMotivo, setConMotivo] = useState(false);
+    const [motivo, setMotivo] = useState(null);
+
+    useEffect(() => {
+        let vivo = true;
+        revisarVentasDeLaCaja(sala).then((r) => {
+            if (!vivo) return;
+            setRevisando(false);
+            if (!r?.error && r?.marcadas?.length) onRevisado?.(r.marcadas);
+        });
+        fetchMotivosCierreConDiferencia().then(({ data, error }) => {
+            if (!vivo) return;
+            if (error) console.error('motivos de cierre con diferencia:', error.message);
+            setMotivos(data || VACIO);
+        });
+        return () => { vivo = false; };
+    // `onRevisado` cambia de identidad en cada render del padre; la revisión es
+    // una por apertura del diálogo.
+    }, [sala]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const opciones = useMemo(() => motivos.map((m) => ({ value: m.id, label: m.rotulo })), [motivos]);
+
+    if (revisando) {
+        return (
+            <Marco abierto onClose={onClose} titulo="Revisando la caja"
+                bajada="Comprobando que todas las ventas del día sigan registradas.">
+                <LoadingState label="Revisando las ventas del día" />
+            </Marco>
+        );
+    }
+
+    const bajada = falta?.desde
+        ? `Desde el corte de las ${hora12(falta.desde)} entraron ${formatMoney(pendiente)} que nadie ha contado.`
+        : `Hoy entraron ${formatMoney(pendiente)} que nadie ha contado.`;
+
+    return (
+        <Marco abierto onClose={onClose} titulo="Falta contar el efectivo" bajada={bajada}
+            pie={conMotivo ? <>
+                <Button variant="ghost" onClick={() => setConMotivo(false)}>Volver</Button>
+                <Button variant="destructive" disabled={ocupado || !motivo}
+                    onClick={() => onReconocer({ motivo, falta: pendiente })}>
+                    Cerrar con {formatMoney(pendiente)} sin contar
+                </Button>
+            </> : <>
+                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                <Button variant="primary" onClick={onCortar}>Hacer corte</Button>
+            </>}>
+            {conMotivo ? (
+                <>
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        El día se cierra con <b>{formatMoney(pendiente)}</b> que ningún corte contó.
+                        Queda anotado con tu nombre y el motivo, y le avisa a supervisión.
+                        El cierre no se deshace.
+                    </Notice>
+                    <LiquidSelect label="Motivo" placeholder="Elige el motivo" value={motivo}
+                        onChange={setMotivo} options={opciones} clearable={false} />
+                </>
+            ) : (
+                <>
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        Si cierras ahora, ese dinero queda <b>fuera de todo conteo</b>: la caja
+                        no vuelve a abrir hasta mañana y el cierre no se deshace. Haz el corte
+                        primero.
+                    </Notice>
+                    <div className="flex justify-end">
+                        <Button variant="ghost" size="sm" onClick={() => setConMotivo(true)}>
+                            Ya conté todo y la diferencia sigue
+                        </Button>
+                    </div>
+                </>
+            )}
         </Marco>
     );
 }

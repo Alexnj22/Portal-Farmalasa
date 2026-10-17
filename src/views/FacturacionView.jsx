@@ -51,7 +51,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 // igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { diasEntre, hoySV, relojSV } from '@nucleo/utils/fecha';
+import { diasEntre, fechaTexto, hoySV, relojSV } from '@nucleo/utils/fecha';
 import {
     conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, observacionesSolventadas, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver,
     claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
@@ -1772,6 +1772,25 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                                                     );
                                                 })}
                                             </div>
+                                            {/* Un salto que el portal SABE qué era: la factura existió, se
+                                                emitió, y el sistema de ventas la eliminó después (Salud 3,
+                                                16-oct-2026). Va visible y no en el tooltip: en el teléfono el
+                                                tooltip no existe, y es lo que hay que ir a resolver. */}
+                                            {branchGaps.flatMap(g => g.desaparecidas || []).map((d) => (
+                                                <Notice key={d.correlativo} variant={d.con_sello ? 'danger' : 'warning'} icon={AlertTriangle} className="mt-2.5">
+                                                    <span className="font-bold">
+                                                        {d.correlativo?.endsWith('_CCF') ? 'Crédito fiscal' : 'Factura'} {pad7(Number(String(d.correlativo).split('_')[0]))} · se eliminó después de emitida
+                                                    </span>
+                                                    <span className="block mt-0.5 font-normal">
+                                                        {fechaTexto(d.fecha, { day: '2-digit', month: 'short' })} {hora12(d.hora)} · <Monto v={d.total} /> · {d.tipo_pago || '—'} · {d.cliente || '—'}
+                                                    </span>
+                                                    <span className="block mt-0.5 font-normal">
+                                                        {d.con_sello
+                                                            ? 'Hacienda la tiene recibida: hay que invalidarla o restituirla. Ya no cuenta como venta en el portal.'
+                                                            : 'No llegó a Hacienda. Ya no cuenta como venta en el portal.'}
+                                                    </span>
+                                                </Notice>
+                                            ))}
                                             {branchGaps.some(g => solvingGap === gapKey(g)) && (() => {
                                                 const g = branchGaps.find(g => solvingGap === gapKey(g));
                                                 return (

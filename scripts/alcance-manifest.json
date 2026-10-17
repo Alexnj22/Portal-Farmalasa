@@ -679,6 +679,10 @@
     "marcar_hojas_recibidas": {
       "guarda": "alcance"
     },
+    "marcar_ventas_desaparecidas": {
+      "guarda": "solo-servidor",
+      "motivo": "Sólo service_role (2026-10-17): la llaman sync-dte-sales y hacer-corte-caja con la llave del servidor, con el listado de ventas que leyeron del origen para esa sala."
+    },
     "pedir_reenvio_sala": {
       "guarda": "alcance"
     },

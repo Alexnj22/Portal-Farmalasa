@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1301.0 — Una factura que el sistema de ventas elimina ya no traba el cierre del día
+
+Salud 3, 16-oct: el ERP eliminó la factura 0000062354_COF ($15.55, efectivo,
+con sello de Hacienda) después de emitida. El sync sólo agrega y actualiza, así
+que el portal la siguió contando como venta: el freno del cierre pidió «$15.55
+sin contar» que ningún corte podía contar —la caja ya no la sumaba—, la sala
+hizo cuatro cortes y cerró a mano en el ERP. Saltos tampoco la mostraba, porque
+acá el correlativo seguía ocupado.
+
+- **El sync detecta lo que el ERP ya no trae** (`marcar_ventas_desaparecidas`).
+  La factura no se borra: pasa a `DESAPARECIDA EN ORIGEN` y, como `venta_valida`
+  es `estado = 'FINALIZADA'`, deja de contar en caja, Ventas, metas y puntos a la
+  vez. Tres frenos: un listado vacío no mira nada, la ausencia se marca recién
+  en la segunda lectura (3 min), y si de golpe faltan más de max(5, 5%) no se
+  marca nada y queda en la bitácora. Si la factura reaparece, vuelve sola.
+- **Saltos la muestra** con su fecha, monto, cliente y si Hacienda la tiene, y
+  **avisa** a quien edita Facturación y ve Saltos.
+- **El cierre revisa antes de frenar**: al mostrar «falta contar», relee las
+  ventas del día en el ERP (`hacer-corte-caja` con `revisar`); el servidor hace
+  lo mismo antes de rechazar el Z. Anoche habría cerrado sin que nadie notara.
+- **Cerrar con la diferencia, con motivo fijo** (regla del usuario): si el freno
+  sigue, la sala cierra eligiendo un motivo de `caja_motivos_cierre_con_diferencia`.
+  El servidor exige que el monto sea el que la persona vio, lo anota en
+  `caja_cierres_con_diferencia` y avisa a quienes reciben los cortes. Web y app.
+- Pendiente MH ya no lista una desaparecida (no hay qué transmitir) y el
+  vigilante de estados la conoce.
+
+Ya aplicado: la 0000062354 quedó marcada y la caja de Salud 3 del 16-oct cuadra
+en $0.00 de falta.
+
 ## v2.1300.3 — Expediente: sólo se mandan a leer los documentos de los que se usa algo
 
 Auditoría de las lecturas del alta (medido en los registros del 16-oct):

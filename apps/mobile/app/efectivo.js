@@ -36,7 +36,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  abrirCaja, cerrarElDia, estadoDeCaja, estadoDeCajaEnElOrigen, fetchCorreccionesDeCaja, fetchMovimientosDelPortal, iniciarTurno,
+  abrirCaja, cerrarElDia, estadoDeCaja, fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja, estadoDeCajaEnElOrigen, fetchCorreccionesDeCaja, fetchMovimientosDelPortal, iniciarTurno,
   fetchSalidasDeSalaDelDia, fetchTiposDeSalida,
 } from '@nucleo/data/bolsas';
 import { fetchCortes, fetchPersonas, fetchVentasPorPago } from '@nucleo/data/cortes';
@@ -59,7 +59,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { Chip } from '../componentes/inicio/Widget';
-import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { cerrarProgreso, fallo, listo, trabajando } from '../componentes/Progreso';
 import MetaDelDia from '../componentes/caja/MetaDelDia';
 import PanelDelDia from '../componentes/caja/PanelDelDia';
 import BonosPorPagar from '../componentes/caja/BonosPorPagar';
@@ -211,13 +211,69 @@ export default function Efectivo() {
     }
     const noSeMidio = falta && falta.medido === false;
     const pendiente = Number(falta?.falta);
-    if (noSeMidio || (Number.isFinite(pendiente) && pendiente >= 0.01)) {
-      Alert.alert(noSeMidio ? 'No se pudo revisar la caja' : 'Falta contar el efectivo',
-        noSeMidio ? 'No se pudo comprobar si quedó dinero sin contar. El día no se cierra sin saberlo: vuelve a intentarlo en un momento.'
-          : `${falta?.desde ? `Desde el corte de las ${hora12(falta.desde)} entraron` : 'Hoy entraron'} ${formatMoney(pendiente)} que nadie ha contado. Si cierras ahora, ese dinero queda fuera de todo conteo. Haz el corte primero.`,
-        noSeMidio ? [{ text: 'Entendido' }] : [{ text: 'Ahora no', style: 'cancel' }, { text: 'Hacer el corte', onPress: () => router.push({ pathname: '/hacer-corte', params: { sala } }) }]);
+    if (noSeMidio) {
+      Alert.alert('No se pudo revisar la caja',
+        'No se pudo comprobar si quedó dinero sin contar. El día no se cierra sin saberlo: vuelve a intentarlo en un momento.',
+        [{ text: 'Entendido' }]);
       return;
     }
+    if (Number.isFinite(pendiente) && pendiente >= 0.01) {
+      // Antes de mandar a contar: ¿todas las ventas que el portal cuenta siguen
+      // en el sistema? Salud 3, 16-oct: una factura eliminada después de
+      // emitida pedía $15.55 que ningún corte podía contar. Mismo camino que
+      // la pantalla web (`FrenoDeEfectivoSinContar`).
+      revisarAntesDeCerrar(pendiente);
+      return;
+    }
+    confirmarCierre();
+  };
+
+  const revisarAntesDeCerrar = async (pendienteAntes) => {
+    trabajando('Revisando las ventas del día…');
+    const r = await revisarVentasDeLaCaja(sala).catch((e) => ({ error: e }));
+    cerrarProgreso();
+    const medida = !r?.error && r?.falta ? r.falta : falta;
+    const pendiente = Number(medida?.falta ?? pendienteAntes);
+    if (r?.marcadas?.length) cargar();
+    if (!(Number.isFinite(pendiente) && pendiente >= 0.01) && medida?.medido !== false) {
+      if (!r?.marcadas?.length) { confirmarCierre(); return; }
+      Alert.alert(r.marcadas.length === 1 ? 'Una venta del día ya no existe' : 'Ventas del día que ya no existen',
+        'Dejaron de contar en la caja y Facturación ya está avisada. La caja cuadra.',
+        [{ text: 'Seguir', onPress: confirmarCierre }]);
+      return;
+    }
+    Alert.alert('Falta contar el efectivo',
+      `${medida?.desde ? `Desde el corte de las ${hora12(medida.desde)} entraron` : 'Hoy entraron'} ${formatMoney(pendiente)} que nadie ha contado. Si cierras ahora, ese dinero queda fuera de todo conteo. Haz el corte primero.`,
+      [{ text: 'Ahora no', style: 'cancel' },
+        { text: 'Ya conté todo', onPress: () => elegirMotivo(pendiente) },
+        { text: 'Hacer el corte', onPress: () => router.push({ pathname: '/hacer-corte', params: { sala } }) }]);
+  };
+
+  // Cerrar con la diferencia, SIEMPRE con un motivo de la lista fija (regla
+  // del usuario, 17-oct). Los motivos salen de su tabla.
+  const elegirMotivo = async (pendiente) => {
+    const { data: motivos, error } = await fetchMotivosCierreConDiferencia();
+    if (error || !motivos?.length) { fallo('No se pudo', 'No se pudieron leer los motivos. Vuelve a intentarlo.'); return; }
+    Alert.alert(`Cerrar con ${formatMoney(pendiente)} sin contar`, 'Elige el motivo. Queda anotado con tu nombre y le avisa a supervisión.', [
+      ...motivos.map((m) => ({ text: m.rotulo, onPress: () => cerrarConMotivo(m, pendiente) })),
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+  const cerrarConMotivo = (motivo, pendiente) => {
+    Alert.alert(`¿Cerrar el día en ${nombre}?`, `Con ${formatMoney(pendiente)} sin contar. Motivo: ${motivo.rotulo}. No se deshace.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar el día', style: 'destructive', onPress: async () => {
+        trabajando('Cerrando el día…');
+        const r = await cerrarElDia(sala, { reconocer: { motivo: motivo.id, falta: pendiente } });
+        if (r?.error) fallo('No se pudo cerrar el día', mensajeAmigable(r.error));
+        else if (r?.aviso) fallo('Quedó algo pendiente', r.aviso);
+        else listo('El día quedó cerrado', 'Con la diferencia anotada.');
+        cargar();
+      } },
+    ]);
+  };
+
+  const confirmarCierre = () => {
     Alert.alert(`¿Cerrar el día en ${nombre}?`, 'Se emite el cierre (Z) y la caja no vuelve a abrir hasta mañana. No se deshace.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cerrar el día', style: 'destructive', onPress: async () => {

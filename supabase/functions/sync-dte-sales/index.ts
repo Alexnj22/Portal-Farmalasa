@@ -594,6 +594,29 @@ async function syncBranch(
     if (logErr) console.error(`[changelog] sucursal ${branchId}: se perdieron ${changelogs.length} cambio(s) — ${logErr.message}`);
   }
 
+  // 7. Lo que el ERP ya no trae
+  //
+  // Este sync sólo agrega y actualiza: una factura que el ERP ELIMINA (no la
+  // anula: la hace desaparecer del listado) se quedaba viva acá como
+  // FINALIZADA para siempre. Salud 3, 16-oct-2026: la 0000062354_COF ($15.55,
+  // con sello de Hacienda) se ocultó en el ERP, el portal la siguió contando, y
+  // el freno del cierre pidió «$15.55 sin contar» que ningún corte podía
+  // contar — la sala tuvo que cerrar a mano. Tampoco salía en Saltos, porque
+  // acá el correlativo seguía ocupado.
+  //
+  // El juez vive en la base (`marcar_ventas_desaparecidas`): anota la primera
+  // ausencia, marca la que sigue faltando 3 minutos después, y no marca nada si
+  // de golpe faltan demasiadas (un listado raro no puede borrar ventas). Va con
+  // TODOS los ids del listado, también los anulados: lo que mira es si la
+  // factura existe, no si cuenta. Un error acá no aborta el sync — las facturas
+  // ya se escribieron — pero queda en el log.
+  {
+    const { error: ausErr } = await supabase.rpc('marcar_ventas_desaparecidas', {
+      p_branch_id: branchId, p_fini: startDate, p_ffin: endDate, p_vistos: erpInvoiceIds,
+    });
+    if (ausErr) console.error(`[desaparecidas] sucursal ${branchId}: ${ausErr.message}`);
+  }
+
   // idMin/idMax calculado sobre todas las ventas del ERP (no solo upserted)
   const allErpNums = ventas.map(v => parseInt(String(v.id_factura))).filter(n => !isNaN(n));
   const idMin = allErpNums.length ? Math.min(...allErpNums) : null;

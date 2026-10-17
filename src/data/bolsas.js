@@ -1187,7 +1187,13 @@ export async function cerrarTurno(sala) {
     return operar({ accion: 'cerrar', sala });
 }
 
-export async function cerrarElDia(sala) {
+/**
+ * `reconocer` = `{ motivo, falta }`: cerrar aunque el freno «efectivo sin
+ * contar» siga en pie, con un motivo de `caja_motivos_cierre_con_diferencia` y
+ * el monto que la persona vio en pantalla. El servidor vuelve a medir y, si el
+ * monto ya no es ése, rechaza en vez de cerrar sobre un número que nadie vio.
+ */
+export async function cerrarElDia(sala, { reconocer = null } = {}) {
     /* ── EL TURNO SE INICIA ANTES DEL Z, y no es una comodidad ─────────────
      *
      * Un Z emitido con el turno parado sale en **$0.00** — cuatro de cuatro
@@ -1209,7 +1215,7 @@ export async function cerrarElDia(sala) {
      * pantalla. */
     await iniciarTurno(sala);
 
-    const z = await hacerCorte({ sala, efectivo: 0, tipo: 'Z' });
+    const z = await hacerCorte({ sala, efectivo: 0, tipo: 'Z', reconocer });
     if (z?.error) return { error: z.error };
     /* `ya_estaba` NO es un fallo: es el reintento después de un «no se pudo
      * confirmar que saliera el Z». El Z está, lo que falta es cerrar el turno —
@@ -1283,10 +1289,10 @@ async function operar(body) {
  * toda la idea. Si el portal lo mostrara antes, sería la misma pantalla que hoy
  * deja teclear hasta que la diferencia dé cero.
  */
-export async function hacerCorte({ sala, efectivo, observaciones = null, simular = false, tipo = 'C' }) {
+export async function hacerCorte({ sala, efectivo, observaciones = null, simular = false, tipo = 'C', reconocer = null }) {
     try {
         const { data, error } = await supabase.functions.invoke('hacer-corte-caja', {
-            body: { sala, efectivo, observaciones, simular, tipo },
+            body: { sala, efectivo, observaciones, simular, tipo, ...(reconocer ? { reconocer } : {}) },
         });
         // Igual que en `operar`: el motivo del rechazo viaja en el cuerpo y
         // `.message` es siempre la misma frase genérica. Acá pesa más todavía
@@ -1300,6 +1306,35 @@ export async function hacerCorte({ sala, efectivo, observaciones = null, simular
     } catch (err) {
         return { error: err };
     }
+}
+
+/**
+ * Antes de mandar a la sala a contar lo que «falta», preguntarle al sistema de
+ * ventas si todas las ventas que el portal cuenta siguen ahí.
+ *
+ * Salud 3, 16-oct-2026: una factura eliminada después de emitida dejó el
+ * cierre pidiendo $15.55 que ningún corte podía contar. El servidor relee las
+ * ventas del día, marca las que ya no existen y devuelve la falta medida de
+ * nuevo (`falta`, la misma forma que `caja_estado.falta_por_contar`). No emite
+ * ningún corte. `revisado: false` = no se pudo leer; la falta es la de antes.
+ */
+export async function revisarVentasDeLaCaja(sala) {
+    try {
+        const { data, error } = await supabase.functions.invoke('hacer-corte-caja', {
+            body: { sala, revisar: true },
+        });
+        if (error) return { error: await motivoDelServidor(error) };
+        if (!data || data.ok !== true) return { error: new Error(data?.error || 'NO_SE_PUDO') };
+        return data;
+    } catch (err) {
+        return { error: err };
+    }
+}
+
+/** Los motivos fijos para cerrar con diferencia. Tabla chica (3 filas). */
+export async function fetchMotivosCierreConDiferencia() {
+    return supabase.from('caja_motivos_cierre_con_diferencia')
+        .select('id, rotulo').eq('activo', true).order('orden');
 }
 
 /**

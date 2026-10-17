@@ -479,6 +479,9 @@ export const AREAS = [
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',
                  'sales_invoice_resolutions', 'sales_null_resolutions', 'sales_observation_resolutions',
                  'sales_payment_confirmations', 'ventas_cuadre_hallazgos', 'clientes_sin_producto',
+                 // Las facturas que el sistema de ventas eliminó después de
+                 // emitidas (2026-10-17): el sync las marca, Saltos las muestra.
+                 'ventas_desaparecidas',
                  'product_last_sale', 'product_sales_rollup', 'product_sales_monthly_agg',
                  'puntos_enviados',
                  // El libro mayor del programa, en el portal (2026-09-01). Va con
@@ -647,6 +650,9 @@ export const AREAS = [
                  'cortes_caja_eventos', 'cortes_caja_movimientos',
                  'cortes_caja_movimientos_historial', 'cortes_caja_aperturas',
                  'caja_cierres_automaticos',
+                 // Cerrar el día con la diferencia reconocida, siempre con un
+                 // motivo de la lista fija (2026-10-17).
+                 'caja_motivos_cierre_con_diferencia', 'caja_cierres_con_diferencia',
                  'cortes_caja_vistazos',
                  'caja_vales_portal', 'caja_aperturas_del_portal', 'caja_movimientos_portal',
                  'caja_tipos_movimiento', 'abonos_de_cliente', 'creditos_abonos_portal',

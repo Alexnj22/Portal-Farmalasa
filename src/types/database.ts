@@ -4421,6 +4421,68 @@ export type Database = {
           },
         ]
       }
+      caja_cierres_con_diferencia: {
+        Row: {
+          branch_id: number
+          created_at: string
+          detalle: Json | null
+          employee_id: string | null
+          falta: number
+          fecha: string
+          id: number
+          motivo_id: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          detalle?: Json | null
+          employee_id?: string | null
+          falta: number
+          fecha: string
+          id?: never
+          motivo_id: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          detalle?: Json | null
+          employee_id?: string | null
+          falta?: number
+          fecha?: string
+          id?: never
+          motivo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caja_cierres_con_diferencia_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "caja_cierres_con_diferencia_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "caja_cierres_con_diferencia_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "caja_cierres_con_diferencia_motivo_id_fkey"
+            columns: ["motivo_id"]
+            isOneToOne: false
+            referencedRelation: "caja_motivos_cierre_con_diferencia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       caja_cortes_del_portal: {
         Row: {
           branch_id: number
@@ -4469,6 +4531,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      caja_motivos_cierre_con_diferencia: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          orden: number
+          rotulo: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id: string
+          orden?: number
+          rotulo: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          orden?: number
+          rotulo?: string
+        }
+        Relationships: []
       }
       caja_movimientos_portal: {
         Row: {
@@ -25067,6 +25153,39 @@ export type Database = {
           },
         ]
       }
+      ventas_desaparecidas: {
+        Row: {
+          branch_id: number
+          created_at: string
+          erp_invoice_id: string
+          estado_previo: string | null
+          invoice_id: number
+          marcada_at: string | null
+          primera_ausencia: string
+          reaparecio_at: string | null
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          erp_invoice_id: string
+          estado_previo?: string | null
+          invoice_id: number
+          marcada_at?: string | null
+          primera_ausencia?: string
+          reaparecio_at?: string | null
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          erp_invoice_id?: string
+          estado_previo?: string | null
+          invoice_id?: number
+          marcada_at?: string | null
+          primera_ausencia?: string
+          reaparecio_at?: string | null
+        }
+        Relationships: []
+      }
       ventas_monthly_stats: {
         Row: {
           avg_ticket: number
@@ -25932,6 +26051,7 @@ export type Database = {
       sales_invoice_gaps: {
         Row: {
           branch_id: number | null
+          desaparecidas: Json | null
           fecha_siguiente: string | null
           gap_count: number | null
           gap_from: number | null
@@ -30747,6 +30867,16 @@ export type Database = {
       marcar_vale_impreso: {
         Args: { p_movimiento_id: number }
         Returns: boolean
+      }
+      marcar_ventas_desaparecidas: {
+        Args: {
+          p_branch_id: number
+          p_ffin: string
+          p_fini: string
+          p_inmediato?: boolean
+          p_vistos: string[]
+        }
+        Returns: Json
       }
       marketing_aprobar_mes: {
         Args: { p_mes_id: string; p_texto?: string }

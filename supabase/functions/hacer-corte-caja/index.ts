@@ -109,6 +109,62 @@ async function abrirSala(cookie: string, erpId: number): Promise<void> {
   if (!ok) throw new Error(`no se pudo abrir la sala ${erpId}`);
 }
 
+const DTE_LISTADO_URL = `${BASE}descarga_dte_emitidos_json.php`;
+
+/**
+ * Las ventas que el ERP tiene HOY para la sala, contra las que el portal cree
+ * tener — antes de frenar un cierre por «efectivo sin contar».
+ *
+ * Salud 3, 16-oct-2026: el ERP eliminó la factura 0000062354 ($15.55) después
+ * de emitida. El portal la seguía contando, así que `caja_falta_por_contar`
+ * decía «$15.55 sin contar» y ningún corte podía satisfacerlo: la caja ya no la
+ * sumaba. La sala hizo cuatro cortes y terminó cerrando a mano en el ERP.
+ *
+ * El sync de cada minuto ya lo detecta solo (`marcar_ventas_desaparecidas`, con
+ * dos lecturas separadas por 3 minutos). Ésta es la lectura deliberada: fresca,
+ * justo antes de decidir, y por eso con `p_inmediato`. Mismo juez de la base,
+ * con sus mismos frenos (listado vacío no mira nada; demasiadas ausencias de
+ * golpe no marca nada).
+ *
+ * Devuelve null si no se pudo leer: quien llama sigue con lo que ya sabía, que
+ * es exactamente el comportamiento de antes.
+ */
+async function revisarVentasDelDia(
+  // deno-lint-ignore no-explicit-any
+  supabase: any, cookie: string, sala: number, erpId: number, dia: string,
+): Promise<{ marcadas: unknown[] } | null> {
+  try {
+    const r = await fetch(
+      `${DTE_LISTADO_URL}?fini=${dia}&ffin=${dia}&id_sucursal=${erpId}`,
+      { headers: { Cookie: cookie }, signal: AbortSignal.timeout(30_000) },
+    );
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const ventas: Array<{ id_factura?: unknown }> = (await r.json())?.ventas ?? [];
+    const vistos = ventas.map((v) => String(v.id_factura ?? "")).filter(Boolean);
+    if (!vistos.length) return null;
+    const { data, error } = await supabase.rpc("marcar_ventas_desaparecidas", {
+      p_branch_id: sala, p_fini: dia, p_ffin: dia, p_vistos: vistos, p_inmediato: true,
+    });
+    if (error) throw new Error(error.message);
+    return { marcadas: Array.isArray(data?.marcadas) ? data.marcadas : [] };
+  } catch (e) {
+    console.error(`[hacer-corte-caja] revisando las ventas de la sala ${sala}:`, e);
+    return null;
+  }
+}
+
+/** El día que la caja tiene ABIERTO, no el del reloj (misma lectura que `operar-caja`). */
+// deno-lint-ignore no-explicit-any
+async function diaAbiertoDe(supabase: any, sala: number): Promise<string> {
+  const { data, error } = await supabase
+    .from("cortes_caja_aperturas")
+    .select("abierta_el")
+    .eq("branch_id", sala).is("cerrada_at", null)
+    .order("abierta_el", { ascending: false }).limit(1);
+  if (error) throw new Error(`leyendo el día abierto: ${error.message}`);
+  return data?.[0]?.abierta_el ?? new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+}
+
 /** La apertura vigente: `id_apertura`, empleado y turno. */
 async function aperturaViva(cookie: string) {
   const pagina = await (await fetch(CORTE_URL, {
@@ -559,6 +615,22 @@ Deno.serve(async (req) => {
     const cookie = await getSessionCookie(username, password);
     await abrirSala(cookie, entrada.erpId);
 
+    /* ── REVISAR, SIN CORTAR NADA ──────────────────────────────────────────
+     *
+     * Lo pide la pantalla del cierre cuando va a mostrar «falta contar»: antes
+     * de mandar a la sala a hacer un corte que quizá no resuelve nada, se le
+     * pregunta al ERP si todas las ventas que el portal cuenta siguen ahí. Si
+     * faltaba una eliminada, la diferencia desaparece y el cierre sigue normal.
+     * Sólo lee y marca; no emite ningún corte. */
+    if (body.revisar === true) {
+      const dia = await diaAbiertoDe(supabase, sala);
+      const rev = await revisarVentasDelDia(supabase, cookie, sala, entrada.erpId, dia);
+      const { data: falta, error: errFalta } = await supabase
+        .rpc("caja_falta_por_contar", { p_branch_id: sala, p_dia: dia });
+      if (errFalta) throw new Error(`revisando el efectivo sin contar: ${errFalta.message}`);
+      return json({ ok: true, revisado: rev !== null, marcadas: rev?.marcadas ?? [], falta });
+    }
+
     /* ── UN DÍA TIENE UN SOLO Z, y hay que frenarlo ANTES de emitirlo ───────
      *
      * Lo pide el arreglo mismo: desde que el cierre del día se PARA cuando el
@@ -771,12 +843,27 @@ Deno.serve(async (req) => {
        * Sólo para el Z: un corte C no cierra nada, y frenarlo por dinero sin
        * contar sería frenar justamente al que viene a contarlo. */
       if (esZ) {
-        const { data: falta, error: errFalta } = await supabase
-          .rpc("caja_falta_por_contar", { p_branch_id: sala, p_dia: diaAbierto });
-        // Igual que arriba: un error no puede leerse como «no falta nada».
-        if (errFalta) throw new Error(`revisando el efectivo sin contar: ${errFalta.message}`);
+        const medirFalta = async () => {
+          const { data, error } = await supabase
+            .rpc("caja_falta_por_contar", { p_branch_id: sala, p_dia: diaAbierto });
+          // Igual que arriba: un error no puede leerse como «no falta nada».
+          if (error) throw new Error(`revisando el efectivo sin contar: ${error.message}`);
+          return data;
+        };
+        let falta = await medirFalta();
+        let pendiente = Number(falta?.falta);
 
-        const pendiente = Number(falta?.falta);
+        /* Antes de frenar, la diferencia se le pregunta al ERP: si viene de una
+         * venta que allá se eliminó, al marcarla la diferencia desaparece sola.
+         * Ver `revisarVentasDelDia` — Salud 3, 16-oct. */
+        if (Number.isFinite(pendiente) && pendiente >= 0.01) {
+          const rev = await revisarVentasDelDia(supabase, cookie, sala, entrada.erpId, diaAbierto);
+          if (rev?.marcadas.length) {
+            falta = await medirFalta();
+            pendiente = Number(falta?.falta);
+          }
+        }
+
         if (falta?.medido === false || !Number.isFinite(pendiente)) {
           return json({
             ok: false, sin_contar: true,
@@ -784,16 +871,75 @@ Deno.serve(async (req) => {
               + " cierra sin saberlo. Volvé a intentarlo en un momento.",
           }, 503);
         }
+
+        /* ── CERRAR CON LA DIFERENCIA RECONOCIDA (usuario, 17-oct) ────────
+         *
+         * «Que puedan ellos hacerlo, siempre con motivo fijo.» Cuando el freno
+         * no se puede satisfacer —la diferencia no la cuenta ningún corte—, la
+         * sala cierra igual eligiendo un motivo de
+         * `caja_motivos_cierre_con_diferencia`. Tres condiciones, y las tres
+         * existen para que esto no sea un botón de «saltar el freno»:
+         *   · el motivo es un id de esa tabla, activo — no texto libre;
+         *   · el monto que la persona VIO tiene que ser el que mide el
+         *     servidor ahora: si entró otra venta entre el aviso y el clic, se
+         *     le vuelve a mostrar en vez de cerrar sobre un número que no vio;
+         *   · queda escrito (`caja_cierres_con_diferencia` + bitácora) y le
+         *     llega a quienes reciben los cortes de esa sala.
+         * Sólo salta ESTE freno: el de los cortes sin resolver, arriba, no. */
         if (pendiente >= 0.01) {
-          const desde = falta?.hay_corte && falta?.desde
-            ? `Desde el corte de las ${hora12(falta.desde)} entraron`
-            : "Hoy entraron";
-          return json({
-            ok: false, sin_contar: true, falta: pendiente, desde: falta?.desde ?? null,
-            error: `${desde} $${pendiente.toFixed(2)} que nadie ha contado.`
-              + " Hacé un corte antes de cerrar el día: la caja no vuelve a abrir"
-              + " y ese dinero ya no se podría contar.",
-          }, 409);
+          const reconocer = body.reconocer && typeof body.reconocer === "object" ? body.reconocer : null;
+          const motivoId = typeof reconocer?.motivo === "string" ? reconocer.motivo : null;
+          const vista = Number(reconocer?.falta);
+          let motivo: { id: string; rotulo: string } | null = null;
+          if (motivoId && Number.isFinite(vista) && Math.abs(vista - pendiente) < 0.01 && quien) {
+            const { data: m, error: errM } = await supabase
+              .from("caja_motivos_cierre_con_diferencia")
+              .select("id, rotulo").eq("id", motivoId).eq("activo", true).maybeSingle();
+            if (errM) throw new Error(`leyendo el motivo: ${errM.message}`);
+            motivo = m ?? null;
+          }
+
+          if (!motivo) {
+            const desde = falta?.hay_corte && falta?.desde
+              ? `Desde el corte de las ${hora12(falta.desde)} entraron`
+              : "Hoy entraron";
+            return json({
+              ok: false, sin_contar: true, falta: pendiente, desde: falta?.desde ?? null,
+              puede_reconocer: !automatico,
+              error: `${desde} $${pendiente.toFixed(2)} que nadie ha contado.`
+                + " Hacé un corte antes de cerrar el día: la caja no vuelve a abrir"
+                + " y ese dinero ya no se podría contar.",
+            }, 409);
+          }
+
+          const { error: errReg } = await supabase.from("caja_cierres_con_diferencia").insert({
+            branch_id: sala, fecha: diaAbierto, falta: pendiente, motivo_id: motivo.id,
+            employee_id: quien!.id, detalle: { medicion: falta },
+          });
+          // Sin el registro no se cierra: el motivo ES la condición para pasar.
+          if (errReg) throw new Error(`anotando el cierre con diferencia: ${errReg.message}`);
+          // La bitácora y el aviso no frenan el cierre —el registro de arriba ya
+          // es la condición—, pero un fallo queda en el log en vez de perderse.
+          const { error: errLog } = await supabase.from("audit_logs").insert({
+            action: "CIERRE_CON_DIFERENCIA_RECONOCIDA", target_id: String(sala),
+            user_id: quien!.id, user_name: quien!.name ?? null, source: "ADMIN_PANEL", severity: "WARNING",
+            branch_id: sala,
+            details: { branch_id: sala, fecha: diaAbierto, falta: pendiente, motivo: motivo.id },
+          });
+          if (errLog) console.error(`[hacer-corte-caja] bitácora del cierre con diferencia: ${errLog.message}`);
+          const { data: dest, error: errDest } = await supabase.rpc("destinatarios_de_cortes", { p_branch_id: sala });
+          if (errDest) console.error(`[hacer-corte-caja] destinatarios del aviso: ${errDest.message}`);
+          if (Array.isArray(dest) && dest.length) {
+            const { data: suc } = await supabase.from("branches").select("name").eq("id", sala).maybeSingle();
+            const { error: errAviso } = await supabase.rpc("notify_employees", {
+              p_recipients: dest, p_type: "CIERRE_DEL_DIA",
+              p_title: `${suc?.name ?? "Una sala"} cerró el día con $${pendiente.toFixed(2)} sin contar`,
+              p_body: `Motivo: ${motivo.rotulo}.`,
+              p_link: "/cortes", p_metadata: { origen: "cierre-con-diferencia", falta: pendiente, motivo: motivo.id },
+              p_push: true, p_branch_id: sala,
+            });
+            if (errAviso) console.error(`[hacer-corte-caja] aviso del cierre con diferencia: ${errAviso.message}`);
+          }
         }
       }
     }

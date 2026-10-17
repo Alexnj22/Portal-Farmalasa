@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1300.2 — La planilla descuenta sola las órdenes de descuento; tipo de sangre sin valor inventado
+
+- **Órdenes de descuento en la planilla.** Al calcular la quincena, la columna
+  «Orden de descuento» se llena con las órdenes VIGENTES de cada persona
+  (`cuotaDeLaQuincena`): quincenal = la cuota entera; mensual = la mitad en
+  cada quincena, y la segunda absorbe el centavo para que sumen la cuota
+  exacta. Por mes, del mes de inicio al de fin incluidos (igual que
+  `loQueFalta`). Sigue editable renglón por renglón. Las órdenes se leen
+  ANTES de borrar los pendientes: si la lectura falla, no se calcula.
+- `ordenes_descuento_select` también deja leer a Nómina (migración
+  20261017151504): sin eso, quien tuviera Nómina sin Personal habría calculado
+  la orden en $0 sin error. Hoy no pasaba porque los tres cargos con Nómina
+  ven Personal — protegido por coincidencia.
+- **Tipo de sangre.** La lectura del DUI tomaba un «O+» a secas —el ejemplo de
+  su propia instrucción— aunque el DUI no lo dijera: 4 fichas tenían O+ sin
+  que nadie lo hubiera dado. Ahora sólo se toma con la forma del DUI («O RH +»,
+  «A POSITIVO»). La lista del formulario se puede volver a «Sin dato» y se
+  guarda NULL. Se quitó el dato de las 4 fichas (pedido del usuario), con su
+  línea en la bitácora.
+
 ## v2.1300.1 — Integra main en la búsqueda de inyecciones
 
 Sin cambios propios: junta v2.1300.0 (inyecciones y pantalla despierta) con v2.1299.2 (órdenes de descuento), que salieron en paralelo.

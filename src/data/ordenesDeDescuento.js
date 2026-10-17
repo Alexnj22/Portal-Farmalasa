@@ -5,6 +5,7 @@
  */
 import { supabase } from '../supabaseClient';
 import { subirArchivo } from '../utils/storageFiles';
+import { fetchAllRows } from '../utils/supabaseUtils';
 import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 
 const COLUMNAS = ['banco', 'referencia', 'monto_prestamo', 'tasa_interes', 'cuota', 'periodicidad',
@@ -70,4 +71,18 @@ export async function borrarOrden(id) {
     const { error, count } = await supabase.from('ordenes_descuento').delete({ count: 'exact' }).eq('id', id);
     if (error) throw error;
     if (!count) throw new Error('No se borró: hace falta permiso de edición en Personal.');
+}
+
+/**
+ * Las órdenes VIGENTES de toda la planilla, para calcular la quincena.
+ * Paginado con el canónico: hoy son pocas, pero la planilla no puede perder
+ * una orden en silencio el día que pasen de mil. Si la lectura falla se lanza:
+ * calcular sin ellas pondría el descuento en cero sin que nadie lo note.
+ */
+export async function fetchOrdenesVigentes() {
+    const filas = await fetchAllRows(() => supabase.from('ordenes_descuento')
+        .select('id, employee_id, cuota, periodicidad, fecha_inicio, fecha_fin, estado, banco')
+        .eq('estado', 'VIGENTE').order('id'), { completo: true });
+    if (filas === null) throw new Error('No se pudieron leer las órdenes de descuento.');
+    return filas;
 }

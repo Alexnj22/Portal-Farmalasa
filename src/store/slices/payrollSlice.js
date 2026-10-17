@@ -6,6 +6,8 @@ import {
 } from '../../data/payroll';
 import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 import { rotuloDePeriodo } from '../../utils/planilla';
+import { fetchOrdenesVigentes } from '../../data/ordenesDeDescuento';
+import { descuentosPorOrdenes } from '../../utils/ordenDeDescuento';
 
 // Lo escrito sobre este módulo:
 // `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md` — por qué las secciones
@@ -324,6 +326,15 @@ export const createPayrollSlice = (set, get) => ({
                 vacBonusMap.set(empId, (vacBonusMap.get(empId) || 0) + parseFloat((vacDays * dailyRate * 0.30).toFixed(2)));
             }
 
+            // ── Órdenes de descuento (2026-10-17) ─────────────────────────────
+            // Se leían a mano renglón por renglón: una orden vigente en la ficha
+            // no llegaba a la planilla. Antes de BORRAR los pendientes, igual que
+            // lo demás de arriba: si la lectura falla, se para acá y el borrador
+            // que había queda intacto. La regla del monto vive en
+            // `cuotaDeLaQuincena` y sólo ahí.
+            const ordenesVigentes = await fetchOrdenesVigentes();
+            const ordenMap = descuentosPorOrdenes(ordenesVigentes, period.start_date);
+
             // Period working days (fallback when no timesheets)
             const start    = new Date(period.start_date + 'T12:00:00');
             const end      = new Date(period.end_date   + 'T12:00:00');
@@ -346,6 +357,7 @@ export const createPayrollSlice = (set, get) => ({
                     salary_advance:       advance,
                     night_hours_ordinary: noctOrd,
                     vacation_bonus:       vacBonus,
+                    order_discount:       ordenMap.get(empId) || 0,
                 });
                 return {
                     period_id:   periodId,
@@ -383,6 +395,7 @@ export const createPayrollSlice = (set, get) => ({
             await get().appendAuditLog('CALCULAR_PLANILLA', periodId, {
                 renglones: rows.length, banco_de_horas: bankRows.length,
                 sin_salario: noSalary.length,
+                con_orden_de_descuento: rows.filter(r => r.order_discount > 0).length,
             });
             return { warnings: noSalary };
         } catch (err) {

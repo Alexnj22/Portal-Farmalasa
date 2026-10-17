@@ -92,3 +92,56 @@ export function camposDesdeLectura(leido) {
     }
     return campos;
 }
+
+const mesDe = (d) => d.getFullYear() * 12 + d.getMonth();
+const redondear2 = (n) => Math.round(n * 100) / 100;
+
+/**
+ * Cuánto descuenta UNA orden en la quincena que empieza en `inicioPeriodo`.
+ *
+ * La planilla tomaba la «Orden de descuento» a mano en cada renglón: que la
+ * ficha tuviera una orden vigente no cambiaba nada (2026-10-17). Esto es lo
+ * que la conecta. Decisiones, todas escritas acá y en ningún otro lado:
+ *
+ *  - Sólo `VIGENTE`. Finalizada o cancelada no descuenta.
+ *  - Por MES, igual que `loQueFalta`: corre desde el mes de inicio hasta el
+ *    mes de fin, incluidos. Comparar por día dejaría fuera la quincena en la
+ *    que cae la fecha de fin, y `loQueFalta` sí cuenta esa cuota.
+ *  - `QUINCENAL` descuenta la cuota entera cada quincena. `MENSUAL` la parte en
+ *    dos: la primera quincena se lleva la mitad redondeada hacia abajo y la
+ *    segunda el resto, así las dos suman la cuota al centavo.
+ *
+ * @param {{ estado?: string, cuota?: number|string, periodicidad?: string,
+ *           fecha_inicio?: string, fecha_fin?: string }} orden
+ * @param {string} inicioPeriodo  'YYYY-MM-DD' — el día 1 o el 16.
+ */
+export function cuotaDeLaQuincena(orden, inicioPeriodo) {
+    if (!orden || orden.estado !== 'VIGENTE') return 0;
+    const cuota = Number(orden.cuota);
+    if (!Number.isFinite(cuota) || cuota <= 0) return 0;
+    const p = aFecha(inicioPeriodo);
+    if (!p) return 0;
+    const ini = aFecha(orden.fecha_inicio);
+    const fin = aFecha(orden.fecha_fin);
+    if (ini && mesDe(ini) > mesDe(p)) return 0;
+    if (fin && mesDe(fin) < mesDe(p)) return 0;
+    if (orden.periodicidad === 'QUINCENAL') return redondear2(cuota);
+    const mitad = Math.floor(cuota * 100 / 2) / 100;
+    return p.getDate() <= 15 ? mitad : redondear2(cuota - mitad);
+}
+
+/**
+ * Total por empleado para una quincena: `Map<employee_id, monto>`.
+ * @param {Array<{ employee_id: string }>} ordenes
+ * @param {string} inicioPeriodo
+ */
+export function descuentosPorOrdenes(ordenes, inicioPeriodo) {
+    const m = new Map();
+    for (const o of ordenes || []) {
+        const monto = cuotaDeLaQuincena(o, inicioPeriodo);
+        if (!monto) continue;
+        const k = String(o.employee_id);
+        m.set(k, redondear2((m.get(k) || 0) + monto));
+    }
+    return m;
+}

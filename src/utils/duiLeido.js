@@ -193,8 +193,21 @@ export function aplicarDuiLeido(leido, actual = {}) {
     if (leido?.estado_familiar && !civil) descartados.push(`estado familiar «${leido.estado_familiar}»`);
     poner('marital_status', civil);
 
-    const sangre = deCatalogo(normalizarSangre(leido?.tipo_sangre), TIPOS_SANGRE);
-    if (leido?.tipo_sangre && !sangre) descartados.push(`tipo de sangre «${leido.tipo_sangre}»`);
+    /* Sólo con la forma del DUI (2026-10-17). El DUI escribe «O RH +» —con RH
+     * en medio— o la palabra POSITIVO/NEGATIVO; y lo trae sólo quien presentó
+     * constancia de laboratorio, así que casi nunca está. El lector devolvía
+     * «O+» a secas, que es justo el ejemplo de su instrucción: 4 fichas
+     * quedaron con O+ sin que nadie lo hubiera dado (dicho por el usuario:
+     * «a ninguno se le ha agregado»). Un «O+» pelado no es una lectura, es un
+     * relleno: se descarta en silencio, como un campo que no vino. */
+    const sangreCruda = sinTildes(leido?.tipo_sangre);
+    const conFormaDelDui = /\bRH\b|POSITIV|NEGATIV/.test(sangreCruda);
+    const delCatalogo = deCatalogo(normalizarSangre(leido?.tipo_sangre), TIPOS_SANGRE);
+    const sangre = conFormaDelDui ? delCatalogo : null;
+    // Lo que no es un tipo de sangre («NO INDICA», «Z+») se sigue diciendo;
+    // el «O+» pelado no, porque no es algo que el documento haya dicho.
+    const rellenoPelado = !conFormaDelDui && !!delCatalogo;
+    if (leido?.tipo_sangre && !sangre && !rellenoPelado) descartados.push(`tipo de sangre «${leido.tipo_sangre}»`);
     poner('blood_type', sangre);
 
     // ── Territorio: en cascada, y ninguno entra suelto ──────────────────────

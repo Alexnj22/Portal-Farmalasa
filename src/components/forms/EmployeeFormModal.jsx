@@ -3749,7 +3749,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="relative z-base">
                                     <label className={rotuloCampo('text-content-3')}>Tipo de Sangre</label>
-                                    <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Sin dato" clearable={false} {...portalSelectProps} />
+                                    {/* `clearable`: es un dato OPCIONAL (sólo lo trae quien presentó
+                                        constancia de laboratorio). Sin la ✕, una vez elegido no
+                                        había forma de volver a «Sin dato» (2026-10-17). */}
+                                    <LiquidSelect value={formData.blood_type || ''} onChange={(val) => handleSelectChange('blood_type', val || '')} options={BLOOD_TYPE_OPTIONS} placeholder="Sin dato" {...portalSelectProps} clearable clearLabel="Sin dato" />
                                 </div>
                             </div>
 

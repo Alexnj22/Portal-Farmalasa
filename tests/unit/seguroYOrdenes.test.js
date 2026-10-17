@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { primaPorPersona, periodoVigente, rotuloDelPeriodo, estadoEnElSeguro } from '@nucleo/utils/seguroDeVida';
-import { loQueFalta, finDesdePlazo, camposDesdeLectura } from '@nucleo/utils/ordenDeDescuento';
+import { loQueFalta, finDesdePlazo, camposDesdeLectura, cuotaDeLaQuincena, descuentosPorOrdenes } from '@nucleo/utils/ordenDeDescuento';
 import { bancoDelTexto } from '@nucleo/constants/bancos';
 import { revisarNup } from '@nucleo/utils/nupAfp';
 
@@ -65,5 +65,39 @@ describe('NUP', () => {
     it('el DUI de la ficha vale como NUP', () => {
         expect(revisarNup('01234567-8', '01234567-8').ok).toBe(true);
         expect(revisarNup('012345678', '01234567-8').esElDui).toBe(true);
+    });
+});
+
+// ── La planilla toma la cuota de las órdenes vigentes (2026-10-17) ───────────
+
+describe('cuotaDeLaQuincena', () => {
+    const base = { estado: 'VIGENTE', cuota: 100.01, periodicidad: 'MENSUAL', fecha_inicio: '2026-10-05', fecha_fin: '2027-03-05' };
+    it('mensual: se parte en dos y las dos mitades suman la cuota al centavo', () => {
+        const a = cuotaDeLaQuincena(base, '2026-10-01');
+        const b = cuotaDeLaQuincena(base, '2026-10-16');
+        expect(a).toBe(50);
+        expect(b).toBe(50.01);
+        expect(Math.round((a + b) * 100) / 100).toBe(100.01);
+    });
+    it('quincenal: la cuota entera cada quincena', () => {
+        expect(cuotaDeLaQuincena({ ...base, periodicidad: 'QUINCENAL' }, '2026-11-16')).toBe(100.01);
+    });
+    it('por mes: incluye el mes de inicio y el de fin, nada fuera', () => {
+        expect(cuotaDeLaQuincena(base, '2026-09-16')).toBe(0);
+        expect(cuotaDeLaQuincena(base, '2027-03-16')).toBe(50.01);
+        expect(cuotaDeLaQuincena(base, '2027-04-01')).toBe(0);
+    });
+    it('sólo vigente y con cuota', () => {
+        expect(cuotaDeLaQuincena({ ...base, estado: 'FINALIZADA' }, '2026-10-01')).toBe(0);
+        expect(cuotaDeLaQuincena({ ...base, cuota: '' }, '2026-10-01')).toBe(0);
+    });
+    it('suma por persona', () => {
+        const m = descuentosPorOrdenes([
+            { ...base, employee_id: 'a' },
+            { ...base, employee_id: 'a', cuota: 20, periodicidad: 'QUINCENAL' },
+            { ...base, employee_id: 'b', estado: 'CANCELADA' },
+        ], '2026-10-01');
+        expect(m.get('a')).toBe(70);
+        expect(m.has('b')).toBe(false);
     });
 });

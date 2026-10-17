@@ -1131,6 +1131,8 @@ export const createEmployeeSlice = (set, get) => ({
     updateEmployee: async (id, updatedData) => {
         try {
             const dbPayload = { ...updatedData };
+            // «Sin dato» llega como '' desde la lista: se guarda NULL, no una cadena vacía.
+            if (dbPayload.blood_type !== undefined) dbPayload.blood_type = dbPayload.blood_type || null;
 
             // Mismas reglas del código que en addEmployee: trim, único, y SOLO números.
             // Los códigos legacy no numéricos (SUPERADMIN, edwin, etc.) se toleran

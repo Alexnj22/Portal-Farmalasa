@@ -32,7 +32,7 @@ const LEIDO = {
     departamento: 'Chalatenango',
     municipio: null,
     distrito: null,
-    tipo_sangre: 'O+',
+    tipo_sangre: 'O RH +',
     nacionalidad: 'Salvadoreña',
 };
 
@@ -352,13 +352,20 @@ describe('el tipo de sangre como lo escribe el DUI', () => {
         expect(aplicarDuiLeido({ tipo_sangre: 'O RH +' }, {}).descartados).toEqual([]);
     });
 
+    it('un «O+» a secas no se toma: es el relleno del lector, no lo que dice el DUI', () => {
+        const r = aplicarDuiLeido({ tipo_sangre: 'O+' }, {});
+        expect(r.parche.blood_type).toBeUndefined();
+        expect(r.descartados).toEqual([]);
+        expect(aplicarDuiLeido({ tipo_sangre: 'A POSITIVO' }, {}).parche.blood_type).toBe('A+');
+    });
+
     it('aguanta las formas que aparecen de verdad', () => {
         const leer = (t) => aplicarDuiLeido({ tipo_sangre: t }, {}).parche.blood_type;
         expect(leer('A RH -')).toBe('A-');
         expect(leer('AB RH+')).toBe('AB+');
         expect(leer('B RH-')).toBe('B-');
         expect(leer('O POSITIVO')).toBe('O+');   // documentos viejos, con letra
-        expect(leer('O+')).toBe('O+');
+        expect(leer('O+')).toBeUndefined();     // pelado: relleno del lector, no del DUI
     });
 
     it('lo que no es un tipo de sangre se sigue descartando', () => {

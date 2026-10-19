@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1306.1 — Puntos: el vencimiento resta exactamente el lote vencido
+
+- `puntos_vencer_lotes` descontaba lo vencido por FIFO (`puntos_consumir`,
+  ordena por `ganado_el`). El cupón del mes vence a fin de mes, antes que
+  compras más viejas: se restaba de la compra y el cupón seguía «vencido» al
+  día siguiente, quemando otro lote ajeno cada día. Ahora cada lote vencido
+  pasa a 0 con sus `restantes` exactos, idempotente. Prod tenía 0 vencimientos:
+  se corrige antes del primer daño. Probado en el entorno de pruebas (la vieja
+  quemaba 450 puntos por 250 vencidos; la nueva, 250 y la segunda corrida 0).
+- Migración `20261019225431_puntos_vencer_exactamente_el_lote_vencido`.
+
 ## v2.1306.0 — Pago de asegurado Mapfre amarrado a su factura
 
 - **Nuevo ingreso «Pago de asegurado Mapfre».** La venta a Mapfre se factura al

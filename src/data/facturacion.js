@@ -6,6 +6,7 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { anotar, conBitacora } from './audit';
+import { NO_ES_COF_NOCHE } from '../utils/cofNoche';
 // Las listas de «ya resuelto» (anulaciones, pagos confirmados, observaciones)
 // crecen para siempre y se usan para RESTAR de las colas: cortadas en 1000,
 // lo resuelto después de la fila 1000 volvería a aparecer como pendiente, sin
@@ -67,7 +68,10 @@ export function fetchNulaInvoices(filterBranch) {
         let q = supabase
             .from('sales_invoices')
             .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, codigo_generacion, recibido_mh')
-            .or('estado.eq.NULA,estado.is.null,estado.eq.undefined')
+            // Un COF de la noche anulado sin sello no está pendiente de nada:
+            // Hacienda nunca lo tuvo y no hay qué invalidar (2026-10-19). Si la
+            // caja lo transmitió igual —tiene sello— sí se invalida, y sigue acá.
+            .or(`and(or(estado.eq.NULA,estado.is.null,estado.eq.undefined),or(${NO_ES_COF_NOCHE},recibido_mh.like.${'_'.repeat(40)}))`)
             .order('tipo_documento', { ascending: false })
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true });

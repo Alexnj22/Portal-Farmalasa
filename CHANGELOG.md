@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1305.2 — COF de la noche: se puede anular sin enviarlo a Hacienda; fuera de Anuladas y de «Pdte. MH»
+
+- **Anular un COF de después de las 6:00 p. m. ya no se traba.**
+  `aplicar-solicitud-facturacion` transmitía a Hacienda TODA venta sin sello
+  antes de anularla (regla del 2026-08-24) y `regularizar-dte` ahora se niega
+  a mandar éstas: la anulación quedaba frenada para siempre con «todavía no
+  llegó a Hacienda». Con el COF de la noche sin sello se anula sólo en la caja:
+  ni se transmite antes ni se invalida después (el paso 2 «se intentaba
+  siempre» y reventaba porque la caja ya le asignó código de generación). Si
+  la caja lo transmitió igual y tiene sello, se invalida como cualquier otro.
+  La regla se le pregunta a la base (`cof_no_se_envia_mh`).
+- **Facturación → Anuladas** no lista un COF de la noche anulado sin sello: no
+  hay nada que invalidar.
+- **Ventas** no le pone «Pdte. MH» a un COF de la noche.
+- Gemela del frente en `src/utils/cofNoche.js`.
+- Los cambios de cliente, forma de pago y vendedor no tocan Hacienda y ya
+  funcionaban igual.
+
 ## v2.1305.1 — Evidencia de COF de la noche sólo para admin; fuera del aviso contable
 
 - **La evidencia de los COF de después de las 6:00 p. m. es sólo del área

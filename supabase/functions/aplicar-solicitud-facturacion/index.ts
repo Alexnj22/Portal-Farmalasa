@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
     // ── id del portal → id del ERP ───────────────────────────────────────
     const { data: factura, error: facErr } = await admin
       .from("sales_invoices")
-      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento")
+      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento, fecha, hora")
       .eq("id", meta.invoice_id)
       .maybeSingle();
     if (facErr) throw facErr;
@@ -304,6 +304,20 @@ Deno.serve(async (req) => {
       // del barrido nocturno.
       let cierrePendiente = false;
 
+      // ── Consumidor final de las 6:00 p. m. en adelante (2026-10-19) ─────
+      // Por decisión del usuario no se transmite a Hacienda nunca. Mientras no
+      // tenga sello, anularlo es SÓLO anularlo en el sistema: ni se manda antes
+      // (paso 0) ni se invalida después (paso 2) — Hacienda no lo tiene. Si la
+      // caja lo transmitió igual y tiene sello, se invalida como cualquier otro,
+      // porque ahí sí está vigente ante Hacienda.
+      //
+      // Se le pregunta a la base y no a una copia de la regla: la misma función
+      // la usan el envío, la cola y los avisos. Un error acá no es un «no».
+      const { data: esCofNoche, error: cofErr } = await admin.rpc("cof_no_se_envia_mh", {
+        p_tipo: factura.tipo_documento, p_fecha: factura.fecha, p_hora: factura.hora,
+      });
+      if (cofErr) throw cofErr;
+
       // ── 0 · Lo que Hacienda todavía no tiene se le manda ANTES de anular ──
       //
       // Una venta que ocurrió tiene que quedar documentada ante Hacienda antes
@@ -334,7 +348,10 @@ Deno.serve(async (req) => {
           .from("sales_invoices").select("recibido_mh").eq("id", factura.id).maybeSingle();
         if (previaErr) throw previaErr;   // no se anula sobre una lectura que falló
 
-        if (!selloValido(previa?.recibido_mh)) {
+        if (!selloValido(previa?.recibido_mh) && esCofNoche) {
+          // No se transmite: se anula tal cual (ver el bloque de arriba).
+          avisos.push("No se transmite a Hacienda por decisión escrita.");
+        } else if (!selloValido(previa?.recibido_mh)) {
           const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
           if (!secreto)
             return json({
@@ -377,6 +394,17 @@ Deno.serve(async (req) => {
             avisos.push("Se transmitió a Hacienda antes de anular.");
           } else if (r?.excluida) {
             // Ya hay una decisión escrita de no transmitir este documento.
+            avisos.push("No se transmite a Hacienda por decisión escrita.");
+          } else if (r?.no_se_envia) {
+            // Consumidor final emitido desde las 6:00 p. m. (2026-10-19): por
+            // decisión del usuario no se transmite nunca, tampoco para anularlo.
+            // Es la excepción a la regla del 2026-08-24 de arriba, y es a
+            // propósito: sin esto la anulación quedaba trabada para siempre,
+            // porque `regularizar-dte` se niega a mandarlo y esto lo leía como
+            // «no entró». Normalmente no se llega acá —`esCofNoche` corta antes
+            // sin llamar—; es la red por si las dos copias de la regla
+            // divergen. El aviso es el de la lista negra: quien aprueba no
+            // necesita saber el motivo.
             avisos.push("No se transmite a Hacienda por decisión escrita.");
           } else {
             // No entró. Antes de frenar, se le pregunta a la base si éste es el
@@ -477,6 +505,11 @@ Deno.serve(async (req) => {
       let mh: Awaited<ReturnType<typeof enviarDteAlMH>> | null = null;
       if (yaInvalidada) {
         avisos.push("Ya estaba invalidada ante Hacienda: no se volvió a enviar.");
+      } else if (esCofNoche && !selloValido(fresca?.recibido_mh)) {
+        // Ver arriba: nunca se transmitió y no se va a transmitir, así que no
+        // hay nada que invalidar. Intentarlo revienta: el sistema ya le asignó
+        // código de generación al emitirla, y con eso «llegó a armarse».
+        avisos.push("La venta nunca se transmitió a Hacienda, así que no hay nada que invalidar.");
       } else if (interno) {
         // El paso 0 ya resolvió que este documento no se le manda a Hacienda:
         // nunca lo recibió y nunca lo va a recibir. Intentar la invalidación

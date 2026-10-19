@@ -37,6 +37,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
+import { cofNoSeEnviaMh } from '@nucleo/utils/cofNoche';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { filaDeProductoVendido as mapAggRow, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos, DRILL_TIERS, DRILL_TIER_ORDER, detectTier, RELEVANT_CAMPOS, CAMPO_LABELS, fmtCampoVal, lineasDelDrill } from '@nucleo/utils/ventasPeriodo';
 
@@ -951,7 +952,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     {r.hora && <p className="text-caption text-content-3">{hora12(r.hora)}</p>}
                                     {isCancelled
                                         ? <span className="text-micro font-black uppercase tracking-widest text-danger-text">ANULADA</span>
-                                        : r.recibido_mh === null && <span className="text-micro font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
+                                        : r.recibido_mh === null && !cofNoSeEnviaMh(r.tipo_documento, r.fecha, r.hora)
+                                            // El COF de la noche no se envía a Hacienda por decisión
+                                            // (2026-10-19): no está «pendiente» de nada.
+                                            && <span className="text-micro font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     {r.erp_invoice_id && <p className={`font-mono text-label font-black text-content-3 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}

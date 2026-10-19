@@ -689,8 +689,6 @@ export const AREAS = [
         rutas: ['/facturacion', '/clientes', '/cotizaciones', '/mis-puntos'],
         archivos: [
             'src/views/FacturacionView.jsx', 'src/views/ClientesView.jsx', 'src/views/clientes/',
-            // El DTE que se le entrega al cliente desde Facturación y Ventas (2026-10-19).
-            'src/components/facturacion/',
             'src/views/CotizacionesView.jsx',
             'src/data/facturacion.js', 'src/data/customers.js', 'src/data/cotizaciones.js',
             'src/data/datosPedidos.js', 'src/views/dashboard/WidgetDatoPedido.jsx',
@@ -699,6 +697,7 @@ export const AREAS = [
             'src/utils/dteIva.js', 'src/utils/dtePdfCodigo.js', 'src/utils/dteTypes.js',
             'src/utils/svCatalogs.js',
             'src/components/forms/FormClienteDetail.jsx', 'src/components/forms/FormSalesDteViewer.jsx',
+            'src/components/facturacion/', 'src/utils/cofNoche.js',
             'scripts/migracion-clientes/',
             // La pantalla del CLIENTE, sin sesión. Va acá y no en Ventas porque
             // lo que muestra es el dato de una persona, y su puerta es la ficha.
@@ -817,9 +816,12 @@ export const AREAS = [
                  // Los dos mensajes automáticos (abierto / fuera de horario).
                  'app_chat_ajustes',
                  // Chat asignado (2026-10-14): esperas de más de 20 min sin respuesta del asignado.
-                 'app_chat_incumplimientos'],
+                 'app_chat_incumplimientos',
+                 // Cuántas unidades se piden de lo normal, para preguntarle al
+                 // cliente cuando reserva de más (2026-10-19).
+                 'producto_cantidad_habitual'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario',
+        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
                 'recetas-escalar-15min',
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.

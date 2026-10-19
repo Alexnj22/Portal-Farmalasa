@@ -34,7 +34,7 @@ export const FAMILIAS_OPERATIVAS = [
     {
         key: 'facturacion', icono: 'Receipt',
         label: 'Modificar facturación',
-        desc: 'Anular una factura, o cambiar su cliente, vendedor o forma de pago',
+        desc: 'Anular una factura, cambiar su cliente, vendedor o forma de pago, o entregarle el documento electrónico al cliente',
         permiso: 'dash_annulment_req',
     },
     {

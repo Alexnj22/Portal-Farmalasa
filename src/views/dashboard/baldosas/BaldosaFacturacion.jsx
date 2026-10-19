@@ -96,7 +96,7 @@ export default function BaldosaFacturacion(props) {
       etiquetaPendientesPlural="solicitudes pendientes"
       vacio="Sin pendientes"
       tono="warning"
-      descripcion="Anular una factura, o cambiar su cliente, vendedor o forma de pago"
+      descripcion="Anular una factura, cambiar su cliente, vendedor o forma de pago, o entregarle el documento electrónico al cliente"
       instrumento={franja === null
         ? <FranjaVacia />
         : <BarraTramos tramos={franja.tramos} />}

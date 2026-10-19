@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1307.3 — Área de auditoría para el componente del DTE al cliente
+
+- `src/components/facturacion/` y `src/utils/cofNoche.js` van al área
+  facturacion-dte. `DocumentoParaCliente.jsx` había entrado a main sin área y
+  `gate:auditoria --hook` frenaba todos los commits: al correrlo antes de
+  commitear el archivo era nuevo sin seguimiento y el gate no lo veía.
+
+## v2.1307.2 — Modificar facturación menciona la entrega del documento electrónico
+
+- La descripción de la herramienta (baldosa del Inicio y lanzador de
+  solicitudes) dice ahora que ahí también se entrega el DTE al cliente, para
+  que la sala la encuentre.
+
 ## v2.1309.0 — Integración: recetas, niveles, mayoreo y app de clientes
 
 Une los cuatro frentes del 2026-10-19 (cada uno con su entrada propia abajo):

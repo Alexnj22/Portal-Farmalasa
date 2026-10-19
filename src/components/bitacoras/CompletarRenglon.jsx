@@ -22,6 +22,9 @@ import {
     guardarMedicoDelConsejo, subirFotoDeReceta,
 } from '@nucleo/data/bitacoras';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { recetaDeLaAppParaDispensacion } from '@nucleo/data/reservas';
+import { firmarRuta } from '@nucleo/data/chatClientes';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Completar un renglón del libro.
@@ -162,6 +165,24 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
         });
         return () => { vivo = false; };
     }, [branchId]);
+
+    // La receta que el cliente subió por la app y la sala aprobó (2026-10-19,
+    // decisión 8): misma ficha y producto. Sirve de respaldo de este renglón
+    // —se ve la foto, quién la aprobó y cuándo—; la copia del libro se sigue
+    // tomando aparte. Si falla la consulta, el formulario sigue igual.
+    const [recetaApp, setRecetaApp] = useState(null);
+    useEffect(() => {
+        let vivo = true;
+        recetaDeLaAppParaDispensacion(renglon.id)
+            .then(async (filas) => {
+                const r = (filas || [])[0];
+                if (!r || !vivo) return;
+                const url = await firmarRuta(r.receta_ruta);
+                if (vivo) setRecetaApp({ ...r, url });
+            })
+            .catch((err) => console.error('CompletarRenglon: no se pudo buscar la receta de la app', err));
+        return () => { vivo = false; };
+    }, [renglon.id]);
 
     // El borrador se escribe en cada tecla. La foto NO va: un File no se
     // serializa, y guardar su nombre haría creer que quedó adjunta.
@@ -476,6 +497,22 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
             </LiquidModal.Header>
 
             <LiquidModal.Body className="space-y-5">
+                {recetaApp && (
+                    <Notice variant="info" icon={BadgeCheck}>
+                        <span className="font-bold">Este cliente mandó su receta por la app y se aprobó</span>
+                        <span className="block mt-0.5 font-normal text-content-2">
+                            {recetaApp.pedido ?? `R-${String(recetaApp.reserva_id).padStart(6, '0')}`} · {recetaApp.sala}
+                            {recetaApp.revisada_por ? ` · la aprobó ${shortEmployeeName(recetaApp.revisada_por)}` : ''}
+                            {recetaApp.receta_revisada_at ? ` el ${fechaTexto(recetaApp.receta_revisada_at, { day: 'numeric', month: 'short' })}` : ''}
+                        </span>
+                        {recetaApp.url && (
+                            <a href={recetaApp.url} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center mt-1 min-h-[var(--tap-min)] font-semibold text-brand-text underline active:scale-[0.97]">
+                                Ver la foto de la receta
+                            </a>
+                        )}
+                    </Notice>
+                )}
                 {!clase.sirve && (
                     <Notice variant="warning" icon={AlertTriangle}>
                         <span className="font-bold">{clase.titulo}</span>

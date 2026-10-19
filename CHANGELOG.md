@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1307.0 — Recetas y reservas de la app: regla del libro, permiso propio, plazos, lo apartado y saldo a favor
+
+Decisiones del dueño tras la auditoría del 2026-10-19 (frente «recetas y reservas»).
+
+- **La app pide receta con la MISMA regla del libro** (`clase_de_dispensacion`),
+  en un solo sitio (`app_productos_bajo_receta`) para reservar, carrito, encargos
+  y existencias; el trigger `app_reservas_guardas` la vuelve a decidir al
+  insertar y frena apartar, marcar lista o entregar sin la receta aprobada.
+- **Permiso propio `recetas_app`** (Aprobar, con alcance): lo tienen los cuatro
+  cargos de administración (todas las salas) y los cargos de sala que manejan
+  reservas (su sala). Lo exigen `reserva_receta_decidir`, la foto de la receta
+  y el aviso de «receta por revisar».
+- **Plazos con aviso al cliente**: sin foto, 24 h; con foto sin revisar, 48 h;
+  aprobada o sin receta, 48 h para prepararla; lista, su plazo de siempre. Lo
+  que vence por la sala no cuenta en el tope de «3 vencidas».
+- **Lo apartado se resta**: lo disponible que ve la app, y el control al
+  reservar y al pagar, es existencia menos las reservas abiertas de esa sala
+  (`app_existencias_netas`, en unidades, sin tocar `inventory`).
+- **Saldo a favor**: lo pagado en línea que no se entrega (la sala cancela,
+  vence, o el pago llega tarde) queda a favor 90 días; un pago tardío nunca
+  revive una reserva. Se usa en cualquier sala (buscando el código) y sólo
+  administración lo devuelve en dinero, con motivo
+  (`dash_reservas_devolver_saldo`). La app lo muestra en Mis reservas y Cuenta.
+- **Rechazo en un pedido mixto**: se cancela sólo lo bajo receta; el cliente
+  puede además quitar esos productos y seguir con lo demás.
+- **Pago de prueba**: la sala ve «PAGO DE PRUEBA — cobrar en caja» y la app lo
+  dice; el enlace reutilizado ya no contesta `prueba: false` fijo.
+- **La receta aprobada se guarda siempre** y se ve desde el libro al completar
+  el renglón (`receta_app_de_dispensacion`).
 ## v2.1308.1 — Puntos: la app y los avisos leen los niveles configurados
 
 Funciones de Supabase (SIN desplegar: lo despliega el coordinador) y app de clientes:

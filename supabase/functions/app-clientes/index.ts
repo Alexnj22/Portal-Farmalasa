@@ -188,7 +188,11 @@ async function borrarLoPersonal(admin: any, customerId: number) {
     .eq("customer_id", customerId).not("receta_ruta", "is", null).limit(500);
   if (eR) throw eR;
   // deno-lint-ignore no-explicit-any
-  const sinEntregar = (rs ?? []).filter((r: any) => r.estado === "vencida" || r.estado === "cancelada" || r.receta_estado === "rechazada");
+  // Una receta APROBADA no se borra nunca (2026-10-19, decisión 8): es el
+  // respaldo de lo que se despachó bajo receta y la consulta el libro
+  // (`receta_app_de_dispensacion`). Sólo se borran las que nunca valieron.
+  const sinEntregar = (rs ?? []).filter((r: any) => r.receta_estado !== "aprobada"
+    && (r.estado === "vencida" || r.estado === "cancelada" || r.receta_estado === "rechazada"));
   for (const r of sinEntregar) await deCarpeta(`recetas/${Number(r.branch_id)}/${Number(r.id)}`);
   if (sinEntregar.length) {
     // deno-lint-ignore no-explicit-any
@@ -271,59 +275,53 @@ async function salasDeLaRed(admin: any): Promise<{ data: any[] | null; error: an
   return { data: salasCache.v, error: null };
 }
 
-// Unidades por sucursal (2026-10-15, «¿dónde lo hay?»). `inventory` trae una
-// fila por PRESENTACIÓN y lote —«CAJA X 20: 1» y «UNIDAD: 14» del mismo
-// producto—, así que sumar `cantidad` a secas mezcla cajas con unidades. Se
-// pasa a unidades con el factor de esa presentación (`v_product_factor`, la
-// misma cuenta de `get_pedido_*`): 1 caja de 20 + 14 sueltas = 34. Sin factor
-// conocido, el «x N» del detalle, y si no, 1. Se deduplica con la misma clave
-// que `inv_dedup` de esas funciones.
-// Por tandas de 8 productos: `erp_product_id` se REPITE (hasta 63 filas por
-// producto, medido el 2026-10-15), así que acotar la entrada no acota la
-// respuesta; 8 × 63 = 504, lejos del tope de 1000 de PostgREST.
+// Unidades DISPONIBLES por sucursal (2026-10-15, «¿dónde lo hay?»; desde el
+// 2026-10-19, lo apartado ya restado). La cuenta vive en la base,
+// `app_existencias_netas`: existencia en UNIDADES —una fila de `inventory` por
+// presentación y lote, pasada a unidades con `v_product_factor`, sin factor
+// el «x N» del detalle, y deduplicada como `inv_dedup`— menos las unidades de
+// las reservas abiertas de esa sala (en revisión, pendientes y listas). Antes
+// esta cuenta se hacía acá a mano y no restaba lo apartado: dos clientes podían
+// reservar y pagar la última caja. Devuelve JSON (no SETOF): sin techo de 1000.
+// Con `existencia` además trae la cuenta bruta y lo apartado, para el control
+// de cobro (FIFO) de `pagar_reserva`.
+// deno-lint-ignore no-explicit-any
+async function existenciasNetas(admin: any, ids: number[]): Promise<{ product_id: number; branch_id: number; existencia: number; apartadas: number; disponibles: number }[]> {
+  const unicos = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))];
+  if (!unicos.length) return [];
+  const { data, error } = await admin.rpc("app_existencias_netas", { p_ids: unicos });
+  if (error) throw error;
+  // deno-lint-ignore no-explicit-any
+  return ((data ?? []) as any[]).map((x) => ({
+    product_id: Number(x.product_id), branch_id: Number(x.branch_id),
+    existencia: Number(x.existencia) || 0, apartadas: Number(x.apartadas) || 0, disponibles: Number(x.disponibles) || 0,
+  }));
+}
 // deno-lint-ignore no-explicit-any
 async function unidadesPorSala(admin: any, ids: number[]): Promise<Map<number, Map<number, number>>> {
   const out = new Map<number, Map<number, number>>();
-  const unicos = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))];
-  if (!unicos.length) return out;
-  const tandas: number[][] = [];
-  for (let i = 0; i < unicos.length; i += 8) tandas.push(unicos.slice(i, i + 8));
-  const [{ data: mapa, error: eM }, { data: factores, error: eF }, ...inv] = await Promise.all([
-    admin.from("erp_sucursal_map").select("erp_sucursal_id, branch_id").eq("es_bodega", false),
-    admin.from("v_product_factor").select("product_id, pres_key, factor").in("product_id", unicos),
-    ...tandas.map((t) => admin.from("inventory")
-      .select("erp_sucursal_id, erp_product_id, presentacion, detalle, lote, fecha_vencimiento, cantidad")
-      .in("erp_product_id", t).or("is_vencidos.is.null,is_vencidos.eq.false").range(0, 999)),
-  ]);
-  if (eM) throw eM;
-  if (eF) throw eF;
-  const sala = new Map((mapa ?? []).map((m: any) => [Number(m.erp_sucursal_id), Number(m.branch_id)]));
-  const factor = new Map((factores ?? []).map((f: any) => [`${f.product_id}|${f.pres_key}`, Number(f.factor) || 1]));
-  const vistas = new Set<string>();
-  for (const { data, error } of inv) {
-    if (error) throw error;
-    // 1000 filas exactas es la firma del corte de PostgREST: mejor fallar que
-    // decir «agotado» de una sala cuyas filas no llegaron.
-    if ((data ?? []).length >= 1000) throw new Error("unidadesPorSala: tanda cortada en 1000 filas");
-    // deno-lint-ignore no-explicit-any
-    for (const r of (data ?? []) as any[]) {
-      const pres = String(r.presentacion ?? "").trim();
-      const clave = [r.erp_sucursal_id, r.erp_product_id, r.lote, r.fecha_vencimiento, pres.toLowerCase(), String(r.detalle ?? "").toLowerCase()].join("|");
-      if (vistas.has(clave)) continue;
-      vistas.add(clave);
-      const b = sala.get(Number(r.erp_sucursal_id));
-      const n = Number(r.cantidad) || 0;
-      if (b == null || n <= 0) continue;
-      const delDetalle = Number(/x\s*(\d+)/i.exec(String(r.detalle ?? ""))?.[1]) || null;
-      const f = factor.get(`${r.erp_product_id}|${pres.toUpperCase()}`) ?? delDetalle ?? 1;
-      const pid = Number(r.erp_product_id);
-      if (!out.has(pid)) out.set(pid, new Map());
-      const m = out.get(pid)!;
-      m.set(b, (m.get(b) ?? 0) + n * f);
-    }
+  for (const x of await existenciasNetas(admin, ids)) {
+    if (!out.has(x.product_id)) out.set(x.product_id, new Map());
+    out.get(x.product_id)!.set(x.branch_id, x.disponibles);
   }
   return out;
 }
+
+// Bajo receta (2026-10-19): la MISMA regla del libro (`clase_de_dispensacion`),
+// contestada en UN sitio de la base (`app_productos_bajo_receta`) para
+// reservar, el carrito, los encargos y las existencias. Antes cada acción
+// preguntaba `es_antibiotico || requiere_receta` por su cuenta, y eso no ve lo
+// que la sala marcó como bajo receta en el catálogo del libro. Además el
+// trigger `app_reservas_guardas` lo vuelve a decidir al insertar la reserva.
+// deno-lint-ignore no-explicit-any
+async function bajoReceta(admin: any, ids: number[]): Promise<Set<number>> {
+  const unicos = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))];
+  if (!unicos.length) return new Set();
+  const { data, error } = await admin.rpc("app_productos_bajo_receta", { p_ids: unicos });
+  if (error) throw error;
+  return new Set(((data ?? []) as unknown[]).map(Number));
+}
+
 // Cuántas de una presentación alcanzan en una sala, con tope en 5 (lo más que
 // se pide de una): la app no muestra existencias exactas, sólo si alcanza para
 // lo que la persona pide o hasta dónde llega.
@@ -1292,18 +1290,17 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // sala (tope 5). La oferta se reserva en su presentación MENOR —su precio
       // es el más bajo de viñeta (`productosDeLaFoto`)—, así que se cuenta con
       // ese factor y en unidades.
-      const [{ data, error }, { data: prod, error: eP }, { data: facs, error: eFa }, unidades] = await Promise.all([
+      const [{ data, error }, rx, { data: facs, error: eFa }, unidades] = await Promise.all([
         admin.rpc("app_cliente_existencias", { p_producto_id: productoId }),
-        admin.from("products").select("es_antibiotico, requiere_receta").eq("id", productoId).maybeSingle(),
+        bajoReceta(admin, [productoId]),
         admin.from("product_precios").select("factor").eq("product_id", productoId).eq("activo", true).gt("vineta", 0),
         unidadesPorSala(admin, [productoId]).then((m) => m.get(productoId) ?? new Map<number, number>()),
       ]);
       if (error) throw error;
-      if (eP) throw eP;
       if (eFa) throw eFa;
       const menor = (facs ?? []).length ? Math.max(1, Math.min(...(facs ?? []).map((x: any) => Number(x.factor) || 1))) : 1;
       const sucursales = (data ?? []).map((s: any) => ({ ...s, alcance: alcanceDe(unidades.get(Number(s.branch_id)) ?? 0, menor) }));
-      return json({ ok: true, sucursales: conSucursal(sucursales), receta: !!(prod?.es_antibiotico || prod?.requiere_receta) });
+      return json({ ok: true, sucursales: conSucursal(sucursales), receta: rx.has(productoId) });
     }
 
     // El cupón del mes ya se raspó (2026-10-09): queda en el servidor, así en
@@ -1318,7 +1315,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true });
     }
 
-    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar"].includes(accion)) {
+    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -1364,6 +1361,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { data: hechas, error } = await q.select("id");
       if (error) throw error;
       return json(hechas?.length ? { ok: true, ruta } : { ok: false, mensaje: "Esta reserva ya no necesita una foto de la receta." });
+    }
+    // Quitar lo bajo receta y seguir con lo demás (2026-10-19, decisión 7):
+    // mientras el pedido espera la receta (falta la foto, la sala pidió otra o
+    // la está revisando), el cliente puede sacar los productos bajo receta; lo
+    // demás pasa a «en preparación» y se paga o se retira como cualquier
+    // pedido. Si todo el pedido era bajo receta, es cancelarlo.
+    if (accion === "quitar_receta") {
+      const { data, error } = await admin.rpc("app_reserva_quitar_receta", {
+        p_customer_id: customerId, p_id: Number(body?.reserva_id),
+      });
+      if (error) throw error;
+      return json(data ?? { ok: false, mensaje: "No se pudo quitar. Intenta de nuevo." });
     }
 
     // ── Foto de perfil (2026-10-12) ───────────────────────────────────────
@@ -1798,8 +1807,29 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // Cursor `antes` = {created_at, id} de la última fila mostrada, de a 20
     // (como `mis_facturas`): una reserva nueva mientras se baja no repite ni
     // salta ninguna.
+    // El saldo a favor del cliente (2026-10-19, decisión 6): lo que pagó y no
+    // se le entregó —la sala canceló, venció, o el pago llegó tarde— y el
+    // anticipo de una reserva de sala vencida. Vale en cualquier sucursal hasta
+    // su fecha; se usa mostrando el código en caja. Sólo lo vigente: ni usado,
+    // ni devuelto en dinero, ni vencido.
+    const saldosAFavor = async (cid: number) => {
+      const { data, error } = await admin.from("app_reservas")
+        .select("id, pedido, saldo_favor, saldo_favor_vence, saldo_favor_origen").limit(100) // tope deliberado: son pocos
+        .eq("customer_id", cid).gt("saldo_favor", 0).is("saldo_favor_usado_at", null).is("saldo_favor_devuelto_at", null)
+        .gte("saldo_favor_vence", hoySV()).order("saldo_favor_vence", { ascending: true });
+      if (error) { console.error("app-clientes: no se pudo leer el saldo a favor:", error.message); return null; }
+      const filas = (data ?? []) as any[];
+      const total = Math.round(filas.reduce((t, r) => t + Number(r.saldo_favor ?? 0), 0) * 100) / 100;
+      return {
+        total, vence: filas[0]?.saldo_favor_vence ?? null,
+        detalle: filas.map((r) => ({
+          codigo: r.pedido ?? `R-${String(r.id).padStart(6, "0")}`, monto: Number(r.saldo_favor), vence: r.saldo_favor_vence,
+          origen: r.saldo_favor_origen,
+        })),
+      };
+    };
     if (accion === "mis_reservas") {
-      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos";
+      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at";
       // `en_revision` (2026-10-12): esperando que la sucursal revise la receta.
       const ABIERTAS = ["en_revision", "pendiente", "lista"];
       const TERMINADAS: Record<string, string[]> = {
@@ -1814,7 +1844,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // terminadas de esta página y las sucursales van A LA VEZ (2026-10-15):
       // ninguna depende de otra. Sólo la firma de las recetas espera a saber
       // qué filas hay.
-      const [abiertas, terminadas, { data: salas, error: eS }] = await Promise.all([
+      const [abiertas, terminadas, { data: salas, error: eS }, saldos] = await Promise.all([
         (async () => {
           if (!((filtro === "todas" || filtro === "abiertas") && !antes)) return [] as any[];
           const { data, error } = await admin.from("app_reservas").select(COLS).limit(200) // tope deliberado: son pocas
@@ -1838,6 +1868,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           return (data ?? []) as any[];
         })(),
         salasDeLaRed(admin),
+        saldosAFavor(customerId as number),
       ]);
       let siguiente: { created_at: string; id: number } | null = null;
       const ultima = terminadas[terminadas.length - 1];
@@ -1862,6 +1893,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         ok: true,
         estado: filtro,
         siguiente,
+        // El saldo a favor vigente (2026-10-19), aunque sus renglones estén en
+        // otra página: la pantalla lo muestra arriba, con su vigencia.
+        saldo_a_favor: saldos,
         reservas: data.map(({ receta_ruta, ...r }: any) => {
           const tp = r.pedido ? porPedido.get(r.pedido) : null;
           const b: any = sala.get(Number(r.branch_id));
@@ -1878,6 +1912,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       });
     }
 
+    // El tope de «3 vencidas en 30 días» (2026-10-19) cuenta sólo lo que fue
+    // del cliente: no retirarla o no mandar la foto de la receta. Si venció
+    // porque la sala no revisó la receta o no la preparó a tiempo, o porque la
+    // oferta terminó, no le cuenta en contra (el aviso se lo dice así).
+    const vencidaDelCliente = (r: any) => r.estado === "vencida"
+      && !["receta_sin_revisar", "sin_preparar", "oferta_terminada"].includes(String(r.vencida_motivo ?? ""));
     if (accion === "reservar") {
       const ofertaId = String(body?.oferta_id ?? "");
       const productoId = Number(body?.producto_id);
@@ -1929,22 +1969,40 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       }
       // Bajo receta (2026-10-12): se reserva igual, pero nace «en revisión» y
       // espera la foto de la receta (`receta_subir_url` / `receta_confirmar`).
-      const { data: prod, error: eP } = await admin.from("products").select("es_antibiotico, requiere_receta").eq("id", productoId).maybeSingle();
-      if (eP) throw eP;
-      const conReceta = !!(prod?.es_antibiotico || prod?.requiere_receta);
+      // La regla es la del libro (2026-10-19, `bajoReceta`).
+      // Lo que se aparta (2026-10-19, decisión 5): la oferta se reserva en su
+      // presentación MENOR (como `reserva_existencias`), y tiene que alcanzar
+      // con lo DISPONIBLE de esa sala —existencia menos lo que ya apartaron
+      // otras reservas—. Sin esto dos personas reservaban la última caja.
+      const [rx, { data: facs, error: eFa }, disponibles] = await Promise.all([
+        bajoReceta(admin, [productoId]),
+        admin.from("product_precios").select("factor").eq("product_id", productoId).eq("activo", true).gt("vineta", 0),
+        unidadesPorSala(admin, [productoId]).then((m) => m.get(productoId)?.get(branchId) ?? 0),
+      ]);
+      if (eFa) throw eFa;
+      const conReceta = rx.has(productoId);
+      const factorMenor = (facs ?? []).length ? Math.max(1, Math.min(...(facs ?? []).map((x: any) => Number(x.factor) || 1))) : 1;
+      // La MUESTRA (ficha de prueba) se reserva igual, para ver el circuito.
+      if (!ofertaId.startsWith("muestra-") && disponibles < cantidad * factorMenor) {
+        const alcanza = alcanceDe(disponibles, factorMenor);
+        return json({ ok: false, motivo: "sin_existencia", mensaje: alcanza > 0
+          ? `En esa sucursal sólo alcanzan ${alcanza}. Pide menos o elige otra sucursal.`
+          : "Esa sucursal ya no tiene para apartar. Elige otra sucursal." });
+      }
       // Tope de activas y bloqueo por vencidas.
-      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido")
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo")
         .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
       if (eR) throw eR;
       // Un pedido del carrito cuenta como UNA reserva (2026-10-07).
       const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
-      const vencidas = new Set((suyas ?? []).filter((r: any) => r.estado === "vencida").map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
       if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
       if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
       const { data: nueva, error: eI } = await admin.from("app_reservas").insert({
         customer_id: customerId, branch_id: branchId, oferta_id: o.id, oferta_titulo: o.titulo, oferta_fin: o.fin,
         producto_id: productoId, producto_nombre: String(p.nombre), cantidad,
         precio_unitario: p.precio_descuento ?? null, precio_normal: p.precio ?? null, terminos_version: TERMINOS_RESERVA.version,
+        factor: factorMenor,
         ...(conReceta ? { estado: "en_revision" } : {}),
       }).select("id").single();
       if (eI) throw eI;
@@ -1974,16 +2032,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const ids = (Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0).slice(0, 20);
       const envio = await ajustesEnvio();
       if (!ids.length) return json({ ok: true, existencias: [], salas: [], envio });
-      const [{ data, error }, { data: salas, error: eS }, { data: rec, error: eRec }, unidades] = await Promise.all([
+      const [{ data, error }, { data: salas, error: eS }, rec, unidades] = await Promise.all([
         admin.rpc("app_carrito_existencias", { p_ids: ids }),
         admin.from("branches").select("id, name, address").eq("type", "FARMACIA").order("name"),
-        // `receta_ids` (2026-10-12): los que piden foto de la receta al reservar.
-        admin.from("products").select("id").in("id", ids).or("es_antibiotico.eq.true,requiere_receta.eq.true"),
+        // `receta_ids` (2026-10-12): los que piden foto de la receta al reservar
+        // (desde el 2026-10-19, con la regla del libro).
+        bajoReceta(admin, ids),
         unidadesPorSala(admin, ids),
       ]);
       if (error) throw error;
       if (eS) throw eS;
-      if (eRec) throw eRec;
       // `alcance` (2026-10-15): si la app manda `items` ({ id, factor }), por
       // cada uno y cada sala, cuántos de esa presentación alcanzan (tope 5,
       // contado en unidades). Así el carrito distingue «tiene todo» de «tiene
@@ -1992,7 +2050,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         .map((x: any) => ({ id: Number(x?.id), factor: Number(x?.factor) || 1 })).filter((x: any) => ids.includes(x.id));
       const alcance = pedidos.flatMap((x: any) => [...(unidades.get(x.id) ?? new Map<number, number>()).entries()]
         .map(([b, u]) => ({ product_id: x.id, factor: x.factor, branch_id: b, alcance: alcanceDe(u, x.factor) })));
-      return json({ ok: true, envio, existencias: data ?? [], alcance, receta_ids: (rec ?? []).map((p: any) => Number(p.id)),
+      return json({ ok: true, envio, existencias: data ?? [], alcance, receta_ids: [...rec],
         salas: (salas ?? []).map((b: any) => ({ id: b.id, sala: sucursal(b.name), direccion: b.address })) });
     }
 
@@ -2001,25 +2059,31 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // `app_reservas_pagos`. Vale si se creó hace menos de 25 min (Wompi lo
     // deja vivo 30: el margen es para que no venza con la hoja abierta), sigue
     // sin pagar y es por el MISMO monto — si el total cambió, se crea otro.
-    async function enlaceVigente(columna: "reserva_id" | "pedido" | "encargo_id", valor: string | number, monto: number): Promise<string | null> {
-      const { data, error } = await admin.from("app_reservas_pagos").select("enlace_url, monto")
+    // (2026-10-19) Devuelve también si el enlace es de PRUEBA (`enlace_prueba`,
+    // anotado al crearlo): antes el reutilizado contestaba `prueba: false` fijo
+    // y la app decía «pago» de un cobro que no era dinero.
+    async function enlaceVigente(columna: "reserva_id" | "pedido" | "encargo_id", valor: string | number, monto: number): Promise<{ url: string; prueba: boolean } | null> {
+      const { data, error } = await admin.from("app_reservas_pagos").select("enlace_url, monto, enlace_prueba")
         .eq(columna, valor).eq("estado", "creado").not("enlace_url", "is", null)
         .gte("created_at", new Date(Date.now() - 25 * 60_000).toISOString())
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (error) { console.error("app-clientes: no se pudo buscar un enlace vigente:", error.message); return null; }
-      return data && Math.abs(Number(data.monto) - monto) < 0.005 ? String(data.enlace_url) : null;
+      return data && Math.abs(Number(data.monto) - monto) < 0.005 ? { url: String(data.enlace_url), prueba: data.enlace_prueba === true } : null;
     }
 
     // Un enlace de Wompi por el total de un PEDIDO (una sola transacción).
     // deno-lint-ignore no-explicit-any
-    async function enlaceDePago({ pedido, total, branchId, descripcion }: { pedido: string; total: number; branchId: any; descripcion: string }) {
+    // `reservas` (2026-10-19): los renglones que este cobro cubre. Si uno se
+    // cierra antes de que llegue el pago, lo suyo queda a favor; uno que no
+    // estaba en la lista no entró en el monto (`app_reserva_pago_confirmar`).
+    async function enlaceDePago({ pedido, total, branchId, descripcion, reservas }: { pedido: string; total: number; branchId: any; descripcion: string; reservas: number[] }) {
       const vigente = await enlaceVigente("pedido", pedido, total);
-      if (vigente) return { url: vigente, total, prueba: false, reutilizado: true };
+      if (vigente) return { url: vigente.url, total, prueba: vigente.prueba, reutilizado: true };
       const identificador = `${pedido}-${Date.now().toString(36)}`;
       // En paralelo (2026-10-08): la sala, la fila del pago y el token de Wompi.
       const [{ data: salaFila, error: eS }, { error: eP }] = await Promise.all([
         admin.from("branches").select("name").eq("id", branchId).maybeSingle(),
-        admin.from("app_reservas_pagos").insert({ pedido, identificador, monto: total }),
+        admin.from("app_reservas_pagos").insert({ pedido, identificador, monto: total, reservas_ids: reservas.length ? reservas : null }),
         calentarWompi(),
       ]);
       if (eS) throw eS;
@@ -2033,7 +2097,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         });
         const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
         // Anotar el enlace no hace esperar al cliente: el pago se reconoce por el identificador.
-        const anotar = admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url }).eq("identificador", identificador)
+        const anotar = admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador)
           .then(({ error: eU }: any) => { if (eU) console.error("app-clientes: no se guardó el enlace del pedido:", eU.message); });
         try { (globalThis as any).EdgeRuntime?.waitUntil(anotar); } catch { /* sin waitUntil se termina igual */ }
         return { url, total, prueba: !enlace.estaProductivo };
@@ -2052,13 +2116,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const branchId = Number(body?.branch_id);
       if (!Number.isInteger(productId) || !(cantidad >= 1 && cantidad <= 20)) return json({ ok: false, mensaje: "Revisa el producto y la cantidad." });
       const [{ data: p, error: eP }, { data: sala, error: eS }, { data: oc, error: eO }] = await Promise.all([
-        admin.from("products").select("id, nombre, activo, oculto_en_ventas, es_antibiotico, requiere_receta").eq("id", productId).maybeSingle(),
+        admin.from("products").select("id, nombre, activo, oculto_en_ventas").eq("id", productId).maybeSingle(),
         admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle(),
         admin.from("app_catalogo_ocultos").select("product_id").eq("product_id", productId).maybeSingle(),
       ]);
       if (eP) throw eP; if (eS) throw eS; if (eO) throw eO;
       if (!p || p.activo === false || p.oculto_en_ventas || oc) return json({ ok: false, mensaje: "Este producto ya no está en la tienda." });
-      if (p.es_antibiotico || p.requiere_receta) return json({ ok: false, mensaje: "Los productos bajo receta se encargan en la sucursal, con la receta." });
+      // Bajo receta, con la regla del libro (2026-10-19): un encargo no lleva
+      // revisión de receta en la app, así que se sigue pidiendo en la sucursal.
+      if ((await bajoReceta(admin, [productId])).has(productId)) return json({ ok: false, mensaje: "Los productos bajo receta se encargan en la sucursal, con la receta." });
       if (!sala) return json({ ok: false, mensaje: "Elige la sucursal donde lo vas a retirar." });
       const { count, error: eC } = await admin.from("app_encargos").select("id", { count: "exact", head: true })
         .eq("customer_id", customerId).in("estado", ["solicitado", "confirmado", "aceptado", "pedido", "listo"]);
@@ -2096,7 +2162,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (e.pago_estado === "pagado") return json({ ok: false, mensaje: "Este encargo ya está pagado." });
       const codigo = `E-${String(e.id).padStart(6, "0")}`;
       const vigenteE = await enlaceVigente("encargo_id", e.id, Number(e.anticipo));
-      if (vigenteE) return json({ ok: true, url: vigenteE, total: Number(e.anticipo), prueba: false, reutilizado: true });
+      if (vigenteE) return json({ ok: true, url: vigenteE.url, total: Number(e.anticipo), prueba: vigenteE.prueba, reutilizado: true });
       const identificador = `${codigo}-${Date.now().toString(36)}`;
       const { error: eP } = await admin.from("app_reservas_pagos").insert({ encargo_id: e.id, identificador, monto: Number(e.anticipo) });
       if (eP) throw eP;
@@ -2107,7 +2173,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           descripcion: `Anticipo del encargo ${codigo}`, urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
         });
         const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
-        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url }).eq("identificador", identificador);
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador);
         if (eU) console.error("app-clientes: no se guardó el enlace del encargo:", eU.message);
         return json({ ok: true, url, total: Number(e.anticipo), prueba: !enlace.estaProductivo });
       } catch (err) {
@@ -2726,13 +2792,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (aDomicilio && (direccion ?? "").length < 10) return json({ ok: false, motivo: "direccion", mensaje: "Escribe la dirección completa, con una referencia." });
       // Sin existencia en esa sala no se cobra (2026-10-07): se envía para que
       // la sucursal confirme, y se paga al retirar.
+      // (2026-10-19) Con lo DISPONIBLE —existencia menos lo apartado por otras
+      // reservas—, en unidades, y alcanzando para lo que se pide (antes bastaba
+      // con que hubiera una).
       if (pagoEnLinea) {
         const idsP = [...new Set(items.map((x: any) => x.id))];
-        const { data: ex, error: eEx } = await admin.rpc("app_carrito_existencias", { p_ids: idsP });
-        if (eEx) throw eEx;
-        const hay = new Set((ex ?? []).filter((e: any) => Number(e.branch_id) === branchId && Number(e.cantidad) > 0).map((e: any) => Number(e.product_id)));
-        if (idsP.some((id) => !hay.has(id))) {
-          return json({ ok: false, motivo: "sin_existencia", mensaje: "Esa sucursal no tiene todos los productos: envía el pedido para que lo confirmen y pagas al retirar." });
+        const disp = await unidadesPorSala(admin, idsP);
+        const pide = new Map<number, number>();
+        for (const x of items) pide.set(x.id, (pide.get(x.id) ?? 0) + Math.max(1, x.cantidad) * Math.max(1, x.factor));
+        if ([...pide.entries()].some(([id, u]) => (disp.get(id)?.get(branchId) ?? 0) < u)) {
+          return json({ ok: false, motivo: "sin_existencia", mensaje: "Esa sucursal no tiene todo lo que pides: envía el pedido para que lo confirmen y pagas al retirar." });
         }
       }
       if (items.some((x: any) => !(x.cantidad >= 1 && x.cantidad <= 5))) return json({ ok: false, mensaje: "Cada producto va de 1 a 5 unidades." });
@@ -2740,11 +2809,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (eSala) throw eSala;
       if (!sala) return json({ ok: false, mensaje: "Elige la sucursal donde vas a retirar." });
       const ids = [...new Set(items.map((x: any) => x.id))];
-      const [{ data: prods, error: eP }, { data: precios, error: ePr }, { data: ocultos, error: eO }, condPrecio] = await Promise.all([
-        admin.from("products").select("id, nombre, activo, oculto_en_ventas, es_antibiotico, requiere_receta").in("id", ids),
+      const [{ data: prods, error: eP }, { data: precios, error: ePr }, { data: ocultos, error: eO }, condPrecio, rxC] = await Promise.all([
+        admin.from("products").select("id, nombre, activo, oculto_en_ventas").in("id", ids),
         admin.from("product_precios").select("product_id, vineta, vip, clinica, mayoreo, factor, presentaciones(tipo)").in("product_id", ids).eq("activo", true).gt("vineta", 0),
         admin.from("app_catalogo_ocultos").select("product_id").in("product_id", ids),
         condicionDePrecio(false),
+        bajoReceta(admin, ids),
       ]);
       if (eP) throw eP;
       if (ePr) throw ePr;
@@ -2753,7 +2823,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const porId = new Map((prods ?? []).map((p: any) => [Number(p.id), p]));
       // Bajo receta (2026-10-12): si UN producto la pide, TODO el pedido nace
       // «en revisión» y no se cobra hasta que la sucursal apruebe la receta.
-      const conReceta = (prods ?? []).some((p: any) => p.es_antibiotico || p.requiere_receta);
+      // Si la rechaza (2026-10-19), sólo se cancelan los renglones bajo receta
+      // y lo demás sigue (`reserva_receta_decidir`).
+      const conReceta = ids.some((id: number) => rxC.has(id));
       const filas = [];
       for (const x of items) {
         const p: any = porId.get(x.id);
@@ -2778,17 +2850,17 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         filas.push({
           customer_id: customerId, branch_id: branchId, producto_id: x.id,
           producto_nombre: `${p.nombre}${pr.presentaciones?.tipo ? ` · ${pr.presentaciones.tipo}` : ""}`.slice(0, 200),
-          cantidad: x.cantidad, precio_unitario: precioMay ?? vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
+          cantidad: x.cantidad, factor: Math.max(1, x.factor), precio_unitario: precioMay ?? vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
           documento, datos_fiscales: datosFiscales,
           entrega: aDomicilio ? "domicilio" : "retiro", direccion_entrega: direccion,
           ...(conReceta ? { estado: "en_revision" } : {}),
         });
       }
-      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido")
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo")
         .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
       if (eR) throw eR;
       const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
-      const vencidas = new Set((suyas ?? []).filter((r: any) => r.estado === "vencida").map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
       if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
       if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
       const ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -2801,7 +2873,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // Pagar en línea: UN cobro por todo el pedido. Si Wompi no responde, el
       // pedido queda igual (se paga al retirar o luego desde Mis reservas).
       let pago = null;
-      if (pagoEnLinea && !conReceta && total > 0) pago = await enlaceDePago({ pedido, total, branchId, descripcion: `${filas.length} productos` });
+      if (pagoEnLinea && !conReceta && total > 0) pago = await enlaceDePago({ pedido, total, branchId, descripcion: `${filas.length} productos`, reservas: (nuevas ?? []).map((n: any) => Number(n.id)) });
       // `reservas[0]` es la que se usa para subir la receta de todo el pedido.
       return json({ ok: true, pedido, reservas: (nuevas ?? []).map((n: any) => n.id), total, envio, pago, receta: conReceta });
     }
@@ -2822,9 +2894,42 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // acá, nunca el que mande la app— y devuelve su URL. La app la abre en una
     // hoja del navegador; el pago se confirma en `wompi-pagos`, que es la
     // única que marca «pagado». Se puede pagar apenas reservada o ya lista.
+    // ¿Alcanza la existencia para cobrar estos renglones? (2026-10-19,
+    // decisión 5). Lo apartado se reparte por ORDEN DE LLEGADA: una reserva
+    // cuenta con lo que queda después de las abiertas más viejas de esa sala y
+    // producto. Las ya «listas» no se miran: la sala ya las tiene separadas.
+    // Devuelve los nombres que no alcanzan (vacío = se puede cobrar).
+    // deno-lint-ignore no-explicit-any
+    const sinExistenciaParaCobrar = async (mias: any[]): Promise<string[]> => {
+      const porMirar = mias.filter((m) => m.estado === "pendiente" && m.pago_estado !== "pagado");
+      if (!porMirar.length) return [];
+      const branch = Number(porMirar[0].branch_id);
+      const prods = [...new Set(porMirar.map((m) => Number(m.producto_id)))];
+      const [ex, { data: cola, error: eCola }] = await Promise.all([
+        existenciasNetas(admin, prods),
+        admin.from("app_reservas").select("id, producto_id, cantidad, factor, created_at").limit(500) // tope deliberado: abiertas de una sala
+          .eq("branch_id", branch).in("producto_id", prods).in("estado", ["en_revision", "pendiente", "lista"])
+          .order("created_at", { ascending: true }).order("id", { ascending: true }),
+      ]);
+      if (eCola) throw eCola;
+      const existencia = new Map(ex.filter((x) => x.branch_id === branch).map((x) => [x.product_id, x.existencia]));
+      const acumulado = new Map<number, number>();
+      const hasta = new Map<number, number>();
+      for (const c of cola ?? []) {
+        const pid = Number(c.producto_id);
+        acumulado.set(pid, (acumulado.get(pid) ?? 0) + Number(c.cantidad) * Math.max(1, Number(c.factor) || 1));
+        hasta.set(Number(c.id), acumulado.get(pid)!);
+      }
+      return porMirar.filter((m) => (hasta.get(Number(m.id)) ?? Infinity) > (existencia.get(Number(m.producto_id)) ?? 0))
+        .map((m) => String(m.producto_nombre ?? "un producto"));
+    };
+    const SIN_EXISTENCIA_PAGO = (nombres: string[]) => ({
+      ok: false, motivo: "sin_existencia",
+      mensaje: `La sucursal todavía no confirma que tenga ${nombres.slice(0, 2).join(" y ")}. Podrás pagar cuando la aparte, o paga al retirar.`,
+    });
     if (accion === "pagar_reserva") {
       const { data: r, error } = await admin.from("app_reservas")
-        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, branch_id, pedido")
+        .select("id, estado, pago_estado, producto_id, producto_nombre, cantidad, factor, precio_unitario, branch_id, pedido")
         .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
       // Con la receta en revisión no se cobra (2026-10-12): todavía puede rechazarse.
@@ -2832,7 +2937,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (r?.estado === "en_revision") return json(EN_REVISION);
       // Una reserva de un pedido del carrito se paga con TODO el pedido (2026-10-07).
       if (r?.pedido) {
-        const { data: filasT, error: eFp } = await admin.from("app_reservas").select("estado, pago_estado, precio_unitario, cantidad, costo_envio")
+        const { data: filasT, error: eFp } = await admin.from("app_reservas").select("id, estado, pago_estado, producto_id, producto_nombre, branch_id, factor, precio_unitario, cantidad, costo_envio")
           .eq("pedido", r.pedido).eq("customer_id", customerId).in("estado", ["en_revision", "pendiente", "lista"]);
         if (eFp) throw eFp;
         if ((filasT ?? []).some((f: any) => f.estado === "en_revision")) return json(EN_REVISION);
@@ -2841,7 +2946,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         if (filasP.every((f: any) => f.pago_estado === "pagado")) return json({ ok: false, mensaje: "Este pedido ya está pagado." });
         const envioP = Math.max(0, ...filasP.map((f: any) => Number(f.costo_envio ?? 0)));
         const totalP = Math.round((filasP.reduce((t: number, f: any) => t + Number(f.precio_unitario ?? 0) * Number(f.cantidad), 0) + envioP) * 100) / 100;
-        const pagoP = await enlaceDePago({ pedido: r.pedido, total: totalP, branchId: r.branch_id, descripcion: `${filasP.length} productos` });
+        const faltanP = await sinExistenciaParaCobrar(filasP);
+        if (faltanP.length) return json(SIN_EXISTENCIA_PAGO(faltanP));
+        const pagoP = await enlaceDePago({ pedido: r.pedido, total: totalP, branchId: r.branch_id, descripcion: `${filasP.length} productos`, reservas: filasP.map((f: any) => Number(f.id)) });
         return json(pagoP ? { ok: true, ...pagoP } : { ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato o paga al retirar." });
       }
       if (!r || !["pendiente", "lista"].includes(r.estado)) return json({ ok: false, mensaje: "Esta reserva ya no se puede pagar." });
@@ -2849,14 +2956,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const total = Math.round(Number(r.precio_unitario ?? 0) * Number(r.cantidad) * 100) / 100;
       if (!(total > 0)) return json({ ok: false, mensaje: "Esta reserva se paga al retirarla en la sucursal." });
       const codigo = `R-${String(r.id).padStart(6, "0")}`;
+      const faltanR = await sinExistenciaParaCobrar([r]);
+      if (faltanR.length) return json(SIN_EXISTENCIA_PAGO(faltanR));
       const vigenteR = await enlaceVigente("reserva_id", r.id, total);
-      if (vigenteR) return json({ ok: true, url: vigenteR, total, prueba: false, reutilizado: true });
+      if (vigenteR) return json({ ok: true, url: vigenteR.url, total, prueba: vigenteR.prueba, reutilizado: true });
       // Un identificador por INTENTO: Wompi no deja repetirlo, y el cliente
       // puede cerrar la hoja y volver a tocar «Pagar».
       const identificador = `${codigo}-${Date.now().toString(36)}`;
       const [{ data: salaFila, error: eS }, { error: eP }] = await Promise.all([
         admin.from("branches").select("name").eq("id", r.branch_id).maybeSingle(),
-        admin.from("app_reservas_pagos").insert({ reserva_id: r.id, identificador, monto: total }),
+        admin.from("app_reservas_pagos").insert({ reserva_id: r.id, identificador, monto: total, reservas_ids: [r.id] }),
         calentarWompi(),
       ]);
       if (eS) throw eS;
@@ -2877,7 +2986,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato o paga al retirar." });
       }
       const { error: eU } = await admin.from("app_reservas_pagos")
-        .update({ enlace_id: enlace.idEnlace, enlace_url: enlace.urlEnlaceLargo || enlace.urlEnlace }).eq("identificador", identificador);
+        .update({ enlace_id: enlace.idEnlace, enlace_url: enlace.urlEnlaceLargo || enlace.urlEnlace, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador);
       if (eU) console.error("app-clientes: no se guardó el enlace:", eU.message);
       return json({ ok: true, url: enlace.urlEnlaceLargo || enlace.urlEnlace, total, prueba: !enlace.estaProductivo });
     }
@@ -3065,6 +3174,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         muestras,
         creditos,
         programa,
+        saldoFavor,
       ] = await Promise.all([
         admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId }),
         salasDeLaRed(admin),
@@ -3153,6 +3263,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // escalera, los premios del raspable y lo del mayorista por rango. Si
         // falla, el resumen sigue: la app cae a lo que trae `nivel`.
         programaParaApp(admin).catch((e) => { console.error("resumen programa:", (e as Error)?.message); return null; }),
+        // El saldo a favor (2026-10-19): Cuenta lo muestra con su vigencia.
+        saldosAFavor(customerId as number),
       ]);
       if (eEst) throw eEst;
       if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
@@ -3172,6 +3284,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         cumpleanos,
         chat_sin_leer: Number(conv?.sin_leer_cliente ?? 0),
         chat: { sin_leer: Number(conv?.sin_leer_cliente ?? 0), abierta: !!horChat.abierta },
+        saldo_a_favor: saldoFavor && saldoFavor.total > 0 ? saldoFavor : null,
         reservas_abiertas: (resAb ?? []).length,
         reservas_listas: (resAb ?? []).filter((r: any) => r.estado === "lista").length,
         reservas_productos: (resAb ?? []).map((r: any) => ({

@@ -28,7 +28,7 @@ import { conBiometria, nombreBiometria, rotuloBiometria, sinBloquear, useBloqueo
 import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
 import Segmentos from '../../../componentes/Segmentos';
-import { nombrePropio } from '../../../lib/formato';
+import { dolares, fecha, nombrePropio } from '../../../lib/formato';
 import { useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
 import { navegar } from '../../../lib/navegar';
@@ -274,6 +274,13 @@ export default function Cuenta() {
       {conFicha ? (
         <Grupo titulo="Perfil">
           <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} />
+          {/* Saldo a favor (2026-10-19): lo pagado que no se entregó o un
+              anticipo; vale en cualquier sucursal. El detalle, en Mis reservas. */}
+          {resumen?.saldo_a_favor?.total > 0 ? (
+            <FilaAccion sf="dollarsign.circle.fill" color={t.color.exitoTexto}
+              texto={`Saldo a favor: ${dolares(resumen.saldo_a_favor.total)}${resumen.saldo_a_favor.vence ? ` · hasta el ${fecha(resumen.saldo_a_favor.vence)}` : ''} · úsalo en cualquier sucursal`}
+              alTocar={() => navegar('/reservas')} />
+          ) : null}
           {/* Mis créditos (2026-10-15): sólo si debe algo; la insignia, los vencidos. */}
           {resumen?.creditos?.pendientes > 0 ? (
             <FilaAccion sf="creditcard.fill" texto="Mis créditos" insignia={Number(resumen.creditos.vencidos) || 0}

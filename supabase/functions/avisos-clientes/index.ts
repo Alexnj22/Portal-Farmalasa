@@ -18,6 +18,8 @@
 //                   Mayoreo Plus (inmediato), y subir de rango (diario).
 //   · receta/chat — (2026-10-12) los escribe la base (`reserva_receta_decidir`,
 //                   `chat_responder`) con `enviado = false`; acá sólo se mandan.
+//                   Igual los de reserva con ref `base:` (2026-10-19:
+//                   `reservas_vencer`, `reserva_cambiar_estado`).
 //   · credito     — (2026-10-15, diario) un crédito pasó el plazo: una vez por
 //                   crédito, y un recordatorio cada 7 días como máximo mientras
 //                   siga vencido. Sin montos (se lee en la pantalla bloqueada).
@@ -110,7 +112,10 @@ Deno.serve(async (req) => {
     if (inmediato) {
       const { data: pend, error: ePd } = await admin.from("app_cliente_avisos")
         .select("id, customer_id, tipo, ref, titulo, cuerpo, url").limit(500)
-        .in("tipo", ["receta", "chat"]).eq("enviado", false)
+        // (2026-10-19) Más los de reservas que escribe la base —venció,
+        // la sala la canceló, quedó saldo a favor—: tipo `reserva` con ref
+        // `base:…`. Los demás `reserva` los inserta esta misma función.
+        .or("tipo.in.(receta,chat),and(tipo.eq.reserva,ref.like.base:*)").eq("enviado", false)
         .gte("created_at", new Date(Date.now() - 24 * 3600_000).toISOString())
         .order("id", { ascending: true });
       if (ePd) console.error("no se pudieron leer los avisos pendientes:", ePd.message);

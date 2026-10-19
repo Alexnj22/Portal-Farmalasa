@@ -21,6 +21,14 @@
 // (todavía se puede rechazar). Ahí se ve la foto que se mandó, el motivo si la
 // sucursal pidió otra («Subir otra foto»), y en Anteriores, «Rechazada: …».
 //
+// Recetas y saldo a favor (2026-10-19, decisiones del dueño): la sala tiene
+// plazos (24 h sin foto, 48 h con la foto sin revisar, 48 h para preparar) y
+// al vencer se dice por qué —si fue de la sala, no cuenta en contra—. En un
+// pedido con productos bajo receta, el cliente puede QUITAR esos productos y
+// seguir con lo demás; si la sala rechaza la receta, sólo se cancelan esos.
+// Lo pagado en línea que no se entrega queda A FAVOR (arriba, con su
+// vigencia, y en cada tarjeta). Un cobro de PRUEBA se dice como tal.
+//
 // Pantalla bloqueada (2026-10-15): cada vez que se lee la lista, las reservas
 // abiertas se ponen en la pantalla bloqueada (Live Activity en iPhone,
 // notificación fija en Android) y las que terminaron se quitan — ver
@@ -105,8 +113,11 @@ function agruparPorPedido(filas) {
 const estadoDeGrupo = (g) => (g.filas.every((r) => r.estado === 'lista') ? 'lista' : 'pendiente');
 // El pago del pedido: pagado si lo están todos; si no, el de la primera fila
 // con anticipo, o pendiente.
-const pagoDeGrupo = (g) => (g.filas.every((r) => r.pago_estado === 'pagado') ? 'pagado'
+// Un cobro de PRUEBA (2026-10-19) no es dinero: el pedido se paga en caja.
+const pagoDeGrupo = (g) => (g.filas.every((r) => r.pago_estado === 'pagado')
+  ? (g.filas.some((r) => r.pago_prueba) ? 'prueba' : 'pagado')
   : g.filas.find((r) => r.pago_estado && r.pago_estado !== 'pendiente' && r.pago_estado !== 'pagado')?.pago_estado ?? 'pendiente');
+const pagoDeFila = (r) => (r.pago_estado === 'pagado' && r.pago_prueba ? 'prueba' : r.pago_estado);
 const totalDeFila = (r) => Number(r.total ?? Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1));
 
 export default function Reservas() {
@@ -167,6 +178,9 @@ export default function Reservas() {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;
       }
+      // El servidor dice si el cobro es de PRUEBA (2026-10-19): no se carga
+      // dinero, así que se paga al retirar. Se avisa al volver de la hoja.
+      if (res.prueba) Alert.alert('Cobro de prueba', 'Este cobro fue de prueba: no se cargó dinero. Pagas al retirar en la sucursal.');
       for (let i = 0; i < 4; i++) {
         const r = await pedir('mis_encargos');
         if (r?.ok) setEncargos(r.encargos);
@@ -221,6 +235,21 @@ export default function Reservas() {
       subiendoYa.current = false;
       setSubiendo(null);
     }
+  };
+  // Quitar lo bajo receta y seguir con lo demás (2026-10-19): la otra salida
+  // de un pedido mixto, además de subir (otra) foto.
+  const quitarReceta = (g) => {
+    const conReceta = g.filas.filter((f) => f.bajo_receta).map((f) => f.producto_nombre);
+    Alert.alert('Quitar los productos bajo receta', `Se quita ${conReceta.join(', ')} y lo demás del pedido sigue: lo pagas o lo retiras como siempre.`, [
+      { text: 'No', style: 'cancel' },
+      { text: 'Quitar y seguir', style: 'destructive', onPress: async () => {
+        const res = await pedir('quitar_receta', { reserva_id: g.filas[0].id });
+        if (res?.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        else Alert.alert('No se pudo quitar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+        cargar();
+        useCuenta.getState().cargar({ forzar: true }).catch(() => {});
+      } },
+    ]);
   };
   // El reloj de la cuenta regresiva corre SÓLO mientras alguien la ve
   // (2026-10-15): con la pantalla tapada o la app en segundo plano el
@@ -278,6 +307,9 @@ export default function Reservas() {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;
       }
+      // El servidor dice si el cobro es de PRUEBA (2026-10-19): no se carga
+      // dinero, así que se paga al retirar. Se avisa al volver de la hoja.
+      if (res.prueba) Alert.alert('Cobro de prueba', 'Este cobro fue de prueba: no se cargó dinero. Pagas al retirar en la sucursal.');
       for (let i = 0; i < 4; i++) {
         const nuevo = await pedir('mis_reservas');
         if (nuevo?.reservas?.find((x) => x.id === r.id)?.pago_estado === 'pagado') {
@@ -355,12 +387,14 @@ export default function Reservas() {
           {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} />)}
         </>
       ) : null}
+      {d.saldo_a_favor?.total > 0 ? <ResumenSaldo s={d.saldo_a_favor} /> : null}
       {filtro !== 'todas' && !d.reservas.length ? <Vacio titulo="Nada por aquí">{VACIO_FILTRO[filtro]}</Vacio> : null}
       {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length + enRevision.length} /> : null}
       {enRevision.length ? <Seccion texto="Receta en revisión" n={enRevision.length} /> : null}
       {enRevision.map((g, i) => (
         <Entrada key={`v:${g.clave}`} indice={Math.min(i, 8)}>
           <EnRevision g={g} resaltada={esResaltado(g)} alSubir={() => subirOtra(g)} subiendo={subiendo === g.clave}
+            alQuitarReceta={() => quitarReceta(g)}
             alCancelar={() => (g.filas.length > 1 ? cancelarPedido(g) : cancelar(g.filas[0]))} />
         </Entrada>
       ))}
@@ -412,6 +446,7 @@ const PAGO = {
   pendiente: { texto: 'Pendiente de pago', tono: 'aviso', sf: 'clock' },
   anticipo: { texto: 'Anticipo pagado', tono: 'aviso', sf: 'circle.lefthalf.filled' },
   pagado: { texto: 'Pagado', tono: 'exito', sf: 'checkmark.seal.fill' },
+  prueba: { texto: 'Cobro de prueba · pagas al retirar', tono: 'aviso', sf: 'exclamationmark.triangle.fill' },
   devuelto: { texto: 'Devuelto', tono: 'neutro', sf: 'arrow.uturn.backward' },
 };
 const METODO = {
@@ -479,7 +514,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
   const t = useTema();
   const lista = r.estado === 'lista';
   const e = estadoDe(t, r.estado);
-  const pago = PAGO[r.pago_estado] ?? PAGO.pendiente;
+  const pago = PAGO[pagoDeFila(r)] ?? PAGO.pendiente;
   const domicilio = r.entrega === 'domicilio';
   const ahorro = r.precio_normal != null && r.precio_unitario != null && r.precio_normal > r.precio_unitario
     ? (r.precio_normal - r.precio_unitario) * r.cantidad : 0;
@@ -594,7 +629,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
 
       {r.pago_estado === 'pagado' ? (
         <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
-          Ya está pagada. Para cancelarla, escríbele a la sucursal.
+          {r.pago_prueba ? 'El cobro en línea fue de prueba: pagas al retirar.' : 'Ya está pagada.'} Para cancelarla, escríbele a la sucursal.
         </Text>
       ) : (
         <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
@@ -798,7 +833,7 @@ function PedidoAbierto({ g, ahora, alCancelar, alPagar, pagando, resaltada = fal
 
       {algunaPagada ? (
         <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
-          Ya está pagado. Para cancelarlo, escríbele a la sucursal.
+          {pagoClave === 'prueba' ? 'El cobro en línea fue de prueba: pagas al retirar.' : 'Ya está pagado.'} Para cancelarlo, escríbele a la sucursal.
         </Text>
       ) : (
         <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
@@ -855,6 +890,7 @@ function PedidoCerrado({ g }) {
         </View>
       ) : null}
       <Rechazada r={g.filas.find((f) => f.receta_estado === 'rechazada')} />
+      <MotivoVencida r={g.filas.find((f) => f.estado === 'vencida')} />
       {g.filas.map((f) => <SaldoAFavor key={f.id} r={f} />)}
     </Tarjeta>
   );
@@ -864,7 +900,7 @@ function PedidoCerrado({ g }) {
 function ReservaCerrada({ r }) {
   const t = useTema();
   const e = estadoDe(t, r.estado);
-  const pago = PAGO[r.pago_estado] ?? PAGO.pendiente;
+  const pago = PAGO[pagoDeFila(r)] ?? PAGO.pendiente;
   const retirada = r.estado === 'retirada';
   return (
     <Tarjeta estilo={{ gap: 10 }}>
@@ -891,6 +927,7 @@ function ReservaCerrada({ r }) {
         ) : null}
       </View>
       <Rechazada r={r.receta_estado === 'rechazada' ? r : null} />
+      <MotivoVencida r={r} />
       {/* El anticipo de una vencida queda a favor 30 días: se ve también acá, que es donde vive la vencida. */}
       <SaldoAFavor r={r} />
     </Tarjeta>
@@ -905,6 +942,7 @@ function Rechazada({ r }) {
   return (
     <View style={{ borderRadius: 14, padding: 12, gap: 2, backgroundColor: FONDOS.peligro }}>
       <Text style={{ fontSize: 14, fontWeight: '800', color: t.color.peligroTexto }}>Receta rechazada{r.receta_motivo ? `: ${r.receta_motivo}` : ''}</Text>
+      {r.pedido ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Se quitó sólo lo bajo receta: si tu pedido tenía otros productos, siguen en preparación.</Text> : null}
       <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Si tienes dudas, escríbenos desde «Pregúntale a la farmacia».</Text>
     </View>
   );
@@ -912,7 +950,7 @@ function Rechazada({ r }) {
 
 // Una reserva o un pedido con la receta en revisión (2026-10-12). Sin código
 // para retirar y sin pagar: la sucursal todavía la puede rechazar.
-function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar }) {
+function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar, alQuitarReceta }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const r = g.filas[0];
@@ -923,6 +961,14 @@ function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar }) {
   const pildora = estado === 'otra_foto' ? { ...e, texto: 'Necesitamos otra foto' } : estado == null ? { ...e, texto: 'Falta la foto de tu receta' } : e;
   const domicilio = r.entrega === 'domicilio';
   const total = r.total_pedido ?? g.filas.reduce((n, f) => n + totalDeFila(f), 0);
+  // Pedido mixto: hay productos sin receta que pueden seguir solos.
+  const mixto = g.filas.some((f) => f.bajo_receta) && g.filas.some((f) => !f.bajo_receta);
+  // Los plazos (2026-10-19, `reservas_vencer`).
+  const plazo = estado === 'pendiente'
+    ? 'La sucursal tiene 48 horas para revisarla. Si no alcanza, la reserva vence y no cuenta en tu contra.'
+    : estado === 'otra_foto'
+      ? 'Tienes 24 horas para mandar la otra foto; si no, la reserva vence.'
+      : 'Tienes 24 horas para subirla; si no, la reserva vence.';
   return (
     <Tarjeta tono={resaltada ? t.color.magenta : undefined} estilo={{ gap: 14 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -932,7 +978,7 @@ function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar }) {
       <View style={{ gap: 4 }}>
         {g.filas.map((f) => (
           <Text key={f.id} style={{ fontSize: g.filas.length > 1 ? 15 : 20, fontWeight: '800', color: colorSistema.texto }}>
-            {g.filas.length > 1 ? `${f.cantidad} × ` : ''}{f.producto_nombre}
+            {g.filas.length > 1 ? `${f.cantidad} × ` : ''}{f.producto_nombre}{mixto && f.bajo_receta ? ' · bajo receta' : ''}
           </Text>
         ))}
       </View>
@@ -948,8 +994,16 @@ function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar }) {
             : `${r.sala ?? 'La sucursal'} está revisando tu receta. Cuando la apruebe te avisamos, y ahí ya puedes pagarla y retirarla.`}
         </Text>
       )}
+      <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto3 }}>{plazo}</Text>
       {pide ? (
         <Boton alTocar={alSubir} cargando={subiendo}>{estado == null ? 'Subir la foto de mi receta' : 'Subir otra foto'}</Boton>
+      ) : null}
+      {/* La otra salida (2026-10-19): quitar lo bajo receta y seguir con lo demás. */}
+      {mixto ? (
+        <Presionable onPress={alQuitarReceta} hitSlop={8} accessibilityRole="button"
+          style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Quitar lo bajo receta y seguir con lo demás</Text>
+        </Presionable>
       ) : null}
       <View>
         {r.receta_url ? (
@@ -989,22 +1043,61 @@ function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar }) {
   );
 }
 
+// El saldo a favor de un renglón (2026-10-08; desde el 2026-10-19 también lo
+// pagado en línea que no se entregó). Vale en cualquier sucursal: se muestra
+// el código en caja.
+const ORIGEN_SALDO = {
+  anticipo: 'Tu anticipo',
+  pago_en_linea: 'Lo que pagaste en línea',
+  pago_tardio: 'Tu pago llegó con la reserva ya cerrada, y',
+  pago_duplicado: 'Pagaste de más, y eso',
+};
 function SaldoAFavor({ r }) {
   if (!(Number(r.saldo_favor) > 0)) return null;
+  const usado = !!r.saldo_favor_usado_at;
+  const devuelto = !!r.saldo_favor_devuelto_at;
+  const codigo = r.pedido ?? r.codigo;
   return (
     <View style={{ borderRadius: 14, padding: 12, gap: 2, backgroundColor: 'rgba(52,199,89,0.12)' }}>
       <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>
-        {r.saldo_favor_usado_at ? `Usaste tu saldo a favor de ${dolares(r.saldo_favor)}` : `Tienes ${dolares(r.saldo_favor)} a favor`}
+        {usado ? `Usaste tu saldo a favor de ${dolares(r.saldo_favor)}`
+          : devuelto ? `Te devolvimos ${dolares(r.saldo_favor)}`
+          : `Tienes ${dolares(r.saldo_favor)} a favor`}
       </Text>
-      {!r.saldo_favor_usado_at ? (
-        <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
-          Tu anticipo te sirve para otra compra en cualquier sucursal hasta el {fecha(r.saldo_favor_vence)}. No se devuelve en efectivo.
+      {!usado && !devuelto ? (
+        <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
+          {ORIGEN_SALDO[r.saldo_favor_origen] ?? 'Tu anticipo'} te sirve para otra compra. Úsalo en cualquier sucursal hasta el {fecha(r.saldo_favor_vence)}: muestra el código {codigo} en caja.
         </Text>
       ) : null}
     </View>
   );
 }
-
+// Arriba de Mis reservas (2026-10-19): todo lo que tiene a favor, de un vistazo.
+function ResumenSaldo({ s }) {
+  const t = useTema();
+  const codigos = (s.detalle ?? []).map((x) => x.codigo);
+  return (
+    <View style={{ borderRadius: 18, padding: 14, gap: 4, backgroundColor: FONDOS.exito }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2 }}>Saldo a favor</Text>
+      <Text style={{ fontSize: 28, fontWeight: '900', color: t.color.exitoTexto, fontVariant: ['tabular-nums'] }}>{dolares(s.total)}</Text>
+      <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
+        Úsalo en cualquier sucursal{s.vence ? ` hasta el ${fecha(s.vence)}` : ''}. En caja, muestra {codigos.length > 1 ? 'los códigos' : 'el código'} {codigos.join(', ')}.
+      </Text>
+    </View>
+  );
+}
+// Por qué venció (2026-10-19): si fue de la sucursal, no cuenta en contra.
+const MOTIVO_VENCIDA = {
+  sin_receta: 'No llegó la foto de la receta a tiempo.',
+  receta_sin_revisar: 'La sucursal no alcanzó a revisar tu receta a tiempo. No cuenta en tu contra.',
+  sin_preparar: 'La sucursal no alcanzó a prepararla a tiempo. No cuenta en tu contra.',
+  oferta_terminada: 'La oferta terminó antes de que se preparara. No cuenta en tu contra.',
+  sin_retirar: 'Se cumplió el plazo para retirarla.',
+};
+function MotivoVencida({ r }) {
+  if (!r || r.estado !== 'vencida' || !MOTIVO_VENCIDA[r.vencida_motivo]) return null;
+  return <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>{MOTIVO_VENCIDA[r.vencida_motivo]}</Text>;
+}
 function Pildora({ e }) {
   return (
     <View style={{ alignSelf: 'flex-start', backgroundColor: e.fondo, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>

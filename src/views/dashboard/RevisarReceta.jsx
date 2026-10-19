@@ -20,6 +20,10 @@ import { firmarRuta } from '@nucleo/data/chatClientes';
 // pedir otra foto (con el motivo, que le llega al cliente) o rechazarla (la
 // reserva se cancela). La función de la base avisa al cliente y anota la
 // bitácora; acá sólo se decide.
+//
+// (2026-10-19) Decide quien tenga el permiso `recetas_app` (de su sala, o de
+// todas). Rechazar en un pedido con productos sin receta cancela SÓLO los
+// renglones bajo receta: lo demás sigue y el cliente lo puede pagar o retirar.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Las razones de siempre para pedir otra foto: un toque, y el texto se puede
@@ -53,11 +57,13 @@ export default function RevisarReceta({ reserva, onClose, onDecidida }) {
         }
         setEnviando(decision);
         try {
-            await decidirReceta(reserva.id, decision, decision === 'aprobada' ? null : motivo);
+            const res = await decidirReceta(reserva.id, decision, decision === 'aprobada' ? null : motivo);
             showToast(
                 decision === 'aprobada' ? 'Receta aprobada' : decision === 'otra_foto' ? 'Se pidió otra foto' : 'Receta rechazada',
                 decision === 'aprobada' ? 'La reserva quedó confirmada y el cliente recibió el aviso.'
-                    : decision === 'otra_foto' ? 'El cliente recibió el aviso para subir otra.' : 'La reserva se canceló y el cliente recibió el aviso.',
+                    : decision === 'otra_foto' ? 'El cliente recibió el aviso para subir otra o quitar ese producto.'
+                    : Number(res?.siguen) > 0 ? 'Se quitaron los productos bajo receta; lo demás del pedido sigue y el cliente recibió el aviso.'
+                    : 'La reserva se canceló y el cliente recibió el aviso.',
                 'success',
             );
             onDecidida?.();

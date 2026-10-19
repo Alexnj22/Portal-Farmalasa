@@ -95,6 +95,9 @@ const CHURN_INTENCIONAL = [
   { tabla: 'public.product_last_sale', reescriturasDia: 1,
     motivo: 'la última venta por producto y sala: el disparador y la reconstrucción diaria '
           + '(`refresh_product_last_sale`), con `IS DISTINCT FROM`.' },
+  { tabla: 'public.producto_cantidad_habitual', reescriturasDia: 1,
+    motivo: 'la cantidad habitual por producto de la madrugada '
+          + '(`refresh_producto_cantidad_habitual`), con `IS DISTINCT FROM`.' },
   { tabla: 'public.customer_activity', reescriturasDia: 1,
     motivo: 'la actividad por cliente de la madrugada (`refresh_customer_activity`), con '
           + '`IS DISTINCT FROM`.' },
@@ -129,6 +132,12 @@ const CRONS = [
     corridasDia: 1, sistema: 0,
     motivo: 'Da el cupón mensual del nivel Platino (puntos que vencen a fin de mes). El día 1 a todos; '
           + 'los demás días sólo a quien llegó a Platino en el mes (índice único por mes). Sólo la base propia.',
+  },
+  {
+    job: 'app-cantidad-habitual', slug: null, cadencia: '50 8 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Rehace la cantidad habitual por producto (percentil 95 de unidades por factura, 90 días) '
+          + 'para preguntarle al cliente de la app cuando reserva de más. ~0.6 s. Sólo la base propia.',
   },
   {
     job: 'app-catalogo-destacados', slug: null, cadencia: '40 8 * * *',

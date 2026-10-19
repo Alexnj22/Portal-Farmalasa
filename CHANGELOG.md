@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1307.2 — Modificar facturación menciona la entrega del documento electrónico
+
+- La descripción de la herramienta (baldosa del Inicio y lanzador de
+  solicitudes) dice ahora que ahí también se entrega el DTE al cliente, para
+  que la sala la encuentre.
+
 ## v2.1307.1 — DTE para el cliente también desde Ventas
 
 - El bloque «Documento electrónico» (descargar o enviar por correo el PDF y el

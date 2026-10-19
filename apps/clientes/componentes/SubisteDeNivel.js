@@ -11,7 +11,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import EfectoNivel from './EfectoNivel';
-import { BENEFICIOS } from './Nivel';
+import { beneficiosDeNivel } from './Nivel';
 import { PRECIOS } from './Mayorista';
 import { Confeti } from './animacion';
 import { Momento, vibrarMomento } from './momentos';
@@ -23,7 +23,12 @@ import Icono from './Icono';
 // guarda en el teléfono lo último que vio; bajar no celebra (y se anota en
 // silencio). La primera vez que se ve un rango o un precio sólo se anota:
 // no se sabe de dónde venía.
-const CLAVE = 'puntos_salud_ultimo_nivel';
+// 2026-10-19: clave nueva. La vieja guardaba el nivel visto también con los
+// niveles APAGADOS —o sea 'vip' para todos—, así que el día que se encendieran
+// cada cliente en Plata, Oro o Platino habría visto «¡Subiste!» sin haber
+// subido nada. Esta sólo se escribe con los niveles encendidos; la primera vez
+// que la app los ve encendidos muestra «TU NIVEL» (presentación, no subida).
+const CLAVE = 'puntos_salud_ultimo_nivel_activo';
 const CLAVE_RANGO = 'puntos_salud_ultimo_rango';
 const CLAVE_PRECIO = 'puntos_salud_ultimo_precio';
 const CLAVE_BIENVENIDA = 'puntos_salud_mayoreo_bienvenida';
@@ -42,7 +47,11 @@ const reciente = (f) => !f || (Date.now() - Date.parse(`${String(f).slice(0, 10)
 const beneficiosRango = (m) => [`${m.puntos} pts por cada $1 a tu precio de mayoreo`, '1 punto por cada $1 a precio Preferente',
   `${m.cumpleanos} puntos en tu cumpleaños`, ...(m.raspable ? [`Raspable mensual ${m.raspable}`] : [])];
 const pantallaNivel = (n) => ({ clave: n.clave, etiqueta: '¡SUBISTE DE NIVEL!', titulo: n.nombre, icono: ['crown.fill', '👑'],
-  texto: 'Gracias por tu preferencia. Desde ahora ganas más con cada compra:', beneficios: BENEFICIOS[n.clave] ?? [] });
+  texto: 'Gracias por tu preferencia. Desde ahora ganas más con cada compra:', beneficios: beneficiosDeNivel(n) });
+// La primera vez que se ven los niveles encendidos: cuál le tocó con lo que
+// compró en 12 meses, sin decir que «subió».
+const pantallaTuNivel = (n) => ({ clave: n.clave, etiqueta: 'TU NIVEL', titulo: n.nombre, icono: ['crown.fill', '👑'],
+  texto: 'Con lo que compraste en los últimos 12 meses, este es tu nivel en Puntos Salud:', beneficios: beneficiosDeNivel(n) });
 const pantallaRango = (m) => ({ clave: m.clave, etiqueta: '¡SUBISTE DE RANGO!', titulo: m.nombre, subtitulo: 'Cliente de mayoreo', icono: ['diamond.fill', '◆'],
   texto: `Tu compra promedio de los últimos tres meses te llevó a ${m.nombre}. Desde ahora:`, beneficios: beneficiosRango(m) });
 const pantallaPrecio = (m) => ({ clave: m.clave, etiqueta: '¡NUEVO PRECIO!', titulo: 'Mayoreo Plus', subtitulo: 'Cliente de mayoreo', icono: ['tag.fill', '🏷️'],
@@ -66,16 +75,19 @@ export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, 
   useEffect(() => { if (forzarRango && mayoreo?.clave) poner(pantallaRango(mayoreo)); }, [forzarRango]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (forzarPrecio && mayoreo?.clave) poner(pantallaPrecio(mayoreo)); }, [forzarPrecio]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (forzarBienvenida && mayoreo?.clave) poner(pantallaBienvenida(mayoreo)); }, [forzarBienvenida]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Apagados no se anota nada: el nivel de entrada de todos no es un dato.
+  const activos = nivel?.activos !== false;
   useEffect(() => {
-    if (!nivel?.clave) return;
+    if (!nivel?.clave || !activos) return;
     let vivo = true;
     leer(CLAVE).then((ultimo) => {
       if (!vivo) return;
-      if (ultimo && (ORDEN[nivel.clave] ?? 0) > (ORDEN[ultimo] ?? 0)) poner(pantallaNivel(nivel));
+      if (!ultimo) poner(pantallaTuNivel(nivel));
+      else if ((ORDEN[nivel.clave] ?? 0) > (ORDEN[ultimo] ?? 0)) poner(pantallaNivel(nivel));
       if (ultimo !== nivel.clave) guardar(CLAVE, nivel.clave);
     });
     return () => { vivo = false; };
-  }, [nivel?.clave]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nivel?.clave, activos]); // eslint-disable-line react-hooks/exhaustive-deps
   // Mayoreo: bienvenida la primera vez; después, subir de rango y de precio.
   const precio = mayoreo?.clave ? precioDe(mayoreo) : null;
   useEffect(() => {

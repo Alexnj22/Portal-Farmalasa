@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1308.1 — Puntos: la app y los avisos leen los niveles configurados
+
+Funciones de Supabase (SIN desplegar: lo despliega el coordinador) y app de clientes:
+- `_shared/nivel.ts`: los beneficios de cada nivel salen de la configuración
+  (`beneficios`), días de anticipo de ofertas por nivel, `programaParaApp`
+  (escalera, premios del raspable, beneficios del mayorista por rango).
+  Apagados: sin «siguiente» (antes la app decía «Estás en el nivel más alto»
+  a quien compraba ≥ $500 estando en Bronce).
+- `app-clientes`: ofertas anticipadas según `dias_anticipo_ofertas` (antes
+  Platino = 2 fijo); `programa` en el resumen; regalo de cumpleaños del rango
+  si el mayorista tiene sus beneficios encendidos.
+- `avisos-clientes`: «¡Subiste a X!» sólo si la factura cruzó el umbral hacia
+  arriba (`puntos_subieron_de_nivel`), llave por factura; nada al encender ni
+  al bajar. Aviso de oferta anticipada por los días de cada nivel.
+- App: `Nivel.js` sin listas a mano (lee `beneficios`), apagados muestra
+  Bronce y «los niveles se activan pronto»; `SubisteDeNivel` presenta «TU
+  NIVEL» la primera vez que ve los niveles encendidos y no celebra el
+  encendido como subida; `lib/prueba.js` sin tabla de premios fija (lee
+  `resumen.programa`); textos «Platino» de anticipo → genéricos; mayorista con
+  cumpleaños/raspable configurados; «Cliente VIP» → Bronce en comentarios.
+
+
 ## v2.1308.0 — Puntos: pestaña Niveles para configurar el programa
 
 - Nueva pestaña **Puntos → Niveles** (`puntos/NivelesDelPrograma.jsx`, permiso

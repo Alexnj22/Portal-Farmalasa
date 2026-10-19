@@ -7,13 +7,18 @@ import { create } from 'zustand';
 
 const CLAVE = 'puntos_salud_modo_prueba';
 
+// Sólo las claves y el rótulo para elegir el nivel de muestra. Los números
+// (umbral, factor, cumpleaños, raspable) NO van acá desde el 2026-10-19: salen
+// de `resumen.programa`, lo configurado en el portal, para que la muestra sea
+// lo mismo que vería un cliente real de ese nivel.
 export const NIVELES_PRUEBA = [
-  // Reglamento v2: el nivel de entrada se llama Bronce.
-  { clave: 'bronce', nombre: 'Bronce', factor: 1, desde: 0, cumpleanos: 50 },
-  { clave: 'plata', nombre: 'Plata', factor: 1.25, desde: 500, cumpleanos: 75 },
-  { clave: 'oro', nombre: 'Oro', factor: 1.5, desde: 1000, cumpleanos: 100 },
-  { clave: 'platino', nombre: 'Platino', factor: 2, desde: 2000, cumpleanos: 100 },
+  // Reglamento v2: el nivel de entrada se llama Bronce (en la base, 'vip').
+  { clave: 'bronce', nombre: 'Bronce' },
+  { clave: 'plata', nombre: 'Plata' },
+  { clave: 'oro', nombre: 'Oro' },
+  { clave: 'platino', nombre: 'Platino' },
 ];
+const claveServidor = (c) => (c === 'bronce' ? 'vip' : c);
 
 export const useModoPrueba = create((set) => ({
   activo: false,
@@ -52,38 +57,63 @@ export const useModoPrueba = create((set) => ({
   }),
 }));
 
-/** El objeto `nivel` del resumen, armado para el nivel de prueba (con una compra a mitad de camino). */
-export function nivelDePrueba(clave) {
-  const i = Math.max(0, NIVELES_PRUEBA.findIndex((n) => n.clave === clave));
-  const n = NIVELES_PRUEBA[i];
-  const s = NIVELES_PRUEBA[i + 1];
-  const compra = s ? Math.round((n.desde + (s.desde - n.desde) * 0.7) * 100) / 100 : 2850;
+/**
+ * El objeto `nivel` del resumen, armado para el nivel de prueba (con una compra
+ * a mitad de camino), desde `programa` (lo que manda el servidor). Sin
+ * `programa` —una versión vieja de la función— no se inventa nada: null.
+ */
+export function nivelDePrueba(clave, programa) {
+  const lista = programa?.niveles ?? [];
+  if (!lista.length) return null;
+  const i = Math.max(0, lista.findIndex((n) => n.clave === claveServidor(clave)));
+  const n = lista[i];
+  const s = lista[i + 1];
+  const compra = s ? Math.round((n.desde + (s.desde - n.desde) * 0.7) * 100) / 100 : Math.round(Number(n.desde) * 140) / 100;
   return {
     clave: n.clave, nombre: n.nombre, factor: n.factor, cumpleanos: n.cumpleanos, horas_reserva: 24, activos: true,
-    cupon_mensual: n.clave === 'platino' ? 500 : 0, compra,
-    siguiente: s ? { clave: s.clave, nombre: s.nombre, desde: s.desde, factor: s.factor, falta: Math.round((s.desde - compra) * 100) / 100 } : null,
+    raspable: !!n.raspable, cupon_mensual: n.cupon_mensual ?? 0, compra, beneficios: n.beneficios ?? [],
+    siguiente: s ? { clave: s.clave, nombre: s.nombre, desde: s.desde, factor: s.factor,
+      falta: Math.round((s.desde - compra) * 100) / 100, beneficios: s.beneficios ?? [] } : null,
   };
 }
 
-// Los premios de la raspable del Reglamento v2 (cláusula 5), con su probabilidad.
-const PREMIOS = {
-  oro: [[45, { puntos: 25 }], [30, { puntos: 50 }], [15, { puntos: 100 }], [8, { descuento: 5, tope: 5 }], [2, { puntos: 250 }]],
-  platino: [[40, { puntos: 100 }], [30, { puntos: 200 }], [15, { puntos: 300 }], [10, { descuento: 15, tope: 10 }], [5, { puntos: 1000 }]],
-};
+/**
+ * De dónde sale el raspable de muestra: el nivel elegido o, si se mira como
+ * Cliente Mayorista, su rango. Null si ese nivel o rango no tiene raspable
+ * configurado.
+ */
+export function raspableDePrueba(programa, { nivel, mayorista }) {
+  const fuente = mayorista
+    ? (programa?.mayoreo?.rangos ?? []).find((r) => r.clave === mayorista)
+    : (programa?.niveles ?? []).find((n) => n.clave === claveServidor(nivel));
+  return fuente?.raspable ? fuente : null;
+}
 
-/** Un cupón de muestra (Oro o Platino, premios del v2). `semilla` cambia con «Volver a tapar». */
-export function cuponDePrueba(nivel, semilla, usado = false) {
+/**
+ * Un raspable de muestra con los premios CONFIGURADOS (2026-10-19; antes, una
+ * tabla escrita acá que ya no coincidía con la base y que además ofrecía
+ * descuentos que el motor no sabe dar). Sólo puntos, igual que el servidor.
+ * `semilla` cambia con «Volver a tapar».
+ */
+export function cuponDePrueba(fuente, semilla, usado = false) {
+  if (!fuente) return null;
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
   const vence = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
-  const tabla = PREMIOS[nivel === 'oro' ? 'oro' : 'platino'];
-  let r = Math.random() * 100; let premio = tabla[0][1];
-  for (const [peso, p] of tabla) { if (r < peso) { premio = p; break; } r -= peso; }
-  const puntos = premio.puntos ?? 0;
+  const premios = (fuente.premios ?? []).filter((x) => Number(x.peso) > 0 && Number(x.puntos) > 0);
+  let puntos = Number(fuente.cupon_mensual ?? 0);
+  if (premios.length) {
+    // Igual que `puntos_premio_al_azar`: cada premio con su peso.
+    const total = premios.reduce((a, x) => a + Number(x.peso), 0);
+    let r = Math.random() * total;
+    puntos = Number(premios[premios.length - 1].puntos);
+    for (const x of premios) { if (r <= Number(x.peso)) { puntos = Number(x.puntos); break; } r -= Number(x.peso); }
+  }
+  if (!(puntos > 0)) return null;
   return {
-    id: `prueba-${nivel}-${semilla}`, puntos, restantes: usado ? 0 : (puntos || 1), vence,
-    descuento: premio.descuento ?? null, tope: premio.tope ?? null,
-    titulo: `Raspable ${nivel === 'oro' ? 'Oro' : 'Platino'} del mes`,
+    id: `prueba-${fuente.clave}-${semilla}`, puntos, restantes: usado ? 0 : puntos, vence,
+    descuento: null, tope: null,
+    titulo: `Raspable ${fuente.nombre} del mes`,
   };
 }
 

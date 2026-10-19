@@ -98,7 +98,7 @@ const alRafaga = () => {
   setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), 140);
 };
 
-// Los colores de cada nivel (plan aprobado 2026-10-07): morada (Cliente VIP),
+// Los colores de cada nivel (plan aprobado 2026-10-07): morada (Bronce, clave 'vip'),
 // plata, dorada y platino. El texto queda blanco en las cuatro.
 export const COLORES_NIVEL = {
   // El COLOR dice el nivel; los efectos sólo lo acompañan, suaves (2026-10-07):

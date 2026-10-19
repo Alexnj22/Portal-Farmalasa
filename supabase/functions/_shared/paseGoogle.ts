@@ -187,3 +187,23 @@ export async function avisarGoogle(admin: any) {
   if (errores.length) console.error("[wallet-pases] errores Google Wallet:", [...new Set(errores)].slice(0, 5).join(" | "));
   return { ok: true, google: data.length, actualizadas, errores: errores.length };
 }
+
+/**
+ * «Borrar mi cuenta» de la app (2026-10-19): la tarjeta guardada en Google
+ * Wallet pasa a VENCIDA (Google la mueve a «Pases vencidos» y deja de
+ * mostrarla como vigente). 404 = esa persona nunca la guardó: no es un error.
+ * Sólo cambia el estado: el PATCH del saldo (`actualizarObjetoGoogle`) no
+ * manda `state`, así que no la vuelve a activar.
+ */
+export async function expirarObjetoGoogle(customerId: number): Promise<boolean> {
+  const id = `${emisor()}.socio-${customerId}`;
+  const r = await fetch(`https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${await tokenOAuth(cuenta())}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ state: "EXPIRED" }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (r.status === 404) return false;
+  if (!r.ok) throw new Error(`Google Wallet ${r.status}: ${await r.text()}`);
+  return true;
+}

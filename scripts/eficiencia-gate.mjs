@@ -198,6 +198,12 @@ const CRONS = [
     motivo: 'Retención de 30 días de los intentos de entrar a Mis puntos y a la app (guardan la IP).',
   },
   {
+    job: 'purge-app-cliente-sesiones', slug: null, cadencia: '45 9 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Borra las sesiones de la app de clientes revocadas hace 30 días o sin uso hace 210 '
+          + '(2026-10-19). SQL puro sobre la propia base, con tope de 5000 por corrida.',
+  },
+  {
     job: 'refresh-product-last-sale-daily', slug: null, cadencia: '45 6 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Recalcula `product_last_sale` —la fecha de la última venta de cada producto en cada '

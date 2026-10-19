@@ -72,7 +72,8 @@ export default function BurbujaChat() {
   const conFicha = !!resumen && !resumen.pendiente;
   const enPestanas = segmentos[0] === '(tabs)';
   const oculta = !segmentos.length || OCULTA.has(segmentos[0]) || (enPestanas && PESTANA_OCULTA.has(segmentos[1]));
-  const visible = Platform.OS !== 'web' && !!token && !bloqueada && conFicha && !oculta;
+  // Con la sesión de CÓDIGO no hay chat (2026-10-19): pide DUI y teléfono.
+  const visible = Platform.OS !== 'web' && !!token && !bloqueada && conFicha && !oculta && resumen?.alcance !== 'codigo';
   const sinLeer = Number(resumen?.chat?.sin_leer ?? resumen?.chat_sin_leer) || 0;
   // `null`: el servidor todavía no lo dice (una versión anterior) — sin punto.
   const abierta = typeof resumen?.chat?.abierta === 'boolean' ? resumen.chat.abierta : null;

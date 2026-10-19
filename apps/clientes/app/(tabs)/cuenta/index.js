@@ -20,7 +20,8 @@ import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
 import { Aviso, ESPACIO_BURBUJA } from '../../../componentes/ui';
-import { useSesion } from '../../../lib/sesion';
+import { MENSAJE_CODIGO, useConCodigo, useSesion } from '../../../lib/sesion';
+import { irACompletarEntrada } from '../../../componentes/SoloConDocumento';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
 import { abrirPase, agregarDirecto, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
@@ -104,10 +105,15 @@ export default function Cuenta() {
   const foto = { url: fotoGuardada.codigo === resumen?.codigo ? fotoGuardada.url : null, clave: fotoGuardada.clave,
     quitada: fotoGuardada.codigo === resumen?.codigo && fotoGuardada.quitada, cargando: subiendo };
   const conFicha = !!resumen && !resumen.pendiente;
+  // Sesión de CÓDIGO (2026-10-19): sólo puntos, tarjeta y ofertas. Sin foto de
+  // perfil, facturas, créditos, chat, permisos ni borrar la cuenta; en su
+  // lugar, el camino a entrar con DUI y teléfono.
+  const conCodigo = useConCodigo() || resumen?.alcance === 'codigo';
+  const completa = conFicha && !conCodigo;
   useFocusEffect(useCallback(() => {
-    if (!conFicha || !resumen?.codigo) return;
+    if (!completa || !resumen?.codigo) return;
     refrescarFotoPerfil(resumen.codigo);
-  }, [conFicha, resumen?.codigo]));
+  }, [completa, resumen?.codigo]));
   const ponerFoto = (f) => useFotoPerfil.getState().poner(resumen?.codigo ?? null, f);
   // El nivel en el avatar (2026-10-14, «no me muestra en el avatar mi nivel»):
   // la misma cuenta que la tarjeta del Inicio — el rango de mayoreo si lo
@@ -219,9 +225,18 @@ export default function Cuenta() {
   // (`puntos_guardar_consentimiento`): el Reglamento dice que entonces deja de
   // acumular y su saldo queda retenido —no vence ni se canjea— hasta que vuelva.
   function borrar() {
+    if (conCodigo) {
+      Alert.alert('Borrar tu cuenta', `${MENSAJE_CODIGO} Así sabemos que la cuenta es tuya.`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Entrar con DUI y teléfono', onPress: irACompletarEntrada },
+      ]);
+      return;
+    }
     Alert.alert(
       '¿Borrar tu cuenta de la app?',
-      'Se cierra la sesión en todos tus teléfonos, dejas de recibir avisos y se borran tu registro en la app, tu foto de perfil, tus conversaciones con la farmacia y las fotos de recetas que no se usaron.\n\n'
+      // 2026-10-19: la lista completa, la misma de la cláusula 10 del aviso de
+      // privacidad y de `borrarLoPersonal` (app-clientes). Se mueven juntas.
+      'Se cierra la sesión en todos tus teléfonos, dejas de recibir avisos y se borran tu registro en la app, tu foto de perfil, tus conversaciones con la farmacia y el comentario con que las calificaste, los correos que guardaste para tus facturas, tu código para invitar, las novedades que viste y las fotos de recetas que no se usaron. Tu tarjeta de Apple Wallet deja de actualizarse y la de Google Wallet queda vencida. Las reservas abiertas que no pagaste se cancelan; las que pagaste siguen en pie.\n\n'
         + 'Se conservan, porque la ley lo exige: tu ficha de cliente con tus compras y facturas, y la receta de un medicamento que ya retiraste. Tus puntos siguen ahí: si compras con tu DUI sigues acumulando, y puedes volver a entrar cuando quieras.\n\n'
         + 'Si además quieres dejar de acumular puntos, elige «Retirar mi permiso del programa»: tu saldo queda en pausa (no vence ni se puede canjear) y dejas de recibir promociones, hasta que vuelvas a aceptarlo.',
       [
@@ -244,7 +259,7 @@ export default function Cuenta() {
       {vistaPrevia.vista}
       {resumen?.nombre ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 24 }}>
-          {conFicha ? (
+          {completa ? (
             <Presionable onPress={cambiarFoto} accessibilityRole="button" accessibilityLabel={foto.url ? 'Cambiar tu foto de perfil' : 'Agregar una foto de perfil'}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
               <AvatarNivel nombre={resumen.nombre} material={materialAvatar} equipo={equipoAvatar} uri={foto.url} clave={foto.clave} tam={68} atenuado={foto.cargando} />
@@ -260,9 +275,9 @@ export default function Cuenta() {
             {nivelTexto ? (
               <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{nivelTexto}</Text>
             ) : null}
-            {conFicha && foto.quitada ? (
+            {completa && foto.quitada ? (
               <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Quitamos tu foto de perfil porque no correspondía. Puedes subir otra.</Text>
-            ) : conFicha && !foto.url ? (
+            ) : completa && !foto.url ? (
               <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Toca para agregar tu foto (opcional)</Text>
             ) : null}
           </View>
@@ -273,20 +288,23 @@ export default function Cuenta() {
       {/* Perfil: lo que sólo vive aquí. */}
       {conFicha ? (
         <Grupo titulo="Perfil">
-          <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} />
+          {conCodigo ? (
+            <FilaAccion sf="person.text.rectangle.fill" texto="Ver mis compras, facturas y reservas" alTocar={irACompletarEntrada} />
+          ) : null}
+          {!conCodigo ? <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} /> : null}
           {/* Saldo a favor (2026-10-19): lo pagado que no se entregó o un
               anticipo; vale en cualquier sucursal. El detalle, en Mis reservas. */}
-          {resumen?.saldo_a_favor?.total > 0 ? (
+          {!conCodigo && resumen?.saldo_a_favor?.total > 0 ? (
             <FilaAccion sf="dollarsign.circle.fill" color={t.color.exitoTexto}
               texto={`Saldo a favor: ${dolares(resumen.saldo_a_favor.total)}${resumen.saldo_a_favor.vence ? ` · hasta el ${fecha(resumen.saldo_a_favor.vence)}` : ''} · úsalo en cualquier sucursal`}
               alTocar={() => navegar('/reservas')} />
           ) : null}
           {/* Mis créditos (2026-10-15): sólo si debe algo; la insignia, los vencidos. */}
-          {resumen?.creditos?.pendientes > 0 ? (
+          {!conCodigo && resumen?.creditos?.pendientes > 0 ? (
             <FilaAccion sf="creditcard.fill" texto="Mis créditos" insignia={Number(resumen.creditos.vencidos) || 0}
               alTocar={() => navegar('/creditos')} />
           ) : null}
-          <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} />
+          {!conCodigo ? <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} /> : null}
           {resumen?.wallet_serial && walletDisponible() && enWallet ? (
             <FilaAccion sf="wallet.pass.fill" texto="Ver mi tarjeta en Apple Wallet" alTocar={() => wallet()} />
           ) : null}
@@ -310,21 +328,28 @@ export default function Cuenta() {
         </Grupo>
       ) : null}
 
+      {!conCodigo || resumen?.acepta_avisos === true ? (
       <Grupo titulo="Notificaciones" pie="Ofertas nuevas, puntos por vencer y tus reservas. Las promociones son las ofertas personalizadas que te mandamos.">
-        <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
-          alCambiar={avisos} color={t.color.magenta} />
-        {conFicha ? (
+        {/* Con el código, los avisos sólo se pueden apagar: hablan de reservas, chat y facturas. */}
+        {!conCodigo || resumen?.acepta_avisos === true ? (
+          <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
+            alCambiar={avisos} color={t.color.magenta} />
+        ) : null}
+        {completa ? (
           <FilaInterruptor titulo="Promociones" detalle={c?.textos?.promociones}
             valor={valorDe('promociones', c?.promociones === true)} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
         ) : null}
       </Grupo>
+      ) : null}
 
       {/* El chat con la farmacia (2026-10-12), con los sin leer. Sin ficha
           todavía no hay Inicio con sus accesos: las sucursales van aquí. */}
       {conFicha ? (
         <Grupo titulo="Ayuda y chat" pie="Te responde el equipo de Farmacia Salud en el horario de las sucursales.">
-          <FilaAccion sf="bubble.left.and.bubble.right.fill" texto="Pregúntale a la farmacia" insignia={Number(resumen?.chat_sin_leer) || 0}
-            alTocar={() => navegar('/chat')} />
+          {!conCodigo ? (
+            <FilaAccion sf="bubble.left.and.bubble.right.fill" texto="Pregúntale a la farmacia" insignia={Number(resumen?.chat_sin_leer) || 0}
+              alTocar={() => navegar('/chat')} />
+          ) : null}
           {/* La guía del primer inicio y las novedades de esta versión, otra vez (2026-10-14). */}
           <FilaAccion sf="questionmark.circle" texto="Cómo funciona la app" alTocar={() => navegar('/guia')} />
           <FilaAccion sf="sparkles" texto="Novedades" alTocar={() => usePresentacion.getState().abrirNovedades()} />
@@ -337,8 +362,8 @@ export default function Cuenta() {
         </Grupo>
       )}
 
-      <Grupo titulo="Legal y privacidad" pie={conFicha ? 'Si quitas el programa, tu saldo queda en pausa; no se pierde.' : undefined}>
-        {conFicha ? (
+      <Grupo titulo="Legal y privacidad" pie={completa ? 'Si quitas el programa, tu saldo queda en pausa; no se pierde.' : undefined}>
+        {completa ? (
           <FilaInterruptor titulo="Programa de puntos" detalle={c?.textos?.programa}
             valor={valorDe('programa', c?.programa !== false)} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
         ) : null}

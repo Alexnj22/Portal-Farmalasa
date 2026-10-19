@@ -14,6 +14,7 @@ import { useTema } from '../tema/tema';
 import { documentoEscrito } from '../lib/formato';
 import { conBiometria, useBloqueo } from '../lib/bloqueo';
 import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
+import { useCuenta } from '../lib/cuenta';
 
 // El alfabeto del código no tiene letras ni números que se confundan
 // (sin O/0, I/1, S/5…), igual que el que emite la sala.
@@ -29,8 +30,15 @@ export default function Entrar() {
   const t = useTema();
   const abrir = useSesion((s) => s.abrir);
   // Llegando desde el QR del ticket (app/mis-puntos.js), con el código escrito.
-  const { codigo: delQr } = useLocalSearchParams();
-  const [modo, setModo] = useState(delQr ? 'codigo' : 'dui');
+  const { codigo: delQr, completar } = useLocalSearchParams();
+  // Completar (2026-10-19): llega desde «Para ver esto, entra con tu DUI y
+  // teléfono» con la sesión de CÓDIGO todavía abierta. Sólo DUI y teléfono,
+  // sin la entrada rápida (la guardada puede ser el mismo código), y al
+  // entrar la sesión de código se reemplaza (`reemplaza`: el servidor la
+  // revoca). Si vuelve atrás, sigue con la de código.
+  const completando = completar === '1' && !!useSesion.getState().token;
+  useEffect(() => (completando ? () => useSesion.getState().dejarDeCompletar() : undefined), [completando]);
+  const [modo, setModo] = useState(delQr && !completando ? 'codigo' : 'dui');
   const [documento, setDocumento] = useState('');
   const [telefono, setTelefono] = useState('');
   const [codigo, setCodigo] = useState(delQr ? String(delQr) : '');
@@ -43,9 +51,9 @@ export default function Entrar() {
   const [rapida, setRapida] = useState(null);
   // Y se ofrece sola al abrir la pantalla, una vez: es lo que se espera del gesto.
   const ofrecida = useRef(false);
-  useEffect(() => { entradaDisponible().then(setRapida); }, []);
+  useEffect(() => { if (!completando) entradaDisponible().then(setRapida); }, [completando]);
   useEffect(() => {
-    if (rapida && !ofrecida.current && !delQr) { ofrecida.current = true; entrarRapido(); }
+    if (rapida && !ofrecida.current && !delQr && !completando) { ofrecida.current = true; entrarRapido(); }
   }, [rapida]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const listo = modo === 'codigo'
@@ -55,13 +63,16 @@ export default function Entrar() {
   async function entrarCon(datos) {
     setError(null);
     setEnviando(true);
-    const r = await llamar('entrar', { ...datos, plataforma, dispositivo: Device.modelName ?? null });
+    const reemplaza = completando ? useSesion.getState().token : undefined;
+    const r = await llamar('entrar', { ...datos, plataforma, dispositivo: Device.modelName ?? null, ...(reemplaza ? { reemplaza } : {}) });
     setEnviando(false);
     if (r?.ok && r.token) {
       await guardarEntrada(datos);
       // Recién entró con sus datos o su cara: no se le pide Face ID otra vez.
       useBloqueo.setState({ bloqueada: false });
-      await abrir(r.token);
+      // De código a completa: el resumen recortado no sirve, se pide de nuevo.
+      if (completando) useCuenta.getState().limpiar();
+      await abrir(r.token, r.alcance);
       return true;
     }
     setError(r?.mensaje ?? 'No se pudo entrar.');
@@ -83,13 +94,17 @@ export default function Entrar() {
 
   return (
     <Formulario>
-      <Segmentos
-        valor={modo}
-        alCambiar={(m) => { setModo(m); setError(null); }}
-        opciones={[{ valor: 'dui', rotulo: 'DUI y teléfono' }, { valor: 'codigo', rotulo: 'Código del ticket' }]}
-      />
+      {completando ? (
+        <Aviso tipo="aviso">Entraste con el código de tu ticket. Para ver tus compras, facturas, reservas y el chat, entra con tu DUI y teléfono.</Aviso>
+      ) : (
+        <Segmentos
+          valor={modo}
+          alCambiar={(m) => { setModo(m); setError(null); }}
+          opciones={[{ valor: 'dui', rotulo: 'DUI y teléfono' }, { valor: 'codigo', rotulo: 'Código del ticket' }]}
+        />
+      )}
       {motivo === 'vencida' ? <Aviso tipo="aviso">Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Aviso> : null}
-      {rapida ? (
+      {rapida && !completando ? (
         <BotonSistema etiqueta={enviando ? 'Entrando…' : `Entrar ${conBiometria(rapida.biometria)}`} alTocar={entrarRapido}
           deshabilitado={enviando} color={t.color.magenta} />
       ) : null}
@@ -122,7 +137,7 @@ export default function Entrar() {
           />
         </Grupo>
       ) : (
-        <Grupo pie="Las 7 letras que vienen impresas en tu ticket de puntos.">
+        <Grupo pie="Las 7 letras que vienen impresas en tu ticket de puntos. Con el código ves tus puntos, tu tarjeta y las ofertas; para tus compras, facturas, reservas y el chat, entra con tu DUI y teléfono.">
           <FilaCampo
             placeholder="Código"
             autoCapitalize="characters"

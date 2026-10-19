@@ -817,7 +817,7 @@ export const AREAS = [
                  // Chat asignado (2026-10-14): esperas de más de 20 min sin respuesta del asignado.
                  'app_chat_incumplimientos'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario',
+        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
                 'recetas-escalar-15min',
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.

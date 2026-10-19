@@ -17,9 +17,11 @@ import { fetchCofSinEnvioMh } from '@nucleo/data/librosIva';
 // dispara avisos— pero se lleva registro de cuántos son y cuánto suman. La
 // regla vive en `public.cof_no_se_envia_mh`; esto sólo la muestra.
 //
-// Vive en Libros IVA y no en Facturación porque la consecuencia que importa es
-// fiscal: sin sello no entran al libro, y quien arma la declaración tiene que
-// ver el monto al lado del libro que presenta.
+// Es información del área administrativa, NO de contabilidad: el contador no
+// la ve (pedido del usuario: «esto es oculto»). Vive en Libros IVA porque ahí
+// está el mes y el libro al que no entran, pero `LibrosIvaView` sólo la pinta
+// para los cuatro cargos de admin, y `get_cof_sin_envio_mh` contesta FORBIDDEN
+// a cualquier otro. El aviso de «ventas fuera del libro» tampoco los cuenta.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const COLS = [

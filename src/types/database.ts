@@ -30392,7 +30392,6 @@ export type Database = {
       get_ventas_fuera_del_libro: {
         Args: { p_branch_id?: number; p_desde: string; p_hasta: string }
         Returns: {
-          cof_noche: number
           documentos: number
           monto: number
           sello_invalido: number

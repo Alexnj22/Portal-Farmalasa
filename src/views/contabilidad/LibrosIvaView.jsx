@@ -28,6 +28,7 @@ import {
 } from '@nucleo/data/librosIva';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import CofNocheSinEnvio from './CofNocheSinEnvio';
+import { CARGOS_DEL_AREA_ADMINISTRATIVA } from '@nucleo/utils/marcaDeLaSala';
 
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { paqueteDeLibrosIva } from '@nucleo/data/paqueteLibrosIva';
@@ -632,8 +633,12 @@ export default function LibrosIvaView({ openModal }) {
     const [renta,         setRenta]         = useState([]);
     const [fuera,         setFuera]         = useState(null);
     // Los consumidores finales de las 6 p. m. en adelante, que no se envían a
-    // Hacienda (2026-10-19). Ver `CofNocheSinEnvio`.
+    // Hacienda (2026-10-19). Ver `CofNocheSinEnvio`. Sólo para el área
+    // administrativa: el contador no la ve. El candado de verdad está en
+    // `get_cof_sin_envio_mh`; acá sólo se evita pedirla y pintar un error.
     const [cofNoche,      setCofNoche]      = useState(null);
+    const esAdmin = CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.roleId))
+                 || CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.secondaryRoleId));
     const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
@@ -662,7 +667,7 @@ export default function LibrosIvaView({ openModal }) {
             fetchAnexoRetencionRenta(desde, hasta),
             fetchVentasFueraDelLibro(desde, hasta, filterBranch),
             fetchRetencionVentas(desde, hasta, filterBranch),
-            fetchCofSinEnvioMh(desde, hasta, filterBranch),
+            esAdmin ? fetchCofSinEnvioMh(desde, hasta, filterBranch) : Promise.resolve({ data: null, error: null }),
         ]);
         // Un libro que falla NO puede quedar como "no hubo operaciones": un mes
         // vacío por error de red es indistinguible de un mes sin movimiento, y
@@ -682,7 +687,7 @@ export default function LibrosIvaView({ openModal }) {
         setRetVentas(rv.data || []);
         setCofNoche(cn.data ?? null);
         setLoading(false);
-    }, [desde, hasta, filterBranch]);
+    }, [desde, hasta, filterBranch, esAdmin]);
 
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
@@ -1047,14 +1052,7 @@ export default function LibrosIvaView({ openModal }) {
                         les falta el sello de Hacienda. Se resuelven en Facturación:{' '}
                         {fuera.sin_sello > 0 && <>{fuera.sin_sello} en <strong>Pendiente MH</strong></>}
                         {fuera.sin_sello > 0 && fuera.sello_invalido > 0 && ' y '}
-                        {fuera.sello_invalido > 0 && <>{fuera.sello_invalido} en <strong>Observaciones</strong></>}
-                        {/* Los de la noche no se resuelven en ningún lado: no se
-                            envían por decisión. Se nombran para que la suma de
-                            las partes dé el total del aviso. */}
-                        {fuera.cof_noche > 0 && <>
-                            {(fuera.sin_sello > 0 || fuera.sello_invalido > 0) && '; '}
-                            {fuera.cof_noche} son consumidores finales de después de las 6:00 p. m., que no se envían
-                        </>}.
+                        {fuera.sello_invalido > 0 && <>{fuera.sello_invalido} en <strong>Observaciones</strong></>}.
                     </Notice>
                 )}
 
@@ -1121,7 +1119,7 @@ export default function LibrosIvaView({ openModal }) {
                     </DataTable>
                 )}
 
-                {activeTab === 'consumidor' && (
+                {activeTab === 'consumidor' && esAdmin && (
                     <CofNocheSinEnvio resumen={cofNoche} loading={loading} mes={mes}
                         desde={desde} hasta={hasta} filterBranch={filterBranch}
                         sufijoArchivo={sufijoArchivo} onError={setError} />

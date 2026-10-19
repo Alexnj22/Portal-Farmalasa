@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1305.1 — Evidencia de COF de la noche sólo para admin; fuera del aviso contable
+
+- **La evidencia de los COF de después de las 6:00 p. m. es sólo del área
+  administrativa** (cargos 2, 3, 11 y 13). `get_cof_sin_envio_mh` contesta
+  FORBIDDEN a cualquier otro —el permiso de Libros IVA ya no alcanza— y Libros
+  IVA sólo pide y pinta la sección para esos cargos. El contador no la ve.
+- **El aviso de «ventas fuera del libro» deja de contarlos**: ni documentos, ni
+  monto, ni mención. `get_ventas_fuera_del_libro` vuelve a sus cuatro columnas.
+
 ## v2.1305.0 — COF desde las 6 pm no se envía a Hacienda; los CCF se reenvían solos
 
 Decisión del usuario, para todas las sucursales, desde el 2026-10-19.

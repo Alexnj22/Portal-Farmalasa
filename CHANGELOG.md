@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1306.1 — Salud 1 vuelve al envío a Hacienda
+
+- Se quita la pausa de Salud 1 (`dte_sucursales_en_pausa` queda vacía): las
+  pruebas fiscales terminaron en la regla de los COF de las 6:00 p. m. en
+  adelante, que vale para todas las sucursales. Sus facturas sin sello de
+  antes de las 6 se mandan en el envío de las 22:30 y sus CCF vuelven al
+  reintento de cada 10 minutos.
+
 ## v2.1306.0 — Pago de asegurado Mapfre amarrado a su factura
 
 - **Nuevo ingreso «Pago de asegurado Mapfre».** La venta a Mapfre se factura al

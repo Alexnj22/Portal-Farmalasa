@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1307.0 — Puntos: niveles configurables, compra completa de 12 meses y beneficios del mayorista
+
+Base de datos (niveles siguen APAGADOS; nada cambia para el cliente hasta encenderlos):
+- `puntos_compra_12m` suma TODAS las facturas válidas de 12 meses
+  (`sales_invoices` + `venta_valida`), también las de una cuenta unida, en vez
+  de los puntos ganados. Medido: 360/360 iguales contra la suma de una pasada
+  de `puntos_dar_cupones`; ~5 ms estables en 8 llamadas seguidas para el
+  cliente con más facturas. Con la regla nueva, al encender: Plata 501, Oro
+  135, Platino 61 (antes 89/34/8); 14 clientes bajarían a Bronce.
+- Configurable sin migración: umbral, factor, cumpleaños, horas de reserva y
+  días de anticipo de ofertas por nivel; raspable (premios con probabilidad)
+  sólo del penúltimo y último nivel; tope mensual (vacío = sin tope).
+  Historial en `puntos_config_historial`, permiso `puntos_tab_niveles`.
+- Cliente Mayorista: cumpleaños y raspable por rango
+  (`puntos_mayoreo_beneficios`) detrás de `mayoreo_beneficios_activos`
+  (apagado).
+- `puntos_subieron_de_nivel` (para el aviso «Subiste») y
+  `puntos_horas_reserva` (lectura lista para el frente de reservas).
+- Migraciones `20261019230834_puntos_niveles_configurables_desde_el_portal` y
+  `20261019230957_puntos_nivel_con_todas_las_compras_y_beneficios_por_rango`.
+
 ## v2.1306.1 — Puntos: el vencimiento resta exactamente el lote vencido
 
 - `puntos_vencer_lotes` descontaba lo vencido por FIFO (`puntos_consumir`,

@@ -34,7 +34,7 @@ import {
     anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
-    subirComprobante, boletaYaEnCaja,
+    subirComprobante, boletaYaEnCaja, fetchFacturasMapfre,
 } from '@nucleo/data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
 import MetaDelDia from '../components/cortes/MetaDelDia';
@@ -60,6 +60,7 @@ const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 // su diálogo sólo se carga cuando alguien lo abre.
 const DialogoAplicacion = lazy(() => import('../components/caja/DialogoAplicacion'));
 const DialogoReenviarIngreso = lazy(() => import('../components/caja/DialogoReenviarIngreso'));
+const DialogoMapfre = lazy(() => import('../components/caja/DialogoMapfre'));
 import BonosPorPagar from '../components/caja/BonosPorPagar';
 import EsperaDeLaCaja from '../components/caja/EsperaDeLaCaja';
 import FormaDePago from '../components/caja/FormaDePago';
@@ -231,6 +232,10 @@ export default function MiCajaView({ comoPestana = false }) {
     // Un ingreso con tarjeta o transferencia que no se autorizó y se vuelve a
     // mandar con más pruebas. Ver `DialogoReenviarIngreso`.
     const [reenviando, setReenviando] = useState(null);
+    /* Cuántas facturas de Mapfre de esta sala esperan el pago del asegurado.
+     * `mapfreVersion` sube al cobrar una, para volver a contar. */
+    const [mapfrePorCobrar, setMapfrePorCobrar] = useState(0);
+    const [mapfreVersion, setMapfreVersion] = useState(0);
     /* Los cortes del día, COMPLETOS. `estadoDeCaja` ya trae los suyos, pero sin
      * el nombre de quien cortó ni quién lo confirmó — y es justo lo que la sala
      * entra a comprobar: «que todo esté bien» (usuario, 1-sep). Van aparte y no
@@ -541,6 +546,17 @@ export default function MiCajaView({ comoPestana = false }) {
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
 
+    // Las facturas de Mapfre sin el pago del asegurado. Un fallo no se lee
+    // como cero ni como alarma: se calla y queda el diálogo, que lo dice.
+    useEffect(() => {
+        if (!sala || !puedeOperar) return undefined;
+        let vivo = true;
+        fetchFacturasMapfre(sala)
+            .then((f) => { if (vivo) setMapfrePorCobrar(f.filter((x) => x.estado === 'POR_COBRAR').length); })
+            .catch((e) => console.error('caja: facturas de Mapfre:', e?.message ?? e));
+        return () => { vivo = false; };
+    }, [sala, puedeOperar, mapfreVersion]);
+
 
     /* Si el día que la caja tiene abierto no lleva ni un corte, cerrar deja el
      * efectivo de toda la jornada sin contar ni una vez — y el cierre no se
@@ -678,7 +694,7 @@ export default function MiCajaView({ comoPestana = false }) {
         else if (r.movimiento?.autorizacion === 'PENDIENTE') {
             showToast('Anotado, falta autorizarlo',
                 'No hay comprobante: lo revisa Supervisión o Talento Humano.', 'warning');
-        } else if (exito) showToast(exito, 'success');
+        } else if (exito) showToast(exito, '', 'success');
         setDialogo(null);
         cargar();
         return r;
@@ -1176,6 +1192,17 @@ export default function MiCajaView({ comoPestana = false }) {
 
                         {/* Sólo si hubo algún cobro con tarjeta: sin ellos no
                             hay nada que cuadrar y la consulta sobra. */}
+                        {/* Las facturas de Mapfre sin el pago del asegurado: se
+                            dice acá, donde la sala mira su caja, y no sólo al
+                            abrir el diálogo. */}
+                        {puedeOperar && mapfrePorCobrar > 0 && (
+                            <Notice variant="warning" icon={ShieldCheck}
+                                action={<Button size="sm" variant="secondary" onClick={() => setDialogo('mapfre')}>Cobrar</Button>}>
+                                {mapfrePorCobrar === 1 ? 'Una factura de Mapfre no tiene' : `${mapfrePorCobrar} facturas de Mapfre no tienen`} el
+                                pago del asegurado anotado.
+                            </Notice>
+                        )}
+
                         {(movimientos || []).some((m) => m.forma_pago === 'TARJETA' && !m.anulado_at) && (
                             <VouchersDelDia sala={sala} dia={estado?.dia} version={movimientos} />
                         )}
@@ -1245,6 +1272,40 @@ export default function MiCajaView({ comoPestana = false }) {
                 </Suspense>
             )}
 
+            {dialogo === 'mapfre' && (
+                <Suspense fallback={null}>
+                    <DialogoMapfre abierto ocupado={ocupado} sala={sala}
+                        onClose={() => setDialogo(null)}
+                        onCobrar={async ({ clave, monto, factura, asegurado, pago }) => {
+                            const tipo = tiposDeCaja.find((t) => t.codigo === 'MAPFRE') || null;
+                            const comprobante = await subirFotoDelPago(pago);
+                            if (comprobante.error) return;
+                            // El monto y el concepto los rehace el servidor con la
+                            // factura; lo que viaja es lo que la pantalla mostró,
+                            // para que frene si no coincide.
+                            const r = await correr(
+                                () => anotarIngreso({
+                                    sala, monto, clave, tipo: 'MAPFRE',
+                                    concepto: tipo?.etiqueta || 'Pago de asegurado Mapfre',
+                                    mapfre: { invoice_id: factura.id, customer_id: asegurado.id },
+                                    fotoUrl: comprobante.url,
+                                    ...datosDeFormaDePago(pago, comprobante.url),
+                                }),
+                                'Pago del asegurado anotado.',
+                            );
+                            if (r?.movimiento) {
+                                await imprimirMovimiento(r.movimiento, tipo, {
+                                    detalle: String(r.movimiento.detalle || r.movimiento.concepto || '')
+                                        .replace(/^Pago asegurado Mapfre · /, ''),
+                                    persona: asegurado.name || '',
+                                    comoSeComprobo: null,
+                                });
+                            }
+                            setMapfreVersion((v) => v + 1);
+                        }} />
+                </Suspense>
+            )}
+
             {dialogo === 'aplicacion' && (
                 <Suspense fallback={null}>
                     <DialogoAplicacion abierto ocupado={ocupado} sala={sala}
@@ -1296,7 +1357,8 @@ export default function MiCajaView({ comoPestana = false }) {
                 // Dos tipos llevan su propio diálogo: el abono (comprobante) y la
                 // aplicación de inyección (se asigna a la venta). Lo decide la
                 // bandera del catálogo; acá sólo se elige cuál de los dos.
-                onComprobante={(t) => setDialogo(t?.codigo === 'APLICACION' ? 'aplicacion' : 'abono')}
+                onComprobante={(t) => setDialogo(t?.codigo === 'APLICACION' ? 'aplicacion'
+                    : t?.codigo === 'MAPFRE' ? 'mapfre' : 'abono')}
                 onClose={() => setDialogo(null)}
                 onAnotar={async (datos, tipoElegido, identificada) => {
                     const r = await correr(

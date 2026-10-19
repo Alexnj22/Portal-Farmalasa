@@ -1054,7 +1054,11 @@ export async function iniciarTurno(sala, { simular = false } = {}) {
 
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null, clave = null,
-    aplicacion = null, formaPago = 'EFECTIVO', comprobanteTotal = null, motivoSinComprobante = '' }) {
+    aplicacion = null, formaPago = 'EFECTIVO', comprobanteTotal = null, motivoSinComprobante = '',
+    mapfre = null }) {
+    // `mapfre` sólo con el tipo MAPFRE: `{ invoice_id, customer_id }`. El
+    // servidor pone el monto desde el renglón de puntos de la factura.
+    //
     // `formaPago`: sólo el EFECTIVO viaja a la caja. Tarjeta y transferencia
     // se quedan en el portal y, sin foto, piden autorización con
     // `motivoSinComprobante`. `comprobanteTotal` es el total del voucher, que
@@ -1078,6 +1082,7 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
          * escribir otro: ver `clave_envio` en `operar-caja`. */
         clave_envio: clave,
         ...(aplicacion ? { aplicacion } : {}),
+        ...(mapfre ? { mapfre } : {}),
         forma_pago: formaPago,
         ...(formaPago !== 'EFECTIVO'
             ? { comprobante_total: comprobanteTotal, motivo_sin_comprobante: motivoSinComprobante }
@@ -1657,5 +1662,18 @@ export async function reenviarIngreso(movimientoId, nota, fotoUrl = null) {
 export async function fetchVouchersDelDia(sala, dia) {
     const { data, error } = await supabase.rpc('caja_vouchers_del_dia', { p_branch_id: Number(sala), p_dia: dia });
     if (error) { console.error('caja: vouchers del día:', error.message); return null; }
+    return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Las facturas de Mapfre de la sala (60 días) y en qué quedó cada una:
+ * POR_COBRAR, COBRADA o ANOTADA_COMO_OTRO (el pago entró como «Otro» antes de
+ * que existiera el tipo). Ver `mapfre_facturas` en la base.
+ */
+export async function fetchFacturasMapfre(sala, buscar = '') {
+    const { data, error } = await supabase.rpc('mapfre_facturas', {
+        p_branch_id: Number(sala), p_buscar: String(buscar ?? '').trim() || null, p_dias: 60,
+    });
+    if (error) throw new Error(error.message);
     return Array.isArray(data) ? data : [];
 }

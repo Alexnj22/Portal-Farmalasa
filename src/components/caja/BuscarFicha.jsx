@@ -12,7 +12,12 @@ import { buscarClientes } from '@nucleo/data/customers';
  * Vive aparte (2026-10-17) porque también la usa la Bitácora para asignar
  * la ficha DESPUÉS, a una aplicación que se cobró sin ella.
  */
-export default function BuscarFicha({ ficha, onElegir }) {
+/* `ayuda` y `rotulo`: el texto de abajo y el de la ficha elegida. Por defecto
+ * hablan de la inyección; el pago de Mapfre los cambia, porque ahí la ficha
+ * del asegurado es obligatoria y decir «se cobra igual» sería falso. */
+const AYUDA = 'Con su ficha, la aplicación queda en su historial y la ve en su app. Si no tiene, se cobra igual.';
+
+export default function BuscarFicha({ ficha, onElegir, ayuda = AYUDA, rotulo = 'Queda en el historial de' }) {
     const [texto, setTexto] = useState('');
     const q = useTextoRebotado(texto, 300);
     const [resultados, setResultados] = useState([]);
@@ -34,7 +39,7 @@ export default function BuscarFicha({ ficha, onElegir }) {
         return (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
                 <div className="min-w-0">
-                    <p className="text-caption text-content-3">Queda en el historial de</p>
+                    <p className="text-caption text-content-3">{rotulo}</p>
                     <p className="text-body-sm font-semibold text-content truncate">{ficha.name}</p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => { onElegir(null); setTexto(''); }}>Cambiar</Button>
@@ -45,9 +50,7 @@ export default function BuscarFicha({ ficha, onElegir }) {
         <div className="space-y-1.5">
             <SearchInput value={texto} onChange={setTexto} placeholder="Cliente: nombre, DUI o teléfono"
                 ariaLabel="Buscar la ficha del cliente" />
-            <p className="text-caption text-content-3">
-                Con su ficha, la aplicación queda en su historial y la ve en su app. Si no tiene, se cobra igual.
-            </p>
+            {ayuda && <p className="text-caption text-content-3">{ayuda}</p>}
             {buscando && <p className="text-caption text-content-3">Buscando…</p>}
             {resultados.length > 0 && (
                 <ul className="rounded-lg border border-border-subtle divide-y divide-border-subtle">

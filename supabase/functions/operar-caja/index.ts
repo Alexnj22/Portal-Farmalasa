@@ -1613,6 +1613,51 @@ Deno.serve(async (req) => {
         body.detalle = `${etiqueta} · ${detalleCot}`;
       }
 
+      /* ── EL PAGO DEL ASEGURADO DE MAPFRE (2026-10-19) ─────────────────────
+       *
+       * La venta a Mapfre se factura al crédito y lo que paga el asegurado se
+       * descuenta con puntos: es el renglón `erp_product_id = 0` de la
+       * factura. Este ingreso es ESE pago, y por eso nace de la factura:
+       *   · el monto lo pone `mapfre_cotizar` desde el renglón, nunca el
+       *     navegador, y si no coincide con lo que la pantalla mostró se frena;
+       *   · el asegurado sale del listado de clientes;
+       *   · una factura se cobra una sola vez (índice único sobre las vivas).
+       *
+       * Va DESPUÉS de las guardas de repetido por lo mismo que la aplicación:
+       * un reintento del mismo envío tiene que contestar con lo ya escrito, y
+       * si cotizara primero lo rechazaría por «ya tiene su pago». */
+      const esMapfre = esEntrada && !esAbono && String(body.tipo ?? "") === "MAPFRE";
+      let mapfreFactura: number | null = null;
+      let mapfreAsegurado: number | null = null;
+      if (esMapfre) {
+        const m = (body.mapfre && typeof body.mapfre === "object") ? body.mapfre as { invoice_id?: unknown; customer_id?: unknown } : {};
+        mapfreFactura = Number(m.invoice_id) || null;
+        mapfreAsegurado = Number(m.customer_id) || null;
+        if (!mapfreFactura) return json({ ok: false, error: "Elige la factura de Mapfre." }, 400);
+        if (!mapfreAsegurado) return json({ ok: false, error: "Elige al asegurado del listado de clientes." }, 400);
+        const { data: cot, error: errCot } = await supabase.rpc("mapfre_cotizar", {
+          p_branch_id: sala, p_invoice_id: mapfreFactura,
+        });
+        if (errCot || !cot) {
+          return json({ ok: false, error: errCot?.message || "No se pudo leer la factura de Mapfre." }, 409);
+        }
+        const c = cot as { monto: number; correlativo: string };
+        if (Math.abs(Number(c.monto) - monto) > 0.004) {
+          return json({ ok: false, error: `La factura dice que el asegurado paga $${Number(c.monto).toFixed(2)} y la pantalla decía $${monto.toFixed(2)}. Vuelve a abrir el cobro.` }, 409);
+        }
+        const { data: asegurado, error: errAseg } = await supabase.from("customers")
+          .select("id, name").eq("id", mapfreAsegurado).maybeSingle();
+        if (errAseg) {
+          console.error(`[operar-caja] mapfre: asegurado ${mapfreAsegurado}: ${errAseg.message}`);
+          return json({ ok: false, error: "No se pudo leer la ficha del asegurado. Vuelve a intentarlo." }, 503);
+        }
+        if (!asegurado) return json({ ok: false, error: "Ese asegurado no está en el listado de clientes." }, 400);
+        monto = Number(c.monto);
+        const factura = String(c.correlativo ?? "").replace(/^0+/, "").split("_")[0];
+        concepto = `Pago asegurado Mapfre · Fac ${factura} · ${asegurado.name}`.slice(0, 50);
+        body.detalle = `Pago asegurado Mapfre · Fac ${factura} · ${asegurado.name}`;
+      }
+
       /* ── EL ABONO DE CLIENTE ────────────────────────────────────────────
        *
        * Es un ingreso con un contrato encima: el dinero entra al cajón igual
@@ -1798,6 +1843,9 @@ Deno.serve(async (req) => {
           clave_envio: claveEnvio,
           // De qué salida de bolsa es el resto, si lo es. Ver `operacionBolsa`.
           bolsa_operacion_id: operacionBolsa?.id ?? null,
+          // La factura y el asegurado de un pago de Mapfre. Ver `esMapfre`.
+          invoice_id: mapfreFactura,
+          customer_id: mapfreAsegurado,
           forma_pago: formaPago,
           comprobante_total: comprobanteTotal,
         })
@@ -1833,6 +1881,10 @@ Deno.serve(async (req) => {
       // tiene su parte de la caja viva.
       if (errFila?.code === "23505" && operacionBolsa) {
         return json({ ok: false, error: "Esa salida ya tiene su parte de la caja anotada." }, 409);
+      }
+      // El índice de Mapfre: otro envío cobró esa factura en el medio.
+      if (errFila?.code === "23505" && esMapfre) {
+        return json({ ok: false, error: "Esa factura de Mapfre ya tiene su pago anotado." }, 409);
       }
       if (errFila) throw new Error(`guardando el movimiento: ${errFila.message}`);
 

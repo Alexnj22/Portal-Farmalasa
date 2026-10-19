@@ -4572,6 +4572,7 @@ export type Database = {
           comprobante_total: number | null
           concepto: string
           created_at: string
+          customer_id: number | null
           detalle: string | null
           erp_apertura_id: number | null
           erp_movimiento_id: number | null
@@ -4580,6 +4581,7 @@ export type Database = {
           foto_lectura: Json | null
           foto_url: string | null
           id: number
+          invoice_id: number | null
           monto: number
           monto_origen: string | null
           numero_boleta: string | null
@@ -4607,6 +4609,7 @@ export type Database = {
           comprobante_total?: number | null
           concepto: string
           created_at?: string
+          customer_id?: number | null
           detalle?: string | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
@@ -4615,6 +4618,7 @@ export type Database = {
           foto_lectura?: Json | null
           foto_url?: string | null
           id?: never
+          invoice_id?: number | null
           monto: number
           monto_origen?: string | null
           numero_boleta?: string | null
@@ -4642,6 +4646,7 @@ export type Database = {
           comprobante_total?: number | null
           concepto?: string
           created_at?: string
+          customer_id?: number | null
           detalle?: string | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
@@ -4650,6 +4655,7 @@ export type Database = {
           foto_lectura?: Json | null
           foto_url?: string | null
           id?: never
+          invoice_id?: number | null
           monto?: number
           monto_origen?: string | null
           numero_boleta?: string | null
@@ -30845,6 +30851,15 @@ export type Database = {
       list_sessions: { Args: never; Returns: Json }
       lock_module: {
         Args: { p_hours?: number; p_module_key: string; p_reason?: string }
+        Returns: Json
+      }
+      mapfre_cotizar: {
+        Args: { p_branch_id: number; p_invoice_id: number }
+        Returns: Json
+      }
+      mapfre_customer_id: { Args: never; Returns: number }
+      mapfre_facturas: {
+        Args: { p_branch_id: number; p_buscar?: string; p_dias?: number }
         Returns: Json
       }
       marcar_abonos_impresos: { Args: { p_ids: number[] }; Returns: number }

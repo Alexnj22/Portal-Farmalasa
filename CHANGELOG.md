@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1306.0 — Pago de asegurado Mapfre amarrado a su factura
+
+- **Nuevo ingreso «Pago de asegurado Mapfre».** La venta a Mapfre se factura al
+  crédito y lo que paga el asegurado se descuenta con puntos; ese descuento es
+  un renglón de la factura. El cobro ahora nace de la factura: se elige la
+  factura de Mapfre de la sala, el monto lo pone el renglón de puntos (no se
+  escribe) y el asegurado sale del listado de clientes. Pregunta la forma de
+  pago como cualquier ingreso.
+- Una factura se cobra una sola vez; anularla la libera. Las facturas que
+  antes entraron como «Otro» ese día, por el mismo monto, salen marcadas y no
+  se ofrecen para no contar el dinero doble.
+- Mi caja avisa cuántas facturas de Mapfre de la sala (60 días) no tienen el
+  pago del asegurado, con un botón para cobrarlas.
+- Arreglo: el aviso después de anotar un ingreso o un vale decía «success»
+  como texto.
+- La lista muestra sólo las facturas por cobrar, y sólo desde el 19-oct-2026
+  (cuando el cobro empezó a existir): lo anterior no se reabre.
+- Migración `20261019223921_mapfre_pago_asegurado`.
+- Probado en el entorno de pruebas: 20 casos de servidor
+  (`scripts/entorno-pruebas/probar_mapfre.mjs`) y 11 en pantalla
+  (`recorrer_mapfre.mjs`).
 ## v2.1305.2 — COF de la noche: se puede anular sin enviarlo a Hacienda; fuera de Anuladas y de «Pdte. MH»
 
 - **Anular un COF de después de las 6:00 p. m. ya no se traba.**

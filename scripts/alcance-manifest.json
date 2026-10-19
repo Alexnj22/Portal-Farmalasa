@@ -672,6 +672,13 @@
     "caja_vouchers_del_dia": {
       "guarda": "alcance"
     },
+    "mapfre_facturas": {
+      "guarda": "alcance"
+    },
+    "mapfre_cotizar": {
+      "guarda": "solo-servidor",
+      "motivo": "Sin EXECUTE para authenticated: la llama sólo operar-caja con la llave del servidor, después de comprobar el alcance de la sala."
+    },
     "inyeccion_venta_por_comprobante": {
       "guarda": "alcance"
     },

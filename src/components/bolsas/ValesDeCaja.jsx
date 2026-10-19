@@ -176,7 +176,7 @@ export default function ValesDeCaja({ sala = null }) {
                 'warning',
             );
         } else {
-            showToast('Anotado en la caja.', 'success');
+            showToast('Anotado en la caja.', '', 'success');
         }
         setSimulacion(null);
         setAbierto(false);

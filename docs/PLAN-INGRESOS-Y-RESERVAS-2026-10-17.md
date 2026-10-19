@@ -34,6 +34,10 @@ pago no alcanza: lo que no es efectivo **no puede llegar al cajón**.
 
 ## Parte 2 — Pago de asegurado Mapfre
 
+**Construida el 2026-10-19** (tipo `MAPFRE`, `mapfre_facturas`, `mapfre_cotizar`,
+`DialogoMapfre`). La ficha de Mapfre se identifica por `erp_id = '19713'`
+(`mapfre_customer_id()`).
+
 Cómo funciona: la venta a Mapfre (ficha `customers.id = 1043`, erp `19713`)
 se factura **al crédito** por lo que paga la aseguradora, y lo que paga el
 asegurado se descuenta con **puntos de lealtad** (el ERP no tiene otro

@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
     // ── id del portal → id del ERP ───────────────────────────────────────
     const { data: factura, error: facErr } = await admin
       .from("sales_invoices")
-      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento, fecha, hora")
+      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento, fecha, hora, customer_id")
       .eq("id", meta.invoice_id)
       .maybeSingle();
     if (facErr) throw facErr;
@@ -315,6 +315,7 @@ Deno.serve(async (req) => {
       // la usan el envío, la cola y los avisos. Un error acá no es un «no».
       const { data: esCofNoche, error: cofErr } = await admin.rpc("cof_no_se_envia_mh", {
         p_tipo: factura.tipo_documento, p_fecha: factura.fecha, p_hora: factura.hora,
+        p_customer_id: factura.customer_id,
       });
       if (cofErr) throw cofErr;
 

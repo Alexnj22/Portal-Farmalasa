@@ -38,6 +38,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { cofNoSeEnviaMh } from '@nucleo/utils/cofNoche';
+import { fetchClientesQueSiempreSeEnvian } from '@nucleo/data/facturacion';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { filaDeProductoVendido as mapAggRow, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos, DRILL_TIERS, DRILL_TIER_ORDER, detectTier, RELEVANT_CAMPOS, CAMPO_LABELS, fmtCampoVal, lineasDelDrill } from '@nucleo/utils/ventasPeriodo';
 
@@ -311,6 +312,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const { getScope, hasPermission } = useAuth();
     const verCards = hasPermission('ventas_ver_cards');
     const [rows, setRows]             = useState([]);
+    // Para no marcar «Pdte. MH» a un COF de la noche (no se envía), salvo los
+    // clientes que sí se envían. `null` mientras carga: ahí se marca como antes.
+    const [clientesSiempre, setClientesSiempre] = useState(null);
+    useEffect(() => {
+        let vivo = true;
+        fetchClientesQueSiempreSeEnvian().then(s => { if (vivo) setClientesSiempre(s); });
+        return () => { vivo = false; };
+    }, []);
     // DOS conteos, no uno. `totalCount` es lo que tiene la lista —incluidas las
     // anuladas, que se muestran tachadas— y manda en la tarjeta «Facturas» y en
     // la paginación. `totalCountValido` son las que suman dinero, y es el
@@ -952,7 +961,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     {r.hora && <p className="text-caption text-content-3">{hora12(r.hora)}</p>}
                                     {isCancelled
                                         ? <span className="text-micro font-black uppercase tracking-widest text-danger-text">ANULADA</span>
-                                        : r.recibido_mh === null && !cofNoSeEnviaMh(r.tipo_documento, r.fecha, r.hora)
+                                        : r.recibido_mh === null && !cofNoSeEnviaMh(r.tipo_documento, r.fecha, r.hora, r.customer_id, clientesSiempre)
                                             // El COF de la noche no se envía a Hacienda por decisión
                                             // (2026-10-19): no está «pendiente» de nada.
                                             && <span className="text-micro font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}

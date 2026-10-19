@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1306.2 — Mapfre y la Diócesis: su COF de la noche sí se envía a Hacienda
+
+- Excepción a la regla de las 6:00 p. m.: los COF de MAPFRE SEGURO EL
+  SALVADOR (ficha 1043) y DIOCESIS DE CHALATENANGO (ficha 21092) se envían
+  siempre. La lista es la tabla `dte_clientes_siempre_se_envian`, por ficha y
+  no por nombre (las 157 ventas del año de los dos están amarradas a su ficha).
+- `cof_no_se_envia_mh` recibe el cliente; sus cinco usuarios se reescribieron
+  desde su definición viva y la versión de tres argumentos se borró.
+- `regularizar-dte` v29 lee la lista en cada corrida (503 si no puede) y la
+  mete en el filtro; `aplicar-solicitud-facturacion` v36 pasa el cliente, así
+  que anular uno de esos se manda a Hacienda primero, como cualquier otro.
+- Ventas les vuelve a poner «Pdte. MH» mientras no tengan sello.
+
 ## v2.1306.1 — Salud 1 vuelve al envío a Hacienda
 
 - Se quita la pausa de Salud 1 (`dte_sucursales_en_pausa` queda vacía): las

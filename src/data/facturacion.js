@@ -63,6 +63,16 @@ export async function regularizarDte({ alcance, invoiceId = null, branchId = nul
 // sales_invoices está en la lista de CLAUDE.md de tablas que requieren
 // paginación — el backlog de NULA/nulo puede superar 1000 filas.
 
+// Los clientes a los que su COF de la noche SÍ se les manda a Hacienda
+// (Mapfre y la Diócesis, 2026-10-19). Devuelve un Set de `customer_id`, o
+// `null` si la lectura falla — y `cofNoSeEnviaMh` con `null` contesta «se
+// envía», así que una falla deja la pantalla como antes de la regla.
+export async function fetchClientesQueSiempreSeEnvian() {
+    const { data, error } = await supabase.from('dte_clientes_siempre_se_envian').select('customer_id');
+    if (error) { console.error('fetchClientesQueSiempreSeEnvian:', error.message); return null; }
+    return new Set((data || []).map(c => Number(c.customer_id)));
+}
+
 export function fetchNulaInvoices(filterBranch) {
     return fetchAllRows(() => {
         let q = supabase

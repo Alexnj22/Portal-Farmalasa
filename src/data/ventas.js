@@ -191,7 +191,7 @@ export function fetchVentasRecetaStats({ fini, ffin, branchFilter, anuladas, sea
  * lee como «sin enviar», que es lo mismo que diría la fila que falta.
  */
 const COLUMNAS_LISTA = 'id, branch_id, erp_invoice_id, correlativo, tipo_documento, ' +
-    'fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, retencion, total, ' +
+    'fecha, hora, customer_id, cliente, cod_vendedor, tipo_pago, subtotal, iva, retencion, total, ' +
     'estado, recibido_mh, has_puntos, puntos_enviados(estado_puntos)';
 
 /*

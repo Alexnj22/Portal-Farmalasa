@@ -1279,6 +1279,7 @@ export type Database = {
       app_cliente_sesiones: {
         Row: {
           acepta_avisos: boolean | null
+          alcance: string
           created_at: string
           customer_id: number | null
           dispositivo: string | null
@@ -1292,6 +1293,7 @@ export type Database = {
         }
         Insert: {
           acepta_avisos?: boolean | null
+          alcance?: string
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null
@@ -1305,6 +1307,7 @@ export type Database = {
         }
         Update: {
           acepta_avisos?: boolean | null
+          alcance?: string
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null
@@ -11697,6 +11700,39 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      dte_clientes_siempre_se_envian: {
+        Row: {
+          created_at: string
+          customer_id: number
+          motivo: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          motivo: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          motivo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dte_clientes_siempre_se_envian_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dte_clientes_siempre_se_envian_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
           },
         ]
       }
@@ -26688,6 +26724,14 @@ export type Database = {
         Args: { p_branch_id: number; p_franjas?: Json; p_limpiezas?: Json }
         Returns: number
       }
+      app_borrar_datos_de_cuenta: {
+        Args: { p_customer: number }
+        Returns: Json
+      }
+      app_cancelar_reservas_abiertas_sin_pago: {
+        Args: { p_customer: number }
+        Returns: number
+      }
       app_carrito_existencias: { Args: { p_ids: number[] }; Returns: Json }
       app_catalogo: {
         Args: { p_desde?: number; p_limite?: number; p_q: string }
@@ -26714,6 +26758,7 @@ export type Database = {
           sala: string
         }[]
       }
+      app_cliente_sesiones_purgar: { Args: never; Returns: number }
       app_historia_quienes_vieron: {
         Args: { p_historia: string }
         Returns: Json
@@ -27484,7 +27529,12 @@ export type Database = {
         Returns: number
       }
       cof_no_se_envia_mh: {
-        Args: { p_fecha: string; p_hora: string; p_tipo: string }
+        Args: {
+          p_customer_id: number
+          p_fecha: string
+          p_hora: string
+          p_tipo: string
+        }
         Returns: boolean
       }
       cola_espejo_portal_erp: { Args: { p_limite?: number }; Returns: Json }

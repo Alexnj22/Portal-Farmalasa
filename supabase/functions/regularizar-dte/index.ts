@@ -91,19 +91,28 @@ const SIN_SELLO_VALIDO = `recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LI
 // nunca, llenaran los 60 lugares de cada corrida y taparan a los CCF.
 // Al cambiar una, cambiar la otra.
 //
+// Salvo los clientes de `dte_clientes_siempre_se_envian` (Mapfre y la
+// Diócesis, 2026-10-19): a ésos su COF de la noche SÍ se les manda. La lista
+// se lee en cada corrida y entra al filtro como `customer_id.in.(…)`.
+//
 // Se escribe por la positiva («sí se manda si…»), con los NULL de cada
 // columna adentro: en SQL la función los da por enviables (`coalesce … false`),
 // y acá `neq` con NULL da NULL y dejaría la fila afuera.
 const COF_SIN_ENVIO_DESDE = "2026-10-19";
 const COF_SIN_ENVIO_HORA = "18:00:00";
-const SE_ENVIA =
+const seEnvia = (siempre: Set<number>) =>
   `tipo_documento.is.null,tipo_documento.neq.COF,fecha.is.null,fecha.lt.${COF_SIN_ENVIO_DESDE},` +
-  `hora.is.null,hora.lt.${COF_SIN_ENVIO_HORA}`;
+  `hora.is.null,hora.lt.${COF_SIN_ENVIO_HORA}` +
+  (siempre.size ? `,customer_id.in.(${[...siempre].join(",")})` : "");
 /** Sin sello válido Y de las que se mandan. Un solo `or()` para que PostgREST no tenga que juntar dos. */
-const PENDIENTE_DE_ENVIO = `and(or(${SIN_SELLO_VALIDO}),or(${SE_ENVIA}))`;
-const cofNoSeEnvia = (f: { tipo_documento?: string | null; fecha?: string | null; hora?: string | null }) =>
+const pendienteDeEnvio = (siempre: Set<number>) => `and(or(${SIN_SELLO_VALIDO}),or(${seEnvia(siempre)}))`;
+const cofNoSeEnvia = (
+  f: { tipo_documento?: string | null; fecha?: string | null; hora?: string | null; customer_id?: number | null },
+  siempre: Set<number>,
+) =>
   f.tipo_documento === "COF" && !!f.fecha && f.fecha >= COF_SIN_ENVIO_DESDE &&
-  !!f.hora && String(f.hora) >= COF_SIN_ENVIO_HORA;
+  !!f.hora && String(f.hora) >= COF_SIN_ENVIO_HORA &&
+  !(f.customer_id != null && siempre.has(Number(f.customer_id)));
 
 // ── Reintento de CCF cada 10 minutos (2026-10-19) ──────────────────────────
 // `tipo: 'CCF'` lo manda el cron `reenviar-ccf-10min`: sólo CCF sin sello,
@@ -204,7 +213,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Qué corregir ───────────────────────────────────────────────────
-    const cols = "id, erp_invoice_id, correlativo, tipo_documento, branch_id, estado, fecha, hora";
+    const cols = "id, erp_invoice_id, correlativo, tipo_documento, branch_id, estado, fecha, hora, customer_id";
     const pendientes: Pendiente[] = [];
 
     // Lista negra: decisiones explícitas de "no lo intentes". Se aplica ANTES
@@ -229,6 +238,14 @@ Deno.serve(async (req) => {
     if (ePau) return json({ ok: false, error: `No se pudo leer la pausa por sucursal: ${ePau.message}` }, 503);
     const pausadas = new Map<number, string>(
       (pau ?? []).map((p: { branch_id: number; motivo: string }) => [Number(p.branch_id), p.motivo]));
+    // Los clientes a los que su COF de la noche sí se les manda. Si la lectura
+    // falla, NO se sigue: sin la lista, sus documentos quedarían sin mandar
+    // creyendo que no tocaba.
+    const { data: sie, error: eSie } = await admin.from("dte_clientes_siempre_se_envian")
+      .select("customer_id");
+    if (eSie) return json({ ok: false, error: `No se pudo leer los clientes que siempre se envían: ${eSie.message}` }, 503);
+    const siempre = new Set<number>((sie ?? []).map((c: { customer_id: number }) => Number(c.customer_id)));
+    const PENDIENTE_DE_ENVIO = pendienteDeEnvio(siempre);
     const filtroPausa = pausadas.size ? `(${[...pausadas.keys()].join(",")})` : null;
     if (alcance === "sucursal" && pausadas.has(Number(branch_id)))
       return json({ ok: false, pausada: true,
@@ -241,7 +258,7 @@ Deno.serve(async (req) => {
       if (pausadas.has(Number(data.branch_id)))
         return json({ ok: false, pausada: true,
                       error: `Esta sucursal no se envía a Hacienda por ahora: ${pausadas.get(Number(data.branch_id))}` }, 409);
-      if (cofNoSeEnvia(data))
+      if (cofNoSeEnvia(data, siempre))
         return json({ ok: false, no_se_envia: true,
                       error: "Los consumidores finales emitidos desde las 6:00 p. m. no se envían a Hacienda." }, 409);
       if (excluidas.has(Number(invoice_id)))

@@ -699,7 +699,7 @@ export const AREAS = [
             'src/views/MisPuntosView.jsx', 'src/data/misPuntos.js',
         ],
         tablas: ['customers', 'customers_changelog', 'customer_activity', 'clientes_por_revisar',
-                 'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido', 'dte_sucursales_en_pausa',
+                 'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido', 'dte_sucursales_en_pausa', 'dte_clientes_siempre_se_envian',
                  'dte_datos_pedidos',
                  'dte_mh_intentos', 'sales_dte_documents', 'espejo_conflictos',
                  'puntos_consulta_intentos', 'dte_rechazos_avisados'],

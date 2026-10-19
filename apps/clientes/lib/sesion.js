@@ -11,18 +11,27 @@ import { olvidarTomas } from './tomas';
 import { olvidarVistos } from './catalogo';
 
 const CLAVE = 'puntos_salud_sesion';
+// El ALCANCE de la sesión (2026-10-19): 'codigo' si se entró con el código de
+// 7 letras del ticket (sólo puntos, saldo, tarjeta, nivel y ofertas), 'completo'
+// con DUI y teléfono. Quien decide es el SERVIDOR (lista blanca en
+// app-clientes); esto es sólo lo que la app sabe para no ofrecer lo que le
+// van a negar, y se corrige solo con cada respuesta (`pedir`).
+const CLAVE_ALCANCE = 'puntos_salud_alcance';
+const ALCANCES = new Set(['codigo', 'completo']);
 
-const almacen = Platform.OS === 'web'
+const almacenDe = (clave) => (Platform.OS === 'web'
   ? {
-      leer: async () => { try { return localStorage.getItem(CLAVE); } catch { return null; } },
-      guardar: async (v) => { try { localStorage.setItem(CLAVE, v); } catch { /* sin almacenamiento */ } },
-      borrar: async () => { try { localStorage.removeItem(CLAVE); } catch { /* idem */ } },
+      leer: async () => { try { return localStorage.getItem(clave); } catch { return null; } },
+      guardar: async (v) => { try { localStorage.setItem(clave, v); } catch { /* sin almacenamiento */ } },
+      borrar: async () => { try { localStorage.removeItem(clave); } catch { /* idem */ } },
     }
   : {
-      leer: () => SecureStore.getItemAsync(CLAVE),
-      guardar: (v) => SecureStore.setItemAsync(CLAVE, v),
-      borrar: () => SecureStore.deleteItemAsync(CLAVE),
-    };
+      leer: () => SecureStore.getItemAsync(clave),
+      guardar: (v) => SecureStore.setItemAsync(clave, v),
+      borrar: () => SecureStore.deleteItemAsync(clave),
+    });
+const almacen = almacenDe(CLAVE);
+const almacenAlcance = almacenDe(CLAVE_ALCANCE);
 
 // La lectura del llavero es asíncrona y las pantallas piden datos al montarse.
 // Sin esperar a esa lectura, la primera llamada salía SIN token, el servidor
@@ -33,21 +42,36 @@ let lectura = null;
 export const useSesion = create((set, get) => ({
   token: null,
   lista: false,
+  alcance: null,
+  // «Para ver esto, entra con tu DUI y teléfono» (2026-10-19): mientras se
+  // completa la entrada, la sesión de código sigue abierta y la guardia deja
+  // estar en «Entrar» con sesión.
+  completando: false,
 
   cargar: () => {
     if (!lectura) {
-      lectura = almacen.leer().catch(() => null).then((token) => {
-        set({ token: token || null, lista: true });
+      lectura = Promise.all([
+        almacen.leer().catch(() => null),
+        almacenAlcance.leer().catch(() => null),
+      ]).then(([token, alcance]) => {
+        set({ token: token || null, alcance: token && ALCANCES.has(alcance) ? alcance : null, lista: true });
       });
     }
     return lectura;
   },
 
-  abrir: async (token) => {
+  abrir: async (token, alcance = null) => {
     await almacen.guardar(token);
+    const a = ALCANCES.has(alcance) ? alcance : null;
+    if (a) await almacenAlcance.guardar(a).catch(() => {});
+    else await almacenAlcance.borrar().catch(() => {});
     olvidarSincronizacion(); // la sesión nueva retoma los avisos del teléfono
-    set({ token, lista: true, motivoCierre: null });
+    set({ token, alcance: a, completando: false, lista: true, motivoCierre: null });
   },
+
+  /** Ir a completar la entrada con DUI y teléfono, sin cerrar la sesión de código. */
+  completar: () => set({ completando: true }),
+  dejarDeCompletar: () => set({ completando: false }),
 
   cerrar: async () => {
     await almacen.borrar().catch(() => {});
@@ -63,7 +87,8 @@ export const useSesion = create((set, get) => ({
       // Y los productos vistos: son de quien los buscó, no del teléfono.
       await olvidarVistos().catch(() => {});
     }
-    set({ token: null });
+    await almacenAlcance.borrar().catch(() => {});
+    set({ token: null, alcance: null, completando: false });
   },
 
   /**
@@ -76,8 +101,19 @@ export const useSesion = create((set, get) => ({
     if (!token) return { ok: false, sinSesion: true, mensaje: 'Vuelve a entrar.' };
     const r = await llamar(accion, { ...datos, token });
     if (r?.sinSesion && get().token === token) { set({ motivoCierre: 'vencida' }); await get().cerrar(); }
+    // El servidor dice el alcance en el resumen y al negar algo al código.
+    const a = r?.motivo === 'requiere_documento' ? 'codigo' : r?.alcance;
+    if (ALCANCES.has(a) && get().token === token && get().alcance !== a) {
+      set({ alcance: a });
+      almacenAlcance.guardar(a).catch(() => {});
+    }
     return r;
   },
 }));
 
 export const plataforma = Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web';
+
+/** ¿La sesión es de CÓDIGO (limitada)? Lo que no se sabe todavía cuenta como completa: el servidor igual lo niega. */
+export const useConCodigo = () => useSesion((s) => !!s.token && s.alcance === 'codigo');
+/** Lo que se le dice a quien entró con el código, en cualquier pantalla. */
+export const MENSAJE_CODIGO = 'Para ver esto, entra con tu DUI y teléfono.';

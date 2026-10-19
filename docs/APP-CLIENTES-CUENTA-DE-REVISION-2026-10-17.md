@@ -15,6 +15,25 @@ Quien las necesite las lee de ahí.
 | `puntos_codigo_acceso` | su código de 7 caracteres | `customer_id = 3201016` |
 | `app_cliente_muestras` | 19 muestras copiadas de la cuenta de prueba (ofertas, inyecciones, vencimientos, facturas, historias) | `customer_id = 3201016` |
 
+## Desde el 2026-10-19: el revisor entra con DUI y teléfono, NO con el código
+
+Entrar con el código de 7 letras abre ahora una sesión LIMITADA (puntos,
+saldo, tarjeta, nivel y ofertas; ver `CON_CODIGO` en `app-clientes`). Si las
+notas de revisión dan el código, el revisor no ve facturas, reservas ni chat,
+y «Borrar mi cuenta» le pide entrar con DUI y teléfono — motivo de rechazo
+(5.1.1(v) exige poder borrar la cuenta). La ficha 3201016 tiene DUI y
+teléfono: **las notas de App Store Connect y Play Console tienen que dar esos
+dos**, y como mucho mencionar el código como segunda forma de entrar.
+
+## Las facturas de muestra abren un documento de EJEMPLO (2026-10-19)
+
+Sus cuatro facturas de muestra se copiaron de la cuenta de prueba y su
+`documento_de` apunta a facturas de OTRA ficha: el control de pertenencia —que
+no se abrió— no las dejaba abrir. Ahora una muestra cuya factura prestada no
+es de la ficha sirve `sales-dte/muestras/FACTURA-DE-EJEMPLO.pdf` y `.json`
+(datos ficticios, marcados «EJEMPLO», sin validez fiscal): en Mis facturas, al
+descargar y al enviarlas por correo. `DOC_EJEMPLO` en `app-clientes`.
+
 ## Por qué no sale de la base
 
 - **No va al sistema de la caja**: la cola hacia allá es `customers_changelog`,

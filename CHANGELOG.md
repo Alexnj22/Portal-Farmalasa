@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1307.0 — App Puntos Salud: sesión de código limitada, borrar cuenta completo, muestras de factura y permisos de Android
+
+Frente «seguridad, borrado y tiendas» de la auditoría del 2026-10-19.
+
+- **Entrar con el código del ticket abre una sesión LIMITADA.** El código va
+  impreso: cualquiera que vea el ticket lo lee. Con él se ven los puntos, el
+  saldo, la tarjeta, el nivel y las ofertas; lo demás (facturas, compras,
+  reservas, chat, créditos, encargos, datos fiscales, foto de perfil, bandeja,
+  borrar la cuenta) contesta «Para ver esto, entra con tu DUI y teléfono». Lo
+  decide el servidor en UN sitio, con lista blanca (`CON_CODIGO` en
+  `app-clientes`), y el resumen sale recortado también por lista blanca. Nueva
+  columna `app_cliente_sesiones.alcance`; las sesiones de código ya abiertas se
+  reconocieron por el registro de intentos. La app lleva a «Entrar» en modo
+  completar sin cerrar la sesión de código, y al entrar con DUI y teléfono el
+  servidor revoca la de código (`reemplaza`).
+- **«Borrar mi cuenta» borra lo que promete.** Además de lo de antes: los
+  correos guardados, el comentario de la calificación del chat y la vista
+  previa del último mensaje, el registro de Apple Wallet, el código para
+  invitar, las historias vistas, todas las fotos de perfil subidas, y la
+  tarjeta de Google Wallet queda vencida. Las reservas abiertas sin pago se
+  cancelan (las pagadas no se tocan). Lo de la base va en una función
+  (`app_borrar_datos_de_cuenta`), sin el techo de 1000 filas que cortaba las
+  fotos del chat; las carpetas del almacenamiento se listan paginadas; y las
+  sesiones se revocan DESPUÉS de borrar, para poder reintentar si algo falla.
+  Aviso de privacidad (cláusula 10) y diálogo de la app, al día.
+- **Facturas de muestra de la cuenta de revisión.** Una muestra cuya factura
+  prestada no es de la ficha abre un documento de EJEMPLO propio (PDF y JSON
+  ficticios en `sales-dte/muestras/`). El control de pertenencia de las
+  facturas reales no cambia.
+- **Android sin permisos que no usa**: ventana flotante, ajustes del sistema,
+  leer almacenamiento, micrófono y los de número en el ícono de los
+  launchers. Escribir almacenamiento queda sólo hasta Android 9, donde la
+  cámara de expo-image-picker lo exige.
+- **Purga de sesiones muertas** (cron `purge-app-cliente-sesiones`, 3:45 SV):
+  revocadas hace 30 días o sin uso hace 210. Y `reportar_error` ya no une el
+  reporte a la ficha con un token vencido.
+
 ## v2.1306.0 — Pago de asegurado Mapfre amarrado a su factura
 
 - **Nuevo ingreso «Pago de asegurado Mapfre».** La venta a Mapfre se factura al

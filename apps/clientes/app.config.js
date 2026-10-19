@@ -46,6 +46,44 @@ const ENLACES_DEL_PORTAL = {
   category: ['BROWSABLE', 'DEFAULT'],
 };
 
+// Permisos que la app no usa (2026-10-19): se quitan del manifiesto fusionado.
+// El porqué de cada grupo, y por qué WRITE_EXTERNAL_STORAGE va aparte, en
+// plugins/permisos-android.js. Vive aquí por la misma razón que los enlaces.
+const BLOQUEADOS = [
+  // La plantilla de Expo: ventana flotante y ajustes del sistema. La app no
+  // dibuja sobre otras ni cambia ajustes.
+  'android.permission.SYSTEM_ALERT_WINDOW',
+  'android.permission.WRITE_SETTINGS',
+  // Leer fotos: la galería se abre con el selector del sistema, que no pide
+  // permiso (expo-image-picker en Android 13+ y GetContent antes).
+  'android.permission.READ_EXTERNAL_STORAGE',
+  // Micrófono: sólo se toman fotos, nunca video ni audio.
+  'android.permission.RECORD_AUDIO',
+  // El número en el ícono de los launchers (ShortcutBadger, que trae
+  // expo-notifications): la app no lo pone (`shouldSetBadge: false` en
+  // lib/avisos.js) y no crea accesos directos.
+  'com.android.launcher.permission.READ_SETTINGS',
+  'com.android.launcher.permission.WRITE_SETTINGS',
+  'com.android.launcher.permission.INSTALL_SHORTCUT',
+  'com.android.launcher.permission.UNINSTALL_SHORTCUT',
+  'com.sec.android.provider.badge.permission.READ',
+  'com.sec.android.provider.badge.permission.WRITE',
+  'com.htc.launcher.permission.READ_SETTINGS',
+  'com.htc.launcher.permission.UPDATE_SHORTCUT',
+  'com.sonyericsson.home.permission.BROADCAST_BADGE',
+  'com.sonymobile.home.permission.PROVIDER_INSERT_BADGE',
+  'com.anddoes.launcher.permission.UPDATE_COUNT',
+  'com.majeur.launcher.permission.UPDATE_BADGE',
+  'com.huawei.android.launcher.permission.CHANGE_BADGE',
+  'com.huawei.android.launcher.permission.READ_SETTINGS',
+  'com.huawei.android.launcher.permission.WRITE_SETTINGS',
+  'android.permission.READ_APP_BADGE',
+  'com.oppo.launcher.permission.READ_SETTINGS',
+  'com.oppo.launcher.permission.WRITE_SETTINGS',
+  'me.everything.badger.permission.BADGE_COUNT_READ',
+  'me.everything.badger.permission.BADGE_COUNT_WRITE',
+];
+
 module.exports = ({ config }) => {
   const googleServicesFile = archivoDeFirebase(config.android?.package);
   return {
@@ -53,7 +91,9 @@ module.exports = ({ config }) => {
     android: {
       ...config.android,
       intentFilters: [...(config.android?.intentFilters ?? []), ENLACES_DEL_PORTAL],
+      blockedPermissions: [...new Set([...(config.android?.blockedPermissions ?? []), ...BLOQUEADOS])],
       ...(googleServicesFile ? { googleServicesFile } : {}),
     },
+    plugins: [...(config.plugins ?? []), './plugins/permisos-android'],
   };
 };

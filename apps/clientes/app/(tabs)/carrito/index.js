@@ -30,7 +30,7 @@ import FotoProducto from '../../../componentes/FotoProducto';
 import CodigoReserva from '../../../componentes/CodigoReserva';
 import { useCarrito, MAX_UNIDADES } from '../../../lib/carrito';
 import { useCuenta } from '../../../lib/cuenta';
-import { useSesion } from '../../../lib/sesion';
+import { useConCodigo, useSesion } from '../../../lib/sesion';
 import { dolares } from '../../../lib/formato';
 import { nombreProducto } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
@@ -41,10 +41,18 @@ import { subirReceta } from '../../../lib/fotos';
 import { precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
 import { sinBloquear } from '../../../lib/bloqueo';
 import { estadoDeAlcance } from '../../../componentes/DondeLoHay';
+import SoloConDocumento from '../../../componentes/SoloConDocumento';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 
-export default function Carrito() {
+// Con la sesión de CÓDIGO (2026-10-19) el carrito no se puede reservar ni
+// pagar: se dice antes de llenarlo, no al final. El servidor igual lo niega.
+export default function CarritoSegunSesion() {
+  const conCodigo = useConCodigo();
+  return conCodigo ? <SoloConDocumento /> : <Carrito />;
+}
+
+function Carrito() {
   const t = useTema();
   const items = useCarrito((s) => s.items);
   const { cantidad, quitar, vaciar } = useCarrito.getState();

@@ -31,7 +31,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
-import { enlaceGoogleWallet, googleWalletListo } from "../_shared/paseGoogle.ts";
+import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_shared/paseGoogle.ts";
 import { nivelDeCliente } from "../_shared/nivel.ts";
 import { validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
@@ -46,6 +46,37 @@ const TOPE_FALLOS = 8;
 const TOPE_FALLOS_CODIGO = 5;
 const ES_CODIGO = /^[ACDEFGHJKMNPQRTUVWXY34679]{7}$/;
 const DIAS_SESION = 180;
+
+// ── Lo que se puede con una sesión de CÓDIGO (2026-10-19) ──────────────────
+// La lista blanca del portero (ver «La sesión de CÓDIGO es limitada»). Se
+// agrega una acción aquí sólo si muestra puntos, saldo, tarjeta, nivel u
+// ofertas, o es parte de tener una sesión (salir, las reglas del primer
+// inicio). Reservas, facturas, chat, créditos, encargos, datos fiscales, foto
+// de perfil, la bandeja de avisos y borrar la cuenta piden DUI y teléfono.
+const CON_CODIGO = new Set([
+  "resumen", "movimientos", "cupon_raspado",
+  "wallet_pase", "wallet_enlace", "google_wallet_enlace",
+  "ofertas", "historias", "historia_vista",
+  "documentos_estado", "aceptar_documentos",
+  "salir",
+]);
+// Y del RESUMEN, sólo estos campos (también lista blanca: un campo nuevo que
+// otro agregue al resumen no se filtra a la sesión de código por omisión). Lo
+// que la app espera encontrar va con un valor vacío, para que el Inicio no
+// pinte tarjetas de reservas, chat, créditos ni inyecciones.
+const RESUMEN_CON_CODIGO = [
+  "ok", "pendiente", "nombre", "cumpleanos", "wallet_serial", "google_wallet", "nivel", "empleado", "prueba",
+  "cupon", "regalo_cumpleanos", "codigo", "socio_desde", "saldo", "equivale", "acumulados", "canjeados",
+  "vencimientos", "movimientos", "movimientos_total", "consentimiento", "acepta_avisos",
+];
+// deno-lint-ignore no-explicit-any
+const resumenConCodigo = (b: any) => (!b || b.ok !== true ? b : {
+  ...Object.fromEntries(RESUMEN_CON_CODIGO.filter((k) => k in b).map((k) => [k, b[k]])),
+  chat_sin_leer: 0, chat: { sin_leer: 0, abierta: false },
+  reservas_abiertas: 0, reservas_listas: 0, reservas_productos: [],
+  mayorista: null, tratamientos: [], encuesta: null, inyecciones_pendientes: 0, creditos: null,
+  alcance: "codigo",
+});
 const POR_PAGINA_INICIAL = 10;
 const POR_PAGINA = 20;
 // El cupón del mes (2026-10-14): `puntos_estado_cuenta` lo trae como «compra»
@@ -118,6 +149,16 @@ async function muestrasDe(admin: any, customerId: number | null, tipo: string): 
 // Al confirmar se vuelve a comprobar la ruta Y que el archivo exista: sin eso,
 // se podría «confirmar» una receta que nunca se subió.
 const BUCKET_ARCHIVOS = "app-clientes-archivos";
+// El documento de EJEMPLO de las facturas de muestra (2026-10-19). Las
+// muestras de la cuenta de revisión de las tiendas se copiaron de otra ficha
+// (docs/APP-CLIENTES-CUENTA-DE-REVISION-2026-10-17.md) y su `documento_de`
+// apunta a facturas que NO son suyas: el control de pertenencia —que se queda
+// como está— no las dejaba abrir, y el revisor veía «no tiene documento».
+// Una muestra cuya factura prestada no es de la ficha abre ESTE par: un PDF y
+// un JSON con datos ficticios, marcados «EJEMPLO», en `sales-dte` (privado).
+// Nunca abre un documento real ajeno: sólo se cambia lo que se sirve cuando
+// la pertenencia falla.
+const DOC_EJEMPLO = { pdf: "muestras/FACTURA-DE-EJEMPLO.pdf", json: "muestras/FACTURA-DE-EJEMPLO.json" } as const;
 // deno-lint-ignore no-explicit-any
 async function urlDeSubida(admin: any, ruta: string) {
   const { data, error } = await admin.storage.from(BUCKET_ARCHIVOS).createSignedUploadUrl(ruta, { upsert: true });
@@ -133,57 +174,64 @@ async function archivoExiste(admin: any, ruta: string): Promise<boolean> {
   // deno-lint-ignore no-explicit-any
   return (data ?? []).some((f: any) => f.name === nombre);
 }
-// Lo que «borrar mi cuenta» se lleva de la ficha (2026-10-17). Apple
-// (5.1.1(v)) pide borrar los datos de la cuenta, y la ficha fiscal se conserva
-// porque la ley obliga; pero la foto de perfil, el chat y las fotos de receta
-// no tienen esa razón. Tres reglas, cada una con su motivo:
-//   · Foto de perfil: se borra entera (fila y archivo).
-//   · Chat: se borra el CONTENIDO (texto, fotos, productos adjuntos) y el
-//     archivo de cada foto, pero la conversación y sus renglones quedan con
-//     «Mensaje borrado»: de ellos cuelgan `app_chat_incumplimientos`, la
-//     medida de cuánto tardó el equipo en contestar, que es del personal y no
-//     del cliente. Borrar la conversación los borraría en cascada.
+// Lo que «borrar mi cuenta» se lleva de la ficha (2026-10-17; completado el
+// 2026-10-19 tras la auditoría). Apple (5.1.1(v)) pide borrar los datos de la
+// cuenta, y la ficha fiscal se conserva porque la ley obliga; pero lo que se
+// subió o se guardó DESDE LA APP no tiene esa razón. La lista es la que
+// promete el aviso de privacidad (cláusula 10, «Borrar su cuenta») y el
+// diálogo de la app — si se cambia una, se cambian las tres:
+//   · Reservas de la app abiertas y SIN pago: se cancelan
+//     (`app_cancelar_reservas_abiertas_sin_pago`). Nadie las va a seguir, y
+//     así su foto de receta entra en lo que se borra. Las pagadas o con
+//     anticipo no se tocan: devolver dinero lo decide una persona.
+//   · En la base, en UNA llamada sin techo de filas (`app_borrar_datos_de_cuenta`):
+//     la foto de perfil, el contenido del chat («Mensaje borrado») y el
+//     comentario de su calificación, los correos guardados para las facturas,
+//     el registro de Apple Wallet (sin él la tarjeta deja de actualizarse), el
+//     código para invitar y las historias vistas. Antes esto iba con selects
+//     sueltos y el `.limit(5000)` de las fotos del chat lo cortaba PostgREST
+//     en 1000 sin avisar.
+//   · El chat conserva la conversación y sus renglones (con «Mensaje
+//     borrado»): de ellos cuelgan `app_chat_incumplimientos`, la medida del
+//     personal. Borrarla los borraría en cascada.
 //   · Recetas: se borran las de reservas que NO se entregaron (vencida,
 //     cancelada, o receta rechazada). La de una reserva RETIRADA respalda una
-//     dispensación bajo receta y se conserva; la de una reserva todavía en
-//     curso también, porque la sala la está usando para decidir.
-// Si un archivo no se puede borrar del almacenamiento, la cuenta se borra
-// igual y queda en el registro: el cliente no puede quedarse sin poder irse
-// por un archivo.
+//     dispensación bajo receta y se conserva; la de una reserva pagada todavía
+//     en curso también, porque la sala la está usando.
+//   · Google Wallet: la tarjeta guardada pasa a VENCIDA en Google.
+// Si un archivo no se puede borrar del almacenamiento, o Google no contesta,
+// la cuenta se borra igual y queda en el registro: el cliente no puede
+// quedarse sin poder irse por un archivo.
 // deno-lint-ignore no-explicit-any
 async function borrarLoPersonal(admin: any, customerId: number) {
   const archivos: string[] = [];
-  // Una carpeta entera del bucket (las fotos del chat y las de una receta,
-  // que se suben numeradas y sólo la última queda anotada en la fila).
+  // Una carpeta entera del bucket (las fotos del chat, las de perfil y las de
+  // una receta: se suben numeradas y sólo la última queda anotada en la
+  // fila). PAGINADA (2026-10-19): con un solo `list` de 500, la foto 501 en
+  // adelante se quedaba.
+  const PAGINA = 1000;
   const deCarpeta = async (carpeta: string) => {
-    const { data, error } = await admin.storage.from(BUCKET_ARCHIVOS).list(carpeta, { limit: 500 });
-    if (error) { console.error(`borrar_cuenta: no se pudo listar ${carpeta}:`, error.message); return; }
-    // deno-lint-ignore no-explicit-any
-    for (const f of data ?? []) if (f?.name && f.id) archivos.push(`${carpeta}/${f.name}`);
+    for (let offset = 0; ; offset += PAGINA) {
+      const { data, error } = await admin.storage.from(BUCKET_ARCHIVOS).list(carpeta, { limit: PAGINA, offset });
+      if (error) { console.error(`borrar_cuenta: no se pudo listar ${carpeta}:`, error.message); return; }
+      // deno-lint-ignore no-explicit-any
+      for (const f of data ?? []) if (f?.name && f.id) archivos.push(`${carpeta}/${f.name}`);
+      if ((data ?? []).length < PAGINA) return;
+    }
   };
 
-  const { data: foto, error: eF } = await admin.from("app_cliente_fotos").select("ruta").eq("customer_id", customerId).maybeSingle();
-  if (eF) throw eF;
-  if (foto?.ruta) archivos.push(foto.ruta);
-  const { error: eFd } = await admin.from("app_cliente_fotos").delete().eq("customer_id", customerId);
-  if (eFd) throw eFd;
+  const { error: eCa } = await admin.rpc("app_cancelar_reservas_abiertas_sin_pago", { p_customer: customerId });
+  if (eCa) throw eCa;
 
-  const { data: conv, error: eC } = await admin.from("app_chat_conversaciones").select("id").eq("customer_id", customerId).maybeSingle();
-  if (eC) throw eC;
-  if (conv) {
-    // Una conversación es de UNA persona: cabe en un tope generoso, y si
-    // alguna vez no cabe, la vuelta siguiente del mismo botón termina.
-    const { data: fotos, error: eM } = await admin.from("app_chat_mensajes").select("foto_ruta")
-      .eq("conversacion_id", conv.id).not("foto_ruta", "is", null).limit(5000);
-    if (eM) throw eM;
-    // deno-lint-ignore no-explicit-any
-    for (const m of fotos ?? []) archivos.push((m as any).foto_ruta);
-    const { error: eU } = await admin.from("app_chat_mensajes")
-      .update({ texto: "Mensaje borrado", foto_ruta: null, adjunto: null }).eq("conversacion_id", conv.id);
-    if (eU) throw eU;
-  }
+  const { data: hecho, error: eB } = await admin.rpc("app_borrar_datos_de_cuenta", { p_customer: customerId });
+  if (eB) throw eB;
+  // deno-lint-ignore no-explicit-any
+  for (const r of ((hecho as any)?.archivos ?? []) as string[]) archivos.push(r);
   await deCarpeta(`chat/${customerId}`);
+  await deCarpeta(`perfil/${customerId}`);
 
+  // Una persona tiene a lo sumo unas decenas de reservas con receta: el tope
+  // de 500 queda lejos del techo de 1000 de PostgREST.
   const { data: rs, error: eR } = await admin.from("app_reservas").select("id, branch_id, estado, receta_estado")
     .eq("customer_id", customerId).not("receta_ruta", "is", null).limit(500);
   if (eR) throw eR;
@@ -200,6 +248,11 @@ async function borrarLoPersonal(admin: any, customerId: number) {
   for (let i = 0; i < unicos.length; i += 500) {
     const { error } = await admin.storage.from(BUCKET_ARCHIVOS).remove(unicos.slice(i, i + 500));
     if (error) console.error(`borrar_cuenta: ${unicos.length} archivo(s) de la ficha ${customerId} sin borrar:`, error.message);
+  }
+
+  if (googleWalletListo()) {
+    try { await expirarObjetoGoogle(customerId); }
+    catch (e) { console.error(`borrar_cuenta: la tarjeta de Google Wallet de la ficha ${customerId} no se venció:`, (e as Error)?.message ?? e); }
   }
 }
 /** Firma varias rutas de un bucket privado; las que fallan quedan fuera del mapa. */
@@ -505,8 +558,13 @@ Deno.serve(async (req) => {
 });
 
 async function atender(req: Request, traza: Traza): Promise<Response> {
+  // `recorte` (2026-10-19): con una sesión de CÓDIGO, la respuesta de las
+  // acciones permitidas pasa por aquí antes de salir (ver `CON_CODIGO`). Sólo
+  // lo pone el portero de la sesión; sin sesión limitada queda en null.
+  // deno-lint-ignore no-explicit-any
+  let recorte: ((b: any) => any) | null = null;
   const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+    new Response(JSON.stringify(recorte ? recorte(body) : body), { status, headers: { ...cors, "Content-Type": "application/json" } });
   // La tarjeta de Wallet: Safari abre este enlace (lo da la acción
   // `wallet_enlace`, firmado y válido 10 min) y ofrece «Agregar a Wallet».
   const enlaceWallet = req.method === "GET" ? new URL(req.url).searchParams.get("wallet") : null;
@@ -603,11 +661,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     return Array.isArray(data) ? data[0] ?? null : null;
   }
 
-  async function abrirSesion(fila: { customer_id?: number | null; preregistro_id?: string | null }) {
+  // `alcance` (2026-10-19): 'codigo' SÓLO cuando se entró con el código de 7
+  // letras del ticket; todo lo demás (DUI + teléfono, registrarse) es
+  // 'completo'. Se escribe siempre: el default de la columna existe sólo para
+  // la transición con la función vieja.
+  async function abrirSesion(fila: { customer_id?: number | null; preregistro_id?: string | null; alcance?: "completo" | "codigo" }) {
     const token = tokenNuevo();
     const { error } = await admin.from("app_cliente_sesiones").insert({
       customer_id: fila.customer_id ?? null,
       preregistro_id: fila.preregistro_id ?? null,
+      alcance: fila.alcance === "codigo" ? "codigo" : "completo",
       token_hash: await sha256(token),
       plataforma: plataformaValida(body?.plataforma),
       dispositivo: body?.dispositivo ? String(body.dispositivo).slice(0, 80) : null,
@@ -658,10 +721,14 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       }
       let customerId: number | null = null;
       if (typeof body?.token === "string" && body.token.length > 10) {
-        const { data: ses, error: eS } = await admin.from("app_cliente_sesiones").select("customer_id")
+        const { data: ses, error: eS } = await admin.from("app_cliente_sesiones").select("customer_id, ultimo_uso_at")
           .eq("token_hash", await sha256(body.token)).is("revocada_at", null).maybeSingle();
         if (eS) console.error("reportar_error: sesión", eS.message);
-        customerId = ses?.customer_id ?? null;
+        // (2026-10-19, auditoría) Vencida es igual que revocada: el mismo
+        // corte de DIAS_SESION que el portero de la sesión. Un token viejo no
+        // une el reporte a la ficha (el reporte se guarda igual, sin ella).
+        const viva = ses && Date.now() - new Date(ses.ultimo_uso_at).getTime() <= DIAS_SESION * 86400_000;
+        customerId = viva ? ses.customer_id ?? null : null;
       }
       const { error } = await admin.from("app_errores").insert({
         customer_id: customerId, fatal: body?.fatal === true, mensaje: txt(body?.mensaje, 1000) ?? "(sin mensaje)",
@@ -684,7 +751,20 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const cli = await buscarCliente(doc, tel);
       if (cli) {
         await anotarAcierto(doc);
-        return json({ ok: true, token: await abrirSesion({ customer_id: cli.id }) });
+        const alcance = esCodigo ? "codigo" : "completo";
+        const nuevo = await abrirSesion({ customer_id: cli.id, alcance });
+        // «Para ver esto, entra con tu DUI y teléfono» (2026-10-19): la app
+        // completa la entrada SIN cerrar antes la sesión de código, y manda
+        // su token en `reemplaza`. Entrando completo, esa sesión limitada se
+        // revoca aquí — y sólo si era de esta misma ficha: un token ajeno no
+        // revoca nada.
+        if (!esCodigo && typeof body?.reemplaza === "string" && body.reemplaza.length >= 30) {
+          const { error: eR } = await admin.from("app_cliente_sesiones")
+            .update({ revocada_at: new Date().toISOString(), push_token: null })
+            .eq("token_hash", await sha256(body.reemplaza)).eq("customer_id", cli.id).is("revocada_at", null);
+          if (eR) console.error("entrar: no se revocó la sesión de código:", eR.message);
+        }
+        return json({ ok: true, token: nuevo, alcance });
       }
       // ¿Se pre-registró con ESOS dos datos? Entonces vuelve a su pre-registro.
       if (!esCodigo) {
@@ -1124,7 +1204,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     if (token.length < 30) return json({ ok: false, motivo: "sin_sesion" }, 401);
     const hash = await sha256(token);
     const { data: ses, error: eSes } = await admin.from("app_cliente_sesiones")
-      .select("id, customer_id, preregistro_id, ultimo_uso_at, revocada_at, acepta_avisos")
+      .select("id, customer_id, preregistro_id, ultimo_uso_at, revocada_at, acepta_avisos, alcance")
       .eq("token_hash", hash).maybeSingle();
     if (eSes) throw eSes;
     const vencida = ses && Date.now() - new Date(ses.ultimo_uso_at).getTime() > DIAS_SESION * 86400_000;
@@ -1169,6 +1249,29 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       }
     }
 
+    // ── La sesión de CÓDIGO es limitada (2026-10-19, decisión del dueño) ───
+    // El código de 7 letras viene impreso en el ticket: lo tiene cualquiera
+    // que vea el papel. Con él se ven los puntos, el saldo, la tarjeta, el
+    // nivel y las ofertas; nada más. ESTE es el único sitio que lo decide, y
+    // es una LISTA BLANCA: una acción nueva queda cerrada para el código hasta
+    // que alguien la agregue aquí a propósito. Cualquier valor que no sea
+    // 'completo' cuenta como código (falla cerrada).
+    if (ses.alcance !== "completo") {
+      const permitida = CON_CODIGO.has(accion)
+        // Avisos al teléfono: se pueden APAGAR, no encender — los avisos
+        // hablan de reservas, chat y facturas, que el código no ve.
+        || (accion === "avisos" && body?.acepta !== true);
+      if (!permitida) {
+        return json({ ok: false, motivo: "requiere_documento", alcance: "codigo",
+          mensaje: "Para ver esto, entra con tu DUI y teléfono." }, 403);
+      }
+      if (accion === "resumen") recorte = resumenConCodigo;
+    } else if (accion === "resumen") {
+      // La app también aprende que la sesión es completa (para quitar el aviso).
+      // deno-lint-ignore no-explicit-any
+      recorte = (b: any) => (b?.ok === true ? { ...b, alcance: "completo" } : b);
+    }
+
     // ── Cerrar sesión / borrar cuenta: valen también sin ficha ─────────────
     if (accion === "salir") {
       const { error } = await admin.from("app_cliente_sesiones")
@@ -1185,12 +1288,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // —sus permisos— se puede retirar en el mismo gesto (`retirar_permisos`).
       const ahora = new Date().toISOString();
       if (customerId) {
+        // Lo personal PRIMERO y las sesiones después (2026-10-19): si algo
+        // falla a medio camino, la sesión sigue viva y el mismo botón vuelve
+        // a intentarlo. Al revés, la cuenta quedaba a medio borrar y sin
+        // forma de terminar desde la app.
+        if (body?.retirar_permisos === true) await guardarPermisos(customerId, false, false);
+        await borrarLoPersonal(admin, customerId);
         const { error } = await admin.from("app_cliente_sesiones")
           .update({ revocada_at: ahora, push_token: null, acepta_avisos: false })
           .eq("customer_id", customerId).is("revocada_at", null);
         if (error) throw error;
-        if (body?.retirar_permisos === true) await guardarPermisos(customerId, false, false);
-        await borrarLoPersonal(admin, customerId);
       }
       // El pre-registro se borra aunque ya esté VINCULADO: sus datos (nombre,
       // documento, teléfono, correo, nacimiento) ya viven en la ficha, y
@@ -2262,7 +2369,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       };
       const filas = (data ?? []).filter((f: any) => f.codigo_generacion);
       const base = [...filas.map(ruta), ...[...docDe.values()].map(ruta)].filter(Boolean) as string[];
-      const rutas = [...new Set(base)].flatMap((r) => [`${r}.pdf`, `${r}.json`]);
+      // Muestras sin factura propia detrás: firman el documento de EJEMPLO.
+      const conEjemplo = muestras.some((m: any) => !ruta(docDe.get(Number(m.documento_de))));
+      const rutas = [...[...new Set(base)].flatMap((r) => [`${r}.pdf`, `${r}.json`]), ...(conEjemplo ? [DOC_EJEMPLO.pdf, DOC_EJEMPLO.json] : [])];
       const firmadas = new Map<string, string>();
       if (rutas.length) {
         const { data: fs, error: eF } = await admin.storage.from("sales-dte").createSignedUrls(rutas, FIRMA_DOC);
@@ -2293,8 +2402,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
             total: Number(m.total ?? 0), numero: m.numero ? String(m.numero) : null, tipo: tipoDe(m.tipo_documento),
             anulada: m.anulada === true, sala: sucursal(m.sala) ?? null,
             relacionada: m.relacionada == null ? null : String(m.relacionada),
-            pdf: r ? firmadas.get(`${r}.pdf`) ?? null : null, json: r ? firmadas.get(`${r}.json`) ?? null : null,
-            sin_documento: !r,
+            pdf: firmadas.get(r ? `${r}.pdf` : DOC_EJEMPLO.pdf) ?? null,
+            json: firmadas.get(r ? `${r}.json` : DOC_EJEMPLO.json) ?? null,
+            sin_documento: !r && !firmadas.has(DOC_EJEMPLO.pdf),
           };
         }),
       ];
@@ -2389,14 +2499,24 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     if (accion === "factura_documento") {
       const formato = body?.formato === "json" ? "json" : "pdf";
       let idFactura = Number(body?.id);
-      if (String(body?.id ?? "").startsWith("muestra-")) {
+      const esMuestra = String(body?.id ?? "").startsWith("muestra-");
+      if (esMuestra) {
         const m = (await muestrasDe(admin, customerId, "factura")).find((x: any) => `muestra-${x.id}` === String(body.id));
-        idFactura = Number(m?.documento_de);
-        if (!idFactura) return json({ ok: false, mensaje: "Este ejemplo no tiene documento." });
+        if (!m) return json({ ok: false, mensaje: "Este ejemplo no tiene documento." });
+        idFactura = Number(m.documento_de) || 0;
       }
-      const { data: f, error } = await admin.from("sales_invoices").select("id, fecha, codigo_generacion")
-        .eq("id", idFactura).eq("customer_id", customerId).maybeSingle();
+      const { data: f, error } = idFactura
+        ? await admin.from("sales_invoices").select("id, fecha, codigo_generacion")
+          .eq("id", idFactura).eq("customer_id", customerId).maybeSingle()
+        : { data: null, error: null };
       if (error) throw error;
+      // Una muestra cuya factura prestada no es de esta ficha abre el EJEMPLO
+      // (ver DOC_EJEMPLO). Una factura real que no es suya sigue sin abrir.
+      if (esMuestra && !f) {
+        const { data: e, error: eE } = await admin.storage.from("sales-dte").createSignedUrl(DOC_EJEMPLO[formato], FIRMA_DOC);
+        if (eE) console.error("factura_documento: no se firmó el ejemplo:", eE.message);
+        return json(e?.signedUrl ? { ok: true, url: e.signedUrl } : { ok: false, mensaje: "Este ejemplo no tiene documento." });
+      }
       const doc = await documentoGuardado(f, formato, true);
       if ("mensaje" in doc) return json({ ok: false, mensaje: doc.mensaje });
       if (formato === "pdf" && f) enSegundoPlano(documentoGuardado(f, "json"));
@@ -2490,21 +2610,26 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         if (id.startsWith("muestra-")) {
           const m = muestras.find((x: any) => `muestra-${x.id}` === id);
           if (!m) return json({ ok: false, mensaje: "Alguna de las facturas elegidas no es de tu cuenta." });
-          if (!Number(m.documento_de)) return json({ ok: false, mensaje: "Uno de los ejemplos no tiene documento." });
-          pedidos.push({ id, real: Number(m.documento_de), muestra: m });
+          pedidos.push({ id, real: Number(m.documento_de) || 0, muestra: m });
         } else {
           if (!/^\d+$/.test(id)) return json({ ok: false, mensaje: "Alguna de las facturas elegidas no es de tu cuenta." });
           pedidos.push({ id, real: Number(id), muestra: null });
         }
       }
-      const reales = [...new Set(pedidos.map((p) => p.real))];
+      const pedidas = [...new Set(pedidos.map((p) => p.real).filter((r) => r > 0))];
       // ≤ 30 ids únicos (`id` es la llave): la respuesta no se acerca al techo de 1000.
-      const { data: fs, error: eF } = await admin.from("sales_invoices")
-        .select("id, fecha, codigo_generacion, tipo_documento, correlativo, total")
-        .in("id", reales).eq("customer_id", customerId);
+      const { data: fs, error: eF } = pedidas.length
+        ? await admin.from("sales_invoices")
+          .select("id, fecha, codigo_generacion, tipo_documento, correlativo, total")
+          .in("id", pedidas).eq("customer_id", customerId)
+        : { data: [], error: null };
       if (eF) throw eF;
       const porId = new Map((fs ?? []).map((f: any) => [Number(f.id), f]));
-      if (reales.some((r) => !porId.has(r))) return json({ ok: false, mensaje: "Alguna de las facturas elegidas no es de tu cuenta." });
+      if (pedidos.some((p) => !p.muestra && !porId.has(p.real))) return json({ ok: false, mensaje: "Alguna de las facturas elegidas no es de tu cuenta." });
+      // Una muestra sin factura propia detrás va con el documento de EJEMPLO
+      // (`real = 0`, ver DOC_EJEMPLO).
+      for (const p of pedidos) if (p.muestra && !porId.has(p.real)) p.real = 0;
+      const reales = [...new Set(pedidos.map((p) => p.real).filter((r) => r > 0))];
 
       // Los dos documentos de cada factura, de a 5 a la vez.
       const rutas = new Map<string, string>(); // `${id}.${formato}` → ruta
@@ -2526,12 +2651,13 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         const f = porId.get(p.real);
         const tipo = p.muestra ? tipoDoc(p.muestra.tipo_documento) : tipoDoc(f.tipo_documento);
         const numero = p.muestra ? (p.muestra.numero ? String(p.muestra.numero) : null) : numeroDe(f.correlativo);
-        const fechaDoc = String(p.muestra?.fecha ?? f.fecha);
+        const fechaDoc = String(p.muestra?.fecha ?? f?.fecha ?? "");
         const total = Number(p.muestra ? p.muestra.total ?? 0 : f.total ?? 0);
         let base = `${tipo.replace(/[^A-Za-z]+/g, "-").replace(/-+$/, "")}-${String(numero ?? fechaDoc).replace(/[^A-Za-z0-9-]/g, "")}`;
         for (let n = 2; usados.has(base); n++) base = `${base.replace(/_\d+$/, "")}_${n}`;
         usados.add(base);
-        return { p, f, tipo, numero, fechaDoc, total, base, pdf: rutas.get(`${p.real}.pdf`)!, json: rutas.get(`${p.real}.json`)! };
+        return { p, f, tipo, numero, fechaDoc, total, base,
+          pdf: p.real ? rutas.get(`${p.real}.pdf`)! : DOC_EJEMPLO.pdf, json: p.real ? rutas.get(`${p.real}.json`)! : DOC_EJEMPLO.json };
       });
 
       // Adjuntos si caben; si no, enlaces de 7 días.

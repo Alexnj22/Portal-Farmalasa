@@ -58,6 +58,13 @@ const MODAL_ANDROID = ANDROID ? { animation: 'slide_from_bottom' } : {};
 const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
 // Se ven con o sin sesión: la vitrina, las sucursales y el detalle de una oferta.
 const ABIERTAS = new Set(['vitrina', 'sucursales', 'oferta', 'o', 'producto', 'mis-puntos', 'legal']);
+// Lo que una sesión de CÓDIGO no abre (2026-10-19, decisión del dueño): todo
+// lo que pide DUI y teléfono. La guardia la manda a «completar» (la pantalla
+// que lo explica y lleva a Entrar). Es la mitad de AVISO: la que decide es la
+// lista blanca del servidor (app-clientes), y una pantalla que falte aquí
+// igual recibe «Para ver esto, entra con tu DUI y teléfono».
+const SOLO_COMPLETA = new Set(['chat', 'compras', 'creditos', 'encuesta', 'facturas', 'invitar', 'inyecciones',
+  'notificaciones', 'notificaciones-borradas', 'reservas', 'tratamientos']);
 const WEB = Platform.OS === 'web';
 let entradaAutomaticaHecha = false;
 
@@ -99,7 +106,7 @@ function usarFondoDelDocumento(base) {
 }
 
 function Guardia() {
-  const { token, lista, cargar } = useSesion();
+  const { token, lista, cargar, alcance, completando } = useSesion();
   const segmentos = useSegments();
   useEffect(() => { cargar(); }, [cargar]);
   // La reserva en la pantalla bloqueada se pone al día aunque no se abra Mis
@@ -115,11 +122,12 @@ function Guardia() {
     if (!__DEV__ || !codigo || !lista || token || entradaAutomaticaHecha) return;
     entradaAutomaticaHecha = true;
     llamar('entrar', { documento: codigo, plataforma: 'ios', dispositivo: 'simulador' })
-      .then((r) => { if (r?.ok && r.token) useSesion.getState().abrir(r.token); })
+      .then((r) => { if (r?.ok && r.token) useSesion.getState().abrir(r.token, r.alcance); })
       .catch(() => {});
   }, [lista, token]);
   useEffect(() => {
     if (!lista) return;
+    if (token && alcance === 'codigo' && SOLO_COMPLETA.has(segmentos[0])) { router.replace('/completar'); return; }
     if (ABIERTAS.has(segmentos[0])) return;
     const publica = PUBLICAS.has(segmentos[0]);
     // Sin sesión se limpia TODO lo que la sesión anterior dejó en memoria: en un
@@ -129,8 +137,11 @@ function Guardia() {
     // pestañas) se podía alcanzar con el gesto de volver.
     const limpiarPila = () => { if (router.canDismiss()) router.dismissAll(); };
     if (!token && !publica) { useCuenta.getState().limpiar(); useOfertas.getState().limpiar(); limpiarPila(); router.replace('/bienvenida'); }
+    // Completando la entrada desde una sesión de código: «Entrar» se queda
+    // abierta con la sesión viva, hasta que entre o vuelva atrás.
+    if (token && completando && segmentos[0] === 'entrar') return;
     if (token && (publica || !segmentos.length)) { limpiarPila(); router.replace('/puntos'); }
-  }, [token, lista, segmentos]);
+  }, [token, lista, segmentos, alcance, completando]);
   return null;
 }
 
@@ -332,6 +343,7 @@ function Raiz() {
                 deslizar mandaba un segundo al login (2026-10-07). */}
             <Stack.Screen name="bienvenida" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="entrar" options={{ title: 'Entrar' }} />
+            <Stack.Screen name="completar" options={{ title: 'Tu DUI y teléfono' }} />
             <Stack.Screen name="registro" options={{ title: 'Unirme' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false, ...(ANDROID ? { animation: 'fade' } : {}) }} />
             <Stack.Screen name="oferta/[id]" options={{ presentation: 'modal', headerShown: false, gestureEnabled: true, ...MODAL_ANDROID }} />

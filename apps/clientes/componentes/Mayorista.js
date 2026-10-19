@@ -1,9 +1,11 @@
-// El rango del Cliente Mayorista (2026-10-08). Hoy sólo en modo de prueba,
-// para ver cómo se ve antes de abrirlo a clientes. Las reglas son las de las
-// «Condiciones del Cliente Mayorista»: el rango sale del promedio de compra de
-// los tres meses anteriores, se recalcula el primer día del mes, y da puntos
-// por cada US$1.00 a precio de mayoreo. El precio (Mayoreo, Plus, Elite) es
-// independiente del rango.
+// El rango del Cliente Mayorista (2026-10-08). Lo ve el cliente aprobado
+// (`rangoReal`) y la cuenta de prueba (`rangoDePrueba`). Las reglas son las de
+// las «Condiciones del Cliente Mayorista»: el rango sale del promedio de compra
+// de los tres meses anteriores, se recalcula el primer día del mes, y da puntos
+// por cada US$1.00 a precio de mayoreo. El precio (Mayoreo o Mayoreo Plus; el
+// «Elite» desapareció el 2026-10-08) es independiente del rango.
+// (2026-10-19) Los puntos del rango los acredita el motor sólo con
+// `puntos_config.mayoreo_puntos_activo` encendido.
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Presionable from './Presionable';
@@ -42,6 +44,8 @@ export function rangoReal(m) {
   // precioClave y aprobadoDesde: para las pantallas de SubisteDeNivel (subir a Plus, bienvenida).
   return { ...r, precio: PRECIOS[m.precio] ?? 'Mayoreo', precioClave: PRECIOS[m.precio] ? m.precio : 'mayoreo', aprobadoDesde: m.aprobado_desde ?? null,
     compra, retiro: m.retiro_programado ?? null,
+    // Bajada de Mayoreo Plus a Mayoreo avisada (2026-10-19, Condiciones §6).
+    bajaEl: m.precio_programado_el ?? null,
     siguiente: s ? { ...s, falta: Math.max(0, s.desde - compra) } : null };
 }
 
@@ -102,7 +106,8 @@ export default function Mayorista({ rango, pie = null }) {
           </View>
         ))}
       </View>
-      {rango.retiro ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Tu precio de mayoreo termina el {rango.retiro}.</Texto> : null}
+      {rango.retiro ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Tu precio de mayoreo termina el {rango.retiro}.</Texto>
+        : rango.bajaEl ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Desde el {rango.bajaEl} tu precio pasa a Mayoreo.</Texto> : null}
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {RANGOS.map((r) => {
           const p = COLORES_NIVEL[r.clave];

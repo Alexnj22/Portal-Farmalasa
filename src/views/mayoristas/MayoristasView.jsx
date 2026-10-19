@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Gem, Inbox, ListChecks, History, Users, Check, X, ArrowUpDown, LogOut, Send } from 'lucide-react';
+import { Gem, Inbox, ListChecks, History, Users, Check, X, ArrowUpDown, LogOut, Send, Undo2 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -11,6 +11,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
+import PersonaConFoto from '../../components/caja/PersonaConFoto';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -21,7 +22,6 @@ import { ORDENES_MAYORISTAS, accionesDeMayorista, filasDeMayoristas, solicitudes
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
     ESTADOS, ORIGENES, PRECIOS, RANGOS,
     fetchDetalleMayorista, fetchHistorialMayoristas, fetchMayoristas, proponerMayorista, resolverMayorista,
@@ -35,8 +35,15 @@ import {
  *     aquí. Administración aprueba con un precio o rechaza con motivo; quien
  *     aprueba no puede ser quien pidió (lo frena la base).
  *   · Candidatos: quien compró a precio de mayoreo (Mayoreo o Mayoreo Plus por
- *     debajo del Preferente) en los últimos 6 meses, con lo que pide la
- *     cláusula 2.3 (promedio de $100/mes o una factura de $500) a la vista.
+ *     debajo del Preferente) en los últimos 6 meses, más las fichas con
+ *     «(4)»/«(5)» en el nombre, con lo que pide la cláusula 2.3 (promedio de
+ *     $100/mes o una factura de $500) a la vista. Desde el 2026-10-19 quien
+ *     aprueba los decide uno por uno desde aquí —aprobar o no aprobar, sin
+ *     solicitud previa y sin nada automático—; «no aprobar» no le avisa al
+ *     cliente (no pidió nada) y lo saca de la lista.
+ *   · Bajar de Mayoreo Plus a Mayoreo y retirar rigen 15 días después del aviso
+ *     (Condiciones §6); hasta entonces se pueden cancelar.
+ *   · Quién decidió se ve con foto y nombre corto (canon del portal).
  *   · Mayoristas: los aprobados, con su precio y su rango del mes.
  *   · Historial: todo lo que pasó, de un solo lugar, para evaluar.
  *
@@ -95,27 +102,46 @@ export default function MayoristasView() {
 }
 
 function Lista({ tab, filas, busqueda, onAbrir }) {
-    const [soloCumplen, setSoloCumplen] = useState(true);
+    // Candidatos (2026-10-19): por defecto TODOS los que compraron a mayoreo en
+    // 6 meses, para decidirlos uno por uno; «cumplen» es un filtro, no la lista.
+    const [soloCumplen, setSoloCumplen] = useState(false);
+    const [soloConNombre, setSoloConNombre] = useState(false);
+    const [verDescartados, setVerDescartados] = useState(false);
     const [orden, setOrden] = useState('mayoreo');
     const [ver, setVer] = useState(PASO);
-    const lista = filasDeMayoristas(filas, { tab, busqueda, soloCumplen, orden });
+    const lista = filasDeMayoristas(filas, { tab, busqueda, soloCumplen, orden, soloConNombre, verDescartados });
     const visibles = lista.slice(0, ver);
+    const esCandidatos = tab === 'candidatos';
+    const filtrosActivos = esCandidatos ? [soloCumplen, soloConNombre, verDescartados].filter(Boolean).length : 0;
+    const limpiar = () => { setSoloCumplen(false); setSoloConNombre(false); setVerDescartados(false); };
 
     return (
         <>
-            {tab === 'candidatos' && (
+            {esCandidatos && (
                 <Notice variant="info">
-                    Compraron a precio de mayoreo en los últimos 6 meses. Para pedirlo deben cumplir la cláusula 2.3: <b>promedio de $100 al mes</b> en
-                    los últimos 3 meses o <b>una factura de $500</b>, con la ficha completa. Nadie entra solo: alguien lo propone y Administración decide.
+                    Les vendieron a precio de mayoreo en los últimos 6 meses, o tienen «(4)»/«(5)» en el nombre de la ficha. Cada uno se aprueba o no
+                    a mano: nadie entra solo. La cláusula 2.3 pide <b>promedio de $100 al mes</b> en los últimos 3 meses o <b>una factura de $500</b>,
+                    con la ficha completa.
                 </Notice>
             )}
             <div className="flex justify-end">
-                <FilterBar activeCount={tab === 'candidatos' && !soloCumplen ? 1 : 0}
-                    onClear={tab === 'candidatos' && !soloCumplen ? () => setSoloCumplen(true) : undefined}>
-                    {tab === 'candidatos' && (
-                        <FilterBar.Section label="requisito" active={!soloCumplen} onClear={() => setSoloCumplen(true)}>
-                            <FilterBar.Opciones value={soloCumplen ? 'cumplen' : 'todos'} onChange={(v) => setSoloCumplen(v !== 'todos')} label="Requisito" umbral={0}
-                                options={[{ value: 'cumplen', label: 'Cumplen el requisito' }, { value: 'todos', label: 'Todos los que compraron a mayoreo' }]} />
+                <FilterBar activeCount={filtrosActivos} onClear={filtrosActivos ? limpiar : undefined}>
+                    {esCandidatos && (
+                        <FilterBar.Section label="requisito" active={soloCumplen} onClear={() => setSoloCumplen(false)}>
+                            <FilterBar.Opciones value={soloCumplen ? 'cumplen' : 'todos'} onChange={(v) => setSoloCumplen(v === 'cumplen')} label="Requisito" umbral={0}
+                                options={[{ value: 'todos', label: 'Todos los que compraron a mayoreo' }, { value: 'cumplen', label: 'Cumplen el requisito' }]} />
+                        </FilterBar.Section>
+                    )}
+                    {esCandidatos && (
+                        <FilterBar.Section label="ficha" active={soloConNombre} onClear={() => setSoloConNombre(false)}>
+                            <FilterBar.Opciones value={soloConNombre ? 'nombre' : 'todas'} onChange={(v) => setSoloConNombre(v === 'nombre')} label="Ficha" umbral={0}
+                                options={[{ value: 'todas', label: 'Todas las fichas' }, { value: 'nombre', label: 'Con «(4)» o «(5)» en el nombre' }]} />
+                        </FilterBar.Section>
+                    )}
+                    {esCandidatos && (
+                        <FilterBar.Section label="no aprobados" active={verDescartados} onClear={() => setVerDescartados(false)}>
+                            <FilterBar.Opciones value={verDescartados ? 'ver' : 'ocultar'} onChange={(v) => setVerDescartados(v === 'ver')} label="No aprobados" umbral={0}
+                                options={[{ value: 'ocultar', label: 'Ocultar los no aprobados' }, { value: 'ver', label: 'Mostrar también los no aprobados' }]} />
                         </FilterBar.Section>
                     )}
                     <FilterBar.Section label="orden" active={orden !== 'mayoreo'} onClear={() => setOrden('mayoreo')}>
@@ -125,7 +151,14 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
                 </FilterBar>
             </div>
             <DataTable
-                columns={[
+                columns={esCandidatos ? [
+                    { key: 'cliente', label: 'Cliente' },
+                    { key: 'total', label: 'Comprado (6 m)', align: 'right' },
+                    { key: 'facturas', label: 'Facturas', align: 'right', hideBelow: 'sm' },
+                    { key: 'ultima', label: 'Última compra', hideBelow: 'md' },
+                    { key: 'rango', label: 'Rango que tendría', hideBelow: 'sm' },
+                    { key: 'estado', label: 'Estado' },
+                ] : [
                     { key: 'cliente', label: 'Cliente' },
                     { key: 'prom', label: 'Promedio 3 meses', align: 'right' },
                     { key: 'mayoreo', label: 'A mayoreo (6 m)', align: 'right', hideBelow: 'sm' },
@@ -135,7 +168,29 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
                 movil={{ usarAccionDeFila: true }}
                 empty={{ icon: tab === 'solicitudes' ? Inbox : Users, message: tab === 'solicitudes' ? 'No hay solicitudes por resolver' : 'Nadie con ese filtro' }}
                 minWidth="720px">
-                {visibles.map((f, i) => (
+                {visibles.map((f, i) => esCandidatos ? (
+                    <DataRow key={f.customer_id} index={i} onClick={() => onAbrir(f)}>
+                        <DataCell>
+                            <div className="min-w-0">
+                                <p className="text-body-sm font-semibold text-content truncate">{f.nombre}</p>
+                                <p className="text-micro text-content-3 truncate">
+                                    {[f.documento, f.precio_en_nombre ? `${PRECIOS[f.precio_en_nombre]} en el nombre` : null,
+                                        f.a_mayoreo > 0 ? `${formatMoney(f.a_mayoreo)} a mayoreo` : null, f.ficha_completa ? null : 'Ficha incompleta'].filter(Boolean).join(' · ') || '—'}
+                                </p>
+                            </div>
+                        </DataCell>
+                        <DataCell align="right"><span className="text-body-sm font-semibold text-content">{formatMoney(f.total)}</span></DataCell>
+                        <DataCell align="right"><span className="text-body-sm text-content-2">{f.facturas}</span></DataCell>
+                        <DataCell>
+                            <span className="text-body-sm text-content-2">{f.ultima_compra ? fechaTexto(f.ultima_compra, { day: 'numeric', month: 'short' }) : '—'}</span>
+                        </DataCell>
+                        <DataCell><span className="text-body-sm text-content-2">{RANGOS[f.rango_sugerido]?.nombre ?? '—'}</span></DataCell>
+                        <DataCell>
+                            {f.estado ? <Badge variant={ESTADOS[f.estado]?.variant}>{ESTADOS[f.estado]?.label}</Badge>
+                                : <Badge variant={f.cumple ? 'info' : 'neutral'}>{f.cumple ? 'Cumple' : 'No cumple aún'}</Badge>}
+                        </DataCell>
+                    </DataRow>
+                ) : (
                     <DataRow key={f.customer_id} index={i} onClick={() => onAbrir(f)}>
                         <DataCell>
                             <div className="min-w-0">
@@ -153,6 +208,7 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
                             {tab === 'mayoristas' ? (
                                 <span className="text-body-sm text-content-2">
                                     {PRECIOS[f.precio]} · {RANGOS[f.rango]?.nombre ?? '—'}{f.retiro_programado ? ` · se retira el ${fechaTexto(f.retiro_programado, { day: 'numeric', month: 'short' })}` : ''}
+                                    {!f.retiro_programado && f.precio_programado_el ? ` · pasa a Mayoreo el ${fechaTexto(f.precio_programado_el, { day: 'numeric', month: 'short' })}` : ''}
                                 </span>
                             ) : f.estado ? <Badge variant={ESTADOS[f.estado]?.variant}>{ESTADOS[f.estado]?.label}</Badge>
                                 : <Badge variant={f.cumple ? 'info' : 'neutral'}>{f.cumple ? 'Cumple' : 'No cumple aún'}</Badge>}
@@ -189,7 +245,10 @@ function Historial({ busqueda, onAbrir }) {
                     <DataCell>
                         <span className="text-body-sm text-content-2">{textoDeAccion(h)}{h.nota ? ` — «${h.nota}»` : ''}</span>
                     </DataCell>
-                    <DataCell><span className="text-body-sm text-content-2">{h.employees?.name ? shortEmployeeName(h.employees.name) : h.origen === 'app' ? 'El cliente (app)' : 'Sistema'}</span></DataCell>
+                    <DataCell>
+                        {h.employees?.name ? <PersonaConFoto id={h.employees.id} nombre={h.employees.name} px={20} />
+                            : <span className="text-body-sm text-content-2">{h.origen === 'app' ? 'El cliente (app)' : 'Sistema'}</span>}
+                    </DataCell>
                 </DataRow>
             ))}
         </DataTable>
@@ -202,14 +261,19 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
     const showToast = useToastStore((s) => s.showToast);
     const appendAuditLog = useStaff((st) => st.appendAuditLog);
     const [d, setD] = useState(null);
-    const [precio, setPrecio] = useState(cliente.precio ?? cliente.precio_sugerido ?? 'mayoreo');
+    // Aprobado o en revisión: su precio. Candidato (o no aprobado antes): el sugerido —«(5)» en el nombre = Mayoreo Plus—.
+    const [precio, setPrecio] = useState((['aprobado', 'solicitado'].includes(cliente.estado) ? cliente.precio : cliente.precio_sugerido) ?? 'mayoreo');
     const [nota, setNota] = useState('');
     const [ocupado, setOcupado] = useState(false);
     useEffect(() => {
         fetchDetalleMayorista(cliente.customer_id).then(setD).catch((err) => showToast('No se pudo cargar', mensajeAmigable(err, ''), 'error'));
     }, [cliente.customer_id, showToast]);
 
-    const { esSolicitante, proponer: puedeAbrirSolicitud, resolver: resolverSolicitud, gestionar } = accionesDeMayorista(cliente, { puedeProponer, puedeAprobar, userId: user?.id });
+    const { esSolicitante, proponer, decidir, resolver: resolverSolicitud, gestionar, cancelar } = accionesDeMayorista(cliente, { puedeProponer, puedeAprobar, userId: user?.id });
+    // Quien aprueba decide al candidato directamente; proponer queda para quien no aprueba.
+    const puedeAbrirSolicitud = proponer && !decidir;
+    // Bajar de Mayoreo Plus a Mayoreo rige a los 15 días y se le avisa: pide motivo (§6).
+    const esBajada = gestionar && cliente.precio === 'mayoreo_plus' && precio === 'mayoreo';
     const correr = async (accion, fn, mensaje) => {
         setOcupado(true);
         try {
@@ -240,10 +304,29 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                     {!cliente.ficha_completa && cliente.ficha_completa !== undefined && (
                         <Notice variant="warning">La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar.</Notice>
                     )}
+                    {cliente.resuelto_por && est && est !== 'solicitado' && (
+                        <div className="flex flex-wrap items-center gap-2 text-body-sm text-content-2">
+                            <span>{est === 'aprobado' ? 'Última decisión' : ESTADOS[est]?.label}:</span>
+                            <PersonaConFoto id={cliente.resuelto_por_id} nombre={cliente.resuelto_por} px={22}
+                                detalle={cliente.resuelto_at ? fechaTexto(cliente.resuelto_at, { day: 'numeric', month: 'short', year: 'numeric' }) : null} />
+                            {cliente.motivo && est !== 'aprobado' ? <span className="text-content-3">— «{cliente.motivo}»</span> : null}
+                        </div>
+                    )}
+                    {est === 'aprobado' && (cliente.retiro_programado || cliente.precio_programado_el) && (
+                        <Notice variant="warning">
+                            {cliente.retiro_programado
+                                ? `Retiro avisado: deja de ser Cliente Mayorista el ${fechaTexto(cliente.retiro_programado, { day: 'numeric', month: 'long' })}.`
+                                : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`}
+                            {' '}Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.
+                        </Notice>
+                    )}
                     {est === 'solicitado' && (
                         <Notice variant="info">
-                            {ORIGENES[cliente.origen]}{cliente.solicitado_por ? ` por ${shortEmployeeName(cliente.solicitado_por)}` : ''} el {fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}
+                            {ORIGENES[cliente.origen]} el {fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}
                             {cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}. {esSolicitante ? 'Tú la hiciste: la tiene que resolver otra persona.' : ''}
+                            {cliente.solicitado_por ? (
+                                <span className="mt-1.5 flex"><PersonaConFoto id={cliente.solicitado_por_id} nombre={cliente.solicitado_por} px={20} detalle="Lo propuso" /></span>
+                            ) : null}
                         </Notice>
                     )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -279,19 +362,24 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                                 {d.historial.map((h, i) => (
                                     <li key={i} className="text-body-sm text-content-2">
                                         <span className="text-content-3">{fechaTexto(h.cuando, { day: 'numeric', month: 'short', year: 'numeric' })} · </span>
-                                        {textoDeAccion(h)}{h.por ? ` · ${shortEmployeeName(h.por)}` : ''}{h.nota ? ` — «${h.nota}»` : ''}
+                                        {textoDeAccion(h)}{h.nota ? ` — «${h.nota}»` : ''}
+                                        {h.por ? <span className="ml-2 inline-flex align-middle"><PersonaConFoto id={h.por_id} nombre={h.por} px={18} /></span> : null}
                                     </li>
                                 ))}
                             </ul>
                         </section>
                     )}
 
-                    {(puedeAbrirSolicitud || resolverSolicitud || gestionar) && (
+                    {(puedeAbrirSolicitud || decidir || resolverSolicitud || gestionar || cancelar) && (
                         <section className="space-y-3 rounded-lg border border-border-subtle p-3">
-                            <SegmentedControl label="Precio" value={precio} onChange={setPrecio}
-                                options={[{ value: 'mayoreo', label: 'Mayoreo' }, { value: 'mayoreo_plus', label: 'Mayoreo Plus' }]} />
-                            <PortalTextarea label={resolverSolicitud || gestionar ? 'Motivo (obligatorio para rechazar o retirar)' : 'Nota (opcional)'} rows={2} maxLength={300}
-                                value={nota} onChange={(e) => setNota(e.target.value)} />
+                            {(puedeAbrirSolicitud || decidir || resolverSolicitud || gestionar) && (
+                                <SegmentedControl label="Precio" value={precio} onChange={setPrecio}
+                                    options={[{ value: 'mayoreo', label: 'Mayoreo' }, { value: 'mayoreo_plus', label: 'Mayoreo Plus' }]} />
+                            )}
+                            <PortalTextarea rows={2} maxLength={300} value={nota} onChange={(e) => setNota(e.target.value)}
+                                label={resolverSolicitud ? 'Motivo (obligatorio para rechazar: se le avisa al cliente)'
+                                    : gestionar ? 'Motivo (obligatorio para retirar o bajar a Mayoreo: se le avisa al cliente)'
+                                        : 'Nota (opcional, interna)'} />
                         </section>
                     )}
                 </div>
@@ -302,6 +390,18 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                     <Button icon={Send} loading={ocupado} onClick={() => correr('propuesto', () => proponerMayorista(cliente.customer_id, precio, nota), 'Solicitud enviada a Administración')}>
                         Proponer como mayorista
                     </Button>
+                )}
+                {decidir && (
+                    <>
+                        <Button variant="secondary" icon={X} loading={ocupado}
+                            onClick={() => correr('descartado', () => resolverMayorista(cliente.customer_id, 'descartar', null, nota), 'No aprobado: sale de los candidatos')}>No aprobar</Button>
+                        <Button icon={Check} loading={ocupado} disabled={cliente.ficha_completa === false}
+                            onClick={() => correr('aprobado', () => resolverMayorista(cliente.customer_id, 'aprobar', precio, nota), `Aprobado con ${PRECIOS[precio]}`)}>Aprobar</Button>
+                    </>
+                )}
+                {cancelar && (
+                    <Button variant="secondary" icon={Undo2} loading={ocupado}
+                        onClick={() => correr('cambio_cancelado', () => resolverMayorista(cliente.customer_id, 'cancelar_cambio', null, nota), 'Cambio cancelado')}>Cancelar el cambio avisado</Button>
                 )}
                 {resolverSolicitud && (
                     <>
@@ -315,8 +415,11 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                     <>
                         <Button variant="secondary" icon={LogOut} loading={ocupado} disabled={!nota.trim()}
                             onClick={() => correr('retiro', () => resolverMayorista(cliente.customer_id, 'retirar', null, nota), 'Retiro avisado: rige en 15 días')}>Retirar</Button>
-                        <Button icon={ArrowUpDown} loading={ocupado} disabled={precio === cliente.precio}
-                            onClick={() => correr('precio', () => resolverMayorista(cliente.customer_id, 'cambiar_precio', precio, nota), `Precio cambiado a ${PRECIOS[precio]}`)}>Cambiar precio</Button>
+                        <Button icon={ArrowUpDown} loading={ocupado} disabled={precio === cliente.precio || (esBajada && !nota.trim()) || (esBajada && !!cliente.precio_programado)}
+                            onClick={() => correr('precio', () => resolverMayorista(cliente.customer_id, 'cambiar_precio', precio, nota),
+                                esBajada ? 'Bajada avisada: rige en 15 días' : `Precio cambiado a ${PRECIOS[precio]}`)}>
+                            {esBajada ? 'Bajar a Mayoreo (en 15 días)' : 'Cambiar precio'}
+                        </Button>
                     </>
                 )}
             </LiquidModal.Footer>

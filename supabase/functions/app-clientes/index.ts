@@ -1001,14 +1001,25 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!eE && emp === true) return { clave: "mayoreo_plus", sinPuntos: true };
       return nada;
     };
+    // El precio de la lista del cliente, escrito UNA vez para el catálogo y el
+    // cobro (2026-10-19). Los dos números vienen ya de `precio_de_lista` (la
+    // regla única en la base: techo = el menor entre viñeta y VIP; el Plus es
+    // el menor entre Plus y Mayoreo). Acá sólo se elige cuál le toca y con qué
+    // nombre: si el «Plus» de un producto es en realidad su Mayoreo (no tiene
+    // uno mejor), se nombra y se guarda como Mayoreo, que es la lista con la
+    // que la sala lo tiene que facturar.
+    const precioDeLista = (clave: string | null, mayoreo: unknown, plus: unknown):
+      { precio: number | null; lista: "mayoreo" | "mayoreo_plus" | null; nombre: string | null } => {
+      const may = mayoreo == null ? null : Number(mayoreo);
+      const pl = plus == null ? null : Number(plus);
+      if (clave === "mayoreo_plus" && pl != null && (may == null || pl < may)) return { precio: pl, lista: "mayoreo_plus", nombre: "Mayoreo Plus" };
+      if ((clave === "mayoreo_plus" || clave === "mayoreo") && may != null) return { precio: may, lista: "mayoreo", nombre: "Mayoreo" };
+      return { precio: null, lista: null, nombre: null };
+    };
     // deno-lint-ignore no-explicit-any
     const conPrecioTuyo = (cond: { clave: string | null; sinPuntos: boolean }) => (x: any) => {
       const { precio_mayoreo, precio_plus, ...resto } = x ?? {};
-      const plus = precio_plus == null ? null : Number(precio_plus);
-      const may = precio_mayoreo == null ? null : Number(precio_mayoreo);
-      let tuyo: number | null = null, nombre: string | null = null;
-      if (cond.clave === "mayoreo_plus" && plus != null) { tuyo = plus; nombre = "Mayoreo Plus"; }
-      else if ((cond.clave === "mayoreo_plus" || cond.clave === "mayoreo") && may != null) { tuyo = may; nombre = "Mayoreo"; }
+      const { precio: tuyo, nombre } = precioDeLista(cond.clave, precio_mayoreo, precio_plus);
       return { ...resto, precio_tuyo: tuyo, precio_tuyo_nombre: nombre, precio_tuyo_sin_puntos: tuyo != null && cond.sinPuntos };
     };
     // El mayoreo es por presentación CERRADA (2026-10-12, condiciones de
@@ -2729,7 +2740,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const ids = [...new Set(items.map((x: any) => x.id))];
       const [{ data: prods, error: eP }, { data: precios, error: ePr }, { data: ocultos, error: eO }, condPrecio] = await Promise.all([
         admin.from("products").select("id, nombre, activo, oculto_en_ventas, es_antibiotico, requiere_receta").in("id", ids),
-        admin.from("product_precios").select("product_id, vineta, vip, clinica, mayoreo, factor, presentaciones(tipo)").in("product_id", ids).eq("activo", true).gt("vineta", 0),
+        // Los precios por la MISMA función que el catálogo (2026-10-19): antes
+        // se leía `product_precios` y la regla se repetía acá, y no coincidía
+        // con lo que la app mostraba cuando el VIP era más alto que la viñeta.
+        admin.rpc("app_precios_para_cobro", { p_ids: ids }),
         admin.from("app_catalogo_ocultos").select("product_id").in("product_id", ids),
         condicionDePrecio(false),
       ]);
@@ -2745,27 +2759,24 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       for (const x of items) {
         const p: any = porId.get(x.id);
         if (!p || p.activo === false || p.oculto_en_ventas || oculto.has(x.id)) return json({ ok: false, mensaje: "Un producto del carrito ya no está en el catálogo. Quítalo e intenta de nuevo." });
-        // La presentación: la de mayor precio entre las de ese factor (la misma regla del catálogo).
-        const pr: any = (precios ?? []).filter((q: any) => Number(q.product_id) === x.id && (Number(q.factor) || 1) === x.factor)
-          .sort((a: any, b: any) => Number(b.vineta) - Number(a.vineta))[0];
+        // La presentación de ese factor: una sola por (producto, factor), la de
+        // mayor viñeta — la elige `app_precios_para_cobro` igual que el catálogo.
+        const deEse = ((precios ?? []) as any[]).filter((q: any) => Number(q.product_id) === x.id);
+        const pr: any = deEse.find((q: any) => (Number(q.factor) || 1) === x.factor);
         if (!pr) return json({ ok: false, mensaje: `«${p.nombre}» cambió de presentación. Quítalo y agrégalo de nuevo.` });
         // ¿Es la caja (la presentación de mayor factor)? Sólo ahí vale el mayoreo.
-        const esCaja = x.factor === factorMayor((precios ?? []).filter((q: any) => Number(q.product_id) === x.id));
-        const vineta = Math.round(Number(pr.vineta) * 100) / 100;
-        const vip = Number(pr.vip) > 0 && Number(pr.vip) < Number(pr.vineta) ? Math.round(Number(pr.vip) * 100) / 100 : null;
-        // Mayoreo (2026-10-12): la MISMA regla de `app_catalogo_producto` —la
-        // lista vale si está por debajo del VIP (o de la viñeta)—. Mayoreo =
-        // columna `clinica`; Mayoreo Plus = columna `mayoreo`, y si no tiene,
-        // la de Mayoreo. Decide el servidor, nunca el precio que mande la app.
-        const techo = vip ?? vineta;
-        const lista = (v: unknown) => (Number(v) > 0 && Number(v) < techo ? Math.round(Number(v) * 100) / 100 : null);
-        const precioMay = !esCaja ? null
-          : condPrecio.clave === "mayoreo_plus" ? lista(pr.mayoreo) ?? lista(pr.clinica)
-          : condPrecio.clave === "mayoreo" ? lista(pr.clinica) : null;
+        const esCaja = x.factor === factorMayor(deEse);
+        const vineta = Number(pr.vineta);
+        const vip = pr.vip == null ? null : Number(pr.vip);
+        // Mayoreo: el precio y la lista salen de `precioDeLista`, el mismo que
+        // usa el catálogo. Decide el servidor, nunca el precio que mande la app.
+        const lp = esCaja ? precioDeLista(condPrecio.clave, pr.precio_mayoreo, pr.precio_plus) : { precio: null, lista: null };
         filas.push({
           customer_id: customerId, branch_id: branchId, producto_id: x.id,
-          producto_nombre: `${p.nombre}${pr.presentaciones?.tipo ? ` · ${pr.presentaciones.tipo}` : ""}`.slice(0, 200),
-          cantidad: x.cantidad, precio_unitario: precioMay ?? vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
+          producto_nombre: `${p.nombre}${pr.tipo ? ` · ${pr.tipo}` : ""}`.slice(0, 200),
+          cantidad: x.cantidad, precio_unitario: lp.precio ?? vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
+          // Para que la sala facture con la misma lista que se cobró (2026-10-19).
+          lista_precio: lp.lista,
           documento, datos_fiscales: datosFiscales,
           entrega: aDomicilio ? "domicilio" : "retiro", direccion_entrega: direccion,
           ...(conReceta ? { estado: "en_revision" } : {}),

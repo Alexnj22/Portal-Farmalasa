@@ -214,7 +214,7 @@ export default function WidgetReservas({ todas = false }) {
                             title={r.renglones && r.renglones.length > 1
                                 ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
                                 : `${r.cantidad} × ${r.producto}`}
-                            subtitle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}`).join(' · ')} — ` : ''}${
+                            subtitle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
                                 todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
                                 r.estado === 'lista' ? ` · retira antes de las ${hora12(r.vence_at)}` : ''}${
@@ -238,6 +238,14 @@ export default function WidgetReservas({ todas = false }) {
                                     {r.pago_estado === 'anticipo' && Number(r.anticipo) > 0 && (
                                         <Badge variant="warning" uppercase={false}
                                             title={`Saldo al retirar: ${formatMoney(Number(r.precio ?? 0) * Number(r.cantidad ?? 1) - Number(r.anticipo))}`}>Anticipo {formatMoney(Number(r.anticipo))}</Badge>
+                                    )}
+                                    {/* Mayoreo (2026-10-19): se cobró a precio de mayoreo en la app; en caja
+                                        se factura con ESA lista para cobrar lo mismo. */}
+                                    {(r.renglones ?? [r]).some((x) => x.lista_precio) && (
+                                        <Badge variant="info" uppercase={false}
+                                            title="Facturar con esta lista de precio: es la que se cobró al reservar">
+                                            {(r.renglones ?? [r]).some((x) => x.lista_precio === 'mayoreo_plus') ? 'Precio Mayoreo Plus' : 'Precio Mayoreo'}
+                                        </Badge>
                                     )}
                                     {r.documento === 'credito_fiscal' && (
                                         <Badge variant="info" uppercase={false}

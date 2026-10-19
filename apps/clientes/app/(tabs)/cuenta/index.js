@@ -428,12 +428,18 @@ export default function Cuenta() {
   );
 }
 
+// '2026-11-03' → '3/11' (la fecha sola, sin zona: es un día del calendario).
+const fechaCorta = (iso) => { const [, mm, dd] = String(iso).slice(0, 10).split('-'); return dd && mm ? `${Number(dd)}/${Number(mm)}` : String(iso); };
+
 // Cliente Mayorista (Condiciones §2, Procedimiento §3): se pide desde aquí y
 // lo decide Administración en el portal en 5 días hábiles.
 function FilaMayorista({ m, pedir, alCambiar }) {
   const estado = m?.estado;
   if (estado === 'aprobado') {
-    return <FilaAccion sf="diamond.fill" texto={`Cliente Mayorista · ${m.precio === 'mayoreo_plus' ? 'Mayoreo Plus' : 'Mayoreo'}`} flecha={false} alTocar={() => navegar('/puntos')} />;
+    // Un cambio avisado (2026-10-19, Condiciones §6): rige 15 días después.
+    const cambio = m.retiro_programado ? ` · termina el ${fechaCorta(m.retiro_programado)}`
+      : m.precio_programado_el ? ` · pasa a Mayoreo el ${fechaCorta(m.precio_programado_el)}` : '';
+    return <FilaAccion sf="diamond.fill" texto={`Cliente Mayorista · ${m.precio === 'mayoreo_plus' ? 'Mayoreo Plus' : 'Mayoreo'}${cambio}`} flecha={false} alTocar={() => navegar('/puntos')} />;
   }
   if (estado === 'solicitado') {
     return <FilaAccion sf="clock.fill" texto="Cliente Mayorista: solicitud en revisión" flecha={false}
@@ -446,5 +452,16 @@ function FilaMayorista({ m, pedir, alCambiar }) {
       Alert.alert(r?.ok ? 'Solicitud enviada' : 'No se pudo', r?.ok ? 'Te avisamos cuando Administración la revise.' : (r?.mensaje ?? 'Revisa tu conexión.'));
       if (r?.ok) alCambiar?.();
     } }]);
-  return <FilaAccion sf="diamond" texto={estado === 'rechazado' ? 'Volver a solicitar ser Cliente Mayorista' : 'Quiero ser Cliente Mayorista'} alTocar={pedirla} />;
+  // Rechazada (2026-10-19): se muestra el motivo que escribió Administración
+  // (Condiciones §2.4) y se puede volver a pedir sin espera.
+  if (estado === 'rechazado') {
+    return (
+      <>
+        <FilaAccion sf="xmark.circle" texto={`Solicitud no aprobada${m?.motivo ? `: ${m.motivo}` : ''}`} flecha={false}
+          alTocar={() => Alert.alert('Solicitud no aprobada', m?.motivo ? `Motivo: ${m.motivo}\n\nPuedes volver a pedirlo cuando quieras.` : 'Puedes volver a pedirlo cuando quieras.')} />
+        <FilaAccion sf="diamond" texto="Volver a solicitar ser Cliente Mayorista" alTocar={pedirla} />
+      </>
+    );
+  }
+  return <FilaAccion sf="diamond" texto="Quiero ser Cliente Mayorista" alTocar={pedirla} />;
 }

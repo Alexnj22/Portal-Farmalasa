@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1307.1 — DTE para el cliente también desde Ventas
+
+- El bloque «Documento electrónico» (descargar o enviar por correo el PDF y el
+  JSON) aparece también al abrir una venta en **Ventas**, en escritorio y en
+  el teléfono. Es el mismo componente que en Modificar facturación
+  (`components/facturacion/DocumentoParaCliente.jsx`).
+- `dte-para-cliente` v2 acepta `dash_annulment_req` o `ventas`; hoy los dos
+  los tienen los mismos cargos.
+
 ## v2.1307.0 — DTE para el cliente desde la sala: descargar o enviar por correo, aunque sea un COF de la noche
 
 - **Modificar facturación → detalle de la venta → «Documento electrónico».**

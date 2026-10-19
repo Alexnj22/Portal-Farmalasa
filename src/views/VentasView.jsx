@@ -39,6 +39,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { cofNoSeEnviaMh } from '@nucleo/utils/cofNoche';
 import { fetchClientesQueSiempreSeEnvian } from '@nucleo/data/facturacion';
+import DocumentoParaCliente from '../components/facturacion/DocumentoParaCliente';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { filaDeProductoVendido as mapAggRow, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos, DRILL_TIERS, DRILL_TIER_ORDER, detectTier, RELEVANT_CAMPOS, CAMPO_LABELS, fmtCampoVal, lineasDelDrill } from '@nucleo/utils/ventasPeriodo';
 
@@ -821,6 +822,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             </div>
                         </div>
                     </div>
+                )}
+                {/* El DTE para el cliente que lo pide (2026-10-19): descargar o
+                    por correo, y si no tiene sello se envía a Hacienda primero. */}
+                {!CANCELLED_ESTADOS.includes(r.estado) && (
+                    <div className="mt-3"><DocumentoParaCliente inv={r} /></div>
                 )}
             </>
         );

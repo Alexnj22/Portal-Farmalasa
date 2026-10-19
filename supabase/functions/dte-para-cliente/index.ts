@@ -30,7 +30,7 @@
 //
 // ── Quién ───────────────────────────────────────────────────────────────────
 // Quien tiene `dash_annulment_req` (la herramienta «Modificar facturación»
-// de la sala), y sólo sobre ventas de su sala salvo alcance de toda la red.
+// de la sala) o `ventas` (el detalle de la venta en Ventas), y sólo sobre ventas de su sala salvo alcance de toda la red.
 // La sala sale de la factura, no del pedido: no se elige cambiando un número.
 //
 // Ni una línea de esto habla del sistema de origen en lo que ve el usuario.
@@ -72,8 +72,18 @@ Deno.serve(async (req) => {
     // ── Quién ──────────────────────────────────────────────────────────
     const emp = await requireActiveEmployeeUser(req, admin);
     if (!emp) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
-    const permiso = await permisoDeModulo(admin, emp.id, "dash_annulment_req", "can_view");
-    if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+    // El botón vive en las dos pantallas; cualquiera de los dos permisos basta,
+    // y el alcance de red de cualquiera de los dos también.
+    const [pA, pV] = await Promise.all([
+      permisoDeModulo(admin, emp.id, "dash_annulment_req", "can_view"),
+      permisoDeModulo(admin, emp.id, "ventas", "can_view"),
+    ]);
+    if (pA.roto || pV.roto) return json({ ok: false, error: pA.roto || pV.roto }, 503);
+    const permiso = {
+      puede: pA.puede || pV.puede,
+      alcanceTodo: pA.alcanceTodo || pV.alcanceTodo,
+      emp: pA.emp ?? pV.emp,
+    };
     if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para entregar documentos de venta." }, 403);
 
     // ── Qué venta ──────────────────────────────────────────────────────

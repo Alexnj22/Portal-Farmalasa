@@ -133,36 +133,58 @@ const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
 const CLAVE_VISTA = 'puntos_salud_tarjeta_vista';
 let vistaBorrada = false;
 
-// Las medidas del reverso (2026-10-17, «quita el código de todos lados… que
-// el código de barras se vea más integrado en el diseño»). Antes iban el QR
-// con el código escrito al lado y, abajo, una tira blanca de barras de 40–52
-// pt que parecía una etiqueta pegada. El QR no lo lee ningún lector de la
-// sala —son de una dimensión— y el código escrito el cliente no lo necesita:
-// ahora el reverso es la marca arriba, una VENTANA blanca con las barras
-// altas en el centro y una línea de ayuda abajo.
+// El reverso (rehecho el 2026-10-19, «está horrible la card… se ve un gran
+// cuadro blanco con el código de barras; que se integre, estético según cada
+// card, y que siempre lo lea el lector»). Ahora se lee como el reverso de una
+// tarjeta de verdad: banda magnética arriba, el código como la franja de la
+// firma, y la marca con el nivel abajo.
 //
-// De arriba abajo: margen · marca (ENCABEZADO) · aire · ventana (relleno,
-// barras, relleno) · aire · ayuda (AYUDA) · margen. Las barras se llevan todo
-// lo que sobra, hasta el 30 % del ancho: más alto ya no le suma lectura al
-// láser y la tarjeta se vería como un ticket. En un teléfono de 320 pt la
-// tarjeta mide 288 × 181 y las barras salen de 74 pt.
+// Lo que el lector NECESITA, y nada más (lo demás era diseño):
+//   · Barras OSCURAS sobre fondo CLARO. Invertido, muchos lectores no leen.
+//     Pero no tiene que ser negro sobre blanco: la franja se tiñe con el acento
+//     del nivel y las barras van en su tono más oscuro (`tintasDeFranja`), con
+//     un contraste medido —si una combinación no llega, cae a negro y blanco—.
+//   · Zona de silencio clara de 10 módulos a cada lado: va dentro del dibujo,
+//     del mismo tinte que la franja, así que no se ve como un margen.
+//   · Módulo de unos 5 px a 3×: por eso la franja usa ~80 % del ancho. Lo que
+//     sobraba era la ALTURA: Code 128 pide ~15 % del largo, o sea ~36–44 pt,
+//     no los 74 del cuadro anterior.
 const MARGEN_REVERSO = 16;
-const ENCABEZADO = 22;
-const AYUDA = 15;
-const RELLENO_BARRAS = 10;
-const MARCO = 3; // el filo (1) y su separación (2) alrededor de la ventana
+const RELLENO_FRANJA = 7;   // arriba y abajo de las barras, dentro de la franja
+const AYUDA = 14;
+const PIE = 18;             // la marca y el nivel
 function medidasReverso(w, h) {
   const holgada = h >= 215;
-  const mv = holgada ? 16 : 13;
-  const aire = holgada ? 12 : 8;
-  const libre = h - 2 * mv - ENCABEZADO - AYUDA - 2 * aire - 2 * (RELLENO_BARRAS + MARCO);
+  const banda = { top: Math.round(h * 0.09), alto: Math.round(h * 0.17) };
+  const mb = holgada ? 16 : 13;   // margen del pie
   return {
-    mv,
-    barras: Math.max(40, Math.min(Math.round(w * 0.3), Math.floor(libre))),
-    // La ventana lleva el mismo margen a los lados que la tarjeta; adentro, las
-    // barras con su zona de silencio de 10 módulos ya blanca en el dibujo.
-    anchoBarras: Math.floor(w) - 2 * (MARGEN_REVERSO + MARCO + RELLENO_BARRAS),
+    banda, mb,
+    barras: Math.max(34, Math.min(44, Math.round(h * 0.2))),
+    anchoBarras: Math.round(w * 0.8),
+    // El hueco entre la banda y el pie, donde se centra la franja con su ayuda.
+    arriba: banda.top + banda.alto,
+    abajo: mb + PIE,
   };
+}
+
+// Los colores de la franja de cada nivel. El tinte es el acento llevado casi a
+// blanco; la tinta, el tono más oscuro del reverso. Se mide la señal de
+// contraste que usan los lectores, (claro − oscuro) / claro sobre la
+// luminancia: con menos de 0.8 algunos lectores de caja fallan, y entonces se
+// vuelve a negro sobre blanco. Hoy los diez niveles pasan con holgura.
+const aRgb = (hex) => { const h = hex.replace('#', ''); return [0, 2, 4].map((k) => parseInt(h.slice(k, k + 2), 16)); };
+const aHex = (rgb) => '#' + rgb.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+const mezclar = (a, b, t) => aHex(aRgb(a).map((v, k) => v + (aRgb(b)[k] - v) * t));
+const luminancia = (hex) => {
+  const [r, g, b] = aRgb(hex).map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+function tintasDeFranja(paleta) {
+  const tinte = mezclar(paleta.acento, '#FFFFFF', 0.8);
+  const tinta = paleta.reverso[0];
+  const claro = luminancia(tinte);
+  const senal = (claro - luminancia(tinta)) / claro;
+  return senal >= 0.8 ? { tinte, tinta, filo: `${paleta.acento}99` } : { tinte: '#FFFFFF', tinta: '#000000', filo: '#FFFFFF99' };
 }
 
 function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material' }) {
@@ -349,6 +371,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
   // el primer layout.
   const [caja, setCaja] = useState({ w: 0, h: 0 });
   const medidas = useMemo(() => (caja.w > 0 && caja.h > 0 ? medidasReverso(caja.w, caja.h) : null), [caja]);
+  const franja = useMemo(() => tintasDeFranja(paleta), [paleta]);
   // Los dos códigos van juntos (2026-10-15): la elección del selector viejo
   // ya no sirve; se borra una vez, si estaba.
   useEffect(() => {
@@ -583,35 +606,37 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
             : <EfectoPausable nivel={nivel} activa={vivaReverso} x={reversoX} />}
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
           <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
-          {/* El código de barras (2026-10-17): sólo las barras, sin el código
-              escrito ni el QR. Arriba la marca y el nivel —como en el frente,
-              para que el reverso se lea como la misma tarjeta—; al centro una
-              ventana blanca con las barras de borde a borde, enmarcada con el
-              acento del nivel; abajo, para qué sirve. Barras negras puras sobre
-              blanco puro: el láser rojo necesita el mayor contraste posible, y
-              por eso el marco va POR FUERA de la ventana y nada se le pinta
-              encima. Dibujo estático: no se redibuja con el giro. */}
+          {/* La banda magnética: decorado, del tono del nivel, con un brillo
+              que la cruza. Es lo que hace que el reverso se lea como tarjeta. */}
           {medidas ? (
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { paddingHorizontal: MARGEN_REVERSO, paddingVertical: medidas.mv, justifyContent: 'space-between' }]}>
-              <View style={{ height: ENCABEZADO, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Image source={require('../assets/icono.png')} style={{ width: 20, height: 20, tintColor: '#FFFFFF' }} />
-                  <Text maxFontSizeMultiplier={1.15} style={[estilos.marca, { fontSize: 12 }]}>PUNTOS SALUD</Text>
-                </View>
-                <Text maxFontSizeMultiplier={1.15} style={[estilos.socio, { color: paleta.acento }]}>{paleta.rotulo}</Text>
-              </View>
+            <LinearGradient pointerEvents="none" colors={[paleta.reverso[0], mezclar(paleta.reverso[0], paleta.acento, 0.22), paleta.reverso[0]]}
+              locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{ position: 'absolute', left: 0, right: 0, top: medidas.banda.top, height: medidas.banda.alto }} />
+          ) : null}
+          {/* La franja del código (2026-10-19): sin el código escrito ni el QR.
+              Dibujo estático: no se redibuja con el giro. Medidas y colores en
+              `medidasReverso` / `tintasDeFranja`. */}
+          {medidas ? (
+            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top: medidas.arriba, bottom: medidas.abajo, alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
               {codigo ? (
-                <View style={[estilos.marcoBarras, { borderColor: paleta.acento, shadowColor: paleta.acento }]}>
-                  <View style={estilos.ventanaBarras}>
-                    <CodigoBarras value={codigo} ancho={medidas.anchoBarras} alto={medidas.barras} />
-                  </View>
+                <View style={[estilos.franja, { backgroundColor: franja.tinte, borderColor: franja.filo }]}>
+                  <CodigoBarras value={codigo} ancho={medidas.anchoBarras} alto={medidas.barras} color={franja.tinta} backgroundColor={franja.tinte} />
                 </View>
               ) : (
-                <View style={[estilos.ventanaBarras, { height: medidas.barras + 2 * (RELLENO_BARRAS + MARCO), opacity: 0.25 }]} />
+                <View style={[estilos.franja, { width: medidas.anchoBarras, height: medidas.barras + 2 * RELLENO_FRANJA, backgroundColor: franja.tinte, borderColor: franja.filo, opacity: 0.3 }]} />
               )}
               <Text maxFontSizeMultiplier={1.1} numberOfLines={1} style={estilos.ayuda}>
                 {codigo ? 'Muéstrala en caja para usar tus puntos' : 'Tu código estará listo en unos minutos'}
               </Text>
+            </View>
+          ) : null}
+          {medidas ? (
+            <View pointerEvents="none" style={{ position: 'absolute', left: MARGEN_REVERSO, right: MARGEN_REVERSO, bottom: medidas.mb, height: PIE, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Image source={require('../assets/icono.png')} style={{ width: 16, height: 16, tintColor: '#FFFFFF' }} />
+                <Text maxFontSizeMultiplier={1.15} style={[estilos.marca, { fontSize: 11 }]}>PUNTOS SALUD</Text>
+              </View>
+              <Text maxFontSizeMultiplier={1.15} style={[estilos.socio, { color: paleta.acento, fontSize: 10 }]}>{paleta.rotulo}</Text>
             </View>
           ) : null}
         </Animated.View>
@@ -841,15 +866,10 @@ const estilos = StyleSheet.create({
   desde: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', opacity: 0.92, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 9, textShadowOffset: { width: 0, height: 1 } },
   puntos: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', opacity: 0.95, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
-  // El marco: un filo del acento del nivel y su resplandor, por FUERA de la
-  // ventana —nada se pinta sobre las barras—. Las esquinas siguen a las de la
-  // tarjeta (22 − el margen de 16 ≈ 6 + el relleno), así la ventana se lee
-  // como parte del plástico y no como una etiqueta pegada.
-  marcoBarras: {
-    borderRadius: 15, borderWidth: 1, padding: MARCO - 1, backgroundColor: 'rgba(255,255,255,0.10)',
-    shadowOpacity: 0.45, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
-  },
-  ventanaBarras: { backgroundColor: '#FFFFFF', borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: RELLENO_BARRAS },
+  // La franja: sin relleno a los lados (la zona de silencio ya va teñida
+  // dentro del dibujo); un filo del acento, apenas, para que se lea pegada al
+  // plástico y no flotando.
+  franja: { borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden', paddingVertical: RELLENO_FRANJA, alignItems: 'center' },
   ayuda: { color: 'rgba(255,255,255,0.82)', fontSize: 12, lineHeight: AYUDA, height: AYUDA, fontWeight: '600', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
 });
 

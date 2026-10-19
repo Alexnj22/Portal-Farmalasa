@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1304.3 — App de puntos: reverso de la tarjeta como tarjeta de verdad
+
+- El código de barras ya no es un cuadro blanco de 74 pt: el reverso tiene
+  banda magnética arriba, el código como la franja de la firma (~40 pt) y la
+  marca con el nivel abajo. La franja se tiñe con el acento de cada nivel y
+  las barras van en su tono más oscuro; `tintasDeFranja` mide la señal de
+  contraste del lector y, si una combinación bajara de 0.8, vuelve a negro
+  sobre blanco (hoy el mínimo es Plata, 0.969). El ancho del módulo no cambia.
+
 ## v2.1304.2 — Pausa por sucursal del envío a Hacienda (Salud 1 en pruebas fiscales)
 
 - **Nueva tabla `dte_sucursales_en_pausa`.** `regularizar-dte` la lee en los

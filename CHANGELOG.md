@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1308.0 — Cliente Mayorista: candidatos para aprobar a mano, rechazo con motivo, bajada a 15 días y puntos por renglón (apagados)
+
+Frente MAYOREO, según las Condiciones del Cliente Mayorista (vigentes 15-oct-2026). El programa
+no está aprobado todavía: lo que cambia puntos queda detrás de un interruptor APAGADO.
+
+- **Candidatos para decidir a mano.** La pestaña Candidatos de Clientes Mayoristas lista a TODOS
+  los clientes a los que se les vendió a precio Mayoreo o Mayoreo Plus en los últimos 6 meses, más
+  las fichas con «(4)»/«(5)» en el nombre, con lo comprado, las facturas, la última compra y el
+  rango que le tocaría. Quien aprueba los aprueba o no uno por uno, sin solicitud previa y sin nada
+  automático; «No aprobar» no le avisa al cliente y lo saca de la lista (filtro para verlos).
+- **Quién aprueba.** Cualquier cargo admin y quien tenga `can_approve` del módulo: Gerente General
+  no lo tenía. El aviso de solicitud también le llega. Quién decidió y quién propuso se ven con foto
+  y nombre corto, también en el historial.
+- **Rechazo con motivo.** El cliente recibe el aviso con el motivo y la app lo muestra en Cuenta;
+  puede volver a pedirlo sin espera.
+- **Bajar a Mayoreo y retirar rigen a los 15 días** (Condiciones §6), con aviso al cliente al
+  decidirlo, «cancelar el cambio» mientras no rige, y fila en el historial cuando el cron diario lo
+  aplica (antes el retiro se aplicaba sin rastro).
+- **Una sola regla de precio de lista** (`precio_de_lista`) para el catálogo y el cobro de la app:
+  no coincidían cuando el VIP era más alto que la viñeta, y al Plus se le cobraba más que al
+  Mayoreo cuando la columna Plus era más cara.
+- **La sala ve en la reserva que se cobró a precio de mayoreo** (`app_reservas.lista_precio`, badge
+  en el widget de reservas) para facturar a ese mismo precio.
+- **Puntos por renglón para el Cliente Mayorista y el personal**, detrás de
+  `puntos_config.mayoreo_puntos_activo` (apagado). Apagado no cambia nada: medido sobre 30 días de
+  prod, 11,890 facturas y 158,912 puntos idénticos.
+- Migraciones: `20261019225758`, `20261019230026`, `20261019230646`, `20261019230821`.
+- Hace falta desplegar `app-clientes` y `avisos-clientes`.
 ## v2.1307.0 — Recetas y reservas de la app: regla del libro, permiso propio, plazos, lo apartado y saldo a favor
 
 Decisiones del dueño tras la auditoría del 2026-10-19 (frente «recetas y reservas»).

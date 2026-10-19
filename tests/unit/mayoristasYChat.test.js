@@ -30,9 +30,25 @@ describe('Clientes Mayoristas — reglas compartidas', () => {
         expect(accionesDeMayorista({ estado: 'aprobado', retiro_programado: '2026-11-01' }, { puedeAprobar: true }).gestionar).toBe(false);
         expect(accionesDeMayorista({ estado: 'rechazado' }, { puedeProponer: true }).proponer).toBe(true);
     });
+    it('quien aprueba decide a un candidato sin solicitud, y cancela lo avisado (2026-10-19)', () => {
+        expect(accionesDeMayorista({}, { puedeAprobar: true }).decidir).toBe(true);
+        expect(accionesDeMayorista({ estado: 'descartado' }, { puedeAprobar: true }).decidir).toBe(true);
+        expect(accionesDeMayorista({ estado: 'solicitado' }, { puedeAprobar: true }).decidir).toBe(false);
+        expect(accionesDeMayorista({}, { puedeProponer: true }).decidir).toBe(false);
+        expect(accionesDeMayorista({ estado: 'aprobado', precio_programado: 'mayoreo' }, { puedeAprobar: true }).cancelar).toBe(true);
+        expect(accionesDeMayorista({ estado: 'aprobado' }, { puedeAprobar: true }).cancelar).toBe(false);
+    });
+    it('los candidatos esconden a los no aprobados y filtran por «(4)/(5)» en el nombre', () => {
+        const filas = [{ customer_id: 7, estado: 'descartado', cumple: true, a_mayoreo: 1 },
+            { customer_id: 8, cumple: false, precio_en_nombre: 'mayoreo', a_mayoreo: 2 }, { customer_id: 9, cumple: true, a_mayoreo: 3 }];
+        expect(filasDeMayoristas(filas, { tab: 'candidatos', soloCumplen: false }).map((f) => f.customer_id)).toEqual([9, 8]);
+        expect(filasDeMayoristas(filas, { tab: 'candidatos', soloCumplen: false, verDescartados: true }).map((f) => f.customer_id)).toEqual([9, 8, 7]);
+        expect(filasDeMayoristas(filas, { tab: 'candidatos', soloCumplen: false, soloConNombre: true }).map((f) => f.customer_id)).toEqual([8]);
+    });
     it('lee el historial en palabras', () => {
         expect(textoDeAccion({ accion: 'aprobado', precio: 'mayoreo_plus' })).toBe('Aprobado con Mayoreo Plus');
         expect(textoDeAccion({ accion: 'retiro_avisado' })).toBe('Retiro avisado');
+        expect(textoDeAccion({ accion: 'baja_avisada' })).toBe('Bajada a Mayoreo avisada');
     });
 });
 

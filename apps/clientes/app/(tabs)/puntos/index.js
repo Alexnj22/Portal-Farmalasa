@@ -206,7 +206,7 @@ export default function Puntos() {
 
       {/* El nivel: Bronce, Plata, Oro o Platino, y cuánto falta. Justo
           debajo de la tarjeta (usuario, 2026-10-07). */}
-      {/* Cliente Mayorista (modo de prueba): su rango, arriba del nivel de puntos. */}
+      {/* Cliente Mayorista (el aprobado, o el modo de prueba): su rango, arriba del nivel de puntos. */}
       {mayorista ? (
         <Entrada indice={1}>
           <Mayorista rango={mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)} pie={empleado ? <BeneficiosEquipo mayoreo={mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)} /> : null} />

@@ -113,7 +113,8 @@ export const COLORES_NIVEL = {
   platino: { frente: ['#08090C', '#262A33', '#08090C'], reverso: ['#000000', '#16181E'], rotulo: 'PLATINO', sombra: '#000000', acento: '#E8ECF2' },
   // Equipo (empleados): carbono con la franja de la marca.
   empleado: { frente: ['#0B0B0E', '#2A2A30', '#0B0B0E'], reverso: ['#000000', '#16161A'], rotulo: 'EQUIPO', sombra: '#000000', acento: '#E06BC2' },
-  // Cliente Mayorista (2026-10-08, en modo de prueba): sus rangos son piedras,
+  // Cliente Mayorista (2026-10-08; desde el 2026-10-19 también el aprobado, no sólo
+  // el modo de prueba): sus rangos son piedras,
   // cada una con su color — Jade, Zafiro, Rubí y Diamante.
   jade: { frente: ['#06281F', '#1F9E77', '#0B4D3A'], reverso: ['#041A14', '#0B4D3A'], rotulo: 'JADE', sombra: '#0B4D3A', acento: '#8CF5CE' },
   zafiro: { frente: ['#061440', '#2E5BD6', '#0A2470'], reverso: ['#040C2A', '#0A2470'], rotulo: 'ZAFIRO', sombra: '#0A2470', acento: '#A9C2FF' },

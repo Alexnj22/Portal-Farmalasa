@@ -24,6 +24,8 @@ export const ESTADOS = {
     aprobado: { label: 'Mayorista', variant: 'success' },
     rechazado: { label: 'Rechazado', variant: 'danger' },
     retirado: { label: 'Retirado', variant: 'neutral' },
+    // Un candidato que Administración decidió no aprobar (2026-10-19). No se le avisa: no pidió nada.
+    descartado: { label: 'No aprobado', variant: 'neutral' },
 };
 export const ORIGENES = { app: 'Desde la app', sala: 'Propuesto en sala', portal: 'Administración' };
 
@@ -38,7 +40,7 @@ export async function fetchDetalleMayorista(customerId) {
 /** El historial de todos, lo más reciente primero (una tabla chica, sin paginar). */
 export async function fetchHistorialMayoristas(limite = 300) {
     return sinError(await supabase.from('clientes_mayoristas_historial')
-        .select('id, customer_id, accion, estado, precio, origen, nota, created_at, customers(name), employees(name)')
+        .select('id, customer_id, accion, estado, precio, origen, nota, created_at, customers(name), employees(id, name)')
         .order('created_at', { ascending: false }).limit(limite)) ?? [];
 }
 
@@ -46,7 +48,12 @@ export async function proponerMayorista(customerId, precio, nota) {
     return sinError(await supabase.rpc('mayorista_proponer', { p_customer: Number(customerId), p_precio: precio, p_nota: nota ?? '' }));
 }
 
-/** `accion`: 'aprobar' | 'rechazar' | 'cambiar_precio' | 'retirar'. */
+/**
+ * `accion`: 'aprobar' | 'rechazar' | 'descartar' | 'cambiar_precio' | 'retirar' | 'cancelar_cambio'.
+ * 2026-10-19: 'aprobar' vale también para un candidato sin solicitud; 'descartar'
+ * es «no aprobar» a un candidato (sin aviso); bajar a Mayoreo y retirar rigen a
+ * los 15 días (Condiciones §6) y 'cancelar_cambio' los deshace antes.
+ */
 export async function resolverMayorista(customerId, accion, precio, nota) {
     return sinError(await supabase.rpc('mayorista_resolver', {
         p_customer: Number(customerId), p_accion: accion, p_precio: precio ?? null, p_nota: nota ?? '',

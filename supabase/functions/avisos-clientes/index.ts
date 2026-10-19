@@ -16,6 +16,8 @@
 //                   aceptó recibir promociones (es publicidad).
 //   · mayoreo     — (2026-10-09) aprobado como cliente de mayoreo o pasado a
 //                   Mayoreo Plus (inmediato), y subir de rango (diario).
+//                   (2026-10-19) También el rechazo con su motivo, y la bajada
+//                   a Mayoreo o el retiro, que rigen 15 días después.
 //   · receta/chat — (2026-10-12) los escribe la base (`reserva_receta_decidir`,
 //                   `chat_responder`) con `enviado = false`; acá sólo se mandan.
 //                   Igual los de reserva con ref `base:` (2026-10-19:
@@ -206,21 +208,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Mayoreo: aprobado, o pasado de Mayoreo a Mayoreo Plus (2026-10-09) ──
-    // Sale del historial que escribe `mayorista_resolver` (acciones «aprobado»
-    // y «precio_cambiado»), de las últimas 48 h: una aprobación de noche se
+    // ── Mayoreo: aprobado, o pasado de Mayoreo a Mayoreo Plus (2026-10-09);
+    // y desde el 2026-10-19 también el rechazo con su motivo, la bajada a
+    // Mayoreo y el retiro avisados con 15 días (Condiciones §6) ──────────────
+    // Sale del historial que escribe `mayorista_resolver` (acciones «aprobado»,
+    // «precio_cambiado», «rechazado», «baja_avisada» y «retiro_avisado»), de
+    // las últimas 48 h: una aprobación de noche se
     // avisa a la mañana. La llave es la fila del historial. Sólo si sigue
     // aprobado y con ese precio (si lo deshicieron, no se avisa).
     if (inmediato) {
       const { data: hist, error: eH } = await admin.from("clientes_mayoristas_historial")
-        .select("id, customer_id, accion, precio")
-        .in("customer_id", clientes).in("accion", ["aprobado", "precio_cambiado"])
+        .select("id, customer_id, accion, precio, nota")
+        .in("customer_id", clientes).in("accion", ["aprobado", "precio_cambiado", "rechazado", "baja_avisada", "retiro_avisado"])
         .gte("created_at", new Date(Date.now() - 48 * 3600_000).toISOString());
       if (eH) console.error("no se pudo leer el historial de mayoreo:", eH.message);
       if (hist?.length) {
         const ids = [...new Set(hist.map((h: any) => Number(h.customer_id)))];
         const [{ data: vig, error: eVg }, { data: previos, error: ePv }] = await Promise.all([
-          admin.from("clientes_mayoristas").select("customer_id, estado, precio").in("customer_id", ids),
+          admin.from("clientes_mayoristas").select("customer_id, estado, precio, precio_programado, retiro_programado").in("customer_id", ids),
           // El precio que tenía antes de cada cambio: la fila anterior con precio.
           admin.from("clientes_mayoristas_historial").select("id, customer_id, precio")
             .in("customer_id", ids).not("precio", "is", null).order("id", { ascending: true }),
@@ -231,7 +236,38 @@ Deno.serve(async (req) => {
         const NOMBRE_PRECIO: Record<string, string> = { mayoreo: "Mayoreo", mayoreo_plus: "Mayoreo Plus" };
         for (const h of hist as any[]) {
           const v = vigente.get(Number(h.customer_id));
+          // Rechazo (2026-10-19, Condiciones §2.4: «comunica su motivo»): con
+          // el motivo, y sólo si sigue rechazado (si ya lo volvió a pedir, no).
+          // Puede volver a pedirlo sin espera.
+          if (h.accion === "rechazado") {
+            if (v?.estado !== "rechazado") continue;
+            candidatos.push({ customer_id: h.customer_id, tipo: "mayoreo", ref: `mayoreo:${h.id}`,
+              titulo: "Tu solicitud de Cliente Mayorista",
+              cuerpo: `No fue aprobada${h.nota ? `: ${String(h.nota).slice(0, 140)}` : "."} Puedes volver a pedirlo desde Cuenta.`,
+              url: "/cuenta" });
+            continue;
+          }
           if (!v || v.estado !== "aprobado") continue;
+          // Bajada de Mayoreo Plus a Mayoreo y retiro (2026-10-19, §6): rigen 15
+          // días después de este aviso. La nota ya trae el motivo y la fecha
+          // («… · rige el DD/MM/AAAA»), la escribe `mayorista_resolver`. Sólo si
+          // sigue programado: si lo cancelaron antes del envío, no se avisa.
+          if (h.accion === "baja_avisada") {
+            if (!v.precio_programado) continue;
+            candidatos.push({ customer_id: h.customer_id, tipo: "mayoreo", ref: `mayoreo:${h.id}`,
+              titulo: "Cambio en tu precio de mayoreo",
+              cuerpo: `Tu precio pasa de Mayoreo Plus a Mayoreo${h.nota ? `: ${String(h.nota).slice(0, 140)}` : "."}`,
+              url: "/puntos" });
+            continue;
+          }
+          if (h.accion === "retiro_avisado") {
+            if (!v.retiro_programado) continue;
+            candidatos.push({ customer_id: h.customer_id, tipo: "mayoreo", ref: `mayoreo:${h.id}`,
+              titulo: "Tu condición de Cliente Mayorista termina",
+              cuerpo: `${h.nota ? `${String(h.nota).slice(0, 140)}. ` : ""}Conservas tus puntos y vuelves a tener tu nivel de Puntos Salud.`,
+              url: "/puntos" });
+            continue;
+          }
           if (h.accion === "aprobado") {
             candidatos.push({ customer_id: h.customer_id, tipo: "mayoreo", ref: `mayoreo:${h.id}`,
               titulo: "¡Bienvenido a precio de mayoreo! 💎",

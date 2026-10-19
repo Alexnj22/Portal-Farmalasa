@@ -16,6 +16,13 @@ export const textoDeAccion = (h) => ({
     rechazado: 'Rechazado',
     precio_cambiado: `Precio cambiado a ${PRECIO[h.precio] ?? '—'}`,
     retiro_avisado: 'Retiro avisado',
+    // 2026-10-19: no aprobar a un candidato, la bajada a 15 días (§6) y lo que
+    // aplica el cron diario cuando rige.
+    descartado: 'No aprobado (candidato)',
+    baja_avisada: 'Bajada a Mayoreo avisada',
+    precio_bajado: 'Pasó a Mayoreo',
+    retirado: 'Retirado',
+    cambio_cancelado: 'Cambio cancelado',
 }[h.accion] ?? h.accion);
 
 export const ORDENES_MAYORISTAS = [
@@ -31,12 +38,17 @@ export const solicitudesPendientes = (filas) => (filas ?? []).filter((f) => f.es
  * Lo que muestra una pestaña: «solicitudes», «mayoristas» o «candidatos» (los
  * que no son ni lo pidieron; con `soloCumplen`, sólo los que cumplen la
  * cláusula 2.3), con búsqueda por nombre o documento y el orden elegido.
+ * Candidatos (2026-10-19): los «no aprobados» (`descartado`) se esconden salvo
+ * `verDescartados`, y `soloConNombre` deja sólo las fichas con «(4)»/«(5)».
+ * @param {any[]} filas
+ * @param {{ tab?: string, busqueda?: string, soloCumplen?: boolean, orden?: string, verDescartados?: boolean, soloConNombre?: boolean }} [opciones]
  */
-export function filasDeMayoristas(filas, { tab, busqueda = '', soloCumplen = true, orden = 'mayoreo' } = {}) {
+export function filasDeMayoristas(filas, { tab, busqueda = '', soloCumplen = true, orden = 'mayoreo', verDescartados = false, soloConNombre = false } = {}) {
     return (filas ?? [])
         .filter((f) => (tab === 'solicitudes' ? f.estado === 'solicitado'
             : tab === 'mayoristas' ? f.estado === 'aprobado'
-                : f.estado !== 'aprobado' && f.estado !== 'solicitado' && (!soloCumplen || f.cumple)))
+                : f.estado !== 'aprobado' && f.estado !== 'solicitado' && (!soloCumplen || f.cumple)
+                    && (verDescartados || f.estado !== 'descartado') && (!soloConNombre || !!f.precio_en_nombre)))
         .filter((f) => !busqueda || tokenMatch(`${f.nombre ?? ''} ${f.documento ?? ''}`, busqueda))
         .sort((a, b) => (orden === 'promedio' ? b.prom_3m - a.prom_3m
             : orden === 'reciente' ? String(b.ultima_compra ?? '').localeCompare(String(a.ultima_compra ?? ''))
@@ -48,14 +60,20 @@ export function filasDeMayoristas(filas, { tab, busqueda = '', soloCumplen = tru
  * rechazaron o se retiró), resolver su solicitud (quien la hizo no puede: lo
  * frena también la base) o gestionarlo (cambiar precio o retirar) si ya es
  * mayorista y no tiene un retiro avisado.
+ * 2026-10-19: quien aprueba también decide a un candidato directamente
+ * (`decidir`: aprobar o no aprobar, uno por uno, sin solicitud previa), y
+ * `cancelar` deshace un retiro o una bajada avisados que todavía no rigen.
  */
 export function accionesDeMayorista(cliente, { puedeProponer, puedeAprobar, userId }) {
     const est = cliente?.estado;
     const esSolicitante = !!(cliente?.solicitado_por_id && userId && cliente.solicitado_por_id === userId);
+    const libre = !est || est === 'rechazado' || est === 'retirado' || est === 'descartado';
     return {
         esSolicitante,
-        proponer: !!puedeProponer && (!est || est === 'rechazado' || est === 'retirado'),
+        proponer: !!puedeProponer && libre,
+        decidir: !!puedeAprobar && libre,
         resolver: !!puedeAprobar && est === 'solicitado' && !esSolicitante,
         gestionar: !!puedeAprobar && est === 'aprobado' && !cliente?.retiro_programado,
+        cancelar: !!puedeAprobar && est === 'aprobado' && !!(cliente?.retiro_programado || cliente?.precio_programado),
     };
 }

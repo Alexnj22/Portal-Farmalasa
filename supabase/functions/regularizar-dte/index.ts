@@ -183,10 +183,31 @@ Deno.serve(async (req) => {
     const excluidas = new Map<number, string>(
       (exc ?? []).map((e: { invoice_id: number; motivo: string }) => [e.invoice_id, e.motivo]));
 
+    // Sucursales en pausa: lo mismo que la lista negra, pero por SALA. Existe
+    // para las pruebas fiscales (2026-10-19, Salud 1): las facturas de prueba
+    // tienen que quedar tal cual, sin sello, y una lista por factura no
+    // alcanza porque las de mañana todavía no existen. Se aplica a los tres
+    // alcances: el botón de una fila tampoco puede mandarla mientras dure.
+    //
+    // Si la lectura falla, NO se envía nada: sin saber qué sala está en
+    // pausa, mandar es justo lo que se pidió no hacer.
+    const { data: pau, error: ePau } = await admin.from("dte_sucursales_en_pausa")
+      .select("branch_id, motivo");
+    if (ePau) return json({ ok: false, error: `No se pudo leer la pausa por sucursal: ${ePau.message}` }, 503);
+    const pausadas = new Map<number, string>(
+      (pau ?? []).map((p: { branch_id: number; motivo: string }) => [Number(p.branch_id), p.motivo]));
+    const filtroPausa = pausadas.size ? `(${[...pausadas.keys()].join(",")})` : null;
+    if (alcance === "sucursal" && pausadas.has(Number(branch_id)))
+      return json({ ok: false, pausada: true,
+                    error: `Esta sucursal no se envía a Hacienda por ahora: ${pausadas.get(Number(branch_id))}` }, 409);
+
     if (alcance === "una") {
       if (!invoice_id) return json({ ok: false, error: "Falta invoice_id." }, 400);
       const { data } = await admin.from("sales_invoices").select(cols).eq("id", invoice_id).maybeSingle();
       if (!data) return json({ ok: false, error: "Esa factura ya no está en el portal." }, 404);
+      if (pausadas.has(Number(data.branch_id)))
+        return json({ ok: false, pausada: true,
+                      error: `Esta sucursal no se envía a Hacienda por ahora: ${pausadas.get(Number(data.branch_id))}` }, 409);
       if (excluidas.has(Number(invoice_id)))
         return json({ ok: false, excluida: true,
                       error: `Esta factura está excluida del barrido: ${excluidas.get(Number(invoice_id))}` }, 409);
@@ -208,6 +229,7 @@ Deno.serve(async (req) => {
           .like("recibido_mh", SELLO_MH_LIKE)
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
+        else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
         const { data } = await q;
         for (const f of data ?? [])
           if (!excluidas.has(f.id)) pendientes.push({ ...f, bolsa: "anuladas" } as Pendiente);
@@ -218,6 +240,7 @@ Deno.serve(async (req) => {
           .not("estado", "in", '("NULA","DTE INVALIDADO EN MH")')
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
+        else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
         const { data } = await q;
         for (const f of data ?? [])
           if (!excluidas.has(f.id)) pendientes.push({ ...f, bolsa: "sin_sello" } as Pendiente);
@@ -240,6 +263,7 @@ Deno.serve(async (req) => {
         // día— sin serlo.
         : q.or(SIN_SELLO_VALIDO).not("estado", "in", '("NULA","DTE INVALIDADO EN MH")');
       if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
+      else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
       const { count } = await q;
       return count ?? 0;
     };
@@ -257,6 +281,7 @@ Deno.serve(async (req) => {
         // invisibles — el mismo hueco que el `accionable` sin coalesce.
         .or(`recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`);
       if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
+      else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
       const { count } = await q;
       return count ?? 0;
     };
@@ -287,6 +312,9 @@ Deno.serve(async (req) => {
           // se intentan. Se anotan para que no desaparezcan del radar.
           anuladas_sin_tramite: anuladasSinTramite,
           excluidas: excluidas.size,
+          // Salas en pausa: sus facturas no se miraron ni se cuentan en
+          // `total_pendiente`. Se anota para que la pausa no se olvide puesta.
+          sucursales_en_pausa: [...pausadas.keys()],
           ...resumen,
         },
       });

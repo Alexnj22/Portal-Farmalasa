@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1304.2 — Pausa por sucursal del envío a Hacienda (Salud 1 en pruebas fiscales)
+
+- **Nueva tabla `dte_sucursales_en_pausa`.** `regularizar-dte` la lee en los
+  tres alcances: ni el cron de las 22:30 ni los botones «corregir» envían a
+  Hacienda una factura de una sala en pausa (contestan 409 con el motivo). Si
+  la lectura falla, no se envía nada. Las salas en pausa no cuentan en
+  `total_pendiente` y quedan anotadas en la bitácora de cada corrida.
+- **Salud 1 (`branch_id 4`) queda en pausa** por pruebas fiscales: sus
+  facturas se quedan tal cual, sin sello. Para levantarla:
+  `DELETE FROM dte_sucursales_en_pausa WHERE branch_id = 4;`
+
 ## v2.1304.1 — Migración de ingresos con forma de pago y tipos de la base
 
 - Migración `20261017175529_ingreso_forma_de_pago` aplicada en producción y tipos de la base regenerados (`src/types/database.ts`).

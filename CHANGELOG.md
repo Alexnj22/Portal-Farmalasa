@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1305.0 — COF desde las 6 pm no se envía a Hacienda; los CCF se reenvían solos
+
+Decisión del usuario, para todas las sucursales, desde el 2026-10-19.
+
+- **COF emitido de las 6:00 p. m. en adelante: el portal no lo manda nunca.**
+  La regla vive en `public.cof_no_se_envia_mh` y la usan el envío
+  (`regularizar-dte`, gemela en PostgREST), la cola Pendiente MH, el aviso de
+  «ventas seguidas sin sello» y el vigilante de la mañana: no cuenta como
+  pendiente ni dispara avisos. El botón de una fila contesta 409.
+- **Evidencia en Libros IVA → Consumidor final**: total del mes, IVA,
+  desglose por día y sucursal, y CSV documento por documento (con columna de
+  sello). El aviso de «ventas fuera del libro» los nombra aparte
+  (`get_ventas_fuera_del_libro.cof_noche`) en vez de mandarlos a Pendiente MH.
+- **CCF sin sello: se reenvía solo cada 10 minutos** (cron
+  `reenviar-ccf-10min`, 7:00–21:59 SV; la corrida de las 22:30 cubre el resto).
+  `regularizar-dte` con `tipo: 'CCF'` mira sólo CCF de más de 5 minutos, sin
+  nada pendiente no inicia sesión ni escribe bitácora, y anota con
+  `target_id = 'ccf'` para que el vigilante siga mirando sólo la noche.
+- `regularizar-dte` ya no se traga el error de la consulta de pendientes: un
+  filtro que la base rechaza se leía «no hay nada» y no se mandaba nada.
+- ⚠️ Un COF sin sello no entra al libro de ventas (`venta_fiscal`).
+
 ## v2.1304.3 — App de puntos: reverso de la tarjeta como tarjeta de verdad
 
 - El código de barras ya no es un cuadro blanco de 74 pt: el reverso tiene

@@ -83,6 +83,34 @@ const tieneSello = (v: unknown) => typeof v === "string" && v.length === 40;
 // a Hacienda es lo que YA tiene sello y su observación es de otra cosa.
 const SIN_SELLO_VALIDO = `recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`;
 
+// ── COF de las 6 pm en adelante: NO se manda (2026-10-19) ──────────────────
+// Decisión del usuario, para todas las sucursales. Es la gemela de
+// `public.cof_no_se_envia_mh` —la que usan la cola Pendiente MH y los
+// avisos—, escrita en PostgREST porque el filtro tiene que ir en la consulta:
+// filtrar después del `.limit()` dejaría que esos COF, que no se resuelven
+// nunca, llenaran los 60 lugares de cada corrida y taparan a los CCF.
+// Al cambiar una, cambiar la otra.
+//
+// Se escribe por la positiva («sí se manda si…»), con los NULL de cada
+// columna adentro: en SQL la función los da por enviables (`coalesce … false`),
+// y acá `neq` con NULL da NULL y dejaría la fila afuera.
+const COF_SIN_ENVIO_DESDE = "2026-10-19";
+const COF_SIN_ENVIO_HORA = "18:00:00";
+const SE_ENVIA =
+  `tipo_documento.is.null,tipo_documento.neq.COF,fecha.is.null,fecha.lt.${COF_SIN_ENVIO_DESDE},` +
+  `hora.is.null,hora.lt.${COF_SIN_ENVIO_HORA}`;
+/** Sin sello válido Y de las que se mandan. Un solo `or()` para que PostgREST no tenga que juntar dos. */
+const PENDIENTE_DE_ENVIO = `and(or(${SIN_SELLO_VALIDO}),or(${SE_ENVIA}))`;
+const cofNoSeEnvia = (f: { tipo_documento?: string | null; fecha?: string | null; hora?: string | null }) =>
+  f.tipo_documento === "COF" && !!f.fecha && f.fecha >= COF_SIN_ENVIO_DESDE &&
+  !!f.hora && String(f.hora) >= COF_SIN_ENVIO_HORA;
+
+// ── Reintento de CCF cada 10 minutos (2026-10-19) ──────────────────────────
+// `tipo: 'CCF'` lo manda el cron `reenviar-ccf-10min`: sólo CCF sin sello,
+// sólo la bolsa sin sello, y sólo los que llevan más de estos minutos en el
+// portal — el ERP los transmite al emitirlos y no hay que pisarle el envío.
+const GRACIA_CCF_MIN = 5;
+
 interface Pendiente {
   id: number;
   erp_invoice_id: string;
@@ -149,7 +177,12 @@ Deno.serve(async (req) => {
 
   try {
     const cuerpo = await req.json().catch(() => ({}));
-    const { alcance = "todas", invoice_id, branch_id, bolsa, segundaVuelta = false } = cuerpo;
+    const { alcance = "todas", invoice_id, branch_id, segundaVuelta = false } = cuerpo;
+    const soloCcf = cuerpo.tipo === "CCF";
+    // El reintento de CCF es sólo de los que no tienen sello: una anulada se
+    // invalida en la corrida de la noche, como siempre.
+    const bolsa = soloCcf ? "sin_sello" : cuerpo.bolsa;
+    const graciaCcf = new Date(Date.now() - GRACIA_CCF_MIN * 60_000).toISOString();
 
     // ── Quién llama ────────────────────────────────────────────────────
     const esCron = requireInvokeSecret(req);
@@ -171,7 +204,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Qué corregir ───────────────────────────────────────────────────
-    const cols = "id, erp_invoice_id, correlativo, tipo_documento, branch_id, estado, fecha";
+    const cols = "id, erp_invoice_id, correlativo, tipo_documento, branch_id, estado, fecha, hora";
     const pendientes: Pendiente[] = [];
 
     // Lista negra: decisiones explícitas de "no lo intentes". Se aplica ANTES
@@ -208,6 +241,9 @@ Deno.serve(async (req) => {
       if (pausadas.has(Number(data.branch_id)))
         return json({ ok: false, pausada: true,
                       error: `Esta sucursal no se envía a Hacienda por ahora: ${pausadas.get(Number(data.branch_id))}` }, 409);
+      if (cofNoSeEnvia(data))
+        return json({ ok: false, no_se_envia: true,
+                      error: "Los consumidores finales emitidos desde las 6:00 p. m. no se envían a Hacienda." }, 409);
       if (excluidas.has(Number(invoice_id)))
         return json({ ok: false, excluida: true,
                       error: `Esta factura está excluida del barrido: ${excluidas.get(Number(invoice_id))}` }, 409);
@@ -230,18 +266,25 @@ Deno.serve(async (req) => {
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
         else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
-        const { data } = await q;
+        // Un filtro que PostgREST no entiende devuelve error y `data` vacío:
+        // sin mirar el error, eso se lee «no hay nada pendiente» y no se manda.
+        const { data, error: eSel } = await q;
+        if (eSel) return json({ ok: false, error: `No se pudo leer lo pendiente: ${eSel.message}` }, 500);
         for (const f of data ?? [])
           if (!excluidas.has(f.id)) pendientes.push({ ...f, bolsa: "anuladas" } as Pendiente);
       }
       if (bolsa !== "anuladas") {
         let q = admin.from("sales_invoices").select(cols)
-          .or(SIN_SELLO_VALIDO)
+          .or(PENDIENTE_DE_ENVIO)
           .not("estado", "in", '("NULA","DTE INVALIDADO EN MH")')
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
+        if (soloCcf) q = q.eq("tipo_documento", "CCF").lt("created_at", graciaCcf);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
         else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
-        const { data } = await q;
+        // Un filtro que PostgREST no entiende devuelve error y `data` vacío:
+        // sin mirar el error, eso se lee «no hay nada pendiente» y no se manda.
+        const { data, error: eSel } = await q;
+        if (eSel) return json({ ok: false, error: `No se pudo leer lo pendiente: ${eSel.message}` }, 500);
         for (const f of data ?? [])
           if (!excluidas.has(f.id)) pendientes.push({ ...f, bolsa: "sin_sello" } as Pendiente);
       }
@@ -261,10 +304,12 @@ Deno.serve(async (req) => {
         // El conteo usa EXACTAMENTE el mismo filtro que la selección. Si
         // divergen, `restantes` miente y el barrido parece atrasado —o al
         // día— sin serlo.
-        : q.or(SIN_SELLO_VALIDO).not("estado", "in", '("NULA","DTE INVALIDADO EN MH")');
+        : q.or(PENDIENTE_DE_ENVIO).not("estado", "in", '("NULA","DTE INVALIDADO EN MH")');
+      if (bolsaCount === "sin_sello" && soloCcf) q = q.eq("tipo_documento", "CCF").lt("created_at", graciaCcf);
       if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
       else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
-      const { count } = await q;
+      const { count, error: eCnt } = await q;
+      if (eCnt) throw new Error(`No se pudo contar lo pendiente: ${eCnt.message}`);
       return count ?? 0;
     };
 
@@ -282,7 +327,8 @@ Deno.serve(async (req) => {
         .or(`recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`);
       if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
       else if (filtroPausa) q = q.not("branch_id", "in", filtroPausa);
-      const { count } = await q;
+      const { count, error: eCnt } = await q;
+      if (eCnt) throw new Error(`No se pudo contar lo pendiente: ${eCnt.message}`);
       return count ?? 0;
     };
     const anuladasSinTramite = alcance === "una" ? 0 : await contarSinTramite();
@@ -297,7 +343,9 @@ Deno.serve(async (req) => {
     const registrarCorrida = async (resumen: Record<string, unknown>, severity: string) => {
       const { error: auditErr } = await admin.from("audit_logs").insert({
         action:    "DTE_REGULARIZADO",
-        target_id: alcance === "una" ? String(invoice_id) : alcance,
+        // `ccf` y no `todas` para el reintento de cada 10 minutos: el
+        // vigilante de la mañana busca la corrida nocturna por `todas`.
+        target_id: alcance === "una" ? String(invoice_id) : soloCcf ? "ccf" : alcance,
         user_id:   actorId,
         user_name: actorNombre,
         // El barrido de las 22:30 no lo dispara una persona: es del sistema, y
@@ -307,6 +355,7 @@ Deno.serve(async (req) => {
         branch_id: alcance === "sucursal" ? Number(branch_id) : null,
         details: {
           alcance, por: actorNombre,
+          ...(soloCcf ? { modo: "reintento_ccf" } : {}),
           total_pendiente: totalPendiente,
           // Anuladas que Hacienda nunca recibió: no hay nada que invalidar y no
           // se intentan. Se anotan para que no desaparezcan del radar.
@@ -341,7 +390,10 @@ Deno.serve(async (req) => {
         fichas_corregidas: 0, segunda_vuelta_motivo: null,
         detalle: [],
       };
-      await registrarCorrida(sinNadaQueHacer, "INFO");
+      // El reintento de CCF corre 90 veces al día y casi siempre sin nada:
+      // anotar cada vuelta vacía enterraría la bitácora. La noche sí se anota,
+      // porque su vigilante necesita la fila.
+      if (!soloCcf) await registrarCorrida(sinNadaQueHacer, "INFO");
       return json({ ok: true, total_pendiente: totalPendiente,
                     anuladas_sin_tramite: anuladasSinTramite,
                     excluidas: excluidas.size, ...sinNadaQueHacer });
@@ -555,7 +607,8 @@ Deno.serve(async (req) => {
             // UNA factura no puede terminar mandando las de toda la empresa.
             const rEnvio = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
               method: "POST", headers: cab,
-              body: JSON.stringify({ alcance, invoice_id, branch_id, bolsa, segundaVuelta: true }),
+              body: JSON.stringify({ alcance, invoice_id, branch_id, bolsa,
+                                     ...(soloCcf ? { tipo: "CCF" } : {}), segundaVuelta: true }),
               signal: AbortSignal.timeout(120_000),
             });
             const r2 = await rEnvio.json().catch(() => ({}));

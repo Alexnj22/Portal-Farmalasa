@@ -21,12 +21,13 @@ import { ACCESO_DEL_LIBRO, buscarYOrdenarLibro, fmtFecha, soloNumero, csvRetenci
          construirLibro } from '@nucleo/utils/libroIva';
 import {
     fetchAnexoRetencionRenta,
-    fetchVentasFueraDelLibro,
+    fetchVentasFueraDelLibro, fetchCofSinEnvioMh,
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
     fetchNotasCreditoCompras, fetchRetencionVentas, descargarPaqueteDteVenta,
 } from '@nucleo/data/librosIva';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import CofNocheSinEnvio from './CofNocheSinEnvio';
 
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { paqueteDeLibrosIva } from '@nucleo/data/paqueteLibrosIva';
@@ -630,6 +631,9 @@ export default function LibrosIvaView({ openModal }) {
     const [retVentas,     setRetVentas]     = useState([]);
     const [renta,         setRenta]         = useState([]);
     const [fuera,         setFuera]         = useState(null);
+    // Los consumidores finales de las 6 p. m. en adelante, que no se envían a
+    // Hacienda (2026-10-19). Ver `CofNocheSinEnvio`.
+    const [cofNoche,      setCofNoche]      = useState(null);
     const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
@@ -644,7 +648,7 @@ export default function LibrosIvaView({ openModal }) {
     // y el carril puede mostrar el total del período sin importar dónde estés.
     const load = useCallback(async () => {
         setLoading(true);
-        const [c, k, a, co, pe, re, nc, rt, fu, rv] = await Promise.all([
+        const [c, k, a, co, pe, re, nc, rt, fu, rv, cn] = await Promise.all([
             fetchLibroConsumidor(desde, hasta, filterBranch),
             fetchLibroContribuyente(desde, hasta, filterBranch),
             fetchLibroAnulados(desde, hasta, filterBranch),
@@ -658,12 +662,13 @@ export default function LibrosIvaView({ openModal }) {
             fetchAnexoRetencionRenta(desde, hasta),
             fetchVentasFueraDelLibro(desde, hasta, filterBranch),
             fetchRetencionVentas(desde, hasta, filterBranch),
+            fetchCofSinEnvioMh(desde, hasta, filterBranch),
         ]);
         // Un libro que falla NO puede quedar como "no hubo operaciones": un mes
         // vacío por error de red es indistinguible de un mes sin movimiento, y
         // acá eso se declara a Hacienda. Vale doble para Retención y Sujeto
         // Excluido, que salen vacíos aun cuando todo funciona.
-        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error || rt.error || fu.error || rv.error;
+        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error || rt.error || fu.error || rv.error || cn.error;
         setError(fallo ? fallo.message : null);
         setConsumidor(c.data || []);
         setContribuyente(k.data || []);
@@ -675,6 +680,7 @@ export default function LibrosIvaView({ openModal }) {
         setRenta(rt.data || []);
         setFuera((fu.data ?? [])[0] ?? null);
         setRetVentas(rv.data || []);
+        setCofNoche(cn.data ?? null);
         setLoading(false);
     }, [desde, hasta, filterBranch]);
 
@@ -1041,7 +1047,14 @@ export default function LibrosIvaView({ openModal }) {
                         les falta el sello de Hacienda. Se resuelven en Facturación:{' '}
                         {fuera.sin_sello > 0 && <>{fuera.sin_sello} en <strong>Pendiente MH</strong></>}
                         {fuera.sin_sello > 0 && fuera.sello_invalido > 0 && ' y '}
-                        {fuera.sello_invalido > 0 && <>{fuera.sello_invalido} en <strong>Observaciones</strong></>}.
+                        {fuera.sello_invalido > 0 && <>{fuera.sello_invalido} en <strong>Observaciones</strong></>}
+                        {/* Los de la noche no se resuelven en ningún lado: no se
+                            envían por decisión. Se nombran para que la suma de
+                            las partes dé el total del aviso. */}
+                        {fuera.cof_noche > 0 && <>
+                            {(fuera.sin_sello > 0 || fuera.sello_invalido > 0) && '; '}
+                            {fuera.cof_noche} son consumidores finales de después de las 6:00 p. m., que no se envían
+                        </>}.
                     </Notice>
                 )}
 
@@ -1106,6 +1119,12 @@ export default function LibrosIvaView({ openModal }) {
                             </DataRow>
                         ))}
                     </DataTable>
+                )}
+
+                {activeTab === 'consumidor' && (
+                    <CofNocheSinEnvio resumen={cofNoche} loading={loading} mes={mes}
+                        desde={desde} hasta={hasta} filterBranch={filterBranch}
+                        sufijoArchivo={sufijoArchivo} onError={setError} />
                 )}
 
                 {activeTab === 'contribuyente' && (

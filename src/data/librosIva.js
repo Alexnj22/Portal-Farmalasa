@@ -153,3 +153,15 @@ export function fetchVentasFueraDelLibro(desde, hasta, branchId) {
         p_branch_id: branchId ? Number(branchId) : null,
     });
 }
+
+// Los consumidores finales emitidos desde las 6:00 p. m., que no se envían a
+// Hacienda por decisión (2026-10-19): total, desglose por día y sucursal, y
+// con `detalle` el documento por documento para el CSV. Un JSON, así que el
+// tope de 1000 filas no recorta la evidencia.
+export function fetchCofSinEnvioMh(desde, hasta, branchId, detalle = false) {
+    return supabase.rpc('get_cof_sin_envio_mh', {
+        p_desde: desde, p_hasta: hasta,
+        p_branch_id: branchId ? Number(branchId) : null,
+        p_detalle: detalle,
+    });
+}

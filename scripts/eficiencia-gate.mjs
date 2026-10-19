@@ -626,6 +626,13 @@ const CRONS = [
     job: 'check-sync-health-alerts-20min', slug: 'check-sync-health-alerts', cadencia: '*/20 12-23,0-5 * * *',
     corridasDia: 54, sistema: 0, motivo: 'Mira la base, no el sistema.',
   },
+  {
+    // 7:00–21:59 SV: la corrida de las 22:30 cubre lo que queda, y correr las
+    // dos a la vez pondría dos envíos sobre la misma sesión del sistema.
+    job: 'reenviar-ccf-10min', slug: 'regularizar-dte', cadencia: '*/10 13-23,0-3 * * *',
+    corridasDia: 90, sistema: 0,
+    motivo: 'Sin un CCF sin sello de más de 5 min no toca el sistema: no inicia sesión, es una consulta a la base. Con uno, ~5 peticiones al sistema por CCF, y es el caso que se quiere.',
+  },
   // ── Los diarios, semanales y mensuales ─────────────────────────────────────
   // Su volumen es irrelevante para el presupuesto (una corrida por día o menos),
   // pero están declarados igual: lo que el gate cuida en ellos es que SIGAN

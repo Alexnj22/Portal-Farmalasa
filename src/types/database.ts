@@ -11978,6 +11978,35 @@ export type Database = {
         }
         Relationships: []
       }
+      dte_sucursales_en_pausa: {
+        Row: {
+          branch_id: number
+          created_at: string
+          motivo: string
+          pausada_por: string | null
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          motivo: string
+          pausada_por?: string | null
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          motivo?: string
+          pausada_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dte_sucursales_en_pausa_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       education_catalog_entries: {
         Row: {
           category: string
@@ -27448,6 +27477,10 @@ export type Database = {
         Args: { p_branch: number; p_fecha: string; p_hasta: string }
         Returns: number
       }
+      cof_no_se_envia_mh: {
+        Args: { p_fecha: string; p_hora: string; p_tipo: string }
+        Returns: boolean
+      }
       cola_espejo_portal_erp: { Args: { p_limite?: number }; Returns: Json }
       compactar_busqueda: { Args: { p: string }; Returns: string }
       completar_dispensacion: {
@@ -28887,6 +28920,15 @@ export type Database = {
       get_clasificacion_fiscal_pendiente: { Args: never; Returns: Json }
       get_clientes_por_revisar: {
         Args: { p_familia?: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_cof_sin_envio_mh: {
+        Args: {
+          p_branch_id?: number
+          p_desde: string
+          p_detalle?: boolean
+          p_hasta: string
+        }
         Returns: Json
       }
       get_consecutive_mh_alerts: {
@@ -30350,6 +30392,7 @@ export type Database = {
       get_ventas_fuera_del_libro: {
         Args: { p_branch_id?: number; p_desde: string; p_hasta: string }
         Returns: {
+          cof_noche: number
           documentos: number
           monto: number
           sello_invalido: number

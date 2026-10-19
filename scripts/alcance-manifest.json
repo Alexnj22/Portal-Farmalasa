@@ -13,6 +13,9 @@
       "guarda": "sin-sala",
       "motivo": "Analiza datos que manda el navegador; no lee la base por sala."
     },
+    "dte-para-cliente": {
+      "guarda": "alcance"
+    },
     "anotar-vales-caja": {
       "guarda": "alcance"
     },

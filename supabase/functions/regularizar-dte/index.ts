@@ -258,7 +258,10 @@ Deno.serve(async (req) => {
       if (pausadas.has(Number(data.branch_id)))
         return json({ ok: false, pausada: true,
                       error: `Esta sucursal no se envía a Hacienda por ahora: ${pausadas.get(Number(data.branch_id))}` }, 409);
-      if (cofNoSeEnvia(data, siempre))
+      // `forzar_cof_noche`: el cliente pidió su documento en la sala
+      // (`dte-para-cliente`, 2026-10-19). Sólo se le acepta al servidor: desde
+      // el navegador nadie puede saltarse la regla con un parámetro.
+      if (cofNoSeEnvia(data, siempre) && !(esCron && cuerpo.forzar_cof_noche === true))
         return json({ ok: false, no_se_envia: true,
                       error: "Los consumidores finales emitidos desde las 6:00 p. m. no se envían a Hacienda." }, 409);
       if (excluidas.has(Number(invoice_id)))

@@ -7,6 +7,8 @@ import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { anotar, conBitacora } from './audit';
 import { NO_ES_COF_NOCHE } from '../utils/cofNoche';
+import { registrarEgreso } from './egreso';
+import { descargarArchivo } from '@plataforma/descargas';
 // Las listas de «ya resuelto» (anulaciones, pagos confirmados, observaciones)
 // crecen para siempre y se usan para RESTAR de las colas: cortadas en 1000,
 // lo resuelto después de la fila 1000 volvería a aparecer como pendiente, sin
@@ -54,6 +56,51 @@ export async function regularizarDte({ alcance, invoiceId = null, branchId = nul
         let detalle = '';
         try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
         return { ok: false, error: detalle || error.message };
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
+// ── El documento electrónico para el cliente que lo pide (2026-10-19) ───────
+// Lo arma la edge function `dte-para-cliente`: si la venta no tiene sello la
+// manda a Hacienda en ese momento —también el COF de después de las 6:00 p. m.,
+// que por regla no se envía, porque el documento es del cliente— y devuelve el
+// PDF y el JSON. `accion: 'descargar'` baja un ZIP; `'correo'` lo envía.
+//
+// Nunca lanza: devuelve `{ ok, se_envio }` o `{ ok:false, error }`.
+let zipPromise = null;
+function getZipLib() {
+    if (!zipPromise) {
+        zipPromise = import('client-zip')
+            .catch(err => { zipPromise = null; throw err; });  // reintentar, no quedar roto
+    }
+    return zipPromise;
+}
+
+export async function entregarDteAlCliente({ accion, invoiceId, correo = null }) {
+    try {
+        const { data, error } = await supabase.functions.invoke('dte-para-cliente', {
+            body: { accion, invoice_id: invoiceId, correo },
+        });
+        if (error) {
+            let detalle = '';
+            try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+            return { ok: false, error: detalle || error.message };
+        }
+        if (!data?.ok) return { ok: false, error: data?.error || 'El servidor no devolvió respuesta.' };
+        if (accion === 'descargar') {
+            const { downloadZip } = await getZipLib();
+            const entradas = (data.archivos || []).map(a => ({
+                name: a.nombre,
+                input: new Blob([Uint8Array.from(atob(a.base64), c => c.charCodeAt(0))], { type: a.tipo }),
+            }));
+            const blob = await downloadZip(entradas).blob();
+            const base = (data.archivos?.[0]?.nombre || 'documento').replace(/\.[^.]+$/, '');
+            descargarArchivo(blob, `${base}.zip`);
+            registrarEgreso('dte_venta', { formato: 'zip', filas: entradas.length, detalle: { invoice_id: invoiceId, para: 'cliente' } });
+        }
+        anotar(accion === 'correo' ? 'DTE_CLIENTE_CORREO' : 'DTE_CLIENTE_DESCARGA', invoiceId, { se_envio: !!data.se_envio });
+        return { ok: true, se_envio: !!data.se_envio };
     } catch (e) {
         return { ok: false, error: e?.message || String(e) };
     }

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1307.0 — DTE para el cliente desde la sala: descargar o enviar por correo, aunque sea un COF de la noche
+
+- **Modificar facturación → detalle de la venta → «Documento electrónico».**
+  El dependiente lo pide directo, sin solicitud: **Descargar** baja un ZIP con
+  el PDF y el JSON, **Correo** se lo manda al cliente con los dos adjuntos.
+- Si la venta no tiene sello, se envía a Hacienda en ese momento —también el
+  COF de después de las 6:00 p. m., que por regla no se envía—, porque el
+  documento es del cliente por ley. El JSON se entrega sólo si trae el sello
+  de 40.
+- Edge function nueva `dte-para-cliente` (verify_jwt ON): permiso
+  `dash_annulment_req` y sólo ventas de la propia sala salvo alcance de red;
+  tope de 40 correos por persona al día. `regularizar-dte` v30 acepta
+  `forzar_cof_noche`, sólo del servidor.
+- Cada entrega queda en `dte_entregas_cliente` (quién, cuándo, correo, si fue
+  la que la mandó a Hacienda), anotada antes del correo.
+
 ## v2.1306.2 — Mapfre y la Diócesis: su COF de la noche sí se envía a Hacienda
 
 - Excepción a la regla de las 6:00 p. m.: los COF de MAPFRE SEGURO EL

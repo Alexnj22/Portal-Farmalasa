@@ -699,11 +699,11 @@ export const AREAS = [
             'src/views/MisPuntosView.jsx', 'src/data/misPuntos.js',
         ],
         tablas: ['customers', 'customers_changelog', 'customer_activity', 'clientes_por_revisar',
-                 'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido', 'dte_sucursales_en_pausa', 'dte_clientes_siempre_se_envian',
+                 'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido', 'dte_sucursales_en_pausa', 'dte_clientes_siempre_se_envian', 'dte_entregas_cliente',
                  'dte_datos_pedidos',
                  'dte_mh_intentos', 'sales_dte_documents', 'espejo_conflictos',
                  'puntos_consulta_intentos', 'dte_rechazos_avisados'],
-        edge: ['regularizar-dte', 'sincronizar-fichas-clientes', 'push-cliente-erp',
+        edge: ['regularizar-dte', 'dte-para-cliente', 'sincronizar-fichas-clientes', 'push-cliente-erp',
                'aplicar-solicitud-facturacion', 'sync-sales-dte', 'sync-numero-control',
                'backfill-dte-related-docs', 'leer-dte-json', 'mis-puntos',
                // La dispara una sala desde Inicio, pero el EFECTO es fiscal:

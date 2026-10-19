@@ -693,6 +693,7 @@ export const AREAS = [
             'src/utils/dteIva.js', 'src/utils/dtePdfCodigo.js', 'src/utils/dteTypes.js',
             'src/utils/svCatalogs.js',
             'src/components/forms/FormClienteDetail.jsx', 'src/components/forms/FormSalesDteViewer.jsx',
+            'src/components/facturacion/', 'src/utils/cofNoche.js',
             'scripts/migracion-clientes/',
             // La pantalla del CLIENTE, sin sesión. Va acá y no en Ventas porque
             // lo que muestra es el dato de una persona, y su puerta es la ficha.

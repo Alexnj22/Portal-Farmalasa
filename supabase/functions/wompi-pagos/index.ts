@@ -74,13 +74,16 @@ Deno.serve(async (req) => {
     const q = new URL(req.url).searchParams;
     const identificador = q.get("identificadorEnlaceComercio") ?? q.get("ref") ?? "";
     const idTransaccion = q.get("idTransaccion") ?? "";
-    let r: { ok?: boolean; motivo?: string } = { ok: false, motivo: "incompleto" };
+    let r: { ok?: boolean; motivo?: string; prueba?: boolean } = { ok: false, motivo: "incompleto" };
     try {
       if (idTransaccion) r = await confirmar(admin, identificador, idTransaccion);
     } catch (e) {
       console.error("[wompi] vuelta:", (e as Error)?.message ?? e);
     }
-    const html = r?.ok
+    // Un cobro de PRUEBA (2026-10-19) no es dinero: se dice, y la sala lo cobra en caja.
+    const html = r?.ok && r?.prueba
+      ? pagina("Pago de prueba", "Este cobro fue de prueba: no se cargó dinero. Pagas al retirar en la sucursal.")
+      : r?.ok
       ? pagina("¡Pago recibido!", "Tu reserva ya figura como pagada.")
       : pagina("Volviendo a la app", "Si completaste el pago, tu reserva se actualiza en unos segundos.");
     return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });

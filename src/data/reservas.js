@@ -42,6 +42,15 @@ export async function decidirReceta(id, decision, motivo = null) {
 /** Las horas que una receta lleva esperando: a las 4 se avisa a supervisión. */
 export const HORAS_RECETA_URGENTE = 4;
 
+/**
+ * Los plazos de una reserva de la app (2026-10-19, `reservas_vencer`): sin la
+ * foto de la receta vence a las 24 h; con la foto sin revisar, a las 48 h de
+ * subida; aprobada o sin receta, la sala tiene 48 h para prepararla.
+ */
+export const HORAS_SIN_FOTO = 24;
+export const HORAS_RECETA_SIN_REVISAR = 48;
+export const HORAS_PARA_PREPARAR = 48;
+
 export async function marcarAvisadaPorWhatsapp(id) {
     sinError(await supabase.rpc('reserva_avisada_whatsapp', { p_id: id }));
 }
@@ -119,7 +128,38 @@ export async function guardarAjustesEnvio({ activo, costo, gratisDesde, nota }, 
     if (!filas?.length) throw new Error('No tienes permiso para cambiar el envío a domicilio.');
 }
 
-/** El anticipo de una reserva vencida queda a favor 30 días: la sala lo marca al aplicarlo en caja. */
+/**
+ * El saldo a favor (anticipo de una reserva vencida, o lo pagado en línea que
+ * no se entregó) se aplica en caja de CUALQUIER sala (2026-10-19): la sala lo
+ * marca al usarlo y queda anotada.
+ */
 export async function usarSaldoAFavor(id) {
     return sinError(await supabase.rpc('reserva_usar_saldo_favor', { p_id: Number(id) }));
+}
+
+/**
+ * Devolver en dinero un saldo a favor (2026-10-19): sólo administración
+ * (`dash_reservas_devolver_saldo`), con motivo. La devolución se hace afuera;
+ * acá queda quién la autorizó, cuándo, cuánto y por qué, y el saldo deja de
+ * estar disponible. La base lo rechaza sin el permiso.
+ */
+export async function devolverSaldoAFavor(id, motivo) {
+    return sinError(await supabase.rpc('reserva_saldo_devolver', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));
+}
+
+/**
+ * Un saldo a favor por el código que el cliente muestra (R-… o P-…), de
+ * cualquier sala (2026-10-19): se usa en cualquier sucursal.
+ */
+export async function buscarSaldoAFavor(codigo) {
+    return sinError(await supabase.rpc('saldo_favor_buscar', { p_codigo: String(codigo ?? '').trim() })) ?? [];
+}
+
+/**
+ * La receta aprobada en la app para un renglón del libro bajo receta
+ * (2026-10-19): misma ficha y producto, aprobada en los 60 días previos. Trae
+ * la ruta de la foto (bucket privado de la app), quién la aprobó y cuándo.
+ */
+export async function recetaDeLaAppParaDispensacion(dispensacionId) {
+    return sinError(await supabase.rpc('receta_app_de_dispensacion', { p_dispensacion_id: Number(dispensacionId) })) ?? [];
 }

@@ -191,6 +191,9 @@ export default function Carrito() {
       // La confirmación va ANTES de vaciar y de abrir el cobro (2026-10-12): al
       // volver del pago se veía «Tu carrito está vacío» mientras se verificaba.
       const conCobro = pagoReal === 'en_linea' && !!r.pago?.url;
+      // Un cobro de PRUEBA (2026-10-19, lo dice el servidor) no es dinero: se
+      // paga al retirar, y la confirmación lo dice.
+      base.prueba = conCobro && !!r.pago?.prueba;
       setHecho({ ...base, verificando: conCobro });
       vaciar();
       useCuenta.getState().cargar({ forzar: true }).catch(() => {});
@@ -203,7 +206,7 @@ export default function Carrito() {
         for (let i = 0; i < 4; i++) {
           const mr = await pedir('mis_reservas');
           const delPedido = (mr?.reservas ?? []).filter((x) => x.pedido === r.pedido);
-          if (delPedido.length && delPedido.every((x) => x.pago_estado === 'pagado')) { base.pagado = true; break; }
+          if (delPedido.length && delPedido.every((x) => x.pago_estado === 'pagado')) { base.pagado = !base.prueba; break; }
           await new Promise((ok) => setTimeout(ok, 1500));
         }
       } else if (pagoReal === 'en_linea') {
@@ -242,7 +245,7 @@ export default function Carrito() {
             sala: hecho.sala, pedido: true, productos: hecho.productos, total: hecho.total, pagado: !!hecho.pagado, receta: !!hecho.receta,
           }} />
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>
-            Total: {dolares(hecho.total)} · {hecho.pagado ? 'pagado' : hecho.verificando ? 'confirmando el pago…' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : hecho.domicilio ? 'pagas al recibir' : 'pagas al retirar'}
+            Total: {dolares(hecho.total)} · {hecho.prueba ? 'cobro de prueba: pagas al retirar' : hecho.pagado ? 'pagado' : hecho.verificando ? 'confirmando el pago…' : hecho.enLinea ? 'pago pendiente (puedes pagarlo en Mis reservas)' : hecho.domicilio ? 'pagas al recibir' : 'pagas al retirar'}
           </Text>
         </Tarjeta>
         <Boton alTocar={() => { setHecho(null); navegar('/reservas'); }}>Ver mis reservas</Boton>

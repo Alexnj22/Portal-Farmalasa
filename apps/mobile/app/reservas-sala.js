@@ -18,7 +18,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, usarSaldoAFavor, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
-import { pilaDelCliente, reservasAbiertas, reservasPendientes, reservasPorCodigo, resumenDelPedido, saldosAFavor } from '@nucleo/utils/reservasDeSala';
+import { esPagoDePrueba, pilaDelCliente, reservasAbiertas, reservasPendientes, reservasPorCodigo, resumenDelPedido, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
@@ -190,14 +190,16 @@ export default function ReservasDeSala() {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
                   {enRevision && r.receta_estado === 'otra_foto' ? <Pildora texto="Esperando nueva foto del cliente" color={MARCA.azulClaro} /> : null}
-                  {r.pago_estado === 'pagado' ? <Pildora texto={r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'} color={MARCA.verde} /> : null}
+                  {/* (2026-10-19) Un cobro en línea de PRUEBA no es dinero: se cobra en caja. */}
+                  {esPagoDePrueba(r) ? <Pildora texto="PAGO DE PRUEBA — cobrar en caja" color={MARCA.rojo} />
+                    : r.pago_estado === 'pagado' ? <Pildora texto={r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'} color={MARCA.verde} /> : null}
                   {r.pago_estado === 'anticipo' && Number(r.anticipo) > 0 ? <Pildora texto={`Anticipo ${formatMoney(Number(r.anticipo))} · saldo ${formatMoney(Number(r.precio ?? 0) * Number(r.cantidad ?? 1) - Number(r.anticipo))}`} color={MARCA.ambar} /> : null}
                   {r.documento === 'credito_fiscal' ? <Pildora texto="Crédito fiscal" color={MARCA.azulClaro} /> : null}
                 </View>
                 {urgente ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>{`Lleva más de ${HORAS_RECETA_URGENTE} h: ya se avisó a supervisión.`}</Text> : null}
                 {enRevision && r.receta_estado === 'otra_foto' && r.receta_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Se pidió otra foto: ${r.receta_motivo}`}</Text> : null}
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {enRevision ? (r.receta_ruta ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} /> : null) : r.estado === 'pendiente' ? <Accion texto="Apartar y avisar" color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} /> : (
+                  {enRevision ? (r.receta_ruta && r.puede_revisar_receta ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} /> : null) : r.estado === 'pendiente' ? <Accion texto="Apartar y avisar" color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} /> : (
                     <>
                       {!r.tiene_app ? <Accion texto="WhatsApp" onPress={() => avisarPorWhatsapp(r)} /> : null}
                       <Accion texto="Retirada" color={MARCA.verde} onPress={() => mover(r, 'retirada')} deshabilitado={!!ocupada} />

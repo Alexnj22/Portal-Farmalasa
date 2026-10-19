@@ -108,6 +108,8 @@ function Carrito() {
     if (!r?.ok) { setDeSalas(null); setErrorSalas(true); return; }
     setEnvioCfg(r.envio ?? null);
     setRecetaIds(new Set((r.receta_ids ?? []).map(Number)));
+    // En UNIDADES, por producto (2026-10-19). Un servidor viejo no lo manda.
+    setHabitual(r.habitual ?? null);
     const hay = new Map();
     for (const e of r.existencias) hay.set(`${e.product_id}|${e.branch_id}`, Number(e.cantidad));
     // Un servidor viejo no manda `alcance`: entonces vale «hay» o no, como antes.
@@ -152,11 +154,22 @@ function Carrito() {
   // toma en la PRIMERA línea y se suelta al terminar.
   const tocando = useRef(false);
   const enviandoYa = useRef(false);
-  const reservar = async () => {
+  /* La cantidad es libre, pero lo que pasa de lo habitual se pregunta
+   * (decisión del usuario, 2026-10-19). `habitual` está en unidades: se
+   * compara con cantidad × factor de la presentación. */
+  const [habitual, setHabitual] = useState(null);
+  const inusuales = items.filter((x) => habitual && x.cantidad * (Number(x.factor) || 1) > Number(habitual[x.id] ?? 5));
+  const reservar = async (confirmada = false) => {
     if (tocando.current) return;
     tocando.current = true;
     try {
       if (enviando || !sala) return;
+      if (!confirmada && inusuales.length) {
+        Alert.alert('¿Las cantidades son correctas?',
+          `${inusuales.map((x) => `${x.cantidad} × ${nombreProducto(x.nombre)}`).join('\n')}\n\nEs más de lo que se lleva normalmente de ${inusuales.length === 1 ? 'este producto' : 'estos productos'}.`,
+          [{ text: 'Cambiar', style: 'cancel' }, { text: 'Sí, son correctas', onPress: () => { tocando.current = false; reservar(true); } }]);
+        return;
+      }
       if (problemaFiscal) { Alert.alert('Faltan datos del crédito fiscal', problemaFiscal); return; }
       if (faltaDireccion) { Alert.alert('Falta la dirección', 'Escribe la dirección completa, con una referencia para encontrarte.'); return; }
       if (pendiente) { Alert.alert('Falta completar tu registro', 'Completa tu registro en cualquier sucursal para reservar.'); return; }
@@ -419,7 +432,7 @@ function Carrito() {
 
       {conReceta ? <RecetaFoto foto={fotoReceta} alCambiar={setFotoReceta} /> : null}
 
-      <Boton alTocar={reservar} cargando={enviando} deshabilitado={!sala || !!problemaFiscal || faltaDireccion || (conReceta && !fotoReceta?.uri)}>
+      <Boton alTocar={() => reservar()} cargando={enviando} deshabilitado={!sala || !!problemaFiscal || faltaDireccion || (conReceta && !fotoReceta?.uri)}>
         {conReceta ? 'Enviar para revisión' : faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : aDomicilio ? 'Pedir · pagar al recibir' : 'Reservar · pagar al retirar'}
       </Boton>
 

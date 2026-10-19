@@ -19,7 +19,8 @@
 // foto y la sucursal decide. Si la subida falla, la reserva queda igual y la
 // foto se sube desde Mis reservas.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, View } from 'react-native';
+import { MAX_UNIDADES } from '../lib/carrito';
 import Presionable from './Presionable';
 import { Seccion } from './ui';
 import * as Haptics from 'expo-haptics';
@@ -64,6 +65,8 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
   const [error, setError] = useState(null);
   const [hecha, setHecha] = useState(null);
   const [receta, setReceta] = useState(false);
+  // Cuántas se piden de lo normal (2026-10-19): arriba de eso se pregunta.
+  const [habitual, setHabitual] = useState(5);
   const [fotoReceta, setFotoReceta] = useState(null);
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
@@ -81,6 +84,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
       const lista = (ex?.sucursales ?? []).filter((s) => !oferta.salas || oferta.salas.includes(s.sala));
       setSucursales(lista);
       setReceta(!!ex?.receta);
+      setHabitual(Number(ex?.habitual) || 5);
       setSala(lista.find((s) => s.nivel !== 'sin')?.branch_id ?? lista[0]?.branch_id ?? null);
       // Sin condiciones o sin sucursales no se puede reservar: se dice y se
       // ofrece reintentar (antes la hoja podía quedar en blanco).
@@ -95,9 +99,18 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
     await SecureStore.setItemAsync(CLAVE_TERMINOS, terminos.version).catch(() => {});
     setPaso('elegir');
   };
-  const reservar = async () => {
+  const reservar = async (confirmada = false) => {
     if (enviando || !sala) return;
     if (receta && !fotoReceta?.uri) { setError('Agrega la foto de tu receta para continuar.'); return; }
+    /* La cantidad es libre, pero si no es la habitual se pregunta (decisión
+     * del usuario, 2026-10-19): un dedo de más en «+» aparta unidades que
+     * otro cliente no va a encontrar. No frena: el cliente confirma. */
+    if (!confirmada && cantidad > habitual) {
+      Alert.alert('¿La cantidad es correcta?',
+        `Vas a reservar ${cantidad} unidades. Lo habitual para este producto es hasta ${habitual}.`,
+        [{ text: 'Cambiar', style: 'cancel' }, { text: `Sí, reservar ${cantidad}`, onPress: () => reservar(true) }]);
+      return;
+    }
     setEnviando(true);
     setError(null);
     const r = await pedir('reservar', {
@@ -206,7 +219,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                 <Paso texto="−" deshabilitado={cantidad <= 1} alTocar={() => setCantidad((c) => Math.max(1, c - 1))} />
                 <Text style={{ fontSize: 20, fontWeight: '800', minWidth: 24, textAlign: 'center', color: colorSistema.texto }}>{cantidad}</Text>
-                <Paso texto="+" deshabilitado={cantidad >= 5} alTocar={() => setCantidad((c) => Math.min(5, c + 1))} />
+                <Paso texto="+" deshabilitado={cantidad >= MAX_UNIDADES} alTocar={() => setCantidad((c) => Math.min(MAX_UNIDADES, c + 1))} />
               </View>
             </View>
 
@@ -227,7 +240,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             ) : null}
             {receta ? <RecetaFoto foto={fotoReceta} alCambiar={(f) => { setFotoReceta(f); setError(null); }} superficie={superficie} /> : null}
             {error ? <Text style={{ fontSize: 15, color: colorSistema.rojo, textAlign: 'center' }}>{error}</Text> : null}
-            <Boton texto={enviando ? (receta ? 'Enviando…' : 'Reservando…') : receta ? 'Enviar para revisión' : 'Reservar'} color={t.color.magenta} alTocar={reservar}
+            <Boton texto={enviando ? (receta ? 'Enviando…' : 'Reservando…') : receta ? 'Enviar para revisión' : 'Reservar'} color={t.color.magenta} alTocar={() => reservar()}
               deshabilitado={!sala || enviando || (receta && !fotoReceta?.uri)} />
             <Text style={{ fontSize: 13, color: colorSistema.texto3, textAlign: 'center' }}>Pagas en la sucursal al retirar. Si no puedes ir tú, puedes compartir el código de la reserva con quien la vaya a retirar.</Text>
           </ScrollView>

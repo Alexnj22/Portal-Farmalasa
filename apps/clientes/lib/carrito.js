@@ -8,7 +8,10 @@ import { guardar as guardarEnAlmacen, leer as leerDelAlmacen } from './almacen';
 
 const CLAVE = 'puntos_salud_carrito';
 export const MAX_PRODUCTOS = 10;
-export const MAX_UNIDADES = 5;
+// Era 5 hasta el 2026-10-19: la cantidad pasó a ser libre (decisión del
+// usuario) y lo «no habitual» se le pregunta al cliente al reservar. Esto es
+// sólo una red contra un número absurdo.
+export const MAX_UNIDADES = 99;
 
 // Vive en `almacen` (archivos) desde el 2026-10-15: en SecureStore cada toque
 // de «+» reescribía el carrito entero cifrado, y uno lleno pasaba su tope de

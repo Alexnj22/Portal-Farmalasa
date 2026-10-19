@@ -100,17 +100,23 @@ const TERMINOS_RESERVA = {
   // vuelve a pedir la aceptación la próxima vez que se reserve.
   // 2026-10-12: los productos bajo receta YA se reservan, con foto de la receta
   // que revisa la sucursal antes de confirmar.
-  version: "2026-10-12",
+  // 2026-10-19: sin tope de unidades; el tope de 3 activas es sólo para las
+  // reservas sin pagar; y los plazos de la receta y de preparación, y el saldo
+  // a favor de lo pagado en línea, que la base aplica desde la migración
+  // 20261019230641 (decisiones del usuario, unidas en una sola versión).
+  version: "2026-10-19",
   titulo: "Así funciona tu reserva",
   puntos: [
     "Por ahora puedes reservar productos que estén en oferta.",
-    "Te avisamos cuando la sucursal la tenga lista. Desde ese aviso tienes 24 horas para retirarla.",
+    "La sucursal tiene 48 horas para preparar tu reserva. Te avisamos cuando esté lista y desde ese aviso tienes 24 horas para retirarla.",
+    "Si la sucursal no alcanza a revisar tu receta o a preparar tu reserva a tiempo, la reserva vence y no cuenta en tu contra.",
     "El precio de oferta vale si la retiras dentro de las fechas de la oferta.",
-    "Puedes tener hasta 3 reservas activas y hasta 5 unidades por producto.",
+    "Puedes tener hasta 3 reservas sin pagar al mismo tiempo. Las que pagas en línea no tienen límite.",
+    "Puedes reservar las unidades que necesites. Si la cantidad no es la habitual para ese producto, te preguntamos si es correcta antes de reservar.",
     "Si no la retiras a tiempo, el producto vuelve a la venta. Con 3 reservas sin retirar en 30 días, no podrás reservar por 30 días.",
-    "Los productos bajo receta se reservan con una foto de tu receta. La sucursal la revisa y, cuando la aprueba, tu reserva queda confirmada. Mientras está en revisión no se puede pagar, y si el pedido lleva algún producto bajo receta, todo el pedido espera esa revisión.",
+    "Los productos bajo receta se reservan con una foto de tu receta: tienes 24 horas para subirla y la sucursal 48 horas para revisarla. Cuando la aprueba, tu reserva queda confirmada. Mientras está en revisión no se puede pagar, y si el pedido lleva algún producto bajo receta, todo el pedido espera esa revisión.",
     "Puedes pagarla en línea desde la app o al retirarla en la sucursal.",
-    "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista. Pasado ese plazo el producto vuelve a la venta, pero tu pago se conserva y la sucursal la aparta de nuevo cuando vengas.",
+    "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista. Si no la retiras, el producto vuelve a la venta y lo que pagaste queda como saldo a favor por 90 días, para usarlo en cualquier sucursal. Sólo la administración puede autorizar devolverlo en dinero.",
     "Una reserva pagada en línea no se cancela desde la app: escríbele a la sucursal.",
     "Si no puedes ir tú, comparte el código de tu reserva (desde Mis reservas) con alguien de confianza: quien lo presente en la sucursal puede retirarla, y pagarla si falta. Como el código basta para retirarla, no lo publiques.",
   ],
@@ -378,10 +384,27 @@ async function bajoReceta(admin: any, ids: number[]): Promise<Set<number>> {
   return new Set(((data ?? []) as unknown[]).map(Number));
 }
 
-// Cuántas de una presentación alcanzan en una sala, con tope en 5 (lo más que
-// se pide de una): la app no muestra existencias exactas, sólo si alcanza para
-// lo que la persona pide o hasta dónde llega.
-const TOPE_ALCANCE = 5;
+// Cuántas de una presentación alcanzan en una sala. La app no muestra
+// existencias exactas: sólo si alcanza para lo que la persona pide o hasta
+// dónde llega. Era 5 —el tope de unidades por producto— hasta el 2026-10-19,
+// cuando la cantidad pasó a ser libre (decisión del usuario): ahora el tope es
+// sólo una red contra números absurdos.
+const TOPE_ALCANCE = 999;
+// Cuántas unidades se piden «de lo normal» (2026-10-19): de la tabla que se
+// rehace de noche (`refresh_producto_cantidad_habitual`); sin fila, el piso de
+// 5. Arriba de eso la app le pregunta al cliente si la cantidad es correcta —
+// no frena: la cantidad es libre.
+const PISO_HABITUAL = 5;
+// deno-lint-ignore no-explicit-any
+async function cantidadHabitual(admin: any, ids: number[]): Promise<Record<number, number>> {
+  const out: Record<number, number> = Object.fromEntries(ids.map((id) => [id, PISO_HABITUAL]));
+  if (!ids.length) return out;
+  const { data, error } = await admin.from("producto_cantidad_habitual").select("product_id, unidades").in("product_id", ids);
+  // Sin el dato se usa el piso: preguntar de más es una molestia, no un error.
+  if (error) { console.error("app-clientes: cantidad habitual:", error.message); return out; }
+  for (const r of data ?? []) out[Number(r.product_id)] = Math.max(PISO_HABITUAL, Number(r.unidades) || PISO_HABITUAL);
+  return out;
+}
 const alcanceDe = (unidades: number, factor: number) => Math.max(0, Math.min(TOPE_ALCANCE, Math.floor(unidades / Math.max(1, factor || 1))));
 // La foto de un empleado se guarda como URL «formato público» del bucket
 // privado `empleados` (regla 10 del CLAUDE.md): se saca el bucket y la ruta
@@ -1421,7 +1444,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (eFa) throw eFa;
       const menor = (facs ?? []).length ? Math.max(1, Math.min(...(facs ?? []).map((x: any) => Number(x.factor) || 1))) : 1;
       const sucursales = (data ?? []).map((s: any) => ({ ...s, alcance: alcanceDe(unidades.get(Number(s.branch_id)) ?? 0, menor) }));
-      return json({ ok: true, sucursales: conSucursal(sucursales), receta: rx.has(productoId) });
+      // `habitual` (2026-10-19): cuántas de ESTA presentación (la menor, la de
+      // la oferta) se piden de lo normal. La tabla está en unidades.
+      const habitual = Math.max(1, Math.floor((await cantidadHabitual(admin, [productoId]))[productoId] / menor));
+      return json({ ok: true, sucursales: conSucursal(sucursales), receta: rx.has(productoId), habitual });
     }
 
     // El cupón del mes ya se raspó (2026-10-09): queda en el servidor, así en
@@ -2047,8 +2073,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (body?.acepta_terminos !== TERMINOS_RESERVA.version) {
         return json({ ok: false, motivo: "terminos", mensaje: "Acepta las condiciones de la reserva para continuar." });
       }
-      if (!productoId || !branchId || !(cantidad >= 1 && cantidad <= 5)) {
-        return json({ ok: false, mensaje: "Revisa la sucursal y la cantidad (de 1 a 5)." });
+      // Cantidad libre (2026-10-19): lo «no habitual» lo pregunta la app.
+      if (!productoId || !branchId || !(cantidad >= 1 && cantidad <= TOPE_ALCANCE)) {
+        return json({ ok: false, mensaje: "Revisa la sucursal y la cantidad." });
       }
       // La oferta: publicada, vigente, con ese producto. Una MUESTRA (sólo la
       // ficha de prueba) se reserva igual, para poder ver el circuito completo.
@@ -2111,14 +2138,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           : "Esa sucursal ya no tiene para apartar. Elige otra sucursal." });
       }
       // Tope de activas y bloqueo por vencidas.
-      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo")
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado")
         .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
       if (eR) throw eR;
       // Un pedido del carrito cuenta como UNA reserva (2026-10-07).
-      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      // Sólo las SIN PAGAR cuentan para el tope de 3 (2026-10-19, decisión del
+      // usuario): una pagada no aparta nada que el cliente no haya pagado.
+      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && r.pago_estado !== "pagado").map((r: any) => r.pedido ?? `r${r.id}`)).size;
       const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
       if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
-      if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
+      if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas sin pagar. Págalas, retíralas o cancela una para reservar otra." });
       const { data: nueva, error: eI } = await admin.from("app_reservas").insert({
         customer_id: customerId, branch_id: branchId, oferta_id: o.id, oferta_titulo: o.titulo, oferta_fin: o.fin,
         producto_id: productoId, producto_nombre: String(p.nombre), cantidad,
@@ -2172,6 +2201,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const alcance = pedidos.flatMap((x: any) => [...(unidades.get(x.id) ?? new Map<number, number>()).entries()]
         .map(([b, u]) => ({ product_id: x.id, factor: x.factor, branch_id: b, alcance: alcanceDe(u, x.factor) })));
       return json({ ok: true, envio, existencias: data ?? [], alcance, receta_ids: [...rec],
+        habitual: await cantidadHabitual(admin, ids),
         salas: (salas ?? []).map((b: any) => ({ id: b.id, sala: sucursal(b.name), direccion: b.address })) });
     }
 
@@ -2944,7 +2974,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           return json({ ok: false, motivo: "sin_existencia", mensaje: "Esa sucursal no tiene todo lo que pides: envía el pedido para que lo confirmen y pagas al retirar." });
         }
       }
-      if (items.some((x: any) => !(x.cantidad >= 1 && x.cantidad <= 5))) return json({ ok: false, mensaje: "Cada producto va de 1 a 5 unidades." });
+      if (items.some((x: any) => !(x.cantidad >= 1 && x.cantidad <= TOPE_ALCANCE))) return json({ ok: false, mensaje: "Revisa las cantidades del carrito." });
       const { data: sala, error: eSala } = await admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle();
       if (eSala) throw eSala;
       if (!sala) return json({ ok: false, mensaje: "Elige la sucursal donde vas a retirar." });
@@ -2996,13 +3026,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           ...(conReceta ? { estado: "en_revision" } : {}),
         });
       }
-      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo")
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado")
         .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
       if (eR) throw eR;
-      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      // Sólo las SIN PAGAR cuentan para el tope de 3 (2026-10-19, decisión del
+      // usuario): una pagada no aparta nada que el cliente no haya pagado.
+      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && r.pago_estado !== "pagado").map((r: any) => r.pedido ?? `r${r.id}`)).size;
       const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
       if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
-      if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas activas. Retira o cancela una para reservar otra." });
+      if (activas >= 3 && !pagoEnLinea) return json({ ok: false, mensaje: "Ya tienes 3 reservas sin pagar. Págalas, retíralas o cancela una para reservar otra." });
       const ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       const pedido = "P-" + Array.from(crypto.getRandomValues(new Uint8Array(6)), (n) => ABC[n % ABC.length]).join("");
       const subtotal = Math.round(filas.reduce((s, f) => s + f.precio_unitario * f.cantidad, 0) * 100) / 100;

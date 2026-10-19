@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1308.0 — Integración: recetas, niveles, mayoreo y app de clientes
+## v2.1309.0 — Integración: recetas, niveles, mayoreo y app de clientes
 
 Une los cuatro frentes del 2026-10-19 (cada uno con su entrada propia abajo):
 recetas y reservas, niveles configurables, Cliente Mayorista y la app

@@ -32,7 +32,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 import { enlaceGoogleWallet, googleWalletListo } from "../_shared/paseGoogle.ts";
-import { nivelDeCliente } from "../_shared/nivel.ts";
+import { escaleraDeNiveles, nivelDeCliente, programaParaApp } from "../_shared/nivel.ts";
 import { validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
@@ -790,12 +790,23 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // La cuenta de PRUEBA puede mirar «como» otro nivel (`prueba_nivel`,
     // `prueba_mayorista`, los mismos del modo de prueba de la app).
     const ORDEN_NIVEL: Record<string, number> = { vip: 0, bronce: 0, plata: 1, oro: 2, platino: 3 };
-    const accesoDeNivel = async (customerId: number | null): Promise<{ nivel: string | null; mayorista: boolean }> => {
-      if (!customerId) return { nivel: null, mayorista: false };
+    // `dias`: cuántos días antes ve las ofertas (2026-10-19). Antes era
+    // «Platino = 2» escrito acá; hoy es `puntos_niveles.dias_anticipo_ofertas`,
+    // que se cambia desde el portal. Apagados los niveles, 0 para todos.
+    type Acceso = { nivel: string | null; mayorista: boolean; dias: number };
+    const accesoDeNivel = async (customerId: number | null): Promise<Acceso> => {
+      if (!customerId) return { nivel: null, mayorista: false, dias: 0 };
       const pn = String(body?.prueba_nivel ?? "");
       if ((pn in ORDEN_NIVEL || body?.prueba_mayorista === true) && await esDePrueba(customerId)) {
-        const nv = pn in ORDEN_NIVEL ? (pn === "bronce" ? "vip" : pn) : (await nivelDeCliente(admin, customerId)).clave;
-        return { nivel: nv, mayorista: body?.prueba_mayorista === true };
+        if (!(pn in ORDEN_NIVEL)) {
+          const nv = await nivelDeCliente(admin, customerId);
+          return { nivel: nv.clave, mayorista: body?.prueba_mayorista === true, dias: nv.dias_anticipo_ofertas };
+        }
+        // El modo de prueba mira «como» ese nivel, con lo configurado para él.
+        const clave = pn === "bronce" ? "vip" : pn;
+        const { lista } = await escaleraDeNiveles(admin);
+        const fila = lista.find((n) => n.clave === clave);
+        return { nivel: clave, mayorista: body?.prueba_mayorista === true, dias: Number(fila?.dias_anticipo_ofertas ?? 0) };
       }
       const [nv, { data: m, error: eM }] = await Promise.all([
         nivelDeCliente(admin, customerId),
@@ -803,9 +814,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       ]);
       if (eM) throw eM;
       // deno-lint-ignore no-explicit-any
-      return { nivel: nv.clave, mayorista: (m as any)?.estado === "aprobado" };
+      return { nivel: nv.clave, mayorista: (m as any)?.estado === "aprobado", dias: nv.dias_anticipo_ofertas };
     };
-    const alcanzaNivel = (requerido: string | null | undefined, acc: { nivel: string | null; mayorista: boolean }) => {
+    const alcanzaNivel = (requerido: string | null | undefined, acc: { nivel: string | null; mayorista: boolean; dias?: number }) => {
       if (!requerido) return true;
       if (requerido === "mayoreo") return acc.mayorista;
       if (acc.nivel == null || !(requerido in ORDEN_NIVEL)) return false;
@@ -821,20 +832,22 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // deno-lint-ignore no-explicit-any
     const ofertasPara = async (customerId: number | null): Promise<any> => {
       const hoy = hoySV();
-      // Platino ve las ofertas 2 días ANTES que nadie (2026-10-07), marcadas «pronto».
-      const enDosDias = new Date(Date.parse(`${hoy}T12:00:00Z`) + 2 * 86400_000).toISOString().slice(0, 10);
+      // Un nivel puede ver las ofertas unos días ANTES que nadie (2026-10-07,
+      // Platino; desde el 2026-10-19 lo que diga `dias_anticipo_ofertas`),
+      // marcadas «pronto». Se piden con la ventana más larga posible (14 días,
+      // el tope del CHECK en la base) y se recortan acá según el nivel.
+      const masAdelante = (dias: number) => new Date(Date.parse(`${hoy}T12:00:00Z`) + dias * 86400_000).toISOString().slice(0, 10);
+      const ventanaMaxima = masAdelante(14);
       // Todo A LA VEZ (2026-10-14). Antes eran siete viajes en fila —nivel,
       // ofertas, ficha, salas, muestras, firma— y la pestaña tardaba ~0.75 s
-      // de mediana y hasta varios segundos. Las ofertas se piden con la
-      // ventana de Platino (+2 días) y se recortan acá cuando no lo es: así no
-      // esperan a saber el nivel.
+      // de mediana y hasta varios segundos. Así no esperan a saber el nivel.
       const [acceso, { data: filasTodas, error }, socio, { data: salas, error: eB }, muestras] = await Promise.all([
         accesoDeNivel(customerId),
         admin.from("ofertas_clientes")
           .select("id, titulo, descripcion, etiqueta, condiciones, imagen_path, inicio, fin, exclusiva, branch_ids, descuento_tipo, descuento_monto, productos, acento, nivel_minimo")
-          .eq("publicada", true).lte("inicio", enDosDias).gte("fin", hoy)
+          .eq("publicada", true).lte("inicio", ventanaMaxima).gte("fin", hoy)
           .order("orden", { ascending: true }).order("fin", { ascending: true })
-          .limit(80),
+          .limit(120),
         customerId
           ? admin.from("customers").select("acepta_programa_puntos, acumula_puntos").eq("id", customerId).maybeSingle()
             .then(({ data: c, error: eC }: any) => { if (eC) throw eC; return c?.acepta_programa_puntos !== false && c?.acumula_puntos !== false; })
@@ -843,7 +856,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         muestrasDe(admin, customerId, "oferta"),
       ]);
       if (error) throw error;
-      const tope = acceso.nivel === "platino" ? enDosDias : hoy;
+      const tope = acceso.dias > 0 ? masAdelante(acceso.dias) : hoy;
       // deno-lint-ignore no-explicit-any
       const filas = (filasTodas ?? []).filter((o: any) => o.inicio <= tope).slice(0, 50);
       if (eB) console.error("no se pudieron leer las salas:", eB.message);
@@ -3051,6 +3064,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         inyeccionesReales,
         muestras,
         creditos,
+        programa,
       ] = await Promise.all([
         admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId }),
         salasDeLaRed(admin),
@@ -3135,6 +3149,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
             vencidos: filas.filter((f: any) => estadoDeCredito(f.fecha, Number(f.saldo)).estado === "vencido").length,
           };
         })(),
+        // El programa como está configurado en el portal (2026-10-19): la
+        // escalera, los premios del raspable y lo del mayorista por rango. Si
+        // falla, el resumen sigue: la app cae a lo que trae `nivel`.
+        programaParaApp(admin).catch((e) => { console.error("resumen programa:", (e as Error)?.message); return null; }),
       ]);
       if (eEst) throw eEst;
       if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
@@ -3183,7 +3201,20 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
         prueba: muestras.prueba,
         cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo, raspado: !!cup.raspado_el } : null,
-        regalo_cumpleanos: nivel.clave === "vip" ? Number(cfgP?.puntos_cumpleanos ?? 0) : nivel.cumpleanos,
+        // El regalo de cumpleaños: el del nivel (desde el 2026-10-19 el del nivel
+        // de entrada y `puntos_config.puntos_cumpleanos` se guardan juntos), o el
+        // del rango si es Cliente Mayorista con sus beneficios encendidos —el
+        // mismo criterio que `puntos_dar_cumpleanos`—.
+        regalo_cumpleanos: (() => {
+          // deno-lint-ignore no-explicit-any
+          const m = mayorista as any;
+          if (programa?.mayoreo.activos && m?.estado === "aprobado" && m?.rango) {
+            const r = programa.mayoreo.rangos.find((x) => x.clave === m.rango);
+            if (r) return r.cumpleanos;
+          }
+          return Number(nivel.cumpleanos ?? cfgP?.puntos_cumpleanos ?? 0);
+        })(),
+        programa,
         codigo,
         socio_desde: primero?.ganado_el ?? null,
         saldo,

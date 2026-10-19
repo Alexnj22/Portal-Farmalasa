@@ -46,14 +46,18 @@ export function BadgeNivel({ nivel, tam = 12 }) {
   );
 }
 
-/** «Acceso anticipado Platino»: la oferta todavía no empieza y Platino ya la ve. */
+/**
+ * «Acceso anticipado»: la oferta todavía no empieza y el nivel de quien la mira
+ * ya la ve. Sin nombrar el nivel desde el 2026-10-19: los días de anticipo se
+ * configuran por nivel en el portal y ya no son sólo de Platino.
+ */
 export function BadgeAnticipado({ tam = 12 }) {
   return (
-    <View accessible accessibilityLabel="Acceso anticipado Platino"
+    <View accessible accessibilityLabel="Acceso anticipado"
       style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(8,9,12,0.85)', borderRadius: 999, borderWidth: 1,
         borderColor: 'rgba(233,237,245,0.45)', paddingHorizontal: 11, paddingVertical: 6 }}>
       <Icono sf="crown.fill" respaldo="👑" tam={tam - 1} color="#E9EDF5" />
-      <Text style={{ fontSize: tam, fontWeight: '800', color: '#E9EDF5' }}>Acceso anticipado Platino</Text>
+      <Text style={{ fontSize: tam, fontWeight: '800', color: '#E9EDF5' }}>Acceso anticipado</Text>
     </View>
   );
 }

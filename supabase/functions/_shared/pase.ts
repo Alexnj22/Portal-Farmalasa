@@ -31,7 +31,7 @@ export interface DatosPase {
   equivale: number;
   codigo: string | null;
   socioDesde: string | null;
-  /** «Cliente VIP», «Plata», «Oro», «Platino» o un rango de mayorista («Zafiro»…). */
+  /** «Bronce», «Plata», «Oro», «Platino» o un rango de mayorista («Zafiro»…). */
   nivel?: string;
   /** Tarjeta del modo de prueba: serie propia y sin actualizaciones, para que
    *  Wallet la guarde APARTE y no la «corrija» con el nivel real (2026-10-08). */
@@ -150,7 +150,7 @@ export async function armarPase(d: DatosPase): Promise<Uint8Array> {
         // Lo que dice la pantalla bloqueada cuando la tarjeta se actualiza.
         changeMessage: "Tu saldo de Puntos Salud ahora es %@" }],
       secondaryFields: [
-        // El nivel al frente (Plata, Oro, Platino); el de entrada se llama «Cliente VIP».
+        // El nivel al frente (Plata, Oro, Platino); el de entrada se llama «Bronce» (clave vip).
         { key: "nombre", label: `${nivelRotulo(d.nivel)}${d.equipo ? " · TEAM" : ""}`, value: corto(d.nombre) },
       ],
       backFields: [

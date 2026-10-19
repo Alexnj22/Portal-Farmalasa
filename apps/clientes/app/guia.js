@@ -234,7 +234,12 @@ export default function Guia() {
             nota={resumen?.nivel?.activos === false
               ? 'Los niveles se activan pronto, según el reglamento vigente.'
               : 'Los niveles y sus beneficios siguen el reglamento vigente.'}>
-            Mientras más compras, mejor tu material y tus beneficios. Oro y Platino reciben un cupón raspable cada mes.
+            {/* 2026-10-19: apagados, sin prometer beneficios que el reglamento
+                vigente no da; encendidos, sin nombrar niveles a mano (el
+                raspable se configura en el portal y puede cambiar de nivel). */}
+            {resumen?.nivel?.activos === false
+              ? 'Cuando se activen, tu nivel saldrá de lo que compraste en los últimos 12 meses.'
+              : 'Mientras más compras, mejor tu material y tus beneficios. Mira los de tu nivel en Mis puntos.'}
           </Pagina>
           <Pagina ancho={ancho} titulo="Tienda y reservas" arte={<Insignia sf="bag.fill" respaldo="◍" color={t.color.magenta} texto={t.color.magentaTexto} />}>
             Aparta productos y retíralos sin hacer fila. Si llevan receta, súbela con una foto.

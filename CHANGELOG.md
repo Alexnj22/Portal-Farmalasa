@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1308.1 — Puntos: la app y los avisos leen los niveles configurados
+
+Funciones de Supabase (SIN desplegar: lo despliega el coordinador) y app de clientes:
+- `_shared/nivel.ts`: los beneficios de cada nivel salen de la configuración
+  (`beneficios`), días de anticipo de ofertas por nivel, `programaParaApp`
+  (escalera, premios del raspable, beneficios del mayorista por rango).
+  Apagados: sin «siguiente» (antes la app decía «Estás en el nivel más alto»
+  a quien compraba ≥ $500 estando en Bronce).
+- `app-clientes`: ofertas anticipadas según `dias_anticipo_ofertas` (antes
+  Platino = 2 fijo); `programa` en el resumen; regalo de cumpleaños del rango
+  si el mayorista tiene sus beneficios encendidos.
+- `avisos-clientes`: «¡Subiste a X!» sólo si la factura cruzó el umbral hacia
+  arriba (`puntos_subieron_de_nivel`), llave por factura; nada al encender ni
+  al bajar. Aviso de oferta anticipada por los días de cada nivel.
+- App: `Nivel.js` sin listas a mano (lee `beneficios`), apagados muestra
+  Bronce y «los niveles se activan pronto»; `SubisteDeNivel` presenta «TU
+  NIVEL» la primera vez que ve los niveles encendidos y no celebra el
+  encendido como subida; `lib/prueba.js` sin tabla de premios fija (lee
+  `resumen.programa`); textos «Platino» de anticipo → genéricos; mayorista con
+  cumpleaños/raspable configurados; «Cliente VIP» → Bronce en comentarios.
+
+
+## v2.1308.0 — Puntos: pestaña Niveles para configurar el programa
+
+- Nueva pestaña **Puntos → Niveles** (`puntos/NivelesDelPrograma.jsx`, permiso
+  `puntos_tab_niveles`, ver y editar para los cuatro cargos de administración):
+  los interruptores de niveles y de beneficios del Cliente Mayorista con
+  confirmación, el tope del raspable del mes (vacío = sin tope), cada nivel
+  (umbral, puntos por dólar, cumpleaños, horas de reserva, días de anticipo de
+  ofertas) y los premios del raspable de los dos niveles y rangos más altos,
+  con su probabilidad y costo promedio. Historial de cambios con quién, antes y
+  después. Cada cambio va a la bitácora (`PUNTOS_NIVEL_CAMBIO`,
+  `PUNTOS_MAYOREO_CAMBIO`, `PUNTOS_CONFIG_CAMBIO`). Borrador por tarjeta.
+- Sin premios en descuento: el motor sólo da puntos.
+- `src/types/database.ts` regenerado contra producción.
+
+
+## v2.1307.0 — Puntos: niveles configurables, compra completa de 12 meses y beneficios del mayorista
+
+Base de datos (niveles siguen APAGADOS; nada cambia para el cliente hasta encenderlos):
+- `puntos_compra_12m` suma TODAS las facturas válidas de 12 meses
+  (`sales_invoices` + `venta_valida`), también las de una cuenta unida, en vez
+  de los puntos ganados. Medido: 360/360 iguales contra la suma de una pasada
+  de `puntos_dar_cupones`; ~5 ms estables en 8 llamadas seguidas para el
+  cliente con más facturas. Con la regla nueva, al encender: Plata 501, Oro
+  135, Platino 61 (antes 89/34/8); 14 clientes bajarían a Bronce.
+- Configurable sin migración: umbral, factor, cumpleaños, horas de reserva y
+  días de anticipo de ofertas por nivel; raspable (premios con probabilidad)
+  sólo del penúltimo y último nivel; tope mensual (vacío = sin tope).
+  Historial en `puntos_config_historial`, permiso `puntos_tab_niveles`.
+- Cliente Mayorista: cumpleaños y raspable por rango
+  (`puntos_mayoreo_beneficios`) detrás de `mayoreo_beneficios_activos`
+  (apagado).
+- `puntos_subieron_de_nivel` (para el aviso «Subiste») y
+  `puntos_horas_reserva` (lectura lista para el frente de reservas).
+- Migraciones `20261019230834_puntos_niveles_configurables_desde_el_portal` y
+  `20261019230957_puntos_nivel_con_todas_las_compras_y_beneficios_por_rango`.
+
+## v2.1306.1 — Puntos: el vencimiento resta exactamente el lote vencido
+
+- `puntos_vencer_lotes` descontaba lo vencido por FIFO (`puntos_consumir`,
+  ordena por `ganado_el`). El cupón del mes vence a fin de mes, antes que
+  compras más viejas: se restaba de la compra y el cupón seguía «vencido» al
+  día siguiente, quemando otro lote ajeno cada día. Ahora cada lote vencido
+  pasa a 0 con sus `restantes` exactos, idempotente. Prod tenía 0 vencimientos:
+  se corrige antes del primer daño. Probado en el entorno de pruebas (la vieja
+  quemaba 450 puntos por 250 vencidos; la nueva, 250 y la segunda corrida 0).
+- Migración `20261019225431_puntos_vencer_exactamente_el_lote_vencido`.
 ## v2.1307.1 — DTE para el cliente también desde Ventas
 
 - El bloque «Documento electrónico» (descargar o enviar por correo el PDF y el

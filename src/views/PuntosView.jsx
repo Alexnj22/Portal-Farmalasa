@@ -26,6 +26,10 @@
  *                          para los umbrales y de dónde salen)
  *   · Cuentas por asignar — las cuentas del sistema anterior que no pasaron
  *                          solas, para asignarlas cuando el cliente reclame.
+ *   · Niveles            — umbrales, factores, cumpleaños, reservas, anticipo de
+ *                          ofertas, raspable y tope, beneficios del mayorista e
+ *                          interruptores, con historial (2026-10-19,
+ *                          `puntos/NivelesDelPrograma`).
  *
  * ── Lo que NO hace ──────────────────────────────────────────────────────────
  * No une nada solo. Decisión del usuario (2026-09-25): una cuenta vieja pasa a
@@ -39,7 +43,7 @@
  */
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Star, Search, ScanLine, LayoutDashboard, Trophy, Wallet, ChevronRight, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users } from 'lucide-react';
+import { Star, Search, ScanLine, LayoutDashboard, Trophy, Wallet, ChevronRight, AlertTriangle, UserSearch, Coins, TrendingUp, Gift, Inbox, CalendarClock, Store, Users, Crown } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -75,6 +79,8 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 // `recharts` pesa: viaja en su propio chunk y se pide cuando la pestaña lo pinta.
 const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaDiaria })));
 const GraficaVencimientos = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaVencimientos })));
+// La pestaña Niveles es de pocos (administración): en su propio chunk.
+const NivelesDelPrograma = lazy(() => import('./puntos/NivelesDelPrograma'));
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { avisoDePuntos, motorQuieto } from '@nucleo/utils/puntosTexto';
 import { clickable } from '@nucleo/utils/clickable';
@@ -90,6 +96,9 @@ const PESTANAS = [
     { key: 'consulta',    label: 'Consulta',            icon: Search },
     { key: 'avisos',      label: 'Avisos',              icon: AlertTriangle },
     { key: 'por_asignar', label: 'Cuentas por asignar', icon: UserSearch },
+    // Los niveles, el raspable y los beneficios del mayorista, configurables
+    // (2026-10-19). Sólo administración: `puntos_tab_niveles`.
+    { key: 'niveles',     label: 'Niveles',             icon: Crown },
 ];
 
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
@@ -123,7 +132,10 @@ export default function PuntosView({ openModal }) {
         escanear:    hasPermission('puntos_tab_consulta', 'can_view'),
         avisos:      hasPermission('puntos_tab_avisos', 'can_view'),
         por_asignar: hasPermission('puntos_tab_por_asignar', 'can_view'),
+        niveles:     hasPermission('puntos_tab_niveles', 'can_view'),
     };
+    // Cambiar un nivel, el raspable o un interruptor: la base lo vuelve a exigir.
+    const puedeEditarNiveles = hasPermission('puntos_tab_niveles', 'can_edit');
     const visibles = PESTANAS.filter((t) => permitidas[t.key]);
     const [pestana, setPestana] = usePestanaEnUrl(visibles, visibles[0]?.key ?? 'resumen');
     const veResumen = visibles.some((t) => t.key === 'resumen');
@@ -225,7 +237,7 @@ export default function PuntosView({ openModal }) {
             searchValue={pestana === 'consulta' ? busquedaClientes : busqueda}
             // Resumen no tiene lista que buscar, y Escanear tiene su propio
             // campo (el del lector): sin la lupa.
-            onSearchChange={pestana === 'resumen' || pestana === 'escanear' ? undefined : buscar}
+            onSearchChange={pestana === 'resumen' || pestana === 'escanear' || pestana === 'niveles' ? undefined : buscar}
             placeholder={pestana === 'avisos' ? 'Buscar por cliente, documento o vendedor…'
                 : pestana === 'consulta' ? 'Buscar cliente por nombre, DUI o teléfono…'
                 : 'Buscar por nombre, DUI o teléfono…'}
@@ -241,6 +253,12 @@ export default function PuntosView({ openModal }) {
                         <Resumen resumen={resumen} serie={serie} tablero={tablero} cargando={cargando}
                             irA={setPestana} veTarjetas={veTarjetas} onAbrirCliente={setClienteAbierto} />
                     </>
+                )}
+
+                {pestana === 'niveles' && (
+                    <Suspense fallback={null}>
+                        <NivelesDelPrograma puedeEditar={puedeEditarNiveles} />
+                    </Suspense>
                 )}
 
                 {pestana === 'escanear' && (

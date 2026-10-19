@@ -253,6 +253,9 @@ const GRUPOS_CRUDOS = [
                 { key: 'puntos_tab_consulta',    label: 'Consulta',            tipo: 'tab' },
                 { key: 'puntos_tab_avisos',      label: 'Avisos',              tipo: 'tab' },
                 { key: 'puntos_tab_por_asignar', label: 'Cuentas por asignar', tipo: 'tab' },
+                // Niveles, raspable, tope y beneficios del mayorista (2026-10-19).
+                // Editar = cambiarlos y encender o apagar los niveles.
+                { key: 'puntos_tab_niveles',     label: 'Niveles',             tipo: 'tab' },
                 { key: 'puntos_ajustar',         label: 'Dar o quitar puntos a mano', tipo: 'cap' },
                 // Las tarjetas de cifras de Resumen y Consulta: sólo administración
                 // (pedido del usuario, 2026-10-01).

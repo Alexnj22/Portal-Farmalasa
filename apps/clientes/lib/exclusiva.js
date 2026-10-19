@@ -36,7 +36,7 @@ export function useMiNivel() {
   const real = useCuenta((s) => s.resumen);
   const prueba = useModoPrueba();
   if (real?.prueba && prueba.activo) {
-    return { nivel: nivelDePrueba(prueba.nivel), mayorista: !!prueba.mayorista };
+    return { nivel: nivelDePrueba(prueba.nivel, real?.programa), mayorista: !!prueba.mayorista };
   }
   return { nivel: real?.nivel ?? null, mayorista: real?.mayorista?.estado === 'aprobado' };
 }

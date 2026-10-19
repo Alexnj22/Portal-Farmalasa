@@ -28,17 +28,33 @@ export const RANGOS = [
 export const PRECIOS = { mayoreo: 'Mayoreo', mayoreo_plus: 'Mayoreo Plus' };
 const PRECIO_MUESTRA = { jade: 'mayoreo', zafiro: 'mayoreo', rubi: 'mayoreo_plus', diamante: 'mayoreo_plus' };
 
+// El cumpleaños y el raspable de cada rango (2026-10-19) los da el programa de
+// puntos y se configuran en el portal (`resumen.programa.mayoreo`), detrás de
+// su propio interruptor. Apagado, el mayorista recibe lo de cualquier cliente
+// (el cumpleaños del nivel de entrada y ningún raspable), así que la tarjeta no
+// promete lo que todavía no se da. Sin `programa` (una versión vieja de la
+// función) queda lo escrito arriba, que es lo de las Condiciones.
+function conProgramaMayoreo(r, programa, { prueba = false } = {}) {
+  const conf = programa?.mayoreo;
+  if (!conf) return r;
+  const fila = (conf.rangos ?? []).find((x) => x.clave === r.clave);
+  if (!conf.activos && !prueba) {
+    return { ...r, raspable: null, cumpleanos: Number(programa.niveles?.[0]?.cumpleanos ?? r.cumpleanos) };
+  }
+  return { ...r, cumpleanos: fila ? fila.cumpleanos : r.cumpleanos, raspable: fila?.raspable ? fila.nombre : null };
+}
+
 /** El rango para mostrar: de prueba (con una compra a mitad de camino) o el real del cliente. */
-export function rangoDePrueba(clave) {
+export function rangoDePrueba(clave, programa = null) {
   const i = Math.max(0, RANGOS.findIndex((r) => r.clave === clave));
-  const r = RANGOS[i]; const s = RANGOS[i + 1];
+  const r = conProgramaMayoreo(RANGOS[i], programa, { prueba: true }); const s = RANGOS[i + 1];
   const compra = s ? Math.round(Math.max(150, r.desde + (s.desde - r.desde) * 0.6)) : 2400;
   return { ...r, precio: PRECIOS[PRECIO_MUESTRA[r.clave]], precioClave: PRECIO_MUESTRA[r.clave], compra, siguiente: s ? { ...s, falta: s.desde - compra } : null };
 }
-export function rangoReal(m) {
+export function rangoReal(m, programa = null) {
   if (!m || m.estado !== 'aprobado') return null;
   const i = Math.max(0, RANGOS.findIndex((r) => r.clave === (m.rango ?? 'jade')));
-  const r = RANGOS[i]; const s = RANGOS[i + 1]; const compra = Number(m.prom_3m ?? 0);
+  const r = conProgramaMayoreo(RANGOS[i], programa); const s = RANGOS[i + 1]; const compra = Number(m.prom_3m ?? 0);
   // precioClave y aprobadoDesde: para las pantallas de SubisteDeNivel (subir a Plus, bienvenida).
   return { ...r, precio: PRECIOS[m.precio] ?? 'Mayoreo', precioClave: PRECIOS[m.precio] ? m.precio : 'mayoreo', aprobadoDesde: m.aprobado_desde ?? null,
     compra, retiro: m.retiro_programado ?? null,

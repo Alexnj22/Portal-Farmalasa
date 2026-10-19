@@ -24,7 +24,7 @@ import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useSesion } from '../../../lib/sesion';
 import { alLlegarAviso, sincronizarAvisos } from '../../../lib/avisos';
-import { cuponDePrueba, nivelDePrueba, useModoPrueba } from '../../../lib/prueba';
+import { cuponDePrueba, nivelDePrueba, raspableDePrueba, useModoPrueba } from '../../../lib/prueba';
 import { BotonWalletNativo, abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
@@ -55,25 +55,26 @@ export default function Puntos() {
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
   const prueba = useModoPrueba();
   const enPrueba = !!real?.prueba && prueba.activo;
-  // El cupón de prueba se arma UNA vez (su premio es al azar).
-  const cuponPrueba = useMemo(() => cuponDePrueba(prueba.nivel, prueba.semilla, prueba.cuponUsado), [prueba.nivel, prueba.semilla, prueba.cuponUsado]);
   // En prueba el saldo se puede mover a mano («Simular: ganar/usar puntos») para ver la animación.
   const saldoPrueba = enPrueba && real ? Math.max(0, Number(real.saldo ?? 0) + prueba.ajuste) : null;
   // Cliente Mayorista (Condiciones, cláusula 5): NO tiene nivel de Puntos
   // Salud, sólo su rango. La raspable: Zafiro como Oro; Rubí y Diamante como Platino.
   // El rango: de prueba, o el real si Administración lo aprobó.
-  const mayoristaReal = !enPrueba ? rangoReal(real?.mayorista) : null;
+  const mayoristaReal = !enPrueba ? rangoReal(real?.mayorista, real?.programa) : null;
   const mayorista = enPrueba ? prueba.mayorista : mayoristaReal?.clave ?? null;
   // Empleado activo (2026-10-08): lleva la tarjeta de SU nivel de cliente, o la
   // de su rango si Administración lo aprobó como mayorista, con el sello de
   // Equipo encima. Acumula puntos en lo que compra a precio Preferente o más.
   const empleado = enPrueba ? !!prueba.empleado : !!real?.empleado;
   const material = mayorista;
-  // Condiciones §5.4: Rubí recibe el raspable de Oro y Diamante el de Platino.
-  const raspableDe = mayorista ? ({ rubi: 'oro', diamante: 'platino' }[mayorista] ?? null)
-    : (['oro', 'platino'].includes(prueba.nivel) ? prueba.nivel : null);
-  const cuponMay = useMemo(() => (raspableDe ? cuponDePrueba(raspableDe, prueba.semilla, prueba.cuponUsado) : null), [raspableDe, prueba.semilla, prueba.cuponUsado]);
-  const resumen = enPrueba ? { ...real, nivel: mayorista ? null : nivelDePrueba(prueba.nivel), cupon: mayorista ? cuponMay : (raspableDe ? cuponPrueba : null),
+  // El raspable de muestra (2026-10-19): con los premios CONFIGURADOS en el
+  // portal para ese nivel o, si se mira como mayorista, para ese rango
+  // (`resumen.programa`). Se arma UNA vez: su premio es al azar.
+  const programa = real?.programa ?? null;
+  const fuenteRaspable = enPrueba ? raspableDePrueba(programa, { nivel: prueba.nivel, mayorista }) : null;
+  const cuponPrueba = useMemo(() => cuponDePrueba(fuenteRaspable, prueba.semilla, prueba.cuponUsado),
+    [fuenteRaspable, prueba.semilla, prueba.cuponUsado]);
+  const resumen = enPrueba ? { ...real, nivel: mayorista ? null : nivelDePrueba(prueba.nivel, programa), cupon: cuponPrueba,
     saldo: saldoPrueba, equivale: saldoPrueba / 100 } : real;
 
   // Sumar y restar se VEN (2026-10-08): el último saldo que se mostró queda en
@@ -164,10 +165,10 @@ export default function Puntos() {
           accessibilityLabel="Modo de prueba activo. Cambiarlo en Cuenta" accessibilityHint="Abre Cuenta, donde se elige el nivel de prueba"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minHeight: 28 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista, real?.programa).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Presionable>
       ) : null}
-      <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista)) : null}
+      <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
         forzarRango={verRango === '1'} forzarPrecio={verPrecio === '1'} forzarBienvenida={verMayoreo === '1'} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
@@ -203,12 +204,12 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* El nivel: Cliente VIP, Plata, Oro o Platino, y cuánto falta. Justo
+      {/* El nivel: Bronce, Plata, Oro o Platino, y cuánto falta. Justo
           debajo de la tarjeta (usuario, 2026-10-07). */}
       {/* Cliente Mayorista (modo de prueba): su rango, arriba del nivel de puntos. */}
       {mayorista ? (
         <Entrada indice={1}>
-          <Mayorista rango={mayoristaReal ?? rangoDePrueba(mayorista)} pie={empleado ? <BeneficiosEquipo mayoreo={mayoristaReal ?? rangoDePrueba(mayorista)} /> : null} />
+          <Mayorista rango={mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)} pie={empleado ? <BeneficiosEquipo mayoreo={mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)} /> : null} />
         </Entrada>
       ) : null}
       {/* Sin panel de nivel (niveles apagados), los beneficios de Equipo van solos. */}

@@ -335,3 +335,40 @@ export const marcarCambioResueltoAMano = async (solicitudId, nota, contexto = {}
     anotar('PUNTOS_TRASPASO_A_MANO', solicitudId, { ...contexto, nota: nota?.trim() || null });
     return r;
 };
+
+// ── Pestaña «Niveles» (2026-10-19) ─────────────────────────────────────────
+//
+// Todo lo que el programa promete por nivel, el raspable, el tope del mes y
+// los beneficios del Cliente Mayorista se cambian desde el portal. Las tres
+// escrituras van por funciones de la base que validan (la escalera, los
+// premios sólo en puntos, el raspable sólo en los dos niveles más altos) y
+// anotan el historial en `puntos_config_historial`; además se anota en la
+// bitácora del portal, como toda acción de usuario. Permiso:
+// `puntos_tab_niveles` (ver y editar), que la base vuelve a exigir.
+
+/** Configuración, niveles, rangos de mayoreo, lo dado este mes en raspables y el historial. */
+export const fetchPanelDeNiveles = () => rpc('puntos_niveles_panel');
+
+/** Cambiar un nivel. `cambios` lleva sólo los campos que cambian. */
+export const guardarNivelDePuntos = async (clave, cambios, nota = null) => {
+    const r = await rpc('puntos_nivel_guardar', { p_clave: clave, p_cambios: cambios, p_nota: nota?.trim() || null });
+    if (r?.cambio) anotar('PUNTOS_NIVEL_CAMBIO', clave, { cambios, nota: nota?.trim() || null });
+    return r;
+};
+
+/** Cambiar el cumpleaños o el raspable de un rango de Cliente Mayorista. */
+export const guardarRangoMayoreoDePuntos = async (clave, cambios, nota = null) => {
+    const r = await rpc('puntos_mayoreo_guardar', { p_clave: clave, p_cambios: cambios, p_nota: nota?.trim() || null });
+    if (r?.cambio) anotar('PUNTOS_MAYOREO_CAMBIO', clave, { cambios, nota: nota?.trim() || null });
+    return r;
+};
+
+/**
+ * El tope del raspable (`null` = sin tope) y los dos interruptores
+ * (`niveles_activos`, `mayoreo_beneficios_activos`).
+ */
+export const guardarConfigDePuntos = async (cambios, nota = null) => {
+    const r = await rpc('puntos_config_guardar', { p_cambios: cambios, p_nota: nota?.trim() || null });
+    if (r?.cambio) anotar('PUNTOS_CONFIG_CAMBIO', 'puntos_config', { cambios, nota: nota?.trim() || null });
+    return r;
+};

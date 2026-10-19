@@ -67,7 +67,8 @@ export default function Oferta() {
     cargar({ forzar: true }).catch(() => {}).finally(() => setRevisando(false));
   }, [porRevisar, quien, cargar]);
   // Reservar: con sesión y oferta disponible (lo exclusivo, sólo socios).
-  // Platino la ve antes («pronto»): se mira, pero se reserva desde que empieza.
+  // Su nivel la ve antes («pronto»; los días se configuran en el portal desde
+  // el 2026-10-19): se mira, pero se reserva desde que empieza.
   // Exclusiva por nivel (2026-10-14): la VE todo el mundo, la reserva quien
   // llega (lo decide el servidor: `disponible_para_ti`). Un servidor viejo no
   // lo manda: entonces vale `disponible`.
@@ -137,7 +138,7 @@ export default function Oferta() {
             ) : null}
             {o.pronto ? (
               <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>
-                La ves antes que nadie por ser Platino. Se puede reservar desde el {fecha(o.inicio)}.
+                La ves antes que nadie por tu nivel. Se puede reservar desde el {fecha(o.inicio)}.
               </Text>
             ) : null}
             <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: colorSistema.texto }}>{o.titulo}</Text>

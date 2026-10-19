@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
 
     // ── Ganado: lotes de las últimas 2 horas (la bitácora impide repetir) ──
     const { data: lotes, error: eL } = !inmediato ? { data: [], error: null } : await admin.from("puntos_lote")
-      .select("id, customer_id, origen, puntos, sucursal")
+      .select("id, customer_id, origen, puntos, sucursal, invoice_id")
       .in("customer_id", clientes).in("origen", ["venta", "cumpleanos", "referido", "cupon"])
       .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
     if (eL) throw eL;
@@ -180,15 +180,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Subiste de nivel (2026-10-07): sólo quien acaba de comprar puede
-    // haber subido. Un aviso por nivel y por cliente (la llave es el nivel).
-    const compraron = [...new Set((lotes ?? []).filter((l) => l.origen === "venta").map((l) => Number(l.customer_id)))];
-    if (compraron.length) {
-      const { data: niv, error: eN } = await admin.rpc("app_niveles_de", { p_clientes: compraron });
-      if (eN) console.error("no se pudieron leer los niveles:", eN.message);
-      for (const n of (niv ?? []) as { customer_id: number; clave: string; nombre: string }[]) {
-        if (n.clave === "vip") continue;
-        candidatos.push({ customer_id: n.customer_id, tipo: "nivel", ref: `nivel:${n.clave}`,
+    // ── Subiste de nivel (2026-10-07; corregido el 2026-10-19) ───────────
+    // Sólo quien acaba de comprar puede haber subido. Antes se avisaba a todo
+    // el que comprara estando en un nivel distinto del de entrada, con la
+    // llave `nivel:<clave>`: al ENCENDER los niveles, quien ya estaba en Oro
+    // recibía «¡Subiste a Oro!» en su próxima compra sin haber subido nada.
+    // Ahora `puntos_subieron_de_nivel` compara el nivel ANTES y DESPUÉS de
+    // cada factura y devuelve sólo las que cruzaron un umbral hacia arriba
+    // (bajar no se avisa; apagados no devuelve nada). La llave lleva la
+    // factura: si alguien baja y vuelve a subir meses después, eso sí se avisa.
+    const facturas = [...new Set((lotes ?? []).filter((l: any) => l.origen === "venta" && l.invoice_id != null)
+      .map((l: any) => Number(l.invoice_id)))];
+    if (facturas.length) {
+      const { data: sub, error: eN } = await admin.rpc("puntos_subieron_de_nivel", { p_invoices: facturas });
+      if (eN) console.error("no se pudo saber quién subió de nivel:", eN.message);
+      for (const n of (sub ?? []) as { customer_id: number; invoice_id: number; clave: string; nombre: string }[]) {
+        candidatos.push({ customer_id: n.customer_id, tipo: "nivel", ref: `nivel:${n.clave}:${n.invoice_id}`,
           titulo: `¡Subiste a ${n.nombre}! 👑`, cuerpo: "Desde ahora ganas más puntos con cada compra. Mira tus beneficios.",
           url: "/puntos?nivel=1" });
       }
@@ -506,11 +513,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Platino: la oferta antes que nadie (2026-10-07) ───────────────────
-    // Las que empiezan en los próximos 2 días, sólo a Platino con promociones.
-    const { data: pronto, error: ePr } = !diario ? { data: [], error: null } : await admin.from("ofertas_clientes")
-      .select("id, titulo, inicio").eq("publicada", true).gt("inicio", hoy)
-      .lte("inicio", new Date(Date.parse(`${hoy}T12:00:00Z`) + 2 * 86400_000).toISOString().slice(0, 10));
+    // ── La oferta antes que nadie (2026-10-07; configurable el 2026-10-19) ─
+    // Antes: Platino y 2 días, escritos acá. Ahora cada nivel tiene sus
+    // `dias_anticipo_ofertas` (se cambian en el portal): se avisa a cada
+    // cliente con promociones de las ofertas que empiezan dentro de SUS días.
+    // Con los niveles apagados `app_niveles_de` devuelve el de entrada para
+    // todos, que no tiene anticipo: nadie recibe este aviso.
+    const { data: anticipos, error: eAn } = !diario ? { data: [], error: null } : await admin.from("puntos_niveles")
+      .select("clave, nombre, dias_anticipo_ofertas").gt("dias_anticipo_ofertas", 0);
+    if (eAn) console.error("no se pudieron leer los días de anticipo:", eAn.message);
+    const diasDe = new Map(((anticipos ?? []) as any[]).map((n) => [n.clave, { dias: Number(n.dias_anticipo_ofertas), nombre: n.nombre }]));
+    const maxDias = Math.max(0, ...[...diasDe.values()].map((x) => x.dias));
+    const masAdelante = (dias: number) => new Date(Date.parse(`${hoy}T12:00:00Z`) + dias * 86400_000).toISOString().slice(0, 10);
+    const { data: pronto, error: ePr } = !diario || maxDias === 0 ? { data: [], error: null } : await admin.from("ofertas_clientes")
+      .select("id, titulo, inicio").eq("publicada", true).gt("inicio", hoy).lte("inicio", masAdelante(maxDias));
     if (ePr) console.error("no se pudieron leer las próximas ofertas:", ePr.message);
     if (pronto?.length) {
       const { data: promo, error: eP } = await admin.from("customers").select("id").in("id", clientes).eq("acepta_promociones", true);
@@ -518,13 +534,18 @@ Deno.serve(async (req) => {
       const { data: niv, error: eN } = promo?.length
         ? await admin.rpc("app_niveles_de", { p_clientes: promo.map((c: any) => c.id) }) : { data: [], error: null };
       if (eN) console.error("no se pudieron leer los niveles:", eN.message);
-      for (const c of ((niv ?? []) as { customer_id: number; clave: string }[]).filter((n) => n.clave === "platino")) {
-        for (const o of pronto) candidatos.push({
-          customer_id: c.customer_id, tipo: "oferta", ref: `oferta-pronto:${o.id}`,
-          titulo: `Antes que nadie 👑 · ${o.titulo}`,
-          cuerpo: "Por ser Platino la ves desde hoy. Empieza para todos en unos días.",
-          url: `/oferta/${o.id}`,
-        });
+      for (const c of (niv ?? []) as { customer_id: number; clave: string }[]) {
+        const a = diasDe.get(c.clave);
+        if (!a) continue;
+        for (const o of pronto) {
+          if (o.inicio > masAdelante(a.dias)) continue;
+          candidatos.push({
+            customer_id: c.customer_id, tipo: "oferta", ref: `oferta-pronto:${o.id}`,
+            titulo: `Antes que nadie 👑 · ${o.titulo}`,
+            cuerpo: `Por ser ${a.nombre} la ves desde hoy. Empieza para todos en unos días.`,
+            url: `/oferta/${o.id}`,
+          });
+        }
       }
     }
 

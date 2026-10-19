@@ -1645,6 +1645,7 @@ export type Database = {
           factor: number
           id: number
           lista_at: string | null
+          lista_precio: string | null
           oferta_fin: string | null
           oferta_id: string | null
           oferta_titulo: string | null
@@ -1706,6 +1707,7 @@ export type Database = {
           factor?: number
           id?: never
           lista_at?: string | null
+          lista_precio?: string | null
           oferta_fin?: string | null
           oferta_id?: string | null
           oferta_titulo?: string | null
@@ -1767,6 +1769,7 @@ export type Database = {
           factor?: number
           id?: never
           lista_at?: string | null
+          lista_precio?: string | null
           oferta_fin?: string | null
           oferta_id?: string | null
           oferta_titulo?: string | null
@@ -21103,10 +21106,11 @@ export type Database = {
         Row: {
           acumulacion_activa: boolean
           avisar_fallas_a: string | null
-          cupon_presupuesto_mensual: number
+          cupon_presupuesto_mensual: number | null
           fuente: string
           id: boolean
           inicio: string | null
+          mayoreo_beneficios_activos: boolean
           mayoreo_puntos_activo: boolean
           minimo_canje: number
           niveles_activos: boolean
@@ -21118,10 +21122,11 @@ export type Database = {
         Insert: {
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
-          cupon_presupuesto_mensual?: number
+          cupon_presupuesto_mensual?: number | null
           fuente?: string
           id?: boolean
           inicio?: string | null
+          mayoreo_beneficios_activos?: boolean
           mayoreo_puntos_activo?: boolean
           minimo_canje?: number
           niveles_activos?: boolean
@@ -21133,10 +21138,11 @@ export type Database = {
         Update: {
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
-          cupon_presupuesto_mensual?: number
+          cupon_presupuesto_mensual?: number | null
           fuente?: string
           id?: boolean
           inicio?: string | null
+          mayoreo_beneficios_activos?: boolean
           mayoreo_puntos_activo?: boolean
           minimo_canje?: number
           niveles_activos?: boolean
@@ -21175,6 +21181,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      puntos_config_historial: {
+        Row: {
+          antes: Json | null
+          clave: string | null
+          created_at: string
+          despues: Json | null
+          employee_id: string | null
+          id: number
+          nota: string | null
+          tabla: string
+        }
+        Insert: {
+          antes?: Json | null
+          clave?: string | null
+          created_at?: string
+          despues?: Json | null
+          employee_id?: string | null
+          id?: never
+          nota?: string | null
+          tabla: string
+        }
+        Update: {
+          antes?: Json | null
+          clave?: string | null
+          created_at?: string
+          despues?: Json | null
+          employee_id?: string | null
+          id?: never
+          nota?: string | null
+          tabla?: string
+        }
+        Relationships: []
       }
       puntos_consulta_intentos: {
         Row: {
@@ -21653,6 +21692,39 @@ export type Database = {
           },
         ]
       }
+      puntos_mayoreo_beneficios: {
+        Row: {
+          clave: string
+          created_at: string
+          cupon_mensual: number
+          cupon_premios: Json | null
+          nombre: string
+          orden: number
+          puntos_cumpleanos: number
+          updated_at: string
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          cupon_mensual?: number
+          cupon_premios?: Json | null
+          nombre: string
+          orden: number
+          puntos_cumpleanos?: number
+          updated_at?: string
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          cupon_mensual?: number
+          cupon_premios?: Json | null
+          nombre?: string
+          orden?: number
+          puntos_cumpleanos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       puntos_motor_fallas: {
         Row: {
           created_at: string
@@ -21681,6 +21753,7 @@ export type Database = {
           cupon_mensual: number
           cupon_premios: Json | null
           desde: number
+          dias_anticipo_ofertas: number
           factor: number
           horas_reserva: number
           nombre: string
@@ -21694,6 +21767,7 @@ export type Database = {
           cupon_mensual?: number
           cupon_premios?: Json | null
           desde: number
+          dias_anticipo_ofertas?: number
           factor: number
           horas_reserva?: number
           nombre: string
@@ -21707,6 +21781,7 @@ export type Database = {
           cupon_mensual?: number
           cupon_premios?: Json | null
           desde?: number
+          dias_anticipo_ofertas?: number
           factor?: number
           horas_reserva?: number
           nombre?: string
@@ -31750,12 +31825,17 @@ export type Database = {
           name: string
         }[]
       }
+      puntos_clientes_de: { Args: { p_customer_id: number }; Returns: number[] }
       puntos_codigo_emitir: { Args: { p_customer_id: number }; Returns: Json }
       puntos_codigo_estado: { Args: { p_customer_id: number }; Returns: Json }
       puntos_codigo_ver: { Args: { p_customer_id: number }; Returns: Json }
       puntos_compra_12m: {
         Args: { p_customer_id: number; p_excluir?: number; p_hasta: string }
         Returns: number
+      }
+      puntos_config_guardar: {
+        Args: { p_cambios: Json; p_nota?: string }
+        Returns: Json
       }
       puntos_consulta_registrar: {
         Args: { p_acerto: boolean; p_huella_dui: string; p_ip: string }
@@ -31820,6 +31900,7 @@ export type Database = {
         }
         Returns: Json
       }
+      puntos_horas_reserva: { Args: { p_customer: number }; Returns: number }
       puntos_marcar_anuladas: {
         Args: { p_invoice_ids: number[] }
         Returns: number
@@ -31835,6 +31916,10 @@ export type Database = {
       puntos_marcar_sin_enviar: {
         Args: { p_desde: string; p_hasta: string }
         Returns: number
+      }
+      puntos_mayoreo_guardar: {
+        Args: { p_cambios: Json; p_clave: string; p_nota?: string }
+        Returns: Json
       }
       puntos_migrar_historial: {
         Args: {
@@ -31853,6 +31938,7 @@ export type Database = {
           cupon_mensual: number
           cupon_premios: Json | null
           desde: number
+          dias_anticipo_ofertas: number
           factor: number
           horas_reserva: number
           nombre: string
@@ -31867,6 +31953,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      puntos_nivel_guardar: {
+        Args: { p_cambios: Json; p_clave: string; p_nota?: string }
+        Returns: Json
+      }
+      puntos_niveles_panel: { Args: never; Returns: Json }
       puntos_panel_asignar: {
         Args: {
           p_customer_id: number
@@ -31901,6 +31992,7 @@ export type Database = {
         Args: { p_defecto: number; p_premios: Json }
         Returns: number
       }
+      puntos_premios_validos: { Args: { p_premios: Json }; Returns: string }
       puntos_registrar_canje: {
         Args: { p_invoice_id: number; p_simular?: boolean }
         Returns: Json
@@ -31920,6 +32012,16 @@ export type Database = {
           p_por?: string
         }
         Returns: Json
+      }
+      puntos_subieron_de_nivel: {
+        Args: { p_invoices: number[] }
+        Returns: {
+          antes: string
+          clave: string
+          customer_id: number
+          invoice_id: number
+          nombre: string
+        }[]
       }
       puntos_tickets_de_ficha_que_no_acumula: {
         Args: { p_tope?: number }

@@ -87,10 +87,14 @@ BEGIN
 
   UPDATE public.employees e
      SET dui = '99' || lpad(n.rn::text, 6, '0') || '-0'
-    -- Numerados DESPUÉS de los que ya se pusieron: esto corre todos los días y
-    -- una ficha nueva no puede repetir el número de una de ayer.
+    -- Numerados DESPUÉS del MAYOR que ya se puso: esto corre todos los días y
+    -- una ficha nueva no puede repetir el número de una de ayer. Con el MAYOR y
+    -- no contando (2026-10-19): con un hueco en la numeración —faltaba el 6 y
+    -- estaba el 13— contar daba 12, la ficha nueva tomaba el 13 y el índice
+    -- único hacía fallar el mantenimiento entero dos días seguidos.
     FROM (SELECT id, row_number() OVER (ORDER BY id)
-                     + (SELECT count(*) FROM public.employees WHERE dui LIKE '99%') AS rn
+                     + (SELECT coalesce(max(substring(dui FROM 3 FOR 6)::int), 0)
+                          FROM public.employees WHERE dui ~ '^99[0-9]{6}-0$') AS rn
             FROM public.employees WHERE coalesce(dui, '') = '') n
    WHERE e.id = n.id;
 END $$;

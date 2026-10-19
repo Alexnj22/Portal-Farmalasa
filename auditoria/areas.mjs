@@ -493,6 +493,10 @@ export const AREAS = [
                  // docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md
                  'puntos_cuenta', 'puntos_lote', 'puntos_niveles', 'puntos_salida', 'puntos_salida_lote',
                  'puntos_vencimiento_log', 'puntos_config',
+                 // Lo que el Cliente Mayorista recibe por rango (cumpleaños y
+                 // raspable) y el historial de cada cambio de la pestaña
+                 // Niveles (2026-10-19).
+                 'puntos_mayoreo_beneficios', 'puntos_config_historial',
                  // La copia del sistema de puntos anterior (se apaga el
                  // 2026-10-01) y la bitácora del arranque de esa madrugada.
                  'puntos_archivo_carga', 'puntos_archivo_cliente', 'puntos_archivo_venta',

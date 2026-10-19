@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1308.0 — Puntos: pestaña Niveles para configurar el programa
+
+- Nueva pestaña **Puntos → Niveles** (`puntos/NivelesDelPrograma.jsx`, permiso
+  `puntos_tab_niveles`, ver y editar para los cuatro cargos de administración):
+  los interruptores de niveles y de beneficios del Cliente Mayorista con
+  confirmación, el tope del raspable del mes (vacío = sin tope), cada nivel
+  (umbral, puntos por dólar, cumpleaños, horas de reserva, días de anticipo de
+  ofertas) y los premios del raspable de los dos niveles y rangos más altos,
+  con su probabilidad y costo promedio. Historial de cambios con quién, antes y
+  después. Cada cambio va a la bitácora (`PUNTOS_NIVEL_CAMBIO`,
+  `PUNTOS_MAYOREO_CAMBIO`, `PUNTOS_CONFIG_CAMBIO`). Borrador por tarjeta.
+- Sin premios en descuento: el motor sólo da puntos.
+- `src/types/database.ts` regenerado contra producción.
+
+
 ## v2.1307.0 — Puntos: niveles configurables, compra completa de 12 meses y beneficios del mayorista
 
 Base de datos (niveles siguen APAGADOS; nada cambia para el cliente hasta encenderlos):

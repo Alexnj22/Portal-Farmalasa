@@ -1279,6 +1279,7 @@ export type Database = {
       app_cliente_sesiones: {
         Row: {
           acepta_avisos: boolean | null
+          alcance: string
           created_at: string
           customer_id: number | null
           dispositivo: string | null
@@ -1292,6 +1293,7 @@ export type Database = {
         }
         Insert: {
           acepta_avisos?: boolean | null
+          alcance?: string
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null
@@ -1305,6 +1307,7 @@ export type Database = {
         }
         Update: {
           acepta_avisos?: boolean | null
+          alcance?: string
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null
@@ -1625,6 +1628,7 @@ export type Database = {
           avisado_at: string | null
           avisado_por: string | null
           avisado_via: string | null
+          bajo_receta: boolean
           branch_id: number
           cantidad: number
           cerrada_at: string | null
@@ -1638,8 +1642,10 @@ export type Database = {
           documento: string
           entrega: string
           estado: string
+          factor: number
           id: number
           lista_at: string | null
+          lista_precio: string | null
           oferta_fin: string | null
           oferta_id: string | null
           oferta_titulo: string | null
@@ -1647,7 +1653,9 @@ export type Database = {
           pagado_at: string | null
           pago_estado: string
           pago_metodo: string
+          pago_prueba: boolean
           pedido: string | null
+          pendiente_at: string | null
           precio_normal: number | null
           precio_unitario: number | null
           preparada_por: string | null
@@ -1662,18 +1670,27 @@ export type Database = {
           receta_ruta: string | null
           receta_subida_at: string | null
           saldo_favor: number | null
+          saldo_favor_devuelto_at: string | null
+          saldo_favor_devuelto_monto: number | null
+          saldo_favor_devuelto_motivo: string | null
+          saldo_favor_devuelto_por: string | null
+          saldo_favor_origen: string | null
           saldo_favor_usado_at: string | null
+          saldo_favor_usado_branch: number | null
           saldo_favor_usado_por: string | null
           saldo_favor_vence: string | null
+          saldo_incluye_envio: boolean
           terminos_version: string
           updated_at: string
           vence_at: string | null
+          vencida_motivo: string | null
         }
         Insert: {
           anticipo?: number
           avisado_at?: string | null
           avisado_por?: string | null
           avisado_via?: string | null
+          bajo_receta?: boolean
           branch_id: number
           cantidad: number
           cerrada_at?: string | null
@@ -1687,8 +1704,10 @@ export type Database = {
           documento?: string
           entrega?: string
           estado?: string
+          factor?: number
           id?: never
           lista_at?: string | null
+          lista_precio?: string | null
           oferta_fin?: string | null
           oferta_id?: string | null
           oferta_titulo?: string | null
@@ -1696,7 +1715,9 @@ export type Database = {
           pagado_at?: string | null
           pago_estado?: string
           pago_metodo?: string
+          pago_prueba?: boolean
           pedido?: string | null
+          pendiente_at?: string | null
           precio_normal?: number | null
           precio_unitario?: number | null
           preparada_por?: string | null
@@ -1711,18 +1732,27 @@ export type Database = {
           receta_ruta?: string | null
           receta_subida_at?: string | null
           saldo_favor?: number | null
+          saldo_favor_devuelto_at?: string | null
+          saldo_favor_devuelto_monto?: number | null
+          saldo_favor_devuelto_motivo?: string | null
+          saldo_favor_devuelto_por?: string | null
+          saldo_favor_origen?: string | null
           saldo_favor_usado_at?: string | null
+          saldo_favor_usado_branch?: number | null
           saldo_favor_usado_por?: string | null
           saldo_favor_vence?: string | null
+          saldo_incluye_envio?: boolean
           terminos_version: string
           updated_at?: string
           vence_at?: string | null
+          vencida_motivo?: string | null
         }
         Update: {
           anticipo?: number
           avisado_at?: string | null
           avisado_por?: string | null
           avisado_via?: string | null
+          bajo_receta?: boolean
           branch_id?: number
           cantidad?: number
           cerrada_at?: string | null
@@ -1736,8 +1766,10 @@ export type Database = {
           documento?: string
           entrega?: string
           estado?: string
+          factor?: number
           id?: never
           lista_at?: string | null
+          lista_precio?: string | null
           oferta_fin?: string | null
           oferta_id?: string | null
           oferta_titulo?: string | null
@@ -1745,7 +1777,9 @@ export type Database = {
           pagado_at?: string | null
           pago_estado?: string
           pago_metodo?: string
+          pago_prueba?: boolean
           pedido?: string | null
+          pendiente_at?: string | null
           precio_normal?: number | null
           precio_unitario?: number | null
           preparada_por?: string | null
@@ -1760,12 +1794,20 @@ export type Database = {
           receta_ruta?: string | null
           receta_subida_at?: string | null
           saldo_favor?: number | null
+          saldo_favor_devuelto_at?: string | null
+          saldo_favor_devuelto_monto?: number | null
+          saldo_favor_devuelto_motivo?: string | null
+          saldo_favor_devuelto_por?: string | null
+          saldo_favor_origen?: string | null
           saldo_favor_usado_at?: string | null
+          saldo_favor_usado_branch?: number | null
           saldo_favor_usado_por?: string | null
           saldo_favor_vence?: string | null
+          saldo_incluye_envio?: boolean
           terminos_version?: string
           updated_at?: string
           vence_at?: string | null
+          vencida_motivo?: string | null
         }
         Relationships: [
           {
@@ -1811,6 +1853,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "app_reservas_saldo_favor_devuelto_por_fkey"
+            columns: ["saldo_favor_devuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_saldo_favor_devuelto_por_fkey"
+            columns: ["saldo_favor_devuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_saldo_favor_usado_branch_fkey"
+            columns: ["saldo_favor_usado_branch"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "app_reservas_saldo_favor_usado_por_fkey"
             columns: ["saldo_favor_usado_por"]
             isOneToOne: false
@@ -1833,6 +1896,7 @@ export type Database = {
           detalle: Json | null
           encargo_id: number | null
           enlace_id: number | null
+          enlace_prueba: boolean | null
           enlace_url: string | null
           es_real: boolean | null
           estado: string
@@ -1844,6 +1908,7 @@ export type Database = {
           pagado_at: string | null
           pedido: string | null
           reserva_id: number | null
+          reservas_ids: number[] | null
         }
         Insert: {
           codigo_autorizacion?: string | null
@@ -1851,6 +1916,7 @@ export type Database = {
           detalle?: Json | null
           encargo_id?: number | null
           enlace_id?: number | null
+          enlace_prueba?: boolean | null
           enlace_url?: string | null
           es_real?: boolean | null
           estado?: string
@@ -1862,6 +1928,7 @@ export type Database = {
           pagado_at?: string | null
           pedido?: string | null
           reserva_id?: number | null
+          reservas_ids?: number[] | null
         }
         Update: {
           codigo_autorizacion?: string | null
@@ -1869,6 +1936,7 @@ export type Database = {
           detalle?: Json | null
           encargo_id?: number | null
           enlace_id?: number | null
+          enlace_prueba?: boolean | null
           enlace_url?: string | null
           es_real?: boolean | null
           estado?: string
@@ -1880,6 +1948,7 @@ export type Database = {
           pagado_at?: string | null
           pedido?: string | null
           reserva_id?: number | null
+          reservas_ids?: number[] | null
         }
         Relationships: [
           {
@@ -5049,6 +5118,8 @@ export type Database = {
           nota_solicitud: string | null
           origen: string
           precio: string
+          precio_programado: string | null
+          precio_programado_el: string | null
           resuelto_at: string | null
           resuelto_por: string | null
           retiro_programado: string | null
@@ -5065,6 +5136,8 @@ export type Database = {
           nota_solicitud?: string | null
           origen: string
           precio?: string
+          precio_programado?: string | null
+          precio_programado_el?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
           retiro_programado?: string | null
@@ -5081,6 +5154,8 @@ export type Database = {
           nota_solicitud?: string | null
           origen?: string
           precio?: string
+          precio_programado?: string | null
+          precio_programado_el?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
           retiro_programado?: string | null
@@ -11700,6 +11775,39 @@ export type Database = {
           },
         ]
       }
+      dte_clientes_siempre_se_envian: {
+        Row: {
+          created_at: string
+          customer_id: number
+          motivo: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          motivo: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          motivo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dte_clientes_siempre_se_envian_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dte_clientes_siempre_se_envian_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       dte_correcciones_ficha: {
         Row: {
           antes: string | null
@@ -11844,6 +11952,81 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      dte_entregas_cliente: {
+        Row: {
+          accion: string
+          correo: string | null
+          created_at: string
+          employee_id: string
+          enviado: boolean | null
+          error: string | null
+          id: number
+          invoice_id: number
+          proveedor_id: string | null
+          se_envio_a_hacienda: boolean
+        }
+        Insert: {
+          accion: string
+          correo?: string | null
+          created_at?: string
+          employee_id: string
+          enviado?: boolean | null
+          error?: string | null
+          id?: never
+          invoice_id: number
+          proveedor_id?: string | null
+          se_envio_a_hacienda?: boolean
+        }
+        Update: {
+          accion?: string
+          correo?: string | null
+          created_at?: string
+          employee_id?: string
+          enviado?: boolean | null
+          error?: string | null
+          id?: never
+          invoice_id?: number
+          proveedor_id?: string | null
+          se_envio_a_hacienda?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dte_entregas_cliente_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dte_entregas_cliente_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dte_entregas_cliente_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoice_nulls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dte_entregas_cliente_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dte_entregas_cliente_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "ventas_sin_producto"
+            referencedColumns: ["invoice_id"]
           },
         ]
       }
@@ -20923,10 +21106,12 @@ export type Database = {
         Row: {
           acumulacion_activa: boolean
           avisar_fallas_a: string | null
-          cupon_presupuesto_mensual: number
+          cupon_presupuesto_mensual: number | null
           fuente: string
           id: boolean
           inicio: string | null
+          mayoreo_beneficios_activos: boolean
+          mayoreo_puntos_activo: boolean
           minimo_canje: number
           niveles_activos: boolean
           nota: string | null
@@ -20937,10 +21122,12 @@ export type Database = {
         Insert: {
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
-          cupon_presupuesto_mensual?: number
+          cupon_presupuesto_mensual?: number | null
           fuente?: string
           id?: boolean
           inicio?: string | null
+          mayoreo_beneficios_activos?: boolean
+          mayoreo_puntos_activo?: boolean
           minimo_canje?: number
           niveles_activos?: boolean
           nota?: string | null
@@ -20951,10 +21138,12 @@ export type Database = {
         Update: {
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
-          cupon_presupuesto_mensual?: number
+          cupon_presupuesto_mensual?: number | null
           fuente?: string
           id?: boolean
           inicio?: string | null
+          mayoreo_beneficios_activos?: boolean
+          mayoreo_puntos_activo?: boolean
           minimo_canje?: number
           niveles_activos?: boolean
           nota?: string | null
@@ -20992,6 +21181,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      puntos_config_historial: {
+        Row: {
+          antes: Json | null
+          clave: string | null
+          created_at: string
+          despues: Json | null
+          employee_id: string | null
+          id: number
+          nota: string | null
+          tabla: string
+        }
+        Insert: {
+          antes?: Json | null
+          clave?: string | null
+          created_at?: string
+          despues?: Json | null
+          employee_id?: string | null
+          id?: never
+          nota?: string | null
+          tabla: string
+        }
+        Update: {
+          antes?: Json | null
+          clave?: string | null
+          created_at?: string
+          despues?: Json | null
+          employee_id?: string | null
+          id?: never
+          nota?: string | null
+          tabla?: string
+        }
+        Relationships: []
       }
       puntos_consulta_intentos: {
         Row: {
@@ -21470,6 +21692,39 @@ export type Database = {
           },
         ]
       }
+      puntos_mayoreo_beneficios: {
+        Row: {
+          clave: string
+          created_at: string
+          cupon_mensual: number
+          cupon_premios: Json | null
+          nombre: string
+          orden: number
+          puntos_cumpleanos: number
+          updated_at: string
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          cupon_mensual?: number
+          cupon_premios?: Json | null
+          nombre: string
+          orden: number
+          puntos_cumpleanos?: number
+          updated_at?: string
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          cupon_mensual?: number
+          cupon_premios?: Json | null
+          nombre?: string
+          orden?: number
+          puntos_cumpleanos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       puntos_motor_fallas: {
         Row: {
           created_at: string
@@ -21498,6 +21753,7 @@ export type Database = {
           cupon_mensual: number
           cupon_premios: Json | null
           desde: number
+          dias_anticipo_ofertas: number
           factor: number
           horas_reserva: number
           nombre: string
@@ -21511,6 +21767,7 @@ export type Database = {
           cupon_mensual?: number
           cupon_premios?: Json | null
           desde: number
+          dias_anticipo_ofertas?: number
           factor: number
           horas_reserva?: number
           nombre: string
@@ -21524,6 +21781,7 @@ export type Database = {
           cupon_mensual?: number
           cupon_premios?: Json | null
           desde?: number
+          dias_anticipo_ofertas?: number
           factor?: number
           horas_reserva?: number
           nombre?: string
@@ -26688,6 +26946,14 @@ export type Database = {
         Args: { p_branch_id: number; p_franjas?: Json; p_limpiezas?: Json }
         Returns: number
       }
+      app_borrar_datos_de_cuenta: {
+        Args: { p_customer: number }
+        Returns: Json
+      }
+      app_cancelar_reservas_abiertas_sin_pago: {
+        Args: { p_customer: number }
+        Returns: number
+      }
       app_carrito_existencias: { Args: { p_ids: number[] }; Returns: Json }
       app_catalogo: {
         Args: { p_desde?: number; p_limite?: number; p_q: string }
@@ -26714,6 +26980,8 @@ export type Database = {
           sala: string
         }[]
       }
+      app_cliente_sesiones_purgar: { Args: never; Returns: number }
+      app_existencias_netas: { Args: { p_ids: number[] }; Returns: Json }
       app_historia_quienes_vieron: {
         Args: { p_historia: string }
         Returns: Json
@@ -26736,9 +27004,14 @@ export type Database = {
           nombre: string
         }[]
       }
+      app_precios_para_cobro: { Args: { p_ids: number[] }; Returns: Json }
       app_preregistro_resolver: {
         Args: { p_accion: string; p_customer_id?: number; p_id: string }
         Returns: Json
+      }
+      app_productos_bajo_receta: {
+        Args: { p_ids: number[] }
+        Returns: number[]
       }
       app_reserva_pago_confirmar: {
         Args: {
@@ -26750,6 +27023,10 @@ export type Database = {
           p_identificador: string
           p_monto: number
         }
+        Returns: Json
+      }
+      app_reserva_quitar_receta: {
+        Args: { p_customer_id: number; p_id: number }
         Returns: Json
       }
       app_tratamiento_cambiar: {
@@ -27484,7 +27761,12 @@ export type Database = {
         Returns: number
       }
       cof_no_se_envia_mh: {
-        Args: { p_fecha: string; p_hora: string; p_tipo: string }
+        Args: {
+          p_customer_id: number
+          p_fecha: string
+          p_hora: string
+          p_tipo: string
+        }
         Returns: boolean
       }
       cola_espejo_portal_erp: { Args: { p_limite?: number }; Returns: Json }
@@ -31303,6 +31585,16 @@ export type Database = {
         Args: { p_pedido_id: string; p_run_id: string; p_sucursal_id: number }
         Returns: Json
       }
+      precio_de_lista: {
+        Args: {
+          p_clave: string
+          p_clinica: number
+          p_mayoreo: number
+          p_vineta: number
+          p_vip: number
+        }
+        Returns: number
+      }
       preview_metas_gasto: {
         Args: { p_meses: number; p_salas: Json; p_ym_inicio: string }
         Returns: Json
@@ -31533,12 +31825,17 @@ export type Database = {
           name: string
         }[]
       }
+      puntos_clientes_de: { Args: { p_customer_id: number }; Returns: number[] }
       puntos_codigo_emitir: { Args: { p_customer_id: number }; Returns: Json }
       puntos_codigo_estado: { Args: { p_customer_id: number }; Returns: Json }
       puntos_codigo_ver: { Args: { p_customer_id: number }; Returns: Json }
       puntos_compra_12m: {
         Args: { p_customer_id: number; p_excluir?: number; p_hasta: string }
         Returns: number
+      }
+      puntos_config_guardar: {
+        Args: { p_cambios: Json; p_nota?: string }
+        Returns: Json
       }
       puntos_consulta_registrar: {
         Args: { p_acerto: boolean; p_huella_dui: string; p_ip: string }
@@ -31603,6 +31900,7 @@ export type Database = {
         }
         Returns: Json
       }
+      puntos_horas_reserva: { Args: { p_customer: number }; Returns: number }
       puntos_marcar_anuladas: {
         Args: { p_invoice_ids: number[] }
         Returns: number
@@ -31618,6 +31916,10 @@ export type Database = {
       puntos_marcar_sin_enviar: {
         Args: { p_desde: string; p_hasta: string }
         Returns: number
+      }
+      puntos_mayoreo_guardar: {
+        Args: { p_cambios: Json; p_clave: string; p_nota?: string }
+        Returns: Json
       }
       puntos_migrar_historial: {
         Args: {
@@ -31636,6 +31938,7 @@ export type Database = {
           cupon_mensual: number
           cupon_premios: Json | null
           desde: number
+          dias_anticipo_ofertas: number
           factor: number
           horas_reserva: number
           nombre: string
@@ -31650,6 +31953,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      puntos_nivel_guardar: {
+        Args: { p_cambios: Json; p_clave: string; p_nota?: string }
+        Returns: Json
+      }
+      puntos_niveles_panel: { Args: never; Returns: Json }
       puntos_panel_asignar: {
         Args: {
           p_customer_id: number
@@ -31684,6 +31992,7 @@ export type Database = {
         Args: { p_defecto: number; p_premios: Json }
         Returns: number
       }
+      puntos_premios_validos: { Args: { p_premios: Json }; Returns: string }
       puntos_registrar_canje: {
         Args: { p_invoice_id: number; p_simular?: boolean }
         Returns: Json
@@ -31703,6 +32012,16 @@ export type Database = {
           p_por?: string
         }
         Returns: Json
+      }
+      puntos_subieron_de_nivel: {
+        Args: { p_invoices: number[] }
+        Returns: {
+          antes: string
+          clave: string
+          customer_id: number
+          invoice_id: number
+          nombre: string
+        }[]
       }
       puntos_tickets_de_ficha_que_no_acumula: {
         Args: { p_tope?: number }
@@ -31841,6 +32160,14 @@ export type Database = {
           pedido_id: string
           sin_ingresar: number
         }[]
+      }
+      receta_app_de_dispensacion: {
+        Args: { p_dispensacion_id: number }
+        Returns: Json
+      }
+      receta_app_puede_aprobar: {
+        Args: { p_branch_id: number }
+        Returns: boolean
       }
       recetas_escalar: { Args: never; Returns: number }
       recibir_bolsas: { Args: { p_ids: number[] }; Returns: number }
@@ -32136,6 +32463,10 @@ export type Database = {
         Args: { p_decision: string; p_id: number; p_motivo?: string }
         Returns: Json
       }
+      reserva_saldo_devolver: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: Json
+      }
       reserva_usar_saldo_favor: { Args: { p_id: number }; Returns: Json }
       reservar_pago_bono: { Args: { p_item: string }; Returns: Json }
       reservas_de_sucursal: {
@@ -32422,6 +32753,7 @@ export type Database = {
         Returns: number[]
       }
       salas_que_cubro_ahora: { Args: never; Returns: number[] }
+      saldo_favor_buscar: { Args: { p_codigo: string }; Returns: Json }
       save_pedido_snapshot: {
         Args: { p_nombre: string; p_sucursal_ids: number[] }
         Returns: string

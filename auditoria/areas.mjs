@@ -689,6 +689,8 @@ export const AREAS = [
         rutas: ['/facturacion', '/clientes', '/cotizaciones', '/mis-puntos'],
         archivos: [
             'src/views/FacturacionView.jsx', 'src/views/ClientesView.jsx', 'src/views/clientes/',
+            // El DTE que se le entrega al cliente desde Facturación y Ventas (2026-10-19).
+            'src/components/facturacion/',
             'src/views/CotizacionesView.jsx',
             'src/data/facturacion.js', 'src/data/customers.js', 'src/data/cotizaciones.js',
             'src/data/datosPedidos.js', 'src/views/dashboard/WidgetDatoPedido.jsx',

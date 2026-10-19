@@ -19417,6 +19417,30 @@ export type Database = {
         }
         Relationships: []
       }
+      producto_cantidad_habitual: {
+        Row: {
+          calculado_at: string
+          created_at: string
+          lineas: number
+          product_id: number
+          unidades: number
+        }
+        Insert: {
+          calculado_at?: string
+          created_at?: string
+          lineas: number
+          product_id: number
+          unidades: number
+        }
+        Update: {
+          calculado_at?: string
+          created_at?: string
+          lineas?: number
+          product_id?: number
+          unidades?: number
+        }
+        Relationships: []
+      }
       productos_sin_venta_avisados: {
         Row: {
           avisado_el: string
@@ -32229,6 +32253,7 @@ export type Database = {
         Returns: number
       }
       refresh_product_sales_rollup: { Args: never; Returns: Json }
+      refresh_producto_cantidad_habitual: { Args: never; Returns: number }
       refresh_sales_daily_stats: {
         Args: { p_days_back?: number }
         Returns: number

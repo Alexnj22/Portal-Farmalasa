@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1308.0 — Integración: recetas, niveles, mayoreo y app de clientes
+
+Une los cuatro frentes del 2026-10-19 (cada uno con su entrada propia abajo):
+recetas y reservas, niveles configurables, Cliente Mayorista y la app
+(sesión de código, borrado completo, tiendas). Choques resueltos en
+`app-clientes`: el resumen lleva `programa` y `saldoFavor` a la vez; el
+carrito toma los precios de `app_precios_para_cobro` y decide la receta con
+`bajoReceta`; la sesión de código deja pasar `programa` (es del programa, no
+de la persona). El borrado de cuenta conserva las recetas aprobadas.
+Niveles y mayoreo siguen APAGADOS (`niveles_activos`,
+`mayoreo_puntos_activo`, `mayoreo_beneficios_activos`).
+
 ## v2.1307.0 — App Puntos Salud: sesión de código limitada, borrar cuenta completo, muestras de factura y permisos de Android
 
 Frente «seguridad, borrado y tiendas» de la auditoría del 2026-10-19.

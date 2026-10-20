@@ -28,6 +28,8 @@
 //   · credito     — (2026-10-15, diario) un crédito pasó el plazo: una vez por
 //                   crédito, y un recordatorio cada 7 días como máximo mientras
 //                   siga vencido. Sin montos (se lee en la pantalla bloqueada).
+//                   Y desde el 2026-10-20, también ANTES: uno por crédito
+//                   cuando entra en los últimos 5 días del plazo («vence pronto»).
 //
 // ── Por qué no manda dos veces ─────────────────────────────────────────────
 // Antes de enviar, cada aviso se INSERTA en `app_cliente_avisos`, cuya UNIQUE
@@ -490,6 +492,8 @@ Deno.serve(async (req) => {
         const ultimo = new Map<number, number>();
         for (const p of (previos ?? []) as { customer_id: number; ref: string; created_at: string }[]) {
           for (const k of String(p.ref).split("|")) avisados.add(`${p.customer_id}|${k}`);
+          // El aviso previo («vence pronto») no cuenta para el recordatorio de vencidos.
+          if (String(p.ref).startsWith("pronto:")) continue;
           ultimo.set(Number(p.customer_id), Math.max(ultimo.get(Number(p.customer_id)) ?? 0, Date.parse(p.created_at)));
         }
         // Sin la bitácora no se sabe qué ya se avisó: mejor no avisar nada.
@@ -508,6 +512,48 @@ Deno.serve(async (req) => {
               cuerpo: "Toca para ver el detalle. Si ya pagaste, no te preocupes: se actualiza en unas horas.",
               url: "/creditos" });
           }
+        }
+      }
+    }
+
+    // ── Crédito por vencer (2026-10-20, pedido del usuario) ───────────────
+    // El mismo plazo que la pantalla «Mis créditos» (`estadoDeCredito` de
+    // app-clientes): 30 días desde la fecha, y «vence pronto» los últimos 5.
+    // UN aviso por crédito, la primera vez que entra en esa ventana (`ref`
+    // `pronto:cred:<id>`); varios del mismo cliente van juntos. Con saldo y
+    // sin anular: un crédito pagado no vence. Sin montos, como el de vencidos.
+    if (diario) {
+      const desde = new Date(Date.parse(`${hoy}T12:00:00Z`) - 30 * 86400_000).toISOString().slice(0, 10);
+      const hasta = new Date(Date.parse(`${hoy}T12:00:00Z`) - 25 * 86400_000).toISOString().slice(0, 10);
+      const { data: pronto, error: ePr } = await admin.from("creditos_de_clientes")
+        .select("id, customer_id, fecha").gt("saldo", 0.004).is("anulado_el", null)
+        .gte("fecha", desde).lte("fecha", hasta).not("customer_id", "is", null).limit(2000);
+      if (ePr) console.error("no se pudieron leer los créditos por vencer:", ePr.message);
+      const porCliente = new Map<number, { id: number; limite: string }[]>();
+      for (const f of (pronto ?? []) as { id: number; customer_id: number; fecha: string }[]) {
+        const c = Number(f.customer_id);
+        if (!c || !tokens.has(c)) continue;
+        const limite = new Date(Date.parse(`${String(f.fecha).slice(0, 10)}T12:00:00Z`) + 30 * 86400_000).toISOString().slice(0, 10);
+        porCliente.set(c, [...(porCliente.get(c) ?? []), { id: Number(f.id), limite }]);
+      }
+      if (porCliente.size) {
+        const { data: previos, error: ePp } = await admin.from("app_cliente_avisos").select("customer_id, ref")
+          .eq("tipo", "credito").like("ref", "pronto:%").in("customer_id", [...porCliente.keys()]).limit(5000);
+        if (ePp) console.error("no se pudieron leer los avisos de crédito por vencer:", ePp.message);
+        const avisados = new Set<string>();
+        for (const p of (previos ?? []) as { customer_id: number; ref: string }[]) {
+          for (const k of String(p.ref).replace(/^pronto:/, "").split("|")) avisados.add(`${p.customer_id}|${k}`);
+        }
+        // Sin la bitácora no se sabe qué ya se avisó: mejor no avisar nada.
+        for (const [cliente, creds] of ePp ? [] : porCliente) {
+          const nuevos = creds.filter((x) => !avisados.has(`${cliente}|cred:${x.id}`));
+          if (!nuevos.length) continue;
+          const primero = nuevos.map((x) => x.limite).sort()[0];
+          candidatos.push({ customer_id: cliente, tipo: "credito",
+            ref: `pronto:${nuevos.map((x) => `cred:${x.id}`).sort().join("|")}`,
+            titulo: nuevos.length > 1 ? `Tienes ${nuevos.length} créditos por vencer` : "Tu crédito vence pronto",
+            cuerpo: `${nuevos.length > 1 ? "El primero vence" : "Vence"} el ${fechaCorta(primero)}. Toca para ver el detalle. ¿Dudas? Escríbenos por el chat de la app.`,
+            url: "/creditos" });
         }
       }
     }

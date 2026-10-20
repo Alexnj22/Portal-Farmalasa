@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1321.2 — App de clientes: aviso antes de que venza un crédito
+
+_(pendiente de redactar)_
+
+**La app de clientes avisa ANTES de que venza un crédito.** Hasta hoy sólo avisaba cuando ya estaba vencido. Ahora manda «Tu crédito vence pronto · Vence el 25 oct» la primera vez que un crédito con saldo entra en sus últimos 5 días de plazo (los mismos que «Mis créditos» marca como «vence pronto»). Una sola vez por crédito; varios del mismo cliente van en un solo aviso, sin montos.
+
 ## v2.1321.1 — Apartar y retirar: correcciones de la auditoría
 
 _(pendiente de redactar)_

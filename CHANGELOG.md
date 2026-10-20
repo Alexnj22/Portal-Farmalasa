@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1310.0 — App: el modo de prueba como demo — saldo a favor, reservas de muestra, vista con el código y momentos
+
+Pedido del dueño (2026-10-20): «¿dónde veo el saldo a favor? agrégalo en modo
+de prueba para verlo. Dame más herramientas en modo de prueba para que sea
+demo». Todo del lado de la app y en la memoria del teléfono: nada se pide ni
+se escribe en el servidor.
+
+- **Panel ordenado en subgrupos** en Cuenta: Tarjeta y nivel · Reservas y
+  saldo · Momentos · Avisos al teléfono · Vista.
+- **Saldo a favor de muestra** (No · Vigente · Ya usado): $14.75 de una
+  reserva pagada en línea que la sucursal no alcanzó a preparar, vigente 30
+  días. Se ve en Cuenta («Saldo a favor: …»), arriba de Mis reservas y en la
+  tarjeta de esa reserva vencida; «Ya usado» la muestra como usada.
+- **Reservas de muestra**, una en cada paso: receta por subir, receta en
+  revisión, pedido mixto con otra foto pedida (reenviar la foto o quitar lo
+  bajo receta), en preparación, lista sin pagar, pagada en línea, cobro de
+  prueba, vencida con saldo a favor, receta rechazada y retirada. Mis reservas
+  y el Inicio las cuentan como reales; pagar, cancelar, mandar la foto o
+  quitar lo bajo receta cambia la muestra sin llamar al servidor y lo avisa
+  («En el modo de prueba no se guarda»). «Simular: la sucursal avanza un
+  paso» aprueba la receta enviada y deja lista lo que se preparaba.
+- **Vista «entró con el código»**: la app se ve como una sesión de código
+  (Cuenta reducida, sin chat, y lo que pide DUI lleva a esa pantalla) sin
+  cerrar la sesión real. Entrar de verdad la apaga.
+- **Momentos a pedido**: «¡Subiste a X!», la bienvenida «Tu nivel» (nueva
+  `forzarTuNivel` en SubisteDeNivel) y el cumpleaños, cada vez que se toca
+  (antes la segunda vez no volvía a abrirse: el parámetro era un `1` fijo).
+- **Reiniciar todo el modo de prueba** a como estaba.
+- Sólo para la cuenta con `modo_prueba`: `lib/cuenta.js` reconoce
+  `resumen.prueba` en cada resumen y, sin él, lo de muestra se apaga; la del
+  revisor de las tiendas (muestras sin `modo_prueba`) no ve ni el panel ni los
+  datos.
 ## v2.1309.1 — App de puntos: reverso de la tarjeta como una tarjeta real
 
 - El reverso usa el MISMO fondo que el frente (material vivo, mismo velo) y

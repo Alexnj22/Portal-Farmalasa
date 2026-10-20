@@ -4,6 +4,11 @@ import { create } from 'zustand';
 import { borrarDelWidget, publicarEnWidget } from './widget';
 import { useSesion } from './sesion';
 import { copiaParaEmpezar } from './sinConexion';
+import { useModoPrueba } from './prueba';
+
+// El modo de prueba se reconoce con CADA resumen (2026-10-20): sin `prueba`,
+// lo de muestra del demo se apaga (lib/demo.js).
+const reconocer = (r) => useModoPrueba.getState().reconocer(!!r?.prueba);
 
 // `generacion` sube con cada resumen nuevo: la lista paginada de movimientos
 // se reinicia SÓLO cuando cambia, y una página pedida antes de un refresco se
@@ -40,11 +45,12 @@ export const useCuenta = create((set, get) => ({
       // `cargadoAt` queda en 0 para que el fresco lo reemplace.
       if (!resumen) {
         const copia = await copiaParaEmpezar('resumen', {});
-        if (copia && vigente() && !get().resumen) set((x) => ({ resumen: copia, generacion: x.generacion + 1 }));
+        if (copia && vigente() && !get().resumen) { reconocer(copia); set((x) => ({ resumen: copia, generacion: x.generacion + 1 })); }
       }
       const r = await useSesion.getState().pedir('resumen');
       // Se cerró sesión (o entró otra) mientras se pedía: no se pinta ni se publica.
       if (!vigente()) return { ok: false, mensaje: 'Vuelve a entrar.' };
+      if (r?.ok) reconocer(r);
       if (r?.ok) set((x) => ({ resumen: r, cargando: false, cargadoAt: r.sinConexion ? 0 : Date.now(), generacion: x.generacion + 1 }));
       if (r?.ok) { if (!r.sinConexion) publicarEnWidget(r); }
       else set({ error: r?.mensaje ?? 'No se pudo consultar.', cargando: false });
@@ -57,6 +63,7 @@ export const useCuenta = create((set, get) => ({
     vuelta += 1;
     enCurso = null;
     borrarDelWidget();
+    reconocer(null);
     set({ resumen: null, error: null, cargadoAt: 0, cargando: false });
   },
 }));

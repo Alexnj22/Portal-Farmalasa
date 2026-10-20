@@ -29,12 +29,17 @@
 // Lo pagado en línea que no se entrega queda A FAVOR (arriba, con su
 // vigencia, y en cada tarjeta). Un cobro de PRUEBA se dice como tal.
 //
+// Modo de prueba (2026-10-20): la cuenta de prueba puede ver reservas de
+// MUESTRA, una en cada paso, y un saldo a favor de muestra (lib/demo.js). Se
+// suman a las reales DESPUÉS de leerlas —no van a la pantalla bloqueada— y
+// sus acciones no llaman al servidor: el cambio queda sólo en este teléfono.
+//
 // Pantalla bloqueada (2026-10-15): cada vez que se lee la lista, las reservas
 // abiertas se ponen en la pantalla bloqueada (Live Activity en iPhone,
 // notificación fija en Android) y las que terminaron se quitan — ver
 // modules/reserva-viva. Sólo con «Todas» o «Abiertas»: son las lecturas que
 // traen TODAS las abiertas; con otro filtro se darían por terminadas.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { Image } from 'expo-image';
@@ -58,6 +63,8 @@ import { PISTA_RECETA, usarVistaPreviaFoto } from '../componentes/VistaPreviaFot
 import { sinBloquear } from '../lib/bloqueo';
 import { useVisible } from '../lib/visible';
 import { sincronizarReservasVivas, vigilarReservasVivas } from '../modules/reserva-viva';
+import { esDeMuestra, misReservasConDemo, useDemo } from '../lib/demo';
+import { useModoPrueba } from '../lib/prueba';
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -125,7 +132,9 @@ export default function Reservas() {
   const pedir = useSesion((s) => s.pedir);
   const [filtro, setFiltro] = useState('todas');
   const [porFiltro, setPorFiltro] = useState({});
-  const d = porFiltro[filtro];
+  // Con el modo de prueba, las de muestra encima de las reales.
+  const demo = useDemo();
+  const d = useMemo(() => misReservasConDemo(porFiltro[filtro], demo, filtro), [porFiltro, filtro, demo]);
   const [ahora, setAhora] = useState(Date.now());
   const [refrescando, setRefrescando] = useState(false);
   const [encargos, setEncargos] = useState([]);
@@ -212,6 +221,20 @@ export default function Reservas() {
   useFocusEffect(useCallback(() => { pedir('pago_preparar'); }, [pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
+  // Las de muestra (modo de prueba): el cambio va a la memoria, nunca al servidor.
+  const cambiarMuestra = (filas, cambio) => {
+    useModoPrueba.getState().cambiarReservas(Object.fromEntries(filas.map((f) => [f.id, cambio])));
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  };
+  const avisoMuestra = (texto) => Alert.alert('En el modo de prueba no se guarda', texto);
+  const pagarMuestra = (r) => {
+    const filas = r.pedido ? (d?.reservas ?? []).filter((x) => x.pedido === r.pedido && ABIERTA(x)) : [r];
+    Alert.alert('En el modo de prueba no se cobra', 'No se abre la página de pago ni se carga dinero. ¿Ver cómo queda pagada en línea?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Ver pagada', onPress: () => cambiarMuestra(filas, { pago_estado: 'pagado', pago_metodo: 'en_linea', pagado_at: new Date().toISOString() }) },
+    ]);
+  };
+
   // Subir (otra) foto de la receta (2026-10-12): contra el primer renglón; el
   // servidor la anota en todo el pedido.
   const [subiendo, setSubiendo] = useState(null);
@@ -224,6 +247,11 @@ export default function Reservas() {
       titulo: 'Foto de tu receta', mensaje: 'Que se lean bien el nombre del medicamento, la firma y el sello del médico.', pista: PISTA_RECETA,
     });
     if (!f) return;
+    if (esDeMuestra(g.filas[0])) {
+      cambiarMuestra(g.filas, { receta_estado: 'pendiente', receta_motivo: null, receta_url: f.uri, receta_subida_at: new Date().toISOString() });
+      avisoMuestra('La foto no se envía: queda sólo en este teléfono, como si la sucursal la estuviera revisando.');
+      return;
+    }
     subiendoYa.current = true;
     setSubiendo(g.clave);
     try {
@@ -243,6 +271,15 @@ export default function Reservas() {
     Alert.alert('Quitar los productos bajo receta', `Se quita ${conReceta.join(', ')} y lo demás del pedido sigue: lo pagas o lo retiras como siempre.`, [
       { text: 'No', style: 'cancel' },
       { text: 'Quitar y seguir', style: 'destructive', onPress: async () => {
+        if (esDeMuestra(g.filas[0])) {
+          const ahora = new Date().toISOString();
+          const quedan = g.filas.filter((f) => !f.bajo_receta);
+          const resto = Math.round(quedan.reduce((n, f) => n + totalDeFila(f), 0) * 100) / 100;
+          cambiarMuestra(g.filas.filter((f) => f.bajo_receta), { estado: 'cancelada', cerrada_at: ahora });
+          cambiarMuestra(quedan, { estado: 'pendiente', receta_estado: null, receta_motivo: null, total_pedido: resto });
+          avisoMuestra('Se quitó lo bajo receta sólo en este teléfono; lo demás sigue en preparación.');
+          return;
+        }
         const res = await pedir('quitar_receta', { reserva_id: g.filas[0].id });
         if (res?.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         else Alert.alert('No se pudo quitar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
@@ -267,6 +304,11 @@ export default function Reservas() {
   const cancelarPedido = (g) => Alert.alert('Cancelar pedido', `¿Cancelar el pedido ${g.pedido} completo (${g.filas.length} productos)?`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar pedido', style: 'destructive', onPress: async () => {
+      if (esDeMuestra(g.filas[0])) {
+        cambiarMuestra(g.filas, { estado: 'cancelada', cerrada_at: new Date().toISOString() });
+        avisoMuestra('El pedido se canceló sólo en este teléfono.');
+        return;
+      }
       const res = await Promise.all(g.filas.map((r) => pedir('cancelar_reserva', { id: r.id })));
       const fallidas = res.filter((x) => !x?.ok);
       if (!fallidas.length) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -279,6 +321,11 @@ export default function Reservas() {
   const cancelar = (r) => Alert.alert('Cancelar reserva', `¿Cancelar ${r.producto_nombre}?`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar reserva', style: 'destructive', onPress: async () => {
+      if (esDeMuestra(r)) {
+        cambiarMuestra([r], { estado: 'cancelada', cerrada_at: new Date().toISOString() });
+        avisoMuestra('La reserva se canceló sólo en este teléfono.');
+        return;
+      }
       const res = await pedir('cancelar_reserva', { id: r.id });
       if (res?.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       else Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
@@ -295,6 +342,7 @@ export default function Reservas() {
   // se vuelve a leer, un par de veces, por si el aviso de Wompi se atrasa.
   const [pagando, setPagando] = useState(null);
   const pagar = async (r) => {
+    if (esDeMuestra(r)) { pagarMuestra(r); return; }
     if (pagandoYa.current) return;
     pagandoYa.current = true;
     setPagando(r.id);

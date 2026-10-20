@@ -11,7 +11,7 @@ import { useAppActiva } from '../lib/visible';
 import { BARRA_NATIVA, barraAndroid } from '../componentes/PilaDePestana';
 import * as SystemUI from 'expo-system-ui';
 import * as SplashScreen from 'expo-splash-screen';
-import { useSesion } from '../lib/sesion';
+import { useConCodigo, useSesion } from '../lib/sesion';
 import { conReporte } from '../lib/errores';
 import { llamar } from '../lib/api';
 import { useCuenta } from '../lib/cuenta';
@@ -106,7 +106,9 @@ function usarFondoDelDocumento(base) {
 }
 
 function Guardia() {
-  const { token, lista, cargar, alcance, completando } = useSesion();
+  const { token, lista, cargar, completando } = useSesion();
+  // La sesión de código, o la del modo de prueba que la simula (2026-10-20).
+  const conCodigo = useConCodigo();
   const segmentos = useSegments();
   useEffect(() => { cargar(); }, [cargar]);
   // La reserva en la pantalla bloqueada se pone al día aunque no se abra Mis
@@ -127,7 +129,7 @@ function Guardia() {
   }, [lista, token]);
   useEffect(() => {
     if (!lista) return;
-    if (token && alcance === 'codigo' && SOLO_COMPLETA.has(segmentos[0])) { router.replace('/completar'); return; }
+    if (token && conCodigo && SOLO_COMPLETA.has(segmentos[0])) { router.replace('/completar'); return; }
     if (ABIERTAS.has(segmentos[0])) return;
     const publica = PUBLICAS.has(segmentos[0]);
     // Sin sesión se limpia TODO lo que la sesión anterior dejó en memoria: en un
@@ -141,7 +143,7 @@ function Guardia() {
     // abierta con la sesión viva, hasta que entre o vuelva atrás.
     if (token && completando && segmentos[0] === 'entrar') return;
     if (token && (publica || !segmentos.length)) { limpiarPila(); router.replace('/puntos'); }
-  }, [token, lista, segmentos, alcance, completando]);
+  }, [token, lista, segmentos, conCodigo, completando]);
   return null;
 }
 

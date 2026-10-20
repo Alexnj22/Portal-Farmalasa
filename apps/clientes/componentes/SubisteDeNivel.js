@@ -66,8 +66,11 @@ let siguienteId = 0;
  * `nivel`: el nivel de Puntos Salud. `mayoreo`: el rango del cliente de mayoreo
  * (`rangoReal` o `rangoDePrueba` de Mayorista.js), o null. Los `forzar*` la
  * muestran aunque ya se haya visto (modo de prueba y los avisos que la abren).
+ * Desde el 2026-10-20 cualquier valor que cambie la vuelve a mostrar (el
+ * modo de prueba manda la hora del toque) y `forzarTuNivel` muestra la
+ * presentación «TU NIVEL».
  */
-export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, forzarRango = false, forzarPrecio = false, forzarBienvenida = false }) {
+export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, forzarRango = false, forzarPrecio = false, forzarBienvenida = false, forzarTuNivel = false }) {
   const [cola, setCola] = useState([]);
   const poner = (p) => setCola((c) => [...c, { ...p, id: ++siguienteId }]);
   // Modo de prueba / los avisos: se muestran aunque ya se hayan visto.
@@ -75,6 +78,7 @@ export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, 
   useEffect(() => { if (forzarRango && mayoreo?.clave) poner(pantallaRango(mayoreo)); }, [forzarRango]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (forzarPrecio && mayoreo?.clave) poner(pantallaPrecio(mayoreo)); }, [forzarPrecio]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (forzarBienvenida && mayoreo?.clave) poner(pantallaBienvenida(mayoreo)); }, [forzarBienvenida]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (forzarTuNivel && nivel?.clave) poner(pantallaTuNivel(nivel)); }, [forzarTuNivel]); // eslint-disable-line react-hooks/exhaustive-deps
   // Apagados no se anota nada: el nivel de entrada de todos no es un dato.
   const activos = nivel?.activos !== false;
   useEffect(() => {

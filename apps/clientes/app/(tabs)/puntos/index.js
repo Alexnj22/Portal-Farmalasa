@@ -25,6 +25,7 @@ import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '
 import { useSesion } from '../../../lib/sesion';
 import { alLlegarAviso, sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, raspableDePrueba, useModoPrueba } from '../../../lib/prueba';
+import { resumenConDemo, useDemo } from '../../../lib/demo';
 import { BotonWalletNativo, abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
@@ -46,12 +47,18 @@ const ROTULOS = {
 
 export default function Puntos() {
   const t = useTema();
-  const { cumple, nivel: verNivel, rango: verRango, precio: verPrecio, mayoreo: verMayoreo } = useLocalSearchParams();
+  // Los `ver*` (modo de prueba y avisos) llegan con un valor que cambia en cada
+  // toque (2026-10-20): con un '1' fijo, la segunda vez no volvía a abrirse.
+  const { cumple, nivel: verNivel, rango: verRango, precio: verPrecio, mayoreo: verMayoreo, tunivel: verTuNivel } = useLocalSearchParams();
   // Sólo lo que esta pantalla pinta (2026-10-14): con el almacén entero, cada
   // `cargando: true/false` de una consulta repintaba el Inicio completo.
-  const { resumen: real, error, cargar, generacion } = useCuenta(useShallow((s) => ({
+  const { resumen: crudo, error, cargar, generacion } = useCuenta(useShallow((s) => ({
     resumen: s.resumen, error: s.error, cargar: s.cargar, generacion: s.generacion,
   })));
+  // El demo del modo de prueba (2026-10-20): las reservas y el saldo a favor de
+  // muestra cuentan en el Inicio como si fueran reales (lib/demo.js).
+  const demo = useDemo();
+  const real = useMemo(() => resumenConDemo(crudo, demo), [crudo, demo]);
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
   const prueba = useModoPrueba();
   const enPrueba = !!real?.prueba && prueba.activo;
@@ -168,8 +175,8 @@ export default function Puntos() {
           <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista, real?.programa).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Presionable>
       ) : null}
-      <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel === '1'} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
-        forzarRango={verRango === '1'} forzarPrecio={verPrecio === '1'} forzarBienvenida={verMayoreo === '1'} />
+      <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel || false} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
+        forzarRango={verRango || false} forzarPrecio={verPrecio || false} forzarBienvenida={verMayoreo || false} forzarTuNivel={verTuNivel || false} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>

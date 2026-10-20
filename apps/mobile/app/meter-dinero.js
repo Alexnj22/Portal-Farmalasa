@@ -81,7 +81,13 @@ export default function MeterDinero() {
   const elegir = (v) => {
     const elegido = tipos.find((t) => t.codigo === v);
     if (elegido?.lleva_comprobante) {
-      router.replace({ pathname: elegido.codigo === 'APLICACION' ? '/aplicacion-inyeccion' : '/abono-apartado', params: { sala } });
+      /* Cada tipo con diálogo propio va al SUYO. Antes todo lo que no era la
+       * inyección caía en el abono para apartar, y el «Pago de asegurado
+       * Mapfre» (2026-10-19) abría esa pantalla. Lo que todavía no tiene
+       * pantalla nativa se abre en el portal, en Mi caja de esa sala. */
+      const nativa = { APLICACION: '/aplicacion-inyeccion', ABONO_CLIENTE: '/abono-apartado' }[elegido.codigo];
+      if (nativa) router.replace({ pathname: nativa, params: { sala } });
+      else router.replace({ pathname: '/portal', params: { ruta: `/caja?sala=${sala}` } });
       return;
     }
     setCodigo(v); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setMontoCerrado(false);

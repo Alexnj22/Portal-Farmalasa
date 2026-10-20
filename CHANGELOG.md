@@ -23,7 +23,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1314.3 — Tipos de la base: saldo_favor_dias
 
-_(pendiente de redactar)_
+Los tipos de la base (`src/types/database.ts`) con la función nueva `saldo_favor_dias()`.
 
 ## v2.1314.2 — Saldo a favor: un solo plazo de 60 días y aviso antes de que venza
 

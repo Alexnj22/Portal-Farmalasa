@@ -1962,9 +1962,19 @@ export type Database = {
       }
       app_reservas_pagos: {
         Row: {
+          abono_at: string | null
+          abono_error: string | null
+          abono_estado: string | null
+          abono_intentos: number
+          abono_tomado_at: string | null
           codigo_autorizacion: string | null
           created_at: string
+          credito_branch_id: number | null
+          credito_erp: string | null
+          credito_id: number | null
+          customer_id: number | null
           detalle: Json | null
+          devolver_monto: number | null
           encargo_id: number | null
           enlace_id: number | null
           enlace_prueba: boolean | null
@@ -1982,9 +1992,19 @@ export type Database = {
           reservas_ids: number[] | null
         }
         Insert: {
+          abono_at?: string | null
+          abono_error?: string | null
+          abono_estado?: string | null
+          abono_intentos?: number
+          abono_tomado_at?: string | null
           codigo_autorizacion?: string | null
           created_at?: string
+          credito_branch_id?: number | null
+          credito_erp?: string | null
+          credito_id?: number | null
+          customer_id?: number | null
           detalle?: Json | null
+          devolver_monto?: number | null
           encargo_id?: number | null
           enlace_id?: number | null
           enlace_prueba?: boolean | null
@@ -2002,9 +2022,19 @@ export type Database = {
           reservas_ids?: number[] | null
         }
         Update: {
+          abono_at?: string | null
+          abono_error?: string | null
+          abono_estado?: string | null
+          abono_intentos?: number
+          abono_tomado_at?: string | null
           codigo_autorizacion?: string | null
           created_at?: string
+          credito_branch_id?: number | null
+          credito_erp?: string | null
+          credito_id?: number | null
+          customer_id?: number | null
           detalle?: Json | null
+          devolver_monto?: number | null
           encargo_id?: number | null
           enlace_id?: number | null
           enlace_prueba?: boolean | null
@@ -2022,6 +2052,34 @@ export type Database = {
           reservas_ids?: number[] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "app_reservas_pagos_credito_branch_id_fkey"
+            columns: ["credito_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_pagos_credito_id_fkey"
+            columns: ["credito_id"]
+            isOneToOne: false
+            referencedRelation: "creditos_de_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_pagos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_pagos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
           {
             foreignKeyName: "app_reservas_pagos_encargo_id_fkey"
             columns: ["encargo_id"]
@@ -7337,9 +7395,10 @@ export type Database = {
       }
       creditos_abonos_portal: {
         Row: {
-          abonado_por: string
+          abonado_por: string | null
           anulado_at: string | null
           anulado_por: string | null
+          app_pago_id: number | null
           branch_id: number
           cliente: string
           comprobante_url: string | null
@@ -7353,15 +7412,17 @@ export type Database = {
           id: number
           lectura: Json | null
           monto: number
+          origen: string
           pago_id: number | null
           pos_proveedor: string | null
           saldo_antes: number | null
           saldo_despues: number | null
         }
         Insert: {
-          abonado_por: string
+          abonado_por?: string | null
           anulado_at?: string | null
           anulado_por?: string | null
+          app_pago_id?: number | null
           branch_id: number
           cliente: string
           comprobante_url?: string | null
@@ -7375,15 +7436,17 @@ export type Database = {
           id?: never
           lectura?: Json | null
           monto: number
+          origen?: string
           pago_id?: number | null
           pos_proveedor?: string | null
           saldo_antes?: number | null
           saldo_despues?: number | null
         }
         Update: {
-          abonado_por?: string
+          abonado_por?: string | null
           anulado_at?: string | null
           anulado_por?: string | null
+          app_pago_id?: number | null
           branch_id?: number
           cliente?: string
           comprobante_url?: string | null
@@ -7397,6 +7460,7 @@ export type Database = {
           id?: never
           lectura?: Json | null
           monto?: number
+          origen?: string
           pago_id?: number | null
           pos_proveedor?: string | null
           saldo_antes?: number | null
@@ -7429,6 +7493,13 @@ export type Database = {
             columns: ["anulado_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creditos_abonos_portal_app_pago_id_fkey"
+            columns: ["app_pago_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas_pagos"
             referencedColumns: ["id"]
           },
           {
@@ -28586,6 +28657,49 @@ export type Database = {
         }
       }
       credito_detalle: { Args: { p_id: number }; Returns: Json }
+      credito_pago_avisar: {
+        Args: { p_pago_id: number; p_texto: string; p_tipo: string }
+        Returns: undefined
+      }
+      credito_pago_tomar: {
+        Args: { p_pago_id: number }
+        Returns: {
+          abono_at: string | null
+          abono_error: string | null
+          abono_estado: string | null
+          abono_intentos: number
+          abono_tomado_at: string | null
+          codigo_autorizacion: string | null
+          created_at: string
+          credito_branch_id: number | null
+          credito_erp: string | null
+          credito_id: number | null
+          customer_id: number | null
+          detalle: Json | null
+          devolver_monto: number | null
+          encargo_id: number | null
+          enlace_id: number | null
+          enlace_prueba: boolean | null
+          enlace_url: string | null
+          es_real: boolean | null
+          estado: string
+          forma_pago: string | null
+          id: number
+          id_transaccion: string | null
+          identificador: string
+          monto: number
+          pagado_at: string | null
+          pedido: string | null
+          reserva_id: number | null
+          reservas_ids: number[] | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "app_reservas_pagos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       creditos_del_cliente: {
         Args: { p_credito_id: number }
         Returns: {

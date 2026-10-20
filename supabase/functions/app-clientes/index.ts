@@ -35,6 +35,8 @@ import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_
 import { escaleraDeNiveles, nivelDeCliente, programaParaApp } from "../_shared/nivel.ts";
 import { duiValido, validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
+import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/creditos.ts";
+import { getErpBranchMap } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
 import { reconocer } from "../_shared/autoRespuesta.ts";
 
@@ -2509,7 +2511,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // (2026-10-19) Devuelve también si el enlace es de PRUEBA (`enlace_prueba`,
     // anotado al crearlo): antes el reutilizado contestaba `prueba: false` fijo
     // y la app decía «pago» de un cobro que no era dinero.
-    async function enlaceVigente(columna: "reserva_id" | "pedido" | "encargo_id", valor: string | number, monto: number): Promise<{ url: string; prueba: boolean } | null> {
+    async function enlaceVigente(columna: "reserva_id" | "pedido" | "encargo_id" | "credito_id", valor: string | number, monto: number): Promise<{ url: string; prueba: boolean } | null> {
       const { data, error } = await admin.from("app_reservas_pagos").select("enlace_url, monto, enlace_prueba")
         .eq(columna, valor).eq("estado", "creado").not("enlace_url", "is", null)
         .gte("created_at", new Date(Date.now() - 25 * 60_000).toISOString())
@@ -2645,7 +2647,69 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json(data);
     }
 
+    // ── Pagar un crédito con Wompi (2026-10-20) ─────────────────────────
+    // Decisiones del dueño: por el saldo TOTAL, y se abona solo en la caja
+    // apenas Wompi lo aprueba (`wompi-pagos` → `_shared/creditoEnLinea.ts`).
+    // El crédito se busca en la ficha de la SESIÓN, nunca por un id suelto
+    // que mande el teléfono. El saldo se relee de la caja antes de cobrar:
+    // cobrarle a alguien lo que ya pagó en sala obliga a devolverle el dinero.
+    if (accion === "pagar_credito") {
+      if (!customerId) return json({ ok: false, mensaje: "Para pagar, entra con tu DUI y teléfono." });
+      const { data: c, error } = await admin.from("creditos_de_clientes")
+        .select("id, branch_id, credito_erp, numero_doc, fecha, saldo")
+        .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
+      if (error) throw error;
+      if (!c || !(Number(c.saldo) > 0.004)) return json({ ok: false, mensaje: "Ese crédito ya no tiene saldo." });
+      // ¿Ya hay un pago cobrado esperando su abono? No se cobra dos veces.
+      const { data: enCurso, error: eC } = await admin.from("app_reservas_pagos").select("id")
+        .eq("credito_id", c.id).eq("estado", "aprobado").in("abono_estado", ["pendiente", "aplicando", "fallo"]).limit(1);
+      if (eC) throw eC;
+      if (enCurso?.length) return json({ ok: false, mensaje: "Ya recibimos tu pago de este crédito; se está aplicando. En unos minutos se actualiza." });
+
+      let saldo = Number(c.saldo);
+      try {
+        const entrada = getErpBranchMap().find((e) => e.branchId === Number(c.branch_id));
+        if (entrada) {
+          const { username, password } = getCortesCreds();
+          const vivo = (await creditosDeLaSala(await getSessionCookie(username, password), entrada.erpId, String(c.fecha), String(c.fecha)))
+            .find((x) => x.credito === String(c.credito_erp));
+          if (vivo) saldo = vivo.saldo;
+        }
+      } catch (e) {
+        // La caja no respondió: se cobra el saldo del espejo. Si resultara de
+        // más, el abono lo detecta y se devuelve la diferencia en caja.
+        console.error("pagar_credito: no se releyó el saldo:", (e as Error)?.message ?? e);
+      }
+      if (!(saldo > 0.004)) return json({ ok: false, mensaje: "Ese crédito ya está pagado. Tu lista se actualiza en unos minutos." });
+      const total = Math.round(saldo * 100) / 100;
+
+      const vigente = await enlaceVigente("credito_id", c.id, total);
+      if (vigente) return json({ ok: true, url: vigente.url, total, prueba: vigente.prueba, reutilizado: true });
+      const numero = String(c.numero_doc ?? c.credito_erp).split("_")[0].replace(/^0+(?=\d)/, "");
+      const identificador = `CR-${c.id}-${Date.now().toString(36)}`;
+      const { error: eP } = await admin.from("app_reservas_pagos").insert({
+        identificador, monto: total, credito_id: c.id, credito_branch_id: c.branch_id, credito_erp: String(c.credito_erp), customer_id: customerId,
+      });
+      if (eP) throw eP;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      try {
+        const enlace = await crearEnlace({
+          identificador, monto: total, producto: `Pago de crédito ${numero}`,
+          descripcion: `Pago total del crédito ${numero}`, urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+        });
+        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador);
+        if (eU) console.error("app-clientes: no se guardó el enlace del crédito:", eU.message);
+        return json({ ok: true, url, total, prueba: !enlace.estaProductivo });
+      } catch (err) {
+        console.error("app-clientes: wompi no creó el enlace del crédito:", (err as Error)?.message ?? err);
+        return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato." });
+      }
+    }
+
     // ── Mis créditos (2026-10-15): sólo LECTURA, sin pagos ──────────────
+    // (Desde el 2026-10-20 cada crédito trae su pago en curso, y la lista de
+    // los pagos hechos en la app con su comprobante.)
     // Los créditos con saldo de ESTA ficha (la de la sesión, nunca una que
     // mande el teléfono), del espejo `creditos_de_clientes`. El estado sale de
     // `estadoDeCredito`, la política del portal. El número es el del documento
@@ -2674,8 +2738,29 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         };
       });
       const centavos = creditos.reduce((s: number, c: any) => s + Math.round(c.saldo * 100), 0);
+      // Los pagos hechos en la app (2026-10-20): el comprobante que el cliente
+      // guarda, y el estado de lo que todavía se está abonando. Un crédito que
+      // se terminó de pagar sale de la lista de arriba; su pago queda aquí.
+      const { data: pagos, error: ePg } = await admin.from("app_reservas_pagos")
+        .select("id, credito_id, credito_branch_id, credito_erp, monto, id_transaccion, codigo_autorizacion, forma_pago, pagado_at, es_real, abono_estado, devolver_monto")
+        .eq("customer_id", customerId).not("credito_erp", "is", null).eq("estado", "aprobado")
+        .order("pagado_at", { ascending: false }).limit(30);
+      if (ePg) console.error("mis_creditos: no se leyeron los pagos:", ePg.message);
+      const ESTADO_PAGO: Record<string, string> = {
+        pendiente: "en_proceso", aplicando: "en_proceso", fallo: "en_proceso",
+        aplicado: "aplicado", por_devolver: "por_devolver", prueba: "prueba",
+      };
+      const pagosApp = (pagos ?? []).map((p: any) => ({
+        id: p.id, credito_id: p.credito_id, monto: Number(p.monto), fecha: p.pagado_at,
+        transaccion: p.id_transaccion, autorizacion: p.codigo_autorizacion ?? null, forma: p.forma_pago ?? null,
+        estado: ESTADO_PAGO[String(p.abono_estado)] ?? "en_proceso",
+        devolver: p.devolver_monto == null ? null : Number(p.devolver_monto),
+        sala: nombreSala.get(Number(p.credito_branch_id)) ?? null,
+      }));
+      const enProceso = new Set(pagosApp.filter((p: any) => p.estado === "en_proceso").map((p: any) => p.credito_id));
+      for (const c of creditos as any[]) c.pago_en_proceso = enProceso.has(c.id);
       return json({
-        ok: true, creditos, total: centavos / 100,
+        ok: true, creditos, total: centavos / 100, pagos: pagosApp, pagar_en_linea: true,
         vencidos: creditos.filter((c: any) => c.estado === "vencido").length,
         plazo_dias: PLAZO_CREDITO,
       });

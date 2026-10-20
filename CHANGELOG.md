@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1321.0 — Pagar un crédito desde la app con Wompi
+
+Decisiones del dueño (2026-10-20): pago por el saldo TOTAL; queda en la caja
+como «Transferencia» en la sala del crédito; se abona solo cuando Wompi lo
+aprueba; si el crédito ya estaba pagado, se devuelve en caja (la API de Wompi
+sólo anula cobros de Visa Direct, no los de enlace de pago).
+
+- **App**: botón «Pagar $X» en cada crédito; «Pago recibido, se está
+  aplicando» mientras se abona; sección «Pagos en la app» con el comprobante
+  (monto, fecha, transacción, autorización) para compartir, y el aviso de
+  devolución si llegó tarde.
+- **`pagar_credito`** (`app-clientes`): el crédito sale de la ficha de la
+  sesión, el saldo se relee de la caja antes de cobrar y no se cobra dos veces
+  mientras otro pago espera su abono.
+- **`wompi-pagos`**: confirmado el cobro, abona en la caja después de
+  contestar (`_shared/creditoEnLinea.ts`); `sync-creditos` reintenta cada 10
+  minutos. Tres frenos contra el doble abono: `credito_pago_tomar` atómico, el
+  documento `WOMPI-<transacción>` buscado en la caja antes de abonar, y
+  `creditos_abonos_portal.app_pago_id` único.
+- **Portal**: el cobro sale en los movimientos del corte y en Cuentas por
+  cobrar con la marca «Pagado en la app» y sin «quién lo cobró».
+- Si sobra (ya estaba pagado) o no se puede abonar, avisa a Administración
+  (`credito_pago_avisar`).
+- Migración `20261020221304_credito_pagado_en_linea_con_wompi`.
+
 ## v2.1320.1 — App: apartar o encargar y retirar desde el teléfono
 
 _(pendiente de redactar)_

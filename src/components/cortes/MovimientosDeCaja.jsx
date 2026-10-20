@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, CreditCard, HandCoins, History, Paperclip, Pencil, Scale, Search, ShoppingBag, Trash2, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, CreditCard, HandCoins, History, Paperclip, Pencil, Scale, Search, ShoppingBag, Smartphone, Trash2, Wallet } from 'lucide-react';
+import { pagadoEnLaApp } from '@nucleo/data/creditos';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -511,22 +512,31 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
         const cb = it.cb;
         const anulado = Boolean(cb.anulado_at);
         const entra = Boolean(cb.entroAlCajon);
+        /* Lo pagó el cliente solo, desde la app (2026-10-20): no hay quién lo
+         * cobró, y eso es justo lo que la sala tiene que ver para no buscarlo
+         * en el cajón ni preguntarle a nadie. */
+        const app = pagadoEnLaApp(cb);
         return {
             clave: it.clave, branchId: cb.branch_id, fecha: it.fecha,
-            Icono: HandCoins, tono: anulado ? 'ido' : entra ? 'cobro' : 'neutro',
+            Icono: app ? Smartphone : HandCoins, tono: anulado ? 'ido' : entra ? 'cobro' : 'neutro',
             tipo: 'Cobro de crédito',
             principal: 'Cobro de crédito', resto: cb.cliente || 'Sin nombre',
             concepto: `Cobro de crédito · ${cb.cliente || 'Sin nombre'}`,
             hora: horaDe(cb.created_at), horaExacta: true,
             monto: cb.monto, entra: true, montoNota: Number(cb.saldo_despues) > 0.004
                 ? `queda ${formatMoney(cb.saldo_despues)}` : 'saldado',
-            quien: personas?.get(cb.abonado_por), rotuloQuien: 'Lo cobró',
+            quien: app ? null : personas?.get(cb.abonado_por), rotuloQuien: 'Lo cobró',
             foto: cb.comprobante_url || null,
             marcas: [
+                app && ['info', 'Pagado en la app', Smartphone],
                 anulado && ['danger', 'Anulado'],
                 !anulado && (entra ? ['warning', 'Todavía no aparece en la caja'] : ['neutral', 'No entra al cajón']),
             ].filter(Boolean),
-            datos: datosDelCobro(cb),
+            datos: [
+                ...datosDelCobro(cb),
+                app && ['Se pagó', 'el cliente, desde la app con tarjeta (Wompi)'],
+                app && ['Dónde está el dinero', 'en la cuenta de Wompi, no en el cajón'],
+            ].filter(Boolean),
         };
     }
     if (it.kind === 'bolsa') {
@@ -680,8 +690,8 @@ function LineaDeCorte({ corte }) {
 }
 
 /** Una marca con el tono de `Badge`. */
-const marcaDe = ([variant, texto]) => (
-    <Badge key={texto} variant={variant} size="sm">{texto}</Badge>
+const marcaDe = ([variant, texto, icono]) => (
+    <Badge key={texto} variant={variant} size="sm" icon={icono}>{texto}</Badge>
 );
 
 /**

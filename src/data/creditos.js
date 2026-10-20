@@ -402,7 +402,7 @@ export function fetchCobrosDelPortal({ desde, hasta, branchId = null }) {
         let q = supabase.from('creditos_abonos_portal')
             .select(`id, branch_id, credito_erp, factura_erp, cliente, monto, forma,
                      documento, saldo_antes, saldo_despues, abonado_por, comprobante_url,
-                     erp_abono_id, anulado_at, created_at`)
+                     erp_abono_id, anulado_at, created_at, origen, app_pago_id`)
             .order('created_at', { ascending: false });
         if (branchId) q = q.eq('branch_id', branchId);
         if (desde) q = q.gte('created_at', `${desde}T00:00:00-06:00`);
@@ -410,6 +410,12 @@ export function fetchCobrosDelPortal({ desde, hasta, branchId = null }) {
         return q;
     });
 }
+
+/** Si el cliente lo pagó solo, desde la app y con tarjeta (Wompi, 2026-10-20).
+ *  Se mira también el documento —`WOMPI-<transacción>`— porque el historial
+ *  que viene de la caja no trae la columna `origen` del portal. */
+export const pagadoEnLaApp = (a) =>
+    a?.origen === 'app' || /^WOMPI-/i.test(String(a?.documento ?? ''));
 
 /** Si un cobro entró al CAJÓN. Lo decide la forma, y por eso se escribe una
  *  sola vez: el efectivo lo va a pedir el corte en billetes; lo demás no

@@ -1,6 +1,7 @@
 import { getCorsHeaders, getErpBranchMap, requireInvokeSecret } from "../_shared/security.ts";
 import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/creditos.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { aplicarPendientes } from "../_shared/creditoEnLinea.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LAS CUENTAS POR COBRAR, TRAÍDAS AL PORTAL
@@ -84,6 +85,14 @@ Deno.serve(async (req) => {
      * completa se nombra a propósito, que es la que cuesta. */
     const modo = body?.modo === "completo" ? "completo" : "hoy";
     const desde = String(body?.desde ?? (modo === "completo" ? DESDE : hasta));
+
+    /* Los créditos pagados en la app que todavía no se abonaron en la caja
+     * (2026-10-20): `wompi-pagos` los abona apenas Wompi aprueba; si la caja
+     * no respondió, se reintentan acá. Sin pendientes es UNA lectura de la
+     * base y ninguna petición a la caja. Va antes de leer, para que esta
+     * misma corrida ya traiga el saldo nuevo. */
+    try { await aplicarPendientes(supabase); }
+    catch (e) { console.error("[sync-creditos] pagos en línea:", (e as Error).message); }
 
     const mapa = getErpBranchMap().filter((e) => e.erpId !== 6);   // Bodega no vende al crédito
     const { username, password } = getCortesCreds();

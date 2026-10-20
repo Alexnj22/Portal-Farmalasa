@@ -15,8 +15,23 @@
 // comprueba antes.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { aceptaPruebas, avisoAutentico, consultarTransaccion } from "../_shared/wompi.ts";
+import { aplicarPagoDeCredito } from "../_shared/creditoEnLinea.ts";
 
 const VOLVER_A_LA_APP = "puntossalud://reservas";
+const VOLVER_A_CREDITOS = "puntossalud://creditos";
+
+// El pago de un crédito (2026-10-20): confirmado el cobro, el abono en la caja
+// sigue DESPUÉS de contestar — la caja tarda hasta 45 s y Wompi quiere su 200
+// enseguida. Si falla, `sync-creditos` lo reintenta cada 10 minutos.
+// deno-lint-ignore no-explicit-any
+function abonarSiEsCredito(admin: any, r: any) {
+  if (!r?.ok || !r?.credito || r?.prueba || !r?.pago_id) return;
+  if (r.ya && !["pendiente", "fallo"].includes(String(r.abono_estado))) return;
+  const tarea = aplicarPagoDeCredito(admin, Number(r.pago_id))
+    .catch((e) => console.error("[wompi] abono del crédito:", (e as Error)?.message ?? e));
+  // deno-lint-ignore no-explicit-any
+  try { (globalThis as any).EdgeRuntime?.waitUntil(tarea); } catch { /* sin waitUntil, lo toma sync-creditos */ }
+}
 
 // deno-lint-ignore no-explicit-any
 async function confirmar(admin: any, identificador: string, idTransaccion: string) {
@@ -57,14 +72,14 @@ async function confirmar(admin: any, identificador: string, idTransaccion: strin
   return data;
 }
 
-const pagina = (titulo: string, texto: string) => `<!doctype html>
+const pagina = (titulo: string, texto: string, volver = VOLVER_A_LA_APP) => `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="1;url=${VOLVER_A_LA_APP}"><title>${titulo}</title>
+<meta http-equiv="refresh" content="1;url=${volver}"><title>${titulo}</title>
 <style>body{font-family:-apple-system,system-ui,sans-serif;text-align:center;padding:48px 24px;color:#1c1c1e;background:#fff}
 @media(prefers-color-scheme:dark){body{color:#f2f2f7;background:#000}}h1{font-size:22px}p{font-size:16px;opacity:.75}
 a{display:inline-block;margin-top:20px;padding:14px 24px;border-radius:14px;background:#C2185B;color:#fff;text-decoration:none;font-weight:700}</style>
-</head><body><h1>${titulo}</h1><p>${texto}</p><a href="${VOLVER_A_LA_APP}">Volver a la app</a>
-<script>setTimeout(function(){location.href=${JSON.stringify(VOLVER_A_LA_APP)}},300)</script></body></html>`;
+</head><body><h1>${titulo}</h1><p>${texto}</p><a href="${volver}">Volver a la app</a>
+<script>setTimeout(function(){location.href=${JSON.stringify(volver)}},300)</script></body></html>`;
 
 Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -74,11 +89,21 @@ Deno.serve(async (req) => {
     const q = new URL(req.url).searchParams;
     const identificador = q.get("identificadorEnlaceComercio") ?? q.get("ref") ?? "";
     const idTransaccion = q.get("idTransaccion") ?? "";
-    let r: { ok?: boolean; motivo?: string; prueba?: boolean } = { ok: false, motivo: "incompleto" };
+    let r: { ok?: boolean; motivo?: string; prueba?: boolean; credito?: boolean } = { ok: false, motivo: "incompleto" };
     try {
       if (idTransaccion) r = await confirmar(admin, identificador, idTransaccion);
+      abonarSiEsCredito(admin, r);
     } catch (e) {
       console.error("[wompi] vuelta:", (e as Error)?.message ?? e);
+    }
+    // El identificador de un crédito empieza con «CR-» (ver `pagar_credito`).
+    if (r?.credito || identificador.startsWith("CR-")) {
+      const html = r?.ok && r?.prueba
+        ? pagina("Pago de prueba", "Este cobro fue de prueba: no se cargó dinero y tu crédito sigue igual.", VOLVER_A_CREDITOS)
+        : r?.ok
+        ? pagina("¡Pago recibido!", "Tu crédito se actualiza en unos segundos.", VOLVER_A_CREDITOS)
+        : pagina("Volviendo a la app", "Si completaste el pago, tu crédito se actualiza en unos segundos.", VOLVER_A_CREDITOS);
+      return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
     }
     // Un cobro de PRUEBA (2026-10-19) no es dinero: se dice, y la sala lo cobra en caja.
     const html = r?.ok && r?.prueba
@@ -110,6 +135,7 @@ Deno.serve(async (req) => {
   const idTransaccion = String(aviso?.IdTransaccion ?? "");
   try {
     const r = await confirmar(admin, identificador, idTransaccion);
+    abonarSiEsCredito(admin, r);
     // 200 también cuando no se confirmó por una razón definitiva (no aprobada,
     // prueba, monto distinto): reintentarlo no la va a cambiar.
     return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } });

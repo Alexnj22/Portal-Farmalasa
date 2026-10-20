@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, ArrowDownUp, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, UserCircle2, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownUp, Building2, CalendarClock, HandCoins, Pencil, RefreshCw, Search, ShoppingBag, Smartphone, UserCircle2, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -26,6 +26,7 @@ import {
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
     pagarCreditos, pedirCorreccionDeAbono, severidadDeDias, fetchCreditosReservados,
     refrescarCreditosDeHoy, subirComprobanteDeAbono,
+    pagadoEnLaApp,
 } from '@nucleo/data/creditos';
 import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -929,8 +930,11 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
                                                             que en tres de las seis es una cuenta
                                                             compartida. Decir «en la caja» es la
                                                             verdad; poner un nombre, no. */}
-                                                        {a.cobrado_por || 'cobrado en la caja'}
+                                                        {pagadoEnLaApp(a) ? 'pagado por el cliente en la app' : (a.cobrado_por || 'cobrado en la caja')}
                                                     </span>
+                                                    {pagadoEnLaApp(a) && (
+                                                        <Badge variant="info" size="sm" icon={Smartphone} className="mt-1">Pagado en la app</Badge>
+                                                    )}
                                                 </span>
                                             </span>
                                             <span className="flex items-center gap-2 shrink-0">

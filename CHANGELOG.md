@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1316.3 — Premios: se retiran en cualquier sucursal; apartar o pedir el regalo
+
+_(pendiente de redactar)_
+
+- **El premio del raspable se retira en cualquier sucursal**: la que escanea el código es la que entrega, y de ésa sale el producto o el regalo. El cliente ya no elige sucursal.
+- **Un regalo que la sala no tiene no se entrega**: el portal dice en qué farmacias hay y ofrece **apartarlo** en una de ellas o **pedirlo** para esta. Cuando el envío llega se aparta solo y al cliente le llega el aviso «Tu regalo ya llegó» en la app. Lo pedido aparece en Puntos → Premios → «Pedidos por clientes», con el botón para enviarlo.
+- **Desde la app** el cliente ve dónde hay su regalo antes de ir y puede apartarlo él mismo.
+
 ## v2.1316.2 — Un monto que la foto no comprueba pide otra foto y después «lo comparé con el papel»
 
 Reporte del usuario (20-oct): un POS Promerica de $19.87 en Salud 4 quedó

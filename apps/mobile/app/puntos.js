@@ -23,7 +23,8 @@ import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, 
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { buscarClientePorTarjeta, entregarPremio, fetchAvisosDePuntos, fetchClientesConPuntos, fetchPremiosPorEntregar, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { apartarPremio, buscarClientePorTarjeta, entregarPremio, fetchAvisosDePuntos, pedirPremio, fetchClientesConPuntos, fetchPremiosPorEntregar, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
 import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { leerEntradaDeTarjeta, NOMBRE_DE_ENTRADA } from '@nucleo/utils/expedienteDelCliente';
@@ -60,6 +61,8 @@ function EscanearTarjeta() {
   const { user, hasPermission } = useAuth();
   const miSala = user?.branchId ?? user?.branch_id ?? null;
   const administra = hasPermission('puntos_tab_niveles', 'can_edit');
+  const sucursales = useStaffStore((s) => s.branches);
+  const nombreSala = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? 'otra sucursal';
 
   // Un premio del raspable (2026-10-19): escanear su código en la app del
   // cliente, confirmar, y queda entregado —el producto se descarga del
@@ -67,21 +70,36 @@ function EscanearTarjeta() {
   // donde el cliente lo retira, salvo quien administra los niveles.
   const entregarEscaneado = async (codigo) => {
     try {
-      const lista = await fetchPremiosPorEntregar(administra ? null : miSala, codigo, true);
+      // Se retira en CUALQUIER sucursal (2026-10-20): entrega la que escanea.
+      const lista = await fetchPremiosPorEntregar(miSala, codigo, true);
       const p = (lista ?? []).find((x) => x.codigo === codigo);
-      const no = !p ? `No hay un premio ${codigo}${administra ? '' : ' para esta sucursal'}.`
+      const no = !p ? `No hay un premio ${codigo}.`
         : p.estado === 'ENTREGADO' ? 'Ese premio ya se entregó.'
           : p.estado === 'VENCIDO' ? 'Ese premio ya venció.'
-            : !p.branch_id ? 'El cliente todavía no eligió dónde retirarlo: que lo elija en la app.'
-              : p.tipo === 'promocional' && p.hay_en_sala === false ? 'En esta sucursal no hay de ese regalo: hay que pedirlo a Bodega.'
-                : null;
+            : p.tipo === 'promocional' && p.reserva_branch && Number(p.reserva_branch) !== Number(miSala)
+              ? `Ese regalo está apartado para el cliente en ${nombreSala(p.reserva_branch)}: se retira allá.`
+              : null;
       if (no) { Alert.alert('No se puede entregar', no); return; }
+      // Un regalo que aquí no hay: se dice dónde hay y el cliente elige.
+      if (p.tipo === 'promocional' && p.hay_en_sala === false) {
+        const otras = (p.hay_en ?? []).filter((x) => Number(x.branch_id) !== Number(miSala));
+        const hacer = async (fn, sala, ok) => {
+          trabajando('Guardando…');
+          try { await fn(p.id, sala); listo(ok); } catch (e) { fallo('No se pudo', mensajeAmigable(e)); }
+        };
+        Alert.alert(`Aquí no hay ${p.nombre}`, 'Pregúntale al cliente qué prefiere. Se le avisa en la app.', [
+          ...otras.slice(0, 2).map((x) => ({ text: `Apartarlo en ${nombreSala(x.branch_id)}`, onPress: () => hacer(apartarPremio, x.branch_id, 'Regalo apartado') })),
+          { text: 'Pedirlo para esta sucursal', onPress: () => hacer(pedirPremio, miSala, 'Regalo pedido') },
+          { text: 'Cancelar', style: 'cancel' },
+        ]);
+        return;
+      }
       const cuantos = Number(p.cantidad) > 1 ? `${p.cantidad} × ` : '';
       Alert.alert(`¿Entregar ${cuantos}${p.nombre}?`,
         `Premio ${p.codigo} de ${p.cliente?.nombre ?? 'el cliente'}. ${p.tipo === 'producto' ? 'Se descarga del inventario de esta sucursal.' : 'Sale del inventario de regalos de esta sucursal.'} Confirma con su documento que es la persona.`,
         [{ text: 'Cancelar', style: 'cancel' }, { text: 'Entregar', onPress: async () => {
           trabajando('Entregando…');
-          try { await entregarPremio(p.id); listo('Premio entregado', `${p.codigo} · ${p.nombre}`); }
+          try { await entregarPremio(p.id, miSala); listo('Premio entregado', `${p.codigo} · ${p.nombre}`); }
           catch (e) { fallo('No se pudo entregar', mensajeAmigable(e)); }
         } }]);
     } catch (e) {

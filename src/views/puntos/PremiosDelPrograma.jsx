@@ -24,7 +24,6 @@ import PortalInput from '../../components/common/PortalInput';
 import SearchInput from '../../components/common/SearchInput';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidModal from '../../components/common/LiquidModal';
-import ConfirmModal from '../../components/common/ConfirmModal';
 import Switch from '../../components/common/Switch';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -36,7 +35,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
 import EntregarPremioEscaneado from './EntregarPremioEscaneado';
 import {
-    ajustarPromocional, entregarPremio, enviarPromocional, fetchPremiosPorEntregar, fetchPromocionales,
+    ajustarPromocional, enviarPromocional, fetchPremiosPorEntregar, fetchPromocionales,
     guardarPromocional, recibirPromocional,
 } from '@nucleo/data/puntos';
 
@@ -72,7 +71,6 @@ export default function PremiosDelPrograma({ puedeAdministrar, miSala }) {
 
 // ── Por entregar ────────────────────────────────────────────────────────────
 function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
-    const showToast = useToastStore((s) => s.showToast);
     // La sala ve la suya y nada más; administración elige (vacío = todas).
     const [sala, setSala] = useState(puedeAdministrar ? '' : miSala);
     const [texto, setTexto] = useState('');
@@ -85,8 +83,8 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
     const [premios, setPremios] = useState(null);
     const [error, setError] = useState(null);
     const [version, setVersion] = useState(0);
-    const [confirmando, setConfirmando] = useState(null);
-    const [entregando, setEntregando] = useState(false);
+    // La sala que entrega: la elegida (administración) o la propia.
+    const salaQueEntrega = sala !== '' && sala != null ? Number(sala) : miSala;
 
     useEffect(() => {
         if (!puedeAdministrar && !miSala) return undefined;
@@ -96,21 +94,6 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
             .catch((e) => { if (vivo) { setPremios([]); setError(mensajeAmigable(e)); } });
         return () => { vivo = false; };
     }, [sala, buscar, entregados, version, puedeAdministrar, miSala]);
-
-    const entregar = async () => {
-        const p = confirmando;
-        setEntregando(true);
-        try {
-            await entregarPremio(p.id);
-            showToast('Premio entregado', `${p.codigo} · ${p.nombre} a ${p.cliente?.nombre ?? 'el cliente'}`, 'success');
-            setConfirmando(null);
-            setVersion((v) => v + 1);
-        } catch (e) {
-            showToast('No se pudo entregar', mensajeAmigable(e), 'error');
-        } finally {
-            setEntregando(false);
-        }
-    };
 
     if (!puedeAdministrar && !miSala) {
         return <Notice variant="warning">Tu ficha no tiene sucursal: no hay premios que entregar desde aquí.</Notice>;
@@ -148,9 +131,12 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
                 <ul className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     {premios.map((p) => {
                         const e = ESTADO[p.estado] ?? ESTADO.POR_RETIRAR;
-                        const sinSala = !p.branch_id;
-                        const sinRegalo = p.tipo === 'promocional' && p.hay_en_sala === false;
-                        const puede = p.estado === 'POR_RETIRAR' && !sinSala && !sinRegalo;
+                        /* Se retira en CUALQUIER sucursal (2026-10-20). Un regalo
+                         * apartado se retira en la suya; uno pedido espera el envío. */
+                        const donde = p.reserva_branch ? `Apartado en ${nombreSala(p.reserva_branch)}`
+                            : p.espera_envio ? `Pedido para ${nombreSala(p.branch_id)} · esperando el envío`
+                                : p.estado === 'ENTREGADO' ? `Entregado en ${nombreSala(p.entregado_branch)}`
+                                    : 'Se retira en cualquier sucursal';
                         return (
                             <li key={p.id} data-surface="card" className="rounded-xl p-3 flex flex-col gap-1.5 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
@@ -169,16 +155,12 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
                                     {p.cliente?.nombre ?? '—'}{p.cliente?.documento ? ` · ${p.cliente.documento}` : ''}
                                 </p>
                                 <p className="text-caption text-content-3">
-                                    {sinSala ? 'El cliente todavía no eligió sucursal' : `Retira en ${nombreSala(p.branch_id)}`}
-                                    {' · '}vence {fechaCorta(p.vence_el)}
+                                    {donde}{' · '}vence {fechaCorta(p.vence_el)}
                                 </p>
-                                {sinRegalo && p.estado === 'POR_RETIRAR' && (
-                                    <p className="text-caption text-warning-text font-semibold">No hay en esta sala: hay que pedirlo a Bodega.</p>
-                                )}
-                                {p.estado === 'POR_RETIRAR' && !sinSala && (
-                                    <Button variant="primary" size="sm" icon={PackageCheck} className="self-start" disabled={!puede}
-                                        onClick={() => setConfirmando(p)}>
-                                        Entregar
+                                {p.estado === 'POR_RETIRAR' && salaQueEntrega && (
+                                    <Button variant="primary" size="sm" icon={PackageCheck} className="self-start"
+                                        onClick={() => setEscaneado(p.codigo)}>
+                                        Entregar aquí
                                     </Button>
                                 )}
                             </li>
@@ -187,17 +169,8 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
                 </ul>
             )}
             {escaneado && (
-                <EntregarPremioEscaneado codigo={escaneado} miSala={miSala} puedeAdministrar={puedeAdministrar}
+                <EntregarPremioEscaneado codigo={escaneado} miSala={salaQueEntrega} puedeAdministrar={puedeAdministrar}
                     onCerrar={cerrarEscaneado} onEntregado={() => setVersion((v) => v + 1)} />
-            )}
-            {confirmando && (
-                <ConfirmModal isOpen isDestructive={false} isProcessing={entregando}
-                    onClose={() => { if (!entregando) setConfirmando(null); }}
-                    title={`¿Entregar ${confirmando.nombre}?`}
-                    message={`A ${confirmando.cliente?.nombre ?? 'el cliente'}, código ${confirmando.codigo}. ${confirmando.tipo === 'producto'
-                        ? 'Se descarga del inventario de esta sucursal. Confirma con su DUI o su tarjeta que es la persona.'
-                        : 'Sale del inventario de regalos de esta sucursal. Confirma con su DUI o su tarjeta que es la persona.'}`}
-                    confirmText="Entregar" onConfirm={entregar} />
             )}
         </section>
     );
@@ -248,6 +221,23 @@ function Regalos({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
                     <Button variant="ghost" size="sm" icon={Plus} onClick={() => setDialogo({ modo: 'nuevo', promo: null })}>Nuevo regalo</Button>
                 )}
             </div>
+
+            {puedeAdministrar && (panel.pedidos ?? []).length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5"><Gift size={13} /> Pedidos por clientes</p>
+                    {(panel.pedidos ?? []).map((x) => (
+                        <div key={`${x.promocional_id}-${x.hacia}`} data-surface="card" className="rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-body-sm text-content">
+                                <b>{x.cantidad} × {x.nombre}</b> para {nombreSala(x.hacia)} · {x.premios === 1 ? '1 cliente esperando' : `${x.premios} clientes esperando`}
+                            </span>
+                            <Button variant="secondary" size="sm" icon={Send}
+                                onClick={() => setDialogo({ modo: 'enviar', promo: promos.find((p) => Number(p.id) === Number(x.promocional_id)), hacia: x.hacia, cantidad: x.cantidad })}>
+                                Enviar
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {envios.length > 0 && (
                 <div className="flex flex-col gap-2">
@@ -308,7 +298,7 @@ function Regalos({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
 
 const TITULOS = { nuevo: 'Nuevo regalo', editar: 'Editar regalo', entrada: 'Entrada o ajuste', enviar: 'Enviar a una sucursal' };
 
-function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho }) {
+function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = '', cantidad = '' }) {
     const showToast = useToastStore((s) => s.showToast);
     const bodega = opcionesSala.find((o) => /bodega/i.test(o.label))?.value ?? '';
     // El borrador sobrevive al cierre de sesión por inactividad (gate:borradores).
@@ -316,7 +306,7 @@ function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho }) {
     const [f, setF] = useState(() => loadDraft(llave) ?? ({
         nombre: promo?.nombre ?? '', descripcion: promo?.descripcion ?? '',
         costo: promo?.costo != null ? String(promo.costo) : '', activo: promo?.activo ?? true,
-        sala: bodega, hacia: '', cantidad: '', nota: '',
+        sala: bodega, hacia: hacia ?? '', cantidad: cantidad ? String(cantidad) : '', nota: '',
     }));
     const [guardando, setGuardando] = useState(false);
     const poner = (k, v) => setF((x) => { const n = { ...x, [k]: v }; saveDraft(llave, n); return n; });

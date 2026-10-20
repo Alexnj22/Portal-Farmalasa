@@ -54,7 +54,7 @@ const DIAS_SESION = 180;
 // inicio). Reservas, facturas, chat, créditos, encargos, datos fiscales, foto
 // de perfil, la bandeja de avisos y borrar la cuenta piden DUI y teléfono.
 const CON_CODIGO = new Set([
-  "resumen", "movimientos", "cupon_raspado", "premio_salas", "premio_elegir_sala",
+  "resumen", "movimientos", "cupon_raspado", "premio_salas", "premio_elegir_sala", "premio_apartar",
   "wallet_pase", "wallet_enlace", "google_wallet_enlace",
   "ofertas", "historias", "historia_vista",
   "documentos_estado", "aceptar_documentos",
@@ -1476,17 +1476,27 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // con «lo hay» para que el cliente elija una que lo tenga; si elige otra,
     // el premio queda esperando que se lo manden. Sólo su propio premio, y sólo
     // mientras no se haya entregado ni vencido.
-    if (accion === "premio_salas" || accion === "premio_elegir_sala") {
+    if (accion === "premio_salas" || accion === "premio_elegir_sala" || accion === "premio_apartar") {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal." });
       const id = Number(body?.id);
       const { data: pr, error: ePr } = await admin.from("puntos_premios")
-        .select("id, tipo, product_id, factor, cantidad, promocional_id, estado, vence_el, branch_id")
+        .select("id, tipo, product_id, factor, cantidad, promocional_id, estado, vence_el, branch_id, reserva_branch")
         .eq("id", id).eq("customer_id", customerId).maybeSingle();
       if (ePr) throw ePr;
       if (!pr) return json({ ok: false, mensaje: "Ese premio no es tuyo." }, 404);
       const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
       if (pr.estado === "ENTREGADO") return json({ ok: false, mensaje: "Ese premio ya se entregó." });
       if (String(pr.vence_el) < hoy) return json({ ok: false, mensaje: "Ese premio ya venció." });
+
+      // Apartar un REGALO en una sala que lo tiene, desde la app (2026-10-20,
+      // pedido del usuario: «que desde la app se vea antes de ir»). La misma
+      // función que usa la sala; aquí ya se comprobó que el premio es suyo.
+      if (accion === "premio_apartar") {
+        if (pr.tipo !== "promocional") return json({ ok: false, mensaje: "Un producto se retira en cualquier sucursal que lo tenga." });
+        const { data: ap, error: eAp } = await admin.rpc("puntos_premio_apartar", { p_id: id, p_branch: Number(body?.branch_id) });
+        if (eAp) return json({ ok: false, mensaje: eAp.message });
+        return json({ ok: true, sala: sucursal(ap?.sala) });
+      }
 
       if (accion === "premio_elegir_sala") {
         const branchId = Number(body?.branch_id);
@@ -1507,15 +1517,24 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (pr.tipo === "producto") {
         hay = (await unidadesPorSala(admin, [Number(pr.product_id)])).get(Number(pr.product_id)) ?? new Map();
       } else {
+        // Lo LIBRE de cada sala (lo que hay menos lo apartado para otros); la
+        // unidad apartada para este cliente cuenta como suya.
         const { data: ex, error: eEx } = await admin.from("promocionales_existencias")
-          .select("branch_id, cantidad").eq("promocional_id", pr.promocional_id);
+          .select("branch_id").eq("promocional_id", pr.promocional_id);
         if (eEx) throw eEx;
-        hay = new Map((ex ?? []).map((x: any) => [Number(x.branch_id), Number(x.cantidad)]));
+        const libres = await Promise.all((ex ?? []).map(async (x: any) => {
+          const { data: n, error: eL } = await admin.rpc("promocional_libres",
+            { p_promocional: pr.promocional_id, p_branch: Number(x.branch_id), p_salvo: id });
+          if (eL) throw eL;
+          return [Number(x.branch_id), Number(n) || 0] as [number, number];
+        }));
+        hay = new Map(libres);
       }
       const necesita = pr.tipo === "producto" ? Number(pr.cantidad) * Number(pr.factor || 1) : Number(pr.cantidad);
       const lista = ((salas ?? []) as any[]).filter((b) => b.type === "FARMACIA").map((b) => ({
         branch_id: Number(b.id), sala: b.name, direccion: b.address ?? null,
         hay: (hay.get(Number(b.id)) ?? 0) >= necesita, elegida: Number(b.id) === Number(pr.branch_id),
+        apartado: Number(b.id) === Number(pr.reserva_branch),
       }));
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
@@ -3620,7 +3639,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // regalo promocional que se retira en una sucursal. Sólo se busca si el
       // mes no trae lote de puntos — es uno u otro, nunca los dos.
       const { data: premioMes, error: ePm } = cup ? { data: null, error: null } : await admin.from("puntos_premios")
-        .select("id, codigo, tipo, nombre, cantidad, presentacion_tipo, factor, nivel, vence_el, raspado_el, branch_id, estado, entregado_at")
+        .select("id, codigo, tipo, nombre, cantidad, presentacion_tipo, factor, nivel, vence_el, raspado_el, branch_id, estado, entregado_at, reserva_branch, espera_envio")
         .eq("customer_id", customerId).eq("mes", inicioMes).maybeSingle();
       if (ePm) throw ePm;
       if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
@@ -3671,7 +3690,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
             premio: {
               tipo: premioMes.tipo, nombre: premioMes.nombre, cantidad: Number(premioMes.cantidad), codigo: premioMes.codigo,
               presentacion: premioMes.tipo === "producto" ? `${premioMes.presentacion_tipo} (${premioMes.factor})` : null,
-              branch_id: premioMes.branch_id, sala: premioMes.branch_id ? sucursal(((salas ?? []) as any[]).find((b) => Number(b.id) === Number(premioMes.branch_id))?.name) : null,
+              // Desde el 2026-10-20 se retira en CUALQUIER sucursal: `sala` sólo
+              // dice dónde está APARTADO un regalo (o adónde se pidió).
+              branch_id: premioMes.reserva_branch ?? (premioMes.espera_envio ? premioMes.branch_id : null),
+              sala: (premioMes.reserva_branch || premioMes.espera_envio)
+                ? sucursal(((salas ?? []) as any[]).find((b) => Number(b.id) === Number(premioMes.reserva_branch ?? premioMes.branch_id))?.name) : null,
+              apartado: !!premioMes.reserva_branch, pedido: !!premioMes.espera_envio && !premioMes.reserva_branch,
               entregado: premioMes.estado === "ENTREGADO", entregado_at: premioMes.entregado_at,
             },
           } : null,

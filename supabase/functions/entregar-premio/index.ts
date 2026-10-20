@@ -10,7 +10,9 @@
 //
 // ── El orden importa ──────────────────────────────────────────────────────
 //   1. ¿Puede entregar en ESA sala? (`promocionales_puede_en_sala`, como él)
-//   2. Tomar el premio: ENTREGANDO, atómico. Dos clics a la vez no descartan
+//   2. Tomar el premio: ENTREGANDO, atómico. Desde el 2026-10-20 se retira en
+//      CUALQUIER sucursal: la que entrega es la que escanea (`sala`), y de ésa
+//      sale el producto o el regalo. Dos clics a la vez no descartan
 //      dos veces.
 //   3. El descarte en el sistema de la caja (sólo producto).
 //   4. Cerrar: ENTREGADO (y el promocional baja, en la misma transacción).
@@ -35,7 +37,7 @@ Deno.serve(async (req) => {
   let tomado: number | null = null;
   let descartado = false;
   try {
-    const { premio_id } = await req.json().catch(() => ({}));
+    const { premio_id, sala } = await req.json().catch(() => ({}));
     const id = Number(premio_id);
     if (!Number.isInteger(id) || id <= 0) return json({ ok: false, error: "Falta el premio." }, 400);
 
@@ -43,20 +45,24 @@ Deno.serve(async (req) => {
     if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
 
     const { data: fila, error: filaErr } = await admin
-      .from("puntos_premios").select("id, branch_id, estado").eq("id", id).maybeSingle();
+      .from("puntos_premios").select("id, estado").eq("id", id).maybeSingle();
     if (filaErr) throw filaErr;
     if (!fila) return json({ ok: false, error: "Ese premio no existe." }, 404);
-    if (!fila.branch_id) return json({ ok: false, error: "El cliente todavía no eligió dónde retirarlo." }, 409);
+    // La sala que entrega: la que manda la pantalla, o la de la ficha de quien entrega.
+    const { data: empleado, error: empErr } = await admin.from("employees").select("branch_id").eq("id", quien.id).maybeSingle();
+    if (empErr) throw empErr;
+    const salaQueEntrega = Number(sala) || Number(empleado?.branch_id) || null;
+    if (!salaQueEntrega) return json({ ok: false, error: "No se sabe en qué sucursal se entrega." }, 400);
 
     // El permiso se pregunta COMO el usuario: la regla vive en la base.
     const comoEl = createClient(url, Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
       global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
     });
-    const { data: puedeObrarPor, error: puedeErr } = await comoEl.rpc("promocionales_puede_en_sala", { p_branch: fila.branch_id });
+    const { data: puedeObrarPor, error: puedeErr } = await comoEl.rpc("promocionales_puede_en_sala", { p_branch: salaQueEntrega });
     if (puedeErr) throw puedeErr;
-    if (!puedeObrarPor) return json({ ok: false, error: "Este premio se entrega en otra sucursal." }, 403);
+    if (!puedeObrarPor) return json({ ok: false, error: "Sólo puedes entregar premios en tu sucursal." }, 403);
 
-    const { data: p, error: tomarErr } = await admin.rpc("puntos_premio_tomar", { p_id: id, p_branch: fila.branch_id });
+    const { data: p, error: tomarErr } = await admin.rpc("puntos_premio_tomar", { p_id: id, p_branch: salaQueEntrega });
     if (tomarErr) return json({ ok: false, error: tomarErr.message }, 409);
     tomado = id;
 

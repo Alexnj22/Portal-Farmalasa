@@ -831,6 +831,14 @@
         "puntos_tab_niveles"
       ],
       "motivo": "Entradas y ajustes del inventario de regalos: sólo quien edita los niveles (puntos_tab_niveles can_edit), cargos de toda la red."
+    },
+    "puntos_premio_pedir": {
+      "guarda": "alcance",
+      "motivo": "Pide un regalo para la sala propia (compara contra auth_employee_branch_id); quien administra, para cualquiera."
+    },
+    "puntos_premio_apartar": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "Aparta un regalo para el cliente en OTRA sala que sí lo tiene: lo hace la sala que lo atiende (o el cliente desde la app, por app-clientes). Sólo mueve dónde se retira el premio; no toca dinero ni existencias."
     }
   },
   "buckets_abiertos": {

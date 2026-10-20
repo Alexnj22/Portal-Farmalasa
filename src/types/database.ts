@@ -22031,6 +22031,7 @@ export type Database = {
           entregado_branch: number | null
           entregado_por: string | null
           erp_aplicado: Json | null
+          espera_envio: boolean
           estado: string
           factor: number | null
           ganado_el: string
@@ -22042,6 +22043,7 @@ export type Database = {
           product_id: number | null
           promocional_id: number | null
           raspado_el: string | null
+          reserva_branch: number | null
           tipo: string
           tomado_at: string | null
           vence_el: string
@@ -22056,6 +22058,7 @@ export type Database = {
           entregado_branch?: number | null
           entregado_por?: string | null
           erp_aplicado?: Json | null
+          espera_envio?: boolean
           estado?: string
           factor?: number | null
           ganado_el: string
@@ -22067,6 +22070,7 @@ export type Database = {
           product_id?: number | null
           promocional_id?: number | null
           raspado_el?: string | null
+          reserva_branch?: number | null
           tipo: string
           tomado_at?: string | null
           vence_el: string
@@ -22081,6 +22085,7 @@ export type Database = {
           entregado_branch?: number | null
           entregado_por?: string | null
           erp_aplicado?: Json | null
+          espera_envio?: boolean
           estado?: string
           factor?: number | null
           ganado_el?: string
@@ -22092,6 +22097,7 @@ export type Database = {
           product_id?: number | null
           promocional_id?: number | null
           raspado_el?: string | null
+          reserva_branch?: number | null
           tipo?: string
           tomado_at?: string | null
           vence_el?: string
@@ -22130,6 +22136,13 @@ export type Database = {
             columns: ["promocional_id"]
             isOneToOne: false
             referencedRelation: "promocionales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_premios_reserva_branch_fkey"
+            columns: ["reserva_branch"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]
@@ -32047,6 +32060,10 @@ export type Database = {
         }
         Returns: number
       }
+      promocional_apartados: {
+        Args: { p_branch: number; p_promocional: number; p_salvo?: number }
+        Returns: number
+      }
       promocional_enviar: {
         Args: {
           p_cantidad: number
@@ -32065,6 +32082,10 @@ export type Database = {
           p_id: number
           p_nombre: string
         }
+        Returns: number
+      }
+      promocional_libres: {
+        Args: { p_branch: number; p_promocional: number; p_salvo?: number }
         Returns: number
       }
       promocional_mover: {
@@ -32387,9 +32408,17 @@ export type Database = {
         Args: { p_defecto: number; p_premios: Json }
         Returns: number
       }
+      puntos_premio_apartar: {
+        Args: { p_branch: number; p_id: number }
+        Returns: Json
+      }
       puntos_premio_cerrar: {
         Args: { p_employee: string; p_erp: Json; p_id: number }
         Returns: undefined
+      }
+      puntos_premio_pedir: {
+        Args: { p_branch: number; p_id: number }
+        Returns: Json
       }
       puntos_premio_soltar: { Args: { p_id: number }; Returns: undefined }
       puntos_premio_sorteado: {

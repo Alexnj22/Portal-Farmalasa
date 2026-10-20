@@ -6,46 +6,59 @@
  * sala lo pasa por el lector (o la cámara) en Puntos → Escanear o en Puntos →
  * Premios. Esto busca ESE premio y pide UNA confirmación: al confirmar,
  * `entregar-premio` lo marca entregado y, si es un producto, lo descarga del
- * inventario de la sala. Si no se puede (otra sala, vencido, ya entregado, sin
- * existencia del regalo), lo dice en vez de ofrecer el botón.
+ * inventario de la sala.
+ *
+ * Desde el 2026-10-20 se retira en CUALQUIER sucursal: la que escanea es la
+ * que entrega. Un regalo promocional que esta sala no tiene NO se entrega: se
+ * dice dónde hay y el cliente elige (decisión del usuario) —apartarlo en una
+ * de esas salas, o pedirlo para ésta: cuando llegue se le avisa en la app—.
  */
 import React, { useEffect, useState } from 'react';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import LiquidModal from '../../components/common/LiquidModal';
+import Button from '../../components/common/Button';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { entregarPremio, fetchPremiosPorEntregar } from '@nucleo/data/puntos';
+import { apartarPremio, entregarPremio, fetchPremiosPorEntregar, pedirPremio } from '@nucleo/data/puntos';
 
 /** Por qué un premio no se puede entregar acá, o `null` si se puede. */
-function impedimento(p, miSala, puedeAdministrar) {
+function impedimento(p, sala) {
     if (p.estado === 'ENTREGADO') return 'Ese premio ya se entregó.';
     if (p.estado === 'VENCIDO') return 'Ese premio ya venció.';
     if (p.estado === 'ENTREGANDO') return 'Ese premio se está entregando en este momento.';
-    if (!p.branch_id) return 'El cliente todavía no eligió en qué sucursal lo retira: que lo elija en la app.';
-    if (!puedeAdministrar && Number(p.branch_id) !== Number(miSala)) return 'Ese premio se retira en otra sucursal.';
-    if (p.tipo === 'promocional' && p.hay_en_sala === false) return 'En esta sucursal no hay de ese regalo: hay que pedirlo a Bodega.';
+    if (p.tipo === 'promocional' && p.reserva_branch && Number(p.reserva_branch) !== Number(sala)) return 'APARTADO_EN_OTRA';
+    if (p.tipo === 'promocional' && p.hay_en_sala === false) return 'SIN_REGALO';
     return null;
 }
 
 export default function EntregarPremioEscaneado({ codigo, miSala, puedeAdministrar, onCerrar, onEntregado }) {
     const showToast = useToastStore((s) => s.showToast);
+    const salas = useStaffStore((s) => s.branches);
+    const nombreSala = (id) => (salas || []).find((b) => Number(b.id) === Number(id))?.name ?? 'otra sucursal';
     const [premio, setPremio] = useState(null);
+    const [sinRegalo, setSinRegalo] = useState(null);
     const [problema, setProblema] = useState(null);
-    const [entregando, setEntregando] = useState(false);
+    const [ocupado, setOcupado] = useState(false);
 
     useEffect(() => {
         let vivo = true;
-        // Quien administra busca en todas; la sala, en la suya. Con los
-        // entregados, para poder decir «ya se entregó» en vez de «no existe».
-        fetchPremiosPorEntregar(puedeAdministrar ? null : miSala, codigo, true)
+        // La sala que entrega es la de quien escanea. Con los entregados, para
+        // poder decir «ya se entregó» en vez de «no existe».
+        fetchPremiosPorEntregar(miSala, codigo, true)
             .then((lista) => {
                 if (!vivo) return;
                 const p = (lista ?? []).find((x) => x.codigo === codigo);
-                if (!p) { setProblema(`No hay un premio ${codigo}${puedeAdministrar ? '' : ' para esta sucursal'}.`); return; }
-                const no = impedimento(p, miSala, puedeAdministrar);
-                if (no) setProblema(no); else setPremio(p);
+                if (!p) { setProblema(`No hay un premio ${codigo}.`); return; }
+                const no = impedimento(p, miSala);
+                if (no === 'APARTADO_EN_OTRA') setProblema(`Ese regalo está apartado para el cliente en ${nombreSala(p.reserva_branch)}: se retira allá.`);
+                else if (no === 'SIN_REGALO') setSinRegalo(p);
+                else if (no) setProblema(no);
+                else setPremio(p);
             })
             .catch((e) => { if (vivo) setProblema(mensajeAmigable(e)); });
         return () => { vivo = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `nombreSala` sólo traduce un id para el aviso
     }, [codigo, miSala, puedeAdministrar]);
 
     // Lo que no se puede entregar se avisa y se cierra solo: el lector queda
@@ -57,24 +70,77 @@ export default function EntregarPremioEscaneado({ codigo, miSala, puedeAdministr
     }, [problema, showToast, onCerrar]);
 
     const entregar = async () => {
-        setEntregando(true);
+        setOcupado(true);
         try {
-            await entregarPremio(premio.id);
+            await entregarPremio(premio.id, miSala);
             showToast('Premio entregado', `${premio.codigo} · ${premio.nombre} a ${premio.cliente?.nombre ?? 'el cliente'}`, 'success');
             onEntregado?.(premio);
             onCerrar?.();
         } catch (e) {
             showToast('No se pudo entregar', mensajeAmigable(e), 'error');
         } finally {
-            setEntregando(false);
+            setOcupado(false);
         }
     };
+
+    const resolver = async (accion, sala) => {
+        setOcupado(true);
+        try {
+            if (accion === 'apartar') {
+                await apartarPremio(sinRegalo.id, sala);
+                showToast('Regalo apartado', `Queda en ${nombreSala(sala)} para ${sinRegalo.cliente?.nombre ?? 'el cliente'}. Se le avisa en la app.`, 'success');
+            } else {
+                await pedirPremio(sinRegalo.id, sala);
+                showToast('Regalo pedido', 'Cuando llegue a esta sucursal se le avisa al cliente en la app.', 'success');
+            }
+            onEntregado?.(sinRegalo);
+            onCerrar?.();
+        } catch (e) {
+            showToast('No se pudo', mensajeAmigable(e), 'error');
+        } finally {
+            setOcupado(false);
+        }
+    };
+
+    if (sinRegalo) {
+        const hay = (sinRegalo.hay_en ?? []).filter((x) => Number(x.branch_id) !== Number(miSala));
+        return (
+            <LiquidModal open onClose={ocupado ? undefined : onCerrar} maxWidth="max-w-md" ariaLabel="Regalo sin existencia en esta sala">
+                <LiquidModal.Header>
+                    <h2 className="text-body-xl font-semibold text-content">Aquí no hay {sinRegalo.nombre}</h2>
+                    <p className="text-body-sm text-content-2">
+                        Premio {sinRegalo.codigo} de {sinRegalo.cliente?.nombre ?? 'el cliente'}. Pregúntale qué prefiere.
+                    </p>
+                </LiquidModal.Header>
+                <LiquidModal.Body>
+                    <div className="flex flex-col gap-2">
+                        {hay.length ? hay.map((x) => (
+                            <Button key={x.branch_id} variant="secondary" disabled={ocupado} onClick={() => resolver('apartar', x.branch_id)}>
+                                Apartarlo en {nombreSala(x.branch_id)}
+                            </Button>
+                        )) : (
+                            <p className="text-body-sm text-content-3">No hay en ninguna sucursal por ahora.</p>
+                        )}
+                        <Button variant="primary" disabled={ocupado || !miSala} onClick={() => resolver('pedir', miSala)}>
+                            Pedirlo para esta sucursal
+                        </Button>
+                        <p className="text-caption text-content-3">
+                            Apartado o pedido, el cliente lo ve en la app y recibe el aviso cuando ya puede retirarlo.
+                        </p>
+                    </div>
+                </LiquidModal.Body>
+                <LiquidModal.Footer>
+                    <Button variant="ghost" onClick={onCerrar} disabled={ocupado}>Cancelar</Button>
+                </LiquidModal.Footer>
+            </LiquidModal>
+        );
+    }
 
     if (!premio) return null;
     const cantidad = Number(premio.cantidad) > 1 ? `${premio.cantidad} × ` : '';
     return (
-        <ConfirmModal isOpen isDestructive={false} isProcessing={entregando}
-            onClose={() => { if (!entregando) onCerrar?.(); }}
+        <ConfirmModal isOpen isDestructive={false} isProcessing={ocupado}
+            onClose={() => { if (!ocupado) onCerrar?.(); }}
             title={`¿Entregar ${cantidad}${premio.nombre}?`}
             message={`Premio ${premio.codigo} de ${premio.cliente?.nombre ?? 'el cliente'}${premio.cliente?.documento ? ` (${premio.cliente.documento})` : ''}. ${premio.tipo === 'producto'
                 ? 'Al confirmar se descarga del inventario de esta sucursal.'

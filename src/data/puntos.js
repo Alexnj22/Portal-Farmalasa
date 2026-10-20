@@ -413,6 +413,20 @@ export const recibirPromocional = async (envio) => {
     return queda;
 };
 
+/** Apartar un regalo para el cliente en una sala que SÍ tiene (2026-10-20). */
+export const apartarPremio = async (id, sala) => {
+    const r = await rpc('puntos_premio_apartar', { p_id: id, p_branch: sala });
+    anotar('PUNTOS_PREMIO_APARTADO', String(id), { sala });
+    return r;
+};
+
+/** Pedir un regalo para esta sala: se aparta solo cuando llegue el envío. */
+export const pedirPremio = async (id, sala) => {
+    const r = await rpc('puntos_premio_pedir', { p_id: id, p_branch: sala });
+    anotar('PUNTOS_PREMIO_PEDIDO', String(id), { sala });
+    return r;
+};
+
 /** Los premios por entregar de una sala (`sala` null = todas, sólo administración). */
 export const fetchPremiosPorEntregar = (sala, buscar = null, incluirEntregados = false) =>
     rpc('puntos_premios_lista', { p_branch: sala ?? null, p_buscar: buscar?.trim() || null, p_incluir_entregados: incluirEntregados });
@@ -421,8 +435,8 @@ export const fetchPremiosPorEntregar = (sala, buscar = null, incluirEntregados =
  * Entregar un premio. Un producto se descarta en el sistema de la caja; un
  * promocional baja de la sala. Lanza con el motivo del servidor.
  */
-export async function entregarPremio(id) {
-    const { data, error } = await supabase.functions.invoke('entregar-premio', { body: { premio_id: id } });
+export async function entregarPremio(id, sala = null) {
+    const { data, error } = await supabase.functions.invoke('entregar-premio', { body: { premio_id: id, sala } });
     if (error) {
         let motivo = error;
         try {

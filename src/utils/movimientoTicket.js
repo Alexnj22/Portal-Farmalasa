@@ -59,6 +59,12 @@ export function construirComprobanteDeMovimiento({
 }) {
     const entra = movimiento?.tipo === 'ENTRADA';
     const monto = Number(movimiento?.monto) || 0;
+    /* Cómo se pagó (2026-10-19). Un ingreso con tarjeta o transferencia NO
+     * entra al cajón: el papel decía «Entra a la caja» igual, y quien cuenta
+     * el efectivo con el papel en la mano buscaba un dinero que no está. */
+    const forma = movimiento?.forma_pago ?? 'EFECTIVO';
+    const noEfectivo = entra && forma !== 'EFECTIVO';
+    const nombreForma = forma === 'TARJETA' ? 'Tarjeta' : forma === 'TRANSFERENCIA' ? 'Transferencia' : 'Efectivo';
 
     const datos = [
         // El número del portal es el mismo que va adelante del concepto en la
@@ -68,7 +74,11 @@ export function construirComprobanteDeMovimiento({
         ['Fecha', fechaCorta(movimiento?.fecha)],
         ['Sucursal', recortar(soloAscii(sala || '-'), 20)],
     ];
-    if (movimiento?.numero_boleta) datos.push(['Boleta', soloAscii(movimiento.numero_boleta)]);
+    if (movimiento?.numero_boleta) datos.push([noEfectivo ? (forma === 'TARJETA' ? 'Voucher' : 'Referencia') : 'Boleta', soloAscii(movimiento.numero_boleta)]);
+    if (entra) datos.push(['Pago', nombreForma]);
+    if (noEfectivo && Number(movimiento?.comprobante_total) > monto + 0.004) {
+        datos.push([forma === 'TARJETA' ? 'Total voucher' : 'Total transf.', formatMoney(Number(movimiento.comprobante_total))]);
+    }
 
     const bloques = [];
     const concepto = [etiqueta, detalle].filter(Boolean).join(' - ');
@@ -91,6 +101,15 @@ export function construirComprobanteDeMovimiento({
         });
     }
 
+    // Con tarjeta o transferencia: dicho en palabras, para que nadie lo busque
+    // en el cajón al contar.
+    if (noEfectivo) {
+        bloques.push({ titulo: 'No entra al cajon', texto: `El dinero llega por el ${forma === 'TARJETA' ? 'POS' : 'banco'}.` });
+    }
+    if (noEfectivo && movimiento?.autorizacion === 'PENDIENTE') {
+        bloques.push({ titulo: 'Pendiente', texto: 'Sin comprobante del pago: queda pendiente de autorizacion.' });
+    }
+
     const pie = [];
     // La raya SÓLO cuando no hubo identidad comprobada. Con carné el registro
     // ya prueba quién se llevó el dinero; una raya al lado pediría a mano una
@@ -106,13 +125,14 @@ export function construirComprobanteDeMovimiento({
                            selloCorto(hechoAt)));
 
     return {
-        titulo: entra ? 'INGRESO A CAJA' : 'VALE DE CAJA',
+        titulo: !entra ? 'VALE DE CAJA' : noEfectivo ? `INGRESO CON ${forma === 'TARJETA' ? 'TARJETA' : 'TRANSFERENCIA'}` : 'INGRESO A CAJA',
         encabezado: { titulo: soloAscii(EMPRESA.razonSocial) },
         datos,
         bloques,
         // Un solo total y destacado: es la única cifra del papel, y lo que
         // alguien va a contar con las manos.
-        totales: [[entra ? 'Entra a la caja' : 'Sale de la caja', formatMoney(monto), true]],
+        totales: [[!entra ? 'Sale de la caja' : noEfectivo ? `Cobrado con ${nombreForma.toLowerCase()}` : 'Entra a la caja', formatMoney(monto), true]],
+
         pie,
     };
 }

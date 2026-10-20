@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1314.4 — El comprobante de un ingreso dice cómo se pagó
+
+_(pendiente de redactar)_
+
+El papel de un ingreso cobrado con tarjeta o transferencia decía «INGRESO A CAJA · Entra a la caja», y ese dinero no está en el cajón. Ahora dice **INGRESO CON TARJETA · Cobrado con tarjeta**, el número y el total del voucher, y «No entra al cajón: el dinero llega por el POS». Sin comprobante, avisa que queda pendiente de autorización. Vale para el portal y la app del personal.
+
 ## v2.1314.3 — Tipos de la base: saldo_favor_dias
 
 Los tipos de la base (`src/types/database.ts`) con la función nueva `saldo_favor_dias()`.

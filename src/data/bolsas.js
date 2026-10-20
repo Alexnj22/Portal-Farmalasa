@@ -1370,10 +1370,14 @@ export function fetchAnotadosDelPortal({ desde, hasta, branchId = null }) {
     return fetchAllRows(() => {
         let q = supabase.from('caja_movimientos_portal')
             .select('id, branch_id, erp_movimiento_id, tipo, monto, concepto, detalle, numero_boleta,'
-                  + ' foto_url, monto_origen, registrado_at, registrado_por, anulado_at')
+                  + ' foto_url, monto_origen, registrado_at, registrado_por, anulado_at,'
+                  + ' fecha, forma_pago, comprobante_total, autorizacion')
             .gte('fecha', desde)
             .lte('fecha', hasta)
-            .not('erp_movimiento_id', 'is', null)
+            /* Además de los que llegaron a la caja, los cobrados con tarjeta o
+             * transferencia (2026-10-20): ésos NO van a la caja a propósito, y
+             * sin traerlos la lista de movimientos no los mostraba nunca. */
+            .or('erp_movimiento_id.not.is.null,forma_pago.neq.EFECTIVO')
             .order('id', { ascending: false });
         if (branchId) q = q.eq('branch_id', branchId);
         return q;

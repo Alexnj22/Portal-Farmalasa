@@ -93,9 +93,10 @@ export default function MeterDinero() {
     if (elegido?.lleva_comprobante) {
       /* Cada tipo con diálogo propio va al SUYO. Antes todo lo que no era la
        * inyección caía en el abono para apartar, y el «Pago de asegurado
-       * Mapfre» (2026-10-19) abría esa pantalla. Lo que todavía no tiene
-       * pantalla nativa se abre en el portal, en Mi caja de esa sala. */
-      const nativa = { APLICACION: '/aplicacion-inyeccion', ABONO_CLIENTE: '/abono-apartado' }[elegido.codigo];
+       * Mapfre» (2026-10-19) abría esa pantalla. Desde el 2026-10-20 Mapfre
+       * tiene la suya; lo que todavía no la tenga se abre en el portal, en Mi
+       * caja de esa sala. */
+      const nativa = { APLICACION: '/aplicacion-inyeccion', ABONO_CLIENTE: '/abono-apartado', MAPFRE: '/mapfre-asegurado' }[elegido.codigo];
       if (nativa) router.replace({ pathname: nativa, params: { sala } });
       else router.replace({ pathname: '/portal', params: { ruta: `/caja?sala=${sala}` } });
       return;

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, HandCoins, History, Paperclip, Pencil, Scale, Search, ShoppingBag, Trash2, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, CreditCard, HandCoins, History, Paperclip, Pencil, Scale, Search, ShoppingBag, Trash2, Wallet } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -11,7 +11,7 @@ import PhotoLightbox from '../common/PhotoLightbox';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { filtrarMovimientos, fueEditado as fueEditadoMov, historiaDe as historiaDeMov, historiaPorMovimiento, renglonesDeMovimientos } from '@nucleo/utils/movimientosDeCaja';
+import { filtrarMovimientos, nombreDeForma, fueEditado as fueEditadoMov, historiaDe as historiaDeMov, historiaPorMovimiento, renglonesDeMovimientos } from '@nucleo/utils/movimientosDeCaja';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diaSV, fechaTexto, relojSV } from '@nucleo/utils/fecha';
@@ -249,6 +249,9 @@ export default function MovimientosDeCaja({
                             if (it.kind === 'bolsa') {
                                 return { tipoFila: 'bolsa', it, minuto: minutosDeIso(it.op.registrado_at) };
                             }
+                            if (it.kind === 'portal') {
+                                return { tipoFila: 'portal', it, minuto: minutosDeIso(it.an.registrado_at) };
+                            }
                             /* Si lo anotó o lo cobró el portal, su hora es la REAL y no la
                              * de la captura: se compara ésa contra el corte, y
                              * «cayó después» pasa de estimación a hecho. */
@@ -292,6 +295,8 @@ export default function MovimientosDeCaja({
                             // lo contaría dos veces. La fila existe para poder
                             // rastrearla, no para mover el número.
                             if (it.kind === 'bolsa') return s;
+                            // Con tarjeta o transferencia: no entró al cajón.
+                            if (it.kind === 'portal') return s;
                             const mv = it.mv;
                             return mv.desaparecido_at ? s
                                 : s + (mv.tipo === 'ENTRADA' ? 1 : -1) * (Number(mv.monto) || 0);
@@ -546,6 +551,40 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
                 ['Boleta', op.numero_boleta],
                 ['Monto de la operación', formatMoney(op.monto)],
                 ['Fuera de un vale', formatMoney(op.montoSinVale)],
+            ],
+        };
+    }
+
+    if (it.kind === 'portal') {
+        const an = it.an;
+        const anulado = Boolean(an.anulado_at);
+        const forma = nombreDeForma(an.forma_pago);
+        const texto = an.detalle || an.concepto || 'Ingreso';
+        const { principal, resto } = partirConcepto(texto);
+        return {
+            clave: it.clave, branchId: an.branch_id, fecha: it.fecha,
+            Icono: CreditCard, tono: anulado ? 'ido' : 'neutro',
+            tipo: `Ingreso con ${forma}`,
+            principal, resto, concepto: texto,
+            hora: horaDe(an.registrado_at), horaExacta: true,
+            monto: an.monto, entra: true,
+            montoNota: Number(an.comprobante_total) > Number(an.monto) + 0.004
+                ? `de un ${an.forma_pago === 'TARJETA' ? 'voucher' : 'comprobante'} de ${formatMoney(an.comprobante_total)}` : null,
+            quien: personas?.get(an.registrado_por), rotuloQuien: 'Lo cobró',
+            foto: an.foto_url || null,
+            marcas: [
+                anulado && ['danger', 'Anulado'],
+                !anulado && ['neutral', 'No entra al cajón'],
+                !anulado && an.autorizacion === 'PENDIENTE' && ['warning', 'Pendiente de autorización'],
+                !anulado && an.autorizacion === 'RECHAZADA' && ['danger', 'Autorización rechazada'],
+            ].filter(Boolean),
+            datos: [
+                ['Forma de pago', forma.charAt(0).toUpperCase() + forma.slice(1)],
+                [an.forma_pago === 'TARJETA' ? 'Voucher' : 'Referencia', an.numero_boleta],
+                [an.forma_pago === 'TARJETA' ? 'Total del voucher' : 'Total del comprobante',
+                    an.comprobante_total != null ? formatMoney(an.comprobante_total) : null],
+                ['Dónde está el dinero', an.forma_pago === 'TARJETA' ? 'en el POS, no en el cajón' : 'en el banco, no en el cajón'],
+                ['Se anotó', 'desde el portal'],
             ],
         };
     }

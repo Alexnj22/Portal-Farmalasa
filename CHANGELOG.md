@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1314.6 — Cortes muestra los ingresos con tarjeta; Mapfre nativo en la app del personal
+
+_(pendiente de redactar)_
+
+- **Cortes → Movimientos muestra los ingresos cobrados con tarjeta o transferencia**, como renglón propio: «Ingreso con tarjeta · No entra al cajón», con el voucher, su total, quién lo cobró y si espera autorización. No suman al neto del cajón. También en la lista de movimientos de la app del personal.
+- **El pago del asegurado de Mapfre tiene pantalla propia en la app del personal**: la factura de Mapfre por cobrar, el asegurado del listado de clientes y cómo pagó. Antes «Meter dinero» abría el portal para este tipo.
+
 ## v2.1314.5 — Puntos Salud: la burbuja del chat viaja con la barra de pestañas
 
 «Si voy a una vista sin barra de menú y regreso, la burbuja se mueve extraño»: su altura cambiaba de golpe al cambiar la ruta —al EMPEZAR la transición— y saltaba ~46 pt mientras la pantalla todavía se deslizaba. Ahora queda anclada abajo y sube o baja con la misma curva y duración que la transición del sistema.

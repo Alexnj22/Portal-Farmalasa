@@ -188,6 +188,20 @@ export default function CajaMovimientos() {
                 quien={personas.get(c.abonado_por)} />
             );
           }
+          if (it.kind === 'portal') {
+            // Cobrado con tarjeta o transferencia (2026-10-20): no entra al cajón.
+            const a = it.an;
+            const forma = a.forma_pago === 'TARJETA' ? 'Tarjeta' : 'Transferencia';
+            return (
+              <Renglon key={it.clave} entra tachado={!!a.anulado_at} sala={salaTxt} monto={a.monto}
+                titulo={a.detalle || a.concepto || 'Ingreso'}
+                detalle={[forma, a.numero_boleta ? `voucher ${a.numero_boleta}` : null, horaDeIso(a.registrado_at)].filter(Boolean).join(' · ')}
+                pildoras={[['No entra al cajón', MARCA.azulClaro],
+                  ...(a.autorizacion === 'PENDIENTE' ? [['Pendiente de autorización', MARCA.ambar]] : []),
+                  ...(a.anulado_at ? [['Anulado', MARCA.rojo]] : [])]}
+                quien={personas.get(a.registrado_por)} />
+            );
+          }
           if (it.kind === 'bolsa') {
             const op = it.op;
             return (

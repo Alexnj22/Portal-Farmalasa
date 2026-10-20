@@ -60,7 +60,16 @@ export function anotadosPorMovimiento(anotados = []) {
 }
 
 /**
- * La lista unida, la más reciente primero. Cada renglón es `{ kind: 'mov'|'cobro'|'bolsa', clave, … }`.
+ * Lo cobrado con tarjeta o transferencia (2026-10-20). No va a la caja —el
+ * dinero llega por el POS o por el banco—, así que no tiene renglón de la caja
+ * con el que juntarse: sale como renglón PROPIO, y nunca suma al cajón.
+ */
+export const esIngresoSinEfectivo = (a) => a?.erp_movimiento_id == null && a?.tipo === 'ENTRADA'
+    && (a?.forma_pago ?? 'EFECTIVO') !== 'EFECTIVO';
+export const nombreDeForma = (f) => (f === 'TARJETA' ? 'tarjeta' : f === 'TRANSFERENCIA' ? 'transferencia' : 'efectivo');
+
+/**
+ * La lista unida, la más reciente primero. Cada renglón es `{ kind: 'mov'|'cobro'|'bolsa'|'portal', clave, … }`.
  * Un cobro en efectivo que casó con su movimiento va DENTRO de ese renglón
  * (`cobro`); sólo los que no casaron salen sueltos.
  */
@@ -78,6 +87,10 @@ export function renglonesDeMovimientos({ movimientos = [], cobros = [], salidasD
         ...sueltos.map((cb) => ({
             kind: 'cobro', clave: `c${cb.id}`, cb,
             fecha: diaDe(cb.created_at), branchId: cb.branch_id, orden: cb.created_at, desempate: cb.id,
+        })),
+        ...anotados.filter(esIngresoSinEfectivo).map((an) => ({
+            kind: 'portal', clave: `p${an.id}`, an,
+            fecha: an.fecha ?? diaDe(an.registrado_at), branchId: an.branch_id, orden: an.registrado_at, desempate: an.id,
         })),
         ...salidasDeBolsa.filter((op) => op.montoSinVale > 0.005).map((op) => ({
             kind: 'bolsa', clave: `b${op.id}`, op,
@@ -112,6 +125,14 @@ export function filtrarMovimientos(renglones, {
             return tokenMatch(busqueda, c.cliente, `crédito ${c.credito_erp}`, c.forma,
                 c.documento, cobraron?.get(c.abonado_por)?.name,
                 salas?.get(c.branch_id), String(c.monto), 'ENTRADA');
+        }
+        if (it.kind === 'portal') {
+            const a = it.an;
+            if (tipo === 'SALIDA') return false;
+            if (estado === 'VIGENTES' && a.anulado_at) return false;
+            if (estado === 'EDITADOS' || estado === 'DESAPARECIDOS') return false;
+            return tokenMatch(busqueda, a.concepto, a.detalle, a.numero_boleta, nombreDeForma(a.forma_pago),
+                anotaron?.get(a.registrado_por)?.name, salas?.get(a.branch_id), String(a.monto), 'ENTRADA');
         }
         if (it.kind === 'bolsa') {
             const op = it.op;

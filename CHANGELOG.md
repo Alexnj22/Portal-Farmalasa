@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1318.0 — Chat del equipo: app del personal y portal al día con el de clientes
+
+El chat del lado del EQUIPO, al día con el de clientes (2026-10-20, «¿desde la app del portal se ve igual? debe verse muy estético también»):
+
+- **App del personal** (`apps/mobile`, chat nativo): globos agrupados como iMessage (la esquina del lado del autor se achica dentro de una tanda; la hora y «Visto» al final de la tanda; la foto del cliente al pie), la tarjeta del producto con su foto, las **notas de voz** y los **PDF** del cliente (se abren en el visor del sistema), lo que el cliente **editó** («Editado») o **eliminó** (tachado, con aviso) y las **respuestas automáticas** con su rótulo, del lado del equipo. El refresco en vivo trae también lo editado y lo eliminado.
+- **Portal web**: la tarjeta del producto con su foto.
+
 ## v2.1317.0 — Chat: respuestas automáticas de horario, teléfonos, direcciones y precio
 
 **Respuestas automáticas del chat** (2026-10-20, «que conteste solo si preguntan precio, horario, teléfono»). Cuando el cliente pregunta algo sencillo, la app contesta al instante con los datos REALES del portal:

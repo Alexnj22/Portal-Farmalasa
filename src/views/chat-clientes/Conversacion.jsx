@@ -545,6 +545,9 @@ function HiloCargando() {
 // el primero de cada tanda lleva la foto y el nombre corto de quien contestó.
 // Globos agrupados como en iMessage: dentro de una tanda la esquina del lado
 // del autor se achica, y la hora (con «Enviado»/«Visto») va sólo al final.
+// La foto del CATÁLOGO de un producto enviado (bucket público product-photos), no de una persona.
+const imagenDeProducto = (a) => a?.foto ?? undefined;
+
 function Burbuja({
     mensaje: m, nuevoGrupo, finDeGrupo, recien, autor, entrega, reacciones, yo, equipo, cliente, puedeReaccionar,
     onReaccionar, onResponder, onCopiar, onIrA, onOpciones, onFoto,
@@ -560,8 +563,10 @@ function Burbuja({
                 <span className="flex items-center gap-1 mb-1 text-micro text-content-3"><Sparkles size={12} /> Respuesta automática</span>
                 <div className="max-w-[min(80%,34rem)] rounded-[1.25rem] px-3.5 py-2 space-y-1.5 bg-surface-card text-content border border-brand/30">
                     {m.adjunto?.tipo === 'producto' && (
-                        <span className="flex items-center gap-2 rounded-input px-2 py-1.5 bg-surface-card-hover">
-                            <Package size={14} className="shrink-0" />
+                        <span className="flex items-center gap-2.5 rounded-input px-2 py-1.5 bg-surface-card-hover min-w-[13rem]">
+                            {m.adjunto.foto
+                                ? <img src={imagenDeProducto(m.adjunto)} alt="" className="size-10 shrink-0 rounded-input object-contain bg-surface-card" loading="lazy" />
+                                : <Package size={14} className="shrink-0" />}
                             <span className="min-w-0">
                                 <span className="block text-body-sm font-semibold truncate">{m.adjunto.nombre}</span>
                                 {m.adjunto.precio != null && <span className="block text-label tabular-nums">{formatMoney(Number(m.adjunto.precio))}</span>}
@@ -616,8 +621,10 @@ function Burbuja({
                         ) : <span className="text-label opacity-80">Foto no disponible</span>
                     )}
                     {adj?.tipo === 'producto' && (
-                        <span className={`flex items-center gap-2 rounded-input px-2 py-1.5 ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>
-                            <Package size={14} className="shrink-0" />
+                        <span className={`flex items-center gap-2.5 rounded-input px-2 py-1.5 min-w-[13rem] ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>
+                            {adj.foto
+                                ? <img src={imagenDeProducto(adj)} alt="" className="size-10 shrink-0 rounded-input object-contain bg-surface-card" loading="lazy" />
+                                : <Package size={14} className="shrink-0" />}
                             <span className="min-w-0">
                                 <span className="block text-body-sm font-semibold truncate">{adj.nombre}</span>
                                 {adj.precio != null && <span className="block text-label tabular-nums">{formatMoney(Number(adj.precio))}</span>}

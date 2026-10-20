@@ -15,11 +15,12 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { useEquipoDelChat } from '@nucleo/hooks/useBandejaDelChat';
-import { COLUMNAS_PRESENCIA, EMOJIS_DE_REACCION, MENSAJES_POR_PAGINA, fetchConversaciones, fetchMensajes, fetchPresenciaDeConversaciones, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje, resolverConversacion, tomarConversacion } from '@nucleo/data/chatClientes';
+import { COLUMNAS_PRESENCIA, EMOJIS_DE_REACCION, MENSAJES_POR_PAGINA, fetchConversaciones, fetchMensajes, fetchMensajesCambiados, fetchPresenciaDeConversaciones, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje, resolverConversacion, tomarConversacion } from '@nucleo/data/chatClientes';
 import { escribeAhora, useRelojDeEscritura } from '@nucleo/hooks/escrituraDelChat';
 import { cambiaDeDia, empiezaTanda, esperaDe, etiquetaDeDia, nombreDeAutor, nombreDeCliente, recorteDeMensaje } from '@nucleo/utils/chatClientes';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
@@ -56,48 +57,106 @@ function SeparadorDeDia({ valor }) {
   );
 }
 
-const Burbuja = memo(function Burbuja({ m, nuevaTanda, autor, onFoto, cita, reacciones, entrega, onOpciones, clienteFoto }) {
-  if (m.autor === 'sistema') {
-    return <Text style={{ textAlign: 'center', color: colorSistema.texto2, fontSize: 12, paddingVertical: 6, marginHorizontal: 24 }}>{m.texto}</Text>;
+// Abrir la nota de voz o el PDF del cliente en el visor del sistema (2026-10-20).
+const abrirArchivo = (url) => {
+  if (!url) return;
+  Haptics.selectionAsync().catch(() => {});
+  WebBrowser.openBrowserAsync(url, { presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET }).catch(() => {});
+};
+
+// Un mensaje (rehecho el 2026-10-20, «que se vea muy estético también»): globos
+// agrupados como iMessage —dentro de una tanda la esquina del lado del autor se
+// achica—, la tarjeta del producto con su foto, las notas de voz y los PDF del
+// cliente, lo que el cliente EDITÓ o ELIMINÓ, y las respuestas automáticas con
+// su rótulo, del lado del equipo.
+const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto, cita, reacciones, entrega, onOpciones, clienteFoto }) {
+  if (m.autor === 'sistema' && !m.automatica) {
+    return (
+      <View style={{ alignItems: 'center', paddingVertical: 6, paddingHorizontal: 24 }}>
+        <Text style={{ textAlign: 'center', color: colorSistema.texto2, fontSize: 12, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10,
+          backgroundColor: 'rgba(127,127,127,0.12)', overflow: 'hidden' }}>{m.texto}</Text>
+      </View>
+    );
   }
-  const delEquipo = m.autor === 'equipo';
+  const auto = m.autor === 'sistema';
+  const delEquipo = m.autor === 'equipo' || auto;
   const adj = m.adjunto;
-  const tinta = delEquipo ? '#fff' : colorSistema.texto;
+  const tinta = delEquipo && !auto ? '#fff' : colorSistema.texto;
+  const R = 20, r = 6;
+  const esquinas = delEquipo
+    ? { borderTopRightRadius: nuevaTanda ? R : r, borderBottomRightRadius: finDeTanda ? R : r }
+    : { borderTopLeftRadius: nuevaTanda ? R : r, borderBottomLeftRadius: finDeTanda ? R : r };
+  const fondo = auto ? 'rgba(105,41,196,0.10)' : delEquipo ? MARCA.azul : 'rgba(127,127,127,0.15)';
+  const tarjeta = delEquipo && !auto ? 'rgba(255,255,255,0.16)' : 'rgba(127,127,127,0.12)';
   return (
     <View style={{ alignItems: delEquipo ? 'flex-end' : 'flex-start', paddingHorizontal: 12, paddingLeft: delEquipo ? 12 : 44, paddingTop: nuevaTanda ? 10 : 2 }}>
-      {!delEquipo && nuevaTanda && clienteFoto ? <View style={{ position: 'absolute', left: 10, top: nuevaTanda ? 10 : 2 }}>{clienteFoto}</View> : null}
+      {!delEquipo && finDeTanda && clienteFoto ? <View style={{ position: 'absolute', left: 10, bottom: 18 }}>{clienteFoto}</View> : null}
       {nuevaTanda && delEquipo ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{shortEmployeeName(autor)}</Text>
-          <Avatar empleado={autor} tamano={20} />
+          {auto ? (
+            <Text style={{ color: MARCA.violeta, fontSize: 12, fontWeight: '700' }}>✦ Respuesta automática</Text>
+          ) : (
+            <>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{shortEmployeeName(autor)}</Text>
+              <Avatar empleado={autor} tamano={20} />
+            </>
+          )}
         </View>
       ) : null}
       <Pressable onLongPress={() => onOpciones?.(m)} delayLongPress={300} accessibilityHint="Desliza a la derecha para responder; mantén presionado para reaccionar o copiar"
-        style={{ maxWidth: '82%', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 8, gap: 6,
-        backgroundColor: delEquipo ? MARCA.azul : 'rgba(127,127,127,0.16)', borderBottomRightRadius: delEquipo ? 6 : 18, borderBottomLeftRadius: delEquipo ? 18 : 6 }}>
+        style={({ pressed }) => ({ maxWidth: '82%', borderRadius: R, paddingHorizontal: 12, paddingVertical: 8, gap: 6, backgroundColor: fondo, ...esquinas,
+          opacity: m.borrado_at ? 0.55 : 1, transform: [{ scale: pressed ? 0.98 : 1 }],
+          ...(auto ? { borderWidth: 1, borderColor: 'rgba(105,41,196,0.28)' } : null) })}>
         {cita ? (
-          <View style={{ borderLeftWidth: 3, borderLeftColor: delEquipo ? 'rgba(255,255,255,0.7)' : MARCA.azulClaro, paddingLeft: 8, opacity: 0.9 }}>
+          <View style={{ borderLeftWidth: 3, borderLeftColor: delEquipo && !auto ? 'rgba(255,255,255,0.7)' : MARCA.azulClaro, paddingLeft: 8, opacity: 0.9 }}>
             <Text style={{ color: tinta, fontSize: 12, fontWeight: '700' }}>{cita.quien}</Text>
             <Text style={{ color: tinta, fontSize: 13 }} numberOfLines={2}>{cita.texto}</Text>
           </View>
         ) : null}
         {m.foto_ruta ? (m.foto_url ? (
           <Pressable onPress={() => onFoto(m.foto_url)} accessibilityLabel="Ampliar la foto">
-            <Image source={{ uri: m.foto_url }} style={{ width: 200, height: 200, borderRadius: 12 }} resizeMode="cover" />
+            <Image source={{ uri: m.foto_url }} style={{ width: 210, height: 240, borderRadius: 14 }} resizeMode="cover" />
           </Pressable>
         ) : <Text style={{ color: tinta, fontSize: 13, opacity: 0.8 }}>Foto no disponible</Text>) : null}
         {adj?.tipo === 'producto' ? (
-          <View style={{ borderRadius: 10, padding: 8, backgroundColor: delEquipo ? 'rgba(0,0,0,0.2)' : 'rgba(127,127,127,0.14)' }}>
-            <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }} numberOfLines={2}>{`📦 ${adj.nombre}`}</Text>
-            {adj.precio != null ? <Text style={{ color: tinta, fontSize: 13 }}>{formatMoney(Number(adj.precio))}</Text> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, padding: 8, backgroundColor: tarjeta, minWidth: 200 }}>
+            {adj.foto ? <Image source={{ uri: adj.foto }} style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: '#fff' }} />
+              : <View style={{ width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.18)' }}><Text style={{ fontSize: 20 }}>💊</Text></View>}
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }} numberOfLines={2}>{adj.nombre}</Text>
+              {adj.precio != null ? <Text style={{ color: tinta, fontSize: 13, opacity: 0.9 }}>{formatMoney(Number(adj.precio))}</Text> : null}
+            </View>
           </View>
         ) : null}
         {adj?.tipo === 'oferta' ? (
-          <View style={{ borderRadius: 10, padding: 8, backgroundColor: delEquipo ? 'rgba(0,0,0,0.2)' : 'rgba(127,127,127,0.14)' }}>
-            <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }} numberOfLines={2}>{`🏷 ${adj.titulo}`}</Text>
+          <View style={{ borderRadius: 14, padding: 10, backgroundColor: tarjeta }}>
+            <Text style={{ color: tinta, fontSize: 11, fontWeight: '800', letterSpacing: 0.6, opacity: 0.8 }}>OFERTA</Text>
+            <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }} numberOfLines={2}>{adj.titulo}</Text>
           </View>
         ) : null}
-        {m.texto ? <Text style={{ color: tinta, fontSize: 16 }}>{m.texto}</Text> : null}
+        {adj?.tipo === 'audio' ? (
+          <Pressable onPress={() => abrirArchivo(m.archivo_url)} disabled={!m.archivo_url} accessibilityRole="button" accessibilityLabel="Escuchar la nota de voz"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, padding: 8, backgroundColor: tarjeta, minWidth: 200 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.azul }}>
+              <Text style={{ color: '#fff', fontSize: 14 }}>▶</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }}>Nota de voz</Text>
+              <Text style={{ color: tinta, fontSize: 12, opacity: 0.75 }}>{m.archivo_url ? (adj.duracion ? `${Math.floor(adj.duracion / 60)}:${String(adj.duracion % 60).padStart(2, '0')} · toca para escuchar` : 'Toca para escuchar') : 'No disponible'}</Text>
+            </View>
+          </Pressable>
+        ) : null}
+        {adj?.tipo === 'pdf' ? (
+          <Pressable onPress={() => abrirArchivo(m.archivo_url)} disabled={!m.archivo_url} accessibilityRole="button" accessibilityLabel="Abrir el documento"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, padding: 8, backgroundColor: tarjeta, minWidth: 200 }}>
+            <View style={{ width: 36, height: 42, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(240,68,56,0.14)' }}>
+              <Text style={{ color: MARCA.rojo, fontSize: 10, fontWeight: '900' }}>PDF</Text>
+            </View>
+            <Text style={{ flex: 1, color: tinta, fontSize: 14, fontWeight: '700' }} numberOfLines={2}>{adj.nombre || 'Documento'}</Text>
+          </Pressable>
+        ) : null}
+        {m.texto ? <Text style={{ color: tinta, fontSize: 16, lineHeight: 21, textDecorationLine: m.borrado_at ? 'line-through' : 'none' }}>{m.texto}</Text> : null}
+        {m.borrado_at ? <Text style={{ color: tinta, fontSize: 12, fontWeight: '700', opacity: 0.85 }}>El cliente eliminó este mensaje</Text> : null}
       </Pressable>
       {reacciones?.length ? (
         <View style={{ flexDirection: 'row', gap: 4, marginTop: 3 }}>
@@ -109,9 +168,11 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, autor, onFoto, cita, reac
           ))}
         </View>
       ) : null}
-      <Text style={{ color: colorSistema.texto2, fontSize: 11, marginTop: 2 }}>
-        {cuandoLlego(m.created_at)}{entrega ? <Text style={{ fontWeight: entrega === 'Visto' ? '700' : '400', color: entrega === 'Visto' ? MARCA.azulClaro : colorSistema.texto2 }}>{` · ${entrega}`}</Text> : null}
-      </Text>
+      {finDeTanda ? (
+        <Text style={{ color: colorSistema.texto2, fontSize: 11, marginTop: 2 }}>
+          {cuandoLlego(m.created_at)}{m.editado_at && !m.borrado_at ? ' · Editado' : ''}{entrega ? <Text style={{ fontWeight: entrega === 'Visto' ? '700' : '400', color: entrega === 'Visto' ? MARCA.azulClaro : colorSistema.texto2 }}>{` · ${entrega}`}</Text> : null}
+        </Text>
+      ) : null}
     </View>
   );
 });
@@ -199,11 +260,21 @@ export default function ConversacionDelChat() {
     return () => { vivo = false; if (puedeResponder) Promise.resolve(tomarConversacion(id, true)).catch(() => {}); };
   }, [id, puedeResponder, asegurarEquipo, leerReacciones]);
 
+  // Desde cuándo se buscan lo editado y lo eliminado por el cliente (2026-10-20).
+  const cambiosDesde = useRef(new Date().toISOString());
   const traerNuevos = useCallback(async () => {
     const actuales = mensajesRef.current;
     if (!actuales) return;
     try {
-      const nuevos = await fetchMensajes(id, { despuesDe: actuales[actuales.length - 1]?.id ?? null });
+      const desde = cambiosDesde.current;
+      cambiosDesde.current = new Date(Date.now() - 5000).toISOString();
+      const [nuevos, cambiados] = await Promise.all([
+        fetchMensajes(id, { despuesDe: actuales[actuales.length - 1]?.id ?? null }), fetchMensajesCambiados(id, desde),
+      ]);
+      if (cambiados.length) {
+        const porId = new Map(cambiados.map((x) => [x.id, x]));
+        setMensajes((prev) => (prev ?? []).map((x) => (porId.has(x.id) ? { ...x, ...porId.get(x.id) } : x)));
+      }
       if (!nuevos.length) return;
       setMensajes((prev) => { const ids = new Set((prev ?? []).map((m) => m.id)); return [...(prev ?? []), ...nuevos.filter((m) => !ids.has(m.id))]; });
       asegurarEquipo(nuevos.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
@@ -272,7 +343,8 @@ export default function ConversacionDelChat() {
     const n = new Map(); (filas ?? []).forEach((f) => n.set(f.emoji, (n.get(f.emoji) ?? 0) + 1));
     return [...n].map(([emoji, k]) => ({ emoji, n: k }));
   };
-  const invertidos = (mensajes ?? []).map((m, i, todos) => ({ m, nuevaTanda: empiezaTanda(m, todos[i - 1]) || cambiaDeDia(m, todos[i - 1]), nuevoDia: cambiaDeDia(m, todos[i - 1]) })).reverse();
+  const invertidos = (mensajes ?? []).map((m, i, todos) => ({ m, nuevaTanda: empiezaTanda(m, todos[i - 1]) || cambiaDeDia(m, todos[i - 1]), nuevoDia: cambiaDeDia(m, todos[i - 1]),
+    finDeTanda: !todos[i + 1] || empiezaTanda(todos[i + 1], m) || cambiaDeDia(todos[i + 1], m) })).reverse();
   const fotoCliente = c ? <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={26} /> : null;
   const tel = String(c?.telefono ?? '').replace(/\D/g, '');
 
@@ -335,7 +407,7 @@ export default function ConversacionDelChat() {
                   <View>
                   {item.nuevoDia ? <SeparadorDeDia valor={item.m.created_at} /> : null}
                   <DeslizarParaResponder activo={puedeResponder && item.m.autor !== 'sistema'} onResponder={() => responderA(item.m)}>
-                  <Burbuja m={item.m} nuevaTanda={item.nuevaTanda} onFoto={setFoto} onOpciones={opciones} clienteFoto={fotoCliente}
+                  <Burbuja m={item.m} nuevaTanda={item.nuevaTanda} finDeTanda={item.finDeTanda} onFoto={setFoto} onOpciones={opciones} clienteFoto={fotoCliente}
                     autor={item.m.employee_id ? equipo.get(item.m.employee_id) ?? { id: item.m.employee_id } : null}
                     cita={item.m.cita ? { quien: nombreDeAutor(item.m.cita, equipo, nombreCliente), texto: recorteDeMensaje(item.m.cita) } : null}
                     reacciones={resumirReacciones(reacciones.get(item.m.id))}

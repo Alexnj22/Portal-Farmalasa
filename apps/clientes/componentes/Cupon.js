@@ -26,6 +26,7 @@ import { COLORES_NIVEL } from './TarjetaSocio';
 import Mineral, { MATERIALES } from './minerales/Mineral';
 import { Confeti } from './animacion';
 import { dolares, fechaLarga } from '../lib/formato';
+import { useTema } from '../tema/tema';
 import CodigoBarras from './CodigoBarras';
 import CodigoQR from './CodigoQR';
 
@@ -548,6 +549,9 @@ const paraEscanear = (c) => String(c ?? '').replace(/[^0-9A-Z]/gi, '').toUpperCa
 // premio se retira en cualquiera; un REGALO promocional además se puede
 // apartar en una (`premio_apartar`) y, apartado o pedido, se dice dónde.
 function DondeHay({ premio, id, pedir, alCambiar }) {
+  // Va debajo del cupón, sobre el FONDO de la pantalla: el color sale del tema.
+  // Con un gris fijo (#3A3A3C) en tema oscuro no se leía (2026-10-20).
+  const t = useTema();
   const [salas, setSalas] = useState(null);
   const [apartando, setApartando] = useState(false);
   useEffect(() => {
@@ -556,14 +560,14 @@ function DondeHay({ premio, id, pedir, alCambiar }) {
     pedir('premio_salas', { id }).then((r) => { if (vivo) setSalas(r?.ok ? (r.sucursales ?? []) : []); }).catch(() => { if (vivo) setSalas([]); });
     return () => { vivo = false; };
   }, [id, premio.apartado, premio.pedido, pedir]);
-  const fila = (sf, texto, color = '#3A3A3C') => (
+  const fila = (sf, texto, color = t.color.texto2) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
       backgroundColor: 'rgba(120,120,128,0.12)' }}>
       <Icono sf={sf} respaldo="•" tam={12} color={color} />
       <Text style={{ fontSize: 13, fontWeight: '600', color, flexShrink: 1 }}>{texto}</Text>
     </View>
   );
-  if (premio.apartado && premio.sala) return <View style={{ marginTop: 10 }}>{fila('checkmark.circle.fill', `Apartado en ${premio.sala}: te espera`, '#1E8E3E')}</View>;
+  if (premio.apartado && premio.sala) return <View style={{ marginTop: 10 }}>{fila('checkmark.circle.fill', `Apartado en ${premio.sala}: te espera`, t.color.exitoTexto)}</View>;
   if (premio.pedido && premio.sala) return <View style={{ marginTop: 10 }}>{fila('shippingbox.fill', `Pedido a ${premio.sala}: te avisamos cuando llegue`)}</View>;
   if (salas == null) return null;
   const con = salas.filter((x) => x.hay);

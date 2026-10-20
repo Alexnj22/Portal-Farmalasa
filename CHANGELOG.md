@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1319.1 — La píldora «Hay hoy en…» del premio se lee en tema oscuro
+
+- **App de clientes**: debajo del cupón de un premio, la píldora que dice en qué
+  sucursales hay hoy tenía el texto fijo en gris oscuro (`#3A3A3C`) sobre un
+  fondo translúcido; en tema oscuro no se distinguía. Ahora el color sale del
+  tema (`texto2`, y el verde de «Apartado en…» de `exitoTexto`).
+
 ## v2.1319.0 — Apartar o encargar desde la sala, con el anticipo en la caja
 
 _(pendiente de redactar)_

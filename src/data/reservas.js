@@ -100,9 +100,17 @@ export async function preciosDeProducto(productId) {
         .select('vineta, factor, presentaciones(tipo)')
         .eq('product_id', Number(productId)).eq('activo', true).gt('vineta', 0)
         .order('factor', { ascending: true }));
+    // El catálogo puede traer la MISMA presentación dos veces (mismo tipo,
+    // factor y precio, con otro id de presentación): se ofrece una sola.
+    const vistas = new Set();
     return (filas ?? []).map((f) => ({
         precio: Number(f.vineta), factor: Number(f.factor) || 1, tipo: f.presentaciones?.tipo ?? 'Unidad',
-    }));
+    })).filter((p) => {
+        const k = `${p.tipo}|${p.factor}|${p.precio}`;
+        if (vistas.has(k)) return false;
+        vistas.add(k);
+        return true;
+    });
 }
 
 export async function crearReservaEnSucursal({ branchId, customerId, productoId, productoNombre, cantidad, precio, anticipo, metodo }) {

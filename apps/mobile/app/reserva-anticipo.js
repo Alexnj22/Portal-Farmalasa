@@ -29,6 +29,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../componentes/formulario/Piezas';
 import FormaDePago from '../componentes/formulario/FormaDePago';
+import Segmentos from '../componentes/Segmentos';
 import { subirFotos } from '../componentes/formulario/Fotos';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
@@ -97,6 +98,8 @@ export default function ReservaConAnticipo() {
   const [presentacion, setPresentacion] = useState(null);
   const [cantidad, setCantidad] = useState('1');
   const [anticipo, setAnticipo] = useState('');
+  // Cuánto deja (2026-10-20): botones rápidos del 50 % y del total, u otro monto.
+  const [cuanto, setCuanto] = useState('mitad');
   const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
   const [opciones, setOpciones] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -130,7 +133,7 @@ export default function ReservaConAnticipo() {
   const seEncarga = opciones?.modo === 'encargo';
   const total = pres ? redondear(pres.precio * cant) : 0;
   const minimo = redondear(total * 0.5);
-  const ant = Number(anticipo) || 0;
+  const ant = cuanto === 'mitad' ? minimo : cuanto === 'todo' ? total : (Number(anticipo) || 0);
   const estadoPago = estadoDeFormaDePago(pago, ant);
   const problema = !cliente ? 'Elige el cliente.' : !producto ? 'Elige el producto.' : precios && !pres ? 'Ese producto no tiene precio.'
     : !pres ? null : cant < 1 || cant > 50 ? 'La cantidad va de 1 a 50.' : !opciones ? null : seEncarga ? null
@@ -230,10 +233,12 @@ export default function ReservaConAnticipo() {
                     </Seccion>
                   ) : (<>
                   <Seccion titulo="Cantidad y anticipo" pie={`${formatMoney(pres.precio)} c/u · total ${formatMoney(total)} · mínimo ${formatMoney(minimo)}`}>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <View style={{ width: 90 }}><Campo multiline={false} value={cantidad} keyboardType="number-pad" onChangeText={(v) => setCantidad(v.replace(/\D/g, '').slice(0, 2))} placeholder="Cant." style={{ textAlign: 'center' }} /></View>
-                      <View style={{ flex: 1 }}><Campo multiline={false} value={anticipo} keyboardType="decimal-pad" onChangeText={(v) => setAnticipo(dinero(v))} placeholder="Anticipo $0.00" style={{ textAlign: 'center', fontWeight: '700' }} /></View>
-                    </View>
+                    <View style={{ width: 90 }}><Campo multiline={false} value={cantidad} keyboardType="number-pad" onChangeText={(v) => setCantidad(v.replace(/\D/g, '').slice(0, 2))} placeholder="Cant." style={{ textAlign: 'center' }} /></View>
+                    <Segmentos opciones={[{ id: 'mitad', label: `50 % · ${formatMoney(minimo)}` }, { id: 'todo', label: `Todo · ${formatMoney(total)}` }, { id: 'otro', label: 'Otro' }]}
+                      activa={cuanto} onCambiar={setCuanto} margen={0} />
+                    {cuanto === 'otro' ? (
+                      <Campo multiline={false} value={anticipo} keyboardType="decimal-pad" onChangeText={(v) => setAnticipo(dinero(v))} placeholder={`Anticipo, mínimo ${formatMoney(minimo)}`} style={{ textAlign: 'center', fontWeight: '700' }} autoFocus />
+                    ) : null}
                     <Dato rotulo="Saldo al retirar" valor={ant >= minimo && ant <= total ? formatMoney(total - ant) : '—'} fuerte />
                   </Seccion>
                   <FormaDePago valor={pago} onCambiar={setPago} monto={ant || null} />

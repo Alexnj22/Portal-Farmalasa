@@ -7,6 +7,10 @@
 import { imprimirDocumento, fechaHora } from './ticketPrint';
 import { formatMoney } from './formatNumber';
 
+// El plazo del saldo a favor es el de `public.saldo_favor_dias()` (60 desde el
+// 2026-10-20). El papel decía 30: se le prometía al cliente la mitad del plazo.
+export const DIAS_SALDO_A_FAVOR = 60;
+
 const recortar = (t, n) => (String(t ?? '').length > n ? `${String(t).slice(0, n - 1)}.` : String(t ?? ''));
 
 export function construirConstanciaDeReserva({ codigo, cliente, producto, cantidad, precio, anticipo, metodo, venceAt, sala, atendio, ahora = new Date() }) {
@@ -34,7 +38,7 @@ export function construirConstanciaDeReserva({ codigo, cliente, producto, cantid
             'Si no puedes venir, quien lo presente',
             'puede retirar la reserva.',
             'Si no la retiras en 7 dias, el anticipo',
-            'queda a tu favor 30 dias para otra compra.',
+            `queda a tu favor ${DIAS_SALDO_A_FAVOR} dias para otra compra.`,
             'No se devuelve en efectivo.',
         ],
     };

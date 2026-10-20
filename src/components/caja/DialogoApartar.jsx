@@ -75,6 +75,8 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
     const [cantidad, setCantidad] = useState(guardado?.cantidad ?? '1');
     const [opciones, setOpciones] = useState(null);
     const [anticipo, setAnticipo] = useState('');
+    // Cuánto deja (2026-10-20): botones rápidos del 50 % y del total, u otro monto.
+    const [cuanto, setCuanto] = useState('mitad');
     const [nota, setNota] = useState(guardado?.nota ?? '');
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
     const [enviando, setEnviando] = useState(false);
@@ -105,7 +107,7 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
     const total = elegida ? redondear(elegida.precio * cant) : 0;
     const minimo = redondear(total * 0.5);
     const modo = opciones?.modo ?? null;
-    const montoAnticipo = anticipo === '' ? minimo : Number(anticipo);
+    const montoAnticipo = cuanto === 'mitad' ? minimo : cuanto === 'todo' ? total : (anticipo === '' ? 0 : Number(anticipo));
     const estadoPago = estadoDeFormaDePago(pago, montoAnticipo);
     const nombreProducto = producto ? `${producto.nombre}${elegida?.tipo ? ` · ${elegida.tipo}` : ''}` : '';
 
@@ -178,8 +180,13 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
                         Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta 7 días</b> con el precio de hoy. Total {formatMoney(total)};
                         el anticipo mínimo es {formatMoney(minimo)} (50 %) y el resto se paga al retirar.
                     </Notice>
-                    <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo === '' ? String(minimo) : anticipo}
-                        onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
+                    <SegmentedControl label="Cuánto deja" value={cuanto} onChange={setCuanto}
+                        options={[{ value: 'mitad', label: `50 % · ${formatMoney(minimo)}` }, { value: 'todo', label: `Todo · ${formatMoney(total)}` },
+                            { value: 'otro', label: 'Otro monto' }]} />
+                    {cuanto === 'otro' && (
+                        <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo} placeholder={String(minimo)} autoFocus
+                            onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
+                    )}
                     <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />
                 </>
             )}

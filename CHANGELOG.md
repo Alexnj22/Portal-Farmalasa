@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1321.5 — Apartar: botones de 50 % y todo, presentaciones sin repetir
+
+_(pendiente de redactar)_
+
+**Apartar o encargar, en el portal y en la app del personal:**
+
+- Botones rápidos para cuánto deja el cliente: **50 %**, **Todo** u **Otro monto**.
+- Una presentación repetida en el catálogo (mismo tipo, factor y precio) se ofrece una sola vez: la Amoxicilina 125 mg salía dos veces «FRASCO · $3.73».
+- La constancia decía que el anticipo queda a favor 30 días; el plazo es de 60 (`saldo_favor_dias`).
+
 ## v2.1321.4 — Chat: encabezado compacto, bordes reales y nota de voz propia
 
 **Chat con clientes (panel de la burbuja y vista completa):**

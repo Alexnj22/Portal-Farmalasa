@@ -105,7 +105,7 @@ import { usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
 import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Reacciones, Respondiendo, subidaConTeclado, useMedir } from '../componentes/ChatPiezas';
 import { BuscadorProducto, Calificar, ProductoPendiente, respuestasSugeridas, Sugerencias, TarjetaProducto, TextoConEnlaces } from '../componentes/ChatConsultas';
 import VisorFotos from '../componentes/VisorFotos';
-import { Documento, elegirPdf, Grabadora, HAY_AUDIO, NotaDeVoz, permisoMicrofono } from '../componentes/ChatMedios';
+import { Documento, elegirPdf, HAY_AUDIO, NotaDeVoz } from '../componentes/ChatMedios';
 import { escucharTimbre } from '../lib/enVivo';
 import BuscarEnChat from '../componentes/BuscarEnChat';
 import { suave, useTema } from '../tema/tema';
@@ -250,7 +250,6 @@ export default function Chat() {
   const [canal, setCanal] = useState(null);
   const enVivo = useRef(false);
   const cambiosDesde = useRef(null);
-  const [grabando, setGrabando] = useState(false);
   const [editando, setEditando] = useState(null); // { id, texto }
   const lista = useRef(null);
   const campo = useRef(null);
@@ -695,14 +694,11 @@ export default function Chat() {
     setRespondiendo(null);
     await mandar({ uri: f.uri, cita });
   };
-  // Nota de voz (2026-10-20): el micrófono abre la grabadora en la barra.
-  const grabar = async () => {
-    if (enviando || grabando) return;
-    Keyboard.dismiss();
-    if (await permisoMicrofono()) setGrabando(true);
-  };
+  // Nota de voz (2026-10-20): el gesto (mantener, deslizar, bloquear) vive en
+  // `useMicrofono` de ChatMedios, dentro de la barra; acá sólo llega la nota
+  // terminada y sale por el MISMO envío que una foto o un PDF
+  // (`chat_subir_url` + `chat_enviar`, con la cita si se respondía).
   const enviarNota = async ({ uri, duracion }) => {
-    setGrabando(false);
     const cita = respondiendo;
     setRespondiendo(null);
     await mandar({ archivo: { tipo: 'audio', uri, duracion }, cita });
@@ -1099,8 +1095,7 @@ export default function Chat() {
       {/* La barra para escribir, como iMessage (componentes/ChatPiezas). */}
       <Compositor texto={texto} alEscribir={alEscribir} alEnviar={enviarBarra} alAdjuntar={adjuntar} enviando={enviando}
         campoRef={campo} listo={!!producto} tecladoAlto={tecladoAlto}
-        alGrabar={HAY_AUDIO && !editando ? grabar : null}
-        grabadora={grabando ? <Grabadora alEnviar={enviarNota} alCancelar={() => setGrabando(false)} /> : null}
+        voz={HAY_AUDIO && !editando ? { alEnviar: enviarNota } : null}
         encima={(
           <>
             {editando ? (

@@ -30,6 +30,7 @@ import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
 import { LIVIANO } from '../lib/rendimiento';
+import { useMicrofono } from './ChatMedios';
 import { suave, useTema } from '../tema/tema';
 
 export const EMOJIS = ['👍', '❤️', '😂', '😮', '🙏', '✅'];
@@ -96,14 +97,21 @@ export function subidaConTeclado(h, insAbajo) {
 // queda detrás del teclado. En iOS 26 la barra es una cápsula de
 // Liquid Glass separada de los bordes, como el teclado flotante: sin franjas
 // vacías a los costados ni bordes duros.
-// `alGrabar` / `grabadora` (2026-10-20): con el campo vacío, el micrófono junto
-// a la cámara (como WhatsApp); mientras se graba, la barra es la grabadora.
-export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false, tecladoAlto = null, alGrabar = null, grabadora = null }) {
+// `voz` (2026-10-20): `{ alEnviar }` para la nota de voz. Con el campo vacío,
+// el micrófono junto a la cámara (como WhatsApp). Desde el 2026-10-20 el
+// micrófono se MANTIENE (ver `useMicrofono` en ChatMedios): mientras se graba
+// la fila no se reemplaza, se TAPA — el micrófono tiene que seguir montado
+// bajo el dedo o el gesto se corta a la mitad. Lo demás de la fila queda
+// invisible y sin toques, y encima va la grabación.
+export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false, tecladoAlto = null, voz = null }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const teclado = useTecladoAbierto();
   const hay = !!texto.trim() || listo;
   const tinte = t.color.magenta;
+  const mic = useMicrofono({ alEnviar: voz?.alEnviar, apagado: enviando || !voz });
+  const grabandoVoz = mic.fase !== 'nada';
+  const tapado = grabandoVoz ? 'none' : 'auto';
   const abajoFijo = teclado ? 6 : Math.max(ins.bottom, 8);
   const insAbajo = Math.max(ins.bottom, 8);
   const subida = useAnimatedStyle(() => ({
@@ -113,11 +121,17 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
   const contenido = (
     <>
       {encima}
-      {grabadora ?? (
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 6, paddingTop: 6,
         paddingBottom: IOS26 ? 4 : tecladoAlto ? 0 : abajoFijo }}>
-        <Redondo sf="plus" respaldo="+" etiqueta="Adjuntar un producto o una foto" alTocar={() => alAdjuntar(null)} apagado={enviando} />
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 36, marginVertical: 4, borderRadius: 18,
+        {mic.capa ? (
+          <View pointerEvents="box-none" style={{ position: 'absolute', left: 6, right: 6, top: 6, bottom: IOS26 ? 4 : tecladoAlto ? 0 : abajoFijo }}>
+            {mic.capa}
+          </View>
+        ) : null}
+        <View pointerEvents={tapado} style={{ opacity: grabandoVoz ? 0 : 1 }}>
+          <Redondo sf="plus" respaldo="+" etiqueta="Adjuntar un producto o una foto" alTocar={() => alAdjuntar(null)} apagado={enviando} />
+        </View>
+        <View pointerEvents={tapado} style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 36, marginVertical: 4, borderRadius: 18, opacity: grabandoVoz ? 0 : 1,
           backgroundColor: IOS ? (t.oscuro ? 'rgba(28,28,30,0.9)' : 'rgba(255,255,255,0.95)') : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
           ...(IOS ? { borderWidth: StyleSheet.hairlineWidth, borderColor: t.oscuro ? 'rgba(255,255,255,0.22)' : 'rgba(60,60,67,0.3)' } : {}) }}>
           <TextInput ref={campoRef} value={texto} onChangeText={alEscribir} placeholder={listo ? 'Agrega una pregunta (opcional)' : 'Mensaje'} placeholderTextColor={colorSistema.placeholder}
@@ -133,10 +147,13 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
           ) : null}
         </View>
         {/* Con el campo vacío, el atajo a la cámara (como iMessage / WhatsApp). */}
-        {!hay ? <Redondo sf="camera.fill" respaldo="📷" etiqueta="Tomar una foto" alTocar={() => alAdjuntar('camara')} apagado={enviando} /> : null}
-        {!hay && alGrabar ? <Redondo sf="mic.fill" respaldo="🎤" etiqueta="Grabar una nota de voz" alTocar={alGrabar} apagado={enviando} /> : null}
+        {!hay ? (
+          <View pointerEvents={tapado} style={{ opacity: grabandoVoz ? 0 : 1 }}>
+            <Redondo sf="camera.fill" respaldo="📷" etiqueta="Tomar una foto" alTocar={() => alAdjuntar('camara')} apagado={enviando} />
+          </View>
+        ) : null}
+        {voz && (!hay || grabandoVoz) ? mic.boton : null}
       </View>
-      )}
     </>
   );
   if (IOS26) {
@@ -147,6 +164,7 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
           {contenido}
         </View>
         {espacio ?? <View style={{ height: abajoFijo }} />}
+        {mic.encima}
       </Animated.View>
     );
   }
@@ -158,10 +176,11 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
           {contenido}
           {espacio}
         </BlurView>
+        {mic.encima}
       </Animated.View>
     );
   }
-  return <View style={{ backgroundColor: t.oscuro ? '#1E1B24' : '#FFFFFF', elevation: 8 }}>{contenido}</View>;
+  return <View style={{ backgroundColor: t.oscuro ? '#1E1B24' : '#FFFFFF', elevation: 8 }}>{contenido}{mic.encima}</View>;
 }
 
 // El «+» y la cámara: toque de 44 con un círculo visible de 34, como iMessage.

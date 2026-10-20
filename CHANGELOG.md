@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1319.4 — Notas de voz del chat como WhatsApp
+
+- **App de clientes, chat**: mantener presionado el micrófono graba y al soltar
+  se envía; deslizar a la izquierda cancela y hacia arriba bloquea (manos
+  libres). Un toque corto también entra bloqueado, con papelera, tiempo, onda
+  y enviar. Menos de 1 s se descarta («Mantén presionado para grabar»). Si se
+  niega el permiso, un aviso lleva a Ajustes. El envío es el mismo de antes
+  (`chat_subir_url` + `chat_enviar`). Sin probar todavía en un teléfono.
+
 ## v2.1319.3 — App de clientes: DUI y teléfono validados también en el servidor, Mis facturas sólo CCF, documentos del primer acceso más claros, micrófono
 
 - **Entrar y registrarse** (`app-clientes`, desplegada): el servidor acepta sólo

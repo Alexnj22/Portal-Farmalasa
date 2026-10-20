@@ -19,11 +19,13 @@
 // Cada pestaña con su permiso, como en el portal; la base lo vuelve a comprobar.
 // Los rótulos salen del núcleo (`puntosTexto`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { buscarClientePorTarjeta, fetchAvisosDePuntos, fetchClientesConPuntos, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
+import { buscarClientePorTarjeta, entregarPremio, fetchAvisosDePuntos, fetchClientesConPuntos, fetchPremiosPorEntregar, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
+import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
+import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { leerEntradaDeTarjeta, NOMBRE_DE_ENTRADA } from '@nucleo/utils/expedienteDelCliente';
 import Escaner from '../componentes/Escaner';
 import { avisoDePuntos, dolaresDePuntos, puntosTexto } from '@nucleo/utils/puntosTexto';
@@ -55,8 +57,42 @@ function EscanearTarjeta() {
   const [abierto, setAbierto] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [candidatos, setCandidatos] = useState(null);
+  const { user, hasPermission } = useAuth();
+  const miSala = user?.branchId ?? user?.branch_id ?? null;
+  const administra = hasPermission('puntos_tab_niveles', 'can_edit');
+
+  // Un premio del raspable (2026-10-19): escanear su código en la app del
+  // cliente, confirmar, y queda entregado —el producto se descarga del
+  // inventario de la sala—. La misma regla que el portal: sólo en la sala
+  // donde el cliente lo retira, salvo quien administra los niveles.
+  const entregarEscaneado = async (codigo) => {
+    try {
+      const lista = await fetchPremiosPorEntregar(administra ? null : miSala, codigo, true);
+      const p = (lista ?? []).find((x) => x.codigo === codigo);
+      const no = !p ? `No hay un premio ${codigo}${administra ? '' : ' para esta sucursal'}.`
+        : p.estado === 'ENTREGADO' ? 'Ese premio ya se entregó.'
+          : p.estado === 'VENCIDO' ? 'Ese premio ya venció.'
+            : !p.branch_id ? 'El cliente todavía no eligió dónde retirarlo: que lo elija en la app.'
+              : p.tipo === 'promocional' && p.hay_en_sala === false ? 'En esta sucursal no hay de ese regalo: hay que pedirlo a Bodega.'
+                : null;
+      if (no) { Alert.alert('No se puede entregar', no); return; }
+      const cuantos = Number(p.cantidad) > 1 ? `${p.cantidad} × ` : '';
+      Alert.alert(`¿Entregar ${cuantos}${p.nombre}?`,
+        `Premio ${p.codigo} de ${p.cliente?.nombre ?? 'el cliente'}. ${p.tipo === 'producto' ? 'Se descarga del inventario de esta sucursal.' : 'Sale del inventario de regalos de esta sucursal.'} Confirma con su documento que es la persona.`,
+        [{ text: 'Cancelar', style: 'cancel' }, { text: 'Entregar', onPress: async () => {
+          trabajando('Entregando…');
+          try { await entregarPremio(p.id); listo('Premio entregado', `${p.codigo} · ${p.nombre}`); }
+          catch (e) { fallo('No se pudo entregar', mensajeAmigable(e)); }
+        } }]);
+    } catch (e) {
+      Alert.alert('No se pudo buscar el premio', mensajeAmigable(e));
+    }
+  };
+
   // `false` deja el escáner abierto: el código no era una tarjeta conocida.
   const alEscanear = async (codigo) => {
+    const premio = leerCodigoDePremio(codigo);
+    if (premio) { setAbierto(false); setAviso(null); entregarEscaneado(premio); return true; }
     const leido = leerEntradaDeTarjeta(codigo);
     if (leido.tipo === 'nada') { setAviso('Ese código no es una tarjeta de cliente.'); return false; }
     try {
@@ -79,7 +115,7 @@ function EscanearTarjeta() {
   };
   return (
     <View style={{ marginHorizontal: 16, gap: 10 }}>
-      <BotonGrande texto="Escanear tarjeta del cliente" onPress={() => { setAviso(null); setAbierto(true); }} />
+      <BotonGrande texto="Escanear tarjeta o premio" onPress={() => { setAviso(null); setAbierto(true); }} />
       {candidatos ? (
         <Vidrio radio={18}>
           <View style={{ padding: 12, gap: 8 }}>
@@ -94,7 +130,7 @@ function EscanearTarjeta() {
           </View>
         </Vidrio>
       ) : null}
-      <Escaner visible={abierto} titulo="Tarjeta del cliente" ayuda="Apunta al código de barras o al QR de su tarjeta"
+      <Escaner visible={abierto} titulo="Tarjeta del cliente" ayuda="Apunta al código de barras o al QR de su tarjeta, o al de su premio"
         onCodigo={alEscanear} onCerrar={() => { setAbierto(false); setAviso(null); }}
         pie={aviso ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{aviso}</Text> : null} />
     </View>

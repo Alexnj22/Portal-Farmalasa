@@ -33,6 +33,8 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
+import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
+import EntregarPremioEscaneado from './EntregarPremioEscaneado';
 import {
     ajustarPromocional, entregarPremio, enviarPromocional, fetchPremiosPorEntregar, fetchPromocionales,
     guardarPromocional, recibirPromocional,
@@ -74,7 +76,11 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
     // La sala ve la suya y nada más; administración elige (vacío = todas).
     const [sala, setSala] = useState(puedeAdministrar ? '' : miSala);
     const [texto, setTexto] = useState('');
-    const buscar = useTextoRebotado(texto, 300);
+    const rebotado = useTextoRebotado(texto, 300);
+    // El lector teclea el código sin guion (PS000123): se busca en la forma de la base.
+    const buscar = leerCodigoDePremio(rebotado) ?? rebotado;
+    const [escaneado, setEscaneado] = useState(null);
+    const cerrarEscaneado = useCallback(() => setEscaneado(null), []);
     const [entregados, setEntregados] = useState(false);
     const [premios, setPremios] = useState(null);
     const [error, setError] = useState(null);
@@ -114,7 +120,12 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
         <section className="flex flex-col gap-3">
             <h3 className="text-body font-black text-content flex items-center gap-2"><Gift size={16} /> Premios por entregar</h3>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <SearchInput value={texto} onChange={setTexto} placeholder="Código, cliente o DUI" className="flex-1" />
+                <SearchInput value={texto} onChange={setTexto} placeholder="Escanea el código del premio, o busca por cliente o DUI" className="flex-1"
+                    onKeyDown={(e) => {
+                        // Escanear y Enter: directo a confirmar la entrega.
+                        const codigo = e.key === 'Enter' ? leerCodigoDePremio(texto) : null;
+                        if (codigo) { e.preventDefault(); setTexto(''); setEscaneado(codigo); }
+                    }} />
                 {puedeAdministrar && (
                     <div className="sm:w-56">
                         <LiquidSelect options={opcionesSala} value={sala} onChange={(v) => setSala(v === '' ? '' : Number(v))}
@@ -174,6 +185,10 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
                         );
                     })}
                 </ul>
+            )}
+            {escaneado && (
+                <EntregarPremioEscaneado codigo={escaneado} miSala={miSala} puedeAdministrar={puedeAdministrar}
+                    onCerrar={cerrarEscaneado} onEntregado={() => setVersion((v) => v + 1)} />
             )}
             {confirmando && (
                 <ConfirmModal isOpen isDestructive={false} isProcessing={entregando}

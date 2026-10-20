@@ -275,6 +275,7 @@ export default function PuntosView({ openModal }) {
 
                 {pestana === 'escanear' && (
                     <EscanearCliente puedeEditarFicha={puedeEditarFicha}
+                        miSala={user?.branchId ?? user?.branch_id ?? null} puedeAdministrarPremios={puedeEditarNiveles}
                         onVerPuntos={setClienteAbierto}
                         onVerFicha={(c) => abrirFicha(c, 'escaneo')} />
                 )}

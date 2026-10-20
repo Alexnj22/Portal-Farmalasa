@@ -26,6 +26,9 @@ import { COLORES_NIVEL } from './TarjetaSocio';
 import Mineral, { MATERIALES } from './minerales/Mineral';
 import { Confeti } from './animacion';
 import { dolares, fechaLarga } from '../lib/formato';
+import CodigoBarras from './CodigoBarras';
+import CodigoQR from './CodigoQR';
+import Segmentos from './Segmentos';
 
 // La línea punteada entre las muescas: por ahí se «corta» al usarlo.
 const CORTE = 86;
@@ -201,7 +204,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
                 backgroundColor: 'rgba(0,0,0,0.28)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <Icono sf="clock.fill" respaldo="⏰" tam={12} color="#FFFFFF" />
                 <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>
-                  Vence el {fechaLarga(cupon.vence)} — {premio ? 'retíralo' : 'úsalo'} este mes
+                  {premio ? `Vence el ${fechaLarga(cupon.vence)} — retíralo este mes` : `Sólo dura este mes: vence el ${fechaLarga(cupon.vence)}`}
                 </Text>
               </View>
             ) : null}
@@ -255,6 +258,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
       {/* Las muescas de un cupón, del color del fondo. */}
       <View style={{ position: 'absolute', left: 78, top: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
       <View style={{ position: 'absolute', left: 78, bottom: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
+      {premio && raspado && !usado ? <CodigoDelPremio codigo={premio.codigo} /> : null}
       {premio && raspado && !usado && pedir ? <ElegirSala premio={premio} id={cupon.id} pedir={pedir} alCambiar={alCambiar} /> : null}
       {festejo ? <Confeti colores={['#FFD978', '#FFFFFF', '#E8ECF2', '#B5308C']} alTerminar={() => setFestejo(false)} /> : null}
     </View>
@@ -565,5 +569,35 @@ function ElegirSala({ premio, id, pedir, alCambiar }) {
         {premio.sala ? `Retirar en ${premio.sala} · Cambiar` : 'Elegir dónde lo retiro'}
       </Text>
     </Pressable>
+  );
+}
+
+// El código del premio para escanearlo en la sala (2026-10-19, pedido del
+// usuario): en BARRAS para el lector de mostrador —de una dimensión, conectado
+// como teclado— o en QR para la cámara de un teléfono. Las dos llevan el código
+// SIN guion: un lector «teclea» con la distribución del sistema y en español el
+// guion puede llegar como otra tecla; el portal acepta las dos formas
+// (`src/utils/codigoDePremio.js`). Fondo blanco siempre: el lector necesita
+// contraste. Barras por defecto: es lo que tienen las cajas.
+const paraEscanear = (c) => String(c ?? '').replace(/[^0-9A-Z]/gi, '').toUpperCase();
+function CodigoDelPremio({ codigo }) {
+  const [modo, setModo] = useState('barras');
+  if (!codigo) return null;
+  return (
+    <View style={{ marginTop: 12, gap: 10, alignItems: 'center' }}>
+      <View style={{ alignSelf: 'stretch' }}>
+        <Segmentos valor={modo} alCambiar={setModo}
+          opciones={[{ valor: 'barras', rotulo: 'Código de barras' }, { valor: 'qr', rotulo: 'Código QR' }]} />
+      </View>
+      <View style={{ backgroundColor: '#FFFFFF', padding: 14, borderRadius: 18, alignItems: 'center' }}>
+        {modo === 'qr'
+          ? <CodigoQR value={paraEscanear(codigo)} size={150} />
+          : <CodigoBarras value={paraEscanear(codigo)} ancho={260} alto={70} />}
+      </View>
+      <Text selectable style={{ fontSize: 20, fontWeight: '900', letterSpacing: 3, color: '#B5308C', fontVariant: ['tabular-nums'] }}>{codigo}</Text>
+      <Text style={{ fontSize: 13, textAlign: 'center', opacity: 0.75, maxWidth: 300, color: '#8E8E93' }}>
+        Muéstralo en la sucursal: lo escanean, confirman y te lo entregan. Te pueden pedir tu documento.
+      </Text>
+    </View>
   );
 }

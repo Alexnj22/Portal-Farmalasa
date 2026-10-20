@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1314.1 — Premios: escanear el código del raspable y entregar
+
+_(pendiente de redactar)_
+
+- **El raspable muestra el código del premio** en la app del cliente, en barras (para el lector de la caja) o en QR (para la cámara de un teléfono), con un selector.
+- **La sala lo escanea y confirma**: en Puntos → Escanear, en Puntos → Premios o en la app del personal. Al confirmar queda entregado y, si es un producto, se descarga del inventario de la sucursal. Si no se puede —otra sucursal, vencido, ya entregado, sin existencia— lo dice.
+- **Los puntos del raspable dicen que sólo duran el mes**: «Sólo dura este mes: vence el 31 de octubre».
+
 ## v2.1314.0 — Puntos Salud: foto en el Inicio, código que se imprime, reverso que se inclina y toques animados
 
 **Foto en el Inicio** («para que se sienta más personal»): junto a «Hola, …» va la foto con el aro de su nivel. Sin foto, las iniciales y una cámara que late; al tocarla se elige la foto con una línea que dice para qué es («Personaliza tu app. Sólo la ve el equipo de la farmacia cuando chateas con nosotros.»). Con la sesión de código no hay foto, como en Cuenta. La subida vive en `lib/fotoPerfil.js` (`subirFotoPerfil`) y la usan las dos pantallas.

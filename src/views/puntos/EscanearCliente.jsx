@@ -37,6 +37,8 @@ import { clickable } from '@nucleo/utils/clickable';
 import { buscarClientePorTarjeta, fetchExpedienteDelCliente } from '@nucleo/data/puntos';
 import { leerEntradaDeTarjeta, NOMBRE_DE_ENTRADA } from '@nucleo/utils/expedienteDelCliente';
 import ExpedienteDelCliente from './ExpedienteDelCliente';
+import EntregarPremioEscaneado from './EntregarPremioEscaneado';
+import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
 
 const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
 
@@ -51,7 +53,7 @@ const conPunteroFino = () => {
     try { return window.matchMedia('(pointer: fine)').matches; } catch { return true; }
 };
 
-export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFicha }) {
+export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFicha, miSala = null, puedeAdministrarPremios = false }) {
     const [entrada, setEntrada] = useState('');
     const [buscando, setBuscando] = useState(false);
     const [aviso, setAviso] = useState(null);           // { variante, texto }
@@ -62,6 +64,9 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
     // Descarta la respuesta de un escaneo viejo: dos tarjetas seguidas no
     // pueden terminar mostrando la primera porque tardó más.
     const pedidoRef = useRef(0);
+    // Un código de premio del raspable (2026-10-19): se entrega desde aquí mismo.
+    const [premioEscaneado, setPremioEscaneado] = useState(null);
+    const cerrarPremio = useCallback(() => { setPremioEscaneado(null); campoRef.current?.focus(); }, []);
 
     // La primera tecla con el foco fuera de un campo vuelve al lector.
     useEffect(() => {
@@ -96,6 +101,13 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
     }, []);
 
     const buscar = useCallback(async (texto, { enfocar = true } = {}) => {
+        const premio = leerCodigoDePremio(texto);
+        if (premio) {
+            setEntrada('');
+            setAviso(null);
+            setPremioEscaneado(premio);
+            return;
+        }
         const leido = leerEntradaDeTarjeta(texto);
         // El campo se vacía siempre: el próximo cliente escanea sobre limpio.
         setEntrada('');
@@ -161,6 +173,7 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
                     </h3>
                     <p className="text-caption text-content-3 mt-1">
                         Pasa la tarjeta del cliente por el lector, o escribe su código, su DUI o su teléfono.
+                        Para entregar un premio del raspable, escanea el código del premio en la app del cliente.
                     </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 min-w-0">
@@ -214,6 +227,11 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
                 <ExpedienteDelCliente exp={expediente} puedeEditarFicha={puedeEditarFicha}
                     onVerPuntos={(c) => onVerPuntos?.(c.id)}
                     onVerFicha={(c) => onVerFicha?.(c)} />
+            )}
+
+            {premioEscaneado && (
+                <EntregarPremioEscaneado codigo={premioEscaneado} miSala={miSala}
+                    puedeAdministrar={puedeAdministrarPremios} onCerrar={cerrarPremio} />
             )}
 
             {camara && (

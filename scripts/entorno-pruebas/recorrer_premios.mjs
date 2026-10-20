@@ -25,7 +25,7 @@ try {
     // ── Premios: entregar el promocional ──
     await p.goto(`${BASE}/puntos?tab=premios`);
     paso('la pestaña Premios abre', await p.getByText('Premios por entregar').first().waitFor({ timeout: 30_000 }).then(() => true).catch(() => false));
-    await p.getByPlaceholder('Código, cliente o DUI').fill('PS-000002');
+    await p.getByPlaceholder('Escanea el código del premio, o busca por cliente o DUI').fill('PS-000002');
     const tarjetaPromo = p.locator('li', { hasText: 'PS-000002' }).first();
     paso('busca por código', await tarjetaPromo.waitFor({ timeout: 15_000 }).then(() => true).catch(() => false));
     await p.screenshot({ path: `${C}/p1-por-entregar.png` });
@@ -36,7 +36,7 @@ try {
     paso('sale de la lista de por entregar', !(await p.locator('li', { hasText: 'PS-000002' }).first().isVisible().catch(() => false)));
 
     // ── Premios: el producto, sin sistema de la caja, falla y NO queda entregado ──
-    await p.getByPlaceholder('Código, cliente o DUI').fill('PS-000004');
+    await p.getByPlaceholder('Escanea el código del premio, o busca por cliente o DUI').fill('PS-000004');
     const tarjetaProd = p.locator('li', { hasText: 'PS-000004' }).first();
     await tarjetaProd.waitFor({ timeout: 15_000 });
     await tarjetaProd.getByRole('button', { name: 'Entregar' }).click();
@@ -45,7 +45,7 @@ try {
     await p.screenshot({ path: `${C}/p2-producto-falla.png` });
     await p.getByRole('button', { name: 'Cancelar' }).last().click().catch(() => {});
     await p.reload();
-    await p.getByPlaceholder('Código, cliente o DUI').fill('PS-000004');
+    await p.getByPlaceholder('Escanea el código del premio, o busca por cliente o DUI').fill('PS-000004');
     paso('el producto sigue por retirar', await p.locator('li', { hasText: 'PS-000004' }).first().getByText('Por retirar').waitFor({ timeout: 15_000 }).then(() => true).catch(() => false));
 
     // ── Regalos: nuevo, entrada a Bodega, envío ──

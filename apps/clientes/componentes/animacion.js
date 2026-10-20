@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { ANDROID, LIVIANO } from '../lib/rendimiento';
 import { ONDA } from './Presionable';
 import { M3, PRESION, SUELTA } from './movimiento';
+import Icono from './Icono';
 
 const PressableAnimado = Animated.createAnimatedComponent(Pressable);
 
@@ -240,4 +241,19 @@ export function Latido({ children, estilo, escala = 1.05 }) {
   }, [s, escala, quieto]);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return <Animated.View style={[estilo, animado]}>{children}</Animated.View>;
+}
+
+/**
+ * La flecha de un desplegable (2026-10-20, «que la app se sienta moderna,
+ * animada»): gira con resorte al abrir y cerrar, en el hilo de la interfaz.
+ */
+export function FlechaDesplegable({ abierto, color, tam = 14 }) {
+  const g = useSharedValue(abierto ? 1 : 0);
+  useEffect(() => { g.value = withSpring(abierto ? 1 : 0, { damping: 16, stiffness: 220 }); }, [abierto, g]);
+  const estilo = useAnimatedStyle(() => ({ transform: [{ rotate: `${g.value * 180}deg` }] }));
+  return (
+    <Animated.View style={estilo}>
+      <Icono sf="chevron.down" respaldo="⌄" tam={tam} color={color} />
+    </Animated.View>
+  );
 }

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1312.0 — Puntos Salud: reverso con visor, giro nítido, Inicio compacto y textos cortos
+
+**Reverso sin banda magnética** («no me gusta»): arriba, como el frente, la marca y «CLIENTE · ORO»; al centro el código en un vidrio claro que brilla con su propio tono sobre el material, sin marco, con un **visor** de cuatro esquinas que se cierra sobre él al girar la tarjeta, la línea del lector que lo barre una vez y un latido con la luz que cruza la tarjeta; abajo, puntos, saldo a favor y holograma. El vidrio y las barras no se transforman nunca.
+
+**Giro nítido** («al girar se ve borroso; antes no pasaba»): la inclinación iba en la tarjeta entera y el giro en cada cara — dos transformaciones 3D anidadas, que iOS resuelve pintando la cara aparte y deformándola otra vez. Medido con la tarjeta quieta a mitad del giro: borrosa con las dos, nítida con una. Ahora inclinación, giro y escala van juntos en la transformación de cada cara.
+
+**Inicio sin barra de título** («se pierde mucho espacio arriba»): el saludo «Hola, …» pasa a ser el título, grande, junto a la campana; al desplazar aparece un velo difuminado detrás de la hora. ~60 pt más de contenido a la vista.
+
+**Textos cortos en el desplegable de niveles y del Team**: «1 pt por $1», «50 pts de cumpleaños», «Raspable mensual», «Te faltan $X para Oro»; el del personal en una línea. La flecha del desplegable gira con resorte.
+
+**Tienda**: «Vistos recientemente» ya no aparece de golpe empujando la pantalla — vive en memoria y se reacomoda mientras el producto está abierto, no al volver.
+
 ## v2.1311.4 — Avisos al teléfono llegan al momento y no se pisan
 
 Reporte de los vendedores: los avisos de solicitudes llegaban hasta 30 min

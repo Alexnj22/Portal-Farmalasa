@@ -166,7 +166,7 @@ export default function Puntos() {
     // `sinVidrio`: las tarjetas de esta lista, en el relleno del vidrio sin el
     // vidrio vivo (ver Pantalla en componentes/ui.js). La aurora de atrás
     // está quieta (puntos/_layout.js), así que se ven iguales.
-    <Pantalla alRefrescar={refrescar} refrescando={refrescando} sinVidrio>
+    <Pantalla alRefrescar={refrescar} refrescando={refrescando} sinVidrio sinBarra>
       {enPrueba ? (
         <Presionable onPress={() => navegar('/cuenta')} accessibilityRole="button" hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
           accessibilityLabel="Modo de prueba activo. Cambiarlo en Cuenta" accessibilityHint="Abre Cuenta, donde se elige el nivel de prueba"
@@ -180,7 +180,11 @@ export default function Puntos() {
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
-        <Texto nivel={2} estilo={{ fontSize: 17 }}>{resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}</Texto>
+        {/* El saludo ES el título del Inicio (2026-10-20): sin la barra de «Inicio» encima. */}
+        <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.3}
+          style={{ flex: 1, fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: colorSistema.texto }}>
+          {resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}
+        </Text>
         <Campana generacion={generacion} />
       </Entrada>
 

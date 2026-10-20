@@ -3,12 +3,13 @@
 // texto en los colores del sistema (`label`; los secundarios, sólidos — ver sistema.js), el botón del
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlatList, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
 import IndicadorCarga from './IndicadorCarga';
 import Presionable from './Presionable';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import BotonNativo from './BotonNativo';
 import Icono from './Icono';
 import Vidrio, { SinVidrio } from './Vidrio';
@@ -52,7 +53,13 @@ export const ESPACIO_BURBUJA = 88;
 // El estado del desplazamiento (lib/desplazamiento.js) sale de los eventos de
 // arrastre y de inercia: lo que se anima solo lo usa para pausarse mientras
 // la lista se mueve.
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false }) {
+// `sinBarra` (2026-10-20, Inicio: «siento que se pierde mucho espacio
+// arriba»): la pantalla no tiene barra de título —su primer renglón hace de
+// título— y el contenido arranca bajo la barra de estado. Al desplazar, un
+// velo difuminado aparece detrás de la hora y la batería, como el de la barra
+// del sistema; arriba de todo no se ve.
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false }) {
+  const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
   const t = useTema();
   const desp = useRef(null);
@@ -68,6 +75,9 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.
       contentContainerStyle={{
         padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom) + (conBurbuja && Platform.OS !== 'web' ? ESPACIO_BURBUJA : 0), gap: 14,
+        // Sin barra, iOS ya corre el contenido bajo la barra de estado
+        // (`automatic`); Android no: se suma a mano.
+        ...(sinBarra ? { paddingTop: (Platform.OS === 'ios' ? 4 : ins.top + 8) } : null),
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"
@@ -75,9 +85,10 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       onScrollEndDrag={d.soltar}
       onMomentumScrollBegin={d.inercia}
       onMomentumScrollEnd={d.terminar}
-      scrollEventThrottle={alFinal ? 250 : undefined}
-      onScroll={alFinal ? ({ nativeEvent: e }) => {
-        if (e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
+      scrollEventThrottle={sinBarra ? 32 : alFinal ? 250 : undefined}
+      onScroll={alFinal || sinBarra ? ({ nativeEvent: e }) => {
+        if (sinBarra) { const v = e.contentOffset.y > 4; if (v !== velo) setVelo(v); }
+        if (alFinal && e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
       } : undefined}
       // `colors` y `progressBackgroundColor` sólo los lee Android: el círculo de
       // Material en la marca, sobre la superficie alta (2026-10-13).
@@ -86,6 +97,11 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     >
       {children}
     </ScrollView>
+    {sinBarra && velo ? (
+      Platform.OS === 'ios'
+        ? <BlurView pointerEvents="none" intensity={60} tint="systemChromeMaterial" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: ins.top }} />
+        : <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: ins.top, backgroundColor: colorSistema.fondo }} />
+    ) : null}
     </SinVidrio.Provider>
     </ContextoDesplazamiento.Provider>
   );

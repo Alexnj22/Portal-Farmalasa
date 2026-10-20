@@ -60,7 +60,9 @@ export function barraAndroid(principal = false) {
 // detrás de listas que también se desplazan. Viva queda sólo la de la entrada
 // (bienvenida, entrar, registro: app/_layout.js, `AuroraRaiz`), que no se
 // desplaza. `auroraQuieta={false}` la vuelve a animar en una pestaña concreta.
-export default function PilaDePestana({ titulo, auroraQuieta = true }) {
+// `sinBarra` (2026-10-20, Inicio): sin barra de título; la pantalla pone su
+// propio encabezado (ver `Pantalla`).
+export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = false }) {
   useColorScheme();
   // La aurora de esta pestaña sólo se mueve mientras se ve.
   const visible = useVisible() && !auroraQuieta;
@@ -68,7 +70,7 @@ export default function PilaDePestana({ titulo, auroraQuieta = true }) {
     return (
       <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
         <Stack screenOptions={barraAndroid(true)}>
-          <Stack.Screen name="index" options={{ title: titulo }} />
+          <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra }} />
         </Stack>
       </View>
     );
@@ -77,7 +79,7 @@ export default function PilaDePestana({ titulo, auroraQuieta = true }) {
     <View style={{ flex: 1 }}>
       <Aurora activa={visible} />
       <Stack screenOptions={{ headerLargeTitle: Platform.OS === 'ios', contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA }}>
-        <Stack.Screen name="index" options={{ title: titulo }} />
+        <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra }} />
       </Stack>
     </View>
   );

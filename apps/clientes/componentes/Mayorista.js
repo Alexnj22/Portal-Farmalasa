@@ -13,7 +13,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Tarjeta, Texto } from './ui';
-import { BarraAnimada } from './animacion';
+import { BarraAnimada, FlechaDesplegable } from './animacion';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import { colorSistema } from './sistema';
 import Icono from './Icono';
@@ -92,29 +92,26 @@ export default function Mayorista({ rango, pie = null }) {
           <Text style={{ fontSize: 15, fontWeight: '900', color: colorSistema.texto }}>{rango.precio}</Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{rango.puntos} pts / $1 de mayoreo</Text>
         </View>
-        <View style={{ transform: [{ rotate: abierto ? '180deg' : '0deg' }] }}>
-          <Icono sf="chevron.down" respaldo="⌄" tam={14} color={colorSistema.texto3} />
-        </View>
+        <FlechaDesplegable abierto={abierto} color={colorSistema.texto3} />
       </Presionable>
       {sig ? (
         <View style={{ gap: 6 }}>
           <BarraAnimada avance={Math.min(1, rango.compra / sig.desde)} color={paleta.frente[1]} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
           <Texto nivel={2} estilo={{ fontSize: 14 }}>
-            Compras en promedio <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(rango.compra)}</Text> al mes (los 3 meses anteriores). Con{' '}
-            <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(sig.falta)}</Text> más llegas a{' '}
-            <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{sig.nombre}</Text> ({sig.puntos} pts por $1).
+            Te faltan <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(sig.falta)}</Text> al mes para{' '}
+            <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{sig.nombre}</Text>
           </Texto>
         </View>
       ) : (
-        <Texto nivel={2} estilo={{ fontSize: 14 }}>Estás en el rango más alto: {dolares(rango.compra)} al mes en promedio.</Texto>
+        <Texto nivel={2} estilo={{ fontSize: 14 }}>Rango más alto. ¡Gracias por tu preferencia!</Texto>
       )}
       {abierto ? (
       <Animated.View entering={FadeIn.duration(220)} style={{ gap: 12 }}>
       {/* Lo que da su rango (Condiciones, cláusula 5). */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {[`${rango.puntos} pts por $1 a tu precio de mayoreo`, '1 punto por $1 a precio Preferente',
-          `${rango.cumpleanos} puntos en tu cumpleaños`, ...(rango.raspable ? [`Raspable mensual ${rango.raspable}`] : []),
-          `Tu precio: ${rango.precio}`].map((b) => (
+        {[`${rango.puntos} pts por $1 en mayoreo`, '1 pt por $1 en Preferente',
+          `${rango.cumpleanos} pts de cumpleaños`, ...(rango.raspable ? [`Raspable ${rango.raspable}`] : []),
+          `Precio ${rango.precio}`].map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
@@ -122,8 +119,8 @@ export default function Mayorista({ rango, pie = null }) {
           </View>
         ))}
       </View>
-      {rango.retiro ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Tu precio de mayoreo termina el {rango.retiro}.</Texto>
-        : rango.bajaEl ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Desde el {rango.bajaEl} tu precio pasa a Mayoreo.</Texto> : null}
+      {rango.retiro ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Tu precio de mayoreo termina el {rango.retiro}</Texto>
+        : rango.bajaEl ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Desde el {rango.bajaEl}: precio Mayoreo</Texto> : null}
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {RANGOS.map((r) => {
           const p = COLORES_NIVEL[r.clave];
@@ -139,8 +136,7 @@ export default function Mayorista({ rango, pie = null }) {
         })}
       </View>
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
-        Con precio de mayoreo no tienes nivel de Puntos Salud: tu escalera es tu rango. Se recalcula el primer día de cada mes con el
-        promedio de los tres meses anteriores, y el precio lo asigna la empresa aparte.
+        Tu rango sale del promedio de compra de los últimos 3 meses y se recalcula cada día 1. Promedio actual: {dolares(rango.compra)} al mes.
       </Texto>
       {pie}
       </Animated.View>
@@ -165,7 +161,7 @@ export function BeneficiosEquipo({ mayoreo = null }) {
     <View style={{ gap: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
       <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Team Farmacia Salud</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {['Precio Mayoreo Plus', 'Crédito a 30 días', 'En todas las sucursales'].map((b) => (
+        {['Mayoreo Plus', 'Crédito 30 días', 'Todas las salas'].map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
@@ -174,11 +170,9 @@ export function BeneficiosEquipo({ mayoreo = null }) {
         ))}
       </View>
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
-        Por política de personal compras a precio Mayoreo Plus y puedes llevar tus compras al crédito, a pagar en 30 días.{' '}
         {mayoreo
-          ? `Como además te aprobaron precio de mayoreo, lo que compras a precio de mayoreo acumula puntos según tu rango ${mayoreo.nombre}, y lo demás 1 punto por cada $1.`
-          : 'Lo que compras a precio de personal (Mayoreo Plus) NO acumula puntos, aunque seas Plata, Oro o Platino; lo que compras a precio Preferente o más alto sí, y cuenta para tu nivel.'}
-        {' '}Muestra tu tarjeta en caja.
+          ? `Lo de mayoreo suma según tu rango ${mayoreo.nombre}; lo demás, 1 punto por $1.`
+          : 'A precio de personal no sumas puntos; a Preferente o más, sí.'}
       </Texto>
     </View>
   );

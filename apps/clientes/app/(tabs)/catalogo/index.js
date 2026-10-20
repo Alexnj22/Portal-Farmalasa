@@ -21,7 +21,7 @@ import BannerPromos from '../../../componentes/BannerPromos';
 import FilaProductos from '../../../componentes/FilaProductos';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
-import { BUSQUEDAS, leerVistos, nombreProducto, olvidarVistos, tonoDe } from '../../../lib/catalogo';
+import { BUSQUEDAS, alCambiarVistos, leerVistos, vistosEnMemoria, nombreProducto, olvidarVistos, tonoDe } from '../../../lib/catalogo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
@@ -63,8 +63,13 @@ export default function Catalogo() {
   const listaRef = useRef(null);
   // Las filas de arriba (sin buscar): mayor ahorro VIP y vistos recientemente.
   const [ahorro, setAhorro] = useState([]);
-  const [vistos, setVistos] = useState([]);
-  useFocusEffect(useCallback(() => { leerVistos().then(setVistos); }, []));
+  // Nace con la copia en memoria (lib/catalogo.js); al volver a la pestaña,
+  // sólo cambia si cambió de verdad — el mismo arreglo no repinta la fila.
+  const [vistos, setVistos] = useState(vistosEnMemoria);
+  useEffect(() => {
+    leerVistos().then(setVistos);
+    return alCambiarVistos(setVistos);
+  }, []);
 
   // La búsqueda sale 300 ms después de la última tecla.
   useEffect(() => { const id = setTimeout(() => setQ(texto.trim()), 300); return () => clearTimeout(id); }, [texto]);
@@ -107,7 +112,7 @@ export default function Catalogo() {
     <>
       <FilaProductos titulo="Mayor ahorro con tu tarjeta de Puntos Salud" sf="tag.fill" productos={ahorro} />
       <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
-        accion={{ texto: 'Limpiar', alTocar: () => { olvidarVistos(); setVistos([]); } }} />
+        accion={{ texto: 'Limpiar', alTocar: olvidarVistos }} />
     </>
   )), [q, ahorro, vistos]);
   const categorias = useMemo(() => (

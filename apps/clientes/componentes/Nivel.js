@@ -20,7 +20,7 @@ import Presionable from './Presionable';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Tarjeta, Texto } from './ui';
-import { BarraAnimada } from './animacion';
+import { BarraAnimada, FlechaDesplegable } from './animacion';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import { colorSistema } from './sistema';
 import { dolares } from '../lib/formato';
@@ -29,9 +29,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Icono from './Icono';
 
 /** Lo que da un nivel, tal como lo manda el servidor (vacío si no vino). */
-export const beneficiosDeNivel = (n) => (Array.isArray(n?.beneficios) ? n.beneficios : []);
+export const beneficiosDeNivel = (n) => (Array.isArray(n?.beneficios) ? n.beneficios.map(beneficioCorto) : []);
 
 const factorTexto = (f) => (Number(f) === 1 ? '1 punto' : `${String(Number(f)).replace('.', '.')} puntos`);
+
+// Los beneficios, CORTOS (2026-10-20, «los textos del desplegable son muy
+// largos»): el servidor los manda como frase («Raspable mensual con premios
+// en puntos»); en una píldora sobra la mitad. Lo que no se reconoce, tal cual.
+const CORTOS = [
+  [/^(\d+(?:\.\d+)?) puntos? por cada \$1$/i, (m) => `${m[1]} pt${m[1] === '1' ? '' : 's'} por $1`],
+  [/^(\d+) puntos en tu cumplea[ñn]os$/i, (m) => `${m[1]} pts de cumpleaños`],
+  [/^Raspable mensual.*$/i, () => 'Raspable mensual'],
+  [/^Ves las ofertas un d[ií]a antes$/i, () => 'Ofertas 1 día antes'],
+  [/^Ves las ofertas (\d+) d[ií]as antes$/i, (m) => `Ofertas ${m[1]} días antes`],
+  [/^Tus reservas te esperan (\d+) horas$/i, (m) => `Reservas por ${m[1]} h`],
+];
+export function beneficioCorto(b) {
+  const t = String(b ?? '').trim();
+  for (const [re, f] of CORTOS) { const m = t.match(re); if (m) return f(m); }
+  return t;
+}
 
 export default function Nivel({ nivel, pie = null }) {
   const t = useTema();
@@ -68,23 +85,21 @@ export default function Nivel({ nivel, pie = null }) {
           <Text style={{ fontSize: 20, fontWeight: '900', color: t.color.verdeTexto, fontVariant: ['tabular-nums'] }}>×{Number(nivel.factor)}</Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{factorTexto(nivel.factor)} / $1</Text>
         </View>
-        <View style={{ transform: [{ rotate: abierto ? '180deg' : '0deg' }] }}>
-          <Icono sf="chevron.down" respaldo="⌄" tam={14} color={colorSistema.texto3} />
-        </View>
+        <FlechaDesplegable abierto={abierto} color={colorSistema.texto3} />
       </Presionable>
 
       {apagados ? (
-        <Texto nivel={2} estilo={{ fontSize: 14 }}>Los niveles se activan pronto. Por ahora ganas 1 punto por cada $1.</Texto>
+        <Texto nivel={2} estilo={{ fontSize: 14 }}>Hoy: 1 punto por cada $1. Los niveles llegan pronto.</Texto>
       ) : sig ? (
         <View style={{ gap: 6 }}>
           <BarraAnimada avance={avance} color={t.color.verde} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
           <Texto nivel={2} estilo={{ fontSize: 14 }}>
-            Te faltan <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(sig.falta)}</Text> en compras para{' '}
-            <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{sig.nombre}</Text> ({factorTexto(sig.factor)} por $1).
+            Te faltan <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(sig.falta)}</Text> para{' '}
+            <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{sig.nombre}</Text>
           </Texto>
         </View>
       ) : (
-        <Texto nivel={2} estilo={{ fontSize: 14 }}>Estás en el nivel más alto. ¡Gracias por tu preferencia!</Texto>
+        <Texto nivel={2} estilo={{ fontSize: 14 }}>Nivel más alto. ¡Gracias por tu preferencia!</Texto>
       )}
 
       {abierto ? (
@@ -93,7 +108,7 @@ export default function Nivel({ nivel, pie = null }) {
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', borderRadius: 14, padding: 10, backgroundColor: t.oscuro ? 'rgba(255,214,10,0.12)' : 'rgba(255,204,0,0.14)' }}>
           <Icono sf="clock.fill" respaldo="⏱" tam={13} color={colorSistema.texto2} />
           <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }}>
-            Los niveles se activan pronto, con el nuevo reglamento. Cuando empiecen, tu nivel saldrá de lo que compraste en los últimos 12 meses.
+            Llegan con el nuevo reglamento. Tu nivel saldrá de tus compras de 12 meses.
           </Text>
         </View>
       ) : null}
@@ -114,7 +129,7 @@ export default function Nivel({ nivel, pie = null }) {
               style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center' }}>
               <Icono sf="arrow.up" respaldo="↑" tam={11} color="#FFFFFF" />
             </LinearGradient>
-            <Text style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>Al llegar a {sig.nombre} ganas</Text>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>En {sig.nombre}</Text>
           </View>
           {beneficiosSig.map((b) => (
             <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4 }}>
@@ -124,13 +139,13 @@ export default function Nivel({ nivel, pie = null }) {
           ))}
         </View>
       ) : null}
-      <Texto nivel={3} estilo={{ fontSize: 12 }}>Según lo que compraste en los últimos 12 meses: {dolares(nivel.compra)}.</Texto>
+      <Texto nivel={3} estilo={{ fontSize: 12 }}>Tus compras de 12 meses: {dolares(nivel.compra)}</Texto>
       {pie}
       </Animated.View>
       ) : (
         <Presionable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>
-            {apagados ? 'Ver beneficios y cuándo se activan' : 'Ver beneficios'}
+            Ver beneficios
           </Text>
         </Presionable>
       )}

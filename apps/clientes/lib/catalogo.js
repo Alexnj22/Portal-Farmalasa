@@ -35,15 +35,29 @@ export const BUSQUEDAS = [
 // 2026-10-15 (SecureStore tiene tope de 2048 bytes y doce productos con su foto
 // firmada lo pasan); la primera vez se muda lo que había allá.
 const CLAVE_VISTOS = 'puntos_salud_vistos';
+// La copia en MEMORIA (2026-10-20, «a veces al entrar a la tienda se ve un
+// movimiento de un producto en vistos recientemente»): la fila se leía del
+// disco DESPUÉS de pintar la Tienda —vacía primero, llena un instante
+// después— y empujaba todo hacia abajo. Con la copia, la pantalla nace con la
+// fila ya puesta y la lectura del disco sólo confirma.
+let enMemoria = null;
+export const vistosEnMemoria = () => enMemoria ?? [];
+// Quien muestra la fila se entera AL MOMENTO de abrir un producto (con la
+// ficha encima), no al volver: así el reacomodo no se ve.
+const oyentes = new Set();
+export function alCambiarVistos(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
+const avisar = () => oyentes.forEach((fn) => fn(enMemoria ?? []));
 export async function leerVistos() {
+  if (enMemoria) return enMemoria;
   const lista = await leer(CLAVE_VISTOS);
-  if (Array.isArray(lista)) return lista;
+  if (Array.isArray(lista)) { enMemoria = lista; return lista; }
   try {
     const viejo = await SecureStore.getItemAsync(CLAVE_VISTOS);
     if (!viejo) return [];
     const mudada = JSON.parse(viejo);
     if (!Array.isArray(mudada)) return [];
     await guardar(CLAVE_VISTOS, mudada);
+    enMemoria = mudada;
     await SecureStore.deleteItemAsync(CLAVE_VISTOS).catch(() => {});
     return mudada;
   } catch { return []; }
@@ -52,10 +66,14 @@ export async function recordarVisto(p) {
   if (!p?.id) return;
   const lista = (await leerVistos()).filter((x) => x.id !== p.id);
   lista.unshift({ id: p.id, nombre: p.nombre, foto: p.foto ?? null, precio: p.precio ?? null, precio_vip: p.precio_vip ?? null });
-  await guardar(CLAVE_VISTOS, lista.slice(0, 12));
+  enMemoria = lista.slice(0, 12);
+  avisar();
+  await guardar(CLAVE_VISTOS, enMemoria);
 }
 
 export async function olvidarVistos() {
+  enMemoria = [];
+  avisar();
   await guardar(CLAVE_VISTOS, null);
   await SecureStore.deleteItemAsync(CLAVE_VISTOS).catch(() => {});
 }

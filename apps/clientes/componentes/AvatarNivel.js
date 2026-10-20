@@ -77,7 +77,19 @@ export default function AvatarNivel({ nombre, material, equipo = false, uri, cla
   if (!insignia) return aro;
   const claveNivel = material === 'vip' ? 'bronce' : material;
   const nombreNivel = material ? (NOMBRE_RANGO[claveNivel] ?? NOMBRE_NIVEL[claveNivel] ?? '') : '';
-  const rotulo = [nombreNivel, equipo ? 'Team' : null].filter(Boolean).join(' · ').toUpperCase();
+  // Del equipo (2026-10-20, «donde dice Bronce, si es team, se ve cortado»):
+  // «BRONCE · TEAM» no cabía en el ancho de la foto y se cortaba. Ahora son
+  // DOS placas lado a lado —el nivel en su metal y «TEAM» en el negro con
+  // acento de la tarjeta del equipo— y pueden salir del ancho de la foto.
+  const equipoPaleta = COLORES_NIVEL.empleado;
+  const placa = (colores, borde, icono, respaldo, texto) => (
+    <LinearGradient colors={colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: borde }}>
+      <Icono sf={icono} respaldo={respaldo} tam={10} color="#FFFFFF" />
+      <Text maxFontSizeMultiplier={1.2} numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 1.4,
+        textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } }}>{texto}</Text>
+    </LinearGradient>
+  );
   return (
     <View style={{ width: tam, height: tam + 12, alignItems: 'center' }}>
       {/* El brillo del nivel alrededor del aro. */}
@@ -85,14 +97,12 @@ export default function AvatarNivel({ nombre, material, equipo = false, uri, cla
         backgroundColor: paleta.frente[0] }}>
         {aro}
       </View>
-      {rotulo ? (
-        <LinearGradient colors={[paleta.frente[0], paleta.frente[1], paleta.frente[2] ?? paleta.frente[0]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ position: 'absolute', bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 24, borderRadius: 12,
-            borderWidth: 1.5, borderColor: paleta.acento }}>
-          <Icono sf={MAYOREO.includes(claveNivel) ? 'diamond.fill' : 'crown.fill'} respaldo="★" tam={10} color="#FFFFFF" />
-          <Text maxFontSizeMultiplier={1.2} numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 1.4,
-            textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } }}>{rotulo}</Text>
-        </LinearGradient>
+      {nombreNivel || equipo ? (
+        <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: -90, right: -90, flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
+          {nombreNivel ? placa([paleta.frente[0], paleta.frente[1], paleta.frente[2] ?? paleta.frente[0]], paleta.acento,
+            MAYOREO.includes(claveNivel) ? 'diamond.fill' : 'crown.fill', '★', nombreNivel.toUpperCase()) : null}
+          {equipo ? placa([equipoPaleta.frente[1], equipoPaleta.frente[0]], equipoPaleta.acento, 'person.2.fill', '●', 'TEAM') : null}
+        </View>
       ) : null}
     </View>
   );

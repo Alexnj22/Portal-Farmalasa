@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1321.3 — Puntos Salud: placa Team aparte en Cuenta
+
+_(pendiente de redactar)_
+
+**App de clientes, Cuenta:** la placa debajo de la foto decía «BRONCE · TEAM» y se cortaba (no cabía en el ancho de la foto). Ahora son dos placas: el nivel en su metal y una aparte, «TEAM», en el negro con acento de la tarjeta del equipo, y pueden ser más anchas que la foto.
+
 ## v2.1321.2 — App de clientes: aviso antes de que venza un crédito
 
 _(pendiente de redactar)_

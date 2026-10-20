@@ -36,6 +36,7 @@ import { escaleraDeNiveles, nivelDeCliente, programaParaApp } from "../_shared/n
 import { validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
+import { reconocer } from "../_shared/autoRespuesta.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -1777,7 +1778,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         }
         const foto_url = m.foto_ruta ? fotos.get(m.foto_ruta) ?? null : null;
         return {
-        editado: !!m.editado_at, borrado: false,
+        editado: !!m.editado_at, borrado: false, automatica: !!m.automatica,
         id: Number(m.id), autor: m.autor, texto: m.texto ?? null, created_at: m.created_at,
         foto_url,
         foto_clave: foto_url ? `${BUCKET_ARCHIVOS}/${m.foto_ruta}` : null,
@@ -1796,7 +1797,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         conversacion: estadoConversacion(cv) };
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
-      const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at";
+      const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at, automatica";
       // Por DÍAS (2026-10-14, «que salgan los de los últimos 3 días; si no,
       // "Cargar más" de semana en semana»): la app nueva manda `desde_fecha`
       // (primera carga) o `antes_de` (+ `antes_id`, la página anterior). Una
@@ -1921,7 +1922,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // Buscar en el chat y su galería (2026-10-20, «que sea como las apps de
     // mensajería»): en TODO el hilo, no sólo en lo que la app tiene cargado.
     // Con los mismos globos que `chat_mensajes` (fotos firmadas, equipo).
-    const COLS_BUSCAR = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at";
+    const COLS_BUSCAR = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at, automatica";
     if (accion === "chat_buscar") {
       const cv = await convDe();
       const q = String(body?.q ?? "").trim().slice(0, 60);
@@ -2010,6 +2011,87 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const ext = body?.tipo === "pdf" ? "pdf" : body?.tipo === "audio" ? "m4a" : "jpg";
       return json(await urlDeSubida(admin, `chat/${customerId}/${Date.now()}.${ext}`));
     }
+    // ── Respuestas automáticas (2026-10-20) ─────────────────────────────────
+    // `_shared/autoRespuesta.ts` reconoce la pregunta; acá se contesta con los
+    // datos REALES: horario de hoy, teléfonos y direcciones de las sucursales,
+    // precio y existencias del catálogo. Si no hay certeza (ningún producto
+    // encontrado), no se contesta: queda para el equipo. Son mensajes del
+    // `sistema` con `automatica = true`.
+    const hora12 = (h: string | null) => {
+      const m = String(h ?? "").match(/(\d{1,2}):(\d{2})/);
+      if (!m) return null;
+      const hh = Number(m[1]);
+      return `${hh % 12 || 12}:${m[2]} ${hh < 12 ? "a. m." : "p. m."}`;
+    };
+    const respuestasAutomaticas = async (convId: number, texto: string, abierta: boolean) => {
+      const intento = reconocer(texto);
+      if (!intento) return [];
+      // La MISMA pregunta repetida en 2 min no se vuelve a contestar (el
+      // mensaje recién guardado es uno; otro igual antes, es repetición).
+      const { data: iguales, error: eRe } = await admin.from("app_chat_mensajes").select("id").eq("conversacion_id", convId)
+        .eq("autor", "cliente").eq("texto", texto).gte("created_at", new Date(Date.now() - 2 * 60_000).toISOString()).limit(2);
+      if (eRe) throw eRe;
+      if ((iguales?.length ?? 0) > 1) return [];
+      const cierre = abierta ? "Si necesitas algo más, escríbenos y te atiende una persona del equipo."
+        : "Si necesitas algo más, te responde una persona del equipo cuando abramos.";
+      // deno-lint-ignore no-explicit-any
+      const filas: any[] = [];
+      if (intento.tipo === "producto") {
+        const [{ data: cat, error: eCat }, { data: salas, error: eSa }] = await Promise.all([
+          admin.rpc("app_catalogo", { p_q: intento.consulta, p_desde: 0, p_limite: 3 }),
+          salasDeLaRed(admin),
+        ]);
+        if (eCat) throw eCat;
+        if (eSa) throw eSa;
+        // deno-lint-ignore no-explicit-any
+        const prods: any[] = (cat as any)?.productos ?? [];
+        if (!prods.length) return [];
+        const stock = await unidadesPorSala(admin, prods.map((p) => Number(p.id)));
+        const nombreSala = new Map((salas ?? []).filter((b: any) => b.type === "FARMACIA").map((b: any) => [Number(b.id), sucursal(b.name)]));
+        filas.push({ texto: prods.length === 1 ? "Esto encontré:" : `Encontré ${prods.length} opciones:` });
+        for (const p of prods) {
+          const precio = Number(p.precio), vip = p.precio_vip != null ? Number(p.precio_vip) : null;
+          const donde = [...(stock.get(Number(p.id)) ?? new Map()).entries()].filter(([b, u]) => u > 0 && nombreSala.has(b)).map(([b]) => nombreSala.get(b));
+          const partes = [
+            vip != null && vip < precio ? `$${precio.toFixed(2)} · $${vip.toFixed(2)} con tu tarjeta` : `$${precio.toFixed(2)}`,
+            donde.length ? `Hay hoy en ${donde.join(", ")}.` : "Hoy no hay en ninguna sucursal: pregúntanos por un encargo.",
+            p.bajo_receta ? "Necesita receta." : null,
+          ].filter(Boolean);
+          filas.push({ texto: partes.join(". ").replace(/\.\./g, "."),
+            adjunto: { tipo: "producto", id: Number(p.id), nombre: String(p.nombre ?? ""), precio: vip ?? precio, foto: p.foto ?? null } });
+        }
+        filas[filas.length - 1].texto += `\n\n${cierre}`;
+      } else {
+        const { data: bs, error: eB } = await admin.from("branches").select("id, name, address, phone, cell, weekly_hours")
+          .eq("type", "FARMACIA").order("name");
+        if (eB) throw eB;
+        const dia = new Date(Date.now() - 6 * 3600_000).getUTCDay();
+        // deno-lint-ignore no-explicit-any
+        const lineas = (bs ?? []).map((b: any) => {
+          const nombre = sucursal(b.name);
+          if (intento.tipo === "horario") {
+            const h = (b.weekly_hours ?? {})[dia] ?? (b.weekly_hours ?? {})[String(dia)] ?? {};
+            return h.isOpen && hora12(h.start) && hora12(h.end) ? `• ${nombre}: ${hora12(h.start)} a ${hora12(h.end)}` : `• ${nombre}: cerrada hoy`;
+          }
+          if (intento.tipo === "telefono") {
+            const tel = [b.phone, b.cell ? `cel. ${b.cell}` : null].filter(Boolean).join(" · ");
+            return tel ? `• ${nombre}: ${tel}` : null;
+          }
+          return b.address ? `• ${nombre}: ${b.address}` : null;
+        }).filter(Boolean);
+        if (!lineas.length) return [];
+        const titulo = intento.tipo === "horario" ? "Hoy atendemos así:" : intento.tipo === "telefono" ? "Nuestros teléfonos:" : "Nuestras sucursales:";
+        const extra = intento.tipo === "direccion" ? "\n\nEn «Sucursales» de la app ves el mapa y cómo llegar." : "";
+        filas.push({ texto: `${titulo}\n${lineas.join("\n")}${extra}\n\n${cierre}` });
+      }
+      const { data: ins, error: eIns } = await admin.from("app_chat_mensajes")
+        .insert(filas.map((f) => ({ conversacion_id: convId, autor: "sistema", automatica: true, texto: f.texto, adjunto: f.adjunto ?? null })))
+        .select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at, automatica");
+      if (eIns) throw eIns;
+      // deno-lint-ignore no-explicit-any
+      return [...(ins ?? [])].sort((a: any, b: any) => Number(a.id) - Number(b.id));
+    };
+
     if (accion === "chat_enviar") {
       const crudo = String(body?.texto ?? "").trim();
       if (crudo.length > 2000) return json({ ok: false, mensaje: "El mensaje es muy largo (máximo 2,000 letras)." });
@@ -2073,7 +2155,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if ((count ?? 0) >= 30) return json({ ok: false, motivo: "muchos_mensajes", mensaje: "Enviaste muchos mensajes seguidos. Espera unos minutos." }, 429);
       const { data: m, error } = await admin.from("app_chat_mensajes")
         .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta, respuesta_a: respuestaA, adjunto: adjuntoProducto ?? adjuntoArchivo })
-        .select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at").single();
+        .select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at, automatica").single();
       if (error) throw error;
       // Respuesta automática (2026-10-12): el cliente siempre sabe que lo
       // recibimos y cuándo le contestan. Una por turno: no se repite si ya hubo
@@ -2081,10 +2163,19 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const hor = await horarioFarmacia(admin);
       const abierto = hor.abierta;
       let auto: any = null;
+      // La respuesta automática (si la pregunta se puede contestar sola y está
+      // encendida en el portal) va en lugar del acuse genérico.
+      const { data: ajAuto, error: eAjA } = await admin.from("app_chat_ajustes").select("respuestas_automaticas").eq("id", true).maybeSingle();
+      if (eAjA) console.error("chat_enviar: ajustes automáticas", eAjA.message);
+      // deno-lint-ignore no-explicit-any
+      let automaticas: any[] = [];
+      if (texto && !fotoRuta && !adjuntoProducto && !adjuntoArchivo && ajAuto?.respuestas_automaticas !== false) {
+        automaticas = await respuestasAutomaticas(cv.id, texto, abierto).catch((e) => { console.error("chat_enviar: respuesta automática", (e as Error)?.message); return []; });
+      }
       const { data: previa, error: eP } = await admin.from("app_chat_mensajes").select("id")
         .eq("conversacion_id", cv.id).eq("autor", "sistema").gte("created_at", new Date(Date.now() - 10 * 3600_000).toISOString()).limit(1);
       if (eP) console.error("chat_enviar: respuesta automática", eP.message);
-      if (!eP && !previa?.length) {
+      if (!eP && !previa?.length && !automaticas.length) {
         // Los textos los edita el equipo en el portal (`app_chat_ajustes`),
         // con {abre} y {cierra} reemplazados por el horario real.
         const { data: aj, error: eAj } = await admin.from("app_chat_ajustes").select("mensaje_abierto, mensaje_cerrado").eq("id", true).maybeSingle();
@@ -2096,13 +2187,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           .replaceAll("{cierra}", hor.cierra ?? "");
         const { data: a, error: eA } = await admin.from("app_chat_mensajes").insert({
           conversacion_id: cv.id, autor: "sistema", texto,
-        }).select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at").single();
+        }).select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at, automatica").single();
         if (eA) console.error("chat_enviar: respuesta automática", eA.message);
         else auto = a;
       }
-      const armados = await armarMensajes(auto ? [m, auto] : [m]);
+      const armados = await armarMensajes([m, ...(auto ? [auto] : []), ...automaticas]);
       // Escribir reabre la conversación (trigger `app_chat_mensaje_nuevo`).
-      return json({ ok: true, mensaje: armados[0], automatico: armados[1] ?? null, fuera_de_horario: !abierto,
+      // `automaticas` (2026-10-20): las respuestas automáticas, en orden; una
+      // app vieja lee sólo `automatico` (el primero) y el resto le llega con el sondeo.
+      return json({ ok: true, mensaje: armados[0], automatico: armados[1] ?? null, automaticas: armados.slice(1), fuera_de_horario: !abierto,
         conversacion: { estado: "abierta", calificacion: null, puede_calificar: false }, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado } });
     }
     // Calificar la atención (2026-10-13): sólo con la conversación resuelta

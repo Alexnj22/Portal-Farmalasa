@@ -67,7 +67,7 @@ export async function fetchConversaciones(estado = 'abierta', antes = null) {
 
 // Desde el 2026-10-20 el cliente puede EDITAR y BORRAR lo suyo, y mandar notas
 // de voz y documentos (PDF) en `adjunto` ({ tipo: 'audio'|'pdf', ruta, ... }).
-const COLUMNAS_MENSAJE = 'id, autor, employee_id, texto, foto_ruta, adjunto, created_at, respuesta_a, editado_at, borrado_at, cambiado_at, cita:respuesta_a(id, autor, employee_id, texto, foto_ruta)';
+const COLUMNAS_MENSAJE = 'id, autor, employee_id, texto, foto_ruta, adjunto, created_at, respuesta_a, editado_at, borrado_at, cambiado_at, automatica, cita:respuesta_a(id, autor, employee_id, texto, foto_ruta)';
 
 /** La foto y el archivo del adjunto (nota de voz, PDF), firmados. */
 async function conArchivosFirmados(filas) {

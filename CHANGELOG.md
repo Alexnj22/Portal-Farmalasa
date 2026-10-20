@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1317.0 — Chat: respuestas automáticas de horario, teléfonos, direcciones y precio
+
+**Respuestas automáticas del chat** (2026-10-20, «que conteste solo si preguntan precio, horario, teléfono»). Cuando el cliente pregunta algo sencillo, la app contesta al instante con los datos REALES del portal:
+
+- **Horario** de hoy de cada sucursal; **teléfonos**; **direcciones** (con el camino a «Sucursales» para el mapa).
+- **Precio y existencias** de un producto: hasta 3 coincidencias del catálogo, cada una con su tarjeta, el precio y el precio con tarjeta, en qué sucursales hay hoy y si necesita receta. Si no encuentra el producto, NO contesta: queda para el equipo.
+- **Nunca** contesta solo lo clínico —dosis, síntomas, embarazo, lactancia, niños, interacciones, efectos, alergias, «¿qué me recomiendan?»—: eso le llega al equipo.
+- La pregunta se reconoce con reglas (`_shared/autoRespuesta.ts`, sin modelo de lenguaje); la misma pregunta repetida en 2 minutos no se vuelve a contestar. Con respuesta automática no se manda el acuse genérico.
+- Se ven como **«Respuesta automática»** (mensajes del `sistema` con `automatica`, migración `20261020170229`), con «Hablar con alguien» y «Gracias» de un toque. En el portal salen del lado del equipo con su rótulo.
+- Se **apagan desde el portal**: Ajustes del chat → «Contestar solo lo sencillo».
+
+Probado de punta a punta contra producción con la cuenta de revisión (horario, teléfonos, direcciones, loratadina; la pregunta de dosis para un niño no se contestó sola); la conversación de prueba se borró.
+
 ## v2.1316.5 — Raspable: dónde hay el premio hoy y apartar el regalo
 
 Raspable con premio (2026-10-20, «que desde la app se vea antes de ir»): debajo del cupón, **dónde hay hoy** el premio (`premio_salas`: las sucursales que pueden entregarlo hoy) o, si no hay, «pregúntalo en caja». Un **regalo promocional** se puede **apartar** en una de ellas (`premio_apartar`); apartado o pedido, se dice dónde te espera o que te avisan cuando llegue. El premio se retira en cualquier sucursal.

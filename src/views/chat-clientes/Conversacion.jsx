@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowDown, CheckCircle2, FileText, ImageOff, MessagesSquare, Package, Phone, Tag, Tags, UserRound } from 'lucide-react';
+import { ArrowDown, CheckCircle2, FileText, ImageOff, MessagesSquare, Package, Phone, Sparkles, Tag, Tags, UserRound } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -552,6 +552,28 @@ function Burbuja({
     const conAcciones = m.autor !== 'sistema' && (puedeReaccionar || !!m.texto);
     // Mantener presionado el globo (teléfono) abre la hoja con las acciones.
     const gestos = usePulsacionLarga({ activo: conAcciones, alMantener: () => onOpciones(m) });
+    // La respuesta automática (2026-10-20): del lado del equipo, con su rótulo,
+    // para que se vea qué contestó la app sola y se pueda corregir.
+    if (m.autor === 'sistema' && m.automatica) {
+        return (
+            <div data-mensaje-id={m.id} className="flex flex-col items-end pt-1.5">
+                <span className="flex items-center gap-1 mb-1 text-micro text-content-3"><Sparkles size={12} /> Respuesta automática</span>
+                <div className="max-w-[min(80%,34rem)] rounded-[1.25rem] px-3.5 py-2 space-y-1.5 bg-surface-card text-content border border-brand/30">
+                    {m.adjunto?.tipo === 'producto' && (
+                        <span className="flex items-center gap-2 rounded-input px-2 py-1.5 bg-surface-card-hover">
+                            <Package size={14} className="shrink-0" />
+                            <span className="min-w-0">
+                                <span className="block text-body-sm font-semibold truncate">{m.adjunto.nombre}</span>
+                                {m.adjunto.precio != null && <span className="block text-label tabular-nums">{formatMoney(Number(m.adjunto.precio))}</span>}
+                            </span>
+                        </span>
+                    )}
+                    {m.texto && <p className="text-body-sm whitespace-pre-wrap break-words">{m.texto}</p>}
+                </div>
+                <span className="text-micro text-content-3 tabular-nums mt-0.5 px-1">{hora12(m.created_at)}</span>
+            </div>
+        );
+    }
     if (m.autor === 'sistema') {
         return <p className="text-center text-micro text-content-3 py-2">{m.texto}</p>;
     }

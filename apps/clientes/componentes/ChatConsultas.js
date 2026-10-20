@@ -244,6 +244,9 @@ export const SUGERENCIAS = [
 const sinTildes = (x) => String(x ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const enviar = (texto, sf = 'arrowshape.turn.up.left.fill') => ({ texto, mensaje: texto, accion: 'enviar', sf });
 export function respuestasSugeridas(m) {
+  // Después de una respuesta automática: hablar con una persona, o gracias.
+  if (m?.autor === 'sistema' && m.automatica) return [enviar('Hablar con alguien', 'person.fill'), enviar('Gracias 🙏')]
+    .map((x) => (x.texto === 'Hablar con alguien' ? { ...x, mensaje: 'Quiero hablar con una persona del equipo, por favor.' } : x));
   if (!m || m.autor !== 'equipo') return [];
   const t = sinTildes(m.texto);
   const out = [];

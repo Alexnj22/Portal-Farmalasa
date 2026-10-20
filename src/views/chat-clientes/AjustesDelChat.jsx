@@ -7,7 +7,8 @@ import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { fetchAjustesDelChat, guardarAjustesDelChat } from '@nucleo/data/horarios';
+import { fetchAjustesDelChat, guardarAjustesDelChat, guardarRespuestasAutomaticas } from '@nucleo/data/horarios';
+import Switch from '../../components/common/Switch';
 import { LARGO_MAXIMO_MENSAJE, MARCADORES_DEL_CHAT, trozosDelMensaje } from '@nucleo/utils/horarioDelChat';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -125,6 +126,19 @@ export default function AjustesDelChat({ abierto, onClose, estado }) {
     const valido = f.mensaje_abierto.trim() && f.mensaje_cerrado.trim();
     const listo = puedeEditar && cambiado && valido && !guardando && !!user?.id;
 
+    // Las respuestas automáticas (2026-10-20): se guardan al tocar el interruptor.
+    const [cambiandoAuto, setCambiandoAuto] = useState(false);
+    const cambiarAuto = async (v) => {
+        setCambiandoAuto(true); setError('');
+        try {
+            setFila(await guardarRespuestasAutomaticas({ encendidas: v, employeeId: user.id }));
+        } catch (e) {
+            setError(e?.message || 'No se pudo guardar.');
+        } finally {
+            setCambiandoAuto(false);
+        }
+    };
+
     const guardar = async () => {
         setGuardando(true); setError(''); setGuardado(false);
         try {
@@ -156,6 +170,18 @@ export default function AjustesDelChat({ abierto, onClose, estado }) {
                         <EstadoDeLaFarmacia estado={estado} />
                     </div>
                     {error && <Notice variant="danger" bloque>{error}</Notice>}
+                    {fila && (
+                        <div data-surface="card" className="flex items-start justify-between gap-4 p-3">
+                            <div className="flex flex-col gap-1 min-w-0">
+                                <span className="text-body-sm font-bold text-content">Contestar solo lo sencillo</span>
+                                <span className="text-caption text-content-2">
+                                    Horario de hoy, teléfonos, direcciones y precio y existencias de un producto, con los datos del portal. Nunca contesta solo dosis, síntomas, embarazo, niños ni recomendaciones: eso te llega a ti. El cliente lo ve como «Respuesta automática» y puede pedir hablar con una persona.
+                                </span>
+                            </div>
+                            <Switch checked={fila.respuestas_automaticas !== false} onChange={cambiarAuto} disabled={!puedeEditar || cambiandoAuto}
+                                aria-label="Respuestas automáticas del chat" />
+                        </div>
+                    )}
                     {guardado && !error && <Notice variant="success" bloque>Mensajes guardados. Los próximos clientes ya los reciben.</Notice>}
                     {cargando && !fila ? <LoadingState label="Cargando mensajes" /> : (
                         CAMPOS.map((c) => (

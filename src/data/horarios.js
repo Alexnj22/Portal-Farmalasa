@@ -31,9 +31,24 @@ export async function fetchFarmaciaEstado() {
 
 export async function fetchAjustesDelChat() {
     return sinError(await supabase.from('app_chat_ajustes')
-        .select('mensaje_abierto, mensaje_cerrado, updated_by, updated_at')
+        .select('mensaje_abierto, mensaje_cerrado, respuestas_automaticas, updated_by, updated_at')
         .eq('id', true)
         .maybeSingle());
+}
+
+/**
+ * Enciende o apaga las respuestas automáticas del chat (2026-10-20): horario,
+ * teléfonos, direcciones y precio y existencias de un producto, contestados
+ * solos con los datos del portal. La misma policy que los mensajes.
+ */
+export async function guardarRespuestasAutomaticas({ encendidas, employeeId }) {
+    const filas = sinError(await supabase.from('app_chat_ajustes')
+        .update({ respuestas_automaticas: !!encendidas, updated_by: employeeId, updated_at: new Date().toISOString() })
+        .eq('id', true)
+        .select('mensaje_abierto, mensaje_cerrado, respuestas_automaticas, updated_by, updated_at'));
+    if (!filas?.length) throw new Error('No se guardó: no tienes permiso para editar los ajustes del chat.');
+    anotar('CHAT_RESPUESTAS_AUTOMATICAS', 'app_chat_ajustes', { encendidas: !!encendidas });
+    return filas[0];
 }
 
 /**
@@ -47,7 +62,7 @@ export async function guardarAjustesDelChat({ mensajeAbierto, mensajeCerrado, em
     const filas = sinError(await supabase.from('app_chat_ajustes')
         .update({ mensaje_abierto: abierto, mensaje_cerrado: cerrado, updated_by: employeeId, updated_at: new Date().toISOString() })
         .eq('id', true)
-        .select('mensaje_abierto, mensaje_cerrado, updated_by, updated_at'));
+        .select('mensaje_abierto, mensaje_cerrado, respuestas_automaticas, updated_by, updated_at'));
     if (!filas?.length) throw new Error('No se guardó: no tienes permiso para editar los mensajes del chat.');
     anotar('CHAT_AJUSTES_MENSAJES', 'app_chat_ajustes', { largo_abierto: abierto.length, largo_cerrado: cerrado.length });
     return filas[0];

@@ -588,11 +588,15 @@ export default function Chat() {
       if (r.conversacion) setConversacion(siCambio(r.conversacion));
       anotarUltimo([r.mensaje]);
       recien.current.add(r.mensaje.id);
+      // Lo que contestó el sistema: el acuse y, desde el 2026-10-20, las
+      // respuestas automáticas (`automaticas`, en orden).
+      const extra = r.automaticas ?? (r.automatico ? [r.automatico] : []);
+      const idsExtra = new Set(extra.map((x) => x.id));
       setMensajes((ant) => {
-        const sin = (ant ?? []).filter((m) => m.id !== r.mensaje.id && m.id !== r.automatico?.id).map((m) => (m.id === tmp.id ? r.mensaje : m));
-        return r.automatico ? [...sin, r.automatico] : sin;
+        const sin = (ant ?? []).filter((m) => m.id !== r.mensaje.id && !idsExtra.has(m.id)).map((m) => (m.id === tmp.id ? r.mensaje : m));
+        return [...sin, ...extra];
       });
-      if (r.automatico) { anotarUltimo([r.automatico]); recien.current.add(r.automatico.id); }
+      if (extra.length) { anotarUltimo(extra); for (const x of extra) recien.current.add(x.id); }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       return true;
     } catch (e) {
@@ -782,7 +786,8 @@ export default function Chat() {
     mensajes.forEach((m, i) => { if (delEquipo(m)) ultimoEquipo = i; });
     const corta = (a, b) => !a || !b || claveDia(new Date(a.created_at)) !== claveDia(new Date(b.created_at))
       || Date.parse(b.created_at) - Date.parse(a.created_at) > HUECO_MS || (nuevosDesde && b.id === nuevosDesde.id);
-    const misma = (a, b) => a && b && a.autor === b.autor && a.autor !== 'sistema' && !a.fallido && !b.fallido
+    // Las respuestas automáticas seguidas también forman racha (un solo rótulo).
+    const misma = (a, b) => a && b && a.autor === b.autor && (a.autor !== 'sistema' || (a.automatica && b.automatica)) && !a.fallido && !b.fallido
       && (a.autor !== 'equipo' || a.equipo?.nombre === b.equipo?.nombre)
       && Math.abs(Date.parse(b.created_at) - Date.parse(a.created_at)) < RACHA_MS && !corta(a, b);
     // El rótulo del día se arma UNA vez por día, no por mensaje: `toLocaleDateString`
@@ -991,7 +996,7 @@ export default function Chat() {
   if (mensajes == null) return <View style={{ flex: 1 }}>{titulo}<Esqueleto arriba={arriba} /></View>;
   // Los atajos: con la conversación vacía o justo después de la respuesta automática.
   const ultimo = mensajes[mensajes.length - 1];
-  const conAtajos = !texto.trim() && !producto && !respondiendo && (!mensajes.length || ultimo?.autor === 'sistema');
+  const conAtajos = !texto.trim() && !producto && !respondiendo && (!mensajes.length || (ultimo?.autor === 'sistema' && !ultimo.automatica));
   // Después de un mensaje del equipo, respuestas de un toque según lo que dijo (2026-10-20).
   const sugeridas = !texto.trim() && !producto && !respondiendo && !enviando ? respuestasSugeridas(ultimo) : [];
 
@@ -1357,6 +1362,31 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
   // Lo propio entra con un resorte (2026-10-20), como el globo que sale del
   // botón de enviar en Mensajes; lo del equipo, con el fundido y el destello.
   const entrada = entra && !reducir ? (m.autor === 'cliente' ? ZoomIn.springify().damping(16).stiffness(240) : FadeIn.duration(200)) : undefined;
+  // La respuesta automática (2026-10-20): como un globo de la farmacia, con el
+  // logo y «Respuesta automática» arriba, y el producto si lo trae.
+  if (m.autor === 'sistema' && m.automatica) {
+    return (
+      <Animated.View entering={entrada} style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: primero ? 10 : 2 }}>
+        <View style={{ width: 28 }}>
+          {ultimo ? <Image source={require('../assets/icono.png')} style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFFFFF' }} contentFit="cover" /> : null}
+        </View>
+        <View style={{ maxWidth: '78%', gap: 4, alignItems: 'flex-start' }}>
+          {primero ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 12 }}>
+              <Icono sf="sparkles" respaldo="✦" tam={11} color={t.color.magentaTexto} />
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>Respuesta automática</Text>
+            </View>
+          ) : null}
+          {m.adjunto?.tipo === 'producto' ? <TarjetaProducto a={m.adjunto} mio={false} /> : null}
+          {m.texto ? (
+            <View style={{ backgroundColor: globoEquipo(t.oscuro), borderRadius: R, paddingHorizontal: 13, paddingVertical: 8 }}>
+              <TextoConEnlaces texto={m.texto} color={colorSistema.texto} colorEnlace={t.color.magentaTexto} estilo={{ fontSize: IOS ? 17 : 16, lineHeight: IOS ? 22 : 21 }} />
+            </View>
+          ) : null}
+        </View>
+      </Animated.View>
+    );
+  }
   if (m.autor === 'sistema') {
     return (
       <Animated.View entering={entrada} style={{ alignSelf: 'center', maxWidth: '86%', marginVertical: 8, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14,

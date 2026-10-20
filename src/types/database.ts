@@ -363,6 +363,7 @@ export type Database = {
           id: boolean
           mensaje_abierto: string
           mensaje_cerrado: string
+          respuestas_automaticas: boolean
           updated_at: string
           updated_by: string | null
         }
@@ -371,6 +372,7 @@ export type Database = {
           id?: boolean
           mensaje_abierto: string
           mensaje_cerrado: string
+          respuestas_automaticas?: boolean
           updated_at?: string
           updated_by?: string | null
         }
@@ -379,6 +381,7 @@ export type Database = {
           id?: boolean
           mensaje_abierto?: string
           mensaje_cerrado?: string
+          respuestas_automaticas?: boolean
           updated_at?: string
           updated_by?: string | null
         }
@@ -625,6 +628,7 @@ export type Database = {
       app_chat_mensajes: {
         Row: {
           adjunto: Json | null
+          automatica: boolean
           autor: string
           borrado_at: string | null
           cambiado_at: string | null
@@ -639,6 +643,7 @@ export type Database = {
         }
         Insert: {
           adjunto?: Json | null
+          automatica?: boolean
           autor: string
           borrado_at?: string | null
           cambiado_at?: string | null
@@ -653,6 +658,7 @@ export type Database = {
         }
         Update: {
           adjunto?: Json | null
+          automatica?: boolean
           autor?: string
           borrado_at?: string | null
           cambiado_at?: string | null

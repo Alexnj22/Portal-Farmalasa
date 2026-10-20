@@ -46,8 +46,14 @@ Notifications.setNotificationHandler({
 //     llega sin el producto; el texto entero viene en `data.cuerpo` y lo pinta
 //     el banner de la app. Un canal no se puede cambiar una vez creado: por eso
 //     es uno nuevo y no `ofertas`. Se crea junto con el token (abajo).
+//   · Android, formato 2 (2026-10-20, «que no aparezcan en la pantalla
+//     bloqueada, y desbloqueado se vean completos»): el canal `ocultos`, con
+//     visibilidad SECRETA — suena, pero bloqueado no se pinta. Como ahí el
+//     aviso llega ENTERO, la app sólo declara `formato: 2` si el canal se creó;
+//     el servidor no se lo manda a quien no lo dijo.
 export const CATEGORIA_PRIVADA = 'privado';
 const CANAL_PRIVADO = 'privados';
+const CANAL_OCULTO = 'ocultos';
 if (Platform.OS === 'ios') {
   Notifications.setNotificationCategoryAsync(CATEGORIA_PRIVADA, [], {
     showTitle: true, previewPlaceholder: 'Toca para ver el detalle',
@@ -88,24 +94,34 @@ export async function pedirPermisoDeAvisos() {
   return status === 'granted';
 }
 
-/** Devuelve el token de avisos, o `{ error }` con una frase que se puede mostrar. */
+/** Devuelve `{ token, formato }`, o `{ error }` con una frase que se puede mostrar. */
 export async function pedirTokenDeAvisos() {
   if (Platform.OS === 'web' || !Device.isDevice) return { error: 'Los avisos sólo funcionan en un teléfono.' };
+  let formato = 1;
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('ofertas', {
       name: 'Ofertas y puntos', importance: Notifications.AndroidImportance.DEFAULT,
     });
-    await Notifications.setNotificationChannelAsync(CANAL_PRIVADO, {
+    formato = await Notifications.setNotificationChannelAsync(CANAL_OCULTO, {
       name: 'Reservas y tratamientos', importance: Notifications.AndroidImportance.DEFAULT,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
-    }).catch(() => { /* sin el canal, el aviso sale por el de siempre: igual sin el producto */ });
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.SECRET,
+    }).then(() => 2).catch(() => 1);
+    if (formato === 2) {
+      // El canal viejo ya no recibe nada: se quita para no salir dos veces en Ajustes.
+      await Notifications.deleteNotificationChannelAsync(CANAL_PRIVADO).catch(() => {});
+    } else {
+      await Notifications.setNotificationChannelAsync(CANAL_PRIVADO, {
+        name: 'Reservas y tratamientos', importance: Notifications.AndroidImportance.DEFAULT,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
+      }).catch(() => { /* sin el canal, el aviso sale por el de siempre: igual sin el producto */ });
+    }
   }
   if (!(await pedirPermisoDeAvisos())) return { error: 'Activa las notificaciones en los ajustes del teléfono.' };
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) return { error: 'Los avisos todavía no están disponibles.' };
   try {
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
-    return { token: data };
+    return { token: data, formato };
   } catch {
     return { error: 'No se pudieron activar los avisos. Intenta más tarde.' };
   }
@@ -136,7 +152,7 @@ export async function sincronizarAvisos(pedir, aceptaEnServidor) {
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') return; // nunca se pide el permiso sin que la persona lo active
     const r = await pedirTokenDeAvisos();
-    if (r.token) await pedir('avisos', { acepta: true, push_token: r.token });
+    if (r.token) await pedir('avisos', { acepta: true, push_token: r.token, formato: r.formato });
   } catch { /* sin red: se reintenta en la próxima apertura */ }
 }
 

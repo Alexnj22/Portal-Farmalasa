@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1311.3 — Avisos en Android: ocultos con el teléfono bloqueado, completos al desbloquear
+
+Decisión del dueño: en Android los avisos de reservas, encargos, inyecciones, tratamientos, recetas y chat ya no se muestran en la pantalla bloqueada (suenan igual) y, con el teléfono desbloqueado, se leen completos con el nombre del producto. La app nueva crea el canal `ocultos` (visibilidad secreta) y lo declara al registrar su token (`app_cliente_sesiones.avisos_formato = 2`); sólo a esos teléfonos se les manda el texto entero. Una versión vieja sigue recibiendo el aviso genérico, que nunca deja ver el producto.
+
 ## v2.1311.2 — Puntos Salud: la banda magnética ya no toca los bordes de la tarjeta
 
 La banda magnética del reverso iba de canto a canto y tapaba el filo de luz y el material de la orilla: la tarjeta se veía cortada. Ahora queda metida 10 pt de cada lado, con puntas redondeadas y un filo del color del nivel, y se dibuja DEBAJO de la luz de la tarjeta, así el borde y el barrido pasan por encima sin cortarse.

@@ -51,7 +51,7 @@ const json = (b: unknown, status = 200) =>
 // `cuerpoPublico` (2026-10-15): el cuerpo SIN el producto, para la pantalla
 // bloqueada de Android (ver _shared/avisoPrivado.ts). No se guarda en la tabla.
 interface Aviso { customer_id: number; tipo: string; ref: string; titulo: string; cuerpo: string; url: string; cuerpoPublico?: string }
-type Token = { id: string; token: string; plataforma: string | null };
+type Token = { id: string; token: string; plataforma: string | null; formato: number };
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const fechaCorta = (f: string) => { const [, m, d] = f.split("-"); return `${Number(d)} ${MESES[Number(m) - 1]}`; };
@@ -68,14 +68,14 @@ Deno.serve(async (req) => {
   try {
     // Quién puede recibir: sesiones vivas con token y avisos encendidos.
     const { data: ses, error: eSes } = await admin.from("app_cliente_sesiones")
-      .select("id, customer_id, push_token, plataforma")
+      .select("id, customer_id, push_token, plataforma, avisos_formato")
       .not("customer_id", "is", null).not("push_token", "is", null)
       .is("revocada_at", null).eq("acepta_avisos", true);
     if (eSes) throw eSes;
     const tokens = new Map<number, Token[]>();
     for (const s of ses ?? []) {
       const l = tokens.get(s.customer_id) ?? [];
-      l.push({ id: s.id, token: s.push_token, plataforma: s.plataforma ?? null });
+      l.push({ id: s.id, token: s.push_token, plataforma: s.plataforma ?? null, formato: s.avisos_formato ?? 1 });
       tokens.set(s.customer_id, l);
     }
 
@@ -619,7 +619,7 @@ async function enviar(admin: any, tokens: Map<number, Token[]>, avisos: Aviso[])
   // iPhone y en Android (_shared/avisoPrivado.ts).
   const mensajes: (ReturnType<typeof mensajePush> & { _c: number; _s: string })[] = [];
   for (const a of avisos) for (const t of tokens.get(a.customer_id) ?? []) {
-    mensajes.push({ ...mensajePush(a, t.token, t.plataforma), _c: a.customer_id, _s: t.id });
+    mensajes.push({ ...mensajePush(a, t.token, t.plataforma, t.formato), _c: a.customer_id, _s: t.id });
   }
   let enviados = 0;
   const errores: string[] = [];

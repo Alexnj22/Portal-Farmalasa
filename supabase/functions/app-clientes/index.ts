@@ -1367,8 +1367,11 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     if (accion === "avisos") {
       const acepta = body?.acepta === true;
       const pushToken = acepta && body?.push_token ? String(body.push_token).slice(0, 200) : null;
+      // `formato` (2026-10-20): 2 = la app ya creó el canal secreto de Android
+      // (_shared/avisoPrivado.ts). Una versión vieja no lo manda: queda en 1.
+      const formato = Number(body?.formato) === 2 ? 2 : 1;
       const { error } = await admin.from("app_cliente_sesiones")
-        .update({ acepta_avisos: acepta, push_token: pushToken }).eq("id", ses.id);
+        .update({ acepta_avisos: acepta, push_token: pushToken, avisos_formato: formato }).eq("id", ses.id);
       if (error) throw error;
       return json({ ok: true, acepta });
     }
@@ -2913,15 +2916,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { error: eA } = await admin.from("app_cliente_avisos").insert({ customer_id: customerId, tipo: a.tipo, ref: `prueba:${Date.now()}`,
         titulo: a.titulo, cuerpo: a.cuerpo, url: a.url, enviado: true });
       if (eA) throw eA;
-      const { data: sesiones, error: eS } = await admin.from("app_cliente_sesiones").select("push_token, plataforma")
+      const { data: sesiones, error: eS } = await admin.from("app_cliente_sesiones").select("push_token, plataforma, avisos_formato")
         .eq("customer_id", customerId).is("revocada_at", null).eq("acepta_avisos", true).not("push_token", "is", null);
       if (eS) throw eS;
-      const tokens = (sesiones ?? []) as { push_token: string; plataforma: string | null }[];
+      const tokens = (sesiones ?? []) as { push_token: string; plataforma: string | null; avisos_formato: number | null }[];
       if (!tokens.length) return json({ ok: false, mensaje: "Activa los avisos en Cuenta para recibirlo." });
       // Armado igual que el aviso real: lo que nombra un producto no se lee bloqueado.
       const r = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify(tokens.map((t) => mensajePush(a, t.push_token, t.plataforma))),
+        body: JSON.stringify(tokens.map((t) => mensajePush(a, t.push_token, t.plataforma, t.avisos_formato))),
       });
       return json({ ok: r.ok, enviados: tokens.length });
     }

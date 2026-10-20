@@ -1279,6 +1279,7 @@ export type Database = {
       app_cliente_sesiones: {
         Row: {
           acepta_avisos: boolean | null
+          avisos_formato: number
           alcance: string
           created_at: string
           customer_id: number | null
@@ -1293,6 +1294,7 @@ export type Database = {
         }
         Insert: {
           acepta_avisos?: boolean | null
+          avisos_formato?: number
           alcance?: string
           created_at?: string
           customer_id?: number | null
@@ -1307,6 +1309,7 @@ export type Database = {
         }
         Update: {
           acepta_avisos?: boolean | null
+          avisos_formato?: number
           alcance?: string
           created_at?: string
           customer_id?: number | null

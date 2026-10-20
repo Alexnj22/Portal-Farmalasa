@@ -198,15 +198,17 @@ export default function Cuenta() {
     if (guardando) return;
     setMensaje(null);
     let push_token = null;
+    let formato = 1;
     if (valor) {
       // Nunca lanza hacia el botón (2026-10-12): un fallo del sistema es un mensaje.
       const r = await pedirTokenDeAvisos().catch(() => ({ error: 'No se pudieron activar los avisos. Intenta más tarde.' }));
       if (r.error) { setMensaje(r.error); return; }
       push_token = r.token;
+      formato = r.formato;
     }
     setGuardando('avisos');
     setLocal((x) => ({ ...x, avisos: valor }));
-    const r = await pedir('avisos', { acepta: valor, push_token });
+    const r = await pedir('avisos', { acepta: valor, push_token, formato });
     if (!r?.ok) setMensaje(r?.mensaje ?? 'No se pudo guardar.');
     else await recordarAvisos(valor);
     await cargar({ forzar: true });

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1319.2 — Entrar y registrarse en la app: sólo DUI, con su verificador
+
+- **App de clientes**: el campo DUI de Entrar y de Registro ya no deja
+  escribir más de 9 números (8 y el verificador; el guion se pone solo). Antes
+  aceptaba hasta 14 para el NIT; el dueño decidió que se entra sólo con DUI.
+- El botón no se habilita hasta que el DUI es válido, y si el verificador no
+  cuadra se avisa «Revisa tu DUI» en vez de un «no te encontramos».
+
 ## v2.1319.1 — La píldora «Hay hoy en…» del premio se lee en tema oscuro
 
 - **App de clientes**: debajo del cupón de un premio, la píldora que dice en qué

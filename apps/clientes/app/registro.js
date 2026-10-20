@@ -14,6 +14,7 @@ import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito, fechaDeNacimiento } from '../lib/formato';
+import { duiValido } from '../lib/fiscal';
 import FechaNacimiento from '../componentes/FechaNacimiento';
 import { useBloqueo } from '../lib/bloqueo';
 import { navegar } from '../lib/navegar';
@@ -53,7 +54,8 @@ export default function Registro() {
   const nacimiento = fechaDeNacimiento(f.fecha_nacimiento);
   const fechaMala = nacimiento === null;
 
-  const listo = f.nombre.trim().length >= 3 && f.documento.length >= 7
+  const duiMalo = f.documento.replace(/\D/g, '').length === 9 && !duiValido(f.documento);
+  const listo = f.nombre.trim().length >= 3 && duiValido(f.documento)
     && f.telefono.replace(/\D/g, '').length >= 8 && programa && !!textos && !fechaMala;
 
   async function enviar() {
@@ -71,7 +73,7 @@ export default function Registro() {
 
   return (
     <Formulario>
-      <Grupo titulo="Tus datos" pie="En tu próxima compra en sala te pedimos el DUI para completar tu ficha. Desde esa compra empiezas a acumular.">
+      <Grupo titulo="Tus datos" pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : 'En tu próxima compra en sala te pedimos el DUI para completar tu ficha. Desde esa compra empiezas a acumular.'}>
         <FilaCampo placeholder="Nombre completo" value={f.nombre} onChangeText={cambiar('nombre')} autoCapitalize="words"
           textContentType="name" autoComplete="name" returnKeyType="next" blurOnSubmit={false}
           onSubmitEditing={() => duiRef.current?.focus()} />

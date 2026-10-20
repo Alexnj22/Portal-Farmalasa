@@ -12,6 +12,7 @@ import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { documentoEscrito } from '../lib/formato';
+import { duiValido } from '../lib/fiscal';
 import { conBiometria, useBloqueo } from '../lib/bloqueo';
 import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
 import { useCuenta } from '../lib/cuenta';
@@ -58,7 +59,10 @@ export default function Entrar() {
 
   const listo = modo === 'codigo'
     ? codigo.length === 7
-    : documento.replace(/[^A-Za-z0-9]/g, '').length >= 7 && telefono.replace(/\D/g, '').length >= 8;
+    : duiValido(documento) && telefono.replace(/\D/g, '').length >= 8;
+  // Los 9 números escritos pero el verificador no cuadra: se dice aquí, antes
+  // de mandarlo, en vez de un «no te encontramos» que no explica nada.
+  const duiMalo = documento.replace(/\D/g, '').length === 9 && !duiValido(documento);
 
   async function entrarCon(datos) {
     setError(null);
@@ -109,7 +113,7 @@ export default function Entrar() {
           deshabilitado={enviando} color={t.color.magenta} />
       ) : null}
       {modo === 'dui' ? (
-        <Grupo pie="Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo. Si te registraste con NIT, escríbelo en lugar del DUI.">
+        <Grupo pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : 'Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo.'}>
           <FilaCampo
             placeholder="DUI"
             keyboardType="number-pad"

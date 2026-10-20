@@ -44,13 +44,12 @@ export function nombrePropio(v) {
 }
 
 /**
- * El documento mientras se escribe. Con exactamente 9 dígitos es un DUI y se
- * pone el guion (12345678-9); con más (un NIT tiene 14) se deja tal cual. Antes
- * se cortaba a 9 y quien se registró con NIT no podía entrar nunca.
+ * El DUI mientras se escribe: sólo números, 9 como máximo (8 y el
+ * verificador), y el guion antes del último (12345678-9). Sólo DUI: el NIT ya
+ * no se acepta para entrar ni para registrarse (decisión del dueño, 2026-10-20).
  */
 export function documentoEscrito(v) {
-  if (/[A-Za-z]/.test(v)) return v.toUpperCase().slice(0, 20);
-  const d = v.replace(/\D/g, '').slice(0, 14);
+  const d = String(v ?? '').replace(/\D/g, '').slice(0, 9);
   return d.length === 9 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;
 }
 

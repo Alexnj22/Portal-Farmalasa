@@ -35,6 +35,8 @@ import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento } from '../componentes/cortes/papel';
+import FormaDePago from '../componentes/formulario/FormaDePago';
+import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
 
 export default function MeterDinero() {
   usePantallaDespierta('meter-dinero'); // se cuenta efectivo: la pantalla no se apaga
@@ -57,6 +59,7 @@ export default function MeterDinero() {
   const [sentido, setSentido] = useState(null);
   const [repetidas, setRepetidas] = useState([]);
   const [guardando, setGuardando] = useState(false);
+  const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
   const [clave] = useState(() => `app-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   useEffect(() => {
@@ -68,6 +71,13 @@ export default function MeterDinero() {
   const tipo = tipos.find((t) => t.codigo === codigo) || null;
   const n = String(monto).trim() === '' ? NaN : Number(String(monto).replace(',', '.'));
   const exigeDetalle = !tipo || tipo.codigo.startsWith('OTRO');
+  /* Cómo se pagó (2026-10-19), con la misma regla del portal: las operaciones
+   * del POS Promerica son en efectivo por ventanilla y no la llevan. Con
+   * tarjeta o transferencia el respaldo es el comprobante del pago, así que la
+   * boleta y su foto dejan de pedirse. */
+  const conFormaDePago = !!tipo && !tipo.codigo.startsWith('POS_');
+  const estadoPago = estadoDeFormaDePago(conFormaDePago ? pago : null, n);
+  const noEfectivo = conFormaDePago && estadoPago.noEfectivo;
 
   useEffect(() => {
     const num = boleta.trim();
@@ -90,7 +100,7 @@ export default function MeterDinero() {
       else router.replace({ pathname: '/portal', params: { ruta: `/caja?sala=${sala}` } });
       return;
     }
-    setCodigo(v); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setMontoCerrado(false);
+    setCodigo(v); setPago(FORMA_DE_PAGO_INICIAL); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setMontoCerrado(false);
   };
 
   // Al poner la foto se lee; al quitarla se olvida lo que dijo.
@@ -115,24 +125,29 @@ export default function MeterDinero() {
 
   const falta = !tipo ? 'Elige el motivo.'
     : leyendo ? 'Leyendo la foto…'
-      : tipo.foto === 'OBLIGATORIA' && !fotos.length ? 'Falta la foto del comprobante.'
+      : !noEfectivo && tipo.foto === 'OBLIGATORIA' && !fotos.length ? 'Falta la foto del comprobante.'
         : !(n > 0) ? 'Escribe el monto.'
           : exigeDetalle && detalle.trim().length < 3 ? 'Escribe el detalle.'
-            : tipo.pide_boleta && !boleta.trim() ? 'Falta el número de boleta.'
-              : problema?.bloquea ? problema.texto
+            : !noEfectivo && tipo.pide_boleta && !boleta.trim() ? 'Falta el número de boleta.'
+              : !noEfectivo && problema?.bloquea ? problema.texto
                 : tipo.pide_persona && persona.trim().length < 2 ? 'Escribe quién lo trae.'
-                  : null;
+                  : estadoPago.falta;
 
   const guardar = async () => {
     setGuardando(true); trabajando('Anotando el ingreso…');
     try {
-      const fotoUrl = fotos.length ? (await subirFotos(fotos, { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }))[0] ?? null : null;
+      // Con tarjeta o transferencia la foto que vale es la del comprobante del pago.
+      const fotosQueVan = noEfectivo ? (pago.foto ? [pago.foto] : []) : fotos;
+      const fotoUrl = fotosQueVan.length ? (await subirFotos(fotosQueVan, { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }))[0] ?? null : null;
+      // Sin la foto el servidor pediría una autorización que nadie pidió: la sala SÍ tenía el papel.
+      if (noEfectivo && pago.foto && !fotoUrl) throw new Error('No se pudo subir la foto del comprobante. Revisa la conexión y vuelve a intentarlo.');
       const r = await anotarIngreso({
         sala, monto: n, tipo: tipo.codigo, clave,
         concepto: [tipo.etiqueta, detalle.trim()].filter(Boolean).join(' · ').slice(0, 50),
         conceptoCompleto: [tipo.etiqueta, detalle.trim()].filter(Boolean).join(' · '),
         boleta: boleta.trim() || null, fotoUrl, lectura: fotoUrl ? lectura : null,
         ...(tipo.pide_persona ? { vendedor: persona.trim() } : {}),
+        ...(conFormaDePago ? datosDeFormaDePago(pago, fotoUrl) : {}),
       });
       if (r?.error) throw r.error;
       const papel = r?.movimiento ? await comprobanteDelMovimiento(r.movimiento, {
@@ -163,33 +178,38 @@ export default function MeterDinero() {
               valor={codigo} onCambiar={elegir} />
           </Seccion>
 
-          {tipo && tipo.foto !== 'NO' ? (
+          {conFormaDePago ? (
+            <FormaDePago valor={pago} onCambiar={setPago} monto={n}
+              onMontoLeido={(t) => { if (String(monto).trim() === '') setMonto(String(t)); }} />
+          ) : null}
+
+          {tipo && tipo.foto !== 'NO' && !noEfectivo ? (
             <Seccion titulo={tipo.foto === 'OBLIGATORIA' ? 'Foto de la boleta' : 'Foto de la boleta (opcional)'}
               pie="La foto se lee sola: llena el monto, el número y el detalle.">
               <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} />
             </Seccion>
           ) : null}
-          {aviso ? <Aviso tono={montoCerrado ? 'nota' : 'cuidado'} texto={aviso} /> : null}
-          {sentido ? <Aviso tono="cuidado" texto={sentido} /> : null}
+          {aviso && !noEfectivo ? <Aviso tono={montoCerrado ? 'nota' : 'cuidado'} texto={aviso} /> : null}
+          {sentido && !noEfectivo ? <Aviso tono="cuidado" texto={sentido} /> : null}
 
           {tipo ? (
             <Seccion titulo="El ingreso">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{montoCerrado ? 'Monto (confirmado por la boleta)' : 'Monto'}</Text>
+                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{noEfectivo ? 'Cuánto es de este ingreso' : montoCerrado ? 'Monto (confirmado por la boleta)' : 'Monto'}</Text>
                 <View style={{ minWidth: 140 }}>
-                  <Campo multiline={false} value={monto} editable={!montoCerrado} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))}
+                  <Campo multiline={false} value={monto} editable={noEfectivo || !montoCerrado} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))}
                     keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} />
                 </View>
               </View>
-              {tipo.pide_boleta ? <Campo multiline={false} value={boleta} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
+              {tipo.pide_boleta && !noEfectivo ? <Campo multiline={false} value={boleta} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
               {tipo.pide_persona ? <Campo multiline={false} value={persona} onChangeText={setPersona} placeholder="Quién lo trae" autoCapitalize="words" /> : null}
               <Campo value={detalle} onChangeText={setDetalle}
                 placeholder={`Detalle${exigeDetalle ? '' : ' (opcional)'}${PISTA_DE_DETALLE[tipo.codigo] ? ` — p. ej. ${PISTA_DE_DETALLE[tipo.codigo]}` : ''}`} />
             </Seccion>
           ) : null}
 
-          {problema && !problema.bloquea ? <Aviso tono="cuidado" texto={problema.texto} /> : null}
-          {falta && tipo ? <Aviso tono={problema?.bloquea ? 'freno' : 'cuidado'} texto={falta} /> : null}
+          {problema && !problema.bloquea && !noEfectivo ? <Aviso tono="cuidado" texto={problema.texto} /> : null}
+          {falta && tipo ? <Aviso tono={!noEfectivo && problema?.bloquea ? 'freno' : 'cuidado'} texto={falta} /> : null}
           <BotonGrande texto={guardando ? 'Anotando…' : 'Anotar e imprimir'} color={MARCA.verde} deshabilitado={guardando || !!falta} onPress={guardar} />
         </ScrollView>
       </KeyboardAvoidingView>

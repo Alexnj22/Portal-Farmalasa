@@ -27,6 +27,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../componentes/formulario/Piezas';
+import FormaDePago from '../componentes/formulario/FormaDePago';
+import { subirFotos } from '../componentes/formulario/Fotos';
+import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -105,6 +108,8 @@ export default function AplicacionInyeccion() {
   const [textoPend, setTextoPend] = useState('');
   const [cuantasCanje, setCuantasCanje] = useState({});
   const [enviando, setEnviando] = useState(false);
+  // Cómo pagó (2026-10-19): con tarjeta, la aplicación no entra al cajón.
+  const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
   const [clave] = useState(() => `app-aplicacion-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   useEffect(() => {
@@ -144,6 +149,7 @@ export default function AplicacionInyeccion() {
   const veces = Math.min(vecesMezcla, topeDeMezcla(enMezcla, renglonDe, dosis));
   const items = useMemo(() => itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe }), [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe]);
   const c = cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala });
+  const estadoPago = estadoDeFormaDePago(pago, c.monto);
   const grupos = useMemo(() => gruposDePendientes(pendientes), [pendientes]);
   const idsACanjear = grupos.flatMap((g) => g.ids.slice(0, cuantasCanje[g.clave] || 0));
 
@@ -161,13 +167,20 @@ export default function AplicacionInyeccion() {
   };
 
   const cobrar = () => Alert.alert(`¿Cobrar ${formatMoney(c.monto)}?`,
-    `${c.total} ${c.total === 1 ? 'aplicación' : 'aplicaciones'}${c.quedan > 0 ? `; ${c.quedan} quedan pendientes a nombre de ${aNombreDe.trim()}` : ''}. Entra a la caja de ${nombreSala}.`, [
+    `${c.total} ${c.total === 1 ? 'aplicación' : 'aplicaciones'}${c.quedan > 0 ? `; ${c.quedan} quedan pendientes a nombre de ${aNombreDe.trim()}` : ''}. ${estadoPago.noEfectivo ? `Con ${pago.forma === 'TARJETA' ? 'tarjeta' : 'transferencia'}: no entra al cajón${estadoPago.pideAutorizacion ? ' y queda pendiente de autorización' : ''}.` : `Entra a la caja de ${nombreSala}.`}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cobrar', onPress: async () => {
         setEnviando(true); trabajando('Cobrando…');
+        let fotoUrl = null;
+        if (estadoPago.noEfectivo && pago.foto) {
+          fotoUrl = (await subirFotos([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }).catch(() => []))[0] ?? null;
+          // Sin la foto el servidor pediría una autorización que nadie pidió.
+          if (!fotoUrl) { setEnviando(false); fallo('No se subió la foto del comprobante', 'Revisa la conexión y vuelve a intentarlo.'); return; }
+        }
         const r = await anotarIngreso({
           sala, monto: c.monto, clave, tipo: 'APLICACION', concepto: tipo?.etiqueta || 'Aplicacion de inyeccion',
           aplicacion: aplicacionDelCobro({ origen: c.origen, items, producto, cantidad, ahora: c.ahora, quedan: c.quedan, aNombreDe, ficha }),
+          fotoUrl, ...datosDeFormaDePago(pago, fotoUrl),
         }).catch((e) => ({ error: e }));
         setEnviando(false);
         if (r?.error) { fallo('No se pudo cobrar', mensajeAmigable(r.error)); return; }
@@ -308,7 +321,9 @@ export default function AplicacionInyeccion() {
                 {c.quedan > 0 ? <Campo multiline={false} value={aNombreDe} maxLength={80} onChangeText={setANombreDe} placeholder={`A nombre de (quedan ${c.quedan}): nombre del cliente`} /> : null}
               </Seccion>
             ) : null}
-            {modo !== 'CANJEAR' ? <BotonGrande texto={enviando ? 'Cobrando…' : c.monto != null && c.total > 0 ? `Cobrar ${formatMoney(c.monto)}` : 'Cobrar'} color={MARCA.verde} deshabilitado={enviando || !c.valido} onPress={cobrar} /> : null}
+            {modo !== 'CANJEAR' && c.total > 0 ? <FormaDePago valor={pago} onCambiar={setPago} monto={c.monto} montoFijo /> : null}
+            {modo !== 'CANJEAR' && c.total > 0 && c.valido && estadoPago.falta ? <Aviso tono="cuidado" texto={estadoPago.falta} /> : null}
+            {modo !== 'CANJEAR' ? <BotonGrande texto={enviando ? 'Cobrando…' : c.monto != null && c.total > 0 ? `Cobrar ${formatMoney(c.monto)}` : 'Cobrar'} color={MARCA.verde} deshabilitado={enviando || !c.valido || !estadoPago.valido} onPress={cobrar} /> : null}
 
             {modo === 'CANJEAR' ? (
               <>

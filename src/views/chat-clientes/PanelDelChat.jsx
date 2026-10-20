@@ -71,7 +71,7 @@ export default function PanelDelChat({ abierto, onClose }) {
     const titulo = 'Chat con clientes';
 
     const barra = (
-        <div className="flex-none flex items-center gap-2 px-3 py-2 border-b border-border-subtle">
+        <div className="flex-none flex items-center gap-2 px-3 py-2 border-b border-border-card">
             {/* En el teléfono la barra del expediente ya tiene el título y el
                 «volver» (que con un hilo abierto vuelve a la bandeja). */}
             {conv && !enTelefono && (

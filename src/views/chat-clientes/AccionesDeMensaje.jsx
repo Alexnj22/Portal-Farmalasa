@@ -25,7 +25,7 @@ export function BarraDeMensaje({ alLado, conTexto, onReaccionar, onResponder, on
                     {e}
                 </button>
             ))}
-            <span aria-hidden="true" className="w-px h-5 bg-border-subtle mx-0.5" />
+            <span aria-hidden="true" className="w-px h-5 bg-border-card mx-0.5" />
             <button type="button" aria-label="Responder" onClick={onResponder}
                 className="w-7 h-7 rounded-full inline-flex items-center justify-center text-content-2 hover:bg-surface-card-hover active:scale-[0.97]">
                 <CornerUpLeft size={15} />
@@ -61,7 +61,7 @@ export function ReaccionesDeMensaje({ filas, yo, equipo, cliente, alLado, puedeR
                         aria-pressed={g.mia} disabled={!puedeReaccionar}
                         onClick={() => onReaccionar(g.mia ? null : g.emoji)}
                         className={`inline-flex items-center gap-1 rounded-pill border px-2 min-h-[var(--tap-min)] md:min-h-0 md:py-0.5 text-label tabular-nums active:scale-[0.97] disabled:active:scale-100
-                            ${g.mia ? 'border-brand bg-brand/10 text-brand-text font-semibold' : 'border-border-subtle bg-surface-card text-content-2'}`}>
+                            ${g.mia ? 'border-brand bg-brand/10 text-brand-text font-semibold' : 'border-border-card bg-surface-card text-content-2'}`}>
                         <span className="text-body-sm leading-none">{g.emoji}</span>
                         {g.quienes.length > 1 && <span>{g.quienes.length}</span>}
                     </button>
@@ -77,7 +77,7 @@ export function CitaDeMensaje({ cita, equipo, cliente, delEquipo, onIr }) {
     return (
         <button type="button" onClick={() => onIr(cita.id)} title="Ir al mensaje citado"
             className={`block w-full text-left rounded-input px-2 py-1 active:scale-[0.97] min-h-[var(--tap-min)] md:min-h-0
-                ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card border border-border-subtle'}`}>
+                ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card border border-border-card'}`}>
             <span className="block text-micro font-semibold truncate">{nombreDeAutor(cita, equipo, cliente)}</span>
             <span className="block text-label opacity-90 line-clamp-2 break-words">{recorteDeMensaje(cita)}</span>
         </button>
@@ -88,7 +88,7 @@ export function CitaDeMensaje({ cita, equipo, cliente, delEquipo, onIr }) {
 export function FranjaDeRespuesta({ mensaje, equipo, cliente, onQuitar }) {
     if (!mensaje) return null;
     return (
-        <div className="flex items-center gap-2 rounded-input border border-border-subtle bg-surface-card-hover px-2 py-1.5">
+        <div className="flex items-center gap-2 rounded-input border border-border-card bg-surface-card-hover px-2 py-1.5">
             <MessageSquareQuote size={14} className="shrink-0 text-brand-text" />
             <span className="min-w-0 flex-1">
                 <span className="block text-micro font-semibold text-content-2 truncate">

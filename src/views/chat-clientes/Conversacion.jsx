@@ -29,12 +29,13 @@ import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
 import AsignadoA from './AsignadoA';
 import Compositor from './Compositor';
+import NotaDeVoz from './NotaDeVoz';
 import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 import ChipPreferente from './Preferente';
 import { cambiaDeDia, empiezaTanda, etiquetaDeDia, primerSinLeer } from '@nucleo/utils/chatClientes';
 import { ChipsDeEtiquetas, EditorDeEtiquetas } from './EtiquetasDelCliente';
-import { CalificacionDelCliente } from './Calificacion';
+import { CalificacionEnLinea } from './Calificacion';
 import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 
 // El hilo de una conversación: el contexto del cliente arriba, los mensajes
@@ -371,50 +372,62 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
 
     return (
         <div data-surface={comoPanel ? undefined : 'card'} className={`flex flex-col min-h-0 ${comoPanel ? 'h-full' : 'flex-1 rounded-card overflow-hidden'}`}>
-            {/* ── El cliente ─────────────────────────────────────────────── */}
-            <header className="flex-none flex flex-wrap items-start gap-x-3 gap-y-2 px-4 py-3 border-b border-border-subtle">
-                <ClienteAvatar conversacion={c} size="lg" />
-                <div className="min-w-0 flex-1 basis-48">
-                    <p className="text-body font-black text-content truncate" title={nombre}>{nombre}</p>
-                    <div className="flex flex-wrap items-center gap-1 mt-1">
-                        <ChipsDeEstado conversacion={c} ahora={ahora}
-                            atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
-                        <ChipPreferente conversacion={c} />
-                        <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
-                        {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
-                        {c.telefono && (
-                            <a href={`tel:${String(c.telefono).replace(/\D/g, '')}`}
-                                className="inline-flex items-center gap-1 px-1 rounded-btn text-label text-content-2 hover:text-brand-text tabular-nums min-h-[var(--tap-min)] active:scale-[0.97]">
-                                <Phone size={12} /> {c.telefono}
-                            </a>
-                        )}
+            {/* ── El cliente ─────────────────────────────────────────────
+                Dos renglones: quién es (foto, nombre, estado) con las acciones
+                a la derecha, y debajo los datos de contacto, la calificación y
+                las etiquetas. En el panel de la burbuja (420px) las acciones
+                van compactas: con rótulo largo se partían en tres renglones. */}
+            <header className="flex-none px-4 py-3 border-b border-border-card space-y-2">
+                <div className="flex items-start gap-3">
+                    <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-body font-black text-content truncate" title={nombre}>{nombre}</p>
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <ChipsDeEstado conversacion={c} ahora={ahora}
+                                atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
+                            <ChipPreferente conversacion={c} />
+                            <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
+                            {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
+                        </div>
                     </div>
-                    {c.asignada_a && <AsignadoA conversacion={c} equipo={equipo} className="mt-1" />}
-                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                    {puedeResponder && (c.foto_ruta || c.estado === 'abierta') && (
+                        <div className="flex-none flex items-center gap-1">
+                            {c.foto_ruta && (
+                                <Button variant="ghost" size="sm" icon={ImageOff} iconOnly title="Quitar la foto de perfil" onClick={() => setQuitarFoto(true)} />
+                            )}
+                            {c.estado === 'abierta' && (
+                                <Button variant="secondary" size="sm" icon={CheckCircle2} loading={resolviendo} onClick={resolver}
+                                    title="Marcar como resuelta">
+                                    {comoPanel ? 'Resolver' : 'Marcar como resuelta'}
+                                </Button>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label text-content-2">
+                    {c.telefono && (
+                        <a href={`tel:${String(c.telefono).replace(/\D/g, '')}`}
+                            className="inline-flex items-center gap-1 rounded-btn hover:text-brand-text tabular-nums min-h-[var(--tap-min)] md:min-h-0 active:scale-[0.97]">
+                            <Phone size={12} /> {c.telefono}
+                        </a>
+                    )}
+                    {c.calificacion ? <CalificacionEnLinea conversacion={c} /> : null}
+                    {c.asignada_a && <AsignadoA conversacion={c} equipo={equipo} />}
+                </div>
+                {(c.etiquetas?.length > 0 || puedeResponder) && (
+                    <div className="flex flex-wrap items-center gap-1">
                         <ChipsDeEtiquetas conversacion={c} />
                         {puedeResponder && (
-                            <Button variant="ghost" size="sm" icon={Tags} onClick={() => setEditandoEtiquetas(true)}>
-                                {c.etiquetas?.length ? 'Editar etiquetas' : 'Etiquetar'}
+                            <Button variant="ghost" size="xs" icon={Tags} onClick={() => setEditandoEtiquetas(true)}>
+                                {c.etiquetas?.length ? 'Editar' : 'Etiquetar'}
                             </Button>
-                        )}
-                    </div>
-                </div>
-                {puedeResponder && (c.foto_ruta || c.estado === 'abierta') && (
-                    <div className="flex flex-wrap items-center justify-end gap-1.5 ml-auto">
-                        {c.foto_ruta && (
-                            <Button variant="ghost" size="sm" icon={ImageOff} onClick={() => setQuitarFoto(true)}>Quitar foto</Button>
-                        )}
-                        {c.estado === 'abierta' && (
-                            <Button variant="secondary" size="sm" icon={CheckCircle2} loading={resolviendo} onClick={resolver}>Marcar como resuelta</Button>
                         )}
                     </div>
                 )}
             </header>
 
-            {c.calificacion ? <CalificacionDelCliente conversacion={c} className="mx-4 mt-3 flex-none" /> : null}
-
             {conPanelCliente && !lateral && (
-                <div className="flex-none px-4 pt-2">
+                <div className="flex-none px-4 py-2 border-b border-border-card">
                     <SegmentedControl size="sm" label="Ver" value={pestana} onChange={setPestana}
                         options={[
                             { value: 'mensajes', label: 'Mensajes', icon: MessagesSquare },
@@ -492,11 +505,11 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     respondiendoA={respondiendoA} onQuitarRespuesta={() => setRespondiendoA(null)}
                     equipo={equipo} cliente={nombre} />
             ) : (
-                <p className="px-4 py-3 border-t border-border-subtle text-label text-content-3">Puedes leer las conversaciones; para responder hace falta el permiso de editar.</p>
+                <p className="px-4 py-3 border-t border-border-card text-label text-content-3">Puedes leer las conversaciones; para responder hace falta el permiso de editar.</p>
             )}
             </div>
             {lateral && (
-                <aside aria-label="Cliente" className="w-[320px] shrink-0 border-l border-border-subtle overflow-y-auto overscroll-contain">
+                <aside aria-label="Cliente" className="w-[320px] shrink-0 border-l border-border-card overflow-y-auto overscroll-contain">
                     <PanelCliente customerId={c.customer_id} conversacion={c} />
                 </aside>
             )}
@@ -608,7 +621,7 @@ function Burbuja({
                 <div {...gestos}
                     className={`rounded-[1.25rem] ${esquinas} px-3.5 py-2 space-y-1.5 [@media(pointer:coarse)]:select-none [-webkit-touch-callout:none]
                         transition-shadow duration-[var(--dur-lento)]
-                        ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-subtle'}
+                        ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-card'}
                         ${m.borrado_at ? 'opacity-60' : ''}
                         ${recien ? 'ring-2 ring-brand/45 ring-offset-1 ring-offset-transparent' : ''}`}>
                     <CitaDeMensaje cita={m.cita} equipo={equipo} cliente={cliente} delEquipo={delEquipo} onIr={onIrA} />
@@ -637,12 +650,8 @@ function Burbuja({
                             <span className="text-body-sm font-semibold min-w-0 truncate">{adj.titulo}</span>
                         </span>
                     )}
-                    {adj?.tipo === 'audio' && (
-                        m.archivo_url ? (
-                            // La nota de voz del cliente (m4a/AAC), con los controles del navegador.
-                            <audio controls preload="none" src={m.archivo_url} className="max-w-full h-10">Nota de voz</audio>
-                        ) : <span className="text-label opacity-80">Nota de voz no disponible</span>
-                    )}
+                    {/* La nota de voz del cliente (m4a/AAC). */}
+                    {adj?.tipo === 'audio' && <NotaDeVoz key={m.archivo_url ?? 'sin-archivo'} src={m.archivo_url} delEquipo={delEquipo} />}
                     {adj?.tipo === 'pdf' && (
                         <a href={m.archivo_url ?? undefined} target="_blank" rel="noreferrer" title="Abrir el documento"
                             className={`flex items-center gap-2 rounded-input px-2 py-1.5 min-h-[var(--tap-min)] active:scale-[0.97] ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>

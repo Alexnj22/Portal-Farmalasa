@@ -86,7 +86,7 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
     };
 
     return (
-        <div className="border-t border-border-subtle px-3 py-2.5 space-y-2 pb-[max(0.625rem,var(--sa-bottom))]">
+        <div className="border-t border-border-card px-3 py-2.5 space-y-2 pb-[max(0.625rem,var(--sa-bottom))]">
             {respondiendoA && (
                 <FranjaDeRespuesta mensaje={respondiendoA} equipo={equipo ?? new Map()} cliente={cliente} onQuitar={onQuitarRespuesta} />
             )}
@@ -94,7 +94,7 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
                 <div className="flex flex-wrap items-center gap-2">
                     {archivo && (
                         <span className="relative inline-block">
-                            <img src={vista} alt="Foto por enviar" className="h-16 w-16 rounded-input object-cover border border-border-subtle" />
+                            <img src={vista} alt="Foto por enviar" className="h-16 w-16 rounded-input object-cover border border-border-card" />
                             <Button variant="secondary" size="xs" iconOnly icon={X} title="Quitar la foto" className="absolute -top-2 -right-2"
                                 onClick={() => setArchivo(null)} />
                         </span>
@@ -197,7 +197,7 @@ function RespuestasRapidas({ textoActual, onClose, onElegir }) {
                             ))}
                         </ul>
                     )}
-                    <div className="space-y-2 pt-2 border-t border-border-subtle">
+                    <div className="space-y-2 pt-2 border-t border-border-card">
                         <p className="text-label font-semibold text-content-2">Guardar una respuesta nueva</p>
                         <PortalInput label="Título" name="respuesta-titulo" maxLength={60} value={titulo} onChange={(e) => setTitulo(e.target.value)} />
                         <PortalTextarea label="Texto" name="respuesta-texto" rows={3} compact maxLength={1000} value={nuevoTexto}

@@ -121,7 +121,7 @@ export default function PanelCliente({ customerId, conversacion = null }) {
                                     <ChevronDown size={16} className={`shrink-0 text-content-3 transition-transform duration-[var(--dur-fast)] ${expandida ? 'rotate-180' : ''}`} />
                                 </button>
                                 {expandida && (
-                                    <ul className="px-3 pb-2 space-y-1 border-t border-border-subtle pt-2">
+                                    <ul className="px-3 pb-2 space-y-1 border-t border-border-card pt-2">
                                         {(f.productos ?? []).map((p, i) => (
                                             <li key={i} className="flex items-start gap-2 text-label">
                                                 <span className="tabular-nums text-content-3 shrink-0">{formatQty(Number(p.cantidad), { decimalesMax: 2 })}×</span>

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import Badge from '../../components/common/Badge';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { fetchCalificacionesRecientes } from '@nucleo/data/chatClientes';
 import { resumenDeCalificaciones } from '@nucleo/utils/chatClientes';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
@@ -22,19 +23,22 @@ export function Estrellas({ valor, px = 12 }) {
     );
 }
 
-/** El bloque del hilo / del panel: estrellas y lo que escribió. Nada si no calificó. */
-export function CalificacionDelCliente({ conversacion: c, className = '' }) {
+/** La calificación en un renglón, para el encabezado del hilo: las
+ *  estrellas y el comentario recortado (entero al pasar el ratón). Como bloque
+ *  aparte empujaba el hilo hacia abajo en el panel de la burbuja. */
+export function CalificacionEnLinea({ conversacion: c }) {
     if (!c?.calificacion) return null;
+    const comentario = c.calificacion_comentario ? `«${c.calificacion_comentario}»` : '';
     return (
-        <div data-surface="card" className={`rounded-card px-3 py-2 space-y-1 ${className}`}>
-            <p className="flex items-center gap-2 text-label text-content-2">
-                <span className="font-semibold">Calificó la atención</span>
-                <Estrellas valor={c.calificacion} />
-            </p>
-            {c.calificacion_comentario && (
-                <p className="text-body-sm text-content whitespace-pre-wrap break-words">«{c.calificacion_comentario}»</p>
+        <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+            <span className="text-content-3">Calificó</span>
+            <Estrellas valor={c.calificacion} />
+            {comentario && (
+                <LiquidTooltip content={comentario} className="min-w-0 truncate">
+                    <span className="italic text-content-2">{comentario}</span>
+                </LiquidTooltip>
             )}
-        </div>
+        </span>
     );
 }
 

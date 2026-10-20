@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1321.4 — Chat: encabezado compacto, bordes reales y nota de voz propia
+
+**Chat con clientes (panel de la burbuja y vista completa):**
+- Las líneas que separan encabezado, pestañas y respuesta se veían como trazos blancos (tema oscuro) o negros (claro): usaban `border-border-subtle`, que **no es un token**, y el navegador caía al color del texto. Ahora `border-border-card` en todo `chat-clientes/`. Quedan 8 archivos fuera del chat con la misma clase inexistente (caja, ofertas, mayoristas, dashboard).
+- Encabezado del hilo en dos renglones: foto, nombre y estado con las acciones a la derecha («Resolver» en el panel; «Quitar foto» como ícono), y debajo teléfono, calificación y asignación. En 420 px las acciones se partían en tres renglones.
+- La calificación pasa a una línea dentro del encabezado (estrellas + comentario con tooltip) en vez de una tarjeta que empujaba el hilo.
+- Las pestañas Mensajes/Cliente llevan su propio relleno y separador: ya no se montan sobre el primer mensaje.
+- Nota de voz con reproductor propio (play/pausa, avance, duración). Los controles nativos en Safari salían como una barra gris con «Error» cuando el archivo no cargaba; ahora dice «Nota de voz no disponible».
+
 ## v2.1321.3 — Puntos Salud: placa Team aparte en Cuenta
 
 _(pendiente de redactar)_

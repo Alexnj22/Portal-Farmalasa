@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1314.3 — Tipos de la base: saldo_favor_dias
+
+_(pendiente de redactar)_
+
 ## v2.1314.2 — Saldo a favor: un solo plazo de 60 días y aviso antes de que venza
 
 Había dos plazos: **30 días** para el anticipo en sala de una reserva vencida (decidido el 2026-10-08) y **90** para lo pagado en línea que se cerró o el cobro duplicado (puesto por un agente el 2026-10-19, sin confirmar). El usuario eligió **60 días para todo**.

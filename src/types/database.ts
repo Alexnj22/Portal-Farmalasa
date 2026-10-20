@@ -33155,6 +33155,7 @@ export type Database = {
       }
       salas_que_cubro_ahora: { Args: never; Returns: number[] }
       saldo_favor_buscar: { Args: { p_codigo: string }; Returns: Json }
+      saldo_favor_dias: { Args: never; Returns: number }
       save_pedido_snapshot: {
         Args: { p_nombre: string; p_sucursal_ids: number[] }
         Returns: string

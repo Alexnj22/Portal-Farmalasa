@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ImagePlus, MessageSquareText, Package, Send, Tag, Trash2, X } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
@@ -34,6 +34,7 @@ import { FranjaDeRespuesta } from './AccionesDeMensaje';
 const TIPOS_FOTO = 'image/jpeg,image/png,image/webp,image/heic';
 const MAX_FOTO = 8 * 1024 * 1024;   // el `file_size_limit` del bucket
 const CADA_CUANTO_ESCRIBIENDO_MS = 3_000;
+const MAX_TEXTO = 2000;
 
 export default function Compositor({ conversacion, onEnviado, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -43,7 +44,16 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
     const [enviando, setEnviando] = useState(false);
     const [hoja, setHoja] = useState(null); // 'respuestas' | 'producto' | 'oferta'
     const fileRef = useRef(null);
+    const campoRef = useRef(null);
     const ultimoAvisoRef = useRef(0);
+
+    // El campo crece con lo que se escribe; el tope lo pone su `max-h-40`.
+    useLayoutEffect(() => {
+        const el = campoRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [texto]);
 
     const escribir = (valor) => {
         setTexto(valor);
@@ -86,7 +96,7 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
     };
 
     return (
-        <div className="border-t border-border-card px-3 py-2.5 space-y-2 pb-[max(0.625rem,var(--sa-bottom))]">
+        <div className="border-t border-border-card px-3 pt-2.5 space-y-1.5 pb-[max(0.5rem,var(--sa-bottom))]">
             {respondiendoA && (
                 <FranjaDeRespuesta mensaje={respondiendoA} equipo={equipo ?? new Map()} cliente={cliente} onQuitar={onQuitarRespuesta} />
             )}
@@ -107,16 +117,28 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
                     {adjunto && <Button variant="ghost" size="xs" iconOnly icon={X} title="Quitar el adjunto" onClick={() => setAdjunto(null)} />}
                 </div>
             )}
-            <PortalTextarea name="chat-respuesta" aria-label="Escribe una respuesta" placeholder="Escribe una respuesta…" rows={2} compact
-                maxLength={2000} value={texto} onChange={(e) => escribir(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) { e.preventDefault(); enviar(); } }} />
-            <div className="flex items-center gap-1">
+            {/* El campo crece con el texto (hasta ~6 renglones) y el botón de
+                enviar va a su lado, redondo: la forma de cualquier app de
+                mensajería. Las herramientas, en una tira fina debajo. */}
+            <div className="flex items-end gap-2">
+                <PortalTextarea name="chat-respuesta" aria-label="Escribe una respuesta" placeholder="Escribe una respuesta…" rows={1} compact
+                    ref={campoRef} className="flex-1 min-w-0" textareaClassName="!font-medium max-h-40 overflow-y-auto"
+                    value={texto} onChange={(e) => escribir(e.target.value.slice(0, MAX_TEXTO))}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) { e.preventDefault(); enviar(); } }} />
+                <Button size="md" iconOnly icon={Send} title="Enviar" loading={enviando} disabled={!puedeEnviar} onClick={enviar}
+                    className="shrink-0" />
+            </div>
+            <div className="flex items-center gap-0.5">
                 <input ref={fileRef} type="file" accept={TIPOS_FOTO} className="sr-only" onChange={elegirFoto} />
-                <Button variant="ghost" size="sm" iconOnly icon={ImagePlus} title="Adjuntar una foto" onClick={() => fileRef.current?.click()} />
-                <Button variant="ghost" size="sm" iconOnly icon={MessageSquareText} title="Respuestas rápidas" onClick={() => setHoja('respuestas')} />
-                <Button variant="ghost" size="sm" iconOnly icon={Package} title="Enviar un producto" onClick={() => setHoja('producto')} />
-                <Button variant="ghost" size="sm" iconOnly icon={Tag} title="Enviar una oferta" onClick={() => setHoja('oferta')} />
-                <Button className="ml-auto" size="sm" icon={Send} loading={enviando} disabled={!puedeEnviar} onClick={enviar}>Enviar</Button>
+                <Button variant="ghost" size="xs" iconOnly icon={ImagePlus} title="Adjuntar una foto" onClick={() => fileRef.current?.click()} />
+                <Button variant="ghost" size="xs" iconOnly icon={MessageSquareText} title="Respuestas rápidas" onClick={() => setHoja('respuestas')} />
+                <Button variant="ghost" size="xs" iconOnly icon={Package} title="Enviar un producto" onClick={() => setHoja('producto')} />
+                <Button variant="ghost" size="xs" iconOnly icon={Tag} title="Enviar una oferta" onClick={() => setHoja('oferta')} />
+                <span className="ml-auto pr-1 text-micro text-content-3 tabular-nums">
+                    {texto.length > MAX_TEXTO - 200
+                        ? `${texto.length}/${MAX_TEXTO}`
+                        : <span className="hidden md:inline">Enter envía · Shift+Enter salto de línea</span>}
+                </span>
             </div>
 
             {hoja === 'respuestas' && (

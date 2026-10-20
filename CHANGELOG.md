@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1322.0 — Chat con clientes: rediseño estilo mensajería
+
+**Chat con clientes (panel de la burbuja, vista completa y teléfono)** — misma pieza en los tres:
+- **Barra del hilo** como app de mensajería: foto, nombre y estado; a la derecha, la ficha del cliente (ícono), quitar foto y «Resolver». La fila de pestañas Mensajes/Cliente desaparece: la ficha se abre desde la barra. Teléfono, calificación, asignación y etiquetas van en una franja fina debajo (oculta con la ficha abierta). «Cliente» ya no se rotula: sólo Team/Mayoreo.
+- **Hilo**: fondo propio, separadores de día como píldora que se queda pegada arriba, globos con sombra, la hora DENTRO del último globo de cada tanda con ✓ enviado / ✓✓ visto, reacciones montadas sobre el borde del globo, mensajes del sistema en cápsula.
+- **Respuesta**: el campo crece con el texto (hasta ~6 renglones), botón de enviar redondo a su lado y las herramientas en una tira fina debajo. El contador sólo aparece cerca del límite de 2000.
+- **Bandeja**: nombre y hora en el primer renglón, vista previa con el contador de sin leer en el segundo, chips en el tercero. El panel usa rótulos cortos en los filtros (ya no se parten en dos renglones).
+- `rounded-pill` tampoco es un token (como `border-border-subtle` en v2.1321.4): las píldoras salían cuadradas. Ahora `rounded-badge`.
+
 ## v2.1321.6 — Constancia de reserva más corta y con la sucursal
 
 _(pendiente de redactar)_

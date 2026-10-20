@@ -32,6 +32,9 @@ import { ordenarConPreferentes } from '@nucleo/utils/chatClientes';
  */
 
 const CHIPS = ['abierta', 'nuevo', 'atencion', 'esperando'];
+// Rótulos cortos para el riel del panel (420px): con los de la vista
+// («Esperando al cliente») el riel se partía en dos renglones.
+const CORTO = { abierta: 'Todas', nuevo: 'Nuevas', atencion: 'Atención', esperando: 'Esperando' };
 
 export default function PanelDelChat({ abierto, onClose }) {
     const enTelefono = useMediaQuery(CORTE_TELEFONO);
@@ -94,7 +97,7 @@ export default function PanelDelChat({ abierto, onClose }) {
                 <SegmentedControl size="sm" label="Estado de la conversación" value={filtro} onChange={setFiltro}
                     options={CHIPS.map((k) => ({
                         value: k,
-                        label: cuentas[k] ? `${FILTROS[k].label} · ${cuentas[k]}` : FILTROS[k].label,
+                        label: cuentas[k] ? `${CORTO[k]} · ${cuentas[k]}` : CORTO[k],
                     }))} />
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-1.5">

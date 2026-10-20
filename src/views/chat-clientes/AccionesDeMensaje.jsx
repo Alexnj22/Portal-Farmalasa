@@ -17,7 +17,7 @@ export function BarraDeMensaje({ alLado, conTexto, onReaccionar, onResponder, on
     return (
         <div data-surface="dropdown" role="toolbar" aria-label="Acciones del mensaje"
             className={`absolute z-tabs -top-9 ${alLado === 'derecha' ? 'right-0' : 'left-0'}
-                hidden group-hover:flex group-focus-within:flex items-center gap-0.5 rounded-pill px-1 py-0.5 whitespace-nowrap`}>
+                hidden group-hover:flex group-focus-within:flex items-center gap-0.5 rounded-badge px-1 py-0.5 whitespace-nowrap`}>
             {EMOJIS_DE_REACCION.map((e) => (
                 <button key={e} type="button" aria-label={`Reaccionar con ${e}`}
                     onClick={() => onReaccionar(e)}
@@ -53,15 +53,16 @@ export function ReaccionesDeMensaje({ filas, yo, equipo, cliente, alLado, puedeR
         grupos.set(r.emoji, g);
     });
     return (
-        <div className={`flex flex-wrap gap-1 mt-1 ${alLado === 'derecha' ? 'justify-end' : 'justify-start'}`}>
+        // Montadas sobre el borde inferior del globo, como en iMessage/WhatsApp.
+        <div className={`relative z-base flex flex-wrap gap-1 -mt-1.5 px-2 ${alLado === 'derecha' ? 'justify-end' : 'justify-start'}`}>
             {[...grupos.values()].map((g) => {
                 const titulo = `${g.quienes.join(', ')}${g.mia ? ' · toca para quitar la tuya' : ''}`;
                 return (
                     <button key={g.emoji} type="button" title={titulo} aria-label={`${g.emoji} ${g.quienes.length}: ${titulo}`}
                         aria-pressed={g.mia} disabled={!puedeReaccionar}
                         onClick={() => onReaccionar(g.mia ? null : g.emoji)}
-                        className={`inline-flex items-center gap-1 rounded-pill border px-2 min-h-[var(--tap-min)] md:min-h-0 md:py-0.5 text-label tabular-nums active:scale-[0.97] disabled:active:scale-100
-                            ${g.mia ? 'border-brand bg-brand/10 text-brand-text font-semibold' : 'border-border-card bg-surface-card text-content-2'}`}>
+                        className={`inline-flex items-center gap-1 rounded-badge border px-2 min-h-[var(--tap-min)] md:min-h-0 md:py-0.5 text-label tabular-nums active:scale-[0.97] disabled:active:scale-100
+                            shadow-sm ${g.mia ? 'border-brand bg-surface-card text-brand-text font-semibold' : 'border-border-card bg-surface-card text-content-2'}`}>
                         <span className="text-body-sm leading-none">{g.emoji}</span>
                         {g.quienes.length > 1 && <span>{g.quienes.length}</span>}
                     </button>

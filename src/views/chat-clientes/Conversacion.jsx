@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowDown, CheckCircle2, FileText, ImageOff, MessagesSquare, Package, Phone, Sparkles, Tag, Tags, UserRound } from 'lucide-react';
+import { ArrowDown, Check, CheckCircle2, FileText, ImageOff, Package, Phone, Sparkles, Tag, Tags, UserRound } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -7,7 +7,6 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import Notice from '../../components/common/Notice';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { Skeleton } from '../../components/common/StateViews';
-import SegmentedControl from '../../components/common/SegmentedControl';
 import useMediaQuery from '../../plataforma/useMediaQuery';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useAlLlegarAviso } from '@nucleo/hooks/avisosRecibidos';
@@ -373,38 +372,44 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     return (
         <div data-surface={comoPanel ? undefined : 'card'} className={`flex flex-col min-h-0 ${comoPanel ? 'h-full' : 'flex-1 rounded-card overflow-hidden'}`}>
             {/* ── El cliente ─────────────────────────────────────────────
-                Dos renglones: quién es (foto, nombre, estado) con las acciones
-                a la derecha, y debajo los datos de contacto, la calificación y
-                las etiquetas. En el panel de la burbuja (420px) las acciones
-                van compactas: con rótulo largo se partían en tres renglones. */}
-            <header className="flex-none px-4 py-3 border-b border-border-card space-y-2">
-                <div className="flex items-start gap-3">
-                    <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} />
-                    <div className="min-w-0 flex-1">
-                        <p className="text-body font-black text-content truncate" title={nombre}>{nombre}</p>
-                        <div className="flex flex-wrap items-center gap-1 mt-1">
-                            <ChipsDeEstado conversacion={c} ahora={ahora}
-                                atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
-                            <ChipPreferente conversacion={c} />
-                            <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
-                            {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
-                        </div>
+                Como la barra de una app de mensajería (2026-10-20): foto,
+                nombre y estado a la izquierda, las acciones como íconos a la
+                derecha. La ficha del cliente se abre desde la barra (ya no es
+                una fila de pestañas) y lo secundario —teléfono, calificación,
+                asignación, etiquetas— va en una franja fina debajo. */}
+            <header className="flex-none flex items-center gap-3 px-3 py-2.5 border-b border-border-card">
+                <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} />
+                <div className="min-w-0 flex-1">
+                    <p className="text-body-sm font-black text-content truncate" title={nombre}>{nombre}</p>
+                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                        <ChipsDeEstado conversacion={c} ahora={ahora}
+                            atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
+                        <ChipPreferente conversacion={c} />
+                        {/* «Cliente» es el caso común: sólo se rotula lo que no lo es. */}
+                        {(c.es_team || c.es_mayoreo) && <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>}
+                        {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
                     </div>
-                    {puedeResponder && (c.foto_ruta || c.estado === 'abierta') && (
-                        <div className="flex-none flex items-center gap-1">
-                            {c.foto_ruta && (
-                                <Button variant="ghost" size="sm" icon={ImageOff} iconOnly title="Quitar la foto de perfil" onClick={() => setQuitarFoto(true)} />
-                            )}
-                            {c.estado === 'abierta' && (
-                                <Button variant="secondary" size="sm" icon={CheckCircle2} loading={resolviendo} onClick={resolver}
-                                    title="Marcar como resuelta">
-                                    {comoPanel ? 'Resolver' : 'Marcar como resuelta'}
-                                </Button>
-                            )}
-                        </div>
+                </div>
+                <div className="flex-none flex items-center gap-0.5">
+                    {conPanelCliente && !lateral && (
+                        <Button variant={verCliente ? 'secondary' : 'ghost'} size="sm" iconOnly icon={UserRound} aria-pressed={verCliente}
+                            title={verCliente ? 'Volver a los mensajes' : 'Ver la ficha del cliente'}
+                            onClick={() => setPestana(verCliente ? 'mensajes' : 'cliente')} />
+                    )}
+                    {puedeResponder && c.foto_ruta && (
+                        <Button variant="ghost" size="sm" icon={ImageOff} iconOnly title="Quitar la foto de perfil" onClick={() => setQuitarFoto(true)} />
+                    )}
+                    {puedeResponder && c.estado === 'abierta' && (
+                        <Button variant="secondary" size="sm" icon={CheckCircle2} loading={resolviendo} onClick={resolver}
+                            title="Marcar como resuelta" className="ml-1">
+                            {comoPanel ? 'Resolver' : 'Marcar como resuelta'}
+                        </Button>
                     )}
                 </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label text-content-2">
+            </header>
+            {/* Con la ficha abierta, esta franja la repetiría. */}
+            {!verCliente && (c.telefono || c.calificacion || c.asignada_a || c.etiquetas?.length > 0 || puedeResponder) && (
+                <div className="flex-none flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5 border-b border-border-card text-label text-content-2">
                     {c.telefono && (
                         <a href={`tel:${String(c.telefono).replace(/\D/g, '')}`}
                             className="inline-flex items-center gap-1 rounded-btn hover:text-brand-text tabular-nums min-h-[var(--tap-min)] md:min-h-0 active:scale-[0.97]">
@@ -413,26 +418,16 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     )}
                     {c.calificacion ? <CalificacionEnLinea conversacion={c} /> : null}
                     {c.asignada_a && <AsignadoA conversacion={c} equipo={equipo} />}
-                </div>
-                {(c.etiquetas?.length > 0 || puedeResponder) && (
-                    <div className="flex flex-wrap items-center gap-1">
-                        <ChipsDeEtiquetas conversacion={c} />
-                        {puedeResponder && (
-                            <Button variant="ghost" size="xs" icon={Tags} onClick={() => setEditandoEtiquetas(true)}>
-                                {c.etiquetas?.length ? 'Editar' : 'Etiquetar'}
-                            </Button>
-                        )}
-                    </div>
-                )}
-            </header>
-
-            {conPanelCliente && !lateral && (
-                <div className="flex-none px-4 py-2 border-b border-border-card">
-                    <SegmentedControl size="sm" label="Ver" value={pestana} onChange={setPestana}
-                        options={[
-                            { value: 'mensajes', label: 'Mensajes', icon: MessagesSquare },
-                            { value: 'cliente', label: 'Cliente', icon: UserRound },
-                        ]} />
+                    {(c.etiquetas?.length > 0 || puedeResponder) && (
+                        <span className="inline-flex flex-wrap items-center gap-1">
+                            <ChipsDeEtiquetas conversacion={c} />
+                            {puedeResponder && (
+                                <Button variant="ghost" size="xs" icon={Tags} onClick={() => setEditandoEtiquetas(true)}>
+                                    {c.etiquetas?.length ? 'Editar' : 'Etiquetar'}
+                                </Button>
+                            )}
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -445,7 +440,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             <div className={`flex-1 min-w-0 min-h-0 flex-col ${verCliente ? 'hidden' : 'flex'}`}>
             {/* ── Los mensajes ───────────────────────────────────────────── */}
             <div className="relative flex-1 min-h-[240px] flex flex-col">
-            <div ref={listaRef} onScroll={alDesplazar} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3">
+            <div ref={listaRef} onScroll={alDesplazar} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 sm:px-4 pb-5 bg-brand/5">
                 {error && <Notice variant="danger">{error}</Notice>}
                 {!mensajes && !error && <HiloCargando />}
                 {hayAnteriores && (
@@ -532,11 +527,12 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     );
 }
 
-// «Hoy», «Ayer», «lunes, 5 de octubre»: centrado, entre los mensajes.
+// «Hoy», «Ayer», «lunes, 5 de octubre»: una píldora centrada que se queda
+// pegada arriba mientras se recorre ese día, como en las apps de mensajería.
 function Separador({ children }) {
     return (
-        <div role="separator" className="flex justify-center py-3">
-            <Badge variant="neutral" size="sm" uppercase={false}>{children}</Badge>
+        <div role="separator" className="sticky top-0 z-base flex justify-center pt-2 pb-1 pointer-events-none">
+            <span className="rounded-badge border border-border-card bg-surface-card px-3 py-1 text-micro font-semibold text-content-2 shadow-sm">{children}</span>
         </div>
     );
 }
@@ -557,7 +553,8 @@ function HiloCargando() {
 // Un mensaje. Los del cliente a la izquierda; los del equipo a la derecha, y
 // el primero de cada tanda lleva la foto y el nombre corto de quien contestó.
 // Globos agrupados como en iMessage: dentro de una tanda la esquina del lado
-// del autor se achica, y la hora (con «Enviado»/«Visto») va sólo al final.
+// del autor se achica, y la hora (con ✓ «Enviado» / ✓✓ «Visto») va dentro del
+// último globo de la tanda.
 // La foto del CATÁLOGO de un producto enviado (bucket público product-photos), no de una persona.
 const imagenDeProducto = (a) => a?.foto ?? undefined;
 
@@ -574,7 +571,7 @@ function Burbuja({
         return (
             <div data-mensaje-id={m.id} className="flex flex-col items-end pt-1.5">
                 <span className="flex items-center gap-1 mb-1 text-micro text-content-3"><Sparkles size={12} /> Respuesta automática</span>
-                <div className="max-w-[min(80%,34rem)] rounded-[1.25rem] px-3.5 py-2 space-y-1.5 bg-surface-card text-content border border-brand/30">
+                <div className="max-w-[min(80%,34rem)] rounded-[1.25rem] px-3.5 py-2 space-y-1.5 bg-surface-card text-content border border-brand/30 shadow-sm">
                     {m.adjunto?.tipo === 'producto' && (
                         <span className="flex items-center gap-2.5 rounded-input px-2 py-1.5 bg-surface-card-hover min-w-[13rem]">
                             {m.adjunto.foto
@@ -587,13 +584,17 @@ function Burbuja({
                         </span>
                     )}
                     {m.texto && <p className="text-body-sm whitespace-pre-wrap break-words">{m.texto}</p>}
+                    <span className="flex justify-end -mt-0.5 text-micro tabular-nums opacity-75">{hora12(m.created_at)}</span>
                 </div>
-                <span className="text-micro text-content-3 tabular-nums mt-0.5 px-1">{hora12(m.created_at)}</span>
             </div>
         );
     }
     if (m.autor === 'sistema') {
-        return <p className="text-center text-micro text-content-3 py-2">{m.texto}</p>;
+        return (
+            <p className="mx-auto my-2 w-fit max-w-[85%] rounded-input bg-surface-card/70 px-3 py-1.5 text-center text-micro text-content-3">
+                {m.texto}
+            </p>
+        );
     }
     const delEquipo = m.autor === 'equipo';
     const adj = m.adjunto;
@@ -621,7 +622,7 @@ function Burbuja({
                 <div {...gestos}
                     className={`rounded-[1.25rem] ${esquinas} px-3.5 py-2 space-y-1.5 [@media(pointer:coarse)]:select-none [-webkit-touch-callout:none]
                         transition-shadow duration-[var(--dur-lento)]
-                        ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-card'}
+                        ${delEquipo ? 'bg-brand text-white shadow-sm' : 'bg-surface-card text-content border border-border-card shadow-sm'}
                         ${m.borrado_at ? 'opacity-60' : ''}
                         ${recien ? 'ring-2 ring-brand/45 ring-offset-1 ring-offset-transparent' : ''}`}>
                     <CitaDeMensaje cita={m.cita} equipo={equipo} cliente={cliente} delEquipo={delEquipo} onIr={onIrA} />
@@ -662,17 +663,30 @@ function Burbuja({
                     {m.texto && <p className={`text-body-sm whitespace-pre-wrap break-words ${m.borrado_at ? 'line-through' : ''}`}>{m.texto}</p>}
                     {/* El cliente lo borró (2026-10-20): el equipo lo sigue viendo, tachado y con aviso. */}
                     {m.borrado_at && <p className="text-micro font-semibold opacity-80">El cliente eliminó este mensaje</p>}
+                    {/* La hora va DENTRO del globo, abajo a la derecha, con la
+                        doble marca de «Visto» en los del equipo. */}
+                    {finDeGrupo && (
+                        <span className="flex items-center justify-end gap-1 -mt-0.5 text-micro tabular-nums opacity-75">
+                            {m.editado_at && !m.borrado_at && <span>Editado ·</span>}
+                            {hora12(m.created_at)}
+                            {entrega && (
+                                <>
+                                    {/* Una marca = enviado; dos montadas = visto. Es la
+                                        señal de lectura de toda app de mensajería, no el
+                                        «hecho» que §12 unificó en `Check`. */}
+                                    <span aria-hidden="true" className="inline-flex">
+                                        <Check size={13} />
+                                        {entrega === 'Visto' && <Check size={13} className="-ml-2" />}
+                                    </span>
+                                    <span className="sr-only">{entrega}</span>
+                                </>
+                            )}
+                        </span>
+                    )}
                 </div>
             </div>
             <ReaccionesDeMensaje filas={reacciones} yo={yo} equipo={equipo} cliente={cliente} alLado={lado}
                 puedeReaccionar={puedeReaccionar} onReaccionar={(e) => onReaccionar(m, e)} />
-            {finDeGrupo && (
-                <span className="text-micro text-content-3 tabular-nums mt-0.5 px-1">
-                    {hora12(m.created_at)}
-                    {m.editado_at && !m.borrado_at && <span> · Editado</span>}
-                    {entrega && <span className={entrega === 'Visto' ? 'font-semibold text-brand-text' : ''}> · {entrega}</span>}
-                </span>
-            )}
         </div>
     );
 }

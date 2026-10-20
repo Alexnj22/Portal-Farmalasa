@@ -1496,10 +1496,34 @@ Deno.serve(async (req) => {
             if (errFa) console.error(`[operar-caja] abono repetido clave=${claveEnvio}: ${errFa.message}`);
             abonoYa = fa ?? null;
           }
+          /* Un anticipo o un vale de retiro que NO entró (la caja lo rechazó
+           * y se anuló) no es «ya estaba»: contestar ok haría creer que se
+           * cobró. Se dice que no entró; la pantalla reintenta con otra clave. */
+          const delApartado = ya.tipo_codigo === "APARTADO" || ya.tipo_codigo === "APLICA_ANTICIPO";
+          if (delApartado && ya.anulado_at) {
+            return json({ ok: false, error: "Ese intento no entró a la caja. Vuelve a intentarlo." }, 409);
+          }
+          // Y el anticipo que sí entró vuelve con su reserva o encargo, que es
+          // lo que la pantalla necesita para la constancia.
+          let apartadoYa: Record<string, unknown> | null = null;
+          if (ya.tipo_codigo === "APARTADO" && (ya.reserva_id || ya.encargo_id)) {
+            const ref = ya.reserva_id ? { reserva_id: ya.reserva_id } : { encargo_id: ya.encargo_id };
+            const { data: v, error: errV } = await supabase.rpc("apartado_para_retirar", { p_branch_id: sala, p_apartado: ref });
+            if (errV) console.error(`[operar-caja] anticipo repetido clave=${claveEnvio}: ${errV.message}`);
+            if (v) {
+              let venceAt: string | null = null;
+              if (ya.reserva_id) {
+                const { data: r, error: errR } = await supabase.from("app_reservas").select("vence_at").eq("id", ya.reserva_id).maybeSingle();
+                if (errR) console.error(`[operar-caja] anticipo repetido clave=${claveEnvio}: vence: ${errR.message}`);
+                venceAt = r?.vence_at ?? null;
+              }
+              apartadoYa = { tipo: v.tipo, id: v.id, codigo: v.codigo, total: v.total, anticipo: v.pagado, saldo: v.saldo, vence_at: venceAt };
+            }
+          }
           console.log(`[operar-caja] ${accion} repetido: clave=${claveEnvio} ya era la fila ${ya.id}`);
           return json({
             ok: true, movimiento_del_portal: ya.id, movimiento_en_caja: ya.erp_movimiento_id,
-            abono: abonoYa, movimiento: ya,
+            abono: abonoYa, movimiento: ya, apartado: apartadoYa,
             // Para que quien llame pueda distinguir «se anotó» de «ya estaba»
             // sin tener que adivinarlo comparando ids.
             repetido: true,
@@ -2047,6 +2071,25 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* El vale del retiro RECLAMA su aplicación antes de tocar la caja: una
+       * por reserva o encargo, también contra el abono al crédito que pudiera
+       * estar haciéndose a la vez desde otra pantalla. */
+      if (aplicaRef) {
+        const { error: errRec } = await supabase.rpc("apartado_aplicacion_registrar", {
+          p_branch_id: sala, p_apartado: aplicaRef, p_modo: "VALE", p_monto: Number(dosDecimales(monto)),
+          p_credito: null, p_movimiento: fila.id, p_employee: quien.id, p_entregar: false,
+        });
+        if (errRec) {
+          console.error(`[operar-caja] retiro fila=${fila.id}: reclamar: ${errRec.message}`);
+          const { error: errAn } = await supabase.from("caja_movimientos_portal")
+            .update({ anulado_at: new Date().toISOString(), anulado_motivo: "El anticipo ya estaba aplicado",
+                      reserva_id: null, encargo_id: null, clave_envio: null, updated_at: new Date().toISOString() })
+            .eq("id", fila.id);
+          if (errAn) console.error(`[operar-caja] retiro fila=${fila.id}: anular: ${errAn.message}`);
+          return json({ ok: false, error: "El anticipo de esto ya se aplicó. No se movió dinero." }, 409);
+        }
+      }
+
       /* El anticipo se aplica ANTES de tocar la caja, como las aplicaciones:
        * así el concepto que viaja lleva el código de la reserva. Si no se
        * puede, el movimiento se anula y no se mueve dinero. Si después la caja
@@ -2061,7 +2104,9 @@ Deno.serve(async (req) => {
           console.error(`[operar-caja] anticipo sala=${sala} fila=${fila.id}: ${errAp?.message}`);
           const { error: errAnular } = await supabase.from("caja_movimientos_portal")
             .update({ anulado_at: new Date().toISOString(), anulado_motivo: "No se pudo aplicar el anticipo",
-                      updated_at: new Date().toISOString() })
+                      // Sin la clave, el reintento del MISMO envío vuelve a intentar en vez
+                      // de contestar con este intento muerto.
+                      clave_envio: null, updated_at: new Date().toISOString() })
             .eq("id", fila.id);
           if (errAnular) console.error(`[operar-caja] anticipo fila=${fila.id}: anular: ${errAnular.message}`);
           return json({ ok: false, error: `${errAp?.message ?? "No se pudo aplicar el anticipo."} No se movio dinero.` }, 409);
@@ -2118,7 +2163,21 @@ Deno.serve(async (req) => {
       const conceptoCaja = `P${fila.id} ${concepto}`.slice(0, 50);
       // En pruebas no hay caja a la que mandarlo: se contesta como si la caja
       // hubiera aceptado, sin número de movimiento.
-      const resp = cajaSimulada ? "" : await (await fetch(esEntrada ? INGRESO : SALIDA, {
+      /* El vale del retiro que la caja no acepta se ANULA: vivo, su índice
+       * único trabaría la reserva para siempre («ya se aplicó») sin que el
+       * dinero se haya movido. Lo mismo si la petición lanza. */
+      const anularValeDeRetiro = async (motivo: string) => {
+        if (!aplicaRef) return;
+        const { error: errSu } = await supabase.from("apartado_aplicaciones").delete().eq("movimiento_id", fila.id);
+        if (errSu) console.error(`[operar-caja] retiro fila=${fila.id}: soltar: ${errSu.message}`);
+        const { error: errAn } = await supabase.from("caja_movimientos_portal")
+          .update({ anulado_at: new Date().toISOString(), anulado_motivo: motivo, clave_envio: null, updated_at: new Date().toISOString() })
+          .eq("id", fila.id);
+        if (errAn) console.error(`[operar-caja] retiro fila=${fila.id}: anular: ${errAn.message}`);
+      };
+      let resp = "";
+      try {
+      resp = cajaSimulada ? "" : await (await fetch(esEntrada ? INGRESO : SALIDA, {
         method: "POST",
         headers: {
           Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
@@ -2156,9 +2215,21 @@ Deno.serve(async (req) => {
           }).toString(),
         signal: AbortSignal.timeout(45_000),
       })).text();
+      } catch (e) {
+        // No se sabe si la caja lo anotó: el vale se anula para no trabar la
+        // reserva y se avisa para revisar la caja antes de repetirlo.
+        if (aplicaRef) {
+          await anularValeDeRetiro("La caja no contestó");
+          if (apartadoRes) await supabase.rpc("apartado_deshacer", { p_movimiento: fila.id });
+          return json({ ok: false, movimiento_del_portal: fila.id,
+            error: "La caja no contestó. Revisa en la caja si el vale salió antes de repetirlo." }, 504);
+        }
+        throw e;
+      }
 
       if (!cajaSimulada && !exito(resp)) {
         console.error(`[operar-caja] ${accion} sala=${sala} fila=${fila.id}: ${resp.slice(0, 1000)}`);
+        await anularValeDeRetiro("La caja no aceptó el vale");
         // El efectivo no entró: la reserva o el encargo vuelven a como estaban.
         if (apartadoRes) {
           const { error: errDes } = await supabase.rpc("apartado_deshacer", { p_movimiento: fila.id });
@@ -2179,13 +2250,13 @@ Deno.serve(async (req) => {
       let avisoAplicaciones: string | null = null;
       // El vale salió: el anticipo queda aplicado y lo apartado, entregado.
       if (aplicaRef) {
-        const { error: errReg } = await supabase.rpc("apartado_aplicacion_registrar", {
-          p_branch_id: sala, p_apartado: aplicaRef, p_modo: "VALE", p_monto: Number(dosDecimales(monto)),
-          p_credito: null, p_movimiento: fila.id, p_employee: quien.id, p_entregar: true,
-        });
-        if (errReg) {
-          console.error(`[operar-caja] retiro fila=${fila.id}: ${errReg.message}`);
-          avisoAplicaciones = `El vale salió, pero no quedó marcado como entregado (${errReg.message}). Avisa a Sistemas.`;
+        /* La aplicación ya se reclamó antes de la caja; la entrega va APARTE:
+         * si falla (la reserva venció, alguien la tocó), la aplicación queda
+         * y se entrega después con «Entregado», sin otro vale. */
+        const { error: errEnt } = await supabase.rpc("apartado_marcar_entregado", { p_apartado: aplicaRef, p_employee: quien.id });
+        if (errEnt) {
+          console.error(`[operar-caja] retiro fila=${fila.id}: entregar: ${errEnt.message}`);
+          avisoAplicaciones = `El vale salió y el anticipo quedó aplicado, pero no se marcó entregado (${errEnt.message}). Márcalo con «Entregado».`;
         }
       }
       if (aplicaciones) {

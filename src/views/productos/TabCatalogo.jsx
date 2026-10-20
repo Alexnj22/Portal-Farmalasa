@@ -10,7 +10,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban, EyeOff, Smartphone,
+    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban, EyeOff, Smartphone, PackageSearch,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -33,7 +33,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import {
     guardarPrincipiosActivos,
     updateProductCategoria, insertProductCategory, guardarUbicacionesProducto,
-    updateProductDevolutivo, updateProductFoto, fetchVisibleEnApp, setVisibleEnApp, fetchProductCounts,
+    updateProductDevolutivo, updateProductFoto, fetchVisibleEnApp, setVisibleEnApp, fetchEsInsumo, marcarInsumo, fetchProductCounts,
     fetchIdsModificadosDesde, fetchIdsPorMargen, fetchProductsList, fetchIndicadoresDeCatalogo, fetchProductDetail,
 } from '@nucleo/data/productos';
 import PortalInput from '../../components/common/PortalInput';
@@ -838,6 +838,29 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         }
     };
 
+    // ¿Es insumo? (2026-10-20): no se aparta en la sala, se encarga.
+    const puedeMarcarInsumo = hasPermission('productos', 'can_edit');
+    const [insumo, setInsumo] = useState(null);
+    const [savingInsumo, setSavingInsumo] = useState(false);
+    useEffect(() => {
+        let vivo = true;
+        fetchEsInsumo(product.id).then((v) => { if (vivo) setInsumo(v); })
+            .catch((err) => console.error('TabCatalogo: no se pudo leer si es insumo', err));
+        return () => { vivo = false; };
+    }, [product.id]);
+    const toggleInsumo = async () => {
+        if (savingInsumo || insumo == null) return;
+        setSavingInsumo(true);
+        try {
+            await marcarInsumo(product.id, !insumo, { producto: product.nombre });
+            setInsumo(!insumo);
+        } catch (err) {
+            useToastStore.getState().showToast('Error', mensajeAmigable(err), 'error');
+        } finally {
+            setSavingInsumo(false);
+        }
+    };
+
     const toggleDevolutivo = async () => {
         if (savingDevolutivo) return;
         setSavingDevolutivo(true);
@@ -1002,6 +1025,26 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                     >
                         {enApp === false ? 'Oculto en la app' : 'Se ve en la app'}
                     </Button>
+
+                    {/* ── Insumo: no se aparta, se encarga (2026-10-20) ── */}
+                    {(puedeMarcarInsumo || insumo) && (
+                        <Button
+                            size="sm"
+                            aria-pressed={!!insumo}
+                            loading={savingInsumo}
+                            disabled={insumo == null || !puedeMarcarInsumo}
+                            variant="secondary"
+                            tone={insumo ? 'warning' : null}
+                            soft
+                            icon={PackageSearch}
+                            onClick={toggleInsumo}
+                            title={insumo
+                                ? 'Es insumo: en la sala no se aparta, se encarga y Compras confirma el precio. Clic para quitar la marca.'
+                                : 'No es insumo: si hay en la sala, se puede apartar con anticipo. Clic para marcarlo como insumo.'}
+                        >
+                            {insumo ? 'Insumo · se encarga' : 'No es insumo'}
+                        </Button>
+                    )}
 
                     {/* ── Main layout: two columns ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6">

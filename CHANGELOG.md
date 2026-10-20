@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1321.1 — Apartar y retirar: correcciones de la auditoría
+
+_(pendiente de redactar)_
+
+Una auditoría del apartado y el retiro, con un revisor aparte y pruebas de punta a punta en el entorno de pruebas, encontró y corrigió:
+
+- **«Entregado» dejaba entregar lo pagado sin aplicar el anticipo**: la guarda comparaba un `null` de JSON como si fuera un NULL de SQL y nunca disparaba.
+- **«Buscar el crédito» contestaba siempre «Elige el crédito»**: el retiro al crédito no funcionaba ni en el portal ni en la app.
+- **El abono al crédito y el vale reservan la aplicación ANTES de tocar la caja**: dos toques, o el portal y el teléfono a la vez, ya no pueden abonar dos veces. Si la caja lo rechaza, la reserva se suelta.
+- **Un vale de retiro que la caja rechaza se anula**: antes quedaba vivo, trababa la reserva para siempre y la pantalla decía «Retirado».
+- Completar una reserva con otra forma de pago fallaba siempre.
+- Un encargo ya no se puede cobrar dos veces, y una reserva no puede pasar de su total.
+- Un encargo de más de 20 unidades da un mensaje claro.
+- Anular el cobro de un encargo ya pedido lo deja sin pagar.
+- Un reintento del mismo cobro devuelve su reserva; un intento que no entró libera su clave.
+- En la app, «Apartar o encargar» cobra en la sala elegida en Meter dinero.
+- **Productos → ficha: «Insumo · se encarga»**, para marcar los productos que no se apartan.
+
 ## v2.1321.0 — Pagar un crédito desde la app con Wompi
 
 Decisiones del dueño (2026-10-20): pago por el saldo TOTAL; queda en la caja

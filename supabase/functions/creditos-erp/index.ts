@@ -1184,13 +1184,12 @@ Deno.serve(async (req) => {
      * nunca el navegador; y el crédito tiene que ser de ESE cliente: abonar
      * el anticipo de una persona al crédito de otra no da error en el origen
      * y no se deshace. Después cae al abono de siempre. */
-    let anticipoAplicado: Record<string, unknown> | null = null;
+    let anticipoAplicado: { apartado: Record<string, number>; codigo: string; monto: number; reclamo: number } | null = null;
     if (accion === "aplicar_anticipo") {
       const sala = Number(body.sala);
       const credito = String(body.credito ?? "").trim();
       const ref = body.apartado && typeof body.apartado === "object" ? body.apartado as Record<string, unknown> : null;
       if (!ref || !(ref.reserva_id || ref.encargo_id)) return responder({ ok: false, error: "Falta qué se retira." }, 400);
-      if (!credito) return responder({ ok: false, error: "Elige el crédito de la factura." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
         return responder({ ok: false, error: "Sólo puedes retirar en tu propia sala." }, 403);
       }
@@ -1237,7 +1236,17 @@ Deno.serve(async (req) => {
       if (Number(cred.customer_id) !== Number(v.customer_id)) {
         return responder({ ok: false, error: `Ese crédito no es de ${v.cliente}. Factura al crédito a su nombre.` }, 409);
       }
-      anticipoAplicado = { apartado, codigo: v.codigo, monto: Number(v.pagado) };
+      /* El anticipo se RECLAMA antes de tocar el origen: el índice único de
+       * `apartado_aplicaciones` deja pasar uno solo aunque lleguen dos a la
+       * vez (doble toque, portal y teléfono). Un abono en el origen no se
+       * deshace, así que el freno tiene que estar antes y no después. Si el
+       * origen lo rechaza, se suelta. */
+      const { data: reclamo, error: errRec } = await supabase.from("apartado_aplicaciones").insert({
+        ...apartado, branch_id: sala, modo: "CREDITO", monto: Number(v.pagado), credito_erp: credito, creado_por: quien.id,
+      }).select("id").single();
+      if (errRec?.code === "23505") return responder({ ok: false, error: "El anticipo de esto ya se aplicó." }, 409);
+      if (errRec || !reclamo) return responder({ ok: false, error: "No se pudo reservar la aplicación. No se abonó nada." }, 503);
+      anticipoAplicado = { apartado, codigo: v.codigo, monto: Number(v.pagado), reclamo: reclamo.id };
       body.credito = credito;
       body.monto = Number(v.pagado);
       body.forma = "Recibo";
@@ -1247,6 +1256,16 @@ Deno.serve(async (req) => {
 
     // ── ABONAR ───────────────────────────────────────────────────────────
     if (accion === "abonar") {
+      /* Si el abono NO entra, el reclamo del anticipo se suelta para poder
+       * reintentar. Si la petición lanza, se queda: no se sabe si el origen
+       * lo aplicó, y un abono repetido no se deshace. */
+      const fallar = async (b: Record<string, unknown>, st: number) => {
+        if (anticipoAplicado?.reclamo) {
+          const { error: errS } = await supabase.from("apartado_aplicaciones").delete().eq("id", anticipoAplicado.reclamo);
+          if (errS) console.error(`[creditos-erp] soltar reclamo ${anticipoAplicado.reclamo}: ${errS.message}`);
+        }
+        return responder(b, st);
+      };
       const sala = Number(body.sala);
       const credito = String(body.credito ?? "").trim();
       const monto = Number(body.monto);
@@ -1254,17 +1273,17 @@ Deno.serve(async (req) => {
       const documento = String(body.documento ?? "").trim();
 
       const entrada = mapa.find((e) => e.branchId === sala);
-      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!entrada) return fallar({ ok: false, error: "Esa sala no está configurada." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-        return responder({ ok: false, error: "Solo puedes abonar en tu propia sala." }, 403);
+        return fallar({ ok: false, error: "Solo puedes abonar en tu propia sala." }, 403);
       }
-      if (!credito) return responder({ ok: false, error: "Falta a qué crédito se abona." }, 400);
+      if (!credito) return fallar({ ok: false, error: "Falta a qué crédito se abona." }, 400);
       if (!(Number.isFinite(monto) && monto > 0)) {
-        return responder({ ok: false, error: "Falta el monto." }, 400);
+        return fallar({ ok: false, error: "Falta el monto." }, 400);
       }
       // «Recibo» sólo para el anticipo ya cobrado: ver `aplicar_anticipo`.
       if (!FORMAS.includes(forma) && !(anticipoAplicado && forma === "Recibo")) {
-        return responder({ ok: false, error: "Esa forma de pago no se acepta." }, 400);
+        return fallar({ ok: false, error: "Esa forma de pago no se acepta." }, 400);
       }
 
       /* El saldo se relee del ORIGEN, no se cree el que mandó el navegador.
@@ -1294,9 +1313,9 @@ Deno.serve(async (req) => {
 
       const filas = await creditosDeLaSala(cookie, entrada.erpId, ventana.desde, ventana.hasta);
       const vivo = filas.find((c) => c.credito === credito);
-      if (!vivo) return responder({ ok: false, error: "Ese crédito no existe en esta sala." }, 404);
+      if (!vivo) return fallar({ ok: false, error: "Ese crédito no existe en esta sala." }, 404);
       if (monto > vivo.saldo + 0.004) {
-        return responder({
+        return fallar({
           ok: false,
           error: `Ese crédito debe ${vivo.saldo.toFixed(2)}. No se puede abonar más que eso.`,
           saldo: vivo.saldo,
@@ -1328,7 +1347,7 @@ Deno.serve(async (req) => {
       try { datos = JSON.parse(resp); } catch { /* se trata como fallo abajo */ }
       if (String(datos.typeinfo ?? "").toLowerCase() !== "success") {
         console.error(`[creditos-erp] abonar credito=${credito} sala=${sala}: ${resp.slice(0, 1000)}`);
-        return responder({
+        return fallar({
           ok: false,
           error: "La caja no aceptó el abono. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
         }, 502);
@@ -1403,9 +1422,9 @@ Deno.serve(async (req) => {
        * apartado, entregado. Si esto falla, el abono ya entró: se dice. */
       let errAplicacion: string | null = null;
       if (anticipoAplicado) {
-        const { error: errReg } = await supabase.rpc("apartado_aplicacion_registrar", {
-          p_branch_id: sala, p_apartado: anticipoAplicado.apartado, p_modo: "CREDITO",
-          p_monto: monto, p_credito: credito, p_movimiento: null, p_employee: quien.id, p_entregar: true,
+        // La aplicación ya quedó reclamada arriba; acá sólo se entrega.
+        const { error: errReg } = await supabase.rpc("apartado_marcar_entregado", {
+          p_apartado: anticipoAplicado.apartado, p_employee: quien.id,
         });
         if (errReg) {
           console.error(`[creditos-erp] aplicar anticipo ${anticipoAplicado.codigo}: ${errReg.message}`);
@@ -1415,7 +1434,7 @@ Deno.serve(async (req) => {
 
       const avisos = [
         errAplicacion
-          ? `El anticipo se abonó al crédito, pero no quedó marcado como entregado (${errAplicacion}). Avisa a Sistemas.`
+          ? `El anticipo se abonó al crédito, pero no se marcó entregado (${errAplicacion}). Márcalo con «Entregado».`
           : null,
         descuadre
           ? `El abono entró, pero el crédito quedó en ${saldoFinal.toFixed(2)} y se esperaba `

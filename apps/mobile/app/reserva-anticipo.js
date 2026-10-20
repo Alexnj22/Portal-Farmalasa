@@ -13,7 +13,7 @@
 // administración confirma el precio.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -86,7 +86,9 @@ function ElegirCliente({ cliente, onElegir }) {
 
 export default function ReservaConAnticipo() {
   const { user } = useAuth();
-  const sala = user?.branchId ?? user?.branch_id ?? null;
+  // La sala que se eligió en «Meter dinero» manda; sin ella, la de la ficha.
+  const { sala: salaElegida } = useLocalSearchParams();
+  const sala = salaElegida ?? user?.branchId ?? user?.branch_id ?? null;
   const nombreSala = useStaffStore((s) => (s.branches || []).find((b) => String(b.id) === String(sala))?.name) || '';
   const [cliente, setCliente] = useState(null);
   const [producto, setProducto] = useState(null);

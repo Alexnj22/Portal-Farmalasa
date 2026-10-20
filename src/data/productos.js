@@ -95,6 +95,20 @@ export async function setVisibleEnApp(productId, visible, contexto = {}) {
     anotar(visible ? 'PRODUCTO_MOSTRAR_EN_APP' : 'PRODUCTO_OCULTAR_EN_APP', productId, { visible, ...contexto });
 }
 
+/** ¿Es insumo? (2026-10-20). Un insumo no se aparta: se ENCARGA, aunque haya
+ *  en la sala. Marcarlo pide editar productos (`producto_insumo_marcar`). */
+export async function fetchEsInsumo(productId) {
+    const { data, error } = await supabase.from('producto_insumo').select('product_id').eq('product_id', productId).maybeSingle();
+    if (error) throw error;
+    return !!data;
+}
+
+export async function marcarInsumo(productId, insumo, contexto = {}) {
+    const { error } = await supabase.rpc('producto_insumo_marcar', { p_product_id: Number(productId), p_insumo: !!insumo });
+    if (error) throw error;
+    anotar(insumo ? 'PRODUCTO_MARCAR_INSUMO' : 'PRODUCTO_QUITAR_INSUMO', productId, { insumo, ...contexto });
+}
+
 export function updateProductFoto(productId, fotoUrl) {
     return supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId);
 }

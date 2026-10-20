@@ -639,7 +639,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
         ) : null}
       </View>
 
-      {/* El anticipo de una reserva vencida queda a favor 30 días (2026-10-08). */}
+      {/* Lo pagado de una reserva cerrada queda a favor 60 días (2026-10-20, `saldo_favor_dias`). */}
       <SaldoAFavor r={r} />
       {r.pago_estado === 'pendiente' && Number(r.total) > 0 ? (
         <View style={{ gap: 6 }}>
@@ -976,7 +976,7 @@ function ReservaCerrada({ r }) {
       </View>
       <Rechazada r={r.receta_estado === 'rechazada' ? r : null} />
       <MotivoVencida r={r} />
-      {/* El anticipo de una vencida queda a favor 30 días: se ve también acá, que es donde vive la vencida. */}
+      {/* Lo pagado de una vencida queda a favor 60 días: se ve también acá, que es donde vive la vencida. */}
       <SaldoAFavor r={r} />
     </Tarjeta>
   );

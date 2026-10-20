@@ -72,7 +72,7 @@ export function reservasDeMuestra(demo) {
   const vencida = fila(8, b, {
     estado: 'vencida', vencida_motivo: 'sin_preparar', producto_nombre: 'Ensure Advance vainilla 400 g', precio_unitario: SALDO,
     horasAtras: 80, cerrada_at: iso(b, -30), pago_estado: 'pagado', pago_metodo: 'en_linea', pagado_at: iso(b, -79),
-    saldo_favor: SALDO, saldo_favor_vence: dia(b, 30), saldo_favor_origen: 'pago_en_linea',
+    saldo_favor: SALDO, saldo_favor_vence: dia(b, 60), saldo_favor_origen: 'pago_en_linea',
     saldo_favor_usado_at: demo.saldo === 'usado' ? iso(b, -1) : null,
   });
   if (!demo.reservas) return aplicar([vencida], demo.cambios);

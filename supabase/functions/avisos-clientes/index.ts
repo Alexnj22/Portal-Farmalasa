@@ -22,6 +22,9 @@
 //                   `chat_responder`) con `enviado = false`; acá sólo se mandan.
 //                   Igual los de reserva con ref `base:` (2026-10-19:
 //                   `reservas_vencer`, `reserva_cambiar_estado`).
+//   · saldo       — (2026-10-20, diario) saldo a favor que vence en 7 días y
+//                   el día que vence (el plazo es de 60 días, `saldo_favor_dias`).
+//                   Una vez por fecha y por aviso. Va con tipo `reserva`.
 //   · credito     — (2026-10-15, diario) un crédito pasó el plazo: una vez por
 //                   crédito, y un recordatorio cada 7 días como máximo mientras
 //                   siga vencido. Sin montos (se lee en la pantalla bloqueada).
@@ -372,6 +375,30 @@ Deno.serve(async (req) => {
         titulo: `${v.pts} puntos vencen pronto`,
         cuerpo: `Vencen el ${fechaCorta(v.vence)}: son $${(v.pts / 100).toFixed(2)} de descuento. Úsalos en tu próxima compra.`,
         url: "/puntos",
+      });
+    }
+
+    // ── Saldo a favor por vencer (2026-10-20): 7 días antes y el día ─────────
+    const { data: saldos, error: eS } = !diario ? { data: [], error: null } : await admin.from("app_reservas")
+      .select("customer_id, saldo_favor, saldo_favor_vence")
+      .in("customer_id", clientes).gt("saldo_favor", 0)
+      .is("saldo_favor_usado_at", null).is("saldo_favor_devuelto_at", null)
+      .in("saldo_favor_vence", [hoy, masDias(7)]);
+    if (eS) console.error("no se pudo leer el saldo a favor:", eS.message);
+    const saldoPorFecha = new Map<string, { customer_id: number; vence: string; monto: number }>();
+    for (const r of saldos ?? []) {
+      const k = `${r.customer_id}|${r.saldo_favor_vence}`;
+      const x = saldoPorFecha.get(k) ?? { customer_id: r.customer_id, vence: r.saldo_favor_vence, monto: 0 };
+      x.monto += Number(r.saldo_favor);
+      saldoPorFecha.set(k, x);
+    }
+    for (const s of saldoPorFecha.values()) {
+      const hoyVence = s.vence === hoy;
+      candidatos.push({
+        customer_id: s.customer_id, tipo: "reserva", ref: `saldo:${s.vence}:${hoyVence ? "hoy" : "7d"}`,
+        titulo: hoyVence ? "Tu saldo a favor vence hoy" : "Tu saldo a favor vence pronto",
+        cuerpo: `Tienes $${s.monto.toFixed(2)} a favor${hoyVence ? "; hoy es el último día" : ` hasta el ${fechaCorta(s.vence)}`}. Úsalo en caja en cualquier sucursal.`,
+        url: "/reservas",
       });
     }
 

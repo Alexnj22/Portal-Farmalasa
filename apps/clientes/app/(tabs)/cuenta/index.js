@@ -512,7 +512,7 @@ function PanelDePrueba({ prueba, pedir }) {
           detalle="Una en cada paso: receta por subir, receta en revisión, pedido con otra foto pedida, en preparación, lista sin pagar, pagada en línea, cobro de prueba, vencida con saldo a favor, receta rechazada y retirada."
           valor={prueba.reservasMuestra} alCambiar={(v) => prueba.ponerDemo({ reservasMuestra: v })} color={t.color.magenta} />
         <View style={{ padding: 12, gap: 6 }}>
-          <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Saldo a favor de muestra ($14.75 de una reserva pagada en línea que venció; vale 30 días)</Text>
+          <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Saldo a favor de muestra ($14.75 de una reserva pagada en línea que venció; vale 60 días)</Text>
           <Segmentos valor={prueba.saldoFavor} alCambiar={(v) => prueba.ponerDemo({ saldoFavor: v })}
             opciones={[{ valor: 'no', rotulo: 'No' }, { valor: 'vigente', rotulo: 'Vigente' }, { valor: 'usado', rotulo: 'Ya usado' }]} />
         </View>

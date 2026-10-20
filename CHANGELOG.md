@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1314.2 — Saldo a favor: un solo plazo de 60 días y aviso antes de que venza
+
+Había dos plazos: **30 días** para el anticipo en sala de una reserva vencida (decidido el 2026-10-08) y **90** para lo pagado en línea que se cerró o el cobro duplicado (puesto por un agente el 2026-10-19, sin confirmar). El usuario eligió **60 días para todo**.
+
+- Base (`20261020160112_saldo_a_favor_60_dias_un_solo_plazo`): el plazo vive en una sola función, `saldo_favor_dias()`, y la usan `app_reservas_guardas`, `app_reserva_pago_confirmar` y `reservas_vencer` (reescritas desde su definición viva, cambiando sólo el número). El saldo que ya existía conserva su fecha.
+- `avisos-clientes` (diario): aviso 7 días antes de que venza el saldo a favor y otro el día que vence, con el monto; una vez por fecha.
+- App: el saldo de muestra del modo de prueba vence a los 60 días y su texto lo dice.
+
 ## v2.1314.1 — Premios: escanear el código del raspable y entregar
 
 _(pendiente de redactar)_

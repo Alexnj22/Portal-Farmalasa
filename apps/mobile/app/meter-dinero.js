@@ -20,12 +20,12 @@
 // resto —el abono para apartar— a `abono-apartado`.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { anotarIngreso, boletaYaEnCaja, fetchTiposDeMovimiento, leerBoleta } from '@nucleo/data/bolsas';
-import { choqueDeSentido, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
+import { choqueDeSentido, frenoDelMonto, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -33,6 +33,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
 import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
 import { MARCA } from '../componentes/inicio/marca';
+import Interruptor from '../componentes/Interruptor';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento } from '../componentes/cortes/papel';
 import FormaDePago from '../componentes/formulario/FormaDePago';
@@ -55,6 +56,11 @@ export default function MeterDinero() {
   const [leyendo, setLeyendo] = useState(false);
   const [lectura, setLectura] = useState(null);
   const [montoCerrado, setMontoCerrado] = useState(false);
+  // El freno del monto sin comprobar (`frenoDelMonto`, núcleo), igual que en el
+  // portal: primero otra foto, y sólo después «lo comparé con el papel».
+  const [intentosSinComprobar, setIntentosSinComprobar] = useState(0);
+  const [unaSolaVez, setUnaSolaVez] = useState(false);
+  const [cotejado, setCotejado] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [sentido, setSentido] = useState(null);
   const [repetidas, setRepetidas] = useState([]);
@@ -107,7 +113,7 @@ export default function MeterDinero() {
   // Al poner la foto se lee; al quitarla se olvida lo que dijo.
   const alCambiarFotos = async (lista) => {
     setFotos(lista);
-    setAviso(null); setSentido(null); setLectura(null); setMontoCerrado(false);
+    setAviso(null); setSentido(null); setLectura(null); setMontoCerrado(false); setCotejado(false);
     const f = lista[0];
     if (!f) return;
     setLeyendo(true);
@@ -121,8 +127,13 @@ export default function MeterDinero() {
     if (l.boleta != null) setBoleta(l.boleta);
     if (l.concepto != null) setDetalle(l.concepto);
     setMontoCerrado(!!l.puesto.monto);
+    if (l.monto != null && !l.puesto.monto) setIntentosSinComprobar((k) => k + 1);
     setSentido(choqueDeSentido(r, true));
   };
+
+  const frenoMonto = fotos.length && !noEfectivo
+    ? frenoDelMonto({ lectura, monto: n, intentos: intentosSinComprobar, unaSolaVez, cotejado })
+    : null;
 
   const falta = !tipo ? 'Elige el motivo.'
     : leyendo ? 'Leyendo la foto…'
@@ -131,6 +142,7 @@ export default function MeterDinero() {
           : exigeDetalle && detalle.trim().length < 3 ? 'Escribe el detalle.'
             : !noEfectivo && tipo.pide_boleta && !boleta.trim() ? 'Falta el número de boleta.'
               : !noEfectivo && problema?.bloquea ? problema.texto
+                : frenoMonto?.bloquea ? (frenoMonto.paso === 'OTRA_FOTO' ? 'Falta otra foto de la boleta.' : 'Falta comparar el monto con el papel.')
                 : tipo.pide_persona && persona.trim().length < 2 ? 'Escribe quién lo trae.'
                   : estadoPago.falta;
 
@@ -147,6 +159,7 @@ export default function MeterDinero() {
         concepto: [tipo.etiqueta, detalle.trim()].filter(Boolean).join(' · ').slice(0, 50),
         conceptoCompleto: [tipo.etiqueta, detalle.trim()].filter(Boolean).join(' · '),
         boleta: boleta.trim() || null, fotoUrl, lectura: fotoUrl ? lectura : null,
+        montoCotejado: frenoMonto?.paso === 'COTEJAR' && cotejado,
         ...(tipo.pide_persona ? { vendedor: persona.trim() } : {}),
         ...(conFormaDePago ? datosDeFormaDePago(pago, fotoUrl) : {}),
       });
@@ -191,6 +204,21 @@ export default function MeterDinero() {
             </Seccion>
           ) : null}
           {aviso && !noEfectivo ? <Aviso tono={montoCerrado ? 'nota' : 'cuidado'} texto={aviso} /> : null}
+          {frenoMonto && !leyendo ? (
+            <View style={{ gap: 8 }}>
+              <Aviso tono="cuidado" texto={frenoMonto.texto} />
+              {frenoMonto.paso === 'OTRA_FOTO' ? (
+                <Pressable onPress={() => setUnaSolaVez(true)} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', marginHorizontal: 4 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' }}>Esta boleta trae el monto una sola vez</Text>
+                </Pressable>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 4, minHeight: 44 }}>
+                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{frenoMonto.casilla}</Text>
+                  <Interruptor value={cotejado} onValueChange={setCotejado} />
+                </View>
+              )}
+            </View>
+          ) : null}
           {sentido && !noEfectivo ? <Aviso tono="cuidado" texto={sentido} /> : null}
 
           {tipo ? (

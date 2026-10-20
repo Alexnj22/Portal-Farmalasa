@@ -116,8 +116,15 @@ function lecturaParaGuardar(cruda: unknown): Record<string, unknown> | null {
  * máquina» de «lo escribió alguien»: un total que el papel imprime UNA sola vez
  * lo leyó la máquina y no lo respalda nadie más, y ése es justo el caso donde un
  * dígito mal leído pasa sin que nada lo note.
+ *
+ * `FOTO_COTEJADA` (2026-10-20): el formulario ya no deja anotar un monto sin
+ * comprobar sin que la persona marque «lo comparé con el papel». Es la única
+ * parte que SÍ declara el navegador, porque es una declaración de una persona y
+ * no un cálculo: queda firmada por `registrado_por`. Sólo se acepta donde tiene
+ * sentido —monto igual al leído y sin confirmar—; en cualquier otro caso se
+ * ignora y manda la comparación.
  */
-function origenDelMonto(lectura: unknown, montoGuardado: number): string | null {
+function origenDelMonto(lectura: unknown, montoGuardado: number, cotejado = false): string | null {
   if (!lectura || typeof lectura !== "object") return null
   const l = lectura as Record<string, unknown>
   const leido = Number((l.leido as Record<string, unknown> | undefined)?.monto)
@@ -125,7 +132,8 @@ function origenDelMonto(lectura: unknown, montoGuardado: number): string | null 
   // Medio centavo: por debajo de eso es ruido de coma flotante, no una
   // diferencia que alguien haya tecleado.
   if (Math.abs(leido - montoGuardado) >= 0.005) return "A_MANO"
-  return l.montoConfianza === "CONFIRMADO" ? "FOTO_CONFIRMADA" : "FOTO_SIN_CONFIRMAR"
+  if (l.montoConfianza === "CONFIRMADO") return "FOTO_CONFIRMADA"
+  return cotejado ? "FOTO_COTEJADA" : "FOTO_SIN_CONFIRMAR"
 }
 
 async function getSessionCookie(u: string, p: string): Promise<string> {
@@ -1828,7 +1836,7 @@ Deno.serve(async (req) => {
           foto_lectura: lecturaParaGuardar(body.lectura),
           // Y si ese monto lo respalda el papel o lo puso una persona. Sale de
           // comparar las dos cosas que esta función ya tiene en la mano.
-          monto_origen: origenDelMonto(body.lectura, Number(dosDecimales(monto))),
+          monto_origen: origenDelMonto(body.lectura, Number(dosDecimales(monto)), body.monto_cotejado === true),
           // Las dos mitades de «quien recibio», y nunca las dos a la vez: o se
           // comprobo con carne, o se escribio un nombre porque el receptor no
           // es de la casa.

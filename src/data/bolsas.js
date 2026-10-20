@@ -1055,7 +1055,7 @@ export async function iniciarTurno(sala, { simular = false } = {}) {
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null, clave = null,
     aplicacion = null, formaPago = 'EFECTIVO', comprobanteTotal = null, motivoSinComprobante = '',
-    mapfre = null }) {
+    mapfre = null, montoCotejado = false }) {
     // `mapfre` sólo con el tipo MAPFRE: `{ invoice_id, customer_id }`. El
     // servidor pone el monto desde el renglón de puntos de la factura.
     //
@@ -1077,6 +1077,9 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
     return operar({
         accion: 'ingreso', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, vendedor,
         detalle: conceptoCompleto, lectura,
+        // «Lo comparé con el papel», para un monto que la foto no comprobó.
+        // El servidor decide si vale — ver `origenDelMonto` en `operar-caja`.
+        monto_cotejado: !!montoCotejado,
         /* La misma clave para los reintentos del MISMO envío. El servidor la
          * usa para contestar con el movimiento que ya escribió en vez de
          * escribir otro: ver `clave_envio` en `operar-caja`. */
@@ -1135,7 +1138,7 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
  */
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null,
-    lectura = null, clave = null, operacionBolsa = null }) {
+    lectura = null, clave = null, operacionBolsa = null, montoCotejado = false }) {
     return operar({
         accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
         recibido_por: recibidoPor, vale,
@@ -1148,6 +1151,7 @@ export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta 
         clave_envio: clave,
         // Lo que la máquina leyó de la foto, para poder auditarla después.
         lectura,
+        monto_cotejado: !!montoCotejado,
         // El concepto SIN el recorte a 50 del sistema de la caja. Viaja aparte
         // porque `concepto` es lo que se le manda a él y esto es lo que se
         // escribió — ver la migración `..._concepto_completo`.

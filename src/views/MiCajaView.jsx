@@ -13,6 +13,7 @@ import LiquidModal from '../components/common/LiquidModal';
 import LiquidSelect from '../components/common/LiquidSelect';
 import Notice from '../components/common/Notice';
 import FileField from '../components/common/FileField';
+import Checkbox from '../components/common/Checkbox';
 import PortalInput from '../components/common/PortalInput';
 import SegmentedControl from '../components/common/SegmentedControl';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
@@ -69,7 +70,7 @@ import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
-import { choqueDeSentido as sentidoQueChoca, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
+import { choqueDeSentido as sentidoQueChoca, frenoDelMonto, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { conSigno, formatMoney } from '@nucleo/utils/formatNumber';
 import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -789,6 +790,7 @@ export default function MiCajaView({ comoPestana = false }) {
             vale: datos.vale,
             // Lo que la máquina leyó de la foto, para poder auditarla después.
             lectura: datos.lectura,
+            montoCotejado: datos.montoCotejado,
             // La clave del envío: si esta misma salida llega dos veces, el
             // servidor contesta con la que ya escribió. Ver `unaSolaVez`.
             clave: datos.clave,
@@ -1980,7 +1982,7 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
         ['Tipo', l.tipoTexto || l.origen],
         ...(l.datos || []),
         ['Monto', l.montoOrigen ? ORIGEN_DEL_MONTO[l.montoOrigen] || null : null,
-            l.montoOrigen && l.montoOrigen !== 'FOTO_CONFIRMADA'],
+            l.montoOrigen && !['FOTO_CONFIRMADA', 'FOTO_COTEJADA'].includes(l.montoOrigen)],
         ['Corte', !corte ? 'sin cortar todavía'
             : corte.tipo === 'Z' ? `después del cierre · ${hora12(corte.hora)}`
                 : `contado en el de las ${hora12(corte.hora)}`],
@@ -2516,6 +2518,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * tarjeta y transferencia se quedan en el portal con su comprobante. Ver
      * `utils/formaDePago`. */
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
+    /* El freno del monto sin comprobar (`frenoDelMonto`, núcleo): primero otra
+     * foto, y sólo después la casilla de «lo comparé con el papel». */
+    const [intentosSinComprobar, setIntentosSinComprobar] = useState(0);
+    const [unaSolaVez, setUnaSolaVez] = useState(false);
+    const [cotejado, setCotejado] = useState(false);
 
     const delSentido = useMemo(
         () => tipos.filter((t) => t.sentido === (entra ? 'ENTRADA' : 'SALIDA')),
@@ -2591,12 +2598,17 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * ya se equivocó, que es la peor forma de castigar un error honesto.
      */
     const problemaDeLaBoleta = useMemo(() => problemaDeBoleta(repetidaEnCaja, entra, boleta), [repetidaEnCaja, entra, boleta]);
+    // Sólo el efectivo: tarjeta y transferencia tienen su propio comprobante.
+    const frenoMonto = foto && !noEfectivo
+        ? frenoDelMonto({ lectura, monto, intentos: intentosSinComprobar, unaSolaVez, cotejado })
+        : null;
 
     const alElegirFoto = async (f) => {
         setFoto(f);
         setAviso(null);
         setChoqueDeSentido(null);
         setDeLaFoto({});
+        setCotejado(false);
         if (!f) return;
         setLeyendo(true);
         const r = await leerBoleta(f, { entidad: null, numeroBoleta: null, monto: null });
@@ -2604,6 +2616,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         const l = lecturaDeBoleta(r, { pideBoleta: !!tipo?.pide_boleta });
         if (l.error) { setAviso(l.aviso); setAMano(true); return; }
         setLectura(l.lectura);
+        if (l.monto != null && !l.puesto.monto) setIntentosSinComprobar((n) => n + 1);
         // Lo que se llena y cómo se avisa: `lecturaDeBoleta` (núcleo). El monto
         // se LLENA siempre y se CIERRA sólo si el papel lo confirma.
         if (l.monto != null) setMonto(l.monto);
@@ -2668,6 +2681,10 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             // Lo que el lector contestó, para poder medirlo después. Sólo si
             // hubo foto: sin ella no hay lectura que guardar.
             lectura: fotoUrl ? lectura : null,
+            // Quien anota declaró haber comparado el monto con el papel. El
+            // servidor sólo lo cree si el monto es el leído y no estaba
+            // comprobado: ahí lo guarda como `FOTO_COTEJADA`.
+            montoCotejado: frenoMonto?.paso === 'COTEJAR' && cotejado,
             /* El ingreso ya no manda vendedor: lo resuelve el servidor con la
              * sesión de quien lo anota. Pero SÍ manda la persona cuando el tipo
              * la pide —«de quién» en un abono a crédito—, y va por `vendedor`
@@ -2707,7 +2724,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 pie={<>
                     <Button variant="ghost" onClick={() => setPaso('DATOS')} disabled={enviando}>Atrás</Button>
                     <Button variant="primary" loading={enviando}
-                        disabled={ocupado || !persona || !vale || !!problemaDeLaBoleta?.bloquea}
+                        disabled={ocupado || !persona || !vale || !!problemaDeLaBoleta?.bloquea || !!frenoMonto?.bloquea}
                         onClick={guardar}>
                         {enviando ? 'Anotando…' : 'Anotar'}
                     </Button>
@@ -2744,7 +2761,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     vuelve a tocarlo. La foto tarda cientos de ms en subir, así
                     que ese silencio es justo la ventana del doble toque. */}
                 <Button variant="primary" loading={enviando}
-                    disabled={ocupado || leyendo || !valido || (!noEfectivo && !!problemaDeLaBoleta?.bloquea)}
+                    disabled={ocupado || leyendo || !valido || (!noEfectivo && !!problemaDeLaBoleta?.bloquea) || !!frenoMonto?.bloquea}
                     onClick={() => (identifica ? setPaso('IDENTIDAD') : guardar())}>
                     {identifica ? 'Continuar' : (enviando ? 'Anotando…' : 'Anotar')}
                 </Button>
@@ -2777,6 +2794,21 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                         accept="image/*" value={foto}
                         onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
                     {aviso && <p className="text-caption text-content-2">{aviso}</p>}
+                    {frenoMonto && !leyendo && (
+                        <Notice variant="warning" compact icon={AlertTriangle}>
+                            {frenoMonto.texto}
+                            {frenoMonto.paso === 'OTRA_FOTO' && (
+                                <button type="button" onClick={() => setUnaSolaVez(true)}
+                                    className="block mt-1 underline font-bold text-content-2 min-h-[var(--tap-min)]">
+                                    Esta boleta trae el monto una sola vez
+                                </button>
+                            )}
+                            {frenoMonto.paso === 'COTEJAR' && (
+                                <Checkbox className="mt-2" checked={cotejado}
+                                    onChange={(v) => setCotejado(!!v)} label={frenoMonto.casilla} />
+                            )}
+                        </Notice>
+                    )}
                     {choqueDeSentido && (
                         <Notice variant="warning" compact icon={AlertTriangle}>
                             {choqueDeSentido}

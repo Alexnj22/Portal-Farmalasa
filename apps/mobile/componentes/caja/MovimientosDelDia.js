@@ -70,7 +70,7 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
     ['Hora', l.cuando ? hora12(l.cuando) : null],
     ['Tipo', l.tipoTexto || l.origen],
     ...(l.datos || []),
-    ['Monto', l.montoOrigen ? ORIGEN_DEL_MONTO[l.montoOrigen] || null : null, l.montoOrigen && l.montoOrigen !== 'FOTO_CONFIRMADA'],
+    ['Monto', l.montoOrigen ? ORIGEN_DEL_MONTO[l.montoOrigen] || null : null, l.montoOrigen && !['FOTO_CONFIRMADA', 'FOTO_COTEJADA'].includes(l.montoOrigen)],
     ['Corte', !corte ? 'sin cortar todavía' : corte.tipo === 'Z' ? `después del cierre · ${hora12(corte.hora)}` : `contado en el de las ${hora12(corte.hora)}`],
     ['Estado', l.anulado ? 'anulado' : null, true],
   ].filter(([, v]) => v != null && v !== '');

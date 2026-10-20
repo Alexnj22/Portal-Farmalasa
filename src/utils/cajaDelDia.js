@@ -51,6 +51,7 @@ export function cuentaDelCajon({ estado, ventas }) {
 export const ORIGEN_DEL_MONTO = {
     FOTO_CONFIRMADA: 'leído de la boleta y confirmado',
     FOTO_SIN_CONFIRMAR: 'leído de la boleta, sin confirmar',
+    FOTO_COTEJADA: 'leído de la boleta y comparado con el papel por quien lo anotó',
     A_MANO: 'escrito a mano',
 };
 export const ROTULO_DE_ORIGEN = {

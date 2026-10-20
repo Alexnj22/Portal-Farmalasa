@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { choqueDeSentido, lecturaDeBoleta, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
+import { choqueDeSentido, frenoDelMonto, lecturaDeBoleta, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 
 describe('ingresoDeCaja', () => {
     it('lectura fallida: escribir a mano', () => {
@@ -13,7 +13,7 @@ describe('ingresoDeCaja', () => {
     it('monto de una sola vez: se llena pero no se cierra, y lo dice', () => {
         const l = lecturaDeBoleta({ montoConfianza: 'UNICO', leido: { monto: 10 } }, { pideBoleta: true });
         expect(l.puesto.monto).toBe(false);
-        expect(l.aviso).toMatch(/sólo lo dice una vez/);
+        expect(l.aviso).toMatch(/no lo pude comprobar/);
         expect(l.aviso).toMatch(/Falta el número/);
     });
     it('nada legible: a mano', () => {
@@ -22,5 +22,28 @@ describe('ingresoDeCaja', () => {
     it('sin choque de boleta, null', () => {
         expect(problemaDeBoleta([], true, '1')).toBeNull();
         expect(choqueDeSentido({ leido: {} }, true)).toBeNull();
+    });
+
+    describe('frenoDelMonto', () => {
+        const unico = { montoConfianza: 'UNICO', leido: { monto: 19.87 } };
+        it('confirmado por el papel: no frena', () => {
+            expect(frenoDelMonto({ lectura: { ...unico, montoConfianza: 'CONFIRMADO' }, monto: '19.87', intentos: 0 })).toBeNull();
+        });
+        it('primera lectura sin comprobar: pide otra foto y frena', () => {
+            expect(frenoDelMonto({ lectura: unico, monto: '19.87', intentos: 1 })).toMatchObject({ paso: 'OTRA_FOTO', bloquea: true });
+        });
+        it('segunda lectura sin comprobar: casilla, frena hasta marcarla', () => {
+            expect(frenoDelMonto({ lectura: unico, monto: '19.87', intentos: 2 })).toMatchObject({ paso: 'COTEJAR', bloquea: true });
+            expect(frenoDelMonto({ lectura: unico, monto: '19.87', intentos: 2, cotejado: true })).toMatchObject({ paso: 'COTEJAR', bloquea: false });
+        });
+        it('«trae el monto una sola vez» salta a la casilla', () => {
+            expect(frenoDelMonto({ lectura: unico, monto: '19.87', intentos: 1, unaSolaVez: true }).paso).toBe('COTEJAR');
+        });
+        it('monto escrito distinto al leído: es a mano, no frena', () => {
+            expect(frenoDelMonto({ lectura: unico, monto: '18.87', intentos: 1 })).toBeNull();
+        });
+        it('sin lectura de monto: no frena', () => {
+            expect(frenoDelMonto({ lectura: { montoConfianza: 'UNICO', leido: {} }, monto: '5', intentos: 1 })).toBeNull();
+        });
     });
 });

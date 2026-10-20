@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1316.2 — Un monto que la foto no comprueba pide otra foto y después «lo comparé con el papel»
+
+Reporte del usuario (20-oct): un POS Promerica de $19.87 en Salud 4 quedó
+«monto sin comprobar». La foto cortó el segundo `MONTO` de la boleta, el
+lector lo vio una sola vez y el formulario avisaba con una línea gris pero
+dejaba anotar igual. Así, la marca quedaba puesta para siempre sin que nadie
+mirara el papel.
+
+- **Primero, otra foto.** La primera lectura sin comprobar apaga «Anotar» y
+  pide una foto con la boleta entera (`frenoDelMonto`, núcleo).
+- **Después, la casilla.** Si la segunda tampoco lo comprueba, o se toca «Esta
+  boleta trae el monto una sola vez», se exige marcar «Lo comparé con el
+  papel: dice $X».
+- **Se guarda distinto.** `operar-caja` lo marca `FOTO_COTEJADA`, firmado por
+  quien lo anota, y ya no sale como «monto sin comprobar». Migración
+  `20261020164722` (el CHECK de `caja_movimientos_portal.monto_origen`).
+- Portal (Mi caja, ingreso y salida) y app (Meter dinero) con la misma regla.
+  Escribir otro monto sigue siendo «a mano» y no frena. Sólo aplica al
+  efectivo: tarjeta y transferencia ya tienen su propio comprobante.
+
 ## v2.1316.1 — Chat con clientes en el portal: notas de voz, PDF, editados y eliminados
 
 Portal, «Chat con clientes» (etapa 2 del chat, 2026-10-20): el equipo **escucha las notas de voz** (reproductor del navegador) y **abre los PDF** que manda el cliente; ve **«Editado»** junto a la hora y los mensajes que el cliente **eliminó**, tachados y con «El cliente eliminó este mensaje» (el contenido se conserva para el equipo). El refresco en vivo trae también lo que cambió (`fetchMensajesCambiados`, por `cambiado_at`), no sólo lo nuevo. Tipos de la base al día (columnas `canal`, `editado_at`, `borrado_at`, `cambiado_at`; funciones `app_chat_resumen`, `app_chat_timbre`) y el `package-lock` con `expo-audio` y `expo-document-picker`.

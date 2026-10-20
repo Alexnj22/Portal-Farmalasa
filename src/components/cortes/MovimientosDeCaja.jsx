@@ -481,6 +481,7 @@ const COLOR_MONTO = {
 const ORIGEN_DEL_MONTO = {
     FOTO_CONFIRMADA: 'Leído de la boleta y confirmado',
     FOTO_SIN_CONFIRMAR: 'Leído de la boleta, sin confirmar',
+    FOTO_COTEJADA: 'Leído de la boleta y comparado con el papel',
     A_MANO: 'Escrito a mano',
 };
 
@@ -606,7 +607,7 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
     const hora = horaExacta ? horaDe(real) : (minuto != null ? horaDe(mv.created_at) : null);
     const quienCobro = cb && personas?.get(cb.abonado_por);
     const quienAnoto = an && personas?.get(an.registrado_por);
-    const dudoso = an?.monto_origen && an.monto_origen !== 'FOTO_CONFIRMADA';
+    const dudoso = an?.monto_origen && !['FOTO_CONFIRMADA', 'FOTO_COTEJADA'].includes(an.monto_origen);
 
     return {
         clave: it.clave, branchId: mv.branch_id, fecha: it.fecha, mv,

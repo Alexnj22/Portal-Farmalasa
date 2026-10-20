@@ -67,9 +67,54 @@ export function lecturaDeBoleta(r, { pideBoleta = false } = {}) {
             : confianza === 'CONTRADICHO'
                 ? `La boleta trae el monto dos veces y no dicen lo mismo: leí ${formatMoney(montoLeido)}. Escribe el que dice el papel.`
                 : !seguro
-                    ? `Leí ${formatMoney(montoLeido)}, pero la boleta sólo lo dice una vez: compáralo con el papel y corrígelo si no es.${cola}`
+                    ? `Leí ${formatMoney(montoLeido)}, pero no lo pude comprobar en la foto.${cola}`
                     : `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}, y la boleta lo confirma.${cola}`;
     return { ...salida, puesto, aviso, aMano: nada };
+}
+
+/**
+ * ¿Se puede anotar ese monto, o la foto todavía no lo respalda?
+ *
+ * Regla del usuario (2026-10-20), sobre un POS Promerica de $19.87 que quedó
+ * «monto sin comprobar» para siempre: el aviso era una línea gris y «Anotar»
+ * seguía encendido, así que se guardaba sin mirar el papel. Dos escalones, en
+ * este orden:
+ *
+ *   1. `OTRA_FOTO` — la primera lectura sin comprobar pide otra foto con la
+ *      boleta ENTERA. Casi siempre el total sí sale dos veces y la foto cortó
+ *      el de abajo (el caso del 20-oct).
+ *   2. `COTEJAR` — si la segunda tampoco lo comprueba, o la persona dice que la
+ *      boleta lo trae una sola vez, se exige marcar «comparé con el papel».
+ *      Ese monto se guarda como `FOTO_COTEJADA`, firmado por quien lo anota.
+ *
+ * Si la persona escribe OTRO monto, no frena: eso ya es «a mano» y el servidor
+ * lo marca así. Tampoco frena sin lectura de monto (no hay nada que cotejar).
+ *
+ * @param lectura   lo que contestó `leerBoleta` (con `leido` y `montoConfianza`)
+ * @param monto     lo que hay en el campo
+ * @param intentos  cuántas lecturas SIN comprobar lleva este formulario
+ * @param unaSolaVez la persona dijo que la boleta imprime el total una vez
+ * @param cotejado  marcó la casilla
+ *   → null | { paso: 'OTRA_FOTO'|'COTEJAR', bloquea, texto, casilla? }
+ */
+export function frenoDelMonto({ lectura, monto, intentos = 0, unaSolaVez = false, cotejado = false }) {
+    const leido = Number(lectura?.leido?.monto);
+    if (!lectura || !Number.isFinite(leido) || leido <= 0) return null;
+    if (lectura.montoConfianza === 'CONFIRMADO') return null;
+    if (Math.abs(Number(monto) - leido) >= 0.005) return null;
+    if (intentos < 2 && !unaSolaVez) {
+        return {
+            paso: 'OTRA_FOTO', bloquea: true,
+            texto: lectura.montoConfianza === 'CONTRADICHO'
+                ? 'El monto se leyó distinto en dos partes de la boleta. Toma otra foto con la boleta completa, derecha y enfocada.'
+                : 'No se ve el monto completo para comprobarlo. Toma otra foto donde se vea toda la boleta, de arriba abajo.',
+        };
+    }
+    return {
+        paso: 'COTEJAR', bloquea: !cotejado,
+        texto: 'La foto no comprueba el monto. Compáralo con el papel antes de anotar.',
+        casilla: `Lo comparé con el papel: dice ${formatMoney(leido)}`,
+    };
 }
 
 /**

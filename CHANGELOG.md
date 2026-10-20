@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1309.1 — App de puntos: reverso de la tarjeta como una tarjeta real
+
+- El reverso usa el MISMO fondo que el frente (material vivo, mismo velo) y
+  lleva las piezas de una tarjeta de verdad: banda magnética brillante con un
+  reflejo que sigue la inclinación y la franja de luz del frente; la franja de
+  la firma con su rayado fino en los extremos y el código de barras al centro;
+  y un holograma tornasol que cambia de color al inclinar. El código queda
+  quieto, con su zona de silencio limpia y el contraste medido de siempre.
+
 ## v2.1307.3 — Área de auditoría para el componente del DTE al cliente
 
 - `src/components/facturacion/` y `src/utils/cofNoche.js` van al área

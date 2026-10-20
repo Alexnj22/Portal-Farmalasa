@@ -134,37 +134,40 @@ const CLAVE_PISTA = 'puntos_salud_tarjeta_girada';
 const CLAVE_VISTA = 'puntos_salud_tarjeta_vista';
 let vistaBorrada = false;
 
-// El reverso (rehecho el 2026-10-19, «está horrible la card… se ve un gran
-// cuadro blanco con el código de barras; que se integre, estético según cada
-// card, y que siempre lo lea el lector»). Ahora se lee como el reverso de una
-// tarjeta de verdad: banda magnética arriba, el código como la franja de la
-// firma, y la marca con el nivel abajo.
+// El reverso (rehecho el 2026-10-19 y dos veces el 2026-10-20: «el fondo y
+// el diseño se deben mantener como el frontal, con las animaciones; la banda y
+// el código de barras mucho más bonitos, más animados, como una tarjeta
+// real»). El fondo es EL MISMO del frente —material vivo, mismo velo—; encima,
+// las tres piezas del reverso de una tarjeta de verdad:
+//   · la banda magnética, negra y brillante, con un reflejo que sigue la
+//     inclinación y la misma franja de luz que cruza el frente (`BandaMagnetica`);
+//   · la franja de la firma, clara, con su rayado fino en los extremos y el
+//     código de barras al centro (`FranjaDeFirma`);
+//   · el holograma: una calcomanía tornasol que cambia de color al inclinar
+//     (`Holograma`).
 //
-// Lo que el lector NECESITA, y nada más (lo demás era diseño):
+// Lo que el lector NECESITA, y nada más (lo demás es diseño):
 //   · Barras OSCURAS sobre fondo CLARO. Invertido, muchos lectores no leen.
-//     Pero no tiene que ser negro sobre blanco: la franja se tiñe con el acento
-//     del nivel y las barras van en su tono más oscuro (`tintasDeFranja`), con
-//     un contraste medido —si una combinación no llega, cae a negro y blanco—.
+//     La franja se tiñe con el acento del nivel y las barras van en su tono
+//     más oscuro (`tintasDeFranja`), con un contraste medido —si una
+//     combinación no llega, cae a negro y blanco—.
 //   · Zona de silencio clara de 10 módulos a cada lado: va dentro del dibujo,
-//     del mismo tinte que la franja, así que no se ve como un margen.
-//   · Módulo de unos 5 px a 3×: por eso la franja usa ~80 % del ancho. Lo que
-//     sobraba era la ALTURA: Code 128 pide ~15 % del largo, o sea ~36–44 pt,
-//     no los 74 del cuadro anterior.
+//     del mismo tinte. El rayado de la firma queda POR FUERA de ella: nada se
+//     pinta sobre las barras ni sobre su silencio, ni se mueve.
+//   · Módulo de unos 5–6 px a 3×: por eso el código usa ~74 % del ancho. Alto:
+//     Code 128 pide ~15 % del largo, o sea ~36–46 pt.
 const MARGEN_REVERSO = 16;
-const RELLENO_FRANJA = 7;   // arriba y abajo de las barras, dentro de la franja
-const AYUDA = 14;
-const PIE = 18;             // la marca y el nivel
+const RAYADO = 12;          // el rayado de la firma, a cada lado del código
+const PIE = 22;             // la marca, el nivel y el holograma
 function medidasReverso(w, h) {
   const holgada = h >= 215;
-  const banda = { top: Math.round(h * 0.09), alto: Math.round(h * 0.17) };
-  const mb = holgada ? 16 : 13;   // margen del pie
   return {
-    banda, mb,
-    barras: Math.max(34, Math.min(44, Math.round(h * 0.2))),
-    anchoBarras: Math.round(w * 0.8),
-    // El hueco entre la banda y el pie, donde se centra la franja con su ayuda.
-    arriba: banda.top + banda.alto,
-    abajo: mb + PIE,
+    w, h,
+    m: holgada ? 16 : 13,
+    banda: { top: Math.round(h * 0.085), alto: Math.round(h * 0.19) },
+    barras: Math.max(36, Math.min(46, Math.round(h * 0.21))),
+    anchoBarras: Math.round(w * 0.74),
+    holo: Math.round(Math.max(30, Math.min(40, h * 0.19))),
   };
 }
 
@@ -605,39 +608,29 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
               Vivo mientras el reverso puede verse (`caras`); de frente, quieto. */}
           {MATERIALES.includes(nivel) ? <Mineral key={nivel} material={nivel} x={reversoX} y={reversoY} activa={vivaReverso} pausa={moviendo} />
             : <EfectoPausable nivel={nivel} activa={vivaReverso} x={reversoX} />}
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.42)' }]} />
+          {/* El MISMO velo del frente: el material se ve igual de vivo atrás. */}
+          <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
+            locations={[0, 0.28, 0.55, 1]} style={StyleSheet.absoluteFill} />
           <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
-          {/* La banda magnética: decorado, del tono del nivel, con un brillo
-              que la cruza. Es lo que hace que el reverso se lea como tarjeta. */}
+          {medidas ? <BandaMagnetica x={reversoX} barrido={reversoBarrido} paleta={paleta} medidas={medidas} /> : null}
           {medidas ? (
-            <LinearGradient pointerEvents="none" colors={[paleta.reverso[0], mezclar(paleta.reverso[0], paleta.acento, 0.22), paleta.reverso[0]]}
-              locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ position: 'absolute', left: 0, right: 0, top: medidas.banda.top, height: medidas.banda.alto }} />
-          ) : null}
-          {/* La franja del código (2026-10-19): sin el código escrito ni el QR.
-              Dibujo estático: no se redibuja con el giro. Medidas y colores en
-              `medidasReverso` / `tintasDeFranja`. */}
-          {medidas ? (
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top: medidas.arriba, bottom: medidas.abajo, alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
-              {codigo ? (
-                <View style={[estilos.franja, { backgroundColor: franja.tinte, borderColor: franja.filo }]}>
-                  <CodigoBarras value={codigo} ancho={medidas.anchoBarras} alto={medidas.barras} color={franja.tinta} backgroundColor={franja.tinte} />
-                </View>
-              ) : (
-                <View style={[estilos.franja, { width: medidas.anchoBarras, height: medidas.barras + 2 * RELLENO_FRANJA, backgroundColor: franja.tinte, borderColor: franja.filo, opacity: 0.3 }]} />
-              )}
+            <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: medidas.banda.top + medidas.banda.alto, bottom: medidas.m + Math.max(PIE, medidas.holo), alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              <FranjaDeFirma codigo={codigo} medidas={medidas} franja={franja} acento={paleta.acento} />
               <Text maxFontSizeMultiplier={1.1} numberOfLines={1} style={estilos.ayuda}>
-                {codigo ? 'Muéstrala en caja para usar tus puntos' : 'Tu código estará listo en unos minutos'}
+                {codigo ? 'Muéstrala en caja para usar tus puntos' : 'Tu código estará listo pronto'}
               </Text>
             </View>
           ) : null}
           {medidas ? (
-            <View pointerEvents="none" style={{ position: 'absolute', left: MARGEN_REVERSO, right: MARGEN_REVERSO, bottom: medidas.mb, height: PIE, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Image source={require('../assets/icono.png')} style={{ width: 16, height: 16, tintColor: '#FFFFFF' }} />
-                <Text maxFontSizeMultiplier={1.15} style={[estilos.marca, { fontSize: 11 }]}>PUNTOS SALUD</Text>
+            <View pointerEvents="none" style={{ position: 'absolute', left: MARGEN_REVERSO, right: MARGEN_REVERSO, bottom: medidas.m, height: Math.max(PIE, medidas.holo), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ gap: 2 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Image source={require('../assets/icono.png')} style={{ width: 16, height: 16, tintColor: '#FFFFFF' }} />
+                  <Text maxFontSizeMultiplier={1.15} style={[estilos.marca, { fontSize: 11 }]}>PUNTOS SALUD</Text>
+                </View>
+                <Text maxFontSizeMultiplier={1.15} style={[estilos.socio, { color: paleta.acento, fontSize: 9.5, letterSpacing: 2.2 }]}>{paleta.rotulo} · {entero(saldo ?? 0)} PTS</Text>
               </View>
-              <Text maxFontSizeMultiplier={1.15} style={[estilos.socio, { color: paleta.acento, fontSize: 10 }]}>{paleta.rotulo}</Text>
+              <Holograma x={reversoX} y={reversoY} tam={medidas.holo} acento={paleta.acento} />
             </View>
           ) : null}
         </Animated.View>
@@ -780,6 +773,90 @@ function Canto({ giro, tam, paleta }) {
   );
 }
 
+// La banda magnética del reverso (2026-10-20): negra con un poco del tono del
+// nivel, un brillo que corre con la inclinación (como la luz sobre una banda
+// de verdad) y la franja de luz periódica del frente (`barrido`). Decorado:
+// el lector no la mira, así que puede moverse cuanto quiera.
+function BandaMagnetica({ x, barrido, paleta, medidas }) {
+  const { w, banda } = medidas;
+  const reflejo = useAnimatedStyle(() => ({ transform: [{ translateX: (x ? x.value : 0) * w * 0.35 }] }));
+  const pasa = useAnimatedStyle(() => {
+    const b = barrido ? barrido.value : 0;
+    return { opacity: b > 0 && b < 1 ? 1 : 0, transform: [{ translateX: -w * 0.4 + b * w * 1.6 }, { skewX: '-20deg' }] };
+  });
+  const base = mezclar(paleta.reverso[0], '#000000', 0.55);
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: banda.top, height: banda.alto, overflow: 'hidden' }}>
+      <LinearGradient colors={[base, mezclar(base, paleta.acento, 0.18), base, '#000000']} locations={[0, 0.45, 0.8, 1]}
+        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      {/* El brillo largo y suave que sigue al teléfono. */}
+      <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, left: w * 0.25, width: w * 0.5 }, reflejo]}>
+        <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.16)', 'rgba(255,255,255,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+      {/* La franja de luz que cruza cada pocos segundos, la misma del frente. */}
+      <Animated.View style={[{ position: 'absolute', top: -4, bottom: -4, left: 0, width: w * 0.18 }, pasa]}>
+        <LinearGradient colors={['rgba(255,255,255,0)', `${paleta.acento}55`, 'rgba(255,255,255,0.35)', `${paleta.acento}55`, 'rgba(255,255,255,0)']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+      {/* Los filos de la banda: un hilo de luz arriba, sombra abajo. */}
+      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.25)' }} />
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 1, backgroundColor: 'rgba(0,0,0,0.6)' }} />
+    </View>
+  );
+}
+
+// El rayado fino de una franja de firma real. Sólo en los extremos: el código
+// y su zona de silencio quedan limpios.
+function Rayado({ alto, tinta }) {
+  const n = Math.ceil((RAYADO + alto * 2) / 4);
+  return (
+    <View style={{ width: RAYADO, overflow: 'hidden' }}>
+      {Array.from({ length: n }, (_, i) => (
+        <View key={i} style={{ position: 'absolute', top: -alto, left: i * 4 - alto, width: 1.2, height: alto * 3, backgroundColor: tinta, opacity: 0.18, transform: [{ rotate: '45deg' }] }} />
+      ))}
+    </View>
+  );
+}
+
+// La franja de la firma con el código. Fondo y barras con los colores medidos
+// de `tintasDeFranja`; un filo del acento por fuera.
+function FranjaDeFirma({ codigo, medidas, franja, acento }) {
+  const alto = medidas.barras + 16;
+  return (
+    <View style={[estilos.firma, { backgroundColor: franja.tinte, borderWidth: StyleSheet.hairlineWidth, borderColor: `${acento}AA` }]}>
+      <Rayado alto={alto} tinta={franja.tinta} />
+      <View style={{ paddingVertical: 8, justifyContent: 'center' }}>
+        {codigo
+          ? <CodigoBarras value={codigo} ancho={medidas.anchoBarras} alto={medidas.barras} color={franja.tinta} backgroundColor={franja.tinte} />
+          : <View style={{ width: medidas.anchoBarras, height: medidas.barras, opacity: 0.3 }} />}
+      </View>
+      <Rayado alto={alto} tinta={franja.tinta} />
+    </View>
+  );
+}
+
+// El holograma (2026-10-20): una calcomanía tornasol como la de las tarjetas
+// de crédito. El arcoíris es varias veces más ancho que la calcomanía y se
+// corre con la inclinación, así el color cambia al mover el teléfono; la cruz
+// de la marca va grabada encima.
+const ARCOIRIS = ['#ff9ad5', '#c9a2ff', '#9ab8ff', '#8fe9ff', '#a8ffd8', '#fff3a0', '#ffc4a0', '#ff9ad5', '#c9a2ff', '#9ab8ff'];
+function Holograma({ x, y, tam, acento }) {
+  const tornasol = useAnimatedStyle(() => ({
+    transform: [{ translateX: -tam + (x ? x.value : 0) * tam * 0.9 }, { translateY: (y ? y.value : 0) * tam * 0.3 }, { rotate: '25deg' }],
+  }));
+  return (
+    <View style={{ width: tam * 1.5, height: tam, borderRadius: 6, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: `${acento}CC` }}>
+      <Animated.View style={[{ position: 'absolute', top: -tam, left: 0, width: tam * 4, height: tam * 3 }, tornasol]}>
+        <LinearGradient colors={ARCOIRIS} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+      <LinearGradient colors={['rgba(255,255,255,0.45)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.15)']} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+        <Image source={require('../assets/icono.png')} style={{ width: tam * 0.62, height: tam * 0.62, tintColor: 'rgba(255,255,255,0.75)' }} />
+      </View>
+    </View>
+  );
+}
+
 // Una copia de `fuente` para UNA cara de la tarjeta: sigue a la fuente sólo
 // mientras esa cara puede verse (el frente hasta poco después de la mitad del
 // giro, el reverso desde poco antes) y, oculta, se queda quieta — así su
@@ -867,11 +944,10 @@ const estilos = StyleSheet.create({
   desde: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', opacity: 0.92, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 9, textShadowOffset: { width: 0, height: 1 } },
   puntos: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', opacity: 0.95, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
-  // La franja: sin relleno a los lados (la zona de silencio ya va teñida
-  // dentro del dibujo); un filo del acento, apenas, para que se lea pegada al
-  // plástico y no flotando.
-  franja: { borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden', paddingVertical: RELLENO_FRANJA, alignItems: 'center' },
-  ayuda: { color: 'rgba(255,255,255,0.82)', fontSize: 12, lineHeight: AYUDA, height: AYUDA, fontWeight: '600', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
+  // La franja de la firma: clara, con el rayado a los lados.
+  firma: { borderRadius: 6, overflow: 'hidden', flexDirection: 'row', alignItems: 'stretch',
+    shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  ayuda: { color: 'rgba(255,255,255,0.88)', fontSize: 11.5, lineHeight: 15, fontWeight: '600', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
 });
 
 // Memorizada (2026-10-15): la pantalla que la contiene se repinta por muchas

@@ -14,7 +14,7 @@ import { useMoviendoValor } from './movimiento';
 import { LIVIANO } from '../lib/rendimiento';
 import { useSesion } from '../lib/sesion';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -41,7 +41,7 @@ const textoPremio = (p) => `${Number(p.cantidad) > 1 ? `${p.cantidad} × ` : ''}
 
 // `demo` (modo de prueba): cada vez que cambia, el cupón se tapa y se raspa
 // solo, para ver la animación completa sin gastar el del mes.
-export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0 }) {
+export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0, alCambiar }) {
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const [raspado, setRaspado] = useState(null); // null = leyendo
   // Sólo los cupones reales (id numérico) se anotan en el servidor; los de prueba no.
@@ -261,6 +261,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
       {/* Las muescas de un cupón, del color del fondo. */}
       <View style={{ position: 'absolute', left: 78, top: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
       <View style={{ position: 'absolute', left: 78, bottom: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
+      {premio && raspado && !usado && pedir ? <DondeHay premio={premio} id={cupon.id} pedir={pedir} alCambiar={alCambiar} /> : null}
       {festejo ? <Confeti colores={['#FFD978', '#FFFFFF', '#E8ECF2', '#B5308C']} alTerminar={() => setFestejo(false)} /> : null}
     </View>
   );
@@ -542,6 +543,62 @@ function Particula({ i, polvo, ahora }) {
 // (`src/utils/codigoDePremio.js`). Fondo blanco siempre: el lector necesita
 // contraste. Barras por defecto: es lo que tienen las cajas.
 const paraEscanear = (c) => String(c ?? '').replace(/[^0-9A-Z]/gi, '').toUpperCase();
+// Dónde hay el premio HOY (2026-10-20, «que desde la app se vea antes de
+// ir»): las sucursales que pueden entregarlo hoy (`premio_salas`, `hay`). El
+// premio se retira en cualquiera; un REGALO promocional además se puede
+// apartar en una (`premio_apartar`) y, apartado o pedido, se dice dónde.
+function DondeHay({ premio, id, pedir, alCambiar }) {
+  const [salas, setSalas] = useState(null);
+  const [apartando, setApartando] = useState(false);
+  useEffect(() => {
+    if (premio.apartado || premio.pedido) return undefined;
+    let vivo = true;
+    pedir('premio_salas', { id }).then((r) => { if (vivo) setSalas(r?.ok ? (r.sucursales ?? []) : []); }).catch(() => { if (vivo) setSalas([]); });
+    return () => { vivo = false; };
+  }, [id, premio.apartado, premio.pedido, pedir]);
+  const fila = (sf, texto, color = '#3A3A3C') => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+      backgroundColor: 'rgba(120,120,128,0.12)' }}>
+      <Icono sf={sf} respaldo="•" tam={12} color={color} />
+      <Text style={{ fontSize: 13, fontWeight: '600', color, flexShrink: 1 }}>{texto}</Text>
+    </View>
+  );
+  if (premio.apartado && premio.sala) return <View style={{ marginTop: 10 }}>{fila('checkmark.circle.fill', `Apartado en ${premio.sala}: te espera`, '#1E8E3E')}</View>;
+  if (premio.pedido && premio.sala) return <View style={{ marginTop: 10 }}>{fila('shippingbox.fill', `Pedido a ${premio.sala}: te avisamos cuando llegue`)}</View>;
+  if (salas == null) return null;
+  const con = salas.filter((x) => x.hay);
+  const apartar = () => {
+    if (apartando || !con.length) return;
+    Haptics.selectionAsync().catch(() => {});
+    const elegir = async (s) => {
+      setApartando(true);
+      const r = await pedir('premio_apartar', { id, branch_id: s.branch_id }).catch(() => null);
+      setApartando(false);
+      if (!r?.ok) { Alert.alert('No se pudo apartar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      alCambiar?.();
+    };
+    ActionSheetIOS.showActionSheetWithOptions({
+      title: 'Apartar tu regalo', message: 'Te lo guardan en la sucursal que elijas.',
+      options: [...con.map((x) => x.sala), 'Cancelar'], cancelButtonIndex: con.length,
+    }, (i) => { if (i < con.length) elegir(con[i]); });
+  };
+  return (
+    <View style={{ marginTop: 10, gap: 8, alignItems: 'center' }}>
+      {con.length
+        ? fila('mappin.circle.fill', `Hay hoy en ${con.map((x) => x.sala).join(', ')}`)
+        : fila('clock.fill', 'Hoy no hay en ninguna sucursal: pregúntalo en caja')}
+      {premio.tipo === 'promocional' && con.length ? (
+        <Pressable onPress={apartar} disabled={apartando} accessibilityRole="button" hitSlop={6}
+          style={({ pressed }) => ({ paddingHorizontal: 16, minHeight: 36, justifyContent: 'center', borderRadius: 18,
+            backgroundColor: '#B5308C', opacity: apartando ? 0.6 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+          <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }}>{apartando ? 'Apartando…' : 'Apartarlo en una sucursal'}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 // El talón con el código del premio: barras o QR (se cambia con la píldora
 // de la esquina), y el código escrito para dictarlo si el lector falla. Se
 // retira en CUALQUIER sucursal (2026-10-20): la que lo escanea lo entrega.

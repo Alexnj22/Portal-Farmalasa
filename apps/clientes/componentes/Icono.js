@@ -126,6 +126,7 @@ const MATERIAL = {
   'waveform': 'graphic_eq',
   'nosign': 'block',
   'barcode': 'barcode',
+  'mappin.circle.fill': 'location_on',
   'trash.fill': 'delete',
   'wallet.pass.fill': 'wallet',
   'wifi.slash': 'wifi_off',

@@ -198,7 +198,7 @@ export default function Puntos() {
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <TarjetaEnVista activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'material'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
         previo={movSaldo.previo} cambio={movSaldo.cambio}
-        codigo={resumen.codigo} socioDesde={resumen.socio_desde} />
+        codigo={resumen.codigo} socioDesde={resumen.socio_desde} aFavor={resumen.saldo_a_favor?.total} />
 
       {/* Apple Wallet, justo debajo de la tarjeta (usuario, 2026-10-08): la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (

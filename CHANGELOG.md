@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1311.0 — Puntos Salud: reverso de la tarjeta moderno y saldo a favor en la tarjeta
+
+Reverso rehecho («que se vea moderna, bonita, animada»): mismo material vivo del frente; banda magnética más fina y cepillada con reflejo tornasol; el código va en una **ventana de vidrio** con un aro de luz del color del nivel que gira despacio y una línea de lector que la barre una vez al girar la tarjeta (sobre las barras quietas no se pinta nada: contraste medido y zona de silencio intactos). Pie con píldora de nivel y puntos, y holograma. Se quitó la franja de firma con rayado.
+
+**Saldo a favor en la tarjeta**: píldora verde «+$X a favor», aparte de los puntos (es dinero, no puntos), al frente sobre el nombre y en el pie del reverso; su punto late y una luz la cruza con el barrido. También lo lee VoiceOver.
+
 ## v2.1310.0 — App: el modo de prueba como demo — saldo a favor, reservas de muestra, vista con el código y momentos
 
 Pedido del dueño (2026-10-20): «¿dónde veo el saldo a favor? agrégalo en modo

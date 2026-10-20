@@ -52,17 +52,43 @@ async function elegirFotoSinBloqueo(origen) {
     const opciones = { mediaTypes: ['images'], quality: 1, allowsEditing: false, exif: false };
     const r = origen === 'camara' ? await ImagePicker.launchCameraAsync(opciones) : await ImagePicker.launchImageLibraryAsync(opciones);
     if (r.canceled || !r.assets?.[0]?.uri) return null;
-    const a = r.assets[0];
-    // Sólo se achica si hace falta (nunca se agranda una foto chica).
-    const ancho = Number(a.width) || 0, alto = Number(a.height) || 0;
-    const ctx = ImageManipulator.manipulate(a.uri);
-    if (Math.max(ancho, alto) > LADO_MAYOR) ctx.resize(ancho >= alto ? { width: LADO_MAYOR } : { height: LADO_MAYOR });
-    const imagen = await ctx.renderAsync();
-    const chica = await imagen.saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
-    return { uri: chica.uri, ancho: chica.width, alto: chica.height };
+    return await achicar(r.assets[0]);
   } catch {
     return { error: 'No se pudo abrir la foto. Intenta de nuevo.' };
   }
+}
+
+// Sólo se achica si hace falta (nunca se agranda una foto chica).
+async function achicar(a) {
+  const ancho = Number(a.width) || 0, alto = Number(a.height) || 0;
+  const ctx = ImageManipulator.manipulate(a.uri);
+  if (Math.max(ancho, alto) > LADO_MAYOR) ctx.resize(ancho >= alto ? { width: LADO_MAYOR } : { height: LADO_MAYOR });
+  const imagen = await ctx.renderAsync();
+  const chica = await imagen.saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
+  return { uri: chica.uri, ancho: chica.width, alto: chica.height };
+}
+
+/**
+ * VARIAS fotos de la galería a la vez (2026-10-20, el chat «como las apps de
+ * mensajería»), hasta `max`, en el orden en que se eligieron y ya achicadas.
+ * Devuelve `[]` si se canceló, o `{ error }`.
+ */
+export async function elegirFotos(max = 6) {
+  if (Platform.OS === 'web') return { error: 'Las fotos se suben desde el teléfono.' };
+  return sinBloquear(async () => {
+    try {
+      const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!p.granted && p.accessPrivileges !== 'limited') return { error: 'Permite el acceso a tus fotos en los ajustes del teléfono.' };
+      const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, exif: false,
+        allowsMultipleSelection: true, selectionLimit: max, orderedSelection: true });
+      if (r.canceled || !r.assets?.length) return [];
+      const out = [];
+      for (const a of r.assets.slice(0, max)) out.push(await achicar(a));
+      return out;
+    } catch {
+      return { error: 'No se pudieron abrir las fotos. Intenta de nuevo.' };
+    }
+  });
 }
 
 /**

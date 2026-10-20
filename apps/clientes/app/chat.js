@@ -80,11 +80,11 @@
 //     por globo (fechas, enlaces) se calcula una vez. En desarrollo se anota
 //     en la consola cuánto tardó el primer cuadro y de dónde salió el hilo.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, Dimensions, FlatList, InteractionManager, Keyboard, Modal, Platform, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Dimensions, FlatList, InteractionManager, Keyboard, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
-import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, ZoomIn, useAnimatedKeyboard, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -95,7 +95,7 @@ import { useSesion } from '../lib/sesion';
 import { useCuenta } from '../lib/cuenta';
 import { llamar } from '../lib/api';
 import { alLlegarAviso, marcarChatALaVista } from '../lib/avisos';
-import { subirFoto } from '../lib/fotos';
+import { elegirFotos, subirFoto } from '../lib/fotos';
 import { nombrePropio } from '../lib/formato';
 import { navegar } from '../lib/navegar';
 import { nombreProducto } from '../lib/catalogo';
@@ -103,7 +103,9 @@ import { datosDePrecio } from '../lib/precioTuyo';
 import { LIVIANO } from '../lib/rendimiento';
 import { usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
 import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Reacciones, Respondiendo, subidaConTeclado, useMedir } from '../componentes/ChatPiezas';
-import { BuscadorProducto, Calificar, ProductoPendiente, Sugerencias, TarjetaProducto, TextoConEnlaces } from '../componentes/ChatConsultas';
+import { BuscadorProducto, Calificar, ProductoPendiente, respuestasSugeridas, Sugerencias, TarjetaProducto, TextoConEnlaces } from '../componentes/ChatConsultas';
+import VisorFotos from '../componentes/VisorFotos';
+import BuscarEnChat from '../componentes/BuscarEnChat';
 import { suave, useTema } from '../tema/tema';
 import { useMiNivel } from '../lib/exclusiva';
 import { chatAbierto, desdeFechaPrimera, guardarHilo, leerHilo } from '../lib/chatHilo';
@@ -233,7 +235,9 @@ export default function Chat() {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [cargandoViejos, setCargandoViejos] = useState(false);
-  const [fotoGrande, setFotoGrande] = useState(null); // { uri, cacheKey? }
+  // El visor a pantalla completa (2026-10-20): TODAS las fotos del hilo, para pasar de una a otra.
+  const [visor, setVisor] = useState(null); // { fotos: [{ uri, cacheKey? }], i }
+  const [buscar, setBuscar] = useState(false);
   const lista = useRef(null);
   const campo = useRef(null);
   const ultimoId = useRef(0);
@@ -594,6 +598,20 @@ export default function Chat() {
     const origen = origenDado ?? await preguntarAdjunto();
     if (!origen) return;
     if (origen === 'producto') { preguntaDelAtajo.current = null; setBuscador(true); return; }
+    // De la galería, VARIAS a la vez (2026-10-20, hasta 6), una tras otra y
+    // en el orden en que se eligieron; la cámara sigue con su vista previa.
+    if (origen === 'galeria') {
+      const fs = await elegirFotos(6);
+      if (fs?.error) { Alert.alert('No se pudo usar la foto', fs.error); return; }
+      if (!fs?.length) return;
+      const cita = respondiendo;
+      setRespondiendo(null);
+      for (let k = 0; k < fs.length; k += 1) {
+        // Si una no sale, las demás no se mandan solas: queda para reintentar.
+        if (!(await mandar({ uri: fs[k].uri, cita: k === 0 ? cita : null }))) break;
+      }
+      return;
+    }
     const f = await foto.elegir({ origen });
     if (!f) return;
     const cita = respondiendo;
@@ -609,6 +627,7 @@ export default function Chat() {
     setTimeout(() => campo.current?.focus?.(), 450);
   };
   const atajo = (s) => {
+    if (s.accion === 'foto') { adjuntar(); return; }
     if (s.accion === 'producto') { preguntaDelAtajo.current = s.mensaje; setBuscador(true); return; }
     if (s.accion === 'escribir') { setTexto(s.mensaje); setTimeout(() => campo.current?.focus?.(), 50); return; }
     mandar({ texto: s.mensaje });
@@ -817,9 +836,16 @@ export default function Chat() {
   // volvía a dibujar entera. Ahora cambian sólo si cambia lo que muestran.
   const atiendeNombre = vivo.atiende ? nombrePropio(vivo.atiende) : null;
   const conPreferencia = !!preferente;
+  const abrirBuscar = useCallback(() => { Haptics.selectionAsync().catch(() => {}); Keyboard.dismiss(); setBuscar(true); }, []);
   const opcionesTitulo = useMemo(() => ({ title: 'Farmacia Salud', headerTitle: () => (
     <TituloChat fuera={fuera} atiende={atiendeNombre} escribiendo={escribiendoNombre} preferente={conPreferencia} />
-  ) }), [fuera, atiendeNombre, escribiendoNombre, conPreferencia]);
+  ), headerRight: () => (
+    // Buscar en el chat y su galería (2026-10-20).
+    <Presionable onPress={abrirBuscar} hitSlop={10} accessibilityRole="button" accessibilityLabel="Buscar en el chat, fotos y productos"
+      style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+      <Icono sf="magnifyingglass" respaldo="⌕" tam={18} color={t.color.magentaTexto} />
+    </Presionable>
+  ) }), [fuera, atiendeNombre, escribiendoNombre, conPreferencia, abrirBuscar, t]);
   // El teclado en iOS, con transformaciones y no con el alto (ver «El teclado», al pie).
   const insAbajo = Math.max(ins.bottom, 8);
   const subida = useAnimatedStyle(() => ({ transform: [{ translateY: tecladoAlto ? -subidaConTeclado(tecladoAlto.value, insAbajo) : 0 }] }));
@@ -860,6 +886,8 @@ export default function Chat() {
   // Los atajos: con la conversación vacía o justo después de la respuesta automática.
   const ultimo = mensajes[mensajes.length - 1];
   const conAtajos = !texto.trim() && !producto && !respondiendo && (!mensajes.length || ultimo?.autor === 'sistema');
+  // Después de un mensaje del equipo, respuestas de un toque según lo que dijo (2026-10-20).
+  const sugeridas = !texto.trim() && !producto && !respondiendo && !enviando ? respuestasSugeridas(ultimo) : [];
 
   // Tocar la cita lleva al mensaje original, si ya está cargado, y lo resalta.
   const irA = (id) => {
@@ -870,11 +898,35 @@ export default function Chat() {
     setResaltado(id);
     setTimeout(() => setResaltado((x) => (x === id ? null : x)), 1400);
   };
+  // Desde la búsqueda (2026-10-20): si el mensaje todavía no está cargado, se
+  // traen semanas anteriores hasta encontrarlo (a lo sumo 12 vueltas).
+  const irAlBuscado = async (m) => {
+    setBuscar(false);
+    let lista_ = mensajesRef.current ?? [];
+    let mas = hayMas;
+    for (let k = 0; k < 12 && !lista_.some((x) => x.id === m.id) && mas; k += 1) {
+      const primero = lista_.find((x) => typeof x.id === 'number');
+      if (!primero) break;
+      const r = await pedir('chat_mensajes', { antes_id: primero.id, antes_de: primero.created_at });
+      if (!r?.ok) break;
+      mas = !!r.hay_mas;
+      const vistos = new Set(lista_.map((x) => x.id));
+      lista_ = [...r.mensajes.filter((x) => !vistos.has(x.id)), ...lista_];
+    }
+    setHayMas(mas);
+    setMensajes(lista_);
+    setTimeout(() => acciones.current.irA?.(m.id), 450);
+  };
   anterioresRef.current = anteriores;
   calificarRef.current = calificar;
   cerrarCalificarRef.current = cerrarCalificar;
   acciones.current = {
-    verFoto: setFotoGrande,
+    // Una foto abre el visor con TODAS las del hilo, empezando por ella.
+    verFoto: (u) => {
+      const fotos = (mensajesRef.current ?? []).filter((x) => x.foto_url).map((x) => fuenteFoto(x.foto_url, x.foto_clave));
+      const i = Math.max(0, fotos.findIndex((f) => f.uri === u.uri));
+      setVisor({ fotos: fotos.length ? fotos : [u], i: fotos.length ? i : 0 });
+    },
     tocar: (m) => {
       if (m.fallido) { reintentar(m); return; }
       Haptics.selectionAsync().catch(() => {});
@@ -938,7 +990,7 @@ export default function Chat() {
         campoRef={campo} listo={!!producto} tecladoAlto={tecladoAlto}
         encima={(
           <>
-            {conAtajos ? <Sugerencias alElegir={atajo} /> : null}
+            {conAtajos ? <Sugerencias alElegir={atajo} /> : sugeridas.length ? <Sugerencias alElegir={atajo} lista={sugeridas} /> : null}
             {respondiendo ? <Respondiendo cita={respondiendo} alCancelar={() => setRespondiendo(null)} /> : null}
             {producto ? <ProductoPendiente p={producto} alQuitar={() => { Haptics.selectionAsync().catch(() => {}); setProducto(null); }} /> : null}
           </>
@@ -946,15 +998,9 @@ export default function Chat() {
 
       <BuscadorProducto visible={buscador} alElegir={elegirProducto} alCerrar={() => { preguntaDelAtajo.current = null; setBuscador(false); }}
         titulo={preguntaDelAtajo.current ? '¿Por cuál producto?' : 'Consultar un producto'} />
-      <Modal visible={!!fotoGrande} animationType="fade" transparent presentationStyle="overFullScreen" onRequestClose={() => setFotoGrande(null)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.94)', paddingTop: ins.top + 8, paddingBottom: ins.bottom + 8 }}>
-          <Presionable onPress={() => setFotoGrande(null)} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={12}
-            style={{ alignSelf: 'flex-end', paddingHorizontal: 18, minHeight: 44, justifyContent: 'center' }}>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>Cerrar</Text>
-          </Presionable>
-          {fotoGrande ? <Image source={fotoGrande} cachePolicy="memory-disk" style={{ flex: 1 }} contentFit="contain" accessibilityLabel="Foto" /> : null}
-        </View>
-      </Modal>
+      <VisorFotos fotos={visor?.fotos} inicio={visor?.i ?? 0} alCerrar={() => setVisor(null)} />
+      <BuscarEnChat visible={buscar} alCerrar={() => setBuscar(false)} alIr={irAlBuscado}
+        alVerFotos={(fotos, i) => { setBuscar(false); setTimeout(() => setVisor({ fotos, i }), 450); }} />
       {foto.vista}
       {menu ? (
         <MenuMensaje menu={menu} alCerrar={() => setMenu(null)}
@@ -1182,7 +1228,9 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
   const mio = m.autor === 'cliente';
   const real = typeof m.id === 'number';
   // Un fundido y nada más: en la lista invertida un deslizamiento se ve al revés.
-  const entrada = entra && !reducir ? FadeIn.duration(200) : undefined;
+  // Lo propio entra con un resorte (2026-10-20), como el globo que sale del
+  // botón de enviar en Mensajes; lo del equipo, con el fundido y el destello.
+  const entrada = entra && !reducir ? (m.autor === 'cliente' ? ZoomIn.springify().damping(16).stiffness(240) : FadeIn.duration(200)) : undefined;
   if (m.autor === 'sistema') {
     return (
       <Animated.View entering={entrada} style={{ alignSelf: 'center', maxWidth: '86%', marginVertical: 8, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14,

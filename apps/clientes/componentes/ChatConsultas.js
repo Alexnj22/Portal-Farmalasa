@@ -236,15 +236,37 @@ export const SUGERENCIAS = [
   { texto: 'Estado de mi reserva', sf: 'bag.fill', accion: 'enviar', mensaje: 'Quiero saber el estado de mi reserva.' },
 ];
 
-export function Sugerencias({ alElegir }) {
+// Respuestas sugeridas (2026-10-20, «como las apps de mensajería»): después
+// de un mensaje del equipo, dos a cuatro respuestas de un toque según lo que
+// dijo — una pregunta, una receta, una reserva, un precio, si lo hay —, como
+// las respuestas inteligentes de Gmail o Mensajes. Es una lista de reglas
+// sencillas sobre el texto (sin servidor): lo que no reconoce, «Gracias».
+const sinTildes = (x) => String(x ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const enviar = (texto, sf = 'arrowshape.turn.up.left.fill') => ({ texto, mensaje: texto, accion: 'enviar', sf });
+export function respuestasSugeridas(m) {
+  if (!m || m.autor !== 'equipo') return [];
+  const t = sinTildes(m.texto);
+  const out = [];
+  if (/receta|foto|imagen/.test(t)) out.push({ texto: 'Te mando la foto', accion: 'foto', sf: 'camera.fill' });
+  if (/reserv|apart|guard/.test(t)) out.push(enviar('Sí, resérvalo'), enviar('¿Hasta cuándo me lo guardan?'));
+  if (/\$|precio|cuesta|vale|costo/.test(t)) out.push(enviar('¿Hay genérico más barato?'), enviar('Perfecto, lo voy a pedir'));
+  if (/tenemos|hay |disponib|existencia|sucursal|sala/.test(t)) out.push(enviar('¿En qué sucursal?'), enviar('Paso a traerlo'));
+  if (m.adjunto?.tipo === 'producto') out.push(enviar('¿Necesita receta?'));
+  if (/\?\s*$/.test(String(m.texto ?? '').trim()) && out.length < 2) out.push(enviar('Sí'), enviar('No'));
+  out.push(enviar('Gracias 🙏'));
+  const vistos = new Set();
+  return out.filter((x) => (vistos.has(x.texto) ? false : vistos.add(x.texto))).slice(0, 4);
+}
+
+export function Sugerencias({ alElegir, lista = SUGERENCIAS }) {
   const t = useTema();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 2 }}
       accessibilityLabel="Preguntas frecuentes">
-      {SUGERENCIAS.map((s) => (
+      {lista.map((s) => (
         <Presionable key={s.texto} onPress={() => { vibrar(); alElegir(s); }} accessibilityRole="button"
-          accessibilityHint={s.accion === 'enviar' ? 'Envía la pregunta' : 'Elige el producto'}
+          accessibilityHint={s.accion === 'enviar' ? 'Lo envía' : s.accion === 'foto' ? 'Elige la foto' : 'Elige el producto'}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 14, borderRadius: 18,
             backgroundColor: pressed ? suave(t.color.magenta, t.oscuro ? 0.35 : 0.2) : (t.oscuro ? 'rgba(255,255,255,0.1)' : '#FFFFFF'),
             borderWidth: StyleSheet.hairlineWidth, borderColor: suave(t.color.magenta, 0.5) })}>

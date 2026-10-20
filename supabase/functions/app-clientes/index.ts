@@ -1524,7 +1524,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
-    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_subir_url", "chat_reaccionar", "chat_escribiendo", "chat_calificar", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
+    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_subir_url", "chat_reaccionar", "chat_escribiendo", "chat_calificar", "chat_buscar", "chat_galeria", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
       if (!customerId) return json({ ok: false, pendiente: true, mensaje: "Completa tu registro en una sucursal para usar esta opción." });
     }
 
@@ -1857,6 +1857,37 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ...base, mensajes: await armarMensajes(filas), hay_mas: hayMas, sin_leer: Number(cv.sin_leer_cliente ?? 0), vivo });
     }
     // Reaccionar a un mensaje de su conversación (`emoji` null = quitar).
+    // Buscar en el chat y su galería (2026-10-20, «que sea como las apps de
+    // mensajería»): en TODO el hilo, no sólo en lo que la app tiene cargado.
+    // Con los mismos globos que `chat_mensajes` (fotos firmadas, equipo).
+    const COLS_BUSCAR = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at";
+    if (accion === "chat_buscar") {
+      const cv = await convDe();
+      const q = String(body?.q ?? "").trim().slice(0, 60);
+      if (!cv || q.length < 2) return json({ ok: true, mensajes: [] });
+      const patron = `%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+      const { data, error } = await admin.from("app_chat_mensajes").select(COLS_BUSCAR)
+        .eq("conversacion_id", cv.id).neq("autor", "sistema").ilike("texto", patron)
+        .order("id", { ascending: false }).limit(40);
+      if (error) throw error;
+      return json({ ok: true, mensajes: await armarMensajes(data ?? []) });
+    }
+    if (accion === "chat_galeria") {
+      const cv = await convDe();
+      if (!cv) return json({ ok: true, fotos: [], productos: [] });
+      const [{ data: f, error: eF }, { data: p, error: eP }] = await Promise.all([
+        admin.from("app_chat_mensajes").select(COLS_BUSCAR).eq("conversacion_id", cv.id).not("foto_ruta", "is", null)
+          .order("id", { ascending: false }).limit(60),
+        admin.from("app_chat_mensajes").select(COLS_BUSCAR).eq("conversacion_id", cv.id).not("adjunto", "is", null)
+          .order("id", { ascending: false }).limit(40),
+      ]);
+      if (eF) throw eF;
+      if (eP) throw eP;
+      const [fotos, productos] = await Promise.all([armarMensajes(f ?? []), armarMensajes(p ?? [])]);
+      // deno-lint-ignore no-explicit-any
+      return json({ ok: true, fotos: fotos.filter((m: any) => m.foto_url), productos: productos.filter((m: any) => m.adjunto) });
+    }
+
     if (accion === "chat_reaccionar") {
       const mid = Number(body?.mensaje_id);
       const emoji = body?.emoji == null ? null : String(body.emoji);

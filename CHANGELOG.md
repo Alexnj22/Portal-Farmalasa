@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1315.0 — Chat de Puntos Salud: varias fotos, visor con zoom, buscar, galería y respuestas sugeridas
+
+Etapa 1 de «que el chat sea como las apps de mensajería» (2026-10-20):
+
+- **Varias fotos a la vez** desde la galería (hasta 6, en el orden elegido); se mandan una tras otra y, si una falla, las demás esperan. La cámara sigue con su vista previa.
+- **Visor a pantalla completa** con TODAS las fotos del hilo: se pasa de una a otra deslizando, pellizcar acerca hasta 4×, dos toques alternan 2.5×, y arrastrar hacia abajo cierra con el fondo que se aclara (gesture-handler + Reanimated, igual en iPhone y Android).
+- **Buscar en el chat** (lupa en el título): en todo el hilo, en el servidor (`chat_buscar`), con lo buscado resaltado; tocar un resultado trae las semanas anteriores hasta encontrarlo y lleva a él. **Fotos** y **Productos** compartidos en la misma hoja (`chat_galeria`).
+- **Respuestas sugeridas** después de un mensaje del equipo, según lo que dijo (receta → «Te mando la foto»; reserva, precio, existencias, pregunta de sí/no; siempre «Gracias 🙏»).
+- Lo propio entra con un **resorte**, como el globo que sale del botón de enviar.
+
 ## v2.1314.6 — Cortes muestra los ingresos con tarjeta; Mapfre nativo en la app del personal
 
 _(pendiente de redactar)_

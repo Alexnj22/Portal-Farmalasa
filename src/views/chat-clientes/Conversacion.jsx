@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowDown, CheckCircle2, ImageOff, MessagesSquare, Package, Phone, Tag, Tags, UserRound } from 'lucide-react';
+import { ArrowDown, CheckCircle2, FileText, ImageOff, MessagesSquare, Package, Phone, Tag, Tags, UserRound } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -21,7 +21,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { diaSV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
-    MENSAJES_POR_PAGINA, fetchMensajes, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje,
+    MENSAJES_POR_PAGINA, fetchMensajes, fetchMensajesCambiados, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje,
     resolverConversacion, tomarConversacion,
 } from '@nucleo/data/chatClientes';
 import { BarraDeMensaje, CitaDeMensaje, HojaDeMensaje, ReaccionesDeMensaje } from './AccionesDeMensaje';
@@ -168,12 +168,20 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     }, [id, puedeResponder]);
 
     // Sólo lo que llegó después del último mensaje que ya se ve.
+    // Desde cuándo se buscan cambios (ediciones y borrados del cliente, 2026-10-20).
+    const cambiosDesdeRef = useRef(new Date().toISOString());
     const traerNuevos = useCallback(async () => {
         const actuales = mensajesRef.current;
         if (!actuales) return;
         const ultimo = actuales[actuales.length - 1]?.id ?? null;
         try {
-            const nuevos = await fetchMensajes(id, { despuesDe: ultimo });
+            const desde = cambiosDesdeRef.current;
+            cambiosDesdeRef.current = new Date(Date.now() - 5000).toISOString();
+            const [nuevos, cambiados] = await Promise.all([fetchMensajes(id, { despuesDe: ultimo }), fetchMensajesCambiados(id, desde)]);
+            if (cambiados.length) {
+                const porId = new Map(cambiados.map((m) => [m.id, m]));
+                setMensajes((prev) => (prev ?? []).map((m) => (porId.has(m.id) ? { ...m, ...porId.get(m.id) } : m)));
+            }
             if (!nuevos.length) return;
             const lista = listaRef.current;
             alFondoRef.current = !lista || lista.scrollHeight - lista.scrollTop - lista.clientHeight < 120;
@@ -574,6 +582,7 @@ function Burbuja({
                     className={`rounded-[1.25rem] ${esquinas} px-3.5 py-2 space-y-1.5 [@media(pointer:coarse)]:select-none [-webkit-touch-callout:none]
                         transition-shadow duration-[var(--dur-lento)]
                         ${delEquipo ? 'bg-brand text-white' : 'bg-surface-card-hover text-content border border-border-subtle'}
+                        ${m.borrado_at ? 'opacity-60' : ''}
                         ${recien ? 'ring-2 ring-brand/45 ring-offset-1 ring-offset-transparent' : ''}`}>
                     <CitaDeMensaje cita={m.cita} equipo={equipo} cliente={cliente} delEquipo={delEquipo} onIr={onIrA} />
                     {m.foto_ruta && (
@@ -599,7 +608,22 @@ function Burbuja({
                             <span className="text-body-sm font-semibold min-w-0 truncate">{adj.titulo}</span>
                         </span>
                     )}
-                    {m.texto && <p className="text-body-sm whitespace-pre-wrap break-words">{m.texto}</p>}
+                    {adj?.tipo === 'audio' && (
+                        m.archivo_url ? (
+                            // La nota de voz del cliente (m4a/AAC), con los controles del navegador.
+                            <audio controls preload="none" src={m.archivo_url} className="max-w-full h-10">Nota de voz</audio>
+                        ) : <span className="text-label opacity-80">Nota de voz no disponible</span>
+                    )}
+                    {adj?.tipo === 'pdf' && (
+                        <a href={m.archivo_url ?? undefined} target="_blank" rel="noreferrer" title="Abrir el documento"
+                            className={`flex items-center gap-2 rounded-input px-2 py-1.5 min-h-[var(--tap-min)] active:scale-[0.97] ${delEquipo ? 'bg-brand-dark/40' : 'bg-surface-card'}`}>
+                            <FileText size={14} className="shrink-0" />
+                            <span className="text-body-sm font-semibold min-w-0 truncate">{adj.nombre || 'Documento PDF'}</span>
+                        </a>
+                    )}
+                    {m.texto && <p className={`text-body-sm whitespace-pre-wrap break-words ${m.borrado_at ? 'line-through' : ''}`}>{m.texto}</p>}
+                    {/* El cliente lo borró (2026-10-20): el equipo lo sigue viendo, tachado y con aviso. */}
+                    {m.borrado_at && <p className="text-micro font-semibold opacity-80">El cliente eliminó este mensaje</p>}
                 </div>
             </div>
             <ReaccionesDeMensaje filas={reacciones} yo={yo} equipo={equipo} cliente={cliente} alLado={lado}
@@ -607,6 +631,7 @@ function Burbuja({
             {finDeGrupo && (
                 <span className="text-micro text-content-3 tabular-nums mt-0.5 px-1">
                     {hora12(m.created_at)}
+                    {m.editado_at && !m.borrado_at && <span> · Editado</span>}
                     {entrega && <span className={entrega === 'Visto' ? 'font-semibold text-brand-text' : ''}> · {entrega}</span>}
                 </span>
             )}

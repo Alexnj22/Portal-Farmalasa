@@ -65,6 +65,21 @@ export async function fetchConversaciones(estado = 'abierta', antes = null) {
     return filas.map((f) => ({ ...f, foto_url: f.foto_ruta ? firmadas.get(f.foto_ruta) ?? null : null }));
 }
 
+// Desde el 2026-10-20 el cliente puede EDITAR y BORRAR lo suyo, y mandar notas
+// de voz y documentos (PDF) en `adjunto` ({ tipo: 'audio'|'pdf', ruta, ... }).
+const COLUMNAS_MENSAJE = 'id, autor, employee_id, texto, foto_ruta, adjunto, created_at, respuesta_a, editado_at, borrado_at, cambiado_at, cita:respuesta_a(id, autor, employee_id, texto, foto_ruta)';
+
+/** La foto y el archivo del adjunto (nota de voz, PDF), firmados. */
+async function conArchivosFirmados(filas) {
+    const rutaArchivo = (f) => (f.adjunto && ['audio', 'pdf'].includes(f.adjunto.tipo) ? f.adjunto.ruta : null);
+    const firmadas = await firmarRutas([...filas.map((f) => f.foto_ruta), ...filas.map(rutaArchivo)]);
+    return filas.map((f) => ({
+        ...f,
+        foto_url: f.foto_ruta ? firmadas.get(f.foto_ruta) ?? null : null,
+        archivo_url: rutaArchivo(f) ? firmadas.get(rutaArchivo(f)) ?? null : null,
+    }));
+}
+
 /**
  * Los mensajes de una conversación, en orden de llegada. Sin cursores trae los
  * últimos 50; `antesDe` (un id) pide la página anterior y `despuesDe` (un id)
@@ -74,15 +89,25 @@ export async function fetchConversaciones(estado = 'abierta', antes = null) {
 export async function fetchMensajes(conversacionId, { antesDe = null, despuesDe = null } = {}) {
     // `cita` es el mensaje al que responde (`respuesta_a`), para su recorte.
     let q = supabase.from('app_chat_mensajes')
-        .select('id, autor, employee_id, texto, foto_ruta, adjunto, created_at, respuesta_a, cita:respuesta_a(id, autor, employee_id, texto, foto_ruta)')
+        .select(COLUMNAS_MENSAJE)
         .eq('conversacion_id', Number(conversacionId));
     if (antesDe != null) q = q.lt('id', Number(antesDe));
     if (despuesDe != null) q = q.gt('id', Number(despuesDe));
     const filas = sinError(await q.order('id', { ascending: false }).limit(MENSAJES_POR_PAGINA)) ?? [];
-    const firmadas = await firmarRutas(filas.map((f) => f.foto_ruta));
-    return filas
-        .map((f) => ({ ...f, foto_url: f.foto_ruta ? firmadas.get(f.foto_ruta) ?? null : null }))
-        .reverse();
+    return (await conArchivosFirmados(filas)).reverse();
+}
+
+/**
+ * Lo que CAMBIÓ en una conversación desde `desde` (ISO): mensajes editados o
+ * borrados por el cliente. Lo usa el refresco en vivo para ponerlos al día en
+ * su lugar, sin volver a bajar el hilo.
+ */
+export async function fetchMensajesCambiados(conversacionId, desde) {
+    if (!desde) return [];
+    const filas = sinError(await supabase.from('app_chat_mensajes').select(COLUMNAS_MENSAJE)
+        .eq('conversacion_id', Number(conversacionId)).gt('cambiado_at', desde)
+        .order('id', { ascending: true }).limit(50)) ?? [];
+    return conArchivosFirmados(filas);
 }
 
 /** Las fichas de quienes contestaron, para su nombre corto y su foto. */

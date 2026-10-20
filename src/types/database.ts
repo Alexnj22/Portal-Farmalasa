@@ -406,6 +406,7 @@ export type Database = {
           calificacion: number | null
           calificacion_comentario: string | null
           calificada_at: string | null
+          canal: string
           cliente_escribiendo_at: string | null
           created_at: string
           customer_id: number
@@ -435,6 +436,7 @@ export type Database = {
           calificacion?: number | null
           calificacion_comentario?: string | null
           calificada_at?: string | null
+          canal?: string
           cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id: number
@@ -464,6 +466,7 @@ export type Database = {
           calificacion?: number | null
           calificacion_comentario?: string | null
           calificada_at?: string | null
+          canal?: string
           cliente_escribiendo_at?: string | null
           created_at?: string
           customer_id?: number
@@ -623,8 +626,11 @@ export type Database = {
         Row: {
           adjunto: Json | null
           autor: string
+          borrado_at: string | null
+          cambiado_at: string | null
           conversacion_id: number
           created_at: string
+          editado_at: string | null
           employee_id: string | null
           foto_ruta: string | null
           id: number
@@ -634,8 +640,11 @@ export type Database = {
         Insert: {
           adjunto?: Json | null
           autor: string
+          borrado_at?: string | null
+          cambiado_at?: string | null
           conversacion_id: number
           created_at?: string
+          editado_at?: string | null
           employee_id?: string | null
           foto_ruta?: string | null
           id?: never
@@ -645,8 +654,11 @@ export type Database = {
         Update: {
           adjunto?: Json | null
           autor?: string
+          borrado_at?: string | null
+          cambiado_at?: string | null
           conversacion_id?: number
           created_at?: string
+          editado_at?: string | null
           employee_id?: string | null
           foto_ruta?: string | null
           id?: never
@@ -27292,6 +27304,10 @@ export type Database = {
       }
       app_catalogo_producto: { Args: { p_id: number }; Returns: Json }
       app_catalogo_rehacer_destacados: { Args: never; Returns: number }
+      app_chat_resumen: {
+        Args: { p_adjunto: Json; p_texto: string }
+        Returns: string
+      }
       app_cliente_buscar_productos: { Args: { p_q: string }; Returns: Json }
       app_cliente_compras: { Args: { p_customer_id: number }; Returns: Json }
       app_cliente_existencias: {

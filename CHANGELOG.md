@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1316.1 — Chat con clientes en el portal: notas de voz, PDF, editados y eliminados
+
+Portal, «Chat con clientes» (etapa 2 del chat, 2026-10-20): el equipo **escucha las notas de voz** (reproductor del navegador) y **abre los PDF** que manda el cliente; ve **«Editado»** junto a la hora y los mensajes que el cliente **eliminó**, tachados y con «El cliente eliminó este mensaje» (el contenido se conserva para el equipo). El refresco en vivo trae también lo que cambió (`fetchMensajesCambiados`, por `cambiado_at`), no sólo lo nuevo. Tipos de la base al día (columnas `canal`, `editado_at`, `borrado_at`, `cambiado_at`; funciones `app_chat_resumen`, `app_chat_timbre`) y el `package-lock` con `expo-audio` y `expo-document-picker`.
+
 ## v2.1316.0 — Chat de Puntos Salud: en vivo, editar y borrar, notas de voz y PDF; código del premio en el cupón
 
 Etapa 2 de «que el chat sea como las apps de mensajería», y el raspable con el código adentro (2026-10-20):

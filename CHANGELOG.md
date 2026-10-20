@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1311.4 — Avisos al teléfono llegan al momento y no se pisan
+
+Reporte de los vendedores: los avisos de solicitudes llegaban hasta 30 min
+tarde y había que entrar al portal para verlos. Medido en el servidor: cada
+envío sale a los segundos y el servicio de push lo acepta (`sent = total`). La
+demora estaba DESPUÉS de esa aceptación.
+
+- **`send-push-notification` manda el web push con `urgency: 'high'`** (y TTL
+  de 24 h). Con el default `normal`, Android en reposo (Doze) e iOS retienen
+  el aviso y lo entregan por tandas. Desplegada (v35, `--no-verify-jwt`).
+- **La app de Android sale con prioridad `high`** de Expo/FCM; antes
+  `default`, que es prioridad normal y sufre lo mismo.
+- **`sw.js`: cada aviso es su propia notificación.** Todas compartían el tag
+  `farmalasa-notif`, así que cada una reemplazaba a la anterior en silencio
+  (sin sonar): de tres solicitudes se veía la última. Con tag propio (un
+  comunicado), `renotify` hace que el reemplazo suene.
+
 ## v2.1311.3 — Avisos en Android: ocultos con el teléfono bloqueado, completos al desbloquear
 
 Decisión del dueño: en Android los avisos de reservas, encargos, inyecciones, tratamientos, recetas y chat ya no se muestran en la pantalla bloqueada (suenan igual) y, con el teléfono desbloqueado, se leen completos con el nombre del producto. La app nueva crea el canal `ocultos` (visibilidad secreta) y lo declara al registrar su token (`app_cliente_sesiones.avisos_formato = 2`); sólo a esos teléfonos se les manda el texto entero. Una versión vieja sigue recibiendo el aviso genérico, que nunca deja ver el producto.

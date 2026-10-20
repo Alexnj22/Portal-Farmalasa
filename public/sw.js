@@ -59,11 +59,16 @@ self.addEventListener('push', (event) => {
       const appFocused = list.some(c => c.focused);
       if (appFocused) return;
 
+      // Sin tag, cada aviso es su propia notificación. Con el tag fijo de
+      // antes ('farmalasa-notif') cada uno REEMPLAZABA al anterior en
+      // silencio: de tres solicitudes se veía la última y las otras sólo
+      // entrando al portal (2026-10-20). Con tag (un comunicado que se
+      // actualiza), `renotify` hace que el reemplazo vuelva a sonar.
       return self.registration.showNotification(title, {
         body,
         icon: '/Logo192.png',
         badge: '/Logo192.png',
-        tag: tag || 'farmalasa-notif',
+        ...(tag ? { tag, renotify: true } : {}),
         data: { url },
         vibrate: urgent ? [200, 100, 200] : [100],
         requireInteraction: !!urgent,

@@ -31,7 +31,10 @@ async function enviarATelefonos(supabase: any, tokens: string[], a: AvisoTelefon
         mutableContent: true,
         ...(a.categoryId ? { categoryId: a.categoryId } : {}),
         sound: 'default',
-        priority: a.urgent ? 'high' : 'default',
+        // 'high' siempre: en Android 'default' es prioridad normal de FCM y
+        // el teléfono en reposo la retiene (mismo defecto que el web push).
+        // Lo que distingue lo urgente en iOS es `interruptionLevel`.
+        priority: 'high',
         interruptionLevel: a.urgent ? 'time-sensitive' : 'active',
       }))),
       });
@@ -158,9 +161,14 @@ serve(async (req) => {
     const results = await Promise.allSettled(
       aEnviar.map(async (sub: { endpoint: string; p256dh: string; auth: string; employee_id: string }) => {
         try {
+          // `urgency: 'high'` (2026-10-20): con el default `normal`, Android en
+          // reposo (Doze) y iOS retienen el aviso y lo entregan por tandas —
+          // a los vendedores les llegaba hasta 30 min tarde. TTL de un día:
+          // un aviso de solicitud de ayer ya no sirve como alerta.
           await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-            payload
+            payload,
+            { urgency: 'high', TTL: 86400 }
           );
         } catch (err: unknown) {
           const status = (err as { statusCode?: number }).statusCode;

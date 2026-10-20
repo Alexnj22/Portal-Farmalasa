@@ -32,6 +32,10 @@ export const IOS = {
 /** El resorte de apretar y soltar algo, según el sistema. */
 export const PRESION = Platform.OS === 'android' ? M3.efectosRapido : IOS.presion;
 export const SUELTA = Platform.OS === 'android' ? M3.espacialRapido : IOS.suelta;
+// Soltar algo que se apretó (2026-10-20): en iPhone vuelve con un rebote leve,
+// como los controles de iOS 26; en Android, el espacial rápido de Material
+// (sin rebote visible).
+export const SUELTA_TOQUE = Platform.OS === 'android' ? M3.espacialRapido : resorte(420, 0.62);
 
 /**
  * `true` mientras la pantalla se desplaza, como VALOR COMPARTIDO de Reanimated

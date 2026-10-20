@@ -35,9 +35,8 @@ import { useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
 import { navegar } from '../../../lib/navegar';
 import AvatarNivel, { rotuloNivel } from '../../../componentes/AvatarNivel';
-import { refrescarFotoPerfil, useFotoPerfil } from '../../../lib/fotoPerfil';
+import { PARA_QUE_FOTO, refrescarFotoPerfil, subirFotoPerfil, useFotoPerfil } from '../../../lib/fotoPerfil';
 import { rangoReal } from '../../../componentes/Mayorista';
-import { subirFoto } from '../../../lib/fotos';
 import { usarVistaPreviaFoto } from '../../../componentes/VistaPreviaFoto';
 import { usePresentacion } from '../../../lib/novedades';
 
@@ -130,14 +129,12 @@ export default function Cuenta() {
   // Se revisa con la guía redonda antes de subirla (componentes/VistaPreviaFoto).
   const vistaPrevia = usarVistaPreviaFoto();
   const subirPerfil = async () => {
-    const f = await vistaPrevia.elegir({ titulo: 'Tu foto de perfil', mensaje: 'La ve el equipo de la farmacia cuando chateas con nosotros.', circular: true });
+    const f = await vistaPrevia.elegir({ titulo: 'Tu foto de perfil', mensaje: PARA_QUE_FOTO, circular: true });
     if (!f) return;
     setSubiendo(true);
-    const s = await subirFoto(pedir, 'perfil_subir_url', {}, f.uri);
-    const r = s.ok ? await pedir('perfil_confirmar', { ruta: s.ruta }) : s;
+    const r = await subirFotoPerfil(resumen?.codigo ?? null, f.uri);
     setSubiendo(false);
-    if (r?.ok) ponerFoto({ url: r.foto_url ?? f.uri, quitada: false });
-    else Alert.alert('No se pudo guardar la foto', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+    if (!r?.ok) Alert.alert('No se pudo guardar la foto', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
   };
   const cambiarFoto = () => {
     Haptics.selectionAsync().catch(() => {});
@@ -265,27 +262,33 @@ export default function Cuenta() {
     <Formulario contentContainerStyle={Platform.OS === 'web' ? undefined : { paddingBottom: 20 + ESPACIO_BURBUJA }}>
       {vistaPrevia.vista}
       {resumen?.nombre ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 24 }}>
+        // El encabezado de Cuenta (2026-10-20, «el aro no se distingue qué
+        // nivel es»): la foto grande al centro, con el aro y la placa de su
+        // nivel debajo, y el nombre abajo.
+        <View style={{ alignItems: 'center', gap: 10, marginHorizontal: 24, marginTop: 4 }}>
           {completa ? (
             <Presionable onPress={cambiarFoto} accessibilityRole="button" accessibilityLabel={foto.url ? 'Cambiar tu foto de perfil' : 'Agregar una foto de perfil'}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-              <AvatarNivel nombre={resumen.nombre} material={materialAvatar} equipo={equipoAvatar} uri={foto.url} clave={foto.clave} tam={68} atenuado={foto.cargando} />
-              <View style={{ position: 'absolute', right: -2, bottom: -2, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: t.color.magenta }}>
-                <Icono sf="camera.fill" respaldo="+" tam={11} color="#FFFFFF" />
+              <AvatarNivel nombre={resumen.nombre} material={materialAvatar} equipo={equipoAvatar} uri={foto.url} clave={foto.clave} tam={96} atenuado={foto.cargando} insignia />
+              <View style={{ position: 'absolute', right: 0, top: 2, width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: t.color.magenta, borderWidth: 2, borderColor: t.oscuro ? '#1C1B22' : '#FFFFFF' }}>
+                <Icono sf="camera.fill" respaldo="+" tam={12} color="#FFFFFF" />
               </View>
             </Presionable>
-          ) : null}
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontSize: 22, fontWeight: '700', color: colorSistema.texto }}>
+          ) : (
+            <AvatarNivel nombre={resumen.nombre} material={materialAvatar} equipo={equipoAvatar} tam={96} insignia />
+          )}
+          <View style={{ alignItems: 'center', gap: 2 }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: colorSistema.texto, textAlign: 'center' }}>
               {nombrePropio(resumen.nombre)}
             </Text>
             {nivelTexto ? (
-              <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{nivelTexto}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2, textAlign: 'center' }}>{nivelTexto}</Text>
             ) : null}
             {completa && foto.quitada ? (
-              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>Quitamos tu foto de perfil porque no correspondía. Puedes subir otra.</Text>
+              <Text style={{ fontSize: 13, color: colorSistema.texto2, textAlign: 'center' }}>Quitamos tu foto de perfil porque no correspondía. Puedes subir otra.</Text>
             ) : completa && !foto.url ? (
-              <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Toca para agregar tu foto (opcional)</Text>
+              <Text style={{ fontSize: 13, color: colorSistema.texto3, textAlign: 'center' }}>Toca la foto para agregarla (opcional)</Text>
             ) : null}
           </View>
         </View>

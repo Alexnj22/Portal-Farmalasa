@@ -11,6 +11,7 @@ import { Aviso, Cargando, Pantalla, RADIO, Tarjeta, Texto, Titulo, Vacio } from 
 import { useCuenta } from '../../../lib/cuenta';
 import { diasHasta, dolares, entero, fecha, fechaLarga, finDeMes, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
+import AvatarInicio from '../../../componentes/AvatarInicio';
 import Nivel from '../../../componentes/Nivel';
 import Mayorista, { BeneficiosEquipo, Equipo, rangoDePrueba, rangoReal } from '../../../componentes/Mayorista';
 import Cupon from '../../../componentes/Cupon';
@@ -22,7 +23,7 @@ import Historias from '../../../componentes/Historias';
 import Icono from '../../../componentes/Icono';
 import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
-import { useSesion } from '../../../lib/sesion';
+import { useConCodigo, useSesion } from '../../../lib/sesion';
 import { alLlegarAviso, sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, raspableDePrueba, useModoPrueba } from '../../../lib/prueba';
 import { resumenConDemo, useDemo } from '../../../lib/demo';
@@ -58,6 +59,8 @@ export default function Puntos() {
   // El demo del modo de prueba (2026-10-20): las reservas y el saldo a favor de
   // muestra cuentan en el Inicio como si fueran reales (lib/demo.js).
   const demo = useDemo();
+  // Antes de cualquier `return`: es un hook.
+  const sesionDeCodigo = useConCodigo();
   const real = useMemo(() => resumenConDemo(crudo, demo), [crudo, demo]);
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
   const prueba = useModoPrueba();
@@ -160,6 +163,7 @@ export default function Puntos() {
     setCargandoMas(false);
     pidiendo.current = false;
   };
+  const conCodigo = sesionDeCodigo || resumen.alcance === 'codigo';
   const primerNombre = nombrePropio(String(resumen.nombre ?? '').split(' ')[0]);
 
   return (
@@ -180,6 +184,14 @@ export default function Puntos() {
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
       {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
       <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
+        {/* La foto junto al saludo (2026-10-20): más personal; sin foto, la
+            invitación a ponerla. Con la sesión de código no hay foto. */}
+        {!conCodigo && !resumen.pendiente ? (
+          <View style={{ marginRight: 12 }}>
+            <AvatarInicio codigo={resumen.codigo} nombre={resumen.nombre} equipo={empleado}
+              material={material ?? resumen.nivel?.clave ?? null} />
+          </View>
+        ) : null}
         {/* El saludo ES el título del Inicio (2026-10-20): sin la barra de «Inicio» encima. */}
         <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.3}
           style={{ flex: 1, fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: colorSistema.texto }}>

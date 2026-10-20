@@ -139,10 +139,12 @@ let vistaBorrada = false;
 // vea más integrado, con más animaciones»). El fondo es EL MISMO del frente
 // —material vivo, mismo velo, misma luz—; encima, como el frente:
 //   · arriba, la marca y qué tarjeta es (CLIENTE / MAYOREO sobre el nivel);
-//   · al centro, el código en un vidrio claro que BRILLA con su propio tono
-//     sobre el material (sin marco), con un VISOR de cuatro esquinas que se
-//     cierra sobre él al girar la tarjeta, una línea de lector que lo barre
-//     una vez y un latido suave con la luz que cruza la tarjeta (`VentanaCodigo`);
+//   · al centro, el código en un vidrio claro y CEÑIDO que brilla con su
+//     propio tono sobre el material: al girar la tarjeta el vidrio aparece y
+//     las barras se IMPRIMEN de izquierda a derecha; después, el brillo del
+//     vidrio late con la luz que cruza la tarjeta (`VentanaCodigo`). El visor
+//     de esquinas y la línea roja del lector se quitaron (2026-10-20, «mejor
+//     anima el código de barras»);
 //   · abajo, las píldoras de nivel y puntos y la del saldo a favor, y el
 //     holograma tornasol.
 // La banda magnética se quitó: ni de canto a canto ni metida convencía, y
@@ -154,14 +156,13 @@ let vistaBorrada = false;
 //     más oscuro (`tintasDeFranja`), con un contraste medido —si una
 //     combinación no llega, cae a negro y blanco—.
 //   · Zona de silencio clara de 10 módulos a cada lado: va dentro del dibujo,
-//     del mismo tinte. El visor queda POR FUERA del vidrio y la línea del
-//     lector termina en un segundo, antes de que se acerque la caja: sobre las
-//     barras quietas no se pinta nada, y el vidrio nunca se transforma.
+//     del mismo tinte. La impresión dura menos de un segundo y termina antes
+//     de que se acerque la caja: sobre las barras quietas no se pinta nada, y
+//     quieto el vidrio no lleva ninguna transformación.
 //   · Módulo de unos 5–6 px a 3×: por eso el código usa ~74 % del ancho. Alto:
 //     ~36–48 pt.
 const MARGEN_REVERSO = 18;
 const PIE = 24;             // las píldoras y el holograma
-const VISOR = 7;            // cuánto sobresale el visor del vidrio
 function medidasReverso(w, h) {
   const holgada = h >= 215;
   const barras = Math.max(36, Math.min(48, Math.round(h * 0.22)));
@@ -171,7 +172,8 @@ function medidasReverso(w, h) {
     m: holgada ? 16 : 13,
     arriba: 24,             // el renglón de la marca
     // El vidrio: el código, el rótulo encima y un respiro alrededor.
-    ventana: { ancho: Math.min(w - 2 * MARGEN_REVERSO - 2 * VISOR, anchoBarras + 28), alto: barras + 31 },
+    // El vidrio, ceñido al código: la zona de silencio ya va dentro del dibujo.
+    ventana: { ancho: Math.min(w - 2 * MARGEN_REVERSO, anchoBarras + 14), alto: barras + 14 },
     holo: Math.round(Math.max(26, Math.min(32, h * 0.15))),
   };
 }
@@ -376,17 +378,13 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
   });
   const vivaFrente = viva && (caras & 1) !== 0;
   const vivaReverso = viva && (caras & 2) !== 0;
-  // Al llegar al reverso: el visor se CIERRA sobre el código con un resorte
-  // (`fijar` 0 → 1) y una línea de lector lo barre una vez (`escaneo`).
-  const fijar = useSharedValue(1);
-  const escaneo = useSharedValue(0);
+  // Al llegar al reverso: el vidrio aparece y las barras se imprimen
+  // (`imprimir` 0 → 1). Al volver al frente queda impreso, sin animar.
+  const imprimir = useSharedValue(1);
   useAnimatedReaction(() => giro.value > 0.5, (ahora, antes) => {
-    if (antes === null || ahora === antes) return;
-    escaneo.value = 0;
-    if (!ahora || reducir) { fijar.value = 1; return; }
-    fijar.value = 0;
-    fijar.value = withDelay(60, withSpring(1, { damping: 11, stiffness: 150 }));
-    escaneo.value = withDelay(260, withTiming(1, { duration: 950, easing: Easing.inOut(Easing.quad) }));
+    if (antes === null || ahora === antes || !ahora || reducir) return;
+    imprimir.value = 0;
+    imprimir.value = withDelay(120, withTiming(1, { duration: 820, easing: Easing.out(Easing.cubic) }));
   });
   // El tamaño de la tarjeta, para el canto que se ve al girar (`Canto`).
   const tam = useSharedValue({ w: 0, h: 0 });
@@ -459,11 +457,12 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
     // no da 0 en coma flotante.
     const g = asentado(giro.value);
     const medio = g === 0 || g === 1 ? 0 : Math.sin(g * Math.PI);
-    // Con el código a la vista la tarjeta queda PLANA (2026-10-14, «el código
-    // sale pixeleado»): ladeada, el código se re-muestrea por la perspectiva y
-    // pierde los bordes netos que el lector necesita. El ladeo se apaga con el
-    // giro; el brillo del reverso sigue a la inclinación igual.
-    const plano = 1 - Math.max(0, Math.min(1, g));
+    // El reverso también se ladea (2026-10-20, «en el reverso la card no se
+    // inclina, como hace el frente»), a la MITAD: plano del todo era para que
+    // el código no se re-muestreara (2026-10-14), pero ladeado unos grados un
+    // lector de una dimensión lo lee igual, y en reposo (`despierta`) la
+    // tarjeta se asienta plana y el código queda píxel a píxel.
+    const plano = 1 - 0.5 * Math.max(0, Math.min(1, g));
     return { g, rx: grados(-y.value * 12 * plano), ry: grados(x.value * 14 * plano), esc: 1 - medio * 0.06 };
   });
   const ladeo = useAnimatedStyle(() => {
@@ -647,7 +646,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
                 </Text>
               </View>
               <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: medidas.m + medidas.arriba, bottom: medidas.m + Math.max(PIE, medidas.holo), alignItems: 'center', justifyContent: 'center' }}>
-                <VentanaCodigo codigo={codigo} medidas={medidas} franja={franja} acento={paleta.acento} fijar={fijar} escaneo={escaneo} barrido={reversoBarrido} />
+                <VentanaCodigo codigo={codigo} medidas={medidas} franja={franja} acento={paleta.acento} imprimir={imprimir} barrido={reversoBarrido} />
               </View>
               <View pointerEvents="none" style={{ position: 'absolute', left: MARGEN_REVERSO, right: MARGEN_REVERSO, bottom: medidas.m, height: Math.max(PIE, medidas.holo), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
@@ -800,59 +799,57 @@ function Canto({ giro, tam, paleta }) {
   );
 }
 
-// La ventana del código (2026-10-20, «que se vea más integrado, con más
-// animaciones»): sin marco. Un vidrio claro, con los colores medidos de
-// `tintasDeFranja`, que se ilumina con su propio tono sobre el material (la
-// sombra va del color del vidrio: parece que la luz sale de él). Encima:
-//   · el VISOR, cuatro esquinas por fuera del vidrio que se cierran sobre el
-//     código al girar la tarjeta (`fijar`) y laten con la luz que la cruza
-//     cada pocos segundos (`barrido`);
-//   · la línea del lector, que lo barre una vez al llegar (`escaneo`).
-// El vidrio y el código no se transforman nunca: quedan píxel a píxel.
-const LASER = '#FF2D55';
-function VentanaCodigo({ codigo, medidas, franja, acento, fijar, escaneo, barrido }) {
+// La ventana del código (2026-10-20; rehecha el mismo día: «quita la línea
+// roja y las esquinas; mejor anima el código de barras, haz más pequeño el
+// cuadro blanco»). Un vidrio claro CEÑIDO a las barras —la zona de silencio ya
+// va dentro del dibujo—, con los colores medidos de `tintasDeFranja`, que se
+// ilumina con su propio tono sobre el material. El rótulo va DEBAJO, fuera
+// del vidrio, en el blanco de la tarjeta.
+//   · Al girar la tarjeta (`imprimir`): el vidrio sube y se asienta, y las
+//     barras se IMPRIMEN de izquierda a derecha detrás de un filo de luz del
+//     color del nivel.
+//   · Después, el brillo del vidrio LATE con la luz que cruza la tarjeta
+//     cada pocos segundos (`barrido`): sólo la sombra, nada sobre las barras.
+// Quieto, ni el vidrio ni las barras llevan transformación: píxel a píxel.
+function VentanaCodigo({ codigo, medidas, franja, acento, imprimir, barrido }) {
   const { ventana, barras, anchoBarras } = medidas;
-  const visor = useAnimatedStyle(() => {
+  const vidrio = useAnimatedStyle(() => {
+    const r = imprimir.value;
     const b = barrido ? barrido.value : 0;
     const late = b > 0 && b < 1 ? Math.sin(b * Math.PI) : 0;
-    const f = fijar.value;
-    return {
-      opacity: Math.max(0, Math.min(1, f * 1.4)),
-      transform: [{ scaleX: 1 + (1 - f) * 0.14 + late * 0.025 }, { scaleY: 1 + (1 - f) * 0.4 + late * 0.06 }],
-    };
+    const base = { shadowOpacity: 0.45 + late * 0.4, shadowRadius: 12 + late * 8 };
+    if (r >= 1) return { ...base, opacity: 1, transform: [{ translateY: 0 }] };
+    const sube = Math.min(1, r * 2.2);
+    return { ...base, opacity: sube, transform: [{ translateY: alPixel((1 - sube) * 8) }, { scale: 0.96 + sube * 0.04 }] };
   });
-  const linea = useAnimatedStyle(() => {
-    const e = escaneo.value;
-    return { opacity: e > 0 && e < 1 ? Math.sin(e * Math.PI) : 0, transform: [{ translateY: e * (ventana.alto - 8) }] };
+  // El velo que tapa lo que falta imprimir: se achica hacia la derecha.
+  const velo = useAnimatedStyle(() => {
+    const r = imprimir.value;
+    return r >= 1 ? { width: 0, opacity: 0 } : { width: (1 - r) * (anchoBarras + 14), opacity: 1 };
   });
   return (
-    <View style={{ width: ventana.ancho, height: ventana.alto }}>
-      <View style={[estilos.ventana, { width: ventana.ancho, height: ventana.alto, backgroundColor: franja.tinte, shadowColor: franja.tinte }]}>
-        <View style={[StyleSheet.absoluteFill, { borderRadius: 14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', gap: 4 }]}>
-          {/* El brillo del vidrio: una luz arriba, sobre el rótulo y no sobre las barras. */}
-          <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0.7)', 'rgba(255,255,255,0)']}
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 10 }} />
-          <Text maxFontSizeMultiplier={1} numberOfLines={1} style={[estilos.escanea, { color: franja.tinta }]}>
-            {codigo ? 'ESCANEA EN CAJA' : 'TU CÓDIGO ESTARÁ LISTO PRONTO'}
-          </Text>
+    <View style={{ alignItems: 'center', gap: 7 }}>
+      <Animated.View style={[estilos.ventana, { width: ventana.ancho, height: ventana.alto, backgroundColor: franja.tinte, shadowColor: acento }, vidrio]}>
+        <View style={[StyleSheet.absoluteFill, { borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }]}>
           {codigo
             ? <CodigoBarras value={codigo} ancho={anchoBarras} alto={barras} color={franja.tinta} backgroundColor={franja.tinte} />
             : <View style={{ width: anchoBarras, height: barras }} />}
-          <Animated.View pointerEvents="none" style={[estilos.laser, linea]} />
+          {/* El brillo del vidrio: un hilo de luz arriba, fuera de las barras. */}
+          <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0)']}
+            style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 5 }} />
+          <Animated.View pointerEvents="none" style={[{ position: 'absolute', right: 0, top: 0, bottom: 0, backgroundColor: franja.tinte }, velo]}>
+            {/* El filo de luz que va imprimiendo. */}
+            <LinearGradient colors={[`${acento}00`, acento, `${acento}00`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{ position: 'absolute', left: -6, top: 0, bottom: 0, width: 12 }} />
+          </Animated.View>
         </View>
-      </View>
-      <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: -VISOR, right: -VISOR, top: -VISOR, bottom: -VISOR }, visor]}>
-        {ESQUINAS.map((e) => <View key={e.k} style={[estilos.esquina, e.estilo, { shadowColor: acento }]} />)}
       </Animated.View>
+      <Text maxFontSizeMultiplier={1} numberOfLines={1} style={estilos.escanea}>
+        {codigo ? 'ESCANEA EN CAJA' : 'TU CÓDIGO ESTARÁ LISTO PRONTO'}
+      </Text>
     </View>
   );
 }
-const ESQUINAS = [
-  { k: 'ai', estilo: { top: 0, left: 0, borderTopWidth: 2.5, borderLeftWidth: 2.5, borderTopLeftRadius: 9 } },
-  { k: 'ad', estilo: { top: 0, right: 0, borderTopWidth: 2.5, borderRightWidth: 2.5, borderTopRightRadius: 9 } },
-  { k: 'bi', estilo: { bottom: 0, left: 0, borderBottomWidth: 2.5, borderLeftWidth: 2.5, borderBottomLeftRadius: 9 } },
-  { k: 'bd', estilo: { bottom: 0, right: 0, borderBottomWidth: 2.5, borderRightWidth: 2.5, borderBottomRightRadius: 9 } },
-];
 
 // La píldora del saldo a favor (2026-10-20): verde y aparte de los puntos —es
 // dinero, no puntos—. Su punto «late» y una luz la cruza con el mismo barrido
@@ -987,11 +984,9 @@ const estilos = StyleSheet.create({
   saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 9, textShadowOffset: { width: 0, height: 1 } },
   puntos: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', opacity: 0.95, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   // La ventana del código: fondo sólido (la sombra de color sale casi gratis).
-  ventana: { borderRadius: 14, shadowOpacity: 0.65, shadowRadius: 16, shadowOffset: { width: 0, height: 0 } },
-  esquina: { position: 'absolute', width: 18, height: 18, borderColor: '#FFFFFF', shadowOpacity: 0.9, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } },
-  escanea: { fontSize: 8, fontWeight: '900', letterSpacing: 2.4, opacity: 0.7 },
-  laser: { position: 'absolute', left: 8, right: 8, top: 3, height: 2, borderRadius: 1, backgroundColor: LASER,
-    shadowColor: LASER, shadowOpacity: 1, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } },
+  ventana: { borderRadius: 11, shadowOffset: { width: 0, height: 0 } },
+  escanea: { color: 'rgba(255,255,255,0.82)', fontSize: 8.5, fontWeight: '800', letterSpacing: 2.6,
+    textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
   // Las píldoras del pie del reverso.
   pildora: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: 'rgba(0,0,0,0.32)' },
   pildoraTexto: { color: '#FFFFFF', fontSize: 10.5, fontWeight: '800', fontVariant: ['tabular-nums'] },

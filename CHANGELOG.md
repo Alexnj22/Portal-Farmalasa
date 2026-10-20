@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1314.0 — Puntos Salud: foto en el Inicio, código que se imprime, reverso que se inclina y toques animados
+
+**Foto en el Inicio** («para que se sienta más personal»): junto a «Hola, …» va la foto con el aro de su nivel. Sin foto, las iniciales y una cámara que late; al tocarla se elige la foto con una línea que dice para qué es («Personaliza tu app. Sólo la ve el equipo de la farmacia cuando chateas con nosotros.»). Con la sesión de código no hay foto, como en Cuenta. La subida vive en `lib/fotoPerfil.js` (`subirFotoPerfil`) y la usan las dos pantallas.
+
+**Cuenta**: la foto grande al centro con el aro más grueso, el brillo de su nivel y una **placa** con el nombre del nivel en su mismo metal o piedra («BRONCE», «ORO · TEAM», «ZAFIRO»). Antes el aro de 3 pt no decía qué nivel era.
+
+**Reverso**: sin la línea roja ni las esquinas. El vidrio del código es más chico (ceñido a las barras) y el rótulo va debajo; al girar, el vidrio sube y las barras se **imprimen** de izquierda a derecha detrás de un filo de luz del nivel, y después su brillo late con la luz de la tarjeta. El reverso ahora también se **inclina** con el teléfono (a la mitad que el frente; en reposo queda plano).
+
+**Toques animados, nativos**: `Presionable` da a toda pieza que se toca un resorte propio en el hilo de la interfaz — en iPhone se hunde y vuelve con un rebote leve (64 piezas no respondían al toque); en Android, la onda de Material más el hundimiento corto de Material 3 Expressive. Cuánto se hunde sale del tamaño de la pieza. Las tarjetas que se tocan enteras vuelven **interactivo** su Liquid Glass (iOS 26): el sistema las ilumina bajo el dedo.
+
 ## v2.1313.0 — Premios del raspable que no son puntos: producto y regalo promocional
 
 _(pendiente de redactar)_

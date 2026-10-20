@@ -10,8 +10,9 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { ANDROID, LIVIANO } from '../lib/rendimiento';
 import { ONDA } from './Presionable';
-import { M3, PRESION, SUELTA } from './movimiento';
+import { M3, PRESION, SUELTA, SUELTA_TOQUE } from './movimiento';
 import Icono from './Icono';
+import { EnTocable } from './Vidrio';
 
 const PressableAnimado = Animated.createAnimatedComponent(Pressable);
 
@@ -176,10 +177,13 @@ export function Tocable({ alTocar, onPress, children, estilo, etiqueta, ...resto
       accessibilityLabel={etiqueta}
       {...resto}
       onPressIn={() => { s.value = withSpring(0.97, PRESION); }}
-      onPressOut={() => { s.value = withSpring(1, SUELTA); }}
+      onPressOut={() => { s.value = withSpring(1, SUELTA_TOQUE); }}
       onPress={(e) => { Haptics.selectionAsync().catch(() => {}); alTocar?.(); onPress?.(e); }}
     >
-      <Animated.View style={[estilo, animado]}>{children}</Animated.View>
+      {/* El vidrio de adentro responde al dedo con la luz del Liquid Glass (Vidrio). */}
+      <EnTocable.Provider value>
+        <Animated.View style={[estilo, animado]}>{children}</Animated.View>
+      </EnTocable.Provider>
     </Pressable>
   );
 }

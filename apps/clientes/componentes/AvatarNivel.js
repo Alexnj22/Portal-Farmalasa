@@ -33,10 +33,15 @@ function iniciales(nombre) {
   return `${p[0]?.[0] ?? ''}${ap?.[0] ?? ''}`.toUpperCase();
 }
 
-export default function AvatarNivel({ nombre, material, equipo = false, uri, clave, tam = 64, atenuado = false }) {
+// `insignia` (2026-10-20, Cuenta: «el aro no se distingue qué nivel es, dame
+// una mejor presentación»): debajo de la foto, montada sobre el aro, una
+// placa con el NOMBRE del nivel en su mismo metal o piedra (y «TEAM» si es del
+// equipo). El aro además es más grueso y brilla del tono del nivel: con 3 pt
+// de metal sobre la aurora, Oro y Bronce se confundían.
+export default function AvatarNivel({ nombre, material, equipo = false, uri, clave, tam = 64, atenuado = false, insignia = false }) {
   const t = useTema();
   const paleta = material ? (COLORES_NIVEL[material === 'vip' ? 'bronce' : material] ?? null) : equipo ? COLORES_NIVEL.empleado : null;
-  const anillo = 3;
+  const anillo = insignia ? Math.max(4, Math.round(tam * 0.055)) : 3;
   const hueco = 1.5;
   const interior = tam - 2 * (anillo + hueco);
   // El hueco va del tono hondo del mismo material (un bisel), no del fondo:
@@ -58,7 +63,7 @@ export default function AvatarNivel({ nombre, material, equipo = false, uri, cla
     </View>
   );
   if (!paleta) return <View style={{ width: tam, height: tam, alignItems: 'center', justifyContent: 'center' }}>{cara}</View>;
-  return (
+  const aro = (
     // El anillo: el metal de la tarjeta (tono → reflejo → hondo → reflejo) y,
     // entre el anillo y la foto, un bisel fino del tono hondo.
     <LinearGradient colors={[paleta.frente[1], paleta.acento, paleta.frente[0], paleta.acento]} locations={[0, 0.35, 0.7, 1]}
@@ -68,5 +73,27 @@ export default function AvatarNivel({ nombre, material, equipo = false, uri, cla
         {cara}
       </View>
     </LinearGradient>
+  );
+  if (!insignia) return aro;
+  const claveNivel = material === 'vip' ? 'bronce' : material;
+  const nombreNivel = material ? (NOMBRE_RANGO[claveNivel] ?? NOMBRE_NIVEL[claveNivel] ?? '') : '';
+  const rotulo = [nombreNivel, equipo ? 'Team' : null].filter(Boolean).join(' · ').toUpperCase();
+  return (
+    <View style={{ width: tam, height: tam + 12, alignItems: 'center' }}>
+      {/* El brillo del nivel alrededor del aro. */}
+      <View style={{ width: tam, height: tam, borderRadius: tam / 2, shadowColor: paleta.acento, shadowOpacity: 0.7, shadowRadius: 14, shadowOffset: { width: 0, height: 0 },
+        backgroundColor: paleta.frente[0] }}>
+        {aro}
+      </View>
+      {rotulo ? (
+        <LinearGradient colors={[paleta.frente[0], paleta.frente[1], paleta.frente[2] ?? paleta.frente[0]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ position: 'absolute', bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 24, borderRadius: 12,
+            borderWidth: 1.5, borderColor: paleta.acento }}>
+          <Icono sf={MAYOREO.includes(claveNivel) ? 'diamond.fill' : 'crown.fill'} respaldo="★" tam={10} color="#FFFFFF" />
+          <Text maxFontSizeMultiplier={1.2} numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 1.4,
+            textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } }}>{rotulo}</Text>
+        </LinearGradient>
+      ) : null}
+    </View>
   );
 }

@@ -18,6 +18,7 @@ import { Image } from 'expo-image';
 import { create } from 'zustand';
 import { useCuenta } from './cuenta';
 import { useSesion } from './sesion';
+import { subirFoto } from './fotos';
 
 const CLAVE = 'puntos_salud_foto_perfil';
 
@@ -58,6 +59,19 @@ async function leerGuardada(codigo) {
       useFotoPerfil.setState({ codigo, url: v.url, clave: v.clave ?? claveDeFoto(v.url), quitada: false });
     }
   } catch { /* nada guardado */ }
+}
+
+// Para qué es la foto, en una línea (2026-10-20, «que explique de forma
+// corta y concisa para qué se usa»): lo dicen igual el Inicio y Cuenta.
+export const PARA_QUE_FOTO = 'Personaliza tu app. Sólo la ve el equipo de la farmacia cuando chateas con nosotros.';
+
+/** Sube la foto elegida y la deja puesta. Devuelve la respuesta del servidor. */
+export async function subirFotoPerfil(codigo, uri) {
+  const pedir = useSesion.getState().pedir;
+  const s = await subirFoto(pedir, 'perfil_subir_url', {}, uri);
+  const r = s.ok ? await pedir('perfil_confirmar', { ruta: s.ruta }) : s;
+  if (r?.ok) useFotoPerfil.getState().poner(codigo, { url: r.foto_url ?? uri, quitada: false });
+  return r;
 }
 
 /** Pide `perfil` y deja la foto al día. Devuelve la respuesta del servidor. */

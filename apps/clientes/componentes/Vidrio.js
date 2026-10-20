@@ -17,9 +17,17 @@ const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassA
  */
 export const SinVidrio = createContext(false);
 
+/**
+ * `true` dentro de algo que se toca entero (`Tocable`, 2026-10-20): el Liquid
+ * Glass se vuelve INTERACTIVO — el sistema lo ilumina y lo flexa bajo el dedo,
+ * como los controles de iOS 26. Sin vidrio vivo (`SinVidrio`) no aplica.
+ */
+export const EnTocable = createContext(false);
+
 export default function Vidrio({ style, children, radio = 22, interactivo = false, tinte, elevacion = 0 }) {
   const oscuro = useColorScheme() === 'dark';
   const sinVidrio = useContext(SinVidrio);
+  const enTocable = useContext(EnTocable);
   const forma = { borderRadius: radio, overflow: 'hidden' };
   // Sin tinte propio, un velo del fondo del sistema: el Liquid Glass «regular»
   // es casi transparente y sobre la aurora el texto quedaba encima del color
@@ -49,7 +57,7 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
     const base = oscuro ? 'rgba(18,16,24,0.42)' : 'rgba(255,255,255,0.46)';
     return (
       <View style={[forma, { backgroundColor: base }, style]}>
-        <GlassView glassEffectStyle="regular" isInteractive={interactivo} tintColor={tinte ?? velo}
+        <GlassView glassEffectStyle="regular" isInteractive={interactivo || enTocable} tintColor={tinte ?? velo}
           style={StyleSheet.absoluteFill} pointerEvents="none" />
         {children}
       </View>

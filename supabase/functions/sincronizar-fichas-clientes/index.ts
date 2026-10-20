@@ -266,7 +266,8 @@ Deno.serve(async (req) => {
         res.distrito_escrito++;
         correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "distrito",
                             antes: "", despues: eleccion.value,
-                            motivo: c.origen === "rechazo" ? "rechazo_distrito" : "sin_distrito" });
+                            motivo: c.origen === "rechazo" && c.campo === "distrito"
+                              ? "rechazo_distrito" : "sin_distrito" });
         detalle.push({ ficha: c.name, accion: "distrito", motivo: eleccion.motivo });
       } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
       else { res.fallidas++; detalle.push({ ficha: c.name, accion: "distrito", error: w.motivo }); }
@@ -276,6 +277,9 @@ Deno.serve(async (req) => {
       if (!queda()) { res.cortada_por_tiempo = true; break; }
       try {
         let erpId = c.erp_id;
+        // La cadena de abajo toma UNA rama por ficha. Si la toma el correo, el
+        // DUI o el teléfono, el distrito que falta se completa igual al final.
+        let ramaDeOtroCampo = false;
 
         // ── 1 · Resolver el número, leyendo una factura suya ──────────
         if (!erpId) {
@@ -393,6 +397,7 @@ Deno.serve(async (req) => {
           });
           res.a_revisar++;
         } else if (c.campo === "email") {
+          ramaDeOtroCampo = true;
           // ── El correo del receptor ───────────────────────────────────────
           //
           // Regla del usuario, 2026-08-24: «si no es .com y le han puesto .con
@@ -537,6 +542,7 @@ Deno.serve(async (req) => {
             await derivarDistrito(c, erpId, ficha);
           }
         } else if (c.campo === "dui" || duiValido(ficha.campos.dui) === false) {
+          ramaDeOtroCampo = true;
           // Regla ③ de bloque: un DUI que no cumple el algoritmo se borra. La
           // ficha queda limpia y el dato sigue disponible para corregirlo.
           const antes = ficha.campos.dui ?? "";
@@ -558,6 +564,7 @@ Deno.serve(async (req) => {
             else { res.fallidas++; detalle.push({ ficha: c.name, accion: "dui", error: w.motivo }); }
           }
         } else if (c.campo === "phone" || !telefonoValido(ficha.campos.telefono1)) {
+          ramaDeOtroCampo = true;
           // Un teléfono que no cumple se reemplaza por el de la empresa — no se
           // borra. Es la diferencia con el DUI: un DUI inventado sería un dato
           // falso de identidad, mientras que el teléfono es un contacto y
@@ -624,6 +631,23 @@ Deno.serve(async (req) => {
           } else if (esRechazoPorDuplicado(u.motivo)) { aRevisarDuplicado(c, erpId, u.motivo); }
           else { res.fallidas++; detalle.push({ ficha: c.name, accion: "ubicación", error: u.motivo }); }
         } else if (!ficha.campos.distrito) {
+          await derivarDistrito(c, erpId, ficha);
+        }
+
+        // ── 2b · El distrito que falta, aunque la rama fuera otra ─────
+        //
+        // Medido el 2026-10-19: dos fichas nuevas de Salud 4 (28816, 28817)
+        // llegaron sin teléfono Y sin distrito. La corrida de las 21:30 tomó la
+        // rama del teléfono, el distrito quedó vacío, y a las 22:30 Hacienda
+        // rechazó sus dos COF por `receptor.direccion.distrito`. Una ficha con
+        // dos datos faltantes necesitaba dos noches — y la segunda llegaba con
+        // el documento ya rechazado.
+        //
+        // Sólo con municipio: sin él no hay de dónde derivar, y eso lo resuelve
+        // la regla ① la noche siguiente. `solo_distrito` entra a propósito —
+        // completar el distrito que falta es justo lo que se le permite.
+        if (ramaDeOtroCampo && c.alcance_escritura !== "ninguno"
+            && ficha.campos.municipio && !ficha.campos.distrito) {
           await derivarDistrito(c, erpId, ficha);
         }
 

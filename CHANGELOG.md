@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1312.1 — Fichas: el distrito que falta se completa aunque se corrija otro dato; la segunda vuelta del envío sigue en segundo plano
+
+**Dos COF de Salud 4 rechazados por el distrito y sin corregir esa noche** («¿por qué no se corrigieron?»). Dos clientes nuevos (28816, 28817) llegaron sin teléfono y sin distrito. A las 21:30 la corrección de fichas tomó la rama del teléfono —una rama por ficha— y el distrito quedó vacío; a las 22:30 Hacienda rechazó los dos documentos.
+
+- **`sincronizar-fichas-clientes`**: si la ficha se corrigió por correo, DUI o teléfono y le falta el distrito, ahora también se le deriva el distrito dentro de su municipio. Una ficha con dos datos faltantes ya no necesita dos noches.
+- **`regularizar-dte`**: la segunda vuelta (corregir fichas rechazadas y reenviar) se saltaba con «sin tiempo en esta corrida» cuando la ida pasaba de 50 s — esa noche, 23 pendientes y 11 anuladas. En la corrida del cron ahora sigue en segundo plano (`EdgeRuntime.waitUntil`) y deja su resultado en `audit_logs` como `DTE_SEGUNDA_VUELTA`. El botón de una factura no cambia.
+
 ## v2.1312.0 — Puntos Salud: reverso con visor, giro nítido, Inicio compacto y textos cortos
 
 **Reverso sin banda magnética** («no me gusta»): arriba, como el frente, la marca y «CLIENTE · ORO»; al centro el código en un vidrio claro que brilla con su propio tono sobre el material, sin marco, con un **visor** de cuatro esquinas que se cierra sobre él al girar la tarjeta, la línea del lector que lo barre una vez y un latido con la luz que cruza la tarjeta; abajo, puntos, saldo a favor y holograma. El vidrio y las barras no se transforman nunca.

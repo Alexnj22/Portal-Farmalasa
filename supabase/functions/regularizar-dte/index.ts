@@ -601,37 +601,87 @@ Deno.serve(async (req) => {
       const MARGEN_SEGUNDA_VUELTA_MS = 60_000;
       const hayTiempo = Date.now() - arranque < PRESUPUESTO_MS - MARGEN_SEGUNDA_VUELTA_MS;
 
+      // La cadena: corregir las fichas rechazadas y, si algo cambió, reenviar.
+      // Devuelve lo que pasó en vez de escribir variables de afuera, porque
+      // también corre en segundo plano, cuando la respuesta ya salió.
+      const cadena = async () => {
+        const cab = { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` };
+        const rFichas = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sincronizar-fichas-clientes`, {
+          method: "POST", headers: cab,
+          body: JSON.stringify({
+            alcance: "rechazos",
+            ...(clienteDeLaFactura ? { customer_id: clienteDeLaFactura } : {}),
+          }),
+          signal: AbortSignal.timeout(120_000),
+        });
+        const f = await rFichas.json().catch(() => ({}));
+        // Todo lo que cambia lo que el sistema le va a mandar a Hacienda. Una
+        // fusión cuenta: reapunta la factura a OTRA ficha, así que el receptor
+        // del documento deja de ser el mismo.
+        const n = (f?.distrito_escrito ?? 0) + (f?.ubicacion_por_defecto ?? 0)
+                + (f?.dui_borrado ?? 0) + (f?.telefono_puesto ?? 0) + (f?.fusionadas ?? 0);
+        if (!n) return { corregidas: 0, motivo: "la corrección de fichas no cambió nada", r2: null };
+        // El reenvío conserva el alcance del llamador: apretar el botón de
+        // UNA factura no puede terminar mandando las de toda la empresa.
+        const rEnvio = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
+          method: "POST", headers: cab,
+          body: JSON.stringify({ alcance, invoice_id, branch_id, bolsa,
+                                 ...(soloCcf ? { tipo: "CCF" } : {}), segundaVuelta: true }),
+          signal: AbortSignal.timeout(120_000),
+        });
+        const r2 = await rEnvio.json().catch(() => ({}));
+        return { corregidas: n, motivo: null, r2 };
+      };
+
       if (!corregibles) segundaVueltaMotivo = "ningún rechazo se corrige solo";
+      else if (!hayTiempo && esCron && alcance !== "una") {
+        // ── Sin tiempo en la respuesta: la cadena sigue en segundo plano ──
+        //
+        // Medido el 2026-10-19: 23 pendientes + 11 anuladas comieron más de
+        // 50 s, la vuelta se saltó con «sin tiempo en esta corrida», y dos COF
+        // de Salud 4 rechazados por el distrito quedaron para la noche
+        // siguiente. El motivo quedaba anotado, pero nadie lo leía como «hay
+        // dos documentos trabados».
+        //
+        // Al cron no lo espera nadie, así que la respuesta no tiene por qué
+        // esperar a la cadena: `waitUntil` la deja correr después. El techo es
+        // el reloj de pared del worker (400 s en Pro): ≤110 s de la ida más
+        // ≤120 s por cada llamada encadenada entran. Al botón de UNA factura sí
+        // lo espera una persona, y ése nunca se queda sin tiempo.
+        //
+        // En segundo plano no hay respuesta que lo cuente: el reenvío anota su
+        // propia corrida, y lo que no llega a reenviar se anota acá.
+        segundaVueltaMotivo = "en segundo plano";
+        // @ts-ignore — EdgeRuntime es global del runtime de Supabase
+        EdgeRuntime.waitUntil((async () => {
+          let resumen: Record<string, unknown>;
+          try {
+            const c = await cadena();
+            resumen = { fichas_corregidas: c.corregidas, segunda_vuelta: !!c.r2,
+                        motivo: c.motivo, resueltas: c.r2?.resueltas ?? null,
+                        fallidas: c.r2?.fallidas ?? null };
+          } catch (e) {
+            resumen = { segunda_vuelta: false, motivo: "falló la cadena",
+                        error: e instanceof Error ? e.message : String(e) };
+          }
+          const { error } = await admin.from("audit_logs").insert({
+            action: "DTE_SEGUNDA_VUELTA", target_id: soloCcf ? "ccf" : alcance, user_id: null,
+            user_name: "Barrido automático", source: "SYSTEM",
+            severity: resumen.segunda_vuelta && !resumen.fallidas ? "INFO" : "WARNING",
+            details: resumen,
+          });
+          if (error) console.error("segunda vuelta en segundo plano (registro):", error.message);
+        })());
+      }
       else if (!hayTiempo) segundaVueltaMotivo = "sin tiempo en esta corrida";
       else {
         try {
-          const cab = { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` };
-          const rFichas = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sincronizar-fichas-clientes`, {
-            method: "POST", headers: cab,
-            body: JSON.stringify({
-              alcance: "rechazos",
-              ...(clienteDeLaFactura ? { customer_id: clienteDeLaFactura } : {}),
-            }),
-            signal: AbortSignal.timeout(120_000),
-          });
-          const f = await rFichas.json().catch(() => ({}));
-          // Todo lo que cambia lo que el sistema le va a mandar a Hacienda. Una
-          // fusión cuenta: reapunta la factura a OTRA ficha, así que el receptor
-          // del documento deja de ser el mismo.
-          corregidas = (f?.distrito_escrito ?? 0) + (f?.ubicacion_por_defecto ?? 0)
-                     + (f?.dui_borrado ?? 0) + (f?.telefono_puesto ?? 0) + (f?.fusionadas ?? 0);
-          if (!corregidas) {
-            segundaVueltaMotivo = "la corrección de fichas no cambió nada";
+          const c = await cadena();
+          corregidas = c.corregidas;
+          if (!c.r2) {
+            segundaVueltaMotivo = c.motivo;
           } else {
-            // El reenvío conserva el alcance del llamador: apretar el botón de
-            // UNA factura no puede terminar mandando las de toda la empresa.
-            const rEnvio = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
-              method: "POST", headers: cab,
-              body: JSON.stringify({ alcance, invoice_id, branch_id, bolsa,
-                                     ...(soloCcf ? { tipo: "CCF" } : {}), segundaVuelta: true }),
-              signal: AbortSignal.timeout(120_000),
-            });
-            const r2 = await rEnvio.json().catch(() => ({}));
+            const r2 = c.r2;
             segundaVueltaHecha = true;
             // ── El número que se informa es el FINAL, no el de la ida ──────
             // Sin esto, «Solventar» decía «1 no se pudo» sobre una factura que

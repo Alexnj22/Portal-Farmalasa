@@ -1293,6 +1293,7 @@ export type Database = {
           acepta_avisos: boolean | null
           alcance: string
           avisos_formato: number
+          avisos_responde: boolean
           created_at: string
           customer_id: number | null
           dispositivo: string | null
@@ -1308,6 +1309,7 @@ export type Database = {
           acepta_avisos?: boolean | null
           alcance?: string
           avisos_formato?: number
+          avisos_responde?: boolean
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null
@@ -1323,6 +1325,7 @@ export type Database = {
           acepta_avisos?: boolean | null
           alcance?: string
           avisos_formato?: number
+          avisos_responde?: boolean
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null

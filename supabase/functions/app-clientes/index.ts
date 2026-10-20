@@ -1370,8 +1370,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // `formato` (2026-10-20): 2 = la app ya creó el canal secreto de Android
       // (_shared/avisoPrivado.ts). Una versión vieja no lo manda: queda en 1.
       const formato = Number(body?.formato) === 2 ? 2 : 1;
+      // `responde` (2026-10-20): la app registró la categoría `chat` con «Responder».
+      const responde = body?.responde === true;
       const { error } = await admin.from("app_cliente_sesiones")
-        .update({ acepta_avisos: acepta, push_token: pushToken, avisos_formato: formato }).eq("id", ses.id);
+        .update({ acepta_avisos: acepta, push_token: pushToken, avisos_formato: formato, avisos_responde: responde }).eq("id", ses.id);
       if (error) throw error;
       return json({ ok: true, acepta });
     }

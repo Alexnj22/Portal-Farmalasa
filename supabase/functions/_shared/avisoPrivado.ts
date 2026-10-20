@@ -42,6 +42,10 @@ export const TIPOS_PRIVADOS = new Set(["reserva", "encargo", "inyeccion", "trata
 
 /** Debe coincidir con apps/clientes/lib/avisos.js (sin «:» ni «-»: Expo lo pide). */
 export const CATEGORIA_PRIVADA = "privado";
+// El chat con «Responder» desde el aviso (2026-10-20): la misma privacidad que
+// `privado` y un botón con campo de texto. Sólo a las apps que lo declararon
+// (`app_cliente_sesiones.avisos_responde`).
+export const CATEGORIA_CHAT = "chat";
 /** Ídem. Un canal de Android no se puede cambiar una vez creado: por eso es uno NUEVO. */
 export const CANAL_PRIVADO = "privados";
 /** Ídem: el canal SECRETO de Android (formato 2). */
@@ -61,13 +65,14 @@ export interface AvisoPush {
  * Android, que es el camino que nunca deja ver el producto bloqueado.
  * `formato` es `app_cliente_sesiones.avisos_formato` (2 = tiene el canal secreto).
  */
-export function mensajePush(a: AvisoPush, to: string, plataforma: string | null | undefined, formato?: number | null) {
+export function mensajePush(a: AvisoPush, to: string, plataforma: string | null | undefined, formato?: number | null, responde = false) {
   const base = { to, title: a.titulo, sound: "default" };
   if (!TIPOS_PRIVADOS.has(a.tipo)) return { ...base, body: a.cuerpo, data: { url: a.url, tipo: a.tipo } };
   // El texto entero viaja en `data` para el banner de la app (lib/avisos.js).
   const data = { url: a.url, tipo: a.tipo, cuerpo: a.cuerpo };
-  if (plataforma === "ios") return { ...base, body: a.cuerpo, categoryId: CATEGORIA_PRIVADA, data };
-  if (plataforma === "android" && (formato ?? 1) >= 2) return { ...base, body: a.cuerpo, channelId: CANAL_OCULTO, data };
+  const conRespuesta = responde && a.tipo === "chat" ? { categoryId: CATEGORIA_CHAT } : null;
+  if (plataforma === "ios") return { ...base, body: a.cuerpo, categoryId: CATEGORIA_PRIVADA, data, ...conRespuesta };
+  if (plataforma === "android" && (formato ?? 1) >= 2) return { ...base, body: a.cuerpo, channelId: CANAL_OCULTO, data, ...conRespuesta };
   return {
     ...base, body: a.cuerpoPublico || GENERICO[a.tipo] || "Toca para ver el detalle.",
     channelId: CANAL_PRIVADO, data,

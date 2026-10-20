@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1316.4 — Chat de Puntos Salud: responder desde la notificación
+
+Etapa 3 del chat (2026-10-20): **responder desde la notificación**, sin abrir la app, como WhatsApp o Mensajes. El aviso de una respuesta de la farmacia trae el botón «Responder» con campo de texto (categoría `chat`, con la misma privacidad de pantalla bloqueada que `privado` en iPhone); lo escrito se manda con `chat_enviar` aunque la app esté cerrada (espera hasta 10 s a que la sesión se lea del llavero) y, si no sale, un aviso local lo dice. Sólo a las apps que lo declaran (`app_cliente_sesiones.avisos_responde`, migración `20261020165300`): a una versión vieja le sigue llegando el aviso de siempre. La app lo declara sola al abrir, al activar los avisos en Cuenta y en la guía.
+
 ## v2.1316.3 — Premios: se retiran en cualquier sucursal; apartar o pedir el regalo
 
 _(pendiente de redactar)_

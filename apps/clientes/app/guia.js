@@ -493,7 +493,7 @@ function Permisos({ resumen }) {
     setMensaje(null); setAvisos('cargando');
     const r = await pedirTokenDeAvisos().catch(() => ({ error: 'No se pudieron activar los avisos. Intenta más tarde.' }));
     if (r.error) { setMensaje(r.error); setAvisos(null); return; }
-    const g = await pedir('avisos', { acepta: true, push_token: r.token, formato: r.formato });
+    const g = await pedir('avisos', { acepta: true, push_token: r.token, formato: r.formato, responde: !!r.responde });
     if (!g?.ok) { setMensaje(g?.mensaje ?? 'No se pudo guardar. Puedes activarlos después en Cuenta.'); setAvisos(null); return; }
     await recordarAvisos(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

@@ -60,6 +60,21 @@ if (Platform.OS === 'ios') {
   }).catch(() => { /* sin la categoría iOS esconde título y cuerpo: nunca peor */ });
 }
 
+// Responder el chat DESDE EL AVISO (2026-10-20, «como las apps de mensajería»):
+// la categoría `chat` lleva el botón «Responder» con campo de texto —sin abrir
+// la app— y, en iPhone, la misma privacidad que `privado`. Se declara al
+// servidor (`responde`) sólo si se registró: a una app vieja le sigue llegando
+// el aviso de siempre.
+export const CATEGORIA_CHAT = 'chat';
+export const ACCION_RESPONDER = 'responder';
+const categoriaChat = Platform.OS === 'web' ? Promise.resolve(false)
+  : Notifications.setNotificationCategoryAsync(CATEGORIA_CHAT, [{
+    identifier: ACCION_RESPONDER, buttonTitle: 'Responder',
+    textInput: { submitButtonTitle: 'Enviar', placeholder: 'Escribe tu respuesta' },
+    options: { opensAppToForeground: false },
+  }], Platform.OS === 'ios' ? { showTitle: true, previewPlaceholder: 'Toca para ver el detalle' } : undefined)
+    .then(() => true).catch(() => false);
+
 // Quien quiera enterarse de un aviso que llegó con la app abierta: el banner,
 // la campana (para sumar uno) y la bandeja (para recargarse si está a la vista).
 const oyentes = new Set();
@@ -121,7 +136,7 @@ export async function pedirTokenDeAvisos() {
   if (!projectId) return { error: 'Los avisos todavía no están disponibles.' };
   try {
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
-    return { token: data, formato };
+    return { token: data, formato, responde: await categoriaChat };
   } catch {
     return { error: 'No se pudieron activar los avisos. Intenta más tarde.' };
   }
@@ -152,9 +167,38 @@ export async function sincronizarAvisos(pedir, aceptaEnServidor) {
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') return; // nunca se pide el permiso sin que la persona lo active
     const r = await pedirTokenDeAvisos();
-    if (r.token) await pedir('avisos', { acepta: true, push_token: r.token, formato: r.formato });
+    if (r.token) await pedir('avisos', { acepta: true, push_token: r.token, formato: r.formato, responde: !!r.responde });
   } catch { /* sin red: se reintenta en la próxima apertura */ }
 }
 
 /** Al cerrar sesión, la próxima apertura vuelve a sincronizar. */
 export function olvidarSincronizacion() { sincronizado = false; }
+
+// Lo escrito en «Responder» del aviso del chat (2026-10-20): se manda sin abrir
+// la app. Con la app cerrada, el sistema la despierta en segundo plano y la
+// sesión tarda un momento en leerse del llavero: se la espera hasta 10 s. Si no
+// sale, un aviso local lo dice (lo escrito no se pierde en silencio).
+const respondidas = new Set();
+export const esRespuestaDeAviso = (r) => r?.actionIdentifier === ACCION_RESPONDER;
+async function responderDesdeAviso(r) {
+  if (!esRespuestaDeAviso(r)) return;
+  const id = r.notification?.request?.identifier ?? '';
+  const texto = String(r.userText ?? '').trim().slice(0, 2000);
+  Notifications.clearLastNotificationResponseAsync?.().catch?.(() => {});
+  if (!texto || respondidas.has(id)) return;
+  respondidas.add(id);
+  // Perezoso: `sesion` importa este archivo.
+  const { useSesion } = require('./sesion');
+  for (let i = 0; i < 40 && !useSesion.getState().token; i += 1) await new Promise((listo) => setTimeout(listo, 250));
+  const res = await Promise.resolve(useSesion.getState().pedir?.('chat_enviar', { texto })).catch(() => null);
+  if (!res?.ok) {
+    Notifications.scheduleNotificationAsync({
+      content: { title: 'No se envió tu respuesta', body: 'Abre el chat para intentarlo de nuevo.', data: { url: '/chat', tipo: 'chat' } },
+      trigger: null,
+    }).catch(() => {});
+  }
+}
+if (Platform.OS !== 'web') {
+  Notifications.addNotificationResponseReceivedListener((r) => { responderDesdeAviso(r); });
+  Notifications.getLastNotificationResponseAsync().then((r) => { if (r) responderDesdeAviso(r); }).catch(() => {});
+}

@@ -23,6 +23,7 @@ import { useTema } from '../tema/tema';
 import { colorSistema } from '../componentes/sistema';
 import { navegar } from '../lib/navegar';
 import { esAccionDeToma, instalarTomas } from '../lib/tomas';
+import { esRespuestaDeAviso } from '../lib/avisos';
 import AvisoSinConexion from '../componentes/AvisoSinConexion';
 import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
 import NovedadesHoja from '../componentes/NovedadesHoja';
@@ -170,6 +171,8 @@ function AbrirAviso() {
     const ir = (r) => {
       // Un botón del recordatorio de tomas no abre nada: lo atiende lib/tomas.
       if (esAccionDeToma(r)) return;
+      // «Responder» del aviso del chat: lo manda lib/avisos, sin abrir nada.
+      if (esRespuestaDeAviso(r)) return;
       const url = r?.notification?.request?.content?.data?.url;
       if (typeof url === 'string' && url.startsWith('/')) {
         if (bloqueoTapa(useBloqueo.getState())) pendiente.current = url;

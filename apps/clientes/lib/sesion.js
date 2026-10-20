@@ -9,6 +9,7 @@ import { olvidarTodo } from './sinConexion';
 import { useCarrito } from './carrito';
 import { olvidarTomas } from './tomas';
 import { olvidarVistos } from './catalogo';
+import { useModoPrueba } from './prueba';
 
 const CLAVE = 'puntos_salud_sesion';
 // El ALCANCE de la sesión (2026-10-19): 'codigo' si se entró con el código de
@@ -66,6 +67,8 @@ export const useSesion = create((set, get) => ({
     if (a) await almacenAlcance.guardar(a).catch(() => {});
     else await almacenAlcance.borrar().catch(() => {});
     olvidarSincronizacion(); // la sesión nueva retoma los avisos del teléfono
+    // Entrar de verdad termina la vista «entró con el código» del modo de prueba.
+    useModoPrueba.getState().ponerDemo({ vistaCodigo: false });
     set({ token, alcance: a, completando: false, lista: true, motivoCierre: null });
   },
 
@@ -114,6 +117,12 @@ export const useSesion = create((set, get) => ({
 export const plataforma = Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web';
 
 /** ¿La sesión es de CÓDIGO (limitada)? Lo que no se sabe todavía cuenta como completa: el servidor igual lo niega. */
-export const useConCodigo = () => useSesion((s) => !!s.token && s.alcance === 'codigo');
+// Con el modo de prueba (2026-10-20) también se puede VER así sin serlo: el
+// servidor sigue dando todo, pero la app se muestra como con el código.
+export const useConCodigo = () => {
+  const real = useSesion((s) => !!s.token && s.alcance === 'codigo');
+  const demo = useModoPrueba((s) => s.cuentaDePrueba && s.vistaCodigo);
+  return real || demo;
+};
 /** Lo que se le dice a quien entró con el código, en cualquier pantalla. */
 export const MENSAJE_CODIGO = 'Para ver esto, entra con tu DUI y teléfono.';

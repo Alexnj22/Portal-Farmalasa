@@ -20,6 +20,9 @@ export const NIVELES_PRUEBA = [
 ];
 const claveServidor = (c) => (c === 'bronce' ? 'vip' : c);
 
+// Lo del demo que vive sólo en memoria, apagado.
+const DEMO_INICIAL = { saldoFavor: 'no', reservasMuestra: false, cambiosReservas: {}, vistaCodigo: false };
+
 export const useModoPrueba = create((set) => ({
   activo: false,
   nivel: 'oro',
@@ -43,6 +46,42 @@ export const useModoPrueba = create((set) => ({
   simularPuntos: (n) => set((e) => ({ ajuste: e.ajuste + n })),
   verCuponUsado: (v) => set({ cuponUsado: v }),
   verAnimacionCupon: () => set((e) => ({ cuponUsado: false, demoCupon: e.demoCupon + 1 })),
+  // ── El demo (2026-10-20): todo en MEMORIA, nada se guarda ni se manda. ──
+  // ¿El último resumen dijo `prueba: true`? Lo pone lib/cuenta.js con cada
+  // resumen. Sin eso, lo de abajo no se aplica en ninguna pantalla (lib/demo.js)
+  // y, si estaba encendido, se apaga: otra cuenta en el mismo teléfono —la del
+  // revisor de las tiendas, por ejemplo— no hereda nada.
+  cuentaDePrueba: false,
+  // Saldo a favor de muestra: 'no' | 'vigente' | 'usado'.
+  saldoFavor: 'no',
+  // Una reserva de muestra en cada paso (lib/demo.js).
+  reservasMuestra: false,
+  // Lo que se «hizo» en Mis reservas sobre las de muestra: { id: cambio }.
+  cambiosReservas: {},
+  // Desde cuándo corren sus horas (la cuenta regresiva de «lista»).
+  baseMuestra: Date.now(),
+  // Ver la app como quien entró con el código del ticket, sin cerrar la sesión.
+  vistaCodigo: false,
+  reconocer: (esPrueba) => set((x) => {
+    if (esPrueba) return x.cuentaDePrueba ? x : { cuentaDePrueba: true };
+    if (!x.cuentaDePrueba && !x.vistaCodigo && !x.reservasMuestra && x.saldoFavor === 'no') return x;
+    return { cuentaDePrueba: false, ...DEMO_INICIAL };
+  }),
+  ponerDemo: (cambio) => set((x) => ({ ...cambio,
+    // Al encender las reservas de muestra, nacen otra vez desde ahora.
+    ...(cambio.reservasMuestra && !x.reservasMuestra ? { baseMuestra: Date.now(), cambiosReservas: {} } : {}) })),
+  cambiarReservas: (cambios) => set((x) => {
+    const nuevo = { ...x.cambiosReservas };
+    for (const [id, c] of Object.entries(cambios)) nuevo[id] = { ...nuevo[id], ...c };
+    return { cambiosReservas: nuevo };
+  }),
+  reiniciarReservas: () => set({ cambiosReservas: {}, baseMuestra: Date.now() }),
+  /** Todo el modo de prueba a como estaba: lo guardado y lo del demo. */
+  reiniciarTodo: () => {
+    const guardado = { activo: false, nivel: 'oro', mayorista: null, empleado: false, logo: 'material', precio: null };
+    SecureStore.setItemAsync(CLAVE, JSON.stringify(guardado)).catch(() => {});
+    set({ ...guardado, ...DEMO_INICIAL, ajuste: 0, cuponUsado: false, demoCupon: 0, semilla: Date.now().toString(36) });
+  },
   cargar: async () => {
     try {
       const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');

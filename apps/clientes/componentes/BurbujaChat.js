@@ -32,7 +32,7 @@ import { M3, IOS } from './movimiento';
 import { alLlegarAviso, esAvisoDeChat } from '../lib/avisos';
 import { useCuenta } from '../lib/cuenta';
 import { precargarChat } from '../lib/chatHilo';
-import { useSesion } from '../lib/sesion';
+import { useConCodigo, useSesion } from '../lib/sesion';
 import { useTapadaPorBloqueo } from '../lib/bloqueo';
 import { LIVIANO } from '../lib/rendimiento';
 import { navegar } from '../lib/navegar';
@@ -73,7 +73,9 @@ export default function BurbujaChat() {
   const enPestanas = segmentos[0] === '(tabs)';
   const oculta = !segmentos.length || OCULTA.has(segmentos[0]) || (enPestanas && PESTANA_OCULTA.has(segmentos[1]));
   // Con la sesión de CÓDIGO no hay chat (2026-10-19): pide DUI y teléfono.
-  const visible = Platform.OS !== 'web' && !!token && !bloqueada && conFicha && !oculta && resumen?.alcance !== 'codigo';
+  // (También la que simula el modo de prueba, 2026-10-20.)
+  const conCodigo = useConCodigo();
+  const visible = Platform.OS !== 'web' && !!token && !bloqueada && conFicha && !oculta && resumen?.alcance !== 'codigo' && !conCodigo;
   const sinLeer = Number(resumen?.chat?.sin_leer ?? resumen?.chat_sin_leer) || 0;
   // `null`: el servidor todavía no lo dice (una versión anterior) — sin punto.
   const abierta = typeof resumen?.chat?.abierta === 'boolean' ? resumen.chat.abierta : null;

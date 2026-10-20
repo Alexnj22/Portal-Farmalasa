@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1314.5 — Puntos Salud: la burbuja del chat viaja con la barra de pestañas
+
+«Si voy a una vista sin barra de menú y regreso, la burbuja se mueve extraño»: su altura cambiaba de golpe al cambiar la ruta —al EMPEZAR la transición— y saltaba ~46 pt mientras la pantalla todavía se deslizaba. Ahora queda anclada abajo y sube o baja con la misma curva y duración que la transición del sistema.
+
 ## v2.1314.4 — El comprobante de un ingreso dice cómo se pagó
 
 _(pendiente de redactar)_

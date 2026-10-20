@@ -23,7 +23,7 @@ import { useEffect } from 'react';
 import { AppState, InteractionManager, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -122,12 +122,23 @@ export default function BurbujaChat() {
     if (!sinLeer || reducir) return;
     numero.value = withSequence(withTiming(1.15, { duration: 120 }), withSpring(1, ANDROID ? M3.efectos : IOS.suelta));
   }, [sinLeer, reducir, numero]);
-  const animado = useAnimatedStyle(() => ({ opacity: opac.value, transform: [{ scale: escala.value }] }));
+  // La ALTURA se anima (2026-10-20, «si voy a una vista sin barra de menú y
+  // regreso, la burbuja se mueve extraño»): `bottom` cambiaba de golpe en el
+  // instante en que cambia la ruta —al empezar la transición, no al terminar—,
+  // así que la burbuja saltaba ~46 pt mientras la pantalla todavía se
+  // deslizaba. Ahora se queda anclada abajo y SUBE o BAJA con la misma curva y
+  // duración que la transición del sistema, como si viajara con la barra.
+  const sobre = useSharedValue(enPestanas ? SOBRE_PESTANAS - 16 : 0);
+  useEffect(() => {
+    const destino = enPestanas ? SOBRE_PESTANAS - 16 : 0;
+    sobre.value = reducir ? destino : withTiming(destino, { duration: ANDROID ? 300 : 380, easing: Easing.bezier(0.2, 0.9, 0.25, 1) });
+  }, [enPestanas, reducir, sobre]);
+  const animado = useAnimatedStyle(() => ({ opacity: opac.value, transform: [{ translateY: -sobre.value }, { scale: escala.value }] }));
   const animadoNumero = useAnimatedStyle(() => ({ transform: [{ scale: numero.value }] }));
   const forma = useAnimatedStyle(() => ({ borderRadius: radio.value }));
 
   if (!visible) return null;
-  const abajo = ins.bottom + (enPestanas ? SOBRE_PESTANAS : 16);
+  const abajo = ins.bottom + 16;
   const abrir = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); navegar('/chat'); };
   const estado = sinLeer ? `${sinLeer} ${sinLeer === 1 ? 'mensaje sin leer' : 'mensajes sin leer'}`
     : abierta === true ? 'farmacia en línea' : abierta === false ? 'farmacia cerrada, te respondemos al abrir' : '';

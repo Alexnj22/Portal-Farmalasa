@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1311.1 — Menú: Clientes, Mayoristas y Puntos en un grupo propio junto a App de clientes
+
+_(pendiente de redactar)_
+
+Lo del cliente estaba repartido: Clientes, Mayoristas y Puntos dentro de Comercial, y la app en un grupo lejos. Ahora hay dos grupos seguidos — **Clientes** (la ficha, el mayorista con sus solicitudes y candidatos por confirmar, y el programa de puntos con sus niveles) y **App de clientes** (vitrina y chat). No cambia ninguna pantalla ni ningún permiso.
+
 ## v2.1311.0 — Puntos Salud: reverso de la tarjeta moderno y saldo a favor en la tarjeta
 
 Reverso rehecho («que se vea moderna, bonita, animada»): mismo material vivo del frente; banda magnética más fina y cepillada con reflejo tornasol; el código va en una **ventana de vidrio** con un aro de luz del color del nivel que gira despacio y una línea de lector que la barre una vez al girar la tarjeta (sobre las barras quietas no se pinta nada: contraste medido y zona de silencio intactos). Pie con píldora de nivel y puntos, y holograma. Se quitó la franja de firma con rayado.

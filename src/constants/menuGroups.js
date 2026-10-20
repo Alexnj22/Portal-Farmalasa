@@ -30,12 +30,20 @@ export const MENU_GROUPS = [
     { key: 'asistencia',    label: 'Asistencia',    icono: 'Monitor',       modules: ['monitor', 'time_audit']               },
     { key: 'horarios',      label: 'Horarios',      icono: 'Calendar',      modules: ['schedules', 'vacation_plan']          },
     { key: 'rrhh',          label: 'RRHH',          icono: 'Users',         modules: ['entrevistas']                        },
-    // `clientes` entra acá y no en un grupo propio: el receptor de la factura es
-    // el mismo asunto que Facturación y Cotizaciones, y quien factura es quien
-    // necesita su ficha fiscal correcta. Quedan 4 de los 6 que admite un grupo.
-    // `puntos` (2026-09-25) va con Clientes: el programa es de los clientes y
-    // lo opera quien supervisa la venta. 5 de 6.
-    { key: 'comercial',    label: 'Comercial',     icono: 'TrendingUp',    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes', 'mayoristas', 'puntos'] },
+    { key: 'comercial',    label: 'Comercial',     icono: 'TrendingUp',    modules: ['ventas', 'facturacion', 'cotizaciones'] },
+    // Lo del cliente en dos grupos pegados, por la pregunta que contesta
+    // (pedido del usuario, 2026-10-19: «siento un desorden, está puntos, app de
+    // clientes, y varias cosas en varios lados»). Antes Clientes, Mayoristas y
+    // Puntos vivían dentro de Comercial y la app en un grupo lejos de ellos.
+    //   · Clientes — QUIÉN es y QUÉ gana: la ficha, el mayorista (con sus
+    //     solicitudes y candidatos por confirmar) y el programa de puntos,
+    //     niveles incluidos. Los niveles son del programa, no de la app: valen
+    //     también para quien compra con su DUI y nunca la instaló.
+    //   · App de clientes — lo que pasa EN la app: vitrina y chat.
+    { key: 'clientes',     label: 'Clientes',      icono: 'Contact',       modules: ['clientes', 'mayoristas', 'puntos'] },
+    // La app de clientes Puntos Salud (2026-10-05): su vitrina de ofertas y los
+    // pre-registros. Sección propia: lo que se edita acá lo ve el CLIENTE.
+    { key: 'app_clientes', label: 'App de clientes', icono: 'Smartphone', modules: ['ofertas_clientes', 'chat_clientes'] },
     // Cortes de caja salió de Comercial a menú propio (2026-08-20, pedido del
     // usuario). No es una pregunta sobre la venta: es el cuadre del efectivo al
     // cerrar el turno, y quien lo abre —la sala que cierra, quien confirma la
@@ -90,9 +98,6 @@ export const MENU_GROUPS = [
     // Encuestas a clientes (2026-10-01): sección propia por pedido del usuario,
     // no una pestaña de Marketing.
     { key: 'encuestas_clientes', label: 'Encuestas', icono: 'ClipboardCheck', modules: ['encuestas_clientes', 'encuestas_aplicar'] },
-    // La app de clientes Puntos Salud (2026-10-05): su vitrina de ofertas y los
-    // pre-registros. Sección propia: lo que se edita acá lo ve el CLIENTE.
-    { key: 'app_clientes', label: 'App de clientes', icono: 'Smartphone', modules: ['ofertas_clientes', 'chat_clientes'] },
     { key: 'producto',     label: 'Producto',      icono: 'Package',       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icono: 'ClipboardList', modules: ['pedidos'] },
     // `inventario` y `gestion_stock` van PRIMERO y no al final de la lista

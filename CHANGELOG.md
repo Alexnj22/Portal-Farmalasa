@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1312.2 — Puntos Salud: el catálogo carga más productos al bajar, sin páginas
+
+Decisión del dueño (2026-10-20): la Tienda deja las páginas de 20 con «Anterior / Siguiente» y carga continua: al acercarse al final se piden 30 más y se agregan abajo, hasta el último producto (o el tope de 1,000 del servidor). Sin repetidos aunque el orden se mueva entre tandas; si una tanda falla, lo cargado se queda y abajo aparece «Reintentar». Probado en el simulador contra producción: los 300 de «Lo más vendido» llegan en 10 tandas, sin huecos ni repetidos, y la lista se detiene al final; una búsqueda y una tanda fallida simulada se comportan igual.
+
 ## v2.1312.1 — Fichas: el distrito que falta se completa aunque se corrija otro dato; la segunda vuelta del envío sigue en segundo plano
 
 **Dos COF de Salud 4 rechazados por el distrito y sin corregir esa noche** («¿por qué no se corrigieron?»). Dos clientes nuevos (28816, 28817) llegaron sin teléfono y sin distrito. A las 21:30 la corrección de fichas tomó la rama del teléfono —una rama por ficha— y el distrito quedó vacío; a las 22:30 Hacienda rechazó los dos documentos.

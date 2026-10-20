@@ -1,9 +1,13 @@
 // El catálogo (2026-10-07): todos los productos con su precio de viñeta y su
 // precio VIP —el que paga el socio—, y si hay en alguna sucursal. Sin buscar,
 // lo más vendido de los últimos 60 días; con la barra del sistema, por nombre
-// o principio activo. Al tocar un producto se abre su ficha. Por PÁGINAS de 20
-// con «Anterior / Siguiente» abajo (usuario, 2026-10-07: «una lista infinita
-// no es bonito»).
+// o principio activo. Al tocar un producto se abre su ficha.
+//
+// Carga CONTINUA (2026-10-20): al acercarse al final se piden los siguientes y
+// se agregan abajo. Antes eran páginas de 20 con «Anterior / Siguiente»
+// (usuario, 2026-10-07: «una lista infinita no es bonito»); el 2026-10-20 el
+// usuario pidió el cambio: en el teléfono el botón chico obliga a apuntar y
+// volver de una ficha dejaba la página en otro lugar.
 //
 // Las tarjetas NO son de vidrio: son muchas en una lista que se desplaza, y el
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
@@ -29,14 +33,15 @@ import { navegar } from '../../../lib/navegar';
 // le corresponde el servidor le agrega `precio_tuyo` (lib/precioTuyo.js).
 import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
 
-const POR_PAGINA = 20;
+// Cuántos se piden cada vez que la lista se acerca al final.
+const POR_TANDA = 30;
 // El servidor no pasa de `desde = 1000` (app-clientes, acción `catalogo`): una
-// página que empiece más allá devolvía la misma de antes y «Siguiente» quedaba
-// trabado desde la página 51 (2026-10-12).
+// tanda que empiece más allá devuelve la misma de antes (2026-10-12). Ahí la
+// lista se detiene: 1,000 productos es más de lo que alguien recorre a dedo;
+// lo demás se encuentra buscando.
 const DESDE_MAX = 1000;
-// Sin buscar, la primera página se pide de 50 (el tope del servidor): de esas
-// mismas salen la página 1 y la fila «Mayor ahorro». Antes eran dos pedidos
-// iguales al abrir, uno de 50 y otro de 20 (2026-10-15).
+// Sin buscar, la primera tanda se pide de 50 (el tope del servidor): de esas
+// mismas salen la lista y la fila «Mayor ahorro», en un solo pedido (2026-10-15).
 const PRIMERA_SIN_BUSCAR = 50;
 
 // Los de mayor ahorro VIP (en %), de los que hay en existencia.
@@ -56,11 +61,14 @@ export default function Catalogo() {
   const [lista, setLista] = useState(null);
   const [hayMas, setHayMas] = useState(false);
   const [error, setError] = useState(false);
-  const [pagina, setPagina] = useState(0);
-  const [cambiando, setCambiando] = useState(false);
+  // Desde dónde se pide la tanda siguiente (= cuántos hay en la lista).
+  const [desde, setDesde] = useState(0);
+  const [cargandoMas, setCargandoMas] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
   const pedido = useRef(0);
-  const listaRef = useRef(null);
+  // `onEndReached` puede dispararse varias veces seguidas: el estado llega
+  // tarde para frenarlo, la referencia no.
+  const pidiendoMas = useRef(false);
   // Las filas de arriba (sin buscar): mayor ahorro VIP y vistos recientemente.
   const [ahorro, setAhorro] = useState([]);
   // Nace con la copia en memoria (lib/catalogo.js); al volver a la pestaña,
@@ -74,36 +82,39 @@ export default function Catalogo() {
   // La búsqueda sale 300 ms después de la última tecla.
   useEffect(() => { const id = setTimeout(() => setQ(texto.trim()), 300); return () => clearTimeout(id); }, [texto]);
 
-  const cargar = useCallback(async (p) => {
+  // `inicio` 0 = empezar de nuevo (otra búsqueda, refrescar); si no, agregar.
+  const cargar = useCallback(async (inicio, previa = []) => {
     const n = ++pedido.current;
     setError(false);
-    // La página 1 sin buscar trae 50: alcanza para «Mayor ahorro». La página 2
-    // sigue pidiéndose desde 20, igual que antes.
-    const primera = p === 0 && !q;
-    const r = await llamar('catalogo', { q, desde: p * POR_PAGINA, limite: primera ? PRIMERA_SIN_BUSCAR : POR_PAGINA, ...datosDePrecio() });
+    const primera = inicio === 0 && !q;
+    const r = await llamar('catalogo', { q, desde: inicio, limite: primera ? PRIMERA_SIN_BUSCAR : POR_TANDA, ...datosDePrecio() });
     if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
     if (!r?.ok) { setError(true); return; }
     const productos = r.productos ?? [];
     if (primera) setAhorro(mayorAhorro(productos));
-    setLista(primera ? productos.slice(0, POR_PAGINA) : productos);
-    const masAlla = primera ? productos.length > POR_PAGINA || !!r.hay_mas : !!r.hay_mas;
-    setHayMas(masAlla && (p + 1) * POR_PAGINA <= DESDE_MAX);
-    setPagina(p);
+    // Sin repetidos: entre una tanda y la otra el orden de «lo más vendido»
+    // puede moverse, y una llave repetida rompe la lista.
+    const ya = new Set(previa.map((p) => p.id));
+    const nueva = previa.concat(productos.filter((p) => !ya.has(p.id)));
+    const siguiente = inicio + productos.length;
+    setLista(nueva);
+    setDesde(siguiente);
+    setHayMas(!!r.hay_mas && productos.length > 0 && siguiente < DESDE_MAX);
   }, [q]);
-  // Otra búsqueda: de vuelta a la página 1.
-  useEffect(() => { setLista(null); cargar(0); }, [cargar]);
+  // Otra búsqueda: de vuelta al principio.
+  useEffect(() => { setLista(null); setHayMas(false); cargar(0); }, [cargar]);
 
-  const irA = async (p) => {
-    if (cambiando || p < 0) return;
-    Haptics.selectionAsync().catch(() => {});
-    setCambiando(true);
-    await cargar(p);
-    setCambiando(false);
-    listaRef.current?.scrollToOffset({ offset: 0, animated: true });
-  };
-  // Deslizar hacia abajo vuelve a pedir la página que se ve (2026-10-12): si la
-  // primera carga fallaba no había forma de reintentar.
-  const refrescar = async () => { setRefrescando(true); await cargar(lista ? pagina : 0); setRefrescando(false); };
+  const cargarMas = useCallback(async () => {
+    if (pidiendoMas.current || !hayMas || error || !lista?.length) return;
+    pidiendoMas.current = true;
+    setCargandoMas(true);
+    await cargar(desde, lista);
+    setCargandoMas(false);
+    pidiendoMas.current = false;
+  }, [hayMas, error, lista, desde, cargar]);
+  // Deslizar hacia abajo vuelve a empezar (2026-10-12): si la primera carga
+  // fallaba no había forma de reintentar.
+  const refrescar = async () => { setRefrescando(true); await cargar(0); setRefrescando(false); };
 
   // El encabezado en piezas memorizadas (2026-10-15): cada tecla cambia
   // `texto` y redibuja la pantalla; sólo las categorías dependen de él (su
@@ -187,7 +198,6 @@ export default function Catalogo() {
         },
       }} />
       <FlatList
-        ref={listaRef}
         // Cambiar `numColumns` exige montar la lista de nuevo.
         key={`col${columnas}`}
         data={lista ?? []}
@@ -204,6 +214,8 @@ export default function Catalogo() {
         windowSize={7}
         removeClippedSubviews
         renderItem={renderItem}
+        onEndReached={cargarMas}
+        onEndReachedThreshold={0.8}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
         ListEmptyComponent={
           error ? (
@@ -214,13 +226,11 @@ export default function Catalogo() {
             : !lista ? <ActivityIndicator style={{ marginTop: 40 }} />
               : <Vacio titulo="Sin resultados" icono="magnifyingglass" respaldo="⌕">Prueba con otro nombre o con el principio activo.</Vacio>
         }
-        ListFooterComponent={lista?.length && (pagina > 0 || hayMas || error) ? (
-          <View style={{ gap: 8 }}>
-            {/* Cambiar de página falló: la lista de antes se queda, pero se dice. */}
-            {error ? <Text style={{ fontSize: 13, color: t.color.avisoTexto, textAlign: 'center' }}>No se pudo cargar esa página. Revisa tu conexión e intenta de nuevo.</Text> : null}
-            {pagina > 0 || hayMas ? <Paginas pagina={pagina} hayMas={hayMas} cargando={cambiando} alAnterior={() => irA(pagina - 1)} alSiguiente={() => irA(pagina + 1)} /> : null}
-          </View>
-        ) : null}
+        ListFooterComponent={!lista?.length ? null
+          // Pedir más falló: lo cargado se queda, se dice y se puede reintentar.
+          : error ? <Reintentar alTocar={() => { setError(false); cargar(desde, lista); }} />
+            : cargandoMas || hayMas ? <ActivityIndicator style={{ marginVertical: 16 }} />
+              : null}
       />
     </>
   );
@@ -299,28 +309,16 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
   );
 });
 
-// «‹ Anterior · Página 2 · Siguiente ›», como un paginador del sistema.
-function Paginas({ pagina, hayMas, cargando, alAnterior, alSiguiente }) {
+// Tanda siguiente fallida: aviso y botón, sin perder lo que ya se ve.
+function Reintentar({ alTocar }) {
   const t = useTema();
-  const boton = (habilitado) => ({ pressed }) => ({
-    flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 999,
-    backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)',
-    opacity: habilitado ? 1 : 0.35, transform: [{ scale: pressed && habilitado ? 0.96 : 1 }],
-  });
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-      <Presionable onPress={alAnterior} disabled={pagina === 0 || cargando} accessibilityRole="button" accessibilityLabel="Página anterior"
-        style={boton(pagina > 0 && !cargando)}>
-        <Icono sf="chevron.left" respaldo="‹" tam={13} color={colorSistema.texto} />
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Anterior</Text>
-      </Presionable>
-      {cargando ? <ActivityIndicator /> : (
-        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>Página {pagina + 1}</Text>
-      )}
-      <Presionable onPress={alSiguiente} disabled={!hayMas || cargando} accessibilityRole="button" accessibilityLabel="Página siguiente"
-        style={boton(hayMas && !cargando)}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Siguiente</Text>
-        <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto} />
+    <View style={{ alignItems: 'center', gap: 8, marginTop: 8 }}>
+      <Text style={{ fontSize: 13, color: t.color.avisoTexto, textAlign: 'center' }}>No se pudieron cargar más productos. Revisa tu conexión.</Text>
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button" accessibilityLabel="Reintentar"
+        style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 18, borderRadius: 999, justifyContent: 'center',
+          backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)', transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Reintentar</Text>
       </Presionable>
     </View>
   );

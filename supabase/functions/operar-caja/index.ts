@@ -576,7 +576,10 @@ Deno.serve(async (req) => {
     // Corregir también (2026-10-17): pedir y aplicar una corrección sobre un
     // ingreso de prueba no toca nada real, y es justo lo que hay que poder
     // probar del cobro con tarjeta.
-    if (cajaSimulada && !["estado", "ingreso", "corregir", "aplicar_correccion"].includes(accion)) {
+    // Y el vale del retiro de lo apartado (2026-10-20): es la salida que hay
+    // que poder probar del retiro al contado.
+    const valeDeRetiro = accion === "salida" && String(body.tipo ?? "") === "APLICA_ANTICIPO";
+    if (cajaSimulada && !valeDeRetiro && !["estado", "ingreso", "corregir", "aplicar_correccion"].includes(accion)) {
       return json({ ok: false, error: "En el entorno de pruebas la caja es simulada: sólo se puede mirar, anotar ingresos y corregirlos." }, 409);
     }
 
@@ -1700,6 +1703,38 @@ Deno.serve(async (req) => {
         body.detalle = texto;
       }
 
+      /* ── EL RETIRO AL CONTADO DE LO APARTADO (2026-10-20) ──────────────
+       *
+       * Si el anticipo se cobró en efectivo y el resto también se paga en
+       * efectivo, se factura AL CONTADO por el total —la caja no acepta pago
+       * parcial— y la factura vuelve a contar un efectivo que entró el día
+       * del anticipo. Este vale lo saca: el cajón queda con lo que de verdad
+       * hay. Lo decide la base: el monto es el anticipo en efectivo, entero,
+       * y sólo vale si TODO lo pagado fue en efectivo de la caja (lo demás va
+       * al crédito, ver `aplicar_anticipo` de creditos-erp). Una vez por
+       * reserva o encargo: lo frena su índice único. */
+      const esAplicaAnticipo = !esEntrada && String(body.tipo ?? "") === "APLICA_ANTICIPO";
+      let aplicaRef: { reserva_id?: number; encargo_id?: number } | null = null;
+      if (esAplicaAnticipo) {
+        const ref = body.aplicar && typeof body.aplicar === "object" ? body.aplicar as Record<string, unknown> : null;
+        if (!ref || !(ref.reserva_id || ref.encargo_id)) return json({ ok: false, error: "Falta qué se retira." }, 400);
+        aplicaRef = ref.reserva_id ? { reserva_id: Number(ref.reserva_id) } : { encargo_id: Number(ref.encargo_id) };
+        const { data: v, error: errV } = await supabase.rpc("apartado_para_retirar", { p_branch_id: sala, p_apartado: aplicaRef });
+        if (errV || !v) return json({ ok: false, error: errV?.message || "No se pudo leer lo apartado." }, 409);
+        if (v.aplicado) return json({ ok: false, error: "El anticipo de esto ya se aplicó." }, 409);
+        if (!v.listo) return json({ ok: false, error: "Todavía no está listo para retirar." }, 409);
+        if (Number(v.otras_formas) > 0.004 || Number(v.en_linea) > 0.004) {
+          return json({ ok: false, error: "Parte del anticipo no fue en efectivo: se factura al crédito y se abona." }, 409);
+        }
+        if (!(Number(v.efectivo) > 0) || Math.abs(Number(v.efectivo) - monto) > 0.004) {
+          return json({ ok: false, error: `El vale es por el anticipo en efectivo: $${Number(v.efectivo).toFixed(2)}.` }, 409);
+        }
+        const texto = `Aplica anticipo ${v.codigo} a su factura · ${v.cliente ?? ""}`;
+        concepto = texto.slice(0, 50);
+        body.detalle = texto;
+        body.recibe = String(v.cliente ?? "").slice(0, 60);
+      }
+
       /* ── EL ABONO DE CLIENTE ────────────────────────────────────────────
        *
        * Es un ingreso con un contrato encima: el dinero entra al cajón igual
@@ -1888,6 +1923,9 @@ Deno.serve(async (req) => {
           // La factura y el asegurado de un pago de Mapfre. Ver `esMapfre`.
           invoice_id: mapfreFactura,
           customer_id: mapfreAsegurado,
+          // El vale del retiro nace ligado: su índice único impide un segundo.
+          reserva_id: aplicaRef?.reserva_id ?? null,
+          encargo_id: aplicaRef?.encargo_id ?? null,
           forma_pago: formaPago,
           comprobante_total: comprobanteTotal,
         })
@@ -1927,6 +1965,9 @@ Deno.serve(async (req) => {
       // El índice de Mapfre: otro envío cobró esa factura en el medio.
       if (errFila?.code === "23505" && esMapfre) {
         return json({ ok: false, error: "Esa factura de Mapfre ya tiene su pago anotado." }, 409);
+      }
+      if (errFila?.code === "23505" && aplicaRef) {
+        return json({ ok: false, error: "El anticipo de esto ya se aplicó." }, 409);
       }
       if (errFila) throw new Error(`guardando el movimiento: ${errFila.message}`);
 
@@ -2136,6 +2177,17 @@ Deno.serve(async (req) => {
        * lleva pagado; si esto falla, el dinero entró y el control no — se dice
        * y queda en el log, para confirmarlas a mano. */
       let avisoAplicaciones: string | null = null;
+      // El vale salió: el anticipo queda aplicado y lo apartado, entregado.
+      if (aplicaRef) {
+        const { error: errReg } = await supabase.rpc("apartado_aplicacion_registrar", {
+          p_branch_id: sala, p_apartado: aplicaRef, p_modo: "VALE", p_monto: Number(dosDecimales(monto)),
+          p_credito: null, p_movimiento: fila.id, p_employee: quien.id, p_entregar: true,
+        });
+        if (errReg) {
+          console.error(`[operar-caja] retiro fila=${fila.id}: ${errReg.message}`);
+          avisoAplicaciones = `El vale salió, pero no quedó marcado como entregado (${errReg.message}). Avisa a Sistemas.`;
+        }
+      }
       if (aplicaciones) {
         const { error: errConf } = await supabase.from("inyeccion_aplicaciones")
           .update({ confirmada: true }).eq("cobro_id", fila.id);

@@ -199,6 +199,53 @@ export type Database = {
           },
         ]
       }
+      apartado_aplicaciones: {
+        Row: {
+          branch_id: number
+          creado_por: string | null
+          created_at: string
+          credito_erp: string | null
+          encargo_id: number | null
+          id: number
+          modo: string
+          monto: number
+          movimiento_id: number | null
+          reserva_id: number | null
+        }
+        Insert: {
+          branch_id: number
+          creado_por?: string | null
+          created_at?: string
+          credito_erp?: string | null
+          encargo_id?: number | null
+          id?: number
+          modo: string
+          monto: number
+          movimiento_id?: number | null
+          reserva_id?: number | null
+        }
+        Update: {
+          branch_id?: number
+          creado_por?: string | null
+          created_at?: string
+          credito_erp?: string | null
+          encargo_id?: number | null
+          id?: number
+          modo?: string
+          monto?: number
+          movimiento_id?: number | null
+          reserva_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apartado_aplicaciones_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_ajustes: {
         Row: {
           created_at: string
@@ -27324,6 +27371,19 @@ export type Database = {
         Args: { p_auth_user_id: string }
         Returns: undefined
       }
+      apartado_aplicacion_registrar: {
+        Args: {
+          p_apartado: Json
+          p_branch_id: number
+          p_credito: string
+          p_employee: string
+          p_entregar: boolean
+          p_modo: string
+          p_monto: number
+          p_movimiento: number
+        }
+        Returns: Json
+      }
       apartado_aplicar: {
         Args: {
           p_apartado: Json
@@ -27347,6 +27407,14 @@ export type Database = {
         Args: { p_anular?: boolean; p_movimiento: number }
         Returns: undefined
       }
+      apartado_entregar: {
+        Args: { p_apartado: Json; p_branch_id: number }
+        Returns: Json
+      }
+      apartado_marcar_entregado: {
+        Args: { p_apartado: Json; p_employee: string }
+        Returns: undefined
+      }
       apartado_opciones: {
         Args: {
           p_branch_id: number
@@ -27354,6 +27422,10 @@ export type Database = {
           p_factor: number
           p_producto_id: number
         }
+        Returns: Json
+      }
+      apartado_para_retirar: {
+        Args: { p_apartado: Json; p_branch_id: number }
         Returns: Json
       }
       aperturas_de_la_manana: { Args: { p_fecha?: string }; Returns: Json }

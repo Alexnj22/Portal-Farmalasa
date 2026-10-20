@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1320.0 — Retirar lo apartado: el anticipo se aplica a la factura
+
+_(pendiente de redactar)_
+
+**«Retirar» reemplaza a «Retirada» y «Entregado»** en Reservas de mi sala y en los encargos. Antes, marcar retirada una reserva con saldo la daba por pagada sin cobrar nada, y el anticipo nunca se aplicaba a la factura. El sistema de la caja no acepta pago parcial, así que lo ya pagado se aplica así:
+
+- **Todo en efectivo** (el anticipo y lo que falta) → se factura **al contado** por el total y el portal hace solo el **vale** por el anticipo, que la factura vuelve a contar.
+- **Con tarjeta, transferencia o pago en línea de por medio** → se factura **al crédito** a nombre del cliente; el portal busca ese crédito y le abona lo ya pagado con el comprobante de la reserva (sin volver a contarlo como efectivo). Lo que falta se cobra en Cuentas por cobrar, con su forma de pago.
+- Sin nada pagado, se factura como cualquier venta y se marca entregado.
+- Cada reserva o encargo se aplica una sola vez, y el retiro deja la reserva retirada o el encargo entregado.
+
 ## v2.1319.4 — Notas de voz del chat como WhatsApp
 
 - **App de clientes, chat**: mantener presionado el micrófono graba y al soltar

@@ -192,6 +192,15 @@ export function abonarCredito({
 }
 
 /**
+ * El anticipo de lo apartado, abonado a su factura al crédito (2026-10-20).
+ * Sin `credito` contesta los `candidatos`: los créditos de ese cliente en la
+ * sala que pueden recibirlo, leyendo el día de hoy en el origen.
+ */
+export function aplicarAnticipoACredito({ sala, apartado, credito = null }) {
+    return pedir({ accion: 'aplicar_anticipo', sala, apartado, credito });
+}
+
+/**
  * Pagar: UN documento que cubre uno o varios créditos del mismo cliente.
  *
  * Reemplaza a `abonarCredito` para todo lo nuevo. La diferencia no es de forma:

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -13,6 +13,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { fetchEncargos, responderEncargo } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+
+// Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
+const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar'));
 
 /**
  * Encargos de la app de clientes (2026-10-07): lo que un cliente pide porque no
@@ -34,6 +37,7 @@ export default function WidgetEncargos({ branchId = null }) {
     const [ocupado, setOcupado] = useState(null);
     const [confirmando, setConfirmando] = useState(null);
     const [rechazando, setRechazando] = useState(null);
+    const [retirando, setRetirando] = useState(null);
 
     const cargar = useCallback(async () => {
         try { setFilas(await fetchEncargos(branchId, true)); } catch (err) { console.error('WidgetEncargos: no se pudieron cargar', err); setFilas([]); }
@@ -75,7 +79,7 @@ export default function WidgetEncargos({ branchId = null }) {
                                     </>)}
                                     {e.estado === 'aceptado' && <Button variant="secondary" size="xs" icon={Truck} loading={ocupado === e.id} onClick={() => mover(e, 'pedido')}>Pedido</Button>}
                                     {(e.estado === 'aceptado' || e.estado === 'pedido') && <Button variant="secondary" size="xs" icon={PackageCheck} loading={ocupado === e.id} onClick={() => mover(e, 'listo')}>Llegó</Button>}
-                                    {e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupado === e.id} onClick={() => mover(e, 'entregado')}>Entregado</Button>}
+                                    {e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setRetirando(e)}>Entregar</Button>}
                                 </div>
                             )} />
                     </li>
@@ -83,6 +87,12 @@ export default function WidgetEncargos({ branchId = null }) {
             </ul>
             {confirmando && <Confirmar encargo={confirmando} onClose={() => setConfirmando(null)}
                 onConfirmar={async (datos) => { if (await mover(confirmando, 'confirmar', datos)) setConfirmando(null); }} />}
+            {retirando && (
+                <Suspense fallback={null}>
+                    <DialogoRetirar sala={retirando.branch_id ?? branchId} referencia={{ encargo_id: retirando.id }}
+                        onClose={() => setRetirando(null)} onListo={() => { setRetirando(null); cargar(); }} />
+                </Suspense>
+            )}
             {rechazando && <Rechazar encargo={rechazando} onClose={() => setRechazando(null)}
                 onRechazar={async (nota) => { if (await mover(rechazando, 'rechazar', { nota })) setRechazando(null); }} />}
         </div>

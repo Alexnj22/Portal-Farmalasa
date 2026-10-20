@@ -48,6 +48,9 @@ function esperaDeReceta(desde, ahora) {
 // «Nueva reserva» abre el MISMO diálogo que Mi caja (2026-10-20): antes la
 // reserva hecha aquí guardaba un anticipo que no entraba a ninguna caja.
 const DialogoApartar = lazy(() => import('../../components/caja/DialogoApartar'));
+// Retirar aplica lo ya pagado a la factura (vale o abono al crédito): ver
+// `DialogoRetirar`. «Retirada» a secas marcaba pagado lo que no se cobró.
+const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar'));
 // La revisión de la receta (2026-10-12) también se baja al abrirla.
 const RevisarReceta = lazy(() => import('./RevisarReceta'));
 
@@ -81,6 +84,8 @@ export default function WidgetReservas({ todas = false }) {
     // carrito P-XXXXXX): el lector de la caja lo escribe como un teclado.
     const [codigo, setCodigo] = useState('');
     const [nueva, setNueva] = useState(false);
+    // Los renglones que faltan por retirar, de a uno (un pedido del carrito trae varios).
+    const [retirando, setRetirando] = useState([]);
     // La reserva cuya receta se está mirando, y la hora de la última lectura
     // (la espera de cada receta se mide contra ella, no contra el reloj del render).
     const [receta, setReceta] = useState(null);
@@ -150,6 +155,13 @@ export default function WidgetReservas({ todas = false }) {
         <Suspense fallback={null}>
             <RevisarReceta reserva={receta} onClose={() => setReceta(null)}
                 onDecidida={() => { setReceta(null); cargar(); }} />
+        </Suspense>
+    ) : null;
+    const modalRetirar = retirando.length ? (
+        <Suspense fallback={null}>
+            <DialogoRetirar key={retirando[0].id} sala={retirando[0].sala} referencia={{ reserva_id: retirando[0].id }}
+                onClose={() => setRetirando([])}
+                onListo={() => { setRetirando((q) => q.slice(1)); cargar(); }} />
         </Suspense>
     ) : null;
     const modalNueva = nueva ? (
@@ -329,7 +341,8 @@ export default function WidgetReservas({ todas = false }) {
                                                     onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) })} />
                                             )}
                                             <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id}
-                                                onClick={() => mover(r, 'retirada')}>Retirada</Button>
+                                                onClick={() => setRetirando((r.renglones ?? [r]).filter((x) => x.estado === 'lista')
+                                                    .map((x) => ({ id: x.id, sala: x.branch_id ?? r.branch_id ?? miSala })))}>Retirar</Button>
                                         </>
                                     )}
                                     <Button variant="ghost" size="xs" iconOnly icon={XCircle} title="Cancelar reserva"
@@ -368,6 +381,7 @@ export default function WidgetReservas({ todas = false }) {
             )}
             <WidgetEncargos branchId={salaEncargos} />
             {modalNueva}
+            {modalRetirar}
             {modalReceta}
             {devolver && (
                 <DevolverSaldo saldo={devolver} onCerrar={() => setDevolver(null)}

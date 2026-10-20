@@ -847,6 +847,14 @@
     "encargo_en_sucursal_crear": {
       "guarda": "alcance",
       "motivo": "Registra un encargo sin cobrar para la sala propia (compara contra auth_employee_branch_id) o quien edita Ofertas para clientes."
+    },
+    "apartado_para_retirar": {
+      "guarda": "alcance",
+      "motivo": "Lo pagado de una reserva o encargo para retirarlo: la sala propia (compara contra auth_employee_branch_id) o quien edita Ofertas para clientes; service_role la usa desde operar-caja y creditos-erp."
+    },
+    "apartado_entregar": {
+      "guarda": "alcance",
+      "motivo": "Entrega lo apartado sin pago o con el anticipo ya aplicado: la sala propia (compara contra auth_employee_branch_id) o quien edita Ofertas para clientes."
     }
   },
   "buckets_abiertos": {

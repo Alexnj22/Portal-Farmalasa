@@ -1141,9 +1141,12 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
  */
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null,
-    lectura = null, clave = null, operacionBolsa = null, montoCotejado = false }) {
+    lectura = null, clave = null, operacionBolsa = null, montoCotejado = false, aplicar = null }) {
     return operar({
         accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
+        // El vale que aplica el anticipo de lo apartado al retirarlo
+        // (`{ reserva_id }` o `{ encargo_id }`). El monto lo valida el servidor.
+        aplicar,
         recibido_por: recibidoPor, vale,
         /* La operación de bolsa de la que esto es el RESTO, en una salida mixta
          * (2026-10-02). El servidor la relee, hereda de ella quién retira y las

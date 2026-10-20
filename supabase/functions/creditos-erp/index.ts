@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const accion = String(body.accion ?? "listar");
+    let accion = String(body.accion ?? "listar");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -61,7 +61,12 @@ Deno.serve(async (req) => {
      * cualquier sala mandando la petición a mano. La pantalla nunca le mostró
      * el botón; el freno real es éste. */
     const ESCRIBEN = ["abonar", "pagar"];
-    const [modulo, capacidad] = ESCRIBEN.includes(accion)
+    /* Aplicar el anticipo de lo apartado a su factura al crédito (2026-10-20)
+     * es parte del RETIRO en la caja, no del cobro de la cartera: lo hace
+     * quien opera la caja, aunque no cobre créditos. */
+    const [modulo, capacidad] = accion === "aplicar_anticipo"
+      ? ["caja_vales", "can_edit"]
+      : ESCRIBEN.includes(accion)
       ? ["cuentas_por_cobrar", "can_edit"]
       : ["cuentas_por_cobrar", "can_view"];
     const permiso = await permisoDeModulo(supabase, quien.id, modulo, capacidad as "can_view" | "can_edit");
@@ -1164,6 +1169,82 @@ Deno.serve(async (req) => {
       }, fallidos.length ? 207 : 200);
     }
 
+    /* ── APLICAR EL ANTICIPO DE LO APARTADO (2026-10-20) ───────────────
+     *
+     * El sistema de la caja no acepta pago parcial: lo apartado con un pago
+     * de por medio que no fue todo en efectivo se factura AL CRÉDITO, y lo
+     * que el cliente ya pagó se abona a ese crédito (decisión del usuario:
+     * «se envía al crédito, y ahí se abona parcialmente según el tipo de
+     * pago»). Ese abono va con la forma «Recibo» y el código de la reserva:
+     * el dinero ya entró el día del anticipo —al cajón o por otra vía—, y
+     * abonarlo como «Efectivo» lo volvería a sumar al esperado del corte. Lo
+     * que falta se cobra después como cualquier crédito, con su forma.
+     *
+     * El monto y el cliente los decide la base (`apartado_para_retirar`),
+     * nunca el navegador; y el crédito tiene que ser de ESE cliente: abonar
+     * el anticipo de una persona al crédito de otra no da error en el origen
+     * y no se deshace. Después cae al abono de siempre. */
+    let anticipoAplicado: Record<string, unknown> | null = null;
+    if (accion === "aplicar_anticipo") {
+      const sala = Number(body.sala);
+      const credito = String(body.credito ?? "").trim();
+      const ref = body.apartado && typeof body.apartado === "object" ? body.apartado as Record<string, unknown> : null;
+      if (!ref || !(ref.reserva_id || ref.encargo_id)) return responder({ ok: false, error: "Falta qué se retira." }, 400);
+      if (!credito) return responder({ ok: false, error: "Elige el crédito de la factura." }, 400);
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Sólo puedes retirar en tu propia sala." }, 403);
+      }
+      const apartado = ref.reserva_id ? { reserva_id: Number(ref.reserva_id) } : { encargo_id: Number(ref.encargo_id) };
+      const { data: v, error: errV } = await supabase.rpc("apartado_para_retirar", { p_branch_id: sala, p_apartado: apartado });
+      if (errV || !v) return responder({ ok: false, error: errV?.message || "No se pudo leer lo apartado." }, 409);
+      if (v.aplicado) return responder({ ok: false, error: "El anticipo de esto ya se aplicó." }, 409);
+      if (!v.listo) return responder({ ok: false, error: "Todavía no está listo para retirar." }, 409);
+      if (!(Number(v.pagado) > 0)) return responder({ ok: false, error: "No tiene anticipo que aplicar." }, 409);
+
+      /* Sin crédito elegido: se lee el día de HOY de la sala en el origen —la
+       * factura al crédito se acaba de hacer y la pasada de diez minutos aún
+       * no la trae— y se contestan los créditos de ESE cliente que pueden
+       * recibir el anticipo. Elegir entre ellos es de quien tiene la factura
+       * en la mano. El amarre con la ficha sale de la factura sincronizada:
+       * una recién hecha tarda hasta un minuto. */
+      if (!credito) {
+        const entrada = mapa.find((e) => e.branchId === sala);
+        if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+        const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+        try {
+          const delDia = await creditosDeLaSala(cookie, entrada.erpId, hoy, hoy);
+          if (delDia.length) {
+            const { error: errEspejo } = await supabase.rpc("sync_creditos_batch", {
+              p_filas: delDia.map((c) => ({ ...c, branch_id: sala })),
+            });
+            if (errEspejo) console.error(`[creditos-erp] retiro espejo: ${errEspejo.message}`);
+          }
+        } catch (e) {
+          console.error(`[creditos-erp] retiro leer hoy sala=${sala}: ${(e as Error).message}`);
+        }
+        const desde = new Date(Date.now() - 6 * 3600_000 - 3 * 86400_000).toISOString().slice(0, 10);
+        const { data: cands, error: errC } = await supabase.from("creditos_de_clientes")
+          .select("credito_erp, factura_erp, numero_doc, fecha, saldo, total")
+          .eq("branch_id", sala).eq("customer_id", Number(v.customer_id)).gte("fecha", desde)
+          .gte("saldo", Number(v.pagado) - 0.004).order("fecha", { ascending: false });
+        if (errC) return responder({ ok: false, error: "No se pudieron leer los créditos." }, 503);
+        return responder({ ok: true, candidatos: cands ?? [], retiro: v });
+      }
+      const { data: cred, error: errCred } = await supabase.from("creditos_de_clientes")
+        .select("customer_id, saldo").eq("branch_id", sala).eq("credito_erp", credito).maybeSingle();
+      if (errCred) return responder({ ok: false, error: "No se pudo leer el crédito." }, 503);
+      if (!cred) return responder({ ok: false, error: "Ese crédito todavía no aparece. Espera un minuto y vuelve a intentarlo." }, 404);
+      if (Number(cred.customer_id) !== Number(v.customer_id)) {
+        return responder({ ok: false, error: `Ese crédito no es de ${v.cliente}. Factura al crédito a su nombre.` }, 409);
+      }
+      anticipoAplicado = { apartado, codigo: v.codigo, monto: Number(v.pagado) };
+      body.credito = credito;
+      body.monto = Number(v.pagado);
+      body.forma = "Recibo";
+      body.documento = String(v.codigo);
+      accion = "abonar";
+    }
+
     // ── ABONAR ───────────────────────────────────────────────────────────
     if (accion === "abonar") {
       const sala = Number(body.sala);
@@ -1181,7 +1262,8 @@ Deno.serve(async (req) => {
       if (!(Number.isFinite(monto) && monto > 0)) {
         return responder({ ok: false, error: "Falta el monto." }, 400);
       }
-      if (!FORMAS.includes(forma)) {
+      // «Recibo» sólo para el anticipo ya cobrado: ver `aplicar_anticipo`.
+      if (!FORMAS.includes(forma) && !(anticipoAplicado && forma === "Recibo")) {
         return responder({ ok: false, error: "Esa forma de pago no se acepta." }, 400);
       }
 
@@ -1317,7 +1399,24 @@ Deno.serve(async (req) => {
         erp_abono_id: datos.id_abono_credito ? String(datos.id_abono_credito) : null,
       });
 
+      /* El anticipo queda APLICADO —una vez por reserva o encargo— y lo
+       * apartado, entregado. Si esto falla, el abono ya entró: se dice. */
+      let errAplicacion: string | null = null;
+      if (anticipoAplicado) {
+        const { error: errReg } = await supabase.rpc("apartado_aplicacion_registrar", {
+          p_branch_id: sala, p_apartado: anticipoAplicado.apartado, p_modo: "CREDITO",
+          p_monto: monto, p_credito: credito, p_movimiento: null, p_employee: quien.id, p_entregar: true,
+        });
+        if (errReg) {
+          console.error(`[creditos-erp] aplicar anticipo ${anticipoAplicado.codigo}: ${errReg.message}`);
+          errAplicacion = errReg.message;
+        }
+      }
+
       const avisos = [
+        errAplicacion
+          ? `El anticipo se abonó al crédito, pero no quedó marcado como entregado (${errAplicacion}). Avisa a Sistemas.`
+          : null,
         descuadre
           ? `El abono entró, pero el crédito quedó en ${saldoFinal.toFixed(2)} y se esperaba `
             + `${esperado.toFixed(2)}. Revísalo antes de cobrar otra vez.`

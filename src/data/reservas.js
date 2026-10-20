@@ -175,6 +175,18 @@ export async function opcionesDeApartado(branchId, productoId, factor, cantidad)
     }));
 }
 
+/** Lo que hay que saber para retirar lo apartado: total, lo pagado separado
+ *  por dónde está el dinero (efectivo de la caja, otras formas, en línea) y si
+ *  el anticipo ya se aplicó a su factura. `ref`: `{ reserva_id }` o `{ encargo_id }`. */
+export async function fetchParaRetirar(branchId, ref) {
+    return sinError(await supabase.rpc('apartado_para_retirar', { p_branch_id: Number(branchId), p_apartado: ref }));
+}
+
+/** Entregar lo apartado sin anticipo, o con el anticipo ya aplicado. */
+export async function entregarApartado(branchId, ref) {
+    return sinError(await supabase.rpc('apartado_entregar', { p_branch_id: Number(branchId), p_apartado: ref }));
+}
+
 /** Registrar un encargo SIN cobrar: Compras o administración confirma precio y fecha. */
 export async function crearEncargoEnSucursal({ branchId, customerId, productoId, productoNombre, factor, cantidad, nota }) {
     return sinError(await supabase.rpc('encargo_en_sucursal_crear', {

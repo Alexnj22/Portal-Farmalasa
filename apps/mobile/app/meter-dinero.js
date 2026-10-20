@@ -102,7 +102,7 @@ export default function MeterDinero() {
        * Mapfre» (2026-10-19) abría esa pantalla. Desde el 2026-10-20 Mapfre
        * tiene la suya; lo que todavía no la tenga se abre en el portal, en Mi
        * caja de esa sala. */
-      const nativa = { APLICACION: '/aplicacion-inyeccion', ABONO_CLIENTE: '/abono-apartado', MAPFRE: '/mapfre-asegurado' }[elegido.codigo];
+      const nativa = { APLICACION: '/aplicacion-inyeccion', ABONO_CLIENTE: '/abono-apartado', MAPFRE: '/mapfre-asegurado', APARTADO: '/reserva-anticipo' }[elegido.codigo];
       if (nativa) router.replace({ pathname: nativa, params: { sala } });
       else router.replace({ pathname: '/portal', params: { ruta: `/caja?sala=${sala}` } });
       return;

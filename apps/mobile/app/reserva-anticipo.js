@@ -5,10 +5,12 @@
 // con el código en barras (`construirConstanciaDeReserva` del núcleo, el mismo
 // papel del portal) en la caja de la sala.
 //
-// NO es el «Abono para apartar» (`abono-apartado`): aquél es dinero que entra
-// a la caja por un vale, a 15 días y con precio libre; esto es una RESERVA de
-// la app de clientes, que aparece en Reservas de mi sala y se retira con su
-// código.
+// Desde el 2026-10-20 el anticipo ENTRA A LA CAJA: se cobra como un ingreso
+// «Apartar o encargar» (APARTADO) por `operar-caja`, con su forma de pago y la
+// foto del comprobante, igual que en Mi caja del portal. Antes la reserva
+// guardaba un anticipo que no entraba a ninguna caja. Y si en la sala no hay
+// lo que se pide, no se aparta: se ENCARGA sin cobrar, y Compras o
+// administración confirma el precio.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -16,7 +18,9 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buscarClientes } from '@nucleo/data/customers';
-import { codigoDeReserva, crearReservaEnSucursal, preciosDeProducto } from '@nucleo/data/reservas';
+import { crearEncargoEnSucursal, opcionesDeApartado, preciosDeProducto } from '@nucleo/data/reservas';
+import { anotarIngreso } from '@nucleo/data/bolsas';
+import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
 import { construirConstanciaDeReserva } from '@nucleo/utils/reservaConstancia';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -24,17 +28,13 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../componentes/formulario/Piezas';
-import Segmentos from '../componentes/Segmentos';
+import FormaDePago from '../componentes/formulario/FormaDePago';
+import { subirFotos } from '../componentes/formulario/Fotos';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { imprimirEnLaSala } from '../componentes/imprimir';
 
-const METODOS = [
-  { id: 'efectivo', label: 'Efectivo' },
-  { id: 'tarjeta', label: 'Tarjeta' },
-  { id: 'transferencia', label: 'Transferencia' },
-];
 const redondear = (n) => Math.round(Number(n) * 100) / 100;
 const dinero = (v) => v.replace(/[^\d.,]/g, '').replace(',', '.');
 
@@ -95,8 +95,10 @@ export default function ReservaConAnticipo() {
   const [presentacion, setPresentacion] = useState(null);
   const [cantidad, setCantidad] = useState('1');
   const [anticipo, setAnticipo] = useState('');
-  const [metodo, setMetodo] = useState('efectivo');
+  const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
+  const [opciones, setOpciones] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [clave] = useState(() => `app-apartar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   useEffect(() => {
     let vivo = true;
@@ -111,45 +113,88 @@ export default function ReservaConAnticipo() {
 
   const pres = presentacion != null ? precios?.[Number(presentacion)] : null;
   const cant = Math.trunc(Number(cantidad)) || 0;
+
+  // ¿Se aparta o se encarga? Lo decide la base con la existencia de la sala.
+  useEffect(() => {
+    let vivo = true;
+    if (!producto || !pres || cant < 1 || !sala) { setOpciones(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- vaciar al cambiar
+    const t = setTimeout(() => {
+      opcionesDeApartado(sala, producto.id, pres.factor, cant)
+        .then((o) => { if (vivo) setOpciones(o); })
+        .catch(() => { if (vivo) setOpciones(null); });
+    }, 300);
+    return () => { vivo = false; clearTimeout(t); };
+  }, [producto, pres, cant, sala]);
+  const seEncarga = opciones?.modo === 'encargo';
   const total = pres ? redondear(pres.precio * cant) : 0;
   const minimo = redondear(total * 0.5);
   const ant = Number(anticipo) || 0;
+  const estadoPago = estadoDeFormaDePago(pago, ant);
   const problema = !cliente ? 'Elige el cliente.' : !producto ? 'Elige el producto.' : precios && !pres ? 'Ese producto no tiene precio.'
-    : !pres ? null : cant < 1 || cant > 50 ? 'La cantidad va de 1 a 50.' : ant < minimo ? `El anticipo mínimo es ${formatMoney(minimo)} (50 %).`
-      : ant > total ? 'El anticipo no puede pasar del total.' : null;
-  const listoParaGuardar = !problema && !!pres;
+    : !pres ? null : cant < 1 || cant > 50 ? 'La cantidad va de 1 a 50.' : !opciones ? null : seEncarga ? null
+      : ant < minimo ? `El anticipo mínimo es ${formatMoney(minimo)} (50 %).`
+        : ant > total ? 'El anticipo no puede pasar del total.' : estadoPago.falta;
+  const listoParaGuardar = !problema && !!pres && !!opciones;
+  const nombreDe = () => `${producto.nombre}${pres.tipo ? ` · ${pres.tipo}` : ''}`;
+
+  // Sin existencia (o insumo): se encarga sin cobrar.
+  const encargar = () => {
+    if (!listoParaGuardar || guardando) return;
+    Alert.alert('¿Registrar el encargo?', `${shortEmployeeName(cliente.name)} encarga ${cant} × ${nombreDe()}. Compras o administración confirma el precio y la fecha; cuando el cliente acepte, se cobra el 100 %.`, [
+      { text: 'Volver', style: 'cancel' },
+      { text: 'Registrar', onPress: async () => {
+        setGuardando(true); trabajando('Registrando el encargo…');
+        try {
+          const r = await crearEncargoEnSucursal({ branchId: sala, customerId: cliente.id, productoId: producto.id,
+            productoNombre: nombreDe(), factor: pres.factor, cantidad: cant });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          listo('Encargo registrado', `${r.codigo} · se confirma el precio antes de cobrar`);
+          router.back();
+        } catch (e) { fallo('No se pudo registrar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setGuardando(false); }
+      } },
+    ]);
+  };
 
   const guardar = () => {
     if (!listoParaGuardar || guardando) return;
-    const nombre = `${producto.nombre}${pres.tipo ? ` · ${pres.tipo}` : ''}`;
-    const metodoTexto = METODOS.find((m) => m.id === metodo)?.label ?? metodo;
-    Alert.alert('¿Guardar la reserva?', `${shortEmployeeName(cliente.name)} aparta ${cant} × ${nombre}.\nAnticipo ${formatMoney(ant)} (${metodoTexto}) · saldo ${formatMoney(total - ant)} al retirar · 7 días.`, [
+    const nombre = nombreDe();
+    const metodoTexto = FORMAS_DE_PAGO.find((f) => f.value === pago.forma)?.label ?? 'Efectivo';
+    Alert.alert(`¿Cobrar ${formatMoney(ant)}?`, `${shortEmployeeName(cliente.name)} aparta ${cant} × ${nombre}.\nAnticipo ${formatMoney(ant)} (${metodoTexto}) · saldo ${formatMoney(total - ant)} al retirar · 7 días.${estadoPago.noEfectivo ? ' No entra al cajón.' : ` Entra a la caja de ${nombreSala}.`}`, [
       { text: 'Volver', style: 'cancel' },
-      { text: 'Guardar e imprimir', onPress: async () => {
-        setGuardando(true); trabajando('Guardando la reserva…');
+      { text: 'Cobrar e imprimir', onPress: async () => {
+        setGuardando(true); trabajando('Cobrando el anticipo…');
         try {
-          const r = await crearReservaEnSucursal({
-            branchId: sala, customerId: cliente.id, productoId: producto.id, productoNombre: nombre,
-            cantidad: cant, precio: pres.precio, anticipo: ant, metodo,
+          let fotoUrl = null;
+          if (estadoPago.noEfectivo && pago.foto) {
+            fotoUrl = (await subirFotos([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala}/${user?.id ?? 'anon'}` }))[0] ?? null;
+            if (!fotoUrl) throw new Error('No se pudo subir la foto del comprobante. Revisa la conexión y vuelve a intentarlo.');
+          }
+          // El monto, el precio y la existencia los vuelve a validar el servidor.
+          const r = await anotarIngreso({
+            sala, monto: ant, clave, tipo: 'APARTADO', concepto: 'Anticipo', fotoUrl, ...datosDeFormaDePago(pago, fotoUrl),
+            apartado: { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombre,
+              factor: pres.factor, cantidad: cant, precio: pres.precio },
           });
-          useStaffStore.getState().appendAuditLog?.('RESERVA_EN_SUCURSAL', String(r.id), { anticipo: ant, total, metodo, cliente: cliente.id, desde: 'app' })?.catch?.(() => {});
-          const codigo = codigoDeReserva(r.id);
+          if (r?.error) throw r.error;
+          const a = r?.apartado;
+          if (!a) throw new Error('El cobro no quedó ligado a la reserva. Revisa la lista del día.');
           const papel = await imprimirEnLaSala(construirConstanciaDeReserva({
-            codigo, cliente: shortEmployeeName(cliente.name), producto: nombre, cantidad: cant, precio: pres.precio,
-            anticipo: ant, metodo: metodoTexto, venceAt: r.vence_at, sala: nombreSala, atendio: shortEmployeeName(user?.name ?? ''),
-          }), sala, `Reserva ${codigo}`);
+            codigo: a.codigo, cliente: shortEmployeeName(cliente.name), producto: nombre, cantidad: cant, precio: pres.precio,
+            anticipo: Number(a.anticipo), metodo: metodoTexto, venceAt: a.vence_at, sala: nombreSala, atendio: shortEmployeeName(user?.name ?? ''),
+          }), sala, `Reserva ${a.codigo}`);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          if (papel.ok) listo('Reserva guardada', `${codigo} · saldo ${formatMoney(total - ant)} al retirar`);
-          else fallo('Reserva guardada, pero la constancia no salió', papel.detalle);
+          if (r.aviso) fallo('Anticipo cobrado, con un pendiente', r.aviso);
+          else if (papel.ok) listo('Anticipo cobrado', `${a.codigo} · saldo ${formatMoney(Number(a.saldo))} al retirar`);
+          else fallo('Anticipo cobrado, pero la constancia no salió', papel.detalle);
           router.back();
-        } catch (e) { fallo('No se pudo reservar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setGuardando(false); }
+        } catch (e) { fallo('No se pudo cobrar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setGuardando(false); }
       } },
     ]);
   };
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reservar con anticipo' }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Apartar o encargar' }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
@@ -175,6 +220,13 @@ export default function ReservaConAnticipo() {
               </Seccion>
               {pres ? (
                 <>
+                  {seEncarga ? (
+                    <Seccion titulo="Cantidad">
+                      <View style={{ width: 90 }}><Campo multiline={false} value={cantidad} keyboardType="number-pad" onChangeText={(v) => setCantidad(v.replace(/\D/g, '').slice(0, 2))} placeholder="Cant." style={{ textAlign: 'center' }} /></View>
+                      <Aviso tono="cuidado" texto={opciones.insumo ? 'Es un insumo: se encarga sin cobrar. Compras o administración confirma el precio.'
+                        : `En ${nombreSala || 'la sala'} hay ${Number(opciones.disponibles)} y se piden ${Number(opciones.necesita)}: se encarga sin cobrar. Compras o administración confirma el precio.`} />
+                    </Seccion>
+                  ) : (<>
                   <Seccion titulo="Cantidad y anticipo" pie={`${formatMoney(pres.precio)} c/u · total ${formatMoney(total)} · mínimo ${formatMoney(minimo)}`}>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <View style={{ width: 90 }}><Campo multiline={false} value={cantidad} keyboardType="number-pad" onChangeText={(v) => setCantidad(v.replace(/\D/g, '').slice(0, 2))} placeholder="Cant." style={{ textAlign: 'center' }} /></View>
@@ -182,12 +234,13 @@ export default function ReservaConAnticipo() {
                     </View>
                     <Dato rotulo="Saldo al retirar" valor={ant >= minimo && ant <= total ? formatMoney(total - ant) : '—'} fuerte />
                   </Seccion>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Cómo dejó el anticipo</Text>
-                  <Segmentos opciones={METODOS} activa={metodo} onCambiar={setMetodo} margen={0} />
+                  <FormaDePago valor={pago} onCambiar={setPago} monto={ant || null} />
+                  </>)}
                 </>
               ) : null}
               {problema ? <Aviso tono="cuidado" texto={problema} /> : null}
-              <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar e imprimir'} color={MARCA.verde} deshabilitado={guardando || !listoParaGuardar} onPress={guardar} />
+              <BotonGrande texto={guardando ? 'Guardando…' : seEncarga ? 'Registrar encargo' : `Cobrar anticipo${ant ? ` ${formatMoney(ant)}` : ''}`}
+                color={MARCA.verde} deshabilitado={guardando || !listoParaGuardar} onPress={seEncarga ? encargar : guardar} />
             </>
           )}
         </ScrollView>

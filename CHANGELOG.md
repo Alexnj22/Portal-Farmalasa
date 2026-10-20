@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1320.1 — App: apartar o encargar y retirar desde el teléfono
+
+_(pendiente de redactar)_
+
+**App del personal, igual que el portal:**
+
+- «Reservar con anticipo» pasa a **«Apartar o encargar»**: el anticipo entra a la caja con su forma de pago y la foto del comprobante. Si en la sala no hay lo que se pide, o es un insumo, se registra el encargo sin cobrar. Antes el anticipo hecho desde el teléfono no entraba a ninguna caja.
+- En Meter dinero, «Apartar o encargar» abre esa misma pantalla.
+- **«Retirar»** reemplaza a «Retirada»: al contado con vale, o al crédito con el abono del anticipo, igual que en el portal.
+
 ## v2.1320.0 — Retirar lo apartado: el anticipo se aplica a la factura
 
 _(pendiente de redactar)_

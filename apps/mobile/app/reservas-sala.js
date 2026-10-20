@@ -3,12 +3,12 @@
 // en todas, con alcance todas). Se busca por el código que muestra el cliente
 // (R-000123, o el pedido del carrito P-XXXXXX con su total, si se pagó en
 // línea y los datos para el crédito fiscal), y cada una se aparta y avisa, se
-// marca retirada o se cancela — con confirmación. A quien no tiene la app se
+// retira (`reserva-retirar`: lo pagado se aplica a la factura) o se cancela. A quien no tiene la app se
 // le avisa por WhatsApp con el mensaje del núcleo, y se anota que se avisó.
 // Todo por las funciones de la base (`data/reservas`), las mismas del portal.
 // Las que tienen receta («en revisión») se abren en `reserva-receta` para
 // aprobarla, pedir otra foto o rechazarla; pasadas las 4 h se marcan urgentes.
-// Desde acá también se reserva con anticipo en el mostrador (`reserva-anticipo`).
+// Desde acá también se aparta o encarga en el mostrador (`reserva-anticipo`).
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -89,7 +89,6 @@ export default function ReservasDeSala() {
   const mover = (r, estado) => {
     const textos = {
       lista: ['Apartar y avisar', `Se aparta ${r.cantidad} × ${r.producto}${r.tiene_app ? ' y se le avisa al cliente en la app.' : '. El cliente no tiene la app: después se le avisa por WhatsApp.'}`, 'Apartar'],
-      retirada: ['Marcar retirada', `${pilaDelCliente(r)} retiró ${r.cantidad} × ${r.producto}.`, 'Retirada'],
       cancelada: ['Cancelar la reserva', `${codigoDeReserva(r.id)} · ${r.cantidad} × ${r.producto} se cancela.`, 'Cancelar reserva'],
     }[estado];
     Alert.alert(textos[0], textos[1], [
@@ -102,7 +101,7 @@ export default function ReservasDeSala() {
           if (estado === 'lista') {
             if (r.tiene_app) listo('Reserva lista', 'Le avisamos al cliente en la app.');
             else avisarPorWhatsapp({ ...r, estado: 'lista' });
-          } else listo(estado === 'retirada' ? 'Reserva retirada' : 'Reserva cancelada', '');
+          } else listo('Reserva cancelada', '');
           cargar();
         } catch (e) { fallo('No se pudo cambiar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
       } },
@@ -148,7 +147,7 @@ export default function ReservasDeSala() {
         </Text>
         {!todas && sala && !esBodega ? (
           <View style={{ marginHorizontal: 16, flexDirection: 'row' }}>
-            <Accion texto="Reservar con anticipo" onPress={() => router.push('/reserva-anticipo')} />
+            <Accion texto="Apartar o encargar" onPress={() => router.push('/reserva-anticipo')} />
           </View>
         ) : null}
         {pedido.renglones.length ? (
@@ -202,7 +201,8 @@ export default function ReservasDeSala() {
                   {enRevision ? (r.receta_ruta && r.puede_revisar_receta ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} /> : null) : r.estado === 'pendiente' ? <Accion texto="Apartar y avisar" color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} /> : (
                     <>
                       {!r.tiene_app ? <Accion texto="WhatsApp" onPress={() => avisarPorWhatsapp(r)} /> : null}
-                      <Accion texto="Retirada" color={MARCA.verde} onPress={() => mover(r, 'retirada')} deshabilitado={!!ocupada} />
+                      <Accion texto="Retirar" color={MARCA.verde} deshabilitado={!!ocupada}
+                        onPress={() => router.push({ pathname: '/reserva-retirar', params: { id: String(r.id), tipo: 'reserva', sala: String(r.branch_id ?? sala) } })} />
                     </>
                   )}
                   <Accion texto="Cancelar" color={MARCA.rojo} onPress={() => mover(r, 'cancelada')} deshabilitado={!!ocupada} />

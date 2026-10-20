@@ -251,6 +251,13 @@
           "cameraPermission": "Puntos Salud usa la cámara sólo cuando tú la abres, para tomar la foto de tu receta, una foto para el chat con la farmacia o tu foto de perfil.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Puntos Salud usa el micrófono sólo para grabar las notas de voz que mandas en el chat con la farmacia.",
+          "recordAudioAndroid": true
+        }
       ]
     ],
     "owner": "farmasalud",

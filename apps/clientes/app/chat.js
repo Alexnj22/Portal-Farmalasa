@@ -80,7 +80,7 @@
 //     por globo (fechas, enlaces) se calcula una vez. En desarrollo se anota
 //     en la consola cuánto tardó el primer cuadro y de dónde salió el hilo.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, Dimensions, FlatList, InteractionManager, Keyboard, Platform, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Dimensions, FlatList, InteractionManager, Keyboard, Platform, StyleSheet, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
@@ -105,6 +105,8 @@ import { usarVistaPreviaFoto } from '../componentes/VistaPreviaFoto';
 import { Cita, Compositor, copiar, Deslizable, MenuMensaje, preguntarAdjunto, Reacciones, Respondiendo, subidaConTeclado, useMedir } from '../componentes/ChatPiezas';
 import { BuscadorProducto, Calificar, ProductoPendiente, respuestasSugeridas, Sugerencias, TarjetaProducto, TextoConEnlaces } from '../componentes/ChatConsultas';
 import VisorFotos from '../componentes/VisorFotos';
+import { Documento, elegirPdf, Grabadora, HAY_AUDIO, NotaDeVoz, permisoMicrofono } from '../componentes/ChatMedios';
+import { escucharTimbre } from '../lib/enVivo';
 import BuscarEnChat from '../componentes/BuscarEnChat';
 import { suave, useTema } from '../tema/tema';
 import { useMiNivel } from '../lib/exclusiva';
@@ -112,6 +114,11 @@ import { chatAbierto, desdeFechaPrimera, guardarHilo, leerHilo } from '../lib/ch
 
 const IOS = Platform.OS === 'ios';
 const CADA_MS = 5000;
+// Con el timbre en vivo conectado (lib/enVivo), el sondeo es sólo la red de
+// seguridad: cada 20 s.
+const CADA_EN_VIVO_MS = 20_000;
+// Editar lo propio hasta 15 min; borrarlo, hasta 1 hora (el servidor manda igual).
+const EDITAR_MS = 15 * 60_000, BORRAR_MS = 60 * 60_000;
 // Con alguien del equipo escribiendo o atendiendo, la respuesta está cerca.
 const CADA_RAPIDO_MS = 3000;
 // «Está escribiendo» le dura 6 s al equipo: avisar cada 3 s lo mantiene encendido.
@@ -238,6 +245,13 @@ export default function Chat() {
   // El visor a pantalla completa (2026-10-20): TODAS las fotos del hilo, para pasar de una a otra.
   const [visor, setVisor] = useState(null); // { fotos: [{ uri, cacheKey? }], i }
   const [buscar, setBuscar] = useState(false);
+  // En vivo (2026-10-20): el canal secreto de la conversación y la hora del
+  // servidor desde la que se piden los cambios (ediciones, borrados).
+  const [canal, setCanal] = useState(null);
+  const enVivo = useRef(false);
+  const cambiosDesde = useRef(null);
+  const [grabando, setGrabando] = useState(false);
+  const [editando, setEditando] = useState(null); // { id, texto }
   const lista = useRef(null);
   const campo = useRef(null);
   const ultimoId = useRef(0);
@@ -290,6 +304,14 @@ export default function Chat() {
     guardarHilo({ token, mensajes: mensajes.filter((m) => !m.enviando), hayMas, fuera, horario, conversacion, sinLeer: 0, vivo: null, en: Date.now() });
   }, [token, mensajes, hayMas, fuera, horario, conversacion, pendiente]);
 
+  // Lo que cambió (editados, borrados): se reemplaza en su lugar.
+  const aplicarCambios = (r) => {
+    if (r?.hora) cambiosDesde.current = r.hora;
+    if (r?.canal) setCanal((c) => (c === r.canal ? c : r.canal));
+    if (!r?.cambios?.length) return;
+    const porId = new Map(r.cambios.map((m) => [m.id, m]));
+    setMensajes((ant) => (ant ?? []).map((m) => (porId.has(m.id) ? { ...porId.get(m.id), reacciones: porId.get(m.id).reacciones ?? m.reacciones } : m)));
+  };
   // El id más nuevo que ya se tiene (los temporales no cuentan).
   const anotarUltimo = (arr) => {
     for (const m of arr) if (typeof m.id === 'number' && m.id > ultimoId.current) ultimoId.current = m.id;
@@ -305,6 +327,8 @@ export default function Chat() {
     if (r?.pendiente) { setPendiente(true); setMensajes([]); return; }
     if (!r?.ok) { setError(r?.mensaje ?? 'Revisa tu conexión.'); setMensajes((x) => x ?? []); return; }
     setError(null);
+    if (r.hora) cambiosDesde.current = r.hora;
+    if (r.canal) setCanal(r.canal);
     setFuera(!!r.fuera_de_horario);
     if (r.horario) setHorario(siCambio(r.horario));
     if ('vivo' in r) anotarVivo(r.vivo);
@@ -330,7 +354,8 @@ export default function Chat() {
     if (!ultimoId.current) { await cargar(); return; }
     preguntando.current = Date.now();
     try {
-      const r = await pedir('chat_mensajes', { desde_id: ultimoId.current });
+      const r = await pedir('chat_mensajes', { desde_id: ultimoId.current, ...(cambiosDesde.current ? { cambios_desde: cambiosDesde.current } : {}) });
+      if (r?.ok) aplicarCambios(r);
       // Lo «en vivo» cambia aunque no haya mensajes nuevos.
       if (r?.ok && 'vivo' in r) anotarVivo(r.vivo);
       if (r?.ok && r.conversacion) setConversacion(siCambio(r.conversacion));
@@ -389,9 +414,9 @@ export default function Chat() {
     let vivoAca = true;
     const tic = async () => {
       await nuevos();
-      if (vivoAca) reloj = setTimeout(tic, rapido.current ? CADA_RAPIDO_MS : CADA_MS);
+      if (vivoAca) reloj = setTimeout(tic, enVivo.current ? CADA_EN_VIVO_MS : rapido.current ? CADA_RAPIDO_MS : CADA_MS);
     };
-    reloj = setTimeout(tic, rapido.current ? CADA_RAPIDO_MS : CADA_MS);
+    reloj = setTimeout(tic, enVivo.current ? CADA_EN_VIVO_MS : rapido.current ? CADA_RAPIDO_MS : CADA_MS);
     // Llegó el push de una respuesta: se pregunta ya, sin esperar los 5 s.
     const quitar = alLlegarAviso((a) => { if (typeof a.url === 'string' && a.url.startsWith('/chat')) nuevos(); });
     const app = AppState.addEventListener('change', (e) => { if (e === 'active') nuevos(); });
@@ -403,6 +428,22 @@ export default function Chat() {
       setNuevosDesde(null);
     };
   }, [cargar, nuevos])); // eslint-disable-line react-hooks/exhaustive-deps -- `mensajes` sólo decide la primera carga
+
+  // El timbre en vivo (2026-10-20): con la pantalla a la vista y el canal de
+  // la conversación conocido, cada cambio en la base pide lo nuevo al
+  // instante. Si no conecta, el sondeo de arriba sigue como antes.
+  const nuevosRef = useRef(nuevos);
+  nuevosRef.current = nuevos;
+  useFocusEffect(useCallback(() => {
+    if (!canal) return undefined;
+    let espera = null;
+    const soltar = escucharTimbre(canal, () => {
+      // Varios timbres seguidos (un mensaje y su «visto») piden una sola vez.
+      clearTimeout(espera);
+      espera = setTimeout(() => nuevosRef.current(), 120);
+    }, (conectado) => { enVivo.current = conectado; if (conectado) nuevosRef.current(); });
+    return () => { clearTimeout(espera); soltar(); enVivo.current = false; };
+  }, [canal]));
 
   // El menú de un mensaje se cierra si se abre el teclado (2026-10-14).
   useEffect(() => {
@@ -497,15 +538,15 @@ export default function Chat() {
   const ponerEnviado = (tmpId, real) => {
     setMensajes((ant) => (ant ?? []).filter((m) => m.id !== real.id).map((m) => (m.id === tmpId ? real : m)));
   };
-  const mandar = async ({ texto: tx = null, uri = null, prod = null, cita = null, reemplaza = null, previo = null }) => {
+  const mandar = async ({ texto: tx = null, uri = null, prod = null, cita = null, reemplaza = null, previo = null, archivo = null }) => {
     if (enviarYa.current) return false;
     enviarYa.current = true;
     setEnviando(true);
     // Lo mandado y el último id conocido ANTES de mandarlo: lo que se busque
     // después, si la respuesta no llega, tiene que ser posterior a él.
-    const envio = { texto: tx, uri, prod, cita, idAntes: ultimoId.current };
+    const envio = { texto: tx, uri, prod, cita, archivo, idAntes: ultimoId.current };
     const tmp = { id: reemplaza ?? `tmp-${Date.now()}`, autor: 'cliente', texto: tx, foto_url: uri, created_at: new Date().toISOString(), enviando: true,
-      adjunto: prod ? { tipo: 'producto', ...prod } : null,
+      adjunto: prod ? { tipo: 'producto', ...prod } : archivo ? { tipo: archivo.tipo, url: archivo.uri, nombre: archivo.nombre ?? null, duracion: archivo.duracion ?? null } : null,
       responde_a: cita ? { id: cita.id, autor: cita.autor, texto: cita.texto, foto: cita.foto } : null, reacciones: [] };
     alFondo.current = true;
     setSinVer(0);
@@ -525,7 +566,15 @@ export default function Chat() {
         if (!s.ok) throw new Error(s.mensaje);
         fotoRuta = s.ruta;
       }
-      const r = await pedir('chat_enviar', { texto: tx, foto_ruta: fotoRuta, ...(cita ? { respuesta_a: cita.id } : {}), ...(prod ? { producto_id: prod.id } : {}) });
+      // Un documento o una nota de voz (2026-10-20): se sube con su tipo.
+      let archivoRuta = null;
+      if (archivo) {
+        const s2 = await subirFoto(pedir, 'chat_subir_url', { tipo: archivo.tipo }, archivo.uri, archivo.tipo === 'pdf' ? 'application/pdf' : 'audio/mp4');
+        if (!s2.ok) throw new Error(s2.mensaje);
+        archivoRuta = s2.ruta;
+      }
+      const r = await pedir('chat_enviar', { texto: tx, foto_ruta: fotoRuta, ...(cita ? { respuesta_a: cita.id } : {}), ...(prod ? { producto_id: prod.id } : {}),
+        ...(archivo ? { archivo_ruta: archivoRuta, archivo_tipo: archivo.tipo, archivo_nombre: archivo.nombre ?? null, duracion: archivo.duracion ?? null } : {}) });
       if (!r?.ok && r?.sinConfirmar) {
         const ya = await buscarEnviado(envio);
         if (ya) { ponerEnviado(tmp.id, ya); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); return true; }
@@ -584,6 +633,21 @@ export default function Chat() {
   // falla se queda en la conversación para reintentar, no vuelve a la barra.
   const enviarBarra = async () => {
     const tx = texto.trim();
+    // Editando (2026-10-20): se guarda el texto nuevo en su lugar.
+    if (editando) {
+      const ed = editando;
+      if (!tx) return;
+      setEditando(null);
+      setTexto('');
+      setMensajes((ant) => (ant ?? []).map((m) => (m.id === ed.id ? { ...m, texto: tx, editado: true } : m)));
+      const r = await pedir('chat_editar', { id: ed.id, texto: tx });
+      if (!r?.ok) {
+        setMensajes((ant) => (ant ?? []).map((m) => (m.id === ed.id ? { ...m, texto: ed.texto, editado: ed.editado } : m)));
+        Alert.alert('No se editó', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      } else if (r.mensaje) setMensajes((ant) => (ant ?? []).map((m) => (m.id === ed.id ? { ...r.mensaje, reacciones: m.reacciones } : m)));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      return;
+    }
     if ((!tx && !producto) || enviando) return;
     const cita = respondiendo;
     const prod = producto;
@@ -598,6 +662,15 @@ export default function Chat() {
     const origen = origenDado ?? await preguntarAdjunto();
     if (!origen) return;
     if (origen === 'producto') { preguntaDelAtajo.current = null; setBuscador(true); return; }
+    if (origen === 'pdf') {
+      const d = await elegirPdf();
+      if (d?.error) { Alert.alert('No se pudo usar el documento', d.error); return; }
+      if (!d) return;
+      const cita = respondiendo;
+      setRespondiendo(null);
+      await mandar({ archivo: { tipo: 'pdf', uri: d.uri, nombre: d.nombre }, cita });
+      return;
+    }
     // De la galería, VARIAS a la vez (2026-10-20, hasta 6), una tras otra y
     // en el orden en que se eligieron; la cámara sigue con su vista previa.
     if (origen === 'galeria') {
@@ -617,6 +690,39 @@ export default function Chat() {
     const cita = respondiendo;
     setRespondiendo(null);
     await mandar({ uri: f.uri, cita });
+  };
+  // Nota de voz (2026-10-20): el micrófono abre la grabadora en la barra.
+  const grabar = async () => {
+    if (enviando || grabando) return;
+    Keyboard.dismiss();
+    if (await permisoMicrofono()) setGrabando(true);
+  };
+  const enviarNota = async ({ uri, duracion }) => {
+    setGrabando(false);
+    const cita = respondiendo;
+    setRespondiendo(null);
+    await mandar({ archivo: { tipo: 'audio', uri, duracion }, cita });
+  };
+  // Borrar lo propio: se confirma, y queda «Eliminaste este mensaje».
+  const borrar = (m) => {
+    Alert.alert('¿Eliminar este mensaje?', 'Se elimina para ti y para la farmacia.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: async () => {
+        const antes = m;
+        setMensajes((ant) => (ant ?? []).map((x) => (x.id === m.id ? { ...x, borrado: true, texto: null, foto_url: null, adjunto: null, reacciones: [] } : x)));
+        const r = await pedir('chat_borrar', { id: m.id });
+        if (!r?.ok) {
+          setMensajes((ant) => (ant ?? []).map((x) => (x.id === m.id ? antes : x)));
+          Alert.alert('No se eliminó', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+        } else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      } },
+    ]);
+  };
+  const editar = (m) => {
+    setEditando({ id: m.id, texto: m.texto, editado: !!m.editado });
+    setRespondiendo(null);
+    setTexto(m.texto ?? '');
+    setTimeout(() => campo.current?.focus?.(), 50);
   };
   const elegirProducto = (p) => {
     setBuscador(false);
@@ -988,8 +1094,24 @@ export default function Chat() {
       {/* La barra para escribir, como iMessage (componentes/ChatPiezas). */}
       <Compositor texto={texto} alEscribir={alEscribir} alEnviar={enviarBarra} alAdjuntar={adjuntar} enviando={enviando}
         campoRef={campo} listo={!!producto} tecladoAlto={tecladoAlto}
+        alGrabar={HAY_AUDIO && !editando ? grabar : null}
+        grabadora={grabando ? <Grabadora alEnviar={enviarNota} alCancelar={() => setGrabando(false)} /> : null}
         encima={(
           <>
+            {editando ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginTop: 8, paddingLeft: 10,
+                borderLeftWidth: 3, borderLeftColor: t.color.magenta }}>
+                <Icono sf="pencil" respaldo="✎" tam={14} color={t.color.magentaTexto} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Editando mensaje</Text>
+                  <Text numberOfLines={1} style={{ fontSize: 13, color: colorSistema.texto3 }}>{editando.texto}</Text>
+                </View>
+                <Presionable onPress={() => { setEditando(null); setTexto(''); }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cancelar la edición"
+                  style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icono sf="xmark" respaldo="✕" tam={14} color={colorSistema.texto3} />
+                </Presionable>
+              </View>
+            ) : null}
             {conAtajos ? <Sugerencias alElegir={atajo} /> : sugeridas.length ? <Sugerencias alElegir={atajo} lista={sugeridas} /> : null}
             {respondiendo ? <Respondiendo cita={respondiendo} alCancelar={() => setRespondiendo(null)} /> : null}
             {producto ? <ProductoPendiente p={producto} alQuitar={() => { Haptics.selectionAsync().catch(() => {}); setProducto(null); }} /> : null}
@@ -1013,7 +1135,11 @@ export default function Chat() {
           alCopiarProducto={() => {
             const m = menu.m; setMenu(null);
             if (copiar(nombreProducto(m.adjunto?.nombre))) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          }} />
+          }}
+          alEditar={menu.m.autor === 'cliente' && menu.m.texto && !menu.m.borrado && Date.now() - Date.parse(menu.m.created_at) < EDITAR_MS
+            ? () => { const m = menu.m; setMenu(null); editar(m); } : null}
+          alBorrar={menu.m.autor === 'cliente' && !menu.m.borrado && Date.now() - Date.parse(menu.m.created_at) < BORRAR_MS
+            ? () => { const m = menu.m; setMenu(null); borrar(m); } : null} />
       ) : null}
     </View>
   );
@@ -1239,6 +1365,18 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
       </Animated.View>
     );
   }
+  // Borrado (2026-10-20): el globo queda, en gris y en cursiva.
+  if (m.borrado) {
+    return (
+      <View style={{ flexDirection: 'row', justifyContent: mio ? 'flex-end' : 'flex-start', marginTop: primero ? 10 : 2, paddingLeft: mio ? 0 : 36 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 13, paddingVertical: 8, borderRadius: R,
+          borderWidth: StyleSheet.hairlineWidth, borderColor: colorSistema.separador, backgroundColor: t.oscuro ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.6)' }}>
+          <Icono sf="nosign" respaldo="⊘" tam={13} color={colorSistema.texto3} />
+          <Text style={{ fontSize: 15, fontStyle: 'italic', color: colorSistema.texto3 }}>{mio ? 'Eliminaste este mensaje' : 'Se eliminó este mensaje'}</Text>
+        </View>
+      </View>
+    );
+  }
   const fondo = mio ? t.color.magenta : globoEquipo(t.oscuro);
   const colorTexto = mio ? '#FFFFFF' : colorSistema.texto;
   const nombre = m.equipo?.nombre ? nombrePropio(m.equipo.nombre) : 'Farmacia Salud';
@@ -1248,7 +1386,7 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
     ? { borderTopLeftRadius: R, borderBottomLeftRadius: R, borderTopRightRadius: primero ? R : r, borderBottomRightRadius: ultimo ? R : r }
     : { borderTopRightRadius: R, borderBottomRightRadius: R, borderTopLeftRadius: primero ? R : r, borderBottomLeftRadius: ultimo ? R : r };
   const hora = horaDe(m.created_at);
-  const leyenda = `${mio ? 'Tú' : nombre}: ${m.texto ?? (m.foto_url ? 'Foto' : m.adjunto ? 'Producto' : '')}. ${hora}${mio && estado ? `. ${estado === 'visto' ? 'Visto' : 'Enviado'}` : ''}`;
+  const leyenda = `${mio ? 'Tú' : nombre}: ${m.texto ?? (m.foto_url ? 'Foto' : m.adjunto?.tipo === 'audio' ? 'Nota de voz' : m.adjunto?.tipo === 'pdf' ? 'Documento' : m.adjunto ? 'Producto' : '')}. ${hora}${mio && estado ? `. ${estado === 'visto' ? 'Visto' : 'Enviado'}` : ''}`;
   return (
     <Animated.View entering={entrada} style={{ flexDirection: 'row', justifyContent: mio ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8,
       marginTop: primero ? 10 : 2, borderRadius: 14, backgroundColor: resaltado ? suave(t.color.magenta, 0.14) : 'transparent' }}>
@@ -1292,7 +1430,10 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
                     contentFit="cover" transition={150} cachePolicy="memory-disk" recyclingKey={m.foto_clave || m.foto_url} />
                 </Presionable>
               ) : null}
-              {m.adjunto ? (m.adjunto.tipo === 'producto' ? <TarjetaProducto a={m.adjunto} mio={mio} /> : <Oferta a={m.adjunto} />) : null}
+              {m.adjunto ? (m.adjunto.tipo === 'producto' ? <TarjetaProducto a={m.adjunto} mio={mio} />
+                : m.adjunto.tipo === 'audio' ? <NotaDeVoz a={m.adjunto} mio={mio} />
+                : m.adjunto.tipo === 'pdf' ? <Documento a={m.adjunto} mio={mio} />
+                : <Oferta a={m.adjunto} />) : null}
               {m.texto ? (
                 <View style={{ backgroundColor: fondo, ...radios, paddingHorizontal: 13, paddingVertical: 8, opacity: m.enviando ? 0.75 : 1,
                   ...(resaltado ? { borderWidth: 2, borderColor: mio ? '#FFFFFF' : t.color.magenta } : {}) }}>
@@ -1312,6 +1453,7 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
           ultimo ? <Text style={{ fontSize: 11, color: colorSistema.texto3, marginHorizontal: 6 }}>Enviando…</Text> : null
         ) : ultimo || verHora ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginHorizontal: 6 }}>
+            {m.editado ? <Text style={{ fontSize: 11, color: colorSistema.texto3 }}>Editado ·</Text> : null}
             <Text style={{ fontSize: 11, color: colorSistema.texto3 }}>{hora}</Text>
             {mio && estado ? <Palomitas visto={estado === 'visto'} /> : null}
             {mio && rotuloEstado ? (

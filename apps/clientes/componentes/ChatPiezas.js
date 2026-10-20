@@ -48,13 +48,13 @@ export function copiar(texto) {
 const resumenDeCita = (c) => (c?.texto ? c.texto : c?.foto ? '📷 Foto' : 'Mensaje');
 
 // ── La barra para escribir ───────────────────────────────────────────────
-/** El «+»: «Consultar un producto» / «Tomar foto» / «Elegir de Fotos», con la hoja del sistema (en Android, la de HojasAndroid). */
+/** El «+»: «Consultar un producto» / «Tomar foto» / «Elegir de Fotos» / «Documento (PDF)», con la hoja del sistema (en Android, la de HojasAndroid). */
 export function preguntarAdjunto() {
   return new Promise((listo) => {
     ActionSheetIOS.showActionSheetWithOptions({
       title: 'Adjuntar', message: 'Un producto del catálogo, la caja del medicamento o tu receta.',
-      options: ['Consultar un producto', 'Tomar foto', IOS ? 'Elegir de Fotos' : 'Elegir de la galería', 'Cancelar'], cancelButtonIndex: 3,
-    }, (i) => listo(i === 0 ? 'producto' : i === 1 ? 'camara' : i === 2 ? 'galeria' : null));
+      options: ['Consultar un producto', 'Tomar foto', IOS ? 'Elegir de Fotos' : 'Elegir de la galería', 'Documento (PDF)', 'Cancelar'], cancelButtonIndex: 4,
+    }, (i) => listo(i === 0 ? 'producto' : i === 1 ? 'camara' : i === 2 ? 'galeria' : i === 3 ? 'pdf' : null));
   });
 }
 
@@ -96,7 +96,9 @@ export function subidaConTeclado(h, insAbajo) {
 // queda detrás del teclado. En iOS 26 la barra es una cápsula de
 // Liquid Glass separada de los bordes, como el teclado flotante: sin franjas
 // vacías a los costados ni bordes duros.
-export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false, tecladoAlto = null }) {
+// `alGrabar` / `grabadora` (2026-10-20): con el campo vacío, el micrófono junto
+// a la cámara (como WhatsApp); mientras se graba, la barra es la grabadora.
+export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, encima, campoRef, listo = false, tecladoAlto = null, alGrabar = null, grabadora = null }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const teclado = useTecladoAbierto();
@@ -111,6 +113,7 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
   const contenido = (
     <>
       {encima}
+      {grabadora ?? (
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 6, paddingTop: 6,
         paddingBottom: IOS26 ? 4 : tecladoAlto ? 0 : abajoFijo }}>
         <Redondo sf="plus" respaldo="+" etiqueta="Adjuntar un producto o una foto" alTocar={() => alAdjuntar(null)} apagado={enviando} />
@@ -131,7 +134,9 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
         </View>
         {/* Con el campo vacío, el atajo a la cámara (como iMessage / WhatsApp). */}
         {!hay ? <Redondo sf="camera.fill" respaldo="📷" etiqueta="Tomar una foto" alTocar={() => alAdjuntar('camara')} apagado={enviando} /> : null}
+        {!hay && alGrabar ? <Redondo sf="mic.fill" respaldo="🎤" etiqueta="Grabar una nota de voz" alTocar={alGrabar} apagado={enviando} /> : null}
       </View>
+      )}
     </>
   );
   if (IOS26) {
@@ -245,7 +250,9 @@ export function Deslizable({ children, alResponder, alMantener }) {
 }
 
 // ── El menú del mensaje ─────────────────────────────────────────────────
-export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopiarProducto, alCerrar }) {
+// `alEditar` / `alBorrar` (2026-10-20): sólo llegan cuando se puede —un mensaje
+// propio, dentro de su plazo—; si no, no aparecen.
+export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopiarProducto, alEditar, alBorrar, alCerrar }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
@@ -267,7 +274,7 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
   const mio = m.autor === 'cliente';
   const mia = (m.reacciones ?? []).find((r) => r.mia)?.emoji ?? null;
   const conProducto = m.adjunto?.tipo === 'producto' && !!alCopiarProducto;
-  const ALTO_EMOJIS = 52, ALTO_ACCIONES = 52 * (1 + (m.texto ? 1 : 0) + (conProducto ? 1 : 0)), GAP = 8;
+  const ALTO_EMOJIS = 52, ALTO_ACCIONES = 52 * (1 + (m.texto ? 1 : 0) + (conProducto ? 1 : 0) + (alEditar ? 1 : 0) + (alBorrar ? 1 : 0)), GAP = 8;
   // Las reacciones arriba del globo y las acciones abajo; si no caben, se
   // corren para quedar dentro de la pantalla (el globo queda donde estaba).
   const top = Math.max(ins.top + 8, Math.min(caja.y - ALTO_EMOJIS - GAP, piso - ALTO_EMOJIS - ALTO_ACCIONES - GAP * 2 - Math.min(caja.h, 120)));
@@ -277,20 +284,22 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
   const izqAcc = Math.max(12, Math.min(W - 250 - 12, mio ? caja.x + caja.w - 250 : caja.x));
   const panel = t.oscuro ? 'rgba(44,44,46,0.96)' : 'rgba(255,255,255,0.97)';
   const sombra = { shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 };
-  const Fila = ({ sf, respaldo, texto, alTocar, borde }) => (
+  const Fila = ({ sf, respaldo, texto, alTocar, borde, peligro }) => (
     <Presionable onPress={alTocar} accessibilityRole="menuitem"
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16,
         backgroundColor: pressed ? (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)') : 'transparent',
         ...(borde ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador } : {}) })}>
-      <Text style={{ fontSize: 17, color: colorSistema.texto }}>{texto}</Text>
-      <Icono sf={sf} respaldo={respaldo} tam={18} color={colorSistema.texto} />
+      <Text style={{ fontSize: 17, color: peligro ? colorSistema.rojo : colorSistema.texto }}>{texto}</Text>
+      <Icono sf={sf} respaldo={respaldo} tam={18} color={peligro ? colorSistema.rojo : colorSistema.texto} />
     </Presionable>
   );
   return (
     <Modal visible transparent animationType="fade" onRequestClose={alCerrar} statusBarTranslucent>
-      {/* Tocar en cualquier lado lo cierra. Un velo oscuro y nada más: sin desenfoque. */}
-      <Presionable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.25)' }]} onPress={alCerrar} android_ripple={false}
-        accessibilityRole="button" accessibilityLabel="Cerrar el menú" />
+      {/* Tocar en cualquier lado lo cierra. En iPhone, el fondo DIFUMINADO del
+          menú contextual del sistema (2026-10-20); en Android, el velo de Material. */}
+      {IOS ? <BlurView intensity={28} tint={t.oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} pointerEvents="none" /> : null}
+      <Presionable style={[StyleSheet.absoluteFill, { backgroundColor: IOS ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.25)' }]} onPress={alCerrar} android_ripple={false}
+        accessibilityRole="button" accessibilityLabel="Cerrar el menú" sinAcuse />
       <Animated.View style={[{ position: 'absolute', top, left: izq, flexDirection: 'row', gap: 0, paddingHorizontal: 6, height: ALTO_EMOJIS, alignItems: 'center',
         borderRadius: ALTO_EMOJIS / 2, backgroundColor: panel }, sombra, animado]} accessibilityRole="menu">
         {EMOJIS.map((e) => (
@@ -305,6 +314,8 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
         <Fila sf="arrowshape.turn.up.left.fill" respaldo="↩" texto="Responder" alTocar={alResponder} />
         {m.texto ? <Fila sf="doc.on.doc" respaldo="⧉" texto="Copiar" alTocar={alCopiar} borde /> : null}
         {conProducto ? <Fila sf="pills" respaldo="⧉" texto="Copiar nombre del producto" alTocar={alCopiarProducto} borde /> : null}
+        {alEditar ? <Fila sf="pencil" respaldo="✎" texto="Editar" alTocar={alEditar} borde /> : null}
+        {alBorrar ? <Fila sf="trash" respaldo="🗑" texto="Eliminar" alTocar={alBorrar} borde peligro /> : null}
       </Animated.View>
     </Modal>
   );

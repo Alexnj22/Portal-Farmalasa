@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1316.0 — Chat de Puntos Salud: en vivo, editar y borrar, notas de voz y PDF; código del premio en el cupón
+
+Etapa 2 de «que el chat sea como las apps de mensajería», y el raspable con el código adentro (2026-10-20):
+
+- **Mensajes al instante**: cada conversación tiene un canal secreto y la base toca un **timbre** (broadcast de Realtime sin contenido) en cada mensaje, edición, reacción, «escribiendo» o «visto» (`app_chat_timbre`, migración `20261020164024`). La app lo escucha con un cliente mínimo de Realtime (`lib/enVivo.js`, sin agregar librerías) y pide lo nuevo al instante; con el timbre vivo, el sondeo baja a cada 20 s como red de seguridad. Por el canal no viaja ni una letra.
+- **Editar** (15 min) y **eliminar** (1 hora) lo propio, desde el menú del mensaje; «Editado» junto a la hora y «Eliminaste este mensaje» en gris. El contenido borrado se conserva en la base para el equipo. La app pide «lo que cambió desde…» (`cambios_desde`, `cambiado_at`).
+- **Notas de voz**: micrófono junto a la cámara; grabadora con onda que sigue la voz, tiempo y tope de 2 min; el globo se reproduce con avance tocable. m4a/AAC (se escucha en iPhone, Android y el portal). Nuevo módulo nativo `expo-audio` (con el permiso del micrófono) — una compilación vieja no ofrece la grabadora y nunca se cierra.
+- **Documentos PDF** desde «+» (hasta 8 MB, `expo-document-picker`); se abren en el visor del sistema.
+- El bucket del chat acepta PDF y audio; el resumen de la bandeja del equipo dice «Nota de voz» o «Documento» (`app_chat_resumen`, migración `20261020164138`).
+- Menú del mensaje con el fondo **difuminado** del menú contextual de iOS.
+- **Raspable** (pedido del usuario): el código de barras o QR va **dentro del cupón**, en un talón bajo una línea de corte, y se retira en **cualquier sucursal** — se quitó «Elegir dónde lo retiro».
+
 ## v2.1315.0 — Chat de Puntos Salud: varias fotos, visor con zoom, buscar, galería y respuestas sugeridas
 
 Etapa 1 de «que el chat sea como las apps de mensajería» (2026-10-20):

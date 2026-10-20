@@ -1524,7 +1524,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
-    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_subir_url", "chat_reaccionar", "chat_escribiendo", "chat_calificar", "chat_buscar", "chat_galeria", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
+    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_subir_url", "chat_reaccionar", "chat_escribiendo", "chat_calificar", "chat_buscar", "chat_galeria", "chat_editar", "chat_borrar", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
       if (!customerId) return json({ ok: false, pendiente: true, mensaje: "Completa tu registro en una sucursal para usar esta opción." });
     }
 
@@ -1634,7 +1634,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     const POR_PAGINA_CHAT = 30;
     const convDe = async () => {
       const { data, error } = await admin.from("app_chat_conversaciones")
-        .select("id, sin_leer_cliente, tomada_por, tomada_at, escribiendo_por, escribiendo_at, visto_equipo_at, ultimo_de, ultimo_mensaje_at, estado, resuelta_at, calificacion, calificada_at")
+        .select("id, canal, sin_leer_cliente, tomada_por, tomada_at, escribiendo_por, escribiendo_at, visto_equipo_at, ultimo_de, ultimo_mensaje_at, estado, resuelta_at, calificacion, calificada_at")
         .eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
       return data;
@@ -1660,6 +1660,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // no obliga a bajar otra vez la misma foto. Las firmas además se reusan
     // por instancia (`firmarChat`), y los pasos independientes —el equipo con
     // sus fotos, las fotos de los mensajes, reacciones y citas— van a la vez.
+    // deno-lint-ignore no-explicit-any
+    // Un documento (PDF) o una nota de voz en el adjunto (2026-10-20). Sólo
+    // rutas del propio chat: del cliente (`chat/<id>/<n>.<ext>`) o del equipo
+    // (`chat/<id>/equipo/<n>.<ext>`).
+    // deno-lint-ignore no-explicit-any
+    const archivoDe = (a: any): { tipo: "pdf" | "audio"; ruta: string; nombre: string | null; duracion: number | null } | null => {
+      if (!a || typeof a !== "object" || (a.tipo !== "pdf" && a.tipo !== "audio")) return null;
+      const ruta = String(a.ruta ?? "");
+      if (!/^chat\/\d+\/(equipo\/)?\d+\.(pdf|m4a)$/.test(ruta)) return null;
+      const d = Number(a.duracion);
+      return { tipo: a.tipo, ruta, nombre: a.nombre ? String(a.nombre).slice(0, 120) : null, duracion: Number.isFinite(d) && d > 0 ? Math.round(d) : null };
+    };
     // deno-lint-ignore no-explicit-any
     const armarMensajes = async (filas: any[]) => {
       const idsEq = [...new Set(filas.map((m) => m.employee_id).filter(Boolean))];
@@ -1698,7 +1710,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // del citado.
       const [persona, fotos, { data: reacs, error: eR }, { data: citas, error: eCi }] = await Promise.all([
         equipoConFotos(),
-        firmarChat(admin, BUCKET_ARCHIVOS, filas.map((m) => m.foto_ruta).filter(Boolean)),
+        // Las fotos y, desde el 2026-10-20, los documentos y notas de voz.
+        firmarChat(admin, BUCKET_ARCHIVOS, [...filas.map((m) => m.foto_ruta), ...filas.map((m) => archivoDe(m.adjunto)?.ruta)].filter(Boolean)),
         idsMsg.length ? admin.from("app_chat_reacciones").select("mensaje_id, autor, employee_id, emoji").limit(900).in("mensaje_id", idsMsg)
           : Promise.resolve({ data: [], error: null }),
         idsCita.length ? admin.from("app_chat_mensajes").select("id, autor, texto, foto_ruta, conversacion_id").limit(200).in("id", idsCita)
@@ -1713,6 +1726,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           return { tipo: "producto", id: Number(a.id), nombre: String(a.nombre ?? ""), precio: a.precio == null ? null : Number(a.precio), foto };
         }
         if (a.tipo === "oferta" && a.id != null) return { tipo: "oferta", id: String(a.id), titulo: String(a.titulo ?? "") };
+        // Documento o nota de voz (2026-10-20): la URL firmada, nunca la ruta.
+        const ar = archivoDe(a);
+        if (ar) {
+          const url = fotos.get(ar.ruta) ?? null;
+          return url ? { tipo: ar.tipo, url, clave: `${BUCKET_ARCHIVOS}/${ar.ruta}`, nombre: ar.nombre, duracion: ar.duracion } : null;
+        }
         return null;
       };
       if (eR) console.error("chat: reacciones", eR.message);
@@ -1728,8 +1747,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         id: Number(c.id), autor: c.autor, texto: c.texto ? String(c.texto).slice(0, 140) : null, foto: !!c.foto_ruta,
       }]));
       return filas.map((m) => {
+        // Borrado (2026-10-20): el contenido sigue en la fila para el equipo;
+        // a la app sólo le llega que se borró.
+        if (m.borrado_at) {
+          return { id: Number(m.id), autor: m.autor, texto: null, created_at: m.created_at, foto_url: null, foto_clave: null, adjunto: null,
+            equipo: m.autor === "equipo" ? persona.get(m.employee_id) ?? { nombre: "Farmacia Salud", foto_url: null, foto_clave: null } : null,
+            reacciones: [], responde_a: null, borrado: true, editado: false };
+        }
         const foto_url = m.foto_ruta ? fotos.get(m.foto_ruta) ?? null : null;
         return {
+        editado: !!m.editado_at, borrado: false,
         id: Number(m.id), autor: m.autor, texto: m.texto ?? null, created_at: m.created_at,
         foto_url,
         foto_clave: foto_url ? `${BUCKET_ARCHIVOS}/${m.foto_ruta}` : null,
@@ -1748,7 +1775,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         conversacion: estadoConversacion(cv) };
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
-      const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at";
+      const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at";
       // Por DÍAS (2026-10-14, «que salgan los de los últimos 3 días; si no,
       // "Cargar más" de semana en semana»): la app nueva manda `desde_fecha`
       // (primera carga) o `antes_de` (+ `antes_id`, la página anterior). Una
@@ -1854,20 +1881,33 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         atiende: atiende ? quien.get(atiende) ?? null : null,
         visto: cv.ultimo_de === "cliente" && !!cv.visto_equipo_at && Date.parse(cv.visto_equipo_at) >= Date.parse(cv.ultimo_mensaje_at),
       };
-      return json({ ...base, mensajes: await armarMensajes(filas), hay_mas: hayMas, sin_leer: Number(cv.sin_leer_cliente ?? 0), vivo });
+      // Lo que CAMBIÓ desde la última vez (2026-10-20): editados, borrados.
+      // La app manda `cambios_desde` (la `hora` que le dimos la vez anterior).
+      const horaServidor = new Date().toISOString();
+      const cambiosDesde = fechaDe(body?.cambios_desde);
+      // deno-lint-ignore no-explicit-any
+      let cambiados: any[] = [];
+      if (cambiosDesde != null) {
+        const { data: ch, error: eCh } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(50)
+          .eq("conversacion_id", cv.id).gt("cambiado_at", new Date(cambiosDesde - 2000).toISOString());
+        if (eCh) throw eCh;
+        cambiados = ch ?? [];
+      }
+      const [mensajes, cambios] = await Promise.all([armarMensajes(filas), cambiados.length ? armarMensajes(cambiados) : Promise.resolve([])]);
+      return json({ ...base, mensajes, cambios, hora: horaServidor, canal: cv.canal ?? null, hay_mas: hayMas, sin_leer: Number(cv.sin_leer_cliente ?? 0), vivo });
     }
     // Reaccionar a un mensaje de su conversación (`emoji` null = quitar).
     // Buscar en el chat y su galería (2026-10-20, «que sea como las apps de
     // mensajería»): en TODO el hilo, no sólo en lo que la app tiene cargado.
     // Con los mismos globos que `chat_mensajes` (fotos firmadas, equipo).
-    const COLS_BUSCAR = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at";
+    const COLS_BUSCAR = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at";
     if (accion === "chat_buscar") {
       const cv = await convDe();
       const q = String(body?.q ?? "").trim().slice(0, 60);
       if (!cv || q.length < 2) return json({ ok: true, mensajes: [] });
       const patron = `%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
       const { data, error } = await admin.from("app_chat_mensajes").select(COLS_BUSCAR)
-        .eq("conversacion_id", cv.id).neq("autor", "sistema").ilike("texto", patron)
+        .eq("conversacion_id", cv.id).neq("autor", "sistema").is("borrado_at", null).ilike("texto", patron)
         .order("id", { ascending: false }).limit(40);
       if (error) throw error;
       return json({ ok: true, mensajes: await armarMensajes(data ?? []) });
@@ -1886,6 +1926,37 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const [fotos, productos] = await Promise.all([armarMensajes(f ?? []), armarMensajes(p ?? [])]);
       // deno-lint-ignore no-explicit-any
       return json({ ok: true, fotos: fotos.filter((m: any) => m.foto_url), productos: productos.filter((m: any) => m.adjunto) });
+    }
+
+    // Editar y borrar lo PROPIO (2026-10-20), como WhatsApp: editar el texto
+    // hasta 15 minutos después de mandarlo; borrarlo, hasta 1 hora. El
+    // contenido borrado se queda en la fila (el equipo y la bitácora lo ven).
+    if (accion === "chat_editar" || accion === "chat_borrar") {
+      const cv = await convDe();
+      const id = Number(body?.id);
+      if (!cv || !Number.isSafeInteger(id) || id <= 0) return json({ ok: false, mensaje: "No encontramos ese mensaje." });
+      const { data: m, error: eM } = await admin.from("app_chat_mensajes").select("id, autor, texto, created_at, borrado_at")
+        .eq("id", id).eq("conversacion_id", cv.id).maybeSingle();
+      if (eM) throw eM;
+      if (!m || m.autor !== "cliente" || m.borrado_at) return json({ ok: false, mensaje: "No encontramos ese mensaje." });
+      const edad = Date.now() - Date.parse(m.created_at);
+      const ahora = new Date().toISOString();
+      if (accion === "chat_editar") {
+        const nuevo = String(body?.texto ?? "").trim();
+        if (!m.texto) return json({ ok: false, mensaje: "Sólo se puede editar un mensaje de texto." });
+        if (edad > 15 * 60_000) return json({ ok: false, mensaje: "Sólo se puede editar en los primeros 15 minutos." });
+        if (!nuevo || nuevo.length > 2000) return json({ ok: false, mensaje: "Escribe el mensaje (máximo 2,000 letras)." });
+        if (nuevo === m.texto) return json({ ok: true, sin_cambios: true });
+        const { data: e, error } = await admin.from("app_chat_mensajes").update({ texto: nuevo, editado_at: ahora, cambiado_at: ahora })
+          .eq("id", id).select(COLS_BUSCAR).single();
+        if (error) throw error;
+        return json({ ok: true, mensaje: (await armarMensajes([e]))[0] });
+      }
+      if (edad > 3600_000) return json({ ok: false, mensaje: "Sólo se puede eliminar en la primera hora." });
+      const { data: b, error } = await admin.from("app_chat_mensajes").update({ borrado_at: ahora, cambiado_at: ahora })
+        .eq("id", id).select(COLS_BUSCAR).single();
+      if (error) throw error;
+      return json({ ok: true, mensaje: (await armarMensajes([b]))[0] });
     }
 
     if (accion === "chat_reaccionar") {
@@ -1913,7 +1984,11 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (error) throw error;
       return json({ ok: true });
     }
-    if (accion === "chat_subir_url") return json(await urlDeSubida(admin, `chat/${customerId}/${Date.now()}.jpg`));
+    // La foto (jpg) y, desde el 2026-10-20, el documento (pdf) y la nota de voz (m4a).
+    if (accion === "chat_subir_url") {
+      const ext = body?.tipo === "pdf" ? "pdf" : body?.tipo === "audio" ? "m4a" : "jpg";
+      return json(await urlDeSubida(admin, `chat/${customerId}/${Date.now()}.${ext}`));
+    }
     if (accion === "chat_enviar") {
       const crudo = String(body?.texto ?? "").trim();
       if (crudo.length > 2000) return json({ ok: false, mensaje: "El mensaje es muy largo (máximo 2,000 letras)." });
@@ -1942,7 +2017,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // de qué se trata (el trigger resume `texto`, no el adjunto).
         if (!texto) texto = "Quiero consultar por este producto.";
       }
-      if (!texto && !fotoRuta) return json({ ok: false, mensaje: "Escribe un mensaje." });
+      // Un documento o una nota de voz (2026-10-20): la ruta subida, del propio cliente.
+      let adjuntoArchivo: Record<string, unknown> | null = null;
+      if (body?.archivo_ruta) {
+        const ar = archivoDe({ tipo: body?.archivo_tipo, ruta: body.archivo_ruta, nombre: body?.archivo_nombre, duracion: body?.duracion });
+        if (!ar || !ar.ruta.startsWith(`chat/${customerId}/`) || ar.ruta.includes("/equipo/")) return json({ ok: false, mensaje: "El archivo no es válido. Vuelve a elegirlo." });
+        if (!(await archivoExiste(admin, ar.ruta))) return json({ ok: false, mensaje: "El archivo no terminó de subirse. Intenta de nuevo." });
+        adjuntoArchivo = { tipo: ar.tipo, ruta: ar.ruta, nombre: ar.nombre, duracion: ar.duracion };
+      }
+      if (!texto && !fotoRuta && !adjuntoArchivo) return json({ ok: false, mensaje: "Escribe un mensaje." });
       if (fotoRuta && !new RegExp(`^chat/${customerId}/\\d+\\.jpg$`).test(fotoRuta)) return json({ ok: false, mensaje: "La foto no es válida. Vuelve a elegirla." });
       if (fotoRuta && !(await archivoExiste(admin, fotoRuta))) return json({ ok: false, mensaje: "La foto no terminó de subirse. Intenta de nuevo." });
       let cv = await convDe();
@@ -1968,8 +2051,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (eC) throw eC;
       if ((count ?? 0) >= 30) return json({ ok: false, motivo: "muchos_mensajes", mensaje: "Enviaste muchos mensajes seguidos. Espera unos minutos." }, 429);
       const { data: m, error } = await admin.from("app_chat_mensajes")
-        .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta, respuesta_a: respuestaA, adjunto: adjuntoProducto })
-        .select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at").single();
+        .insert({ conversacion_id: cv.id, autor: "cliente", texto, foto_ruta: fotoRuta, respuesta_a: respuestaA, adjunto: adjuntoProducto ?? adjuntoArchivo })
+        .select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at").single();
       if (error) throw error;
       // Respuesta automática (2026-10-12): el cliente siempre sabe que lo
       // recibimos y cuándo le contestan. Una por turno: no se repite si ya hubo
@@ -1992,7 +2075,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           .replaceAll("{cierra}", hor.cierra ?? "");
         const { data: a, error: eA } = await admin.from("app_chat_mensajes").insert({
           conversacion_id: cv.id, autor: "sistema", texto,
-        }).select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at").single();
+        }).select("id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at").single();
         if (eA) console.error("chat_enviar: respuesta automática", eA.message);
         else auto = a;
       }

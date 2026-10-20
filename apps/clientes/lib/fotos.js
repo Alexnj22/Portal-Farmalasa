@@ -95,14 +95,16 @@ export async function elegirFotos(max = 6) {
  * Sube una foto ya achicada: pide la URL firmada con `accionUrl`/`datos`, sube
  * el archivo y devuelve `{ ok, ruta }` para confirmarlo con la acción del caso.
  */
-export async function subirFoto(pedir, accionUrl, datos, uri) {
+// `tipo` (2026-10-20): el tipo de contenido del archivo — la foto (jpg) y, en
+// el chat, el documento (application/pdf) y la nota de voz (audio/mp4).
+export async function subirFoto(pedir, accionUrl, datos, uri, tipo = 'image/jpeg') {
   const r = await pedir(accionUrl, datos);
   if (!r?.ok || !r.url) return { ok: false, mensaje: r?.mensaje ?? 'No se pudo preparar la subida. Revisa tu conexión.' };
   try {
     const s = await FS.uploadAsync(r.url, uri, {
       httpMethod: 'PUT',
       uploadType: FS.FileSystemUploadType.BINARY_CONTENT,
-      headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+      headers: { 'Content-Type': tipo, 'x-upsert': 'true' },
     });
     if (s.status < 200 || s.status >= 300) return { ok: false, mensaje: 'La foto no se pudo subir. Intenta de nuevo.' };
     return { ok: true, ruta: r.ruta };

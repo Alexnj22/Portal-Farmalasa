@@ -14,7 +14,7 @@ import { useMoviendoValor } from './movimiento';
 import { LIVIANO } from '../lib/rendimiento';
 import { useSesion } from '../lib/sesion';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -28,7 +28,6 @@ import { Confeti } from './animacion';
 import { dolares, fechaLarga } from '../lib/formato';
 import CodigoBarras from './CodigoBarras';
 import CodigoQR from './CodigoQR';
-import Segmentos from './Segmentos';
 
 // La línea punteada entre las muescas: por ahí se «corta» al usarlo.
 const CORTE = 86;
@@ -42,7 +41,7 @@ const textoPremio = (p) => `${Number(p.cantidad) > 1 ? `${p.cantidad} × ` : ''}
 
 // `demo` (modo de prueba): cada vez que cambia, el cupón se tapa y se raspa
 // solo, para ver la animación completa sin gastar el del mes.
-export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0, alCambiar }) {
+export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0 }) {
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const [raspado, setRaspado] = useState(null); // null = leyendo
   // Sólo los cupones reales (id numérico) se anotan en el servidor; los de prueba no.
@@ -160,8 +159,8 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   ) : null;
 
   const cara = (
-        <LinearGradient colors={colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 104 }}>
+        <LinearGradient colors={colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={{ padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 104 }}>
           {!usado && MATERIALES.includes(nivel) ? (
             <>
               <Mineral material={nivel} luzSola pausa={moviendo} activa={enUso && !LIVIANO} />
@@ -186,8 +185,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
             </Animated.View>
             <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13 }}>
               {premio ? (usado ? 'Ya lo retiraste. ¡El próximo mes llega otro!'
-                : premio.sala ? `Retíralo en ${premio.sala} con el código ${premio.codigo}.`
-                : 'Es un regalo para retirar: elige en qué sucursal.')
+                : 'Retíralo en cualquier sucursal: muestra este código en caja.')
                 : usado ? 'Ya lo usaste. ¡El próximo mes llega otro!'
                 : cupon.descuento ? `En una compra, hasta ${dolares(cupon.tope)}`
                 : parcial ? `Te quedan ${dolares(cupon.restantes / 100)} de ${dolares(cupon.puntos / 100)}`
@@ -217,6 +215,11 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
               <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>Al canjear, primero se usa el cupón y después tus puntos.</Text>
             ) : null}
           </View>
+          </View>
+          {/* El código del premio, DENTRO del cupón (2026-10-20, «el QR o de
+              barras debe estar integrado en el cupón, no aparte»): un talón
+              blanco bajo una línea de corte, como el de un boleto. */}
+          {premio && raspado && !usado ? <TalonDelPremio codigo={premio.codigo} /> : null}
           {!usado && raspado ? <Brillo activa={enUso && !LIVIANO} pausa={moviendo} /> : null}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }, estiloDestello]} />
         </LinearGradient>
@@ -258,8 +261,6 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
       {/* Las muescas de un cupón, del color del fondo. */}
       <View style={{ position: 'absolute', left: 78, top: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
       <View style={{ position: 'absolute', left: 78, bottom: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
-      {premio && raspado && !usado ? <CodigoDelPremio codigo={premio.codigo} /> : null}
-      {premio && raspado && !usado && pedir ? <ElegirSala premio={premio} id={cupon.id} pedir={pedir} alCambiar={alCambiar} /> : null}
       {festejo ? <Confeti colores={['#FFD978', '#FFFFFF', '#E8ECF2', '#B5308C']} alTerminar={() => setFestejo(false)} /> : null}
     </View>
   );
@@ -532,45 +533,6 @@ function Particula({ i, polvo, ahora }) {
   );
 }
 
-// Dónde retirar el premio (2026-10-19): las sucursales, marcando las que lo
-// tienen. Elegir una que no lo tiene vale — se lo mandan —, pero se avisa.
-function ElegirSala({ premio, id, pedir, alCambiar }) {
-  const [ocupado, setOcupado] = useState(false);
-  const abrir = async () => {
-    if (ocupado) return;
-    setOcupado(true);
-    try {
-      const r = await pedir('premio_salas', { id });
-      if (!r?.ok) { Alert.alert('No se pudo', r?.mensaje ?? 'Intenta de nuevo.'); return; }
-      const salas = r.sucursales ?? [];
-      const opciones = [...salas.map((x) => `${x.elegida ? '✓ ' : ''}${x.sala}${x.hay ? '' : ' (hay que pedirlo)'}`), 'Cancelar'];
-      ActionSheetIOS.showActionSheetWithOptions({
-        title: '¿Dónde lo retiras?', message: 'Las que dicen «hay que pedirlo» todavía no lo tienen: te avisamos cuando llegue.',
-        options: opciones, cancelButtonIndex: opciones.length - 1,
-      }, async (i) => {
-        const elegida = salas[i];
-        if (!elegida) return;
-        const c = await pedir('premio_elegir_sala', { id, branch_id: elegida.branch_id }).catch(() => null);
-        if (!c?.ok) { Alert.alert('No se pudo', c?.mensaje ?? 'Intenta de nuevo.'); return; }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        alCambiar?.();
-      });
-    } catch {
-      Alert.alert('No se pudo', 'Revisa tu conexión e intenta de nuevo.');
-    } finally {
-      setOcupado(false);
-    }
-  };
-  return (
-    <Pressable onPress={abrir} accessibilityRole="button"
-      style={({ pressed }) => ({ marginTop: 10, minHeight: 44, borderRadius: 14, paddingHorizontal: 14, justifyContent: 'center',
-        backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed || ocupado ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      <Text style={{ fontSize: 15, fontWeight: '700', color: '#B5308C' }}>
-        {premio.sala ? `Retirar en ${premio.sala} · Cambiar` : 'Elegir dónde lo retiro'}
-      </Text>
-    </Pressable>
-  );
-}
 
 // El código del premio para escanearlo en la sala (2026-10-19, pedido del
 // usuario): en BARRAS para el lector de mostrador —de una dimensión, conectado
@@ -580,24 +542,29 @@ function ElegirSala({ premio, id, pedir, alCambiar }) {
 // (`src/utils/codigoDePremio.js`). Fondo blanco siempre: el lector necesita
 // contraste. Barras por defecto: es lo que tienen las cajas.
 const paraEscanear = (c) => String(c ?? '').replace(/[^0-9A-Z]/gi, '').toUpperCase();
-function CodigoDelPremio({ codigo }) {
+// El talón con el código del premio: barras o QR (se cambia con la píldora
+// de la esquina), y el código escrito para dictarlo si el lector falla. Se
+// retira en CUALQUIER sucursal (2026-10-20): la que lo escanea lo entrega.
+function TalonDelPremio({ codigo }) {
   const [modo, setModo] = useState('barras');
   if (!codigo) return null;
+  const cambiar = () => { Haptics.selectionAsync().catch(() => {}); setModo((m) => (m === 'qr' ? 'barras' : 'qr')); };
   return (
-    <View style={{ marginTop: 12, gap: 10, alignItems: 'center' }}>
-      <View style={{ alignSelf: 'stretch' }}>
-        <Segmentos valor={modo} alCambiar={setModo}
-          opciones={[{ valor: 'barras', rotulo: 'Código de barras' }, { valor: 'qr', rotulo: 'Código QR' }]} />
-      </View>
-      <View style={{ backgroundColor: '#FFFFFF', padding: 14, borderRadius: 18, alignItems: 'center' }}>
+    <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+      {/* La línea de corte, punteada, con el aire del talón. */}
+      <View style={{ height: 1, borderTopWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.5)', marginBottom: 12 }} />
+      <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 12, alignItems: 'center', gap: 6 }}>
+        <Pressable onPress={cambiar} hitSlop={8} accessibilityRole="button" accessibilityLabel={modo === 'qr' ? 'Ver como código de barras' : 'Ver como código QR'}
+          style={{ position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3,
+            borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.06)', zIndex: 2 }}>
+          <Icono sf={modo === 'qr' ? 'barcode' : 'qrcode'} respaldo="⇄" tam={11} color="#3A3A3C" />
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#3A3A3C' }}>{modo === 'qr' ? 'Barras' : 'QR'}</Text>
+        </Pressable>
         {modo === 'qr'
-          ? <CodigoQR value={paraEscanear(codigo)} size={150} />
-          : <CodigoBarras value={paraEscanear(codigo)} ancho={260} alto={70} />}
+          ? <CodigoQR value={paraEscanear(codigo)} size={132} />
+          : <View style={{ paddingTop: 14 }}><CodigoBarras value={paraEscanear(codigo)} ancho={240} alto={58} /></View>}
+        <Text selectable style={{ fontSize: 16, fontWeight: '900', letterSpacing: 3, color: '#1C1C1E', fontVariant: ['tabular-nums'] }}>{codigo}</Text>
       </View>
-      <Text selectable style={{ fontSize: 20, fontWeight: '900', letterSpacing: 3, color: '#B5308C', fontVariant: ['tabular-nums'] }}>{codigo}</Text>
-      <Text style={{ fontSize: 13, textAlign: 'center', opacity: 0.75, maxWidth: 300, color: '#8E8E93' }}>
-        Muéstralo en la sucursal: lo escanean, confirman y te lo entregan. Te pueden pedir tu documento.
-      </Text>
     </View>
   );
 }

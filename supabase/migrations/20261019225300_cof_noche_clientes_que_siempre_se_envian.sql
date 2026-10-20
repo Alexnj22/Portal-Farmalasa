@@ -32,9 +32,13 @@ CREATE POLICY dte_clientes_siempre_read ON public.dte_clientes_siempre_se_envian
   USING ((SELECT public.auth_has_module_permission('facturacion', 'can_view'))
       OR (SELECT public.auth_has_module_permission('ventas', 'can_view')));
 
-INSERT INTO public.dte_clientes_siempre_se_envian (customer_id, motivo) VALUES
+-- Sólo si la ficha existe (2026-10-19): en el entorno de pruebas no están, y
+-- con la FK la migración cortaba el replay entero. En producción no cambia nada.
+INSERT INTO public.dte_clientes_siempre_se_envian (customer_id, motivo)
+SELECT v.id, v.motivo FROM (VALUES
   (1043,  'MAPFRE SEGURO EL SALVADOR, S.A.: necesita el DTE de cada compra.'),
-  (21092, 'DIOCESIS DE CHALATENANGO: necesita el DTE de cada compra.')
+  (21092, 'DIOCESIS DE CHALATENANGO: necesita el DTE de cada compra.')) v(id, motivo)
+ WHERE EXISTS (SELECT 1 FROM public.customers c WHERE c.id = v.id)
 ON CONFLICT (customer_id) DO NOTHING;
 
 -- La regla, ahora con el cliente. STABLE porque lee la lista; sin `SET

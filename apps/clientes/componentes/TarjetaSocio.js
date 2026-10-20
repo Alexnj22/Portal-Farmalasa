@@ -634,8 +634,11 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
           {/* El MISMO velo del frente: el material se ve igual de vivo atrás. */}
           <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.50)']}
             locations={[0, 0.28, 0.55, 1]} style={StyleSheet.absoluteFill} />
-          <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
+          {/* La banda va DEBAJO de la luz (2026-10-20, «llegaba a los bordes y
+              rompía todo lo visual»): el filo de metal, el destello y el
+              barrido de la tarjeta pasan por encima, sin cortarse. */}
           {medidas ? <BandaMagnetica x={reversoX} barrido={reversoBarrido} paleta={paleta} medidas={medidas} /> : null}
+          <BrilloTarjeta x={reversoX} y={reversoY} barrido={reversoBarrido} sinArcoiris={MATERIALES.includes(nivel)} aro={paleta.acento} giro={giro} esquina={RADIO} />
           {medidas ? (
             <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: medidas.banda.top + medidas.banda.alto, bottom: medidas.m + Math.max(PIE, medidas.holo), alignItems: 'center', justifyContent: 'center' }}>
               <VentanaCodigo codigo={codigo} medidas={medidas} franja={franja} acento={paleta.acento} vuelta={vuelta} escaneo={escaneo} />
@@ -805,8 +808,13 @@ function Canto({ giro, tam, paleta }) {
 // periódica del frente (`barrido`). Decorado: el lector no la mira, así que
 // puede moverse cuanto quiera.
 const HILOS = [0.22, 0.38, 0.56, 0.74];
+// No toca los bordes (2026-10-20): de canto a canto tapaba el filo de luz y
+// el material de la orilla, y la tarjeta se veía cortada en dos. Queda metida
+// `BANDA_ORILLA` de cada lado, con las puntas redondeadas y un filo propio.
+const BANDA_ORILLA = 10;
 function BandaMagnetica({ x, barrido, paleta, medidas }) {
-  const { w, banda } = medidas;
+  const { banda } = medidas;
+  const w = medidas.w - 2 * BANDA_ORILLA;
   const reflejo = useAnimatedStyle(() => ({ transform: [{ translateX: (x ? x.value : 0) * w * 0.35 }] }));
   const pasa = useAnimatedStyle(() => {
     const b = barrido ? barrido.value : 0;
@@ -814,7 +822,8 @@ function BandaMagnetica({ x, barrido, paleta, medidas }) {
   });
   const base = mezclar(paleta.reverso[0], '#000000', 0.55);
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: banda.top, height: banda.alto, overflow: 'hidden' }}>
+    <View pointerEvents="none" style={{ position: 'absolute', left: BANDA_ORILLA, right: BANDA_ORILLA, top: banda.top, height: banda.alto, overflow: 'hidden',
+      borderRadius: 5, borderWidth: StyleSheet.hairlineWidth, borderColor: `${paleta.acento}55` }}>
       <LinearGradient colors={[base, mezclar(base, paleta.acento, 0.18), base, '#000000']} locations={[0, 0.45, 0.8, 1]}
         start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       {/* El cepillado: hilos de luz finísimos a lo largo de la banda. */}

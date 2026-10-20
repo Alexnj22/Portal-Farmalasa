@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1311.2 — Puntos Salud: la banda magnética ya no toca los bordes de la tarjeta
+
+La banda magnética del reverso iba de canto a canto y tapaba el filo de luz y el material de la orilla: la tarjeta se veía cortada. Ahora queda metida 10 pt de cada lado, con puntas redondeadas y un filo del color del nivel, y se dibuja DEBAJO de la luz de la tarjeta, así el borde y el barrido pasan por encima sin cortarse.
+
 ## v2.1311.1 — Menú: Clientes, Mayoristas y Puntos en un grupo propio junto a App de clientes
 
 _(pendiente de redactar)_

@@ -120,7 +120,13 @@ function Partes({ partes, estilo }) {
 // usa la página «Reglas y privacidad» del primer inicio (app/guia.js), que
 // además lo pinta `incrustado`: dentro de otra pantalla que se desplaza, con
 // menos relleno y sin el margen del borde inferior del teléfono.
-export default function DocumentoLegal({ url, alFinal, incrustado = false }) {
+//
+// `alAvanzar` y `pie` (opcionales, 2026-10-20, «no se entiende […] que debe leer
+// todo»): `alAvanzar(fraccion)` cuenta cuánto se bajó (0 a 1) para que la guía
+// pinte una barra de lectura, y `pie` va DEBAJO de la última línea — ahí la guía
+// pone «Siguiente: Aviso de privacidad», justo donde la persona termina. No
+// cambian qué cuenta como «leído»: eso sigue siendo `alFinal`.
+export default function DocumentoLegal({ url, alFinal, alAvanzar, pie, incrustado = false }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const [bloques, setBloques] = useState(() => cache.get(url) ?? null);
@@ -140,10 +146,14 @@ export default function DocumentoLegal({ url, alFinal, incrustado = false }) {
   }, [url]);
   useEffect(() => { cargar(); }, [cargar]);
   const avisado = useRef(false);
-  const alto = useRef({ vista: 0, contenido: 0 });
+  const alto = useRef({ vista: 0, contenido: 0, pie: 0 });
   const revisarFinal = (y = 0) => {
-    const { vista, contenido } = alto.current;
-    if (!alFinal || avisado.current || !vista || !contenido) return;
+    // El `pie` no es texto del documento: no se le exige a nadie bajar hasta él.
+    const { vista, pie: altoPie } = alto.current;
+    const contenido = alto.current.contenido - altoPie;
+    if (!vista || contenido <= 0) return; // todavía sin medir
+    if (alAvanzar) alAvanzar(contenido <= vista ? 1 : Math.min(1, Math.max(0, y / (contenido - vista))));
+    if (!alFinal || avisado.current) return;
     if (y + vista >= contenido - 24) { avisado.current = true; alFinal(); }
   };
   useEffect(() => { avisado.current = false; }, [url]);
@@ -154,7 +164,7 @@ export default function DocumentoLegal({ url, alFinal, incrustado = false }) {
     <ScrollView nestedScrollEnabled={incrustado} scrollEventThrottle={64}
       onLayout={(e) => { alto.current.vista = e.nativeEvent.layout.height; revisarFinal(); }}
       onContentSizeChange={(_w, h) => { alto.current.contenido = h; revisarFinal(); }}
-      onScroll={alFinal ? (e) => revisarFinal(e.nativeEvent.contentOffset.y) : undefined}
+      onScroll={alFinal || alAvanzar ? (e) => revisarFinal(e.nativeEvent.contentOffset.y) : undefined}
       contentContainerStyle={{ padding: incrustado ? 16 : 20, paddingBottom: incrustado ? 24 : 32 + ins.bottom, gap: 12, maxWidth: 680, width: '100%', alignSelf: 'center' }}>
       {bloques.map((b, i) => {
         if (b.tipo === 'h1') return <Partes key={i} partes={b.partes} estilo={{ fontSize: 26, lineHeight: 32, fontWeight: '800', color: colorSistema.texto }} />;
@@ -189,6 +199,7 @@ export default function DocumentoLegal({ url, alFinal, incrustado = false }) {
           ? { fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }
           : { fontSize: 16, lineHeight: 24, color: colorSistema.texto }} />;
       })}
+      {pie ? <View onLayout={(e) => { alto.current.pie = e.nativeEvent.layout.height + 12; revisarFinal(); }}>{pie}</View> : null}
     </ScrollView>
   );
 }

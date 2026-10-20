@@ -33,7 +33,7 @@ import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_shared/paseGoogle.ts";
 import { escaleraDeNiveles, nivelDeCliente, programaParaApp } from "../_shared/nivel.ts";
-import { validarFiscales } from "../_shared/fiscal.ts";
+import { duiValido, validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
 import { reconocer } from "../_shared/autoRespuesta.ts";
@@ -538,6 +538,18 @@ const coordenadas = (loc: any) => {
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : { lat: null, lng: null };
 };
 const limpiarTel = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+// Entrar y registrarse: SÓLO DUI y un teléfono de El Salvador (decisión del
+// dueño, 2026-10-20). El NIT ya no entra — la app dejó de aceptarlo, y sin
+// este freno una versión vieja o una entrada guardada con Face ID seguía
+// pasando. El teléfono: 8 dígitos, fijo (2) o celular (6, 7); con el 503
+// delante se le quita.
+const telSV = (v: unknown) => { const d = limpiarTel(v); return d.length === 11 && d.startsWith("503") ? d.slice(3) : d; };
+const telValido = (d: string) => /^[267]\d{7}$/.test(d);
+// Lo que «Mis facturas» muestra: crédito fiscal y sus notas de crédito, no el
+// consumidor final (2026-10-20).
+const TIPOS_EN_MIS_FACTURAS = ["CCF", "NC", "NCR"];
+const DUI_MALO = { ok: false, motivo: "datos", mensaje: "Revisa tu DUI: son 9 números." };
+const TEL_MALO = { ok: false, motivo: "datos", mensaje: "Revisa tu teléfono: son 8 números y empieza con 2, 6 o 7." };
 const plataformaValida = (p: unknown) => (["ios", "android", "web"].includes(String(p)) ? String(p) : null);
 
 // Freno por IP de `reportar_error` (ver la acción).
@@ -766,9 +778,11 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
 
     if (accion === "entrar") {
       const doc = limpiarDoc(body?.documento);
-      const tel = limpiarTel(body?.telefono);
+      const tel = telSV(body?.telefono);
       const esCodigo = ES_CODIGO.test(doc);
       if (doc.length < 7 || (!esCodigo && tel.length < 8)) return json(NO_ENCONTRADO);
+      if (!esCodigo && !duiValido(doc)) return json(DUI_MALO);
+      if (!esCodigo && !telValido(tel)) return json(TEL_MALO);
 
       const corte = await frenar(doc, esCodigo);
       if (corte) return corte;
@@ -806,7 +820,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
 
     if (accion === "registrar") {
       const doc = limpiarDoc(body?.documento);
-      const tel = limpiarTel(body?.telefono);
+      const tel = telSV(body?.telefono);
       const nombre = String(body?.nombre ?? "").replace(/\s+/g, " ").trim();
       const email = String(body?.email ?? "").trim().toLowerCase() || null;
       const nacimiento = fechaDeNacimiento(body?.fecha_nacimiento);
@@ -821,12 +835,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (nombre.length < 3 || nombre.length > 120) {
         return json({ ok: false, motivo: "datos", mensaje: "Escribe tu nombre completo." });
       }
-      if (doc.length < 7 || doc.length > 20 || ES_CODIGO.test(doc)) {
-        return json({ ok: false, motivo: "datos", mensaje: "Revisa tu número de documento." });
-      }
-      if (tel.length < 8 || tel.length > 15) {
-        return json({ ok: false, motivo: "datos", mensaje: "Revisa tu teléfono: son 8 dígitos." });
-      }
+      if (!duiValido(doc)) return json(DUI_MALO);
+      if (!telValido(tel)) return json(TEL_MALO);
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return json({ ok: false, motivo: "datos", mensaje: "Revisa tu correo." });
       }
@@ -2728,6 +2738,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       try { (globalThis as any).EdgeRuntime?.waitUntil(q); } catch { /* sin waitUntil se termina igual */ }
     };
     if (accion === "mis_facturas") {
+      // Sólo créditos fiscales (decisión del dueño, 2026-10-20): la factura de
+      // consumidor final (COF) ya no sale. Las notas de crédito corrigen un CCF
+      // y se quedan.
       const todo = body?.periodo === "todo";
       const [a0, m0] = hoySV().split("-").map(Number);
       const desde = todo ? null : `${m0 === 1 ? a0 - 1 : a0}-${String(m0 === 1 ? 12 : m0 - 1).padStart(2, "0")}-01`;
@@ -2741,7 +2754,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const horaOk = (v: unknown) => /^\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(String(v ?? ""));
       let q = admin.from("sales_invoices")
         .select("id, fecha, hora, tipo_documento, correlativo, total, codigo_generacion, branch_id, estado")
-        .eq("customer_id", customerId)
+        .eq("customer_id", customerId).in("tipo_documento", TIPOS_EN_MIS_FACTURAS)
         .order("fecha", { ascending: false }).order("hora", { ascending: false }).order("id", { ascending: false })
         .limit(30); // = POR_PAGINA
       if (desde) q = q.gte("fecha", desde);
@@ -2761,7 +2774,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // son los de una factura real de la MISMA ficha (`documento_de`).
       // Las muestras van sólo en la primera página.
       const muestras = antes ? [] : (await muestrasDe(admin, customerId, "factura"))
-        .filter((m: any) => m.fecha && (!desde || String(m.fecha) >= desde));
+        .filter((m: any) => m.fecha && (!desde || String(m.fecha) >= desde))
+        .filter((m: any) => TIPOS_EN_MIS_FACTURAS.includes(String(m.tipo_documento ?? "").toUpperCase()));
       const prestadas = [...new Set(muestras.map((m: any) => Number(m.documento_de)).filter((n: number) => n > 0))];
       const docDe = new Map<number, any>();
       if (prestadas.length) {
@@ -3633,6 +3647,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         creditos,
         programa,
         saldoFavor,
+        conCcf,
       ] = await Promise.all([
         admin.rpc("puntos_estado_cuenta", { p_customer_id: customerId }),
         salasDeLaRed(admin),
@@ -3693,14 +3708,14 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // Casi nadie tiene muestras (`tieneMuestras`): se pregunta una vez y,
         // si no, las lecturas ni se hacen.
         tieneMuestras(customerId).then(async (con) => {
-          if (!con) return { prueba: false, cumpleanos: [], inyeccion: [], vencimiento: [] };
+          if (!con) return { hay: false, prueba: false, cumpleanos: [], inyeccion: [], vencimiento: [] };
           const [prueba, cumpleanos, inyeccion, vencimiento] = await Promise.all([
             esDePrueba(customerId),
             muestrasDe(admin, customerId, "cumpleanos"),
             muestrasDe(admin, customerId, "inyeccion"),
             muestrasDe(admin, customerId, "vencimiento"),
           ]);
-          return { prueba, cumpleanos, inyeccion, vencimiento };
+          return { hay: true, prueba, cumpleanos, inyeccion, vencimiento };
         }),
         // Créditos con saldo (2026-10-15): sólo cuántos y cuántos vencidos, para
         // la alerta del Inicio sin otra petición. Usa el índice por ficha y son
@@ -3723,6 +3738,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         programaParaApp(admin).catch((e) => { console.error("resumen programa:", (e as Error)?.message); return null; }),
         // El saldo a favor (2026-10-19): Cuenta lo muestra con su vigencia.
         saldosAFavor(customerId as number),
+        // ¿Tiene algún crédito fiscal? (2026-10-20) «Mis facturas» muestra sólo
+        // CCF, así que sin ninguno la fila no se ofrece. Si falla, se ofrece:
+        // esconderle sus documentos a quien sí los tiene es el peor error.
+        (async () => {
+          const { data, error } = await admin.from("sales_invoices").select("id")
+            .eq("customer_id", customerId).in("tipo_documento", TIPOS_EN_MIS_FACTURAS).limit(1);
+          if (error) { console.error("resumen con_ccf:", error.message); return true; }
+          return (data ?? []).length > 0;
+        })(),
       ]);
       if (eEst) throw eEst;
       if (eSalas) console.error("no se pudieron leer las salas:", eSalas.message);
@@ -3750,6 +3774,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         chat_sin_leer: Number(conv?.sin_leer_cliente ?? 0),
         chat: { sin_leer: Number(conv?.sin_leer_cliente ?? 0), abierta: !!horChat.abierta },
         saldo_a_favor: saldoFavor && saldoFavor.total > 0 ? saldoFavor : null,
+        // Las cuentas con muestras (la de prueba y la del revisor de las
+        // tiendas) traen un CCF de muestra: también ven la fila.
+        con_ccf: conCcf || muestras.hay,
         reservas_abiertas: (resAb ?? []).length,
         reservas_listas: (resAb ?? []).filter((r: any) => r.estado === "lista").length,
         reservas_productos: (resAb ?? []).map((r: any) => ({

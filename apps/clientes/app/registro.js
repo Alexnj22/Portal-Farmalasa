@@ -13,7 +13,7 @@ import { Aviso } from '../componentes/ui';
 import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
-import { documentoEscrito, fechaDeNacimiento } from '../lib/formato';
+import { documentoEscrito, fechaDeNacimiento, telefonoEscrito, telefonoValido } from '../lib/formato';
 import { duiValido } from '../lib/fiscal';
 import FechaNacimiento from '../componentes/FechaNacimiento';
 import { useBloqueo } from '../lib/bloqueo';
@@ -55,8 +55,9 @@ export default function Registro() {
   const fechaMala = nacimiento === null;
 
   const duiMalo = f.documento.replace(/\D/g, '').length === 9 && !duiValido(f.documento);
+  const telMalo = f.telefono.replace(/\D/g, '').length === 8 && !telefonoValido(f.telefono);
   const listo = f.nombre.trim().length >= 3 && duiValido(f.documento)
-    && f.telefono.replace(/\D/g, '').length >= 8 && programa && !!textos && !fechaMala;
+    && telefonoValido(f.telefono) && programa && !!textos && !fechaMala;
 
   async function enviar() {
     if (!listo || enviando) return;
@@ -73,7 +74,7 @@ export default function Registro() {
 
   return (
     <Formulario>
-      <Grupo titulo="Tus datos" pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : 'En tu próxima compra en sala te pedimos el DUI para completar tu ficha. Desde esa compra empiezas a acumular.'}>
+      <Grupo titulo="Tus datos" pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'En tu próxima compra en sala te pedimos el DUI para completar tu ficha. Desde esa compra empiezas a acumular.'}>
         <FilaCampo placeholder="Nombre completo" value={f.nombre} onChangeText={cambiar('nombre')} autoCapitalize="words"
           textContentType="name" autoComplete="name" returnKeyType="next" blurOnSubmit={false}
           onSubmitEditing={() => duiRef.current?.focus()} />
@@ -85,7 +86,7 @@ export default function Registro() {
         <FilaCampo ref={telRef} placeholder="Teléfono" value={f.telefono} keyboardType="phone-pad" textContentType="telephoneNumber"
           autoComplete="tel" inputAccessoryViewID={IOS ? BARRA_TEL : undefined}
           returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => correoRef.current?.focus()}
-          onChangeText={(v) => cambiar('telefono')(v.replace(/[^\d ]/g, '').slice(0, 9))} />
+          onChangeText={(v) => cambiar('telefono')(telefonoEscrito(v))} />
       </Grupo>
       {IOS ? (
         <>

@@ -206,6 +206,13 @@ export default function Guia() {
   const rotulo = enReglas && !aceptado ? 'Aceptar y continuar'
     : soloReglas || pagina >= PAGINAS - 1 ? 'Empezar' : 'Siguiente';
   const bloqueado = enReglas && !aceptado && !(marcas.reglamento && marcas.aviso);
+  // 2026-10-20: un botón gris sin explicación no dice qué falta. Lo dice aquí,
+  // pegado al botón, en el orden en que se exige: leer hasta el final, marcar.
+  const faltanLeer = DOCUMENTOS.filter((d) => !leidos[d.clave]);
+  const motivo = !bloqueado ? null
+    : faltanLeer.length === 2 ? 'Baja hasta el final de los dos documentos para continuar.'
+      : faltanLeer.length === 1 ? `Falta bajar hasta el final del ${faltanLeer[0].rotulo.toLowerCase()}.`
+        : 'Marca las dos casillas para continuar.';
 
   return (
     <View style={{ flex: 1 }}>
@@ -273,50 +280,119 @@ export default function Guia() {
             ))}
           </View>
         )}
+        {motivo ? (
+          <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 14, lineHeight: 19, marginBottom: -8 }}>{motivo}</Texto>
+        ) : null}
         <Boton alTocar={siguiente} cargando={guardando} deshabilitado={bloqueado}>{rotulo}</Boton>
       </View>
     </View>
   );
 }
 
-// «Reglas y privacidad»: los dos documentos enteros, uno a la vez (se elige
-// arriba), con texto nativo (componentes/DocumentoLegal: la misma página
-// publicada en el portal, la que se archiva como prueba). Cada casilla se
-// habilita al llegar al final de su documento; tocar una todavía cerrada lleva
-// a ese documento.
+// «Reglas y privacidad»: los dos documentos enteros, uno a la vez, con texto
+// nativo (componentes/DocumentoLegal: la misma página publicada en el portal,
+// la que se archiva como prueba). Cada casilla se habilita al llegar al final de
+// su documento; tocar una todavía cerrada lleva a ese documento.
+//
+// 2026-10-20, el dueño: «no se entiende arriba para seleccionar el otro, ni que
+// debe leer todo». Lo de arriba eran dos píldoras que parecían etiquetas, y
+// nada decía que el botón se habilita al bajar hasta el final. Ahora:
+//   · arriba, PASOS numerados («1 Reglamento», «2 Aviso de privacidad») que
+//     dicen «Paso 1 de 2» y se tachan con ✓ al leerse — se ve que son dos y en
+//     qué orden;
+//   · debajo, una barra con cuánto se leyó del documento abierto y qué falta;
+//   · al final del primero, un botón «Siguiente: Aviso de privacidad».
+// Lo que se exige no cambió: llegar al final de cada uno y marcar las dos.
 function PaginaReglas({ ancho, leidos, marcas, aceptado, error, alLeer, alMarcar }) {
   const t = useTema();
   const [doc, setDoc] = useState('reglamento');
   const [pista, setPista] = useState(null);
-  const actual = DOCUMENTOS.find((d) => d.clave === doc);
+  // Lo más lejos que se bajó en cada documento (0 a 1): la barra no retrocede
+  // si la persona sube a releer algo.
+  const [avance, setAvance] = useState({ reglamento: 0, aviso: 0 });
+  const indice = DOCUMENTOS.findIndex((d) => d.clave === doc);
+  const actual = DOCUMENTOS[indice];
+  const otro = DOCUMENTOS.find((d) => d.clave !== doc);
+  const leido = !!leidos[doc] || aceptado;
+  const fraccion = leido ? 1 : avance[doc];
+  const elegir = (clave) => { setDoc(clave); setPista(null); Haptics.selectionAsync().catch(() => {}); };
+  const avanzar = useCallback((f) => {
+    setAvance((a) => (f > a[doc] + 0.01 || (f === 1 && a[doc] < 1) ? { ...a, [doc]: f } : a));
+  }, [doc]);
+
+  // Al pie del documento: el paso siguiente, donde la persona termina de leer.
+  const pie = aceptado ? null : !leidos[otro.clave] ? (
+    <View style={{ marginTop: 8, gap: 8 }}>
+      <Texto nivel={3} estilo={{ textAlign: 'center', fontSize: 13 }}>
+        {leido ? `Listo, terminaste el ${actual.rotulo.toLowerCase()}.` : `Fin del ${actual.rotulo.toLowerCase()}.`}
+      </Texto>
+      <Boton alTocar={() => elegir(otro.clave)}>{`Siguiente: ${otro.rotulo}`}</Boton>
+    </View>
+  ) : (
+    <Texto nivel={3} estilo={{ textAlign: 'center', fontSize: 13, marginTop: 8 }}>
+      Leíste los dos. Marca las casillas de abajo para aceptarlos.
+    </Texto>
+  );
+
   return (
     <View style={{ width: ancho, flex: 1, paddingHorizontal: 20, paddingTop: 4 }}>
-      <View style={{ flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', gap: 12 }}>
-        <View style={{ gap: 6, alignItems: 'center' }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', gap: 10 }}>
+        <View style={{ gap: 4, alignItems: 'center' }}>
           <Text accessibilityRole="header" style={{ fontSize: 26, fontWeight: '800', letterSpacing: -0.4, textAlign: 'center', color: colorSistema.texto }}>Reglas y privacidad</Text>
           <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 15, lineHeight: 21 }}>
             {aceptado ? 'Ya los aceptaste. Puedes volver a leerlos cuando quieras en Cuenta.'
-              : 'Léelos hasta el final y marca que los aceptas para continuar.'}
+              : 'Son dos documentos. Lee cada uno hasta el final y luego marca que los aceptas para continuar.'}
           </Texto>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }} accessibilityRole="tablist">
-          {DOCUMENTOS.map((d) => {
+
+        {/* Los pasos: se tocan para pasar de uno a otro. */}
+        <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="tablist">
+          {DOCUMENTOS.map((d, i) => {
             const elegido = d.clave === doc;
+            const listo = !!leidos[d.clave] || aceptado;
             return (
-              <Presionable key={d.clave} onPress={() => { setDoc(d.clave); setPista(null); }} accessibilityRole="tab"
-                accessibilityState={{ selected: elegido }} accessibilityLabel={`${d.rotulo}${leidos[d.clave] ? ', leído' : ''}`}
-                style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, flexDirection: 'row', alignItems: 'center', gap: 6,
-                  backgroundColor: elegido ? suave(t.color.magenta, t.oscuro ? 0.32 : 0.16) : 'transparent',
-                  borderWidth: 1, borderColor: elegido ? t.color.magenta : colorSistema.contornoSuave, opacity: pressed ? 0.7 : 1 })}>
-                {leidos[d.clave] ? <Icono sf="checkmark.circle.fill" respaldo="✓" tam={16} color={t.color.verdeTexto} /> : null}
-                <Text style={{ fontSize: 15, fontWeight: elegido ? '700' : '600', color: elegido ? t.color.magentaTexto : colorSistema.texto }}>{d.rotulo}</Text>
+              <Presionable key={d.clave} onPress={() => elegir(d.clave)} accessibilityRole="tab"
+                accessibilityState={{ selected: elegido }}
+                accessibilityLabel={`Paso ${i + 1} de ${DOCUMENTOS.length}: ${d.rotulo}${listo ? ', leído' : ', sin leer'}`}
+                accessibilityHint={elegido ? undefined : 'Abre este documento.'}
+                style={({ pressed }) => ({ flex: 1, minHeight: 56, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 14,
+                  flexDirection: 'row', alignItems: 'center', gap: 8,
+                  backgroundColor: elegido ? suave(t.color.magenta, t.oscuro ? 0.32 : 0.16) : colorSistema.superficie,
+                  borderWidth: elegido ? 2 : 1, borderColor: elegido ? t.color.magenta : colorSistema.contornoSuave, opacity: pressed ? 0.7 : 1 })}>
+                <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: listo ? suave(t.color.verde, t.oscuro ? 0.3 : 0.18) : elegido ? t.color.magenta : 'transparent',
+                  borderWidth: listo || elegido ? 0 : 1.5, borderColor: colorSistema.texto2 }}>
+                  {listo ? <Icono sf="checkmark" respaldo="✓" tam={14} color={t.color.verdeTexto} />
+                    : <Text style={{ fontSize: 14, fontWeight: '800', color: elegido ? '#FFFFFF' : colorSistema.texto2 }}>{i + 1}</Text>}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>
+                    {`Paso ${i + 1} de ${DOCUMENTOS.length}${listo ? ' · leído' : ''}`}
+                  </Text>
+                  <Text numberOfLines={2} style={{ fontSize: 15, lineHeight: 19, fontWeight: elegido ? '700' : '600', color: elegido ? t.color.magentaTexto : colorSistema.texto }}>{d.rotulo}</Text>
+                </View>
               </Presionable>
             );
           })}
         </View>
-        <View style={{ flex: 1, minHeight: 180, borderRadius: 16, borderWidth: 1, borderColor: colorSistema.contornoSuave,
+
+        {/* Cuánto se leyó del abierto, y qué falta. */}
+        <View style={{ gap: 4 }} accessible accessibilityRole="progressbar"
+          accessibilityLabel={`${actual.rotulo}: ${leido ? 'leído hasta el final' : `leído ${Math.round(fraccion * 100)} por ciento`}`}
+          accessibilityValue={{ min: 0, max: 100, now: Math.round(fraccion * 100) }}>
+          <View style={{ height: 6, borderRadius: 3, backgroundColor: colorSistema.contornoSuave, overflow: 'hidden' }}>
+            <View style={{ height: 6, borderRadius: 3, width: `${Math.round(fraccion * 100)}%`, backgroundColor: leido ? t.color.verde : t.color.magenta }} />
+          </View>
+          <Texto nivel={3} estilo={{ fontSize: 13 }}>
+            {leido ? `${actual.rotulo}: leído hasta el final ✓`
+              : `${actual.rotulo}: ${Math.round(fraccion * 100)} % · baja hasta el final para poder aceptarlo`}
+          </Texto>
+        </View>
+
+        <View style={{ flex: 1, minHeight: 160, borderRadius: 16, borderWidth: 1, borderColor: colorSistema.contornoSuave,
           backgroundColor: colorSistema.superficie, overflow: 'hidden' }}>
-          <DocumentoLegal key={actual.clave} url={actual.url} incrustado alFinal={() => alLeer(actual.clave)} />
+          <DocumentoLegal key={actual.clave} url={actual.url} incrustado pie={pie}
+            alAvanzar={avanzar} alFinal={() => alLeer(actual.clave)} />
         </View>
         <View style={{ gap: 2 }}>
           {DOCUMENTOS.map((d) => (

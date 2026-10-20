@@ -249,7 +249,7 @@
         {
           "photosPermission": "Puntos Salud usa tus fotos sólo cuando eliges una: la de tu receta para reservar, una foto para el chat con la farmacia o tu foto de perfil.",
           "cameraPermission": "Puntos Salud usa la cámara sólo cuando tú la abres, para tomar la foto de tu receta, una foto para el chat con la farmacia o tu foto de perfil.",
-          "microphonePermission": false
+          "microphonePermission": "Puntos Salud usa el micrófono sólo para grabar las notas de voz que mandas en el chat con la farmacia."
         }
       ],
       [

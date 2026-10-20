@@ -303,7 +303,9 @@ export default function Cuenta() {
           {conCodigo ? (
             <FilaAccion sf="person.text.rectangle.fill" texto="Ver mis compras, facturas y reservas" alTocar={irACompletarEntrada} />
           ) : null}
-          {!conCodigo ? <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} /> : null}
+          {/* Sólo créditos fiscales (2026-10-20): sin ninguno, no hay qué ver.
+              Un servidor viejo no manda `con_ccf`: ahí se ofrece igual. */}
+          {!conCodigo && resumen?.con_ccf !== false ? <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} /> : null}
           {/* Saldo a favor (2026-10-19): lo pagado que no se entregó o un
               anticipo; vale en cualquier sucursal. El detalle, en Mis reservas. */}
           {!conCodigo && resumen?.saldo_a_favor?.total > 0 ? (

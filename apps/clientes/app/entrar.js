@@ -11,7 +11,7 @@ import { Aviso, Texto } from '../componentes/ui';
 import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
-import { documentoEscrito } from '../lib/formato';
+import { documentoEscrito, telefonoEscrito, telefonoValido } from '../lib/formato';
 import { duiValido } from '../lib/fiscal';
 import { conBiometria, useBloqueo } from '../lib/bloqueo';
 import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
@@ -59,10 +59,11 @@ export default function Entrar() {
 
   const listo = modo === 'codigo'
     ? codigo.length === 7
-    : duiValido(documento) && telefono.replace(/\D/g, '').length >= 8;
+    : duiValido(documento) && telefonoValido(telefono);
   // Los 9 números escritos pero el verificador no cuadra: se dice aquí, antes
   // de mandarlo, en vez de un «no te encontramos» que no explica nada.
   const duiMalo = documento.replace(/\D/g, '').length === 9 && !duiValido(documento);
+  const telMalo = telefono.replace(/\D/g, '').length === 8 && !telefonoValido(telefono);
 
   async function entrarCon(datos) {
     setError(null);
@@ -113,7 +114,7 @@ export default function Entrar() {
           deshabilitado={enviando} color={t.color.magenta} />
       ) : null}
       {modo === 'dui' ? (
-        <Grupo pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : 'Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo.'}>
+        <Grupo pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo.'}>
           <FilaCampo
             placeholder="DUI"
             keyboardType="number-pad"
@@ -135,7 +136,7 @@ export default function Entrar() {
             autoComplete="tel"
             inputAccessoryViewID={IOS ? BARRA_TEL : undefined}
             value={telefono}
-            onChangeText={(v) => setTelefono(v.replace(/[^\d ]/g, '').slice(0, 9))}
+            onChangeText={(v) => setTelefono(telefonoEscrito(v))}
             returnKeyType="go"
             onSubmitEditing={entrar}
           />

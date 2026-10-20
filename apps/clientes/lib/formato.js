@@ -48,6 +48,20 @@ export function nombrePropio(v) {
  * verificador), y el guion antes del último (12345678-9). Sólo DUI: el NIT ya
  * no se acepta para entrar ni para registrarse (decisión del dueño, 2026-10-20).
  */
+/**
+ * El teléfono mientras se escribe (2026-10-20): 8 números con el guion en el
+ * medio (7015-3222). El 503 de un número pegado se quita.
+ */
+export function telefonoEscrito(v) {
+  let d = String(v ?? '').replace(/\D/g, '');
+  if (d.length > 8 && d.startsWith('503')) d = d.slice(3);
+  d = d.slice(0, 8);
+  return d.length > 4 ? `${d.slice(0, 4)}-${d.slice(4)}` : d;
+}
+
+/** Un teléfono de El Salvador: fijo (2…) o celular (6…, 7…). La misma regla que `telValido` del servidor. */
+export const telefonoValido = (v) => /^[267]\d{7}$/.test(String(v ?? '').replace(/\D/g, ''));
+
 export function documentoEscrito(v) {
   const d = String(v ?? '').replace(/\D/g, '').slice(0, 9);
   return d.length === 9 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;

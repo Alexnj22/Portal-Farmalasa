@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1319.3 — App de clientes: DUI y teléfono validados también en el servidor, Mis facturas sólo CCF, documentos del primer acceso más claros, micrófono
+
+- **Entrar y registrarse** (`app-clientes`, desplegada): el servidor acepta sólo
+  un DUI con su verificador y un teléfono de 8 dígitos que empiece con 2, 6 o 7
+  (el 503 delante se quita). Antes una versión vieja de la app o una entrada
+  guardada con Face ID seguía entrando con NIT.
+- **Teléfono en la app**: se escribe con formato `0000-0000`, máximo 8 números,
+  y si no empieza con 2, 6 o 7 se avisa debajo del campo.
+- **Mis facturas**: sólo créditos fiscales (CCF) y sus notas de crédito; el
+  consumidor final ya no sale. La fila de Cuenta se ofrece sólo a quien tiene
+  algún CCF (`resumen.con_ccf`).
+- **Primer acceso**: los dos documentos son pasos numerados («Paso 1 de 2»),
+  con ✓ al leerlos, barra de lectura, «Siguiente: Aviso de privacidad» al final
+  del primero y el motivo escrito sobre el botón deshabilitado.
+- **Micrófono del chat**: la app se cerraba al tocarlo. `expo-image-picker`
+  tenía `microphonePermission: false`, que borraba
+  `NSMicrophoneUsageDescription` del Info.plist, e iOS mata la app que abre el
+  micrófono sin ese texto. Necesita build nuevo.
+
 ## v2.1319.2 — Entrar y registrarse en la app: sólo DUI, con su verificador
 
 - **App de clientes**: el campo DUI de Entrar y de Registro ya no deja

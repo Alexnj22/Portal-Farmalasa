@@ -369,6 +369,10 @@
         "staff_detail"
       ],
       "motivo": "Lee la foto de una orden de descuento y no escribe nada. Exige `auth_can_edit_any(staff_detail, staff_list)`; esos módulos hoy sólo los tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "entregar-premio": {
+      "guarda": "alcance",
+      "motivo": "Entrega un premio del raspable y, si es producto, lo descarga del inventario. Pregunta COMO el usuario `promocionales_puede_en_sala(branch del premio)`: la sala entrega sólo los suyos; quien edita los niveles, en cualquiera."
     }
   },
   "rpc": {
@@ -816,6 +820,17 @@
     "verificar_hojas_pedido": {
       "guarda": "solo-servidor",
       "motivo": "Revocada a authenticated el 2026-10-02: la llaman sólo funciones DEFINER, crons o edge functions con la llave del servidor."
+    },
+    "puntos_premios_lista": {
+      "guarda": "alcance",
+      "motivo": "La sala ve los premios de la suya (compara contra auth_employee_branch_id); quien administra los niveles ve cualquiera o todas."
+    },
+    "promocional_ajustar": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "puntos_tab_niveles"
+      ],
+      "motivo": "Entradas y ajustes del inventario de regalos: sólo quien edita los niveles (puntos_tab_niveles can_edit), cargos de toda la red."
     }
   },
   "buckets_abiertos": {

@@ -15,6 +15,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
+import { useToastStore } from '@nucleo/store/toastStore';
 
 /**
  * El pago del asegurado de Mapfre (2026-10-19).
@@ -61,11 +62,17 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
     const porCobrar = (facturas || []).filter((f) => f.estado === 'POR_COBRAR').length;
     const valido = !!elegida && elegida.estado === 'POR_COBRAR' && !!asegurado && estadoPago.valido;
 
+    const showToast = useToastStore((s) => s.showToast);
     const cuerpo = useRef(null);
     cuerpo.current = async () => {
         setEnviando(true);
         try {
             await onCobrar({ clave: claveDeEnvio.current, monto, factura: elegida, asegurado, pago });
+        } catch (e) {
+            // `onCobrar` ya avisa lo que el servidor rechaza; esto es lo que
+            // reventó antes de llegar (la red, la foto): sin aviso, el botón se
+            // reactivaba y nadie sabía que no se cobró.
+            showToast('No se pudo cobrar', mensajeAmigable(e), 'error');
         } finally {
             setEnviando(false);
         }

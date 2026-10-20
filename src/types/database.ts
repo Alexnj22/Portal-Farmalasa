@@ -1279,8 +1279,8 @@ export type Database = {
       app_cliente_sesiones: {
         Row: {
           acepta_avisos: boolean | null
-          avisos_formato: number
           alcance: string
+          avisos_formato: number
           created_at: string
           customer_id: number | null
           dispositivo: string | null
@@ -1294,8 +1294,8 @@ export type Database = {
         }
         Insert: {
           acepta_avisos?: boolean | null
-          avisos_formato?: number
           alcance?: string
+          avisos_formato?: number
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null
@@ -1309,8 +1309,8 @@ export type Database = {
         }
         Update: {
           acepta_avisos?: boolean | null
-          avisos_formato?: number
           alcance?: string
+          avisos_formato?: number
           created_at?: string
           customer_id?: number | null
           dispositivo?: string | null
@@ -20339,6 +20339,196 @@ export type Database = {
           },
         ]
       }
+      promocionales: {
+        Row: {
+          activo: boolean
+          costo: number | null
+          created_at: string
+          descripcion: string | null
+          foto_url: string | null
+          id: number
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          costo?: number | null
+          created_at?: string
+          descripcion?: string | null
+          foto_url?: string | null
+          id?: number
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          costo?: number | null
+          created_at?: string
+          descripcion?: string | null
+          foto_url?: string | null
+          id?: number
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promocionales_envios: {
+        Row: {
+          cantidad: number
+          created_at: string
+          desde_branch: number
+          enviado_at: string
+          enviado_por: string | null
+          estado: string
+          hacia_branch: number
+          id: number
+          promocional_id: number
+          recibido_at: string | null
+          recibido_por: string | null
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          desde_branch: number
+          enviado_at?: string
+          enviado_por?: string | null
+          estado?: string
+          hacia_branch: number
+          id?: number
+          promocional_id: number
+          recibido_at?: string | null
+          recibido_por?: string | null
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          desde_branch?: number
+          enviado_at?: string
+          enviado_por?: string | null
+          estado?: string
+          hacia_branch?: number
+          id?: number
+          promocional_id?: number
+          recibido_at?: string | null
+          recibido_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promocionales_envios_desde_branch_fkey"
+            columns: ["desde_branch"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promocionales_envios_hacia_branch_fkey"
+            columns: ["hacia_branch"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promocionales_envios_promocional_id_fkey"
+            columns: ["promocional_id"]
+            isOneToOne: false
+            referencedRelation: "promocionales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promocionales_existencias: {
+        Row: {
+          branch_id: number
+          cantidad: number
+          created_at: string
+          promocional_id: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: number
+          cantidad?: number
+          created_at?: string
+          promocional_id: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: number
+          cantidad?: number
+          created_at?: string
+          promocional_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promocionales_existencias_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promocionales_existencias_promocional_id_fkey"
+            columns: ["promocional_id"]
+            isOneToOne: false
+            referencedRelation: "promocionales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promocionales_movimientos: {
+        Row: {
+          branch_id: number
+          cantidad: number
+          created_at: string
+          employee_id: string | null
+          envio_id: number | null
+          id: number
+          nota: string | null
+          premio_id: number | null
+          promocional_id: number
+          tipo: string
+        }
+        Insert: {
+          branch_id: number
+          cantidad: number
+          created_at?: string
+          employee_id?: string | null
+          envio_id?: number | null
+          id?: number
+          nota?: string | null
+          premio_id?: number | null
+          promocional_id: number
+          tipo: string
+        }
+        Update: {
+          branch_id?: number
+          cantidad?: number
+          created_at?: string
+          employee_id?: string | null
+          envio_id?: number | null
+          id?: number
+          nota?: string | null
+          premio_id?: number | null
+          promocional_id?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promocionales_movimientos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promocionales_movimientos_promocional_id_fkey"
+            columns: ["promocional_id"]
+            isOneToOne: false
+            referencedRelation: "promocionales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promociones: {
         Row: {
           creado_por: string | null
@@ -21817,6 +22007,120 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      puntos_premios: {
+        Row: {
+          branch_id: number | null
+          cantidad: number
+          codigo: string | null
+          created_at: string
+          customer_id: number
+          entregado_at: string | null
+          entregado_branch: number | null
+          entregado_por: string | null
+          erp_aplicado: Json | null
+          estado: string
+          factor: number | null
+          ganado_el: string
+          id: number
+          mes: string
+          nivel: string | null
+          nombre: string
+          presentacion_tipo: string | null
+          product_id: number | null
+          promocional_id: number | null
+          raspado_el: string | null
+          tipo: string
+          tomado_at: string | null
+          vence_el: string
+        }
+        Insert: {
+          branch_id?: number | null
+          cantidad?: number
+          codigo?: string | null
+          created_at?: string
+          customer_id: number
+          entregado_at?: string | null
+          entregado_branch?: number | null
+          entregado_por?: string | null
+          erp_aplicado?: Json | null
+          estado?: string
+          factor?: number | null
+          ganado_el: string
+          id?: number
+          mes: string
+          nivel?: string | null
+          nombre: string
+          presentacion_tipo?: string | null
+          product_id?: number | null
+          promocional_id?: number | null
+          raspado_el?: string | null
+          tipo: string
+          tomado_at?: string | null
+          vence_el: string
+        }
+        Update: {
+          branch_id?: number | null
+          cantidad?: number
+          codigo?: string | null
+          created_at?: string
+          customer_id?: number
+          entregado_at?: string | null
+          entregado_branch?: number | null
+          entregado_por?: string | null
+          erp_aplicado?: Json | null
+          estado?: string
+          factor?: number | null
+          ganado_el?: string
+          id?: number
+          mes?: string
+          nivel?: string | null
+          nombre?: string
+          presentacion_tipo?: string | null
+          product_id?: number | null
+          promocional_id?: number | null
+          raspado_el?: string | null
+          tipo?: string
+          tomado_at?: string | null
+          vence_el?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puntos_premios_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_premios_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_premios_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "puntos_premios_entregado_branch_fkey"
+            columns: ["entregado_branch"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_premios_promocional_id_fkey"
+            columns: ["promocional_id"]
+            isOneToOne: false
+            referencedRelation: "promocionales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       puntos_producto_no_acumula: {
         Row: {
@@ -31718,6 +32022,54 @@ export type Database = {
         }
         Returns: number
       }
+      promocional_ajustar: {
+        Args: {
+          p_branch: number
+          p_delta: number
+          p_id: number
+          p_nota: string
+        }
+        Returns: number
+      }
+      promocional_enviar: {
+        Args: {
+          p_cantidad: number
+          p_desde: number
+          p_hacia: number
+          p_id: number
+        }
+        Returns: number
+      }
+      promocional_guardar: {
+        Args: {
+          p_activo: boolean
+          p_costo: number
+          p_descripcion: string
+          p_foto_url: string
+          p_id: number
+          p_nombre: string
+        }
+        Returns: number
+      }
+      promocional_mover: {
+        Args: {
+          p_branch: number
+          p_delta: number
+          p_envio: number
+          p_nota: string
+          p_premio: number
+          p_promocional: number
+          p_tipo: string
+        }
+        Returns: number
+      }
+      promocional_recibir: { Args: { p_envio: number }; Returns: number }
+      promocionales_panel: { Args: never; Returns: Json }
+      promocionales_puede_administrar: { Args: never; Returns: boolean }
+      promocionales_puede_en_sala: {
+        Args: { p_branch: number }
+        Returns: boolean
+      }
       promociones_cerrar_meses_de_laboratorio: { Args: never; Returns: number }
       promociones_ciclo_diario: { Args: never; Returns: string }
       promociones_registrar_excedentes: { Args: never; Returns: number }
@@ -32018,6 +32370,27 @@ export type Database = {
       puntos_premio_al_azar: {
         Args: { p_defecto: number; p_premios: Json }
         Returns: number
+      }
+      puntos_premio_cerrar: {
+        Args: { p_employee: string; p_erp: Json; p_id: number }
+        Returns: undefined
+      }
+      puntos_premio_soltar: { Args: { p_id: number }; Returns: undefined }
+      puntos_premio_sorteado: {
+        Args: { p_defecto: number; p_premios: Json }
+        Returns: Json
+      }
+      puntos_premio_tomar: {
+        Args: { p_branch: number; p_id: number }
+        Returns: Json
+      }
+      puntos_premios_lista: {
+        Args: {
+          p_branch: number
+          p_buscar?: string
+          p_incluir_entregados?: boolean
+        }
+        Returns: Json
       }
       puntos_premios_validos: { Args: { p_premios: Json }; Returns: string }
       puntos_registrar_canje: {

@@ -372,3 +372,66 @@ export const guardarConfigDePuntos = async (cambios, nota = null) => {
     if (r?.cambio) anotar('PUNTOS_CONFIG_CAMBIO', 'puntos_config', { cambios, nota: nota?.trim() || null });
     return r;
 };
+
+// ── Premios del raspable que no son puntos, y los regalos promocionales ─────
+// (2026-10-19). Un premio que sale en el raspable puede ser un PRODUCTO del
+// inventario —se entrega en la sala y se descarta en el sistema de la caja— o
+// un regalo PROMOCIONAL, que lleva su propio inventario por sucursal y llega
+// por envíos desde Bodega. La base decide quién puede qué
+// (`promocionales_puede_administrar` / `promocionales_puede_en_sala`).
+
+/** Catálogo de promocionales con sus existencias por sala y los envíos en camino. */
+export const fetchPromocionales = () => rpc('promocionales_panel');
+
+/** Crear (`id` null) o editar un promocional. */
+export const guardarPromocional = async ({ id = null, nombre, descripcion = null, costo = null, fotoUrl = null, activo = true }) => {
+    const nuevo = await rpc('promocional_guardar', {
+        p_id: id, p_nombre: nombre, p_descripcion: descripcion, p_costo: costo, p_foto_url: fotoUrl, p_activo: activo,
+    });
+    anotar(id ? 'PROMOCIONAL_EDITADO' : 'PROMOCIONAL_CREADO', String(nuevo), { nombre, costo, activo });
+    return nuevo;
+};
+
+/** Entrada (positivo) o ajuste (negativo, con motivo) de lo que hay en una sala. */
+export const ajustarPromocional = async (id, sala, delta, nota = null) => {
+    const queda = await rpc('promocional_ajustar', { p_id: id, p_branch: sala, p_delta: delta, p_nota: nota?.trim() || null });
+    anotar('PROMOCIONAL_AJUSTE', String(id), { sala, delta, nota: nota?.trim() || null, queda });
+    return queda;
+};
+
+/** Mandar promocionales de una sala a otra. Salen ya; llegan al confirmarse. */
+export const enviarPromocional = async (id, desde, hacia, cantidad) => {
+    const envio = await rpc('promocional_enviar', { p_id: id, p_desde: desde, p_hacia: hacia, p_cantidad: cantidad });
+    anotar('PROMOCIONAL_ENVIO', String(envio), { promocional: id, desde, hacia, cantidad });
+    return envio;
+};
+
+/** La sala de destino confirma que el envío llegó. */
+export const recibirPromocional = async (envio) => {
+    const queda = await rpc('promocional_recibir', { p_envio: envio });
+    anotar('PROMOCIONAL_RECIBIDO', String(envio), { queda });
+    return queda;
+};
+
+/** Los premios por entregar de una sala (`sala` null = todas, sólo administración). */
+export const fetchPremiosPorEntregar = (sala, buscar = null, incluirEntregados = false) =>
+    rpc('puntos_premios_lista', { p_branch: sala ?? null, p_buscar: buscar?.trim() || null, p_incluir_entregados: incluirEntregados });
+
+/**
+ * Entregar un premio. Un producto se descarta en el sistema de la caja; un
+ * promocional baja de la sala. Lanza con el motivo del servidor.
+ */
+export async function entregarPremio(id) {
+    const { data, error } = await supabase.functions.invoke('entregar-premio', { body: { premio_id: id } });
+    if (error) {
+        let motivo = error;
+        try {
+            const cuerpo = await error?.context?.json?.();
+            if (cuerpo?.error) motivo = new Error(cuerpo.error);
+        } catch { /* la respuesta no era JSON */ }
+        throw motivo;
+    }
+    if (!data?.ok) throw new Error(data?.error || 'No se pudo entregar el premio.');
+    anotar('PUNTOS_PREMIO_ENTREGADO', data.premio?.codigo ?? String(id), { premio: data.premio, erp: data.erp ?? null });
+    return data;
+}

@@ -270,7 +270,7 @@ export default function Puntos() {
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
       {resumen.cupon ? (
         <Entrada indice={2}>
-          <Cupon cupon={resumen.cupon} nivel={mayorista ?? resumen.nivel?.clave} activa={visible} fondo={Platform.OS === 'android' ? colorSistema.fondo : (t.oscuro ? '#0A090E' : '#F5F4F8')} demo={enPrueba ? prueba.demoCupon : 0} />
+          <Cupon cupon={resumen.cupon} nivel={mayorista ?? resumen.nivel?.clave} activa={visible} fondo={Platform.OS === 'android' ? colorSistema.fondo : (t.oscuro ? '#0A090E' : '#F5F4F8')} demo={enPrueba ? prueba.demoCupon : 0} alCambiar={() => cargar({ forzar: true })} />
         </Entrada>
       ) : null}
 

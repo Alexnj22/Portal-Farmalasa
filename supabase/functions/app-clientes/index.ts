@@ -54,7 +54,7 @@ const DIAS_SESION = 180;
 // inicio). Reservas, facturas, chat, créditos, encargos, datos fiscales, foto
 // de perfil, la bandeja de avisos y borrar la cuenta piden DUI y teléfono.
 const CON_CODIGO = new Set([
-  "resumen", "movimientos", "cupon_raspado",
+  "resumen", "movimientos", "cupon_raspado", "premio_salas", "premio_elegir_sala",
   "wallet_pase", "wallet_enlace", "google_wallet_enlace",
   "ofertas", "historias", "historia_vista",
   "documentos_estado", "aceptar_documentos",
@@ -1459,10 +1459,65 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!customerId) return json({ ok: false });
       const id = Number(body?.id);
       if (!Number.isFinite(id)) return json({ ok: false, mensaje: "Cupón inválido." });
+      // Un premio que no es puntos vive en `puntos_premios` (2026-10-19).
+      if (body?.clase === "premio") {
+        const { error: ePr } = await admin.from("puntos_premios").update({ raspado_el: new Date().toISOString() })
+          .eq("id", id).eq("customer_id", customerId).is("raspado_el", null);
+        if (ePr) throw ePr;
+        return json({ ok: true });
+      }
       const { error } = await admin.from("puntos_lote").update({ raspado_el: new Date().toISOString() })
         .eq("id", id).eq("customer_id", customerId).eq("origen", "cupon").is("raspado_el", null);
       if (error) throw error;
       return json({ ok: true });
+    }
+
+    // Dónde retirar el premio del raspable (2026-10-19). Las salas de farmacia,
+    // con «lo hay» para que el cliente elija una que lo tenga; si elige otra,
+    // el premio queda esperando que se lo manden. Sólo su propio premio, y sólo
+    // mientras no se haya entregado ni vencido.
+    if (accion === "premio_salas" || accion === "premio_elegir_sala") {
+      if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal." });
+      const id = Number(body?.id);
+      const { data: pr, error: ePr } = await admin.from("puntos_premios")
+        .select("id, tipo, product_id, factor, cantidad, promocional_id, estado, vence_el, branch_id")
+        .eq("id", id).eq("customer_id", customerId).maybeSingle();
+      if (ePr) throw ePr;
+      if (!pr) return json({ ok: false, mensaje: "Ese premio no es tuyo." }, 404);
+      const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+      if (pr.estado === "ENTREGADO") return json({ ok: false, mensaje: "Ese premio ya se entregó." });
+      if (String(pr.vence_el) < hoy) return json({ ok: false, mensaje: "Ese premio ya venció." });
+
+      if (accion === "premio_elegir_sala") {
+        const branchId = Number(body?.branch_id);
+        const { data: b, error: eB } = await admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle();
+        if (eB) throw eB;
+        if (!b) return json({ ok: false, mensaje: "Elige una sucursal." }, 400);
+        // ENTREGANDO = la sala lo está entregando ahora mismo: no se mueve.
+        const { data: cambio, error: eU } = await admin.from("puntos_premios").update({ branch_id: branchId })
+          .eq("id", id).eq("customer_id", customerId).eq("estado", "POR_RETIRAR").select("id");
+        if (eU) throw eU;
+        if (!cambio?.length) return json({ ok: false, mensaje: "Ese premio se está entregando: ya no se puede cambiar la sucursal." });
+        return json({ ok: true });
+      }
+
+      const { data: salas, error: eS } = await salasDeLaRed(admin);
+      if (eS) throw eS;
+      let hay = new Map<number, number>();
+      if (pr.tipo === "producto") {
+        hay = (await unidadesPorSala(admin, [Number(pr.product_id)])).get(Number(pr.product_id)) ?? new Map();
+      } else {
+        const { data: ex, error: eEx } = await admin.from("promocionales_existencias")
+          .select("branch_id, cantidad").eq("promocional_id", pr.promocional_id);
+        if (eEx) throw eEx;
+        hay = new Map((ex ?? []).map((x: any) => [Number(x.branch_id), Number(x.cantidad)]));
+      }
+      const necesita = pr.tipo === "producto" ? Number(pr.cantidad) * Number(pr.factor || 1) : Number(pr.cantidad);
+      const lista = ((salas ?? []) as any[]).filter((b) => b.type === "FARMACIA").map((b) => ({
+        branch_id: Number(b.id), sala: b.name, direccion: b.address ?? null,
+        hay: (hay.get(Number(b.id)) ?? 0) >= necesita, elegida: Number(b.id) === Number(pr.branch_id),
+      }));
+      return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
     if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
@@ -3447,6 +3502,13 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const saldo = Number(est?.saldo ?? 0);
       if (ePri) console.error("no se pudo leer el primer lote:", ePri.message);
       if (eCup) throw eCup;
+      // El premio del raspable que NO es puntos (2026-10-19): un producto o un
+      // regalo promocional que se retira en una sucursal. Sólo se busca si el
+      // mes no trae lote de puntos — es uno u otro, nunca los dos.
+      const { data: premioMes, error: ePm } = cup ? { data: null, error: null } : await admin.from("puntos_premios")
+        .select("id, codigo, tipo, nombre, cantidad, presentacion_tipo, factor, nivel, vence_el, raspado_el, branch_id, estado, entregado_at")
+        .eq("customer_id", customerId).eq("mes", inicioMes).maybeSingle();
+      if (ePm) throw ePm;
       if (eCfg) console.error("no se pudo leer la configuración:", eCfg.message);
       const cumpleanos = String(c.fecha_nacimiento ?? "").slice(5, 10) === hoyMD || muestras.cumpleanos.length > 0;
       if (eRA) console.error("no se pudieron leer las reservas:", eRA.message);
@@ -3488,7 +3550,17 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         creditos,
         // Cuenta de prueba: la app ofrece el «modo de prueba» en Cuenta.
         prueba: muestras.prueba,
-        cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo, raspado: !!cup.raspado_el } : null,
+        cupon: cup ? { id: cup.id, puntos: Number(cup.puntos), restantes: Number(cup.restantes), vence: cup.vence_el, titulo: cup.motivo, raspado: !!cup.raspado_el }
+          : premioMes ? {
+            id: premioMes.id, clase: "premio", puntos: 0, restantes: 0, vence: premioMes.vence_el,
+            titulo: `Cupón ${premioMes.nivel ?? ""} del mes`.replace(/\s+/g, " "), raspado: !!premioMes.raspado_el,
+            premio: {
+              tipo: premioMes.tipo, nombre: premioMes.nombre, cantidad: Number(premioMes.cantidad), codigo: premioMes.codigo,
+              presentacion: premioMes.tipo === "producto" ? `${premioMes.presentacion_tipo} (${premioMes.factor})` : null,
+              branch_id: premioMes.branch_id, sala: premioMes.branch_id ? sucursal(((salas ?? []) as any[]).find((b) => Number(b.id) === Number(premioMes.branch_id))?.name) : null,
+              entregado: premioMes.estado === "ENTREGADO", entregado_at: premioMes.entregado_at,
+            },
+          } : null,
         // El regalo de cumpleaños: el del nivel (desde el 2026-10-19 el del nivel
         // de entrada y `puntos_config.puntos_cumpleanos` se guardan juntos), o el
         // del rango si es Cliente Mayorista con sus beneficios encendidos —el

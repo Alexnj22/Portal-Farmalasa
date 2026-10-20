@@ -497,6 +497,11 @@ export const AREAS = [
                  // raspable) y el historial de cada cambio de la pestaña
                  // Niveles (2026-10-19).
                  'puntos_mayoreo_beneficios', 'puntos_config_historial',
+                 // Los premios del raspable que no son puntos —un producto o un
+                 // regalo— y el inventario de regalos promocionales por sala,
+                 // con sus envíos y su historial (2026-10-19).
+                 'puntos_premios', 'promocionales', 'promocionales_existencias',
+                 'promocionales_envios', 'promocionales_movimientos',
                  // La copia del sistema de puntos anterior (se apaga el
                  // 2026-10-01) y la bitácora del arranque de esa madrugada.
                  'puntos_archivo_carga', 'puntos_archivo_cliente', 'puntos_archivo_venta',
@@ -519,7 +524,9 @@ export const AREAS = [
                  'inyeccion_aplicaciones', 'inyeccion_precios', 'inyeccion_dosis_producto',
                  // Productos marcados a mano y los que se cuentan por ml (2026-10-03).
                  'inyeccion_producto_clasificacion', 'inyeccion_dosis_ml'],
-        edge: ['sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
+        // `entregar-premio` (2026-10-19): entrega un premio del raspable; si es
+        // un producto, lo descarga del inventario de la sala.
+        edge: ['entregar-premio', 'sync-dte-sales', 'sync-wfm-sales', 'check-sales-alerts', 'check-sales-reconciliation',
                'backfill-dte-sales', 'heal-dte-sync',
                // El programa de puntos vive en el portal desde el 2026-10-01:
                // `puntos-motor` acumula, canjea y anula cada minuto; las dos

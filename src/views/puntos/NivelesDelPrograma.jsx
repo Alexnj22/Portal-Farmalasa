@@ -19,17 +19,21 @@
  *   · Historial     — los últimos 100 cambios.
  *
  * ── Lo que NO hace ──────────────────────────────────────────────────────────
- * No ofrece premios en DESCUENTO: el motor sólo sabe dar puntos (el raspable es
- * un lote de puntos que vence a fin de mes) y la caja no cobraría un
- * porcentaje. Ofrecerlo sería prometer algo que nadie da.
+ * No ofrece premios en DESCUENTO: la caja no cobraría un porcentaje, y
+ * ofrecerlo sería prometer algo que nadie da. Sí ofrece, desde el 2026-10-19,
+ * premios que son un PRODUCTO del inventario (se entrega en la sala y se
+ * descarta en el sistema de la caja) o un regalo PROMOCIONAL (con su propio
+ * inventario por sala, en la pestaña Premios).
  *
  * La base valida todo de nuevo (la escalera, los rangos de cada número, que los
  * premios sean sólo puntos y probabilidad) y exige `puntos_tab_niveles` para
  * escribir: lo de acá sólo evita viajes que van a volver con error.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Crown, Gem, History, Plus, Save, Trash2, Ticket, Power } from 'lucide-react';
+import { Crown, Gem, History, Plus, Save, Search, Trash2, Ticket, Power } from 'lucide-react';
 import Button from '../../components/common/Button';
+import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import ConfirmModal from '../../components/common/ConfirmModal';
@@ -44,8 +48,9 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import {
-    fetchPanelDeNiveles, guardarNivelDePuntos, guardarRangoMayoreoDePuntos, guardarConfigDePuntos,
+    fetchPanelDeNiveles, guardarNivelDePuntos, guardarRangoMayoreoDePuntos, guardarConfigDePuntos, fetchPromocionales,
 } from '@nucleo/data/puntos';
+import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
 
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
 const dolares = (puntos) => formatMoney((Number(puntos) || 0) / 100);
@@ -71,9 +76,13 @@ const ROTULO_CAMPO = {
     mayoreo_beneficios_activos: 'Beneficios del Cliente Mayorista',
 };
 
+/** Un premio en palabras: «300 pts», «2 × MICROPORE», «Termo Salud». */
+const premioTexto = (p) => (p.tipo === 'producto' ? `${Number(p.cantidad) > 1 ? `${p.cantidad} × ` : ''}${p.nombre}`
+    : p.tipo === 'promocional' ? p.nombre : `${pts(p.puntos)} pts`);
+
 /** La tabla de premios en palabras, para el historial. */
 const premiosTexto = (lista) => (Array.isArray(lista) && lista.length
-    ? lista.map((p) => `${pts(p.puntos)} pts (${p.peso})`).join(' · ') : 'ninguno');
+    ? lista.map((p) => `${premioTexto(p)} (${p.peso})`).join(' · ') : 'ninguno');
 
 const valorTexto = (key, v) => {
     if (key === 'cupon_premios') return premiosTexto(v);
@@ -97,13 +106,24 @@ function diferencias(antes, despues) {
     return out;
 }
 
-/** Valor esperado de un raspable: lo que cuesta en promedio cada uno que se da. */
+const esRegalo = (p) => p.tipo === 'producto' || p.tipo === 'promocional';
+/**
+ * Valor esperado de un raspable EN PUNTOS: lo que cuesta en promedio cada uno.
+ * Los regalos cuentan como 0 puntos (su costo es de inventario, no de puntos),
+ * así que pesan en el total y bajan el promedio.
+ */
 function esperado(premios, defecto) {
-    const lista = (premios || []).filter((p) => Number(p.peso) > 0 && Number(p.puntos) > 0);
+    const lista = (premios || []).filter((p) => Number(p.peso) > 0);
     if (!lista.length) return Number(defecto) || 0;
     const total = lista.reduce((a, p) => a + Number(p.peso), 0);
-    return lista.reduce((a, p) => a + Number(p.puntos) * Number(p.peso), 0) / total;
+    return lista.reduce((a, p) => a + (esRegalo(p) ? 0 : Number(p.puntos) || 0) * Number(p.peso), 0) / total;
 }
+/** Qué parte de los raspables sale en regalo, en %. */
+const parteEnRegalos = (premios) => {
+    const lista = (premios || []).filter((p) => Number(p.peso) > 0);
+    const total = lista.reduce((a, p) => a + Number(p.peso), 0);
+    return total ? Math.round((lista.filter(esRegalo).reduce((a, p) => a + Number(p.peso), 0) / total) * 100) : 0;
+};
 
 export default function NivelesDelPrograma({ puedeEditar }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -277,47 +297,170 @@ function FilaInterruptor({ titulo, detalle, valor, alCambiar, puedeEditar }) {
 }
 
 // ── El editor del raspable ──────────────────────────────────────────────────
+// Cada premio es de PUNTOS (los de siempre), de PRODUCTO o PROMOCIONAL. La
+// forma de cada uno es la que guarda la base y valida `puntos_premios_validos`.
+const TIPOS_DE_PREMIO = [
+    { value: 'puntos', label: 'Puntos' },
+    { value: 'producto', label: 'Producto' },
+    { value: 'promocional', label: 'Promocional' },
+];
+
+/** El rótulo de un campo que no lo trae (LiquidSelect), con la letra de PortalInput. */
+const Campo = ({ rotulo, className = '', children }) => (
+    <div className={`flex flex-col gap-1.5 min-w-0 ${className}`}>
+        <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">{rotulo}</span>
+        {children}
+    </div>
+);
+
+/** Un premio guardado → la fila del formulario (todo en texto). */
+const filaDePremio = (p) => ({
+    tipo: p.tipo ?? 'puntos', peso: String(p.peso ?? ''), puntos: p.puntos != null ? String(p.puntos) : '',
+    product_id: p.product_id ?? null, presentacion_tipo: p.presentacion_tipo ?? '', factor: p.factor ?? null,
+    cantidad: p.cantidad != null ? String(p.cantidad) : '1', nombre: p.nombre ?? '', promocional_id: p.promocional_id ?? null,
+});
+
+function FilaDeProducto({ p, poner, puedeEditar }) {
+    const [buscando, setBuscando] = useState(!p.product_id);
+    const [presentaciones, setPresentaciones] = useState(null);
+    useEffect(() => {
+        if (!p.product_id) return undefined;
+        let vivo = true;
+        fetchPresentaciones([p.product_id]).then(({ porProducto }) => {
+            if (vivo) setPresentaciones(porProducto.get(Number(p.product_id)) ?? []);
+        });
+        return () => { vivo = false; };
+    }, [p.product_id]);
+    if (buscando && puedeEditar) {
+        return (
+            <div className="flex flex-col gap-1">
+                <BuscadorDeProducto placeholder="Buscar el producto del premio…"
+                    invitacion={{ icono: Search, texto: 'Escribe el nombre del producto que se regala' }}
+                    onElegir={(prod) => {
+                        poner({ product_id: Number(prod.id), nombre: prod.nombre, presentacion_tipo: '', factor: null });
+                        setBuscando(false);
+                    }} />
+                {p.product_id && (
+                    <button type="button" onClick={() => setBuscando(false)}
+                        className="self-start text-caption underline text-content-3 min-h-[var(--tap-min)]">Cancelar</button>
+                )}
+            </div>
+        );
+    }
+    const opciones = (presentaciones ?? []).map((x) => ({ value: `${x.tipo}|${x.factor}`, label: `${x.tipo} (${x.factor})` }));
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+                <span className="text-body-sm font-semibold text-content truncate flex-1">{p.nombre}</span>
+                {puedeEditar && (
+                    <Button variant="ghost" size="sm" onClick={() => setBuscando(true)}>Cambiar</Button>
+                )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <Campo rotulo="Presentación">
+                    <LiquidSelect placeholder="¿Cuál presentación?" options={opciones} clearable={false}
+                        value={p.presentacion_tipo && p.factor ? `${p.presentacion_tipo}|${p.factor}` : ''} disabled={!puedeEditar}
+                        onChange={(v) => { const [t, f] = String(v).split('|'); poner({ presentacion_tipo: t, factor: Number(f) }); }} />
+                </Campo>
+                <PortalInput label="Cantidad" type="number" compact value={p.cantidad} readOnly={!puedeEditar}
+                    onChange={(e) => poner({ cantidad: e.target.value })} placeholder="1 a 20" />
+            </div>
+        </div>
+    );
+}
+
 function EditorDePremios({ premios, alCambiar, puedeEditar }) {
     const lista = premios ?? [];
     const total = lista.reduce((a, p) => a + (Number(p.peso) || 0), 0);
-    const poner = (i, campo, v) => alCambiar(lista.map((p, j) => (j === i ? { ...p, [campo]: v } : p)));
+    const ponerVarios = (i, cambios) => alCambiar(lista.map((p, j) => (j === i ? { ...p, ...cambios } : p)));
+    const poner = (i, campo, v) => ponerVarios(i, { [campo]: v });
+    const [promos, setPromos] = useState(null);
+    const hayPromo = lista.some((p) => p.tipo === 'promocional');
+    useEffect(() => {
+        if (!hayPromo || promos) return undefined;
+        let vivo = true;
+        fetchPromocionales().then((r) => { if (vivo) setPromos((r?.promocionales ?? []).filter((x) => x.activo)); })
+            .catch(() => { if (vivo) setPromos([]); });
+        return () => { vivo = false; };
+    }, [hayPromo, promos]);
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
             {lista.length === 0 && (
                 <p className="text-caption text-content-3">Sin premios: no se da raspable en este nivel.</p>
             )}
             {lista.map((p, i) => (
-                <div key={i} className="flex items-end gap-2">
-                    <PortalInput className="flex-1" label={i === 0 ? 'Puntos' : undefined} type="number" compact
-                        value={p.puntos ?? ''} onChange={(e) => poner(i, 'puntos', e.target.value)} readOnly={!puedeEditar} />
-                    <PortalInput className="flex-1" label={i === 0 ? 'Peso' : undefined} type="number" compact
-                        value={p.peso ?? ''} onChange={(e) => poner(i, 'peso', e.target.value)} readOnly={!puedeEditar} />
-                    <span className="w-14 shrink-0 pb-2 text-caption text-content-3 tabular-nums text-right">
-                        {total > 0 ? `${Math.round(((Number(p.peso) || 0) / total) * 1000) / 10}%` : '—'}
-                    </span>
-                    {puedeEditar && (
-                        <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar premio"
-                            onClick={() => alCambiar(lista.filter((_, j) => j !== i))} />
+                <div key={i} data-surface="card" className="rounded-xl p-3 flex flex-col gap-2">
+                    <div className="flex items-end gap-2">
+                        <Campo rotulo="Premio" className="flex-1 min-w-[9.5rem]">
+                            <LiquidSelect options={TIPOS_DE_PREMIO} value={p.tipo ?? 'puntos'} clearable={false}
+                                disabled={!puedeEditar}
+                                onChange={(v) => ponerVarios(i, { ...filaDePremio({ peso: p.peso }), tipo: v })} />
+                        </Campo>
+                        <PortalInput className="w-24" label="Peso" type="number" compact
+                            value={p.peso ?? ''} onChange={(e) => poner(i, 'peso', e.target.value)} readOnly={!puedeEditar} />
+                        <span className="w-14 shrink-0 pb-2 text-caption text-content-3 tabular-nums text-right">
+                            {total > 0 ? `${Math.round(((Number(p.peso) || 0) / total) * 1000) / 10}%` : '—'}
+                        </span>
+                        {puedeEditar && (
+                            <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar premio"
+                                onClick={() => alCambiar(lista.filter((_, j) => j !== i))} />
+                        )}
+                    </div>
+                    {(p.tipo ?? 'puntos') === 'puntos' && (
+                        <PortalInput label="Puntos" type="number" compact value={p.puntos ?? ''}
+                            onChange={(e) => poner(i, 'puntos', e.target.value)} readOnly={!puedeEditar}
+                            placeholder="1 a 10,000 · 100 puntos = $1" />
+                    )}
+                    {p.tipo === 'producto' && (
+                        <FilaDeProducto p={p} puedeEditar={puedeEditar} poner={(c) => ponerVarios(i, c)} />
+                    )}
+                    {p.tipo === 'promocional' && (
+                        <Campo rotulo="Regalo">
+                            <LiquidSelect placeholder={promos == null ? 'Cargando…' : '¿Cuál regalo?'} clearable={false}
+                                options={(promos ?? []).map((x) => ({ value: x.id, label: x.nombre }))}
+                                value={p.promocional_id ?? ''} disabled={!puedeEditar}
+                                onChange={(v) => ponerVarios(i, { promocional_id: Number(v),
+                                    nombre: (promos ?? []).find((x) => Number(x.id) === Number(v))?.nombre ?? '' })} />
+                        </Campo>
+                    )}
+                    {p.tipo === 'promocional' && promos?.length === 0 && (
+                        <p className="text-caption text-content-3">No hay regalos en el catálogo: créalos en la pestaña Premios.</p>
                     )}
                 </div>
             ))}
             {puedeEditar && lista.length < 12 && (
                 <Button variant="ghost" size="sm" icon={Plus} className="self-start"
-                    onClick={() => alCambiar([...lista, { puntos: '', peso: '' }])}>
+                    onClick={() => alCambiar([...lista, filaDePremio({})])}>
                     Agregar premio
                 </Button>
             )}
             <p className="text-caption text-content-3">
-                El peso es la probabilidad relativa: la columna de la derecha dice cuánto sale cada uno. Sólo
-                premios en puntos — el programa no sabe dar descuentos.
+                El peso es la probabilidad relativa: la columna de la derecha dice cuánto sale cada uno. Un producto
+                se entrega en la sala y se descarga del inventario; un promocional sale del inventario de regalos de
+                esa sala. No hay premios en descuento: la caja no cobra porcentajes.
             </p>
         </div>
     );
 }
 
-const premiosLimpios = (lista) => (lista ?? [])
-    .filter((p) => p.puntos !== '' && p.peso !== '')
-    .map((p) => ({ puntos: Number(p.puntos), peso: Number(p.peso) }));
+/** El formulario → la lista que guarda la base, sin filas a medio llenar. */
+const premiosLimpios = (lista) => (lista ?? []).flatMap((p) => {
+    if (p.peso === '' || p.peso == null) return [];
+    const peso = Number(p.peso);
+    if ((p.tipo ?? 'puntos') === 'puntos') return p.puntos === '' ? [] : [{ puntos: Number(p.puntos), peso }];
+    if (p.tipo === 'producto') {
+        if (!p.product_id || !p.presentacion_tipo || !p.factor) return [];
+        return [{ tipo: 'producto', product_id: Number(p.product_id), presentacion_tipo: p.presentacion_tipo,
+            factor: Number(p.factor), cantidad: Number(p.cantidad) || 1, nombre: p.nombre, peso }];
+    }
+    if (p.tipo === 'promocional') {
+        if (!p.promocional_id) return [];
+        return [{ tipo: 'promocional', promocional_id: Number(p.promocional_id), nombre: p.nombre, peso }];
+    }
+    return [];
+});
+/** Para comparar con lo guardado: la base reordena las claves de cada premio. */
+const canonico = (lista) => JSON.stringify((lista ?? []).map((o) => Object.fromEntries(Object.entries(o).sort())));
 
 // ── Un nivel ────────────────────────────────────────────────────────────────
 function TarjetaDeNivel({ nivel, conRaspable, esEntrada, puedeEditar, alGuardar }) {
@@ -325,7 +468,7 @@ function TarjetaDeNivel({ nivel, conRaspable, esEntrada, puedeEditar, alGuardar 
     const llave = `puntos_nivel_${nivel.clave}`;
     const desdeFila = useMemo(() => ({
         ...Object.fromEntries(CAMPOS_NIVEL.map((c) => [c.key, nivel[c.key] == null ? '' : String(nivel[c.key])])),
-        cupon_premios: (nivel.cupon_premios ?? []).map((p) => ({ puntos: String(p.puntos), peso: String(p.peso) })),
+        cupon_premios: (nivel.cupon_premios ?? []).map(filaDePremio),
         nota: '',
     }), [nivel]);
     // El borrador sobrevive al cierre de sesión por inactividad (gate:borradores).
@@ -342,7 +485,7 @@ function TarjetaDeNivel({ nivel, conRaspable, esEntrada, puedeEditar, alGuardar 
         }
         if (conRaspable) {
             const p = premiosLimpios(form.cupon_premios);
-            if (JSON.stringify(p) !== JSON.stringify(nivel.cupon_premios ?? [])) c.cupon_premios = p.length ? p : null;
+            if (canonico(p) !== canonico(nivel.cupon_premios)) c.cupon_premios = p.length ? p : null;
         }
         return c;
     }, [form, nivel, conRaspable]);
@@ -396,7 +539,8 @@ function TarjetaDeNivel({ nivel, conRaspable, esEntrada, puedeEditar, alGuardar 
                         alCambiar={(l) => poner('cupon_premios', l)} />
                     {ev > 0 && (
                         <p className="text-caption text-content-2">
-                            Cada raspable cuesta en promedio <span className="font-bold tabular-nums">{pts(Math.round(ev))} puntos</span> ({dolares(ev)}).
+                            Cada raspable cuesta en promedio <span className="font-bold tabular-nums">{pts(Math.round(ev))} puntos</span> ({dolares(ev)}){parteEnRegalos(premiosLimpios(form.cupon_premios)) > 0
+                                && ` en puntos; además ${parteEnRegalos(premiosLimpios(form.cupon_premios))}% de las veces sale un regalo`}.
                         </p>
                     )}
                 </div>
@@ -421,7 +565,7 @@ function TarjetaDeRango({ rango, conRaspable, puedeEditar, alGuardar }) {
     const llave = `puntos_mayoreo_${rango.clave}`;
     const desdeFila = useMemo(() => ({
         puntos_cumpleanos: String(rango.puntos_cumpleanos ?? 0),
-        cupon_premios: (rango.cupon_premios ?? []).map((p) => ({ puntos: String(p.puntos), peso: String(p.peso) })),
+        cupon_premios: (rango.cupon_premios ?? []).map(filaDePremio),
         nota: '',
     }), [rango]);
     const [form, setForm] = useState(() => loadDraft(llave) ?? desdeFila);
@@ -433,7 +577,7 @@ function TarjetaDeRango({ rango, conRaspable, puedeEditar, alGuardar }) {
         if (num(form.puntos_cumpleanos) !== Number(rango.puntos_cumpleanos)) c.puntos_cumpleanos = num(form.puntos_cumpleanos);
         if (conRaspable) {
             const p = premiosLimpios(form.cupon_premios);
-            if (JSON.stringify(p) !== JSON.stringify(rango.cupon_premios ?? [])) c.cupon_premios = p.length ? p : null;
+            if (canonico(p) !== canonico(rango.cupon_premios)) c.cupon_premios = p.length ? p : null;
         }
         return c;
     }, [form, rango, conRaspable]);
@@ -473,7 +617,8 @@ function TarjetaDeRango({ rango, conRaspable, puedeEditar, alGuardar }) {
                         alCambiar={(l) => poner('cupon_premios', l)} />
                     {ev > 0 && (
                         <p className="text-caption text-content-2">
-                            Cada raspable cuesta en promedio <span className="font-bold tabular-nums">{pts(Math.round(ev))} puntos</span> ({dolares(ev)}).
+                            Cada raspable cuesta en promedio <span className="font-bold tabular-nums">{pts(Math.round(ev))} puntos</span> ({dolares(ev)}){parteEnRegalos(premiosLimpios(form.cupon_premios)) > 0
+                                && ` en puntos; además ${parteEnRegalos(premiosLimpios(form.cupon_premios))}% de las veces sale un regalo`}.
                         </p>
                     )}
                 </div>

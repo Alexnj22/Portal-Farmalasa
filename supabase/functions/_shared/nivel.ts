@@ -14,7 +14,9 @@
 export type NivelFila = {
   clave: string; nombre: string; desde: number; factor: number;
   puntos_cumpleanos: number; horas_reserva: number; cupon_mensual: number;
-  cupon_premios: { puntos: number; peso: number }[] | null;
+  // Desde el 2026-10-19 un premio también puede ser un producto o un regalo
+  // promocional (`tipo`), sin `puntos`.
+  cupon_premios: { puntos?: number; peso: number; tipo?: string; nombre?: string }[] | null;
   dias_anticipo_ofertas: number;
 };
 
@@ -46,7 +48,10 @@ const factorTexto = (f: number) => (Number(f) === 1 ? "1 punto" : `${Number(f)} 
 export function beneficiosDe(n: NivelFila, base: NivelFila | null): string[] {
   const b = [`${factorTexto(n.factor)} por cada $1`];
   if (Number(n.puntos_cumpleanos) > 0) b.push(`${Number(n.puntos_cumpleanos)} puntos en tu cumpleaños`);
-  if (Number(n.cupon_mensual) > 0 || (n.cupon_premios?.length ?? 0) > 0) b.push("Raspable mensual con premios en puntos");
+  if (Number(n.cupon_mensual) > 0 || (n.cupon_premios?.length ?? 0) > 0) {
+    const conRegalos = (n.cupon_premios ?? []).some((x) => x.tipo === "producto" || x.tipo === "promocional");
+    b.push(conRegalos ? "Raspable mensual con puntos y regalos" : "Raspable mensual con premios en puntos");
+  }
   const d = Number(n.dias_anticipo_ofertas ?? 0);
   if (d > 0) b.push(d === 1 ? "Ves las ofertas un día antes" : `Ves las ofertas ${d} días antes`);
   if (base && Number(n.horas_reserva) > Number(base.horas_reserva)) b.push(`Tus reservas te esperan ${Number(n.horas_reserva)} horas`);

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1313.0 — Premios del raspable que no son puntos: producto y regalo promocional
+
+_(pendiente de redactar)_
+
+El raspable del mes ya no da sólo puntos: un premio también puede ser un **producto** del inventario o un **regalo promocional** (termo, bolsa, kit), cada uno con su probabilidad. Se configura en Puntos → Niveles.
+
+- **El cliente** raspa en la app, ve qué ganó y elige en qué sucursal lo retira; la app le dice cuáles lo tienen y le muestra el código del premio (`PS-000123`). Vence a fin de mes, como el raspable.
+- **La sala** lo entrega en Puntos → **Premios** (pestaña nueva): busca por código, cliente o DUI y aprieta Entregar. Un producto se **descarga** del inventario de esa sucursal con el concepto «PREMIO PUNTOS SALUD - código - cliente - Entrega: quien»; un regalo baja del inventario de regalos de la sala. Cada sala ve sólo los suyos.
+- **Regalos promocionales**: catálogo con su costo, entradas a Bodega, envíos a cada sucursal y la confirmación al recibirlos.
+
+Además: el cobro de Mapfre ahora avisa si algo falla antes de llegar al servidor, en vez de quedar en silencio.
+
 ## v2.1312.2 — Puntos Salud: el catálogo carga más productos al bajar, sin páginas
 
 Decisión del dueño (2026-10-20): la Tienda deja las páginas de 20 con «Anterior / Siguiente» y carga continua: al acercarse al final se piden 30 más y se agregan abajo, hasta el último producto (o el tope de 1,000 del servidor). Sin repetidos aunque el orden se mueva entre tandas; si una tanda falla, lo cargado se queda y abajo aparece «Reintentar». Probado en el simulador contra producción: los 300 de «Lo más vendido» llegan en 10 tandas, sin huecos ni repetidos, y la lista se detiene al final; una búsqueda y una tanda fallida simulada se comportan igual.

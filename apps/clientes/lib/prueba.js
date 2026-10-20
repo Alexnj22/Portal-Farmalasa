@@ -131,7 +131,7 @@ export function raspableDePrueba(programa, { nivel, mayorista }) {
 /**
  * Un raspable de muestra con los premios CONFIGURADOS (2026-10-19; antes, una
  * tabla escrita acá que ya no coincidía con la base y que además ofrecía
- * descuentos que el motor no sabe dar). Sólo puntos, igual que el servidor.
+ * descuentos que el motor no sabe dar). Puntos o regalos, igual que el servidor.
  * `semilla` cambia con «Volver a tapar».
  */
 export function cuponDePrueba(fuente, semilla, usado = false) {
@@ -139,14 +139,27 @@ export function cuponDePrueba(fuente, semilla, usado = false) {
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
   const vence = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
-  const premios = (fuente.premios ?? []).filter((x) => Number(x.peso) > 0 && Number(x.puntos) > 0);
+  // Un premio también puede ser un producto o un regalo (2026-10-19): sale con
+  // su nombre y sin sucursal, como lo vería el cliente antes de elegirla.
+  const esRegalo = (x) => x.tipo === 'producto' || x.tipo === 'promocional';
+  const premios = (fuente.premios ?? []).filter((x) => Number(x.peso) > 0 && (Number(x.puntos) > 0 || esRegalo(x)));
   let puntos = Number(fuente.cupon_mensual ?? 0);
+  let regalo = null;
   if (premios.length) {
-    // Igual que `puntos_premio_al_azar`: cada premio con su peso.
+    // Igual que `puntos_premio_sorteado`: cada premio con su peso.
     const total = premios.reduce((a, x) => a + Number(x.peso), 0);
     let r = Math.random() * total;
-    puntos = Number(premios[premios.length - 1].puntos);
-    for (const x of premios) { if (r <= Number(x.peso)) { puntos = Number(x.puntos); break; } r -= Number(x.peso); }
+    let elegido = premios[premios.length - 1];
+    for (const x of premios) { if (r <= Number(x.peso)) { elegido = x; break; } r -= Number(x.peso); }
+    if (esRegalo(elegido)) regalo = elegido; else puntos = Number(elegido.puntos);
+  }
+  if (regalo) {
+    return {
+      id: `prueba-${fuente.clave}-${semilla}`, clase: 'premio', puntos: 0, restantes: 0, vence,
+      descuento: null, tope: null, titulo: `Raspable ${fuente.nombre} del mes`,
+      premio: { tipo: regalo.tipo, nombre: regalo.nombre, cantidad: Number(regalo.cantidad ?? 1), codigo: 'PS-PRUEBA',
+                sala: null, entregado: usado },
+    };
   }
   if (!(puntos > 0)) return null;
   return {

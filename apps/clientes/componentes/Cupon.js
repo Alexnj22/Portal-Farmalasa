@@ -4,12 +4,17 @@
 //   · Vigente: el cupón con un brillo que pasa cada pocos segundos.
 //   · Usado: en gris, con el sello «USADO» (o lo que queda, si se usó una parte).
 // Se usa en caja como cualquier saldo, mostrando la tarjeta.
+//
+// Premio que NO es puntos (2026-10-19): el raspable también puede dar un
+// producto o un regalo promocional (`cupon.premio`). Ése no va al saldo: se
+// RETIRA en una sucursal que el cliente elige acá, con el código del premio.
+// «Usado» pasa a ser «ya lo retiraste».
 import { useDespierta } from './reposo';
 import { useMoviendoValor } from './movimiento';
 import { LIVIANO } from '../lib/rendimiento';
 import { useSesion } from '../lib/sesion';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -27,11 +32,14 @@ const CORTE = 86;
 // Lo que se abre la ranura del corte al usarse (dentro de la caja del cupón).
 const RANURA = 7;
 
-const clave = (id) => `puntos_salud_cupon_raspado_${String(id).replace(/[^\w-]/g, '')}`;
+// Los premios viven en otra tabla y sus ids se repiten con los de los lotes:
+// su marca lleva el prefijo para no heredar el «raspado» de otro.
+const clave = (c) => `puntos_salud_cupon_raspado_${c?.clase === 'premio' ? 'premio-' : ''}${String(c?.id).replace(/[^\w-]/g, '')}`;
+const textoPremio = (p) => `${Number(p.cantidad) > 1 ? `${p.cantidad} × ` : ''}${p.nombre}`;
 
 // `demo` (modo de prueba): cada vez que cambia, el cupón se tapa y se raspa
 // solo, para ver la animación completa sin gastar el del mes.
-export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0 }) {
+export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, activa = true, demo = 0, alCambiar }) {
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
   const [raspado, setRaspado] = useState(null); // null = leyendo
   // Sólo los cupones reales (id numérico) se anotan en el servidor; los de prueba no.
@@ -66,9 +74,9 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
     if (!cupon?.id) return;
     // El servidor manda (`cupon.raspado`); el teléfono es respaldo y lo sube si el servidor no lo sabía.
     if (cupon.raspado) { setRaspado(true); return; }
-    SecureStore.getItemAsync(clave(cupon.id)).catch(() => null).then((v) => {
+    SecureStore.getItemAsync(clave(cupon)).catch(() => null).then((v) => {
       setRaspado(v === '1');
-      if (v === '1' && !auto) pedir?.('cupon_raspado', { id: cupon.id }).catch(() => {});
+      if (v === '1' && !auto) pedir?.('cupon_raspado', { id: cupon.id, clase: cupon.clase }).catch(() => {});
     });
   }, [cupon?.id]);
 
@@ -76,7 +84,8 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
   // usarse el cupón se CORTA por la línea punteada: la parte grande se separa
   // del talón con un tirón, se inclina un poco y cae el sello. Si se abre la
   // app con el cupón ya usado, se ve cortado y quieto.
-  const usadoAhora = !!cupon && cupon.restantes <= 0;
+  const premio = cupon?.premio ?? null;
+  const usadoAhora = !!cupon && (premio ? !!premio.entregado : cupon.restantes <= 0);
   const [medida, setMedida] = useState(null);
   const corte = useSharedValue(usadoAhora ? 1 : 0);
   const sello = useSharedValue(usadoAhora ? 1 : 0);
@@ -122,14 +131,14 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
 
   if (!cupon || raspado == null) return null;
   const usado = usadoAhora;
-  const parcial = !usado && cupon.restantes < cupon.puntos;
+  const parcial = !premio && !usado && cupon.restantes < cupon.puntos;
   const paleta = COLORES_NIVEL[nivel] ?? COLORES_NIVEL.platino;
   const colores = usado ? ['#4A4A4F', '#8C8C93', '#5A5A60'] : paleta.frente;
 
   const descubrir = () => {
     if (!auto) {
-      SecureStore.setItemAsync(clave(cupon.id), '1').catch(() => {});
-      pedir?.('cupon_raspado', { id: cupon.id }).catch(() => {});
+      SecureStore.setItemAsync(clave(cupon), '1').catch(() => {});
+      pedir?.('cupon_raspado', { id: cupon.id, clase: cupon.clase }).catch(() => {});
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 180);
@@ -162,12 +171,21 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
           <View style={{ flex: 1, gap: 2, borderLeftWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.45)', paddingLeft: 16 }}>
             <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '800', letterSpacing: 1.5 }}>TU CUPÓN DEL MES</Text>
             <Animated.View style={[{ alignSelf: 'flex-start' }, estiloSalto]}>
+              {premio ? (
+                <Text numberOfLines={2} style={{ color: '#FFFFFF', fontSize: 21, fontWeight: '900', textDecorationLine: usado ? 'line-through' : 'none' }}>
+                  {textoPremio(premio)}
+                </Text>
+              ) : (
               <Text style={{ color: '#FFFFFF', fontSize: 28, fontWeight: '900', fontVariant: ['tabular-nums'], textDecorationLine: usado ? 'line-through' : 'none' }}>
                 {cupon.descuento ? `${cupon.descuento}% OFF` : dolares((parcial ? cupon.restantes : cupon.puntos) / 100)}
               </Text>
+              )}
             </Animated.View>
             <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13 }}>
-              {usado ? 'Ya lo usaste. ¡El próximo mes llega otro!'
+              {premio ? (usado ? 'Ya lo retiraste. ¡El próximo mes llega otro!'
+                : premio.sala ? `Retíralo en ${premio.sala} con el código ${premio.codigo}.`
+                : 'Es un regalo para retirar: elige en qué sucursal.')
+                : usado ? 'Ya lo usaste. ¡El próximo mes llega otro!'
                 : cupon.descuento ? `En una compra, hasta ${dolares(cupon.tope)}`
                 : parcial ? `Te quedan ${dolares(cupon.restantes / 100)} de ${dolares(cupon.puntos / 100)}`
                   // Aclaración (2026-10-09): el premio YA está sumado al saldo;
@@ -183,16 +201,16 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
                 backgroundColor: 'rgba(0,0,0,0.28)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <Icono sf="clock.fill" respaldo="⏰" tam={12} color="#FFFFFF" />
                 <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>
-                  Vence el {fechaLarga(cupon.vence)} — úsalo este mes
+                  Vence el {fechaLarga(cupon.vence)} — {premio ? 'retíralo' : 'úsalo'} este mes
                 </Text>
               </View>
             ) : null}
             {!usado && raspado && !cupon.descuento ? (
-              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>Si no lo canjeas antes, se pierde.</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>{premio ? 'Si no lo retiras antes, se pierde.' : 'Si no lo canjeas antes, se pierde.'}</Text>
             ) : null}
             {/* El orden del canje (2026-10-13), el de la base
                 (`puntos_canje_gasta_primero_el_cupon`): antes nadie lo decía. */}
-            {!usado && !cupon.descuento ? (
+            {!usado && !cupon.descuento && !premio ? (
               <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>Al canjear, primero se usa el cupón y después tus puntos.</Text>
             ) : null}
           </View>
@@ -237,6 +255,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
       {/* Las muescas de un cupón, del color del fondo. */}
       <View style={{ position: 'absolute', left: 78, top: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
       <View style={{ position: 'absolute', left: 78, bottom: -8, width: 16, height: 16, borderRadius: 8, backgroundColor: fondo }} />
+      {premio && raspado && !usado && pedir ? <ElegirSala premio={premio} id={cupon.id} pedir={pedir} alCambiar={alCambiar} /> : null}
       {festejo ? <Confeti colores={['#FFD978', '#FFFFFF', '#E8ECF2', '#B5308C']} alTerminar={() => setFestejo(false)} /> : null}
     </View>
   );
@@ -506,5 +525,45 @@ function Particula({ i, polvo, ahora }) {
   });
   return (
     <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: BASE_PIZCA, height: BASE_PIZCA, borderRadius: 3, backgroundColor: '#C9CED6', opacity: 0 }, estilo]} />
+  );
+}
+
+// Dónde retirar el premio (2026-10-19): las sucursales, marcando las que lo
+// tienen. Elegir una que no lo tiene vale — se lo mandan —, pero se avisa.
+function ElegirSala({ premio, id, pedir, alCambiar }) {
+  const [ocupado, setOcupado] = useState(false);
+  const abrir = async () => {
+    if (ocupado) return;
+    setOcupado(true);
+    try {
+      const r = await pedir('premio_salas', { id });
+      if (!r?.ok) { Alert.alert('No se pudo', r?.mensaje ?? 'Intenta de nuevo.'); return; }
+      const salas = r.sucursales ?? [];
+      const opciones = [...salas.map((x) => `${x.elegida ? '✓ ' : ''}${x.sala}${x.hay ? '' : ' (hay que pedirlo)'}`), 'Cancelar'];
+      ActionSheetIOS.showActionSheetWithOptions({
+        title: '¿Dónde lo retiras?', message: 'Las que dicen «hay que pedirlo» todavía no lo tienen: te avisamos cuando llegue.',
+        options: opciones, cancelButtonIndex: opciones.length - 1,
+      }, async (i) => {
+        const elegida = salas[i];
+        if (!elegida) return;
+        const c = await pedir('premio_elegir_sala', { id, branch_id: elegida.branch_id }).catch(() => null);
+        if (!c?.ok) { Alert.alert('No se pudo', c?.mensaje ?? 'Intenta de nuevo.'); return; }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        alCambiar?.();
+      });
+    } catch {
+      Alert.alert('No se pudo', 'Revisa tu conexión e intenta de nuevo.');
+    } finally {
+      setOcupado(false);
+    }
+  };
+  return (
+    <Pressable onPress={abrir} accessibilityRole="button"
+      style={({ pressed }) => ({ marginTop: 10, minHeight: 44, borderRadius: 14, paddingHorizontal: 14, justifyContent: 'center',
+        backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed || ocupado ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      <Text style={{ fontSize: 15, fontWeight: '700', color: '#B5308C' }}>
+        {premio.sala ? `Retirar en ${premio.sala} · Cambiar` : 'Elegir dónde lo retiro'}
+      </Text>
+    </Pressable>
   );
 }

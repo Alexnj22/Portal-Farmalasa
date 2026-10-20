@@ -81,6 +81,7 @@ const GraficaDiaria = lazy(() => import('./puntos/GraficasPuntos').then((m) => (
 const GraficaVencimientos = lazy(() => import('./puntos/GraficasPuntos').then((m) => ({ default: m.GraficaVencimientos })));
 // La pestaña Niveles es de pocos (administración): en su propio chunk.
 const NivelesDelPrograma = lazy(() => import('./puntos/NivelesDelPrograma'));
+const PremiosDelPrograma = lazy(() => import('./puntos/PremiosDelPrograma'));
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { avisoDePuntos, motorQuieto } from '@nucleo/utils/puntosTexto';
 import { clickable } from '@nucleo/utils/clickable';
@@ -99,6 +100,10 @@ const PESTANAS = [
     // Los niveles, el raspable y los beneficios del mayorista, configurables
     // (2026-10-19). Sólo administración: `puntos_tab_niveles`.
     { key: 'niveles',     label: 'Niveles',             icon: Crown },
+    // Los premios del raspable que no son puntos (producto o regalo) y los
+    // regalos promocionales (2026-10-19). La sala entrega aquí: mismo permiso
+    // que Consulta, que es quien atiende al cliente con su tarjeta.
+    { key: 'premios',     label: 'Premios',             icon: Gift },
 ];
 
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
@@ -118,7 +123,7 @@ const MOTIVO_OPCIONES = [
 ];
 
 export default function PuntosView({ openModal }) {
-    const { hasPermission } = useAuth();
+    const { hasPermission, user } = useAuth();
     const puedeAsignar = hasPermission('puntos', 'can_edit');
     const puedeEditarFicha = hasPermission('clientes', 'can_edit');
     const showToast = useToastStore((s) => s.showToast);
@@ -133,6 +138,7 @@ export default function PuntosView({ openModal }) {
         avisos:      hasPermission('puntos_tab_avisos', 'can_view'),
         por_asignar: hasPermission('puntos_tab_por_asignar', 'can_view'),
         niveles:     hasPermission('puntos_tab_niveles', 'can_view'),
+        premios:     hasPermission('puntos_tab_consulta', 'can_view'),
     };
     // Cambiar un nivel, el raspable o un interruptor: la base lo vuelve a exigir.
     const puedeEditarNiveles = hasPermission('puntos_tab_niveles', 'can_edit');
@@ -258,6 +264,12 @@ export default function PuntosView({ openModal }) {
                 {pestana === 'niveles' && (
                     <Suspense fallback={null}>
                         <NivelesDelPrograma puedeEditar={puedeEditarNiveles} />
+                    </Suspense>
+                )}
+
+                {pestana === 'premios' && (
+                    <Suspense fallback={null}>
+                        <PremiosDelPrograma puedeAdministrar={puedeEditarNiveles} miSala={user?.branchId ?? user?.branch_id ?? null} />
                     </Suspense>
                 )}
 

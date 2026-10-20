@@ -15,6 +15,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import {
     buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
@@ -44,7 +45,9 @@ function esperaDeReceta(desde, ahora) {
 
 // El alta con anticipo se baja al abrirla: arrastra el buscador de producto, la
 // búsqueda de clientes y la ticketera de la constancia (`ticketPrint`, 8 kB).
-const NuevaReservaSucursal = lazy(() => import('./NuevaReservaSucursal'));
+// «Nueva reserva» abre el MISMO diálogo que Mi caja (2026-10-20): antes la
+// reserva hecha aquí guardaba un anticipo que no entraba a ninguna caja.
+const DialogoApartar = lazy(() => import('../../components/caja/DialogoApartar'));
 // La revisión de la receta (2026-10-12) también se baja al abrirla.
 const RevisarReceta = lazy(() => import('./RevisarReceta'));
 
@@ -151,7 +154,18 @@ export default function WidgetReservas({ todas = false }) {
     ) : null;
     const modalNueva = nueva ? (
         <Suspense fallback={null}>
-            <NuevaReservaSucursal branchId={miSala} sala={nombreSala} onClose={() => setNueva(false)} onCreada={cargar} />
+            <DialogoApartar abierto ocupado={false} sala={miSala} onClose={() => setNueva(false)}
+                onCobrar={async ({ clave, monto, apartado, pago, papel }) => {
+                    const r = await cobrarAnticipo({ sala: miSala, nombreSala, userId: user?.id, quienAtiende: user?.name,
+                        clave, monto, apartado, pago, papel });
+                    if (!r.ok) { showToast('No se pudo cobrar', mensajeAmigable(r.error), 'error'); return false; }
+                    showToast(r.aviso ? 'Anticipo cobrado, con un pendiente' : 'Anticipo cobrado',
+                        r.aviso ?? `${r.apartado.codigo} · saldo ${formatMoney(Number(r.apartado.saldo ?? 0))} al retirar`,
+                        r.aviso ? 'warning' : 'success');
+                    if (r.papel) showToast('No se imprimió la constancia', mensajeAmigable(r.papel), 'warning');
+                    cargar();
+                    return true;
+                }} />
         </Suspense>
     ) : null;
 

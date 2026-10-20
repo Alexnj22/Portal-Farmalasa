@@ -19,6 +19,7 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import IdentidadDeQuienRetira from '../components/bolsas/IdentidadDeQuienRetira';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { cobrarAnticipo } from '../components/caja/cobrarAnticipo';
 import PhotoLightbox from '../components/common/PhotoLightbox';
 import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
@@ -62,6 +63,7 @@ const DialogoAbono = lazy(() => import('../components/caja/DialogoAbono'));
 const DialogoAplicacion = lazy(() => import('../components/caja/DialogoAplicacion'));
 const DialogoReenviarIngreso = lazy(() => import('../components/caja/DialogoReenviarIngreso'));
 const DialogoMapfre = lazy(() => import('../components/caja/DialogoMapfre'));
+const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
 import BonosPorPagar from '../components/caja/BonosPorPagar';
 import EsperaDeLaCaja from '../components/caja/EsperaDeLaCaja';
 import FormaDePago from '../components/caja/FormaDePago';
@@ -1308,6 +1310,29 @@ export default function MiCajaView({ comoPestana = false }) {
                 </Suspense>
             )}
 
+            {/* Apartar o encargar (2026-10-20): reemplaza al abono para apartar.
+                El anticipo se cobra con su forma de pago y queda ligado a la
+                reserva o al encargo; la constancia lleva el código en barras. */}
+            {dialogo === 'apartar' && (
+                <Suspense fallback={null}>
+                    <DialogoApartar abierto ocupado={ocupado} sala={sala}
+                        onClose={() => setDialogo(null)}
+                        onCobrar={async ({ clave, monto, apartado, pago, papel }) => {
+                            setOcupado(true);
+                            const r = await cobrarAnticipo({ sala, nombreSala, userId: user?.id, quienAtiende: user?.name,
+                                clave, monto, apartado, pago, papel });
+                            setOcupado(false);
+                            if (!r.ok) { showToast('No se pudo cobrar', mensajeAmigable(r.error), 'error'); return false; }
+                            showToast(r.aviso ? 'Anticipo cobrado, con un pendiente' : 'Anticipo cobrado',
+                                r.aviso ?? `${r.apartado.codigo} · saldo ${formatMoney(Number(r.apartado.saldo ?? 0))} al retirar`,
+                                r.aviso ? 'warning' : 'success');
+                            if (r.papel) showToast('No se imprimió la constancia', mensajeAmigable(r.papel), 'warning');
+                            cargar();
+                            return true;
+                        }} />
+                </Suspense>
+            )}
+
             {dialogo === 'aplicacion' && (
                 <Suspense fallback={null}>
                     <DialogoAplicacion abierto ocupado={ocupado} sala={sala}
@@ -1360,7 +1385,7 @@ export default function MiCajaView({ comoPestana = false }) {
                 // aplicación de inyección (se asigna a la venta). Lo decide la
                 // bandera del catálogo; acá sólo se elige cuál de los dos.
                 onComprobante={(t) => setDialogo(t?.codigo === 'APLICACION' ? 'aplicacion'
-                    : t?.codigo === 'MAPFRE' ? 'mapfre' : 'abono')}
+                    : t?.codigo === 'MAPFRE' ? 'mapfre' : t?.codigo === 'APARTADO' ? 'apartar' : 'abono')}
                 onClose={() => setDialogo(null)}
                 onAnotar={async (datos, tipoElegido, identificada) => {
                     const r = await correr(

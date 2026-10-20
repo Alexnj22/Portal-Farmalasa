@@ -726,7 +726,7 @@ Deno.serve(async (req) => {
 
       const { data: mov, error: errMov } = await supabase
         .from("caja_movimientos_portal")
-        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id, forma_pago, erp_apertura_id, registrado_por, autorizacion")
+        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id, forma_pago, erp_apertura_id, registrado_por, autorizacion, reserva_id, encargo_id")
         .eq("id", Number(meta.movimiento_portal)).maybeSingle();
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
       if (!mov) return json({ ok: false, error: "Ese movimiento ya no existe." }, 404);
@@ -965,6 +965,16 @@ Deno.serve(async (req) => {
         .eq("id", mov.id);
       // Anulado, ya no hay comprobante que esperar.
       if (anular && !errPortal) await cancelarAutorizacion("Se anuló el ingreso con una corrección aprobada.");
+      /* Un anticipo (2026-10-20): su reserva o su encargo se corrigen con él.
+       * Anulado, vuelve a como estaba (una reserva nacida de ese cobro se
+       * borra); con otro monto, el anticipo de la reserva se mueve por la
+       * diferencia. Falla visible en el registro: el dinero ya se corrigió. */
+      if (!errPortal && ((mov as { reserva_id?: number }).reserva_id || (mov as { encargo_id?: number }).encargo_id)) {
+        const { error: errAp } = anular
+          ? await supabase.rpc("apartado_deshacer", { p_movimiento: mov.id, p_anular: false })
+          : await supabase.rpc("apartado_cambiar_monto", { p_movimiento: mov.id, p_antes: Number(mov.monto), p_nuevo: Number(dosDecimales(montoNuevo)) });
+        if (errAp) console.error(`[operar-caja] corrección anticipo mov=${mov.id}: ${errAp.message}`);
+      }
 
       // Quién decidió va en la fila, no sólo en el estado: una decisión sin
       // firma no se puede auditar, y ésta mueve dinero de una caja.
@@ -1666,6 +1676,30 @@ Deno.serve(async (req) => {
         body.detalle = `Pago asegurado Mapfre · Fac ${factura} · ${asegurado.name}`;
       }
 
+      /* ── EL ANTICIPO DE UN PRODUCTO APARTADO O ENCARGADO (2026-10-20) ─────
+       *
+       * «Apartar o encargar» reemplaza al abono de cliente: nace de una ficha
+       * y de un producto del catálogo, y el portal decide si se aparta (hay en
+       * la sala: anticipo mínimo del 50 %) o se encarga (el 100 % de un
+       * encargo con el precio ya confirmado por Compras). Igual que Mapfre, el
+       * monto lo valida el servidor (`apartado_cotizar`), nunca el navegador. */
+      const esAnticipo = esEntrada && !esAbono && String(body.tipo ?? "") === "APARTADO";
+      let apartado: Record<string, unknown> | null = null;
+      let apartadoCot: { cliente?: string; detalle?: string; codigo?: string; minimo: number; maximo: number } | null = null;
+      if (esAnticipo) {
+        apartado = (body.apartado && typeof body.apartado === "object") ? body.apartado as Record<string, unknown> : null;
+        if (!apartado) return json({ ok: false, error: "Falta qué se aparta." }, 400);
+        const { data: cot, error: errCot } = await supabase.rpc("apartado_cotizar", { p_branch_id: sala, p_apartado: apartado });
+        if (errCot || !cot) return json({ ok: false, error: errCot?.message || "No se pudo leer lo que se aparta." }, 409);
+        apartadoCot = cot as typeof apartadoCot;
+        if (monto < Number(apartadoCot!.minimo) - 0.004 || monto > Number(apartadoCot!.maximo) + 0.004) {
+          return json({ ok: false, error: `El cobro va de $${Number(apartadoCot!.minimo).toFixed(2)} a $${Number(apartadoCot!.maximo).toFixed(2)}.` }, 409);
+        }
+        const texto = `Anticipo${apartadoCot!.codigo ? ` ${apartadoCot!.codigo}` : ""} · ${apartadoCot!.detalle ?? ""} · ${apartadoCot!.cliente ?? ""}`;
+        concepto = texto.slice(0, 50);
+        body.detalle = texto;
+      }
+
       /* ── EL ABONO DE CLIENTE ────────────────────────────────────────────
        *
        * Es un ingreso con un contrato encima: el dinero entra al cajón igual
@@ -1972,6 +2006,36 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* El anticipo se aplica ANTES de tocar la caja, como las aplicaciones:
+       * así el concepto que viaja lleva el código de la reserva. Si no se
+       * puede, el movimiento se anula y no se mueve dinero. Si después la caja
+       * rechaza el efectivo, `apartado_deshacer` lo devuelve todo. */
+      let apartadoRes: Record<string, unknown> | null = null;
+      if (esAnticipo && apartado) {
+        const { data: ap, error: errAp } = await supabase.rpc("apartado_aplicar", {
+          p_branch_id: sala, p_apartado: apartado, p_movimiento: fila.id,
+          p_monto: Number(dosDecimales(monto)), p_forma: formaPago, p_employee: quien.id,
+        });
+        if (errAp || !ap) {
+          console.error(`[operar-caja] anticipo sala=${sala} fila=${fila.id}: ${errAp?.message}`);
+          const { error: errAnular } = await supabase.from("caja_movimientos_portal")
+            .update({ anulado_at: new Date().toISOString(), anulado_motivo: "No se pudo aplicar el anticipo",
+                      updated_at: new Date().toISOString() })
+            .eq("id", fila.id);
+          if (errAnular) console.error(`[operar-caja] anticipo fila=${fila.id}: anular: ${errAnular.message}`);
+          return json({ ok: false, error: `${errAp?.message ?? "No se pudo aplicar el anticipo."} No se movio dinero.` }, 409);
+        }
+        apartadoRes = ap as Record<string, unknown>;
+        if (apartadoRes.codigo && !apartadoCot?.codigo) {
+          const texto = `Anticipo ${apartadoRes.codigo} · ${apartadoCot?.detalle ?? ""} · ${apartadoCot?.cliente ?? ""}`;
+          concepto = texto.slice(0, 50);
+          const { error: errConc } = await supabase.from("caja_movimientos_portal")
+            .update({ concepto, detalle: texto, updated_at: new Date().toISOString() }).eq("id", fila.id);
+          if (errConc) console.error(`[operar-caja] anticipo fila=${fila.id}: concepto: ${errConc.message}`);
+          else { fila.concepto = concepto; fila.detalle = texto; }
+        }
+      }
+
       /* ── Lo que no es efectivo termina ACÁ ─────────────────────────────────
        *
        * No va a la caja: allá sería efectivo. Las aplicaciones se confirman
@@ -2002,7 +2066,7 @@ Deno.serve(async (req) => {
           .select("*").eq("id", fila.id).single();
         if (errRel) console.error(`[operar-caja] ${accion} fila=${fila.id}: releyendo: ${errRel.message}`);
         return json({
-          ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: null, abono, aplicaciones,
+          ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: null, abono, aplicaciones, apartado: apartadoRes,
           movimiento: escrita ?? fila, no_va_a_caja: true,
           ...(avisoNoEfectivo ? { aviso: avisoNoEfectivo } : {}),
         });
@@ -2054,6 +2118,11 @@ Deno.serve(async (req) => {
 
       if (!cajaSimulada && !exito(resp)) {
         console.error(`[operar-caja] ${accion} sala=${sala} fila=${fila.id}: ${resp.slice(0, 1000)}`);
+        // El efectivo no entró: la reserva o el encargo vuelven a como estaban.
+        if (apartadoRes) {
+          const { error: errDes } = await supabase.rpc("apartado_deshacer", { p_movimiento: fila.id });
+          if (errDes) console.error(`[operar-caja] anticipo fila=${fila.id}: deshacer: ${errDes.message}`);
+        }
         return json({
           ok: false, movimiento_del_portal: fila.id,
           error: "La caja no aceptó el movimiento. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
@@ -2083,7 +2152,7 @@ Deno.serve(async (req) => {
       // tiene la fila sin el número del sistema: se puede reintentar, pero
       // alguien tiene que enterarse.
       if (errLigar) {
-        return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono, aplicaciones,
+        return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono, aplicaciones, apartado: apartadoRes,
           aviso: avisoAplicaciones ?? "El movimiento se hizo, pero no se pudo enlazar con el del sistema." });
       }
 
@@ -2095,7 +2164,7 @@ Deno.serve(async (req) => {
       // número, su fecha, su boleta—, no con lo que el formulario creía estar
       // mandando. Mismo criterio que el papel del abono.
       return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono,
-        aplicaciones, movimiento: fila, ...(avisoAplicaciones ? { aviso: avisoAplicaciones } : {}),
+        aplicaciones, apartado: apartadoRes, movimiento: fila, ...(avisoAplicaciones ? { aviso: avisoAplicaciones } : {}),
         ...(cajaSimulada ? { simulado: true } : {}) });
     }
 

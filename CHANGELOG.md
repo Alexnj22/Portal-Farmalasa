@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1319.0 — Apartar o encargar desde la sala, con el anticipo en la caja
+
+_(pendiente de redactar)_
+
+**«Apartar o encargar» reemplaza al «Abono para apartar»** (Mi caja → Entrada, y «Nueva reserva» del Inicio). Nace de una ficha del listado de clientes y de un producto del catálogo, y el portal decide:
+
+- **Hay en la sala y no es insumo → se aparta** 7 días con el precio de hoy. El anticipo (mínimo 50 %) se cobra en ese momento con su forma de pago, y sale la constancia con el código `R-…` en barras.
+- **No hay, o es insumo → se encarga** sin cobrar. Compras o administración confirma precio y fecha; cuando el cliente acepta, la sala cobra el 100 % desde «Por cobrar».
+- **«Por cobrar»** lista los encargos con precio confirmado y las reservas con saldo, para cobrarlos con cualquier forma de pago.
+- El anticipo en efectivo entra a la caja; con tarjeta o transferencia no, igual que los demás ingresos. Si la caja rechaza el efectivo, la reserva o el encargo vuelven a como estaban. Anular o corregir el monto de un anticipo corrige también su reserva.
+- Antes, el anticipo de una reserva hecha en el Inicio no entraba a ninguna caja, y el abono viejo era siempre efectivo y nunca se cerraba.
+- El precio de un encargo ahora sólo lo confirma Compras o administración, no la sala.
+
 ## v2.1318.0 — Chat del equipo: app del personal y portal al día con el de clientes
 
 El chat del lado del EQUIPO, al día con el de clientes (2026-10-20, «¿desde la app del portal se ve igual? debe verse muy estético también»):

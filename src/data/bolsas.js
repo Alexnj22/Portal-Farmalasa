@@ -1055,7 +1055,7 @@ export async function iniciarTurno(sala, { simular = false } = {}) {
 export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, vendedor = '', conceptoCompleto = null, lectura = null, clave = null,
     aplicacion = null, formaPago = 'EFECTIVO', comprobanteTotal = null, motivoSinComprobante = '',
-    mapfre = null, montoCotejado = false }) {
+    mapfre = null, apartado = null, montoCotejado = false }) {
     // `mapfre` sólo con el tipo MAPFRE: `{ invoice_id, customer_id }`. El
     // servidor pone el monto desde el renglón de puntos de la factura.
     //
@@ -1086,6 +1086,9 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
         clave_envio: clave,
         ...(aplicacion ? { aplicacion } : {}),
         ...(mapfre ? { mapfre } : {}),
+        // `apartado` sólo con el tipo APARTADO (2026-10-20): `{ modo: 'nueva', … }`,
+        // `{ modo: 'reserva', reserva_id }` o `{ modo: 'encargo', encargo_id }`.
+        ...(apartado ? { apartado } : {}),
         forma_pago: formaPago,
         ...(formaPago !== 'EFECTIVO'
             ? { comprobante_total: comprobanteTotal, motivo_sin_comprobante: motivoSinComprobante }

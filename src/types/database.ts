@@ -4667,6 +4667,7 @@ export type Database = {
           created_at: string
           customer_id: number | null
           detalle: string | null
+          encargo_id: number | null
           erp_apertura_id: number | null
           erp_movimiento_id: number | null
           fecha: string
@@ -4683,6 +4684,7 @@ export type Database = {
           recibido_texto: string | null
           registrado_at: string
           registrado_por: string
+          reserva_id: number | null
           tipo: string
           tipo_codigo: string | null
           updated_at: string
@@ -4704,6 +4706,7 @@ export type Database = {
           created_at?: string
           customer_id?: number | null
           detalle?: string | null
+          encargo_id?: number | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
           fecha: string
@@ -4720,6 +4723,7 @@ export type Database = {
           recibido_texto?: string | null
           registrado_at?: string
           registrado_por: string
+          reserva_id?: number | null
           tipo: string
           tipo_codigo?: string | null
           updated_at?: string
@@ -4741,6 +4745,7 @@ export type Database = {
           created_at?: string
           customer_id?: number | null
           detalle?: string | null
+          encargo_id?: number | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
           fecha?: string
@@ -4757,6 +4762,7 @@ export type Database = {
           recibido_texto?: string | null
           registrado_at?: string
           registrado_por?: string
+          reserva_id?: number | null
           tipo?: string
           tipo_codigo?: string | null
           updated_at?: string
@@ -19465,6 +19471,27 @@ export type Database = {
         }
         Relationships: []
       }
+      producto_insumo: {
+        Row: {
+          created_at: string
+          marcado_por: string | null
+          motivo: string | null
+          product_id: number
+        }
+        Insert: {
+          created_at?: string
+          marcado_por?: string | null
+          motivo?: string | null
+          product_id: number
+        }
+        Update: {
+          created_at?: string
+          marcado_por?: string | null
+          motivo?: string | null
+          product_id?: number
+        }
+        Relationships: []
+      }
       productos_sin_venta_avisados: {
         Row: {
           avisado_el: string
@@ -27297,6 +27324,38 @@ export type Database = {
         Args: { p_auth_user_id: string }
         Returns: undefined
       }
+      apartado_aplicar: {
+        Args: {
+          p_apartado: Json
+          p_branch_id: number
+          p_employee: string
+          p_forma: string
+          p_monto: number
+          p_movimiento: number
+        }
+        Returns: Json
+      }
+      apartado_cambiar_monto: {
+        Args: { p_antes: number; p_movimiento: number; p_nuevo: number }
+        Returns: undefined
+      }
+      apartado_cotizar: {
+        Args: { p_apartado: Json; p_branch_id: number }
+        Returns: Json
+      }
+      apartado_deshacer: {
+        Args: { p_anular?: boolean; p_movimiento: number }
+        Returns: undefined
+      }
+      apartado_opciones: {
+        Args: {
+          p_branch_id: number
+          p_cantidad: number
+          p_factor: number
+          p_producto_id: number
+        }
+        Returns: Json
+      }
       aperturas_de_la_manana: { Args: { p_fecha?: string }; Returns: Json }
       aplicar_barrido_proveedores: {
         Args: { p_crear_supplier?: boolean; p_rows: Json }
@@ -29053,6 +29112,18 @@ export type Database = {
         Returns: string[]
       }
       employee_esta_bloqueado: { Args: { p_user_id: string }; Returns: boolean }
+      encargo_en_sucursal_crear: {
+        Args: {
+          p_branch_id: number
+          p_cantidad: number
+          p_customer_id: number
+          p_factor: number
+          p_nota?: string
+          p_producto_id: number
+          p_producto_nombre: string
+        }
+        Returns: Json
+      }
       encargo_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       encargo_responder: {
         Args: {
@@ -31982,6 +32053,10 @@ export type Database = {
         Returns: Json
       }
       procesar_cambios_de_factor: { Args: never; Returns: Json }
+      producto_insumo_marcar: {
+        Args: { p_insumo: boolean; p_motivo?: string; p_product_id: number }
+        Returns: boolean
+      }
       productos_parados_de_sala: {
         Args: { p_erp_sucursal_id: number }
         Returns: Json

@@ -163,3 +163,22 @@ export async function buscarSaldoAFavor(codigo) {
 export async function recetaDeLaAppParaDispensacion(dispensacionId) {
     return sinError(await supabase.rpc('receta_app_de_dispensacion', { p_dispensacion_id: Number(dispensacionId) })) ?? [];
 }
+
+// ── Apartar o encargar desde la sala (2026-10-20) ──────────────────────────
+// El cobro del anticipo va por `anotarIngreso` con el tipo APARTADO; esto es
+// lo que la pantalla necesita ANTES de cobrar.
+
+/** ¿Se aparta (hay en la sala y no es insumo) o se encarga? Con los precios del catálogo. */
+export async function opcionesDeApartado(branchId, productoId, factor, cantidad) {
+    return sinError(await supabase.rpc('apartado_opciones', {
+        p_branch_id: Number(branchId), p_producto_id: Number(productoId), p_factor: Number(factor) || 1, p_cantidad: Number(cantidad) || 1,
+    }));
+}
+
+/** Registrar un encargo SIN cobrar: Compras o administración confirma precio y fecha. */
+export async function crearEncargoEnSucursal({ branchId, customerId, productoId, productoNombre, factor, cantidad, nota }) {
+    return sinError(await supabase.rpc('encargo_en_sucursal_crear', {
+        p_branch_id: Number(branchId), p_customer_id: Number(customerId), p_producto_id: Number(productoId),
+        p_producto_nombre: productoNombre, p_factor: Number(factor) || 1, p_cantidad: Number(cantidad), p_nota: nota?.trim() || null,
+    }));
+}

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1321.6 — Constancia de reserva más corta y con la sucursal
+
+_(pendiente de redactar)_
+
+**La constancia de reserva, rehecha** («no dice en qué sucursal, hay mucho texto»): arriba «RESERVA R-000012 · Retira en SALUD 1 · Hasta el …»; el producto en una línea; los montos como totales con «Falta pagar» en grande; el pie en dos renglones. Sin la tabla de productos ni el código repetido en grande: ocupa cerca de un tercio menos de papel.
+
 ## v2.1321.5 — Apartar: botones de 50 % y todo, presentaciones sin repetir
 
 _(pendiente de redactar)_

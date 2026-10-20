@@ -13,33 +13,34 @@ export const DIAS_SALDO_A_FAVOR = 60;
 
 const recortar = (t, n) => (String(t ?? '').length > n ? `${String(t).slice(0, n - 1)}.` : String(t ?? ''));
 
+// Compacta (2026-10-20, «no dice en qué sucursal, hay mucho texto»): el código
+// en el título, DÓNDE se retira y hasta cuándo arriba, el producto en una
+// línea, los montos como totales y el pie en dos renglones. Sin tabla de
+// productos —es uno solo— ni el código repetido en grande.
 export function construirConstanciaDeReserva({ codigo, cliente, producto, cantidad, precio, anticipo, metodo, venceAt, sala, atendio, ahora = new Date() }) {
     const total = Math.round(Number(precio) * Number(cantidad) * 100) / 100;
     const saldo = Math.round((total - Number(anticipo)) * 100) / 100;
     return {
         titulo: '',
-        encabezado: { titulo: 'RESERVA', lineas: [sala, cliente].filter(Boolean) },
-        bloques: [{ titulo: 'Codigo', texto: codigo, destacado: true }],
-        items: {
-            columnas: [{ label: 'PRODUCTO' }, { label: 'CANT', alinear: 'der' }],
-            filas: [[recortar(producto, 40), String(cantidad)]],
+        encabezado: {
+            titulo: `RESERVA ${codigo}`,
+            lineas: [sala ? `Retira en ${String(sala).toUpperCase()}` : null, `Hasta el ${fechaHora(new Date(venceAt))}`].filter(Boolean),
         },
+        bloques: [{ texto: `${cantidad} x ${recortar(producto, 80)}` }],
         datos: [
-            ['Total', formatMoney(total)],
-            ['Anticipo', `${formatMoney(Number(anticipo))} (${metodo})`],
-            ['Saldo al retirar', formatMoney(saldo)],
-            ['Retirar antes de', fechaHora(new Date(venceAt))],
+            ...(cliente ? [['Cliente', cliente]] : []),
             ['Impreso', fechaHora(ahora)],
             ...(atendio ? [['Atendio', atendio]] : []),
+        ],
+        totales: [
+            ['Total', formatMoney(total)],
+            [`Anticipo (${metodo})`, formatMoney(Number(anticipo))],
+            ['Falta pagar', formatMoney(saldo), true],
         ],
         codigos: [{ valor: codigo, simbologia: 'CODE128' }],
         pie: [
             'Presenta este papel para retirar.',
-            'Si no puedes venir, quien lo presente',
-            'puede retirar la reserva.',
-            'Si no la retiras en 7 dias, el anticipo',
-            `queda a tu favor ${DIAS_SALDO_A_FAVOR} dias para otra compra.`,
-            'No se devuelve en efectivo.',
+            `Si no la retiras: ${DIAS_SALDO_A_FAVOR} dias a tu favor.`,
         ],
     };
 }

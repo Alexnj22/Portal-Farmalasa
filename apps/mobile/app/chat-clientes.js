@@ -34,6 +34,7 @@ import { ErrorConReintento, useColumnas, useMasAlFinal } from '../componentes/Li
 import { MARCA } from '../componentes/inicio/marca';
 import { ChipsDeEstado, ClienteAvatar, EtiquetasDeCliente } from '../componentes/chat/Piezas';
 import { recordarConversacion } from '../componentes/chat/elegida';
+import { precargarHilo } from '@nucleo/data/chatHilo';
 import { FichasDeEtiquetas } from '../componentes/chat/Etiquetas';
 import Asignacion from '../componentes/chat/Asignacion';
 import { estrellas } from '@nucleo/utils/chatPersonal';
@@ -48,6 +49,8 @@ const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas, equipo
   return (
     <View style={{ ...(columnas > 1 ? { flex: 1 / columnas } : { marginHorizontal: 16 }), marginTop: 10 }}>
       <Tocable accessibilityRole="button" accessibilityLabel={`${nombreDeCliente(c.cliente)}${sinLeer ? `, ${sinLeer} sin leer` : ''}`}
+        // Al apoyar el dedo se precarga el hilo: para cuando se suelta, ya está (`chatHilo`).
+        onPressIn={() => precargarHilo(c.id)}
         onPress={() => { Haptics.selectionAsync().catch(() => {}); recordarConversacion(c); router.push(`/chat-clientes/${c.id}`); }}>
         <Vidrio radio={18}>
           <View style={{ flexDirection: 'row', gap: 12, padding: 12 }}>

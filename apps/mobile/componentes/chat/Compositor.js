@@ -3,6 +3,10 @@
 // guardada (compartidas por todo el equipo: guardar y borrar), o un producto /
 // una oferta vigente que el cliente puede tocar en su app. Mismas funciones del
 // portal (`data/chatClientes`). Enviar no pide confirmación, igual que el portal.
+//
+// Desde el 2026-10-21 el envío lo hace la pantalla del hilo (`onEnviar`): el
+// globo aparece al tocar y acá el cuadro se vacía sin esperar a la red, como en
+// la app de puntos. Con el cuadro vacío, el botón es un micrófono (`Voz.js`).
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -11,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
-  borrarRespuestaRapida, fetchOfertasVigentes, fetchRespuestasRapidas, guardarRespuestaRapida, marcarEscribiendo, responderConversacion, subirFotoDelEquipo,
+  borrarRespuestaRapida, fetchOfertasVigentes, fetchRespuestasRapidas, guardarRespuestaRapida, marcarEscribiendo,
 } from '@nucleo/data/chatClientes';
 import { preciosDeProducto } from '@nucleo/data/reservas';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -27,8 +31,8 @@ import BuscadorProducto from '../compras/BuscadorProducto';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import { fallo, listo } from '../Progreso';
+import { Grabadora, HAY_AUDIO, permisoMicrofono } from './Voz';
 
-const MAX_FOTO = 8 * 1024 * 1024; // el `file_size_limit` del bucket
 // «Está escribiendo» vale 6 s en la base; se renueva a lo sumo cada 3 s (igual que el portal).
 const CADA_CUANTO_ESCRIBIENDO_MS = 3_000;
 
@@ -136,7 +140,7 @@ async function tomarFoto(desdeCamara) {
   return hecha.uri;
 }
 
-export default function Compositor({ conversacion, onEnviado, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
+export default function Compositor({ conversacion, onEnviar, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
   const [texto, setTexto] = useState('');
   const ultimoAviso = useRef(0);
   const escribir = (valor) => {
@@ -150,8 +154,8 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
   };
   const [foto, setFoto] = useState(null);
   const [adjunto, setAdjunto] = useState(null);
-  const [enviando, setEnviando] = useState(false);
   const [hoja, setHoja] = useState(null);
+  const [grabando, setGrabando] = useState(false);
 
   const elegirFoto = () => Alert.alert('Adjuntar una foto', undefined, [
     { text: 'Tomar foto', onPress: () => Promise.resolve(tomarFoto(true)).then((u) => u && setFoto(u)).catch((e) => fallo('No se pudo', mensajeAmigable(e))) },
@@ -167,23 +171,21 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
     } catch (e) { fallo('No se pudo leer el precio', mensajeAmigable(e)); }
   };
 
-  const puedeEnviar = !enviando && (texto.trim() || foto || adjunto);
-  const enviar = async () => {
+  const puedeEnviar = !!(texto.trim() || foto || adjunto);
+  const enviar = () => {
     if (!puedeEnviar) return;
-    setEnviando(true);
-    try {
-      let fotoRuta = null;
-      if (foto) {
-        const body = await (await fetch(foto)).arrayBuffer();
-        if (body.byteLength > MAX_FOTO) throw new Error('La foto pesa más de 8 MB.');
-        fotoRuta = await subirFotoDelEquipo(conversacion.customer_id, { body, contentType: 'image/jpeg' });
-      }
-      await responderConversacion(conversacion.id, { texto, fotoRuta, adjunto, respuestaA: respondiendoA?.id ?? null });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      setTexto(''); setFoto(null); setAdjunto(null); onQuitarRespuesta?.();
-      onEnviado?.();
-    } catch (e) { fallo('No se pudo enviar', mensajeAmigable(e, 'Intenta de nuevo.')); }
-    finally { setEnviando(false); }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    onEnviar?.({ texto, foto, adjunto, respuestaA: respondiendoA });
+    setTexto(''); setFoto(null); setAdjunto(null); onQuitarRespuesta?.();
+  };
+  const grabar = async () => {
+    if (await permisoMicrofono()) setGrabando(true);
+  };
+  const alTerminarDeGrabar = (voz) => {
+    setGrabando(false);
+    if (!voz) return;
+    onEnviar?.({ voz, respuestaA: respondiendoA });
+    onQuitarRespuesta?.();
   };
 
   return (
@@ -217,6 +219,8 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
           ) : null}
         </View>
       ) : null}
+      {grabando ? <Grabadora alFin={alTerminarDeGrabar} /> : (
+      <>
       <TextInput value={texto} onChangeText={escribir} placeholder="Escribe una respuesta…" placeholderTextColor={colorSistema.texto2}
         multiline maxLength={2000} accessibilityLabel="Escribe una respuesta"
         style={{ minHeight: 44, maxHeight: 140, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, fontSize: 16,
@@ -227,12 +231,21 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
         <BotonIcono icono="Package" etiqueta="Enviar un producto" onPress={() => setHoja('producto')} />
         <BotonIcono icono="Tag" etiqueta="Enviar una oferta" onPress={() => setHoja('oferta')} />
         <View style={{ flex: 1 }} />
-        <Tocable onPress={enviar} disabled={!puedeEnviar} accessibilityRole="button" accessibilityLabel="Enviar"
-          style={{ minHeight: 44, paddingHorizontal: 18, borderRadius: 22, flexDirection: 'row', alignItems: 'center', gap: 6,
-            backgroundColor: puedeEnviar ? MARCA.azul : 'rgba(127,127,127,0.25)' }}>
-          {enviando ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Enviar</Text>}
-        </Tocable>
+        {!puedeEnviar && HAY_AUDIO ? (
+          <Tocable onPress={grabar} accessibilityRole="button" accessibilityLabel="Grabar una nota de voz"
+            style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.azul }}>
+            <Host matchContents><Icon name={iconoDe('Mic')} size={20} color="#fff" /></Host>
+          </Tocable>
+        ) : (
+          <Tocable onPress={enviar} disabled={!puedeEnviar} accessibilityRole="button" accessibilityLabel="Enviar"
+            style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: puedeEnviar ? MARCA.azul : 'rgba(127,127,127,0.25)' }}>
+            <Host matchContents><Icon name={iconoDe('ArrowUp')} size={20} color="#fff" /></Host>
+          </Tocable>
+        )}
       </View>
+      </>
+      )}
 
       <RespuestasRapidas abierta={hoja === 'respuestas'} textoActual={texto} onCerrar={() => setHoja(null)}
         onElegir={(t) => { setTexto((prev) => (prev.trim() ? `${prev.trimEnd()} ${t}` : t)); setHoja(null); }} />

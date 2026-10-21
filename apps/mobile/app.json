@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Farmalasa",
+    "name": "FarmaSalud",
     "slug": "farmalasa",
     "scheme": "farmalasa",
     "version": "1.0.0",
@@ -46,13 +46,13 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Farmalasa usa Face ID para que entres sin escribir tu contraseña."
+          "faceIDPermission": "FarmaSalud usa Face ID para que entres sin escribir tu contraseña."
         }
       ],
       [
         "expo-secure-store",
         {
-          "faceIDPermission": "Farmalasa usa Face ID para que entres sin escribir tu contraseña."
+          "faceIDPermission": "FarmaSalud usa Face ID para que entres sin escribir tu contraseña."
         }
       ],
       [
@@ -66,27 +66,34 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Farmalasa usa la cámara para escanear el código de las cajas de traslado y de los productos.",
+          "cameraPermission": "FarmaSalud usa la cámara para escanear el código de las cajas de traslado y de los productos.",
           "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Farmalasa usa tus fotos para adjuntar la evidencia de una solicitud (producto dañado, boleta).",
-          "cameraPermission": "Farmalasa usa la cámara para escanear cajas y fotografiar la evidencia de una solicitud."
+          "photosPermission": "FarmaSalud usa tus fotos para adjuntar la evidencia de una solicitud (producto dañado, boleta).",
+          "cameraPermission": "FarmaSalud usa la cámara para escanear cajas y fotografiar la evidencia de una solicitud."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "FarmaSalud usa el micrófono sólo para grabar las notas de voz que mandas en el chat con clientes.",
+          "recordAudioAndroid": true
         }
       ],
       "./plugins/ciclo-por-escenas",
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Farmalasa usa tu ubicación mientras haces la ruta, para registrar las visitas y mostrar en el mapa dónde va el recorrido.",
-          "locationAlwaysAndWhenInUsePermission": "Farmalasa sigue marcando tu ubicación con la app cerrada mientras tienes una ruta iniciada, para que en el mapa se vea dónde va el reparto. Al terminar la ruta deja de usarla.",
+          "locationWhenInUsePermission": "FarmaSalud usa tu ubicación mientras haces la ruta, para registrar las visitas y mostrar en el mapa dónde va el recorrido.",
+          "locationAlwaysAndWhenInUsePermission": "FarmaSalud sigue marcando tu ubicación con la app cerrada mientras tienes una ruta iniciada, para que en el mapa se vea dónde va el reparto. Al terminar la ruta deja de usarla.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true,
-          "motionUsagePermission": "Farmalasa usa el sensor de movimiento para saber si vas en ruta y ahorrar batería al marcar tu ubicación."
+          "motionUsagePermission": "FarmaSalud usa el sensor de movimiento para saber si vas en ruta y ahorrar batería al marcar tu ubicación."
         }
       ]
     ],

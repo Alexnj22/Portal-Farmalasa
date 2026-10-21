@@ -13,7 +13,7 @@ import { ChipsDeEtiquetas } from './EtiquetasDelCliente';
 import { Estrellas } from './Calificacion';
 import { etiquetasDe } from '@nucleo/utils/chatClientes';
 import ChipPreferente from './Preferente';
-import { precargarHilo } from './hiloEnMemoria';
+import { precargarHilo } from '@nucleo/data/chatHilo';
 
 // Una conversación en la bandeja: quién escribió, qué tipo de cliente es, su
 // nivel, en qué estado está (y cuánto lleva esperando), cuántos mensajes esperan

@@ -23,7 +23,7 @@ import {
     MENSAJES_POR_PAGINA, fetchMensajes, fetchMensajesCambiados, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje,
     resolverConversacion, responderConversacion, subirAudioDelEquipo, subirFotoDelEquipo, tomarConversacion,
 } from '@nucleo/data/chatClientes';
-import { guardarHilo, leerHilo } from './hiloEnMemoria';
+import { fusionar, guardarHilo, leerHilo } from '@nucleo/data/chatHilo';
 import { BarraDeMensaje, CitaDeMensaje, HojaDeMensaje, ReaccionesDeMensaje } from './AccionesDeMensaje';
 import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
@@ -84,7 +84,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     const verCliente = conPanelCliente && !lateral && pestana === 'cliente';
     const ahora = useNowTick(30_000);
     const showToast = useToastStore((s) => s.showToast);
-    // Lo que ya había en memoria de esta conversación (ver `hiloEnMemoria`):
+    // Lo que ya había en memoria de esta conversación (ver `chatHilo`):
     // se pinta en el primer cuadro y la lectura fresca lo pone al día detrás.
     const [enMemoria] = useState(() => leerHilo(c.id));
     const [mensajes, setMensajes] = useState(() => enMemoria?.mensajes ?? null);
@@ -573,27 +573,6 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     );
 }
 
-// Agrega al hilo lo que todavía no está, y retira el globo temporal que un
-// mensaje real del equipo viene a reemplazar (mismo autor y mismo texto). Los
-// temporales que quedan siguen al final, que es donde se escribieron.
-function fusionar(prev, nuevos) {
-    const base = prev ?? [];
-    const ya = new Set(base.map((m) => m.id));
-    const entran = nuevos.filter((m) => !ya.has(m.id));
-    if (!entran.length) return base;
-    const reemplazados = new Set();
-    entran.filter((n) => n.autor === 'equipo').forEach((n) => {
-        const t = base.find((m) => m.temporal && !m.fallido && !reemplazados.has(m.id)
-            && String(m.employee_id) === String(n.employee_id) && (m.texto ?? null) === (n.texto ?? null)
-            && (m.adjunto?.tipo ?? null) === (n.adjunto?.tipo ?? null));
-        if (t) {
-            reemplazados.add(t.id);
-            [t.foto_url, t.archivo_url].forEach((u) => { if (String(u ?? '').startsWith('blob:')) URL.revokeObjectURL(u); });
-        }
-    });
-    const quedan = base.filter((m) => !reemplazados.has(m.id));
-    return [...quedan.filter((m) => !m.temporal), ...entran, ...quedan.filter((m) => m.temporal)];
-}
 
 // «Hoy», «Ayer», «lunes, 5 de octubre»: una píldora centrada que se queda
 // pegada arriba mientras se recorre ese día, como en las apps de mensajería.

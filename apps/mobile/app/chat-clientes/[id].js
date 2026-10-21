@@ -9,6 +9,13 @@
 // respondiendo») y al salir se suelta; cada mensaje nuevo del cliente con el
 // hilo abierto la vuelve a tomar. Los mensajes llegan en vivo
 // (`useRefrescoEnVivo` sobre `app_chat_mensajes`).
+//
+// Desde el 2026-10-21 se siente como la app de puntos y como el portal (los
+// tres usan `@nucleo/data/chatHilo`): lo ya visto se pinta en el primer cuadro
+// y la lectura fresca lo pone al día detrás; el mensaje propio aparece al tocar
+// Enviar (con un reloj), se vuelve ✓ al confirmarse y lo reemplaza el real; si
+// falla queda «No se envió · Toca para reintentar». Las notas de voz se
+// escuchan dentro del globo con velocidad 1×/1.5×/2× (`Voz.js`).
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -20,7 +27,8 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { useEquipoDelChat } from '@nucleo/hooks/useBandejaDelChat';
-import { COLUMNAS_PRESENCIA, EMOJIS_DE_REACCION, MENSAJES_POR_PAGINA, fetchConversaciones, fetchMensajes, fetchMensajesCambiados, fetchPresenciaDeConversaciones, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje, resolverConversacion, tomarConversacion } from '@nucleo/data/chatClientes';
+import { COLUMNAS_PRESENCIA, EMOJIS_DE_REACCION, MENSAJES_POR_PAGINA, fetchConversaciones, fetchMensajes, fetchMensajesCambiados, fetchPresenciaDeConversaciones, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje, resolverConversacion, responderConversacion, subirAudioDelEquipo, subirFotoDelEquipo, tomarConversacion } from '@nucleo/data/chatClientes';
+import { fusionar, guardarHilo, leerHilo } from '@nucleo/data/chatHilo';
 import { escribeAhora, useRelojDeEscritura } from '@nucleo/hooks/escrituraDelChat';
 import { cambiaDeDia, empiezaTanda, esperaDe, etiquetaDeDia, nombreDeAutor, nombreDeCliente, recorteDeMensaje } from '@nucleo/utils/chatClientes';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
@@ -46,6 +54,9 @@ import { conversacionRecordada, recordarConversacion } from '../../componentes/c
 import DeslizarParaResponder from '../../componentes/chat/DeslizarParaResponder';
 import MenuDeMensaje from '../../componentes/chat/MenuDeMensaje';
 import { EtiquetasDeConversacion } from '../../componentes/chat/Etiquetas';
+import { NotaDeVoz } from '../../componentes/chat/Voz';
+
+const MAX_FOTO = 8 * 1024 * 1024; // el `file_size_limit` del bucket
 
 
 function SeparadorDeDia({ valor }) {
@@ -69,7 +80,7 @@ const abrirArchivo = (url) => {
 // achica—, la tarjeta del producto con su foto, las notas de voz y los PDF del
 // cliente, lo que el cliente EDITÓ o ELIMINÓ, y las respuestas automáticas con
 // su rótulo, del lado del equipo.
-const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto, cita, reacciones, entrega, onOpciones, clienteFoto }) {
+const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto, cita, reacciones, entrega, onOpciones, clienteFoto, onReintentar }) {
   if (m.autor === 'sistema' && !m.automatica) {
     return (
       <View style={{ alignItems: 'center', paddingVertical: 6, paddingHorizontal: 24 }}>
@@ -103,9 +114,10 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto
           )}
         </View>
       ) : null}
-      <Pressable onLongPress={() => onOpciones?.(m)} delayLongPress={300} accessibilityHint="Desliza a la derecha para responder; mantén presionado para reaccionar o copiar"
+      <Pressable onLongPress={m.temporal ? undefined : () => onOpciones?.(m)} onPress={m.fallido ? () => onReintentar?.(m) : undefined} delayLongPress={300} accessibilityHint="Desliza a la derecha para responder; mantén presionado para reaccionar o copiar"
         style={({ pressed }) => ({ maxWidth: '82%', borderRadius: R, paddingHorizontal: 12, paddingVertical: 8, gap: 6, backgroundColor: fondo, ...esquinas,
-          opacity: m.borrado_at ? 0.55 : 1, transform: [{ scale: pressed ? 0.98 : 1 }],
+          opacity: m.borrado_at ? 0.55 : m.pendiente ? 0.75 : 1, transform: [{ scale: pressed ? 0.98 : 1 }],
+          ...(m.fallido ? { borderWidth: 2, borderColor: MARCA.rojo } : null),
           ...(auto ? { borderWidth: 1, borderColor: 'rgba(105,41,196,0.28)' } : null) })}>
         {cita ? (
           <View style={{ borderLeftWidth: 3, borderLeftColor: delEquipo && !auto ? 'rgba(255,255,255,0.7)' : MARCA.azulClaro, paddingLeft: 8, opacity: 0.9 }}>
@@ -134,18 +146,7 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto
             <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }} numberOfLines={2}>{adj.titulo}</Text>
           </View>
         ) : null}
-        {adj?.tipo === 'audio' ? (
-          <Pressable onPress={() => abrirArchivo(m.archivo_url)} disabled={!m.archivo_url} accessibilityRole="button" accessibilityLabel="Escuchar la nota de voz"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, padding: 8, backgroundColor: tarjeta, minWidth: 200 }}>
-            <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.azul }}>
-              <Text style={{ color: '#fff', fontSize: 14 }}>▶</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: tinta, fontSize: 14, fontWeight: '700' }}>Nota de voz</Text>
-              <Text style={{ color: tinta, fontSize: 12, opacity: 0.75 }}>{m.archivo_url ? (adj.duracion ? `${Math.floor(adj.duracion / 60)}:${String(adj.duracion % 60).padStart(2, '0')} · toca para escuchar` : 'Toca para escuchar') : 'No disponible'}</Text>
-            </View>
-          </Pressable>
-        ) : null}
+        {adj?.tipo === 'audio' ? <NotaDeVoz key={m.archivo_url ?? 'sin-archivo'} url={m.archivo_url} duracion={adj.duracion} delEquipo={delEquipo && !auto} tinta={tinta} /> : null}
         {adj?.tipo === 'pdf' ? (
           <Pressable onPress={() => abrirArchivo(m.archivo_url)} disabled={!m.archivo_url} accessibilityRole="button" accessibilityLabel="Abrir el documento"
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, padding: 8, backgroundColor: tarjeta, minWidth: 200 }}>
@@ -168,7 +169,11 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto
           ))}
         </View>
       ) : null}
-      {finDeTanda ? (
+      {m.fallido ? (
+        <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700', marginTop: 3 }}>No se envió · Toca para reintentar</Text>
+      ) : m.temporal ? (
+        <Text style={{ color: colorSistema.texto2, fontSize: 11, marginTop: 2 }}>{m.pendiente ? '🕓 Enviando…' : '✓ Enviado'}</Text>
+      ) : finDeTanda ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 11, marginTop: 2 }}>
           {cuandoLlego(m.created_at)}{m.editado_at && !m.borrado_at ? ' · Editado' : ''}{entrega ? <Text style={{ fontWeight: entrega === 'Visto' ? '700' : '400', color: entrega === 'Visto' ? MARCA.azulClaro : colorSistema.texto2 }}>{` · ${entrega}`}</Text> : null}
         </Text>
@@ -187,19 +192,25 @@ export default function ConversacionDelChat() {
   const ahora = useNowTick(30_000);
   const { equipo, asegurarEquipo } = useEquipoDelChat();
   const [c, setC] = useState(() => conversacionRecordada(id));
-  const [mensajes, setMensajes] = useState(null);
-  const [hayAnteriores, setHayAnteriores] = useState(false);
+  // Lo ya visto se pinta en el primer cuadro (ver `chatHilo`).
+  const [enMemoria] = useState(() => leerHilo(id));
+  const [mensajes, setMensajes] = useState(() => enMemoria?.mensajes ?? null);
+  const [hayAnteriores, setHayAnteriores] = useState(() => enMemoria?.hayAnteriores ?? false);
   const [cargandoAnteriores, setCargandoAnteriores] = useState(false);
   const [error, setError] = useState(null);
   const [pestana, setPestana] = useState('mensajes');
   const [foto, setFoto] = useState(null);
   const [respondiendoA, setRespondiendoA] = useState(null);
   const [menu, setMenu] = useState(null);
-  const [reacciones, setReacciones] = useState(() => new Map());
+  const [reacciones, setReacciones] = useState(() => enMemoria?.reacciones ?? new Map());
   const [presencia, setPresencia] = useState(null);
   const mensajesRef = useRef(null);
   const reaccionIds = useRef(new Set());
   useEffect(() => { mensajesRef.current = mensajes; }, [mensajes]);
+  // Lo que se ve queda en memoria para la próxima vez (sin los temporales).
+  useEffect(() => {
+    if (mensajes) guardarHilo(id, { mensajes: mensajes.filter((m) => !m.temporal), hayAnteriores, reacciones });
+  }, [id, mensajes, hayAnteriores, reacciones]);
 
   // Sin la conversación en memoria (se abrió directo), se busca en la bandeja.
   useEffect(() => {
@@ -213,7 +224,7 @@ export default function ConversacionDelChat() {
 
   // ── Reacciones: `Map<mensajeId, filas>`, en vivo (igual que el portal) ──
   const leerReacciones = useCallback(async (ids) => {
-    const lista = (ids || []).filter((x) => x != null);
+    const lista = (ids || []).filter((x) => x != null && !String(x).startsWith('tmp-'));
     if (!lista.length) return;
     try {
       const filas = await fetchReacciones(lista);
@@ -252,7 +263,8 @@ export default function ConversacionDelChat() {
     let vivo = true;
     Promise.resolve(fetchMensajes(id)).then((filas) => {
       if (!vivo) return;
-      setMensajes(filas); setHayAnteriores(filas.length >= MENSAJES_POR_PAGINA);
+      // Los temporales (lo que se está enviando) se conservan al final.
+      setMensajes((prev) => [...filas, ...(prev ?? []).filter((m) => m.temporal)]); setHayAnteriores(filas.length >= MENSAJES_POR_PAGINA);
       asegurarEquipo(filas.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
       leerReacciones(filas.map((m) => m.id));
     }).catch((e) => { if (vivo) setError(mensajeAmigable(e, 'No se pudieron cargar los mensajes.')); });
@@ -269,20 +281,56 @@ export default function ConversacionDelChat() {
       const desde = cambiosDesde.current;
       cambiosDesde.current = new Date(Date.now() - 5000).toISOString();
       const [nuevos, cambiados] = await Promise.all([
-        fetchMensajes(id, { despuesDe: actuales[actuales.length - 1]?.id ?? null }), fetchMensajesCambiados(id, desde),
+        fetchMensajes(id, { despuesDe: actuales.filter((m) => !m.temporal).at(-1)?.id ?? null }), fetchMensajesCambiados(id, desde),
       ]);
       if (cambiados.length) {
         const porId = new Map(cambiados.map((x) => [x.id, x]));
         setMensajes((prev) => (prev ?? []).map((x) => (porId.has(x.id) ? { ...x, ...porId.get(x.id) } : x)));
       }
       if (!nuevos.length) return;
-      setMensajes((prev) => { const ids = new Set((prev ?? []).map((m) => m.id)); return [...(prev ?? []), ...nuevos.filter((m) => !ids.has(m.id))]; });
+      setMensajes((prev) => fusionar(prev, nuevos));
       asegurarEquipo(nuevos.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
       leerReacciones(nuevos.map((m) => m.id));
       if (puedeResponder && nuevos.some((m) => m.autor === 'cliente')) Promise.resolve(tomarConversacion(id)).catch(() => {});
     } catch { /* el siguiente refresco lo vuelve a intentar */ }
   }, [id, puedeResponder, asegurarEquipo, leerReacciones]);
   useRefrescoEnVivo(traerNuevos, { ms: 20_000, tabla: 'app_chat_mensajes', esperaMs: 250 });
+
+  // ── Enviar: el globo aparece AL TOCAR (igual que el portal y la app de puntos) ──
+  const enviarMensaje = useCallback(async (envio, previo = null) => {
+    const tmpId = previo?.id ?? `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const r = envio.respuestaA;
+    const temporal = {
+      id: tmpId, temporal: true, pendiente: true, envio,
+      autor: 'equipo', employee_id: user?.id ?? null, texto: String(envio.texto ?? '').trim() || null,
+      foto_ruta: envio.foto ? 'local' : null, foto_url: envio.foto ?? null,
+      adjunto: envio.voz ? { tipo: 'audio', duracion: envio.voz.duracion } : envio.adjunto ?? null,
+      archivo_url: envio.voz?.uri ?? null, created_at: new Date().toISOString(),
+      cita: r ? { id: r.id, autor: r.autor, employee_id: r.employee_id, texto: r.texto, foto_ruta: r.foto_ruta } : null,
+    };
+    setMensajes((prev) => (previo ? (prev ?? []).map((m) => (m.id === tmpId ? temporal : m)) : [...(prev ?? []), temporal]));
+    try {
+      let fotoRuta = null;
+      if (envio.foto) {
+        const body = await (await fetch(envio.foto)).arrayBuffer();
+        if (body.byteLength > MAX_FOTO) throw new Error('La foto pesa más de 8 MB.');
+        fotoRuta = await subirFotoDelEquipo(c.customer_id, { body, contentType: 'image/jpeg' });
+      }
+      let adjunto = envio.adjunto ?? null;
+      if (envio.voz) {
+        const body = await (await fetch(envio.voz.uri)).arrayBuffer();
+        adjunto = { tipo: 'audio', ruta: await subirAudioDelEquipo(c.customer_id, { body }), nombre: null, duracion: envio.voz.duracion };
+      }
+      await responderConversacion(id, { texto: envio.texto, fotoRuta, adjunto, respuestaA: r?.id ?? null });
+      await traerNuevos();
+      // Si el real todavía no llegó, por lo menos que diga «enviado».
+      setMensajes((prev) => (prev ?? []).map((m) => (m.id === tmpId ? { ...m, pendiente: false, enviado: true } : m)));
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      setMensajes((prev) => (prev ?? []).map((m) => (m.id === tmpId ? { ...m, pendiente: false, fallido: true } : m)));
+    }
+  }, [id, user?.id, c?.customer_id, traerNuevos]);
+  const reintentar = useCallback((m) => enviarMensaje(m.envio, { ...m, fallido: false }), [enviarMensaje]);
 
   const verAnteriores = async () => {
     const primero = mensajes?.[0]?.id;
@@ -331,7 +379,7 @@ export default function ConversacionDelChat() {
   const cv = c ? { ...c, ...(presencia ?? {}) } : c;
   const nombreCliente = cv ? nombreDeCliente(cv.cliente) : '';
   let ultimoDelEquipo = null;
-  for (let i = (mensajes?.length ?? 0) - 1; i >= 0; i -= 1) { if (mensajes[i].autor === 'equipo') { ultimoDelEquipo = mensajes[i].id; break; } }
+  for (let i = (mensajes?.length ?? 0) - 1; i >= 0; i -= 1) { if (mensajes[i].autor === 'equipo' && !mensajes[i].temporal) { ultimoDelEquipo = mensajes[i].id; break; } }
   const sinLeerCliente = cv?.sin_leer_cliente == null ? null : Number(cv.sin_leer_cliente);
   const entrega = sinLeerCliente == null ? null : sinLeerCliente === 0 ? 'Visto' : 'Enviado';
   const reloj = useRelojDeEscritura([cv?.cliente_escribiendo_at, cv?.escribiendo_at]);
@@ -406,12 +454,12 @@ export default function ConversacionDelChat() {
                 renderItem={({ item }) => (
                   <View>
                   {item.nuevoDia ? <SeparadorDeDia valor={item.m.created_at} /> : null}
-                  <DeslizarParaResponder activo={puedeResponder && item.m.autor !== 'sistema'} onResponder={() => responderA(item.m)}>
+                  <DeslizarParaResponder activo={puedeResponder && item.m.autor !== 'sistema' && !item.m.temporal} onResponder={() => responderA(item.m)}>
                   <Burbuja m={item.m} nuevaTanda={item.nuevaTanda} finDeTanda={item.finDeTanda} onFoto={setFoto} onOpciones={opciones} clienteFoto={fotoCliente}
                     autor={item.m.employee_id ? equipo.get(item.m.employee_id) ?? { id: item.m.employee_id } : null}
                     cita={item.m.cita ? { quien: nombreDeAutor(item.m.cita, equipo, nombreCliente), texto: recorteDeMensaje(item.m.cita) } : null}
                     reacciones={resumirReacciones(reacciones.get(item.m.id))}
-                    entrega={item.m.id === ultimoDelEquipo ? entrega : null} />
+                    entrega={item.m.id === ultimoDelEquipo ? entrega : null} onReintentar={reintentar} />
                   </DeslizarParaResponder>
                   </View>
                 )}
@@ -427,7 +475,7 @@ export default function ConversacionDelChat() {
               </View>
             ) : null}
             {c && puedeResponder ? (
-              <Compositor conversacion={c} onEnviado={traerNuevos} respondiendoA={respondiendoA} onQuitarRespuesta={() => setRespondiendoA(null)}
+              <Compositor conversacion={c} onEnviar={enviarMensaje} respondiendoA={respondiendoA} onQuitarRespuesta={() => setRespondiendoA(null)}
                 equipo={equipo} cliente={nombreCliente} />
             ) : null}
             {c && !puedeResponder ? (

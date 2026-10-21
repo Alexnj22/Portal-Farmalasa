@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1325.0 — Chat: la app del personal se siente como el portal y la de puntos
+
+Pedido: «ambos chats deben compartir funcionalidades… en el portal debe haber más cosas, pero la sensación debe ser la misma».
+
+- **Una sola lógica para los tres**: la memoria del hilo y la reconciliación del envío optimista (`fusionar`) se mudaron de la vista web a `src/data/chatHilo.js` (núcleo). El portal web y la app del personal usan el mismo código.
+- **App del personal** (requiere la compilación nueva):
+  - Lo ya visto se pinta en el primer cuadro; al apoyar el dedo en una fila de la bandeja, el hilo se precarga.
+  - Envío optimista: el globo aparece al tocar (reloj → ✓) y el cuadro se vacía al instante; si falla, «No se envió · Toca para reintentar». Antes el botón giraba hasta que contestaba el servidor.
+  - **Notas de voz**: con el cuadro vacío, el botón es un micrófono (toque → punto rojo, tiempo, papelera o enviar; tope 2 min; menos de 1 s no se manda). Graba m4a/AAC con `expo-audio` (nuevo, con permiso de micrófono en `app.json`).
+  - Las notas se escuchan DENTRO del globo (▶︎/❚❚, barra que se toca para saltar, tiempo) con velocidad 1×/1.5×/2×. Antes se abrían en el navegador del sistema.
+- **App de puntos**: velocidad 1×/1.5×/2× en las notas de voz (requiere su compilación nueva).
+- **La app del personal se llama FarmaSalud**, no «Farmalasa»: el nombre bajo el ícono (`expo.name`) y los textos de los permisos (Face ID, cámara, fotos, micrófono, ubicación). El identificador (`lat.farmasalud.portal`) no cambia, así que es la misma app y se actualiza encima.
+
 ## v2.1324.1 — Reservas en Comercial, widget en Operación y flujo auditado
 
 - **Reservas es una pantalla de Comercial** (`/reservas`), con permiso propio sembrado para los mismos cargos que veían el widget más Canales Digitales (que la veía como pestaña de Ofertas). La pestaña de Ofertas se quitó; un enlace viejo `?tab=reservas` lleva a la pantalla nueva. Entrega a domicilio queda en Ofertas como pestaña propia.

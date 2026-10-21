@@ -785,6 +785,7 @@ export const AREAS = [
             // El chat con los clientes de la app y la revisión de recetas (2026-10-12).
             'src/views/chat-clientes/',
             'src/data/chatClientes.js',
+            'src/data/chatHilo.js',
             // Los mensajes automáticos del chat y el horario real que los
             // decide (`farmacia_estado()` / `horario_de_sala()`, 2026-10-12).
             'src/data/horarios.js',

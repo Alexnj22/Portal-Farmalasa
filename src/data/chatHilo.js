@@ -1,5 +1,10 @@
 import { MENSAJES_POR_PAGINA, fetchMensajes, fetchReacciones } from '@nucleo/data/chatClientes';
 
+// El hilo del chat con clientes, compartido por el portal web y la app del
+// personal (núcleo, 2026-10-21): la memoria de lo ya visto y la reconciliación
+// del envío optimista. Vivía en la vista web; se mudó acá cuando la app pidió
+// lo mismo — «la sensación debe ser la misma».
+//
 // Los hilos ya vistos, en MEMORIA y por sesión (2026-10-21). Es el mismo
 // arreglo que hizo la app de clientes (`apps/clientes/lib/chatHilo.js`) cuando
 // el usuario dijo que no se sentía inmediato: abrir una conversación del
@@ -8,7 +13,7 @@ import { MENSAJES_POR_PAGINA, fetchMensajes, fetchReacciones } from '@nucleo/dat
 //
 // Ahora el hilo se pinta en el PRIMER cuadro con lo que había, y la lectura
 // fresca lo pone al día detrás. Además se PRECARGA al pasar el ratón por la
-// fila de la bandeja: para cuando llega el clic, normalmente ya está.
+// fila de la bandeja (en la app, al apoyar el dedo): para cuando llega el clic, normalmente ya está.
 //
 // Precargar sólo LEE: no toma la conversación ni la marca leída (eso lo hace
 // `Conversacion` al abrirse). Y no va al disco: son conversaciones de clientes.
@@ -40,4 +45,26 @@ export function precargarHilo(id) {
         .finally(() => EN_CURSO.delete(clave));
     EN_CURSO.set(clave, promesa);
     return promesa;
+}
+
+// Agrega al hilo lo que todavía no está, y retira el globo temporal que un
+// mensaje real del equipo viene a reemplazar (mismo autor y mismo texto). Los
+// temporales que quedan siguen al final, que es donde se escribieron.
+export function fusionar(prev, nuevos) {
+    const base = prev ?? [];
+    const ya = new Set(base.map((m) => m.id));
+    const entran = nuevos.filter((m) => !ya.has(m.id));
+    if (!entran.length) return base;
+    const reemplazados = new Set();
+    entran.filter((n) => n.autor === 'equipo').forEach((n) => {
+        const t = base.find((m) => m.temporal && !m.fallido && !reemplazados.has(m.id)
+            && String(m.employee_id) === String(n.employee_id) && (m.texto ?? null) === (n.texto ?? null)
+            && (m.adjunto?.tipo ?? null) === (n.adjunto?.tipo ?? null));
+        if (t) {
+            reemplazados.add(t.id);
+            [t.foto_url, t.archivo_url].forEach((u) => { if (String(u ?? '').startsWith('blob:')) globalThis.URL?.revokeObjectURL?.(u); });
+        }
+    });
+    const quedan = base.filter((m) => !reemplazados.has(m.id));
+    return [...quedan.filter((m) => !m.temporal), ...entran, ...quedan.filter((m) => m.temporal)];
 }

@@ -7,8 +7,9 @@
 //     onda que sigue la voz, la papelera y enviar. Tope de 2 minutos (se
 //     manda sola al llegar). Graba en m4a/AAC, que se escucha en iPhone, en
 //     Android y en el navegador del portal.
-//   · `NotaDeVoz`: el globo con ▶︎/❚❚, la barra de avance (se toca para saltar)
-//     y la duración, del color del globo.
+//   · `NotaDeVoz`: el globo con ▶︎/❚❚, la barra de avance (se toca para saltar),
+//     la duración y la velocidad 1× → 1.5× → 2× (2026-10-21, como WhatsApp y
+//     como el portal y la app del personal), del color del globo.
 //   · `Documento`: la tarjeta de un PDF; tocarla lo abre en el visor del
 //     sistema (Safari / Chrome personalizado), de donde se puede compartir.
 //
@@ -31,6 +32,9 @@ let Audio = null;
 try { Audio = require('expo-audio'); } catch { Audio = null; }
 export const HAY_AUDIO = !!Audio && Platform.OS !== 'web';
 const TOPE_MS = 120_000;
+const VELOCIDADES = [1, 1.5, 2];
+// La velocidad elegida se recuerda para las siguientes notas (mientras la app viva).
+let velocidadElegida = 1;
 
 const mmss = (ms) => {
   const s = Math.max(0, Math.round((ms || 0) / 1000));
@@ -387,6 +391,7 @@ function NotaDeVozViva({ a, mio }) {
   const reproductor = Audio.useAudioPlayer(a.url, { updateInterval: 200 });
   const estado = Audio.useAudioPlayerStatus(reproductor);
   const [ancho, setAncho] = useState(0);
+  const [velocidad, setVelocidad] = useState(velocidadElegida);
   const total = (estado?.duration || a.duracion || 0) * 1000;
   const va = (estado?.currentTime || 0) * 1000;
   const avance = total ? Math.min(1, va / total) : 0;
@@ -397,7 +402,15 @@ function NotaDeVozViva({ a, mio }) {
     Haptics.selectionAsync().catch(() => {});
     if (sonando) { reproductor.pause(); return; }
     await Audio.setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false }).catch(() => {});
+    try { reproductor.setPlaybackRate(velocidad, 'high'); } catch { /* sin velocidad: suena a 1× */ }
     reproductor.play();
+  };
+  const cambiarVelocidad = () => {
+    const v = VELOCIDADES[(VELOCIDADES.indexOf(velocidad) + 1) % VELOCIDADES.length];
+    velocidadElegida = v;
+    setVelocidad(v);
+    Haptics.selectionAsync().catch(() => {});
+    try { reproductor.setPlaybackRate(v, 'high'); } catch { /* sin velocidad */ }
   };
   const color = mio ? '#FFFFFF' : t.color.magentaTexto;
   const pista = mio ? 'rgba(255,255,255,0.35)' : suave(t.color.magenta, 0.25);
@@ -421,7 +434,11 @@ function NotaDeVozViva({ a, mio }) {
           {sonando || va > 0 ? mmss(va) : mmss(total)}
         </Text>
       </View>
-      <Icono sf="mic.fill" respaldo="🎤" tam={14} color={mio ? 'rgba(255,255,255,0.8)' : colorSistema.texto3} />
+      <Presionable onPress={cambiarVelocidad} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Velocidad ${velocidad}×, tocar para cambiar`}
+        style={{ minWidth: 40, height: 26, paddingHorizontal: 6, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: mio ? 'rgba(255,255,255,0.22)' : suave(t.color.magenta, 0.14) }}>
+        <Text style={{ fontSize: 12, fontWeight: '800', color, fontVariant: ['tabular-nums'] }}>{`${velocidad}×`}</Text>
+      </Presionable>
     </View>
   );
 }

@@ -18,6 +18,11 @@ export const ICONOS = {
   EyeOff: i('eye.slash', require('@expo/material-symbols/visibility_off.xml')),
   Share: i('square.and.arrow.up', require('@expo/material-symbols/share.xml')),
   Send: i('paperplane', require('@expo/material-symbols/send.xml')),
+  // El chat con clientes: grabar y escuchar notas de voz (2026-10-21).
+  Mic: i('mic.fill', require('@expo/material-symbols/mic.xml')),
+  Play: i('play.fill', require('@expo/material-symbols/play_arrow.xml')),
+  Pause: i('pause.fill', require('@expo/material-symbols/pause.xml')),
+  ArrowUp: i('arrow.up', require('@expo/material-symbols/arrow_upward.xml')),
   MoreVertical: i('ellipsis.circle', require('@expo/material-symbols/more_vert.xml')),
   Banknote: i('banknote', require('@expo/material-symbols/payments.xml')),
   User: i('person', require('@expo/material-symbols/person.xml')),

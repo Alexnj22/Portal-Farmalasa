@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1336.0 — Encargar un producto que no tenemos: SRS, foto y consulta a Bodega
+
+«Apartar o encargar» sólo dejaba elegir productos del catálogo. Ahora, si no lo
+tenemos, la sala escribe el nombre, lo busca en el SRS (elige el registro o
+marca que no aparece), agrega una foto opcional y lo manda a Bodega como
+consulta. A Bodega le llega el aviso «Producto que no tenemos» y en Encargos ve
+la ficha del SRS y la foto; responde precio y fecha, o que no se puede
+**con motivo obligatorio**. Como es nuevo, Bodega lo crea en el sistema y,
+cuando ya está en el catálogo, lo **vincula** al encargo: sin vincular no se
+puede marcar «Llegó». Migración `20261021224846` (`product_id` vacío sólo con
+`producto_nuevo`, bucket privado `encargos-fotos` por sala).
+
 ## v2.1335.11 — Prueba de Actualización de datos al día
 
 La prueba de la capa de datos esperaba la consulta vieja (un `in` de los cuatro

@@ -1425,17 +1425,22 @@ export type Database = {
           estado: string
           factor: number
           fecha_estimada: string | null
+          foto_url: string | null
           id: number
           nota_cliente: string | null
           nota_sucursal: string | null
           pagado_at: string | null
           pago_estado: string
           precio_unitario: number | null
-          product_id: number
+          product_id: number | null
           producto_nombre: string
+          producto_nuevo: boolean
           respondido_at: string | null
           respondido_por: string | null
+          srs: Json | null
           updated_at: string
+          vinculado_at: string | null
+          vinculado_por: string | null
         }
         Insert: {
           anticipo?: number | null
@@ -1447,17 +1452,22 @@ export type Database = {
           estado?: string
           factor?: number
           fecha_estimada?: string | null
+          foto_url?: string | null
           id?: never
           nota_cliente?: string | null
           nota_sucursal?: string | null
           pagado_at?: string | null
           pago_estado?: string
           precio_unitario?: number | null
-          product_id: number
+          product_id?: number | null
           producto_nombre: string
+          producto_nuevo?: boolean
           respondido_at?: string | null
           respondido_por?: string | null
+          srs?: Json | null
           updated_at?: string
+          vinculado_at?: string | null
+          vinculado_por?: string | null
         }
         Update: {
           anticipo?: number | null
@@ -1469,17 +1479,22 @@ export type Database = {
           estado?: string
           factor?: number
           fecha_estimada?: string | null
+          foto_url?: string | null
           id?: never
           nota_cliente?: string | null
           nota_sucursal?: string | null
           pagado_at?: string | null
           pago_estado?: string
           precio_unitario?: number | null
-          product_id?: number
+          product_id?: number | null
           producto_nombre?: string
+          producto_nuevo?: boolean
           respondido_at?: string | null
           respondido_por?: string | null
+          srs?: Json | null
           updated_at?: string
+          vinculado_at?: string | null
+          vinculado_por?: string | null
         }
         Relationships: [
           {
@@ -29587,6 +29602,18 @@ export type Database = {
         }
         Returns: Json
       }
+      encargo_nuevo_en_sucursal_crear: {
+        Args: {
+          p_branch_id: number
+          p_cantidad: number
+          p_customer_id: number
+          p_foto_url?: string
+          p_nombre: string
+          p_nota?: string
+          p_srs?: Json
+        }
+        Returns: Json
+      }
       encargo_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       encargo_responder: {
         Args: {
@@ -29596,6 +29623,10 @@ export type Database = {
           p_nota?: string
           p_precio?: number
         }
+        Returns: Json
+      }
+      encargo_vincular_producto: {
+        Args: { p_id: number; p_product_id: number }
         Returns: Json
       }
       encargos_de_sucursal: {

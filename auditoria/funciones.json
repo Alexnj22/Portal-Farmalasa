@@ -1785,11 +1785,19 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "encargo_nuevo_en_sucursal_crear": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "encargo_puede_manejar": {
    "area": "sucursales",
    "por": "tablas"
   },
   "encargo_responder": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encargo_vincular_producto": {
    "area": "app-clientes",
    "por": "código"
   },

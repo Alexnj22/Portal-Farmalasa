@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { fechaTexto } from '../utils/fecha';
+import { subirArchivo } from '../utils/storageFiles';
 
 /**
  * Reservas de la app de clientes — migración `app_reservas_de_ofertas`.
@@ -229,4 +230,35 @@ export async function crearEncargoEnSucursal({ branchId, customerId, productoId,
         p_branch_id: Number(branchId), p_customer_id: Number(customerId), p_producto_id: Number(productoId),
         p_producto_nombre: productoNombre, p_factor: Number(factor) || 1, p_cantidad: Number(cantidad), p_nota: nota?.trim() || null,
     }));
+}
+
+// ── Encargar un producto que NO tenemos (2026-10-21) ───────────────────────
+// La sala escribe el nombre, lo busca en el SRS y puede agregar una foto. Si
+// no aparece en el SRS va igual, como consulta: Bodega responde precio y fecha
+// o que no se puede (con motivo). Cuando Bodega lo crea y ya está en el
+// catálogo, lo vincula al encargo; sin eso no se marca «Llegó».
+
+/** Lo que se guarda del registro del SRS que eligió la sala. */
+export const srsParaEncargo = (r) => (r ? {
+    nombre: r.nombre, lab: r.lab, forma: r.forma, principio: r.principio, conc: r.conc,
+    noregistro: r.noregistro, estatus: r.estatus,
+} : null);
+
+/** La foto va a `encargos-fotos/<sala>/…`; devuelve la URL que se guarda. */
+export async function subirFotoDeEncargo(branchId, archivo) {
+    const ext = (String(archivo?.type ?? '').split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+    const nombre = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return subirArchivo('encargos-fotos', `${Number(branchId)}/${nombre}.${ext}`, archivo, { contentType: archivo?.type || 'image/jpeg' });
+}
+
+export async function crearEncargoDeProductoNuevo({ branchId, customerId, nombre, cantidad, nota, srs, fotoUrl }) {
+    return sinError(await supabase.rpc('encargo_nuevo_en_sucursal_crear', {
+        p_branch_id: Number(branchId), p_customer_id: Number(customerId), p_nombre: String(nombre ?? '').trim(),
+        p_cantidad: Number(cantidad), p_nota: nota?.trim() || null, p_srs: srs ?? null, p_foto_url: fotoUrl ?? null,
+    }));
+}
+
+/** Bodega amarra el encargo al producto que ya creó (y ya llegó al catálogo). */
+export async function vincularProductoDeEncargo(id, productId) {
+    return sinError(await supabase.rpc('encargo_vincular_producto', { p_id: Number(id), p_product_id: Number(productId) }));
 }

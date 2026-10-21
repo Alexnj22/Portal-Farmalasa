@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { PackageSearch, Search, Truck } from 'lucide-react';
+import { Check, PackagePlus, PackageSearch, Search, Truck } from 'lucide-react';
 import Button from '../common/Button';
 import BuscadorDeProducto from '../common/BuscadorDeProducto';
 import LiquidModal from '../common/LiquidModal';
@@ -9,11 +9,14 @@ import PortalInput from '../common/PortalInput';
 import SegmentedControl from '../common/SegmentedControl';
 import BuscarFicha from './BuscarFicha';
 import FormaDePago from './FormaDePago';
+import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    codigoDeEncargo, codigoDeReserva, crearEncargoEnSucursal, fetchEncargos, fetchReservasDeSucursal,
-    opcionesDeApartado, preciosDeProducto,
+    codigoDeEncargo, codigoDeReserva, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, fetchEncargos, fetchReservasDeSucursal,
+    opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo,
 } from '@nucleo/data/reservas';
+import { buscarEnSrs } from '@nucleo/data/srs';
+import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -32,6 +35,10 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
  *     administración confirma precio y fecha, y cuando el cliente acepta se
  *     cobra el 100 % desde «Por cobrar».
  * El cobro va por `operar-caja` (tipo APARTADO), que vuelve a validar todo.
+ *
+ * Un producto que NO tenemos (2026-10-21): se escribe el nombre, se busca en
+ * el SRS y se puede agregar una foto. Va a Bodega como consulta —aparezca o no
+ * en el SRS— y Bodega responde precio y fecha, o que no se puede con motivo.
  */
 const redondear = (n) => Math.round(Number(n) * 100) / 100;
 const llave = (sala) => `apartar_${sala ?? 'sin-sala'}`;
@@ -78,12 +85,21 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
     // Cuánto deja (2026-10-20): botones rápidos del 50 % y del total, u otro monto.
     const [cuanto, setCuanto] = useState('mitad');
     const [nota, setNota] = useState(guardado?.nota ?? '');
+    // Producto que no tenemos: nombre escrito, registro del SRS (o «no aparece») y foto opcional.
+    const [sinCatalogo, setSinCatalogo] = useState(guardado?.sinCatalogo ?? false);
+    const [nombreNuevo, setNombreNuevo] = useState(guardado?.nombreNuevo ?? '');
+    const [srs, setSrs] = useState(guardado?.srs ?? null);
+    const [srsNoAparece, setSrsNoAparece] = useState(guardado?.srsNoAparece ?? false);
+    const [fotos, setFotos] = useState([]);
+    const [errorFoto, setErrorFoto] = useState('');
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
     const [enviando, setEnviando] = useState(false);
     const claveDeEnvio = useRef(null);
     if (claveDeEnvio.current === null) claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `apartar-${Date.now()}`;
 
-    useEffect(() => { saveDraft(llave(sala), { cliente, producto, pres, cantidad, nota }); }, [sala, cliente, producto, pres, cantidad, nota]);
+    useEffect(() => {
+        saveDraft(llave(sala), { cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece });
+    }, [sala, cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece]);
 
     useEffect(() => {
         if (!producto) { setPresentaciones(null); return undefined; }
@@ -111,7 +127,9 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
     const estadoPago = estadoDeFormaDePago(pago, montoAnticipo);
     const nombreProducto = producto ? `${producto.nombre}${elegida?.tipo ? ` · ${elegida.tipo}` : ''}` : '';
 
-    const falta = !cliente ? 'Elige el cliente del listado.' : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
+    const faltaNuevo = !cliente ? 'Elige el cliente del listado.' : nombreNuevo.trim().length < 3 ? 'Escribe el nombre del producto.'
+        : !srs && !srsNoAparece ? 'Búscalo en el SRS, o marca que no aparece.' : cant < 1 || cant > 20 ? 'Un encargo va de 1 a 20 unidades.' : errorFoto || null;
+    const falta = sinCatalogo ? faltaNuevo : !cliente ? 'Elige el cliente del listado.' : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
         : cant < 1 || cant > 999 ? 'La cantidad va de 1 a 999.' : !opciones ? 'Revisando la existencia…'
             : modo === 'reserva' && (montoAnticipo < minimo - 0.004) ? `El anticipo mínimo es ${formatMoney(minimo)} (50 %).`
                 : modo === 'reserva' && montoAnticipo > total + 0.004 ? 'El anticipo no puede pasar del total.'
@@ -121,6 +139,15 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
     cuerpo.current = async () => {
         setEnviando(true);
         try {
+            if (sinCatalogo) {
+                const fotoUrl = fotos[0] ? await subirFotoDeEncargo(sala, fotos[0]) : null;
+                const r = await crearEncargoDeProductoNuevo({ branchId: sala, customerId: cliente.id, nombre: nombreNuevo,
+                    cantidad: cant, nota, srs: srs ? srsParaEncargo(srs) : null, fotoUrl });
+                showToast('Consulta enviada a Bodega', `${r.codigo} · Bodega responde el precio y para cuándo, o si no se puede conseguir.`, 'success');
+                clearDraft(llave(sala));
+                onClose();
+                return;
+            }
             if (modo === 'reserva') {
                 const ok = await onCobrar({
                     clave: claveDeEnvio.current, monto: redondear(montoAnticipo), pago,
@@ -137,7 +164,7 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
                 onClose();
             }
         } catch (e) {
-            showToast(modo === 'reserva' ? 'No se pudo cobrar' : 'No se pudo registrar', mensajeAmigable(e), 'error');
+            showToast(modo === 'reserva' && !sinCatalogo ? 'No se pudo cobrar' : 'No se pudo registrar', mensajeAmigable(e), 'error');
         } finally {
             setEnviando(false);
         }
@@ -152,7 +179,14 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
                     ayuda="Búscalo en el listado de clientes. Si no tiene ficha, créala primero en Clientes." />
             </div>
 
-            {producto ? (
+            {sinCatalogo ? (
+                <ProductoQueNoTenemos nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
+                    onNombre={(v) => { setNombreNuevo(v); setSrs(null); setSrsNoAparece(false); }}
+                    onSrs={(r) => { setSrs(r); setSrsNoAparece(false); }} onNoAparece={() => { setSrs(null); setSrsNoAparece(true); }}
+                    onVolver={() => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]); }}
+                    cantidad={cantidad} onCantidad={setCantidad} fotos={fotos} onFotos={setFotos} onErrorFoto={setErrorFoto}
+                    nota={nota} onNota={setNota} />
+            ) : producto ? (
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
                     <p className="text-body-sm font-semibold text-content truncate min-w-0">{producto.nombre}</p>
                     <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); }}>Cambiar</Button>
@@ -162,8 +196,13 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
                     invitacion={{ icono: Search, texto: 'Escribe el nombre del producto' }}
                     onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
             )}
+            {!sinCatalogo && !producto && (
+                <Button variant="ghost" size="sm" icon={PackagePlus} onClick={() => setSinCatalogo(true)}>
+                    ¿No lo tenemos? Consultar un producto nuevo a Bodega
+                </Button>
+            )}
 
-            {producto && (
+            {!sinCatalogo && producto && (
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1.5 min-w-0">
                         <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Presentación</span>
@@ -174,7 +213,7 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
                 </div>
             )}
 
-            {opciones && modo === 'reserva' && (
+            {!sinCatalogo && opciones && modo === 'reserva' && (
                 <>
                     <Notice variant="info" compact icon={PackageSearch}>
                         Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta 7 días</b> con el precio de hoy. Total {formatMoney(total)};
@@ -190,7 +229,7 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
                     <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />
                 </>
             )}
-            {opciones && modo === 'encargo' && (
+            {!sinCatalogo && opciones && modo === 'encargo' && (
                 <>
                     <Notice variant="warning" compact icon={Truck}>
                         {opciones.insumo ? 'Es un insumo: ' : `En esta sala ${Number(opciones.disponibles) > 0 ? `hay sólo ${Number(opciones.disponibles)}` : 'no hay'}: `}
@@ -205,9 +244,82 @@ function Nuevo({ sala, ocupado, onCobrar, onClose }) {
             {falta && <p className="text-caption text-content-3">{falta}</p>}
             <div className="flex justify-end">
                 <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>
-                    {modo === 'encargo' ? 'Registrar encargo' : `Cobrar anticipo ${modo === 'reserva' ? formatMoney(montoAnticipo) : ''}`}
+                    {sinCatalogo ? 'Enviar consulta a Bodega' : modo === 'encargo' ? 'Registrar encargo' : `Cobrar anticipo ${modo === 'reserva' ? formatMoney(montoAnticipo) : ''}`}
                 </Button>
             </div>
+        </div>
+    );
+}
+
+// ── Producto que no tenemos: nombre, SRS y foto ─────────────────────────────
+function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoAparece, onVolver, cantidad, onCantidad, fotos, onFotos, onErrorFoto, nota, onNota }) {
+    const [resultados, setResultados] = useState(null);
+    const [buscando, setBuscando] = useState(false);
+    const [error, setError] = useState('');
+    const buscar = async () => {
+        const q = nombre.trim();
+        if (q.length < 3) return;
+        setBuscando(true); setError('');
+        try {
+            const json = await buscarEnSrs(q, { porPagina: 8 });
+            setResultados((json.data || []).map(resultadoDeSrs));
+        } catch (e) {
+            setResultados(null); setError(mensajeAmigable(e, 'No se pudo consultar el SRS. Intenta de nuevo.'));
+        } finally {
+            setBuscando(false);
+        }
+    };
+    return (
+        <div className="space-y-3">
+            <Notice variant="info" compact icon={PackagePlus}>
+                Producto que no está en el catálogo: <b>va a Bodega como consulta</b>. Bodega responde el precio y para cuándo, o si no se
+                puede conseguir. Ahora no se cobra nada.
+            </Notice>
+            <div className="flex items-end gap-2">
+                <div className="flex-1 min-w-0">
+                    <PortalInput label="Nombre del producto" value={nombre} onChange={(e) => onNombre(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') buscar(); }} placeholder="Como lo pide el cliente" autoFocus />
+                </div>
+                <Button variant="secondary" icon={Search} loading={buscando} disabled={nombre.trim().length < 3} onClick={buscar}>Buscar en el SRS</Button>
+            </div>
+            {error && <p className="text-caption text-danger-text">{error}</p>}
+
+            {srs ? (
+                <div className="flex items-start justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
+                    <div className="min-w-0">
+                        <p className="text-body-sm font-semibold text-content flex items-center gap-1.5"><Check size={14} className="text-success-text shrink-0" /> {srs.nombre}</p>
+                        <p className="text-caption text-content-3">{[srs.principio, srs.conc, srs.forma, srs.lab, srs.noregistro && `Reg. ${srs.noregistro}`].filter(Boolean).join(' · ')}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => onNombre(nombre)}>Cambiar</Button>
+                </div>
+            ) : noAparece ? (
+                <Notice variant="warning" compact>No aparece en el SRS: Bodega lo revisa antes de responder.</Notice>
+            ) : resultados && (
+                <div className="space-y-2">
+                    {resultados.length === 0 && <p className="text-body-sm text-content-3">El SRS no tiene nada con ese nombre.</p>}
+                    <ul className="space-y-1.5 max-h-[30vh] overflow-y-auto">
+                        {resultados.map((r, i) => (
+                            <li key={`${r.noregistro}-${i}`}>
+                                <button type="button" onClick={() => onSrs(r)} data-surface="card"
+                                    className="w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] ring-1 ring-border-card active:scale-[0.97]">
+                                    <p className="text-body-sm font-semibold text-content">{r.nombre}{!r.activo && <span className="text-caption text-warning-text"> · registro inactivo</span>}</p>
+                                    <p className="text-caption text-content-3">{[r.principio, r.conc, r.forma, r.lab].filter(Boolean).join(' · ')}</p>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                    <Button variant="ghost" size="sm" onClick={onNoAparece}>No aparece en el SRS: consultar igual</Button>
+                </div>
+            )}
+
+            <PortalInput label="Cantidad" type="number" value={cantidad} onChange={(e) => onCantidad(e.target.value)} />
+            <div>
+                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Foto (opcional)</p>
+                <FotosDeEvidencia fotos={fotos} onCambio={onFotos} max={1} maxMB={5} onError={onErrorFoto} alt="Foto del producto" />
+            </div>
+            <PortalInput label="Nota para Bodega (opcional)" value={nota} onChange={(e) => onNota(e.target.value)}
+                placeholder="Presentación, laboratorio, para cuándo lo necesita…" />
+            <Button variant="ghost" size="sm" onClick={onVolver}>Volver a buscar en el catálogo</Button>
         </div>
     );
 }

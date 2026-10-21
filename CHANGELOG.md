@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.9 — Fechas de vencimiento: ningún huso horario corre el mes
+
+- Cinco funciones que pintan vencimientos de lote armaban la fecha a
+  medianoche de la hora DEL APARATO y la pintaban en hora de El Salvador. En
+  un equipo con otro huso, un lote del 1 de noviembre salía «oct». Ahora le
+  pasan el día como texto a `fechaTexto`, que no lo convierte. Afectaba
+  `pedidoPdfDoc`, `trasladoTexto`, `papelDePedidoHtml`, `RecepcionModal` y la
+  recepción de la app.
+- Era la causa de las 4 pruebas que tenían CI en rojo desde julio (GitHub corre
+  en UTC). Ahora pasan en UTC, El Salvador, Tokio y Honolulu.
+
 ## v2.1333.8 — Auditoría: el gate no lee producción cuando la prueba le da la foto
 
 - Desde v2.1332.1, `gate:auditoria` lee producción en vivo, y eso pisaba la

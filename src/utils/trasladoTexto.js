@@ -21,13 +21,16 @@ export const fmtCuando = (iso) => {
 // Sus tres usos son vencimientos de lote, que vienen como fecha sin hora
 // ('2027-11-01'). Leída como UTC y pintada en hora local retrocedía un día —y
 // con el día 01, que es el caso de casi todas, retrocedía un MES: «31 oct 27»
-// por un lote que vence el 1 de noviembre. Se arma en hora local, como en
-// `pedidoPrint.js`, para que ninguna de las dos pantallas mienta.
+// por un lote que vence el 1 de noviembre. Se le pasa el DÍA como texto a
+// `fechaTexto`, que no lo convierte de huso — igual que `fmtVence` en
+// `pedidoPdfDoc.js`. Armarlo en hora local del aparato fallaba en cualquiera
+// que no estuviera en hora de El Salvador.
 export const fmtFechaLarga = (iso) => {
     if (!iso) return '';
     const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
     if (!y || !m || !d) return '';
-    return fechaTexto(new Date(y, m - 1, d), { day: '2-digit', month: 'short', year: '2-digit' });
+    const dos = (n) => String(n).padStart(2, '0');
+    return fechaTexto(`${y}-${dos(m)}-${dos(d)}`, { day: '2-digit', month: 'short', year: '2-digit' });
 };
 
 /** Lo que se pide, en una línea legible. */

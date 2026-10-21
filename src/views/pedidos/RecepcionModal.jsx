@@ -64,7 +64,7 @@ function fmtVence(iso) {
     if (!iso) return null;
     const [y, m] = String(iso).slice(0, 10).split('-').map(Number);
     if (!y || !m) return null;
-    return fechaTexto(new Date(y, m - 1, 1), { month: 'short', year: '2-digit' });
+    return fechaTexto(`${y}-${String(m).padStart(2, '0')}-01`, { month: 'short', year: '2-digit' });
 }
 
 function LotesDelRenglon({ row }) {

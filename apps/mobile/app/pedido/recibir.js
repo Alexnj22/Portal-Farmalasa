@@ -63,10 +63,10 @@ const presentacion = (r) => {
 };
 const SIN_VALOR = {};
 const SIN_PRES = {};
-// Fecha sin hora, armada en LOCAL para que el huso no la corra un mes.
+// Fecha sin hora, pasada como DÍA a fechaTexto: así ningún huso la corre un mes.
 const vence = (iso) => {
   const [y, m] = String(iso ?? '').slice(0, 10).split('-').map(Number);
-  return y && m ? fechaTexto(new Date(y, m - 1, 1), { month: 'short', year: '2-digit' }) : null;
+  return y && m ? fechaTexto(`${y}-${String(m).padStart(2, '0')}-01`, { month: 'short', year: '2-digit' }) : null;
 };
 const textoDeLotes = (r) => {
   const ls = lotesQueDebenVenir(r);

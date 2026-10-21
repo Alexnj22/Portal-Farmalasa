@@ -47,12 +47,15 @@ const CONTENT_WIDTH = 612 - PAGE_MARGINS[0] - PAGE_MARGINS[2];
 // toda fecha del día 1 retrocedía un mes, o sea que un lote que vence en
 // noviembre se imprimía «oct 27». Y no era un borde raro — medido el 2026-08-18,
 // 9,774 de las 9,959 existencias con vencimiento son día 01: el desfase era la
-// regla. Armando la fecha en hora LOCAL no hay huso que la mueva.
+// regla. Se le pasa el DÍA como texto a `fechaTexto`, que no lo convierte de
+// huso: armarlo con `new Date(y, m, 1)` lo dejaba a medianoche del APARATO, y
+// en uno que no estuviera en hora de El Salvador (el de CI corre en UTC)
+// volvía a imprimir «oct» por noviembre.
 export function fmtVence(iso) {
     if (!iso) return null;
     const [y, m] = String(iso).slice(0, 10).split('-').map(Number);
     if (!y || !m) return null;
-    return fechaTexto(new Date(y, m - 1, 1), { month: 'short', year: '2-digit' });
+    return fechaTexto(`${y}-${String(m).padStart(2, '0')}-01`, { month: 'short', year: '2-digit' });
 }
 // El día del calendario de El Salvador, no el del aparato que imprime: el
 // teléfono o una computadora con otra zona ponían otro día en el papel.

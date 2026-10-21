@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1334.0 — Caja: un solo juez para entradas y salidas; «Otro» dice dónde va; sin comprobante, autorización
+
+Auditoría de entradas y salidas del 2026-10-21. Lo que cuidaba sólo la
+pantalla ahora lo decide el servidor, y «Otro» dejó de ser la puerta trasera.
+
+- **Un juez: `caja_movimiento_regla`.** Lo llaman `operar-caja` (cajón) y
+  `registrar_salida_de_bolsa` (bolsas). Rechaza tipo inexistente o apagado,
+  sentido al revés, foto obligatoria que falta y salida sin quién la recibe.
+- **«Otro» no acepta lo que tiene su lugar.** Lista en la base
+  (`caja_conceptos_de_otro_lado`): anticipo, encargo, Mapfre, crédito,
+  inyección, POS/remesa, proveedor, gasto, corrección… se bloquea y se dice
+  dónde va. Y exige un detalle de al menos 10 letras.
+- **Sin comprobante → autorización.** «Otro», Pago a proveedor y Gasto
+  (`sin_comprobante_autoriza`) sin foto se anotan del cajón con un motivo y
+  quedan pendientes; desde una bolsa la foto es obligatoria.
+- **La salida del cajón manda su clave y su texto entero**: un reintento ya no
+  saca el dinero dos veces y el concepto deja de cortarse en 50.
+- **No se corrige un movimiento de un día ya cerrado**: se rechaza y la
+  diferencia va por el corte de ese día.
+- **Una foto que no subió ya no deja anotar sin foto** (portal y app).
+- La solicitud de autorización dice «Salida»/«Ingreso» y «en efectivo».
+
 ## v2.1333.14 — Planilla: los descuentos se cargan al generarla, no en la entrada
 
 - `payrollSlice` importaba de forma estática `ordenesDeDescuento`,

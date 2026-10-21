@@ -24,7 +24,8 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } fro
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { anotarIngreso, boletaYaEnCaja, fetchTiposDeMovimiento, leerBoleta } from '@nucleo/data/bolsas';
+import { anotarIngreso, boletaYaEnCaja, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, leerBoleta } from '@nucleo/data/bolsas';
+import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { choqueDeSentido, frenoDelMonto, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -66,11 +67,15 @@ export default function MeterDinero() {
   const [repetidas, setRepetidas] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
+  // Lo que no va en «Otro» y por qué no hay comprobante: las reglas del servidor.
+  const [conceptos, setConceptos] = useState([]);
+  const [motivoSinFoto, setMotivoSinFoto] = useState('');
   const [clave] = useState(() => `app-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   useEffect(() => {
     let vivo = true;
     fetchTiposDeMovimiento().then((t) => vivo && setTipos((t || []).filter((x) => x.sentido === 'ENTRADA')));
+    fetchConceptosDeOtroLado().then((l) => vivo && setConceptos(l));
     return () => { vivo = false; };
   }, []);
 
@@ -135,11 +140,17 @@ export default function MeterDinero() {
     ? frenoDelMonto({ lectura, monto: n, intentos: intentosSinComprobar, unaSolaVez, cotejado })
     : null;
 
+  const esOtro = !!tipo && TIPOS_OTRO.includes(tipo.codigo);
+  const avisoOtro = esOtro ? vaEnOtroLado(conceptos, 'ENTRADA', detalle) : null;
+  const efectivoSinComprobante = !!tipo?.sin_comprobante_autoriza && !noEfectivo && !fotos.length;
   const falta = !tipo ? 'Elige el motivo.'
     : leyendo ? 'Leyendo la foto…'
       : !noEfectivo && tipo.foto === 'OBLIGATORIA' && !fotos.length ? 'Falta la foto del comprobante.'
         : !(n > 0) ? 'Escribe el monto.'
           : exigeDetalle && detalle.trim().length < 3 ? 'Escribe el detalle.'
+            : esOtro && !detalleSuficiente(detalle) ? 'En «Otro» escribe de qué fue, con detalle.'
+            : avisoOtro ? avisoOtro
+            : efectivoSinComprobante && motivoSinFoto.trim().length < 5 ? 'Sin foto del comprobante, explica por qué: quedará pendiente de autorización.'
             : !noEfectivo && tipo.pide_boleta && !boleta.trim() ? 'Falta el número de boleta.'
               : !noEfectivo && problema?.bloquea ? problema.texto
                 : frenoMonto?.bloquea ? (frenoMonto.paso === 'OTRA_FOTO' ? 'Falta otra foto de la boleta.' : 'Falta comparar el monto con el papel.')
@@ -153,6 +164,8 @@ export default function MeterDinero() {
       const fotosQueVan = noEfectivo ? (pago.foto ? [pago.foto] : []) : fotos;
       const fotoUrl = fotosQueVan.length ? (await subirFotos(fotosQueVan, { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }))[0] ?? null : null;
       // Sin la foto el servidor pediría una autorización que nadie pidió: la sala SÍ tenía el papel.
+      // En efectivo igual: una subida fallida mandaba el ingreso sin la foto que se eligió.
+      if (fotosQueVan.length && !fotoUrl) throw new Error('No se pudo subir la foto. Revisa la conexión y vuelve a intentarlo.');
       if (noEfectivo && pago.foto && !fotoUrl) throw new Error('No se pudo subir la foto del comprobante. Revisa la conexión y vuelve a intentarlo.');
       const r = await anotarIngreso({
         sala, monto: n, tipo: tipo.codigo, clave,
@@ -162,6 +175,7 @@ export default function MeterDinero() {
         montoCotejado: frenoMonto?.paso === 'COTEJAR' && cotejado,
         ...(tipo.pide_persona ? { vendedor: persona.trim() } : {}),
         ...(conFormaDePago ? datosDeFormaDePago(pago, fotoUrl) : {}),
+        ...(efectivoSinComprobante ? { motivoSinComprobante: motivoSinFoto.trim() } : {}),
       });
       if (r?.error) throw r.error;
       const papel = r?.movimiento ? await comprobanteDelMovimiento(r.movimiento, {
@@ -234,6 +248,12 @@ export default function MeterDinero() {
               {tipo.pide_persona ? <Campo multiline={false} value={persona} onChangeText={setPersona} placeholder="Quién lo trae" autoCapitalize="words" /> : null}
               <Campo value={detalle} onChangeText={setDetalle}
                 placeholder={`Detalle${exigeDetalle ? '' : ' (opcional)'}${PISTA_DE_DETALLE[tipo.codigo] ? ` — p. ej. ${PISTA_DE_DETALLE[tipo.codigo]}` : ''}`} />
+              {efectivoSinComprobante ? (
+                <>
+                  <Aviso tono="cuidado" texto="Sin foto del comprobante, este ingreso queda pendiente de autorización." />
+                  <Campo value={motivoSinFoto} onChangeText={setMotivoSinFoto} placeholder="Por qué no hay comprobante" />
+                </>
+              ) : null}
             </Seccion>
           ) : null}
 

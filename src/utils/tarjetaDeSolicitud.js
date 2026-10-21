@@ -77,7 +77,8 @@ export function detalleDeSolicitud(s) {
             return { contexto: m.que === 'ANULAR' ? 'Anular movimiento de caja' : 'Corrección de caja', renglones: [[String(m.concepto ?? 'Movimiento'), m.monto_nuevo == null ? dinero(m.monto_actual) : `${dinero(m.monto_actual)} → ${dinero(m.monto_nuevo)}`]] };
         case 'CAJA_INGRESO_AUTORIZACION':
             return {
-                contexto: `Ingreso ${m.forma_pago === 'TRANSFERENCIA' ? 'por transferencia' : 'con tarjeta'} sin comprobante`,
+                contexto: `${m.sentido === 'SALIDA' ? 'Salida' : 'Ingreso'} ${m.forma_pago === 'TRANSFERENCIA' ? 'por transferencia'
+                    : m.forma_pago === 'TARJETA' ? 'con tarjeta' : 'en efectivo'} sin comprobante`,
                 renglones: [[String(m.detalle || m.concepto || 'Ingreso'), dinero(m.monto)]],
                 pie: s?.note ?? undefined,
             };

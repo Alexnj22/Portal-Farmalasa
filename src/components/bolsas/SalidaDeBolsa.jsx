@@ -11,9 +11,11 @@ import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import {
-    anularSalida, boletaYaRegistrada, fetchEntidadesDeSalida, fetchTiposDeSalida,
+    anularSalida, boletaYaRegistrada, fetchConceptosDeOtroLado, fetchEntidadesDeSalida,
+    fetchTiposDeMovimiento, fetchTiposDeSalida,
     guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobante,
 } from '@nucleo/data/bolsas';
+import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { disponibles, elegirOrigen, totalDisponible } from '@nucleo/utils/bolsasReparto';
 import { conceptoDelPapel } from '@nucleo/utils/conceptoDelPapel';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -225,7 +227,23 @@ export default function SalidaDeBolsa({
     const [persona, setPersona] = useState(null);
     const [vale, setVale] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    // El cerrojo SÍNCRONO: `guardando` se enciende en el próximo render, y en
+    // ese hueco un doble toque arranca dos envíos. Ver `unaSolaVez`.
+    const guardandoRef = useRef(false);
     const [error, setError] = useState(null);
+    /* ── Las reglas del cajón (auditoría 2026-10-21) ────────────────────────
+     *
+     * El catálogo de la caja dice qué tipo pide comprobante o autorización
+     * (`sin_comprobante_autoriza`), y la lista de conceptos dice qué no va en
+     * «Otro». Las dos son las MISMAS que usa el servidor; acá sólo avisan. */
+    const [tiposCaja, setTiposCaja] = useState([]);
+    const [conceptos, setConceptos] = useState([]);
+    const [motivoSinFoto, setMotivoSinFoto] = useState('');
+    /* La clave de ESTE envío, una para todos sus reintentos: si la respuesta se
+     * pierde y se vuelve a mandar, el servidor contesta con la salida que ya
+     * escribió en vez de sacar el dinero dos veces. Hasta el 2026-10-21 la
+     * salida del cajón no la mandaba: 0 de 506 la tenían. Nace al abrir. */
+    const claveDeEnvio = useRef(null);
 
     /* ── La salida a medio escribir se guarda sola ───────────────────────────
      *
@@ -300,6 +318,10 @@ export default function SalidaDeBolsa({
         // la selección: hasta que no hay motivo, no hay campos de motivo.
         fetchTiposDeSalida().then(setTipos);
         fetchEntidadesDeSalida().then(setEntidades);
+        fetchTiposDeMovimiento().then(setTiposCaja);
+        fetchConceptosDeOtroLado().then(setConceptos);
+        claveDeEnvio.current = globalThis.crypto?.randomUUID?.()
+            ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
         // ── El motor de impresión se baja ANTES de escribir ─────────────────
         // Los dos papeles se arman con `import()` y eso los deja atados a un
@@ -322,7 +344,7 @@ export default function SalidaDeBolsa({
     useEffect(() => {
         if (abierto) return;
         setTipo(''); setMonto(''); setEntidad(''); setBoleta(''); setNota(''); setFoto(null);
-        setDeLaFoto([]); setRepetida([]);
+        setDeLaFoto([]); setRepetida([]); setMotivoSinFoto('');
         setPaso('FORMULARIO'); setPersona(null); setVale(null); setError(null);
     }, [abierto]);
 
@@ -444,6 +466,16 @@ export default function SalidaDeBolsa({
         [lista, n, t, efectivoEnCaja, onSalidaDeCaja],
     );
     const delCajon = eleccion.origen === 'CAJA';
+    // El tipo de la caja en que se convierte este motivo, con sus reglas.
+    const tipoCaja = useMemo(
+        () => tiposCaja.find((c) => c.codigo === t?.caja_tipo) || null,
+        [tiposCaja, t],
+    );
+    const esOtro = TIPOS_OTRO.includes(t?.caja_tipo);
+    // Sin foto en un tipo que la pide como prueba: del cajón, autorización;
+    // de una bolsa, no se puede (ver `caja_movimiento_regla`).
+    const pideComprobante = !!tipoCaja?.sin_comprobante_autoriza;
+    const sinComprobante = pideComprobante && !foto;
     // Bolsa primero y el cajón el resto (2026-10-02). Ver `elegirOrigen`.
     const mixta = eleccion.origen === 'MIXTO';
     /* Si el cajón siquiera se consultó. Distinto de `delCajon`: acá la pregunta
@@ -911,6 +943,19 @@ export default function SalidaDeBolsa({
         }
         if (t.pide_boleta && !boleta.trim()) return 'Falta el número de boleta.';
         if (t.foto === 'OBLIGATORIA' && !foto) return 'Falta la foto del comprobante.';
+        /* «Otro» dice de qué fue, y si es algo que tiene su propio motivo no
+         * se deja anotar acá (decisión del usuario, 2026-10-21). */
+        if (esOtro && !detalleSuficiente(nota)) return 'En «Otro» escribe de qué fue, con detalle.';
+        if (esOtro) {
+            const aviso = vaEnOtroLado(conceptos, 'SALIDA', nota);
+            if (aviso) return aviso;
+        }
+        if (sinComprobante && !delCajon) {
+            return `Lo que sale de una bolsa para «${t.etiqueta}» lleva la foto del comprobante.`;
+        }
+        if (sinComprobante && motivoSinFoto.trim().length < 5) {
+            return 'Sin foto del comprobante, explica por qué: quedará pendiente de autorización.';
+        }
         // Decisión del usuario (2026-08-20): sin una boleta que cuadre, no se
         // registra. Va acá y no en un aviso aparte para que sea la MISMA lista
         // que ya frena el botón — un segundo camino para frenar se olvida de
@@ -921,7 +966,8 @@ export default function SalidaDeBolsa({
         if (problemaDeLaBoleta?.bloquea) return problemaDeLaBoleta.texto;
         return null;
     }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta,
-        laFotoManda, puedeSalirDelCajon, lectura, leyendo]);
+        laFotoManda, puedeSalirDelCajon, lectura, leyendo, esOtro, nota, conceptos,
+        sinComprobante, delCajon, motivoSinFoto]);
 
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
@@ -952,7 +998,8 @@ export default function SalidaDeBolsa({
     }, []);
 
     const guardar = useCallback(async () => {
-        if (falta || guardando) return;
+        if (falta || guardando || guardandoRef.current) return;
+        guardandoRef.current = true;
         setGuardando(true);
         setError(null);
         try {
@@ -1001,6 +1048,12 @@ export default function SalidaDeBolsa({
                     concepto: [t.etiqueta, entidadDicha, nota.trim()]
                         .filter(Boolean).join(' · ').slice(0, 50),
                     detalle: [entidadDicha, nota.trim()].filter(Boolean).join(' · '),
+                    // El texto ENTERO para la base: `concepto` va recortado a
+                    // 50 y sin esto la cola se perdía (vacío en las 506).
+                    conceptoCompleto: [t.etiqueta, entidadDicha, nota.trim()]
+                        .filter(Boolean).join(' · '),
+                    clave: claveDeEnvio.current,
+                    motivoSinComprobante: sinComprobante ? motivoSinFoto.trim() : '',
                     boleta: boleta.trim() || null,
                     fotoUrl,
                     recibidoPor: t.pide_receptor ? persona?.id : null,
@@ -1109,11 +1162,12 @@ export default function SalidaDeBolsa({
             if (t?.pide_receptor) olvidarLaIdentidad();
             setError(mensajeAmigable(e, 'No se pudo registrar.'));
         } finally {
+            guardandoRef.current = false;
             setGuardando(false);
         }
     }, [falta, guardando, foto, eleccion, bolsas, user, t, n, entidad, boleta, nota,
         persona, vale, lectura, olvidarLaIdentidad, showToast, onHecho, onClose, descartar,
-        delCajon, mixta, onSalidaDeCaja, salaId]);
+        delCajon, mixta, onSalidaDeCaja, salaId, sinComprobante, motivoSinFoto]);
 
     const enIdentidad = paso === 'IDENTIDAD' && !!t?.pide_receptor;
 
@@ -1649,12 +1703,31 @@ export default function SalidaDeBolsa({
                             y hay que poder agregarle lo que el papel no dice. */}
                         {!!t && (!laFotoManda || datosALaVista) && (
                             <PortalTextarea
-                                label={laFotoManda ? 'Qué fue' : 'Detalle (opcional)'} name="nota" rows={2}
+                                label={laFotoManda ? 'Qué fue' : esOtro ? 'De qué fue' : 'Detalle (opcional)'}
+                                name="nota" rows={2}
                                 value={nota} onChange={(e) => setNota(e.target.value)}
                                 placeholder={laFotoManda
                                     ? 'Lo dice la boleta: remesa, retiro de efectivo…'
-                                    : 'Cualquier cosa que ayude a entenderlo después'}
+                                    : esOtro
+                                        ? 'Qué se pagó, a quién y quién lo autorizó'
+                                        : 'Cualquier cosa que ayude a entenderlo después'}
                             />
+                        )}
+
+                        {/* Sin comprobante, del cajón sale igual y queda
+                            pendiente de autorización (2026-10-21). De una bolsa
+                            no: ahí la foto es obligatoria y lo dice `falta`. */}
+                        {!!t && sinComprobante && delCajon && (
+                            <>
+                                <Notice variant="warning" compact>
+                                    Sin foto del comprobante, esta salida queda pendiente de autorización.
+                                </Notice>
+                                <PortalTextarea
+                                    label="Por qué no hay comprobante" name="motivoSinFoto" rows={2}
+                                    value={motivoSinFoto} onChange={(e) => setMotivoSinFoto(e.target.value)}
+                                    placeholder="Ej.: el proveedor no dio factura"
+                                />
+                            </>
                         )}
                     </>
                 )}

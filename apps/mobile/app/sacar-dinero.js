@@ -18,9 +18,10 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  anotarSalida, boletaYaRegistrada, estadoDeCaja, fetchBolsas, fetchEntidadesDeSalida, fetchSaldos,
-  fetchTiposDeSalida, registrarSalida,
+  anotarSalida, boletaYaRegistrada, estadoDeCaja, fetchBolsas, fetchConceptosDeOtroLado, fetchEntidadesDeSalida, fetchSaldos,
+  fetchTiposDeMovimiento, fetchTiposDeSalida, registrarSalida,
 } from '@nucleo/data/bolsas';
+import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { disponibles, elegirOrigen, totalDisponible } from '@nucleo/utils/bolsasReparto';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -54,12 +55,18 @@ export default function SacarDinero() {
   const [fotos, setFotos] = useState([]);
   const [identidad, setIdentidad] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // Las reglas del cajón, las mismas del servidor (`caja_movimiento_regla`).
+  const [tiposCaja, setTiposCaja] = useState([]);
+  const [conceptos, setConceptos] = useState([]);
+  const [motivoSinFoto, setMotivoSinFoto] = useState('');
   const [clave] = useState(() => `app-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   useEffect(() => {
     let vivo = true;
     fetchTiposDeSalida().then((x) => vivo && setTipos(x));
     fetchEntidadesDeSalida().then((x) => vivo && setEntidades(x));
+    fetchTiposDeMovimiento().then((x) => vivo && setTiposCaja(x));
+    fetchConceptosDeOtroLado().then((x) => vivo && setConceptos(x));
     if (sala) {
       estadoDeCaja(sala).then((e) => vivo && setEfectivo(e?.error ? null : (e?.efectivo ?? null)));
       fetchBolsas({ estados: ['ABIERTA'] }).then(async (lista) => {
@@ -78,6 +85,10 @@ export default function SacarDinero() {
     efectivoEnCaja: delCajonPermitido ? efectivo : null, puedeElCajon: !!t?.caja_tipo, lista: bolsas, monto: Number.isFinite(n) ? n : 0,
   }), [delCajonPermitido, efectivo, t, bolsas, n]);
   const delCajon = eleccion.origen === 'CAJA';
+  const esOtro = TIPOS_OTRO.includes(t?.caja_tipo);
+  const avisoOtro = esOtro ? vaEnOtroLado(conceptos, 'SALIDA', nota) : null;
+  // Sin foto en un tipo que la pide como prueba: del cajón, autorización; de una bolsa, no.
+  const sinComprobante = !!tiposCaja.find((c) => c.codigo === t?.caja_tipo)?.sin_comprobante_autoriza && !fotos.length;
 
   useEffect(() => {
     if (!t?.pide_boleta || !boleta.trim()) { setRepetida(false); return undefined; }
@@ -93,6 +104,10 @@ export default function SacarDinero() {
           : t.pide_boleta && !boleta.trim() ? 'Falta el número de boleta.'
             : repetida ? 'Esa boleta ya está registrada en esta sala.'
               : t.foto === 'OBLIGATORIA' && !fotos.length ? 'Falta la foto del comprobante.'
+                : esOtro && !detalleSuficiente(nota) ? 'En «Otro» escribe de qué fue, con detalle.'
+                : avisoOtro ? avisoOtro
+                : sinComprobante && !delCajon ? `Lo que sale de una bolsa para «${t.etiqueta}» lleva la foto del comprobante.`
+                : sinComprobante && motivoSinFoto.trim().length < 5 ? 'Sin foto del comprobante, explica por qué: quedará pendiente de autorización.'
                 : t.pide_receptor && !identidad ? 'Falta identificar a quien se lo lleva.'
                   : null;
 
@@ -109,6 +124,7 @@ export default function SacarDinero() {
           boleta: boleta.trim() || null, fotoUrl,
           recibidoPor: t.pide_receptor ? identidad?.persona?.id : null, vale: t.pide_receptor ? identidad?.vale : null,
           recibe: t.pide_receptor ? '' : entidad.trim(), clave,
+          motivoSinComprobante: sinComprobante ? motivoSinFoto.trim() : '',
         });
         if (r?.error) { if (t.pide_receptor) setIdentidad(null); throw r.error; }
         const papel = r?.movimiento ? await comprobanteDelMovimiento(r.movimiento, {
@@ -180,7 +196,13 @@ export default function SacarDinero() {
               ) : null}
               {t.pide_boleta ? <Campo multiline={false} value={boleta} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
               {t.foto && t.foto !== 'NO' ? <Fotos fotos={fotos} onCambiar={setFotos} max={1} /> : null}
-              <Campo value={nota} onChangeText={setNota} placeholder="Nota (opcional)" />
+              <Campo value={nota} onChangeText={setNota} placeholder={esOtro ? 'De qué fue: qué se pagó, a quién y quién lo autorizó' : 'Nota (opcional)'} />
+              {sinComprobante && delCajon ? (
+                <>
+                  <Aviso tono="cuidado" texto="Sin foto del comprobante, esta salida queda pendiente de autorización." />
+                  <Campo value={motivoSinFoto} onChangeText={setMotivoSinFoto} placeholder="Por qué no hay comprobante" />
+                </>
+              ) : null}
             </Seccion>
           ) : null}
 

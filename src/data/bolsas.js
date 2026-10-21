@@ -569,10 +569,26 @@ const BUCKET_COMPROBANTES = 'payment-proofs';
  */
 export async function fetchTiposDeMovimiento() {
     const { data, error } = await supabase.from('caja_tipos_movimiento')
-        .select('codigo, etiqueta, sentido, pide_boleta, pide_persona, identifica_receptor, foto, lleva_comprobante, leyenda')
+        .select('codigo, etiqueta, sentido, pide_boleta, pide_persona, identifica_receptor, foto, lleva_comprobante, leyenda, sin_comprobante_autoriza')
         .eq('activo', true)
         .order('orden');
     if (error) { console.error('caja: fetchTiposDeMovimiento failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
+ * Lo que NO se anota en «Otro», y dónde va (2026-10-21).
+ *
+ * Es la MISMA lista con la que `caja_movimiento_regla` frena en el servidor: la
+ * pantalla la usa para avisar mientras se escribe, el servidor para decidir.
+ * Si no se puede leer, la pantalla no avisa y el servidor frena igual.
+ */
+export async function fetchConceptosDeOtroLado() {
+    const { data, error } = await supabase.from('caja_conceptos_de_otro_lado')
+        .select('sentido, patron, va_en, orden')
+        .eq('activo', true)
+        .order('orden');
+    if (error) { console.error('caja: fetchConceptosDeOtroLado failed:', error.message); return []; }
     return data || [];
 }
 
@@ -1090,9 +1106,11 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
         // `{ modo: 'reserva', reserva_id }` o `{ modo: 'encargo', encargo_id }`.
         ...(apartado ? { apartado } : {}),
         forma_pago: formaPago,
-        ...(formaPago !== 'EFECTIVO'
-            ? { comprobante_total: comprobanteTotal, motivo_sin_comprobante: motivoSinComprobante }
-            : {}),
+        ...(formaPago !== 'EFECTIVO' ? { comprobante_total: comprobanteTotal } : {}),
+        /* Por qué no hay comprobante. Desde 2026-10-21 también en EFECTIVO: un
+         * tipo con `sin_comprobante_autoriza` («Otro») sin foto entra igual y
+         * queda pendiente de autorización, y el servidor exige el motivo. */
+        ...(motivoSinComprobante ? { motivo_sin_comprobante: motivoSinComprobante } : {}),
     });
 }
 
@@ -1141,7 +1159,8 @@ export async function anotarAbono({ sala, monto, clienteNombre, clienteTelefono 
  */
 export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta = null,
     fotoUrl = null, recibe = '', recibidoPor = null, vale = null, detalle = null,
-    lectura = null, clave = null, operacionBolsa = null, montoCotejado = false, aplicar = null }) {
+    lectura = null, clave = null, operacionBolsa = null, montoCotejado = false, aplicar = null,
+    motivoSinComprobante = '' }) {
     return operar({
         accion: 'salida', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, recibe,
         // El vale que aplica el anticipo de lo apartado al retirarlo
@@ -1162,6 +1181,10 @@ export async function anotarSalida({ sala, monto, concepto, tipo = null, boleta 
         // porque `concepto` es lo que se le manda a él y esto es lo que se
         // escribió — ver la migración `..._concepto_completo`.
         detalle,
+        // Sin foto en un tipo que la pide como prueba («Otro», pago a
+        // proveedor, gasto): la salida se hace y queda pendiente de
+        // autorización. Ver `caja_movimiento_regla`.
+        ...(motivoSinComprobante ? { motivo_sin_comprobante: motivoSinComprobante } : {}),
     });
 }
 

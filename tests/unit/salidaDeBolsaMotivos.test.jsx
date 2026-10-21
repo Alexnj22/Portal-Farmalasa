@@ -61,7 +61,13 @@ const TIPOS = [
       pide_receptor: false, entidad_la_dice_el_papel: false, activo: false },
 ];
 
+/* El catálogo de la CAJA y la lista de lo que no va en «Otro» (2026-10-21).
+ * Vacíos por defecto: las pruebas de arriba son sobre el catálogo de las
+ * bolsas, y la regla del comprobante tiene su propia prueba abajo. */
+let TIPOS_CAJA = [];
 vi.mock('@nucleo/data/bolsas', () => ({
+    fetchTiposDeMovimiento: vi.fn(async () => TIPOS_CAJA),
+    fetchConceptosDeOtroLado: vi.fn(async () => []),
     fetchTiposDeSalida: vi.fn(async () => TIPOS),
     fetchEntidadesDeSalida: vi.fn(async () => [
         { tipo: 'POS_PROMERICA', nombre: 'MONEYGRAM' },
@@ -162,6 +168,28 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
         // carné, y por eso el motivo no lo pide.
         expect(arg.recibidoPor).toBeNull();
         expect(arg.vale).toBeNull();
+    });
+
+    // Desde 2026-10-21: si el catálogo de la caja dice que el pago a proveedor
+    // lleva comprobante, sacarlo de una BOLSA sin foto ya no se puede — del
+    // cajón quedaría pendiente de autorización, de una bolsa no hay esa salida.
+    it('con el comprobante pedido, de una bolsa no sale sin foto', async () => {
+        const antes = TIPOS.map((x) => ({ ...x }));
+        TIPOS.find((x) => x.codigo === 'PAGO_PROVEEDOR').caja_tipo = 'PAGO_PROVEEDOR';
+        TIPOS_CAJA = [{ codigo: 'PAGO_PROVEEDOR', sin_comprobante_autoriza: true }];
+        try {
+            await abrir();
+            await elegirMotivo('Pago a proveedor');
+            fireEvent.change(screen.getByLabelText('Proveedor'), { target: { value: 'Droguería X' } });
+            await escribirMonto('120.50');
+            expect(screen.getAllByText(/lleva la foto del comprobante/i).length).toBeGreaterThan(0);
+            fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
+            await act(async () => {});
+            expect(registrarSalida).not.toHaveBeenCalled();
+        } finally {
+            TIPOS.splice(0, TIPOS.length, ...antes);
+            TIPOS_CAJA = [];
+        }
     });
 
     // «POS Promerica» NO se relajó: es la única que pasa por el POS. Lo que

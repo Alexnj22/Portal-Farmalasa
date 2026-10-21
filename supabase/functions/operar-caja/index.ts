@@ -772,6 +772,25 @@ Deno.serve(async (req) => {
 
       const anular = meta.que === "ANULAR";
 
+      /* ── Un día cerrado no se corrige (auditoría 2026-10-21) ──────────────
+       *
+       * Anular o cambiar el monto de un movimiento en EFECTIVO de otra apertura
+       * borraba o editaba en la caja un movimiento cuyo día ya tenía cortes
+       * firmados —o su Z—: el esperado de esos cortes cambiaba hacia atrás y la
+       * diferencia sellada dejaba de cuadrar con lo que la caja dice. Sólo el
+       * paso a EFECTIVO comparaba la apertura (más abajo); ANULAR y MONTO no.
+       *
+       * Lo que no es efectivo nunca fue a la caja, así que corregirlo no toca
+       * ningún corte: ése sí se puede arreglar al día siguiente. */
+      if (!soloPortal && !cajaSimulada && (anular || meta.que === "MONTO")
+          && String(mov.erp_apertura_id ?? "") !== String(estado.aper ?? "")) {
+        return json({
+          ok: false,
+          error: "Ese movimiento es de un día que ya se cerró: no se puede anular ni cambiar. "
+               + "Recházala; la diferencia se resuelve en el corte de ese día.",
+        }, 409);
+      }
+
       /* Si quedaba una autorización viva sobre este ingreso, deja de tener
        * objeto: anulado, o pasado a efectivo, ya no hay comprobante que
        * esperar. Se CANCELA —no se rechaza: nadie dijo que no— y el ingreso
@@ -1531,6 +1550,49 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* ── LO QUE DICE EL CATÁLOGO, dicho por la base (auditoría 2026-10-21) ──
+       *
+       * Hasta hoy esta función no leía `caja_tipos_movimiento`: boleta, foto
+       * obligatoria, quién recibe, tipo apagado y sentido los cuidaba sólo la
+       * pantalla — y había dos pantallas con dos catálogos. Resultado medido:
+       * 2 POS Promerica sin foto, 12 movimientos de tipos apagados, 5 sin tipo,
+       * y «Otro» usado para anticipos, Mapfre, remesas y correcciones.
+       *
+       * El juez es `caja_movimiento_regla`, UNO, y lo llama también
+       * `registrar_salida_de_bolsa`: escrito dos veces, el día que uno cambie la
+       * sala vería un aviso que el otro no respeta.
+       *
+       * Va DESPUÉS de la clave: un reintento del mismo envío contesta con lo
+       * que ya escribió aunque la regla haya cambiado en el medio. El abono
+       * (`accion: abono`) es el circuito viejo con su propio contrato. */
+      let pideAutorizacion = false;
+      if (!esAbono) {
+        const { data: regla, error: errRegla } = await supabase.rpc("caja_movimiento_regla", {
+          p_sentido: esEntrada ? "ENTRADA" : "SALIDA",
+          p_tipo: body.tipo ? String(body.tipo) : null,
+          p_concepto: String(body.detalle ?? "").trim() || concepto,
+          p_tiene_foto: !!String(body.foto_url ?? "").trim(),
+          p_forma_pago: formaPago,
+          p_tiene_receptor: !!(body.recibido_por || body.operacion_bolsa || String(body.recibe ?? "").trim()),
+        });
+        // Sin juez no se escribe: dejar pasar un movimiento sin poder mirarlo
+        // es exactamente el hueco que esto cierra.
+        if (errRegla) {
+          console.error(`[operar-caja] ${accion} regla: ${errRegla.message}`);
+          return json({ ok: false, error: "No se pudo revisar el movimiento. Vuelve a intentarlo." }, 503);
+        }
+        if (regla?.error) return json({ ok: false, error: String(regla.error) }, 400);
+        pideAutorizacion = regla?.autoriza === true;
+      }
+      /* Sin comprobante en un tipo que lo pide, el efectivo igual se mueve —la
+       * sala no puede quedarse esperando— y queda pendiente de autorización
+       * (pedido del usuario, 2026-10-21). Lo que no es efectivo ya tenía su
+       * propio pedido arriba (`sinComprobante`) con la misma exigencia. */
+      if (pideAutorizacion && !noEfectivo && motivoSinComprobante.length < 5) {
+        return json({ ok: false, error: "Sin foto del comprobante, explica por qué: queda pendiente de autorización." }, 400);
+      }
+      if (Number(dosDecimales(monto)) <= 0) return json({ ok: false, error: "Falta el monto." }, 400);
+
       /* ── Esa boleta ya se anotó en esta sala ─────────────────────────────
        *
        * El número de una boleta de POS es el ID de la transacción: el aparato
@@ -2265,6 +2327,20 @@ Deno.serve(async (req) => {
         if (errConf) {
           console.error(`[operar-caja] aplicacion fila=${fila.id}: confirmar: ${errConf.message}`);
           avisoAplicaciones = "El cobro entró, pero las aplicaciones no quedaron confirmadas. Avisa a Sistemas.";
+        }
+      }
+      // El efectivo ya se movió; sin comprobante, queda a la espera de quien
+      // autoriza. La MISMA función que usa lo que no es efectivo.
+      if (pideAutorizacion) {
+        const { error: errAut } = await supabase.rpc("caja_ingreso_pedir_autorizacion", {
+          p_movimiento: fila.id, p_pide: quien.id, p_nota: motivoSinComprobante,
+        });
+        if (errAut) {
+          console.error(`[operar-caja] autorizacion fila=${fila.id}: ${errAut.message}`);
+          avisoAplicaciones = "El movimiento quedó anotado, pero no se pudo pedir la autorización. Avisa a Supervisión.";
+        } else {
+          fila.autorizacion = "PENDIENTE";
+          avisoAplicaciones ??= "Sin comprobante: quedó pendiente de autorización.";
         }
       }
 

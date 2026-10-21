@@ -685,7 +685,7 @@ export const AREAS = [
                  'caja_motivos_cierre_con_diferencia', 'caja_cierres_con_diferencia',
                  'cortes_caja_vistazos',
                  'caja_vales_portal', 'caja_aperturas_del_portal', 'caja_movimientos_portal',
-                 'caja_tipos_movimiento', 'abonos_de_cliente', 'creditos_abonos_portal',
+                 'caja_tipos_movimiento', 'caja_conceptos_de_otro_lado', 'abonos_de_cliente', 'creditos_abonos_portal',
                  'creditos_de_clientes', 'creditos_sync', 'creditos_lectura_sala', 'pos_proveedores',
                  'creditos_cobros_por_aprobar',
                  'bolsas', 'bancos', 'bolsas_conteos', 'bolsas_entidades', 'bolsas_entregas',

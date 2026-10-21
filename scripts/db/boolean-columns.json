@@ -107,7 +107,11 @@
       "identifica_receptor",
       "lleva_comprobante",
       "pide_boleta",
-      "pide_persona"
+      "pide_persona",
+      "sin_comprobante_autoriza"
+    ],
+    "caja_conceptos_de_otro_lado": [
+      "activo"
     ],
     "compra_renglon_pendiente": [
       "ignorado"

@@ -75,7 +75,7 @@ export const REQUEST_TYPES = {
     ABONO_CREDITO_CHANGE:      { label: 'Corrección de un abono', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     CAJA_MOVIMIENTO_CHANGE:    { label: 'Corrección de caja',     color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     // Un ingreso con tarjeta o transferencia que llegó sin foto del comprobante.
-    CAJA_INGRESO_AUTORIZACION: { label: 'Ingreso sin comprobante', color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
+    CAJA_INGRESO_AUTORIZACION: { label: 'Movimiento sin comprobante', color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     // Vive en otra tabla (`minmax_change_requests`) pero se muestra en el mismo
     // centro: para quien mira la sala es una solicitud más. Ver `adaptarMinMax`.
     MINMAX_CHANGE_REQUEST:     { label: 'Ajuste de Min/Max',      color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },

@@ -1071,14 +1071,17 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
      * de qué y por qué no hay papel— y, si es un reenvío, por qué se rechazó
      * antes: sin eso quien decide no sabe qué prueba nueva tiene que buscar. */
     if (t === 'CAJA_INGRESO_AUTORIZACION') {
-        const forma = meta.forma_pago === 'TRANSFERENCIA' ? 'Por transferencia' : 'Con tarjeta';
+        // Desde 2026-10-21 también efectivo: «Otro», el gasto y el pago a
+        // proveedor sin foto salen o entran y quedan esperando esto.
+        const forma = meta.forma_pago === 'TRANSFERENCIA' ? 'Por transferencia'
+            : meta.forma_pago === 'TARJETA' ? 'Con tarjeta' : 'En efectivo';
         return (
             <div className="space-y-2">
                 <Caja tono="hover">
                     <div className="flex items-start gap-2">
                         <Banknote size={14} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2} />
                         <div className="flex-1 min-w-0">
-                            <Rotulo>Ingreso sin comprobante</Rotulo>
+                            <Rotulo>{meta.sentido === 'SALIDA' ? 'Salida sin comprobante' : 'Ingreso sin comprobante'}</Rotulo>
                             <p className="text-body-sm font-bold text-content-2 leading-tight">
                                 {meta.detalle || meta.concepto || 'Sin concepto'}
                             </p>

@@ -32,7 +32,7 @@ import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, iniciarTurno,
     estadoDeCajaEnElOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
-    anotarAbono, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
+    anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
     subirComprobante, boletaYaEnCaja, fetchFacturasMapfre,
@@ -68,6 +68,7 @@ import EsperaDeLaCaja from '../components/caja/EsperaDeLaCaja';
 import FormaDePago from '../components/caja/FormaDePago';
 import VouchersDelDia from '../components/caja/VouchersDelDia';
 import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO, nombreDelComprobante } from '@nucleo/utils/formaDePago';
+import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
@@ -803,6 +804,8 @@ export default function MiCajaView({ comoPestana = false }) {
             // que va al PAPEL, sin el rótulo del tipo adelante. Dos textos
             // parecidos con dos trabajos distintos.
             detalle: datos.conceptoCompleto,
+            // Sin comprobante: sale y queda pendiente de autorización.
+            motivoSinComprobante: datos.motivoSinComprobante || '',
         }), 'Salida anotada.');
         // `correr` ya mostró el motivo en un aviso y dejó el diálogo abierto:
         // se devuelve sin texto para no decir lo mismo dos veces.
@@ -2547,6 +2550,15 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     const [intentosSinComprobar, setIntentosSinComprobar] = useState(0);
     const [unaSolaVez, setUnaSolaVez] = useState(false);
     const [cotejado, setCotejado] = useState(false);
+    /* Lo que no va en «Otro» y por qué no hay comprobante (2026-10-21). La
+     * lista es la MISMA con la que frena el servidor; acá sólo avisa antes. */
+    const [conceptos, setConceptos] = useState([]);
+    const [motivoSinFoto, setMotivoSinFoto] = useState('');
+    useEffect(() => {
+        let vivo = true;
+        fetchConceptosDeOtroLado().then((l) => { if (vivo) setConceptos(l); });
+        return () => { vivo = false; };
+    }, []);
 
     const delSentido = useMemo(
         () => tipos.filter((t) => t.sentido === (entra ? 'ENTRADA' : 'SALIDA')),
@@ -2567,9 +2579,17 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     const noEfectivo = conFormaDePago && estadoPago.noEfectivo;
     // Con identidad, el nombre NO se teclea: sale de quien quedó reconocido.
     const identifica = !!tipo?.identifica_receptor;
+    const esOtro = !!tipo && TIPOS_OTRO.includes(tipo.codigo);
+    const avisoOtro = esOtro ? vaEnOtroLado(conceptos, entra ? 'ENTRADA' : 'SALIDA', concepto) : null;
+    // En efectivo y sin foto, un tipo que la pide como prueba se anota igual y
+    // queda pendiente de autorización. Lo que no es efectivo ya tiene lo suyo.
+    const efectivoSinComprobante = !!tipo?.sin_comprobante_autoriza && !noEfectivo && !foto;
     const valido = !!tipo
         && Number(monto) > 0
         && (!exigeDetalle || concepto.trim().length > 2)
+        && (!esOtro || detalleSuficiente(concepto))
+        && !avisoOtro
+        && (!efectivoSinComprobante || motivoSinFoto.trim().length >= 5)
         && (noEfectivo || !tipo.pide_boleta || boleta.trim().length > 0)
         && (noEfectivo || tipo.foto !== 'OBLIGATORIA' || !!foto)
         && (!tipo.pide_persona || identifica || recibe.trim().length > 1)
@@ -2676,6 +2696,14 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         }
         /* Sin la foto del comprobante el servidor pediría una autorización
          * que nadie pidió: la sala SÍ tenía el papel. Se frena y se dice. */
+        /* Y en efectivo igual (auditoría 2026-10-21): con la foto OBLIGATORIA
+         * de POS Promerica, una subida fallida mandaba el ingreso sin foto y el
+         * servidor lo aceptaba — así quedaron la 2746 y la 4700. */
+        if (fotoQueVa && !fotoUrl) {
+            setAviso('No se pudo subir la foto. Revisa la conexión y vuelve a intentarlo.');
+            enviandoRef.current = false; setEnviando(false);
+            return;
+        }
         if (noEfectivo && pago.foto && !fotoUrl) {
             setAviso('No se pudo subir la foto del comprobante. Revisa la conexión y vuelve a intentarlo.');
             enviandoRef.current = false; setEnviando(false);
@@ -2728,6 +2756,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             // Cómo se pagó. Con tarjeta o transferencia pisa la boleta y la
             // lectura: el respaldo es el comprobante del pago.
             ...(conFormaDePago ? datosDeFormaDePago(pago, fotoUrl) : {}),
+            ...(efectivoSinComprobante ? { motivoSinComprobante: motivoSinFoto.trim() } : {}),
         }, tipo, identifica ? persona : null))
             /* Se suelta PASE LO QUE PASE. Si sólo se soltara al salir bien, un
              * fallo de red dejaría el botón muerto con el diálogo todavía
@@ -2874,6 +2903,20 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                         value={concepto} maxLength={50} readOnly={cerrado('concepto')}
                         onChange={(e) => setConcepto(e.target.value)}
                         placeholder={PISTA_DE_DETALLE[tipo.codigo] || (entra ? 'de qué se trata' : 'en qué se gastó')} />
+                    {avisoOtro && <Notice variant="danger" compact>{avisoOtro}</Notice>}
+                    {esOtro && !avisoOtro && concepto.trim() && !detalleSuficiente(concepto) && (
+                        <Notice variant="info" compact>En «Otro» escribe de qué fue, con detalle.</Notice>
+                    )}
+                    {efectivoSinComprobante && (
+                        <>
+                            <Notice variant="warning" compact>
+                                Sin foto del comprobante, este movimiento queda pendiente de autorización.
+                            </Notice>
+                            <PortalInput label="Por qué no hay comprobante" value={motivoSinFoto} maxLength={200}
+                                onChange={(e) => setMotivoSinFoto(e.target.value)}
+                                placeholder="Ej.: el cliente no trajo recibo" />
+                        </>
+                    )}
                     {/* Con identidad no hay campo: el nombre sale de quien
                         quedó reconocido, y teclearlo sería contestar dos veces
                         la misma pregunta —la mitad de ellas mal—. Se pide en el

@@ -142,6 +142,25 @@ export function EstadoEnTexto({ conversacion: c, atiende, ahora }) {
   );
 }
 
+/**
+ * El estado como chip, en la fila de la bandeja —«Nuevo», «En atención · Ana»,
+ * «Resuelta»— y, mientras el cliente espera, cuánto lleva. Lo importa
+ * `app/chat-clientes.js`: sin este export la fila pinta `undefined` y la app
+ * se cierra al primer renglón (pasó con «Resueltas», 2026-10-21).
+ */
+export function ChipsDeEstado({ conversacion: c, atiende, ahora }) {
+  const clave = estadoDeConversacion(c);
+  const estado = ESTADOS[clave];
+  const quien = clave === 'atencion' && atiende ? shortEmployeeName(atiende) : '';
+  const espera = esperaDe(c, ahora);
+  return (
+    <>
+      <Pildora texto={`${estado.label}${quien ? ` · ${quien}` : ''}`} color={colorDe(estado.variant)} />
+      {espera ? <Pildora texto={`⏱ ${espera.label}`} color={colorDe(espera.tono)} /> : null}
+    </>
+  );
+}
+
 /** «Team», «Mayoreo <rango>» o «Cliente», y su nivel del programa de puntos. */
 export function EtiquetasDeCliente({ c }) {
   const tipo = tipoDeCliente(c);

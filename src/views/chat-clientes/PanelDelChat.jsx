@@ -13,7 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import Conversacion from './Conversacion';
 import FilaDeConversacion from './FilaDeConversacion';
-import { FILTROS, estadoDeConversacion } from './estados';
+import { FILTROS, estadoDeConversacion, estadoServidor } from './estados';
 import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
 import { tieneBorrador } from './borradores';
 import { ordenarConPreferentes } from '@nucleo/utils/chatClientes';
@@ -32,10 +32,10 @@ import { ordenarConPreferentes } from '@nucleo/utils/chatClientes';
  * (`/chat-clientes`) los mismos chips sí viven en la URL.
  */
 
-const CHIPS = ['abierta', 'nuevo', 'atencion', 'esperando'];
+const CHIPS = ['abierta', 'nuevo', 'atencion', 'esperando', 'resuelta'];
 // Rótulos cortos para el riel del panel (420px): con los de la vista
 // («Esperando al cliente») el riel se partía en dos renglones.
-const CORTO = { abierta: 'Todas', nuevo: 'Nuevas', atencion: 'Atención', esperando: 'Esperando' };
+const CORTO = { abierta: 'Todas', nuevo: 'Nuevas', atencion: 'Atención', esperando: 'Esperando', resuelta: 'Resueltas' };
 
 // La conversación que estaba abierta al cerrar el panel. Si quedó algo escrito
 // en ella, el panel vuelve a abrirse ahí: el borrador se ve y se sigue.
@@ -53,13 +53,16 @@ export default function PanelDelChat({ abierto, onClose }) {
     const hayDialogo = useHayDialogo();
 
     const { equipo, asegurarEquipo } = useEquipoDelChat();
-    const { conversaciones, error, cargar } = useBandejaDelChat('abierta', { asegurarEquipo, todas: true });
+    // «Resueltas» se le pide a la base aparte (las últimas 40); las abiertas,
+    // enteras, porque sus chips son filtros derivados de acá.
+    const { conversaciones, error, cargar } = useBandejaDelChat(estadoServidor(filtro), { asegurarEquipo, todas: filtro !== 'resuelta' });
 
     const cuentas = useMemo(() => {
         const n = { nuevo: 0, atencion: 0, esperando: 0 };
+        if (filtro === 'resuelta') return n;
         (conversaciones ?? []).forEach((c) => { const e = estadoDeConversacion(c); if (e in n) n[e] += 1; });
         return n;
-    }, [conversaciones]);
+    }, [conversaciones, filtro]);
     const visibles = useMemo(() => {
         const entran = new Set(FILTROS[filtro].estados);
         // Las «Urgente» arriba y las preferentes después, igual que en la vista.

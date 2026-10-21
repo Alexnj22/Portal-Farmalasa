@@ -82,9 +82,16 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
     // `Map<id, presencia>` — sale de una lectura aparte y de los avisos de realtime.
     const [presencia, setPresencia] = useState(() => new Map());
     const filasRef = useRef(null);
+    // De qué estado son las filas en pantalla, y cuál se pide ahora. Al cambiar
+    // de «Abiertas» a «Resueltas», una lectura vieja que llega tarde pisaba la
+    // lista con las abiertas —y el filtro las escondía: «Resueltas» vacía hasta
+    // el próximo refresco— y además las guardaba como la última de «resuelta».
+    const filasDe = useRef(estado);
+    const pedido = useRef(estado);
+    pedido.current = estado;
     useEffect(() => {
         filasRef.current = conversaciones;
-        if (conversaciones) ULTIMA.set(estado, conversaciones);
+        if (conversaciones && filasDe.current === estado) ULTIMA.set(estado, conversaciones);
     }, [conversaciones, estado]);
 
     const leerPresencia = useCallback(async (ids) => {
@@ -105,6 +112,8 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
     const cargar = useCallback(async () => {
         try {
             const nuevas = await fetchConversaciones(estado);
+            if (pedido.current !== estado) return;
+            filasDe.current = estado;
             setConversaciones((prev) => {
                 if (!prev || prev.length <= POR_PAGINA || !nuevas.length) return nuevas;
                 const corte = nuevas[nuevas.length - 1].ultimo_mensaje_at;
@@ -117,11 +126,13 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
             asegurarEquipo?.(nuevas.map((c) => c.asignada_a).filter(Boolean));
             leerPresencia(nuevas.map((c) => c.id));
         } catch (err) {
+            if (pedido.current !== estado) return;
             setError(mensajeAmigable(err, 'No se pudieron cargar las conversaciones.'));
         }
     }, [estado, asegurarEquipo, leerPresencia]);
 
     useEffect(() => {
+        filasDe.current = estado;
         setConversaciones(ULTIMA.get(estado) ?? null);
         setHayMas(false);
         cargar();
@@ -147,6 +158,7 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
         setCargandoMas(true);
         try {
             const mas = await fetchConversaciones(estado, ultima.ultimo_mensaje_at);
+            if (pedido.current !== estado) return;
             setConversaciones((prev) => {
                 const ids = new Set((prev ?? []).map((c) => c.id));
                 return [...(prev ?? []), ...mas.filter((c) => !ids.has(c.id))];

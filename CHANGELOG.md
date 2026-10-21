@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.2 — Chat con clientes: «Resueltas» vuelve a abrir en la app y aparece en el panel del portal
+
+- **App: abrir «Resueltas» cerraba la app.** v2.1329.0 cambió `ChipsDeEstado`
+  por `EstadoEnTexto` en `componentes/chat/Piezas.js`, pero la bandeja
+  (`app/chat-clientes.js`) lo seguía importando: la fila pintaba `undefined` y
+  React Native se caía al primer renglón. Hoy no hay ninguna abierta, así que
+  sólo se veía en «Resueltas». Vuelve el export.
+- **Portal: el panel flotante del chat no tenía «Resueltas»** y pedía siempre
+  las abiertas. Ahora tiene la pestaña y le pide las resueltas a la base.
+- **`useBandejaDelChat`: una lectura vieja ya no pisa la pestaña nueva.** Al
+  pasar de abiertas a resueltas, un refresco en vuelo que llegaba tarde dejaba
+  la lista con las abiertas (escondidas por el filtro → «Resueltas» vacía hasta
+  el próximo refresco) y las guardaba como la última de «resuelta».
+
 ## v2.1335.1 — Entorno de pruebas: la clave del kiosco nace sola
 
 La bóveda del entorno de pruebas nace vacía, y sin `kiosk_auth_pepper` la

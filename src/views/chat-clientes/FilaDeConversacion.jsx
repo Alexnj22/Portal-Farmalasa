@@ -13,6 +13,7 @@ import { ChipsDeEtiquetas } from './EtiquetasDelCliente';
 import { Estrellas } from './Calificacion';
 import { etiquetasDe } from '@nucleo/utils/chatClientes';
 import ChipPreferente from './Preferente';
+import { precargarHilo } from './hiloEnMemoria';
 
 // Una conversación en la bandeja: quién escribió, qué tipo de cliente es, su
 // nivel, en qué estado está (y cuánto lleva esperando), cuántos mensajes esperan
@@ -50,7 +51,9 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
         </span>
     );
     return (
+        // Al pasar el ratón (o llegar con Tab) el hilo se precarga: para el clic ya está.
         <ListRow surface="card" density="md" onClick={onAbrir} selected={activa}
+            onPointerEnter={() => precargarHilo(c.id)} onFocus={() => precargarHilo(c.id)}
             tone={urgente && !activa ? 'danger' : null}
             className="min-h-[var(--tap-min)] !items-start"
             leading={<ClienteAvatar conversacion={c} />}

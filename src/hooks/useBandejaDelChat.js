@@ -12,6 +12,12 @@ import {
 
 export const POR_PAGINA = 40;
 
+// La última bandeja leída, por estado, en MEMORIA (2026-10-21). El panel de la
+// burbuja se monta al abrirlo, así que cada apertura empezaba vacía y esperaba
+// la red; ahora pinta la última lista en el primer cuadro y la renueva detrás,
+// como el hilo de la app de clientes (`apps/clientes/lib/chatHilo.js`).
+const ULTIMA = new Map();
+
 // Lo que la bandeja muestra de una conversación. Si un aviso de realtime trae
 // estos campos iguales a los que ya hay en pantalla, lo que cambió es sólo la
 // presencia («escribiendo», «visto») y el propio aviso la trae: no se relee
@@ -67,14 +73,17 @@ export function useEquipoDelChat() {
  * ANTES del filtro, CLAUDE.md). Tope de seguridad: 10 páginas.
  */
 export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}) {
-    const [conversaciones, setConversaciones] = useState(null);
+    const [conversaciones, setConversaciones] = useState(() => ULTIMA.get(estado) ?? null);
     const [hayMas, setHayMas] = useState(false);
     const [cargandoMas, setCargandoMas] = useState(false);
     const [error, setError] = useState(null);
     // `Map<id, presencia>` — sale de una lectura aparte y de los avisos de realtime.
     const [presencia, setPresencia] = useState(() => new Map());
     const filasRef = useRef(null);
-    useEffect(() => { filasRef.current = conversaciones; }, [conversaciones]);
+    useEffect(() => {
+        filasRef.current = conversaciones;
+        if (conversaciones) ULTIMA.set(estado, conversaciones);
+    }, [conversaciones, estado]);
 
     const leerPresencia = useCallback(async (ids) => {
         try {
@@ -111,10 +120,10 @@ export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}
     }, [estado, asegurarEquipo, leerPresencia]);
 
     useEffect(() => {
-        setConversaciones(null);
+        setConversaciones(ULTIMA.get(estado) ?? null);
         setHayMas(false);
         cargar();
-    }, [cargar]);
+    }, [cargar, estado]);
     // Un aviso de sólo presencia se aplica tal cual y no relee la bandeja.
     const ignorar = useCallback((payload) => {
         const nueva = payload?.new;

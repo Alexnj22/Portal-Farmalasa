@@ -36,7 +36,8 @@ import { fetchSinLeerDelChat } from '@nucleo/data/chatClientes';
  * momento (sin sonido).
  */
 
-const PanelDelChat = lazy(() => import('./PanelDelChat'));
+const cargarPanel = () => import('./PanelDelChat');
+const PanelDelChat = lazy(cargarPanel);
 
 export default function BurbujaChat({ oculta = false }) {
     const { pathname } = useLocation();
@@ -99,7 +100,9 @@ export default function BurbujaChat({ oculta = false }) {
     return (
         <>
             {!oculta && !abierto && (
-                <button type="button" onClick={() => setAbierto(true)}
+                // El código del panel se baja al acercar el ratón: el primer clic
+                // ya no espera la descarga con la pantalla quieta.
+                <button type="button" onClick={() => setAbierto(true)} onPointerEnter={cargarPanel} onFocus={cargarPanel}
                     aria-label={etiqueta} title={etiqueta} aria-haspopup="dialog" aria-expanded={abierto}
                     className={`fixed z-tabs right-[max(16px,var(--sa-right))]
                         bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom)))]

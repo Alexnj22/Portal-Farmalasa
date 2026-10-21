@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1323.0 — Chat con clientes: fluido como la app
+
+Reporte: «en los puntos se siente fluido, moderno, y en el portal anticuado, lento, torpe». Se portaron al portal los arreglos que ya tenía la app de clientes (`apps/clientes/lib/chatHilo.js`). Medido en el entorno de pruebas con Playwright:
+
+| | antes | ahora |
+|---|---:|---:|
+| abrir una conversación ya vista | ~850 ms (esqueleto + red) | **~100 ms** |
+| abrir una precargada (ratón encima) | ~850 ms | **~35 ms** |
+| ver el propio mensaje al enviar | lo que tarde el servidor | **~15 ms** |
+
+- **Hilo en memoria** (`hiloEnMemoria.js`): lo ya visto se pinta en el primer cuadro y la lectura fresca lo pone al día detrás. Pasar el ratón por una fila de la bandeja lo precarga (sólo lee: no toma la conversación ni la marca leída).
+- **Envío optimista**: el globo aparece al tocar Enviar con un reloj, se vuelve ✓ cuando el servidor lo confirma y lo reemplaza el real sin duplicarse. Si falla queda «No se envió · Reintentar». El cuadro se vacía al instante.
+- **Firmas de fotos reutilizadas**: cada relectura de la bandeja (cada 15 s) volvía a firmar todas las fotos con URL nueva, y el navegador las volvía a bajar: la lista parpadeaba. Ahora una firma se reutiliza mientras le queden más de 10 minutos.
+- **Bandeja en memoria**: el panel de la burbuja ya no abre vacío; además su código se baja al acercar el ratón al botón.
+- **Globos memorizados** (`memo`): ya no se redibujan todos en cada relectura.
+- **Ficha lateral desde 1536 px** (antes 1280): a 1280 dejaba el hilo en ~200 px.
+- **`ViewTabBar` (todas las vistas con pestañas)**: la fila invisible que mide si caben las pestañas estaba anclada a la izquierda y se salía por la derecha: el contenedor de la vista ganaba ~470 px de desplazamiento horizontal y un clic corría la pantalla de lado. Ahora va anclada a la derecha con `w-max` — mide lo mismo y no se puede desplazar.
+
 ## v2.1322.2 — Permisos: la pantalla ya no se cae al elegir un cargo
 
 Reporte: «si entro a permisos y selecciono un rol, me da error y no puedo

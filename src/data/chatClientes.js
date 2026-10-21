@@ -29,16 +29,39 @@ const sinError = ({ data, error }) => {
     return data;
 };
 
-/** Firma varias rutas del bucket en una sola llamada. Devuelve `Map<ruta, url>`. */
+/**
+ * Firma varias rutas del bucket en una sola llamada. Devuelve `Map<ruta, url>`.
+ *
+ * Las firmas se GUARDAN y se reutilizan mientras les quede más de 10 minutos
+ * (2026-10-21). Antes cada relectura de la bandeja —cada 15 s y en cada aviso—
+ * volvía a firmar todas las fotos: URL nueva, así que el navegador volvía a
+ * bajar cada foto de perfil y la lista parpadeaba. Era la mitad de por qué el
+ * chat del portal se sentía torpe al lado del de la app.
+ */
+const FIRMAS = new Map();   // ruta → { url, vence }
+const MARGEN_FIRMA_MS = 10 * 60_000;
 export async function firmarRutas(rutas) {
     const unicas = [...new Set((rutas || []).filter(Boolean))];
-    if (!unicas.length) return new Map();
-    const { data, error } = await supabase.storage.from(BUCKET_APP_CLIENTES).createSignedUrls(unicas, FIRMA_SEGUNDOS);
+    const ahora = Date.now();
+    const firmadas = new Map();
+    const faltan = [];
+    unicas.forEach((r) => {
+        const f = FIRMAS.get(r);
+        if (f && f.vence - ahora > MARGEN_FIRMA_MS) firmadas.set(r, f.url);
+        else faltan.push(r);
+    });
+    if (!faltan.length) return firmadas;
+    const { data, error } = await supabase.storage.from(BUCKET_APP_CLIENTES).createSignedUrls(faltan, FIRMA_SEGUNDOS);
     if (error) {
         console.error('chatClientes.js: no se pudieron firmar los archivos', error);
-        return new Map();
+        return firmadas;
     }
-    return new Map((data ?? []).filter((f) => f.signedUrl).map((f) => [f.path, f.signedUrl]));
+    const vence = ahora + FIRMA_SEGUNDOS * 1000;
+    (data ?? []).filter((f) => f.signedUrl).forEach((f) => {
+        FIRMAS.set(f.path, { url: f.signedUrl, vence });
+        firmadas.set(f.path, f.signedUrl);
+    });
+    return firmadas;
 }
 
 /** Una sola ruta firmada (la receta de una reserva, la foto ampliada). */

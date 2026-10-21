@@ -318,7 +318,13 @@ export default function ViewTabBar({
             ? 'hidden'
             : cabeLaFila
               ? 'hidden lg:flex'
-              : 'flex absolute left-0 top-0 invisible pointer-events-none'}`}>
+              // Anclada a la DERECHA y con `w-max` (2026-10-21): con `left-0`
+              // la fila invisible se salía por la derecha y el contenedor de la
+              // vista ganaba ~470px de desplazamiento horizontal; un clic que
+              // enfocaba algo corría la pantalla de lado (medido en Chat con
+              // clientes a 1280px). Lo que sobra hacia la izquierda no se puede
+              // desplazar, y `fila.scrollWidth` mide lo mismo.
+              : 'flex absolute right-0 top-0 w-max invisible pointer-events-none'}`}>
           {tabs.map(tab => {
             const TabIcon = tab.icon || tab.Icon;
             const isActive = tab.key === activeTab;

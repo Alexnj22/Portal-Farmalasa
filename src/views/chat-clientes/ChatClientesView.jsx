@@ -198,7 +198,7 @@ export default function ChatClientesView() {
             <ViewTabBar tabs={tabs} activeTab={filtro} onTabChange={(t) => { setFiltro(t); if (estadoServidor(t) !== estadoServidor(filtro)) abrir(null); }}
                 searchValue={busqueda} onSearchChange={setBusqueda} placeholder="Buscar por nombre, teléfono o mensaje…" />
         )}>
-            <div className="p-4 md:p-6 lg:flex-1 lg:min-h-0 grid gap-4 lg:grid-cols-[minmax(300px,360px)_1fr]">
+            <div className="p-4 md:p-6 lg:flex-1 lg:min-h-0 grid gap-4 lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
                 <section aria-label="Conversaciones" className="min-h-0 lg:overflow-y-auto space-y-1.5 pr-0.5">
                     {error && <Notice variant="danger">{error}</Notice>}
                     {!conversaciones && !error && <FilasCargando />}
@@ -228,7 +228,7 @@ export default function ChatClientesView() {
                     )}
                 </section>
                 {!enTelefono && (
-                    <section aria-label="Conversación" className="min-h-0 lg:min-h-[420px] flex flex-col">
+                    <section aria-label="Conversación" className="min-w-0 min-h-0 lg:min-h-[420px] flex flex-col">
                         {abiertaEnEscritorio ? hilo(abiertaEnEscritorio) : (
                             <div data-surface="card" className="rounded-card flex-1 flex items-center justify-center p-6">
                                 <EmptyState icon={MessageCircle} compact title="Elige una conversación"

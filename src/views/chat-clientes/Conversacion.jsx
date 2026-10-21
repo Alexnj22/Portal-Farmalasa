@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowDown, Check, CheckCircle2, FileText, ImageOff, Package, Phone, Sparkles, Tag, Tags, UserRound } from 'lucide-react';
+import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AlertCircle, ArrowDown, Check, CheckCircle2, Clock, FileText, ImageOff, Package, Phone, Sparkles, Tag, Tags, UserRound } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -21,8 +21,9 @@ import { diaSV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     MENSAJES_POR_PAGINA, fetchMensajes, fetchMensajesCambiados, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje,
-    resolverConversacion, tomarConversacion,
+    resolverConversacion, responderConversacion, subirFotoDelEquipo, tomarConversacion,
 } from '@nucleo/data/chatClientes';
+import { guardarHilo, leerHilo } from './hiloEnMemoria';
 import { BarraDeMensaje, CitaDeMensaje, HojaDeMensaje, ReaccionesDeMensaje } from './AccionesDeMensaje';
 import ChipsDeEstado from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
@@ -47,7 +48,7 @@ import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 // deja su contador de «sin leer» en cero.
 //
 // `conPanelCliente` suma el panel «Cliente» (compras, puntos, reservas…): al
-// costado en una pantalla ancha (≥1280px y no `comoPanel`), y si no, como una
+// costado en una pantalla ancha (≥1536px y no `comoPanel`), y si no, como una
 // segunda pestaña del hilo — en el teléfono y en el panel de la burbuja.
 //
 // Presencia (2026-10-12): abajo del hilo, «<cliente> está escribiendo…» y
@@ -71,7 +72,10 @@ import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 // hora va al final de cada una) y, en los del equipo, «Enviado» o «Visto»:
 // `sin_leer_cliente` dice cuántos de los últimos todavía no leyó.
 
-const ANCHO_LATERAL = '(min-width: 1280px)';
+// La ficha va al costado sólo desde 1536px: a 1280 la bandeja (360) y la ficha
+// (320) dejaban el hilo en ~200px, con globos de tres palabras por renglón
+// (medido 2026-10-21). Más angosto, se abre con el botón de la barra.
+const ANCHO_LATERAL = '(min-width: 1536px)';
 
 export default function Conversacion({ conversacion: c, puedeResponder, equipo, asegurarEquipo, comoPanel, conPanelCliente = false, onCambio, onCerrar }) {
     const ancha = useMediaQuery(ANCHO_LATERAL);
@@ -80,8 +84,11 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     const verCliente = conPanelCliente && !lateral && pestana === 'cliente';
     const ahora = useNowTick(30_000);
     const showToast = useToastStore((s) => s.showToast);
-    const [mensajes, setMensajes] = useState(null);
-    const [hayAnteriores, setHayAnteriores] = useState(false);
+    // Lo que ya había en memoria de esta conversación (ver `hiloEnMemoria`):
+    // se pinta en el primer cuadro y la lectura fresca lo pone al día detrás.
+    const [enMemoria] = useState(() => leerHilo(c.id));
+    const [mensajes, setMensajes] = useState(() => enMemoria?.mensajes ?? null);
+    const [hayAnteriores, setHayAnteriores] = useState(() => enMemoria?.hayAnteriores ?? false);
     const [cargandoAnteriores, setCargandoAnteriores] = useState(false);
     const [error, setError] = useState(null);
     const [foto, setFoto] = useState(null);
@@ -109,14 +116,14 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     // ── Reacciones: `Map<mensajeId, filas>` de los mensajes cargados ────────
     const equipoRef = useRef(equipo);
     useEffect(() => { equipoRef.current = equipo; }, [equipo]);
-    const [reacciones, setReacciones] = useState(() => new Map());
-    const reaccionIdsRef = useRef(new Set());
+    const [reacciones, setReacciones] = useState(() => enMemoria?.reacciones ?? new Map());
+    const [reaccionIds] = useState(() => new Set([...(enMemoria?.reacciones?.values() ?? [])].flat().map((r) => r.id)));
     const leerReacciones = useCallback(async (ids) => {
         const lista = (ids || []).filter((x) => x != null);
         if (!lista.length) return;
         try {
             const filas = await fetchReacciones(lista);
-            filas.forEach((f) => reaccionIdsRef.current.add(f.id));
+            filas.forEach((f) => reaccionIds.add(f.id));
             setReacciones((prev) => {
                 const nuevo = new Map(prev);
                 lista.forEach((mid) => nuevo.delete(Number(mid)));
@@ -127,16 +134,16 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         } catch (err) {
             console.error('Conversacion: no se pudieron leer las reacciones', err);
         }
-    }, [asegurarEquipo]);
-    const releerReacciones = useCallback(() => leerReacciones((mensajesRef.current ?? []).map((m) => m.id)), [leerReacciones]);
+    }, [asegurarEquipo, reaccionIds]);
+    const releerReacciones = useCallback(() => leerReacciones((mensajesRef.current ?? []).filter((m) => !m.temporal).map((m) => m.id)), [leerReacciones]);
     // El canal de reacciones es de TODAS las conversaciones: sólo cuenta lo que
     // toca a un mensaje de este hilo (o borra una reacción que está en pantalla;
     // el DELETE sólo trae el id).
     const ignorarReaccion = useCallback((payload) => {
-        if (payload?.eventType === 'DELETE') return !reaccionIdsRef.current.has(payload.old?.id);
+        if (payload?.eventType === 'DELETE') return !reaccionIds.has(payload.old?.id);
         const mid = payload?.new?.mensaje_id;
         return !(mensajesRef.current ?? []).some((m) => m.id === mid);
-    }, []);
+    }, [reaccionIds]);
     useRefrescoEnVivo(releerReacciones, { ms: 30_000, tabla: 'app_chat_reacciones', esperaMs: 250, ignorar: ignorarReaccion });
 
     // Primera página + tomar la conversación; al salir, soltarla.
@@ -153,7 +160,8 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                 } else {
                     alFondoRef.current = true;
                 }
-                setMensajes(filas);
+                // Lo que se esté enviando en este momento no se pierde.
+                setMensajes((prev) => [...filas, ...(prev ?? []).filter((m) => m.temporal)]);
                 setHayAnteriores(filas.length >= MENSAJES_POR_PAGINA);
                 asegurarEquipo(filas.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
                 leerReacciones(filas.map((m) => m.id));
@@ -167,13 +175,18 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         // eslint-disable-next-line react-hooks/exhaustive-deps -- se toma UNA vez por conversación
     }, [id, puedeResponder]);
 
+    // El hilo queda en memoria para la próxima vez (sin lo que se está enviando).
+    useEffect(() => {
+        if (mensajes) guardarHilo(c.id, { mensajes: mensajes.filter((m) => !m.temporal), hayAnteriores, reacciones });
+    }, [c.id, mensajes, hayAnteriores, reacciones]);
+
     // Sólo lo que llegó después del último mensaje que ya se ve.
     // Desde cuándo se buscan cambios (ediciones y borrados del cliente, 2026-10-20).
     const cambiosDesdeRef = useRef(new Date().toISOString());
     const traerNuevos = useCallback(async () => {
         const actuales = mensajesRef.current;
         if (!actuales) return;
-        const ultimo = actuales[actuales.length - 1]?.id ?? null;
+        const ultimo = actuales.filter((m) => !m.temporal).at(-1)?.id ?? null;
         try {
             const desde = cambiosDesdeRef.current;
             cambiosDesdeRef.current = new Date(Date.now() - 5000).toISOString();
@@ -187,10 +200,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             alFondoRef.current = !lista || lista.scrollHeight - lista.scrollTop - lista.clientHeight < 120;
             const ids = new Set(actuales.map((m) => m.id));
             const llegados = nuevos.filter((m) => !ids.has(m.id));
-            setMensajes((prev) => {
-                const ya = new Set((prev ?? []).map((m) => m.id));
-                return [...(prev ?? []), ...nuevos.filter((m) => !ya.has(m.id))];
-            });
+            setMensajes((prev) => fusionar(prev, nuevos));
             // Lo del cliente entra con realce; si quien lee está más arriba,
             // suma en el botón en vez de mover la pantalla.
             const delCliente = llegados.filter((m) => m.autor === 'cliente');
@@ -283,6 +293,38 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         setNuevosAbajo(0);
     };
 
+    // ── Enviar: el globo aparece AL TOCAR, no cuando contesta el servidor ──
+    // Como en la app de clientes: el mensaje entra al hilo como «temporal»
+    // (con un reloj en vez de ✓), y cuando el real llega por la lectura de lo
+    // nuevo lo reemplaza (`fusionar`). Si falla se queda con «No se envió» y se
+    // reintenta tocándolo — antes el texto se quedaba en el cuadro y nada se movía.
+    const enviarMensaje = useCallback(async (envio, previo = null) => {
+        const tmpId = previo?.id ?? `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const r = envio.respuestaA;
+        const temporal = {
+            id: tmpId, temporal: true, pendiente: true, envio,
+            autor: 'equipo', employee_id: yo, texto: String(envio.texto ?? '').trim() || null,
+            foto_ruta: envio.archivo ? 'local' : null,
+            foto_url: previo?.foto_url ?? (envio.archivo ? URL.createObjectURL(envio.archivo) : null),
+            adjunto: envio.adjunto ?? null, created_at: new Date().toISOString(),
+            cita: r ? { id: r.id, autor: r.autor, employee_id: r.employee_id, texto: r.texto, foto_ruta: r.foto_ruta } : null,
+        };
+        alFondoRef.current = true;
+        setNuevosAbajo(0);
+        setMensajes((prev) => (previo ? (prev ?? []).map((m) => (m.id === tmpId ? temporal : m)) : [...(prev ?? []), temporal]));
+        try {
+            const fotoRuta = envio.archivo ? await subirFotoDelEquipo(c.customer_id, envio.archivo) : null;
+            await responderConversacion(id, { texto: envio.texto, fotoRuta, adjunto: envio.adjunto, respuestaA: r?.id ?? null });
+            await traerNuevos();
+            // Si el real todavía no llegó, por lo menos que diga «enviado».
+            setMensajes((prev) => (prev ?? []).map((m) => (m.id === tmpId ? { ...m, pendiente: false, enviado: true } : m)));
+        } catch (err) {
+            console.error('Conversacion: no se pudo enviar', err);
+            setMensajes((prev) => (prev ?? []).map((m) => (m.id === tmpId ? { ...m, pendiente: false, fallido: true } : m)));
+        }
+    }, [id, yo, c.customer_id, traerNuevos]);
+    const reintentar = useCallback((m) => enviarMensaje(m.envio, m), [enviarMensaje]);
+
     const resolver = async () => {
         setResolviendo(true);
         try {
@@ -364,10 +406,10 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     const sinLeerCliente = c.sin_leer_cliente == null ? null : Number(c.sin_leer_cliente);
     const noVistos = new Set();
     if (sinLeerCliente != null && mensajes) {
-        const delEquipo = mensajes.filter((m) => m.autor === 'equipo');
+        const delEquipo = mensajes.filter((m) => m.autor === 'equipo' && !m.temporal);
         delEquipo.slice(Math.max(0, delEquipo.length - sinLeerCliente)).forEach((m) => noVistos.add(m.id));
     }
-    const entregaDe = (m) => (sinLeerCliente == null || m.autor !== 'equipo' ? null : noVistos.has(m.id) ? 'Enviado' : 'Visto');
+    const entregaDe = (m) => (sinLeerCliente == null || m.autor !== 'equipo' || m.temporal ? null : noVistos.has(m.id) ? 'Enviado' : 'Visto');
 
     return (
         <div data-surface={comoPanel ? undefined : 'card'} className={`flex flex-col min-h-0 ${comoPanel ? 'h-full' : 'flex-1 rounded-card overflow-hidden'}`}>
@@ -469,13 +511,12 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                             )}
                             <Burbuja mensaje={m} nuevoGrupo={nuevoGrupo} finDeGrupo={finDeGrupo}
                                 recien={recientes.has(m.id)}
-                                autor={m.employee_id ? equipo.get(m.employee_id) ?? { id: m.employee_id } : null}
                                 entrega={finDeGrupo ? entregaDe(m) : null}
                                 reacciones={reacciones.get(m.id)} yo={yo} equipo={equipo} cliente={nombre}
                                 puedeReaccionar={puedeResponder}
                                 onReaccionar={reaccionar} onResponder={setRespondiendoA} onCopiar={copiar}
                                 onIrA={irAMensaje} onOpciones={abrirOpciones}
-                                onFoto={setFoto} />
+                                onFoto={setFoto} onReintentar={reintentar} />
                         </React.Fragment>
                     );
                 })}
@@ -496,7 +537,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
 
             {/* ── Responder ──────────────────────────────────────────────── */}
             {puedeResponder ? (
-                <Compositor conversacion={c} onEnviado={() => { alFondoRef.current = true; setNuevosAbajo(0); return traerNuevos(); }}
+                <Compositor conversacion={c} onEnviar={enviarMensaje}
                     respondiendoA={respondiendoA} onQuitarRespuesta={() => setRespondiendoA(null)}
                     equipo={equipo} cliente={nombre} />
             ) : (
@@ -525,6 +566,27 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             )}
         </div>
     );
+}
+
+// Agrega al hilo lo que todavía no está, y retira el globo temporal que un
+// mensaje real del equipo viene a reemplazar (mismo autor y mismo texto). Los
+// temporales que quedan siguen al final, que es donde se escribieron.
+function fusionar(prev, nuevos) {
+    const base = prev ?? [];
+    const ya = new Set(base.map((m) => m.id));
+    const entran = nuevos.filter((m) => !ya.has(m.id));
+    if (!entran.length) return base;
+    const reemplazados = new Set();
+    entran.filter((n) => n.autor === 'equipo').forEach((n) => {
+        const t = base.find((m) => m.temporal && !m.fallido && !reemplazados.has(m.id)
+            && String(m.employee_id) === String(n.employee_id) && (m.texto ?? null) === (n.texto ?? null));
+        if (t) {
+            reemplazados.add(t.id);
+            if (String(t.foto_url ?? '').startsWith('blob:')) URL.revokeObjectURL(t.foto_url);
+        }
+    });
+    const quedan = base.filter((m) => !reemplazados.has(m.id));
+    return [...quedan.filter((m) => !m.temporal), ...entran, ...quedan.filter((m) => m.temporal)];
 }
 
 // «Hoy», «Ayer», «lunes, 5 de octubre»: una píldora centrada que se queda
@@ -558,11 +620,15 @@ function HiloCargando() {
 // La foto del CATÁLOGO de un producto enviado (bucket público product-photos), no de una persona.
 const imagenDeProducto = (a) => a?.foto ?? undefined;
 
-function Burbuja({
-    mensaje: m, nuevoGrupo, finDeGrupo, recien, autor, entrega, reacciones, yo, equipo, cliente, puedeReaccionar,
-    onReaccionar, onResponder, onCopiar, onIrA, onOpciones, onFoto,
+// `memo`: el hilo se vuelve a dibujar con cada relectura de la bandeja y cada
+// tic del reloj; sin esto se rehacían TODOS los globos cada vez. Las acciones
+// que recibe son estables (`useCallback` en `Conversacion`).
+const Burbuja = memo(function Burbuja({
+    mensaje: m, nuevoGrupo, finDeGrupo, recien, entrega, reacciones, yo, equipo, cliente, puedeReaccionar,
+    onReaccionar, onResponder, onCopiar, onIrA, onOpciones, onFoto, onReintentar,
 }) {
-    const conAcciones = m.autor !== 'sistema' && (puedeReaccionar || !!m.texto);
+    const autor = m.employee_id ? equipo.get(m.employee_id) ?? { id: m.employee_id } : null;
+    const conAcciones = m.autor !== 'sistema' && !m.temporal && (puedeReaccionar || !!m.texto);
     // Mantener presionado el globo (teléfono) abre la hoja con las acciones.
     const gestos = usePulsacionLarga({ activo: conAcciones, alMantener: () => onOpciones(m) });
     // La respuesta automática (2026-10-20): del lado del equipo, con su rótulo,
@@ -607,7 +673,7 @@ function Burbuja({
     return (
         <div data-mensaje-id={m.id}
             className={`flex flex-col ${delEquipo ? 'items-end' : 'items-start'} ${nuevoGrupo ? 'pt-2.5' : 'pt-0.5'}
-                ${recien ? 'animate-in fade-in slide-in-from-bottom-1 duration-[var(--dur-base)]' : ''}`}>
+                ${recien || m.temporal ? 'animate-in fade-in slide-in-from-bottom-1 duration-[var(--dur-base)]' : ''}`}>
             {nuevoGrupo && delEquipo && (
                 <span className="flex items-center gap-1.5 mb-1 text-micro text-content-3 max-w-[80%] min-w-0">
                     <span className="font-semibold text-content-2 truncate">{shortEmployeeName(autor)}</span>
@@ -623,7 +689,7 @@ function Burbuja({
                     className={`rounded-[1.25rem] ${esquinas} px-3.5 py-2 space-y-1.5 [@media(pointer:coarse)]:select-none [-webkit-touch-callout:none]
                         transition-shadow duration-[var(--dur-lento)]
                         ${delEquipo ? 'bg-brand text-white shadow-sm' : 'bg-surface-card text-content border border-border-card shadow-sm'}
-                        ${m.borrado_at ? 'opacity-60' : ''}
+                        ${m.borrado_at ? 'opacity-60' : ''} ${m.pendiente ? 'opacity-75' : ''} ${m.fallido ? 'ring-2 ring-danger/45' : ''}
                         ${recien ? 'ring-2 ring-brand/45 ring-offset-1 ring-offset-transparent' : ''}`}>
                     <CitaDeMensaje cita={m.cita} equipo={equipo} cliente={cliente} delEquipo={delEquipo} onIr={onIrA} />
                     {m.foto_ruta && (
@@ -665,7 +731,18 @@ function Burbuja({
                     {m.borrado_at && <p className="text-micro font-semibold opacity-80">El cliente eliminó este mensaje</p>}
                     {/* La hora va DENTRO del globo, abajo a la derecha, con la
                         doble marca de «Visto» en los del equipo. */}
-                    {finDeGrupo && (
+                    {m.fallido ? (
+                        <button type="button" onClick={() => onReintentar(m)}
+                            className="flex items-center justify-end gap-1 w-full -mt-0.5 text-micro font-semibold min-h-[var(--tap-min)] md:min-h-0 active:scale-[0.97]">
+                            <AlertCircle size={12} aria-hidden="true" /> No se envió · Reintentar
+                        </button>
+                    ) : m.temporal ? (
+                        <span className="flex items-center justify-end gap-1 -mt-0.5 text-micro tabular-nums opacity-75">
+                            {hora12(m.created_at)}
+                            {m.pendiente ? <Clock size={11} aria-hidden="true" /> : <Check size={13} aria-hidden="true" />}
+                            <span className="sr-only">{m.pendiente ? 'Enviando' : 'Enviado'}</span>
+                        </span>
+                    ) : finDeGrupo && (
                         <span className="flex items-center justify-end gap-1 -mt-0.5 text-micro tabular-nums opacity-75">
                             {m.editado_at && !m.borrado_at && <span>Editado ·</span>}
                             {hora12(m.created_at)}
@@ -689,7 +766,7 @@ function Burbuja({
                 puedeReaccionar={puedeReaccionar} onReaccionar={(e) => onReaccionar(m, e)} />
         </div>
     );
-}
+});
 
 // «… está escribiendo», abajo del hilo: el cliente (por su primer nombre) y,
 // si es OTRA persona del equipo, quién —para que no contesten dos a la vez—.

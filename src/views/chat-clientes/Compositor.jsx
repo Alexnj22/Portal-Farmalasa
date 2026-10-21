@@ -19,7 +19,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { preciosDeProducto } from '@nucleo/data/reservas';
 import {
     borrarRespuestaRapida, fetchOfertasVigentes, fetchRespuestasRapidas, guardarRespuestaRapida,
-    marcarEscribiendo, responderConversacion, subirFotoDelEquipo,
+    marcarEscribiendo,
 } from '@nucleo/data/chatClientes';
 import { FranjaDeRespuesta } from './AccionesDeMensaje';
 
@@ -36,12 +36,11 @@ const MAX_FOTO = 8 * 1024 * 1024;   // el `file_size_limit` del bucket
 const CADA_CUANTO_ESCRIBIENDO_MS = 3_000;
 const MAX_TEXTO = 2000;
 
-export default function Compositor({ conversacion, onEnviado, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
+export default function Compositor({ conversacion, onEnviar, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
     const showToast = useToastStore((s) => s.showToast);
     const [texto, setTexto] = useState('');
     const [archivo, setArchivo] = useState(null);
     const [adjunto, setAdjunto] = useState(null);
-    const [enviando, setEnviando] = useState(false);
     const [hoja, setHoja] = useState(null); // 'respuestas' | 'producto' | 'oferta'
     const fileRef = useRef(null);
     const campoRef = useRef(null);
@@ -76,23 +75,18 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
         setArchivo(f);
     };
 
-    const puedeEnviar = !enviando && (texto.trim() || archivo || adjunto);
-    const enviar = async () => {
+    // El envío lo hace el hilo (`onEnviar`), que pinta el globo al instante:
+    // acá sólo se vacía el cuadro, sin esperar a la red. Así se puede escribir
+    // el siguiente mensaje mientras el anterior viaja.
+    const puedeEnviar = !!(texto.trim() || archivo || adjunto);
+    const enviar = () => {
         if (!puedeEnviar) return;
-        setEnviando(true);
-        try {
-            const fotoRuta = archivo ? await subirFotoDelEquipo(conversacion.customer_id, archivo) : null;
-            await responderConversacion(conversacion.id, { texto, fotoRuta, adjunto, respuestaA: respondiendoA?.id ?? null });
-            setTexto('');
-            setArchivo(null);
-            setAdjunto(null);
-            onQuitarRespuesta?.();
-            onEnviado?.();
-        } catch (err) {
-            showToast('No se pudo enviar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
-        } finally {
-            setEnviando(false);
-        }
+        onEnviar({ texto, archivo, adjunto, respuestaA: respondiendoA });
+        setTexto('');
+        setArchivo(null);
+        setAdjunto(null);
+        onQuitarRespuesta?.();
+        campoRef.current?.focus();
     };
 
     return (
@@ -125,7 +119,7 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
                     ref={campoRef} className="flex-1 min-w-0" textareaClassName="!font-medium max-h-40 overflow-y-auto"
                     value={texto} onChange={(e) => escribir(e.target.value.slice(0, MAX_TEXTO))}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) { e.preventDefault(); enviar(); } }} />
-                <Button size="md" iconOnly icon={Send} title="Enviar" loading={enviando} disabled={!puedeEnviar} onClick={enviar}
+                <Button size="md" iconOnly icon={Send} title="Enviar" disabled={!puedeEnviar} onClick={enviar}
                     className="shrink-0" />
             </div>
             <div className="flex items-center gap-0.5">
@@ -137,7 +131,7 @@ export default function Compositor({ conversacion, onEnviado, respondiendoA = nu
                 <span className="ml-auto pr-1 text-micro text-content-3 tabular-nums">
                     {texto.length > MAX_TEXTO - 200
                         ? `${texto.length}/${MAX_TEXTO}`
-                        : <span className="hidden md:inline">Enter envía · Shift+Enter salto de línea</span>}
+                        : <span className="hidden md:inline whitespace-nowrap">Shift+Enter: otra línea</span>}
                 </span>
             </div>
 

@@ -12,7 +12,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import {
     FlaskConical, Truck, RotateCcw, Plus, Pencil, Trash2, Check, X, Loader2, ChevronDown, Ban,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import {
     fetchLaboratoriosBasic, fetchProveedores, fetchSuppliersNames, insertProveedor,
     updateProveedor, deleteProveedor, fetchProductCountByLabDevolutivo, updateProductsMarkND,

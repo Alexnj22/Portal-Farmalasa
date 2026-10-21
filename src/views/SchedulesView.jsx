@@ -3,7 +3,7 @@ import Badge from '../components/common/Badge';
 import SegmentedControl from '../components/common/SegmentedControl';
 import { EmptyState } from '../components/common/StateViews';
 import Button from '../components/common/Button';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { tokenMatch, normSearch } from '@nucleo/utils/searchUtils';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,

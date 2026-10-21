@@ -3,7 +3,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { clickable } from '@nucleo/utils/clickable';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import useCapaFlotante from '../../plataforma/capaFlotante';
 import {

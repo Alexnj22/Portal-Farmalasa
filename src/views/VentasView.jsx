@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
@@ -38,8 +38,10 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { cofNoSeEnviaMh } from '@nucleo/utils/cofNoche';
-import { fetchClientesQueSiempreSeEnvian } from '@nucleo/data/facturacion';
-import DocumentoParaCliente from '../components/facturacion/DocumentoParaCliente';
+// `facturacion.js` entero viajaba con Ventas por estas dos piezas (2026-10-21):
+// el documento para el cliente sólo se ve con una venta abierta, y la lista de
+// clientes se pide una vez al entrar — las dos por `import()`.
+const DocumentoParaCliente = lazy(() => import('../components/facturacion/DocumentoParaCliente'));
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { filaDeProductoVendido as mapAggRow, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos, DRILL_TIERS, DRILL_TIER_ORDER, detectTier, RELEVANT_CAMPOS, CAMPO_LABELS, fmtCampoVal, lineasDelDrill } from '@nucleo/utils/ventasPeriodo';
 
@@ -318,7 +320,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [clientesSiempre, setClientesSiempre] = useState(null);
     useEffect(() => {
         let vivo = true;
-        fetchClientesQueSiempreSeEnvian().then(s => { if (vivo) setClientesSiempre(s); });
+        import('@nucleo/data/facturacion')
+            .then(m => m.fetchClientesQueSiempreSeEnvian())
+            .then(s => { if (vivo) setClientesSiempre(s); })
+            // Sin la lista se marca como antes (`null`): no es para romper la vista.
+            .catch(e => console.warn('clientes que siempre se envían:', e?.message || e));
         return () => { vivo = false; };
     }, []);
     // DOS conteos, no uno. `totalCount` es lo que tiene la lista —incluidas las
@@ -826,7 +832,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 {/* El DTE para el cliente que lo pide (2026-10-19): descargar o
                     por correo, y si no tiene sello se envía a Hacienda primero. */}
                 {!CANCELLED_ESTADOS.includes(r.estado) && (
-                    <div className="mt-3"><DocumentoParaCliente inv={r} /></div>
+                    <div className="mt-3"><Suspense fallback={null}><DocumentoParaCliente inv={r} /></Suspense></div>
                 )}
             </>
         );

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import { SkeletonText } from '../../../components/common/StateViews';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { ChevronDown, ChevronRight, Search, X, Loader2, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';

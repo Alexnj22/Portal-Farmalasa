@@ -1,4 +1,4 @@
-import { MotionConfig } from 'framer-motion';
+import { LazyMotion, MotionConfig } from 'framer-motion';
 import { useMotionConfig } from '../plataforma/useMotionConfig';
 
 /**
@@ -22,12 +22,22 @@ import { useMotionConfig } from '../plataforma/useMotionConfig';
  * `useMotionConfig()` directamente.
  *
  * Va DENTRO de ThemeProvider: necesita leer el tema activo.
+ *
+ * `LazyMotion` (2026-10-21): el motor de animación (~40 kB gzip) viajaba en el
+ * entry porque dos menús del sidebar usaban `motion.div`. Ahora el arranque
+ * usa `m.div` y las funciones llegan en un trozo aparte, por `import()`, antes
+ * de que nadie abra un menú. Va SIN `strict`: las vistas lazy siguen con
+ * `motion.*`, que trae lo suyo en su propio trozo.
  */
+const cargarFunciones = () => import('./motionFunciones').then((r) => r.default);
+
 export default function MotionProvider({ children }) {
   const m = useMotionConfig();
   return (
-    <MotionConfig reducedMotion="user" transition={m.spring}>
-      {children}
-    </MotionConfig>
+    <LazyMotion features={cargarFunciones}>
+      <MotionConfig reducedMotion="user" transition={m.spring}>
+        {children}
+      </MotionConfig>
+    </LazyMotion>
   );
 }

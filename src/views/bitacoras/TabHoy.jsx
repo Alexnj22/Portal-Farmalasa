@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Check, ClipboardCheck, Clock, Sparkles, Thermometer } from 'lucide-react';
 import Badge from '../../components/common/Badge';
@@ -10,7 +10,8 @@ import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import AnotarLectura from '../../components/bitacoras/AnotarLectura';
 import AnotarLimpieza from '../../components/bitacoras/AnotarLimpieza';
 import MatrizDelDia from '../../components/bitacoras/MatrizDelDia';
-import PasarLaRonda from '../../components/bitacoras/PasarLaRonda';
+// La ronda se abre con un botón: no tiene por qué viajar con la pestaña.
+const PasarLaRonda = lazy(() => import('../../components/bitacoras/PasarLaRonda'));
 import { bloquesDeLaRonda } from '@nucleo/data/bitacoras';
 import { momentosDelDia, resumenDelMomento } from '@nucleo/utils/rondaDeBitacora';
 import { rango12 } from '@nucleo/utils/hora';
@@ -216,7 +217,9 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
             )}
 
             {enRonda && (
-                <PasarLaRonda fecha={dia.fecha} bloques={ronda} onCerrar={cerrar} />
+                <Suspense fallback={null}>
+                    <PasarLaRonda fecha={dia.fecha} bloques={ronda} onCerrar={cerrar} />
+                </Suspense>
             )}
             {anotando && (
                 <AnotarLectura

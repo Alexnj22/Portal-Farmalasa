@@ -6,7 +6,7 @@ import Switch from '../../components/common/Switch';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import { SkeletonText } from '../../components/common/StateViews';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import {
     Loader2, Check, X, Ban, AlertTriangle, Package, ShieldAlert,
     Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight, Building2,

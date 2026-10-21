@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { PRINCIPIO_PRESETS, editorDePrincipios, principiosParaGuardar, ubicacionesEditables, ubicacionesParaGuardar } from '@nucleo/utils/edicionDeProducto';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -18,7 +18,8 @@ import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
-import PhotoEditorModal from '../../components/common/PhotoEditorModal';
+// Los dos se abren con un clic; el editor trae `react-easy-crop` (~20 kB).
+const PhotoEditorModal = lazy(() => import('../../components/common/PhotoEditorModal'));
 // La extensión va EXPLÍCITA. `ExpedienteMovil.jsx` y `expedienteMovil.js` son
 // dos archivos que solo difieren en la primera letra, y macOS no distingue
 // mayúsculas: sin extensión, Vite prueba `.js` antes que `.jsx`, encuentra el
@@ -28,7 +29,7 @@ import ExpedienteMovil from '../../components/common/ExpedienteMovil.jsx';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
-import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
+const SrsEnriquecerModal = lazy(() => import('../../components/srs/SrsEnriquecerModal'));
 import SegmentedControl from '../../components/common/SegmentedControl';
 import {
     guardarPrincipiosActivos,
@@ -1058,11 +1059,13 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             <input ref={camaraRef} type="file" {...PROPS_CAMARA} className="hidden"
                                 aria-hidden="true" tabIndex={-1} onChange={handlePhotoSelect} />
                             {pendingFile && (
-                                <PhotoEditorModal
-                                    file={pendingFile}
-                                    onConfirm={handlePhotoConfirm}
-                                    onCancel={() => setPendingFile(null)}
-                                />
+                                <Suspense fallback={null}>
+                                    <PhotoEditorModal
+                                        file={pendingFile}
+                                        onConfirm={handlePhotoConfirm}
+                                        onCancel={() => setPendingFile(null)}
+                                    />
+                                </Suspense>
                             )}
                             <button onClick={() => localFoto ? setLightboxSrc(localFoto) : fileRef.current?.click()}
                                 onContextMenu={handlePhotoContextMenu}
@@ -1665,7 +1668,9 @@ export default function TabCatalogo({
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
             {showEnriquecer && (
-                <SrsEnriquecerModal onClose={() => setShowEnriquecer(false)} />
+                <Suspense fallback={null}>
+                    <SrsEnriquecerModal onClose={() => setShowEnriquecer(false)} />
+                </Suspense>
             )}
 
             {/* ── Stats + filter pill row ──

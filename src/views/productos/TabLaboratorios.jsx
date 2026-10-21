@@ -11,7 +11,7 @@ import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
     ChevronDown, Building2, Package, ShoppingBag,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ListRow from './ListRow';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { Settings, Copy, CheckCircle2, ChevronDown } from 'lucide-react';
 import SidebarSyncStatus from './SidebarSyncStatus';
 import { ThemeAxisPicker } from './ThemeToggle';

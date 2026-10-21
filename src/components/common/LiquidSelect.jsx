@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import useCapaFlotante from '../../plataforma/capaFlotante';
 import SelectorTactil from './SelectorTactil';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { msDelTema } from './gotaApertura';
 import { filtrar } from '@nucleo/utils/busqueda';
 

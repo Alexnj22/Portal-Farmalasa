@@ -3,7 +3,7 @@ import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import Button from '../../../components/common/Button';
 import Checkbox from '../../../components/common/Checkbox';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { X, Bot, Clock, Flame, AlertTriangle, Building2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 

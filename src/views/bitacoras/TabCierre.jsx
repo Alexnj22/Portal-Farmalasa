@@ -11,7 +11,6 @@ import { cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesI
 import { hoySV } from '@nucleo/utils/fecha';
 import { cumplimiento, nombreDelPeriodo, puedeFirmarElCierre, rotularCumplimiento, tonoDelCumplimiento } from '@nucleo/utils/cierreDeBitacoras';
 import { registrarEgreso } from '@nucleo/data/egreso';
-import { imprimirMesDeBitacoras } from '@nucleo/utils/bitacoraPrint';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
 import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '@nucleo/utils/marcaDeLaSala';
 
@@ -127,17 +126,21 @@ export default function TabCierre({ branchId, fechaVista }) {
         // El logo se pide EN PARALELO: es una imagen chica y no tiene por qué
         // sumarle su ida y vuelta a la del mes. Si no viene, el papel sale
         // igual con el nombre de la empresa en texto.
-        const [{ mes, error: err }, logo] = await Promise.all([
+        // El armado del papel (~20 kB) también va en paralelo y por `import()`:
+        // sólo hace falta al imprimir, y estático viajaba en la vista entera.
+        const [{ mes, error: err }, logo, papel] = await Promise.all([
             fetchMesImpreso(branchId, periodo),
             logoComoDataUrl(LOGO_DE_LA_EMPRESA),
+            import('@nucleo/utils/bitacoraPrint').catch(() => null),
         ]);
         setImprimiendo(false);
-        if (err) {
+        if (err || !papel) {
             try { win.close(); } catch { /* ya no está */ }
-            setError(err.message ?? 'No se pudo armar el mes para imprimir.');
+            setError(err ? (err.message ?? 'No se pudo armar el mes para imprimir.')
+                : 'No se pudo preparar la impresión. Revisa tu conexión y vuelve a intentar.');
             return;
         }
-        const r = imprimirMesDeBitacoras(win, mes, logo);
+        const r = papel.imprimirMesDeBitacoras(win, mes, logo);
         if (!r.ok) { setError(r.motivo); return; }
 
         // El mes impreso ES una salida de datos del portal, y hasta el

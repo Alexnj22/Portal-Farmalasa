@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.0 — Rendimiento: el arranque pesa 9% menos y las vistas vuelven a su techo
+
+`gate:bundle` vuelve a estar en verde (lo estaba en rojo desde el 25-sep).
+
+- **El entry bajó de 316 a 288 kB gzip.** El motor de animación de
+  framer-motion (~28 kB) viajaba en el arranque porque dos menús del sidebar
+  usaban `motion.div`. Ahora todo el portal usa `m` (importado como `motion`,
+  así que el JSX no cambia) bajo `LazyMotion` en `MotionProvider`, y las
+  funciones (`domMax`) llegan en `motionFunciones.js`, justo después del
+  arranque. Probado en el navegador: el menú de Ajustes anima igual y no hay
+  errores nuevos. El techo del entry baja de 306 a 290, así que volver a
+  importar `motion` de forma estática hace saltar el gate.
+- **Ventas, de 75 a 69 kB:** el documento para el cliente y la lista de
+  clientes que siempre se envían pasan a `import()`, y `facturacion.js` deja de
+  viajar con la vista.
+- **Bitácoras, de 93 a 87, y Productos, de 91 a 85:** el papel del mes se
+  carga al imprimir, en paralelo con el mes. El detalle del folio, la ronda,
+  el editor de fotos (`react-easy-crop`) y el modal de SRS pasan a `lazy`.
+- Inicio, Ventas, Solicitudes y la campana suben entre 1 y 2 kB su techo, con
+  el motivo escrito. Lo que queda es funcionalidad nueva medida por módulo
+  contra la compilación del 12-oct, y no hay nada detrás de un clic que
+  diferir.
+
 ## v2.1334.1 — Tipos de la base con el juez de caja
 
 `src/types/database.ts` regenerado con `caja_conceptos_de_otro_lado`,

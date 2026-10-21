@@ -7,7 +7,7 @@ import Badge from '../../components/common/Badge';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronDown, ChevronRight, CheckCircle2, History,
     Package, Building2, AlertTriangle,

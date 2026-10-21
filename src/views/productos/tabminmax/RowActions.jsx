@@ -2,7 +2,7 @@
 // dropdown "Más".
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import {
     XCircle, RotateCcw, History, Eye, EyeOff, Loader2, Trash2, Upload, MoreHorizontal, MessageSquareText } from 'lucide-react';
 import useCapaFlotante from '../../../plataforma/capaFlotante';

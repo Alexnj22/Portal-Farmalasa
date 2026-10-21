@@ -4,7 +4,7 @@
 // history), gated by minmax_ver_costos permission.
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { Loader2, Package, Building2, CheckCircle2, TrendingDown } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useNowTick } from '@nucleo/hooks/useNowTick';

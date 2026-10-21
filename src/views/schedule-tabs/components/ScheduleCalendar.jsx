@@ -10,7 +10,7 @@ import IconoPorNombre from '../../../components/common/IconoPorNombre';
 const ICONOS_DE_CONFLICTO = { Palmtree, HeartPulse, FileText, CalendarOff, Building2 };
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../plataforma/useSearchToggle';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 

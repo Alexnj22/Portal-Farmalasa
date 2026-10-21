@@ -6,7 +6,6 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import LiquidModal from '../../components/common/LiquidModal';
 import Notice from '../../components/common/Notice';
 import { LoadingState } from '../../components/common/StateViews';
-import DetalleDeFolio from '../../components/bitacoras/DetalleDeFolio';
 
 /* El formulario se baja al apretar «Completar», no al abrir el libro: arrastra
  * el canónico de archivo, el recorte de la foto y el buscador de médico. */
@@ -18,6 +17,8 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
+// Se abre al tocar un folio: no tiene por qué viajar con la pestaña.
+const DetalleDeFolio = lazy(() => import('../../components/bitacoras/DetalleDeFolio'));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El libro foliado de dispensación bajo receta.
@@ -328,7 +329,9 @@ export default function TabBajoReceta({
                         </div>
                     </LiquidModal.Header>
                     <LiquidModal.Body>
-                        <DetalleDeFolio renglon={abierto} branchId={branchId} onCambio={onRecargar} />
+                        <Suspense fallback={null}>
+                            <DetalleDeFolio renglon={abierto} branchId={branchId} onCambio={onRecargar} />
+                        </Suspense>
                     </LiquidModal.Body>
                 </LiquidModal>
             )}

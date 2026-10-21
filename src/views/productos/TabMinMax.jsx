@@ -6,7 +6,7 @@ import Badge from '../../components/common/Badge';
 import TabBarAction from '../../components/common/TabBarAction';
 import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,

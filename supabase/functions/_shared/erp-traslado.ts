@@ -117,6 +117,15 @@ export const norm = (s: string | null | undefined) =>
  * Latin-1 al guardarlos y al imprimir el kardex. Se transcribe en vez de
  * borrarse: «Nuñez» queda «Nunez» y no «Nuez».
  */
+/** «BL&Iacute;STER» → «BLÍSTER». Sólo las entidades que aparecen en las listas del sistema. */
+export function decodificarEntidades(s: string): string {
+  return String(s ?? "")
+    .replace(/&([aeiouAEIOU])acute;/g, (_m, v) => ({ a: "á", e: "é", i: "í", o: "ó", u: "ú", A: "Á", E: "É", I: "Í", O: "Ó", U: "Ú" } as Record<string, string>)[v])
+    .replace(/&([nN])tilde;/g, (_m, n) => (n === "n" ? "ñ" : "Ñ"))
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCharCode(Number(d)))
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&nbsp;/g, " ");
+}
+
 export function soloAscii(s: string): string {
   return String(s ?? "")
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -776,6 +785,7 @@ export async function traerFila(
  */
 export async function resolverPresentacion(
   cookie: string, fila: Fila, tipoBuscado: string, factor: number,
+  { porFactor = false }: { porFactor?: boolean } = {},
 ): Promise<{ id: string; costo: string; precio: string; unidad: string } | null> {
   // Exacto primero. Si no hay ninguna, el nombre guardado puede ser el RÓTULO
   // de pantalla —tipo + descripción, «UNIDAD 1x1»— que la recepción escribía en
@@ -783,11 +793,23 @@ export async function resolverPresentacion(
   // mandando): se acepta la presentación cuyo nombre es la primera palabra
   // completa de ese rótulo. El factor se sigue exigiendo abajo, así que el
   // respaldo no puede elegir una presentación de otro tamaño.
-  const buscado = norm(tipoBuscado);
-  let candidatas = fila.presentaciones.filter((p) => p.tipo === buscado);
+  //
+  // Los dos lados se comparan sin tildes ni entidades HTML: si la lista del
+  // sistema trae «BL&Iacute;STER» o «BLÍSTER» y el portal guardó «BLISTER», la
+  // comparación exacta fallaba y el producto caía en «ninguna presentación».
+  const clave = (s: string) => soloAscii(decodificarEntidades(norm(s))).toUpperCase();
+  const buscado = clave(tipoBuscado);
+  let candidatas = fila.presentaciones.filter((p) => clave(p.tipo) === buscado);
   if (!candidatas.length) {
-    candidatas = fila.presentaciones.filter((p) => p.tipo && buscado.startsWith(`${p.tipo} `));
+    candidatas = fila.presentaciones.filter((p) => clave(p.tipo) && buscado.startsWith(`${clave(p.tipo)} `));
   }
+  // `porFactor`: el último intento es CUALQUIER presentación del mismo tamaño.
+  // Lo pide la devolución de un sobrante, donde el nombre sólo distingue y lo
+  // que se mueve son unidades —un producto con «CAJA» y «UNIDAD» de 1 guarda
+  // una y la ubicación puede ofrecer la otra—. El traslado de un pedido NO lo
+  // pide: ahí un nombre que no está es señal de que el catálogo cambió y tiene
+  // que verlo alguien (FACTOR_CAMBIO).
+  if (!candidatas.length && porFactor) candidatas = fila.presentaciones;
   for (const c of candidatas) {
     const p = await pedir(cookie, TRASLADO, new URLSearchParams({
       process: "getpresentacion",

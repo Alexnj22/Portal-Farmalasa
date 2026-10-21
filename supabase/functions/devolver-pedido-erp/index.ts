@@ -832,7 +832,7 @@ Deno.serve(async (req) => {
         const f = await traerFila(cookie, d.erp_product_id, ubicOrigen);
         if (!f.encontrado) { await fallar(`${it.nombre} ya no tiene existencia en ${nombreOrigen}.`); continue; }
 
-        const pres = await resolverPresentacion(cookie, f, it.tipo, it.factor);
+        const pres = await resolverPresentacion(cookie, f, it.tipo, it.factor, { porFactor: true });
         if (!pres) {
           await fallar(`${it.nombre}: llegó como ${it.tipo} de ${it.factor}, y hoy ninguna presentación `
             + `con ese nombre trae ese factor. Ofrece: ${f.presentaciones.map((p) => p.tipo).join(", ") || "ninguna"}.`);

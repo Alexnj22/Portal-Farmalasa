@@ -55,7 +55,9 @@ const PRES = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Uni
 const presentacion = (r) => {
   const { fPres } = conteoInicial(r);
   const f = Number(r.dispatch_factor) || 1;
-  if (fPres !== f) return fPres > 1 ? `Unidad ×${fPres}` : 'Unidad';
+  // La presentación del sistema por su nombre («CAJA X 10»), no «Unidad ×10»:
+  // así se leía como unidades sueltas y empujaba a contar unidades.
+  if (fPres !== f) return r.presentaciones?.tipo || (fPres > 1 ? `Unidad ×${fPres}` : 'Unidad');
   const l = PRES[r.dispatch_tipo] ?? r.dispatch_tipo ?? 'Unidad';
   return f > 1 ? `${l} ×${f}` : l;
 };

@@ -55,7 +55,10 @@ export default function ExtrasDelPedido() {
   const [ocupado, setOcupado] = useState(false);
 
   const cargar = useCallback(async () => {
-    const rows = await fetchPedidoItemsAll(pedidoId, suc).catch(() => []);
+    // Si la carga falla se DICE y no se pisa lo que había: con `[]` la
+    // pantalla mostraba «sin extras» y parecía que no había nada anotado.
+    let rows;
+    try { rows = await fetchPedidoItemsAll(pedidoId, suc); } catch (e) { fallo('No se pudo cargar lo anotado', mensajeAmigable(e)); return; }
     setRenglones(rows ?? []);
     const ex = extrasDeRenglones(rows ?? []);
     setExtras(ex);

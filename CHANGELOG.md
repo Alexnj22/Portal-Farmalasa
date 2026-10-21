@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1330.2 — Pedidos: el conteo no redondea, la base fija la presentación del extra y los botones se entienden
+
+- **Contar ya no redondea.** Un producto que el sistema lleva en cajas de 10 se
+  podía contar en unidades: 25 se guardaban como 3 cajas (sobrante de 5 que
+  nadie contó) y 4 como 0 (faltante total). Ahora sólo se ofrecen
+  presentaciones que son un número entero de la del sistema, y ésta aparece
+  con su nombre («CAJA X 10») en vez de «Unidad ×10». Portal y app.
+- **La base decide el nombre de la presentación de un extra**
+  (`tipo_de_presentacion_de_extra`): exacto, o el del catálogo cuyo nombre
+  abre el rótulo, o el del catálogo con ese tamaño. Cubre las apps viejas, y
+  cambiar el tamaño sin nombre ya no deja el nombre viejo con el factor nuevo.
+- **Mover un sobrante**: compara nombres sin tildes ni entidades HTML, y si
+  el nombre no aparece usa cualquier presentación del mismo tamaño (sólo en
+  devoluciones; el traslado del pedido sigue frenando para que alguien mire).
+- **Botones de la diferencia**: cuando no viaja nada, «Sacarlo de bodega» pasa
+  a «Pasar existencias a la sala» con una línea que dice qué hace; «Probar sin
+  mover nada» pasa a «Solo comprobar».
+- La app avisa si no pudo cargar lo anotado en vez de mostrar «sin extras».
+
 ## v2.1330.1 — Pedidos: el extra guarda la presentación del sistema, no el rótulo
 
 - Un producto anotado como «llegó de más» guardaba el rótulo de pantalla

@@ -3,7 +3,7 @@ import {
     conteoInicial, enPresentacion, mapaDePresentaciones, presentacionesDeRenglones,
     quedaTodoListo, renglonContado, renglonTodoOk,
 } from '@nucleo/utils/recepcionDePedido';
-import { opcionesDeExtra, opcionesDelCatalogo, tipoDeOpcion } from '@nucleo/utils/extrasDeRecepcion';
+import { opcionesDeExtra, opcionesDelCatalogo, opcionesDePresentacionDeRenglon, tipoDeOpcion } from '@nucleo/utils/extrasDeRecepcion';
 
 // Blíster de 10, contado en unidades del sistema (factor 1).
 const blister = (enviado) => ({ id: 1, factor: 1, dispatch_factor: 10, cantidad_asignada: enviado });
@@ -101,5 +101,19 @@ describe('opciones de un extra', () => {
     it('del catálogo se escribe el tipo, nunca el rótulo', () => {
         const o = opcionesDelCatalogo([{ factor: 1, descripcion: '1x1', presentaciones: { tipo: 'UNIDAD' } }]);
         expect(o[0]).toMatchObject({ label: 'UNIDAD 1x1', tipo: 'UNIDAD' });
+    });
+});
+
+describe('al contar sólo se ofrecen presentaciones que no redondean', () => {
+    // El sistema lleva el producto en cajas de 10. Contar en unidades guardaba
+    // 25 → 3 cajas (sobrante inventado) y 4 → 0 (faltante total).
+    const r = { id: 1, erp_product_id: 9, factor: 10, dispatch_factor: 10, cantidad_asignada: 2, presentaciones: { tipo: 'CAJA X 10' } };
+    const presMap = { 9: [{ factor: 1, label: 'UNIDAD', tipo: 'UNIDAD' }, { factor: 10, label: 'CAJA X 10', tipo: 'CAJA' }, { factor: 30, label: 'FARDO', tipo: 'FARDO' }] };
+    it('quita la unidad suelta y deja la caja y el múltiplo', () => {
+        expect(opcionesDePresentacionDeRenglon(r, presMap).map(o => o.factor)).toEqual([10, 30]);
+    });
+    it('la del sistema aparece con su nombre aunque el catálogo no la traiga', () => {
+        const o = opcionesDePresentacionDeRenglon(r, { 9: [{ factor: 1, label: 'UNIDAD', tipo: 'UNIDAD' }] });
+        expect(o).toEqual([{ factor: 10, label: 'CAJA X 10', tipo: 'CAJA X 10' }]);
     });
 });

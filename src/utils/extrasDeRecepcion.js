@@ -92,15 +92,28 @@ export function opcionesDePresentacionDeRenglon(r, presMap = {}, incluir = []) {
     const erpFactor  = Number(r.factor) || 1;
     const dispFactor = Number(r.dispatch_factor) || erpFactor;
     const dispOpt    = { factor: dispFactor, label: rotuloDeDespacho(r.dispatch_tipo, dispFactor) };
+    // Sólo presentaciones que son un número ENTERO de la del sistema. Lo
+    // contado se guarda en la presentación del sistema, así que 25 unidades de
+    // algo que el sistema lleva en cajas de 10 se redondeaban a 3 cajas —un
+    // sobrante de 5 que nadie contó— y 4 unidades a 0 (2026-10-21).
+    const cabe = (f) => Number(f) > 0 && Number(f) % erpFactor === 0;
     const vistos = new Set();
     const opts = [];
-    if (r.dispatch_tipo && dispFactor !== erpFactor) { opts.push(dispOpt); vistos.add(dispFactor); }
+    if (r.dispatch_tipo && dispFactor !== erpFactor && cabe(dispFactor)) { opts.push(dispOpt); vistos.add(dispFactor); }
     (presMap?.[r.erp_product_id] ?? []).forEach((o) => {
-        if (!vistos.has(o.factor)) { opts.push(o); vistos.add(o.factor); }
+        if (!vistos.has(o.factor) && cabe(o.factor)) { opts.push(o); vistos.add(o.factor); }
     });
-    if (!opts.length) { opts.push(dispOpt); vistos.add(dispFactor); }
-    [conteoInicial(r).fPres, ...incluir].forEach((f) => {
-        if (!vistos.has(f)) { opts.push({ factor: f, label: rotuloDeDespacho('UNIDAD', f) }); vistos.add(f); }
+    if (!opts.length && cabe(dispFactor) && dispFactor !== erpFactor) { opts.push(dispOpt); vistos.add(dispFactor); }
+    // La del sistema va siempre: es la que nunca redondea. Su rótulo sale de
+    // la fila (`presentaciones.tipo`), no de «Unidad ×N», que la hacía pasar
+    // por unidades sueltas y empujaba a contar unidades donde se piden cajas.
+    const tipoSistema = r.presentaciones?.tipo;
+    [erpFactor, conteoInicial(r).fPres, ...incluir].forEach((f) => {
+        if (!vistos.has(f) && cabe(f)) {
+            const label = f === erpFactor && tipoSistema ? tipoSistema : rotuloDeDespacho('UNIDAD', f);
+            opts.push({ factor: f, label, tipo: f === erpFactor ? (tipoSistema || null) : null });
+            vistos.add(f);
+        }
     });
     return opts;
 }

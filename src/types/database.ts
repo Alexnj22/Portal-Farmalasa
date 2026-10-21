@@ -1746,6 +1746,7 @@ export type Database = {
           saldo_favor_devuelto_monto: number | null
           saldo_favor_devuelto_motivo: string | null
           saldo_favor_devuelto_por: string | null
+          saldo_favor_inicial: number | null
           saldo_favor_origen: string | null
           saldo_favor_usado_at: string | null
           saldo_favor_usado_branch: number | null
@@ -1809,6 +1810,7 @@ export type Database = {
           saldo_favor_devuelto_monto?: number | null
           saldo_favor_devuelto_motivo?: string | null
           saldo_favor_devuelto_por?: string | null
+          saldo_favor_inicial?: number | null
           saldo_favor_origen?: string | null
           saldo_favor_usado_at?: string | null
           saldo_favor_usado_branch?: number | null
@@ -1872,6 +1874,7 @@ export type Database = {
           saldo_favor_devuelto_monto?: number | null
           saldo_favor_devuelto_motivo?: string | null
           saldo_favor_devuelto_por?: string | null
+          saldo_favor_inicial?: number | null
           saldo_favor_origen?: string | null
           saldo_favor_usado_at?: string | null
           saldo_favor_usado_branch?: number | null
@@ -24035,6 +24038,87 @@ export type Database = {
         }
         Relationships: []
       }
+      saldo_favor_movimientos: {
+        Row: {
+          branch_id: number | null
+          confirmado_con: string | null
+          created_at: string
+          employee_id: string | null
+          id: number
+          invoice_id: number | null
+          monto: number
+          nota: string | null
+          puntos_lote_id: number | null
+          reserva_id: number
+          saldo_despues: number
+          tipo: string
+        }
+        Insert: {
+          branch_id?: number | null
+          confirmado_con?: string | null
+          created_at?: string
+          employee_id?: string | null
+          id?: never
+          invoice_id?: number | null
+          monto: number
+          nota?: string | null
+          puntos_lote_id?: number | null
+          reserva_id: number
+          saldo_despues: number
+          tipo: string
+        }
+        Update: {
+          branch_id?: number | null
+          confirmado_con?: string | null
+          created_at?: string
+          employee_id?: string | null
+          id?: never
+          invoice_id?: number | null
+          monto?: number
+          nota?: string | null
+          puntos_lote_id?: number | null
+          reserva_id?: number
+          saldo_despues?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saldo_favor_movimientos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_movimientos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_movimientos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_movimientos_puntos_lote_id_fkey"
+            columns: ["puntos_lote_id"]
+            isOneToOne: false
+            referencedRelation: "puntos_lote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_movimientos_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_alert_log: {
         Row: {
           alert_key: string
@@ -28425,6 +28509,10 @@ export type Database = {
       }
       clave_movimiento_de_item: {
         Args: { p_item_id: number; p_prefijo: string }
+        Returns: string
+      }
+      cliente_confirma: {
+        Args: { p_customer_id: number; p_prueba: string }
         Returns: string
       }
       cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
@@ -33334,7 +33422,10 @@ export type Database = {
         Args: { p_id: number; p_motivo: string }
         Returns: Json
       }
-      reserva_usar_saldo_favor: { Args: { p_id: number }; Returns: Json }
+      reserva_usar_saldo_favor: {
+        Args: { p_id: number; p_monto: number; p_prueba: string }
+        Returns: Json
+      }
       reservar_pago_bono: { Args: { p_item: string }; Returns: Json }
       reservas_de_sucursal: {
         Args: { p_abiertas?: boolean; p_branch_id: number }
@@ -33620,7 +33711,10 @@ export type Database = {
         Returns: number[]
       }
       salas_que_cubro_ahora: { Args: never; Returns: number[] }
-      saldo_favor_buscar: { Args: { p_codigo: string }; Returns: Json }
+      saldo_favor_buscar: {
+        Args: { p_codigo: string; p_prueba?: string }
+        Returns: Json
+      }
       saldo_favor_dias: { Args: never; Returns: number }
       save_pedido_snapshot: {
         Args: { p_nombre: string; p_sucursal_ids: number[] }
@@ -33789,6 +33883,10 @@ export type Database = {
       sync_suppliers_batch: { Args: { p_rows: Json }; Returns: number }
       texto_de_push: {
         Args: { p_body: string; p_meta: Json; p_type: string }
+        Returns: string
+      }
+      tipo_de_presentacion_de_extra: {
+        Args: { p_factor: number; p_product_id: number; p_tipo: string }
         Returns: string
       }
       toggle_producto_oculto_ventas: {

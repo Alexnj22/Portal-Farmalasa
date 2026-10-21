@@ -157,11 +157,16 @@ export default function DevolucionBloque({
                     el acuerdo. */}
                 {(dev.estado === 'aceptada'
                   || (dev.estado === 'error' && !dev.id_traslado && !dev.detalle?.revisar_a_mano)) && !isBranch && (
+                    <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
+                        {/* Cuando no viaja nada, «Sacarlo de bodega» se leía
+                            como mover cajas: lo que hace es pasar las
+                            existencias de un lado al otro (2026-10-21). */}
                         <Button tone="chart-3" icon={Truck} disabled={moviendo || probando}
                             onClick={() => onMover?.(dev.id)}>
                             {moviendo ? <Loader2 size={10} className="animate-spin" />
-                                      : (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')}
+                                      : dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')
+                                                  : `Pasar existencias a ${aDonde}`}
                         </Button>
                         {/* La misma corrida SIN escribir. La función hace todas
                             las comprobaciones contra el sistema —abre la sesión,
@@ -174,8 +179,15 @@ export default function DevolucionBloque({
                         <Button variant="secondary" icon={FlaskConical} disabled={moviendo || probando}
                             onClick={() => onProbar?.(dev.id)}
                             title="Hace todas las comprobaciones contra el sistema y no mueve nada">
-                            {probando ? <Loader2 size={10} className="animate-spin" /> : 'Probar sin mover nada'}
+                            {probando ? <Loader2 size={10} className="animate-spin" /> : 'Solo comprobar'}
                         </Button>
+                    </div>
+                    <p className="text-micro text-content-3 leading-snug">
+                        {dev.viaja
+                            ? `Descuenta el producto de ${deDonde} para mandarlo a ${aDonde}.`
+                            : `El producto ya está donde debe: esto descuenta ${dev.cantidad} de las existencias de ${deDonde} y las suma en ${aDonde}.`}
+                        {' '}«Solo comprobar» revisa que se pueda hacer, sin mover nada.
+                    </p>
                     </div>
                 )}
 

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1331.3 — Chat: el aviso al cliente dice «Farmacia Salud» y «Edwin: …»
+
+Decisión del usuario sobre el aviso que le llega al cliente cuando el equipo le responde (`chat_responder`, migración `20261021190329`).
+
+- **Antes:** título «EDWIN te respondió» (el primer nombre como está en la ficha, en mayúsculas) y el texto del mensaje debajo. En la pantalla bloqueada no se veía que venía de la farmacia.
+- **Ahora, como WhatsApp Business:** el título es **Farmacia Salud** y el cuerpo «**Edwin:** Sí, tenemos loratadina…», con el primer nombre en mayúscula inicial. Así el cliente sabe de dónde viene, el trato sigue siendo personal y no se expone el nombre completo del empleado.
+- Sin texto, el aviso dice qué llegó: «Edwin te envió una foto / una nota de voz / un producto / una oferta». Antes decía «Te envió algo en el chat».
+
 ## v2.1331.2 — Pedidos: fuera el botón de comprobar en la diferencia
 
 - Se quita «Solo comprobar» (antes «Probar sin mover nada») de la diferencia,

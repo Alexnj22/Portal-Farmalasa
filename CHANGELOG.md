@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1323.1 — Chat: las notas de voz se escuchan en el portal
+
+- **Las notas de voz salían «no disponible» en producción.** La política de seguridad del sitio (`vercel.json`) no tenía `media-src`, así que caía en `default-src 'self'` y el navegador bloqueaba el audio de Supabase **antes de pedirlo** — los registros de Storage no muestran ni un GET del portal, sólo de la app del cliente. En local no hay esa política, por eso en pruebas sonaba. Se agregó `media-src 'self' blob: https://*.supabase.co`. Reproducido en WebKit con la política vieja (2 «no disponible») y la nueva (suena).
+- **Velocidad 1× / 1.5× / 2×** en la nota de voz, como en WhatsApp. La elegida se recuerda para las siguientes notas mientras la pestaña siga abierta.
+
 ## v2.1323.0 — Chat con clientes: fluido como la app
 
 Reporte: «en los puntos se siente fluido, moderno, y en el portal anticuado, lento, torpe». Se portaron al portal los arreglos que ya tenía la app de clientes (`apps/clientes/lib/chatHilo.js`). Medido en el entorno de pruebas con Playwright:

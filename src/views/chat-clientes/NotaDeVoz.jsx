@@ -12,12 +12,18 @@ const mmss = (s) => {
     return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 };
 
+// Velocidad como en WhatsApp: 1× → 1.5× → 2×. La elegida se recuerda para las
+// siguientes notas mientras la pestaña siga abierta.
+const VELOCIDADES = [1, 1.5, 2];
+let velocidadElegida = 1;
+
 export default function NotaDeVoz({ src, delEquipo = false }) {
     const audioRef = useRef(null);
     const [sonando, setSonando] = useState(false);
     const [actual, setActual] = useState(0);
     const [duracion, setDuracion] = useState(null);
     const [fallo, setFallo] = useState(!src);
+    const [velocidad, setVelocidad] = useState(velocidadElegida);
 
     if (fallo) {
         return (
@@ -39,6 +45,12 @@ export default function NotaDeVoz({ src, delEquipo = false }) {
         const caja = e.currentTarget.getBoundingClientRect();
         a.currentTime = Math.min(duracion, Math.max(0, ((e.clientX - caja.left) / caja.width) * duracion));
     };
+    const cambiarVelocidad = () => {
+        const v = VELOCIDADES[(VELOCIDADES.indexOf(velocidad) + 1) % VELOCIDADES.length];
+        velocidadElegida = v;
+        setVelocidad(v);
+        if (audioRef.current) audioRef.current.playbackRate = v;
+    };
     const avance = duracion ? Math.min(100, (actual / duracion) * 100) : 0;
 
     return (
@@ -46,7 +58,7 @@ export default function NotaDeVoz({ src, delEquipo = false }) {
             <audio ref={audioRef} src={src} preload="metadata" className="hidden"
                 onLoadedMetadata={(e) => setDuracion(Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : null)}
                 onTimeUpdate={(e) => setActual(e.currentTarget.currentTime)}
-                onPlay={() => setSonando(true)} onPause={() => setSonando(false)}
+                onPlay={(e) => { e.currentTarget.playbackRate = velocidad; setSonando(true); }} onPause={() => setSonando(false)}
                 onEnded={() => { setSonando(false); setActual(0); }}
                 onError={() => setFallo(true)} />
             <button type="button" onClick={alternar} aria-label={sonando ? 'Pausar la nota de voz' : 'Escuchar la nota de voz'}
@@ -64,6 +76,11 @@ export default function NotaDeVoz({ src, delEquipo = false }) {
                     {sonando || actual ? mmss(actual) : <><Mic size={10} className="inline -mt-px" /> {duracion ? mmss(duracion) : 'Nota de voz'}</>}
                 </span>
             </span>
+            <button type="button" onClick={cambiarVelocidad} aria-label={`Velocidad ${velocidad}×, tocar para cambiar`}
+                className={`shrink-0 h-6 min-w-[2.5rem] min-h-[var(--tap-min)] md:min-h-0 px-1.5 rounded-badge text-micro font-bold tabular-nums active:scale-[0.97]
+                    ${delEquipo ? 'bg-brand-dark/40' : 'bg-content-3/15 text-content-2'}`}>
+                {velocidad}×
+            </button>
         </span>
     );
 }

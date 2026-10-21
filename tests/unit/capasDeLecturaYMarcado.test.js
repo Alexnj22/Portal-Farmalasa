@@ -109,10 +109,12 @@ describe('la salud de las sincronizaciones', () => {
         expect(SYNC_HEALTH_DOMAINS).not.toContain('inventory');
     });
 
-    it('filtra por esos dominios y trae lo más reciente primero', () => {
+    it('pide cada dominio por separado y trae lo más reciente primero', () => {
+        // Con un solo tope para los cuatro, Compras y Productos llenaban la
+        // ventana y Respaldo y Min / Max salían «sin actualizaciones».
         fetchSyncHealthRecent();
         expect(espia.tabla()).toBe('v_sync_health');
-        expect(espia.primero('in')).toEqual(['domain', SYNC_HEALTH_DOMAINS]);
+        expect(espia.todos('eq')).toEqual(SYNC_HEALTH_DOMAINS.map(d => ['domain', d]));
         expect(espia.primero('order')).toEqual(['checked_at', { ascending: false }]);
     });
 

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.11 — Prueba de Actualización de datos al día
+
+La prueba de la capa de datos esperaba la consulta vieja (un `in` de los cuatro
+dominios); ahora comprueba que se pide cada uno por separado. Devuelve CI a verde.
+
 ## v2.1335.10 — Actualización de datos ve las corridas de los cuatro dominios
 
 Las pestañas Respaldo y Min / Max decían «Sin actualizaciones» aunque hubieran

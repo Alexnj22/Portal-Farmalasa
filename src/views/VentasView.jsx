@@ -365,6 +365,17 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     // entero en cada carga porque el dato vive en otro sistema y cambia solo.
     // El estado de puntos elegido en el filtro. Vacío = sin filtrar.
     const [filterPuntosEstado, setFilterPuntosEstado] = useState('');
+    /* «Pts. Canjeados» y los otros filtros se EXCLUYEN. Su lista sale de
+     * `get_ventas_con_puntos`, que no sabe de anuladas, receta ni estado de
+     * puntos; el encabezado sí los aplicaba. Con los dos encendidos, la lista
+     * ignoraba los filtros y el conteo y el monto de arriba hablaban de otra
+     * lista (2026-10-21). Encender uno apaga el otro. */
+    const alternarPuntos = () => {
+        const encender = !filterPuntos;
+        setFilterPuntos(encender);
+        if (encender) { setFilterAnuladas(false); setFilterAntibiotico(false); setFilterPuntosEstado(''); }
+    };
+    const sinPuntos = (setter) => (valor) => { setFilterPuntos(false); setter(valor); };
     const fetchRowsRef = useRef(0);
 
     // Refs "siempre frescos" para leer el estado actual de los caches dentro de
@@ -881,7 +892,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Total ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   sub: prevStats.sum && prevStats.countValido ? `${fmt(prevStats.sum/prevStats.countValido)}` : undefined },
-                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
+                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: alternarPuntos, active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </CarrilCards>
@@ -891,9 +902,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     monthRange={monthRange} setMonthRange={setMonthRange}
                     filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     branchOptions={branchOptions}
-                    filterAnuladas={filterAnuladas} setFilterAnuladas={setFilterAnuladas}
-                    filterPuntosEstado={filterPuntosEstado} setFilterPuntosEstado={setFilterPuntosEstado}
-                    filterAntibiotico={filterAntibiotico} setFilterAntibiotico={setFilterAntibiotico}
+                    filterAnuladas={filterAnuladas} setFilterAnuladas={sinPuntos(setFilterAnuladas)}
+                    filterPuntosEstado={filterPuntosEstado} setFilterPuntosEstado={sinPuntos(setFilterPuntosEstado)}
+                    filterAntibiotico={filterAntibiotico} setFilterAntibiotico={sinPuntos(setFilterAntibiotico)}
                     showAntibiotico={antibioticIds.size > 0}
                     branchLocked={getScope('ventas') !== 'ALL'}
                     privacyMode={privacyMode} setPrivacyMode={setPrivacyMode}

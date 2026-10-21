@@ -9,6 +9,7 @@ import * as almacen from '@plataforma/almacen';
 import { formatMoney } from '../../utils/formatNumber';
 import { LIMITE_KIOSCOS } from '../../utils/kioscos';
 import { buscarCargo } from '../../utils/roles';
+import { yaEstabaPagado } from '../../utils/pagoDeSucursal';
 import { SIN_ASIGNAR } from '../../data/constants';
 
 const persistBranches = (branches) => {
@@ -584,7 +585,11 @@ export const createBranchSlice = (set, get) => ({
             if (checkError) throw checkError;
 
             if (existingRecord) {
-                const { error: updError } = await updateBranchExpense(existingRecord.id, dbExpense);
+                // Sin archivo nuevo, el comprobante que ya tenía se queda: el
+                // UPDATE escribía `receipt_url: null` y lo borraba (2026-10-21).
+                const cambios = { ...dbExpense };
+                if (!receiptUrl) delete cambios.receipt_url;
+                const { error: updError } = await updateBranchExpense(existingRecord.id, cambios);
                 if (updError) throw updError;
             } else {
                 const { error: insError } = await insertBranchExpense(dbExpense);
@@ -596,21 +601,28 @@ export const createBranchSlice = (set, get) => ({
                 const newSettings = JSON.parse(JSON.stringify(branch.settings || {}));
                 const isPending = !esArchivoPorSubir(expenseData.receiptFile);
 
+                // «Pagado hasta» sólo AVANZA. Registrar un mes ya cubierto (un
+                // pago atrasado que se anota tarde) lo hacía retroceder: con el
+                // alquiler pagado hasta octubre, anotar agosto dejaba a la
+                // sucursal debiendo septiembre y octubre (2026-10-21).
+                let destino;
                 if (expenseData.expense_type === 'rent') {
                     if (!newSettings.rent) newSettings.rent = {};
-                    newSettings.rent.paidThrough = expenseData.billing_month;
-                    newSettings.rent.isReceiptPending = isPending;
-                    newSettings.rent.amount = expenseData.amount; 
+                    destino = newSettings.rent;
                 } else {
                     if (!newSettings.services) newSettings.services = {};
                     if (!newSettings.services[expenseData.expense_type]) newSettings.services[expenseData.expense_type] = {};
-                    newSettings.services[expenseData.expense_type].paidThrough = expenseData.billing_month;
-                    newSettings.services[expenseData.expense_type].isReceiptPending = isPending;
-                    newSettings.services[expenseData.expense_type].amount = expenseData.amount; 
+                    destino = newSettings.services[expenseData.expense_type];
+                }
+                if (expenseData.billing_month === destino.paidThrough || !yaEstabaPagado(destino.paidThrough, expenseData.billing_month)) {
+                    destino.paidThrough = expenseData.billing_month;
+                    destino.isReceiptPending = isPending;
+                    destino.amount = expenseData.amount;
                 }
 
                 const cleanSettingsForDB = sanitizeForJsonb(newSettings);
-                await updateBranch(branchId, { settings: cleanSettingsForDB });
+                const { error: setErr } = await updateBranch(branchId, { settings: cleanSettingsForDB });
+                if (setErr) throw setErr;
 
                 set((state) => {
                     const next = state.branches.map(b =>

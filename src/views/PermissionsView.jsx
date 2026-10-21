@@ -819,7 +819,9 @@ const PermissionsView = () => {
             setPermissions(prev => {
                 const next = { ...prev };
                 MODULES.forEach(m => {
+                    // `...prev`: la fila conserva su alcance y su delegación.
                     next[`${selectedRoleId}:${m.key}`] = {
+                        ...prev[`${selectedRoleId}:${m.key}`],
                         can_view: true,
                         can_edit: m.isTab ? false : true,
                         can_approve: m.hasApprove ? true : false,
@@ -872,7 +874,13 @@ const PermissionsView = () => {
             const next = { ...prev };
             groupModules.forEach(m => {
                 const k = `${selectedRoleId}:${m.key}`;
+                // `...prev[k]`: sin él la fila perdía `scope` y
+                // `delega_en_ausencia`, y el siguiente toque sobre la sección
+                // —que arma sus filas desde este estado— la guardaba con
+                // alcance de TODA LA RED y la delegación apagada, sin error y
+                // sin que el cuadro lo mostrara (2026-10-21).
                 next[k] = {
+                    ...prev[k],
                     can_view: activate,
                     can_edit: activate,
                     can_approve: activate && !!m.hasApprove,

@@ -650,8 +650,12 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         warnIfOutrageous('max', maxNum, targetRow);
     }, [data, hasPublishedData, refreshCosts]);
 
+    // Las tres escrituras de ocultar/desocultar miran su `error`: antes la
+    // pantalla cambiaba, anotaba en la bitácora y avisaba «Ocultó N» aunque la
+    // base no hubiera guardado nada (2026-10-21).
     const unhideProduct = useCallback(async (productId) => {
-        await updateStockParams(productId, selectedErp, { is_hidden: false, updated_at: new Date().toISOString() });
+        const { error: e } = await updateStockParams(productId, selectedErp, { is_hidden: false, updated_at: new Date().toISOString() });
+        if (e) { useToastStore.getState().showToast('No se pudo mostrar el producto', mensajeAmigable(e), 'error'); return; }
         setHiddenIds(prev => { const n = new Set(prev); n.delete(productId); return n; });
         setData(prev => prev.map(r => r.erp_product_id === productId ? { ...r, is_hidden: false } : r));
         useStaff.getState().appendAuditLog('MINMAX_UNHIDE', String(productId), { sucursal_id: selectedErp });
@@ -660,7 +664,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const unhideAll = useCallback(async () => {
         const ids = [...hiddenIds];
         if (!ids.length) return;
-        await updateStockParamsBulk(ids, selectedErp, { is_hidden: false, updated_at: new Date().toISOString() });
+        const { error: e } = await updateStockParamsBulk(ids, selectedErp, { is_hidden: false, updated_at: new Date().toISOString() });
+        if (e) { useToastStore.getState().showToast('No se pudieron mostrar', mensajeAmigable(e), 'error'); return; }
         setHiddenIds(new Set());
         setData(prev => prev.map(r => ids.includes(r.erp_product_id) ? { ...r, is_hidden: false } : r));
         setFilterHidden(false);
@@ -1046,7 +1051,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             // pendiente para siempre, y calculate_stock_params se salta la sucursal
             // ENTERA ante un solo pendiente: eso dejó el recálculo mensual sin correr
             // desde junio en las 6 sucursales.
-            await upsertStockParamsBulk(filasParaOcultar(ids, selectedErp));
+            const { error: e } = await upsertStockParamsBulk(filasParaOcultar(ids, selectedErp));
+            if (e) throw e;
             setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
             setData(prev => prev.map(r =>
                 ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp

@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.6 — Auditoría fase 2: permisos, bitácora del portal, ventas, pagos de sucursal y Mín·Máx
+
+Tercer lote de la revisión de código, sobre pantallas en uso.
+
+- **Permisos:** encender o apagar una sección entera borraba de la pantalla el
+  alcance y la delegación de cada permiso. El siguiente toque sobre esa
+  sección los guardaba con alcance de TODA LA RED y la delegación apagada, sin
+  error y sin que el cuadro lo mostrara. «Activar todo» perdía la delegación.
+- **Bitácora del portal:** con fecha o acción elegida ahora busca en la base
+  (hasta 20,000 entradas, con aviso si se llega). Antes filtraba en el
+  navegador las 1,000 más recientes —día y medio de 33,812—, así que un rango
+  anterior salía vacío y el CSV traía a lo sumo mil. El CSV va por `exportCsv`:
+  el anterior se cortaba en el primer `#` y no quedaba anotado como egreso.
+- **Ventas:** «Pts. Canjeados» y los filtros de anuladas, receta y estado de
+  puntos se excluyen. Juntos, la lista ignoraba los filtros y el encabezado no.
+- **Pagos de sucursal:** «pagado hasta» sólo avanza (anotar un mes atrasado lo
+  hacía retroceder), un pago sin archivo ya no borra el comprobante que había,
+  y si no se puede guardar la fecha, se avisa en vez de decir «Pago registrado».
+- **Mín·Máx:** ocultar y desocultar miran el error de la escritura; antes
+  avisaban «Ocultó N» y anotaban en la bitácora aunque la base no guardara.
+
 ## v2.1335.5 — Auditoría fase 2: cartera, cola de tarjetas, libro de compras y mes de Facturación
 
 Segundo lote de la revisión de código, el de dinero y fiscal.

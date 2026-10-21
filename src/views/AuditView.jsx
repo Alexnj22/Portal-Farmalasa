@@ -21,6 +21,15 @@ import Badge from '../components/common/Badge';
 import { hora12, hora12ConSegundos } from '@nucleo/utils/hora';
 import { hoySV } from '@nucleo/utils/fecha';
 import { ACCIONES_DE_BITACORA, COLUMNAS_CSV_BITACORA, filasCsvDeBitacora, filtrarBitacora, ordenarBitacora } from '@nucleo/utils/bitacora';
+import { fetchBitacoraPagina } from '@nucleo/data/audit';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+
+// Cuántas entradas trae como mucho un rango pedido a la base. El día más
+// cargado ronda las 700; 20,000 son semanas. Si se llega, se avisa.
+const TOPE_DEL_RANGO = 20000;
+const POR_VUELTA = 500;
 
 // Acciones, filtro y orden: `bitacora` (núcleo, lo mismo de la app).
 const ACTION_OPTIONS = ACCIONES_DE_BITACORA;
@@ -128,6 +137,36 @@ const AuditView = ({ openModal }) => {
     const [endDate, setEndDate] = useState('');
     const [actionFilter, setActionFilter] = useState('ALL');
 
+    /* Con fecha o acción elegida, la lista sale de la BASE y no de las 1000
+     * entradas que tiene el store. Antes se filtraba en el navegador sobre
+     * esas 1000 —día y medio de 33,812— y **un tope se aplica antes del
+     * filtro**: un rango anterior salía vacío sin aviso, y el CSV traía a lo
+     * sumo esas mil (2026-10-21). `clave` ata la respuesta al filtro que la
+     * pidió, para que una respuesta lenta no pise a una más nueva. */
+    const filtraEnLaBase = !!(startDate || endDate || actionFilter !== 'ALL');
+    const claveDelRango = `${actionFilter}|${startDate}|${endDate}`;
+    const [delRango, setDelRango] = useState(null);
+    useEffect(() => {
+        if (!filtraEnLaBase) return undefined;
+        let vigente = true;
+        (async () => {
+            const filas = [];
+            for (let desdeFila = 0; desdeFila < TOPE_DEL_RANGO; desdeFila += POR_VUELTA) {
+                const { data, error } = await fetchBitacoraPagina({
+                    accion: actionFilter, desde: startDate, hasta: endDate, desdeFila, limite: POR_VUELTA,
+                });
+                if (!vigente) return;
+                if (error) { setDelRango({ clave: claveDelRango, filas, topado: false, error }); return; }
+                filas.push(...(data || []));
+                if (!data || data.length < POR_VUELTA) { setDelRango({ clave: claveDelRango, filas, topado: false, error: null }); return; }
+            }
+            setDelRango({ clave: claveDelRango, filas, topado: true, error: null });
+        })();
+        return () => { vigente = false; };
+    }, [filtraEnLaBase, claveDelRango, actionFilter, startDate, endDate]);
+    const rango = filtraEnLaBase && delRango?.clave === claveDelRango ? delRango : null;
+    const cargandoRango = filtraEnLaBase && !rango;
+
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
     // 25 y no 15: es el primer valor de `PAGE_SIZE_OPTIONS`, la escala del
@@ -173,8 +212,11 @@ const AuditView = ({ openModal }) => {
     }, [setRawSearchTerm]);
 
     const processedLogsBase = useMemo(
-        () => (Array.isArray(auditLog) ? filtrarBitacora(auditLog, { accion: actionFilter, desde: startDate, hasta: endDate }) : []),
-        [auditLog, actionFilter, startDate, endDate]);
+        () => {
+            const fuente = filtraEnLaBase ? (rango?.filas || EMPTY_ARRAY) : auditLog;
+            return Array.isArray(fuente) ? filtrarBitacora(fuente, { accion: actionFilter, desde: startDate, hasta: endDate }) : [];
+        },
+        [filtraEnLaBase, rango, auditLog, actionFilter, startDate, endDate]);
 
     const { results: processedLogs, isFuzzy: isLogSearchFuzzy } = useMemo(() => {
         const base = ordenarBitacora(processedLogsBase, sortConfig);
@@ -182,24 +224,19 @@ const AuditView = ({ openModal }) => {
         return smartFilter(debouncedSearchTerm, base, log => [log.user_name, log.action, log.branch_name, log.device_name]);
     }, [processedLogsBase, debouncedSearchTerm, sortConfig]);
 
-    // 🚨 MEJORA: Exportación CSV con TODAS las columnas nuevas
+    // Columnas y filas: núcleo (`bitacora`), las mismas de la app. Por el
+    // canónico `exportCsv`: el URI `data:` armado con `encodeURI` no codifica
+    // `#`, así que el archivo se cortaba en el primer `#` de un detalle; y esa
+    // descarga no quedaba anotada como egreso.
     const exportToCSV = useCallback(() => {
         setIsExporting(true);
-        setTimeout(() => {
-            const escape = (text) => `"${String(text || '').replace(/"/g, '""')}"`;
-            // Columnas y filas: núcleo (`bitacora`), las mismas de la app.
-            const headers = COLUMNAS_CSV_BITACORA;
-            const rows = filasCsvDeBitacora(processedLogs, hora12ConSegundos).map(fila => fila.map(escape).join(","));
-            const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.join("\n");
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `auditoria_completa_${hoySV()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => setIsExporting(false), 1000);
-        }, 100);
+        try {
+            exportCsv(COLUMNAS_CSV_BITACORA, filasCsvDeBitacora(processedLogs, hora12ConSegundos),
+                `auditoria_completa_${hoySV()}.csv`, 'auditview');
+        } catch (e) {
+            useToastStore.getState().showToast('No se pudo descargar', mensajeAmigable(e), 'error');
+        }
+        setTimeout(() => setIsExporting(false), 600);
     }, [processedLogs]);
 
     const totalItems = processedLogs.length;
@@ -340,6 +377,24 @@ const filtrosCuerpo = (
                     />
                 ) : null}
             >
+                {!filtraEnLaBase && auditLog.length >= 1000 && (
+                    <Notice variant="info" icon={Info} className="mb-3">
+                        Se ven las 1,000 entradas más recientes. Para ver anteriores, elige un rango de fechas.
+                    </Notice>
+                )}
+                {cargandoRango && (
+                    <Notice variant="info" icon={Clock} className="mb-3">Buscando en toda la bitácora…</Notice>
+                )}
+                {rango?.error && (
+                    <Notice variant="danger" icon={AlertCircle} className="mb-3">
+                        No se pudo leer todo el rango: faltan entradas. Vuelve a intentarlo.
+                    </Notice>
+                )}
+                {rango?.topado && (
+                    <Notice variant="warning" icon={AlertTriangle} className="mb-3">
+                        Se muestran las {TOPE_DEL_RANGO.toLocaleString('es-SV')} entradas más recientes del rango. Acota las fechas para ver el resto.
+                    </Notice>
+                )}
                 {isLogSearchFuzzy && debouncedSearchTerm && (
                     <Notice variant="warning" icon={Search} className="mb-3">
                     Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas

@@ -1338,13 +1338,19 @@ export const createRequestsSlice = (set, get) => ({
      * `await import()` para no viajar en el chunk de arranque.
      */
     _decidirIngreso: async (requestId, req, approverId, approverNote, aprobar) => {
-        const { resolverAutorizacionDeIngreso } = await import('../../data/bolsas');
+        const { resolverAutorizacionDeIngreso, rechazarYAnularMovimiento } = await import('../../data/bolsas');
+        // Rechazar = anular (2026-10-21): el dinero vuelve a contar en el cajón.
+        let resultado = null;
         try {
-            await resolverAutorizacionDeIngreso(requestId, aprobar, approverNote);
+            if (aprobar) await resolverAutorizacionDeIngreso(requestId, true, approverNote);
+            else resultado = await rechazarYAnularMovimiento(requestId, req?.metadata?.branch_id, approverNote);
         } catch (e) {
-            useToastStore.getState().showToast(aprobar ? 'No se autorizó' : 'No se rechazó',
+            // Rechazado pero sin anular (la caja no respondió): el estado cambió
+            // igual, y volver a rechazar completa la anulación.
+            useToastStore.getState().showToast(aprobar ? 'No se autorizó' : (e?.rechazado ? 'Rechazado, sin anular' : 'No se rechazó'),
                 e?.message || 'El servidor no devolvió respuesta.', 'error');
-            return YA_AVISADO;
+            if (!e?.rechazado) return YA_AVISADO;
+            resultado = { anulado: false, aviso: e.message, yaAvisado: true };
         }
         const estado = aprobar ? 'APPROVED' : 'REJECTED';
         set(state => ({
@@ -1355,11 +1361,11 @@ export const createRequestsSlice = (set, get) => ({
             ),
         }));
         apagarAviso(get, requestId, estado);
-        useToastStore.getState().showToast(
-            aprobar ? 'Ingreso autorizado' : 'Ingreso sin autorizar',
+        if (!resultado?.yaAvisado) useToastStore.getState().showToast(
+            aprobar ? 'Movimiento autorizado' : resultado?.anulado ? 'Rechazado y anulado' : 'Rechazado',
             aprobar ? 'Se le avisó a quien lo anotó.'
-                    : 'Se le avisó a quien lo anotó: lo puede reenviar con más pruebas.',
-            aprobar ? 'success' : 'info');
+                    : resultado?.aviso || 'Se anuló y se le avisó a quien lo anotó: si hacía falta, lo anota de nuevo con su comprobante.',
+            aprobar ? 'success' : resultado?.aviso ? 'warning' : 'info');
         emitir('requests-updated');
         return true;
     },

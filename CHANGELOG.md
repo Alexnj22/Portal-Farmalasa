@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.8 — Caja: rechazar un movimiento lo anula
+
+«si no la aprobé significa que se cancela» (usuario). Rechazar una salida o
+un ingreso sin comprobante ahora lo ANULA: se borra en la caja y el dinero
+vuelve a contar en el cajón. Antes sólo cambiaba el estado y el movimiento
+seguía restando: la sala 27 anotó una compra sin foto ($19.58), se rechazó, la
+anotó de nuevo con factura ($19.68) y el cajón quedó con las dos.
+
+- `operar-caja` acción `rechazar_autorizacion`: decide con la sesión de quien
+  rechaza (`caja_ingreso_resolver`) y después anula. Si la caja no responde,
+  rechazar otra vez completa la anulación. Un día ya cerrado no se toca.
+- El aviso a quien lo anotó ya no dice «puedes reenviarla»: dice que se anuló
+  y que, si hacía falta, se anota de nuevo con su comprobante.
+
 ## v2.1335.7 — Auditoría fase 2: alcance de permisos con dos cargos, pagos a proveedores y cobros de distribución
 
 Tres funciones de la base, aplicadas en producción con el OK del usuario

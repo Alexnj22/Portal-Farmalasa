@@ -387,7 +387,7 @@ Deno.serve(async (req) => {
     // rama existía y nunca se alcanzó. Es lo que esta lista tiene de traicionero
     // en el otro sentido: no sólo deja pasar de más, también deja afuera.
     if (!["abrir", "iniciar_turno", "ingreso", "salida", "abono", "cerrar", "estado", "corregir",
-          "aplicar_correccion"].includes(accion)) {
+          "aplicar_correccion", "rechazar_autorizacion"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
@@ -408,13 +408,13 @@ Deno.serve(async (req) => {
      *    (`requests_caja` `can_approve`). Cobrarla con `caja_vales` dejaría que
      *    quien se equivocó se aprobara a sí mismo, que es exactamente lo que la
      *    solicitud existe para impedir. */
-    const [modulo, accionDelPermiso] = accion === "aplicar_correccion"
+    const [modulo, accionDelPermiso] = ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
       ? ["requests_caja", "can_approve"]
       : ["caja_vales", accion === "estado" ? "can_view" : "can_edit"];   // `abono` incluido: es un ingreso
     const permiso = await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) {
-      return json({ ok: false, error: accion === "aplicar_correccion"
+      return json({ ok: false, error: ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
         ? "No tienes permiso para decidir las correcciones de caja."
         : "No tienes permiso para operar la caja desde el portal." }, 403);
     }
@@ -428,7 +428,7 @@ Deno.serve(async (req) => {
      * `aplicar_correccion` y `corregir` no pasan por acá —van contra un
      * movimiento que se relee de la base, con su propia sala— así que el freno
      * se aplica a lo que sí toca una caja por número de sala. */
-    if (!["aplicar_correccion", "corregir"].includes(accion)
+    if (!["aplicar_correccion", "corregir", "rechazar_autorizacion"].includes(accion)
         && !permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
       return json({ ok: false, error: "Solo puedes operar la caja de tu propia sala." }, 403);
     }
@@ -579,7 +579,7 @@ Deno.serve(async (req) => {
     // Y el vale del retiro de lo apartado (2026-10-20): es la salida que hay
     // que poder probar del retiro al contado.
     const valeDeRetiro = accion === "salida" && String(body.tipo ?? "") === "APLICA_ANTICIPO";
-    if (cajaSimulada && !valeDeRetiro && !["estado", "ingreso", "corregir", "aplicar_correccion"].includes(accion)) {
+    if (cajaSimulada && !valeDeRetiro && !["estado", "ingreso", "corregir", "aplicar_correccion", "rechazar_autorizacion"].includes(accion)) {
       return json({ ok: false, error: "En el entorno de pruebas la caja es simulada: sólo se puede mirar, anotar ingresos y corregirlos." }, 409);
     }
 
@@ -694,6 +694,104 @@ Deno.serve(async (req) => {
     // después el portal, y la solicitud queda APPROVED **al final**. Si el
     // sistema no acepta, la solicitud sigue PENDING con el motivo a la vista —
     // nunca una corrección «aprobada» sobre una caja que no cambió.
+    /* ── RECHAZAR UNA AUTORIZACIÓN = ANULAR EL MOVIMIENTO (2026-10-21) ────
+     *
+     * «si no la aprobé significa que se cancela» (usuario). Hasta acá rechazar
+     * sólo cambiaba un estado: el dinero ya había salido del cajón al anotarlo
+     * y seguía contando. Medido el mismo día: Salud de la sala 27 anotó una
+     * compra sin foto ($19.58), se rechazó, la volvió a anotar con foto
+     * ($19.68) — y el cajón quedó con las DOS salidas.
+     *
+     * El orden importa: primero se decide (`caja_ingreso_resolver`, con la
+     * sesión de quien decide: cobra el permiso, impide decidir lo propio y le
+     * avisa a quien lo anotó), después se borra en la caja y se anula en el
+     * portal. Si la caja falla, el rechazo ya quedó y esta misma acción sobre
+     * la solicitud ya rechazada sólo completa la anulación: así se reintenta.
+     *
+     * Un día ya cerrado no se toca (misma regla que las correcciones): el
+     * rechazo queda y la diferencia va al corte de ese día. */
+    if (accion === "rechazar_autorizacion") {
+      const solId = String(body.solicitud ?? "");
+      const nota = String(body.nota ?? "").trim();
+      if (!solId) return json({ ok: false, error: "Falta la solicitud." }, 400);
+      const { data: sol, error: errSol } = await supabase.from("approval_requests")
+        .select("id, type, status, metadata, employee_id").eq("id", solId).maybeSingle();
+      if (errSol) throw new Error(`leyendo la solicitud: ${errSol.message}`);
+      if (!sol || sol.type !== "CAJA_INGRESO_AUTORIZACION") {
+        return json({ ok: false, error: "No existe esa solicitud de autorización." }, 404);
+      }
+      const meta = (sol.metadata ?? {}) as Record<string, unknown>;
+      if (Number(meta.branch_id) !== sala) return json({ ok: false, error: "Esa solicitud es de otra sala." }, 400);
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return json({ ok: false, error: "Esa solicitud es de otra sala." }, 403);
+      }
+      if (sol.employee_id === quien.id) {
+        return json({ ok: false, error: "No puedes rechazar un movimiento que anotaste tú." }, 403);
+      }
+      if (sol.status === "PENDING") {
+        if (!nota) return json({ ok: false, error: "Para rechazarlo escribe por qué." }, 400);
+        const comoQuienDecide = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+        });
+        const { error: errRes } = await comoQuienDecide.rpc("caja_ingreso_resolver",
+          { p_solicitud: solId, p_aprobar: false, p_nota: nota });
+        if (errRes) return json({ ok: false, error: errRes.message }, 409);
+      } else if (sol.status !== "REJECTED") {
+        return json({ ok: false, error: "Esa solicitud ya se resolvió." }, 409);
+      }
+
+      const { data: mov, error: errMov } = await supabase.from("caja_movimientos_portal")
+        .select("id, monto, concepto, forma_pago, erp_movimiento_id, erp_apertura_id, anulado_at, autorizacion, bolsa_operacion_id, reserva_id, encargo_id")
+        .eq("id", Number(meta.movimiento_portal)).maybeSingle();
+      if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
+      if (!mov) return json({ ok: true, rechazado: true, aviso: "Se rechazó, pero el movimiento ya no existe." });
+      if (mov.anulado_at) return json({ ok: true, rechazado: true, anulado: true });
+      if (mov.autorizacion !== "RECHAZADA") {
+        return json({ ok: false, error: "Ese movimiento no está rechazado." }, 409);
+      }
+      // Una salida que también sacó de una bolsa se anula entera desde
+      // Correcciones; acá no se parte en dos.
+      if (mov.bolsa_operacion_id) {
+        return json({ ok: true, rechazado: true,
+          aviso: "Se rechazó. Es parte de una salida de bolsa: anúlala entera pidiendo la corrección." });
+      }
+      const efectivo = String(mov.forma_pago ?? "EFECTIVO") === "EFECTIVO";
+      if (efectivo && !cajaSimulada) {
+        if (String(mov.erp_apertura_id ?? "") !== String(estado.aper ?? "")) {
+          return json({ ok: true, rechazado: true,
+            aviso: "Se rechazó, pero ese día ya se cerró: el dinero no se puede devolver a esa caja. La diferencia se resuelve en el corte de ese día." });
+        }
+        if (mov.erp_movimiento_id) {
+          const r = await (await fetch(BORRAR, {
+            method: "POST",
+            headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+            body: new URLSearchParams({ process: "eliminar", id_movimiento: String(mov.erp_movimiento_id) }).toString(),
+            signal: AbortSignal.timeout(45_000),
+          })).text();
+          if (!exito(r)) {
+            console.error(`[operar-caja] rechazo mov=${mov.id}: borrar en caja: ${r.slice(0, 1000)}`);
+            return json({ ok: false, rechazado: true,
+              error: "Se rechazó, pero la caja no aceptó anularlo. Vuelve a rechazarlo para completar la anulación." }, 502);
+          }
+        }
+      }
+      const { error: errAnu } = await supabase.from("caja_movimientos_portal").update({
+        anulado_at: new Date().toISOString(), anulado_por: quien.id,
+        anulado_motivo: `No se autorizó${nota ? `: ${nota}` : ""}`.slice(0, 500),
+        updated_at: new Date().toISOString(),
+      }).eq("id", mov.id).is("anulado_at", null);
+      if (errAnu) {
+        console.error(`[operar-caja] rechazo mov=${mov.id}: portal: ${errAnu.message}`);
+        return json({ ok: true, rechazado: true, aviso: "La caja ya lo anuló, pero el portal no lo pudo anotar. Avísale a Sistemas." });
+      }
+      // Un anticipo con tarjeta sin comprobante: su apartado vuelve a como estaba.
+      if (mov.reserva_id || mov.encargo_id) {
+        const { error: errAp } = await supabase.rpc("apartado_deshacer", { p_movimiento: mov.id, p_anular: false });
+        if (errAp) console.error(`[operar-caja] rechazo anticipo mov=${mov.id}: ${errAp.message}`);
+      }
+      return json({ ok: true, rechazado: true, anulado: true });
+    }
+
     if (accion === "aplicar_correccion") {
       const solId = String(body.solicitud ?? "");
       if (!solId) return json({ ok: false, error: "Falta la solicitud." }, 400);

@@ -1703,6 +1703,30 @@ export async function resolverAutorizacionDeIngreso(solicitudId, aprobar, nota =
 }
 
 /**
+ * Rechaza un movimiento sin comprobante Y lo anula (2026-10-21): «si no la
+ * aprobé significa que se cancela». Va por `operar-caja` porque anular un
+ * efectivo es borrarlo también en la caja. Lanza con el motivo del servidor;
+ * devuelve `{ anulado, aviso }` — `aviso` cuando se rechazó pero no se pudo
+ * anular (día ya cerrado, parte de una bolsa).
+ */
+export async function rechazarYAnularMovimiento(solicitudId, sala, nota) {
+    const { data, error } = await supabase.functions.invoke('operar-caja', {
+        body: { accion: 'rechazar_autorizacion', sala: Number(sala), solicitud: solicitudId,
+                nota: String(nota ?? '').trim() },
+    });
+    let cuerpo = data;
+    if (error) {
+        try { cuerpo = await error.context?.json(); } catch { cuerpo = null; }
+    }
+    if (!cuerpo?.ok) {
+        const e = new Error(cuerpo?.error || error?.message || 'El servidor no devolvió respuesta.');
+        e.rechazado = !!cuerpo?.rechazado;
+        throw e;
+    }
+    return { anulado: !!cuerpo.anulado, aviso: cuerpo.aviso || null };
+}
+
+/**
  * Vuelve a pedir la autorización de un ingreso rechazado, con más pruebas: una
  * foto nueva, una explicación, o las dos. Lanza con el motivo del servidor.
  */

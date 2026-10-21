@@ -412,10 +412,13 @@ export function construirTicketHtml(ticket) {
   ${ticket.titulo ? `<div class="titulo">${esc(ticket.titulo)}</div>` : ''}
   ${filasDeDatos.map(filaDeDatos).join('')}
   ${bloques.map(bloqueHtml).join('')}
-  ${codigos.map(codigoHtml).join('')}
   ${ticket?.qrSvg ? `<div class="barras">${ticket.qrSvg}</div>` : ''}
   ${itemsHtml}
   ${totales.length ? `<div class="totales">${totales.map(filaTotal).join('')}</div>` : ''}
+  ${/* Las barras al final, después de los totales: es donde las pone el
+       rollo (ver seccionesParaElPrograma). La vista previa las pintaba
+       en el medio, así que se mostraba un papel distinto al que salía. */
+    codigos.map(codigoHtml).join('')}
   ${ticket.barraPrueba ? '<div class="barra"><div class="solida"></div><div class="franjas"></div></div>' : ''}
   ${pie.length ? `<div class="pie">${pie.map(l => `<p>${esc(l)}</p>`).join('')}</div>` : ''}
   <div class="corte"></div>
@@ -986,6 +989,11 @@ export function seccionesParaElPrograma(ticket) {
          * El comando NO lleva `\n` adelante: viaja pegado al renglón que le
          * toca, por lo mismo que los cambios de letra (un código solo se
          * llevaría un renglón de rollo). */
+        // Un renglón en blanco antes de las barras cuando vienen después de
+        // los totales o de la tabla (2026-10-21, «el código está muy pegado
+        // al texto»): sin él la última cifra quedaba tocando las barras. Es
+        // un espacio y no '' porque el `filter(Boolean)` se comería el vacío.
+        ...(codigos.length && (totales.length || items) ? [' '] : []),
         ...codigos.flatMap(c => [
             codigoDeBarrasParaElRollo(c),
             ...(c.leyenda ? [c.leyenda] : []),

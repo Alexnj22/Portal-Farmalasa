@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1331.6 — Constancia de reserva: barras separadas, montos del mismo tamaño y el pie se entiende
+
+Pedido del usuario: «el código está muy pegado al texto… hay textos muy grandes como falta pagar. Si no lo retiras: … no lo entiendo».
+
+- **Las barras van separadas** de la última cifra por un renglón en blanco en el rollo, en todo papel que lleve barras después de los totales o de la tabla (también el comprobante de abono y la prueba de impresión).
+- **La vista previa pone las barras donde las pone el rollo**: al final, después de los totales. Antes las pintaba en el medio y se veía un papel distinto al que salía.
+- **«Falta pagar» ya no sale en doble alto**: los tres montos van del mismo tamaño.
+- **El pie se entiende**: «Si no la retiras a tiempo, tu anticipo no se pierde: queda como saldo a favor por 60 días».
+
 ## v2.1331.5 — App del personal: deslizar para responder sin salir del chat y compositor alineado
 
 Reporte del usuario con la app del personal: «no puedo deslizar para contestar un mensaje, me saca… visualmente necesita mucho que mejorar».

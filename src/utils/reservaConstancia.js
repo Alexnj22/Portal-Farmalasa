@@ -32,15 +32,23 @@ export function construirConstanciaDeReserva({ codigo, cliente, producto, cantid
             ['Impreso', fechaHora(ahora)],
             ...(atendio ? [['Atendio', atendio]] : []),
         ],
+        // Sin destacado (2026-10-21, «hay textos muy grandes como falta
+        // pagar»): en el rollo el destacado es doble alto y en negrita, y
+        // «Falta pagar» salía más grande que el propio código de la reserva.
         totales: [
             ['Total', formatMoney(total)],
             [`Anticipo (${metodo})`, formatMoney(Number(anticipo))],
-            ['Falta pagar', formatMoney(saldo), true],
+            ['Falta pagar', formatMoney(saldo)],
         ],
         codigos: [{ valor: codigo, simbologia: 'CODE128' }],
+        // «Si no la retiras: 60 dias a tu favor» no se entendía: lo que queda
+        // a favor es el ANTICIPO, como saldo para otra compra.
         pie: [
-            'Presenta este papel para retirar.',
-            `Si no la retiras: ${DIAS_SALDO_A_FAVOR} dias a tu favor.`,
+            'Trae este papel para retirar.',
+            // Partido a mano: el pie viaja tal cual y el rollo cortaría a
+            // mitad de palabra en la columna 54.
+            'Si no la retiras a tiempo, tu anticipo no se pierde:',
+            `queda como saldo a favor por ${DIAS_SALDO_A_FAVOR} dias.`,
         ],
     };
 }

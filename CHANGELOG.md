@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1327.1 — Chat: el panel se cierra al tocar afuera y guarda lo escrito
+
+Pedido del usuario: «si doy click afuera que se cierre el chat (pero si tenía escrito o adjuntado algo, que no se borre)».
+
+- **Tocar fuera del panel de la burbuja lo cierra.** No cuenta lo que se abre desde el panel en otra capa (respuestas rápidas, producto, oferta, la foto ampliada, una confirmación): tocar ahí no cierra nada.
+- **Lo escrito no se pierde.** Texto, foto, producto u oferta quedan guardados por conversación (`chat-clientes/borradores.js`, en memoria: una foto es un `File` y no entra en `localStorage`). Si la conversación que estaba abierta tenía algo escrito, el panel vuelve a abrirse ahí. También sirve al cambiar de conversación. Recargar la página sí lo pierde.
+- Probado en pruebas: clic con la hoja abierta → el panel sigue; clic afuera → se cierra; al reabrir, el texto sigue en el campo.
+
 ## v2.1327.0 — Reservas: enviar la preventa a caja y cierre solo al facturar
 
 - **«Enviar a caja»** en cada reserva pendiente o lista (y en un pedido del carrito entero): deja la venta armada en la caja con el producto, el cliente y quien la envía como vendedor (los cuatro cargos de administración firman con 1000). Sólo con editar Reservas y en la sala propia salvo alcance de toda la red; la base lo vuelve a decidir (`preventa_preparar`) y no deja una segunda preventa viva. La función `preventa-caja` va con JWT.

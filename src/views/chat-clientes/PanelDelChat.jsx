@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Maximize2, MessagesSquare, X } from 'lucide-react';
 import Button from '../../components/common/Button';
@@ -15,6 +15,7 @@ import Conversacion from './Conversacion';
 import FilaDeConversacion from './FilaDeConversacion';
 import { FILTROS, estadoDeConversacion } from './estados';
 import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
+import { tieneBorrador } from './borradores';
 import { ordenarConPreferentes } from '@nucleo/utils/chatClientes';
 
 /**
@@ -36,12 +37,18 @@ const CHIPS = ['abierta', 'nuevo', 'atencion', 'esperando'];
 // («Esperando al cliente») el riel se partía en dos renglones.
 const CORTO = { abierta: 'Todas', nuevo: 'Nuevas', atencion: 'Atención', esperando: 'Esperando' };
 
+// La conversación que estaba abierta al cerrar el panel. Si quedó algo escrito
+// en ella, el panel vuelve a abrirse ahí: el borrador se ve y se sigue.
+let ultimaConversacion = null;
+
 export default function PanelDelChat({ abierto, onClose }) {
     const enTelefono = useMediaQuery(CORTE_TELEFONO);
     const { hasPermission, user } = useAuth();
     const puedeResponder = hasPermission('chat_clientes', 'can_edit');
     const [filtro, setFiltro] = useState('abierta');
-    const [convId, setConvId] = useState(null);
+    const [convId, setConvId] = useState(() => (ultimaConversacion != null && tieneBorrador(ultimaConversacion) ? ultimaConversacion : null));
+    useEffect(() => { ultimaConversacion = convId; }, [convId]);
+    const panelRef = useRef(null);
     const ahora = useNowTick(30_000);
     const hayDialogo = useHayDialogo();
 
@@ -69,6 +76,21 @@ export default function PanelDelChat({ abierto, onClose }) {
         const alTeclear = (e) => { if (e.key === 'Escape' && !hayDialogo) onClose(); };
         window.addEventListener('keydown', alTeclear);
         return () => window.removeEventListener('keydown', alTeclear);
+    }, [enTelefono, abierto, hayDialogo, onClose]);
+
+    // Tocar fuera del panel lo cierra (lo escrito queda en `borradores`). No
+    // cuenta lo que vive en otra capa: un diálogo, la hoja de respuestas
+    // rápidas o la foto ampliada se abren DESDE el panel y salen en un portal,
+    // así que para el DOM están «afuera».
+    useEffect(() => {
+        if (enTelefono || !abierto) return undefined;
+        const alTocar = (e) => {
+            if (hayDialogo || panelRef.current?.contains(e.target)) return;
+            if (e.target instanceof Element && e.target.closest('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-portal]')) return;
+            onClose();
+        };
+        document.addEventListener('pointerdown', alTocar);
+        return () => document.removeEventListener('pointerdown', alTocar);
     }, [enTelefono, abierto, hayDialogo, onClose]);
 
     const titulo = 'Chat con clientes';
@@ -150,7 +172,7 @@ export default function PanelDelChat({ abierto, onClose }) {
     }
 
     return (
-        <div role="dialog" aria-label={titulo} data-surface="dropdown"
+        <div ref={panelRef} role="dialog" aria-label={titulo} data-surface="dropdown"
             className="fixed z-dropdown right-[max(16px,var(--sa-right))] bottom-[max(16px,var(--sa-bottom))]
                 w-[420px] max-w-[calc(100vw-2rem)] h-[min(680px,calc(100dvh-6rem))]
                 rounded-modal overflow-hidden flex flex-col animate-in zoom-in-95 duration-[var(--dur-base)]">

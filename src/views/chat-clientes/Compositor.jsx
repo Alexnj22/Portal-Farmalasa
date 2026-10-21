@@ -23,6 +23,7 @@ import {
 } from '@nucleo/data/chatClientes';
 import { FranjaDeRespuesta } from './AccionesDeMensaje';
 import useGrabadora from './useGrabadora';
+import { guardarBorrador, leerBorrador } from './borradores';
 
 // El cuadro para responder: texto, una foto, una respuesta rápida guardada, o
 // un producto / una oferta vigente que el cliente puede tocar en la app.
@@ -40,9 +41,11 @@ const MAX_TEXTO = 2000;
 
 export default function Compositor({ conversacion, onEnviar, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
     const showToast = useToastStore((s) => s.showToast);
-    const [texto, setTexto] = useState('');
-    const [archivo, setArchivo] = useState(null);
-    const [adjunto, setAdjunto] = useState(null);
+    // Arranca con lo que quedó escrito en esta conversación (`borradores`).
+    const [texto, setTexto] = useState(() => leerBorrador(conversacion.id)?.texto ?? '');
+    const [archivo, setArchivo] = useState(() => leerBorrador(conversacion.id)?.archivo ?? null);
+    const [adjunto, setAdjunto] = useState(() => leerBorrador(conversacion.id)?.adjunto ?? null);
+    useEffect(() => { guardarBorrador(conversacion.id, { texto, archivo, adjunto }); }, [conversacion.id, texto, archivo, adjunto]);
     const [hoja, setHoja] = useState(null); // 'respuestas' | 'producto' | 'oferta'
     const fileRef = useRef(null);
     const campoRef = useRef(null);

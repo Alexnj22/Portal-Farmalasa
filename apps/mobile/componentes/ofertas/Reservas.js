@@ -18,8 +18,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
-import { pilaDelCliente, reservasPendientes, reservasPorCodigo, resumenDelPedido } from '@nucleo/utils/reservasDeSala';
-import { hora12 } from '@nucleo/utils/hora';
+import { pilaDelCliente, plazoDeRetiro, reservasPendientes, reservasPorCodigo, resumenDelPedido } from '@nucleo/utils/reservasDeSala';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
@@ -134,7 +133,7 @@ export default function Reservas({ sala, todas = false, recarga }) {
               </View>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                 {[todas && r.sala ? r.sala : null, r.pedido, codigoDeReserva(r.id), pilaDelCliente(r),
-                  r.estado === 'lista' ? `retira antes de las ${hora12(r.vence_at)}` : null, r.avisado_via === 'whatsapp' ? 'avisado por WhatsApp' : null].filter(Boolean).join(' · ')}
+                  r.estado === 'lista' ? plazoDeRetiro(r) : null, r.avisado_via === 'whatsapp' ? 'avisado por WhatsApp' : null].filter(Boolean).join(' · ')}
               </Text>
               <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                 {r.pago_estado === 'pagado' ? <Pildora texto={r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'} color={MARCA.verde} /> : null}

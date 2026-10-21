@@ -1,7 +1,7 @@
 // Mis reservas (2026-10-06): lo que el cliente apartó, si es de una promoción o
 // un producto normal, en qué va, cómo se entrega (retiro en qué sucursal, o a
 // domicilio), cómo se paga y si ya está pagado. Una reserva «lista» muestra la
-// cuenta regresiva de las 24 horas; una pendiente o lista se puede cancelar.
+// cuenta regresiva del plazo; una pendiente o lista se puede cancelar.
 //
 // Paginada y con filtros (2026-10-09): chips Todas · Abiertas · Retiradas ·
 // Vencidas/Canceladas. El filtro lo aplica el servidor (para que «ver más»
@@ -34,7 +34,8 @@
 // suman a las reales DESPUÉS de leerlas —no van a la pantalla bloqueada— y
 // sus acciones no llaman al servidor: el cambio queda sólo en este teléfono.
 //
-// Pantalla bloqueada (2026-10-15): cada vez que se lee la lista, las reservas
+// Pantalla bloqueada (2026-10-15, APAGADA el 2026-10-20 hasta que haya
+// domicilio — ver ENCENDIDA en modules/reserva-viva): cada vez que se lee la lista, las reservas
 // abiertas se ponen en la pantalla bloqueada (Live Activity en iPhone,
 // notificación fija en Android) y las que terminaron se quitan — ver
 // modules/reserva-viva. Sólo con «Todas» o «Abiertas»: son las lecturas que
@@ -54,7 +55,7 @@ import CodigoReserva from '../componentes/CodigoReserva';
 import { Entrada, Latido } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
-import { dolares, fecha } from '../lib/formato';
+import { diaDelPlazo, dolares, fecha, quedaDelPlazo } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 import { useCuenta } from '../lib/cuenta';
@@ -82,12 +83,7 @@ const estadoDe = (t, e) => {
   return { texto: b.texto, color, fondo: FONDOS[b.tono] };
 };
 
-function restante(iso, ahora) {
-  const ms = Date.parse(iso) - ahora;
-  if (ms <= 0) return 'vence ahora';
-  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
-  return h ? `quedan ${h} h ${m} min` : `quedan ${m} min`;
-}
+// El plazo cuenta el día entero en que vence: ver `quedaDelPlazo` en lib/formato.
 
 // Los filtros: la clave es la que entiende el servidor (`estado`).
 const FILTROS = [['todas', 'Todas'], ['abiertas', 'Abiertas'], ['retiradas', 'Retiradas'], ['cerradas', 'Vencidas o canceladas']];
@@ -714,7 +710,7 @@ function Pasos({ lista }) {
   );
 }
 
-// Las 24 horas para retirar, con la hora en que vence.
+// El plazo para retirar: cuánto queda y hasta qué día (todo el día).
 function CuentaRegresiva({ vence, ahora, domicilio }) {
   const t = useTema();
   return (
@@ -722,9 +718,9 @@ function CuentaRegresiva({ vence, ahora, domicilio }) {
       <Icono sf="timer" respaldo="⏱" tam={16} color={t.color.exitoTexto} />
       <View style={{ flex: 1, gap: 1 }}>
         <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>
-          Lista para {domicilio ? 'entregar' : 'retirar'}: {restante(vence, ahora)}
+          Lista para {domicilio ? 'entregar' : 'retirar'}: {quedaDelPlazo(vence, ahora)}
         </Text>
-        <Text style={{ fontSize: 12, color: colorSistema.texto2 }}>Vence el {fechaHora(vence)}</Text>
+        <Text style={{ fontSize: 12, color: colorSistema.texto2 }}>Puedes {domicilio ? 'recibirla' : 'retirarla'} hasta {diaDelPlazo(vence, ahora)}, todo el día</Text>
       </View>
     </View>
   );

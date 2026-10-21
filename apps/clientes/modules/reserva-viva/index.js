@@ -31,6 +31,21 @@ import { alLlegarAviso, CLAVE_AVISOS } from '../../lib/avisos';
 
 const N = Platform.OS === 'ios' || Platform.OS === 'android' ? requireOptionalNativeModule('ReservaViva') : null;
 
+// APAGADA (2026-10-20, decisión del dueño): «eso para cuando tengamos
+// domicilio». El módulo nativo se queda compilado; mientras esto sea `false`
+// no se pone nada en la pantalla bloqueada y lo que hubiera quedado de una
+// versión anterior se quita al arrancar y al leer Mis reservas.
+const ENCENDIDA = false;
+let limpiada = false;
+function quitarLoQueQuedo() {
+  if (limpiada || !N) return Promise.resolve();
+  limpiada = true;
+  return (async () => {
+    try { if (activas().length) await N.terminarTodas(); } catch { /* nada que quitar */ }
+    await SecureStore.deleteItemAsync(CLAVE_MOSTRADAS).catch(() => {});
+  })();
+}
+
 // `CLAVE_AVISOS` (lib/avisos.js): '0' = la persona apagó los avisos en este teléfono.
 // Qué estado se mostró por última vez de cada reserva: { 'R-001234': 'lista' }.
 const CLAVE_MOSTRADAS = 'puntos_salud_reservas_en_pantalla';
@@ -133,6 +148,7 @@ let ultima = 0;
  */
 export function sincronizarReservasVivas(reservas) {
   if (!N || !Array.isArray(reservas)) return cola;
+  if (!ENCENDIDA) return quitarLoQueQuedo();
   ultima = Date.now();
   cola = cola.then(async () => {
     try {
@@ -201,6 +217,7 @@ const esDeReserva = (a) => a?.tipo === 'reserva' || a?.tipo === 'receta'
 let vigilando = false;
 export function vigilarReservasVivas({ alArrancar = true } = {}) {
   if (vigilando || !N) return;
+  if (!ENCENDIDA) { quitarLoQueQuedo(); return; }
   vigilando = true;
   AppState.addEventListener('change', (e) => { if (e === 'active') refrescarPronto(); });
   alLlegarAviso((a) => { if (esDeReserva(a)) refrescarPronto({ siempre: true }); });

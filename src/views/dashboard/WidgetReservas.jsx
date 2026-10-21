@@ -12,7 +12,6 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
@@ -20,7 +19,7 @@ import {
     buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
-import { esPagoDePrueba, origenDelSaldo, reservasAbiertas, saldosAFavor } from '@nucleo/utils/reservasDeSala';
+import { codigoLimpio, coincideCodigo, esPagoDePrueba, origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
 function esperaDeReceta(desde, ahora) {
@@ -221,11 +220,12 @@ export default function WidgetReservas({ todas = false }) {
 
     const pendientes = abiertas.filter((r) => r.estado === 'pendiente').length;
     const recetas = abiertas.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
-    const buscado = codigo.trim().toUpperCase();
-    const visibles = buscado
-        ? abiertas.filter((r) => codigoDeReserva(r.id).includes(buscado) || String(r.pedido ?? '').includes(buscado))
+    // El lector escribe el código de las barras sin guion: se compara por letras y dígitos.
+    const visibles = codigoLimpio(codigo)
+        ? abiertas.filter((r) => coincideCodigo(r, codigo))
         : (todas ? abiertas : abiertas.slice(0, MAX_FILAS));
-    const delPedido = buscado.startsWith('P-') ? visibles.filter((r) => r.pedido === buscado) : [];
+    const delPedido = renglonesDelPedido(visibles, codigo);
+    const buscado = delPedido[0]?.pedido ?? codigo.trim().toUpperCase();
     // Un pedido del carrito es UNA tarjeta con todos sus productos (2026-10-07).
     const grupos = [];
     for (const r of visibles) {
@@ -283,7 +283,7 @@ export default function WidgetReservas({ todas = false }) {
                             subtitle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
                                 todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
-                                r.estado === 'lista' ? ` · retira antes de las ${hora12(r.vence_at)}` : ''}${
+                                r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                             trailing={(
                                 <div className="flex flex-wrap items-center justify-end gap-1">

@@ -18,10 +18,9 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, usarSaldoAFavor, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
-import { esPagoDePrueba, pilaDelCliente, reservasAbiertas, reservasPendientes, reservasPorCodigo, resumenDelPedido, saldosAFavor } from '@nucleo/utils/reservasDeSala';
+import { esPagoDePrueba, pilaDelCliente, plazoDeRetiro, reservasAbiertas, reservasPendientes, reservasPorCodigo, resumenDelPedido, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { hora12 } from '@nucleo/utils/hora';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -184,7 +183,7 @@ export default function ReservasDeSala() {
                   <Pildora texto={enRevision ? 'Receta' : r.estado === 'pendiente' ? 'Por apartar' : 'Lista'} color={urgente ? MARCA.rojo : enRevision || r.estado === 'pendiente' ? MARCA.ambar : MARCA.verde} />
                 </View>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                  {`${todas && r.sala ? `${r.sala} · ` : ''}${r.entrega === 'domicilio' ? `A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''} · ` : ''}${r.pedido ? `${r.pedido} · ` : ''}${codigoDeReserva(r.id)} · ${pilaDelCliente(r)}${r.estado === 'lista' ? ` · retira antes de las ${hora12(r.vence_at)}` : ''}${r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
+                  {`${todas && r.sala ? `${r.sala} · ` : ''}${r.entrega === 'domicilio' ? `A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''} · ` : ''}${r.pedido ? `${r.pedido} · ` : ''}${codigoDeReserva(r.id)} · ${pilaDelCliente(r)}${r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}

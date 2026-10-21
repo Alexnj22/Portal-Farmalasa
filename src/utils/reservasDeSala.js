@@ -3,6 +3,7 @@
 // vez: buscar por el código que el cliente muestra (R-000123 o el pedido del
 // carrito P-XXXXXX, que el lector escribe como un teclado) y sumar el pedido.
 import { codigoDeReserva } from '../data/reservas';
+import { fechaTexto } from './fecha';
 
 const ABIERTAS = ['en_revision', 'pendiente', 'lista'];
 
@@ -38,20 +39,38 @@ export const esPagoDePrueba = (r) => r?.pago_estado === 'pagado' && r?.pago_meto
 
 export const reservasPendientes = (filas) => reservasAbiertas(filas).filter((r) => r.estado === 'pendiente').length;
 
+// El código se compara SÓLO por letras y dígitos (2026-10-20). Las barras
+// —la constancia impresa y la tarjeta de la app— llevan `R001234`, sin guion
+// (`limpiarValorDeBarras`), y un lector con la distribución de teclado cambiada
+// escribe el guion como otro signo. Comparando tal cual, escanear el papel no
+// encontraba la reserva.
+export const codigoLimpio = (t) => String(t ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/** ¿La fila es la del código escrito o escaneado (con o sin guion)? */
+export const coincideCodigo = (r, codigo) => {
+    const buscado = codigoLimpio(codigo);
+    return !!buscado && (codigoLimpio(codigoDeReserva(r.id)).includes(buscado) || codigoLimpio(r.pedido).includes(buscado));
+};
+
 /** Las que coinciden con el código escrito; sin código, todas (o las primeras `max`). */
 export function reservasPorCodigo(filas, codigo, max = null) {
     const abiertas = reservasAbiertas(filas);
-    const buscado = String(codigo ?? '').trim().toUpperCase();
-    if (!buscado) return max == null ? abiertas : abiertas.slice(0, max);
-    return abiertas.filter((r) => codigoDeReserva(r.id).includes(buscado) || String(r.pedido ?? '').includes(buscado));
+    if (!codigoLimpio(codigo)) return max == null ? abiertas : abiertas.slice(0, max);
+    return abiertas.filter((r) => coincideCodigo(r, codigo));
+}
+
+/** Los renglones del pedido del carrito cuyo código es exactamente el buscado. */
+export function renglonesDelPedido(visibles, codigo) {
+    const buscado = codigoLimpio(codigo);
+    if (!buscado.startsWith('P')) return [];
+    return (visibles || []).filter((r) => r.pedido && codigoLimpio(r.pedido) === buscado);
 }
 
 /** Si el código es de un pedido del carrito: sus renglones, el total y si se pagó en línea. */
 export function resumenDelPedido(visibles, codigo) {
-    const buscado = String(codigo ?? '').trim().toUpperCase();
-    const renglones = buscado.startsWith('P-') ? (visibles || []).filter((r) => r.pedido === buscado) : [];
+    const renglones = renglonesDelPedido(visibles, codigo);
     return {
-        pedido: buscado, renglones,
+        pedido: renglones[0]?.pedido ?? String(codigo ?? '').trim().toUpperCase(), renglones,
         total: renglones.reduce((t, r) => t + Number(r.precio ?? 0) * Number(r.cantidad ?? 1), 0),
         pagado: renglones.length > 0 && renglones.every((r) => r.pago_estado === 'pagado' && !esPagoDePrueba(r)),
         prueba: renglones.some(esPagoDePrueba),
@@ -61,3 +80,10 @@ export function resumenDelPedido(visibles, codigo) {
 
 /** El nombre de pila del cliente, como lo muestra la lista. */
 export const pilaDelCliente = (r) => String(r.cliente ?? '').split(/\s+/)[0] ?? '';
+
+/**
+ * Hasta cuándo se retira una reserva lista: un DÍA, nunca una hora (2026-10-20,
+ * regla del dueño: «la hora no, cuenta todo el día»). `reservas_vencer` la
+ * vence cuando termina ese día en El Salvador.
+ */
+export const plazoDeRetiro = (r) => `retira hasta el ${fechaTexto(r.vence_at, { weekday: 'short', day: 'numeric', month: 'short' })}`;

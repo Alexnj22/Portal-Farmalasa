@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { fechaTexto } from '../utils/fecha';
 
 /**
  * Reservas de la app de clientes — migración `app_reservas_de_ofertas`.
@@ -63,7 +64,9 @@ export function mensajeDeReservaLista(r, sala) {
     const primero = nombre ? nombre[0] + nombre.slice(1).toLowerCase() : '';
     return `Hola${primero ? ` ${primero}` : ''}, le saludamos de Farmacia Salud ${sala ?? ''}. `
         + `Su reserva ${codigoDeReserva(r.id)} (${r.cantidad} × ${r.producto}) ya está lista. `
-        + 'Puede pasar a retirarla en las próximas 24 horas; el precio de oferta se respeta. ¡Le esperamos!';
+        // El plazo es un día entero, no una hora (2026-10-20): se dice el día.
+        + (r.vence_at ? `Puede pasar a retirarla hasta el ${fechaTexto(r.vence_at, { weekday: 'long', day: 'numeric', month: 'long' })}` : 'Puede pasar a retirarla')
+        + '; el precio de oferta se respeta. ¡Le esperamos!';
 }
 
 /** El teléfono en formato de WhatsApp (El Salvador): sólo dígitos, con 503. */

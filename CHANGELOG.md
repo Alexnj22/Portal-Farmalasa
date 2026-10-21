@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1322.1 — Reservas: sin pantalla bloqueada, plazo por día y código de barras al compartir
+
+Pedido del dueño (20-oct), viendo Mis reservas en la app de clientes:
+
+- **Pantalla bloqueada apagada** (Live Activity en iPhone, notificación fija en
+  Android): «eso para cuando tengamos domicilio». `ENCENDIDA = false` en
+  `modules/reserva-viva`; lo que hubiera quedado puesto se quita solo.
+- **El plazo para retirar es un DÍA, no una hora.** La app ya no muestra la
+  hora: «Puedes retirarla hasta el martes 21 de octubre, todo el día», y la
+  cuenta va en días y horas cuando pasa de 24 h. Lo mismo en el portal y en la
+  app de sala («retira hasta el mar 21 oct») y en el WhatsApp de «lista».
+  `reservas_vencer` la vence al terminar ese día (migración aparte).
+- **Compartir más corto y con barras.** Cuatro líneas de mensaje; la imagen es
+  un boleto con código de barras grande (los lectores de sala son de una
+  dimensión), el código y un QR chico. Las barras también salen en la tarjeta
+  de la app.
+- **El portal encuentra el código escaneado.** Las barras llevan `R001234` sin
+  guion —igual que la constancia impresa, que tampoco se encontraba al
+  escanearla—: la búsqueda compara sólo letras y dígitos (`codigoLimpio`).
+
 ## v2.1322.0 — Chat con clientes: rediseño estilo mensajería
 
 **Chat con clientes (panel de la burbuja, vista completa y teléfono)** — misma pieza en los tres:

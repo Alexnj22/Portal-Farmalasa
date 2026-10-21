@@ -27,6 +27,51 @@ export function finDeMes(v) {
   return d.toISOString().slice(0, 10);
 }
 
+// ── El plazo para retirar una reserva (2026-10-20) ──
+// Cuenta el DÍA ENTERO en que vence, en El Salvador (UTC−6, sin horario de
+// verano): la base la vence cuando ese día termina (`reservas_vencer`). Por
+// eso nunca se muestra la hora, sólo el día.
+const SV = 6 * 3600_000;
+const diaSV = (ms) => new Date(ms - SV).toISOString().slice(0, 10);
+const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+/** El instante en que termina (medianoche de El Salvador) el día en que vence `iso`. */
+export function finDelPlazo(iso) {
+  const t = Date.parse(iso ?? '');
+  if (!Number.isFinite(t)) return null;
+  return Date.parse(`${diaSV(t)}T00:00:00Z`) + 86400_000 + SV;
+}
+
+/**
+ * «hoy», «mañana» o «el martes 21 de octubre». Con `absoluto`, siempre la
+ * fecha: lo que se comparte se lee otro día y «mañana» ya no diría nada.
+ */
+export function diaDelPlazo(iso, ahora = Date.now(), { absoluto = false } = {}) {
+  const t = Date.parse(iso ?? '');
+  if (!Number.isFinite(t)) return '';
+  const dia = diaSV(t);
+  const dif = Math.round((Date.parse(`${dia}T00:00:00Z`) - Date.parse(`${diaSV(ahora)}T00:00:00Z`)) / 86400_000);
+  if (!absoluto && dif <= 0) return 'hoy';
+  if (!absoluto && dif === 1) return 'mañana';
+  const d = new Date(`${dia}T12:00:00Z`);
+  return `el ${DIAS_SEMANA[d.getUTCDay()]} ${d.getUTCDate()} de ${MESES_LARGOS[d.getUTCMonth()]}`;
+}
+
+/** Cuánto queda: más de 24 h en días y horas («quedan 2 días y 5 h»); menos, en horas y minutos. */
+export function quedaDelPlazo(iso, ahora = Date.now()) {
+  const fin = finDelPlazo(iso);
+  if (fin == null) return '';
+  const ms = fin - ahora;
+  if (ms <= 0) return 'vence hoy';
+  const dias = Math.floor(ms / 86400_000);
+  if (dias >= 1) {
+    const h = Math.floor((ms % 86400_000) / 3600_000);
+    return `quedan ${dias} ${dias === 1 ? 'día' : 'días'}${h ? ` y ${h} h` : ''}`;
+  }
+  const h = Math.floor(ms / 3600_000), m = Math.floor((ms % 3600_000) / 60_000);
+  return h ? `quedan ${h} h ${m} min` : `quedan ${m} min`;
+}
+
 export const dolares = (n) => `$${Number(n ?? 0).toFixed(2)}`;
 export const entero = (n) => Math.round(Number(n ?? 0)).toLocaleString('en-US');
 

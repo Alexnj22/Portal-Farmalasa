@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.13 — Tipos: el núcleo vuelve a su baseline, y lo baja
+
+- `gate:tipos` tenía 26 avisos nuevos en 14 archivos. Ninguno cambiaba el
+  comportamiento: eran firmas JSDoc incompletas, respuestas `Json` de una RPC
+  leídas sin tipo y opciones desestructuradas de un `{}` vacío. Se agregaron
+  los tipos que faltaban, en vez de subir el baseline.
+- `systemSlice.js` armaba el error para el usuario a mano en seis sitios
+  (`new Error` + `e.userFacing = true`). Ahora usa `usuario()`, que estaba en
+  el mismo archivo para eso.
+- `avisosRecibidos.js` devolvía un booleano como limpieza de un efecto.
+- El baseline bajó en 4 archivos (458 avisos en 72 archivos).
+
 ## v2.1333.12 — Chat de clientes: «Atiende» sin title sobre texto
 
 - `ChipsDeEstado.jsx` ponía un `title=` sobre un `<span>` no interactivo

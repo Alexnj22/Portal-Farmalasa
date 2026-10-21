@@ -53,6 +53,9 @@ export async function aplicarPrincipiosDeSrs(productId, principios, contexto = {
  * `SRS_CONCURRENCIA` a la vez, y va contando: `alAvanzar({ hechos, total })`,
  * `alDecidir({ tipo, entrada, producto })` con `tipo` 'auto' | 'revisar' | 'sin'.
  * `cancelado()` corta la corrida. Devuelve `{ total, error }`.
+ * @param {{ alAvanzar?: (p: { hechos: number, total: number }) => void,
+ *          alDecidir?: (d: { tipo: string, entrada: any, producto: any }) => void,
+ *          cancelado?: () => boolean }} [opciones]
  */
 export async function escanearSinPrincipioEnSrs({ alAvanzar, alDecidir, cancelado = () => false } = {}) {
     const { data: productos, error } = await fetchProductsWithoutPrincipioActivo(SRS_LOTE);

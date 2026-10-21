@@ -33,6 +33,7 @@ const dos = (n) => String(n).padStart(2, '0');
  * Un instante leído como reloj de pared de El Salvador: un `Date` cuyos
  * campos `getUTC*` dan la fecha y la hora de la sala. Para quien necesita
  * hacer cuentas de calendario con ellos; para mostrar o comparar, las de abajo.
+ * @param {number|string|Date} [instante]
  */
 export function relojSV(instante = Date.now()) {
     return new Date(new Date(instante).getTime() - DESPLAZAMIENTO_SV_MS);

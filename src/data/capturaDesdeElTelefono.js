@@ -111,6 +111,7 @@ export async function mandarTexto(secreto, texto) {
         p_secreto: secreto, p_texto: String(texto || ''),
     });
     if (error) return { ok: false, motivo: 'No se pudo enviar. Revisa tu señal.' };
-    if (!data?.ok) return { ok: false, motivo: data?.motivo || 'No se pudo enviar el código.' };
+    const r = /** @type {{ ok?: boolean, motivo?: string } | null} */ (data);
+    if (!r?.ok) return { ok: false, motivo: r?.motivo || 'No se pudo enviar el código.' };
     return { ok: true };
 }

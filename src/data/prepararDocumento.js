@@ -51,7 +51,8 @@ function cargar(file) {
  *
  * @param {File} file
  * @param {string} tipo  clave de `DOCS`
- * @returns {Promise<{ok:true, archivo:File, esquinas:Array, formato:object|null}
+ * @returns {Promise<{ok:true, archivo:File, esquinas:Array, formato:object|null,
+ *                   afinado:{lados:any, movimiento:any}|null}
  *                 | {ok:false, motivo:string}>}
  */
 export async function prepararAutomatico(file, tipo = 'documento') {

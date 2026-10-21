@@ -132,7 +132,8 @@ export function cuotaDeLaQuincena(orden, inicioPeriodo) {
 
 /**
  * Total por empleado para una quincena: `Map<employee_id, monto>`.
- * @param {Array<{ employee_id: string }>} ordenes
+ * @param {Array<{ employee_id: string, estado?: string, cuota?: number|string,
+ *                  periodicidad?: string, fecha_inicio?: string, fecha_fin?: string }>} ordenes
  * @param {string} inicioPeriodo
  */
 export function descuentosPorOrdenes(ordenes, inicioPeriodo) {

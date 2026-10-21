@@ -155,8 +155,8 @@ export const createSystemSlice = (set, get) => ({
                             const mappedBranches = branchData.map((b) => ({
                                 ...b,
                                 weeklyHours: b.weekly_hours,
-                                propertyType: b.settings?.propertyType || 'OWNED',
-                                rent: b.settings?.rent || null,
+                                propertyType: /** @type {any} */ (b.settings)?.propertyType || 'OWNED',
+                                rent: /** @type {any} */ (b.settings)?.rent || null,
                                 type: b.type || 'FARMACIA',
                             }));
                             set({ branches: mappedBranches });
@@ -733,9 +733,7 @@ export const createSystemSlice = (set, get) => ({
                 // de "no existe en el catálogo" que era falso.
                 const roleObj = buscarCargo(stateNow.roles, eventData.newRole);
                 if (!roleObj) {
-                    const e = new Error(`El cargo "${eventData.newRole}" no existe en el catálogo de roles.`);
-                    e.userFacing = true;
-                    throw e;
+                    throw usuario(`El cargo "${eventData.newRole}" no existe en el catálogo de roles.`);
                 }
                 const movesBranch = eventData.isTransferAndPromotion && eventData.targetBranchId;
                 const targetBranch = movesBranch
@@ -763,9 +761,7 @@ export const createSystemSlice = (set, get) => ({
                 const cleanCode = String(eventData.newCode ?? '').trim();
                 if (cleanCode) {
                     if (!/^\d+$/.test(cleanCode)) {
-                        const e = new Error('El código de empleado debe contener solo números.');
-                        e.userFacing = true;
-                        throw e;
+                        throw usuario('El código de empleado debe contener solo números.');
                     }
                     // La unicidad la contesta el servidor: `code` ya no viaja en
                     // la lista de empleados salvo para quien ve Ventas, y una
@@ -774,9 +770,7 @@ export const createSystemSlice = (set, get) => ({
                     const dup = (await codigoDeCarneLibre(cleanCode, employeeId)) === false
                         ? { name: 'otra persona' } : null;
                     if (dup) {
-                        const e = new Error(`El código "${cleanCode}" ya está asignado a ${dup.name}.`);
-                        e.userFacing = true;
-                        throw e;
+                        throw usuario(`El código "${cleanCode}" ya está asignado a ${dup.name}.`);
                     }
                     empUpdates.code = cleanCode;
                     localPatch.code = cleanCode;
@@ -838,9 +832,7 @@ export const createSystemSlice = (set, get) => ({
                 if (protegido) await guardarDatosProtegidos(employeeId, protegido);
                 const { error: updErr } = await updateEmployeeFields(employeeId, camposPlanos);
                 if (updErr) {
-                    const e = new Error(`El evento quedó registrado pero el cambio no se aplicó al expediente: ${updErr.message}`);
-                    e.userFacing = true;
-                    throw e;
+                    throw usuario(`El evento quedó registrado pero el cambio no se aplicó al expediente: ${updErr.message}`);
                 }
             }
 
@@ -882,9 +874,7 @@ export const createSystemSlice = (set, get) => ({
                 // eso saltaba el bloque en silencio: la novedad quedaba sin su
                 // boleta y la pantalla decía «guardado».
                 if (!url) {
-                    const e = new Error('La novedad quedó registrada pero el documento no se pudo subir. Adjúntalo desde el historial.');
-                    e.userFacing = true;
-                    throw e;
+                    throw usuario('La novedad quedó registrada pero el documento no se pudo subir. Adjúntalo desde el historial.');
                 }
                 {
                     // El `error` NO se descarta. Descartado, un insert que falla
@@ -899,9 +889,7 @@ export const createSystemSlice = (set, get) => ({
                         url: url,
                     });
                     if (docErr) {
-                        const e = new Error(`El evento quedó registrado pero el documento no se pudo adjuntar: ${docErr.message}`);
-                        e.userFacing = true;
-                        throw e;
+                        throw usuario(`El evento quedó registrado pero el documento no se pudo adjuntar: ${docErr.message}`);
                     }
                     docObject = newDoc;
                 }

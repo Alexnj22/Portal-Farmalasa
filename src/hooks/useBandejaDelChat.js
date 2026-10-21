@@ -71,6 +71,8 @@ export function useEquipoDelChat() {
  * («Nuevas», «En atención»…), que se aplican en el navegador y, sobre una sola
  * página, dirían «los que cumplen entre los primeros 40» (regla del tope
  * ANTES del filtro, CLAUDE.md). Tope de seguridad: 10 páginas.
+ * @param {string} estado
+ * @param {{ asegurarEquipo?: any, todas?: boolean }} [opciones]
  */
 export function useBandejaDelChat(estado, { asegurarEquipo, todas = false } = {}) {
     const [conversaciones, setConversaciones] = useState(() => ULTIMA.get(estado) ?? null);

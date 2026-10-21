@@ -24,7 +24,7 @@ export function alLlegarAviso(tipos, fn) {
     const lista = new Set([].concat(tipos));
     const oyente = (aviso) => { if (lista.has(aviso?.type)) fn(aviso); };
     oyentes.add(oyente);
-    return () => oyentes.delete(oyente);
+    return () => { oyentes.delete(oyente); };
 }
 
 /** La versión de componente: `fn` puede cambiar en cada render sin resuscribir. */

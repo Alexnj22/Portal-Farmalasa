@@ -85,8 +85,8 @@ export async function guardarPoliza(poliza) {
 export async function subirArchivoDelSeguro(archivo, sub) {
     const limpio = String(archivo?.name || 'archivo').replace(/[^\w.-]+/g, '_');
     const ruta = `${CARPETA}/${sub}/${Date.now()}_${limpio}`;
-    if (archivo?.body) return subirArchivo('documents', ruta, archivo.body, { contentType: archivo.contentType });
-    return subirArchivo('documents', ruta, archivo);
+    if (archivo && 'body' in archivo) return subirArchivo('documents', ruta, archivo.body, { contentType: archivo.contentType });
+    return subirArchivo('documents', ruta, /** @type {File} */ (archivo));
 }
 
 /**

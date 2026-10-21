@@ -24,7 +24,7 @@ const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/(
  *
  * @param {string} bucket
  * @param {string} path
- * @param {Blob} archivo
+ * @param {Blob|ArrayBuffer} archivo  ArrayBuffer: el archivo de la app, que no tiene `File`
  * @param {{ upsert?: boolean, contentType?: string }} [opciones]
  */
 export async function subirArchivo(bucket, path, archivo, { upsert = false, contentType } = {}) {

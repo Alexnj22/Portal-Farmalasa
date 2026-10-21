@@ -107,6 +107,7 @@ function buildProductRows(rows, withRowIds = false) {
     sortRows(rows).forEach((r, idx) => {
         const bg  = idx % 2 === 1 ? '#f2f2f2' : '#ffffff';
         const lts = r.lotes?.length ? r.lotes : [];
+        /** @type {any[]} */
         const productStack = [{ text: r.product_name || '', fontSize: 8.5 }];
         if (r.es_antibiotico) {
             productStack.push({
@@ -360,7 +361,7 @@ export function buildDocDefinition(sections, title, meta, logo, addrMap) {
         info: { title },
         defaultStyle: { fontSize: 9 },
         content,
-        footer: buildFooterCallback(meta),
+        footer: buildFooterCallback(),
     };
 }
 

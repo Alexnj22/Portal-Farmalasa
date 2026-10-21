@@ -306,7 +306,8 @@ export async function fetchQuiebresSala(erpSucursalId, dias = 30) {
         p_dias: dias,
     });
     if (error) return { data: null, error };
-    return { data: { ...data, filas: data?.filas ?? [] }, error: null };
+    const r = /** @type {{ filas?: any[] } & Record<string, any> | null} */ (data);
+    return { data: { ...r, filas: r?.filas ?? [] }, error: null };
 }
 
 // ── Llamadas que vivían en las pantallas (F3 del núcleo portable) ──────────
@@ -362,8 +363,9 @@ export async function calcularMinMaxDeTodasLasSalas(salas, alAvanzar) {
         try {
             const { data: res, error } = await calcularMinMaxDeSala({ p_erp_sucursal_id: id });
             if (error) throw error;
-            if (res?.skipped) { saltadas.push(id); continue; }
-            filas += res?.rows ?? 0;
+            const r = /** @type {{ skipped?: boolean, rows?: number } | null} */ (res);
+            if (r?.skipped) { saltadas.push(id); continue; }
+            filas += r?.rows ?? 0;
         } catch {
             fallidas.push(id);
         }

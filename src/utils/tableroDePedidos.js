@@ -771,7 +771,7 @@ export function nivelDeUrgenciaDeSala(stat) {
  */
 export function ultimoPedidoDeSala(iso, ahora = Date.now()) {
     if (!iso) return { texto: null, dias: null, nivel: null };
-    const d = Math.floor((ahora - new Date(iso)) / 86_400_000);
+    const d = Math.floor((ahora - new Date(iso).getTime()) / 86_400_000);
     const texto = d <= 0 ? 'hoy' : d === 1 ? 'ayer' : d < 14 ? `hace ${d} días`
         : d < 60 ? `hace ${Math.floor(d / 7)} semanas` : `hace ${Math.floor(d / 30)} meses`;
     return { texto, dias: d, nivel: d <= 7 ? 'bien' : d <= 14 ? 'cuidado' : 'tarde' };

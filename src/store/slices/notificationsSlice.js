@@ -127,7 +127,7 @@ export const createNotificationsSlice = (set, get) => ({
     // `conservar(n)`: lo que NO se marca —lo que todavía espera una decisión
     // (`avisoEsperaDecision`). «Leer todas» no contesta ninguna solicitud y no
     // puede sacarlas de la campana (2026-10-12).
-    markAllNotificationsRead: async ({ conservar } = {}) => {
+    markAllNotificationsRead: async (/** @type {{ conservar?: (n: any) => boolean }} */ { conservar } = {}) => {
         const readAt = new Date().toISOString();
         const unreadIds = get().notifications.filter(n => !n.read_at && !(conservar?.(n))).map(n => n.id);
         if (!unreadIds.length) return;

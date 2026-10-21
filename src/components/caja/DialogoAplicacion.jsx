@@ -63,9 +63,10 @@ import { useStaffStore } from '@nucleo/store/staffStore';
  * sola y se marca al cobrar. Lo valida `inyeccion_cotizar`.
  *
  * ── Comprada en otra sucursal (2026-10-03) ─────────────────────────────────
- * La lista es sólo de la sala de la caja. Si el cliente compró en otra y trae
- * el ticket, «Buscar por comprobante» encuentra esa venta por su número —es la
- * ÚNICA forma de llegar a una venta de otra sala—. Si no trae inyección, está
+ * La lista es sólo de la sala de la caja. Si el cliente compró en otra, la
+ * venta se busca por el comprobante del ticket o —si no lo trae— por el NOMBRE
+ * del cliente (2026-10-21): es la ÚNICA forma de llegar a una venta de otra
+ * sala. Por nombre sólo salen ventas con inyección. Si no trae inyección, está
  * pagada o anulada, se dice por qué en vez de no mostrar nada.
  *
  * ── El monto no se escribe ─────────────────────────────────────────────────
@@ -186,7 +187,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
             setEncontradas(await buscarVentaPorComprobante({ sala, comprobante }));
         } catch (e) {
             setEncontradas(null);
-            showToast('No se pudo buscar el comprobante', mensajeAmigable(e), 'error');
+            showToast('No se pudo buscar la venta', mensajeAmigable(e), 'error');
         } finally {
             setBuscandoComp(false);
         }
@@ -384,16 +385,16 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         </>) : (
                         <div className="space-y-2">
                             <p className="text-body-sm text-content-2">
-                                Escribe el número de comprobante del ticket. Sólo así aparece una venta de otra sucursal.
+                                Escribe el número de comprobante del ticket o, si no lo trae, el nombre del cliente. Sólo así aparece una venta de otra sucursal.
                             </p>
                                 <>
                                     <div className="flex items-end gap-2">
                                         <div className="flex-1">
-                                            <PortalInput label="Número de comprobante del ticket" name="comprobante_inyeccion"
-                                                inputMode="numeric" value={comprobante} maxLength={40}
+                                            <PortalInput label="Comprobante o nombre del cliente" name="comprobante_inyeccion"
+                                                value={comprobante} maxLength={60}
                                                 onChange={(e) => { setComprobante(e.target.value); setEncontradas(null); }}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') buscarComprobante(); }}
-                                                placeholder="88134" />
+                                                placeholder="88134 o María López" />
                                         </div>
                                         <Button variant="secondary" loading={buscandoComp} disabled={!comprobante.trim()}
                                             onClick={buscarComprobante}>
@@ -402,7 +403,9 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                     </div>
                                     {encontradas && encontradas.length === 0 && (
                                         <p className="text-body-sm text-content-3">
-                                            No hay una venta con ese comprobante en los últimos 90 días. Revisa el número del ticket.
+                                            {/[a-zñáéíóú]/i.test(comprobante)
+                                                ? 'Ningún cliente con ese nombre tiene una venta con inyección en los últimos 90 días. Revisa cómo se escribió.'
+                                                : 'No hay una venta con ese comprobante en los últimos 90 días. Revisa el número del ticket.'}
                                         </p>
                                     )}
                                     {encontradas && encontradas.length > 0 && (
@@ -415,7 +418,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                 : (
                                                     <li key={v.id} data-surface="card" className="rounded-xl p-3 ring-1 ring-border-card opacity-70">
                                                         <p className="text-body-sm font-bold text-content">
-                                                            Factura {factura(v.correlativo)} · {v.sala}
+                                                            Factura {factura(v.correlativo)} · {v.sala}{v.cliente ? ` · ${v.cliente}` : ''}
                                                         </p>
                                                         <p className="text-caption text-content-2">
                                                             {v.estado === 'sin_inyeccion' ? 'Esa venta no tiene inyecciones: no corresponde a una aplicación.'

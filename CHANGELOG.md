@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1325.3 — Inyecciones: buscar la venta de otra sucursal por nombre del cliente
+
+En Caja → Aplicación → «Otra sucursal», la venta sólo se encontraba con el
+número de comprobante del ticket: si el cliente no lo traía, no había cómo
+llegar a ella. Ahora el mismo campo acepta también el **nombre del cliente**:
+con letras busca por nombre (todas las palabras, en cualquier orden, sin
+importar tildes), con números sigue buscando el comprobante.
+
+Por nombre sólo salen ventas válidas **con inyección** de los últimos 90 días,
+de todas las sucursales, hasta 20, y cada una dice en qué sala se compró.
+Migración `20261021170606_inyeccion_otra_sucursal_buscar_por_nombre`
+(`inyeccion_venta_por_comprobante`; entra por el índice trigram del cliente).
+
 ## v2.1325.2 — Chat: encabezado de una barra, ficha sin duplicados y compositor alineado
 
 Reporte del usuario sobre el panel de la burbuja: la ficha repetía la foto y el nombre, el encabezado no gustaba y el micrófono no medía lo que el campo.

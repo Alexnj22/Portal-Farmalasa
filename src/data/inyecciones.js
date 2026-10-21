@@ -33,7 +33,8 @@ export async function fetchInyeccionesParaCobrar({ sala, buscar = '', dias = 30 
  * Una venta por su número de comprobante, de CUALQUIER sala (2026-10-03): el
  * cliente compró en una sucursal y se la aplica en otra, con el ticket. Es la
  * única forma de llegar a una venta de otra sala. Acepta el correlativo (con o
- * sin ceros) o el código de generación. Cada coincidencia trae su `estado`:
+ * sin ceros), el código de generación o —sin el ticket— el NOMBRE del cliente
+ * (sólo ventas con inyección, hasta 20). Cada coincidencia trae su `estado`:
  * `ok` · `sin_inyeccion` · `pagada` · `anulada`.
  */
 export async function buscarVentaPorComprobante({ sala, comprobante }) {

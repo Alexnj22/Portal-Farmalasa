@@ -18,21 +18,42 @@ export function rotuloDeDespacho(dispatchTipo, dispatchFactor) {
     return f > 1 ? `${label} ×${f}` : label;
 }
 
-/** Las presentaciones activas de un producto, una por factor, con su rótulo. */
+/**
+ * Las presentaciones activas de un producto, una por factor, con su rótulo.
+ *
+ * `label` es para la PANTALLA («UNIDAD 1x1» = tipo + descripción); `tipo` es el
+ * nombre con el que la presentación vive en el sistema («UNIDAD»), y es el
+ * único que se escribe. Mover el sobrante busca la presentación por ese nombre:
+ * guardando el rótulo, el LUBRIDERM de Bodega falló con «llegó como UNIDAD 1x1
+ * de 1, y hoy ninguna presentación con ese nombre trae ese factor» (2026-10-21).
+ */
 export function opcionesDelCatalogo(precios = []) {
     const opts = [];
     for (const p of precios) {
         const f = Number(p.factor) || 1;
-        if (!opts.find(x => x.factor === f)) opts.push({ factor: f, label: etiquetaDePresentacion(p) });
+        if (!opts.find(x => x.factor === f)) opts.push({ factor: f, label: etiquetaDePresentacion(p), tipo: p.presentaciones?.tipo || null });
     }
     return opts;
 }
 
+/** El nombre de sistema de la presentación elegida — lo que se escribe, nunca el rótulo. */
+export const tipoDeOpcion = (opciones = [], factor) =>
+    (opciones ?? []).find(o => o.factor === factor)?.tipo ?? null;
+
+/**
+ * Las opciones de un extra, con la del último despacho primero SI EXISTE en el
+ * catálogo. El paquete de despacho («BOLSA ×20») es la comodidad de Bodega para
+ * armar cajas, no una presentación del sistema: ponerlo de opción —y encima de
+ * default— guardaba un factor que mover el sobrante no encuentra. Sólo entra
+ * cuando el catálogo no trae nada, que es mejor que dejar el extra sin opción.
+ */
 export function opcionesDeExtra(opciones = [], ultimoDespacho = null) {
     const out = [...opciones];
     if (ultimoDespacho) {
         const df = Number(ultimoDespacho.dispatch_factor) || 1;
-        if (!out.find(o => o.factor === df)) out.unshift({ factor: df, label: rotuloDeDespacho(ultimoDespacho.dispatch_tipo, df) });
+        const i = out.findIndex(o => o.factor === df);
+        if (i > 0) out.unshift(...out.splice(i, 1));
+        else if (i < 0 && out.length === 0) out.push({ factor: df, label: rotuloDeDespacho(ultimoDespacho.dispatch_tipo, df), tipo: ultimoDespacho.dispatch_tipo || null });
     }
     return out;
 }

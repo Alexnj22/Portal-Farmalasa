@@ -18,7 +18,7 @@ import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import { useSearchToggle } from '../../plataforma/useSearchToggle';
-import { extrasDeRenglones, lotesQueDebenVenir, opcionesDeExtra, opcionesDelCatalogo, opcionesDePresentacionDeRenglon } from '@nucleo/utils/extrasDeRecepcion';
+import { extrasDeRenglones, lotesQueDebenVenir, opcionesDeExtra, opcionesDelCatalogo, opcionesDePresentacionDeRenglon, tipoDeOpcion } from '@nucleo/utils/extrasDeRecepcion';
 import { actualizarExtraDePedido, agregarExtraAPedido, corregirRecepcionDeItem, fetchLastDispatchInfo, fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, quitarExtraDePedido, recibirPedidoDeSucursal, recibirProductoSuelto, searchAvailableProducts } from '@nucleo/data/recepcion';
 import { recibirTrasladoPedido } from '@nucleo/data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -968,9 +968,8 @@ export default function RecepcionModal({
 
     const escribirExtra = useCallback(async (e) => {
         if (!e?.id || !e.fQty) return;
-        const label = (presMap[e.erp_product_id] ?? []).find(o => o.factor === e.fPres)?.label ?? null;
         const { error } = await actualizarExtraDePedido({
-            itemId: e.id, cantidad: e.fQty, factor: e.fPres, tipo: label, nota: e.nota,
+            itemId: e.id, cantidad: e.fQty, factor: e.fPres, tipo: tipoDeOpcion(presMap[e.erp_product_id], e.fPres), nota: e.nota,
         });
         if (error) setExtraError(mensajeAmigable(error));
         else setExtraError(null);
@@ -1042,14 +1041,13 @@ export default function RecepcionModal({
 
         if (opts.length > 0) setPresMap(prev => ({ ...prev, [prod.id]: opts }));
         const defF = opts[0]?.factor ?? 1;
-        const label = opts[0]?.label ?? null;
 
         // Se escribe ANTES de pintarlo. Si la base lo rechaza —el producto sí
         // venía en el pedido, o esta sala no es la que recibe— hay que decirlo
         // en el momento y no dejar en la lista algo que no quedó anotado.
         const { data: nuevoId, error } = await agregarExtraAPedido({
             pedidoId: pedido.id, sucursalId, productId: prod.id,
-            cantidad: 1, factor: defF, tipo: label, nota: null,
+            cantidad: 1, factor: defF, tipo: opts[0]?.tipo ?? null, nota: null,
         });
         if (error) { setExtraError(mensajeAmigable(error)); return; }
 

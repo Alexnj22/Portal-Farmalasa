@@ -15,7 +15,7 @@ import { fetchPedidoItemsAll } from '@nucleo/data/pedidos';
 import {
   actualizarExtraDePedido, agregarExtraAPedido, fetchLastDispatchInfo, fetchProductPreciosOpts, quitarExtraDePedido, searchAvailableProducts,
 } from '@nucleo/data/recepcion';
-import { extrasDeRenglones, opcionesDeExtra, opcionesDelCatalogo } from '@nucleo/utils/extrasDeRecepcion';
+import { extrasDeRenglones, opcionesDeExtra, opcionesDelCatalogo, tipoDeOpcion } from '@nucleo/utils/extrasDeRecepcion';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -82,7 +82,7 @@ export default function ExtrasDelPedido() {
       const f = ops[0]?.factor ?? 1;
       // Se escribe ANTES de pintarlo: si la base lo rechaza (el producto sí venía,
       // o esta sala no es la que recibe), se dice ahora.
-      const { data: id, error } = await agregarExtraAPedido({ pedidoId, sucursalId: suc, productId: prod.id, cantidad: 1, factor: f, tipo: ops[0]?.label ?? null, nota: null });
+      const { data: id, error } = await agregarExtraAPedido({ pedidoId, sucursalId: suc, productId: prod.id, cantidad: 1, factor: f, tipo: ops[0]?.tipo ?? null, nota: null });
       if (error) throw error;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setOpciones((o) => ({ ...o, [prod.id]: ops }));
@@ -96,8 +96,7 @@ export default function ExtrasDelPedido() {
   };
 
   const escribir = async (e) => {
-    const label = (opciones[e.erp_product_id] ?? []).find((o) => o.factor === e.fPres)?.label ?? null;
-    const { error } = await actualizarExtraDePedido({ itemId: e.id, cantidad: e.fQty, factor: e.fPres, tipo: label, nota: e.nota || null });
+    const { error } = await actualizarExtraDePedido({ itemId: e.id, cantidad: e.fQty, factor: e.fPres, tipo: tipoDeOpcion(opciones[e.erp_product_id], e.fPres), nota: e.nota || null });
     if (error) fallo('No se pudo guardar', mensajeAmigable(error));
   };
   // Un respiro de 400 ms por extra, como el portal: tocar «+» cinco veces es

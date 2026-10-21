@@ -3,6 +3,7 @@ import {
     conteoInicial, enPresentacion, mapaDePresentaciones, presentacionesDeRenglones,
     quedaTodoListo, renglonContado, renglonTodoOk,
 } from '@nucleo/utils/recepcionDePedido';
+import { opcionesDeExtra, opcionesDelCatalogo, tipoDeOpcion } from '@nucleo/utils/extrasDeRecepcion';
 
 // Blíster de 10, contado en unidades del sistema (factor 1).
 const blister = (enviado) => ({ id: 1, factor: 1, dispatch_factor: 10, cantidad_asignada: enviado });
@@ -71,7 +72,9 @@ describe('presentaciones desde los renglones', () => {
             { factor: 1, activo: true, descripcion: '', presentaciones: { tipo: 'UNIDAD' } },
             { factor: 100, activo: false, descripcion: 'X 100', presentaciones: { tipo: 'CAJA' } },
         ])]);
-        expect(m).toEqual({ 5: [{ factor: 1, label: 'UNIDAD' }, { factor: 10, label: 'BLISTER X 10' }] });
+        expect(m).toEqual({ 5: [{ factor: 1, label: 'UNIDAD', tipo: 'UNIDAD' }, { factor: 10, label: 'BLISTER X 10', tipo: 'BLISTER' }] });
+        // El rótulo es para la pantalla; lo que se escribe es el `tipo` del sistema.
+        expect(tipoDeOpcion(m[5], 10)).toBe('BLISTER');
     });
     it('sin `descripcion` en el select devuelve null (hay que consultar aparte)', () => {
         expect(presentacionesDeRenglones([row(5, [{ factor: 10, activo: true, presentaciones: { tipo: 'BLISTER' } }])])).toBeNull();
@@ -80,6 +83,23 @@ describe('presentaciones desde los renglones', () => {
         expect(mapaDePresentaciones([
             { product_id: 1, factor: 1, descripcion: null, presentaciones: null },
             { product_id: 1, factor: 1, descripcion: 'otra', presentaciones: null },
-        ])).toEqual({ 1: [{ factor: 1, label: 'Unidad' }] });
+        ])).toEqual({ 1: [{ factor: 1, label: 'Unidad', tipo: null }] });
+    });
+});
+
+describe('opciones de un extra', () => {
+    const cat = [{ factor: 1, label: 'UNIDAD 1x1', tipo: 'UNIDAD' }, { factor: 12, label: 'CAJA X 12', tipo: 'CAJA' }];
+    it('el despacho que está en el catálogo pasa primero', () => {
+        expect(opcionesDeExtra(cat, { dispatch_factor: 12, dispatch_tipo: 'CAJA' }).map(o => o.factor)).toEqual([12, 1]);
+    });
+    it('un paquete de despacho que no existe en el sistema no se ofrece', () => {
+        expect(opcionesDeExtra(cat, { dispatch_factor: 20, dispatch_tipo: 'BOLSA' })).toEqual(cat);
+    });
+    it('sin catálogo, el despacho es mejor que nada', () => {
+        expect(opcionesDeExtra([], { dispatch_factor: 20, dispatch_tipo: 'BOLSA' })[0]).toMatchObject({ factor: 20, tipo: 'BOLSA' });
+    });
+    it('del catálogo se escribe el tipo, nunca el rótulo', () => {
+        const o = opcionesDelCatalogo([{ factor: 1, descripcion: '1x1', presentaciones: { tipo: 'UNIDAD' } }]);
+        expect(o[0]).toMatchObject({ label: 'UNIDAD 1x1', tipo: 'UNIDAD' });
     });
 });

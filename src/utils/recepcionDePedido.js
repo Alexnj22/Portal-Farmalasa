@@ -105,7 +105,7 @@ export function mapaDePresentaciones(filas) {
             if (pid == null) return;
             const f = Number(p.factor) || 1;
             if (!map[pid]) map[pid] = [];
-            if (!map[pid].some(x => x.factor === f)) map[pid].push({ factor: f, label: etiquetaDePresentacion(p) });
+            if (!map[pid].some(x => x.factor === f)) map[pid].push({ factor: f, label: etiquetaDePresentacion(p), tipo: p.presentaciones?.tipo || null });
         });
     return map;
 }

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1330.1 — Pedidos: el extra guarda la presentación del sistema, no el rótulo
+
+- Un producto anotado como «llegó de más» guardaba el rótulo de pantalla
+  («UNIDAD 1x1») como presentación, y al moverlo de vuelta a Bodega fallaba con
+  «ninguna presentación con ese nombre trae ese factor» (LUBRIDERM, Bodega,
+  21-oct). Ahora la recepción —portal y app— escribe el nombre del sistema
+  («UNIDAD»); el rótulo queda sólo para mostrar.
+- El extra ya no arranca con el paquete de despacho («BOLSA ×20») cuando ese
+  tamaño no existe en el catálogo: guardaba un factor que nadie podía mover.
+- `resolverPresentacion` acepta el rótulo viejo si su primera palabra es el
+  nombre real y el factor coincide — para las apps instaladas que todavía no se
+  actualizan. Desplegado en `devolver-pedido-erp`.
+- Se corrigieron en la base los 4 renglones extra que tenían el rótulo.
+
 ## v2.1330.0 — Reservas: fusionar no borra, deshacer no borra la de la app, sin cobro doble y plazos del servidor
 
 Hallazgos de la auditoría de reservas (2026-10-21), cada uno probado en una transacción que se deshace sola contra producción.

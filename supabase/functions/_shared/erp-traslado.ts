@@ -777,7 +777,17 @@ export async function traerFila(
 export async function resolverPresentacion(
   cookie: string, fila: Fila, tipoBuscado: string, factor: number,
 ): Promise<{ id: string; costo: string; precio: string; unidad: string } | null> {
-  const candidatas = fila.presentaciones.filter((p) => p.tipo === norm(tipoBuscado));
+  // Exacto primero. Si no hay ninguna, el nombre guardado puede ser el RÓTULO
+  // de pantalla —tipo + descripción, «UNIDAD 1x1»— que la recepción escribía en
+  // los extras hasta el 2026-10-21 (y una app instalada vieja lo sigue
+  // mandando): se acepta la presentación cuyo nombre es la primera palabra
+  // completa de ese rótulo. El factor se sigue exigiendo abajo, así que el
+  // respaldo no puede elegir una presentación de otro tamaño.
+  const buscado = norm(tipoBuscado);
+  let candidatas = fila.presentaciones.filter((p) => p.tipo === buscado);
+  if (!candidatas.length) {
+    candidatas = fila.presentaciones.filter((p) => p.tipo && buscado.startsWith(`${p.tipo} `));
+  }
   for (const c of candidatas) {
     const p = await pedir(cookie, TRASLADO, new URLSearchParams({
       process: "getpresentacion",

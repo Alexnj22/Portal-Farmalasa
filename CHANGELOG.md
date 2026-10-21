@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.4 — Revisión de factor 40 veces más rápida y funciones declaradas en los controles
+
+`factores_sospechosos` —el aviso diario y la pantalla Productos → Revisión de factor— recorría el historial entero de renglones de cada producto antes de mirar la fecha: el planificador estimaba 28 productos con un solo factor y son 5,677, así que eligió entrar por producto y descartó 1.15 M filas por llamada. Ahora toma primero los renglones de los últimos 30 días (índice de fecha) y después cruza. `avisar_factores_sospechosos` además la llamaba dos veces y ahora una.
+
+| | antes | ahora |
+|---|---:|---:|
+| aviso diario | 13,100 ms · 2.3 M bloques | ~310 ms · 115 K |
+| pantalla Revisión de factor | 2,018 ms · 1.16 M bloques | 331 ms · 116 K |
+
+Mismo resultado (md5 idéntico antes y después). Migración `20261021195123_factores_sospechosos_venta_por_fecha_primero`.
+
+Declaradas en los controles, con motivo: `horario_de_sala` (sin-sala: horario público) y `get_cof_sin_envio_mh` (cruza-por-diseño: sólo cargos de red, lectura) en `gate:alcance`; `refresh_producto_cantidad_habitual` (una vez al día, 0.5 s) y las dos corregidas en `bloques-por-llamada.json`.
+
+Quedan dos techos cruzados en `gate:perf` que NO se subieron: `inventory_daily_snapshot` (787 contra 703 MB; su techo es decisión del usuario) y `get_stock_analysis_jsonb` (410 contra 320 MB: las salas leen 16.5 K bloques contra 5–7 K del 2026-09-02, con el mismo número de filas y en menos tiempo).
+
 ## v2.1333.3 — Auditoría: las funciones de la base entran al mapa
 
 - Las **1,221 funciones** de `public` no estaban en el mapa de auditoría, así

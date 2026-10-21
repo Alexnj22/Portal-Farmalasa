@@ -863,6 +863,14 @@
     "destinatarios_de_reservas": {
       "guarda": "solo-servidor",
       "motivo": "Revocada a authenticated: la usan triggers y funciones DEFINER para elegir a quién avisar."
+    },
+    "horario_de_sala": {
+      "guarda": "sin-sala",
+      "motivo": "Sólo lee el horario de apertura de una sucursal (especial, feriado o semanal), que es información pública que se muestra a los clientes en el chat. No escribe ni lee datos de la operación de la sala."
+    },
+    "get_cof_sin_envio_mh": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "Evidencia de Libros IVA para el área administrativa: lanza FORBIDDEN salvo cargos 2, 3, 11 y 13 (cargos de toda la red), y es de sólo lectura. Mirar todas las salas es la pregunta que contesta."
     }
   },
   "buckets_abiertos": {

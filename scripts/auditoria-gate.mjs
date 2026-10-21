@@ -209,6 +209,28 @@ function verificarMapa() {
             avisos.push({ titulo: 'No hay superficie `anon` declarada', detalle: ['auditoria/superficie-anon.json'], arreglo: '' });
         }
 
+        // -- la causa, no sólo el síntoma --
+        // Medido el 2026-10-21: toda función nueva nacía ejecutable por `anon`
+        // porque así estaban los privilegios por defecto. Revocar las que
+        // aparecen es secar el piso con la canilla abierta; esto vigila la
+        // canilla. Sólo en vivo: la foto guardada no lo trae.
+        if (vivo?.defaults_funciones) {
+            const abiertos = vivo.defaults_funciones.filter(d => /(^|[{,])(anon)?=X/.test(d.acl))
+                .map(d => `privilegios por defecto de postgres en ${d.esquema}: ${d.acl}`);
+            // Sin la entrada global, Postgres vuelve a su default de fábrica:
+            // EXECUTE para PUBLIC. Que FALTE es tan abierto como que diga =X.
+            for (const esq of ['*', 'public'])
+                if (!vivo.defaults_funciones.some(d => d.esquema === esq))
+                    abiertos.push(`falta la entrada de privilegios por defecto de postgres en ${esq}`);
+            if (abiertos.length) fallas.push({
+                titulo: 'Las funciones NUEVAS nacen ejecutables sin iniciar sesión',
+                detalle: abiertos,
+                arreglo: 'Alguien volvió a abrir el default. Repetir el bloque 2 de la migración '
+                       + '20261021194340_anon_no_ejecuta_funciones_nuevas. Lo que deba llamarse sin '
+                       + 'sesión lleva su GRANT ... TO anon explícito.',
+            });
+        }
+
         const edad = snapshot.generado
             ? Math.floor((Date.now() - Date.parse(snapshot.generado)) / 86_400_000) : null;
         if (!vivo && edad !== null && edad > DIAS_FOTO) (MODO_HOOK ? avisos : fallas).push({

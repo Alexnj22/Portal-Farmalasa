@@ -41,7 +41,17 @@ SELECT json_build_object(
                    WHERE n.nspname = 'public' AND has_function_privilege('anon', p.oid, 'EXECUTE')
                      AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')),
     'tablas',    (SELECT coalesce(json_agg(DISTINCT tablename ORDER BY tablename), '[]')
-                    FROM pg_policies WHERE schemaname = 'public' AND roles @> '{anon}'))
+                    FROM pg_policies WHERE schemaname = 'public' AND roles @> '{anon}')),
+  -- Los permisos que recibe una función NUEVA. Las diez que aparecieron entre
+  -- agosto y octubre no las abrió nadie: nacían abiertas. Desde la migración
+  -- 20261021194340 nacen sólo para authenticated/service_role; si alguien
+  -- vuelve a abrir el default, esto lo dice el mismo día.
+  'defaults_funciones', (SELECT coalesce(json_agg(json_build_object(
+        'esquema', CASE WHEN defaclnamespace = 0 THEN '*' ELSE defaclnamespace::regnamespace::text END,
+        'acl', defaclacl::text)), '[]')
+     FROM pg_default_acl
+    WHERE defaclobjtype = 'f' AND defaclrole = 'postgres'::regrole
+      AND defaclnamespace IN (0, 'public'::regnamespace))
 ) AS catalogo`;
 
 async function porApi(token) {

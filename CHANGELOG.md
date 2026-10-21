@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.2 — Seguridad: las funciones nuevas ya no nacen abiertas sin sesión
+
+- Diez funciones de la base se podían ejecutar **sin iniciar sesión** y nadie lo
+  había decidido. La causa: los privilegios por defecto de `postgres` en
+  `public` le daban EXECUTE a `anon` y a PUBLIC a **toda función nueva**. El
+  25 de agosto se habían revocado diez y aparecieron otras diez.
+- Se revocaron (migraciones `20261021194340` y `20261021194611`). Las ocho de
+  trigger siguen disparando: se probó en el entorno de pruebas con un trigger
+  sin EXECUTE para nadie. `nombre_normalizado` y `puntos_fuente` conservan el
+  permiso para `authenticated` y `service_role`, que es quien las llama. El
+  kiosco sigue entrando sin sesión: sus permisos son explícitos.
+- **La causa también se cerró:** ahora una función nueva nace sólo para
+  `authenticated` y `service_role`. Lo que deba llamarse sin sesión lleva su
+  `GRANT ... TO anon` explícito.
+- `gate:auditoria` (y su corrida diaria en GitHub) vigila también esos
+  privilegios por defecto, y falla si alguien los vuelve a abrir o si falta la
+  entrada global. Se probó con cuatro regresiones fabricadas y cazó las cuatro.
+
 ## v2.1333.1 — Plazo de reservas declarado en el control de rendimiento
 
 `reserva_plazo_hasta` (v2.1330.0) es `LANGUAGE sql` con `SET search_path` y `gate:perf` la marcaba sin declarar. Medida: 0.06 ms y 1 bloque por llamada; su plan no depende de los argumentos (recibe una fila y une contra la configuración de una sola fila), así que va al manifiesto sin `plan_cache_mode`.

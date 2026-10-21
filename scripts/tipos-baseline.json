@@ -1,11 +1,11 @@
 {
  "_comment": "Avisos de tsc por archivo del núcleo (gate:tipos). Sólo BAJA: npm run gate:tipos -- --fijar tras una mejora.",
  "actualizado": "2026-10-21",
- "total": 458,
+ "total": 451,
  "archivos": {
   "src/data/attendanceAudit.js": 2,
   "src/data/bitacoras.js": 9,
-  "src/data/bolsas.js": 18,
+  "src/data/bolsas.js": 12,
   "src/data/busquedaProductos.js": 2,
   "src/data/capturaDeFoto.js": 1,
   "src/data/cargarCompra.js": 1,
@@ -32,7 +32,7 @@
   "src/data/retiros.js": 8,
   "src/data/sesiones.js": 6,
   "src/data/solicitudesDatos.js": 14,
-  "src/data/traslados.js": 2,
+  "src/data/traslados.js": 1,
   "src/hooks/useDecidirSolicitud.js": 3,
   "src/hooks/useMinMaxData.js": 26,
   "src/hooks/usePedidosData.js": 14,

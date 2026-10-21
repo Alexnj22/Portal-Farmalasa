@@ -35,6 +35,7 @@ const CAMPOS = `
  * trunca; el día que lo haga, el síntoma sería una sala que «no tiene bolsas»,
  * que se lee como que ya las entregó.
  */
+/** @param {{ desde?: string|null, hasta?: string|null, estados?: string[], porFechaDeConteo?: boolean }} [opciones] */
 export function fetchBolsas({ desde, hasta, estados = ['ABIERTA'], porFechaDeConteo = false } = {}) {
     return fetchAllRows(() => {
         let q = supabase.from('bolsas').select(CAMPOS);
@@ -457,6 +458,7 @@ export async function fetchPersonasDeAdministracion() {
  * depósitos al mes. Sin permiso el servidor devuelve `null` —no una lista
  * vacía—, así que acá se distingue «no puedo verlos» de «no hay ninguno».
  */
+/** @param {{ desde?: string|null, hasta?: string|null }} [opciones] */
 export async function fetchDepositos({ desde, hasta } = {}) {
     const { data, error } = await supabase.rpc('get_depositos', {
         p_desde: desde || null, p_hasta: hasta || null,
@@ -483,6 +485,7 @@ export async function fetchDepositos({ desde, hasta } = {}) {
  * Sin permiso el servidor devuelve `null` —no una lista vacía—, así que acá se
  * distingue «no puedo verlos» de «no hay ninguno».
  */
+/** @param {{ desde?: string|null, hasta?: string|null }} [opciones] */
 export async function fetchConteos({ desde, hasta } = {}) {
     const { data, error } = await supabase.rpc('get_conteos', {
         p_desde: desde || null, p_hasta: hasta || null,
@@ -1719,7 +1722,8 @@ export async function rechazarYAnularMovimiento(solicitudId, sala, nota) {
         try { cuerpo = await error.context?.json(); } catch { cuerpo = null; }
     }
     if (!cuerpo?.ok) {
-        const e = new Error(cuerpo?.error || error?.message || 'El servidor no devolvió respuesta.');
+        const e = /** @type {Error & { rechazado?: boolean }} */ (
+            new Error(cuerpo?.error || error?.message || 'El servidor no devolvió respuesta.'));
         e.rechazado = !!cuerpo?.rechazado;
         throw e;
     }

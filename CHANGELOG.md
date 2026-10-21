@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1336.2 — Tipos de bolsas al día
+
+`gate:tipos` estaba en rojo por `rechazarYAnularMovimiento` (le agregaba `rechazado` a un `Error`). Se declara el tipo, y de paso los filtros `desde`/`hasta` de bolsas, depósitos y conteos: el archivo baja de 19 a 12 avisos. Sin cambio de comportamiento.
+
 ## v2.1336.1 — Histórico de documentos de sucursal, resumen de encuestas y laboratorios de Mín·Máx
 
 - **Sucursales:** al reemplazar un documento (contrato, permiso, credencial de

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.5 — Techos de lectura de la foto diaria y del análisis de stock, re-auditados
+
+Decisión del usuario (2026-10-21), después de buscar eficiencia y medirla. No cambia nada en producción: sólo el umbral de `gate:perf` en `scripts/bloques-por-llamada.json`, con la medición escrita.
+
+- `inventory_daily_snapshot` 90,000 → 131,000 bloques. Los renglones no crecieron (~13,900/día). Leer cuesta 2,234 bloques; escribir ~99,000, unos 7 por renglón (tabla + dos índices), que es el piso. Ordenar antes de insertar no baja nada (235 vs 233 ms, medido con caché pareja). Guardar sólo los cambios del día (13%) obligaría a reescribir los lectores de Mín·Máx por ~1 s diario de madrugada: descartado.
+- `get_stock_analysis_jsonb` 41,000 → 68,000 bloques. Más rápida que en septiembre (sala 1: 437 → 186 ms) con las mismas filas; los bloques extra son re-visitas en memoria a tablas chicas (261 de disco). La función no se tocó.
+
 ## v2.1333.4 — Revisión de factor 40 veces más rápida y funciones declaradas en los controles
 
 `factores_sospechosos` —el aviso diario y la pantalla Productos → Revisión de factor— recorría el historial entero de renglones de cada producto antes de mirar la fecha: el planificador estimaba 28 productos con un solo factor y son 5,677, así que eligió entrar por producto y descartó 1.15 M filas por llamada. Ahora toma primero los renglones de los últimos 30 días (índice de fecha) y después cruza. `avisar_factores_sospechosos` además la llamaba dos veces y ahora una.

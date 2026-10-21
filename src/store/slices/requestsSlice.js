@@ -65,6 +65,8 @@ export const REQUEST_TYPES = {
     // `INVENTORY_TRANSFER_REQUEST`. Su pantalla propia es `/traslados` —acá se
     // ve para saber que existe, no para resolverlo.
     INVENTORY_TRANSFER_REQUEST:{ label: 'Traslado entre salas',   color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    // Una sala manda producto a otra sin que se lo pidan. También faltaba.
+    INVENTORY_TRANSFER_PUSH:   { label: 'Envío entre salas',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     // Anular o corregir el monto de un movimiento de caja ya anotado. Sin este
     // rótulo la bandeja agrupaba la sección bajo la clave cruda
     // `CAJA_MOVIMIENTO_CHANGE` — el mismo defecto que arriba, y por eso va con
@@ -82,6 +84,13 @@ export const REQUEST_TYPES = {
     // decida.
     DIST_DESCUENTO:            { label: 'Descuento en una venta', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
 };
+
+/**
+ * El nombre de un tipo de solicitud para mostrar. Nunca la clave cruda: un
+ * tipo nuevo sin rótulo se lee «Solicitud», no `CAJA_INGRESO_AUTORIZACION`
+ * (usuario, 2026-10-21: «nunca se vean los textos así en ningún lado»).
+ */
+export const rotuloDeSolicitud = (tipo) => REQUEST_TYPES[tipo]?.label ?? 'Solicitud';
 
 /**
  * Las cuatro solicitudes que hablan de una FACTURA, no del expediente de quien
@@ -1086,7 +1095,7 @@ export const createRequestsSlice = (set, get) => ({
                 set((state) => ({ requests: [enrichedPeer, ...state.requests] }));
                 await get().appendAuditLog('SOLICITUD_CREADA', employeeId, {
                     dimension: 'HR',
-                    new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type} (cambio de par)`,
+                    new_value: `Solicitud de ${rotuloDeSolicitud(type)} (cambio de par)`,
                 });
                 // El aviso al compañero lo crea el trigger
                 // `notificar_solicitud_creada`, en la misma transacción que la
@@ -1130,7 +1139,7 @@ export const createRequestsSlice = (set, get) => ({
 
             await get().appendAuditLog('SOLICITUD_CREADA', employeeId, {
                 dimension: 'HR',
-                new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type}`,
+                new_value: `Solicitud de ${rotuloDeSolicitud(type)}`,
             });
 
             // El aviso al aprobador lo crea el trigger
@@ -1645,7 +1654,7 @@ export const createRequestsSlice = (set, get) => ({
         }
 
         if (toastMsg) useToastStore.getState().showToast('Aprobado', toastMsg, 'success');
-        else useToastStore.getState().showToast('Solicitud Aprobada', `${REQUEST_TYPES[req.type]?.label || req.type} aprobada correctamente.`, 'success');
+        else useToastStore.getState().showToast('Solicitud Aprobada', `${rotuloDeSolicitud(req.type)} aprobada correctamente.`, 'success');
         emitir('requests-updated');
         return true;
     },

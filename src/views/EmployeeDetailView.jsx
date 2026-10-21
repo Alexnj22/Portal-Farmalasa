@@ -686,7 +686,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                         <div className="relative border-l-[3px] border-divider ml-4 md:ml-6 space-y-8 pb-4">
                                             {timeline.length > 0 ? timeline.map((ev, idx) => {
-                                                const label = ev.category || EVENT_TYPES[ev.type]?.label || ev.type;
+                                                const label = ev.category || EVENT_TYPES[ev.type]?.label || 'Movimiento';
                                                 const isHiring = ev.type === 'HIRE' || ev.type === 'HIRING';
                                                 // Era una cascada de QUINCE ramas, cada una escribiendo
                                                 // `bg-X/10 text-X-text border-X/30` a mano — la paleta SOFT de

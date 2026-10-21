@@ -253,7 +253,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                                     <div key={a.id} data-surface="card" className="flex items-center gap-3 px-3 py-2">
                                         <span className="text-caption tabular-nums text-content-3 w-[86px] shrink-0">{fmtFecha(a.date)}</span>
                                         <span className="text-caption text-content-2 flex-1 min-w-0 truncate">
-                                            {EVENT_TYPES[a.type]?.label || a.type}
+                                            {EVENT_TYPES[a.type]?.label || 'Movimiento'}
                                         </span>
                                         {a.reclamo === 'REVOCADA' && <Badge size="sm" variant="neutral">Revocada</Badge>}
                                     </div>

@@ -7,7 +7,7 @@ import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import ModalShell from '../../components/common/ModalShell';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { REQUEST_TYPES, REQUEST_STATUS } from '@nucleo/store/slices/requestsSlice';
+import { REQUEST_TYPES, REQUEST_STATUS, rotuloDeSolicitud } from '@nucleo/store/slices/requestsSlice';
 import { ICONO_POR_TIPO } from '../../components/common/catalogos/tiposDeAviso';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { CaraPersona, ChipPersona } from './PersonasSolicitud';
@@ -146,7 +146,7 @@ export const CompactSummary = ({ req }) => {
 export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
     const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
     const TypeIcon = TYPE_ICONS[req.type] || FileText;
-    const typeConf = REQUEST_TYPES[req.type] || { label: req.type };
+    const typeConf = REQUEST_TYPES[req.type] || { label: rotuloDeSolicitud(req.type) };
     const isRejected = req.status === 'REJECTED';
     const isUrgent   = req.type === 'DISABILITY' && req.status === 'PENDING';
     const parcial    = esParcial(req);
@@ -449,9 +449,9 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
     return (
         <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-xl" zClass="z-toast"
             closeOnEsc={!ocupado} surface={null}
-            ariaLabel={`Solicitud de ${REQUEST_TYPES[req.type]?.label ?? req.type}`}>
+            ariaLabel={`Solicitud de ${rotuloDeSolicitud(req.type)}`}>
             <CuerpoDialogo
-                titulo={REQUEST_TYPES[req.type]?.label ?? req.type}
+                titulo={rotuloDeSolicitud(req.type)}
                 /* El nombre se fue del subtítulo: lo dice —con su cara, su cargo
                    y su sala— la ficha que abre el detalle, y repetirlo dos
                    renglones más arriba gastaba el único lugar donde cabía la

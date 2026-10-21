@@ -462,7 +462,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="relative border-l-[2px] border-divider ml-3 space-y-3 pb-2">
                                 {visibleTimeline.map((ev, idx) => {
                                     const theme = EVENT_THEMES[ev.type] || DEFAULT_THEME;
-                                    const label = ev.type === 'HIRING' ? 'Contratación Inicial' : (EVENT_TYPES[ev.type]?.label || ev.type);
+                                    const label = ev.type === 'HIRING' ? 'Contratación Inicial' : (EVENT_TYPES[ev.type]?.label || 'Movimiento');
                                     const meta        = typeof ev.metadata === 'object' && ev.metadata ? ev.metadata : {};
                                     const isCancelled = meta.status === 'CANCELLED';
                                     const isEdited    = meta.status === 'SUPERSEDED';

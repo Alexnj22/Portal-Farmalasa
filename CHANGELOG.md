@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1327.2 — Ningún aviso muestra la clave cruda de una solicitud
+
+- El aviso de un ingreso con tarjeta o transferencia sin foto salía como
+  «Salud 4 · CAJA_INGRESO_AUTORIZACION por aprobar». Ahora dice «Ingreso sin
+  comprobante» y el cuerpo cuenta quién lo anotó, cuánto y con qué.
+- `notificar_solicitud_creada` ya no cae nunca a la clave del tipo: los que
+  faltaban (envío entre salas, descuento en una venta, ajuste de Min/Max)
+  tienen rótulo, y uno nuevo sin rótulo se lee «Solicitud».
+- En pantalla, el mismo respaldo: `rotuloDeSolicitud()` en la bandeja y el
+  detalle; el envío entre salas tenía tarjeta sin nombre. Los movimientos de
+  personal sin rótulo se leen «Movimiento».
+- Se borraron las 11 reservas de prueba, sus 5 enlaces de pago, el anticipo
+  de $15.90 que esperaba autorización y sus avisos.
+
 ## v2.1327.1 — Chat: el panel se cierra al tocar afuera y guarda lo escrito
 
 Pedido del usuario: «si doy click afuera que se cierre el chat (pero si tenía escrito o adjuntado algo, que no se borre)».

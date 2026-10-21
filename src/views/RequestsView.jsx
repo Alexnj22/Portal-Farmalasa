@@ -19,7 +19,7 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { getLocalMonday, formatWeekRange, shiftWeek, enLaSemanaDe } from '@nucleo/utils/semana';
 import { useDecidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { REQUEST_TYPES, esOperativa, adaptarMinMax, DISTRIBUCION_REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
+import { REQUEST_TYPES, esOperativa, adaptarMinMax, DISTRIBUCION_REQUEST_TYPES, rotuloDeSolicitud } from '@nucleo/store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests } from '@nucleo/data/minmaxRequests';
 import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { ICONO_POR_TIPO } from '../components/common/catalogos/tiposDeAviso';
@@ -666,7 +666,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     )}
                     {groupedByType.map(([type, cards]) => {
                         const TypeIcon  = TYPE_ICONS[type] || FileText;
-                        const typeConf  = REQUEST_TYPES[type] || { label: type };
+                        const typeConf  = REQUEST_TYPES[type] || { label: rotuloDeSolicitud(type) };
                         const isCollapsed = collapsedSections.has(type);
 
                         return (

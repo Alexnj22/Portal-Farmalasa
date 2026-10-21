@@ -33735,6 +33735,20 @@ export type Database = {
         Returns: number[]
       }
       salas_que_cubro_ahora: { Args: never; Returns: number[] }
+      saldo_favor_anotar: {
+        Args: {
+          p_branch_id: number
+          p_clave: string
+          p_customer_id: number
+          p_detalle: Json
+          p_employee_id: string
+          p_invoice_id: number
+          p_monto: number
+          p_nota: string
+          p_tipo: string
+        }
+        Returns: number
+      }
       saldo_favor_buscar: {
         Args: { p_codigo: string; p_prueba?: string }
         Returns: Json

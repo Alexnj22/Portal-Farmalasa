@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.0 — Saldo a favor: lo que no se descontó en una hora vuelve a la reserva, y lo fuera de lo normal queda en Avisos de puntos
+
+Decisión del dueño (2026-10-21). Usar el saldo a favor lo convierte en puntos para que la caja lo descuente como un canje. Pero si la factura sale a otro nombre o como consumidor final, el descuento no se aplica y el saldo de la reserva ya había bajado.
+
+- **Devolución automática.** `reservas_vigilar` (cada 15 min, sin cron nuevo) busca lo usado hace más de una hora que sigue en el lote `saldo_favor`. Esos puntos salen del libro con una salida de ajuste y el monto vuelve a la reserva como movimiento `reverso` (tipo nuevo en `saldo_favor_movimientos`), con su motivo. Si se descontó una parte, vuelve sólo el resto. Se avisa a la sala donde se usó y a `destinatarios_de_reservas`.
+- **Registro de lo fuera de lo normal** («debe quedar registro … así como en puntos»). Se usa el mismo mecanismo del programa: `puntos_irregularidad`, que ya alimenta Puntos → Avisos (web y app). Lo escribe `saldo_favor_anotar`; `puntos` lleva el monto en centavos. Tipos:
+  - saldo devuelto por no descontarse (`saldo_favor_no_canjeado`);
+  - descontado en una factura a otro nombre (`saldo_favor_otro_nombre`);
+  - el cliente no coincidió al confirmarlo (`saldo_favor_titular_no_coincide`). Al tercer intento del día pasa a `saldo_favor_intento_indebido` y se avisa;
+  - vencido sin usar (`saldo_favor_vencido`);
+  - pago en línea a una reserva cerrada (`saldo_favor_pago_tardio`) o ya pagada (`saldo_favor_pago_repetido`);
+  - pago de más sin dónde quedar a favor (`saldo_favor_sobrante_descartado`).
+- `saldo_favor_buscar` deja de ser STABLE porque ahora anota el rechazo.
+
 ## v2.1332.1 — Auditoría: el mapa se compara contra producción en vivo
 
 - El inventario de producción con el que `gate:auditoria` comprueba que todo

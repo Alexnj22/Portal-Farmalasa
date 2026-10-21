@@ -99,6 +99,16 @@ export const AVISOS_DE_PUNTOS = {
     canje_recien_ganado:         { rotulo: 'Canje con puntos recién ganados', severidad: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
     cambio_cliente:              { rotulo: 'Compra pasada de otro cliente', severidad: 'danger', puntos: (a) => `${ptsDe(a)} recibidos` },
     cambio_cliente_fallido:      { rotulo: 'Puntos de un cambio de cliente sin mover', severidad: 'danger', puntos: (a) => `${ptsDe(a)} sin mover` },
+    // Saldo a favor de reservas (2026-10-21): se anota en la misma tabla y
+    // `puntos` trae el monto en centavos (1 punto = $0.01).
+    saldo_favor_no_canjeado:         { rotulo: 'Saldo a favor sin descontar: volvió a la reserva', severidad: 'warning', puntos: (a) => `${dolaresDePuntos(a.puntos)} devueltos` },
+    saldo_favor_otro_nombre:         { rotulo: 'Saldo a favor descontado a otro nombre', severidad: 'danger', puntos: (a) => `${dolaresDePuntos(a.puntos)} descontados` },
+    saldo_favor_titular_no_coincide: { rotulo: 'Saldo a favor: el cliente no coincidió', severidad: 'warning', puntos: (a) => `${dolaresDePuntos(a.puntos)} a favor` },
+    saldo_favor_intento_indebido:    { rotulo: 'Saldo a favor: posible intento indebido', severidad: 'danger', puntos: (a) => `${dolaresDePuntos(a.puntos)} a favor` },
+    saldo_favor_vencido:             { rotulo: 'Saldo a favor vencido sin usar', severidad: 'info', puntos: (a) => `${dolaresDePuntos(a.puntos)} vencidos` },
+    saldo_favor_pago_tardio:         { rotulo: 'Pago en línea de una reserva cerrada', severidad: 'warning', puntos: (a) => `${dolaresDePuntos(a.puntos)} a favor` },
+    saldo_favor_pago_repetido:       { rotulo: 'Pago en línea de una reserva ya pagada', severidad: 'warning', puntos: (a) => `${dolaresDePuntos(a.puntos)} de más` },
+    saldo_favor_sobrante_descartado: { rotulo: 'Pago de más sin dónde quedar a favor', severidad: 'danger', puntos: (a) => `${dolaresDePuntos(a.puntos)} por devolver` },
 };
 
 /** Un tipo que la pantalla todavía no conoce se muestra igual, no desaparece. */

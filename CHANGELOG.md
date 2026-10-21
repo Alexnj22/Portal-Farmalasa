@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.7 — Salud 3 del 16-oct declarado como histórico en gate:cortes
+
+- `gate:cortes` acusaba a Salud 3 de cerrar el 16-oct con $15.55 sin contar.
+  No era efectivo: entre el corte confirmado de las 21:20 y el Z no hubo ventas
+  ni movimientos. La caja había borrado por error la factura 393084 ($15.55) y
+  el Z salió sin ella; después la recuperaron. Ese cierre no se puede rehacer,
+  así que va a `YA_PASADOS` con su monto y su motivo.
+- Auditoría de entradas y salidas de caja (30 días): los 3,007 movimientos en
+  efectivo del portal están en la caja con el mismo monto, fecha y sentido; el
+  único sin pasar es un cobro con tarjeta, que por diseño no viaja.
+
 ## v2.1333.6 — Worktrees: se limpian solos y lint/pruebas dejan de leerlos
 
 - Los worktrees no se borraban nunca. Había 22 carpetas `../Portal-Farmalasa-*`,

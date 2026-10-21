@@ -168,10 +168,16 @@ SELECT b.name AS sala, c.fecha::text AS fecha, c.hora::text AS hora, c.id::text 
  *     corte confirmado de las 22:01, rehicieron el corte (que ya daba exacto) y
  *     **descartaron ése**, dejando confirmado el del sobrante. Cerraron a las
  *     22:03.
+ *   · Salud 3, 16-oct  $15.55   — NO es efectivo sin contar: no hubo ventas ni
+ *     movimientos entre el corte confirmado de las 21:20 y el Z de las 21:24.
+ *     La caja borró por error la factura 393084 (13:49, efectivo, con sello) y
+ *     la recuperaron después; el Z se emitió sin ella (125 facturas, $1,447.95
+ *     contra 126 y $1,463.50 del portal), así que el esperado del juez la
+ *     cuenta y el cierre no. Confirmado por el usuario el 21-oct.
  *
  * Una entrada nueva acá NO se agrega para que el gate calle: sólo para un día
  * ya cerrado que no se puede reparar, y con el monto escrito. */
-const YA_PASADOS = new Set(['Salud 2/2026-09-06', 'Salud 1/2026-08-17']);
+const YA_PASADOS = new Set(['Salud 2/2026-09-06', 'Salud 1/2026-08-17', 'Salud 3/2026-10-16']);
 
 const SQL_CERRO_SIN_CONTAR = `
 SELECT b.name AS sala, z.fecha::text AS fecha, z.hora::text AS hora,

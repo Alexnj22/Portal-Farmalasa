@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1332.0 — Clientes: la fusión deja la duplicada deshabilitada y mueve todo; el envío se cobra una vez por pedido
+
+Dos decisiones del dueño del 2026-10-21.
+
+**Fusionar clientes ya no borra la ficha duplicada** («debe quedar en la cuenta principal, la otra debe quedar deshabilitada»).
+- `customers` suma `fusionada_en_id` (→ la principal) y `deshabilitada_at`, con un CHECK que los exige juntos. `cliente_vigente(id)` sigue la cadena hasta la principal.
+- `fusionar_cliente_duplicado` mueve también lo que antes se iba en cascada con el `DELETE`: sesiones de la app, correos guardados, foto, código y referidos, wallet, chat, mayorista (ficha, historial y resúmenes), avisos, historias vistas, encuestas, pre-registros, errores de la app, movimientos de caja del portal, inyecciones, correcciones de DTE, irregularidades de puntos. Regla de choque: donde la tabla admite una fila por cliente y la principal ya tiene la suya, **gana la principal** y la de la duplicada se queda en la ficha deshabilitada (no se pierde). Correos repetidos suman su uso en la principal. El chat se une: los mensajes pasan a la conversación de la principal y la vacía se elimina. La ficha queda sin NIT (es único) y su fila completa va a `audit_logs`.
+- La deshabilitada desaparece de las búsquedas (`busqueda_clientes`, `buscar_personas_por_nombre`, `get_customers_page`, `puntos_panel_candidatas`), de la corrida nocturna (`fichas_para_corregir_dte`, `clientes_sin_distrito_corregibles`) y del espejo (`aplicar_espejo_erp`).
+- Una factura nueva escrita con el nombre de la ficha fusionada se liga a la **principal** (`upsert_customers_v2`), en vez de abrir otra ficha suelta cada noche (pasaba con «JOSE ALEJANDRO VALLE (5P)», fusionada 11 veces en octubre).
+- El ingreso a la app resuelve a la principal (`puntos_cliente_por_documento`). Medido en la prueba: con el mismo DUI en las dos fichas el ingreso daba **0 coincidencias** (la regla exige una sola) — ahora entra a la principal.
+
+**El envío se cobra una vez por pedido** («el envío es por todo»). `costo_envio` se copia en cada renglón del pedido y `reserva_cuenta` lo sumaba en cada uno: un pedido de 3 renglones (10 + 5 + 3, envío 2.50) daba **25.50 en caja/preventa en vez de 20.50**. Ahora lo lleva un solo renglón (`reserva_envio`: el de menor id que sigue en pie; si se cancela, pasa al siguiente). `reserva_cuenta` pasa a plpgsql con la misma firma; el cobro en línea (`app_reserva_pago_confirmar`) separa el envío con la misma regla — pagar 20.50 ya no deja sobrante.
+
 ## v2.1331.6 — Constancia de reserva: barras separadas, montos del mismo tamaño y el pie se entiende
 
 Pedido del usuario: «el código está muy pegado al texto… hay textos muy grandes como falta pagar. Si no lo retiras: … no lo entiendo».

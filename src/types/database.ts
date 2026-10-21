@@ -7896,12 +7896,14 @@ export type Database = {
           categoria: string | null
           created_at: string | null
           departamento: string | null
+          deshabilitada_at: string | null
           direccion: string | null
           distrito: string | null
           dui: string | null
           email: string | null
           erp_id: string | null
           fecha_nacimiento: string | null
+          fusionada_en_id: number | null
           giro: string | null
           id: number
           ids_busq: string | null
@@ -7927,12 +7929,14 @@ export type Database = {
           categoria?: string | null
           created_at?: string | null
           departamento?: string | null
+          deshabilitada_at?: string | null
           direccion?: string | null
           distrito?: string | null
           dui?: string | null
           email?: string | null
           erp_id?: string | null
           fecha_nacimiento?: string | null
+          fusionada_en_id?: number | null
           giro?: string | null
           id?: never
           ids_busq?: string | null
@@ -7958,12 +7962,14 @@ export type Database = {
           categoria?: string | null
           created_at?: string | null
           departamento?: string | null
+          deshabilitada_at?: string | null
           direccion?: string | null
           distrito?: string | null
           dui?: string | null
           email?: string | null
           erp_id?: string | null
           fecha_nacimiento?: string | null
+          fusionada_en_id?: number | null
           giro?: string | null
           id?: never
           ids_busq?: string | null
@@ -7982,7 +7988,22 @@ export type Database = {
           telefono2?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_fusionada_en_id_fkey"
+            columns: ["fusionada_en_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_fusionada_en_id_fkey"
+            columns: ["fusionada_en_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
       }
       customers_changelog: {
         Row: {
@@ -28519,6 +28540,7 @@ export type Database = {
       cliente_expediente: { Args: { p_customer_id: number }; Returns: Json }
       cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }
       cliente_por_tarjeta: { Args: { p_entrada: string }; Returns: Json }
+      cliente_vigente: { Args: { p_id: number }; Returns: number }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
       clientes_sin_distrito_corregibles: {
         Args: never
@@ -33404,6 +33426,7 @@ export type Database = {
           total: number
         }[]
       }
+      reserva_envio: { Args: { p_id: number }; Returns: number }
       reserva_horas_al_preparar: {
         Args: { r: Database["public"]["Tables"]["app_reservas"]["Row"] }
         Returns: number

@@ -31,7 +31,7 @@ export default function ChipsDeEstado({ conversacion: c, atiende, ahora }) {
 // La misma información, como TEXTO de una línea (2026-10-21): es lo que va
 // debajo del nombre en el encabezado del hilo, igual que el «en línea» de una
 // app de mensajería. Como chip ocupaba dos renglones en el panel de la burbuja.
-const PUNTO = { info: 'bg-info', 'chart-6': 'bg-chart-6', neutral: 'bg-content-3', success: 'bg-success' };
+const PUNTO = { info: 'bg-brand', 'chart-6': 'bg-chart-6', neutral: 'bg-content-3', success: 'bg-success' };
 const TONO = { warning: 'text-warning', danger: 'text-danger' };
 export function EstadoEnTexto({ conversacion: c, atiende, ahora }) {
     const clave = estadoDeConversacion(c);

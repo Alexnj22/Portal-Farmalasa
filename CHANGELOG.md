@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1328.1 — Chat: aro de nivel animado como en la app de puntos y doble aro para Team
+
+Pedido del usuario: «el avatar no se ve como en la app de puntos, debe tener el aro de nivel… si es team, doble aro… animados y que se vea premium».
+
+- **El aro es el de la app de puntos:** el metal de la tarjeta de socio (hondo, tono y reflejo de `COLORES_NIVEL`) en un degradado cónico con brillo, no un anillo de color plano. Bronce, plata, oro, platino y los rangos de mayoreo (jade, zafiro, rubí, diamante).
+- **Team = doble aro.** Afuera, un segundo aro rosa y negro como la tarjeta del equipo, girando al revés. Antes Team tapaba el nivel con un solo anillo rosa; ahora se ven los dos. El aro de Team va por fuera y no cambia el tamaño, así la lista queda alineada.
+- **Animado:** el reflejo corre por el metal (`@property --aro-ang`) sólo en el encabezado del hilo; en la lista quedan quietos. Respeta «reducir movimiento».
+- Todo el dibujo vive en `.aro-cliente` (index.css), recortado con `mask`, así que el hueco entre el aro y la foto es transparente sobre el vidrio del panel.
+- El punto del estado «Nuevo» no se pintaba (`bg-info` no existe); ahora usa el azul de la marca.
 ## v2.1328.0 — Inicio: los widgets se adaptan a cualquier tamaño
 
 - Un widget más chico que lo que su contenido necesita (p. ej. Recetas o

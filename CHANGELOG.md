@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.7 — Auditoría fase 2: alcance de permisos con dos cargos, pagos a proveedores y cobros de distribución
+
+Tres funciones de la base, aplicadas en producción con el OK del usuario
+después de probarlas en el entorno de pruebas.
+
+- **`auth_module_scope`: el alcance sale sólo de una fila que da permiso.** Con
+  dos cargos, una fila APAGADA con «toda la red» de un cargo ponía ese alcance
+  sobre el permiso que daba el otro cargo con alcance de sala. Pasaba hoy con
+  dos personas en las bitácoras: podían reprogramar las de otras salas. Ahora
+  quedan con su sala (verificado en producción). `AuthContext` arma el mapa del
+  navegador con la misma regla.
+- **`registrar_pago_compra`: dos pagos al mismo proveedor se ponen en fila.**
+  Leían el saldo sin candado y podían pagar dos veces la misma deuda. 0 pagos
+  registrados hasta hoy.
+- **`dist_cobrar`: el reparto a mano rechaza montos negativos.** Un negativo
+  restaba en la suma pero no se grababa, y dejaba abonar a una cuenta más de lo
+  cobrado. 0 recibos hasta hoy.
+
 ## v2.1335.6 — Auditoría fase 2: permisos, bitácora del portal, ventas, pagos de sucursal y Mín·Máx
 
 Tercer lote de la revisión de código, sobre pantallas en uso.

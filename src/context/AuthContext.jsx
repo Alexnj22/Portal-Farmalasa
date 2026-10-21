@@ -295,19 +295,27 @@ export const AuthProvider = ({ children }) => {
         // fuente que suma, no una que reemplaza. Va después para que se lea el
         // orden de precedencia, aunque con OR el orden no cambie el resultado.
         const filas = [...data, ...(heredados?.data ?? [])];
+        // El alcance sale SÓLO de una fila que da algún permiso — la misma
+        // regla que `auth_module_scope` en la base desde el 2026-10-21. Una
+        // fila apagada con 'ALL' de un cargo ponía el alcance de toda la red
+        // sobre el permiso que daba el OTRO cargo, con alcance de sala.
+        const daAlgo = (f) => !!(f.can_view || f.can_edit || f.can_approve);
         filas.forEach(p => {
           const prev = map[p.module_key];
           if (!prev) {
             map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'MINE' };
           } else {
+            // Una fila sin `scope` cae a 'MINE' y no a 'ALL': el default más
+            // ancho es el que convierte «no sé» en «todo». En prod las 1,607
+            // filas lo tienen puesto, así que esto es la red, no el caso.
+            const scope = !daAlgo(p) ? prev.scope
+              : !daAlgo(prev) ? (p.scope || 'MINE')
+              : (prev.scope === 'ALL' || p.scope === 'ALL') ? 'ALL' : (prev.scope || p.scope || 'MINE');
             map[p.module_key] = {
               can_view: prev.can_view || p.can_view,
               can_edit: prev.can_edit || p.can_edit,
               can_approve: prev.can_approve || p.can_approve,
-              // Una fila sin `scope` cae a 'MINE' y no a 'ALL': el default más
-              // ancho es el que convierte «no sé» en «todo». En prod las 1,607
-              // filas lo tienen puesto, así que esto es la red, no el caso.
-              scope: (prev.scope === 'ALL' || p.scope === 'ALL') ? 'ALL' : (prev.scope || p.scope || 'MINE'),
+              scope,
             };
           }
         });

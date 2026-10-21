@@ -35,6 +35,10 @@ SELECT json_build_object(
               WHERE n.nspname = 'public' AND c.relkind IN ('r','p') AND NOT c.relispartition
                 AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = c.oid AND d.deptype = 'e')),
   'crons',  (SELECT coalesce(json_agg(jobname ORDER BY jobname), '[]') FROM cron.job),
+  -- Cada función de public tiene que tener área (auditoria/funciones.json).
+  'funciones', (SELECT coalesce(json_agg(DISTINCT p.proname ORDER BY p.proname), '[]')
+                  FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
+                   AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')),
   'anon', json_build_object(
     'funciones', (SELECT coalesce(json_agg(DISTINCT p.proname ORDER BY p.proname), '[]')
                     FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace

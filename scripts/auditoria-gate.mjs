@@ -151,6 +151,18 @@ function verificarMapa() {
         });
     }
 
+    // -- funciones: el área que se les asignó tiene que existir --
+    {
+        const ids = new Set(AREAS.map(a => a.id));
+        const mapa = leerJson(path.join(dir, 'funciones.json'), { funciones: {} }).funciones || {};
+        const malas = Object.entries(mapa).filter(([, v]) => v.area && !ids.has(v.area));
+        if (malas.length) fallas.push({
+            titulo: `${malas.length} función(es) asignada(s) a un área que no existe`,
+            detalle: malas.slice(0, 20).map(([n, v]) => `${n} → ${v.area}`),
+            arreglo: 'Corregir el área en auditoria/funciones.json (los ids están en auditoria/areas.mjs).',
+        });
+    }
+
     // -- tablas y crons: el snapshot de producción --
     // No se consulta la base acá a propósito: este gate corre en el hook de
     // pre-commit y un chequeo que necesita red falla sin conexión, que es como
@@ -207,6 +219,28 @@ function verificarMapa() {
             }
         } else if (!declarada) {
             avisos.push({ titulo: 'No hay superficie `anon` declarada', detalle: ['auditoria/superficie-anon.json'], arreglo: '' });
+        }
+
+        // -- funciones de la base --
+        // Hasta el 2026-10-21 no estaban en el mapa: ~1,200 funciones donde
+        // vive buena parte de la lógica no entraban en ningún porcentaje. Su
+        // área vive en auditoria/funciones.json (la propone
+        // `npm run auditoria:funciones`). Sólo en vivo: la foto no las trae.
+        if (vivo?.funciones) {
+            const mapa = leerJson(path.join(dir, 'funciones.json'), { funciones: {} }).funciones || {};
+            const sinArea = vivo.funciones.filter(n => !mapa[n]?.area);
+            if (sinArea.length) fallas.push({
+                titulo: `${sinArea.length} función(es) de producción sin área`,
+                detalle: sinArea.slice(0, 20),
+                arreglo: 'Correr `npm run auditoria:funciones -- --escribir`, revisar lo que propone y commitear '
+                       + 'auditoria/funciones.json. Lo que no resuelva solo, a mano con "manual": true.',
+            });
+            const muertas = Object.keys(mapa).filter(n => !vivo.funciones.includes(n));
+            if (muertas.length) avisos.push({
+                titulo: `${muertas.length} función(es) en auditoria/funciones.json que ya no existen`,
+                detalle: muertas.slice(0, 20),
+                arreglo: 'Correr `npm run auditoria:funciones -- --escribir`.',
+            });
         }
 
         // -- la causa, no sólo el síntoma --

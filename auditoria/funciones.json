@@ -1,0 +1,4905 @@
+{
+ "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
+ "generado": "2026-10-21T19:51:03.947Z",
+ "funciones": {
+  "_docs_sin_numero_control": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "abonar_diferencia_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "abonos_portal_resella_cortes": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "abrir_captura_de_foto": {
+   "area": "personal",
+   "por": "código"
+  },
+  "activar_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "actualizar_extra_de_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "adjuntar_comprobante_deposito": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "agregar_extra_a_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "agregar_item_conteo": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "agregar_renglones_a_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "ajustar_resumen_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "alcance_de_ventas": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "alcance_escritura_ficha": {
+   "area": "facturacion-dte",
+   "por": "llamada"
+  },
+  "alertar_barrido_dte": {
+   "area": "facturacion-dte",
+   "por": "cron"
+  },
+  "anular_abono_diferencia": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "anular_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "anular_carne_temporal": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "anular_creditos_ausentes": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "anular_deposito": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "anular_diferencia_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "anular_dispensacion": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "anular_limpieza_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "anular_metas_gasto": {
+   "area": "metas",
+   "por": "código"
+  },
+  "anular_pago_compra": {
+   "area": "compras",
+   "por": "código"
+  },
+  "anular_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "anular_receta": {
+   "area": "bitacoras",
+   "por": "tablas"
+  },
+  "anular_salida_de_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "anular_salida_de_bolsa_desde_caja": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "apagar_cuenta_de_carne_temporal": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "apartado_aplicacion_registrar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "apartado_aplicar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "apartado_cambiar_monto": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "apartado_cotizar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "apartado_deshacer": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "apartado_entregar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "apartado_marcar_entregado": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "apartado_opciones": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "apartado_para_retirar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "aperturas_de_la_manana": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "aplicar_barrido_proveedores": {
+   "area": "compras",
+   "por": "tablas"
+  },
+  "aplicar_documentos_pendientes": {
+   "area": "personal",
+   "por": "código"
+  },
+  "aplicar_espejo_erp": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "aplicar_horarios_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "app_borrar_datos_de_cuenta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_cancelar_reservas_abiertas_sin_pago": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_carrito_existencias": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_catalogo": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_catalogo_producto": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_catalogo_rehacer_destacados": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "app_chat_mensaje_nuevo": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_chat_resumen": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "app_chat_timbre": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_cliente_avisos_salir_ya": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_cliente_buscar_productos": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "app_cliente_compras": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_cliente_existencias": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_cliente_inyecciones": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_cliente_inyecciones_por_recordar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_cliente_sesiones_purgar": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "app_encargos_avisar": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_existencias_netas": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_historia_quienes_vieron": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_historia_registrar_vista": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_historias_sellar_publicacion": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_historias_vistas_resumen": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_niveles_de": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_precios_para_cobro": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_preregistro_resolver": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_productos_bajo_receta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_reserva_pago_confirmar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_reserva_quitar_receta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_reservas_avisar_cambios": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_reservas_avisar_receta": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_reservas_avisar_sucursal": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_reservas_guardas": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_reservas_saldo_envio": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_tratamiento_cambiar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_tratamientos_de": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_tratamientos_detectar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_tratamientos_por_recordar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "apply_proveedores_categoria_sugerida": {
+   "area": "compras",
+   "por": "código"
+  },
+  "approve_minmax_request": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "approve_minmax_requests_bulk": {
+   "area": "minmax",
+   "por": "a mano",
+   "manual": true
+  },
+  "aprobar_bono_semestral": {
+   "area": "metas",
+   "por": "código"
+  },
+  "aprobar_conteo_inventario": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "aprobar_meta_gerente": {
+   "area": "metas",
+   "por": "código"
+  },
+  "aprobar_meta_por_autorizacion": {
+   "area": "metas",
+   "por": "código"
+  },
+  "aprobar_metas_lote": {
+   "area": "metas",
+   "por": "código"
+  },
+  "aprobar_metas_por_autorizacion_lote": {
+   "area": "metas",
+   "por": "código"
+  },
+  "aprobar_pago_compra": {
+   "area": "compras",
+   "por": "código"
+  },
+  "asentar_diferencias_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "asignar_aprobador_solicitud": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "asignar_documento_a_empleados": {
+   "area": "personal",
+   "por": "código"
+  },
+  "attendance_kiosko_pedido_lifecycle": {
+   "area": "asistencia",
+   "por": "trigger"
+  },
+  "audit_employee_sensitive_changes": {
+   "area": "personal",
+   "por": "trigger"
+  },
+  "audit_log_de_producto": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "audit_log_de_sucursal": {
+   "area": "sucursales",
+   "por": "código"
+  },
+  "auth_can_edit_any": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_can_edit_scope_all": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_employee_branch_id": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_employee_erp_sucursal_id": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_employee_id": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_employee_role_id": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_employee_secondary_role_id": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_es_supervision": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_has_module_permission": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_hereda_por_ausencia": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_is_su": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_module_locked": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_module_scope": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_no_bloqueado": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_rango": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "auth_ve_costos": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "avisar_a_empleados": {
+   "area": "solicitudes",
+   "por": "código"
+  },
+  "avisar_a_sucursal": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "avisar_aperturas_de_la_manana": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "avisar_cambios_que_no_se_quedaron": {
+   "area": "solicitudes",
+   "por": "cron"
+  },
+  "avisar_camino_del_pedido": {
+   "area": "pedidos",
+   "por": "trigger"
+  },
+  "avisar_cierre_del_dia": {
+   "area": "cortes-efectivo",
+   "por": "cron"
+  },
+  "avisar_cortes_pendientes": {
+   "area": "cortes-efectivo",
+   "por": "cron"
+  },
+  "avisar_descarga_grande": {
+   "area": "sistema",
+   "por": "trigger"
+  },
+  "avisar_dias_sin_cierre": {
+   "area": "cortes-efectivo",
+   "por": "cron"
+  },
+  "avisar_diferencia_de_ayer": {
+   "area": "cortes-efectivo",
+   "por": "cron"
+  },
+  "avisar_diferencias_pendientes_a_jefes": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "avisar_diferencias_vencidas": {
+   "area": "cortes-efectivo",
+   "por": "cron"
+  },
+  "avisar_dui_por_vencer": {
+   "area": "personal",
+   "por": "cron"
+  },
+  "avisar_envios_sin_decidir": {
+   "area": "traslados",
+   "por": "cron"
+  },
+  "avisar_estados_de_venta_desconocidos": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "avisar_factores_sospechosos": {
+   "area": "productos",
+   "por": "cron"
+  },
+  "avisar_facturas_de_sala": {
+   "area": "compras",
+   "por": "cron"
+  },
+  "avisar_falla_del_consejo": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "avisar_faltantes": {
+   "area": "solicitudes",
+   "por": "tablas"
+  },
+  "avisar_faltantes_sin_resolver": {
+   "area": "traslados",
+   "por": "cron"
+  },
+  "avisar_llegada_del_conductor": {
+   "area": "pedidos",
+   "por": "trigger"
+  },
+  "avisar_pago_seguro_vida": {
+   "area": "personal",
+   "por": "cron"
+  },
+  "avisar_pedidos_sin_recibir": {
+   "area": "pedidos",
+   "por": "cron"
+  },
+  "avisar_productos_sin_venta": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "avisar_rechazos_sin_arreglo": {
+   "area": "facturacion-dte",
+   "por": "cron"
+  },
+  "avisar_sala_lista_para_salir": {
+   "area": "pedidos",
+   "por": "trigger"
+  },
+  "avisar_salida_de_ruta": {
+   "area": "pedidos",
+   "por": "trigger"
+  },
+  "avisar_solicitudes_datos_por_vencer": {
+   "area": "plataforma",
+   "por": "cron"
+  },
+  "avisar_traslados_por_respaldo": {
+   "area": "traslados",
+   "por": "cron"
+  },
+  "aviso_de_pedido_fallo": {
+   "area": "sistema",
+   "por": "tablas"
+  },
+  "aviso_ventana": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "avisos_entregar_diferidos": {
+   "area": "comunicacion",
+   "por": "cron"
+  },
+  "avisos_filtrar_push": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "avisos_horario_notificacion": {
+   "area": "comunicacion",
+   "por": "trigger"
+  },
+  "backfill_daily_stats_chunk": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "backup_dump_table": {
+   "area": "sistema",
+   "por": "código"
+  },
+  "bitacora_ahora_sv": {
+   "area": "bitacoras",
+   "por": "llamada"
+  },
+  "bitacora_auditar": {
+   "area": "bitacoras",
+   "por": "trigger"
+  },
+  "bitacora_de_dinero": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "bitacora_estado_franja": {
+   "area": "bitacoras",
+   "por": "llamada"
+  },
+  "bitacora_exigir_acceso": {
+   "area": "bitacoras",
+   "por": "llamada"
+  },
+  "bitacora_hoy_sv": {
+   "area": "bitacoras",
+   "por": "llamada"
+  },
+  "bitacora_libro_pendientes": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "bitacora_pendientes_por_vencer": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "bitacora_periodo_cerrado": {
+   "area": "bitacoras",
+   "por": "tablas"
+  },
+  "bitacora_tomar_folio": {
+   "area": "bitacoras",
+   "por": "tablas"
+  },
+  "block_employee": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "boleta_ya_en_caja": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "boleta_ya_registrada": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "bolsa_al_descartar_corte": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "bolsa_anular_operacion_nucleo": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "bolsa_operacion_no_anulable": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "bolsa_reintegro_maximo": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "bolsa_saldo": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "bolsa_saldo_para_el_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "bolsa_sugerida": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "bolsas_circuito_desde": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "bolsas_invariante_desde": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "bono_meta_sala_interno": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "bono_semestre_asegurar": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "bonos_producto_items": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "borrar_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "buscar_clientes_ids": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "buscar_empleado_para_solicitud": {
+   "area": "datos-personales",
+   "por": "código"
+  },
+  "buscar_facturas_sala_ids": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "buscar_inventario_global": {
+   "area": "tablero",
+   "por": "código"
+  },
+  "buscar_inventario_global_v2": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "buscar_medicos_ids": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "buscar_o_crear_medico": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "buscar_personas_por_nombre": {
+   "area": "datos-personales",
+   "por": "código"
+  },
+  "buscar_productos_ids": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "buscar_productos_minmax": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "busqueda_base": {
+   "area": "inventario",
+   "por": "llamada"
+  },
+  "busqueda_clientes": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "busqueda_coincide": {
+   "area": "plataforma",
+   "por": "a mano",
+   "manual": true
+  },
+  "busqueda_distancia": {
+   "area": "plataforma",
+   "por": "llamada"
+  },
+  "busqueda_fonetica": {
+   "area": "plataforma",
+   "por": "llamada"
+  },
+  "busqueda_la_mas_larga": {
+   "area": "ventas",
+   "por": "llamada"
+  },
+  "busqueda_palabras": {
+   "area": "inventario",
+   "por": "llamada"
+  },
+  "busqueda_parecido": {
+   "area": "plataforma",
+   "por": "a mano",
+   "manual": true
+  },
+  "busqueda_patrones_legados": {
+   "area": "inventario",
+   "por": "llamada"
+  },
+  "busqueda_prefiltro": {
+   "area": "datos-personales",
+   "por": "llamada"
+  },
+  "busqueda_productos": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "busqueda_puntaje": {
+   "area": "plataforma",
+   "por": "llamada"
+  },
+  "caja_cierre_automatico_anotar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_cierre_automatico_decidir": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_cierre_automatico_salas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_cortes_del_portal_sella_el_corte": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "caja_efectivo_piezas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_estado": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_falta_contra_corte": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "caja_falta_por_contar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_ingreso_pedir_autorizacion": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_ingreso_reenviar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_ingreso_resolver": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_movimiento_sigue_bono": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "caja_movimiento_valida_bono": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "caja_vales_pendientes": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_vouchers_del_dia": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "calc_credito_declarable": {
+   "area": "compras",
+   "por": "tablas"
+  },
+  "calculate_stock_params": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "cancelar_envio": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "canjear_codigo_de_vinculacion": {
+   "area": "impresion",
+   "por": "tablas"
+  },
+  "cantidad_de_diferencia": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "captura_de_foto_vigente": {
+   "area": "personal",
+   "por": "código"
+  },
+  "cargos_de_administracion": {
+   "area": "cortes-efectivo",
+   "por": "llamada"
+  },
+  "carne_disponible": {
+   "area": "personal",
+   "por": "código"
+  },
+  "cerrar_bolsa_de_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "cerrar_dato_pedido": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "cerrar_despacho_envio": {
+   "area": "solicitudes",
+   "por": "tablas"
+  },
+  "cerrar_envio": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "cerrar_faltante": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "cerrar_item_por_devolucion": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "cerrar_mes_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cerrar_no_reenviadas": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "cerrar_pedido_si_todo_resuelto": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "cerrar_periodo_fiscal": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "cerrar_ruta": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "cerrar_traslado_ya_recibido": {
+   "area": "solicitudes",
+   "por": "código"
+  },
+  "chat_cliente_contexto": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_conversaciones": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_escribiendo": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_etiquetar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_reaccionar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_recordar_espera": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "chat_resolver": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_responder": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_tomar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "chat_vigilar_espera": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "clase_de_cliente": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "clase_de_dispensacion": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "clasificar_observacion_mh": {
+   "area": "facturacion-dte",
+   "por": "llamada"
+  },
+  "classify_purchase_dte_review": {
+   "area": "compras",
+   "por": "código"
+  },
+  "clave_movimiento_de_item": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "cliente_confirma": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "cliente_es_empleado": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "cliente_expediente": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "cliente_foto_quitar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "cliente_por_tarjeta": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "cliente_vigente": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "clientes_anotar_nacimiento": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "clientes_mayoristas_avisar_solicitud": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "clientes_sin_distrito_corregibles": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "close_ventas_month": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "cobros_portal_en_efectivo": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "cof_no_se_envia_mh": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "cola_espejo_portal_erp": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "compactar_busqueda": {
+   "area": "facturacion-dte",
+   "por": "llamada"
+  },
+  "completar_dispensacion": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "completar_nit_proveedores": {
+   "area": "compras",
+   "por": "código"
+  },
+  "comprobantes_de_caja_red": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "comprobantes_de_caja_sala": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "confirm_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "confirmar_alias_producto": {
+   "area": "compras",
+   "por": "código"
+  },
+  "confirmar_clasificacion_propuesta": {
+   "area": "compras",
+   "por": "código"
+  },
+  "confirmar_conteo": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "confirmar_envio_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "confirmar_impresion": {
+   "area": "impresion",
+   "por": "tablas"
+  },
+  "confirmar_llegada_diferencia": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "confirmar_llegada_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "confirmar_llegada_reenvio": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "confirmar_meta_supervisor": {
+   "area": "metas",
+   "por": "código"
+  },
+  "confirmar_metas_lote": {
+   "area": "metas",
+   "por": "código"
+  },
+  "congelar_metas_mes": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "consumir_vale_de_identidad": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "contar_inventario_por_vencer": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "conteo_busqueda_aproximada": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "conteo_costo_unitario": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "conteo_grupo_key": {
+   "area": "inventario",
+   "por": "llamada"
+  },
+  "conteo_item_copiar_costo": {
+   "area": "inventario",
+   "por": "trigger"
+  },
+  "conteo_lineas_netas": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "conteo_puede_ver_sistema": {
+   "area": "permisos",
+   "por": "código"
+  },
+  "contexto_de_solicitud_minmax": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "corregir_lectura_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "corregir_limpieza_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "corregir_recepcion_de_item": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "corte_diferencia": {
+   "area": "cortes-efectivo",
+   "por": "llamada"
+  },
+  "corte_no_conto_efectivo": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "corte_trabado_por_posterior": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "corte_tramo": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "corte_vendedores_del_tramo": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
+  "cortes_caja_avisar_cierre_del_dia": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "cortes_caja_sella_cobros_portal": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "cortes_caja_sella_quien_corto": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "count_docs_sin_numero_control": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "crear_bolsa_al_confirmar": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "crear_clientes_faltantes": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "crear_codigo_de_vinculacion": {
+   "area": "impresion",
+   "por": "código"
+  },
+  "crear_conteo_inventario": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "crear_conteos_ciclicos_programados": {
+   "area": "inventario",
+   "por": "cron"
+  },
+  "crear_metas_gasto": {
+   "area": "metas",
+   "por": "código"
+  },
+  "crear_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "crear_promocion_laboratorio": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "crear_ruta": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "crear_solicitud_datos": {
+   "area": "datos-personales",
+   "por": "código"
+  },
+  "credito_detalle": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "credito_pago_avisar": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "credito_pago_tomar": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "creditos_del_cliente": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "creditos_pasados_del_plazo": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "creditos_tomar_lectura": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "cron_auth_headers": {
+   "area": "traslados",
+   "por": "cron"
+  },
+  "cuenta_de_carne_temporal": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "custom_access_token_hook": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "customer_ficha_estado": {
+   "area": "facturacion-dte",
+   "por": "llamada"
+  },
+  "dar_todo_a_las_cuentas_de_pruebas": {
+   "area": "permisos",
+   "por": "trigger"
+  },
+  "dashboard_canon_sellar": {
+   "area": "tablero",
+   "por": "trigger"
+  },
+  "datos_pedidos_de_mi_sala": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "decidir_bono_semestral": {
+   "area": "metas",
+   "por": "código"
+  },
+  "decidir_devolucion_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "decidir_diferencia_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "decidir_excedente": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "declarar_faltante_tardio": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "declarar_faltantes": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "dejar_documento_pendiente": {
+   "area": "personal",
+   "por": "código"
+  },
+  "derivar_kiosk_pin": {
+   "area": "personal",
+   "por": "trigger"
+  },
+  "descartar_cliente_por_revisar": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "desmarcar_conteo_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "destinatarios_de_cortes": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "destinatarios_de_faltante": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "destinatarios_de_modulo": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "destinatarios_de_reservas": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "detalle_sin_ingresar": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "detectar_proveedores_duplicados": {
+   "area": "compras",
+   "por": "código"
+  },
+  "devolver_meta_gerente": {
+   "area": "metas",
+   "por": "código"
+  },
+  "discard_stock_drafts": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "dist_abrir_caja": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_anular_cancela_solicitud": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_anular_compra": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_anular_conteo": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_anular_movimiento_caja": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_anular_recibo": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_aplicar_devolucion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_asignar_lotes": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_avisar_cartera_atrasada": {
+   "area": "distribucion",
+   "por": "cron"
+  },
+  "dist_camion_del_dia": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_camiones": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cargar_camion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cartera": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cerrar_conteo": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cerrar_dia": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cerrar_liquidacion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cierre_dia": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cliente_ruta_texto": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_cobrar": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_contar": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_conteo": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_correo_al_sellar": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_costo_al_mover": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_credito_cliente": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_credito_del_documento": {
+   "area": "distribucion",
+   "por": "tablas"
+  },
+  "dist_cxc_al_documento": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_cxc_recalcular": {
+   "area": "distribucion",
+   "por": "tablas"
+  },
+  "dist_descargar_camion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_devolucion_al_anular_nota": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_devolucion_disponible": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_dia_del_sello": {
+   "area": "distribucion",
+   "por": "llamada"
+  },
+  "dist_dia_habil_del_mes": {
+   "area": "distribucion",
+   "por": "tablas"
+  },
+  "dist_estado_cuenta": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_facturacion_pendiente": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_fijar_minmax": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_guardar_compra": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_guardar_ruta": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_iniciar_conteo": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_liberar_lotes": {
+   "area": "distribucion",
+   "por": "tablas"
+  },
+  "dist_libro_compras": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_libros_iva": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_liquidacion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_liquidaciones_del_dia": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_lote_ajustar": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_lote_entrada": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_lotes_al_anular": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_lotes_al_invalidar": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_mover_lote": {
+   "area": "distribucion",
+   "por": "tablas"
+  },
+  "dist_movimiento_caja": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_ordenar_ruta": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_pago_congelado": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_pago_verificacion_inicial": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_pedir_descuento": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_plazo_invalidacion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_plazo_invalidacion_de": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_preparar_devolucion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_punto_venta_de": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_reabrir_dia": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_reabrir_liquidacion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_recibir_compra": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_recibo": {
+   "area": "distribucion",
+   "por": "tablas"
+  },
+  "dist_recorrido": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_referencias_relacionada": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_registrar_correo": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_registrar_deposito": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_registrar_posicion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_registrar_visita": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_relacionadas": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_reposicion": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_reservar": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_reservas_al_anular": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_reservas_vigentes": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_resolver_baja": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_resolver_cuarentena": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_resolver_descuento": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_ruta_del_dia": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_ruta_renombrada": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_siguiente_correlativo": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_solicitar_baja": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_tablero": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_tocar_updated_at": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_utilidad": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_validar_desde_camion": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_validar_item": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_validar_lote_item": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_validar_pedido": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dist_vencer_reservas": {
+   "area": "distribucion",
+   "por": "cron"
+  },
+  "dist_vendedores": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_ventas_perdidas_resolver": {
+   "area": "distribucion",
+   "por": "trigger"
+  },
+  "dui_disponible": {
+   "area": "personal",
+   "por": "código"
+  },
+  "duplicar_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "editar_lote_conteo_item": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "editar_promocion_laboratorio": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "editar_renglon": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "editar_reparto": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "editar_tarifa_renglon": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "eliminar_caja_de_impresion": {
+   "area": "impresion",
+   "por": "código"
+  },
+  "eliminar_conteo_inventario": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "emitir_carne_temporal": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "emparejar_producto_dte": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "empleado_no_disponible": {
+   "area": "solicitudes",
+   "por": "código"
+  },
+  "empleado_sala_de_hoy": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "empleados_en_turno": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "empleados_por_rango": {
+   "area": "solicitudes",
+   "por": "código"
+  },
+  "employee_esta_bloqueado": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "encargo_en_sucursal_crear": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encargo_puede_manejar": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "encargo_responder": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encargos_de_sucursal": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encolar_impresion": {
+   "area": "impresion",
+   "por": "código"
+  },
+  "encuesta_app_disponibles": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encuesta_app_puntos": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "encuesta_app_responder": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_acreditar": {
+   "area": "encuestas-clientes",
+   "por": "tablas"
+  },
+  "encuesta_cliente_anotar_creacion": {
+   "area": "encuestas-clientes",
+   "por": "trigger"
+  },
+  "encuesta_cliente_archivar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_asignar_incentivo": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_avance": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_avisar": {
+   "area": "encuestas-clientes",
+   "por": "llamada"
+  },
+  "encuesta_cliente_avisar_detractor": {
+   "area": "encuestas-clientes",
+   "por": "trigger"
+  },
+  "encuesta_cliente_candado": {
+   "area": "encuestas-clientes",
+   "por": "trigger"
+  },
+  "encuesta_cliente_cerrar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_cerrar_si_llego": {
+   "area": "encuestas-clientes",
+   "por": "tablas"
+  },
+  "encuesta_cliente_cerrar_vencidas": {
+   "area": "encuestas-clientes",
+   "por": "cron"
+  },
+  "encuesta_cliente_comentarios": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_con_texto": {
+   "area": "encuestas-clientes",
+   "por": "tablas"
+  },
+  "encuesta_cliente_cumple": {
+   "area": "encuestas-clientes",
+   "por": "llamada"
+  },
+  "encuesta_cliente_destinatarios": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "encuesta_cliente_duplicar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_entrevistar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_enviar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_guardar_resumen": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_incentivos_de": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_limpiar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_muestra_entregada": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_poblacion": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_problemas": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_problemas_de": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_publicar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_puntaje": {
+   "area": "encuestas-clientes",
+   "por": "llamada"
+  },
+  "encuesta_cliente_registrar": {
+   "area": "encuestas-clientes",
+   "por": "tablas"
+  },
+  "encuesta_cliente_respuestas_para_exportar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_resultados": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_resumen": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_revisar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_rondas": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_sucursal_candado": {
+   "area": "encuestas-clientes",
+   "por": "trigger"
+  },
+  "encuesta_publica": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_publica_responder": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuestas_para_aplicar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "enforce_numeric_employee_code": {
+   "area": "personal",
+   "por": "trigger"
+  },
+  "entregar_bolsas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "envio_json": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "envios_json": {
+   "area": "traslados",
+   "por": "tablas"
+  },
+  "envios_por_continuar": {
+   "area": "traslados",
+   "por": "cron"
+  },
+  "es_busqueda_de_codigo": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "es_cliente_mostrador": {
+   "area": "facturacion-dte",
+   "por": "llamada"
+  },
+  "es_despacho_adicional": {
+   "area": "plataforma",
+   "por": "llamada"
+  },
+  "es_dui_valido": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "es_inyectable": {
+   "area": "ventas",
+   "por": "llamada"
+  },
+  "es_jefe_de_sala": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "es_medicamento_de_tratamiento": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "es_solicitud_operativa": {
+   "area": "permisos",
+   "por": "policy"
+  },
+  "es_telefono_sv_valido": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "es_ultimo_dia_del_mes_sv": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "escalera_disciplinaria": {
+   "area": "personal",
+   "por": "código"
+  },
+  "escribir_niveles_promocion": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "espejo_valor": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "esta_suspendido": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "etiquetas_factura_sala": {
+   "area": "compras",
+   "por": "tablas"
+  },
+  "expandir_lineas_envio": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "explicar_meta_propuesta": {
+   "area": "metas",
+   "por": "código"
+  },
+  "explicar_metas_propuestas": {
+   "area": "metas",
+   "por": "código"
+  },
+  "extender_renglon": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "extraer_observaciones_mh": {
+   "area": "facturacion-dte",
+   "por": "a mano",
+   "manual": true
+  },
+  "f_unaccent": {
+   "area": "inventario",
+   "por": "llamada"
+  },
+  "factores_sospechosos": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "factura_esta_anulada": {
+   "area": "solicitudes",
+   "por": "código"
+  },
+  "facturas_sala_guarda": {
+   "area": "compras",
+   "por": "llamada"
+  },
+  "farmacia_estado": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "ficha_de_persona": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "fichas_para_corregir_dte": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "finalizar_conteo_inventario": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "finalizar_sala_con_cajas": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "find_purchase_dte_document_by_codigo": {
+   "area": "compras",
+   "por": "código"
+  },
+  "find_sync_gaps": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "firmar_quien_decide": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "fn_psp_capture_history": {
+   "area": "minmax",
+   "por": "trigger"
+  },
+  "fn_set_item_factor_unidades": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "fn_update_product_last_sale": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "formas_de_abono_en_efectivo": {
+   "area": "cortes-efectivo",
+   "por": "llamada"
+  },
+  "foto_de_empleado": {
+   "area": "personal",
+   "por": "código"
+  },
+  "fotografiar_bono_meta_mes": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "frenar_ajuste_si_hay_conteo_abierto": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "frenar_traslado_duplicado": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "fusionar_cliente_duplicado": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "generar_csv_libro": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "generar_propuestas_metas": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "generar_propuestas_metas_manual": {
+   "area": "metas",
+   "por": "código"
+  },
+  "generate_wfm_snapshot": {
+   "area": "horarios",
+   "por": "cron"
+  },
+  "get_abonos_del_dia": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_active_product_lab_counts": {
+   "area": "productos",
+   "por": "código"
+  },
+  "get_anexo_retencion_renta": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_bitacora_dia": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "get_bitacora_dispensaciones": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "get_bitacora_mes_impreso": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "get_bitacora_resumen_mes": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "get_bolsa_eventos": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_bolsas_con_diferencia": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_bolsas_invariante": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_bolsas_personas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_bolsas_saldos": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_bono_meta_sala": {
+   "area": "metas",
+   "por": "código"
+  },
+  "get_bono_semestral": {
+   "area": "metas",
+   "por": "código"
+  },
+  "get_bonos_producto_sala": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_caja_piezas_del_rango": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_candidatos_retencion_renta": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_ccf_alerts": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_ccf_con_problema": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "get_ccf_repaso": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_cheques_de_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_clasificacion_fiscal_pendiente": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_clientes_por_revisar": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_cof_sin_envio_mh": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_consecutive_mh_alerts": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_conteo_item_history": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteo_items_count": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteo_items_jsonb": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteo_items_search": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteo_laboratorios": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteo_products_count": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteo_products_page": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteo_resumen": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_conteos": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_conteos_valor": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_correcciones_de_caja": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_corte_eventos": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_corte_turno": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_corte_z_dias": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_cortes_diferencias": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_cortes_por_embolsar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_cortes_resolutores": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_cortes_z": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_cuentas_por_pagar": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_cuentas_por_pagar_detalle": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_customer_detail": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_customers_page": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_customers_stats": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_depositos": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_dias_con_diferencia": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_dispensacion_por_folio": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "get_docs_sin_numero_control": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_documentos_por_barrer": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_documentos_sin_cargar": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_donde_hay": {
+   "area": "tablero",
+   "por": "código"
+  },
+  "get_draft_cost_estimate": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_employee_credenciales": {
+   "area": "personal",
+   "por": "código"
+  },
+  "get_employee_identidad": {
+   "area": "personal",
+   "por": "código"
+  },
+  "get_employee_salarios": {
+   "area": "nomina",
+   "por": "código"
+  },
+  "get_entrega": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_envios_historial": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "get_envios_vivos": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "get_estados_de_personas": {
+   "area": "personal",
+   "por": "código"
+  },
+  "get_excedentes": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_facturas_sala": {
+   "area": "tablero",
+   "por": "código"
+  },
+  "get_facturas_sala_panel": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_faltantes_con_stock_en_otra_sala": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_faltantes_de_bolsa": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "get_inventory_cost_summary": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_inventory_cost_summary_base": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "get_invoice_observations": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_inyecciones_aplicadas": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_kiosk_auth_code": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "get_kiosk_boot_payload": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "get_kiosk_coverage_employees": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "get_laboratorios_con_productos": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_last_sale_dates": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "get_libro_anulados": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_compras": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_compras_completo": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_compras_declarable": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_percepcion": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_retencion": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_sujeto_excluido": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_ventas_consumidor": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_ventas_contribuyente": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_lockable_modules": {
+   "area": "permisos",
+   "por": "código"
+  },
+  "get_logistics_chief_ids": {
+   "area": "productos",
+   "por": "código"
+  },
+  "get_meta_sala": {
+   "area": "plataforma",
+   "por": "transversal"
+  },
+  "get_metas_autorizadores": {
+   "area": "metas",
+   "por": "código"
+  },
+  "get_metas_dashboard": {
+   "area": "metas",
+   "por": "código"
+  },
+  "get_metas_gastos": {
+   "area": "metas",
+   "por": "código"
+  },
+  "get_metas_historico": {
+   "area": "metas",
+   "por": "código"
+  },
+  "get_metas_mes_en_curso": {
+   "area": "metas",
+   "por": "código"
+  },
+  "get_minmax_approver_ids": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_minmax_contexto_producto": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_minmax_solicitudes_de_producto": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_no_sales_products": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "get_notas_credito_compras": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_operacion_de_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_pagos_bono_producto": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_pagos_compra": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_pausa_razones_stats": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "get_pedido_diferencias_stats": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "get_pedido_entregas": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "get_pedido_generar_dashboard": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "get_pedido_item_stats": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "get_pedido_kpis": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "get_pedido_preview": {
+   "area": "plataforma",
+   "por": "transversal"
+  },
+  "get_pedido_sin_bodega": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "get_pedido_sucursal_stats": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "get_pedidos_en_curso": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "get_pending_mh_invoices": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_periodo_fiscal": {
+   "area": "fiscal",
+   "por": "tablas"
+  },
+  "get_periodos_fiscales": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_personas_de_administracion": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_personas_de_solicitudes": {
+   "area": "solicitudes",
+   "por": "código"
+  },
+  "get_por_depositar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_precio_tipo": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "get_precios_con_costo": {
+   "area": "productos",
+   "por": "código"
+  },
+  "get_precios_para_descuento": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_presentaciones_de_producto": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_presentaciones_maestro": {
+   "area": "productos",
+   "por": "código"
+  },
+  "get_product_branch_summary": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_product_drill_lines": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_product_drill_summary": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_product_expiring_lots": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_product_last_sales": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_product_sales_agg": {
+   "area": "ventas",
+   "por": "a mano",
+   "manual": true
+  },
+  "get_product_sales_agg_base": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "get_product_sales_agg_jsonb": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_product_sales_total": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_product_trend": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_product_vencimiento_policy": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_productos_para_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_productos_por_confirmar": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_productos_por_presentacion": {
+   "area": "productos",
+   "por": "código"
+  },
+  "get_products_sold_no_minmax": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "get_products_sold_no_minmax_jsonb": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "get_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_promocion_laboratorio": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_promociones": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_proveedores_maestro": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_puntos_canjeados": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_purchase_dte_documents": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_purchase_dte_review_queue": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_purchase_dte_review_source": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_quiebres_sala": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_recetas_abiertas": {
+   "area": "bitacoras",
+   "por": "tablas"
+  },
+  "get_recetas_recientes": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "get_remitentes_dte_conocidos": {
+   "area": "compras",
+   "por": "código"
+  },
+  "get_resumen_fiscal": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_retencion_ventas": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_salidas_de_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_stagnant_inventory": {
+   "area": "inventario",
+   "por": "llamada"
+  },
+  "get_stagnant_inventory_base": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "get_stagnant_inventory_jsonb": {
+   "area": "inventario",
+   "por": "a mano",
+   "manual": true
+  },
+  "get_stock_analysis": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_stock_analysis_jsonb": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_sucursal_net_stock": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_top_productos_mes": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_top_supplier_per_product": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "get_traslado_disponibilidad": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "get_traslados_por_recibir": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "get_vendedor_diario": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_vendedores": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "get_vendedores_resumen": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_ventas_con_puntos": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_ventas_con_receta": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_ventas_fuera_del_libro": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_ventas_por_forma_de_pago": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "get_ventas_receta_stats": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_ventas_sin_producto": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "get_ventas_stats": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "guardar_conteo_item": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "guardar_datos_protegidos_de_empleado": {
+   "area": "personal",
+   "por": "código"
+  },
+  "guardar_dia_de_horario": {
+   "area": "horarios",
+   "por": "código"
+  },
+  "guardar_foto_de_captura": {
+   "area": "personal",
+   "por": "código"
+  },
+  "guardar_lectura_de_boleta": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "guardar_minmax_desde_pedido": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "guardar_texto_de_captura": {
+   "area": "personal",
+   "por": "código"
+  },
+  "guardia_cambio_de_contrasena": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "hay_alguien_no_disponible": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "hereda_por_ausencia_emp": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "hereda_por_ausencia_rol": {
+   "area": "permisos",
+   "por": "tablas"
+  },
+  "hora_12": {
+   "area": "cortes-efectivo",
+   "por": "llamada"
+  },
+  "hora_del_horario": {
+   "area": "sucursales",
+   "por": "llamada"
+  },
+  "horario_de_sala": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "horarios_de_la_semana": {
+   "area": "horarios",
+   "por": "código"
+  },
+  "identificar_por_carne": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "ignorar_renglon_pendiente": {
+   "area": "compras",
+   "por": "código"
+  },
+  "incrementar_reanudacion_traslado": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "init_pedido_sucursal_codigos": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "insert_missing_products": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inventory_daily_mantener_particiones": {
+   "area": "minmax",
+   "por": "cron"
+  },
+  "inventory_daily_snapshot": {
+   "area": "minmax",
+   "por": "cron"
+  },
+  "inventory_grouped": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "inventory_inversion": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "inventory_proximos_count": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "inyeccion_aplicaciones_por_nombre": {
+   "area": "productos",
+   "por": "llamada"
+  },
+  "inyeccion_aplicar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_asignar_ficha": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_base_sugerida": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "inyeccion_catalogo_dosis": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_clasificar_producto": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_cotizar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "inyeccion_desvincular_cobro": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_es_aplicable": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "inyeccion_fijar_dosis": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_fijar_ml": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_fijar_precio": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_registrar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "inyeccion_renglones_de_venta": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "inyeccion_venta_por_comprobante": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_vincular_cobro": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyecciones_bitacora": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyecciones_bitacora_buscar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyecciones_para_cobrar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyecciones_pendientes": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "items_sin_ingresar": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "jsonb_es_verdadero": {
+   "area": "horarios",
+   "por": "llamada"
+  },
+  "justificar_diferencia_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "kiosco_aviso_leido": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "kiosco_bitacora": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "kiosco_cubre_empleado": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "kiosco_declarar_turno": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "kiosco_identificar": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "kiosco_marcajes_recientes": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "kiosco_marcar": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "kiosco_sucursal": {
+   "area": "acceso",
+   "por": "tablas"
+  },
+  "kiosk_auth_code_for": {
+   "area": "plataforma",
+   "por": "llamada"
+  },
+  "liberar_parada_de_ruta": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "liberar_solicitud": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "ligar_abono_a_ingreso": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "ligar_notas_a_compras": {
+   "area": "compras",
+   "por": "tablas"
+  },
+  "linea_telefonica_de": {
+   "area": "compras",
+   "por": "llamada"
+  },
+  "list_sessions": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "lock_module": {
+   "area": "permisos",
+   "por": "código"
+  },
+  "mapfre_cotizar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "mapfre_customer_id": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "mapfre_facturas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "marcar_abonos_impresos": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "marcar_ajuste_erp": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "marcar_ajuste_manual_minmax": {
+   "area": "minmax",
+   "por": "trigger"
+  },
+  "marcar_aviso_leido": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "marcar_comprobante_impreso": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "marcar_conteo_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "marcar_empujado_al_erp": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "marcar_etiqueta_impresa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "marcar_hojas_recibidas": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "marcar_notificacion_minmax_resuelta": {
+   "area": "minmax",
+   "por": "trigger"
+  },
+  "marcar_notificacion_solicitud_resuelta": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "marcar_pedido_enviado": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "marcar_solventado_internamente": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "marcar_vale_impreso": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "marcar_ventas_desaparecidas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "marketing_anotar_archivo": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_anotar_pieza": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_aprobar_mes": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_archivo_reabre_pieza": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_archivo_version": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_avisar": {
+   "area": "marketing",
+   "por": "llamada"
+  },
+  "marketing_avisar_comentario": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_avisar_idea": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_avisar_pieza_quitada": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_avisar_solicitud": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_campos_de_control": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_candado_de_estado": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_cerrar_mes": {
+   "area": "marketing",
+   "por": "tablas"
+  },
+  "marketing_comentario_hilo": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_comentario_tiene_respuestas": {
+   "area": "marketing",
+   "por": "tablas"
+  },
+  "marketing_cumplimiento": {
+   "area": "marketing",
+   "por": "tablas"
+  },
+  "marketing_destinatarios": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "marketing_duplicar": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_efecto_en_ventas": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_enviar_pieza": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_idea_mover": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_liberar_pieza": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_nombre_mes": {
+   "area": "marketing",
+   "por": "llamada"
+  },
+  "marketing_pieza_en_su_mes": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_piezas_marcas": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_presupuesto_lo_fija_gerencia": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_promociones": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_publicar_mes": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_recordatorios_diarios": {
+   "area": "marketing",
+   "por": "cron"
+  },
+  "marketing_retener_si_reabre": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_revisar_pieza": {
+   "area": "marketing",
+   "por": "código"
+  },
+  "marketing_tope_de_pauta": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "mayorista_de": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "mayorista_detalle": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "mayorista_proponer": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "mayorista_rango": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "mayorista_resolver": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "mayorista_solicitar_app": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "mayoristas_listado": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "mayoristas_rehacer_resumen": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "merge_purchase_dte_documents": {
+   "area": "compras",
+   "por": "código"
+  },
+  "meses_del_semestre": {
+   "area": "metas",
+   "por": "llamada"
+  },
+  "meta_de_pedido": {
+   "area": "pedidos",
+   "por": "llamada"
+  },
+  "metas_aplicar_recuperacion": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "metas_avisar_cierre_a_admin": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "metas_avisar_cierre_a_salas": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "metas_bono_activo": {
+   "area": "metas",
+   "por": "código"
+  },
+  "metas_calculo_propuesta": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "metas_ciclo_diario": {
+   "area": "metas",
+   "por": "cron"
+  },
+  "metas_gasto_reparto": {
+   "area": "metas",
+   "por": "código"
+  },
+  "metas_log": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "metas_mes_label": {
+   "area": "metas",
+   "por": "llamada"
+  },
+  "metas_nota_propuesta": {
+   "area": "metas",
+   "por": "llamada"
+  },
+  "metas_notificar_rol": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "metas_tramo_de_pct": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "minmax_eff_max": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "minmax_eff_min": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "minmax_effective": {
+   "area": "minmax",
+   "por": "a mano",
+   "manual": true
+  },
+  "mis_permisos_heredados": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "mmcr_solicitud_con_efecto": {
+   "area": "minmax",
+   "por": "trigger"
+  },
+  "modulo_de_aprobacion": {
+   "area": "permisos",
+   "por": "policy"
+  },
+  "modulo_de_notificacion": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "motivo_de_solicitud": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "motivos_envio": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "motivos_envio_con_foto": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "motivos_envio_por_direccion": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "motivos_rechazo_envio": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "next_cotizacion_numero": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "nit_sv_valido": {
+   "area": "compras",
+   "por": "llamada"
+  },
+  "nombre_corto_de_empleado": {
+   "area": "cortes-efectivo",
+   "por": "llamada"
+  },
+  "nombre_de_pago": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "nombre_de_vendedor": {
+   "area": "personal",
+   "por": "código"
+  },
+  "nombre_normalizado": {
+   "area": "plataforma",
+   "por": "a mano",
+   "manual": true
+  },
+  "nombre_ordenado": {
+   "area": "plataforma",
+   "por": "a mano",
+   "manual": true
+  },
+  "norm_busqueda": {
+   "area": "facturacion-dte",
+   "por": "llamada"
+  },
+  "norm_search": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "notificaciones_que_coinciden": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "notificar_corte_de_caja": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "notificar_decision_diferencia": {
+   "area": "pedidos",
+   "por": "trigger"
+  },
+  "notificar_envio_despachado": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "notificar_resolucion_envio": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "notificar_resolucion_movimiento_inventario": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "notificar_resolucion_traslado": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "notificar_solicitud_creada": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "notificar_solicitud_minmax": {
+   "area": "minmax",
+   "por": "trigger"
+  },
+  "notify_branch": {
+   "area": "compras",
+   "por": "llamada"
+  },
+  "notify_branch_como": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "notify_employees": {
+   "area": "plataforma",
+   "por": "transversal"
+  },
+  "notify_missing_roster": {
+   "area": "horarios",
+   "por": "cron"
+  },
+  "notify_push_on_announcement": {
+   "area": "comunicacion",
+   "por": "trigger"
+  },
+  "nuevo_folio_de_bolsa": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "numerar_bolsa_envio": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "numeros_de_caja": {
+   "area": "pedidos",
+   "por": "llamada"
+  },
+  "par_min_max_convertido": {
+   "area": "minmax",
+   "por": "llamada"
+  },
+  "paso_de_monto": {
+   "area": "cortes-efectivo",
+   "por": "llamada"
+  },
+  "pedir_dato_a_la_sala": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "pedir_reenvio_sala": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "planificar_traslado_pedido": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "precio_de_lista": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_preparar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_registrar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventas_cerrar_facturadas": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "preview_metas_gasto": {
+   "area": "metas",
+   "por": "código"
+  },
+  "preview_muestra_ciclica": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "probar_identidad": {
+   "area": "acceso",
+   "por": "tablas"
+  },
+  "probar_identidad_por_carne": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "probar_identidad_por_usuario": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "procesar_cambios_de_factor": {
+   "area": "minmax",
+   "por": "cron"
+  },
+  "producto_insumo_marcar": {
+   "area": "productos",
+   "por": "código"
+  },
+  "productos_parados_de_sala": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "productos_por_codigo": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "programar_entrega_sala": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "promocion_avance": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "promocion_corte_del_lote": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "promocion_laboratorio_avance": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "promocion_log": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "promocion_mover_lote": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "promocion_trg_envio_recibido": {
+   "area": "traslados",
+   "por": "trigger"
+  },
+  "promocion_trg_solicitud_recibida": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "promocional_ajustar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "promocional_apartados": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "promocional_enviar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "promocional_guardar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "promocional_libres": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "promocional_mover": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "promocional_recibir": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "promocionales_panel": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "promocionales_puede_administrar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "promocionales_puede_en_sala": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "promociones_cerrar_meses_de_laboratorio": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "promociones_ciclo_diario": {
+   "area": "promociones",
+   "por": "cron"
+  },
+  "promociones_registrar_excedentes": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "publicar_horarios_de_sala": {
+   "area": "horarios",
+   "por": "código"
+  },
+  "publish_stock_params": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "puede_aprobar_modulo": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "puede_confirmar_traslado": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "puede_entregar_de": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "puede_enviar_producto": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "puntos_acumular": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_ajustar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_anotar_aplicado": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_anotar_devolucion": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_anular_venta": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_archivo_cerrar": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_asignar_cuenta_anterior": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_barrer_anulaciones": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_barrer_canjes": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_cambio_de_cliente": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "puntos_cambio_de_cliente_nucleo": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_cambio_reintentar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_cambio_resuelto_a_mano": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_cambios_pendientes": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_cliente_por_documento": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "puntos_cliente_por_dui_y_telefono": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "puntos_clientes_de": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_codigo_emitir": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_codigo_estado": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_codigo_ver": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_compra_12m": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_config_guardar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_consulta_registrar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "puntos_consumir": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_consumir_canje": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_cuadrar": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_dar_cumpleanos": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "puntos_dar_cupones": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "puntos_desde_efectivo": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_devolver_canjes_anulados": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_dui_estricto": {
+   "area": "ventas",
+   "por": "a mano",
+   "manual": true
+  },
+  "puntos_encender": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_estado_cuenta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "puntos_fuente": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "puntos_fusionar_cuentas": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_guardar_consentimiento": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "puntos_horas_reserva": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_marcar_anuladas": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_marcar_enviadas": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_marcar_revertidas": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_marcar_sin_enviar": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_mayoreo_guardar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_migrar_historial": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_nivel_de": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_nivel_guardar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_niveles_panel": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_asignar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_avisos": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_candidatas": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_cliente": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_clientes": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_pendientes": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_resumen": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_serie": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_panel_tablero": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_premiar_referidos": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "puntos_premio_al_azar": {
+   "area": "ventas",
+   "por": "a mano",
+   "manual": true
+  },
+  "puntos_premio_apartar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_premio_cerrar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_premio_pedir": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_premio_soltar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_premio_sorteado": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "puntos_premio_tomar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_premios_lista": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_premios_validos": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_redirigir_cuenta": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "puntos_redirigir_libro": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "puntos_registrar_canje": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_sellar_estado": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "puntos_sembrar_desde_destino": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_sincronizar_cuenta_anterior": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_subieron_de_nivel": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "puntos_tickets_de_ficha_que_no_acumula": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_titular": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_vence_el": {
+   "area": "ventas",
+   "por": "llamada"
+  },
+  "puntos_vencer_lotes": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "puntos_ventas_anuladas": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_vigilar_irregularidades": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "puntos_vigilar_motor": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "purgar_carnes_temporales": {
+   "area": "acceso",
+   "por": "cron"
+  },
+  "purgar_cola_impresion": {
+   "area": "impresion",
+   "por": "cron"
+  },
+  "purge_idle_sessions": {
+   "area": "acceso",
+   "por": "cron"
+  },
+  "push_de_notificaciones": {
+   "area": "comunicacion",
+   "por": "tablas"
+  },
+  "push_function_headers": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "push_function_url": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "quien_cubre_al_empleado": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "quitar_extra_de_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "quitar_renglon": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "rango_de_empleado": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "reabrir_corte_caja": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "reabrir_diferencias_de_sala": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "reabrir_mes_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "reabrir_periodo_fiscal": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "reactivar_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "rebuild_product_sales_monthly_agg": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "recalcular_estado_receta": {
+   "area": "bitacoras",
+   "por": "tablas"
+  },
+  "recalcular_propuestas_metas": {
+   "area": "metas",
+   "por": "tablas"
+  },
+  "recalcular_totales_conteo": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "receive_pedido_sucursal": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "recepcion_corregible": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "recepciones_por_reintentar": {
+   "area": "pedidos",
+   "por": "cron"
+  },
+  "receta_app_de_dispensacion": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "receta_app_puede_aprobar": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "recetas_escalar": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "recibir_bolsas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "reclamar_factura_compra": {
+   "area": "compras",
+   "por": "código"
+  },
+  "reclamar_impresion": {
+   "area": "impresion",
+   "por": "tablas"
+  },
+  "reclamar_push_del_equipo": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "reclamar_solicitud": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "reconstruir_costo_de_venta": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "recontar_conteo_item": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "recontar_docs_proveedor": {
+   "area": "compras",
+   "por": "tablas"
+  },
+  "recordar_linea_base_de_egreso": {
+   "area": "sistema",
+   "por": "cron"
+  },
+  "refresh_customer_activity": {
+   "area": "facturacion-dte",
+   "por": "cron"
+  },
+  "refresh_inventory_grouped_mv": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "refresh_primera_venta_producto": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "refresh_product_last_sale": {
+   "area": "productos",
+   "por": "cron"
+  },
+  "refresh_product_sales_monthly_agg": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "refresh_product_sales_rollup": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "refresh_producto_cantidad_habitual": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "refresh_sales_daily_stats": {
+   "area": "ventas",
+   "por": "cron"
+  },
+  "registrar_bitacora": {
+   "area": "sistema",
+   "por": "código"
+  },
+  "registrar_caja_de_impresion": {
+   "area": "impresion",
+   "por": "tablas"
+  },
+  "registrar_deposito_bancario": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "registrar_dispositivo_push": {
+   "area": "comunicacion",
+   "por": "tablas"
+  },
+  "registrar_egreso": {
+   "area": "sistema",
+   "por": "código"
+  },
+  "registrar_lectura_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "registrar_limpieza_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "registrar_pago_compra": {
+   "area": "compras",
+   "por": "código"
+  },
+  "registrar_pago_seguro_vida": {
+   "area": "personal",
+   "por": "código"
+  },
+  "registrar_rectificacion": {
+   "area": "personal",
+   "por": "código"
+  },
+  "registrar_renglones_pendientes": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "registrar_ronda_bitacora": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "registrar_salida_de_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "registrar_sancion": {
+   "area": "personal",
+   "por": "código"
+  },
+  "registrar_traslados_erp": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "regrant_al_cambiar_employees_safe": {
+   "area": "permisos",
+   "por": "a mano",
+   "manual": true
+  },
+  "regrant_employees_columns": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "reject_minmax_request": {
+   "area": "minmax",
+   "por": "código"
+  },
+  "renglones_de_cajas": {
+   "area": "pedidos",
+   "por": "llamada"
+  },
+  "renglones_de_especiales": {
+   "area": "pedidos",
+   "por": "llamada"
+  },
+  "reserva_avisada_whatsapp": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_cambiar_estado": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_cuenta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_envio": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "reserva_horas_al_preparar": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "reserva_plazo_hasta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_plazos": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "reserva_puede_manejar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_receta_decidir": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_saldo_devolver": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_usar_saldo_favor": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reservar_pago_bono": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "reservas_de_sucursal": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reservas_vencer": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "reservas_vigilar": {
+   "area": "app-clientes",
+   "por": "cron"
+  },
+  "resolve_pedido_item": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "resolve_purchase_dte_review": {
+   "area": "compras",
+   "por": "código"
+  },
+  "resolver_carne_temporal": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "resolver_clasificacion_pendiente": {
+   "area": "compras",
+   "por": "código"
+  },
+  "resolver_corte_caja": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "resolver_destinatarios_traslado": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "resolver_diferencia_bolsa": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "resolver_diferencia_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "resolver_envio_aparecido": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "resolver_reclamo_sancion": {
+   "area": "personal",
+   "por": "código"
+  },
+  "resumen_de_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "resumen_ingreso_pedidos": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "resumen_traslado_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "resumen_ventas_diario": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "retirar_avisos_ccf_ya_sellados": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "retiro_abierto": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "retiro_bultos_viejos": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "retiro_cargar": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "retiro_cerrar": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "retiro_cerrar_custodia": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "retiro_firmar": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "retiro_firmar_carne": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "retiro_pendientes_en_sala": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "retiro_soltar": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "revision_de_presentaciones": {
+   "area": "productos",
+   "por": "código"
+  },
+  "revoke_person_sessions": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "revoke_session": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "ruta_parada_no_entregada": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "ruta_pedidos_firma_entrega": {
+   "area": "pedidos",
+   "por": "trigger"
+  },
+  "sala_abierta_ahora": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "sala_con_caja_abierta": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "sala_hora_de_cierre": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "sala_ya_cerro": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "salas_con_caja_de_impresion": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "salas_que_cubre_ahora": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "salas_que_cubro_ahora": {
+   "area": "permisos",
+   "por": "policy"
+  },
+  "saldo_favor_anotar": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "saldo_favor_buscar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "saldo_favor_dias": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "sales_invoice_items_congelar_costo": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "save_pedido_snapshot": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "search_inventory_descripcion_ids": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "search_ventas_ids": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "sec_avisa": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "sec_exige": {
+   "area": "permisos",
+   "por": "nombre"
+  },
+  "seleccionar_muestra_ciclica": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "sello_mh_valido": {
+   "area": "facturacion-dte",
+   "por": "a mano",
+   "manual": true
+  },
+  "session_idle_limit_minutes": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "set_banner_portal": {
+   "area": "sistema",
+   "por": "código"
+  },
+  "set_bonificaciones_metas": {
+   "area": "metas",
+   "por": "código"
+  },
+  "set_kiosk_pin": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "set_numero_control_batch": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "set_proveedor_categoria": {
+   "area": "compras",
+   "por": "código"
+  },
+  "set_proveedor_clasificacion_fiscal": {
+   "area": "compras",
+   "por": "código"
+  },
+  "set_proveedor_condiciones_credito": {
+   "area": "compras",
+   "por": "código"
+  },
+  "set_proveedor_supplier": {
+   "area": "compras",
+   "por": "código"
+  },
+  "set_proveedores_categoria_bulk": {
+   "area": "compras",
+   "por": "código"
+  },
+  "set_purchase_dte_proveedor": {
+   "area": "compras",
+   "por": "código"
+  },
+  "set_traslado_interruptor": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "set_updated_at": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "siguiente_folio_de_abono": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "sincronizar_bitacora_dispensaciones": {
+   "area": "bitacoras",
+   "por": "cron"
+  },
+  "sincronizar_conteo_en_vivo": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "solicitar_devolucion_pedido": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "solicitud_datos_tomar_folio": {
+   "area": "datos-personales",
+   "por": "tablas"
+  },
+  "soltar_dispositivo_push": {
+   "area": "comunicacion",
+   "por": "tablas"
+  },
+  "soltar_factura_compra": {
+   "area": "compras",
+   "por": "código"
+  },
+  "soltar_paso_envio": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "soltar_push_del_equipo": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "solventado_interno_aplica": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "sucursal_en_conteo": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "suggest_proveedor_categoria_id": {
+   "area": "compras",
+   "por": "tablas"
+  },
+  "suspendidos_en": {
+   "area": "asistencia",
+   "por": "código"
+  },
+  "sync_bodega_draft_from_branch_stmt": {
+   "area": "minmax",
+   "por": "trigger"
+  },
+  "sync_creditos_batch": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "sync_inventory_batch": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "sync_laboratorios_batch": {
+   "area": "productos",
+   "por": "código"
+  },
+  "sync_presentaciones_batch": {
+   "area": "productos",
+   "por": "código"
+  },
+  "sync_purchase_receipt_items_batch": {
+   "area": "compras",
+   "por": "código"
+  },
+  "sync_purchase_receipts_batch": {
+   "area": "compras",
+   "por": "código"
+  },
+  "sync_suppliers_batch": {
+   "area": "compras",
+   "por": "código"
+  },
+  "texto_de_push": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "tipo_de_presentacion_de_extra": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "tocar_ultimo_abono": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "toggle_producto_oculto_ventas": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "tomar_despacho_envio": {
+   "area": "solicitudes",
+   "por": "tablas"
+  },
+  "tomar_paso_envio": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "tope_renglones_envio": {
+   "area": "solicitudes",
+   "por": "llamada"
+  },
+  "touch_abonos_updated_at": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
+  "touch_promotions_updated_at": {
+   "area": "promociones",
+   "por": "a mano",
+   "manual": true
+  },
+  "touch_session": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "traslado_por_codigo": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "traslados_en_vuelo": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "traslados_en_vuelo_vencidos": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "traslados_por_barrer": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "turno_del_dia": {
+   "area": "horarios",
+   "por": "a mano",
+   "manual": true
+  },
+  "una_cuenta_de_pruebas_lo_tiene_todo": {
+   "area": "permisos",
+   "por": "trigger"
+  },
+  "unblock_employee": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "unidad_de_despacho": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "unlock_module": {
+   "area": "permisos",
+   "por": "código"
+  },
+  "update_customer_fiscal": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "update_pedido_sucursal_lifecycle": {
+   "area": "pedidos",
+   "por": "código"
+  },
+  "update_proveedor_manual": {
+   "area": "compras",
+   "por": "código"
+  },
+  "upsert_clientes_por_revisar": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "upsert_customers": {
+   "area": "facturacion-dte",
+   "por": "tablas"
+  },
+  "upsert_customers_v2": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "upsert_meta_manual": {
+   "area": "metas",
+   "por": "código"
+  },
+  "upsert_product_precios_batch": {
+   "area": "productos",
+   "por": "código"
+  },
+  "upsert_products_minimal": {
+   "area": "compras",
+   "por": "código"
+  },
+  "upsert_proveedor_from_dte": {
+   "area": "compras",
+   "por": "código"
+  },
+  "validar_envio_producto": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "validar_rechazo_con_motivo": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "validar_rechazo_traslado": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "validar_solicitud_facturacion": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "validar_solicitud_movimiento_inventario": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "validar_solicitud_traslado": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "validate_role_headcount": {
+   "area": "permisos",
+   "por": "tablas"
+  },
+  "venta_fiscal": {
+   "area": "fiscal",
+   "por": "llamada"
+  },
+  "venta_valida": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "ventas_busqueda_aproximada": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "ventas_elegibles_puntos": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "ventas_para_puntos": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "ventas_por_mes_de_producto": {
+   "area": "plataforma",
+   "por": "código"
+  },
+  "verificar_facturas_reclamadas": {
+   "area": "compras",
+   "por": "cron"
+  },
+  "verificar_hojas_pedido": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
+  "verificar_persona": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "verify_kiosk_authorization": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "verify_kiosk_device": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "verify_kiosk_pin": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "vigilar_reinicio_de_la_base": {
+   "area": "sistema",
+   "por": "cron"
+  },
+  "wallet_registros_por_avisar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "zero_out_product_all_branches": {
+   "area": "minmax",
+   "por": "código"
+  }
+ }
+}

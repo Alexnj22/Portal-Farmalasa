@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.3 — Auditoría: las funciones de la base entran al mapa
+
+- Las **1,221 funciones** de `public` no estaban en el mapa de auditoría, así
+  que ninguna entraba en ningún porcentaje. Ahora cada una tiene área en
+  `auditoria/funciones.json`.
+- `npm run auditoria:funciones` propone el área según quién la usa de verdad:
+  trigger > cron > código que la nombra > tablas que toca > policy > quien la
+  llama. Los helpers `auth_*`/`sec_*` van a Permisos, y lo que usan cuatro
+  áreas o más sin un dueño claro va a Plataforma. Así se asignaron 1,206 solas.
+  Las 15 restantes (9 sin evidencia y 6 equivocadas) se asignaron a mano con
+  `"manual": true`, para que el script no las pise.
+- `gate:auditoria` (y la corrida diaria en GitHub) falla si una función de
+  producción no tiene área. Sin red, el hook comprueba que el área asignada
+  exista. Se probó fabricando las dos regresiones.
+
 ## v2.1333.2 — Seguridad: las funciones nuevas ya no nacen abiertas sin sesión
 
 - Diez funciones de la base se podían ejecutar **sin iniciar sesión** y nadie lo

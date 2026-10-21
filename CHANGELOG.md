@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1328.0 — Inicio: los widgets se adaptan a cualquier tamaño
+
+- Un widget más chico que lo que su contenido necesita (p. ej. Recetas o
+  Reservas en 1×1) ya no se corta: muestra su **vistazo** —el número y una
+  línea— y al tocarlo abre el contenido completo en un modal. El contenido se
+  monta una sola vez (no vuelve a consultar ni pierde lo escrito).
+- El tablero le dice a cada widget cuánto mide (`tamanoWidget.js`) y cada celda
+  es un `@container`, así que el contenido puede ajustarse a su ancho real.
+- Baldosas de solicitudes rediseñadas: el número es la pieza grande, el ícono va
+  junto al título, el desglose aparece cuando hay ancho y la descripción cuando
+  hay alto. «Sin pendientes» se lee con su check en vez de una nota al pie.
+- Vistazo con dato en Bitácoras, Recetas, Reservas, Cortes, Bolsas, Meta,
+  Ausencias, Solicitudes, Alertas, Avisos, Cotizaciones, Facturación, Top
+  productos, Cumpleaños y Datos que faltan (que ahora sí va en tarjeta).
+
 ## v2.1327.2 — Ningún aviso muestra la clave cruda de una solicitud
 
 - El aviso de un ingreso con tarjeta o transferencia sin foto salía como

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AtSign, CheckCircle2, Mail, Send } from 'lucide-react';
+import { AtSign, CheckCircle2, Send } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -8,6 +8,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fetchDatosPedidos, responderDatoPedido } from '@nucleo/data/datosPedidos';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { useResumenWidget } from './tamanoWidget';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Lo que el portal le PIDE a la sala para poder terminar un documento.
@@ -139,13 +140,16 @@ export default function WidgetDatoPedido() {
         return () => clearInterval(id);
     }, [cargar]);
 
+    useResumenWidget(cargando ? null
+        : error ? { texto: 'No se pudieron cargar', tono: 'danger' }
+        : filas.length ? { valor: filas.length, texto: filas.length === 1 ? 'dato por averiguar' : 'datos por averiguar', tono: 'warning' }
+        : { texto: 'Sin datos pendientes' });
+
+    // El encabezado lo pone `WidgetCard` (2026-10-21): este widget era el único
+    // del tablero sin tarjeta, o sea sin vidrio, sin borde y sin el vistazo
+    // cuando el tamaño no le alcanza. El conteo va en el vistazo.
     return (
-        <div className="space-y-3">
-            <div className="flex items-center gap-2">
-                <Mail size={16} className="text-content-2" strokeWidth={2.5} />
-                <h3 className="text-body-sm font-black text-content">Datos que faltan</h3>
-                {filas.length > 0 && <Badge variant="warning" size="sm">{filas.length}</Badge>}
-            </div>
+        <div className="h-full min-h-0 overflow-y-auto overscroll-contain p-3 space-y-3">
 
             {error && <Notice tone="danger">{error}</Notice>}
 

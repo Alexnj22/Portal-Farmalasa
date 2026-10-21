@@ -8,6 +8,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchBitacoraDia, pendientesDelDia } from '@nucleo/data/bitacoras';
 import { hoySV } from '@nucleo/utils/fecha';
+import { useResumenWidget } from './tamanoWidget';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las bitácoras en el Inicio.
@@ -55,6 +56,13 @@ export default function WidgetBitacoras() {
     }, [cargar]);
 
     const resumen = useMemo(() => pendientesDelDia(dia), [dia]);
+
+    useResumenWidget(cargando ? null
+        : !miSala ? { texto: 'Sin sala asignada' }
+        : resumen.vencidas > 0 ? { valor: resumen.vencidas, texto: resumen.vencidas === 1 ? 'lectura pasada de hora' : 'lecturas pasadas de hora', tono: 'danger' }
+        : resumen.abiertas > 0 ? { valor: resumen.abiertas, texto: resumen.abiertas === 1 ? 'lectura toca ahora' : 'lecturas tocan ahora', tono: 'warning' }
+        : resumen.total > 0 ? { valor: `${resumen.hechas}/${resumen.total}`, texto: 'al día', tono: 'success' }
+        : { texto: 'Hoy no hay nada que anotar' });
 
     if (cargando) return <SkeletonText lines={3} />;
 

@@ -9,6 +9,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { faltantesDelRenglon, fetchLibro } from '@nucleo/data/bitacoras';
+import { useResumenWidget } from './tamanoWidget';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
 /* El formulario se baja al apretar «Completar», no al entrar al Inicio: arrastra
@@ -89,6 +90,13 @@ export default function WidgetRecetasPendientes() {
         const t = setInterval(cargar, REFRESCO_MS);
         return () => clearInterval(t);
     }, [cargar]);
+
+    const viejasVistazo = filas.filter(r => diasDesde(r.fecha) >= 2).length;
+    useResumenWidget(cargando ? null
+        : !miSala ? { texto: 'Sin sala asignada' }
+        : !dispensa ? { texto: 'Aquí no se dispensa' }
+        : filas.length ? { valor: filas.length, texto: viejasVistazo > 0 ? `por completar · ${viejasVistazo} con 2+ días` : 'por completar', tono: viejasVistazo > 0 ? 'danger' : 'warning' }
+        : { texto: 'Sin pendientes' });
 
     if (cargando) return <SkeletonText lines={3} />;
 

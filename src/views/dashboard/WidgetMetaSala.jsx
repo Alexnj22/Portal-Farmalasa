@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Target } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
+import { useResumenWidget } from './tamanoWidget';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchMetaSala } from '@nucleo/data/metas';
@@ -83,6 +84,12 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
             document.removeEventListener('visibilitychange', alVolver);
         };
     }, [cargar]);
+
+    useResumenWidget(loading ? null
+        : error ? { texto: 'No se pudo cargar', tono: 'danger' }
+        : !row ? { texto: 'Sin sala asignada' }
+        : row.monto_meta == null ? { texto: 'Sin meta asignada' }
+        : { valor: formatPct(row.pct_cumplimiento), texto: `de la meta · día ${row.dias_transcurridos} de ${row.dias_mes}`, tono: 'brand' });
 
     if (loading) {
         return <div className="p-1"><SkeletonText lines={4} /></div>;

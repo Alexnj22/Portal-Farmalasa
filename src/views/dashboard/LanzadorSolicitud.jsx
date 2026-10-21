@@ -2,7 +2,8 @@ import React, { useState, useCallback, useMemo, useLayoutEffect, useContext, cre
 import { createPortal } from 'react-dom';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
-import { X } from 'lucide-react';
+import { CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { useTamanoWidget } from './tamanoWidget';
 
 // La baldosa que abre una solicitud, y el modal donde se arma.
 //
@@ -228,6 +229,8 @@ export default function LanzadorSolicitud({
 }) {
     const [abierto, setAbierto] = useState(false);
     const cerrar = useCallback(() => setAbierto(false), []);
+    // Con dos renglones o más hay alto para la descripción y un número mayor.
+    const alto = (useTamanoWidget()?.rows ?? 1) >= 2;
 
     const hay = typeof pendientes === 'number' && pendientes > 0;
     const etiqueta = pendientes === 1
@@ -280,63 +283,64 @@ export default function LanzadorSolicitud({
                 data-surface="card"
                 data-interactive=""
                 onClick={() => setAbierto(true)}
-                // `pb-3` y no `p-4`: la franja al pie necesita 14px que la fila
-                // de 120px no tenía. Se recortan del padding de abajo, que es
-                // el único de los cuatro que no toca la alineación con las
-                // baldosas vecinas — el lateral y el de arriba se quedan.
-                // Y el acuse: `data-interactive` le da el lift al APUNTAR desde
-                // `index.css`, que en el teléfono no ocurre nunca. Sin `active:`
-                // la baldosa quedaba muda — cuatro por tablero, y son la puerta
-                // de entrada a lo que la vista ofrece. `0.99` por el tamaño.
-                className="group w-full h-full flex flex-col items-start justify-between gap-2 px-4 pt-4 pb-3 text-left transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
+                // ── Se adapta a la celda (2026-10-21) ─────────────────────
+                // Era una sola composición —ícono arriba, título, figura y un
+                // renglón— para todos los tamaños: en 1×1 cabía justa, y en
+                // 2×1 o 1×2 dejaba media baldosa vacía. Ahora el número es la
+                // pieza grande, el ícono va en la fila del título, y lo que
+                // sobra se gasta en decir más, no en aire:
+                //   · ancho (`@container`, ≥ 20rem) → el desglose al costado;
+                //   · alto (2+ renglones)           → la descripción y una
+                //     figura más gruesa.
+                // `@container` va en el BOTÓN y no se hereda de la celda: así
+                // mide la baldosa también fuera del tablero.
+                className="@container group w-full h-full min-h-0 flex flex-col justify-between gap-2 px-4 pt-3.5 pb-3 text-left overflow-hidden transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
             >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
-                    <Icon size={16} strokeWidth={2} className="text-content-2" />
+                <div className="w-full flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
+                        <Icon size={15} strokeWidth={2} className="text-content-2" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-body-sm font-black text-content leading-tight truncate">{label}</p>
+                        {alto && descripcion && (
+                            <p className="text-caption text-content-3 leading-snug truncate mt-0.5">{descripcion}</p>
+                        )}
+                    </div>
+                    <ChevronRight size={14} className="shrink-0 text-content-3 opacity-60 transition-[transform,opacity] duration-[var(--dur-fast)] group-hover:opacity-100 group-hover:translate-x-0.5" />
                 </div>
 
-                <div className="w-full min-w-0">
-                    <p className="text-body-sm font-black text-content leading-tight">{label}</p>
-                    {/* `aria-hidden` acá y no en cada figura: la baldosa ES un
-                        botón, así que todo lo de adentro forma su nombre
-                        accesible. Los números de la figura ya los dice el
-                        renglón de abajo en palabras; anunciarlos otra vez como
-                        una ristra de divs sólo alarga el anuncio. */}
-                    {/* `empty:hidden` y no `instrumento && …`: las figuras
-                        deciden ellas mismas no dibujarse cuando no hay nada que
-                        mostrar, y un elemento React que renderiza `null` sigue
-                        siendo truthy. Sin esto quedaba el margen de una franja
-                        que no está — el mismo motivo y el mismo recurso que el
-                        contenedor de herramientas del modal, más abajo.
-
-                        ── La franja también va en el teléfono ────────────────
-                        En v2.519.1 estaba apagada abajo de `lg`: con dos
-                        columnas la baldosa mide 171px y «Consulta de
-                        Inventario» **envuelve a dos líneas** —30px de título en
-                        vez de 15—, así que el contenido pasaba de 118 a 131
-                        contra una caja de 118 y se salía de la tarjeta.
-
-                        La causa no era la franja sino que la fila valía 120px
-                        en los dos tamaños. Desde v2.520.0 el teléfono usa
-                        `ROW_H_MOVIL` (150), que es donde vive el arreglo de
-                        verdad, y acá ya no hace falta esconder nada. */}
-                    <div className="mt-1.5 empty:hidden" aria-hidden="true">{instrumento}</div>
-                    <p className={`text-caption font-semibold mt-1 truncate ${hay ? acento.texto : 'text-content-3'}`}>
-                        {pendientes === null
-                            ? (sinDato ?? '—')
-                            : hay ? `${pendientes} ${etiqueta}` : vacio}
-                        {/* El desglose viaja SIEMPRE en tinta apagada, tenga o
-                            no pendientes la baldosa: si tomara el tono, el
-                            color dejaría de señalar «hay algo» y pasaría a ser
-                            la piel del renglón entero. */}
-                        {/* El desglose SÍ sigue apagado en el teléfono, y por
-                            un motivo distinto al de la franja: a éste no lo
-                            limita el alto sino el ANCHO. Pegado al contador en
-                            una baldosa de 171px se corta en la segunda palabra
-                            («40 sin existenci…»), así que subir la fila no lo
-                            arregla. La figura queda, que es lo que sí se lee a
-                            ese tamaño. */}
-                        {detalle && <span className="text-content-3 font-medium hidden lg:inline"> · {detalle}</span>}
-                    </p>
+                <div className="w-full min-w-0 flex flex-col gap-1.5">
+                    <div className="w-full min-w-0 flex items-baseline gap-2">
+                        {hay ? (
+                            <>
+                                <span className={`shrink-0 font-black leading-none tabular-nums ${alto ? 'text-display-lg' : 'text-display'} ${acento.texto}`}>{pendientes}</span>
+                                <span className={`min-w-0 truncate text-caption font-semibold ${acento.texto}`}>{etiqueta}</span>
+                            </>
+                        ) : (
+                            // En calma el renglón no puede ser una nota al pie
+                            // perdida: dice «al día» con su check, al tamaño
+                            // del título, para que se lea igual de rápido que
+                            // un número.
+                            <span className="min-w-0 flex items-center gap-1.5 text-body-sm font-bold text-content-2">
+                                {pendientes !== null && <CheckCircle2 size={15} strokeWidth={2.5} className="shrink-0 text-success-text" />}
+                                <span className="truncate">{pendientes === null ? (sinDato ?? '—') : vacio}</span>
+                            </span>
+                        )}
+                        {/* El desglose viaja SIEMPRE en tinta apagada: si tomara
+                            el tono, el color dejaría de señalar «hay algo». Se
+                            esconde por el ANCHO de la baldosa, no de la ventana:
+                            pegado al número en 171px se cortaba en la segunda
+                            palabra. */}
+                        {detalle && (
+                            <span className="hidden @[20rem]:inline ml-auto shrink min-w-0 truncate text-caption font-medium text-content-3">{detalle}</span>
+                        )}
+                    </div>
+                    {/* `aria-hidden`: la baldosa ES un botón y los números de la
+                        figura ya los dice el renglón de arriba en palabras.
+                        `empty:hidden`: las figuras se niegan solas a dibujarse
+                        cuando no hay nada, y un elemento que rinde `null` sigue
+                        siendo truthy. */}
+                    <div className="w-full empty:hidden" aria-hidden="true">{instrumento}</div>
                 </div>
             </button>
 

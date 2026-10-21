@@ -6,6 +6,7 @@ import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
+import { useResumenWidget } from './tamanoWidget';
 import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -189,6 +190,14 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
      * entrega ya queda registrada con folio, hora y las dos personas.
      */
     const trasLaEntrega = useCallback(async () => { cargar(); }, [cargar]);
+
+    // Sin `bolsas_ver_montos` el vistazo tampoco dice montos: la misma regla
+    // que la baldosa completa.
+    useResumenWidget(cargando ? null
+        : error ? { texto: 'No se pudieron cargar', tono: 'danger' }
+        : faltan.length ? { valor: faltan.length, texto: faltan.length === 1 ? 'corte por embolsar' : 'cortes por embolsar', tono: 'warning' }
+        : enSala.length ? { valor: verMontos ? formatMoney(total) : enSala.length, texto: `${verMontos ? `en ${enSala.length} ` : ''}${enSala.length === 1 ? 'bolsa' : 'bolsas'} en sala${vencidas ? ` · ${vencidas} con ${DIAS_DE_ALARMA}+ días` : ''}`, tono: vencidas ? 'danger' : null }
+        : { texto: 'Sin bolsas en sala' });
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 

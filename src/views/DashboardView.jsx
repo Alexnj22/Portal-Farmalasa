@@ -80,6 +80,8 @@ const WidgetReservas = lazy(() => import('./dashboard/WidgetReservas'));
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
 import WidgetVendedores from './dashboard/WidgetVendedores';
+import { TamanoWidgetCtx, useTamanoWidget } from './dashboard/tamanoWidget';
+import VistazoWidget from './dashboard/VistazoWidget';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { MODULE_MAP } from '../components/common/catalogos/modulos';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -745,8 +747,21 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick, pide = false }
 );
 
 // Liquid-glass widget card — fills grid cell height, content scrolls internally
-const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => {
+//
+// `resumen` ({ valor, texto, tono }) es el dato del vistazo: lo que la tarjeta
+// muestra cuando el tamaño elegido no le alcanza a su contenido (ver
+// `dashboard/tamanoWidget.jsx`). Los widgets con datos propios lo declaran
+// desde adentro con `useResumenWidget`.
+const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general', resumen = null }) => {
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
+  const tam = useTamanoWidget();
+  if (tam?.compacto) {
+    return (
+      <VistazoWidget title={title} icon={Icon} color={cat.color} action={action} resumen={resumen}>
+        {children}
+      </VistazoWidget>
+    );
+  }
   return (
     <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
       {/* §20 · La capa de vidrio a mano se RETIRÓ (2026-08-06). El contenedor ya
@@ -779,6 +794,15 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
       <div className={`relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
     </div>
   );
+};
+
+// Para las tarjetas que no son `WidgetCard` (Cumpleaños dibuja la suya): el
+// mismo vistazo cuando el tamaño no le alcanza, y la tarjeta tal cual si sí.
+const SiCompacto = ({ title, icon, category = 'general', resumen = null, children }) => {
+  const tam = useTamanoWidget();
+  if (!tam?.compacto) return children;
+  const cat = CATEGORY_META[category] || CATEGORY_META.general;
+  return <VistazoWidget title={title} icon={icon} color={cat.color} resumen={resumen}>{children}</VistazoWidget>;
 };
 
 const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
@@ -2302,10 +2326,17 @@ const DashboardView = ({ openModal }) => {
   // por esto. Con `compact` (200px de mínimo) el recorte no servía de nada — se
   // midió: el alto del tablero en 390px no bajó ni un píxel.
   const wrapWidget = (id, content, staggerIdx = 0, vacio = false) => {
-    const { label } = getWidgetSize(id);
+    const { label, minCols, minRows } = getWidgetSize(id);
     const eCols = getEffectiveCols(id);
     const eRowsBase = getEffectiveRows(id);
     const eRows = esTelefono && vacio ? 1 : eRowsBase;
+    // Más chico que lo que su contenido necesita → la tarjeta pasa a vistazo
+    // (ver `dashboard/tamanoWidget.jsx`). El vacío del teléfono no cuenta: ahí
+    // la fila se baja A PROPÓSITO y el vacío ya se dice en una línea.
+    const compacto = !(esTelefono && vacio) && (
+      eRows < minRows || (!esTelefono && eCols < Math.min(minCols, activeCols))
+    );
+    const tamano = { cols: eCols, rows: eRows, minCols, minRows, compacto };
     const pos   = activeLayout[id] || { col: 1, row: 1 };
     const isActive     = dndActive === id;
     const isBouncing   = bouncingIds.has(id);
@@ -2315,7 +2346,7 @@ const DashboardView = ({ openModal }) => {
       <div
         key={id}
         data-widget-id={id}
-        className={`relative group/drag animate-stagger-child ${isBouncing ? 'animate-widget-settle' : ''}`}
+        className={`@container relative group/drag animate-stagger-child ${isBouncing ? 'animate-widget-settle' : ''}`}
         style={{
           // En el teléfono NO se fija la celda: sólo cuánto ocupa, y la rejilla
           // acomoda en el orden del DOM.
@@ -2363,7 +2394,7 @@ const DashboardView = ({ openModal }) => {
           </div>
         </div>}
 
-        {content}
+        <TamanoWidgetCtx.Provider value={tamano}>{content}</TamanoWidgetCtx.Provider>
 
         {/* Resize button — hover to reveal, click opens W×H popover.
             En el teléfono sigue la MISMA regla que la píldora de arrastrar de
@@ -2748,6 +2779,7 @@ const DashboardView = ({ openModal }) => {
         : absences;
       return wrapWidget('absences',
         <WidgetCard title="Ausencias activas" icon={UserX} category="personal"
+          resumen={displayAbsences.length ? { valor: displayAbsences.length, texto: displayAbsences.length===1?'persona ausente hoy':'personas ausentes hoy' } : { texto: 'Nadie ausente' }}
           action={puedeAbrir('/solicitudes')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/solicitudes')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
@@ -2789,6 +2821,7 @@ const DashboardView = ({ openModal }) => {
         : pendingReqs;
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes pendientes" icon={ClipboardList} category="personal"
+          resumen={displayReqs.length ? { valor: displayReqs.length, texto: 'por resolver', tono: 'warning' } : { texto: 'Sin pendientes' }}
           action={puedeAbrir('/solicitudes')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/solicitudes')}>Ver todas <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
@@ -2834,6 +2867,7 @@ const DashboardView = ({ openModal }) => {
         : branches;
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
+          resumen={displayBranchAlerts.length ? { valor: displayBranchAlerts.length, texto: displayBranchAlerts.length===1?'sucursal con alerta':'sucursales con alerta', tono: 'warning' } : { texto: 'Todas en orden' }}
           action={puedeAbrir('/sucursales')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/sucursales')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
@@ -2884,7 +2918,8 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'calendar') {
       if (!showWidget('calendar','dash_calendar')) return null;
       return wrapWidget('calendar',
-        <WidgetCard title="Calendario" icon={CalendarDays} category="general" action={
+        <WidgetCard title="Calendario" icon={CalendarDays} category="general"
+          resumen={{ texto: fechaTexto(new Date(), { weekday: 'long', day: 'numeric', month: 'long' }) }} action={
           // El centro no es un rótulo sino un selector que se abre, así que va
           // como hijo de `PeriodStepper` (§17.1) — envolverlo en el botón de
           // "volver a hoy" daría un `<button>` dentro de otro.
@@ -2940,6 +2975,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
         <WidgetCard title="Avisos recientes" icon={Megaphone} category="general"
+          resumen={recentAnnouncements.length ? { valor: recentAnnouncements.length, texto: recentAnnouncements.some(a=>a.priority==='URGENT') ? 'avisos · hay urgentes' : (recentAnnouncements.length===1?'aviso reciente':'avisos recientes'), tono: recentAnnouncements.some(a=>a.priority==='URGENT') ? 'danger' : null } : { texto: 'Sin avisos' }}
           action={puedeAbrir('/avisos')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/avisos')}>Ver todos <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
@@ -2976,6 +3012,8 @@ const DashboardView = ({ openModal }) => {
         : birthdaysOfMonth;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
+        <SiCompacto title="Cumpleaños" icon={Gift} category="personal"
+          resumen={displayBirthdays.length ? { valor: displayBirthdays.length, texto: `cumpleaños en ${MONTH_ES[bdMonth.getMonth()].toLowerCase()}` } : { texto: 'Sin cumpleaños este mes' }}>
         <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] flex flex-col overflow-hidden">
           {/* El brillo, igual que en `WidgetCard`. La capa de vidrio que iba acá se
               retiró: `data-surface="card"` ya la pone (ver la nota en WidgetCard). */}
@@ -3062,6 +3100,7 @@ const DashboardView = ({ openModal }) => {
             )}
           </div>
         </div>
+        </SiCompacto>
       , staggerIdx);
     }
 
@@ -3071,6 +3110,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones activas" icon={Receipt} category="ventas"
+          resumen={cotizLoading ? null : { valor: cotizStats.activas, texto: cotizStats.activas===1?'cotización activa':'cotizaciones activas' }}
           action={puedeAbrir('/cotizaciones')&&<Button variant="ghost" size="xs" onClick={() => navigate('/cotizaciones')}>Ver <ChevronRight size={11}/></Button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
@@ -3137,6 +3177,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación hoy" icon={FileText} category="ventas"
+          resumen={factLoading ? null : { valor: factStats.count, texto: `${factStats.count===1?'documento':'documentos'} · ${formatMoney(factStats.total)}` }}
           action={puedeAbrir('/facturacion')&&<Button variant="ghost" size="xs" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
           {factLoading ? (
             <div className="flex flex-col h-full px-4 py-3 gap-3">
@@ -3202,6 +3243,7 @@ const DashboardView = ({ openModal }) => {
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
         <WidgetCard title="Top productos · mes actual" icon={Package} category="productos"
+          resumen={topProdLoading ? null : topProductos[0] ? { valor: '#1', texto: topProductos[0].descripcion } : { texto: 'Sin ventas este mes' }}
           action={puedeAbrir('/ventas')&&<Button variant="ghost" size="xs" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
@@ -3423,7 +3465,11 @@ const DashboardView = ({ openModal }) => {
     // correo de un cliente que no se tuvo enfrente no se puede averiguar.
     if (wid === 'dato_pedido') {
       if (!showWidget('dato_pedido', 'dash_dato_pedido')) return null;
-      return wrapWidget('dato_pedido', <WidgetDatoPedido />, staggerIdx);
+      return wrapWidget('dato_pedido',
+        <WidgetCard title="Datos que faltan" icon={Mail} category="ventas">
+          <WidgetDatoPedido />
+        </WidgetCard>
+      , staggerIdx);
     }
 
     /* ── META DE LA SALA ── */
@@ -3555,6 +3601,7 @@ const DashboardView = ({ openModal }) => {
         .map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('vendedores',
         <WidgetCard title="Venta por vendedor" icon={Users} category="ventas"
+          resumen={{ texto: 'Ranking del mes' }}
           action={isVendAllScope && vendOpts.length > 1 && (
             <LiquidSelect
               value={metaBranch}

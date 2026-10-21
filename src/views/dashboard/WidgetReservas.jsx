@@ -5,6 +5,7 @@ import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
 import SearchInput from '../../components/common/SearchInput';
 import WidgetEncargos from './WidgetEncargos';
+import { useResumenWidget } from './tamanoWidget';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -122,6 +123,15 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         const t = setInterval(cargar, REFRESCO_MS);
         return () => clearInterval(t);
     }, [cargar]);
+
+    // El dato del vistazo (tarjeta más chica que la lista): cuántas esperan.
+    const abiertasVistazo = reservasAbiertas(filas);
+    const porRevisarVistazo = abiertasVistazo.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
+    useResumenWidget(cargando ? null
+        : (!miSala && !todas) ? { texto: 'Sin sala asignada' }
+        : porRevisarVistazo > 0 ? { valor: porRevisarVistazo, texto: porRevisarVistazo === 1 ? 'receta por revisar' : 'recetas por revisar', tono: 'warning' }
+        : abiertasVistazo.length > 0 ? { valor: abiertasVistazo.length, texto: abiertasVistazo.length === 1 ? 'reserva abierta' : 'reservas abiertas', tono: 'brand' }
+        : { texto: 'Sin reservas' });
 
     // Un código completo (R-000123 o P-XXXXXX) que no es de esta sala puede
     // ser un saldo a favor de otra: se busca en toda la red.

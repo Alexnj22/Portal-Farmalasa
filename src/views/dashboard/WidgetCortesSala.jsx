@@ -3,6 +3,7 @@ import { ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
+import { useResumenWidget } from './tamanoWidget';
 import TarjetaCorte from '../../components/cortes/TarjetaCorte';
 import { fetchCortes, fetchCortesResumen, fetchPersonas } from '@nucleo/data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes } from '@nucleo/utils/cortesDiagnostico';
@@ -193,6 +194,11 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     const confirmarRapido = useCallback(async (corte) => {
         if (await resolver(corte, 'CONFIRMADO')) recargar();
     }, [resolver, recargar]);
+
+    useResumenWidget(cargando ? null
+        : error ? { texto: 'No se pudieron cargar', tono: 'danger' }
+        : pendientes.length ? { valor: pendientes.length, texto: pendientes.length === 1 ? 'corte sin confirmar' : 'cortes sin confirmar', tono: 'warning' }
+        : { texto: 'Todo confirmado' });
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 

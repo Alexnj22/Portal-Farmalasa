@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.14 — Planilla: los descuentos se cargan al generarla, no en la entrada
+
+- `payrollSlice` importaba de forma estática `ordenesDeDescuento`,
+  `ordenDeDescuento` y `bancos`, que sólo se usan al generar la planilla. Como
+  el slice va en el entry, lo bajaba todo el mundo en cada despliegue. Ahora
+  van por `import()`, y el entry pasa de 316 a 313 kB gzip.
+
 ## v2.1333.13 — Tipos: el núcleo vuelve a su baseline, y lo baja
 
 - `gate:tipos` tenía 26 avisos nuevos en 14 archivos. Ninguno cambiaba el

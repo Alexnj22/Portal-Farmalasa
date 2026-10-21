@@ -6,8 +6,6 @@ import {
 } from '../../data/payroll';
 import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 import { rotuloDePeriodo } from '../../utils/planilla';
-import { fetchOrdenesVigentes } from '../../data/ordenesDeDescuento';
-import { descuentosPorOrdenes } from '../../utils/ordenDeDescuento';
 
 // Lo escrito sobre este módulo:
 // `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md` — por qué las secciones
@@ -332,6 +330,13 @@ export const createPayrollSlice = (set, get) => ({
             // lo demás de arriba: si la lectura falla, se para acá y el borrador
             // que había queda intacto. La regla del monto vive en
             // `cuotaDeLaQuincena` y sólo ahí.
+            // Por `import()`: sólo hacen falta al generar la planilla, y como
+            // import estático viajaban en el entry que baja todo el mundo
+            // (~7 kB con `bancos`, medido el 2026-10-21 con gate:bundle).
+            const [{ fetchOrdenesVigentes }, { descuentosPorOrdenes }] = await Promise.all([
+                import('../../data/ordenesDeDescuento'),
+                import('../../utils/ordenDeDescuento'),
+            ]);
             const ordenesVigentes = await fetchOrdenesVigentes();
             const ordenMap = descuentosPorOrdenes(ordenesVigentes, period.start_date);
 

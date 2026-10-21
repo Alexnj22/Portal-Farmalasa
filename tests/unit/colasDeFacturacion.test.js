@@ -41,8 +41,9 @@ describe('lo que dice Facturación tras enviar a Hacienda', () => {
     });
     it('días que quedan del mes', async () => {
         const { diasQuedanDelMes, tonoDeDiasQuedan } = await import('@nucleo/utils/colasDeFacturacion');
-        expect(diasQuedanDelMes(new Date(2026, 9, 31))).toBe(0);
-        expect(diasQuedanDelMes(new Date(2026, 9, 26))).toBe(5);
+        expect(diasQuedanDelMes('2026-10-31')).toBe(0);
+        expect(diasQuedanDelMes('2026-10-26')).toBe(5);
+        expect(diasQuedanDelMes('2026-11-01')).toBe(29);
         expect(tonoDeDiasQuedan(2)).toBe('danger');
         expect(tonoDeDiasQuedan(5)).toBe('warning');
     });

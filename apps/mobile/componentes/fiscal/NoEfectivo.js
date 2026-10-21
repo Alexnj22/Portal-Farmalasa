@@ -98,7 +98,7 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
 
   const cargar = useCallback(async () => {
     const [inv, ids, h] = await Promise.all([fetchNonCashInvoices(sala, `${mes}-01`, finDeMes(mes), NON_CASH_TYPES), fetchPaymentConfirmationIds(), fetchPaymentConfirmationsHistorial()]);
-    setError(ids.error?.message || h.error?.message || null);
+    setError(inv === null ? 'No se pudo leer la lista completa.' : (ids.error?.message || h.error?.message || null));
     setPend(Array.isArray(inv) ? inv : (inv?.data || []));
     setConfirmadas(new Set((ids.data || []).map((r) => r.invoice_id)));
     setHistorial(await signPhotosDeep(h.data || []).catch(() => h.data || []));

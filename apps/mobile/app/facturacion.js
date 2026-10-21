@@ -52,7 +52,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useVisitados } from '@nucleo/hooks/useVisitados';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { diasEntre, fechaTexto, hoySV, relojSV } from '@nucleo/utils/fecha';
+import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -150,7 +150,7 @@ export default function Facturacion() {
   const conteos = useMemo(() => conteoDeObservaciones(datos?.obs), [datos]);
   const n = (k) => datos?.[k]?.length ?? 0;
   const ccf = (k) => (datos?.[k] || []).filter((r) => r.tipo_documento === 'CCF').length;
-  const diasQuedan = diasQuedanDelMes(relojSV());
+  const diasQuedan = diasQuedanDelMes();
   const masVieja = (datos?.obs || []).reduce((m, r) => Math.max(m, r.fecha ? diasEntre(r.fecha, hoySV()) : 0), 0);
 
   const salasOrdenadas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);

@@ -52,7 +52,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 // igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
 // existe; esto es la otra mitad: que un fallo se VEA.
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { diasEntre, fechaNumerica, fechaTexto, hoySV, relojSV } from '@nucleo/utils/fecha';
+import { correrMes, diasEntre, etiquetaMes, fechaNumerica, fechaTexto, hoySV, mesSV, rangoDelMes, relojSV } from '@nucleo/utils/fecha';
 import {
     conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, observacionesSolventadas, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver,
     claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
@@ -149,18 +149,18 @@ function diasDesde(fechaStr) {
     return diasEntre(fechaStr, hoySV());
 }
 
+// Los meses salen del día de la sala y de aritmética de calendario. Con
+// `relojSV()` y sus campos LOCALES se restaban seis horas dos veces: el 1.º de
+// cada mes, hasta las 6:00, el mes por defecto, estas opciones y el rango de
+// Pendiente MH apuntaban al mes anterior (2026-10-21).
+const rangoDeMes = (mes) => rangoDelMes(mes).join('|');
+
 function monthOptions() {
-    const opts = [];
-    const now = relojSV();
-    for (let i = 0; i < 12; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const y = d.getFullYear(); const m = d.getMonth() + 1;
-        const pad = n => String(n).padStart(2, '0');
-        const last = new Date(y, m, 0).getDate();
-        const label = d.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
-        opts.push({ value: `${y}-${pad(m)}-01|${y}-${pad(m)}-${pad(last)}`, label: label.charAt(0).toUpperCase() + label.slice(1) });
-    }
-    return opts;
+    const actual = mesSV();
+    return Array.from({ length: 12 }, (_, i) => {
+        const mes = correrMes(actual, -i);
+        return { value: rangoDeMes(mes), label: etiquetaMes(mes) };
+    });
 }
 
 // ── Las piezas de las colas (2026-10-17) ─────────────────────────────────
@@ -1099,8 +1099,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const { visitedIds, toggleVisited, clearVisited } = useVisitados();
 
-    const now      = relojSV();
-    const daysLeft = diasQuedanDelMes(now);
+    const daysLeft = diasQuedanDelMes();
 
     const getBranch   = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
     const copyErpId   = (erpId) => {
@@ -1146,10 +1145,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         if (pollingRef2.current) return;
         pollingRef2.current = true;
         setLoading(true);
-        const n = relojSV();
-        const y = n.getFullYear(), m = String(n.getMonth() + 1).padStart(2, '0');
-        const fini = `${y}-${m}-01`;
-        const ffin = `${y}-${m}-${new Date(y, n.getMonth() + 1, 0).getDate()}`;
+        const [fini, ffin] = rangoDelMes(mesSV());
 
         // `fetchPendingMhInvoices` LANZA si el servidor rechaza —sin permiso de
         // Facturación, por ejemplo—. Sin el try/finally de abajo esa excepción
@@ -1939,6 +1935,9 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
             fetchPaymentConfirmationIds(),
             fetchPaymentConfirmationsHistorial(),
         ]);
+        if (invoicesData === null) {
+            useToastStore.getState().showToast('No se pudo leer la cola', 'Faltan facturas por mostrar. Vuelve a intentarlo.', 'error');
+        }
         if (confirmedIdsRes.error) console.error('loadData: fetch confirmed ids failed:', confirmedIdsRes.error.message);
         if (historialRes.error) console.error('loadData: fetch confirmation history failed:', historialRes.error.message);
 
@@ -2713,12 +2712,7 @@ export default function FacturacionView() {
     // pestaña — un filtro fuera de la píldora, que es justo lo que §17 prohíbe.
     // Sube acá para poder ocupar su ranura; el orden de §17 lo pone después de
     // sucursal (ámbito → tiempo).
-    const mesPorDefecto = useMemo(() => {
-        const now = relojSV();
-        const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0');
-        const last = new Date(y, now.getMonth() + 1, 0).getDate();
-        return `${y}-${m}-01|${y}-${m}-${last}`;
-    }, []);
+    const mesPorDefecto = useMemo(() => rangoDeMes(mesSV()), []);
     const [selectedMonth, setSelectedMonth] = useState(mesPorDefecto);
     const monthOpts = useMemo(() => monthOptions(), []);
 

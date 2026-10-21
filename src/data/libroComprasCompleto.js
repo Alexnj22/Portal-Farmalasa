@@ -17,13 +17,17 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 // aplica `limit/offset` sobre el resultado); con dos trozos es despreciable, y
 // si algún día un año entero lo vuelve caro, el camino es el Patrón C de
 // CLAUDE.md (`RETURNS json` con `json_agg`).
+//
+// `completo` en las dos: sin él, si fallaba el SEGUNDO trozo se devolvía el
+// primero como si fuera el libro entero — menos documentos y menos crédito
+// fiscal, sin error. Las pantallas ya tratan `null` como fallo (2026-10-21).
 export function fetchLibroComprasCompleto(desde, hasta, branchId) {
     return fetchAllRows(() =>
         supabase.rpc('get_libro_compras_completo', {
             p_desde: desde,
             p_hasta: hasta,
             p_branch_id: branchId ? Number(branchId) : null,
-        }));
+        }), { completo: true });
 }
 
 // El libro DECLARABLE — el de arriba dice qué se compró; éste, qué de eso puede
@@ -41,5 +45,5 @@ export function fetchLibroComprasCompleto(desde, hasta, branchId) {
 // PostgREST corta en 1000 sin decir nada.
 export function fetchLibroComprasDeclarable(desde, hasta) {
     return fetchAllRows(() =>
-        supabase.rpc('get_libro_compras_declarable', { p_desde: desde, p_hasta: hasta }));
+        supabase.rpc('get_libro_compras_declarable', { p_desde: desde, p_hasta: hasta }), { completo: true });
 }

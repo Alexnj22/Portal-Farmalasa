@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.5 — Auditoría fase 2: cartera, cola de tarjetas, libro de compras y mes de Facturación
+
+Segundo lote de la revisión de código, el de dinero y fiscal.
+
+- **Cuentas por cobrar** devolvía siempre «bien» aunque la lectura fallara: un
+  corte de red pintaba la cartera vacía sin aviso, y una página caída a la
+  mitad la entregaba incompleta. Ahora falla como falla, y el orden desempata
+  por `id` (una fecha tiene hasta 12 créditos, y el corte entre páginas podía
+  repetir uno y saltarse otro).
+- **La cola de pagos con tarjeta** tenía el mismo empate (`tipo_pago, fecha`)
+  sobre dos páginas en septiembre, y tampoco avisaba de una página caída.
+- **El libro de compras completo y el declarable**, si se caía la segunda
+  página, mostraban el primero como si fuera el libro entero: menos documentos
+  y menos crédito fiscal.
+- **Facturación, el 1.º de cada mes antes de las 6:00**, abría en el mes
+  anterior —el mes por defecto, la lista de meses, el rango de Pendiente MH y
+  los días que le quedan al mes—: leía `relojSV()` con los campos locales, que
+  restan otras seis horas. Ahora sale del día de la sala.
+- **El CSV de notas de crédito de compras** sumaba el MONTO bruto (una NC de
+  $100 y una ND de $40 daban 140) junto a un IVA neto. Ahora los dos netos.
+
 ## v2.1335.4 — Caja: lo que más anota la sala aparece primero
 
 Al anotar un movimiento de caja, la lista de tipos sale ordenada por lo que

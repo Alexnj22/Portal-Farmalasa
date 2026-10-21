@@ -128,7 +128,10 @@ export async function fetchCreditos({ sala = null, soloConSaldo = true } = {}) {
             .select('id, branch_id, credito:credito_erp, documento:numero_doc, fecha, '
                   + 'cliente, total, abonado, saldo, ultimo_abono_el, anulado_el, '
                   + 'customer_id, vendedor_id, vendedor:employees(name)')
-            .order('fecha', { ascending: true });
+            // `id` desempata: una fecha llega a tener 12 créditos, y sin él el
+            // corte entre páginas puede repetir uno y saltarse otro.
+            .order('fecha', { ascending: true })
+            .order('id', { ascending: true });
         if (sala) q = q.eq('branch_id', Number(sala));
         if (soloConSaldo) q = q.gt('saldo', 0.004);
         return q;
@@ -141,8 +144,13 @@ export async function fetchCreditos({ sala = null, soloConSaldo = true } = {}) {
      * «los que cumplen entre los primeros N». */
     /* `fetchAllRows` y no un `.range()` a mano: sin filtro son 2,387 filas y
      * PostgREST trunca en 1000 **sin dar error**. */
-    const creditos = await fetchAllRows(armar);
-    return { ok: true, creditos: creditos || [] };
+    /* `completo`: una página que falla no puede devolver la cartera a medias
+     * como si estuviera entera, ni la primera, una cartera vacía. Antes salía
+     * siempre `ok: true` y la rama de error de la vista no corría nunca: un
+     * fallo de red pintaba «no hay créditos» sin aviso (2026-10-21). */
+    const creditos = await fetchAllRows(armar, { completo: true });
+    if (creditos === null) return { ok: false, creditos: [], error: new Error('No se pudo leer la cartera.') };
+    return { ok: true, creditos };
 }
 
 /** Cuándo se leyó la cartera por última vez. Una pantalla congelada se ve igual

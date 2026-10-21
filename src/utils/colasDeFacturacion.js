@@ -5,6 +5,8 @@
  * las mismas colas con la misma regla.
  */
 
+import { diasEntre, hoySV, ultimoDiaDelMes } from './fecha';
+
 /** El catálogo de observaciones que devuelve `get_invoice_observations`. */
 export const OBSERVACIONES = {
     SELLO_INVALIDO:         { label: 'Sello inválido',  variant: 'danger'  },
@@ -87,9 +89,14 @@ export function sinResolver(rows, resoluciones, clave = 'invoice_id') {
 /** Las formas de pago que no pasan por la caja y se confirman a mano. */
 export const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
 
-/** Días que le quedan al mes para mandar a Hacienda (0 = último día). */
-export function diasQuedanDelMes(ahora) {
-    return new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate() - ahora.getDate();
+/**
+ * Días que le quedan al mes para mandar a Hacienda (0 = último día), sobre el
+ * día de la sala `YYYY-MM-DD`. Recibía `relojSV()` y le leía los campos
+ * LOCALES, que en El Salvador restan otras seis horas: el 1.º del mes, hasta
+ * las 6:00, contaba el mes anterior (2026-10-21).
+ */
+export function diasQuedanDelMes(hoy = hoySV()) {
+    return diasEntre(hoy, ultimoDiaDelMes(hoy));
 }
 
 /** El tono de esos días: rojo con dos o menos, ámbar hasta cinco. */

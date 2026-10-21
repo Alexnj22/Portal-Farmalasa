@@ -509,6 +509,10 @@ export function insertGapResolution(payload, contexto = {}) {
 // sales_invoices (tabla flagged en CLAUDE.md) — un mes con mucho volumen
 // de tarjeta/transferencia podía truncarse en silencio sobre 1000 filas.
 
+// `id` desempata el orden: `(tipo_pago, fecha)` se repite cientos de veces y
+// septiembre pasó de 1000 (dos páginas), así que el corte podía repetir una
+// factura y saltarse otra. Y `completo`: una página que falla devuelve `null`
+// —quien llama avisa— en vez de una cola a medias que parece entera.
 export function fetchNonCashInvoices(filterBranch, fini, ffin, nonCashTypes) {
     return fetchAllRows(() => {
         let q = supabase
@@ -517,10 +521,11 @@ export function fetchNonCashInvoices(filterBranch, fini, ffin, nonCashTypes) {
             .in('tipo_pago', nonCashTypes)
             .gte('fecha', fini).lte('fecha', ffin)
             .order('tipo_pago', { ascending: true })
-            .order('fecha', { ascending: false });
+            .order('fecha', { ascending: false })
+            .order('id', { ascending: true });
         if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
         return q;
-    });
+    }, { completo: true });
 }
 
 export function fetchPaymentConfirmationIds() {

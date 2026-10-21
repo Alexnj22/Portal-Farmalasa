@@ -385,9 +385,10 @@ export const construirLibro = (tab, d, tot) => {
                     r.documento_corregido || '',
                     num(r.monto), num(r.iva),
                 ]),
+                // NETO las dos columnas: el MONTO iba bruto (crédito + débito:
+                // una NC de $100 y una ND de $40 decían 140) junto a un IVA neto.
                 ['TOTALES', '', '', '', '', '', '', '', '', '',
-                 num(tot.total), num(d.notas.reduce((s, r) =>
-                     s + (r.tipo_dte === '05' ? 1 : -1) * Number(r.iva || 0), 0))],
+                 num(tot.gravadas), num(tot.debito)],
                 ['AJUSTE NETO AL CREDITO FISCAL', '', '', '', '', '', '', '', '', '',
                  '', num(tot.debito)],
             ] };

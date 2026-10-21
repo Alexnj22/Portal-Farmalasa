@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.1 — Plazo de reservas declarado en el control de rendimiento
+
+`reserva_plazo_hasta` (v2.1330.0) es `LANGUAGE sql` con `SET search_path` y `gate:perf` la marcaba sin declarar. Medida: 0.06 ms y 1 bloque por llamada; su plan no depende de los argumentos (recibe una fila y une contra la configuración de una sola fila), así que va al manifiesto sin `plan_cache_mode`.
+
 ## v2.1333.0 — Saldo a favor: lo que no se descontó en una hora vuelve a la reserva, y lo fuera de lo normal queda en Avisos de puntos
 
 Decisión del dueño (2026-10-21). Usar el saldo a favor lo convierte en puntos para que la caja lo descuente como un canje. Pero si la factura sale a otro nombre o como consumidor final, el descuento no se aplica y el saldo de la reserva ya había bajado.

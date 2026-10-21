@@ -1,7 +1,7 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
- "actualizado": "2026-10-12",
- "medidas": 46,
+ "actualizado": "2026-10-21",
+ "medidas": 47,
  "sin_medir": 24,
  "funciones": {
   "auth_module_scope": {
@@ -310,6 +310,12 @@
    "divergencia": "imposible",
    "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
   },
+  "mayorista_rango": {
+   "ms": "0.17",
+   "casos": "cliente 29 (7 meses en el resumen) · 20 llamadas en 3.4 ms, 721 bloques",
+   "divergencia": "imposible",
+   "nota": "medida el 2026-10-12: el plan genérico (EXPLAIN GENERIC_PLAN con $1) es IDÉNTICO al de literales —Index Scan por mayoristas_resumen_mensual_pkey (customer_id, mes) y por clientes_mayoristas_pkey—. El parámetro sólo entra como Index Cond de una PK, así que conocer el valor no le cambia nada al planificador; forzar el personalizado sólo agregaría replanificar a una función que la app llama por cliente."
+  },
   "metas_calculo_propuesta": {
    "ms": null,
    "casos": null,
@@ -339,6 +345,12 @@
    "casos": null,
    "divergencia": null,
    "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
+  },
+  "reserva_plazo_hasta": {
+   "ms": "0.06",
+   "casos": "100 reservas sintéticas · 1 bloque por llamada",
+   "divergencia": null,
+   "nota": "medida el 2026-10-21: 5.9 ms por 100 llamadas. El plan NO puede depender de los argumentos: recibe una fila ya leída y une contra reserva_plazos(), que devuelve una sola fila de configuración, así que el genérico es el mismo plan y forzar el personalizado sólo agregaría replanificar"
   },
   "resumen_ingreso_pedidos": {
    "ms": "26",
@@ -417,12 +429,6 @@
    "casos": "pedido reciente, sala 1",
    "divergencia": null,
    "nota": "barrido"
-  },
-  "mayorista_rango": {
-   "ms": "0.17",
-   "casos": "cliente 29 (7 meses en el resumen) · 20 llamadas en 3.4 ms, 721 bloques",
-   "divergencia": "imposible",
-   "nota": "medida el 2026-10-12: el plan genérico (EXPLAIN GENERIC_PLAN con $1) es IDÉNTICO al de literales —Index Scan por mayoristas_resumen_mensual_pkey (customer_id, mes) y por clientes_mayoristas_pkey—. El parámetro sólo entra como Index Cond de una PK, así que conocer el valor no le cambia nada al planificador; forzar el personalizado sólo agregaría replanificar a una función que la app llama por cliente."
   }
  },
  "_2026_09_02_el_ms_no_alcanza": "get_top_supplier_per_product y get_sucursal_net_stock SALEN de esta lista: se pasaron a plpgsql con plan_cache_mode='force_custom_plan' (migración 20260902153208). Las dos TENÍAN el defecto y esta lista las daba por sanas — la primera con «19 ms» y la segunda con «costo despreciable». El número no estaba mal: con la caché caliente el plan malo cuesta 43 ms. Lo que estaba mal es el CRITERIO. La auditoría del 25-ago descartaba candidatas por TIEMPO («bajo 200 ms no hace falta medirla a fondo»), y el tiempo sobre una base en reposo no puede ver una diferencia de 61× en TRABAJO: 48,441 bloques contra 791 para devolver las mismas 1,000 filas. La primera llamada del día, con lo que sí hay que ir a buscar al disco, costó 876 ms. El hallazgo salió de la sección F de gate:perf (bloques por llamada), no de ésta. PENDIENTE: quedan 12 funciones de esta lista con un parámetro de ARRAY — la forma donde el plan genérico más se equivoca, porque estima la lista en 127 filas sin verla. Ninguna está medida POR BLOQUES.",

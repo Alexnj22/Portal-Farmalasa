@@ -48,6 +48,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/auditoria-del-sistema': true, // la bitácora del sistema y su CSV
   '/notificaciones': true, // el historial: leídas y quitadas, con la misma tarjeta
   '/ofertas-clientes': true, // ofertas de Puntos Salud y pre-registros
+  '/reservas': '/reservas-sala', // las reservas de la sala: apartar, retirar, recetas y saldos a favor (la misma del widget)
   '/torogoz': true, // la distribuidora: su menú y sus secciones (`/torogoz/<seccion>`)
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal

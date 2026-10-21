@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Tag, Plus, Crown, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, ShoppingBag, GalleryHorizontal } from 'lucide-react';
+import { Navigate, useSearchParams } from 'react-router-dom';
+import { Tag, Plus, Crown, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, Truck, GalleryHorizontal } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -17,7 +18,6 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import OfertaModal from './OfertaModal';
 import HistoriasPanel from './HistoriasPanel';
 import BannersPanel from './BannersPanel';
-import WidgetReservas from '../dashboard/WidgetReservas';
 import EnvioPanel from './EnvioPanel';
 import { estadoDeOferta, etiquetaDeDescuento, nivelDeOferta } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
@@ -58,11 +58,17 @@ export default function OfertasClientesView() {
         { key: 'ofertas', label: 'Ofertas', icon: Tag },
         { key: 'historias', label: 'Historias', icon: CircleDashed },
         { key: 'banners', label: 'Banners', icon: GalleryHorizontal },
-        ...(puedeEditar ? [{ key: 'reservas', label: 'Reservas', icon: ShoppingBag }] : []),
+        // Las reservas salieron de acá a su propia pantalla (`/reservas`,
+        // 2026-10-21). Lo que se queda es el ajuste de la entrega a domicilio:
+        // es parte de lo que la app le ofrece al cliente, como la vitrina.
+        ...(puedeEditar ? [{ key: 'envio', label: 'Entrega a domicilio', icon: Truck }] : []),
         ...(veClientes ? [{ key: 'preregistros', label: 'Pre-registros', icon: UserPlus }] : []),
     ], [veClientes, puedeEditar]);
     const [tab, setTab] = usePestanaEnUrl(tabs, 'ofertas');
     const [busqueda, setBusqueda] = useState('');
+    // Un enlace viejo a la pestaña Reservas (favoritos, historial) va a su pantalla.
+    const [searchParams] = useSearchParams();
+    if (searchParams.get('tab') === 'reservas') return <Navigate to="/reservas" replace />;
 
     return (
         <GlassViewLayout icon={Smartphone} title="Ofertas para clientes" filtersContent={(
@@ -73,8 +79,8 @@ export default function OfertasClientesView() {
             <div className="p-4 md:p-6 space-y-6">
                 {tab === 'preregistros'
                     ? <Preregistros busqueda={busqueda} puedeEditar={hasPermission('clientes', 'can_edit')} showToast={showToast} />
-                    : tab === 'reservas'
-                        ? <><EnvioPanel puedeEditar={puedeEditar} showToast={showToast} /><WidgetReservas todas /></>
+                    : tab === 'envio'
+                        ? <EnvioPanel puedeEditar={puedeEditar} showToast={showToast} />
                     : tab === 'banners'
                         ? <BannersPanel busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />
                     : tab === 'historias'

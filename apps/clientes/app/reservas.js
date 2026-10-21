@@ -671,9 +671,12 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
         }} />
       ) : null}
 
-      {r.pago_estado === 'pagado' ? (
+      {/* Con anticipo, o apartada en la sucursal, la cancela la sucursal (2026-10-21):
+          ahí el anticipo queda a favor. Desde la app se perdía sin rastro. */}
+      {r.pago_estado === 'pagado' || Number(r.anticipo) > 0 || r.origen === 'sucursal' ? (
         <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
-          {r.pago_prueba ? 'El cobro en línea fue de prueba: pagas al retirar.' : 'Ya está pagada.'} Para cancelarla, escríbele a la sucursal.
+          {r.pago_estado === 'pagado' ? (r.pago_prueba ? 'El cobro en línea fue de prueba: pagas al retirar.' : 'Ya está pagada.')
+            : Number(r.anticipo) > 0 ? `Dejaste ${dolares(r.anticipo)} de anticipo.` : 'La apartaste en la sucursal.'} Para cancelarla, escríbele a la sucursal.
         </Text>
       ) : (
         <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>

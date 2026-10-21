@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1324.1 — Reservas en Comercial, widget en Operación y flujo auditado
+
+- **Reservas es una pantalla de Comercial** (`/reservas`), con permiso propio sembrado para los mismos cargos que veían el widget más Canales Digitales (que la veía como pestaña de Ofertas). La pestaña de Ofertas se quitó; un enlace viejo `?tab=reservas` lleva a la pantalla nueva. Entrega a domicilio queda en Ofertas como pestaña propia.
+- **El widget de Reservas pasa a la pestaña Operación** del Inicio, con tamaño mínimo 2×3 (caía a 1×1 y cortaba el contenido). Encabezado y buscador fijos, la lista se desplaza dentro de la tarjeta, y las filas (`FilaConAcciones`) bajan las acciones de renglón según el ancho de la tarjeta, no de la pantalla. Lo mismo en Encargos.
+- **Bitácoras**: el botón «Anotar» / «Pasar la ronda» va en un pie fijo; antes quedaba bajo el borde con varios avisos.
+- **Ícono `ShoppingBag` en el catálogo del menú**: sin él, darle el permiso `reservas` a un cargo tumbaba el portal entero.
+- **Cancelar un apartado con anticipo en la sala deja el anticipo como saldo a favor** (60 días); antes se perdía. La app ya no deja cancelar una reserva con anticipo o hecha en sucursal: se escribe a la sucursal.
+- **El aviso «lista para retirar» dice el día** («hasta mañana», «hasta el martes 28 de octubre»), no una hora: el plazo cuenta el día entero. Términos de reserva actualizados (versión 2026-10-21).
+
 ## v2.1324.0 — Chat: el equipo manda notas de voz desde el portal
 
 - **Con el cuadro vacío, el botón redondo es un micrófono** (como en WhatsApp): graba, muestra el tiempo, y se descarta o se envía. Tope de 3 minutos — al llegar se envía sola. Va por el mismo envío optimista que el texto: el globo aparece al instante (medido: 65 ms) y suena desde el navegador antes de terminar de subir.

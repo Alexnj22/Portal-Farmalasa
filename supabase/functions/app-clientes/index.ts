@@ -107,11 +107,14 @@ const TERMINOS_RESERVA = {
   // reservas sin pagar; y los plazos de la receta y de preparación, y el saldo
   // a favor de lo pagado en línea, que la base aplica desde la migración
   // 20261019230641 (decisiones del usuario, unidas en una sola versión).
-  version: "2026-10-19",
+  // 2026-10-21: el plazo para retirar es un DÍA entero (no una hora), el saldo
+  // a favor dura 60 días (lo que la base aplica, `saldo_favor_dias()`; decía 90)
+  // y ya no se limita a ofertas: el carrito reserva cualquier producto.
+  version: "2026-10-21",
   titulo: "Así funciona tu reserva",
   puntos: [
-    "Por ahora puedes reservar productos que estén en oferta.",
-    "La sucursal tiene 48 horas para preparar tu reserva. Te avisamos cuando esté lista y desde ese aviso tienes 24 horas para retirarla.",
+    "Puedes reservar productos en oferta y también a precio normal.",
+    "La sucursal tiene 48 horas para preparar tu reserva. Te avisamos cuando esté lista y tienes hasta el final del día siguiente para retirarla.",
     "Si la sucursal no alcanza a revisar tu receta o a preparar tu reserva a tiempo, la reserva vence y no cuenta en tu contra.",
     "El precio de oferta vale si la retiras dentro de las fechas de la oferta.",
     "Puedes tener hasta 3 reservas sin pagar al mismo tiempo. Las que pagas en línea no tienen límite.",
@@ -119,7 +122,7 @@ const TERMINOS_RESERVA = {
     "Si no la retiras a tiempo, el producto vuelve a la venta. Con 3 reservas sin retirar en 30 días, no podrás reservar por 30 días.",
     "Los productos bajo receta se reservan con una foto de tu receta: tienes 24 horas para subirla y la sucursal 48 horas para revisarla. Cuando la aprueba, tu reserva queda confirmada. Mientras está en revisión no se puede pagar, y si el pedido lleva algún producto bajo receta, todo el pedido espera esa revisión.",
     "Puedes pagarla en línea desde la app o al retirarla en la sucursal.",
-    "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista. Si no la retiras, el producto vuelve a la venta y lo que pagaste queda como saldo a favor por 90 días, para usarlo en cualquier sucursal. Sólo la administración puede autorizar devolverlo en dinero.",
+    "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista (el último cuenta entero). Si no la retiras, el producto vuelve a la venta y lo que pagaste queda como saldo a favor por 60 días, para usarlo en cualquier sucursal. Sólo la administración puede autorizar devolverlo en dinero.",
     "Una reserva pagada en línea no se cancela desde la app: escríbele a la sucursal.",
     "Si no puedes ir tú, comparte el código de tu reserva (desde Mis reservas) con alguien de confianza: quien lo presente en la sucursal puede retirarla, y pagarla si falta. Como el código basta para retirarla, no lo publiques.",
   ],
@@ -3441,9 +3444,14 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["en_revision", "pendiente", "lista"])
         // Pagada en línea no se cancela desde la app: habría que devolver el
         // dinero, y eso lo hace una persona desde el panel de Wompi.
-        .neq("pago_estado", "pagado").select("id");
+        .neq("pago_estado", "pagado")
+        // Ni la apartada en la sucursal ni la que tiene anticipo (2026-10-21): ésas
+        // las cancela la sucursal, que deja el anticipo a favor (`reserva_cambiar_estado`).
+        // Desde acá se cancelaban sin saldo, sin bitácora y sin avisar a nadie.
+        .eq("origen", "app").or("anticipo.is.null,anticipo.eq.0")
+        .select("id");
       if (error) throw error;
-      return json(data?.length ? { ok: true } : { ok: false, mensaje: "Esa reserva ya no se puede cancelar. Si la pagaste en línea, escríbele a la sucursal." });
+      return json(data?.length ? { ok: true } : { ok: false, mensaje: "Esa reserva ya no se puede cancelar desde la app. Si la pagaste o dejaste un anticipo, escríbele a la sucursal." });
     }
 
     // ── Pagar una reserva en línea, con Wompi (2026-10-07) ────────────────

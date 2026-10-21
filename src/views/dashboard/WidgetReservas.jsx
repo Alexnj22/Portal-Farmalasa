@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Banknote, CheckCircle2, FileCheck, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import ListRow from '../../components/common/ListRow';
+import FilaConAcciones from './FilaConAcciones';
 import SearchInput from '../../components/common/SearchInput';
 import WidgetEncargos from './WidgetEncargos';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -57,7 +57,12 @@ const REFRESCO_MS = 2 * 60 * 1000;
 const MAX_FILAS = 6;
 
 
-export default function WidgetReservas({ todas = false }) {
+// `todas`: todas las salas (alcance «todas» en la pantalla de Reservas).
+// `completa`: es la pantalla del menú y no la baldosa — sin tope de filas y sin
+// desplazamiento propio (desplaza la página).
+// `soloLectura`: quien tiene «ver» y no «editar» en la pantalla de Reservas mira
+// sin botones que cambien nada.
+export default function WidgetReservas({ todas = false, completa = false, soloLectura = false }) {
     const { user, hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const appendAuditLog = useStaff((st) => st.appendAuditLog);
@@ -67,7 +72,6 @@ export default function WidgetReservas({ todas = false }) {
     // contesta por renglón (`puede_revisar_receta`, con el alcance de la sala);
     // esto es el respaldo mientras la respuesta no lo traiga.
     const puedeRecetas = hasPermission('recetas_app', 'can_approve');
-    // `todas`: la pestaña Reservas de Ofertas para clientes — todas las salas.
     const miSala = todas ? null : (user?.branchId ?? user?.branch_id ?? null);
     const branches = useStaff((st) => st.branches);
     const nombreSala = (branches || []).find((b) => String(b.id) === String(miSala))?.name ?? '';
@@ -147,7 +151,7 @@ export default function WidgetReservas({ todas = false }) {
         }
     };
 
-    const botonNueva = !todas && miSala && !esBodega ? (
+    const botonNueva = !todas && !soloLectura && miSala && !esBodega ? (
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
     ) : null;
     const modalReceta = receta ? (
@@ -186,16 +190,18 @@ export default function WidgetReservas({ todas = false }) {
     }
     if (!filas.length && !saldosDeFuera.length) {
         return (
-            <div className="flex flex-col h-full">
-                {!esBodega && <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />}
-                {/* El saldo a favor de un cliente vale en cualquier sala: su código se busca aunque aquí no haya reservas. */}
-                {!esBodega && (
-                    <SearchInput value={codigo} onChange={setCodigo} placeholder="¿Saldo a favor? Escanea el código (R-… o P-…)"
-                        ariaLabel="Buscar un saldo a favor por su código" />
-                )}
-                {botonNueva && <div className="flex justify-center">{botonNueva}</div>}
+            <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
+                <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-2'}>
+                    {!esBodega && <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />}
+                    {/* El saldo a favor de un cliente vale en cualquier sala: su código se busca aunque aquí no haya reservas. */}
+                    {!esBodega && (
+                        <SearchInput value={codigo} onChange={setCodigo} placeholder="¿Saldo a favor? Escanea el código (R-… o P-…)"
+                            ariaLabel="Buscar un saldo a favor por su código" />
+                    )}
+                    {botonNueva && <div className="flex justify-center">{botonNueva}</div>}
+                    <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} />
+                </div>
                 {modalNueva}
-                <WidgetEncargos branchId={salaEncargos} />
             </div>
         );
     }
@@ -223,7 +229,7 @@ export default function WidgetReservas({ todas = false }) {
     // El lector escribe el código de las barras sin guion: se compara por letras y dígitos.
     const visibles = codigoLimpio(codigo)
         ? abiertas.filter((r) => coincideCodigo(r, codigo))
-        : (todas ? abiertas : abiertas.slice(0, MAX_FILAS));
+        : (todas || completa ? abiertas : abiertas.slice(0, MAX_FILAS));
     const delPedido = renglonesDelPedido(visibles, codigo);
     const buscado = delPedido[0]?.pedido ?? codigo.trim().toUpperCase();
     // Un pedido del carrito es UNA tarjeta con todos sus productos (2026-10-07).
@@ -237,34 +243,49 @@ export default function WidgetReservas({ todas = false }) {
     }
     const totalPedido = delPedido.reduce((t, r) => t + Number(r.precio ?? 0) * Number(r.cantidad ?? 1), 0);
 
+    // ── Cómo se reparte el alto de la baldosa ─────────────────────────────
+    // `WidgetCard` le da a su cuerpo `flex-1 min-h-0 overflow-hidden`: lo que no
+    // entra se CORTA, no se desplaza. Hasta el 2026-10-21 esta raíz era una
+    // columna sin desplazamiento, así que en la baldosa de 1×1 que le tocaba
+    // (no tenía tamaño registrado) se veía el buscador y media fila. Hoy el
+    // encabezado y el buscador quedan fijos arriba y TODO lo demás se desplaza
+    // dentro de la tarjeta —es el patrón de `WidgetCortesSala`—. En la pantalla
+    // completa (`completa`) no hay alto que repartir: desplaza la página.
+    const resumen = [
+        recetas > 0 ? `${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : '',
+        pendientes > 0 ? `${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte` : '',
+    ].filter(Boolean).join(' · ');
+
     return (
-        <div className="flex flex-col gap-2 h-full">
-            <div className="flex items-center justify-between gap-2">
-                <p className="text-label text-content-2">
-                    {[
-                        recetas > 0 ? `${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : '',
-                        pendientes > 0 ? `${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte` : '',
-                    ].filter(Boolean).join(' · ')}
+        <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
+            <div className={completa ? 'flex flex-col gap-2' : 'shrink-0 flex flex-col gap-2 px-2 pt-2'}>
+            {(resumen || botonNueva) && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-label text-content-2 min-w-0 break-words">
+                    {resumen}
                 </p>
                 {botonNueva}
             </div>
+            )}
             <SearchInput value={codigo} onChange={setCodigo} placeholder="Escanea o escribe el código (R-… o P-…)"
                 ariaLabel="Buscar una reserva por su código" />
+            </div>
+            <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 flex flex-col gap-2'}>
             {delPedido.length > 0 && (
-                <p className="text-body-sm text-content">
+                <p className="text-body-sm text-content break-words">
                     <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total {formatMoney(totalPedido)}
                     {delPedido.some(esPagoDePrueba) ? ' · PAGO DE PRUEBA — cobrar en caja'
                         : delPedido.every((r) => r.pago_estado === 'pagado') ? ' · pagado en línea' : ' · se cobra en caja'}
                 </p>
             )}
             {delPedido[0]?.documento === 'credito_fiscal' && delPedido[0]?.datos_fiscales && (
-                <div className="rounded-lg border border-border-subtle px-3 py-2 text-caption text-content-2">
+                <div className="rounded-lg border border-border-subtle px-3 py-2 text-caption text-content-2 break-words">
                     <p className="font-semibold text-content">Facturar con crédito fiscal</p>
                     <p>{delPedido[0].datos_fiscales.nombre} · NIT {delPedido[0].datos_fiscales.nit} · NRC {delPedido[0].datos_fiscales.nrc}</p>
                     <p>{delPedido[0].datos_fiscales.giro} · {delPedido[0].datos_fiscales.direccion}</p>
                 </div>
             )}
-            {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código en esta sala.</p>}
+            {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código{todas ? '' : ' en esta sala'}.</p>}
             <ul className="space-y-1.5 min-w-0">
                 {grupos.map((r) => {
                     const enRevision = r.estado === 'en_revision';
@@ -272,21 +293,19 @@ export default function WidgetReservas({ todas = false }) {
                     const urgente = enRevision && r.receta_estado === 'pendiente' && espera.horas >= HORAS_RECETA_URGENTE;
                     return (
                     <li key={`${r.pedido ?? ''}-${r.id}`}>
-                        <ListRow
-                            surface="card"
-                            density="sm"
+                        <FilaConAcciones
                             tone={urgente ? 'danger' : enRevision || r.estado === 'pendiente' ? 'warning' : null}
                             icon={enRevision ? FileCheck : r.entrega === 'domicilio' ? Truck : r.estado === 'lista' ? PackageCheck : ShoppingBag}
-                            title={r.renglones && r.renglones.length > 1
+                            titulo={r.renglones && r.renglones.length > 1
                                 ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
                                 : `${r.cantidad} × ${r.producto}`}
-                            subtitle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
+                            detalle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
                                 todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
                                 r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
-                            trailing={(
-                                <div className="flex flex-wrap items-center justify-end gap-1">
+                            acciones={(
+                                <>
                                     {enRevision && r.receta_estado === 'otra_foto' && (
                                         <Badge variant="info" uppercase={false}
                                             title={r.receta_motivo ? `Se pidió otra foto: ${r.receta_motivo}` : undefined}>Esperando nueva foto del cliente</Badge>
@@ -331,7 +350,7 @@ export default function WidgetReservas({ todas = false }) {
                                             <Badge variant="neutral" uppercase={false}
                                                 title="Revisar recetas de la app pide su propio permiso">Receta por revisar · sin permiso para revisarla</Badge>
                                         ))
-                                    ) : r.estado === 'pendiente' ? (
+                                    ) : soloLectura ? null : r.estado === 'pendiente' ? (
                                         <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}
                                             onClick={() => mover(r, 'lista')}>Apartar y avisar</Button>
                                     ) : (
@@ -345,17 +364,19 @@ export default function WidgetReservas({ todas = false }) {
                                                     .map((x) => ({ id: x.id, sala: x.branch_id ?? r.branch_id ?? miSala })))}>Retirar</Button>
                                         </>
                                     )}
-                                    <Button variant="ghost" size="xs" iconOnly icon={XCircle} title="Cancelar reserva"
-                                        onClick={() => mover(r, 'cancelada')} />
-                                </div>
+                                    {!soloLectura && (
+                                        <Button variant="ghost" size="xs" iconOnly icon={XCircle} title="Cancelar reserva"
+                                            onClick={() => mover(r, 'cancelada')} />
+                                    )}
+                                </>
                             )}
                         />
                     </li>
                     );
                 })}
             </ul>
-            {!todas && !buscado && abiertas.length > MAX_FILAS && (
-                <span className="text-label text-content-3 mt-auto">y {abiertas.length - MAX_FILAS} más</span>
+            {!todas && !completa && !buscado && abiertas.length > MAX_FILAS && (
+                <span className="text-label text-content-3">y {abiertas.length - MAX_FILAS} más</span>
             )}
             {saldos.length > 0 && (
                 <div className="space-y-1.5">
@@ -363,23 +384,24 @@ export default function WidgetReservas({ todas = false }) {
                     <ul className="space-y-1.5 min-w-0">
                         {saldos.map((r) => (
                             <li key={r.id}>
-                                <ListRow surface="card" density="sm" icon={Wallet}
-                                    title={`${formatMoney(Number(r.saldo_favor))} a favor de ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}`}
-                                    subtitle={`${r.pedido ?? codigoDeReserva(r.id)} · ${r.producto} · ${origenDelSaldo(r)} · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}${(todas || String(r.branch_id) !== String(miSala)) && r.sala ? ` · ${r.sala}` : ''}`}
-                                    trailing={(
-                                        <div className="flex flex-wrap items-center justify-end gap-1">
+                                <FilaConAcciones icon={Wallet}
+                                    titulo={`${formatMoney(Number(r.saldo_favor))} a favor de ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}`}
+                                    detalle={`${r.pedido ?? codigoDeReserva(r.id)} · ${r.producto} · ${origenDelSaldo(r)} · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}${(todas || String(r.branch_id) !== String(miSala)) && r.sala ? ` · ${r.sala}` : ''}`}
+                                    acciones={soloLectura ? null : (
+                                        <>
                                             {puedeDevolver && (
                                                 <Button variant="ghost" size="xs" icon={Banknote} onClick={() => setDevolver(r)}>Devolver en dinero</Button>
                                             )}
                                             <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id} onClick={() => usarSaldo(r)}>Aplicado en caja</Button>
-                                        </div>
+                                        </>
                                     )} />
                             </li>
                         ))}
                     </ul>
                 </div>
             )}
-            <WidgetEncargos branchId={salaEncargos} />
+            <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} />
+            </div>
             {modalNueva}
             {modalRetirar}
             {modalReceta}

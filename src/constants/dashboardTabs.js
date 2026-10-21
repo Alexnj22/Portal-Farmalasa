@@ -13,7 +13,12 @@
 export const PESTANAS_TEMATICAS = {
     comercial: ['kpi', 'meta_sala', 'cortes_sala', 'cotizaciones', 'facturacion', 'top_productos', 'sales', 'vendedores'],
     rrhh:      ['kpi', 'trend', 'shifts', 'absences', 'requests', 'calendar', 'announcements', 'birthdays'],
-    operacion: ['inv_search', 'annulment_req', 'minmax_req', 'inv_movement', 'traslados', 'facturas_sala', 'bitacoras', 'recetas_pend'],
+    // `reservas` entró a Operación el 2026-10-21 (pedido del dueño: «pasa el
+    // widget a Operación»): apartar, entregar y cobrar lo reservado es trabajo
+    // de mostrador, como un traslado. Antes no estaba en ninguna temática y
+    // sólo salía en General. Si el canon publicado no la nombra, `ordenDeLaPestana`
+    // la pone al final (y al SU se le avisa que quedó sin ubicar): no se esconde.
+    operacion: ['inv_search', 'annulment_req', 'minmax_req', 'inv_movement', 'traslados', 'facturas_sala', 'bitacoras', 'recetas_pend', 'reservas'],
 };
 
 /** Los widgets de una pestaña. General es el resumen: todo el catálogo. */

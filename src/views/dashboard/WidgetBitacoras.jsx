@@ -66,8 +66,15 @@ export default function WidgetBitacoras() {
 
     const alDia = resumen.abiertas === 0 && resumen.vencidas === 0;
 
+    // ── El botón no puede quedar afuera (2026-10-21) ──────────────────────
+    // `WidgetCard` corta lo que no entra (`overflow-hidden`), y esta raíz era
+    // una columna con el botón empujado al pie (`mt-auto`). Con 1×2 y las tres
+    // franjas del día más «fuera de rango», el botón —que es para lo que existe
+    // el widget— quedaba debajo del borde. Ahora los avisos se desplazan dentro
+    // de la tarjeta y el botón va en un pie fijo que siempre se ve.
     return (
-        <div className="flex flex-col gap-3 h-full">
+        <div className="h-full flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 flex flex-col gap-2">
             {/* Lo urgente primero y con su color: una franja abierta es trabajo
                 de ahora, una vencida ya es un hueco en el libro. */}
             {resumen.vencidas > 0 && (
@@ -87,8 +94,8 @@ export default function WidgetBitacoras() {
             )}
 
             {resumen.desvios > 0 && (
-                <p className="text-label text-danger-text font-bold flex items-center gap-1">
-                    <AlertTriangle size={12} />
+                <p className="text-label text-danger-text font-bold flex items-center gap-1 min-w-0">
+                    <AlertTriangle size={12} className="shrink-0" />
                     {resumen.desvios} fuera de rango hoy
                 </p>
             )}
@@ -98,13 +105,14 @@ export default function WidgetBitacoras() {
                     title="Sin pendientes"
                     subtitle="Hoy no hay nada que anotar." />
             )}
+            </div>
 
             {/* Con dos o más pendientes el atajo abre la VUELTA entera, no la
                 grilla: medido el 2026-08-25, el 68% de los registros se anota a
                 menos de tres minutos del anterior, así que llegar de a uno es
                 la excepción. Con uno solo sigue yendo a la grilla — ahí el
                 botón de esa casilla ya está a la vista. */}
-            <div className="mt-auto">
+            <div className="shrink-0 px-2 pb-2">
                 {resumen.abiertas + resumen.vencidas >= 2 ? (
                     <Button variant="primary" size="sm" icon={ClipboardCheck}
                         onClick={() => navigate('/bitacoras?ronda=1')}>

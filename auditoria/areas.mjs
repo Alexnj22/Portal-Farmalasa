@@ -777,8 +777,8 @@ export const AREAS = [
         id: 'app-clientes',
         nombre: 'App de clientes (Puntos Salud)',
         resumen: 'La app del cliente: entra con documento + teléfono una sola vez (sesión por token, sólo su huella en la base), ve su saldo y movimientos de puntos, las ofertas publicadas (las exclusivas sólo para socios), las inyecciones que pagó y le faltan aplicar, sus permisos y avisos, y puede borrar su cuenta. Quien no tiene ficha deja un pre-registro que se vincula solo cuando la sala lo registra con el mismo documento y teléfono.',
-        modulos: ['ofertas_clientes', 'mayoristas', 'chat_clientes'],
-        rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes'],
+        modulos: ['ofertas_clientes', 'mayoristas', 'chat_clientes', 'reservas'],
+        rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes', '/reservas'],
         archivos: [
             'apps/clientes/',
             'src/views/ofertas-clientes/',
@@ -802,6 +802,10 @@ export const AREAS = [
             'src/data/ofertasClientes.js',
             'src/data/reservas.js',
             'src/views/dashboard/WidgetReservas.jsx',
+            // La pantalla de Reservas del menú (Comercial, 2026-10-21): el mismo
+            // widget sin la baldosa, y la fila que no pierde contenido en ningún ancho.
+            'src/views/ReservasView.jsx',
+            'src/views/dashboard/FilaConAcciones.jsx',
             'src/views/dashboard/RevisarReceta.jsx',
             'src/utils/ofertasClientes.js',
             // Las reservas vistas desde la sala (widget del portal y app del personal).

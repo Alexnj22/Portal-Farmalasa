@@ -60,6 +60,22 @@ type Token = { id: string; token: string; plataforma: string | null; formato: nu
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const fechaCorta = (f: string) => { const [, m, d] = f.split("-"); return `${Number(d)} ${MESES[Number(m) - 1]}`; };
+// «hoy», «mañana» o «el martes 28 de octubre»: el día en que vence una reserva,
+// en El Salvador (UTC−6, sin horario de verano). Gemela de `diaDelPlazo` en
+// apps/clientes/lib/formato.js.
+const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const diaSV = (ms: number) => new Date(ms - 6 * 3600_000).toISOString().slice(0, 10);
+function diaDelPlazo(iso: string): string {
+  const t = Date.parse(iso ?? "");
+  if (!Number.isFinite(t)) return "que venza";
+  const dia = diaSV(t);
+  const dif = Math.round((Date.parse(`${dia}T00:00:00Z`) - Date.parse(`${diaSV(Date.now())}T00:00:00Z`)) / 86400_000);
+  if (dif <= 0) return "hoy";
+  if (dif === 1) return "mañana";
+  const d = new Date(`${dia}T12:00:00Z`);
+  return `el ${DIAS_SEMANA[d.getUTCDay()]} ${d.getUTCDate()} de ${MESES_LARGOS[d.getUTCMonth()]}`;
+}
 const primerNombre = (n: string) => {
   const p = String(n ?? "").trim().split(/\s+/)[0] ?? "";
   return p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : "";
@@ -593,9 +609,10 @@ Deno.serve(async (req) => {
       if (eBr) console.error("no se pudieron leer las sucursales:", eBr.message);
       const sala = new Map((brs ?? []).map((b: any) => [b.id, String(b.name ?? "").trim()]));
       for (const r of listas ?? []) {
-        const hasta = new Date(Date.parse(r.vence_at) - 6 * 3600_000);
-        const h = hasta.getUTCHours(), m = String(hasta.getUTCMinutes()).padStart(2, "0");
-        const antesDe = `antes de mañana a las ${h % 12 || 12}:${m} ${h < 12 ? "a. m." : "p. m."}`;
+        // El plazo es un DÍA entero, no una hora (2026-10-21): `reservas_vencer`
+        // la vence cuando termina el día de `vence_at` en El Salvador. Antes decía
+        // «antes de mañana a las HH:MM» siempre, también a las de 7 días.
+        const antesDe = `hasta ${diaDelPlazo(r.vence_at)}`;
         const en = sala.get(r.branch_id) ? ` en ${sala.get(r.branch_id)}` : "";
         candidatos.push({
           customer_id: r.customer_id, tipo: "reserva", ref: `reserva-lista:${r.id}`,

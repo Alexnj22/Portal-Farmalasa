@@ -86,6 +86,10 @@ export const MODULE_MAP = {
     encuestas_aplicar: { path: '/encuestas-aplicar', label: 'Aplicar encuesta',     icono: 'Mic' },
     ofertas_clientes:  { path: '/ofertas-clientes',  label: 'Ofertas para clientes', icono: 'Smartphone' },
     chat_clientes:     { path: '/chat-clientes',     label: 'Chat con clientes',     icono: 'MessageCircle' },
+    // Pantalla propia desde el 2026-10-21 (pedido del dueño: «las reservas que
+    // estén en Comercial, como pantalla principal»). Antes eran una pestaña de
+    // Ofertas para clientes y el widget del Inicio.
+    reservas:          { path: '/reservas',          label: 'Reservas',              icono: 'ShoppingBag' },
     galeria:           { path: '/galeria',          label: 'Galería',                  icono: 'FolderOpen' },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icono: 'Users',        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icono: 'Package'       },

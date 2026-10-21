@@ -96,6 +96,7 @@ const GaleriaView = lazy(IMPORTADORES.GaleriaView);
 const EncuestasClientesView = lazy(IMPORTADORES.EncuestasClientesView);
 const OfertasClientesView = lazy(IMPORTADORES.OfertasClientesView);
 const ChatClientesView = lazy(IMPORTADORES.ChatClientesView);
+const ReservasView = lazy(IMPORTADORES.ReservasView);
 const MayoristasView = lazy(IMPORTADORES.MayoristasView);
 const AplicarEncuestaView = lazy(IMPORTADORES.AplicarEncuestaView);
 const EncuestaPublicaView = lazy(IMPORTADORES.EncuestaPublicaView);
@@ -949,6 +950,7 @@ function MainApp() {
                                     <Route path="encuestas-aplicar" element={<PermissionGuard moduleKey="encuestas_aplicar"><AplicarEncuestaView /></PermissionGuard>} />
                                     <Route path="ofertas-clientes" element={<PermissionGuard moduleKey="ofertas_clientes"><OfertasClientesView /></PermissionGuard>} />
                                     <Route path="chat-clientes" element={<PermissionGuard moduleKey="chat_clientes"><ChatClientesView /></PermissionGuard>} />
+                                    <Route path="reservas" element={<PermissionGuard moduleKey="reservas"><ReservasView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
@@ -1150,6 +1152,7 @@ const ROUTE_TITLES = {
     '/clientes':          'Clientes',
     '/mayoristas':        'Clientes Mayoristas',
     '/chat-clientes':     'Chat con clientes',
+    '/reservas':          'Reservas',
     '/metas':             'Metas',
     // Copiado LITERAL del `title` del GlassViewLayout de la vista: es lo que
     // exige gate:rutas, y por buenos motivos — el título de la pestaña del

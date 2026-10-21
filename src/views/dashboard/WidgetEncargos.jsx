@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import ListRow from '../../components/common/ListRow';
+import FilaConAcciones from './FilaConAcciones';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
@@ -31,7 +31,8 @@ const ESTADO = {
     listo: { label: 'Llegó', variant: 'success' },
 };
 
-export default function WidgetEncargos({ branchId = null }) {
+// `soloLectura`: quien sólo puede mirar las reservas ve el estado sin los botones.
+export default function WidgetEncargos({ branchId = null, soloLectura = false }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     const [ocupado, setOcupado] = useState(null);
@@ -66,21 +67,21 @@ export default function WidgetEncargos({ branchId = null }) {
             <ul className="space-y-1.5 min-w-0">
                 {filas.map((e) => (
                     <li key={e.id}>
-                        <ListRow surface="card" density="sm" tone={e.estado === 'solicitado' || e.estado === 'aceptado' ? 'warning' : null}
+                        <FilaConAcciones tone={e.estado === 'solicitado' || e.estado === 'aceptado' ? 'warning' : null}
                             icon={PackageSearch}
-                            title={`${e.cantidad} × ${e.producto}`}
-                            subtitle={`${e.codigo} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}`}
-                            trailing={(
-                                <div className="flex items-center gap-1">
+                            titulo={`${e.cantidad} × ${e.producto}`}
+                            detalle={`${e.codigo} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}`}
+                            acciones={(
+                                <>
                                     <Badge variant={ESTADO[e.estado]?.variant ?? 'neutral'} uppercase={false}>{ESTADO[e.estado]?.label ?? e.estado}</Badge>
-                                    {e.estado === 'solicitado' && (<>
+                                    {!soloLectura && e.estado === 'solicitado' && (<>
                                         <Button variant="primary" size="xs" icon={Check} onClick={() => setConfirmando(e)}>Confirmar</Button>
                                         <Button variant="ghost" size="xs" iconOnly icon={X} title="No se puede conseguir" onClick={() => setRechazando(e)} />
                                     </>)}
-                                    {e.estado === 'aceptado' && <Button variant="secondary" size="xs" icon={Truck} loading={ocupado === e.id} onClick={() => mover(e, 'pedido')}>Pedido</Button>}
-                                    {(e.estado === 'aceptado' || e.estado === 'pedido') && <Button variant="secondary" size="xs" icon={PackageCheck} loading={ocupado === e.id} onClick={() => mover(e, 'listo')}>Llegó</Button>}
-                                    {e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setRetirando(e)}>Entregar</Button>}
-                                </div>
+                                    {!soloLectura && e.estado === 'aceptado' && <Button variant="secondary" size="xs" icon={Truck} loading={ocupado === e.id} onClick={() => mover(e, 'pedido')}>Pedido</Button>}
+                                    {!soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && <Button variant="secondary" size="xs" icon={PackageCheck} loading={ocupado === e.id} onClick={() => mover(e, 'listo')}>Llegó</Button>}
+                                    {!soloLectura && e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setRetirando(e)}>Entregar</Button>}
+                                </>
                             )} />
                     </li>
                 ))}

@@ -200,6 +200,13 @@ const WIDGET_SIZES = {
   // `cortes_sala` y `traslados`). Dos columnas porque el nombre de un
   // medicamento con su presentación no entra en una.
   recetas_pend:  { minCols: 2, minRows: 3, label: 'Recetas pendientes' },
+  // Lista con buscador y botones, y NO tenía entrada: caía al 1×1 de una
+  // baldosa (312×120), donde entraba el buscador y media fila — «se pierde el
+  // contenido» (dueño, 2026-10-21). Dos columnas porque cada reserva lleva sus
+  // badges (pagada, anticipo, mayoreo, CCF) y dos o tres botones; tres renglones
+  // para que se vean el encabezado, el buscador y al menos dos reservas. El
+  // resto se desplaza dentro de la tarjeta (ver `WidgetReservas`).
+  reservas:      { minCols: 2, minRows: 3, label: 'Reservas' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
   // Lista con botones: sin alto no entra ni un corte (mismo motivo que
   // `vendedores` y `traslados`, abajo). Tres renglones desde el 2026-08-14:

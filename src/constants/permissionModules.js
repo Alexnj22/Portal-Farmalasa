@@ -237,6 +237,9 @@ const GRUPOS_CRUDOS = [
                 { key: 'facturacion_ver_montos',        label: 'Ver montos',    tipo: 'cap' },
             ]},
             // Tampoco lleva `_ver_montos`: una cotización sin precios no es nada.
+            // (2026-10-21) La pantalla de Reservas del menú. El widget del Inicio
+            // sigue con su propio permiso (`dash_reservas`).
+            { key: 'reservas',       label: 'Reservas',      desc: 'Los productos que los clientes apartaron —desde la app Puntos Salud o con anticipo en la caja—, los pedidos a domicilio, los saldos a favor y los encargos. Ver = mirar las reservas; editar = apartar y avisar, entregar, cancelar y aplicar un saldo a favor. Con alcance «su sala», sólo las de la propia; con «todas», las de todas las salas', icono: 'ShoppingBag', hasApprove: false, hasScope: true },
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icono: 'Receipt',       hasApprove: false, hasScope: true, sub: [
                 { key: 'cotizaciones_descargar', label: 'Imprimir / guardar PDF', tipo: 'cap' },
             ]},

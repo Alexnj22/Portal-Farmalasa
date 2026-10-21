@@ -47,6 +47,7 @@ import {
     Smartphone,
     PackageMinus,
     ShoppingCart,
+    ShoppingBag,
     ClipboardCheck,
     Mic,
     RadioTower,
@@ -127,6 +128,9 @@ const ICONOS = {
     Search,
     ShieldCheck,
     ShoppingCart,
+    // Reservas (2026-10-21). Sin esta entrada el menú pinta `undefined` y
+    // AppLayout entero se cae al darle el módulo a alguien.
+    ShoppingBag,
     MessageCircle,
     Smartphone,
     Target,

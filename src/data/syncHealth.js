@@ -5,12 +5,24 @@ import { supabase } from '../supabaseClient';
 // (dte tiene check-sales-alerts, inventory tiene SyncHealthBanner/useSyncMonitor).
 export const SYNC_HEALTH_DOMAINS = ['products', 'minmax', 'purchases', 'backup'];
 
-export function fetchSyncHealthRecent(limit = 200) {
-    return supabase.from('v_sync_health')
+/**
+ * Las últimas `limit` corridas DE CADA dominio, juntas y de la más nueva a la
+ * más vieja. Antes eran las últimas 200 de los cuatro mezclados: Compras y
+ * Productos corren cada pocos minutos y llenaban la ventana, así que Respaldo
+ * (diario) y Min / Max (mensual) salían «sin actualizaciones» aunque hubieran
+ * corrido bien (medido el 2026-10-21: 0 de 200 filas de cada uno). El tope se
+ * aplica ANTES del filtro por pestaña, así que tiene que ser por dominio.
+ */
+export async function fetchSyncHealthRecent(limit = 200) {
+    const respuestas = await Promise.all(SYNC_HEALTH_DOMAINS.map(d => supabase.from('v_sync_health')
         .select('domain, source, branch_id, erp_sucursal_id, checked_at, success, error_msg')
-        .in('domain', SYNC_HEALTH_DOMAINS)
+        .eq('domain', d)
         .order('checked_at', { ascending: false })
-        .limit(limit);
+        .limit(limit)));
+    const error = respuestas.find(r => r.error)?.error ?? null;
+    const data = respuestas.flatMap(r => r.data ?? [])
+        .sort((a, b) => String(b.checked_at).localeCompare(String(a.checked_at)));
+    return { data, error };
 }
 
 /** Cómo se llama cada dominio en pantalla. */

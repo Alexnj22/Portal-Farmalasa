@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.10 — Actualización de datos ve las corridas de los cuatro dominios
+
+Las pestañas Respaldo y Min / Max decían «Sin actualizaciones» aunque hubieran
+corrido bien: la vista pedía las últimas 200 corridas de los cuatro dominios
+juntos, y Compras y Productos —que corren cada pocos minutos— las llenaban
+todas (medido: 0 de 200 de cada uno). Ahora se piden las últimas 200 de CADA
+dominio (cuatro lecturas por índice, ~0.1 ms cada una). Igual en la app.
+
 ## v2.1335.9 — Descargar del inventario compara en unidades
 
 Al descargar producto (dañado, vencido, descuadre), el aviso «sin existencia»

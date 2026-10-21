@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1334.1 — Tipos de la base con el juez de caja
+
+`src/types/database.ts` regenerado con `caja_conceptos_de_otro_lado`,
+`caja_tipos_movimiento.sin_comprobante_autoriza` y `caja_movimiento_regla`.
+
 ## v2.1334.0 — Caja: un solo juez para entradas y salidas; «Otro» dice dónde va; sin comprobante, autorización
 
 Auditoría de entradas y salidas del 2026-10-21. Lo que cuidaba sólo la

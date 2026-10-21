@@ -4694,6 +4694,36 @@ export type Database = {
           },
         ]
       }
+      caja_conceptos_de_otro_lado: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: number
+          orden: number
+          patron: string
+          sentido: string
+          va_en: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: number
+          orden?: number
+          patron: string
+          sentido: string
+          va_en: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: number
+          orden?: number
+          patron?: string
+          sentido?: string
+          va_en?: string
+        }
+        Relationships: []
+      }
       caja_cortes_del_portal: {
         Row: {
           branch_id: number
@@ -4968,6 +4998,7 @@ export type Database = {
           pide_boleta: boolean
           pide_persona: boolean
           sentido: string
+          sin_comprobante_autoriza: boolean
         }
         Insert: {
           activo?: boolean
@@ -4982,6 +5013,7 @@ export type Database = {
           pide_boleta?: boolean
           pide_persona?: boolean
           sentido: string
+          sin_comprobante_autoriza?: boolean
         }
         Update: {
           activo?: boolean
@@ -4996,6 +5028,7 @@ export type Database = {
           pide_boleta?: boolean
           pide_persona?: boolean
           sentido?: string
+          sin_comprobante_autoriza?: boolean
         }
         Relationships: []
       }
@@ -28312,6 +28345,18 @@ export type Database = {
       }
       caja_ingreso_resolver: {
         Args: { p_aprobar: boolean; p_nota?: string; p_solicitud: string }
+        Returns: Json
+      }
+      caja_movimiento_regla: {
+        Args: {
+          p_concepto: string
+          p_de_bolsa?: boolean
+          p_forma_pago?: string
+          p_sentido: string
+          p_tiene_foto: boolean
+          p_tiene_receptor?: boolean
+          p_tipo: string
+        }
         Returns: Json
       }
       caja_vales_pendientes: {

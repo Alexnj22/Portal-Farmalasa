@@ -161,6 +161,24 @@ export function hayRecepcionPendiente({ enviadoAt = null, pedidoStatus, pendient
     return (reenviosHistorial ?? []).some(c => c.sent_at && !c.arrived_at);
 }
 
+// ── Reportar un error después de cerrar la recepción (2026-10-21) ──────────
+// La sala tiene 2 días desde que cerró la recepción para reportar algo que vio
+// tarde: lo contado, un producto que llegó en lugar de otro, un extra anotado
+// mal. Antes la pantalla de recepción desaparecía al cerrarla y no quedaba
+// ninguna puerta (pedido 07-201026-2-S1: llegó Humectación Diaria donde el
+// sistema decía Reparación Intensiva). Supervisión no tiene plazo.
+//
+// El juez real es `recepcion_corregible` en la base, que rechaza fuera de
+// plazo; esto sólo decide si se muestra el botón. Mismo número en los dos.
+export const PLAZO_PARA_REPORTAR_MS = 2 * 24 * 60 * 60 * 1000;
+
+export function puedeReportarError({ recibidoAt = null, pendientes = 0, esSupervision = false, ahora = Date.now() }) {
+    if (!recibidoAt || pendientes > 0) return false;
+    if (esSupervision) return true;
+    const t = new Date(recibidoAt).getTime();
+    return Number.isFinite(t) && ahora - t < PLAZO_PARA_REPORTAR_MS;
+}
+
 /**
  * Qué le falta todavía a ESTA sala de lo que se le despachó.
  *

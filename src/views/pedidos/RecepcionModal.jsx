@@ -2057,9 +2057,9 @@ export default function RecepcionModal({
                                             />
 
                                             <Button variant="ghost" icon={Trash2} iconOnly
-                                                disabled={e.bloqueado || quitandoExtra != null}
+                                                disabled={(e.bloqueado && e.retirable === false) || quitandoExtra != null}
                                                 loading={quitandoExtra === e.id}
-                                                title={e.bloqueado ? 'Ya se está resolviendo: no se puede quitar' : 'Quitar'}
+                                                title={e.bloqueado && e.retirable === false ? 'Bodega ya contestó: no se puede quitar' : 'Quitar'}
                                                 onClick={() => borrarExtra(ei)} />
                                         </div>
                                         {(eSinCant || e.nota) && (

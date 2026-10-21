@@ -49,6 +49,11 @@ export const extrasDeRenglones = (rows = []) => rows
         nota: r.nota_diferencia ?? '',
         // Con una propuesta en curso, la cantidad es la que aceptó la otra parte.
         bloqueado: r.resolucion_status != null,
+        // Pero se puede QUITAR mientras bodega no contestó: todavía no se movió
+        // nada. Sin esto, un extra anotado con el producto equivocado quedaba
+        // trabado y lo único que había para apretar era aceptar el error
+        // (pedido 07-201026-2-S1, 2026-10-21). La base aplica la misma regla.
+        retirable: r.resolucion_status == null || r.resolucion_status === 'propuesta',
     }));
 
 // ── Lo que se le muestra al renglón que se cuenta (2026-10-15) ──────────────

@@ -22,7 +22,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { ERP_NAMES } from '@nucleo/constants/erp';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes, esDeAntesDelPeriodo } from '@nucleo/utils/tableroDePedidos';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, puedeReportarError, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes, esDeAntesDelPeriodo } from '@nucleo/utils/tableroDePedidos';
 import ItemSections from './tabpedidos/ItemSections';
 import AvanceCompacto, { EncabezadoDeAvance } from './tabpedidos/AvanceCompacto';
 import DifSection from './tabpedidos/DifSection';
@@ -448,6 +448,17 @@ const FilaDeSala = React.memo(function FilaDeSala({
                             <Button variant="primary" icon={CheckCircle2} onClick={e => { e.stopPropagation(); acc.handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
                         );
                     })()}
+                    {/* Un error que la sala vio DESPUÉS de cerrar la recepción:
+                        reabre la misma pantalla (lo ya contado y los extras)
+                        por 2 días. Sin esto no quedaba ninguna puerta — ver
+                        `puedeReportarError`. */}
+                    {verSecundarias && canEdit && (isBranch || isSU || esSupervision) && sucDeLaTarjeta
+                        && puedeReportarError({ recibidoAt: row.recibido_erp_at, pendientes: stats?.pendientes ?? 0, esSupervision }) && (
+                        <Button variant="secondary" icon={AlertTriangle}
+                            onClick={e => { e.stopPropagation(); acc.openModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey); }}>
+                            Reportar un error
+                        </Button>
+                    )}
                     {canIniciar      && <Button variant="primary" icon={Play}      loading={isLCBusy} onClick={() => acc.handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>Iniciar</Button>}
                     {verSecundarias && canPausar && <Button variant="secondary" icon={Pause}     loading={isLCBusy} onClick={() => acc.openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
                     {canFinalizar    && <Button variant="primary" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => acc.openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}

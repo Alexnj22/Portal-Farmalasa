@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1326.0 — Pedidos: reportar un error de la recepción hasta 2 días después
+
+Pedido 07-201026-2-S1 (Salud 1): llegó Humectación Diaria 400 ml donde el
+sistema decía Reparación Intensiva 400 ml, la sala anotó el sobrante con la
+presentación equivocada y no había forma de corregir nada — la pantalla de
+recepción desaparece al cerrarla y el extra con propuesta no se podía quitar.
+
+- Botón **«Reportar un error»** en la tarjeta de la sala durante 2 días desde
+  que cerró la recepción: reabre «Ya confirmados» (corregir lo contado) y
+  «Anotar un extra». Supervisión no tiene plazo.
+- El plazo lo decide la base (`recepcion_corregible`) en `corregir_recepcion_de_item`,
+  `agregar_extra_a_pedido` y `quitar_extra_de_pedido`. Con la recepción cerrada
+  el motivo es obligatorio y queda en la bitácora del renglón.
+- Un extra con la propuesta de la sala **sin contestar** ya se puede quitar.
+- Una diferencia nacida después del cierre reabre la sección de Diferencias y
+  devuelve el pedido a «parcial».
+
+Migración `20261021171427_reportar_error_de_recepcion_hasta_2_dias`.
+
 ## v2.1325.3 — Inyecciones: buscar la venta de otra sucursal por nombre del cliente
 
 En Caja → Aplicación → «Otra sucursal», la venta sólo se encontraba con el

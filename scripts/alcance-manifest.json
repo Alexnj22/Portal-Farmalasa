@@ -379,6 +379,10 @@
     "agregar_extra_a_pedido": {
       "guarda": "alcance"
     },
+    "recepcion_corregible": {
+      "guarda": "sin-sala",
+      "motivo": "Sólo contesta si el plazo de 2 días para reportar un error de la recepción sigue abierto; no lee ni escribe datos de la sala. Quien escribe (corregir/agregar/quitar) compara la sala por su cuenta."
+    },
     "ajustar_resumen_promocion": {
       "guarda": "modulo-de-red",
       "modulos": [

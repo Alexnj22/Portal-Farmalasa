@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1322.2 — Permisos: la pantalla ya no se cae al elegir un cargo
+
+Reporte: «si entro a permisos y selecciono un rol, me da error y no puedo
+modificar nada». El módulo «Recetas de la app» (v2.1307.0) nombra el ícono
+`FileCheck`, que nunca se agregó al mapa de `catalogos/permisos.js`: su tarjeta
+recibía un componente `undefined` y, como al elegir un cargo se pintan todas,
+la pantalla entera caía — con cualquier cargo.
+
+`tests/unit/catalogosConIconos.test.js` existía y lo marcaba en rojo; no se
+corrió al agregar el módulo.
+
 ## v2.1322.1 — Reservas: sin pantalla bloqueada, plazo por día y código de barras al compartir
 
 Pedido del dueño (20-oct), viendo Mis reservas en la app de clientes:

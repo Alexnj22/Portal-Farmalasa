@@ -192,7 +192,6 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               <Boton texto={dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala') : `Pasar existencias a ${aLaSala ? 'la sala' : 'bodega'}`} lleno color={MARCA.violetaClaro} deshabilitado={ocupado}
                 onPress={() => Alert.alert(dev.viaja ? 'Mover el producto' : 'Pasar existencias', dev.viaja ? 'Se descuenta de donde sale para mandarlo.' : `El producto ya está donde debe: se descuentan ${dev.cantidad} de ${aLaSala ? 'bodega' : 'la sala'} y se suman en ${aLaSala ? 'la sala' : 'bodega'}.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Mover', onPress: () => conDevolucion(moverDevoluciones, aLaSala ? 'Salió de bodega' : 'Salió de la sala', 'Falta confirmar la entrada.', 'PEDIDO_DEVOLUCION_MOVIDA') }])} />
-              <Boton texto="Solo comprobar" deshabilitado={ocupado} onPress={() => conDevolucion(moverDevoluciones, 'La prueba pasó — no se movió nada', '', 'PEDIDO_DEVOLUCION_PROBADA')} />
             </View>
           ) : null}
           {(dev.estado === 'enviada' || dev.estado === 'error') && !esSala && dev.id_traslado ? (

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1331.2 — Pedidos: fuera el botón de comprobar en la diferencia
+
+- Se quita «Solo comprobar» (antes «Probar sin mover nada») de la diferencia,
+  en el portal y en la app: queda un solo botón, que hace el movimiento, con
+  la línea que explica qué hace.
+- Comprobado en producción: ningún extra quedó con un nombre de presentación
+  que no exista en su tamaño, y la única diferencia histórica sobre productos
+  llevados en caja es legítima (llegó otro producto), no un redondeo.
+
 ## v2.1331.1 — Chat: quién atiende con su foto y cuánto lleva el cliente esperando
 
 Pedido del usuario: «en atención, que se identifique mejor, con la foto, y todo. y si ya se tardó».

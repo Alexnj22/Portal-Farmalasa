@@ -577,6 +577,29 @@ export async function fetchTiposDeMovimiento() {
 }
 
 /**
+ * Cuántas veces anotó la sala cada tipo hace poco, para ordenar la lista
+ * (`ordenarTiposPorUso`). Es una MUESTRA a propósito: los 400 movimientos más
+ * recientes de 30 días —medido el 2026-10-21, la sala con más movimiento tuvo
+ * 610 en ese plazo—. Sólo decide un orden, así que si falla devuelve un Map
+ * vacío y la lista queda como el catálogo.
+ */
+export async function fetchUsoDeTipos(sala) {
+    if (!sala) return new Map();
+    const desde = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    const { data, error } = await supabase.from('caja_movimientos_portal')
+        .select('tipo_codigo')
+        .eq('branch_id', Number(sala))
+        .gte('fecha', desde)
+        .is('anulado_at', null)
+        .order('created_at', { ascending: false })
+        .limit(400);
+    if (error) { console.error('caja: fetchUsoDeTipos failed:', error.message); return new Map(); }
+    const uso = new Map();
+    for (const r of data || []) if (r.tipo_codigo) uso.set(r.tipo_codigo, (uso.get(r.tipo_codigo) || 0) + 1);
+    return uso;
+}
+
+/**
  * Lo que NO se anota en «Otro», y dónde va (2026-10-21).
  *
  * Es la MISMA lista con la que `caja_movimiento_regla` frena en el servidor: la

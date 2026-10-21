@@ -32,7 +32,7 @@ import {
     abrirCaja, anotarIngreso, anotarSalida, cerrarElDia, estadoDeCaja, iniciarTurno,
     estadoDeCajaEnElOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
-    anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
+    anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
     subirComprobante, boletaYaEnCaja, fetchFacturasMapfre,
@@ -69,6 +69,7 @@ import FormaDePago from '../components/caja/FormaDePago';
 import VouchersDelDia from '../components/caja/VouchersDelDia';
 import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO, nombreDelComprobante } from '@nucleo/utils/formaDePago';
 import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
+import { ordenarTiposPorUso } from '@nucleo/utils/tiposPorUso';
 import { construirComprobanteDeAbono } from '@nucleo/utils/abonoTicket';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { construirComprobanteDeMovimiento } from '@nucleo/utils/movimientoTicket';
@@ -2559,10 +2560,17 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         fetchConceptosDeOtroLado().then((l) => { if (vivo) setConceptos(l); });
         return () => { vivo = false; };
     }, []);
+    // Lo que más anota esta sala va primero en la lista (`ordenarTiposPorUso`).
+    const [uso, setUso] = useState(null);
+    useEffect(() => {
+        let vivo = true;
+        fetchUsoDeTipos(sala).then((u) => { if (vivo) setUso(u); });
+        return () => { vivo = false; };
+    }, [sala]);
 
     const delSentido = useMemo(
-        () => tipos.filter((t) => t.sentido === (entra ? 'ENTRADA' : 'SALIDA')),
-        [tipos, entra],
+        () => ordenarTiposPorUso(tipos.filter((t) => t.sentido === (entra ? 'ENTRADA' : 'SALIDA')), uso),
+        [tipos, entra, uso],
     );
     const tipo = useMemo(() => delSentido.find((t) => t.codigo === codigo) || null,
         [delSentido, codigo]);

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.4 — Caja: lo que más anota la sala aparece primero
+
+Al anotar un movimiento de caja, la lista de tipos sale ordenada por lo que
+esa sala anotó en los últimos 30 días (muestra de los 400 más recientes):
+POS Promerica o la inyección arriba, sin buscar. «Otro» va siempre al final, y
+sin datos queda el orden del catálogo. Portal (Mi caja) y app (Meter dinero).
+`fetchUsoDeTipos` + `ordenarTiposPorUso`, con pruebas.
+
 ## v2.1335.3 — Auditoría fase 2: plazo de Bodega, ventas del tablero e historial de traslados
 
 Tres hallazgos de la revisión de código de la fase 2, los tres en módulos en uso.

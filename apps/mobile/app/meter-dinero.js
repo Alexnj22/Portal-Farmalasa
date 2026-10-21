@@ -24,7 +24,8 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } fro
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { anotarIngreso, boletaYaEnCaja, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, leerBoleta } from '@nucleo/data/bolsas';
+import { anotarIngreso, boletaYaEnCaja, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, leerBoleta } from '@nucleo/data/bolsas';
+import { ordenarTiposPorUso } from '@nucleo/utils/tiposPorUso';
 import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { choqueDeSentido, frenoDelMonto, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -74,10 +75,12 @@ export default function MeterDinero() {
 
   useEffect(() => {
     let vivo = true;
-    fetchTiposDeMovimiento().then((t) => vivo && setTipos((t || []).filter((x) => x.sentido === 'ENTRADA')));
+    // Lo que más anota esta sala va primero (`ordenarTiposPorUso`).
+    Promise.all([fetchTiposDeMovimiento(), fetchUsoDeTipos(sala)])
+      .then(([t, uso]) => vivo && setTipos(ordenarTiposPorUso((t || []).filter((x) => x.sentido === 'ENTRADA'), uso)));
     fetchConceptosDeOtroLado().then((l) => vivo && setConceptos(l));
     return () => { vivo = false; };
-  }, []);
+  }, [sala]);
 
   const tipo = tipos.find((t) => t.codigo === codigo) || null;
   const n = String(monto).trim() === '' ? NaN : Number(String(monto).replace(',', '.'));

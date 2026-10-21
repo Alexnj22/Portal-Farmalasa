@@ -4769,6 +4769,7 @@ export type Database = {
           anulado_at: string | null
           anulado_motivo: string | null
           anulado_por: string | null
+          apartado_previo: Json | null
           autorizacion: string | null
           autorizacion_at: string | null
           autorizacion_nota: string | null
@@ -4808,6 +4809,7 @@ export type Database = {
           anulado_at?: string | null
           anulado_motivo?: string | null
           anulado_por?: string | null
+          apartado_previo?: Json | null
           autorizacion?: string | null
           autorizacion_at?: string | null
           autorizacion_nota?: string | null
@@ -4847,6 +4849,7 @@ export type Database = {
           anulado_at?: string | null
           anulado_motivo?: string | null
           anulado_por?: string | null
+          apartado_previo?: Json | null
           autorizacion?: string | null
           autorizacion_at?: string | null
           autorizacion_nota?: string | null
@@ -33313,6 +33316,15 @@ export type Database = {
           total: number
         }[]
       }
+      reserva_horas_al_preparar: {
+        Args: { r: Database["public"]["Tables"]["app_reservas"]["Row"] }
+        Returns: number
+      }
+      reserva_plazo_hasta: {
+        Args: { r: Database["public"]["Tables"]["app_reservas"]["Row"] }
+        Returns: string
+      }
+      reserva_plazos: { Args: never; Returns: Record<string, unknown> }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       reserva_receta_decidir: {
         Args: { p_decision: string; p_id: number; p_motivo?: string }

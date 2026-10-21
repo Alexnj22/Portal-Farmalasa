@@ -67,8 +67,12 @@ export default function Reservas({ sala, todas = false, recarga }) {
   };
 
   const mover = (r, estado) => {
+    // Cuánto queda lista lo dice el servidor (`horas_al_preparar`: pagada, 7
+    // días; si no, las del nivel del cliente), no un «24 horas» fijo.
+    const h = Number(r.horas_al_preparar);
+    const plazo = h > 0 ? `Queda lista ${h >= 48 && h % 24 === 0 ? `${h / 24} días` : `${h} horas`}` : 'Queda lista';
     const textos = {
-      lista: ['Apartar y avisar', r.tiene_app ? 'Queda lista 24 horas y la app le avisa sola al cliente.' : 'Queda lista 24 horas. El cliente no tiene la app: después se abre WhatsApp para avisarle.'],
+      lista: ['Apartar y avisar', r.tiene_app ? `${plazo} y la app le avisa sola al cliente.` : `${plazo}. El cliente no tiene la app: después se abre WhatsApp para avisarle.`],
       retirada: ['Reserva retirada', 'El cliente la pagó y se la llevó.'],
       cancelada: ['Cancelar la reserva', `${r.cantidad} × ${r.producto} deja de estar apartado.`],
     }[estado];

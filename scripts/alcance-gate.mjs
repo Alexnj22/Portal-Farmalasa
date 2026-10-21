@@ -76,7 +76,9 @@ const CON_MOTIVO = ['sin-sala', 'publica', 'deuda', 'modulo-de-red', 'cruza-por-
  * nombres de variables cualesquiera: una regla que acepte «branch» aceptaría
  * cualquier función que nombre una sucursal, que son todas. */
 const ALCANCE_EDGE = /\balcanceTodo\b|\bpuedeObrarPor\b/;
-const ALCANCE_RPC = /auth_module_scope|auth_employee_branch_id|auth_employee_erp_sucursal_id|auth_can_edit_scope_all|alcance_de_ventas|bitacora_exigir_acceso|facturas_sala_guarda/i;
+// `reserva_puede_manejar` (2026-10-21): la sala de la ficha O la de su horario
+// de hoy (`empleado_sala_de_hoy`), o quien edita ofertas — la guarda única de reservas.
+const ALCANCE_RPC = /auth_module_scope|auth_employee_branch_id|auth_employee_erp_sucursal_id|auth_can_edit_scope_all|alcance_de_ventas|bitacora_exigir_acceso|facturas_sala_guarda|reserva_puede_manejar/i;
 /* El secreto se valida con el ayudante o escrito a mano contra el encabezado
  * (`apply-scheduled-employee-events`, `backup-critical-tables`): las dos formas
  * cuentan, lo que no cuenta es nombrarlo sin compararlo. */

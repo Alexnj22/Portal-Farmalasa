@@ -34,7 +34,16 @@ function abonarSiEsCredito(admin: any, r: any) {
 }
 
 // deno-lint-ignore no-explicit-any
-async function confirmar(admin: any, identificador: string, idTransaccion: string) {
+// El id del enlace con que se pagó, si la respuesta lo trae (la API y el
+// aviso no siempre lo nombran igual).
+// deno-lint-ignore no-explicit-any
+function enlaceDe(x: any): string | null {
+  const v = x?.enlacePago?.id ?? x?.EnlacePago?.Id ?? x?.enlacePago?.idEnlace ?? x?.idEnlace ?? x?.IdEnlace ?? null;
+  return v == null || v === "" ? null : String(v);
+}
+
+// deno-lint-ignore no-explicit-any
+async function confirmar(admin: any, identificador: string, idTransaccion: string, opciones: { vuelta?: boolean; enlaceAviso?: string | null } = {}) {
   if (!identificador || !idTransaccion) return { ok: false, motivo: "incompleto" };
   const tx = await consultarTransaccion(idTransaccion);
   if (!tx?.esAprobada) return { ok: false, motivo: "no_aprobada" };
@@ -48,6 +57,27 @@ async function confirmar(admin: any, identificador: string, idTransaccion: strin
   const extra = (tx as any).datosAdicionales ?? {};
   const suyo = extra?.reserva ?? extra?.Reserva;
   if (suyo && String(suyo) !== identificador) return { ok: false, motivo: "otra_reserva" };
+
+  // Además, el ENLACE (2026-10-21): la vuelta del navegador trae el
+  // identificador en la URL, y cualquiera puede pegarle una transacción
+  // aprobada de otro enlace con el mismo monto. Si la transacción (o el aviso)
+  // dice con qué enlace se pagó, tiene que ser el de este cobro.
+  const enlaceTx = enlaceDe(tx) ?? opciones.enlaceAviso ?? null;
+  if (enlaceTx || (opciones.vuelta && !suyo)) {
+    const { data: pago, error: eP } = await admin.from("app_reservas_pagos")
+      .select("enlace_id").eq("identificador", identificador).maybeSingle();
+    if (eP) throw eP;
+    if (pago?.enlace_id != null && enlaceTx && String(pago.enlace_id) !== enlaceTx) {
+      return { ok: false, motivo: "otro_enlace" };
+    }
+    // En la vuelta, sin `datosAdicionales` ni enlace en la transacción no hay
+    // cómo atarla a este cobro: no se confirma acá. El aviso de Wompi
+    // (firmado, con su enlace) la confirma igual en segundos.
+    if (opciones.vuelta && !suyo && !enlaceTx) {
+      console.warn("[wompi] vuelta sin datos del enlace; se espera el aviso:", identificador, idTransaccion);
+      return { ok: false, motivo: "sin_enlace" };
+    }
+  }
 
   const { data, error } = await admin.rpc("app_reserva_pago_confirmar", {
     p_identificador: identificador,
@@ -91,7 +121,7 @@ Deno.serve(async (req) => {
     const idTransaccion = q.get("idTransaccion") ?? "";
     let r: { ok?: boolean; motivo?: string; prueba?: boolean; credito?: boolean } = { ok: false, motivo: "incompleto" };
     try {
-      if (idTransaccion) r = await confirmar(admin, identificador, idTransaccion);
+      if (idTransaccion) r = await confirmar(admin, identificador, idTransaccion, { vuelta: true });
       abonarSiEsCredito(admin, r);
     } catch (e) {
       console.error("[wompi] vuelta:", (e as Error)?.message ?? e);
@@ -134,7 +164,7 @@ Deno.serve(async (req) => {
   const identificador = String(aviso?.EnlacePago?.IdentificadorEnlaceComercio ?? "");
   const idTransaccion = String(aviso?.IdTransaccion ?? "");
   try {
-    const r = await confirmar(admin, identificador, idTransaccion);
+    const r = await confirmar(admin, identificador, idTransaccion, { enlaceAviso: enlaceDe(aviso) });
     abonarSiEsCredito(admin, r);
     // 200 también cuando no se confirmó por una razón definitiva (no aprobada,
     // prueba, monto distinto): reintentarlo no la va a cambiar.

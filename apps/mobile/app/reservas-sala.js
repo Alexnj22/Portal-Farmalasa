@@ -107,7 +107,7 @@ export default function ReservasDeSala() {
     ]);
   };
 
-  // El anticipo de una reserva vencida queda a favor del cliente 30 días: la
+  // El anticipo de una reserva vencida queda a favor del cliente 60 días (`saldo_favor_dias`): la
   // sala lo marca cuando lo aplica en caja (`reserva_usar_saldo_favor`, la
   // misma del widget del portal).
   const usarSaldo = (r) => {
@@ -158,7 +158,7 @@ export default function ReservasDeSala() {
         {filas && buscado && !visibles.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto="No hay una reserva abierta con ese código en esta sala." /></View> : null}
         {filas && !abiertas.length && !saldos.length && (sala || todas) ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Sin reservas. Cuando un cliente aparte algo desde la app, aparece aquí." /></View> : null}
         {saldos.length && !buscado ? (
-          <Seccion titulo="Saldos a favor" pie="Anticipos de reservas vencidas: valen 30 días y se descuentan en caja.">
+          <Seccion titulo="Saldos a favor" pie="Anticipos de reservas vencidas: valen hasta la fecha de cada uno y se descuentan en caja.">
             {saldos.map((r, i) => (
               <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: ocupada === r.id ? 0.5 : 1 }}>
                 <View style={{ flex: 1, gap: 2 }}>

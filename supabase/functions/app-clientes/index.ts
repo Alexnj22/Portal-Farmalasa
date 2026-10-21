@@ -2277,7 +2277,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       };
     };
     if (accion === "mis_reservas") {
-      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at";
+      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, plazo_hasta:reserva_plazo_hasta";
+      // `plazo_hasta` (2026-10-21) lo calcula la base (`reserva_plazo_hasta`):
+      // hasta cuándo vale el estado actual, para no escribir «24 horas» en la app.
       // `en_revision` (2026-10-12): esperando que la sucursal revise la receta.
       const ABIERTAS = ["en_revision", "pendiente", "lista"];
       const TERMINADAS: Record<string, string[]> = {
@@ -3499,16 +3501,23 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (error) throw error;
       // Con la receta en revisión no se cobra (2026-10-12): todavía puede rechazarse.
       const EN_REVISION = { ok: false, motivo: "en_revision", mensaje: "Tu receta está en revisión. Podrás pagar cuando la sucursal la apruebe." };
+      // Con un anticipo dejado en la sucursal NO se ofrece pagar en línea
+      // (2026-10-21): lo que falta se cobra al retirar, en la misma caja que
+      // recibió el anticipo. Mezclar los dos cobros era cobrar dos veces, y la
+      // app ya no muestra «Pagar» si no está 'pendiente'. Lo decide la base
+      // (`reserva_cuenta`), la única definición de cuánto falta.
+      const CON_ANTICIPO = { ok: false, motivo: "con_anticipo", mensaje: "Dejaste un anticipo en la sucursal: lo que falta lo pagas al retirar." };
       if (r?.estado === "en_revision") return json(EN_REVISION);
       // Una reserva de un pedido del carrito se paga con TODO el pedido (2026-10-07).
       if (r?.pedido) {
-        const { data: filasT, error: eFp } = await admin.from("app_reservas").select("id, estado, pago_estado, producto_id, producto_nombre, branch_id, factor, precio_unitario, cantidad, costo_envio")
+        const { data: filasT, error: eFp } = await admin.from("app_reservas").select("id, estado, pago_estado, producto_id, producto_nombre, branch_id, factor, precio_unitario, cantidad, costo_envio, anticipo")
           .eq("pedido", r.pedido).eq("customer_id", customerId).in("estado", ["en_revision", "pendiente", "lista"]);
         if (eFp) throw eFp;
         if ((filasT ?? []).some((f: any) => f.estado === "en_revision")) return json(EN_REVISION);
         const filasP = filasT ?? [];
         if (!filasP.length) return json({ ok: false, mensaje: "Este pedido ya no se puede pagar." });
         if (filasP.every((f: any) => f.pago_estado === "pagado")) return json({ ok: false, mensaje: "Este pedido ya está pagado." });
+        if (filasP.some((f: any) => Number(f.anticipo ?? 0) > 0.004)) return json(CON_ANTICIPO);
         const envioP = Math.max(0, ...filasP.map((f: any) => Number(f.costo_envio ?? 0)));
         const totalP = Math.round((filasP.reduce((t: number, f: any) => t + Number(f.precio_unitario ?? 0) * Number(f.cantidad), 0) + envioP) * 100) / 100;
         const faltanP = await sinExistenciaParaCobrar(filasP);
@@ -3518,7 +3527,13 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       }
       if (!r || !["pendiente", "lista"].includes(r.estado)) return json({ ok: false, mensaje: "Esta reserva ya no se puede pagar." });
       if (r.pago_estado === "pagado") return json({ ok: false, mensaje: "Esta reserva ya está pagada." });
-      const total = Math.round(Number(r.precio_unitario ?? 0) * Number(r.cantidad) * 100) / 100;
+      const { data: cuentaR, error: eC } = await admin.rpc("reserva_cuenta", { p_id: r.id });
+      if (eC) throw eC;
+      const cuenta = (Array.isArray(cuentaR) ? cuentaR[0] : cuentaR) ?? null;
+      if (!cuenta) return json({ ok: false, mensaje: "Esta reserva ya no se puede pagar." });
+      if (Number(cuenta.pagado) > 0.004) return json(CON_ANTICIPO);
+      if (!(Number(cuenta.falta_pagar) > 0.004)) return json({ ok: false, mensaje: "Esta reserva ya está pagada." });
+      const total = Math.round(Number(cuenta.falta_pagar) * 100) / 100;
       if (!(total > 0)) return json({ ok: false, mensaje: "Esta reserva se paga al retirarla en la sucursal." });
       const codigo = `R-${String(r.id).padStart(6, "0")}`;
       const faltanR = await sinExistenciaParaCobrar([r]);

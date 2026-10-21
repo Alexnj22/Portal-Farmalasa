@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1330.0 — Reservas: fusionar no borra, deshacer no borra la de la app, sin cobro doble y plazos del servidor
+
+Hallazgos de la auditoría de reservas (2026-10-21), cada uno probado en una transacción que se deshace sola contra producción.
+
+- **Fusionar clientes ya no borra reservas**: `fusionar_cliente_duplicado` mueve a la ficha buena las reservas, encargos, cobros en línea, preventas, muestras, aceptaciones de términos y tratamientos. Antes `app_reservas`/`app_encargos` se iban con el `DELETE` (CASCADE) — medido: la reserva desaparecía — y con un cobro en línea la fusión fallaba entera. Las FK `app_reservas.customer_id`, `app_encargos.customer_id` y `app_reservas_pagos.reserva_id` pasan a **RESTRICT**.
+- **Deshacer un anticipo no borra una reserva de la app**: el cobro anota qué hizo (`caja_movimientos_portal.apartado_previo`); sólo se borra la reserva de sala que nació de ESE cobro, sin otro cobro vivo y sin anticipo aplicado. Si no, se resta el monto y el estado de pago vuelve al de antes (con anticipo 0 nunca queda «anticipo»). La caja sólo cobra anticipos de reservas **de sala**.
+- **Sin cobro doble caja↔en línea**: `apartado_cotizar`/`apartado_aplicar` cobran lo que falta según `reserva_cuenta` (la de sala pagada en línea da «ya está pagada»; con candado se vuelve a mirar). La app **no ofrece pagar en línea** una reserva con anticipo en la sucursal (lo que falta se paga al retirar) y cobra `falta_pagar`; `app_reserva_pago_confirmar` da por aplicado sólo lo que faltaba, así que lo cobrado de más sale como sobrante.
+- **Un anticipo aplicado no vuelve como saldo**: no se puede cancelar una reserva con anticipo aplicado a una factura y `reservas_vencer` no la vence. Un anticipo **de prueba** no deja saldo a favor.
+- **Plazos en un sitio**: `reserva_plazos()` (7 días pagada/apartada, 24 h sin foto, 48 h receta, 48 h preparar, saldo `saldo_favor_dias()`), `reserva_plazo_hasta(reserva)` y `reserva_horas_al_preparar(reserva)` → `puntos_horas_reserva`. La sala y la app muestran el plazo que manda el servidor en vez de «24 horas» escrito a mano.
+- **Total único**: `apartado_cotizar`, `apartado_cambiar_monto` (ahora con `FOR UPDATE`) y `apartado_para_retirar` salen de `reserva_cuenta`.
+- Menores: la sala puede cancelar una reserva **en revisión**; `reserva_puede_manejar` acepta también la sala del horario de hoy (`empleado_sala_de_hoy`) y es la guarda de `apartado_para_retirar`, `apartado_entregar` y `reservas_de_sucursal`; la vuelta de Wompi compara el **enlace** y, sin datos que la aten al cobro, espera el aviso firmado; el saldo a favor usado ya no se anota dos veces en la bitácora; `dist-vencer-reservas` pasa de cada minuto a cada 15 (los lectores ya filtran `vence_at > now()`).
+
 ## v2.1329.0 — Chat: un solo aro con emblema de Team, nombre que cabe, y la app del personal igual que el portal
 
 Tres pedidos del usuario sobre el aro del día anterior y el encabezado: «¿por qué tanto aro? que se vea más estético», «el nombre se corta… puedes dar un poco más de espacio», y que la app del personal se actualice con el portal.

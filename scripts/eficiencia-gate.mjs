@@ -707,11 +707,13 @@ const CRONS = [
   { job: 'dte-resync-month-salud5',  slug: 'backfill-dte-sales', cadencia: '0 5 1 * *', corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual, una sala.' },
   // La distribuidora (Torogoz), en producción desde el 2026-10-01.
   {
-    job: 'dist-vencer-reservas', slug: null, cadencia: '* * * * *',
-    corridasDia: 1440, sistema: 0,
+    job: 'dist-vencer-reservas', slug: null, cadencia: '*/15 * * * *',
+    corridasDia: 96, sistema: 0,
     motivo: 'Suelta las reservas de una venta en ruta que pasaron sus 30 minutos y le avisa al vendedor '
           + '(borrador 0012). SQL puro sobre dist_reservas, casi siempre vacía: no toca el sistema de origen '
-          + 'ni Hacienda. Su push va a la función de notificaciones propia y sólo cuando venció algo.',
+          + 'ni Hacienda. Su push va a la función de notificaciones propia y sólo cuando venció algo. '
+          + 'Cada 15 min desde el 2026-10-21 (era cada minuto): quien lee dist_reservas ya filtra '
+          + '`vence_at > now()`, así que lo vencido queda libre a tiempo; el cron sólo limpia y avisa.',
   },
   {
     job: 'dist-aviso-cartera-atrasada', slug: null, cadencia: '0 13 * * *',

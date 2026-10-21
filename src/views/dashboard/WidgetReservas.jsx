@@ -255,8 +255,9 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const usarSaldo = async (r) => {
         setOcupada(r.id);
         try {
+            // La bitácora la escribe `reserva_usar_saldo_favor` (RESERVA_SALDO_FAVOR_USADO):
+            // anotarla también acá la dejaba dos veces.
             await usarSaldoAFavor(r.id);
-            appendAuditLog?.('RESERVA_SALDO_FAVOR_USADO', String(r.id), { monto: Number(r.saldo_favor), sala_de_la_reserva: r.branch_id })?.catch?.(() => {});
             showToast('Saldo a favor aplicado', `${formatMoney(Number(r.saldo_favor))} de ${String(r.cliente ?? '').split(/\s+/)[0]}`, 'success');
             setSaldosDeFuera((l) => l.filter((x) => x.id !== r.id));
             cargar();

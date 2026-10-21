@@ -43,14 +43,10 @@ export async function decidirReceta(id, decision, motivo = null) {
 /** Las horas que una receta lleva esperando: a las 4 se avisa a supervisión. */
 export const HORAS_RECETA_URGENTE = 4;
 
-/**
- * Los plazos de una reserva de la app (2026-10-19, `reservas_vencer`): sin la
- * foto de la receta vence a las 24 h; con la foto sin revisar, a las 48 h de
- * subida; aprobada o sin receta, la sala tiene 48 h para prepararla.
- */
-export const HORAS_SIN_FOTO = 24;
-export const HORAS_RECETA_SIN_REVISAR = 48;
-export const HORAS_PARA_PREPARAR = 48;
+// Los plazos de una reserva (sin foto, receta sin revisar, sin preparar,
+// pagada, saldo a favor) NO se escriben acá: viven en `reserva_plazos()` y cada
+// fila de `reservas_de_sucursal` trae `plazo_hasta` (hasta cuándo vale su
+// estado) y `horas_al_preparar` (2026-10-21). Antes había copias a mano.
 
 export async function marcarAvisadaPorWhatsapp(id) {
     sinError(await supabase.rpc('reserva_avisada_whatsapp', { p_id: id }));

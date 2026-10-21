@@ -121,6 +121,15 @@ const pagoDeGrupo = (g) => (g.filas.every((r) => r.pago_estado === 'pagado')
   ? (g.filas.some((r) => r.pago_prueba) ? 'prueba' : 'pagado')
   : g.filas.find((r) => r.pago_estado && r.pago_estado !== 'pendiente' && r.pago_estado !== 'pagado')?.pago_estado ?? 'pendiente');
 const pagoDeFila = (r) => (r.pago_estado === 'pagado' && r.pago_prueba ? 'prueba' : r.pago_estado);
+// «13 horas», «menos de una hora»; null sin plazo. Para los plazos por hora
+// (receta); los de «lista» vencen al terminar el día y usan `quedaDelPlazo`.
+const horasQueQuedan = (iso, ahora = Date.now()) => {
+  const fin = Date.parse(iso ?? '');
+  if (!Number.isFinite(fin)) return null;
+  const h = Math.floor((fin - ahora) / 3600_000);
+  if (h < 1) return 'menos de una hora';
+  return h === 1 ? '1 hora' : `${h} horas`;
+};
 const totalDeFila = (r) => Number(r.total ?? Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1));
 
 export default function Reservas() {
@@ -1010,12 +1019,14 @@ function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar, alQuitarRecet
   const total = r.total_pedido ?? g.filas.reduce((n, f) => n + totalDeFila(f), 0);
   // Pedido mixto: hay productos sin receta que pueden seguir solos.
   const mixto = g.filas.some((f) => f.bajo_receta) && g.filas.some((f) => !f.bajo_receta);
-  // Los plazos (2026-10-19, `reservas_vencer`).
+  // El plazo lo dice el servidor (`plazo_hasta`, de `reserva_plazo_hasta`),
+  // no un número escrito acá (2026-10-21).
+  const quedan = horasQueQuedan(r.plazo_hasta);
   const plazo = estado === 'pendiente'
-    ? 'La sucursal tiene 48 horas para revisarla. Si no alcanza, la reserva vence y no cuenta en tu contra.'
+    ? `La sucursal tiene ${quedan ?? 'un plazo'} para revisarla. Si no alcanza, la reserva vence y no cuenta en tu contra.`
     : estado === 'otra_foto'
-      ? 'Tienes 24 horas para mandar la otra foto; si no, la reserva vence.'
-      : 'Tienes 24 horas para subirla; si no, la reserva vence.';
+      ? `Tienes ${quedan ?? 'un plazo corto'} para mandar la otra foto; si no, la reserva vence.`
+      : `Tienes ${quedan ?? 'un plazo corto'} para subirla; si no, la reserva vence.`;
   return (
     <Tarjeta tono={resaltada ? t.color.magenta : undefined} estilo={{ gap: 14 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>

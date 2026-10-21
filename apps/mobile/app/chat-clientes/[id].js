@@ -109,8 +109,8 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto
             <Text style={{ color: MARCA.violeta, fontSize: 12, fontWeight: '700' }}>✦ Respuesta automática</Text>
           ) : (
             <>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{shortEmployeeName(autor)}</Text>
-              <Avatar empleado={autor} tamano={20} />
+              <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '600' }}>{nombreDeCliente(shortEmployeeName(autor))}</Text>
+              <Avatar empleado={autor} tamano={16} />
             </>
           )}
         </View>
@@ -404,6 +404,10 @@ export default function ConversacionDelChat() {
           renglones (insignias, asignación, calificación, teléfono, botones,
           etiquetas y las pestañas) que se comían media pantalla del chat. */}
       <Stack.Screen options={{ ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: colorSistema.fondo },
+        // Deslizar a la derecha es RESPONDER un mensaje (2026-10-21: «no puedo
+        // deslizar para contestar, me saca»): con el gesto de pantalla completa
+        // la pila se lo quedaba y cerraba el hilo. Volver sigue desde el borde.
+        fullScreenGestureEnabled: false,
         title: c ? nombreDeCliente(c.cliente) : 'Conversación',
         headerTitle: c ? () => (
           <Pressable onPress={() => setPestana((p) => (p === 'cliente' ? 'mensajes' : 'cliente'))} accessibilityRole="button"

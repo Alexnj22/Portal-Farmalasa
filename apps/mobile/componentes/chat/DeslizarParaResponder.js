@@ -18,7 +18,7 @@ const TOPE = 84;
 // El gesto se crea UNA vez por mensaje; lo vigente (activo, qué hacer) se lee
 // del ref en los manejadores, nunca al dibujar.
 function crearGesto({ x, vivo, paso }) {
-  const volver = () => Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 6, speed: 18 }).start();
+  const volver = () => Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 16 }).start();
   return PanResponder.create({
     onMoveShouldSetPanResponder: (_e, g) => vivo.current.activo && g.dx > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
     onMoveShouldSetPanResponderCapture: (_e, g) => vivo.current.activo && g.dx > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 2.5,

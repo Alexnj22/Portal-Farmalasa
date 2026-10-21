@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1331.5 — App del personal: deslizar para responder sin salir del chat y compositor alineado
+
+Reporte del usuario con la app del personal: «no puedo deslizar para contestar un mensaje, me saca… visualmente necesita mucho que mejorar».
+
+- **Deslizar para responder ya no cierra el chat.** El gesto de volver de pantalla completa de la pila se quedaba con el deslizamiento a la derecha antes que el mensaje. En el hilo ahora está apagado (`fullScreenGestureEnabled: false`); volver sigue funcionando desde el borde. Además, el mensaje vuelve a su lugar sin rebote.
+- **Compositor:** el campo y el botón redondo (micrófono / enviar) van en la misma fila y con el mismo alto, como en el portal. Antes el botón estaba en la fila de herramientas y quedaba desalineado. Las herramientas quedan en una tira más compacta debajo.
+- **Autor de los mensajes del equipo:** nombre corto con mayúscula inicial («Edwin Nuñez», no «EDWIN NUNEZ») y foto más chica.
+- Esta compilación lleva también lo ya publicado en la web y pendiente en la app: la barra con aro y estado, quién atiende con su foto y cuánto espera el cliente.
+
 ## v2.1331.4 — App de puntos: el chat se mueve fluido, sin rebotes
 
 Pedido del usuario: «en el chat de la app de clientes hay mucho rebote; que se vea animado pero fluido, no demasiado exagerado».

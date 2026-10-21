@@ -39,8 +39,8 @@ const CADA_CUANTO_ESCRIBIENDO_MS = 3_000;
 function BotonIcono({ icono, etiqueta, onPress, color = colorSistema.texto2 }) {
   return (
     <Tocable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
-      style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={22} color={color} /></Host>
+      style={{ width: 40, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+      <Host matchContents><Icon name={iconoDe(icono)} size={20} color={color} /></Host>
     </Tocable>
   );
 }
@@ -221,16 +221,15 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
       ) : null}
       {grabando ? <Grabadora alFin={alTerminarDeGrabar} /> : (
       <>
+      {/* El campo y el botón redondo en la MISMA fila, del mismo alto (44),
+          como en el portal y en cualquier app de mensajería; las herramientas
+          en una tira debajo. Antes el botón vivía en la tira y quedaba
+          desalineado del campo (2026-10-21). */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
       <TextInput value={texto} onChangeText={escribir} placeholder="Escribe una respuesta…" placeholderTextColor={colorSistema.texto2}
         multiline maxLength={2000} accessibilityLabel="Escribe una respuesta"
-        style={{ minHeight: 44, maxHeight: 140, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, fontSize: 16,
+        style={{ flex: 1, minHeight: 44, maxHeight: 140, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, borderRadius: 22, fontSize: 16,
           color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.14)' }} />
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <BotonIcono icono="ImagePlus" etiqueta="Adjuntar una foto" onPress={elegirFoto} />
-        <BotonIcono icono="MessageSquareText" etiqueta="Respuestas rápidas" onPress={() => setHoja('respuestas')} />
-        <BotonIcono icono="Package" etiqueta="Enviar un producto" onPress={() => setHoja('producto')} />
-        <BotonIcono icono="Tag" etiqueta="Enviar una oferta" onPress={() => setHoja('oferta')} />
-        <View style={{ flex: 1 }} />
         {!puedeEnviar && HAY_AUDIO ? (
           <Tocable onPress={grabar} accessibilityRole="button" accessibilityLabel="Grabar una nota de voz"
             style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.azul }}>
@@ -243,6 +242,12 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
             <Host matchContents><Icon name={iconoDe('ArrowUp')} size={20} color="#fff" /></Host>
           </Tocable>
         )}
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -4 }}>
+        <BotonIcono icono="ImagePlus" etiqueta="Adjuntar una foto" onPress={elegirFoto} />
+        <BotonIcono icono="MessageSquareText" etiqueta="Respuestas rápidas" onPress={() => setHoja('respuestas')} />
+        <BotonIcono icono="Package" etiqueta="Enviar un producto" onPress={() => setHoja('producto')} />
+        <BotonIcono icono="Tag" etiqueta="Enviar una oferta" onPress={() => setHoja('oferta')} />
       </View>
       </>
       )}

@@ -88,13 +88,15 @@ describe('agotados', () => {
 
 import { avisoDeLote, limiteDeEnvioABodega } from '@nucleo/utils/plazoDeDevolucion';
 describe('plazo de devolución', () => {
+    // Días `YYYY-MM-DD`, como llegan de la base. Antes estas pruebas usaban
+    // «T12:00:00», que es justo la hora que escondía el defecto: con la fecha
+    // pelada, un lote que vence el día 1 caía en el mes anterior.
     it('vence en diciembre con 2 meses → límite el 25 de septiembre', () => {
-        const d = limiteDeEnvioABodega('2026-12-15T12:00:00', 2);
-        expect(d.getMonth()).toBe(8);
-        expect(d.getDate()).toBe(25);
+        expect(limiteDeEnvioABodega('2026-12-15', 2)).toBe('2026-09-25');
+        expect(limiteDeEnvioABodega('2026-12-01', 2)).toBe('2026-09-25');
     });
     it('ND avisa a 7 meses', () => {
-        const a = avisoDeLote({ fecha_vencimiento: '2027-03-01T12:00:00' }, { es_devolutivo: false }, new Date('2026-10-06T12:00:00'));
+        const a = avisoDeLote({ fecha_vencimiento: '2027-03-01' }, { es_devolutivo: false }, '2026-10-06');
         expect(a.reportarND).toBe(true);
         expect(a.limite).toBeNull();
     });

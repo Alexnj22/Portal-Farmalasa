@@ -14,16 +14,14 @@ import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
 import { fetchLotesPorVencer, marcarAccionStockMuerto, fetchPoliticaDeVencimiento, fetchProductCostHistory, fetchResumenDelProductoPorSala, fetchStockParamsHistory, fetchUltimasVentasDelProducto } from '@nucleo/data/stockParams';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fechaTexto } from '@nucleo/utils/fecha';
-import { limiteDeEnvioABodega } from '@nucleo/utils/plazoDeDevolucion';
+import { diaSV, fechaTexto } from '@nucleo/utils/fecha';
+import { avisoDeLote } from '@nucleo/utils/plazoDeDevolucion';
 import { estadoDeProyeccion } from '@nucleo/utils/minmaxGuardar';
-
-// El plazo de envío a Bodega de un lote por vencer: núcleo (`plazoDeDevolucion`).
-const computeSendDeadline = limiteDeEnvioABodega;
 
 export default function ExpandedPanel({ row, cycleDays }) {
     const { hasPermission } = useAuth();
-    const now = useNowTick();
+    // El día de la sala, que cambia solo a medianoche con la pantalla abierta.
+    const hoy = diaSV(useNowTick());
     const canSeeCosts  = hasPermission('minmax_ver_costos');
     const pres        = row.presentations || [];
     const stock       = Number(row.current_stock);
@@ -326,13 +324,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 {expiryData.map((lot, i) => {
-                                    const daysLeft = Math.ceil((new Date(lot.fecha_vencimiento) - now) / 86400000);
-                                    const urgent   = daysLeft <= 30;
-                                    const sendDeadline = (policyData?.es_devolutivo && policyData?.meses_devolucion != null)
-                                        ? computeSendDeadline(lot.fecha_vencimiento, policyData.meses_devolucion)
-                                        : null;
-                                    const pastDeadline = sendDeadline ? now > sendDeadline : false;
-                                    const ndReport = policyData && !policyData.es_devolutivo && daysLeft <= 210;
+                                    // El plazo de envío a Bodega es el del núcleo, el mismo de la app.
+                                    const { dias: daysLeft, urgente: urgent, limite: sendDeadline,
+                                            fueraDePlazo: pastDeadline, reportarND: ndReport } = avisoDeLote(lot, policyData, hoy);
                                     return (
                                         <div key={i} className="flex flex-col gap-0.5">
                                             <div className="flex items-center gap-3 text-caption">
@@ -344,7 +338,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             {sendDeadline && (
                                                 <span className={`text-micro pl-11 font-semibold ${pastDeadline ? 'text-danger' : 'text-content-3'}`}>
                                                     {pastDeadline ? 'FUERA DE PLAZO — límite era el ' : 'Enviar a bodega antes del '}
-                                                    {sendDeadline.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
+                                                    {fechaTexto(sendDeadline, { day: '2-digit', month: 'short' })}
                                                 </span>
                                             )}
                                             {ndReport && (

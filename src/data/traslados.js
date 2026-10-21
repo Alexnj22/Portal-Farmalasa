@@ -426,47 +426,62 @@ export async function fetchDisponibilidadTraslado(requestId) {
  * Sin sala, se devuelve lo que el RLS deje ver, que para alcance ALL es todo.
  */
 export async function fetchTrasladosHistorial({ branchId = null, limite = 200, semana = null } = {}) {
-    let q = supabase
-        .from('approval_requests')
-        // `approver_id`: quién lo despachó o quién lo rechazó. El historial
-        // guardaba el motivo pero no de quién era la firma, así que el registro
-        // no decía quién decidió — reportado: «no sale el proceso de
-        // aprobaciones».
-        /* `type` viaja aunque la consulta ya filtre por él: el detalle que abre
-         * una tarjeta es `DetalleSolicitud`, y ése decide QUÉ bloque pintar
-         * mirando `req.type`. Sin la columna, un traslado se abría sin su
-         * recorrido ni sus renglones —el componente devuelve `null` para un
-         * tipo que no reconoce, o sea un diálogo casi vacío y sin error. */
-        .select('id, type, employee_id, approver_id, note, approver_note, status, metadata, created_at, updated_at')
-        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
-        .in('status', ['APPROVED', 'REJECTED'])
-        .order('updated_at', { ascending: false })
-        .range(0, limite);
-
-    if (branchId) {
-        // Los dos ids viven dentro del mismo jsonb, así que el filtro va por
-        // `metadata->>` y no por columna. Son texto ahí adentro: comparar
-        // contra un número no matchea nada.
-        const id = String(branchId);
-        q = q.or(`metadata->>branch_id.eq.${id},metadata->>origen_branch_id.eq.${id}`);
-    }
-
+    // `approver_id`: quién lo despachó o quién lo rechazó. El historial
+    // guardaba el motivo pero no de quién era la firma, así que el registro
+    // no decía quién decidió — reportado: «no sale el proceso de
+    // aprobaciones».
+    /* `type` viaja aunque la consulta ya filtre por él: el detalle que abre
+     * una tarjeta es `DetalleSolicitud`, y ése decide QUÉ bloque pintar
+     * mirando `req.type`. Sin la columna, un traslado se abría sin su
+     * recorrido ni sus renglones —el componente devuelve `null` para un
+     * tipo que no reconoce, o sea un diálogo casi vacío y sin error. */
     /* La semana va en la CONSULTA y no en el navegador, y no es una
-     * preferencia: arriba hay un `.range(0, limite)`, y **un tope se aplica
-     * antes del filtro**. Recortando acá afuera, pedir una semana de hace dos
-     * meses no devolvería «las de esa semana» sino «las de esa semana entre las
-     * 201 más nuevas» — o sea, ninguna, sin error y sin nada que lo explique.
+     * preferencia: **un tope se aplica antes del filtro**. Recortando acá
+     * afuera, pedir una semana de hace dos meses no devolvería «las de esa
+     * semana» sino «las de esa semana entre las 201 más nuevas» — o sea,
+     * ninguna, sin error y sin nada que lo explique.
      *
      * Corta por `updated_at` porque es CUÁNDO SE RESOLVIÓ, que es la fecha que
      * el historial muestra en su columna y la que ordena la consulta. Cortar
      * por `created_at` haría que un traslado pedido el domingo y despachado el
-     * lunes cayera en una semana distinta de la que lo muestra. */
-    if (semana) {
-        const { desde, hasta } = rangoDeSemana(semana);
-        q = q.gte('updated_at', desde).lt('updated_at', hasta);
-    }
+     * lunes cayera en una semana distinta de la que lo muestra.
+     *
+     * Y con semana NO hay tope: el `limite` también se aplicaba antes del
+     * filtro de abajo (el APPROVED sin recibir), y una semana tuvo entre 205 y
+     * 260 resueltos sin sala elegida — sus primeros días desaparecían del
+     * historial sin aviso (medido el 2026-10-21). Una semana está acotada;
+     * `fetchAllRows` la trae completa o devuelve error. Sin semana, «lo último»
+     * sigue topado: es una vista de lo reciente.
+     *
+     * Los dos ids de sala viven dentro del mismo jsonb, así que ese filtro va
+     * por `metadata->>` y no por columna. Son texto ahí adentro: comparar
+     * contra un número no matchea nada. */
+    const consulta = () => {
+        let q = supabase
+            .from('approval_requests')
+            .select('id, type, employee_id, approver_id, note, approver_note, status, metadata, created_at, updated_at')
+            .eq('type', 'INVENTORY_TRANSFER_REQUEST')
+            .in('status', ['APPROVED', 'REJECTED'])
+            .order('updated_at', { ascending: false })
+            .order('id', { ascending: false });
+        if (branchId) {
+            const id = String(branchId);
+            q = q.or(`metadata->>branch_id.eq.${id},metadata->>origen_branch_id.eq.${id}`);
+        }
+        if (semana) {
+            const { desde, hasta } = rangoDeSemana(semana);
+            q = q.gte('updated_at', desde).lt('updated_at', hasta);
+        }
+        return semana ? q : q.range(0, limite);
+    };
 
-    const { data, error } = await q;
+    let data = null, error = null;
+    if (semana) {
+        data = await fetchAllRows(consulta, { completo: true });
+        if (data === null) error = new Error('No se pudo leer el historial de la semana.');
+    } else {
+        ({ data, error } = await consulta());
+    }
     // El APPROVED sin recibir se descarta acá y no en la consulta: PostgREST no
     // distingue «la clave no existe» de «la clave es null» dentro de un jsonb,
     // que es justo la diferencia entre despachado y recibido.

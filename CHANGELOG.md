@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.3 — Auditoría fase 2: plazo de Bodega, ventas del tablero e historial de traslados
+
+Tres hallazgos de la revisión de código de la fase 2, los tres en módulos en uso.
+
+- **El plazo para mandar un lote a Bodega salía un mes antes.** La fecha de
+  vencimiento se leía como medianoche UTC —las 18:00 del día anterior en la
+  sala—, así que un lote que vence el día 1 caía en el mes previo: vence 1-dic
+  con 2 meses de política → «enviar antes del 25-ago» en vez del 25-sep. El 98%
+  de los lotes con existencia vence un día 1. Afectaba el panel de Mín·Máx y la
+  ficha de la app. Ahora `plazoDeDevolucion` cuenta en días `YYYY-MM-DD` y el
+  panel usa la misma función que la app en vez de su copia; los días que
+  faltan ya no bajan uno a las 18:00.
+- **Las ventas del día del Inicio sumaban facturas invalidadas en Hacienda**
+  (164 en 90 días, $3,834.98). Ahora cuenta sólo lo que `venta_valida()` da por
+  venta: FINALIZADA.
+- **El historial de traslados por semana perdía sus primeros días** cuando la
+  semana pasaba de 200 resueltos (las últimas tuvieron entre 205 y 260). Con
+  semana elegida ahora se trae entera.
+
 ## v2.1335.2 — Chat con clientes: «Resueltas» vuelve a abrir en la app y aparece en el panel del portal
 
 - **App: abrir «Resueltas» cerraba la app.** v2.1329.0 cambió `ChipsDeEstado`

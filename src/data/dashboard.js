@@ -150,9 +150,15 @@ export function fetchRecentCotizaciones(sinceDateStr) {
 // pero un feriado o una sucursal mas y el corte llegaba sin aviso: el widget
 // cuenta `rows.length` y suma `total`, asi que se habrian falseado LAS DOS
 // cifras, hacia abajo y sin error.
+//
+// «Cuenta como venta» es la regla de `public.venta_valida(estado)`: sólo
+// FINALIZADA. Con `.neq('estado','NULA')` entraban las invalidadas en Hacienda
+// —164 en 90 días, $3,834.98 medidos el 2026-10-21— y cualquier estado nuevo.
+// El `order('id')` hace estable la paginación de `fetchAllRows`.
 export function fetchTodayInvoicesSummary(dateStr) {
     return fetchAllRows(() => supabase.from('sales_invoices')
         .select('id, tipo_documento, total')
         .eq('fecha', dateStr)
-        .neq('estado', 'NULA'));
+        .eq('estado', 'FINALIZADA')
+        .order('id'));
 }

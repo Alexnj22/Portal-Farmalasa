@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import { fetchContextoCliente } from '@nucleo/data/chatClientes';
-import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT, nombreDeCliente } from '@nucleo/utils/chatClientes';
+import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT } from '@nucleo/utils/chatClientes';
 import { telefonoParaWhatsapp } from '@nucleo/utils/codigoDePuntos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
@@ -16,7 +16,7 @@ import { Pildora } from '../avisos/Piezas';
 import Tocable from '../Tocable';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
-import { ClienteAvatar, EtiquetasDeCliente, colorDe } from './Piezas';
+import { colorDe } from './Piezas';
 
 const corta = (d) => fechaTexto(d, { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -29,7 +29,7 @@ function Boton({ texto, onPress }) {
   );
 }
 
-export default function PanelCliente({ customerId }) {
+export default function PanelCliente({ customerId, arriba = null }) {
   const [ctx, setCtx] = useState(undefined);
   const [error, setError] = useState(null);
   const [abierta, setAbierta] = useState(null);
@@ -49,13 +49,10 @@ export default function PanelCliente({ customerId }) {
   const tel = String(ctx.telefono ?? '').replace(/\D/g, '');
   return (
     <View style={{ padding: 16, gap: 14 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <ClienteAvatar cliente={ctx.cliente} fotoUrl={ctx.foto_url} tamano={52} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{nombreDeCliente(ctx.cliente)}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}><EtiquetasDeCliente c={ctx} /></View>
-        </View>
-      </View>
+      {/* Quién es —foto, nombre, nivel— ya lo dice la barra de arriba
+          (2026-10-21: verlo dos veces era el defecto que se reportó en el
+          portal). Arriba van los datos de la conversación (`arriba`). */}
+      {arriba}
       {ctx.telefono ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {tel ? <Boton texto={`Llamar · ${ctx.telefono}`} onPress={() => Linking.openURL(`tel:${tel}`).catch(() => {})} /> : null}

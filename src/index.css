@@ -4175,65 +4175,53 @@ html[data-en-pestana] #main-scroll {
 
 /* ══ El aro de nivel del cliente (chat, 2026-10-21) ═══════════════════════
    «el avatar no se ve como en la app de puntos, debe tener el aro de nivel…
-   si es team, doble aro… animados y que se vea premium». Es el aro de
-   `AvatarNivel` de la app de clientes: el METAL de su tarjeta de socio
-   (`COLORES_NIVEL` de TarjetaSocio.js — hondo, tono, reflejo), no un color
-   plano. Los hex son identidad, no tema: son los de la tarjeta que el
-   cliente tiene en la mano.
+   animados y que se vea premium». Es el aro de `AvatarNivel` de la app de
+   clientes: el METAL de su tarjeta de socio (`COLORES_NIVEL` de
+   TarjetaSocio.js — hondo, tono, reflejo), no un color plano. Los hex son
+   identidad, no tema: son los de la tarjeta que el cliente tiene en la mano.
 
-   Cómo está hecho:
+   UN aro, fino. La primera versión ponía un segundo aro para Team y el
+   usuario la rechazó el mismo día («¿por qué tanto aro? que se vea más
+   estético»): Team va como un emblema chico en la esquina
+   (`.aro-cliente-team`), que además ya lo dice la insignia junto al nombre.
+
    · El aro es un `::before` con `conic-gradient` recortado por `mask` a un
-     anillo: el hueco entre el aro y la foto queda TRANSPARENTE y no hay que
-     adivinar el color del fondo (el panel es vidrio).
+     anillo: el hueco entre el aro y la foto queda TRANSPARENTE sobre el
+     vidrio del panel.
    · Gira el ÁNGULO del degradado (`@property --aro-ang`), no el elemento:
-     el reflejo corre por el metal y el anillo queda quieto, como luz sobre
-     una pieza.
-   · Team suma un SEGUNDO aro afuera (`::after`), en el negro con acento rosa
-     de la tarjeta del equipo, girando al revés: se distingue de un vistazo y
-     el nivel sigue visible — antes Team TAPABA el nivel con un anillo rosa.
-   · Animado sólo con `data-animado` (el encabezado del hilo): en la lista
-     serían veinte anillos girando a la vez. */
+     el reflejo corre por el metal y el anillo queda quieto.
+   · Animado sólo con `data-animado` (el encabezado del hilo). */
 @property --aro-ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 @keyframes aro-gira { to { --aro-ang: 360deg } }
 
 .aro-cliente {
-  --aro: 2.5px; --hueco: 2px; --aro-team: 2px;
+  --aro: 2px; --hueco: 2px;
   position: relative; display: inline-flex; flex-shrink: 0; border-radius: 9999px;
   padding: calc(var(--aro) + var(--hueco));
 }
-/* El aro del equipo va POR FUERA y no suma tamaño: en la lista, una fila de
-   Team y una que no lo es tienen la foto del mismo ancho y alineada. */
-.aro-cliente[data-tam="lg"] { --aro: 3px; --aro-team: 2.5px; }
-
-.aro-cliente::before,
-.aro-cliente[data-team]::after {
-  content: ''; position: absolute; border-radius: 9999px; pointer-events: none;
+.aro-cliente::before {
+  content: ''; position: absolute; inset: 0; border-radius: 9999px; pointer-events: none;
+  padding: var(--aro);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude;
+  background: conic-gradient(from var(--aro-ang), var(--aro-tono), var(--aro-brillo) 12%, var(--aro-tono) 26%,
+    var(--aro-hondo) 50%, var(--aro-tono) 74%, var(--aro-tono));
 }
-.aro-cliente::before {
-  inset: 0; padding: var(--aro);
-  background: conic-gradient(from var(--aro-ang), var(--aro-hondo), var(--aro-tono) 18%, var(--aro-brillo) 30%,
-    var(--aro-tono) 42%, var(--aro-hondo) 60%, var(--aro-tono) 78%, var(--aro-brillo) 88%, var(--aro-hondo));
-  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--aro-brillo) 55%, transparent));
-}
-.aro-cliente[data-team]::after {
-  inset: calc((var(--aro-team) + var(--hueco)) * -1); padding: var(--aro-team);
-  background: conic-gradient(from calc(var(--aro-ang) * -1 + 90deg), #0b0b0e, #e06bc2 22%, #ffb3e9 30%, #e06bc2 38%,
-    #2a2a30 55%, #e06bc2 75%, #0b0b0e);
-}
-/* Sin nivel y del equipo: sólo el aro del equipo, en el lugar del de nivel. */
-.aro-cliente[data-team]:not([data-nivel])::before { display: none; }
-.aro-cliente[data-team]:not([data-nivel])::after { inset: 0; padding: var(--aro); }
-.aro-cliente:not([data-nivel]):not([data-team])::before { display: none; }
-
-.aro-cliente[data-animado]::before,
-.aro-cliente[data-animado][data-team]::after { animation: aro-gira 6s linear infinite; }
-.aro-cliente[data-animado][data-team]::after { animation-duration: 9s; }
+.aro-cliente:not([data-nivel])::before { display: none; }
+.aro-cliente[data-animado]::before { animation: aro-gira 7s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .aro-cliente[data-animado]::before,
-  .aro-cliente[data-animado][data-team]::after { animation: none; }
+  .aro-cliente[data-animado]::before { animation: none; }
 }
+
+/* Team: un emblema rosa en la esquina, con canto blanco —como el globo de
+   un aviso en iOS— para que se despegue de la foto en los dos temas. */
+.aro-cliente-team {
+  position: absolute; right: -1px; bottom: -1px; width: 15px; height: 15px; border-radius: 9999px;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  background: linear-gradient(135deg, #f08ad3, #c2479f);
+  box-shadow: 0 0 0 1.5px #fff, 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.aro-cliente[data-tam="lg"] .aro-cliente-team { width: 17px; height: 17px; }
 
 .aro-cliente[data-nivel="bronce"]   { --aro-hondo: #3a1a08; --aro-tono: #9a5a2c; --aro-brillo: #f2b07a; }
 .aro-cliente[data-nivel="plata"]    { --aro-hondo: #4a525e; --aro-tono: #a9b2be; --aro-brillo: #f4f7fb; }

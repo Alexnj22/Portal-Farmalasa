@@ -113,6 +113,17 @@ export function nombreDeCliente(nombre) {
     return String(nombre ?? '').trim().toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase()) || 'Cliente';
 }
 
+/**
+ * Primer nombre + primer apellido, para la barra del chat (2026-10-21, «el
+ * nombre se corta»): con cuatro palabras no cabía. Con tres o menos no se
+ * puede saber cuál es el apellido, así que va entero. El nombre completo
+ * queda en la ficha.
+ */
+export function nombreCortoDeCliente(nombre) {
+    const partes = nombreDeCliente(nombre).split(/\s+/);
+    return partes.length >= 4 ? `${partes[0]} ${partes[2]}` : partes.join(' ');
+}
+
 /** El estado de una reserva viva, en el panel del cliente. */
 export const RESERVA_DEL_CHAT = {
     en_revision: { label: 'En revisión', variant: 'warning' },

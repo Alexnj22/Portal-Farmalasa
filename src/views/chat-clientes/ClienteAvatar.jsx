@@ -1,4 +1,5 @@
 import React from 'react';
+import { Users } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import { inicialesDeCliente } from './etiquetas';
 import { claveDeNivel } from '@nucleo/utils/chatClientes';
@@ -9,9 +10,9 @@ import { claveDeNivel } from '@nucleo/utils/chatClientes';
 //
 // El aro (2026-10-21) es el de la app de puntos: el metal de su tarjeta de
 // socio —bronce, plata, oro, platino; jade, zafiro, rubí, diamante si es
-// mayorista—, con el reflejo corriendo. Si es del equipo lleva un SEGUNDO aro
-// afuera, rosa y negro como la tarjeta del equipo. Antes Team ganaba y tapaba
-// el nivel con un solo anillo rosa plano. Todo el dibujo vive en
+// mayorista—, con el reflejo corriendo. Si es del equipo, un emblema rosa en
+// la esquina (antes Team tapaba el nivel con un anillo rosa plano; después
+// fue un segundo aro, y era demasiado). Todo el dibujo vive en
 // `.aro-cliente` (index.css). `animado`: sólo donde hay UNO a la vista (el
 // encabezado del hilo); en la lista serían veinte girando a la vez.
 export default function ClienteAvatar({ conversacion: c, size = 'md', animado = false }) {
@@ -26,9 +27,14 @@ export default function ClienteAvatar({ conversacion: c, size = 'md', animado = 
             </span>
         );
     return (
-        <span className="aro-cliente" data-nivel={nivel ?? undefined} data-team={c?.es_team ? '' : undefined}
+        <span className="aro-cliente" data-nivel={nivel ?? undefined}
             data-tam={size} data-animado={animado ? '' : undefined}>
             {cara}
+            {c?.es_team && (
+                <span className="aro-cliente-team" role="img" aria-label="Del equipo">
+                    <Users size={size === 'lg' ? 10 : 9} strokeWidth={3} aria-hidden="true" />
+                </span>
+            )}
         </span>
     );
 }

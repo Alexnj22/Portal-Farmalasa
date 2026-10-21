@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1329.0 — Chat: un solo aro con emblema de Team, nombre que cabe, y la app del personal igual que el portal
+
+Tres pedidos del usuario sobre el aro del día anterior y el encabezado: «¿por qué tanto aro? que se vea más estético», «el nombre se corta… puedes dar un poco más de espacio», y que la app del personal se actualice con el portal.
+
+**Portal**
+- **Un solo aro, fino**, del metal del nivel, con el reflejo corriendo. Se quitó el segundo aro de Team: ahora es un **emblema rosa en la esquina** del avatar, con canto blanco.
+- **El nombre ya no se corta.** Tiene el primer renglón entero y, si tiene cuatro palabras, va primer nombre + primer apellido (`nombreCortoDeCliente`); el nombre completo queda en la ficha y al pasar el mouse. La insignia del nivel y el estado bajaron al segundo renglón. La insignia «Team» se quitó del encabezado porque ya está el emblema.
+- El panel de la burbuja pasa de 420 a 460 px de ancho.
+
+**App del personal (iOS y Android)**
+- **El mismo aro animado** (SVG que gira; quieto con «reducir movimiento») y el mismo emblema de Team, también en la lista y junto a los mensajes del cliente.
+- **La barra del hilo es la del sistema:** foto con aro, nombre corto y estado en una línea, y a la derecha la ficha y «resolver» como íconos. Antes eran cinco renglones con insignias, asignación, calificación, teléfono, botones, etiquetas y pestañas, que se comían media pantalla del chat. Tocar la foto o el nombre abre la ficha.
+- **La ficha no repite al cliente** y lleva arriba lo que antes estaba en el encabezado: nombre completo, tipo y nivel, asignación, calificación, etiquetas y quitar la foto.
+
 ## v2.1328.1 — Chat: aro de nivel animado como en la app de puntos y doble aro para Team
 
 Pedido del usuario: «el avatar no se ve como en la app de puntos, debe tener el aro de nivel… si es team, doble aro… animados y que se vea premium».

@@ -54,7 +54,7 @@ const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas, equipo
         onPress={() => { Haptics.selectionAsync().catch(() => {}); recordarConversacion(c); router.push(`/chat-clientes/${c.id}`); }}>
         <Vidrio radio={18}>
           <View style={{ flexDirection: 'row', gap: 12, padding: 12 }}>
-            <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={44} />
+            <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={44} conversacion={c} />
             <View style={{ flex: 1, gap: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: sinLeer ? '800' : '700' }} numberOfLines={1}>{nombreDeCliente(c.cliente)}</Text>

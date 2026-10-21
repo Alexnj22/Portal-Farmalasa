@@ -34,7 +34,7 @@ import NotaDeVoz from './NotaDeVoz';
 import PanelCliente from './PanelCliente';
 import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
 import ChipPreferente from './Preferente';
-import { cambiaDeDia, empiezaTanda, etiquetaDeDia, primerSinLeer } from '@nucleo/utils/chatClientes';
+import { cambiaDeDia, empiezaTanda, etiquetaDeDia, nombreCortoDeCliente, primerSinLeer } from '@nucleo/utils/chatClientes';
 import { ChipsDeEtiquetas, EditorDeEtiquetas } from './EtiquetasDelCliente';
 import { CalificacionEnLinea } from './Calificacion';
 import { escribeAhora, useRelojDeEscritura } from './escribiendo';
@@ -419,6 +419,8 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
     // quitar la foto — que es del cliente, no de la conversación.
     const datosEnFicha = (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-label text-content-2">
+            {/* El nombre entero: la barra lleva el corto. */}
+            <p className="basis-full text-body font-semibold text-content">{nombre}</p>
             <DatosDeLaConversacion c={c} equipo={equipo} puedeResponder={puedeResponder} onEtiquetar={() => setEditandoEtiquetas(true)} sinTelefono />
             {puedeResponder && c.foto_ruta && (
                 <Button variant="ghost" size="xs" icon={ImageOff} onClick={() => setQuitarFoto(true)}>Quitar foto de perfil</Button>
@@ -448,14 +450,17 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     className={`flex items-center gap-2.5 min-w-0 flex-1 text-left rounded-btn ${conPanelCliente && !lateral ? 'hover:bg-content/5 active:scale-[0.99]' : ''} ${barraPanel?.onVolver ? '' : 'pl-1'} py-0.5`}>
                     <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} animado />
                     <span className="min-w-0 flex-1 flex flex-col gap-0.5">
+                        {/* El nombre tiene el renglón ENTERO (2026-10-21, «el nombre se
+                            corta»): las insignias se bajaron al renglón del estado. Team
+                            ya lo dice el emblema del avatar; el nivel, el aro y su
+                            insignia; «Cliente» es el caso común y no se rotula. */}
+                        <span className="text-body-sm font-black text-content truncate" title={nombre}>{nombreCortoDeCliente(c.cliente)}</span>
                         <span className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-body-sm font-black text-content truncate">{nombre}</span>
-                            {/* «Cliente» es el caso común: sólo se rotula lo que no lo es. */}
-                            {(c.es_team || c.es_mayoreo) && <Badge variant={tipo.variant} size="sm" uppercase={false} className="shrink-0">{tipo.label}</Badge>}
+                            {c.es_mayoreo && !c.es_team && <Badge variant={tipo.variant} size="sm" uppercase={false} className="shrink-0">{tipo.label}</Badge>}
                             {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false} className="shrink-0">{nivel.label}</Badge>}
                             <ChipPreferente conversacion={c} />
+                            <EstadoEnTexto conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
                         </span>
-                        <EstadoEnTexto conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
                     </span>
                 </button>
                 <div className="flex-none flex items-center gap-0.5">

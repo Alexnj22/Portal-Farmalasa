@@ -174,7 +174,7 @@ export default function PanelDelChat({ abierto, onClose }) {
     return (
         <div ref={panelRef} role="dialog" aria-label={titulo} data-surface="dropdown"
             className="fixed z-dropdown right-[max(16px,var(--sa-right))] bottom-[max(16px,var(--sa-bottom))]
-                w-[420px] max-w-[calc(100vw-2rem)] h-[min(680px,calc(100dvh-6rem))]
+                w-[460px] max-w-[calc(100vw-2rem)] h-[min(680px,calc(100dvh-6rem))]
                 rounded-modal overflow-hidden flex flex-col animate-in zoom-in-95 duration-[var(--dur-base)]">
             {cuerpo}
         </div>

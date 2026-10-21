@@ -17,7 +17,7 @@
 // falla queda «No se envió · Toca para reintentar». Las notas de voz se
 // escuchan dentro del globo con velocidad 1×/1.5×/2× (`Voz.js`).
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -30,7 +30,7 @@ import { useEquipoDelChat } from '@nucleo/hooks/useBandejaDelChat';
 import { COLUMNAS_PRESENCIA, EMOJIS_DE_REACCION, MENSAJES_POR_PAGINA, fetchConversaciones, fetchMensajes, fetchMensajesCambiados, fetchPresenciaDeConversaciones, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje, resolverConversacion, responderConversacion, subirAudioDelEquipo, subirFotoDelEquipo, tomarConversacion } from '@nucleo/data/chatClientes';
 import { fusionar, guardarHilo, leerHilo } from '@nucleo/data/chatHilo';
 import { escribeAhora, useRelojDeEscritura } from '@nucleo/hooks/escrituraDelChat';
-import { cambiaDeDia, empiezaTanda, esperaDe, etiquetaDeDia, nombreDeAutor, nombreDeCliente, recorteDeMensaje } from '@nucleo/utils/chatClientes';
+import { cambiaDeDia, empiezaTanda, etiquetaDeDia, nombreCortoDeCliente, nombreDeAutor, nombreDeCliente, recorteDeMensaje } from '@nucleo/utils/chatClientes';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import { estrellas, miReaccion } from '@nucleo/utils/chatPersonal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -39,14 +39,15 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso } from '../../componentes/formulario/Piezas';
-import Segmentos from '../../componentes/Segmentos';
 import Tocable from '../../componentes/Tocable';
 import Avatar from '../../componentes/Avatar';
 import { ErrorConReintento } from '../../componentes/ListaPaginada';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import { volver } from '../../componentes/volver';
-import { ChipsDeEstado, ClienteAvatar, EtiquetasDeCliente } from '../../componentes/chat/Piezas';
+import { ClienteAvatar, EstadoEnTexto, EtiquetasDeCliente } from '../../componentes/chat/Piezas';
+import { Host, Icon } from '@expo/ui';
+import { iconoDe } from '../../tema/iconos';
 import Asignacion from '../../componentes/chat/Asignacion';
 import PanelCliente from '../../componentes/chat/PanelCliente';
 import Compositor from '../../componentes/chat/Compositor';
@@ -393,58 +394,68 @@ export default function ConversacionDelChat() {
   };
   const invertidos = (mensajes ?? []).map((m, i, todos) => ({ m, nuevaTanda: empiezaTanda(m, todos[i - 1]) || cambiaDeDia(m, todos[i - 1]), nuevoDia: cambiaDeDia(m, todos[i - 1]),
     finDeTanda: !todos[i + 1] || empiezaTanda(todos[i + 1], m) || cambiaDeDia(todos[i + 1], m) })).reverse();
-  const fotoCliente = c ? <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={26} /> : null;
-  const tel = String(c?.telefono ?? '').replace(/\D/g, '');
+  const fotoCliente = c ? <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={26} conversacion={c} /> : null;
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: colorSistema.fondo }, title: c ? nombreDeCliente(c.cliente) : 'Conversación' }} />
+      {/* La barra (2026-10-21, la misma decisión que el portal): foto con su
+          aro de nivel, nombre y estado en la barra del sistema, como una app
+          de mensajería, y la ficha detrás de un toque. Antes iban cinco
+          renglones (insignias, asignación, calificación, teléfono, botones,
+          etiquetas y las pestañas) que se comían media pantalla del chat. */}
+      <Stack.Screen options={{ ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: colorSistema.fondo },
+        title: c ? nombreDeCliente(c.cliente) : 'Conversación',
+        headerTitle: c ? () => (
+          <Pressable onPress={() => setPestana((p) => (p === 'cliente' ? 'mensajes' : 'cliente'))} accessibilityRole="button"
+            accessibilityLabel={pestana === 'cliente' ? 'Volver a los mensajes' : `Ver la ficha de ${nombreDeCliente(c.cliente)}`}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 9, maxWidth: 240 }}>
+            <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={36} conversacion={c} animado />
+            <View style={{ flexShrink: 1 }}>
+              <Text numberOfLines={1} style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{nombreCortoDeCliente(c.cliente)}</Text>
+              <EstadoEnTexto conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
+            </View>
+          </Pressable>
+        ) : undefined,
+        headerRight: c ? () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Tocable onPress={() => setPestana((p) => (p === 'cliente' ? 'mensajes' : 'cliente'))} hitSlop={8} accessibilityRole="button"
+              accessibilityLabel={pestana === 'cliente' ? 'Volver a los mensajes' : 'Ver la ficha del cliente'}
+              style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: pestana === 'cliente' ? 'rgba(127,127,127,0.18)' : 'transparent' }}>
+              <Host matchContents><Icon name={iconoDe(pestana === 'cliente' ? 'MessageCircle' : 'User')} size={20} color={colorSistema.acento} /></Host>
+            </Tocable>
+            {puedeResponder && c.estado === 'abierta' ? (
+              <Tocable onPress={resolver} hitSlop={8} accessibilityRole="button" accessibilityLabel="Marcar como resuelta"
+                style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+                <Host matchContents><Icon name={iconoDe('CheckCircle2')} size={20} color={MARCA.verde} /></Host>
+              </Tocable>
+            ) : null}
+          </View>
+        ) : undefined,
+      }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? alto : 0}>
-        {c ? (
-          <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, gap: 8, borderBottomWidth: 0.5, borderBottomColor: colorSistema.separador }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={44} />
-              <View style={{ flex: 1, gap: 4 }}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                  <EtiquetasDeCliente c={c} />
-                  <ChipsDeEstado conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
-                </View>
+        {pestana === 'cliente' && c ? (
+          <ScrollView style={{ flex: 1 }}>
+            <PanelCliente customerId={c.customer_id} arriba={(
+              <View style={{ gap: 10 }}>
+                {/* El nombre entero: la barra lleva el corto. */}
+                <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{nombreDeCliente(c.cliente)}</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}><EtiquetasDeCliente c={c} /></View>
                 {cv ? <Asignacion conversacion={cv} equipo={equipo} sinAsignar={cv.estado !== 'resuelta'} /> : null}
-                {estrellas(cv?.calificacion) || esperaDe(cv, ahora) ? (
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                    {[estrellas(cv?.calificacion) ? `${estrellas(cv.calificacion)}${cv.calificacion_comentario ? ` «${cv.calificacion_comentario}»` : ''}` : null,
-                      esperaDe(cv, ahora) ? `espera hace ${esperaDe(cv, ahora).label}` : null].filter(Boolean).join(' · ')}
+                {estrellas(cv?.calificacion) ? (
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
+                    {`Calificó ${estrellas(cv.calificacion)}${cv.calificacion_comentario ? ` «${cv.calificacion_comentario}»` : ''}`}
                   </Text>
                 ) : null}
-                {tel ? (
-                  <Pressable onPress={() => Linking.openURL(`tel:${tel}`).catch(() => {})} hitSlop={6}>
-                    <Text style={{ color: MARCA.azulClaro, fontSize: 14 }}>{`📞 ${c.telefono}`}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-            {puedeResponder ? (
-              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                {c.estado === 'abierta' ? (
-                  <Tocable onPress={resolver} accessibilityRole="button" style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: 'rgba(18,183,106,0.16)' }}>
-                    <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>Marcar como resuelta</Text>
-                  </Tocable>
-                ) : null}
-                {c.foto_ruta || c.foto_url ? (
-                  <Tocable onPress={quitarFoto} accessibilityRole="button" style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.14)' }}>
+                <EtiquetasDeConversacion conversacion={cv} puedeEditar={puedeResponder}
+                  onCambio={(etiquetas) => setC((x) => (x ? { ...x, etiquetas } : x))} />
+                {puedeResponder && (c.foto_ruta || c.foto_url) ? (
+                  <Tocable onPress={quitarFoto} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.14)' }}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 14, fontWeight: '600' }}>Quitar foto de perfil</Text>
                   </Tocable>
                 ) : null}
               </View>
-            ) : null}
-            <EtiquetasDeConversacion conversacion={cv} puedeEditar={puedeResponder}
-              onCambio={(etiquetas) => setC((x) => (x ? { ...x, etiquetas } : x))} />
-            <Segmentos margen={0} activa={pestana} onCambiar={setPestana} opciones={[{ id: 'mensajes', label: 'Mensajes' }, { id: 'cliente', label: 'Cliente' }]} />
-          </View>
-        ) : null}
-
-        {pestana === 'cliente' && c ? (
-          <ScrollView style={{ flex: 1 }}><PanelCliente customerId={c.customer_id} /></ScrollView>
+            )} />
+          </ScrollView>
         ) : (
           <>
             {error && !mensajes ? <ErrorConReintento mensaje={error} onReintentar={() => { setError(null); setC(conversacionRecordada(id)); }} /> : null}

@@ -3,6 +3,7 @@ import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.t
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
 import { callClaude, parseClaudeJson } from "../_shared/claude.ts"
 import { PROMPT_BOLETA as PROMPT } from "../_shared/boletaPrompt.ts"
+import { boletaSinReferencia } from "../_shared/boletaReferencia.ts"
 
 // ════════════════════════════════════════════════════════════════════════════
 // Lee la foto del comprobante de una salida de dinero y la cuadra contra lo
@@ -224,6 +225,15 @@ Deno.serve(async (req) => {
           temperature: 0,
           timeoutMs: TIMEOUT_MS,
         }))
+
+    // La referencia del POS leída como boleta se corrige ANTES de comparar y de
+    // devolver: la pantalla llena (y cierra) el campo con `numero_boleta`. Lo
+    // leído original queda al lado para el rastro de `foto_lectura`.
+    const boletaCorregida = boletaSinReferencia(leido.numero_boleta, leido.numeros_del_papel)
+    if (boletaCorregida !== (leido.numero_boleta ?? null)) {
+      leido.numero_boleta_leido = leido.numero_boleta
+      leido.numero_boleta = boletaCorregida
+    }
 
     // ── La regla, en código ────────────────────────────────────────────────
     const esperaBoleta = !!(esperado?.numeroBoleta)

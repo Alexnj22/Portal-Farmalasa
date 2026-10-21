@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1325.1 — Boleta Promerica: la referencia ya no se toma como número de boleta
+
+Al subir la foto de un comprobante Promerica, a veces el número de boleta se
+llenaba con la REFERENCIA de la transacción. Medido el 21-oct: 5 de 40 boletas
+de dos días (movimientos 4896, 4968, 4977, 5006, 5008).
+
+La referencia tiene una forma que una boleta nunca tiene —12 dígitos
+`MMDD HHMMSS + 2`, p. ej. `102107425217` = 10-21 07:42:52— y el lector sí lee la
+boleta: va en el renglón siguiente de `numeros_del_papel`. `leer-boleta` ahora
+la reconoce y la cambia por ese número (`_shared/boletaReferencia.ts`); si no
+hay uno, deja el campo vacío para escribirlo a mano. Lo leído original queda en
+`numero_boleta_leido`. Probado contra las lecturas reales en
+`tests/unit/boletaReferencia.test.js`. Función desplegada.
+
 ## v2.1325.0 — Chat: la app del personal se siente como el portal y la de puntos
 
 Pedido: «ambos chats deben compartir funcionalidades… en el portal debe haber más cosas, pero la sensación debe ser la misma».

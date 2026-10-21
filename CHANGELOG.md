@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1331.1 — Chat: quién atiende con su foto y cuánto lleva el cliente esperando
+
+Pedido del usuario: «en atención, que se identifique mejor, con la foto, y todo. y si ya se tardó».
+
+- **El segundo renglón del encabezado muestra quién atiende**, con su foto (`AvatarConEstado`) y su nombre corto en mayúscula inicial («Edwin Nuñez», no «EDWIN NUNEZ»), en vez de «En atención · EDWIN NU…» cortado.
+- **Cuánto lleva el cliente esperando**: «espera 22 min», gris, ámbar pasados 15 minutos y rojo pasada la hora. Antes sólo se contaba en «Nuevo»; ahora también en «En atención», porque tomar la conversación no es contestarle: el reloj corre desde el primer mensaje del cliente sin respuesta (`esperaDe`, núcleo). También lo ven la lista y la app.
+- El nombre del cliente y su nivel van juntos en el primer renglón.
+- **App del personal:** el mismo renglón, con la foto de quien atiende y la espera. Sale en la próxima compilación.
 ## v2.1331.0 — Reservas: el saldo a favor como crédito que se descuenta con puntos, titular confirmado y aviso de existencia
 
 Decisiones del usuario (2026-10-21), cada parte probada en una transacción que se deshace sola contra producción.

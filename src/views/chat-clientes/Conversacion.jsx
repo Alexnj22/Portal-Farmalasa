@@ -450,17 +450,18 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     className={`flex items-center gap-2.5 min-w-0 flex-1 text-left rounded-btn ${conPanelCliente && !lateral ? 'hover:bg-content/5 active:scale-[0.99]' : ''} ${barraPanel?.onVolver ? '' : 'pl-1'} py-0.5`}>
                     <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} animado />
                     <span className="min-w-0 flex-1 flex flex-col gap-0.5">
-                        {/* El nombre tiene el renglón ENTERO (2026-10-21, «el nombre se
-                            corta»): las insignias se bajaron al renglón del estado. Team
-                            ya lo dice el emblema del avatar; el nivel, el aro y su
-                            insignia; «Cliente» es el caso común y no se rotula. */}
-                        <span className="text-body-sm font-black text-content truncate" title={nombre}>{nombreCortoDeCliente(c.cliente)}</span>
+                        {/* Renglón 1: el nombre corto y el nivel (2026-10-21, «el nombre se
+                            corta»: con primer nombre + primer apellido caben los dos).
+                            Team ya lo dice el emblema del avatar; «Cliente» es el caso
+                            común y no se rotula. Renglón 2: quién atiende, con su foto,
+                            y cuánto lleva el cliente sin respuesta. */}
                         <span className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-body-sm font-black text-content truncate" title={nombre}>{nombreCortoDeCliente(c.cliente)}</span>
                             {c.es_mayoreo && !c.es_team && <Badge variant={tipo.variant} size="sm" uppercase={false} className="shrink-0">{tipo.label}</Badge>}
                             {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false} className="shrink-0">{nivel.label}</Badge>}
                             <ChipPreferente conversacion={c} />
-                            <EstadoEnTexto conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
                         </span>
+                        <EstadoEnTexto conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? { id: c.tomada_por } : null} />
                     </span>
                 </button>
                 <div className="flex-none flex items-center gap-0.5">

@@ -41,7 +41,9 @@ const AMBAR_MIN = 15;
 const ROJO_MIN = 60;
 
 /**
- * Cuánto lleva esperando un «Nuevo». Se cuenta desde `esperando_desde` —el
+ * Cuánto lleva esperando respuesta un «Nuevo» o un «En atención» (tomarla no
+ * es contestarle: hasta el primer mensaje del equipo el cliente sigue
+ * esperando, 2026-10-21). Se cuenta desde `esperando_desde` —el
  * PRIMER mensaje del cliente que todavía nadie contestó, lo pone el trigger de
  * cada mensaje—, no desde el último: un cliente que escribe tres veces en
  * media hora lleva media hora esperando, no un minuto. Sin esa columna (filas
@@ -49,7 +51,7 @@ const ROJO_MIN = 60;
  * `tono`: 'neutral' | 'warning' | 'danger' (variantes de Badge).
  */
 export function esperaDe(c, ahora) {
-    if (estadoDeConversacion(c) !== 'nuevo') return null;
+    if (!['nuevo', 'atencion'].includes(estadoDeConversacion(c))) return null;
     const desde = Date.parse(c?.esperando_desde ?? c?.ultimo_mensaje_at);
     if (Number.isNaN(desde)) return null;
     const min = Math.max(0, Math.floor((ahora - desde) / 60_000));

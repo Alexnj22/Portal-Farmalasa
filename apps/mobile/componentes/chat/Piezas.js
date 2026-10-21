@@ -6,7 +6,8 @@ import { AccessibilityInfo, Animated, Easing, Image, Text, View } from 'react-na
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Host, Icon } from '@expo/ui';
 import { iconoDe } from '../../tema/iconos';
-import { ESTADOS, NIVELES, claveDeNivel, esperaDe, estadoDeConversacion, inicialesDeCliente, tipoDeCliente } from '@nucleo/utils/chatClientes';
+import { ESTADOS, NIVELES, claveDeNivel, esperaDe, estadoDeConversacion, inicialesDeCliente, nombreDeCliente, tipoDeCliente } from '@nucleo/utils/chatClientes';
+import Avatar from '../Avatar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
@@ -112,19 +113,31 @@ export const ClienteAvatar = memo(function ClienteAvatar({ cliente, fotoUrl, tam
   );
 });
 
-/** El estado como UNA línea de texto bajo el nombre, con su punto de color — el «en línea» de una app de mensajería. */
+/**
+ * El estado como UNA línea bajo el nombre — el «en línea» de una app de
+ * mensajería. «En atención» lleva la foto y el nombre de quien atiende, y
+ * mientras el cliente siga sin respuesta (nuevo o tomada: tomarla no es
+ * contestarle), cuánto lleva: gris, ámbar a los 15 min, rojo a la hora.
+ */
 export function EstadoEnTexto({ conversacion: c, atiende, ahora }) {
   const clave = estadoDeConversacion(c);
   const estado = ESTADOS[clave];
-  const quien = clave === 'atencion' && atiende ? shortEmployeeName(atiende) : '';
   const espera = esperaDe(c, ahora);
+  const conFoto = clave === 'atencion' && atiende;
+  const tono = espera ? (espera.tono === 'neutral' ? '#8E8E93' : colorDe(espera.tono)) : null;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colorDe(estado.variant) }} />
+      {conFoto
+        ? <Avatar empleado={atiende} tamano={16} />
+        : <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colorDe(estado.variant) }} />}
       <Text numberOfLines={1} style={{ color: '#8E8E93', fontSize: 12, fontWeight: '600', flexShrink: 1 }}>
-        {`${estado.label}${quien ? ` · ${quien}` : ''}`}
-        {espera ? <Text style={{ color: colorDe(espera.tono) }}>{`  ⏱ ${espera.label}`}</Text> : null}
+        {conFoto ? nombreDeCliente(shortEmployeeName(atiende)) : estado.label}
       </Text>
+      {espera ? (
+        <Text style={{ color: tono, fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+          {espera.min < 1 ? '· ahora' : `· espera ${espera.label}`}
+        </Text>
+      ) : null}
     </View>
   );
 }

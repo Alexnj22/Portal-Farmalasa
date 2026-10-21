@@ -136,8 +136,12 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
                 </div>
             )}
             {/* El campo crece con el texto (hasta ~6 renglones) y el botón de
-                enviar va a su lado, redondo: la forma de cualquier app de
-                mensajería. Las herramientas, en una tira fina debajo. */}
+                enviar va a su lado: la forma de cualquier app de mensajería.
+                Las herramientas, en una tira fina debajo. Con UN renglón el
+                campo mide exactamente lo que el botón (`max(--tap-min,
+                --control-h)`, el alto de `Button md`): antes el campo medía
+                ~46px y el micrófono 40, y se veía torcido (2026-10-21). El 28
+                es el renglón (leading-6 = 24px) más los 2px de borde arriba y abajo. */}
             {grabando ? (
                 <div className="flex items-center gap-2 min-h-[var(--tap-min)]">
                     <Button variant="ghost" size="md" iconOnly icon={Trash2} title="Descartar la nota de voz" onClick={grabadora.cancelar}
@@ -154,7 +158,7 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
             ) : (
             <div className="flex items-end gap-2">
                 <PortalTextarea name="chat-respuesta" aria-label="Escribe una respuesta" placeholder="Escribe una respuesta…" rows={1} compact
-                    ref={campoRef} className="flex-1 min-w-0" textareaClassName="!font-medium max-h-40 overflow-y-auto"
+                    ref={campoRef} className="flex-1 min-w-0" textareaClassName="!font-medium max-h-40 overflow-y-auto leading-6 !py-[calc((max(var(--tap-min),var(--control-h))_-_28px)_/_2)]"
                     value={texto} onChange={(e) => escribir(e.target.value.slice(0, MAX_TEXTO))}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) { e.preventDefault(); enviar(); } }} />
                 {!puedeEnviar && grabadora.soportada ? (

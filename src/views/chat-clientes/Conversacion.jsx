@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowDown, Check, CheckCircle2, Clock, FileText, ImageOff, Package, Phone, Sparkles, Tag, Tags, UserRound } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowLeft, Check, CheckCircle2, Clock, FileText, ImageOff, Maximize2, MessageCircle, Package, Phone, Sparkles, Tag, Tags, UserRound, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -25,7 +26,7 @@ import {
 } from '@nucleo/data/chatClientes';
 import { fusionar, guardarHilo, leerHilo } from '@nucleo/data/chatHilo';
 import { BarraDeMensaje, CitaDeMensaje, HojaDeMensaje, ReaccionesDeMensaje } from './AccionesDeMensaje';
-import ChipsDeEstado from './ChipsDeEstado';
+import { EstadoEnTexto } from './ChipsDeEstado';
 import ClienteAvatar from './ClienteAvatar';
 import AsignadoA from './AsignadoA';
 import Compositor from './Compositor';
@@ -77,7 +78,7 @@ import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 // (medido 2026-10-21). Más angosto, se abre con el botón de la barra.
 const ANCHO_LATERAL = '(min-width: 1536px)';
 
-export default function Conversacion({ conversacion: c, puedeResponder, equipo, asegurarEquipo, comoPanel, conPanelCliente = false, onCambio, onCerrar }) {
+export default function Conversacion({ conversacion: c, puedeResponder, equipo, asegurarEquipo, comoPanel, conPanelCliente = false, barraPanel = null, onCambio, onCerrar }) {
     const ancha = useMediaQuery(ANCHO_LATERAL);
     const lateral = conPanelCliente && ancha && !comoPanel;
     const [pestana, setPestana] = useState('mensajes');
@@ -414,66 +415,78 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         const delEquipo = mensajes.filter((m) => m.autor === 'equipo' && !m.temporal);
         delEquipo.slice(Math.max(0, delEquipo.length - sinLeerCliente)).forEach((m) => noVistos.add(m.id));
     }
+    // En la ficha: lo de la franja (calificación, asignación, etiquetas) y
+    // quitar la foto — que es del cliente, no de la conversación.
+    const datosEnFicha = (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-label text-content-2">
+            <DatosDeLaConversacion c={c} equipo={equipo} puedeResponder={puedeResponder} onEtiquetar={() => setEditandoEtiquetas(true)} sinTelefono />
+            {puedeResponder && c.foto_ruta && (
+                <Button variant="ghost" size="xs" icon={ImageOff} onClick={() => setQuitarFoto(true)}>Quitar foto de perfil</Button>
+            )}
+        </div>
+    );
     const entregaDe = (m) => (sinLeerCliente == null || m.autor !== 'equipo' || m.temporal ? null : noVistos.has(m.id) ? 'Enviado' : 'Visto');
 
     return (
         <div data-surface={comoPanel ? undefined : 'card'} className={`flex flex-col min-h-0 ${comoPanel ? 'h-full' : 'flex-1 rounded-card overflow-hidden'}`}>
             {/* ── El cliente ─────────────────────────────────────────────
-                Como la barra de una app de mensajería (2026-10-20): foto,
-                nombre y estado a la izquierda, las acciones como íconos a la
-                derecha. La ficha del cliente se abre desde la barra (ya no es
-                una fila de pestañas) y lo secundario —teléfono, calificación,
-                asignación, etiquetas— va en una franja fina debajo. */}
-            <header className="flex-none flex items-center gap-3 px-3 py-2.5 border-b border-border-card">
-                <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} />
-                <div className="min-w-0 flex-1">
-                    <p className="text-body-sm font-black text-content truncate" title={nombre}>{nombre}</p>
-                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                        <ChipsDeEstado conversacion={c} ahora={ahora}
-                            atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
-                        <ChipPreferente conversacion={c} />
-                        {/* «Cliente» es el caso común: sólo se rotula lo que no lo es. */}
-                        {(c.es_team || c.es_mayoreo) && <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>}
-                        {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
-                    </div>
-                </div>
+                Rehecho el 2026-10-21 («no me gusta el encabezado… dar un poco
+                más de espacio al chat»): UNA barra, como la de una app de
+                mensajería. En el panel de la burbuja absorbe también la barra
+                del panel (volver, pantalla completa, cerrar), que antes era
+                una fila aparte. El estado va como texto bajo el nombre —el
+                «en línea» de WhatsApp— y no como chips que ocupaban dos
+                renglones. Teléfono, calificación, asignación y etiquetas
+                viven en la ficha del cliente; en la vista completa, además,
+                en una franja fina. */}
+            <header className="flex-none flex items-center gap-2.5 pl-2 pr-2 py-2 border-b border-border-card">
+                {barraPanel?.onVolver && (
+                    <Button variant="ghost" size="sm" iconOnly icon={ArrowLeft} title="Volver a las conversaciones" onClick={barraPanel.onVolver} />
+                )}
+                <button type="button" disabled={!conPanelCliente || lateral} onClick={() => setPestana(verCliente ? 'mensajes' : 'cliente')}
+                    aria-label={verCliente ? 'Volver a los mensajes' : `Ver la ficha de ${nombre}`}
+                    className={`flex items-center gap-2.5 min-w-0 flex-1 text-left rounded-btn ${conPanelCliente && !lateral ? 'hover:bg-content/5 active:scale-[0.99]' : ''} ${barraPanel?.onVolver ? '' : 'pl-1'} py-0.5`}>
+                    <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} />
+                    <span className="min-w-0 flex-1 flex flex-col gap-0.5">
+                        <span className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-body-sm font-black text-content truncate">{nombre}</span>
+                            {/* «Cliente» es el caso común: sólo se rotula lo que no lo es. */}
+                            {(c.es_team || c.es_mayoreo) && <Badge variant={tipo.variant} size="sm" uppercase={false} className="shrink-0">{tipo.label}</Badge>}
+                            {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false} className="shrink-0">{nivel.label}</Badge>}
+                            <ChipPreferente conversacion={c} />
+                        </span>
+                        <EstadoEnTexto conversacion={c} ahora={ahora} atiende={c.tomada_vigente ? equipo.get(c.tomada_por) ?? null : null} />
+                    </span>
+                </button>
                 <div className="flex-none flex items-center gap-0.5">
                     {conPanelCliente && !lateral && (
-                        <Button variant={verCliente ? 'secondary' : 'ghost'} size="sm" iconOnly icon={UserRound} aria-pressed={verCliente}
+                        <Button variant={verCliente ? 'secondary' : 'ghost'} size="sm" iconOnly icon={verCliente ? MessageCircle : UserRound} aria-pressed={verCliente}
                             title={verCliente ? 'Volver a los mensajes' : 'Ver la ficha del cliente'}
                             onClick={() => setPestana(verCliente ? 'mensajes' : 'cliente')} />
                     )}
-                    {puedeResponder && c.foto_ruta && (
-                        <Button variant="ghost" size="sm" icon={ImageOff} iconOnly title="Quitar la foto de perfil" onClick={() => setQuitarFoto(true)} />
-                    )}
                     {puedeResponder && c.estado === 'abierta' && (
-                        <Button variant="secondary" size="sm" icon={CheckCircle2} loading={resolviendo} onClick={resolver}
-                            title="Marcar como resuelta" className="ml-1">
-                            {comoPanel ? 'Resolver' : 'Marcar como resuelta'}
-                        </Button>
+                        comoPanel
+                            ? <Button variant="ghost" size="sm" iconOnly icon={CheckCircle2} loading={resolviendo} onClick={resolver} title="Marcar como resuelta" />
+                            : <Button variant="secondary" size="sm" icon={CheckCircle2} loading={resolviendo} onClick={resolver} className="ml-1">Marcar como resuelta</Button>
+                    )}
+                    {barraPanel?.enlace && (
+                        <Link to={barraPanel.enlace} onClick={barraPanel.onCerrarPanel} aria-label="Abrir en pantalla completa"
+                            className="inline-flex items-center justify-center size-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] rounded-btn text-content-2 hover:bg-content/5 hover:text-content active:scale-[0.97]">
+                            <Maximize2 size={14} />
+                        </Link>
+                    )}
+                    {barraPanel?.onCerrarPanel && (
+                        <Button variant="ghost" size="sm" iconOnly icon={X} title="Cerrar" onClick={barraPanel.onCerrarPanel} />
                     )}
                 </div>
             </header>
-            {/* Con la ficha abierta, esta franja la repetiría. */}
-            {!verCliente && (c.telefono || c.calificacion || c.asignada_a || c.etiquetas?.length > 0 || puedeResponder) && (
+            {/* La franja fina sólo en la vista completa: en el panel, el chat
+                se queda con ese alto y estos datos están en la ficha. */}
+            {!comoPanel && !verCliente && (c.telefono || c.calificacion || c.asignada_a || c.etiquetas?.length > 0 || puedeResponder) && (
                 <div className="flex-none flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5 border-b border-border-card text-label text-content-2">
-                    {c.telefono && (
-                        <a href={`tel:${String(c.telefono).replace(/\D/g, '')}`}
-                            className="inline-flex items-center gap-1 rounded-btn hover:text-brand-text tabular-nums min-h-[var(--tap-min)] md:min-h-0 active:scale-[0.97]">
-                            <Phone size={12} /> {c.telefono}
-                        </a>
-                    )}
-                    {c.calificacion ? <CalificacionEnLinea conversacion={c} /> : null}
-                    {c.asignada_a && <AsignadoA conversacion={c} equipo={equipo} />}
-                    {(c.etiquetas?.length > 0 || puedeResponder) && (
-                        <span className="inline-flex flex-wrap items-center gap-1">
-                            <ChipsDeEtiquetas conversacion={c} />
-                            {puedeResponder && (
-                                <Button variant="ghost" size="xs" icon={Tags} onClick={() => setEditandoEtiquetas(true)}>
-                                    {c.etiquetas?.length ? 'Editar' : 'Etiquetar'}
-                                </Button>
-                            )}
-                        </span>
+                    <DatosDeLaConversacion c={c} equipo={equipo} puedeResponder={puedeResponder} onEtiquetar={() => setEditandoEtiquetas(true)} />
+                    {puedeResponder && c.foto_ruta && (
+                        <Button variant="ghost" size="xs" icon={ImageOff} onClick={() => setQuitarFoto(true)} className="ml-auto">Quitar foto de perfil</Button>
                     )}
                 </div>
             )}
@@ -481,7 +494,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             <div className="flex-1 min-h-0 flex">
             {verCliente && (
                 <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain">
-                    <PanelCliente customerId={c.customer_id} conversacion={c} />
+                    <PanelCliente customerId={c.customer_id} arriba={datosEnFicha} />
                 </div>
             )}
             <div className={`flex-1 min-w-0 min-h-0 flex-col ${verCliente ? 'hidden' : 'flex'}`}>
@@ -551,7 +564,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             </div>
             {lateral && (
                 <aside aria-label="Cliente" className="w-[320px] shrink-0 border-l border-border-card overflow-y-auto overscroll-contain">
-                    <PanelCliente customerId={c.customer_id} conversacion={c} />
+                    <PanelCliente customerId={c.customer_id} arriba={datosEnFicha} />
                 </aside>
             )}
             </div>
@@ -796,5 +809,32 @@ function Puntos() {
             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse [animation-delay:200ms]" />
             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse [animation-delay:400ms]" />
         </span>
+    );
+}
+
+// Teléfono, calificación, asignación y etiquetas: la franja de la vista
+// completa y la cabecera de la ficha dicen lo mismo, escrito una vez.
+function DatosDeLaConversacion({ c, equipo, puedeResponder, onEtiquetar, sinTelefono = false }) {
+    return (
+        <>
+            {c.telefono && !sinTelefono && (
+                <a href={`tel:${String(c.telefono).replace(/\D/g, '')}`}
+                    className="inline-flex items-center gap-1 rounded-btn hover:text-brand-text tabular-nums min-h-[var(--tap-min)] md:min-h-0 active:scale-[0.97]">
+                    <Phone size={12} /> {c.telefono}
+                </a>
+            )}
+            {c.calificacion ? <CalificacionEnLinea conversacion={c} /> : null}
+            {c.asignada_a && <AsignadoA conversacion={c} equipo={equipo} />}
+            {(c.etiquetas?.length > 0 || puedeResponder) && (
+                <span className="inline-flex flex-wrap items-center gap-1">
+                    <ChipsDeEtiquetas conversacion={c} />
+                    {puedeResponder && (
+                        <Button variant="ghost" size="xs" icon={Tags} onClick={onEtiquetar}>
+                            {c.etiquetas?.length ? 'Editar' : 'Etiquetar'}
+                        </Button>
+                    )}
+                </span>
+            )}
+        </>
     );
 }

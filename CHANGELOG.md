@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1325.2 — Chat: encabezado de una barra, ficha sin duplicados y compositor alineado
+
+Reporte del usuario sobre el panel de la burbuja: la ficha repetía la foto y el nombre, el encabezado no gustaba y el micrófono no medía lo que el campo.
+
+- **Encabezado de una sola barra.** En el panel de la burbuja, la barra del panel (volver, pantalla completa, cerrar) y la del cliente eran dos filas apiladas; ahora el encabezado del hilo las absorbe. El estado («En atención · Ana», la espera) va como texto bajo el nombre, con su punto de color, en vez de chips que ocupaban dos renglones. Resolver queda como ícono en el panel. Tocar la foto o el nombre abre la ficha.
+- **Más alto para el chat.** En el panel, la franja de teléfono, calificación y etiquetas se mudó a la ficha (la vista completa la conserva).
+- **La ficha no repite al cliente.** Foto, nombre, tipo y nivel ya están en el encabezado de arriba; la ficha empieza por calificación, asignación, etiquetas y quitar la foto de perfil.
+- **Compositor alineado.** Con un renglón, el campo mide exactamente lo que el botón de micrófono/enviar (antes 46 contra 40 px). Medido en pruebas: 36 y 36.
 ## v2.1325.1 — Boleta Promerica: la referencia ya no se toma como número de boleta
 
 Al subir la foto de un comprobante Promerica, a veces el número de boleta se

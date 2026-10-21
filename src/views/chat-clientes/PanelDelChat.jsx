@@ -124,11 +124,14 @@ export default function PanelDelChat({ abierto, onClose }) {
 
     const cuerpo = (
         <div className="h-full flex flex-col min-h-0">
-            {barra}
+            {/* Con un hilo abierto, su encabezado ES la barra (volver, pantalla
+                completa, cerrar): dos barras apiladas le quitaban alto al chat. */}
+            {(!conv || enTelefono) && barra}
             {conv ? (
                 <div className="flex-1 min-h-0 flex flex-col">
                     <Conversacion key={conv.id} conversacion={conv} puedeResponder={puedeResponder}
                         equipo={equipo} asegurarEquipo={asegurarEquipo} comoPanel conPanelCliente
+                        barraPanel={enTelefono ? null : { onVolver: () => setConvId(null), enlace: `/chat-clientes?c=${conv.id}`, onCerrarPanel: onClose }}
                         onCambio={cargar} onCerrar={() => setConvId(null)} />
                 </div>
             ) : lista}

@@ -9,9 +9,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { telefonoParaWhatsapp } from '@nucleo/utils/codigoDePuntos';
 import ClienteAvatar from './ClienteAvatar';
-import { NIVELES, nombreDeCliente, tipoDeCliente } from './etiquetas';
-import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT, etiquetasDe } from '@nucleo/utils/chatClientes';
-import { ChipsDeEtiquetas } from './EtiquetasDelCliente';
+import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT } from '@nucleo/utils/chatClientes';
 
 // «Cliente»: lo que conviene tener a mano mientras se le contesta — quién es,
 // cómo llamarlo, sus puntos, lo último que compró (con sus productos), lo que
@@ -27,7 +25,7 @@ const RECETA = RECETA_DEL_CHAT;
 
 const corta = (d) => fechaTexto(d, { day: 'numeric', month: 'short', year: 'numeric' });
 
-export default function PanelCliente({ customerId, conversacion = null }) {
+export default function PanelCliente({ customerId, arriba = null }) {
     const [ctx, setCtx] = useState(undefined);
     const [error, setError] = useState(null);
     const [abierta, setAbierta] = useState(null);
@@ -46,32 +44,17 @@ export default function PanelCliente({ customerId, conversacion = null }) {
     if (ctx === undefined) return <div className="p-4"><SkeletonText lines={6} /></div>;
     if (!ctx) return <div className="p-4"><Notice variant="info">Este cliente ya no está registrado.</Notice></div>;
 
-    const tipo = tipoDeCliente(ctx);
-    const nivel = NIVELES[ctx.nivel];
     const wa = telefonoParaWhatsapp(ctx.telefono);
     const tel = String(ctx.telefono ?? '').replace(/\D/g, '');
     const fila = 'min-h-[var(--tap-min)] active:scale-[0.97]';
 
     return (
         <div className="p-4 space-y-4 text-content">
-            {/* ── Quién es ─────────────────────────────────────────────── */}
-            <section className="flex items-center gap-3">
-                <ClienteAvatar conversacion={{ cliente: ctx.cliente, foto_url: ctx.foto_url, es_team: ctx.es_team, es_mayoreo: ctx.es_mayoreo, rango: ctx.rango, nivel: ctx.nivel }} size="lg" />
-                <div className="min-w-0">
-                    <p className="text-body font-semibold truncate">{nombreDeCliente(ctx.cliente)}</p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                        <Badge variant={tipo.variant} size="sm" uppercase={false}>{tipo.label}</Badge>
-                        {nivel && <Badge variant={nivel.variant} size="sm" uppercase={false}>{nivel.label}</Badge>}
-                    </div>
-                </div>
-            </section>
-
-            {/* Las etiquetas del equipo (la calificación va en el encabezado del hilo). */}
-            {etiquetasDe(conversacion).length > 0 && (
-                <section aria-label="Etiquetas" className="flex flex-wrap gap-1">
-                    <ChipsDeEtiquetas conversacion={conversacion} />
-                </section>
-            )}
+            {/* Quién es —foto, nombre, tipo y nivel— ya lo dice el encabezado
+                del hilo, que queda arriba: repetirlo acá era ver dos veces al
+                mismo cliente (reportado el 2026-10-21). Arriba van los datos de
+                la conversación que pasa el hilo (`arriba`). */}
+            {arriba}
 
             {ctx.telefono && (
                 <section className="flex flex-wrap gap-2">

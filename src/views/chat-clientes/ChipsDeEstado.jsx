@@ -51,7 +51,7 @@ export function EstadoEnTexto({ conversacion: c, atiende, ahora }) {
             {conFoto ? (
                 <>
                     <AvatarConEstado emp={atiende} px={16} mostrarChip={false} />
-                    <span className="shrink-0 text-content" title={`Atiende ${nombreDeCliente(shortEmployeeName(atiende))}`}>{nombreDeCliente(shortEmployeeName(atiende))}</span>
+                    <span className="shrink-0 text-content"><span className="sr-only">Atiende </span>{nombreDeCliente(shortEmployeeName(atiende))}</span>
                 </>
             ) : (
                 <>

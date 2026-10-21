@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.12 — Chat de clientes: «Atiende» sin title sobre texto
+
+- `ChipsDeEstado.jsx` ponía un `title=` sobre un `<span>` no interactivo
+  (`tooltip-no-control`, DESIGN §15.10), y eso tenía `gate:design` y CI en rojo.
+  El nombre ya se ve; «Atiende» pasa a texto para lector de pantalla.
+
 ## v2.1333.11 — Lint: de 32 errores a 14, con dos defectos reales
 
 - `tipoIconos.js` declaraba dos veces `CHAT_INCUMPLIMIENTO` y

@@ -52,7 +52,9 @@ export async function cambiarVisibilidadLaboratorioMinMax(labId, ocultar, contex
     const { error } = await updateLaboratorioMinMaxVisibility(labId, ocultar);
     if (error) return { error };
     if (!ocultar) {
-        const { data: prods } = await fetchProductIdsByLaboratorio(labId);
+        const { data: prods, error: errProds } = await fetchProductIdsByLaboratorio(labId);
+        // Sin la lista no se sabe qué desocultar: decirlo, no darlo por hecho.
+        if (errProds) return { error: null, errorDesocultar: errProds };
         if (prods?.length) {
             // Devuelve un array de resultados (uno por tramo de 1000): un tramo
             // fallido antes quedaba en silencio.

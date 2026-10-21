@@ -104,9 +104,13 @@ export async function generarResumenDeComentarios(surveyId, comments, segment) {
     if (error) throw error;
     const summary = data?.aiSummary || 'Sin respuesta.';
     if (surveyId) {
-        const { data: current } = await fetchSurveyAiSummaries(surveyId);
+        // Si la lectura falla NO se escribe: `merged` saldría con este solo
+        // segmento y el `update` borraría los resúmenes de los demás.
+        const { data: current, error: errLeer } = await fetchSurveyAiSummaries(surveyId);
+        if (errLeer) throw errLeer;
         const merged = { .../** @type {Record<string, string>} */ (current?.ai_summaries || {}), [segment]: summary };
-        await updateSurvey(surveyId, { ai_summaries: merged });
+        const { error: errGuardar } = await updateSurvey(surveyId, { ai_summaries: merged });
+        if (errGuardar) throw errGuardar;
     }
     return summary;
 }

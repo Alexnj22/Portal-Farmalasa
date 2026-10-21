@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1336.1 — Histórico de documentos de sucursal, resumen de encuestas y laboratorios de Mín·Máx
+
+- **Sucursales:** al reemplazar un documento (contrato, permiso, credencial de
+  enfermería), la fila «Histórico» guardaba la ruta del archivo anterior y,
+  enseguida, ese archivo se movía a `old/`: el historial habría abierto un 404
+  la primera vez que alguien reemplazara uno. El anterior ya no se mueve.
+- **Encuestas:** generar el resumen de comentarios de un segmento, si fallaba
+  la lectura de los resúmenes guardados, sobrescribía los de los demás
+  segmentos con uno solo. Ahora no escribe y avisa; y un guardado fallido
+  también avisa.
+- **Mín·Máx:** reactivar un laboratorio con un tropiezo al leer sus productos
+  lo daba por desocultado con los productos todavía ocultos. Ahora lo dice.
+
 ## v2.1336.0 — Encargar un producto que no tenemos: SRS, foto y consulta a Bodega
 
 «Apartar o encargar» sólo dejaba elegir productos del catálogo. Ahora, si no lo

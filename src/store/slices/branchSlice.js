@@ -34,32 +34,16 @@ const sanitizeForJsonb = (obj) => {
 };
 
 // 🚨 HELPER PARA VERSIONADO
-const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newFile, oldUrl) => {
+const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newFile) => {
     const timestamp = Date.now();
     const extension = newFile.name.split('.').pop() || 'pdf';
     const newFileName = `${fileType}_${timestamp}.${extension}`;
     const newPath = `branches/${branchId}/${categoryFolder}/${newFileName}`;
 
-    if (oldUrl) {
-        try {
-            const urlParts = oldUrl.split('/public/documents/');
-            if (urlParts.length > 1) {
-                const oldPath = urlParts[1];
-                const pathParts = oldPath.split('/');
-                const fileName = pathParts.pop();
-                const archivePath = `${pathParts.join('/')}/old/${fileName}`;
-                // El `catch` de abajo NO alcanzaba: `move` devuelve `{ error }`,
-                // no lanza, así que un archivado fallido no dejaba ni el aviso.
-                // Sigue siendo tolerante —el documento nuevo se sube igual— pero
-                // ahora se entera alguien.
-                const { error: moveErr } = await supabase.storage.from('documents').move(oldPath, archivePath);
-                if (moveErr) console.warn('No se pudo archivar el documento anterior en Storage:', moveErr.message);
-            }
-        } catch (e) {
-            console.warn("No se pudo archivar el documento anterior en Storage:", e);
-        }
-    }
-
+    // El anterior NO se mueve. Antes se pasaba a `…/old/`, pero `archiveOldDoc`
+    // ya había guardado la fila «Histórico» con la ruta VIEJA: el historial
+    // quedaba apuntando a un archivo que ya no estaba ahí (404). El nuevo lleva
+    // su propia marca de tiempo, así que no pisa al anterior.
     const cuerpo = newFile.body instanceof ArrayBuffer ? newFile.body : newFile;
     const tipo = newFile.body instanceof ArrayBuffer && newFile.contentType ? { contentType: newFile.contentType } : {};
     const { error } = await supabase.storage.from('documents').upload(newPath, cuerpo, { upsert: true, ...tipo });
@@ -109,7 +93,7 @@ export const createBranchSlice = (set, get) => ({
             let finalSettings = typeof newBranch.settings === 'string' ? JSON.parse(newBranch.settings) : (newBranch.settings || {});
 
             if (pendingRentFile) {
-                const documentUrl = await handleDocumentVersioning(newBranch.id, 'inmueble', 'contrato_alquiler', pendingRentFile, null);
+                const documentUrl = await handleDocumentVersioning(newBranch.id, 'inmueble', 'contrato_alquiler', pendingRentFile);
                 if (documentUrl) {
                     if (!finalSettings.rent) finalSettings.rent = {};
                     if (!finalSettings.rent.contract) finalSettings.rent.contract = {};
@@ -192,7 +176,7 @@ export const createBranchSlice = (set, get) => ({
 
                 mergedSettings.rent.contract.documentUrl = await handleDocumentVersioning(
                     id, 'inmueble', 'contrato_alquiler',
-                    payload.settings.rent.contract.documentFile, oldRentUrl
+                    payload.settings.rent.contract.documentFile
                 );
             }
 
@@ -218,7 +202,7 @@ export const createBranchSlice = (set, get) => ({
                         if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico)`, oldUrl);
 
                         mergedSettings.legal[f.url] = await handleDocumentVersioning(
-                            id, 'legal', f.dbType, newUploadedFile, oldUrl
+                            id, 'legal', f.dbType, newUploadedFile
                         );
                     } else if (payload.settings.legal[f.url] === null) {
                         const oldUrl = oldLegal[f.url];
@@ -252,7 +236,7 @@ export const createBranchSlice = (set, get) => ({
                         if (esArchivoPorSubir(n[f.file])) {
                             const oldUrl = vieja[f.url];
                             if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico)`, oldUrl, { enfermera: n.employeeId || null });
-                            fila[f.url] = await handleDocumentVersioning(id, 'legal', `${f.dbType}_${n.id}`, n[f.file], oldUrl);
+                            fila[f.url] = await handleDocumentVersioning(id, 'legal', `${f.dbType}_${n.id}`, n[f.file]);
                         }
                         delete fila[f.file];
                     }
@@ -563,8 +547,7 @@ export const createBranchSlice = (set, get) => ({
                     branchId,
                     'expenses',
                     `${expenseData.expense_type}_${expenseData.billing_month}`,
-                    expenseData.receiptFile,
-                    null
+                    expenseData.receiptFile
                 );
             }
 

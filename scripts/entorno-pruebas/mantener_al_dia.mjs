@@ -179,6 +179,8 @@ async function herramientas(ref) {
     await sql(ref, 'select * from public.correr_fechas_del_branch_de_pruebas()', { escribe: true });
     await sql(ref, leer('recalcular_resumenes.sql'), { escribe: true });
     await sql(ref, leer('permisos_de_la_cuenta_de_pruebas.sql'), { escribe: true });
+    // La bóveda nace vacía: sin la clave del kiosco el portal da 400 al entrar.
+    await sql(ref, leer('secretos_de_pruebas.sql'), { escribe: true });
     await igualarPermisosDeTablas(ref);
     await asegurarOrigenes(ref);
     // La distribuidora ya está en producción (2026-10-01): el branch trae su

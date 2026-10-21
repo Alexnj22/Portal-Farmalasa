@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.1 — Entorno de pruebas: la clave del kiosco nace sola
+
+La bóveda del entorno de pruebas nace vacía, y sin `kiosk_auth_pepper` la
+función del código del kiosco lanzaba un error: el portal recibía dos 400 al
+entrar con la cuenta de pruebas. En producción la misma función contesta 200
+(227 de 232 en 24 h; los otros 5 son sesiones vencidas).
+
+`scripts/entorno-pruebas/secretos_de_pruebas.sql` crea la clave si falta, con
+un valor al azar —nunca el de producción, para que un código de pruebas no
+valga en un kiosco real— y `mantener_al_dia.mjs` lo corre en cada vuelta. Ya
+se aplicó al branch vigente.
+
 ## v2.1335.0 — Rendimiento: el arranque pesa 9% menos y las vistas vuelven a su techo
 
 `gate:bundle` vuelve a estar en verde (lo estaba en rojo desde el 25-sep).

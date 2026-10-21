@@ -21,7 +21,7 @@ import { diaSV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import {
     MENSAJES_POR_PAGINA, fetchMensajes, fetchMensajesCambiados, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje,
-    resolverConversacion, responderConversacion, subirFotoDelEquipo, tomarConversacion,
+    resolverConversacion, responderConversacion, subirAudioDelEquipo, subirFotoDelEquipo, tomarConversacion,
 } from '@nucleo/data/chatClientes';
 import { guardarHilo, leerHilo } from './hiloEnMemoria';
 import { BarraDeMensaje, CitaDeMensaje, HojaDeMensaje, ReaccionesDeMensaje } from './AccionesDeMensaje';
@@ -306,7 +306,9 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
             autor: 'equipo', employee_id: yo, texto: String(envio.texto ?? '').trim() || null,
             foto_ruta: envio.archivo ? 'local' : null,
             foto_url: previo?.foto_url ?? (envio.archivo ? URL.createObjectURL(envio.archivo) : null),
-            adjunto: envio.adjunto ?? null, created_at: new Date().toISOString(),
+            adjunto: envio.voz ? { tipo: 'audio', duracion: envio.voz.duracion } : envio.adjunto ?? null,
+            archivo_url: previo?.archivo_url ?? (envio.voz ? URL.createObjectURL(envio.voz.archivo) : null),
+            created_at: new Date().toISOString(),
             cita: r ? { id: r.id, autor: r.autor, employee_id: r.employee_id, texto: r.texto, foto_ruta: r.foto_ruta } : null,
         };
         alFondoRef.current = true;
@@ -314,7 +316,10 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
         setMensajes((prev) => (previo ? (prev ?? []).map((m) => (m.id === tmpId ? temporal : m)) : [...(prev ?? []), temporal]));
         try {
             const fotoRuta = envio.archivo ? await subirFotoDelEquipo(c.customer_id, envio.archivo) : null;
-            await responderConversacion(id, { texto: envio.texto, fotoRuta, adjunto: envio.adjunto, respuestaA: r?.id ?? null });
+            const adjunto = envio.voz
+                ? { tipo: 'audio', ruta: await subirAudioDelEquipo(c.customer_id, envio.voz.archivo), nombre: null, duracion: envio.voz.duracion }
+                : envio.adjunto;
+            await responderConversacion(id, { texto: envio.texto, fotoRuta, adjunto, respuestaA: r?.id ?? null });
             await traerNuevos();
             // Si el real todavía no llegó, por lo menos que diga «enviado».
             setMensajes((prev) => (prev ?? []).map((m) => (m.id === tmpId ? { ...m, pendiente: false, enviado: true } : m)));
@@ -579,10 +584,11 @@ function fusionar(prev, nuevos) {
     const reemplazados = new Set();
     entran.filter((n) => n.autor === 'equipo').forEach((n) => {
         const t = base.find((m) => m.temporal && !m.fallido && !reemplazados.has(m.id)
-            && String(m.employee_id) === String(n.employee_id) && (m.texto ?? null) === (n.texto ?? null));
+            && String(m.employee_id) === String(n.employee_id) && (m.texto ?? null) === (n.texto ?? null)
+            && (m.adjunto?.tipo ?? null) === (n.adjunto?.tipo ?? null));
         if (t) {
             reemplazados.add(t.id);
-            if (String(t.foto_url ?? '').startsWith('blob:')) URL.revokeObjectURL(t.foto_url);
+            [t.foto_url, t.archivo_url].forEach((u) => { if (String(u ?? '').startsWith('blob:')) URL.revokeObjectURL(u); });
         }
     });
     const quedan = base.filter((m) => !reemplazados.has(m.id));
@@ -717,7 +723,7 @@ const Burbuja = memo(function Burbuja({
                             <span className="text-body-sm font-semibold min-w-0 truncate">{adj.titulo}</span>
                         </span>
                     )}
-                    {/* La nota de voz del cliente (m4a/AAC). */}
+                    {/* La nota de voz (m4a/AAC) — del cliente o del equipo. */}
                     {adj?.tipo === 'audio' && <NotaDeVoz key={m.archivo_url ?? 'sin-archivo'} src={m.archivo_url} delEquipo={delEquipo} />}
                     {adj?.tipo === 'pdf' && (
                         <a href={m.archivo_url ?? undefined} target="_blank" rel="noreferrer" title="Abrir el documento"

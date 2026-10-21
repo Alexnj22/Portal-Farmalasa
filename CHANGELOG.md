@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1324.0 — Chat: el equipo manda notas de voz desde el portal
+
+- **Con el cuadro vacío, el botón redondo es un micrófono** (como en WhatsApp): graba, muestra el tiempo, y se descarta o se envía. Tope de 3 minutos — al llegar se envía sola. Va por el mismo envío optimista que el texto: el globo aparece al instante (medido: 65 ms) y suena desde el navegador antes de terminar de subir.
+- **El formato es `audio/mp4` (AAC), no el `webm` que Chrome elige solo**: el bucket sólo acepta mp4/aac/mpeg y el iPhone del cliente no abre webm. Chrome y Safari lo graban (`MediaRecorder.isTypeSupported`); el archivo de prueba salió AAC mono 48 kHz y lo decodifican CoreAudio y WebKit. Si un navegador no puede, el micrófono no aparece.
+- **`Permissions-Policy` decía `microphone=()`**: el sitio tenía el micrófono prohibido. Ahora `microphone=(self)`.
+- `fusionar` también compara el tipo de adjunto para reemplazar el globo temporal: dos mensajes sin texto (una foto y una nota de voz) ya no se pueden confundir.
+
 ## v2.1323.1 — Chat: las notas de voz se escuchan en el portal
 
 - **Las notas de voz salían «no disponible» en producción.** La política de seguridad del sitio (`vercel.json`) no tenía `media-src`, así que caía en `default-src 'self'` y el navegador bloqueaba el audio de Supabase **antes de pedirlo** — los registros de Storage no muestran ni un GET del portal, sólo de la app del cliente. En local no hay esa política, por eso en pruebas sonaba. Se agregó `media-src 'self' blob: https://*.supabase.co`. Reproducido en WebKit con la política vieja (2 «no disponible») y la nueva (suena).

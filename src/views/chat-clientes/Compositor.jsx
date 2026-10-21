@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, MessageSquareText, Package, Send, Tag, Trash2, X } from 'lucide-react';
+import { ImagePlus, MessageSquareText, Mic, Package, Send, Tag, Trash2, X } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import Button from '../../components/common/Button';
@@ -22,10 +22,12 @@ import {
     marcarEscribiendo,
 } from '@nucleo/data/chatClientes';
 import { FranjaDeRespuesta } from './AccionesDeMensaje';
+import useGrabadora from './useGrabadora';
 
 // El cuadro para responder: texto, una foto, una respuesta rápida guardada, o
 // un producto / una oferta vigente que el cliente puede tocar en la app.
-// Enter envía; Shift+Enter hace un salto de línea.
+// Enter envía; Shift+Enter hace un salto de línea. Con el cuadro vacío, el
+// botón redondo es un micrófono: graba una nota de voz, como en WhatsApp.
 //
 // Mientras se escribe, avisa «está escribiendo» (`chat_escribiendo`, vale 6 s)
 // a lo sumo cada 3 s: lo ven el cliente en la app y el resto del equipo.
@@ -75,6 +77,28 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
         setArchivo(f);
     };
 
+    // ── Nota de voz ── (al llegar al tope de duración se envía sola)
+    const alTopeRef = useRef(null);
+    const grabadora = useGrabadora({ onTope: () => alTopeRef.current?.() });
+    const enviarVoz = async () => {
+        const voz = await grabadora.detener();
+        if (!voz) { showToast('No se grabó nada', 'Intenta de nuevo.', 'error'); return; }
+        onEnviar({ voz, respuestaA: respondiendoA });
+        onQuitarRespuesta?.();
+    };
+    useEffect(() => { alTopeRef.current = enviarVoz; });
+    const grabar = async () => {
+        try {
+            await grabadora.empezar();
+        } catch (err) {
+            console.error('Compositor: no se pudo usar el micrófono', err);
+            showToast('No se pudo usar el micrófono',
+                err?.name === 'NotAllowedError' ? 'Permite el micrófono para este sitio en el navegador.' : 'Revisa que haya un micrófono conectado.',
+                'error');
+        }
+    };
+    const grabando = grabadora.estado === 'grabando';
+
     // El envío lo hace el hilo (`onEnviar`), que pinta el globo al instante:
     // acá sólo se vacía el cuadro, sin esperar a la red. Así se puede escribir
     // el siguiente mensaje mientras el anterior viaja.
@@ -114,15 +138,35 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
             {/* El campo crece con el texto (hasta ~6 renglones) y el botón de
                 enviar va a su lado, redondo: la forma de cualquier app de
                 mensajería. Las herramientas, en una tira fina debajo. */}
+            {grabando ? (
+                <div className="flex items-center gap-2 min-h-[var(--tap-min)]">
+                    <Button variant="ghost" size="md" iconOnly icon={Trash2} title="Descartar la nota de voz" onClick={grabadora.cancelar}
+                        className="shrink-0" />
+                    <span className="flex-1 min-w-0 flex items-center gap-2 rounded-input bg-surface-card border border-border-card px-3 h-10" role="status">
+                        <span className="size-2.5 rounded-full bg-danger animate-pulse shrink-0" aria-hidden="true" />
+                        <span className="text-body-sm font-semibold tabular-nums text-content">
+                            {Math.floor(grabadora.segundos / 60)}:{String(grabadora.segundos % 60).padStart(2, '0')}
+                        </span>
+                        <span className="text-label text-content-3 truncate">Grabando nota de voz…</span>
+                    </span>
+                    <Button size="md" iconOnly icon={Send} title="Enviar la nota de voz" onClick={enviarVoz} className="shrink-0" />
+                </div>
+            ) : (
             <div className="flex items-end gap-2">
                 <PortalTextarea name="chat-respuesta" aria-label="Escribe una respuesta" placeholder="Escribe una respuesta…" rows={1} compact
                     ref={campoRef} className="flex-1 min-w-0" textareaClassName="!font-medium max-h-40 overflow-y-auto"
                     value={texto} onChange={(e) => escribir(e.target.value.slice(0, MAX_TEXTO))}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) { e.preventDefault(); enviar(); } }} />
-                <Button size="md" iconOnly icon={Send} title="Enviar" disabled={!puedeEnviar} onClick={enviar}
-                    className="shrink-0" />
+                {!puedeEnviar && grabadora.soportada ? (
+                    <Button size="md" iconOnly icon={Mic} title="Grabar una nota de voz" loading={grabadora.estado === 'pidiendo'}
+                        onClick={grabar} className="shrink-0" />
+                ) : (
+                    <Button size="md" iconOnly icon={Send} title="Enviar" disabled={!puedeEnviar} onClick={enviar}
+                        className="shrink-0" />
+                )}
             </div>
-            <div className="flex items-center gap-0.5">
+            )}
+            <div className={`flex items-center gap-0.5 ${grabando ? 'hidden' : ''}`}>
                 <input ref={fileRef} type="file" accept={TIPOS_FOTO} className="sr-only" onChange={elegirFoto} />
                 <Button variant="ghost" size="xs" iconOnly icon={ImagePlus} title="Adjuntar una foto" onClick={() => fileRef.current?.click()} />
                 <Button variant="ghost" size="xs" iconOnly icon={MessageSquareText} title="Respuestas rápidas" onClick={() => setHoja('respuestas')} />

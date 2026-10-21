@@ -237,6 +237,17 @@ export async function subirFotoDelEquipo(customerId, archivo) {
     return ruta;
 }
 
+/**
+ * La nota de voz del equipo (2026-10-21). Va como `audio/mp4` (AAC) a propósito:
+ * es lo que el bucket acepta y lo que el iPhone del cliente reproduce — un
+ * `webm` de Chrome no lo abre iOS. El grabador ya pide ese formato.
+ */
+export async function subirAudioDelEquipo(customerId, archivo) {
+    const ruta = `chat/${Number(customerId)}/equipo/${Date.now()}.m4a`;
+    sinError(await supabase.storage.from(BUCKET_APP_CLIENTES).upload(ruta, archivo?.body ?? archivo, { contentType: 'audio/mp4', upsert: false }));
+    return ruta;
+}
+
 export async function resolverConversacion(conversacionId) {
     const r = sinError(await supabase.rpc('chat_resolver', { p_conversacion: Number(conversacionId) }));
     anotar('CHAT_CLIENTE_RESOLVER', String(conversacionId), {});

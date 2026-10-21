@@ -20,7 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buscarConExistencia, buscarEnCatalogo, fetchLotesDeProducto, fetchPerecederos, fetchPresentaciones, fetchSucursalEnConteo, insertMovimientoInventario } from '@nucleo/data/inventoryMovements';
-import { BUCKET_EVIDENCIA, causaObligatoria, llevaControlDeLote, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, OPS_CON_FOTO, problemasDeLinea, solicitudDeAjuste } from '@nucleo/utils/ajusteInventario';
+import { BUCKET_EVIDENCIA, causaObligatoria, llevaControlDeLote, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, OPS_CON_FOTO, problemasDeLinea, solicitudDeAjuste, unidadesEnSala } from '@nucleo/utils/ajusteInventario';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { BRANCH_A_ERP, ERP_ORDEN, ERP_UBICACION_POR_SUCURSAL } from '@nucleo/constants/erp';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
@@ -127,12 +127,12 @@ export default function Ajuste() {
     const pres = presPorProducto.get(fila.erp_product_id) ?? [];
     const unidad = pres.find((p) => p.factor === 1) ?? pres[0];
     setBorrador({ erp_product_id: fila.erp_product_id, descripcion: fila.descripcion, tipo: unidad?.tipo ?? 'UNIDAD', factor: unidad?.factor ?? 1,
-      cantidad: '', existencia: fila.cantidad ?? null, lote: '', vence: '', regulado: fila.regulado ?? null });
+      cantidad: '', unidadesEnSala: unidadesEnSala(candidatos, fila.erp_product_id), lote: '', vence: '', regulado: fila.regulado ?? null });
     if (!lotesPorProducto.has(fila.erp_product_id)) {
       const { lotes } = await fetchLotesDeProducto({ erpProductId: fila.erp_product_id, erpSucursalId });
       setLotes((m) => new Map(m).set(fila.erp_product_id, lotes));
     }
-  }, [presPorProducto, lotesPorProducto, erpSucursalId]);
+  }, [presPorProducto, lotesPorProducto, erpSucursalId, candidatos]);
 
   const lotesBorrador = borrador ? lotesPorProducto.get(borrador.erp_product_id) : null;
   const faltaBorrador = !borrador || lotesBorrador === undefined ? ['cargando'] : problemasDeLinea(borrador, {
@@ -253,7 +253,7 @@ export default function Ajuste() {
           ) : (
             <Seccion titulo="Producto">
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{borrador.descripcion}</Text>
-              {borrador.existencia != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{borrador.existencia} en la sala</Text> : null}
+              {borrador.unidadesEnSala != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{borrador.unidadesEnSala} {borrador.unidadesEnSala === 1 ? 'unidad' : 'unidades'} en la sala</Text> : null}
               {pres.length > 1 ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {pres.map((p) => <Pastilla key={p.tipo} texto={p.tipo} activa={borrador.tipo === p.tipo} onPress={() => setBorrador((b) => ({ ...b, tipo: p.tipo, factor: p.factor }))} />)}

@@ -23,7 +23,7 @@ import {
 } from '@nucleo/data/inventoryMovements';
 import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
-import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria } from '@nucleo/utils/ajusteInventario';
+import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, unidadesEnSala, topeDeLinea } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
@@ -369,7 +369,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             tipo:   unidad?.tipo ?? 'UNIDAD',
             factor: unidad?.factor ?? 1,
             cantidad: '',
-            existencia: fila.cantidad ?? null,
+            unidadesEnSala: unidadesEnSala(candidatos, fila.erp_product_id),
             lote: '',
             vence: '',
             loteNuevo: false,
@@ -389,7 +389,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
         });
         setLotesPorProducto(prev => new Map(prev).set(fila.erp_product_id, lotes));
         if (pedidoLotes.current === token) setLotesBorrador(lotes);
-    }, [presPorProducto, lotesPorProducto, erpSucursalId]);
+    }, [presPorProducto, lotesPorProducto, erpSucursalId, candidatos]);
 
     const cerrarBorrador = useCallback(() => {
         pedidoLotes.current++;
@@ -655,9 +655,9 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                             <p className="text-body-sm font-black text-content leading-tight">
                                 {borrador.descripcion}
                             </p>
-                            {borrador.existencia != null && (
+                            {borrador.unidadesEnSala != null && (
                                 <p className="text-micro text-content-2 font-semibold mt-0.5">
-                                    {borrador.existencia} en la sala
+                                    {borrador.unidadesEnSala} {borrador.unidadesEnSala === 1 ? 'unidad' : 'unidades'} en la sala
                                 </p>
                             )}
                         </div>
@@ -821,8 +821,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         <p className="flex items-center gap-1 text-micro text-content-3 font-semibold px-1">
                             <AlertTriangle size={11} strokeWidth={2.5} />
                             Falta {faltaBorrador.join(', ')}
-                            {faltaBorrador.includes('sin existencia') && borrador.existencia != null
-                                && ` · hay ${borrador.existencia}`}
+                            {faltaBorrador.includes('sin existencia') && topeDeLinea(borrador) != null
+                                && ` · alcanza para ${topeDeLinea(borrador)} ${borrador.tipo}`}
                         </p>
                     )}
 
@@ -930,7 +930,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         al descargar — una carga no tiene tope. */}
                                     <PortalInput
                                         type="number" min="1" value={l.cantidad}
-                                        max={!esCarga && l.existencia != null ? l.existencia : undefined}
+                                        max={!esCarga && topeDeLinea(l) != null ? topeDeLinea(l) : undefined}
                                         onChange={e => editar(l.id, { cantidad: e.target.value })}
                                         aria-label="Cantidad"
                                         className="w-20"
@@ -1026,7 +1026,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                     <p className="flex items-center gap-1 text-micro text-danger-text font-semibold mt-1.5">
                                         <AlertTriangle size={11} strokeWidth={2.5} />
                                         Falta {pide.join(', ')}
-                                        {pide.includes('sin existencia') && l.existencia != null && ` · hay ${l.existencia}`}
+                                        {pide.includes('sin existencia') && topeDeLinea(l) != null && ` · alcanza para ${topeDeLinea(l)} ${l.tipo}`}
                                     </p>
                                 )}
                             </div>

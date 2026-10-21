@@ -5,6 +5,7 @@
  * veces, la primera que cambiara dejaría a una pidiendo lo que la otra no.
  * Puras: no conocen ni React ni el navegador. Los íconos van por NOMBRE.
  */
+import { sumaUnidades } from './unidadesInventario';
 
 export const OPERACIONES_AJUSTE = [
     { key: 'VENCIMIENTO',     movimiento: 'DESCARTE', icono: 'CalendarX2',    tono: 'peligro',
@@ -57,13 +58,42 @@ export const MAX_FOTOS_AJUSTE = 3;
 export function problemasDeLinea(l, { llevaLote, esCarga, esPerecedero }) {
     const problemas = [];
     if (!(Number(l.cantidad) > 0)) problemas.push('cantidad');
-    if (!esCarga && l.existencia != null && Number(l.cantidad) > Number(l.existencia))
-        problemas.push('sin existencia');
+    if (!esCarga && excedeLaExistencia(l)) problemas.push('sin existencia');
     const loteObligatorio = esCarga ? llevaLote !== false : llevaLote === true;
     if (loteObligatorio && !String(l.lote ?? '').trim()) problemas.push('lote');
     if (esCarga && (loteObligatorio || esPerecedero) && !String(l.vence ?? '').trim())
         problemas.push('vence');
     return problemas;
+}
+
+/**
+ * Las unidades que la sala tiene de un producto, sumando todas sus filas del
+ * inventario. Cada fila es un lote EN UNA PRESENTACIÓN (2 cajas ×30), así que
+ * su `cantidad` sola no se puede comparar con una línea armada en otra.
+ */
+export function unidadesEnSala(filas, erpProductId) {
+    const propias = (filas ?? []).filter(f => f.erp_product_id === erpProductId);
+    if (propias.some(f => f.cantidad == null)) return null;
+    return sumaUnidades(propias);
+}
+
+/**
+ * ¿La línea pide más de lo que hay? Con `unidadesEnSala` se compara en unidades
+ * (`cantidad × factor`): antes se comparaba la cantidad de la línea, en
+ * UNIDADES, contra la de una fila en CAJAS, y descargar 3 unidades de 2 cajas
+ * ×30 daba «sin existencia · hay 2». `existencia` a secas queda para quien ya
+ * la manda en la misma presentación que la línea (la corrección de factor).
+ */
+function excedeLaExistencia(l) {
+    const cant = Number(l.cantidad);
+    if (l.unidadesEnSala != null) return cant * (Number(l.factor) || 1) > Number(l.unidadesEnSala);
+    return l.existencia != null && cant > Number(l.existencia);
+}
+
+/** El tope de la línea en SU presentación, o `null` si no se sabe. */
+export function topeDeLinea(l) {
+    if (l.unidadesEnSala != null) return Math.floor(Number(l.unidadesEnSala) / (Number(l.factor) || 1));
+    return l.existencia ?? null;
 }
 
 /**
@@ -104,7 +134,7 @@ export function solicitudDeAjuste({ op, motivo, causa, evidencia = [], lineas, u
         lote:              String(l.lote ?? '').trim() || null,
         numero_lote:       String(l.lote ?? '').trim() || null,
         vence:             String(l.vence ?? '').trim() || null,
-        existencia:        l.existencia,
+        existencia:        l.unidadesEnSala ?? l.existencia,
     }));
     const motivos = MOTIVOS_AJUSTE[op.key];
     return {

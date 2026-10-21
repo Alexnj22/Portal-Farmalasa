@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1335.9 — Descargar del inventario compara en unidades
+
+Al descargar producto (dañado, vencido, descuadre), el aviso «sin existencia»
+comparaba la cantidad de la línea, en unidades, contra la de UNA fila del
+inventario, que puede estar en cajas: descargar 3 unidades de un lote con 2
+cajas ×30 se bloqueaba con «hay 2». Ahora la existencia es la suma en unidades
+de todas las filas del producto en la sala, la línea se compara por
+`cantidad × factor`, y el aviso dice cuánto alcanza en la presentación elegida
+(«alcanza para 2 CAJA»). Igual en la app.
+
 ## v2.1335.8 — Caja: rechazar un movimiento lo anula
 
 «si no la aprobé significa que se cancela» (usuario). Rechazar una salida o

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { solicitudDeMinMax, mensajeDeMinMax } from '@nucleo/utils/minmaxSolicitud';
-import { problemasDeLinea, llevaControlDeLote, causaObligatoria, solicitudDeAjuste, OPERACIONES_AJUSTE } from '@nucleo/utils/ajusteInventario';
+import { problemasDeLinea, llevaControlDeLote, causaObligatoria, solicitudDeAjuste, OPERACIONES_AJUSTE, unidadesEnSala, topeDeLinea } from '@nucleo/utils/ajusteInventario';
 
 describe('ajusteInventario', () => {
     it('una carga sin saber si lleva lote EXIGE el lote (AVAMYS)', () => {
@@ -41,5 +41,32 @@ describe('minmax — la solicitud y sus mensajes', () => {
     it('traduce los errores de la base', () => {
         expect(mensajeDeMinMax('MMCR_BODEGA')).toMatch(/Bodega/);
         expect(mensajeDeMinMax('x MMCR_SIN_CAMBIO', 'Salud 1')).toMatch(/Salud 1/);
+    });
+});
+
+describe('la existencia de un descargo se cuenta en unidades', () => {
+    // Una fila del inventario es un lote EN UNA PRESENTACIÓN: 2 cajas ×30.
+    const filas = [
+        { erp_product_id: 7, cantidad: 2, detalle: 'CAJA 1x30' },
+        { erp_product_id: 7, cantidad: 5, detalle: 'UNIDAD' },
+        { erp_product_id: 8, cantidad: 9, detalle: 'UNIDAD' },
+    ];
+    it('suma todas las filas del producto en unidades', () => {
+        expect(unidadesEnSala(filas, 7)).toBe(65);
+        expect(unidadesEnSala([{ erp_product_id: 7, cantidad: null }], 7)).toBeNull();
+    });
+    it('3 unidades de 2 cajas ×30 sí alcanzan', () => {
+        const l = { cantidad: 3, factor: 1, unidadesEnSala: 60 };
+        expect(problemasDeLinea(l, { llevaLote: false, esCarga: false })).toEqual([]);
+    });
+    it('en cajas el tope es la división entera', () => {
+        const l = { cantidad: 3, factor: 30, unidadesEnSala: 65, tipo: 'CAJA' };
+        expect(problemasDeLinea(l, { llevaLote: false, esCarga: false })).toContain('sin existencia');
+        expect(topeDeLinea(l)).toBe(2);
+    });
+    it('la solicitud anota las unidades', () => {
+        const op = OPERACIONES_AJUSTE.find(o => o.movimiento !== 'CARGA');
+        const s = solicitudDeAjuste({ op, motivo: Object.keys({})[0], causa: 'x', lineas: [{ erp_product_id: 7, tipo: 'UNIDAD', factor: 1, cantidad: '3', unidadesEnSala: 60 }], usuarioId: 'u', sala: { branchId: 1, nombre: 'S', erpSucursalId: 1 } });
+        expect(JSON.stringify(s)).toContain('"existencia":60');
     });
 });

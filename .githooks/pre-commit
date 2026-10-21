@@ -61,6 +61,35 @@ if [ -n "$FUERA" ]; then
   echo ""
 fi
 
+# ── 2b. ¿Este main está atrás de origin/main? ───────────────────────────────────
+# El 2026-10-21 el main del árbol compartido llevaba seis días sin avanzar: 118
+# commits atrás y 8 adelante, los 8 COPIAS. Cada sesión commiteaba sobre el main
+# viejo, el push rebotaba, y repetía el commit desde un worktree con otro número
+# de versión; el local quedaba y el siguiente nacía más atrás. Un commit sobre
+# un main atrasado está escrito contra código que ya no existe, y sus gates
+# miden ese código.
+#
+# Sin red a propósito: compara contra el `origin/main` que ya se bajó (cualquier
+# sesión que haga fetch lo actualiza para todas). Un gate de commit que necesita
+# red falla sin conexión y enseña a escribir --no-verify.
+if [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] && git rev-parse -q --verify origin/main >/dev/null; then
+  ATRAS=$(git rev-list --count HEAD..origin/main 2>/dev/null || echo 0)
+  if [ "$ATRAS" -gt 0 ]; then
+    echo "  ✗ main está $ATRAS commit(s) ATRÁS de origin/main."
+    echo ""
+    echo "    Este commit se escribiría contra código viejo y el push va a rebotar."
+    echo "    Ponelo al día sin perder nada de nadie:"
+    echo ""
+    echo "      npm run main:al-dia              (dice qué haría)"
+    echo "      npm run main:al-dia -- --aplicar"
+    echo ""
+    echo "    Si se niega, es porque hay trabajo sin publicar: trabajá en un"
+    echo "    worktree (npm run worktree -- <nombre>), que nace de origin/main."
+    echo ""
+    exit 1
+  fi
+fi
+
 # ── 3. Los gates ────────────────────────────────────────────────────────────────
 node scripts/version-gate.mjs || exit 1
 

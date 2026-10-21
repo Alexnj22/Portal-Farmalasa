@@ -1210,6 +1210,20 @@ llevan trabajo ajeno sin commitear. Siempre paths explícitos, y **verificar
 protección real: lo commiteado se recupera, lo demás no. Y `git fetch` antes de
 pushear — el remoto puede haberse movido.
 
+**El `main` de este árbol se queda atrás solo, y commitear encima lo empeora**
+(2026-10-21). Llevaba seis días sin avanzar: **118 commits atrás y 8 adelante,
+los 8 copias**. `git pull` se niega con el árbol sucio —siempre lo está— y
+`stash`/`reset --hard` están prohibidos, así que nadie lo ponía al día; cada
+sesión commiteaba sobre código viejo, el push rebotaba y repetía el commit
+desde un worktree con otro número. Tres piezas lo cierran:
+- **`npm run main:al-dia`** (`-- --aplicar` para hacerlo) lo pone al día sin
+  perder nada: se niega si un commit local no tiene gemelo arriba o si un
+  archivo sucio tiene una línea que no está en ningún commit de arriba,
+  respalda todo en `.git/respaldos-main/`, y usa `reset --keep`.
+- **El pre-commit bloquea un commit en `main` si está atrás de
+  `origin/main`** (sin red: contra el último fetch).
+- **`npm run worktree` nace de `origin/main`**, no del HEAD local.
+
 **Al bumpear `APP_VERSION`: `npm run version:bump -- patch|minor|major "Título"`.**
 Lee la versión, la sube y deja la entrada empezada en `CHANGELOG.md` de una
 sola pasada, y **relee justo antes de escribir** por si otra sesión se llevó ese

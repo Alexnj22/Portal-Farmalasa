@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Crea un árbol de trabajo aparte para una sesión, listo para usar.
 #
-#   npm run worktree -- clientes          → ../Portal-Farmalasa-clientes, rama sesion/clientes
-#   npm run worktree -- clientes main     → parte de main en vez de HEAD
+#   npm run worktree -- clientes          → ../Portal-Farmalasa-clientes, rama sesion/clientes  (nace de origin/main)
+#   npm run worktree -- clientes HEAD     → parte del HEAD local en vez de origin/main
 #
 # ── Por qué ─────────────────────────────────────────────────────────────────
 # Este repo se trabaja con 2-3 sesiones a la vez sobre el MISMO directorio, y
@@ -24,7 +24,10 @@
 set -euo pipefail
 
 NOMBRE="${1:-}"
-BASE="${2:-HEAD}"
+# Nace de `origin/main`, no de HEAD (2026-10-21): el HEAD del árbol compartido
+# puede estar días atrás, y un worktree que nace de ahí hereda el atraso entero.
+BASE="${2:-origin/main}"
+git fetch -q origin main 2>/dev/null || echo "  ⚠ sin red: el worktree parte del último origin/main bajado" >&2
 if [ -z "$NOMBRE" ]; then
   echo "  uso: npm run worktree -- <nombre> [rama-base]" >&2
   exit 1

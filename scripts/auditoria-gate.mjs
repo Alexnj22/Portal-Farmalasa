@@ -71,7 +71,9 @@ const SOLO_MAPA = args.includes('--mapa');
 // FALLA en vez de avisar.
 const DIAS_FOTO = 7;
 let vivo = null, errorVivo = null;
-if (!MODO_HOOK && !args.includes('--sin-red')) {
+// Con AUDITORIA_DIR (las pruebas) los archivos redirigidos SON la verdad,
+// foto incluida: leer producción encima pisaría el caso que la prueba arma.
+if (!MODO_HOOK && !args.includes('--sin-red') && !process.env.AUDITORIA_DIR) {
     try {
         const { leerCatalogoDeProduccion } = await import('./lib/catalogo-produccion.mjs');
         vivo = { generado: new Date().toISOString(), ...(await leerCatalogoDeProduccion()) };

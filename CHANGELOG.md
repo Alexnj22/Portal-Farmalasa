@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.8 — Auditoría: el gate no lee producción cuando la prueba le da la foto
+
+- Desde v2.1332.1, `gate:auditoria` lee producción en vivo, y eso pisaba la
+  foto que arman sus pruebas con `AUDITORIA_DIR`: fallaban 3 de las 13
+  pruebas. Con `AUDITORIA_DIR`, los archivos redirigidos vuelven a ser la
+  verdad.
+
 ## v2.1333.7 — Salud 3 del 16-oct declarado como histórico en gate:cortes
 
 - `gate:cortes` acusaba a Salud 3 de cerrar el 16-oct con $15.55 sin contar.

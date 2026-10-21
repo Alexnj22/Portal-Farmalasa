@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1331.4 — App de puntos: el chat se mueve fluido, sin rebotes
+
+Pedido del usuario: «en el chat de la app de clientes hay mucho rebote; que se vea animado pero fluido, no demasiado exagerado».
+
+Cada pieza del chat traía su propio resorte, con razones de amortiguación entre 0.46 y 0.62 (o sea, rebotes del 8 al 20 %):
+
+| pieza | antes | ahora |
+|---|---|---|
+| el mensaje propio al enviarse | `ZoomIn` desde 0, razón 0.52 | crece de 0.9 a 1 con fundido, resorte `SUAVE` |
+| el menú del mensaje (mantener presionado) | razón 0.46 | `SUAVE` |
+| deslizar para responder, al soltar | razón 0.61 | `SUAVE` |
+| soltar cualquier botón (iPhone, toda la app) | razón 0.62 | 0.8 |
+
+`SUAVE` (`componentes/movimiento.js`) es un resorte de razón 0.88: se mueve con vida y se pasa menos del 1 %. Sale en la compilación nueva de la app de puntos.
+
 ## v2.1331.3 — Chat: el aviso al cliente dice «Farmacia Salud» y «Edwin: …»
 
 Decisión del usuario sobre el aviso que le llega al cliente cuando el equipo le responde (`chat_responder`, migración `20261021190329`).

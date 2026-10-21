@@ -84,7 +84,7 @@ import { ActionSheetIOS, Alert, AppState, Dimensions, FlatList, InteractionManag
 import Presionable from '../componentes/Presionable';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
-import Animated, { FadeIn, ZoomIn, useAnimatedKeyboard, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, useAnimatedKeyboard, withSpring, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -111,6 +111,20 @@ import BuscarEnChat from '../componentes/BuscarEnChat';
 import { suave, useTema } from '../tema/tema';
 import { useMiNivel } from '../lib/exclusiva';
 import { chatAbierto, desdeFechaPrimera, guardarHilo, leerHilo } from '../lib/chatHilo';
+import { SUAVE } from '../componentes/movimiento';
+
+// La entrada del mensaje propio: crece de 0.9 a 1 con el resorte SUAVE y se
+// funde en 0.15 s. Una animación de entrada a medida de Reanimated (worklet).
+function entradaPropia() {
+  'worklet';
+  return {
+    initialValues: { opacity: 0, transform: [{ scale: 0.9 }] },
+    animations: {
+      opacity: withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) }),
+      transform: [{ scale: withSpring(1, SUAVE) }],
+    },
+  };
+}
 
 const IOS = Platform.OS === 'ios';
 const CADA_MS = 5000;
@@ -1354,9 +1368,11 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
   const mio = m.autor === 'cliente';
   const real = typeof m.id === 'number';
   // Un fundido y nada más: en la lista invertida un deslizamiento se ve al revés.
-  // Lo propio entra con un resorte (2026-10-20), como el globo que sale del
+  // Lo propio entra creciendo un poco (2026-10-20), como el globo que sale del
   // botón de enviar en Mensajes; lo del equipo, con el fundido y el destello.
-  const entrada = entra && !reducir ? (m.autor === 'cliente' ? ZoomIn.springify().damping(16).stiffness(240) : FadeIn.duration(200)) : undefined;
+  // Era un `ZoomIn` desde 0 con resorte de razón 0.52 —rebotaba—; desde el
+  // 2026-10-21 crece de 0.9 con el resorte SUAVE (sin rebote a la vista).
+  const entrada = entra && !reducir ? (m.autor === 'cliente' ? entradaPropia : FadeIn.duration(200)) : undefined;
   // La respuesta automática (2026-10-20): como un globo de la farmacia, con el
   // logo y «Respuesta automática» arriba, y el producto si lo trae.
   if (m.autor === 'sistema' && m.automatica) {

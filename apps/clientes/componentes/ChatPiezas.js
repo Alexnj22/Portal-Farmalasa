@@ -25,6 +25,7 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { SUAVE } from './movimiento';
 import Animated, { interpolate, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -243,7 +244,7 @@ export function Deslizable({ children, alResponder, alMantener }) {
         if (v <= UMBRAL && paso.value) paso.value = false;
       })
       .onEnd(() => { if (paso.value) runOnJS(responder)(); })
-      .onFinalize(() => { paso.value = false; x.value = reducir ? withTiming(0, { duration: 120 }) : withSpring(0, { damping: 18, stiffness: 220 }); });
+      .onFinalize(() => { paso.value = false; x.value = reducir ? withTiming(0, { duration: 120 }) : withSpring(0, SUAVE); });
     // Sólo un MANTENER deliberado abre el menú: 350 ms quieto (si el dedo se
     // mueve más de 10 px es un desplazamiento y no cuenta).
     const mantener = Gesture.LongPress().minDuration(350).maxDistance(10).onStart(() => { runOnJS(abrirMenu)(); });
@@ -279,7 +280,7 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
   const escala = useSharedValue(reducir ? 1 : 0.85);
   useEffect(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    if (!reducir) escala.value = withSpring(1, { damping: 16, stiffness: 300 });
+    if (!reducir) escala.value = withSpring(1, SUAVE);
   }, [reducir, escala]);
   const animado = useAnimatedStyle(() => ({ transform: [{ scale: escala.value }] }));
   const { m } = menu;

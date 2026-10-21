@@ -35,7 +35,18 @@ export const SUELTA = Platform.OS === 'android' ? M3.espacialRapido : IOS.suelta
 // Soltar algo que se apretó (2026-10-20): en iPhone vuelve con un rebote leve,
 // como los controles de iOS 26; en Android, el espacial rápido de Material
 // (sin rebote visible).
-export const SUELTA_TOQUE = Platform.OS === 'android' ? M3.espacialRapido : resorte(420, 0.62);
+// Era 0.62 (≈8 % de rebote); el 2026-10-21 el usuario lo encontró de más en
+// el chat («hay mucho rebote… animado pero fluido, no demasiado exagerado»).
+// Con 0.8 queda un asentarse apenas visible.
+export const SUELTA_TOQUE = Platform.OS === 'android' ? M3.espacialRapido : resorte(420, 0.8);
+
+/**
+ * El resorte del chat (2026-10-21): vivo pero sin rebote a la vista (razón
+ * 0.88, se pasa menos del 1 %). Antes cada pieza traía el suyo con razones de
+ * 0.46 a 0.61 —el globo propio, el menú del mensaje, el deslizar para
+ * responder— y todo rebotaba.
+ */
+export const SUAVE = resorte(380, 0.88);
 
 /**
  * `true` mientras la pantalla se desplaza, como VALOR COMPARTIDO de Reanimated

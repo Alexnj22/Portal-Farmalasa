@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.10 — App: el motor de impresión del pedido al día con las fechas
+
+- `apps/mobile/motor/motor-pedido.html` empaqueta `pedidoPdfDoc.js`, y quedó
+  viejo con la corrección de fechas de la versión anterior. Regenerado con
+  `node scripts/motor-pedido.mjs`. Era el último fallo de CI.
+
 ## v2.1333.9 — Fechas de vencimiento: ningún huso horario corre el mes
 
 - Cinco funciones que pintan vencimientos de lote armaban la fecha a

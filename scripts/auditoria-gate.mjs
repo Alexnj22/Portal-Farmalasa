@@ -57,6 +57,26 @@ const DESBLOQUEOS = path.join(dir, 'desbloqueos.json');
 const args = process.argv.slice(2);
 const MODO_HOOK = args.includes('--hook');
 const SOLO_MAPA = args.includes('--mapa');
+
+// ── El inventario de producción, en vivo cuando se puede ────────────────────
+// Hasta el 2026-10-21 el modo completo comparaba contra la foto guardada en
+// auditoria/snapshot-produccion.json, y la foto se armaba a mano. Tenía 57 días
+// y el gate daba verde con 21 tablas y 17 crons de producción sin área: no
+// estaban en la foto, así que no podía verlos. Un verde sobre un inventario
+// viejo no dice nada.
+//
+// Por eso el modo completo lee producción directo (sólo lectura). El hook NO:
+// un gate de commit que necesita red enseña a usar `--no-verify`. Si no hay
+// canal, cae a la foto — y si la foto pasa de DIAS_FOTO días, el modo completo
+// FALLA en vez de avisar.
+const DIAS_FOTO = 7;
+let vivo = null, errorVivo = null;
+if (!MODO_HOOK && !args.includes('--sin-red')) {
+    try {
+        const { leerCatalogoDeProduccion } = await import('./lib/catalogo-produccion.mjs');
+        vivo = { generado: new Date().toISOString(), ...(await leerCatalogoDeProduccion()) };
+    } catch (e) { errorVivo = e.message; }
+}
 const VERBOSO = args.includes('-v') || args.includes('--verbose');
 
 const c = {
@@ -136,7 +156,7 @@ function verificarMapa() {
     // pre-commit y un chequeo que necesita red falla sin conexión, que es como
     // se le enseña a la gente a usar `--no-verify`. El contraste contra
     // producción lo hace `npm run auditoria:sincronizar`, que sí puede tardar.
-    const snapshot = leerJson(path.join(dir, 'snapshot-produccion.json'), null);
+    const snapshot = vivo || leerJson(path.join(dir, 'snapshot-produccion.json'), null);
     if (snapshot) {
         for (const [clave, campo, etiqueta] of [['tablas', 'tablas', 'tabla'], ['crons', 'crons', 'cron']]) {
             const declaradas = new Map();
@@ -191,10 +211,11 @@ function verificarMapa() {
 
         const edad = snapshot.generado
             ? Math.floor((Date.now() - Date.parse(snapshot.generado)) / 86_400_000) : null;
-        if (edad !== null && edad > 30) avisos.push({
-            titulo: `El snapshot de producción tiene ${edad} días`,
-            detalle: [`generado: ${snapshot.generado}`],
-            arreglo: 'Refrescalo con `npm run auditoria:sincronizar`. Un inventario viejo da falsos verdes.',
+        if (!vivo && edad !== null && edad > DIAS_FOTO) (MODO_HOOK ? avisos : fallas).push({
+            titulo: `El snapshot de producción tiene ${edad} días y no se pudo leer producción en vivo`,
+            detalle: [`generado: ${snapshot.generado}`, ...(errorVivo ? [`motivo: ${errorVivo}`] : [])],
+            arreglo: 'Refrescalo con `npm run auditoria:sincronizar`. Un inventario viejo da falsos verdes: '
+                   + 'una tabla o un cron nuevo sin área no aparece en ningún porcentaje.',
         });
     } else {
         avisos.push({
@@ -400,6 +421,9 @@ if (!SOLO_MAPA) {
 }
 
 const etiqueta = MODO_HOOK ? 'gate:auditoria (hook)' : 'gate:auditoria';
+if (!MODO_HOOK) console.log(c.gris(vivo
+    ? `\n  Inventario de producción: leído en vivo (${vivo.tablas.length} tablas, ${vivo.crons.length} crons).`
+    : `\n  Inventario de producción: foto guardada${errorVivo ? ` — sin canal en vivo (${errorVivo})` : ''}.`));
 
 if (fallas.length) {
     console.error(`\n  ${c.rojo('✗')} ${c.ne(etiqueta)} — ${fallas.length} hallazgo(s) bloqueante(s)\n`);

@@ -6,7 +6,7 @@
 //   desbloquear <area> "motivo"      abrir un área congelada, con motivo escrito
 //   sellar <area> "evidencia"        volver a cerrarla después de verificar
 //   recalcular                       derivar `pct` y `estado` de los ejes
-//   sincronizar <archivo.json>       refrescar el snapshot de producción
+//   sincronizar [archivo.json]       refrescar el snapshot de producción (sin archivo: la lee en vivo)
 //
 // Están en un archivo aparte del gate a propósito: el gate sólo LEE, y corre en
 // el hook de pre-commit. Un script que escribe no tiene nada que hacer ahí — el
@@ -185,14 +185,17 @@ case 'recalcular': {
 
 // ── sincronizar ─────────────────────────────────────────────────────────────
 case 'sincronizar': {
+    // Sin archivo, lee producción directo (2026-10-21). Armarlo a mano era el
+    // paso que nadie repetía: la foto llegó a tener 57 días. El archivo sigue
+    // aceptándose para cuando no hay canal.
     const origen = resto[0];
-    if (!origen) morir(
-        'Uso: npm run auditoria:sincronizar -- <archivo.json>\n'
-      + '    El archivo lleva {"tablas": [...], "crons": [...]} tal como están HOY en producción.\n'
-      + '    Se genera con el MCP de Supabase (list_tables / cron.job) — no desde acá, porque\n'
-      + '    este script también corre sin red.'
-    );
-    const datos = leer(path.resolve(origen), null);
+    let datos;
+    if (origen) datos = leer(path.resolve(origen), null);
+    else {
+        const { leerCatalogoDeProduccion } = await import('./lib/catalogo-produccion.mjs');
+        try { datos = await leerCatalogoDeProduccion(); }
+        catch (e) { morir(`No se pudo leer producción: ${e.message}\n    Alternativa: npm run auditoria:sincronizar -- <archivo.json>`); }
+    }
     if (!datos?.tablas || !datos?.crons) morir('El archivo tiene que traer `tablas` y `crons`.');
     escribir(SNAPSHOT, {
         generado: new Date().toISOString(),
@@ -216,7 +219,7 @@ default:
     npm run auditoria:desbloquear -- <area> "..."  abrir un área congelada
     npm run auditoria:sellar -- <area> "..."       volver a cerrarla tras verificar
     npm run auditoria:recalcular                   derivar pct y estado de los ejes
-    npm run auditoria:sincronizar -- <json>        refrescar el snapshot de producción
+    npm run auditoria:sincronizar                  refrescar el snapshot leyendo producción
 
   Áreas: ${AREAS.map(a => a.id).join(', ')}
 `);

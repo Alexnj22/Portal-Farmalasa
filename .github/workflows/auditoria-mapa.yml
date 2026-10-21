@@ -1,0 +1,30 @@
+name: Mapa de auditoría al día
+
+# Todos los días compara lo que producción tiene HOY —tablas, crons y lo que se
+# puede tocar sin iniciar sesión— contra el mapa de auditoria/areas.mjs.
+#
+# Nació el 2026-10-21: el inventario se armaba a mano, tenía 57 días, y el gate
+# daba verde con 21 tablas y 17 crons sin área. Lo que no tiene área no entra
+# en ninguna auditoría, así que se queda afuera sin que nadie lo note. Si esta
+# corrida sale en ROJO, GitHub avisa por correo: hay algo nuevo en producción
+# que hay que asignarle a un área (o una función abierta a `anon` sin declarar).
+#
+# Sólo lee. Usa el mismo secreto que «Entorno de pruebas al día».
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 07:00 SV
+  workflow_dispatch:
+
+jobs:
+  mapa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/auditoria-gate.mjs --mapa --verbose
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

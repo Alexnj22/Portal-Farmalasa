@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1332.1 — Auditoría: el mapa se compara contra producción en vivo
+
+- El inventario de producción con el que `gate:auditoria` comprueba que todo
+  tenga área se armaba a mano y tenía **57 días**. Con eso el gate daba verde
+  aunque **21 tablas y 17 crons** no tenían área. Ahora el modo completo lee
+  producción en vivo (solo lectura, `scripts/lib/catalogo-produccion.mjs`). Sin
+  canal usa la foto guardada, y si la foto pasa de 7 días **falla**. El hook de
+  pre-commit sigue sin red.
+- `npm run auditoria:sincronizar` sin argumentos lee producción directamente.
+- Nuevo workflow `auditoria-mapa.yml`: todos los días a las 07:00 SV compara
+  producción contra el mapa y sale en rojo si aparece algo sin área.
+- Las 21 tablas y los 17 crons quedan asignados a su área, y se quita
+  `puntos_cuentas_pendientes`, que ya no existe.
+
 ## v2.1332.0 — Clientes: la fusión deja la duplicada deshabilitada y mueve todo; el envío se cobra una vez por pedido
 
 Dos decisiones del dueño del 2026-10-21.

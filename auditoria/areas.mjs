@@ -95,7 +95,10 @@ export const AREAS = [
             'src/data/busquedaProductos.js',   // la búsqueda de producto de TODO el portal (PLAN-BUSQUEDA-UNIFICADA)
             'public/', 'vite.config.js', 'index.html',
         ],
-        tablas: ['banner_portal', 'module_locks', 'mv_refresh_state', 'job_watermarks'],
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'capturas_de_foto',
+                 'banner_portal', 'module_locks', 'mv_refresh_state', 'job_watermarks'],
         edge: [],
         // El aviso del plazo (Art. 20), 08:10 SV. SQL puro: no llama a ninguna
         // función, así que no gasta peticiones del sistema de origen.
@@ -250,7 +253,10 @@ export const AREAS = [
             'src/utils/ordenDeDescuento.js', 'src/data/ordenesDeDescuento.js',
             'src/components/forms/OrdenesDeDescuento.jsx', 'src/constants/bancos.js',
         ],
-        tablas: ['employees', 'employee_branches', 'employee_documents', 'employee_events',
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'documentos_por_asignar', 'faltas_disciplinarias',
+                 'employees', 'employee_branches', 'employee_documents', 'employee_events',
                  'practicantes', 'education_catalog_entries',
                  // 2026-10-14: el seguro de vida colectivo (póliza, pago anual y su
                  // listado) y las órdenes de descuento de préstamos.
@@ -270,7 +276,10 @@ export const AREAS = [
                'soltar-captura',
                // Lee la foto de una orden de descuento (banco, cuota, plazo…).
                'leer-orden-de-descuento'],
-        crons: ['apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily',
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'avisar-dui-por-vencer-diario',
+                'apply-scheduled-employee-events-daily', 'check-employee-doc-expiry-daily',
                 'soltar-capturas-abandonadas', 'ordenar-documentos-de-personal-diario',
                 // El 1 de noviembre: toca pagar el seguro de vida colectivo.
                 'avisar-pago-seguro-vida'],
@@ -372,7 +381,10 @@ export const AREAS = [
         // si no, la misma pieza queda congelada por dos áreas y descongelada por
         // cualquiera de las dos.
         edge: [],
-        crons: [],
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'avisar-cambios-que-no-se-quedaron',
+                ],
         docs: ['docs/SOLICITUDES-QUIEN-DECIDE-Y-QUIEN-LO-VE-2026-08-24.md'],
     },
     {
@@ -475,7 +487,10 @@ export const AREAS = [
             // pestaña «Escanear» de Puntos y la app del personal.
             'src/utils/expedienteDelCliente.js',
         ],
-        tablas: ['sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'puntos_anulacion_gastada', 'puntos_producto_no_acumula',
+                 'sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',
                  'sales_invoice_resolutions', 'sales_null_resolutions', 'sales_observation_resolutions',
                  'sales_payment_confirmations', 'ventas_cuadre_hallazgos', 'clientes_sin_producto',
@@ -506,8 +521,6 @@ export const AREAS = [
                  // 2026-10-01) y la bitácora del arranque de esa madrugada.
                  'puntos_archivo_carga', 'puntos_archivo_cliente', 'puntos_archivo_venta',
                  'puntos_archivo_canje', 'puntos_arranque',
-                 // Las cuentas de la base vieja que no pasan solas (2026-09-25).
-                 'puntos_cuentas_pendientes',
                  // Las corridas del motor que fallaron; las lee el vigía (2026-10-01).
                  'puntos_motor_fallas',
                  // Movimientos de puntos fuera de lo normal que detecta el
@@ -534,7 +547,10 @@ export const AREAS = [
                // puntos-vencer, puntos-probe, puntos-traer-saldos) y las del
                // corte (puntos-archivar, puntos-arranque) se retiraron ese día.
                'puntos-consulta', 'puntos-motor'],
-        crons: ['sync-dte-inv-all-1min', 'check-sales-alerts-5min', 'check-sales-reconciliation-daily',
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'puntos-cumpleanos-diario', 'puntos-motor-1min', 'puntos-vencer-diario', 'puntos-vigilar-irregularidades', 'puntos-vigilar-motor', 'vacuum-sales-invoice-items',
+                'sync-dte-inv-all-1min', 'check-sales-alerts-5min', 'check-sales-reconciliation-daily',
                 'close-ventas-month', 'refresh-sales-daily-stats', 'refresh-sales-daily-stats-full',
                 'refresh-product-sales-rollup-daily', 'refresh-product-sales-monthly-agg',
                 'refresh-primera-venta-daily', 'heal-dte-sync', 'dte-resync-mes-hora',
@@ -656,7 +672,10 @@ export const AREAS = [
             'src/utils/corteTicket.js', 'src/utils/abonoTicket.js', 'src/utils/movimientoTicket.js',
             'src/data/creditos.js', 'src/views/CuentasPorCobrarView.jsx',
         ],
-        tablas: ['cortes_caja', 'cortes_caja_diferencia_personas', 'cortes_caja_diferencias',
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'caja_cortes_del_portal', 'creditos_pagos',
+                 'cortes_caja', 'cortes_caja_diferencia_personas', 'cortes_caja_diferencias',
                  'cortes_caja_diferencia_abonos',
                  'cortes_caja_eventos', 'cortes_caja_movimientos',
                  'cortes_caja_movimientos_historial', 'cortes_caja_aperturas',
@@ -677,7 +696,10 @@ export const AREAS = [
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
                'cierre-automatico-caja',
                'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos', 'leer-pago-de-credito'],
-        crons: ['cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'avisar-diferencias-vencidas', 'cierre-del-dia-hora-tope', 'cortes-diferencia-de-ayer-0800-sv',
+                'cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
                 'aperturas-caja-30min', 'aperturas-manana-antes-de-las-7',
                 'aperturas-manana-hasta-la-hora-tope',
                 'cierre-automatico-caja', 'dias-sin-cierre-0700-sv',
@@ -827,7 +849,10 @@ export const AREAS = [
             'supabase/functions/wompi-pagos/',
             'supabase/functions/_shared/wompi.ts',
         ],
-        tablas: ['app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos',
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'apartado_aplicaciones', 'app_ajustes', 'app_chat_reacciones', 'app_cliente_aceptaciones', 'app_errores', 'app_tratamientos', 'clientes_mayoristas', 'clientes_mayoristas_historial', 'mayoristas_resumen_mensual', 'producto_insumo', 'puntos_codigo_acceso',
+                 'app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos',
                  // Chat con la farmacia y foto de perfil (2026-10-12). Los archivos
                  // viven en el bucket privado `app-clientes-archivos`.
                  'app_chat_conversaciones', 'app_chat_mensajes', 'app_chat_respuestas', 'app_cliente_fotos',
@@ -843,7 +868,10 @@ export const AREAS = [
                  // El libro del saldo a favor: usos (pasados a puntos), devoluciones y vencimientos (2026-10-21).
                  'saldo_favor_movimientos'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'reservas-vigilar-15min', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'mayoristas-resumen-diario', 'purge-app-errores-diario',
+                'puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'reservas-vigilar-15min', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
                 'recetas-escalar-15min',
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.
@@ -879,7 +907,10 @@ export const AREAS = [
                  'product_precios', 'product_precios_changelog', 'product_precios_history',
                  'laboratorios', 'lab_locations', 'factores_sospechosos_avisados'],
         edge: ['sync-products', 'notify-new-products-daily'],
-        crons: ['sync-products-10min', 'notify-new-products-daily', 'vacuum-products-hourly',
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'refresh-product-last-sale-daily',
+                'sync-products-10min', 'notify-new-products-daily', 'vacuum-products-hourly',
                 'avisar-factores-sospechosos'],
         docs: ['docs/PRODUCTOS-LA-PRESENTACION-Y-EL-FACTOR-2026-08-24.md'],
     },
@@ -906,7 +937,10 @@ export const AREAS = [
             'src/store/slices/conteoInventarioSlice.js',
             'src/utils/conteoInventarioPrint.js', 'src/utils/conteoPapel.js', 'src/utils/conteoPapelHtml.js',
         ],
-        tablas: ['inventory', 'inventory_sync_huella', 'inventory_sync_log',
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'conteo_inventario_costos',
+                 'inventory', 'inventory_sync_huella', 'inventory_sync_log',
                  'conteos_inventario', 'conteo_inventario_items', 'conteo_inventario_item_history',
                  'ventas_perdidas', 'traslados_erp_linea', 'productos_sin_venta_avisados'],
         edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp'],
@@ -970,13 +1004,19 @@ export const AREAS = [
             'src/utils/pedidoPrint.js', 'src/utils/hojasRecepcion.js',
             'src/utils/routeOptimizer.js', 'src/utils/decisionDiferencia.js',
         ],
-        tablas: ['pedidos', 'pedido_items', 'pedido_apoyo', 'pedido_devolucion', 'pedido_item_eventos',
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'ruta_paradas_no_entregadas',
+                 'pedidos', 'pedido_items', 'pedido_apoyo', 'pedido_devolucion', 'pedido_item_eventos',
                  'pedido_pausa_historial', 'pedido_recepcion_extras', 'pedido_recepcion_firmas',
                  'pedido_sucursal_status', 'pedido_traslado_erp', 'pedido_traslado_linea',
                  'pedidos_snapshots', 'dispatch_rules', 'rutas', 'ruta_pedidos', 'ruta_locations',
                  'diferencia_opcion'],
         edge: ['trasladar-pedido-erp', 'devolver-pedido-erp', 'no-reenviar-pedido-erp', 'maps-proxy'],
-        crons: ['continuar-traslados-pedido', 'reintentar-ingreso-pedido'],
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'avisar-pedidos-sin-recibir',
+                'continuar-traslados-pedido', 'reintentar-ingreso-pedido'],
         docs: ['docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md', 'docs/INCIDENTE-RECEPCION-2026-08-14.md',
                'docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md'],
     },
@@ -993,10 +1033,16 @@ export const AREAS = [
             'src/data/retiros.js', 'src/data/faltantes.js',
             'src/store/composicionTraslado.js',
         ],
-        tablas: ['envio_linea', 'traslado_interruptor', 'retiros', 'retiro_bultos', 'bolsa_faltante'],
+        tablas: [
+                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                 'retiro_firmas',
+                 'envio_linea', 'traslado_interruptor', 'retiros', 'retiro_bultos', 'bolsa_faltante'],
         edge: ['aplicar-traslado-inventario', 'enviar-producto-erp', 'barrer-traslados-recibidos',
                 'avisar-bultos-viejos'],
-        crons: ['barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'avisar-faltantes-sin-resolver',
+                'barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
                 'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily'],
         docs: ['docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md', 'docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
     },
@@ -1131,7 +1177,10 @@ export const AREAS = [
         tablas: ['audit_logs', 'sync_log', 'sync_alert_log', 'backup_sync_log', 'orphan_objects_registry',
                  'security_config', 'export_log', 'reinicios_de_la_base'],
         edge: ['check-sync-health-alerts', 'backup-critical-tables', 'oss-proxy', 'saly-ai'],
-        crons: ['check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
+        crons: [
+                // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
+                'recordar-linea-base-egreso-mensual',
+                'check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
                 'purge-cron-history-daily', 'vigilar-reinicio-de-la-base'],
         docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md',
                'docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md',

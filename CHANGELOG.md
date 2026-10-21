@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.6 — Worktrees: se limpian solos y lint/pruebas dejan de leerlos
+
+- Los worktrees no se borraban nunca. Había 22 carpetas `../Portal-Farmalasa-*`,
+  8 en `.claude/worktrees/` (~2.4 GB) y 12 registros apuntando a carpetas que ya
+  no existían. Se borraron 9 que estaban comprobadamente sin uso, y se
+  limpiaron los 12 registros.
+- Nuevo `npm run limpiar:worktrees`: hace el inventario y, con `--borrar`, quita
+  los que no tienen cambios sin commitear, ni commits fuera de `origin/main`
+  (comparado por contenido), ni uso en 3 días, ni un proceso adentro. Corre solo
+  en el `prebuild` y al crear un worktree, y avisa si ya hay 10 o más.
+- `npm run lint` y `npm test` leían los worktrees de los agentes en
+  `.claude/` (10,258 errores ajenos). Ahora los excluyen.
+
 ## v2.1333.5 — Techos de lectura de la foto diaria y del análisis de stock, re-auditados
 
 Decisión del usuario (2026-10-21), después de buscar eficiencia y medirla. No cambia nada en producción: sólo el umbral de `gate:perf` en `scripts/bloques-por-llamada.json`, con la medición escrita.

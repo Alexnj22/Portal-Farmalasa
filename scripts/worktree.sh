@@ -34,6 +34,15 @@ if [ -z "$NOMBRE" ]; then
 fi
 
 RAIZ="$(git rev-parse --show-toplevel)"
+
+# Antes de crear uno, se borran los que ya nadie usa, y si igual quedan muchos
+# se avisa (2026-10-21: había 22 hermanos + 8 de agentes, varios abandonados).
+# No bloquea: decidir si hace falta otro es de quien lo pide.
+node "$RAIZ/scripts/limpiar-worktrees.mjs" --auto || true
+ACTIVOS=$(( $(git -C "$RAIZ" worktree list | wc -l) - 1 ))
+if [ "$ACTIVOS" -ge 10 ]; then
+  echo "  ⚠ ya hay $ACTIVOS worktrees. ¿Alguno sirve para esto? → npm run limpiar:worktrees" >&2
+fi
 DESTINO="$(dirname "$RAIZ")/$(basename "$RAIZ")-$NOMBRE"
 RAMA="sesion/$NOMBRE"
 

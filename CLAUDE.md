@@ -1246,6 +1246,14 @@ crea el worktree en `../Portal-Farmalasa-<nombre>` sobre la rama
 compartir archivos, índice y `dist/`. El costo es que hay que mergear a `main`
 en vez de pushear directo, así que para un arreglo corto no vale la pena.
 
+**Y al terminar, el worktree se borra** (2026-10-21): había 22 hermanos y 8 de
+agentes en `.claude/worktrees/` (~2.4 GB, rompían `lint` y `test`). Hoy
+`npm run limpiar:worktrees` hace el inventario y `-- --borrar` quita los que no
+tienen cambios sin commitear, ni commits fuera de `origin/main` (por contenido,
+`git cherry`), ni uso en 3 días, ni un proceso adentro. Corre solo en el
+`prebuild` y al crear uno nuevo. **Un worktree con trabajo sin commitear nunca
+se borra solo**: se commitea o se descarta a propósito.
+
 **El preview de QA es uno solo.** Las edge functions solo aceptan CORS de
 `http://localhost:4173`, así que **una sesión a la vez** puede tenerlo
 levantado; `npm run preview` lleva `--strictPort` para que un puerto ocupado

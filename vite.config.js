@@ -79,6 +79,8 @@ export default defineConfig({
     globals: true,
     setupFiles: './tests/setup.js',
     // `apps/` es la app del teléfono: tiene sus propias dependencias (y sus pruebas).
-    exclude: ['tests/e2e/**', 'node_modules/**', 'apps/**'],
+    // `.claude/` son los worktrees de los agentes: sin excluirlo, vitest corría
+    // las pruebas de cada copia y de sus node_modules (2026-10-21).
+    exclude: ['tests/e2e/**', 'node_modules/**', 'apps/**', '.claude/**'],
   },
 })

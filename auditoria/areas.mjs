@@ -811,6 +811,12 @@ export const AREAS = [
             'src/utils/ofertasClientes.js',
             // Las reservas vistas desde la sala (widget del portal y app del personal).
             'src/utils/reservasDeSala.js',
+            // La preventa de una reserva (2026-10-21): la venta la arma el núcleo
+            // y el adaptador la deja en la caja; el cierre lo hace un cron.
+            'src/utils/preventa.js',
+            'tests/unit/preventa.test.js',
+            'supabase/functions/preventa-caja/',
+            'supabase/functions/_shared/preventaCaja.ts',
             'supabase/functions/_shared/ofertaDeDescuento.ts',
             'supabase/functions/app-clientes/',
             'supabase/functions/avisos-clientes/',
@@ -831,13 +837,17 @@ export const AREAS = [
                  'app_chat_incumplimientos',
                  // Cuántas unidades se piden de lo normal, para preguntarle al
                  // cliente cuando reserva de más (2026-10-19).
-                 'producto_cantidad_habitual'],
-        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos'],
+                 'producto_cantidad_habitual',
+                 // La preventa de una reserva enviada a caja (2026-10-21).
+                 'preventas'],
+        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja'],
         crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
                 'recetas-escalar-15min',
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.
-                'chat-vigilar-espera-1min'],
+                'chat-vigilar-espera-1min',
+                // La factura de una preventa llegó: cierra la reserva (2026-10-21).
+                'preventas-cerrar-facturadas'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],
     },
 

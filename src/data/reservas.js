@@ -94,8 +94,9 @@ export async function responderEncargo(id, accion, { precio = null, fecha = null
 }
 
 // ── Reserva hecha en la sucursal, con anticipo (2026-10-07) ────────────────
-// Política: anticipo de al menos el 50 % y 7 días para retirarla. La guarda
-// vive en `reserva_en_sucursal_crear` (sólo un dependiente de ESA sala).
+// Política: anticipo de al menos el 50 % y 7 días para retirarla. Desde el
+// 2026-10-20 el alta va por `DialogoApartar` + `apartado_aplicar`; la función
+// vieja de la base (`reserva_en_sucursal_crear`) se quitó el 2026-10-21.
 
 /** Las presentaciones con precio de un producto, de la menor a la mayor. */
 export async function preciosDeProducto(productId) {
@@ -116,12 +117,31 @@ export async function preciosDeProducto(productId) {
     });
 }
 
-export async function crearReservaEnSucursal({ branchId, customerId, productoId, productoNombre, cantidad, precio, anticipo, metodo }) {
-    return sinError(await supabase.rpc('reserva_en_sucursal_crear', {
-        p_branch_id: Number(branchId), p_customer_id: Number(customerId), p_producto_id: Number(productoId),
-        p_producto_nombre: productoNombre, p_cantidad: Number(cantidad), p_precio: Number(precio),
-        p_anticipo: Number(anticipo), p_metodo: metodo,
-    }));
+/**
+ * Mandar a la caja la venta de una reserva (o de los renglones de un pedido),
+ * ya armada: producto, cliente y vendedor —quien la envía— (2026-10-21).
+ * La arma `armarVenta` del núcleo dentro de la función `preventa-caja`; la base
+ * decide si se puede (permiso, sala, una sola preventa viva). Cuando la venta
+ * se factura, la reserva se cierra sola.
+ *
+ * Devuelve `{ ok, referencia, externo_id, cliente_generico, avisos }` o
+ * `{ ok: false, error }` con el motivo del servidor. Nunca lanza.
+ */
+export async function enviarPreventa(reservaIds) {
+    try {
+        const { data, error } = await supabase.functions.invoke('preventa-caja', {
+            body: { accion: 'enviar', reservas: (reservaIds || []).map(Number) },
+        });
+        if (error) {
+            // El motivo real viaja en el CUERPO (ver `pedir` en data/creditos).
+            let detalle = '';
+            try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+            return { ok: false, error: detalle || error };
+        }
+        return data ?? { ok: false, error: new Error('NO_SE_PUDO') };
+    } catch (err) {
+        return { ok: false, error: err };
+    }
 }
 
 /** El envío a domicilio de la app (una fila en `app_ajustes`). */

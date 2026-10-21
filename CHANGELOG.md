@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1327.0 — Reservas: enviar la preventa a caja y cierre solo al facturar
+
+- **«Enviar a caja»** en cada reserva pendiente o lista (y en un pedido del carrito entero): deja la venta armada en la caja con el producto, el cliente y quien la envía como vendedor (los cuatro cargos de administración firman con 1000). Sólo con editar Reservas y en la sala propia salvo alcance de toda la red; la base lo vuelve a decidir (`preventa_preparar`) y no deja una segunda preventa viva. La función `preventa-caja` va con JWT.
+- **La preventa es una entidad del portal** (`preventas`): la venta que armó el portal (`armarVenta`, `src/utils/preventa.js`), quién y cuándo, y el número de la caja como referencia externa. El adaptador (`_shared/preventaCaja.ts`) es lo único que sabe hablar con la caja de hoy.
+- **Cliente con Ñ o tilde → cliente frecuente**: la caja pierde TODA su lista de preventas de la sala si una lleva un nombre así. El código de la reserva (y el nombre en ASCII, y lo ya pagado) viaja en la nota.
+- **Cierre solo al facturar**: la factura conserva el número de la preventa (medido: la 396306 de Salud 2 llegó a ventas con ese mismo número). Un cron cada 3 min (`preventas_cerrar_facturadas`) liga la reserva a su factura y la pasa a retirada; con un anticipo o pago en línea sin aplicar no la cierra: la liga y avisa que se termine con «Retirar». Sólo por el número guardado, nunca por nombre ni monto.
+- **Avisos a la sala**: cancelada, vencida, pagada en línea y entregada por factura, a los de esa sala con el módulo y a quienes lo tienen en toda la red. El aviso de reserva nueva dejó de llegarle a toda la sala.
+- `reserva_cuenta`: una sola definición de total, pagado y falta por pagar de una reserva. Se quitó `reserva_en_sucursal_crear` (sin uso desde el 20-oct) y su llamada en `data/reservas.js`.
+
+
 ## v2.1326.0 — Pedidos: reportar un error de la recepción hasta 2 días después
 
 Pedido 07-201026-2-S1 (Salud 1): llegó Humectación Diaria 400 ml donde el

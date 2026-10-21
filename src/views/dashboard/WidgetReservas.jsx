@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { Banknote, CheckCircle2, FileCheck, MessageCircle, PackageCheck, Plus, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
+import { Banknote, CheckCircle2, FileCheck, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -16,9 +16,10 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import {
-    buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
+    buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
+import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import { codigoLimpio, coincideCodigo, esPagoDePrueba, origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
@@ -72,6 +73,9 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // contesta por renglón (`puede_revisar_receta`, con el alcance de la sala);
     // esto es el respaldo mientras la respuesta no lo traiga.
     const puedeRecetas = hasPermission('recetas_app', 'can_approve');
+    // Enviar la preventa a caja (2026-10-21): editar la pantalla de Reservas.
+    // La sala y el permiso los vuelve a decidir el servidor.
+    const puedePreventa = !soloLectura && hasPermission('reservas', 'can_edit');
     const miSala = todas ? null : (user?.branchId ?? user?.branch_id ?? null);
     const branches = useStaff((st) => st.branches);
     const nombreSala = (branches || []).find((b) => String(b.id) === String(miSala))?.name ?? '';
@@ -148,6 +152,33 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             showToast('No se pudo cambiar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         } finally {
             setOcupada(null);
+        }
+    };
+
+    // La venta de la reserva, ya armada en la caja: producto, cliente y quien
+    // la envía como vendedor. Un pedido del carrito va en UNA preventa.
+    const enviarACaja = async (r) => {
+        const ids = (r.renglones ?? [r]).filter(puedeEnviarPreventa).map((x) => x.id);
+        if (!ids.length) return;
+        setOcupada(r.id);
+        try {
+            const res = await enviarPreventa(ids);
+            if (!res?.ok) {
+                showToast('No se envió a caja', mensajeAmigable(res?.error, 'Intenta de nuevo.'), 'error');
+                return;
+            }
+            appendAuditLog?.('RESERVA_PREVENTA', ids.join(','), { referencia: res.referencia ?? null, sala: r.branch_id ?? miSala })?.catch?.(() => {});
+            const notas = [
+                res.cliente_generico ? 'Va como cliente frecuente: el código de la reserva viaja en la nota.' : '',
+                ...(res.avisos ?? []),
+                res.externo_id ? 'Al facturarla, la reserva se cierra sola.' : 'Al facturarla, ciérrala con «Retirar».',
+            ].filter(Boolean).join(' ');
+            showToast(`Preventa #${res.referencia} en caja`, notas, res.avisos?.length ? 'warning' : 'success');
+        } catch (err) {
+            showToast('No se envió a caja', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setOcupada(null);
+            cargar();
         }
     };
 
@@ -303,7 +334,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                 todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
                                 r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
-                                r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
+                                r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}${
+                                textoDePreventa(r) ? ` · ${textoDePreventa(r)}` : ''}`}
                             acciones={(
                                 <>
                                     {enRevision && r.receta_estado === 'otra_foto' && (
@@ -350,18 +382,27 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                             <Badge variant="neutral" uppercase={false}
                                                 title="Revisar recetas de la app pide su propio permiso">Receta por revisar · sin permiso para revisarla</Badge>
                                         ))
-                                    ) : soloLectura ? null : r.estado === 'pendiente' ? (
-                                        <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}
-                                            onClick={() => mover(r, 'lista')}>Apartar y avisar</Button>
-                                    ) : (
+                                    ) : soloLectura ? null : (
                                         <>
-                                            {!r.tiene_app && (
-                                                <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
-                                                    onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) })} />
-                                            )}
-                                            <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id}
-                                                onClick={() => setRetirando((r.renglones ?? [r]).filter((x) => x.estado === 'lista')
-                                                    .map((x) => ({ id: x.id, sala: x.branch_id ?? r.branch_id ?? miSala })))}>Retirar</Button>
+                                        {puedePreventa && (r.renglones ?? [r]).some(puedeEnviarPreventa) && (
+                                            <Button variant="secondary" size="xs" icon={Send} loading={ocupada === r.id}
+                                                title="Deja la venta armada en caja: producto, cliente y tú como vendedor"
+                                                onClick={() => enviarACaja(r)}>Enviar a caja</Button>
+                                        )}
+                                        {r.estado === 'pendiente' ? (
+                                            <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}
+                                                onClick={() => mover(r, 'lista')}>Apartar y avisar</Button>
+                                        ) : (
+                                            <>
+                                                {!r.tiene_app && (
+                                                    <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
+                                                        onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) })} />
+                                                )}
+                                                <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id}
+                                                    onClick={() => setRetirando((r.renglones ?? [r]).filter((x) => x.estado === 'lista')
+                                                        .map((x) => ({ id: x.id, sala: x.branch_id ?? r.branch_id ?? miSala })))}>Retirar</Button>
+                                            </>
+                                        )}
                                         </>
                                     )}
                                     {!soloLectura && (

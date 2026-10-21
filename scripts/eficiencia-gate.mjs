@@ -152,6 +152,14 @@ const CRONS = [
           + 'oferta ya terminó. Un UPDATE sobre la propia tabla (decenas de filas a lo sumo).',
   },
   {
+    job: 'preventas-cerrar-facturadas', slug: null, cadencia: '*/3 12-23,0-5 * * *',
+    corridasDia: 400, sistema: 0,
+    motivo: 'Cierra la reserva cuando llega la factura de su preventa (2026-10-21): liga '
+          + '`preventas.externo_id` con `sales_invoices.erp_invoice_id` por su índice único (3 bloques '
+          + 'con cero preventas vivas, medido). Corre en las horas de la sincronización de ventas. '
+          + 'Sólo la base propia.',
+  },
+  {
     job: 'recetas-escalar-15min', slug: null, cadencia: '*/15 * * * *',
     corridasDia: 96, sistema: 0,
     motivo: 'Avisa a supervisión de las recetas de la app que llevan más de 4 h sin que la sala las '

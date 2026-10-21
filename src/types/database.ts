@@ -1730,6 +1730,7 @@ export type Database = {
           precio_normal: number | null
           precio_unitario: number | null
           preparada_por: string | null
+          preventa_id: number | null
           producto_id: number
           producto_nombre: string
           receta_escalada_at: string | null
@@ -1792,6 +1793,7 @@ export type Database = {
           precio_normal?: number | null
           precio_unitario?: number | null
           preparada_por?: string | null
+          preventa_id?: number | null
           producto_id: number
           producto_nombre: string
           receta_escalada_at?: string | null
@@ -1854,6 +1856,7 @@ export type Database = {
           precio_normal?: number | null
           precio_unitario?: number | null
           preparada_por?: string | null
+          preventa_id?: number | null
           producto_id?: number
           producto_nombre?: string
           receta_escalada_at?: string | null
@@ -1907,6 +1910,13 @@ export type Database = {
             columns: ["oferta_id"]
             isOneToOne: false
             referencedRelation: "ofertas_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_preventa_id_fkey"
+            columns: ["preventa_id"]
+            isOneToOne: false
+            referencedRelation: "preventas"
             referencedColumns: ["id"]
           },
           {
@@ -18974,6 +18984,111 @@ export type Database = {
         }
         Relationships: []
       }
+      preventas: {
+        Row: {
+          branch_id: number
+          codigo_generacion: string | null
+          created_at: string
+          customer_id: number | null
+          destino: Json | null
+          enviada_at: string | null
+          enviada_por: string | null
+          error: string | null
+          estado: string
+          externo_id: string | null
+          externo_ref: string | null
+          facturada_at: string | null
+          id: number
+          reservas_ids: number[]
+          sales_invoice_id: number | null
+          sistema: string
+          total: number | null
+          updated_at: string
+          vendedor_codigo: string | null
+          venta: Json | null
+        }
+        Insert: {
+          branch_id: number
+          codigo_generacion?: string | null
+          created_at?: string
+          customer_id?: number | null
+          destino?: Json | null
+          enviada_at?: string | null
+          enviada_por?: string | null
+          error?: string | null
+          estado?: string
+          externo_id?: string | null
+          externo_ref?: string | null
+          facturada_at?: string | null
+          id?: never
+          reservas_ids: number[]
+          sales_invoice_id?: number | null
+          sistema?: string
+          total?: number | null
+          updated_at?: string
+          vendedor_codigo?: string | null
+          venta?: Json | null
+        }
+        Update: {
+          branch_id?: number
+          codigo_generacion?: string | null
+          created_at?: string
+          customer_id?: number | null
+          destino?: Json | null
+          enviada_at?: string | null
+          enviada_por?: string | null
+          error?: string | null
+          estado?: string
+          externo_id?: string | null
+          externo_ref?: string | null
+          facturada_at?: string | null
+          id?: never
+          reservas_ids?: number[]
+          sales_invoice_id?: number | null
+          sistema?: string
+          total?: number | null
+          updated_at?: string
+          vendedor_codigo?: string | null
+          venta?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventas_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "preventas_enviada_por_fkey"
+            columns: ["enviada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventas_enviada_por_fkey"
+            columns: ["enviada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_active_principles: {
         Row: {
           concentracion: string | null
@@ -28855,6 +28970,10 @@ export type Database = {
         Args: { p_branch_id: number; p_module_key: string }
         Returns: string[]
       }
+      destinatarios_de_reservas: {
+        Args: { p_branch_id: number }
+        Returns: string[]
+      }
       detalle_sin_ingresar: { Args: { p_pedido_ids: string[] }; Returns: Json }
       detectar_proveedores_duplicados: {
         Args: never
@@ -32221,6 +32340,23 @@ export type Database = {
         }
         Returns: number
       }
+      preventa_preparar: {
+        Args: { p_employee: string; p_reservas: number[] }
+        Returns: Json
+      }
+      preventa_registrar: {
+        Args: {
+          p_destino?: Json
+          p_error?: string
+          p_externo_id?: string
+          p_externo_ref?: string
+          p_id: number
+          p_ok: boolean
+          p_venta?: Json
+        }
+        Returns: Json
+      }
+      preventas_cerrar_facturadas: { Args: never; Returns: number }
       preview_metas_gasto: {
         Args: { p_meses: number; p_salas: Json; p_ym_inicio: string }
         Returns: Json
@@ -32831,6 +32967,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      reabrir_diferencias_de_sala: {
+        Args: { p_actor: string; p_pedido_id: string; p_sucursal_id: number }
+        Returns: undefined
+      }
       reabrir_mes_bitacora: {
         Args: { p_branch_id: number; p_motivo: string; p_periodo: string }
         Returns: number
@@ -32867,6 +33007,10 @@ export type Database = {
           p_sucursal_id: number
         }
         Returns: undefined
+      }
+      recepcion_corregible: {
+        Args: { p_pedido_id: string; p_sucursal_id: number }
+        Returns: boolean
       }
       recepciones_por_reintentar: {
         Args: { p_minutos?: number }
@@ -33161,18 +33305,13 @@ export type Database = {
         Args: { p_estado: string; p_id: number; p_motivo?: string }
         Returns: Json
       }
-      reserva_en_sucursal_crear: {
-        Args: {
-          p_anticipo: number
-          p_branch_id: number
-          p_cantidad: number
-          p_customer_id: number
-          p_metodo: string
-          p_precio: number
-          p_producto_id: number
-          p_producto_nombre: string
-        }
-        Returns: Json
+      reserva_cuenta: {
+        Args: { p_id: number }
+        Returns: {
+          falta_pagar: number
+          pagado: number
+          total: number
+        }[]
       }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       reserva_receta_decidir: {

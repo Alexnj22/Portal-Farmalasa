@@ -90,14 +90,12 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     CHAT_CLIENTE:       'MessageCircle',
     RECETA_APP:         'FileCheck',
     RECETA_SIN_REVISAR: 'FileCheck',
-    // (2026-10-14) Un cliente pidió ser mayorista (lo ve quien aprueba
-    // `mayoristas`), y un chat asignado pasó 20 min sin respuesta (supervisión).
-    MAYORISTA_SOLICITUD: 'Contact',
-    CHAT_INCUMPLIMIENTO: 'ShieldAlert',
     SYSTEM:           'Info',       // mensaje del portal, no de una persona
     // 2026-10-14 (migración `chat_asignacion_y_aviso_mayorista`): el chat que
     // pasó 20 min sin respuesta (a supervisión) y el cliente que pidió precio de
-    // mayorista desde la app (a quien aprueba mayoristas).
+    // mayorista desde la app (a quien aprueba mayoristas). Estaban declaradas
+    // DOS veces —dos sesiones el mismo día— y la primera decía 'ShieldAlert'
+    // para el incumplimiento; ganaba ésta, que es la que se ve desde entonces.
     CHAT_INCUMPLIMIENTO: 'MessageCircle',
     MAYORISTA_SOLICITUD: 'Contact',
 };

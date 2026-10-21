@@ -858,7 +858,7 @@ test('libros de ventas: contribuyentes y consumidor final con el archivo de las 
     await expect(page.getByTestId('libro-sin-sello')).toBeVisible();
     await page.screenshot({ path: `${SALIDA}/libro-contribuyentes.png`, fullPage: true });
     let [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar CSV' }).click()]);
-    let filas = fs.readFileSync(await d.path(), 'utf8').replace(/^﻿/, '').split('\r\n');
+    let filas = fs.readFileSync(await d.path(), 'utf8').replace(/^\uFEFF/, '').split('\r\n');
     expect(filas[0].split(';')).toHaveLength(20);
     expect(filas[0].split(';')[1]).toBe('4');
     await page.getByRole('combobox').filter({ hasText: 'Contribuyentes' }).click();
@@ -866,7 +866,7 @@ test('libros de ventas: contribuyentes y consumidor final con el archivo de las 
     await expect(page).toHaveURL(/libro=consumidor/);
     await expect(page.getByText('IVA contenido')).toBeVisible();
     [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar CSV' }).click()]);
-    filas = fs.readFileSync(await d.path(), 'utf8').replace(/^﻿/, '').split('\r\n');
+    filas = fs.readFileSync(await d.path(), 'utf8').replace(/^\uFEFF/, '').split('\r\n');
     expect(filas[0].split(';')).toHaveLength(23);
     expect(errores).toEqual([]);
 });

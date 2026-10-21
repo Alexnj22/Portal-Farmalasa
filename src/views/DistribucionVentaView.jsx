@@ -326,6 +326,7 @@ export default function DistribucionVentaView() {
 
     const { recuperado, descartar } = useBorrador(
         emisor && !corrigiendo ? `distribucion-venta-${emisor.id}` : null,
+        // eslint-disable-next-line no-unused-vars -- el adjunto se saca A PROPÓSITO: es un archivo, no va al borrador
         { clienteId, listaVenta, tipoDoc, carrito, pagos: pagos.map(({ adjunto, ...f }) => f), plazo, notas, uuid },
         { activo: !corrigiendo, vale: (v) => !!v?.clienteId || v?.carrito?.length > 0 },
     );

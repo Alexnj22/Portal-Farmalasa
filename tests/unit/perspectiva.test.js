@@ -130,6 +130,7 @@ describe('la afín de cada triángulo de la malla', () => {
         const p = orig[1];
         const x = alReves.a * p.x + alReves.b * p.y + alReves.tx;
         expect(Math.abs(x - dest[1].x)).toBeGreaterThan(1);
+        expect(alReves).not.toEqual(m);
     });
 
     it('un triángulo degenerado no revienta: devuelve null', () => {

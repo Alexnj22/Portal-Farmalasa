@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1333.11 — Lint: de 32 errores a 14, con dos defectos reales
+
+- `tipoIconos.js` declaraba dos veces `CHAT_INCUMPLIMIENTO` y
+  `MAYORISTA_SOLICITUD` (dos sesiones el mismo día). La primera decía
+  `ShieldAlert` y no se usaba nunca, porque ganaba `MessageCircle`. Se deja
+  la que ya se ve.
+- `expedienteYPersonalMinimo.test.js` importaba `describe` dos veces: eslint no
+  podía ni leer el archivo.
+- `perspectiva.test.js` decía «son matrices distintas» y no lo comprobaba.
+  Ahora sí.
+- El resto: imports y variables sin usar, `process` vía `globalThis`, el BOM
+  escrito como `\uFEFF` y las expresiones regulares de códigos de impresora con
+  su motivo. Los 14 que quedan son reglas del compilador de React
+  (`set-state-in-effect`, `refs`, `purity`).
+
 ## v2.1333.10 — App: el motor de impresión del pedido al día con las fechas
 
 - `apps/mobile/motor/motor-pedido.html` empaqueta `pedidoPdfDoc.js`, y quedó

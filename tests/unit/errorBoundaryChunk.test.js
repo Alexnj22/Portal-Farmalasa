@@ -108,7 +108,7 @@ describe('ninguno de los dos recarga SOLO', () => {
         .split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n');
 
     it('el `componentDidCatch` del ErrorBoundary no recarga', () => {
-        const cuerpo = sinComentarios(fuente).match(/componentDidCatch\([\s\S]*?\n    \}/);
+        const cuerpo = sinComentarios(fuente).match(/componentDidCatch\([\s\S]*?\n {4}\}/);
         expect(cuerpo, 'no se encontró componentDidCatch').toBeTruthy();
         expect(cuerpo[0]).not.toMatch(/location\s*\.\s*reload\s*\(/);
     });

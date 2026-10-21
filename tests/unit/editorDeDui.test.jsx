@@ -196,7 +196,7 @@ describe('sePuedeGuardar', () => {
  */
 describe('el giro sale del orden de las esquinas', () => {
     const fuente = fs.readFileSync(
-        path.join(process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
+        path.join(globalThis.process.cwd(), 'src/components/common/EditorDeDocumento.jsx'), 'utf8');
     // Sin comentarios: el archivo EXPLICA en prosa lo que se quitó, y buscarlo
     // sobre el texto crudo lo encuentra ahí. Mismo error que ya costó una prueba
     // en `capturaDeFoto`.
@@ -217,7 +217,7 @@ describe('el giro sale del orden de las esquinas', () => {
         // Vive en la tubería compartida desde que el camino automático y el
         // editor tienen que producir el mismo archivo.
         const componer = fs.readFileSync(
-            path.join(process.cwd(), 'src/plataforma/componerDocumento.js'), 'utf8');
+            path.join(globalThis.process.cwd(), 'src/plataforma/componerDocumento.js'), 'utf8');
         expect(componer).toMatch(/yaOrdenadas:\s*true/);
     });
 

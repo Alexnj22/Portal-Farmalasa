@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, ChevronDown, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, RefreshCw, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
-import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';

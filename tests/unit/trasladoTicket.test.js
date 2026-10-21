@@ -36,10 +36,12 @@ const base = (extra = {}) => construirTicketDeTraslado({
 // Los códigos de impresora ocupan CERO columnas de papel: hay que sacarlos
 // enteros antes de medir un renglón. Es la misma limpieza que hace
 // `ticketPrint.test.js`, por el mismo motivo.
+/* eslint-disable no-control-regex -- los códigos ESC/GS SON lo que se busca */
 const sinCodigos = (s) => s
     .replace(/\x1b[@REa!][\s\S]/g, '')
     .replace(/\x1d[hwHV][\s\S]/g, '')
     .replace(/\x1dk[\s\S]*?(?=\n|$)/g, '');
+/* eslint-enable no-control-regex */
 const renglones = (t) => {
     const s = seccionesParaElPrograma(t);
     return (s.encabezado + s.cuerpo + s.pie).split('\n').map(sinCodigos);

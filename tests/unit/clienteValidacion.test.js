@@ -19,7 +19,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-    esContribuyente, telefonoValido, duiValido, nitValido, nrcValido,
+    esContribuyente, telefonoValido, nitValido, nrcValido,
     correoValido, retencionValida, camposRequeridos, validarCliente,
 } from '@nucleo/utils/clienteValidacion';
 

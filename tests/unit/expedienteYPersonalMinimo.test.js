@@ -276,7 +276,6 @@ describe('los practicantes', () => {
 // no llega al render. jsdom no puede distinguir dos píldoras que se pintan igual
 // mejor de lo que puede leerse acá.
 
-import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 

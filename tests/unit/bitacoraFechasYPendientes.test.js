@@ -15,7 +15,7 @@
 // un área que hoy no aplica NO suma huecos. Contarla inventaría trabajo que
 // nadie tenía que hacer.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { hoySV, sumarDias as correrDia } from '@nucleo/utils/fecha';
 import { periodoDe, correrPeriodo, pendientesDelDia, rotularRango, soloLimpieza, TIPO_AREA }
     from '@nucleo/data/bitacoras';

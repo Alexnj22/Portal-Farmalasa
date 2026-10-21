@@ -2277,7 +2277,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       };
     };
     if (accion === "mis_reservas") {
-      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, plazo_hasta:reserva_plazo_hasta";
+      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, saldo_favor_inicial, plazo_hasta:reserva_plazo_hasta";
       // `plazo_hasta` (2026-10-21) lo calcula la base (`reserva_plazo_hasta`):
       // hasta cuándo vale el estado actual, para no escribir «24 horas» en la app.
       // `en_revision` (2026-10-12): esperando que la sucursal revise la receta.

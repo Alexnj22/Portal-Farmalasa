@@ -44,6 +44,8 @@ const ROTULOS = {
   cumpleanos: 'Regalo de cumpleaños', canje_devuelto: 'Canje devuelto', referido: 'Por invitar a un amigo',
   // El cupón del mes (2026-10-14): el servidor lo distingue de una compra porque vence a fin de mes.
   cupon: 'Cupón del mes',
+  // Saldo a favor de una reserva que pasó a puntos para descontarlo en caja (2026-10-21).
+  saldo_favor: 'Saldo a favor de una reserva',
 };
 
 export default function Puntos() {

@@ -33432,6 +33432,7 @@ export type Database = {
         Returns: Json
       }
       reservas_vencer: { Args: never; Returns: number }
+      reservas_vigilar: { Args: never; Returns: Json }
       resolve_pedido_item: {
         Args: {
           p_action: string

@@ -22,7 +22,7 @@
  */
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
-    Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, History, CalendarClock, IdCard, Phone,
+    Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, Wallet, History, CalendarClock, IdCard, Phone,
     ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal, ArrowLeftRight, Merge,
 } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -62,6 +62,7 @@ const TIPO = {
     compra:      { icono: ShoppingBag, burbuja: 'bg-success/10 text-success-text' },
     cumpleanos:  { icono: Cake,        burbuja: 'bg-brand/10 text-brand-text' },
     ajuste:      { icono: Wrench,      burbuja: 'bg-surface-card-hover text-content-3' },
+    saldo_favor: { icono: Wallet,      burbuja: 'bg-success/10 text-success-text' },
     canje:       { icono: Gift,        burbuja: 'bg-warning/10 text-warning-text' },
     // La factura del canje se anuló y los puntos volvieron (2026-09-28).
     canje_devuelto: { icono: Undo2,    burbuja: 'bg-success/10 text-success-text' },

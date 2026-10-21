@@ -43,7 +43,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Loader2, AlertTriangle, ArrowLeft, ShoppingBag, Gift, ShieldCheck,
     CalendarClock, ChevronDown, ChevronUp, ChevronRight, CreditCard, Phone, UserRound, ScrollText,
-    KeyRound, Cake, SlidersHorizontal, Undo2, CalendarX,
+    KeyRound, Cake, SlidersHorizontal, Undo2, CalendarX, Wallet,
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import PortalInput from '../components/common/PortalInput';
@@ -273,6 +273,7 @@ const TIPOS_DE_MOVIMIENTO = {
     compra:      { rotulo: 'Compra',                  icono: ShoppingBag },
     cumpleanos:  { rotulo: 'Regalo de cumpleaños',    icono: Cake },
     ajuste:      { rotulo: 'Ajuste',                  icono: SlidersHorizontal },
+    saldo_favor: { rotulo: 'Saldo a favor de una reserva', icono: Wallet },
     canje:       { rotulo: 'Canje',                   icono: Gift },
     canje_devuelto: { rotulo: 'Canje devuelto',       icono: Undo2 },
     anulacion:   { rotulo: 'Compra anulada',          icono: Undo2 },

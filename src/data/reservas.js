@@ -157,11 +157,16 @@ export async function guardarAjustesEnvio({ activo, costo, gratisDesde, nota }, 
 
 /**
  * El saldo a favor (anticipo de una reserva vencida, o lo pagado en línea que
- * no se entregó) se aplica en caja de CUALQUIER sala (2026-10-19): la sala lo
- * marca al usarlo y queda anotada.
+ * no se entregó) se aplica en caja de CUALQUIER sala (2026-10-19). Desde el
+ * 2026-10-21 es un CRÉDITO: se usa por partes (`monto`, con lo que queda como
+ * tope) y lo usado se convierte en puntos del cliente, que la caja descuenta
+ * como cualquier canje. `prueba` es la tarjeta de Puntos Salud (o su QR), el
+ * DUI o el teléfono de la ficha: la base confirma con eso al titular.
  */
-export async function usarSaldoAFavor(id) {
-    return sinError(await supabase.rpc('reserva_usar_saldo_favor', { p_id: Number(id) }));
+export async function usarSaldoAFavor(id, monto, prueba) {
+    return sinError(await supabase.rpc('reserva_usar_saldo_favor', {
+        p_id: Number(id), p_monto: Number(monto), p_prueba: String(prueba ?? '').trim(),
+    }));
 }
 
 /**
@@ -176,10 +181,14 @@ export async function devolverSaldoAFavor(id, motivo) {
 
 /**
  * Un saldo a favor por el código que el cliente muestra (R-… o P-…), de
- * cualquier sala (2026-10-19): se usa en cualquier sucursal.
+ * cualquier sala (2026-10-19): se usa en cualquier sucursal. Sin `prueba` (o
+ * con una que no es del titular) la base sólo dice que existe y dónde nació
+ * (`confirmado: false`): ni el nombre ni el monto (2026-10-21).
  */
-export async function buscarSaldoAFavor(codigo) {
-    return sinError(await supabase.rpc('saldo_favor_buscar', { p_codigo: String(codigo ?? '').trim() })) ?? [];
+export async function buscarSaldoAFavor(codigo, prueba = null) {
+    return sinError(await supabase.rpc('saldo_favor_buscar', {
+        p_codigo: String(codigo ?? '').trim(), p_prueba: prueba ? String(prueba).trim() : null,
+    })) ?? [];
 }
 
 /**

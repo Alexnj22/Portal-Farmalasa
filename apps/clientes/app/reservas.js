@@ -1110,17 +1110,22 @@ const ORIGEN_SALDO = {
   pago_tardio: 'Tu pago llegó con la reserva ya cerrada, y',
   pago_duplicado: 'Pagaste de más, y eso',
 };
+// Desde el 2026-10-21 el saldo se usa por partes: `saldo_favor` es lo que
+// QUEDA y `saldo_favor_inicial` lo que nació. Usado entero, `saldo_favor` es 0.
 function SaldoAFavor({ r }) {
-  if (!(Number(r.saldo_favor) > 0)) return null;
   const usado = !!r.saldo_favor_usado_at;
   const devuelto = !!r.saldo_favor_devuelto_at;
+  const inicial = Number(r.saldo_favor_inicial ?? r.saldo_favor);
+  const queda = Number(r.saldo_favor);
+  if (!(queda > 0) && !(usado && inicial > 0)) return null;
   const codigo = r.pedido ?? r.codigo;
   return (
     <View style={{ borderRadius: 14, padding: 12, gap: 2, backgroundColor: 'rgba(52,199,89,0.12)' }}>
       <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>
-        {usado ? `Usaste tu saldo a favor de ${dolares(r.saldo_favor)}`
-          : devuelto ? `Te devolvimos ${dolares(r.saldo_favor)}`
-          : `Tienes ${dolares(r.saldo_favor)} a favor`}
+        {usado ? `Usaste tu saldo a favor de ${dolares(inicial)}`
+          : devuelto ? `Te devolvimos ${dolares(queda)}`
+          : inicial > queda ? `Te quedan ${dolares(queda)} a favor de ${dolares(inicial)}`
+          : `Tienes ${dolares(queda)} a favor`}
       </Text>
       {!usado && !devuelto ? (
         <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>

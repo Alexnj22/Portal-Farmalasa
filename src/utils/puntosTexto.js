@@ -37,6 +37,8 @@ export const ROTULO_MOVIMIENTO = {
     compra: 'Compra',
     cumpleanos: 'Cumpleaños',
     ajuste: 'Ajuste',
+    // Saldo a favor de una reserva que la sala pasó a puntos para descontarlo en caja (2026-10-21).
+    saldo_favor: 'Saldo a favor',
     canje: 'Canje',
     // La factura del canje se anuló y los puntos volvieron (2026-09-28).
     canje_devuelto: 'Canje devuelto',

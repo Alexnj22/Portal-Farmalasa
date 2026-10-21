@@ -8,6 +8,7 @@ import WidgetEncargos from './WidgetEncargos';
 import { useResumenWidget } from './tamanoWidget';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
@@ -100,6 +101,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const [ahora, setAhora] = useState(0);
     // El saldo a favor que se devuelve en dinero (modal con el motivo).
     const [devolver, setDevolver] = useState(null);
+    const [usando, setUsando] = useState(null);
     // Saldos a favor de OTRA sala encontrados por el código (2026-10-19): el
     // saldo vale en cualquier sucursal, así que el código del cliente se busca
     // también fuera de esta sala cuando aquí no aparece.
@@ -252,19 +254,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // aplican en cualquier sala (los de otra aparecen al buscar su código).
     const saldos = [...saldosAFavor(filas), ...saldosDeFuera];
     const abiertas = reservasAbiertas(filas);
-    const usarSaldo = async (r) => {
-        setOcupada(r.id);
-        try {
-            // La bitácora la escribe `reserva_usar_saldo_favor` (RESERVA_SALDO_FAVOR_USADO):
-            // anotarla también acá la dejaba dos veces.
-            await usarSaldoAFavor(r.id);
-            showToast('Saldo a favor aplicado', `${formatMoney(Number(r.saldo_favor))} de ${String(r.cliente ?? '').split(/\s+/)[0]}`, 'success');
-            setSaldosDeFuera((l) => l.filter((x) => x.id !== r.id));
-            cargar();
-        }
-        catch (err) { showToast('No se pudo aplicar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error'); }
-        finally { setOcupada(null); }
-    };
+    // Usar el saldo (2026-10-21): un diálogo confirma al titular y pide cuánto.
+    const usarSaldo = (r) => setUsando(r);
 
     const pendientes = abiertas.filter((r) => r.estado === 'pendiente').length;
     const recetas = abiertas.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
@@ -437,14 +428,18 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                         {saldos.map((r) => (
                             <li key={r.id}>
                                 <FilaConAcciones icon={Wallet}
-                                    titulo={`${formatMoney(Number(r.saldo_favor))} a favor de ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}`}
-                                    detalle={`${r.pedido ?? codigoDeReserva(r.id)} · ${r.producto} · ${origenDelSaldo(r)} · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}${(todas || String(r.branch_id) !== String(miSala)) && r.sala ? ` · ${r.sala}` : ''}`}
+                                    titulo={r.confirmado === false
+                                        ? 'Saldo a favor · confirma al cliente para verlo'
+                                        : `${formatMoney(Number(r.saldo_favor))} a favor de ${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}`}
+                                    detalle={r.confirmado === false
+                                        ? `${r.pedido ?? codigoDeReserva(r.id)} · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}${r.sala ? ` · ${r.sala}` : ''}`
+                                        : `${r.pedido ?? codigoDeReserva(r.id)} · ${r.producto} · ${origenDelSaldo(r)}${Number(r.saldo_favor_inicial) > Number(r.saldo_favor) ? ` · de ${formatMoney(Number(r.saldo_favor_inicial))}` : ''} · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}${(todas || String(r.branch_id) !== String(miSala)) && r.sala ? ` · ${r.sala}` : ''}`}
                                     acciones={soloLectura ? null : (
                                         <>
-                                            {puedeDevolver && (
+                                            {puedeDevolver && r.confirmado !== false && (
                                                 <Button variant="ghost" size="xs" icon={Banknote} onClick={() => setDevolver(r)}>Devolver en dinero</Button>
                                             )}
-                                            <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id} onClick={() => usarSaldo(r)}>Aplicado en caja</Button>
+                                            <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => usarSaldo(r)}>Usar en caja</Button>
                                         </>
                                     )} />
                             </li>
@@ -457,6 +452,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             {modalNueva}
             {modalRetirar}
             {modalReceta}
+            {usando && (
+                <UsarSaldo saldo={usando} onCerrar={() => setUsando(null)}
+                    onUsado={() => { setSaldosDeFuera([]); setUsando(null); cargar(); }}
+                    buscarSaldoAFavor={buscarSaldoAFavor} usarSaldoAFavor={usarSaldoAFavor} showToast={showToast} />
+            )}
             {devolver && (
                 <DevolverSaldo saldo={devolver} onCerrar={() => setDevolver(null)}
                     onDevuelto={() => { setSaldosDeFuera((l) => l.filter((x) => x.id !== devolver.id)); setDevolver(null); cargar(); }}
@@ -502,6 +502,87 @@ function AvisoWhatsapp({ reserva, onCerrar, onEnviado }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
                 <Button icon={MessageCircle} disabled={!numero || !texto.trim()} onClick={abrir}>Abrir WhatsApp</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+// Usar un saldo a favor en caja (2026-10-21): funciona como un crédito.
+//   1. Se confirma al titular: su tarjeta de Puntos Salud (o el QR de la app),
+//      el DUI o el teléfono de la ficha. Lo decide la base
+//      (`saldo_favor_buscar` con la prueba); con sólo el código no se ve ni el
+//      nombre ni el monto.
+//   2. Se elige cuánto usar, con lo que queda como tope.
+//   3. Ese monto pasa a puntos del cliente y la caja lo descuenta como
+//      cualquier canje de puntos, en una factura a SU nombre. La bitácora la
+//      escribe `reserva_usar_saldo_favor`.
+function UsarSaldo({ saldo, onCerrar, onUsado, buscarSaldoAFavor, usarSaldoAFavor, showToast }) {
+    const codigo = saldo.pedido ?? codigoDeReserva(saldo.id);
+    const [prueba, setPrueba] = useState('');
+    const [fila, setFila] = useState(null);
+    const [monto, setMonto] = useState('');
+    const [trabajando, setTrabajando] = useState(false);
+    const [error, setError] = useState('');
+    const disponible = Number(fila?.saldo_favor ?? 0);
+    const pedido = Math.round(Number(String(monto).replace(',', '.')) * 100) / 100;
+    const montoValido = pedido > 0 && pedido <= disponible + 0.0001;
+    const confirmar = async () => {
+        setTrabajando(true); setError('');
+        try {
+            const filas = await buscarSaldoAFavor(codigo, prueba);
+            const f = (filas || []).find((x) => String(x.id) === String(saldo.id));
+            if (!f) { setError('Ese saldo ya no está disponible.'); return; }
+            if (!f.confirmado) { setError('No coincide con el cliente de este saldo. Escanea su tarjeta de Puntos Salud o escribe el DUI o el teléfono de su ficha.'); return; }
+            setFila(f);
+            setMonto(Number(f.saldo_favor).toFixed(2));
+        } catch (err) { setError(mensajeAmigable(err, 'Intenta de nuevo.')); }
+        finally { setTrabajando(false); }
+    };
+    const usar = async () => {
+        setTrabajando(true); setError('');
+        try {
+            const r = await usarSaldoAFavor(saldo.id, pedido, prueba);
+            showToast('Saldo listo para descontar',
+                `Descuenta ${formatMoney(Number(r?.monto ?? pedido))} con puntos en la factura de ${String(fila.cliente ?? '').split(/\s+/)[0]}.${Number(r?.queda) > 0 ? ` Le quedan ${formatMoney(Number(r.queda))}.` : ''}`, 'success');
+            onUsado();
+        } catch (err) { setError(mensajeAmigable(err, 'Intenta de nuevo.')); }
+        finally { setTrabajando(false); }
+    };
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel="Usar saldo a favor">
+            <LiquidModal.Header>
+                <h2 className="text-body-xl font-semibold text-content">Usar saldo a favor · {codigo}</h2>
+            </LiquidModal.Header>
+            <LiquidModal.Body>
+                <div className="space-y-3">
+                    {!fila ? (
+                        <>
+                            <p className="text-body-sm text-content-2">
+                                Primero confirma que es el cliente: escanea su tarjeta de Puntos Salud (o el QR de su app), o escribe el DUI o el teléfono de su ficha.
+                            </p>
+                            <PortalInput label="Tarjeta, DUI o teléfono" name="prueba" value={prueba} autoFocus
+                                onChange={(e) => setPrueba(e.target.value)} placeholder="Escanea o escribe" />
+                        </>
+                    ) : (
+                        <>
+                            <p className="text-body-sm text-content-2">
+                                {fila.cliente} tiene {formatMoney(disponible)} a favor (vale hasta el {fechaTexto(fila.saldo_favor_vence, { day: 'numeric', month: 'short' })}).
+                                Lo que uses pasa a sus puntos: en caja, factura a su nombre y descuéntalo con puntos.
+                            </p>
+                            <PortalInput label="Cuánto usa" name="monto" inputMode="decimal" maskType="DECIMAL" prefix="$"
+                                value={monto} onChange={(e) => setMonto(e.target.value)}
+                                helperText={`Hasta ${formatMoney(disponible)}.`} placeholder="0.00"
+                                hasError={!!monto && !montoValido} errorMessage={!!monto && !montoValido ? `Hasta ${formatMoney(disponible)}.` : undefined} />
+                        </>
+                    )}
+                    {error && <p className="text-body-sm text-danger-text">{error}</p>}
+                </div>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
+                {!fila
+                    ? <Button icon={CheckCircle2} loading={trabajando} disabled={!prueba.trim()} onClick={confirmar}>Confirmar cliente</Button>
+                    : <Button icon={Wallet} loading={trabajando} disabled={!montoValido} onClick={usar}>Usar {montoValido ? formatMoney(pedido) : ''}</Button>}
             </LiquidModal.Footer>
         </LiquidModal>
     );

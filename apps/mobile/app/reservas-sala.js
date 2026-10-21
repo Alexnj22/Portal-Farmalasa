@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, usarSaldoAFavor, whatsappDe, HORAS_RECETA_URGENTE,
+  cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
 } from '@nucleo/data/reservas';
 import { esPagoDePrueba, pilaDelCliente, plazoDeRetiro, reservasAbiertas, reservasPendientes, reservasPorCodigo, resumenDelPedido, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -107,23 +107,10 @@ export default function ReservasDeSala() {
     ]);
   };
 
-  // El anticipo de una reserva vencida queda a favor del cliente 60 días (`saldo_favor_dias`): la
-  // sala lo marca cuando lo aplica en caja (`reserva_usar_saldo_favor`, la
-  // misma del widget del portal).
-  const usarSaldo = (r) => {
-    Alert.alert('Saldo a favor aplicado en caja', `${formatMoney(Number(r.saldo_favor))} a favor de ${pilaDelCliente(r)} (${codigoDeReserva(r.id)}). Márcalo sólo cuando ya se descontó en caja.`, [
-      { text: 'Volver', style: 'cancel' },
-      { text: 'Ya se aplicó', onPress: async () => {
-        setOcupada(r.id);
-        try {
-          await usarSaldoAFavor(r.id);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          listo('Saldo a favor aplicado', `${formatMoney(Number(r.saldo_favor))} de ${pilaDelCliente(r)}`);
-          cargar();
-        } catch (e) { fallo('No se pudo aplicar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
-      } },
-    ]);
-  };
+  // El saldo a favor (60 días, `saldo_favor_dias`) se usa como un crédito
+  // (2026-10-21): `reserva-saldo` confirma al titular, pide cuánto y lo pasa a
+  // puntos, que la caja descuenta como un canje (`reserva_usar_saldo_favor`).
+  const usarSaldo = (r) => router.push({ pathname: '/reserva-saldo', params: { id: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id) } });
 
   const lista = filas || [];
   const abiertas = reservasAbiertas(lista);
@@ -165,7 +152,7 @@ export default function ReservasDeSala() {
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${formatMoney(Number(r.saldo_favor))} a favor de ${pilaDelCliente(r)}`}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${codigoDeReserva(r.id)} · ${r.producto}${r.saldo_favor_vence ? ` · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}` : ''}${todas && r.sala ? ` · ${r.sala}` : ''}`}</Text>
                 </View>
-                <Accion texto="Aplicado en caja" color={MARCA.verde} onPress={() => usarSaldo(r)} deshabilitado={!!ocupada} />
+                <Accion texto="Usar en caja" color={MARCA.verde} onPress={() => usarSaldo(r)} deshabilitado={!!ocupada} />
               </View>
             ))}
           </Seccion>

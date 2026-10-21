@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1331.0 — Reservas: el saldo a favor como crédito que se descuenta con puntos, titular confirmado y aviso de existencia
+
+Decisiones del usuario (2026-10-21), cada parte probada en una transacción que se deshace sola contra producción.
+
+- **El saldo a favor es un crédito**: se usa por partes hasta que se acaba o vence. `saldo_favor` pasa a ser lo que QUEDA y `saldo_favor_inicial` lo que nació; cada uso, devolución en dinero y vencimiento queda en `saldo_favor_movimientos` (monto, lo que queda, sala, quién, cuándo, cómo se confirmó y la factura donde se descontó).
+- **Se descuenta con puntos**: usar $X lo convierte en X×100 puntos del cliente (lote `saldo_favor`, vence con el saldo); la caja aplica el descuento de puntos en una factura a su nombre y `puntos_registrar_canje` lo detecta como cualquier canje. `puntos_consumir_canje` consume primero ese lote y anota la factura en el libro. En el corte se ve igual que un canje: descuento en la factura, no efectivo. El estado de cuenta lo muestra como «Saldo a favor».
+- **Titular confirmado en el servidor**: para usarlo hay que escanear su tarjeta de Puntos Salud (o el QR de la app) o escribir el DUI o el teléfono de la ficha (`cliente_confirma`, no expuesta). `saldo_favor_buscar` con sólo el código ya no da nombre ni monto. La pantalla pide la prueba y después el monto, con lo que queda como tope (portal y app del personal, `reserva-saldo`).
+- **Vencido = apagado**: `reservas_vigilar` (cron `reservas-vigilar-15min`, 7:00–21:45 SV) pasa a 0 lo que quedaba y lo anota; lo ya convertido vence con su lote de puntos.
+- **Aviso de existencia**: el mismo vigía avisa a la sala (`destinatarios_de_reservas`) si la existencia de un producto cae por debajo de lo apartado. Sólo mira los productos con reserva abierta (`app_existencias_netas`, por índice): sin disparador sobre `inventory` ni barrido del inventario. Un aviso por sala, producto y día.
+- La devolución en dinero devuelve lo que queda.
+
+
 ## v2.1330.2 — Pedidos: el conteo no redondea, la base fija la presentación del extra y los botones se entienden
 
 - **Contar ya no redondea.** Un producto que el sistema lleva en cajas de 10 se

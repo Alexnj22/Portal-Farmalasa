@@ -839,9 +839,11 @@ export const AREAS = [
                  // cliente cuando reserva de más (2026-10-19).
                  'producto_cantidad_habitual',
                  // La preventa de una reserva enviada a caja (2026-10-21).
-                 'preventas'],
+                 'preventas',
+                 // El libro del saldo a favor: usos (pasados a puntos), devoluciones y vencimientos (2026-10-21).
+                 'saldo_favor_movimientos'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja'],
-        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
+        crons: ['puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'reservas-vigilar-15min', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
                 'recetas-escalar-15min',
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.

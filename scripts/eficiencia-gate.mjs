@@ -152,6 +152,14 @@ const CRONS = [
           + 'oferta ya terminó. Un UPDATE sobre la propia tabla (decenas de filas a lo sumo).',
   },
   {
+    job: 'reservas-vigilar-15min', slug: null, cadencia: '*/15 13-23,0-3 * * *',
+    corridasDia: 60, sistema: 0,
+    motivo: 'Dos vigías de reservas (2026-10-21): apaga el saldo a favor vencido (lo deja en su libro) '
+          + 'y avisa a la sala si la existencia cae bajo lo apartado. Sólo mira los productos con una '
+          + 'reserva abierta (`app_existencias_netas` por índice), nunca el inventario entero ni un '
+          + 'disparador sobre `inventory`. 7:00–21:45 SV.',
+  },
+  {
     job: 'preventas-cerrar-facturadas', slug: null, cadencia: '*/3 12-23,0-5 * * *',
     corridasDia: 400, sistema: 0,
     motivo: 'Cierra la reserva cuando llega la factura de su preventa (2026-10-21): liga '

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.4 — Reglamento de reservas: más amable y en 4 hojas
+
+- **Reglamento de reservas**:
+  - la reserva que la sucursal no alcanza a revisar o preparar «se cierra sin ninguna consecuencia para el Cliente: no cuenta en su contra y puede volver a reservar cuando quiera»;
+  - el plazo para retirar «empieza cuando la Empresa envía el aviso… aunque todavía no lo haya leído. Por eso conviene mantener el teléfono al día»;
+  - para que entre en **4 hojas**, el papel lleva márgenes de 15 × 18 mm, interlineado de 1.36 y menos aire entre secciones y cláusulas. La letra sigue en 10.5 pt.
+
 ## v2.1350.3 — App: la tarjeta de reserva igual a la del portal y el detalle con «Qué hacer»
 
 - **App · Reservas**: la tarjeta sigue la del portal (v2.1349.3): alto parejo con el dinero al pie, cada texto en una línea, hasta 2 productos con su detalle o «$x c/u» y «+ N productos más». Al pie, «Más» y las dos acciones principales. El detalle tiene «Qué hacer» con todas las acciones y «Cancelar reserva» al final.

@@ -130,7 +130,7 @@
      a Chromium por fuera del CSS, así que el navegador no los conocía y usaba
      los suyos. El documento tiene que decir cómo se imprime; el generador lo
      lee de acá. */
-  @page { size: Letter; margin: 18mm 20mm; }
+  @page { size: Letter; margin: 15mm 18mm; }
 
   @media print {
     /* ── La escala del papel ─────────────────────────────────────────────
@@ -145,7 +145,9 @@
        interlineado también se aprieta: 1.55 es cómodo en pantalla y suelto
        en papel. */
     html { font-size: 10.5pt; }
-    body { font-size: 1rem; line-height: 1.42; }
+    body { font-size: 1rem; line-height: 1.36; }
+    section { margin-top: 1.1rem; }
+    ol.clausulas > li { margin-bottom: .45rem; }
     body { background: #fff; color: #000; }
     /* ── En papel no hay grises de apoyo ─────────────────────────────────
        El encabezado de una tabla y el número de una cláusula se pintan en
@@ -276,9 +278,10 @@
       Mientras la receta está en revisión la reserva no se puede pagar, y si
       el pedido incluye un producto bajo receta, todo el pedido espera esa
       revisión.</li>
-      <li>Si la sucursal no revisa la receta o no prepara la reserva
-      dentro de su plazo, la reserva vence y <strong>no cuenta en contra</strong>
-      del Cliente.</li>
+      <li>Si la sucursal no alcanza a revisar la receta o a preparar la reserva a
+      tiempo, la reserva se cierra <strong>sin ninguna consecuencia para el
+      Cliente</strong>: no cuenta en su contra y puede volver a reservar
+      cuando quiera.</li>
       <li>La reserva puede pagarse en línea desde la aplicación o al retirarla
       en la sucursal. Si se paga en línea, el plazo para retirarla es de
       <strong>siete (7) días</strong> siguientes al aviso de que está lista. Si no se retira, el producto vuelve a la venta y lo pagado
@@ -418,9 +421,9 @@
       estimada; cuando lo que se trae de otra sucursal no llega completo (cláusula
       4.6); cuando un encargo no se retiró en su plazo (cláusula 5.5), y cuando
       su saldo a favor está por vencer (cláusula 9.5).</li>
-      <li>El plazo para retirar corre desde el aviso aunque el Cliente no lo
-      haya leído, siempre que se haya enviado a la aplicación o al teléfono que
-      el Cliente registró.</li>
+      <li>El plazo para retirar empieza cuando la Empresa envía el aviso a la
+      aplicación o al teléfono que el Cliente registró, aunque todavía no lo
+      haya leído. Por eso conviene mantener el teléfono al día.</li>
     </ol>
   </section>
 

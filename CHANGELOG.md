@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.1 — Reglamento de reservas: «sucursal» y redacción del producto en camino
+
+- **Reglamento de reservas**: dice **«sucursal»** en vez de «sala de ventas» (21 menciones). Es la palabra que usa el cliente y la que ya usa la app. El procedimiento interno sigue diciendo «sala», que es como habla el personal.
+- **3.4** (producto que se trae de otra sucursal): redactada de nuevo, una idea por oración. Dice «no corre el plazo de preparación», y el plazo para retirar corre desde el aviso de que la reserva está lista, igual que en la 3.3.
+
 ## v2.1350.0 — App: la tarjeta y el detalle de cada reserva; traer de otra sala
 
 - **App · Reservas de la sala**: cada reserva es una tarjeta en cuatro bloques —código y estado en palabras, cliente (teléfono, con o sin la app, a domicilio), hasta 2 productos y «+N más», Total / Pagado o Anticipo / Falta con el plazo—; las acciones van al pie con su nombre. Tocarla abre el detalle nuevo (`reserva/[id]`): todos los productos con traslado, encargo y oferta, el pago, las fechas, la receta, y Llamar / WhatsApp.

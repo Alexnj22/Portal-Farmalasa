@@ -8,12 +8,16 @@
 // no deja que quien pidió se lo apruebe — acá se esconde el botón en ese caso.
 // Rechazar pide el motivo, que lo lee el vendedor. Un aviso abre la pantalla
 // con `?solicitud=` y esa tarjeta sale primero y resaltada.
+//
+// Desde la auditoría H3 llegan también las de invalidar un documento sellado
+// (corregirlo o deshacer la venta): las decide `resolverSolicitudDistribucion`,
+// la misma del portal, y la tarjeta dice qué pasa con el dinero.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchSolicitudesDescuento, mensajeDeDistribucion, resolverDescuento } from '@nucleo/data/distribucion';
+import { avisoDeDecision, fetchSolicitudesDescuento, mensajeDeDistribucion, resolverSolicitudDistribucion } from '@nucleo/data/distribucion';
 import { ESTADO_SOLICITUD_DESCUENTO } from '@nucleo/utils/distribucionComercial';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -46,6 +50,13 @@ function Tarjeta({ f, mia, puedeDecidir, destacada, ocupado, onDecidir }) {
   const est = ESTADO_SOLICITUD_DESCUENTO[f.status] ?? ESTADO_SOLICITUD_DESCUENTO.PENDING;
   const renglones = Array.isArray(m.renglones) ? m.renglones : [];
   const pendiente = f.status === 'PENDING';
+  const invalida = f.type === 'DIST_INVALIDACION';
+  const filaDinero = (texto, monto, ultimo = false) => (
+    <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderBottomWidth: ultimo ? 0 : 0.5, borderBottomColor: colorSistema.separador }}>
+      <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{texto}</Text>
+      <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(monto ?? 0)}</Text>
+    </View>
+  );
   return (
     <View style={{ marginHorizontal: 16 }}>
       <Vidrio radio={22} tinte={destacada ? `${PETROLEO}40` : undefined}>
@@ -54,12 +65,23 @@ function Tarjeta({ f, mia, puedeDecidir, destacada, ocupado, onDecidir }) {
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>{m.cliente || 'Cliente'}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                {`Venta ${m.pedido_id} · pidió ${shortEmployeeName(f.solicitante?.name) || '—'} · ${fechaHora12(f.created_at)}`}
+                {`${invalida ? `${m.accion === 'corregir' ? 'Corregir' : 'Deshacer'} ${m.numero_control ?? ''}` : `Venta ${m.pedido_id}`} · pidió ${shortEmployeeName(f.solicitante?.name) || '—'} · ${fechaHora12(f.created_at)}`}
               </Text>
             </View>
             <Pildora texto={est.label} color={colorDe(est.variant)} />
           </View>
 
+          {invalida ? (
+            <View style={{ borderRadius: 14, borderWidth: 0.5, borderColor: colorSistema.separador, overflow: 'hidden' }}>
+              {filaDinero(`${m.tipo_documento === '03' ? 'Crédito Fiscal' : 'Factura'} · total del documento`, m.total)}
+              {m.accion === 'corregir'
+                ? filaDinero('Abonado (pasa a la cuenta nueva)', m.abonado, true)
+                : (<>
+                  {filaDinero('Efectivo que se le devuelve (sale de la caja del vendedor)', m.devolver_efectivo)}
+                  {filaDinero('Queda a favor del cliente', m.a_favor, true)}
+                </>)}
+            </View>
+          ) : (
           <View style={{ borderRadius: 14, borderWidth: 0.5, borderColor: colorSistema.separador, overflow: 'hidden' }}>
             {renglones.map((r, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderBottomWidth: 0.5, borderBottomColor: colorSistema.separador }}>
@@ -78,6 +100,7 @@ function Tarjeta({ f, mia, puedeDecidir, destacada, ocupado, onDecidir }) {
               <Text style={{ color: PETROLEO, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(m.total)}</Text>
             </View>
           </View>
+          )}
 
           {f.note ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}><Text style={{ color: colorSistema.texto2 }}>Motivo: </Text>{`«${f.note}»`}</Text> : null}
           {!pendiente ? (
@@ -148,16 +171,24 @@ export default function SolicitudesTorogoz() {
 
   const decidir = (f, aprobar, motivo = '', alTerminar) => {
     const m = f.metadata ?? {};
-    Alert.alert(aprobar ? 'Aprobar el descuento' : 'Rechazar el descuento',
-      `${m.cliente || 'Cliente'} · ${formatMoney(m.total)}\n\n${aprobar ? 'La venta se podrá facturar con el descuento y se le avisa al vendedor.' : 'La venta queda sin el descuento y se le avisa al vendedor.'}`, [
+    const invalida = f.type === 'DIST_INVALIDACION';
+    const queHace = invalida
+      ? (aprobar
+        ? (m.accion === 'corregir'
+          ? 'Se abre una venta nueva con lo mismo; al facturarla, este documento se invalida ante Hacienda con tu nombre.'
+          : 'Se invalida ante Hacienda con tu nombre y el pedido queda anulado. El efectivo sale de la caja del vendedor; lo demás queda a favor del cliente.')
+        : 'El documento queda como estaba y se le avisa al vendedor.')
+      : (aprobar ? 'La venta se podrá facturar con el descuento y se le avisa al vendedor.' : 'La venta queda sin el descuento y se le avisa al vendedor.');
+    Alert.alert(aprobar ? (invalida ? 'Aprobar la solicitud' : 'Aprobar el descuento') : (invalida ? 'Rechazar la solicitud' : 'Rechazar el descuento'),
+      `${m.cliente || 'Cliente'} · ${formatMoney(m.total)}\n\n${queHace}`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: aprobar ? 'Aprobar' : 'Rechazar', style: aprobar ? 'default' : 'destructive', onPress: async () => {
           setOcupado(f.id);
           trabajando(aprobar ? 'Aprobando…' : 'Rechazando…');
           try {
-            await resolverDescuento(f.id, aprobar, aprobar ? null : motivo);
-            listo(aprobar ? 'Descuento aprobado' : 'Descuento rechazado',
-              aprobar ? 'La venta ya se puede facturar con el descuento. Se le avisó al vendedor.' : 'La venta queda sin el descuento. Se le avisó al vendedor.');
+            const r = await resolverSolicitudDistribucion(f.id, f.type, aprobar, aprobar ? null : motivo);
+            const av = avisoDeDecision(f.type, m.accion, aprobar, r);
+            if (av.tono === 'warning') fallo(av.titulo, av.texto); else listo(av.titulo, av.texto);
             alTerminar?.();
             await cargar();
           } catch (e) {
@@ -178,7 +209,7 @@ export default function SolicitudesTorogoz() {
         <Segmentos activa={filtro} onCambiar={setFiltro}
           opciones={[{ id: 'pendientes', label: pendientes ? `Por decidir · ${pendientes}` : 'Por decidir' }, { id: 'resueltas', label: 'Resueltas' }]} />
         {!puedeDecidir ? (
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Ves las que pediste. Las decide quien tiene permiso para aprobar descuentos.</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Ves las que pediste. Las decide quien tiene permiso para aprobar solicitudes de Distribución.</Text>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas === null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
@@ -188,7 +219,7 @@ export default function SolicitudesTorogoz() {
         ))}
         {filas !== null && !visibles.length && !error ? (
           <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 32, fontSize: 15, marginHorizontal: 24 }}>
-            {filtro === 'pendientes' ? 'No hay descuentos esperando decisión.' : 'Todavía no hay solicitudes resueltas.'}
+            {filtro === 'pendientes' ? 'No hay solicitudes esperando decisión.' : 'Todavía no hay solicitudes resueltas.'}
           </Text>
         ) : null}
       </ScrollView>

@@ -93,3 +93,31 @@ export function usoDelLimite(cliente) {
     const limite = Number(cliente?.limite_credito) || 0;
     return { saldo, limite, uso: limite > 0 ? Math.min(1, saldo / limite) : 1, sobre: saldo > limite };
 }
+
+// ── El saldo a favor como pago parcial ─────────────────────────────────────
+// Decisión del dueño (2026-10-22): «lo podríamos poner como pago parcial».
+// Lo que el cliente tiene a favor —de un documento invalidado o de una nota de
+// crédito— se usa en UNA de sus cuentas, entero o por partes. Quien decide es
+// `dist_aplicar_saldo_a_favor`; esto sólo lo dice antes de apretar.
+
+/** Lo que tiene a favor, nunca negativo para mostrar. */
+export const saldoAFavor = (credito) => Math.max(0, c(credito?.a_favor) / 100);
+
+/**
+ * Cuánto se puede usar en esa cuenta: lo menor entre lo que tiene a favor y lo
+ * que debe la cuenta. → { tope, monto, problema }. `montoTexto` vacío usa el tope.
+ */
+export function usoDelSaldoAFavor({ aFavor, cuenta, montoTexto, leer }) {
+    const favor = Math.max(0, Number(aFavor) || 0);
+    const debe = Math.max(0, c(cuenta?.saldo) / 100);
+    const tope = Math.min(favor, debe);
+    const escrito = String(montoTexto ?? '').trim() === '' ? null : leer(montoTexto);
+    const monto = escrito == null ? tope : escrito;
+    let problema = null;
+    if (!cuenta) problema = 'Elige a qué cuenta va.';
+    else if (!(tope > 0)) problema = 'No hay saldo a favor que usar.';
+    else if (!(monto > 0)) problema = 'Escribe cuánto se usa.';
+    else if (c(monto) > c(favor)) problema = `Sólo tiene ${formatMoney(favor)} a favor.`;
+    else if (c(monto) > c(debe)) problema = `Esa cuenta sólo debe ${formatMoney(debe)}.`;
+    return { tope, monto, problema };
+}

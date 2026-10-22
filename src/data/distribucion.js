@@ -23,7 +23,9 @@ const MENSAJES = {
     DIST_SIN_PRECIO: 'Esa presentación no tiene precio cargado. Revisa el catálogo.',
     DIST_CCF_SIN_NRC: 'Ese cliente no tiene NRC: sólo se le puede emitir Factura.',
     DIST_SIN_PERMISO: 'No tienes permiso para esto en Distribución.',
-    DIST_AUTOAPROBAR: 'No puedes decidir un descuento que pediste tú: lo decide otra persona con permiso.',
+    DIST_AUTOAPROBAR: 'No puedes decidir una solicitud que pediste tú: la decide otra persona con permiso.',
+    DIST_INVALIDACION_PEDIDA: 'Ya hay una solicitud esperando decisión para este documento.',
+    DIST_RECIBO_REINTEGRADO: 'Ese cobro ya se devolvió o quedó a favor del cliente cuando se invalidó su documento: no se puede anular.',
     DIST_SOLICITUD_RESUELTA: 'Esa solicitud ya se resolvió.',
     DIST_LOTE_AJENO: 'Ese lote no es de ese producto. Vuelve a elegirlo.',
     DIST_RESERVA_AJENA: 'Esta venta la tiene abierta otra persona: sus productos siguen reservados a su nombre.',
@@ -291,27 +293,35 @@ export async function pedirDescuento(pedidoId, nota) {
 }
 
 /**
- * Las solicitudes de descuento, para la sección Solicitudes de la
- * distribuidora. El RLS decide qué llega: quien pidió ve las suyas; quien
- * puede verlas en la sala, todas. Tabla chica por tipo, pero paginada igual.
+ * Los tipos de solicitud que se deciden en la sección Solicitudes de la
+ * distribuidora: el descuento que el vendedor no puede dar solo y, desde la
+ * auditoría H3, deshacer o corregir un documento sellado (el vendedor ya no
+ * invalida por su cuenta: lo pide).
+ */
+export const TIPOS_SOLICITUD_DISTRIBUCION = ['DIST_DESCUENTO', 'DIST_INVALIDACION'];
+
+/**
+ * Las solicitudes de la distribuidora, para su sección Solicitudes. El RLS
+ * decide qué llega: quien pidió ve las suyas; quien puede verlas en la sala,
+ * todas. Tabla chica por tipo, pero paginada igual.
  */
 export async function fetchSolicitudesDescuento() {
     const rows = await fetchAllRows(() => supabase
         .from('approval_requests')
-        .select('id, status, note, approver_note, metadata, created_at, updated_at, employee_id, approver_id, '
+        .select('id, type, status, note, approver_note, metadata, created_at, updated_at, employee_id, approver_id, '
             + 'solicitante:employees!approval_requests_employee_id_fkey(name), '
             + 'decidio:employees!approval_requests_approver_id_fkey(name)')
-        .eq('type', 'DIST_DESCUENTO')
+        .in('type', TIPOS_SOLICITUD_DISTRIBUCION)
         .order('created_at', { ascending: false }));
     if (rows === null) throw new Error('No se pudieron cargar las solicitudes.');
     return rows;
 }
 
-/** Cuántos descuentos esperan decisión (el número del menú de la distribuidora). */
+/** Cuántas solicitudes esperan decisión (el número del menú de la distribuidora). */
 export async function contarDescuentosPendientes() {
     const { count, error } = await supabase.from('approval_requests')
         .select('id', { count: 'exact', head: true })
-        .eq('type', 'DIST_DESCUENTO').eq('status', 'PENDING');
+        .in('type', TIPOS_SOLICITUD_DISTRIBUCION).eq('status', 'PENDING');
     if (error) throw error;
     return count ?? 0;
 }
@@ -323,6 +333,36 @@ export async function resolverDescuento(solicitudId, aprobar, nota) {
     });
     if (error) throw error;
     return data;
+}
+
+/**
+ * Decide una solicitud de la distribuidora según su tipo. Invalidar un
+ * documento se aprueba en la edge function, porque firma el evento con el
+ * nombre y el DUI de quien aprueba y lo manda a Hacienda; el rechazo lo decide
+ * la base igual.
+ */
+export async function resolverSolicitudDistribucion(solicitudId, tipo, aprobar, nota) {
+    if (tipo === 'DIST_INVALIDACION') {
+        return invocar({ accion: 'resolver_invalidacion', solicitud_id: solicitudId, aprobar, nota: nota?.trim() || null });
+    }
+    return resolverDescuento(solicitudId, aprobar, nota);
+}
+
+/** Qué decir al decidir una solicitud de la distribuidora (toast de la pantalla y del celular). */
+export function avisoDeDecision(tipo, accion, aprobar, resultado = null) {
+    if (tipo === 'DIST_INVALIDACION') {
+        if (!aprobar) return { titulo: 'Solicitud rechazada', texto: 'El documento queda como estaba. Se le avisó al vendedor.', tono: 'info' };
+        if (accion === 'corregir') {
+            return { titulo: 'Corrección aprobada', texto: 'Se abrió una venta nueva con lo mismo. Se le avisó al vendedor para que la revise y la facture.', tono: 'success' };
+        }
+        if (resultado?.estado === 'invalidado') {
+            return { titulo: 'Venta deshecha', texto: 'Hacienda aceptó la invalidación. Se le avisó al vendedor.', tono: 'success' };
+        }
+        return { titulo: 'Aprobada', texto: resultado?.aviso || 'La invalidación quedó pendiente de enviar.', tono: 'warning' };
+    }
+    return aprobar
+        ? { titulo: 'Descuento aprobado', texto: 'La venta ya se puede facturar con el descuento. Se le avisó al vendedor.', tono: 'success' }
+        : { titulo: 'Descuento rechazado', texto: 'La venta queda sin el descuento. Se le avisó al vendedor.', tono: 'info' };
 }
 
 export async function anularPedido(pedidoId, motivo) {
@@ -656,10 +696,27 @@ export async function fetchPedidoPorUuid(clientUuid) {
 }
 export const reintentarDocumento = (dteId) => invocar({ accion: 'transmitir', dte_id: dteId });
 export const descartarDocumento = (dteId) => invocar({ accion: 'descartar', dte_id: dteId });
-/** Documento sellado: abre un pedido nuevo que, al facturarse, lo reemplaza y lo invalida. */
-export const corregirDocumentoSellado = (dteId) => invocar({ accion: 'corregir_sellado', dte_id: dteId });
-/** Documento sellado sin reemplazo: se deshizo la venta. */
+/**
+ * Documento sellado: PIDE corregirlo (auditoría H3). Al aprobarse se abre un
+ * pedido nuevo que, al facturarse, lo reemplaza y lo invalida.
+ * → { estado: 'sellado', solicitud_id, aviso }
+ */
+export const corregirDocumentoSellado = (dteId, motivo) => invocar({ accion: 'corregir_sellado', dte_id: dteId, motivo });
+/** Documento sellado sin reemplazo: PIDE deshacer la venta (auditoría H3). → { estado, solicitud_id, aviso } */
 export const anularVenta = (dteId, motivo) => invocar({ accion: 'anular_venta', dte_id: dteId, motivo });
+
+/**
+ * Usa el saldo a favor del cliente (lo que quedó de un documento invalidado
+ * pagado con tarjeta, transferencia o cheque) para pagar una de sus cuentas.
+ * → { id, a_favor, saldo_cuenta }
+ */
+export async function aplicarSaldoAFavor(cxcId, monto, nota = null) {
+    const { data, error } = await supabase.rpc('dist_aplicar_saldo_a_favor', {
+        p_cxc: Number(cxcId), p_monto: Number(monto), p_nota: nota?.trim() || null,
+    });
+    if (error) throw error;
+    return data;
+}
 export const reenviarInvalidacion = (dteId) => invocar({ accion: 'enviar_invalidacion', dte_id: dteId });
 
 // ── Pagos ──────────────────────────────────────────────────────────────────

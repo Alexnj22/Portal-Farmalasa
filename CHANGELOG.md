@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1339.3 — Distribución: deshacer y corregir por solicitud, el dinero vuelve y saldo a favor como pago parcial
+
+Auditoría de Distribución (H2, H3, H4, H7) con las decisiones del dueño del
+2026-10-22. Migraciones aplicadas en producción con su OK y `distribucion-dte`
+redesplegada.
+
+- **Corregir o deshacer una venta sellada se PIDE** (`DIST_INVALIDACION`): se
+  decide en Solicitudes del portal o en Torogoz › Solicitudes, nadie aprueba
+  lo suyo y rechazar exige motivo. Aprobar la ejecuta el servidor, firmada con
+  quien aprueba.
+- **El dinero vuelve.** Deshacer: el efectivo sale de la caja del vendedor
+  (resta en su liquidación); tarjeta, transferencia o cheque quedan como saldo
+  a favor del cliente. Corregir: lo abonado pasa al documento nuevo; si el
+  nuevo cobra más efectivo, la diferencia sube el esperado del vendedor, y si
+  cobra menos, se devuelve. Un recibo ya devuelto no se puede anular.
+- **Saldo a favor = pago parcial.** Un solo saldo por cliente (incluye lo que
+  dejó una nota de crédito por devolución). En la cuenta del cliente se usa
+  entero o por partes, hasta lo que deba; queda quién lo usó. En la app, por
+  ahora se ve y se aplica desde el portal.
+- **La venta en contingencia respeta el límite de crédito.**
+- **Facturar toma un candado por pedido**: dos clics no emiten dos documentos.
+- No se puede deshacer ni corregir un documento con nota de crédito vigente.
+
+Migraciones: `dist_candado_al_facturar`, `dist_dinero_de_documentos_invalidados_1/2/3`
+(la de la agente se partió en tres para aplicarla) y `dist_invalidar_por_solicitud`.
+`dist_prueba_de_canal` es un `SELECT 1` que quedó registrado al probar el canal
+de migraciones tras un fallo de la herramienta; no cambia nada.
+
 ## v2.1339.2 — Planilla: quincenas, anticipos, incapacidad y suspensión según Talento Humano
 
 Reglas de planilla decididas por el dueño (2026-10-22). Hallazgos H3 y H5 de

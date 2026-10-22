@@ -5,9 +5,9 @@
 // puede hacer, con la MISMA regla que el portal (`accionesDelDocumento`):
 //
 //   · sin sello o rechazado → «Corregir»: el pedido vuelve a la venta;
-//   · sellado → «Corregir» abre un pedido nuevo que lo reemplaza; «Deshacer la
-//     venta» lo invalida sin reemplazo; un Crédito Fiscal admite «Devolución»
-//     (Nota de Crédito). Pasado el plazo para invalidar, sólo la devolución.
+//   · sellado → «Corregir» y «Deshacer la venta» se PIDEN (auditoría H3): los
+//     aprueba quien tenga permiso en Solicitudes; un Crédito Fiscal admite
+//     «Devolución» (Nota de Crédito). Pasado el plazo, sólo la devolución.
 //
 // `?imprimir=1` (al venir de facturar) abre la impresión del ticket una vez,
 // cuando ya llegaron los pagos —así sale con lo entregado y el cambio—.
@@ -73,7 +73,9 @@ export default function Documento() {
   const [error, setError] = useState(null);
   const [vista, setVista] = useState('detalle');
   const [ocupado, setOcupado] = useState(false);
-  const [deshaciendo, setDeshaciendo] = useState(false);
+  // Qué se está pidiendo sobre un sellado: null | 'anular' | 'corregir'.
+  const [pidiendo, setPidiendo] = useState(null);
+  const deshaciendo = pidiendo !== null;
   const [motivo, setMotivo] = useState('');
   const [ticketHtml, setTicketHtml] = useState(null);
   const [recargando, setRecargando] = useState(false);
@@ -154,16 +156,16 @@ export default function Documento() {
   ]);
   const corregir = () => {
     if (d.estado === 'rechazado') { router.push(`/torogoz/venta/${d.pedido_id}`); return; }
-    if (d.estado === 'sellado') {
-      ante('¿Corregir el documento?', queHaceCorregir(d), 'Corregir', () => corregirDocumentoSellado(id), 'DISTRIBUCION_CORRECCION_ABIERTA',
-        (r) => { if (r?.pedido_id) router.push(`/torogoz/venta/${r.pedido_id}`); });
-      return;
-    }
+    if (d.estado === 'sellado') { setMotivo(''); setPidiendo('corregir'); return; }
     ante('¿Corregir el documento?', queHaceCorregir(d), 'Corregir', () => descartarDocumento(id), 'DISTRIBUCION_DTE_DESCARTADO',
       (r) => { if (r?.estado === 'descartado') router.push(`/torogoz/venta/${d.pedido_id}`); });
   };
-  const deshacer = () => ante('¿Deshacer la venta?', `${nombre}. Se invalida ante Hacienda, el pedido queda anulado y las unidades vuelven al inventario. No se puede volver atrás.`,
-    'Invalidar ante Hacienda', () => anularVenta(id, motivo.trim()), 'DISTRIBUCION_VENTA_DESHECHA', () => { setDeshaciendo(false); setMotivo(''); });
+  // Un sellado no se invalida desde acá: se pide, y lo decide otra persona.
+  const pedir = () => (pidiendo === 'corregir'
+    ? ante('¿Pedir la corrección?', queHaceCorregir(d), 'Pedir', () => corregirDocumentoSellado(id, motivo.trim()), 'DISTRIBUCION_CORRECCION_PEDIDA',
+      () => { setPidiendo(null); setMotivo(''); })
+    : ante('¿Pedir que se deshaga la venta?', `${nombre}. Cuando la aprueben se invalida ante Hacienda, el pedido queda anulado y las unidades vuelven al inventario. El efectivo cobrado sale de tu caja; lo demás queda a favor del cliente.`,
+      'Pedir', () => anularVenta(id, motivo.trim()), 'DISTRIBUCION_INVALIDACION_PEDIDA', () => { setPidiendo(null); setMotivo(''); }));
 
   const papeles = () => elegir('Papeles del documento', [
     { texto: 'Compartir el documento (PDF)', accion: () => compartirDocumento(d).catch((e) => fallo('No se pudo armar el PDF', e?.message ?? '')) },
@@ -237,13 +239,15 @@ export default function Documento() {
               {puedeVender && d.pedido_id ? <BotonGrande borde color={PETROLEO} texto="Volver a vender" onPress={() => router.push(`/torogoz/venta?desde=${d.pedido_id}`)} /> : null}
               {enElPortal ? <SeHaceEnElPortal texto="Corregirlo, deshacer la venta o hacer una devolución se hace desde el portal." /> : null}
               {a.puedeDevolver && !deshaciendo ? <BotonGrande borde color={PETROLEO} texto="Devolución" deshabilitado={ocupado} onPress={() => router.push(`/torogoz/devolucion/${id}`)} /> : null}
-              {a.puedeCorregir && d.estado !== 'rechazado' ? <BotonGrande borde color={PETROLEO} texto="Corregir" deshabilitado={ocupado} onPress={corregir} /> : null}
-              {a.puedeDeshacer && !deshaciendo ? <BotonGrande borde color={MARCA.rojo} texto="Deshacer la venta" deshabilitado={ocupado} onPress={() => setDeshaciendo(true)} /> : null}
+              {a.puedeCorregir && d.estado !== 'rechazado' && !deshaciendo ? <BotonGrande borde color={PETROLEO} texto="Corregir" deshabilitado={ocupado} onPress={corregir} /> : null}
+              {a.puedeDeshacer && !deshaciendo ? <BotonGrande borde color={MARCA.rojo} texto="Deshacer la venta" deshabilitado={ocupado} onPress={() => { setMotivo(''); setPidiendo('anular'); }} /> : null}
               {deshaciendo ? (
-                <Seccion titulo="¿Por qué se deshace la venta? (lo lee Hacienda)">
-                  <Campo value={motivo} onChangeText={setMotivo} placeholder="Ej.: el cliente devolvió toda la mercadería" />
-                  <BotonGrande color={MARCA.rojo} texto="Invalidar ante Hacienda" deshabilitado={!motivo.trim() || ocupado} onPress={deshacer} />
-                  <BotonGrande borde color={colorSistema.texto2} texto="Cancelar" onPress={() => { setDeshaciendo(false); setMotivo(''); }} />
+                <Seccion titulo={pidiendo === 'corregir' ? '¿Qué hay que corregir? (lo lee quien aprueba)' : '¿Por qué se deshace la venta? (lo lee Hacienda)'}>
+                  <Campo value={motivo} onChangeText={setMotivo}
+                    placeholder={pidiendo === 'corregir' ? 'Ej.: el NIT del cliente está mal escrito' : 'Ej.: el cliente devolvió toda la mercadería'} />
+                  <BotonGrande color={pidiendo === 'corregir' ? PETROLEO : MARCA.rojo} texto={pidiendo === 'corregir' ? 'Pedir la corrección' : 'Pedir que se deshaga'}
+                    deshabilitado={!motivo.trim() || ocupado} onPress={pedir} />
+                  <BotonGrande borde color={colorSistema.texto2} texto="Cancelar" onPress={() => { setPidiendo(null); setMotivo(''); }} />
                 </Seccion>
               ) : null}
             </View>

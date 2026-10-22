@@ -83,6 +83,9 @@ export const REQUEST_TYPES = {
     // (borrador distribucion/0008). La venta queda como preventa hasta que se
     // decida.
     DIST_DESCUENTO:            { label: 'Descuento en una venta', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
+    // Corregir o deshacer un documento sellado de Distribución (auditoría H3):
+    // el vendedor ya no invalida solo, lo pide.
+    DIST_INVALIDACION:         { label: 'Invalidar un documento', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
 };
 
 /**
@@ -151,6 +154,9 @@ export const CAJA_REQUEST_TYPES = new Set([
  */
 export const DISTRIBUCION_REQUEST_TYPES = new Set([
     'DIST_DESCUENTO',
+    // Invalidar un sellado: aprobarla firma el evento con el nombre de quien
+    // aprueba y lo manda a Hacienda (edge `distribucion-dte`).
+    'DIST_INVALIDACION',
 ]);
 
 /**
@@ -1371,9 +1377,10 @@ export const createRequestsSlice = (set, get) => ({
     },
 
     _decidirDistribucion: async (requestId, req, approverId, approverNote, aprobar) => {
-        const { resolverDescuento, mensajeDeDistribucion } = await import('../../data/distribucion');
+        const { resolverSolicitudDistribucion, avisoDeDecision, mensajeDeDistribucion } = await import('../../data/distribucion');
+        let resultado = null;
         try {
-            await resolverDescuento(requestId, aprobar, approverNote);
+            resultado = await resolverSolicitudDistribucion(requestId, req?.type, aprobar, approverNote);
         } catch (e) {
             useToastStore.getState().showToast(aprobar ? 'No se aprobó' : 'No se rechazó', mensajeDeDistribucion(e), 'error');
             return YA_AVISADO;
@@ -1387,11 +1394,8 @@ export const createRequestsSlice = (set, get) => ({
             ),
         }));
         apagarAviso(get, requestId, estado);
-        useToastStore.getState().showToast(
-            aprobar ? 'Descuento aprobado' : 'Descuento rechazado',
-            aprobar ? 'La venta ya se puede facturar con el descuento. Se le avisó al vendedor.'
-                    : 'La venta queda sin el descuento. Se le avisó al vendedor.',
-            aprobar ? 'success' : 'info');
+        const aviso = avisoDeDecision(req?.type, req?.metadata?.accion, aprobar, resultado);
+        useToastStore.getState().showToast(aviso.titulo, aviso.texto, aviso.tono);
         emitir('requests-updated');
         return true;
     },

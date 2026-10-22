@@ -9,6 +9,12 @@
 // llevan su número. Lo que impide cobrar lo dice el núcleo
 // (`problemaDelCobro`), igual que en el portal.
 //
+// El saldo a favor (de un documento invalidado o de una nota de crédito) se
+// muestra siempre y se usa como PAGO PARCIAL de una cuenta, entero o por
+// partes (`dist_aplicar_saldo_a_favor`), con la misma regla del núcleo que el
+// portal (`usoDelSaldoAFavor`). Mueve la cartera, así que va con el mismo
+// interruptor que cobrar (`ACCIONES_DE_DINERO`).
+//
 // ⚠ «Cobrar» y «Anular cobro» mueven DINERO de verdad (la cartera y la caja del
 // vendedor). En el entorno de pruebas no se cobra: ahí sólo se mira.
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -17,8 +23,8 @@ import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { anularRecibo, cobrar, fetchEmisor, fetchEstadoCuenta, mensajeDeDistribucion } from '@nucleo/data/distribucion';
-import { cambioDelCobro, problemaDelCobro, repartoDelCobro } from '@nucleo/utils/distribucionCartera';
+import { anularRecibo, aplicarSaldoAFavor, cobrar, fetchEmisor, fetchEstadoCuenta, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { cambioDelCobro, problemaDelCobro, repartoDelCobro, saldoAFavor, usoDelSaldoAFavor } from '@nucleo/utils/distribucionCartera';
 import { FORMA_PAGO, leerMonto } from '@nucleo/utils/distribucionComun';
 import { nombreFormaPago } from '@nucleo/utils/distribucionFacturacion';
 import { nuevoUuid } from '@nucleo/utils/distribucionComercial';
@@ -80,6 +86,8 @@ export default function CuentaDelCliente() {
   const [anulando, setAnulando] = useState(null);
   const [motivo, setMotivo] = useState('');
   const [recargando, setRecargando] = useState(false);
+  const [favorCuenta, setFavorCuenta] = useState(null);
+  const [favorMonto, setFavorMonto] = useState('');
 
   const cargar = useCallback(async () => {
     try { setEstado(await fetchEstadoCuenta(clienteId)); setError(null); }
@@ -121,6 +129,9 @@ export default function CuentaDelCliente() {
   const cambio = cambioDelCobro(forma, recibidoN, montoFinal);
   const problema = problemaDelCobro({ puedeCobrar, montoFinal, saldo, aMano, reparto, forma, referencia, cambio });
   const listoParaCobrar = montoFinal > 0 && !problema && !cobrando;
+  const aFavor = saldoAFavor(cr);
+  const cuentaFavor = abiertas.find((x) => x.id === favorCuenta) ?? abiertas[0] ?? null;
+  const usoFavor = usoDelSaldoAFavor({ aFavor, cuenta: cuentaFavor, montoTexto: favorMonto, leer: leerMonto });
 
   const papelDelRecibo = (r) => ticketDeRecibo(r, MARCA_PAPEL, emisor ?? {});
   const sacarRecibo = (r) => elegir(`Recibo ${r.id}`, [
@@ -157,6 +168,24 @@ export default function CuentaDelCliente() {
         } catch (e) {
           fallo('No se pudo cobrar', mensajeDeDistribucion(e));
         } finally { setCobrando(false); }
+      } },
+    ]);
+  };
+
+  const usarSaldoAFavor = () => {
+    if (usoFavor.problema || !puedeCobrar) return;
+    Alert.alert('¿Usar el saldo a favor?', `${formatMoney(usoFavor.monto)} a ${cuentaFavor.numero_control}. No entra a la caja: baja lo que debe esa cuenta.`, [
+      { text: 'Revisar', style: 'cancel' },
+      { text: 'Usar', onPress: async () => {
+        trabajando('Aplicando…');
+        try {
+          const r = await aplicarSaldoAFavor(cuentaFavor.id, usoFavor.monto, null);
+          useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_SALDO_A_FAVOR_USADO', String(r?.id ?? cuentaFavor.id),
+            { cliente: clienteId, cxc: cuentaFavor.id, monto: usoFavor.monto, via: 'app' });
+          listo('Saldo a favor usado', `Le quedan ${formatMoney(Math.max(0, Number(r?.a_favor ?? 0)))} a favor`);
+          setFavorMonto(''); setFavorCuenta(null);
+          cargar();
+        } catch (e) { fallo('No se pudo usar', mensajeDeDistribucion(e)); }
       } },
     ]);
   };
@@ -239,6 +268,39 @@ export default function CuentaDelCliente() {
                   </Pressable>
                 ) : null}
               </Seccion>
+
+              {aFavor > 0 ? (
+                <Seccion titulo="Saldo a favor" pie={puedeCobrar && abiertas.length ? `Pago parcial de una cuenta, entero o por partes · hasta ${formatMoney(usoFavor.tope)}` : undefined}>
+                  <Text style={{ color: MARCA.verde, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(aFavor)}</Text>
+                  {puedeCobrar && abiertas.length > 0 ? (
+                    <>
+                      <Opciones color={PETROLEO} opciones={abiertas.map((x) => ({ id: x.id, label: `${x.numero_control.slice(-6)} · ${formatMoney(x.saldo)}` }))}
+                        valor={cuentaFavor?.id} onCambiar={(v) => { setFavorCuenta(v); setFavorMonto(''); }} />
+                      <Campo multiline={false} value={favorMonto} onChangeText={(v) => setFavorMonto(soloMonto(v))} keyboardType="decimal-pad"
+                        placeholder={`Monto ${usoFavor.tope.toFixed(2)}`} />
+                      {favorMonto && usoFavor.problema ? <Aviso tono="freno" texto={usoFavor.problema} /> : null}
+                      <BotonGrande borde color={PETROLEO} texto={usoFavor.monto > 0 ? `Usar ${formatMoney(usoFavor.monto)}` : 'Usar'}
+                        deshabilitado={!!usoFavor.problema} onPress={usarSaldoAFavor} />
+                    </>
+                  ) : vende && !ACCIONES_DE_DINERO && abiertas.length > 0 ? (
+                    <SeHaceEnElPortal texto="Usarlo para pagar una cuenta se hace desde el portal." />
+                  ) : null}
+                </Seccion>
+              ) : null}
+              {(estado.a_favor_usado ?? []).length > 0 ? (
+                <Seccion titulo="Saldo a favor usado">
+                  {estado.a_favor_usado.slice(0, 8).map((a, i) => (
+                    <View key={a.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                      {a.por ? <Avatar empleado={a.por} tamano={30} /> : null}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 13, fontFamily: 'Menlo' }} numberOfLines={1}>{a.numero_control}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${fechaHora12(a.fecha)} · ${shortEmployeeName(a.por) || '—'}${a.nota ? ` · ${a.nota}` : ''}`}</Text>
+                      </View>
+                      <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(a.monto)}</Text>
+                    </View>
+                  ))}
+                </Seccion>
+              ) : null}
 
               {vende && !ACCIONES_DE_DINERO && abiertas.length > 0 ? <SeHaceEnElPortal texto="Los cobros se registran desde el portal." /> : null}
               {puedeCobrar && abiertas.length > 0 ? (

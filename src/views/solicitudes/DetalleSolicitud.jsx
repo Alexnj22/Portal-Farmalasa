@@ -1153,6 +1153,41 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
         );
     }
 
+    /* ── Invalidar un documento sellado de Distribución (auditoría H3) ─────
+     *
+     * El vendedor ya no invalida solo: lo pide. Quien decide ve qué documento,
+     * de quién, y qué pasa con el dinero si aprueba — el efectivo sale de la
+     * caja del vendedor y lo demás queda a favor del cliente. */
+    if (t === 'DIST_INVALIDACION') {
+        const corrige = meta.accion === 'corregir';
+        return (
+            <div className="space-y-2">
+                <Caja tono="hover">
+                    <Rotulo>{corrige ? 'Corregir el documento' : 'Deshacer la venta'}</Rotulo>
+                    <p className="text-body-sm font-bold text-content-2 leading-tight">{meta.cliente || 'Sin nombre'}</p>
+                    <p className="text-micro text-content-3 mt-0.5">
+                        {meta.tipo_documento === '03' ? 'Crédito Fiscal' : 'Factura'} {meta.numero_control}
+                    </p>
+                    <p className="text-label font-black text-content-2 tabular-nums mt-0.5">Total: {formatMoney(meta.total)}</p>
+                </Caja>
+                <Caja>
+                    <Rotulo>Si se aprueba</Rotulo>
+                    {corrige ? (
+                        <p className="text-micro text-content-3 mt-1">
+                            Se abre una venta nueva con lo mismo; al facturarla, este documento se invalida ante Hacienda con tu nombre.
+                            {Number(meta.abonado) > 0 ? ` Lo abonado (${formatMoney(meta.abonado)}) pasa a la cuenta nueva.` : ''}
+                        </p>
+                    ) : (
+                        <div className="space-y-1 mt-1">
+                            <p className="text-micro text-content-3 tabular-nums">Efectivo que se le devuelve: <span className="font-black text-content-2">{formatMoney(meta.devolver_efectivo ?? 0)}</span></p>
+                            <p className="text-micro text-content-3 tabular-nums">Queda a favor del cliente: <span className="font-black text-content-2">{formatMoney(meta.a_favor ?? 0)}</span></p>
+                        </div>
+                    )}
+                </Caja>
+            </div>
+        );
+    }
+
     /* ── Un abono que espera confirmación ──────────────────────────────────
      *
      * Se resuelve CRÉDITO POR CRÉDITO —«se debe poder confirmar individualmente

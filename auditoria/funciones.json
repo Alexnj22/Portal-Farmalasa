@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-22T15:44:14.597Z",
+ "generado": "2026-10-22T16:22:26.544Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1405,9 +1405,17 @@
    "area": "distribucion",
    "por": "código"
   },
+  "dist_aplicar_saldo_a_favor": {
+   "area": "distribucion",
+   "por": "código"
+  },
   "dist_asignar_lotes": {
    "area": "distribucion",
    "por": "código"
+  },
+  "dist_avisar": {
+   "area": "comunicacion",
+   "por": "tablas"
   },
   "dist_avisar_cartera_atrasada": {
    "area": "distribucion",
@@ -1434,6 +1442,10 @@
    "por": "código"
   },
   "dist_cerrar_dia": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_cerrar_invalidacion": {
    "area": "distribucion",
    "por": "código"
   },
@@ -1589,6 +1601,10 @@
    "area": "distribucion",
    "por": "código"
   },
+  "dist_pedir_invalidacion": {
+   "area": "distribucion",
+   "por": "código"
+  },
   "dist_plazo_invalidacion": {
    "area": "distribucion",
    "por": "código"
@@ -1613,6 +1629,10 @@
    "area": "distribucion",
    "por": "código"
   },
+  "dist_rechazar_invalidacion": {
+   "area": "distribucion",
+   "por": "código"
+  },
   "dist_recibir_compra": {
    "area": "distribucion",
    "por": "código"
@@ -1620,6 +1640,10 @@
   "dist_recibo": {
    "area": "distribucion",
    "por": "tablas"
+  },
+  "dist_recibo_reintegrado_no_se_anula": {
+   "area": "distribucion",
+   "por": "trigger"
   },
   "dist_recorrido": {
    "area": "distribucion",
@@ -1644,6 +1668,10 @@
   "dist_registrar_visita": {
    "area": "distribucion",
    "por": "código"
+  },
+  "dist_reintegrar_documento": {
+   "area": "distribucion",
+   "por": "tablas"
   },
   "dist_relacionadas": {
    "area": "distribucion",
@@ -1685,11 +1713,19 @@
    "area": "distribucion",
    "por": "trigger"
   },
+  "dist_saldo_a_favor": {
+   "area": "distribucion",
+   "por": "tablas"
+  },
   "dist_siguiente_correlativo": {
    "area": "distribucion",
    "por": "código"
   },
   "dist_solicitar_baja": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_soltar_facturacion": {
    "area": "distribucion",
    "por": "código"
   },
@@ -1700,6 +1736,14 @@
   "dist_tocar_updated_at": {
    "area": "distribucion",
    "por": "trigger"
+  },
+  "dist_tomar_para_facturar": {
+   "area": "distribucion",
+   "por": "código"
+  },
+  "dist_trasladar_abonos": {
+   "area": "distribucion",
+   "por": "tablas"
   },
   "dist_utilidad": {
    "area": "distribucion",
@@ -1805,6 +1849,14 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "encargo_pasar_a_saldo": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "encargo_prorrogar": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
   "encargo_puede_manejar": {
    "area": "sucursales",
    "por": "tablas"
@@ -1812,6 +1864,10 @@
   "encargo_responder": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "encargo_retirar_hasta": {
+   "area": "app-clientes",
+   "por": "llamada"
   },
   "encargo_vincular_producto": {
    "area": "app-clientes",
@@ -3651,6 +3707,10 @@
    "area": "minmax",
    "por": "cron"
   },
+  "producto_baja_rotacion": {
+   "area": "minmax",
+   "por": "tablas"
+  },
   "producto_insumo_marcar": {
    "area": "productos",
    "por": "código"
@@ -3756,8 +3816,8 @@
    "por": "código"
   },
   "puede_aprobar_modulo": {
-   "area": "inventario",
-   "por": "código"
+   "area": "plataforma",
+   "por": "transversal"
   },
   "puede_confirmar_traslado": {
    "area": "traslados",
@@ -4385,6 +4445,10 @@
   "reserva_precio_de_bodega": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "reserva_prorrogar": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "reserva_puede_manejar": {
    "area": "app-clientes",

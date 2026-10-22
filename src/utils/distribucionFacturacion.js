@@ -129,13 +129,15 @@ export function accionesDelDocumento(d, { puedeVender = false, plazo = null } = 
 export function queHaceCorregir(d) {
     if (!d) return '';
     if (d.estado === 'rechazado') return 'El pedido vuelve a «por facturar» para corregir lo que dijo Hacienda y facturarlo de nuevo.';
-    if (d.estado === 'sellado') return 'Se abre un pedido NUEVO con lo mismo. Al facturarlo, éste se invalida ante Hacienda y el nuevo lo reemplaza.';
+    if (d.estado === 'sellado') {
+        return 'Se manda una solicitud: cuando la aprueben se abre un pedido NUEVO con lo mismo, y al facturarlo éste se invalida ante Hacienda y el nuevo lo reemplaza. Lo abonado pasa a la cuenta nueva.';
+    }
     return 'Se retira antes de llegar a Hacienda y el pedido vuelve a «por facturar» para cambiarle lo que haga falta.';
 }
 
 /** La ayuda de abajo del documento sellado: qué hace cada botón. */
 export function ayudaDelSellado(tipo) {
-    return 'Con sello, «Corregir» emite un documento nuevo que reemplaza a éste, y éste se invalida ante Hacienda. Si la venta no se hizo, usa «Deshacer la venta».'
+    return 'Con sello, «Corregir» y «Deshacer la venta» se piden: los aprueba quien tenga permiso en Solicitudes. Corregir emite un documento nuevo que reemplaza a éste; deshacer lo invalida y devuelve lo cobrado (el efectivo sale de tu caja, lo demás queda a favor del cliente).'
         + (tipo === '03'
             ? ' Si el cliente regresa sólo una parte, «Devolución» emite una nota de crédito por eso.'
             : ' A una Factura no se le hace nota de crédito: si el cliente regresa una parte, «Corregir» y deja sólo lo que se queda.');
@@ -166,6 +168,9 @@ export function avisoDelPlazo(plazo, tipo) {
 
 /** Lo que se le dice a quien acaba de mandar algo a Hacienda, según cómo volvió. */
 export function avisoDeAccion(r, estadoDocumento) {
+    // Corregir o deshacer un sellado se PIDE (auditoría H3): lo que vuelve es
+    // la solicitud, y el documento sigue vigente hasta que la aprueben.
+    if (r?.solicitud_id) return { titulo: 'Solicitud enviada', texto: r.aviso ?? '', bien: true };
     return {
         titulo: estadoDocumento?.[r?.estado]?.label ?? 'Listo',
         texto: r?.aviso ?? r?.mensaje ?? '',

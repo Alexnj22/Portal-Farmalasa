@@ -29306,6 +29306,10 @@ export type Database = {
         Args: { p_devolucion: number; p_nota: number }
         Returns: Json
       }
+      dist_aplicar_saldo_a_favor: {
+        Args: { p_cxc: number; p_monto: number; p_nota?: string }
+        Returns: Json
+      }
       dist_asignar_lotes: { Args: { p_pedido: number }; Returns: Json }
       dist_avisar_cartera_atrasada: { Args: never; Returns: number }
       dist_camion_del_dia: {

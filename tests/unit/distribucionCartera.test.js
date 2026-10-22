@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { repartirCobro, tramoDe } from '@nucleo/utils/distribucionCartera';
+import { repartirCobro, saldoAFavor, tramoDe, usoDelSaldoAFavor } from '@nucleo/utils/distribucionCartera';
+import { leerMonto } from '@nucleo/utils/distribucionComun';
 
 // El reparto de la pantalla tiene que dar lo mismo que `dist_cobrar` (0014):
 // primero lo que vence antes. Los mismos casos se corrieron contra la base.
@@ -29,5 +30,36 @@ describe('cartera: reparto de un cobro', () => {
     });
     it('los tramos de antigüedad cortan donde la base', () => {
         expect([0, -3, 1, 30, 31, 60, 61, 90, 91].map(tramoDe)).toEqual(['al_dia', 'al_dia', '1_30', '1_30', '31_60', '31_60', '61_90', '61_90', 'mas_90']);
+    });
+});
+
+// El saldo a favor como pago parcial: los mismos frenos que
+// `dist_aplicar_saldo_a_favor` (probados en el entorno de pruebas: 15 a favor,
+// cuenta de 50 → se usan 5, quedan 10; pedir 46 sobre una cuenta de 45 frena).
+describe('saldo a favor como pago parcial', () => {
+    const uso = (aFavor, saldo, montoTexto = '') => usoDelSaldoAFavor({ aFavor, cuenta: saldo == null ? null : { id: 1, saldo }, montoTexto, leer: leerMonto });
+
+    it('el tope es lo menor entre lo que tiene a favor y lo que debe la cuenta', () => {
+        expect(uso(15, 50).tope).toBe(15);
+        expect(uso(80, 45).tope).toBe(45);
+        expect(uso(15, 50)).toMatchObject({ monto: 15, problema: null });
+    });
+
+    it('se puede usar por partes', () => {
+        expect(uso(15, 50, '5')).toMatchObject({ monto: 5, problema: null });
+    });
+
+    it('no deja pasar de lo que tiene ni de lo que debe la cuenta', () => {
+        expect(uso(15, 50, '16').problema).toMatch(/Sólo tiene/);
+        expect(uso(80, 45, '46').problema).toMatch(/sólo debe/);
+        expect(uso(15, null).problema).toMatch(/Elige/);
+        expect(uso(0, 50).problema).toMatch(/No hay saldo/);
+        expect(uso(15, 50, '0').problema).toMatch(/cuánto/);
+    });
+
+    it('un saldo negativo (nota invalidada después de usarla) se muestra como cero', () => {
+        expect(saldoAFavor({ a_favor: -5 })).toBe(0);
+        expect(saldoAFavor({ a_favor: '12.50' })).toBe(12.5);
+        expect(saldoAFavor(null)).toBe(0);
     });
 });

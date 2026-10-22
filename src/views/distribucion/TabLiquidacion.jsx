@@ -236,8 +236,14 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
 
                 {Number(liq.devoluciones.a_favor) > 0 && (
                     <Notice variant="info" icon={Undo2}>
-                        Hay {formatMoney(Number(liq.devoluciones.a_favor))} de devoluciones a favor de clientes. No se restan del efectivo:
-                        si el vendedor se lo devolvió en la ruta, anótalo como motivo de la diferencia.
+                        Hay {formatMoney(Number(liq.devoluciones.a_favor))} de devoluciones a favor de clientes. Quedan como su saldo a favor
+                        —lo usan como pago parcial de sus cuentas— y no se restan del efectivo.
+                    </Notice>
+                )}
+                {(Number(liq.reintegros?.total) > 0 || Number(liq.correcciones?.total) > 0) && (
+                    <Notice variant="info" icon={Undo2}>
+                        {Number(liq.reintegros?.total) > 0 && <>Se devolvieron {formatMoney(Number(liq.reintegros.total))} en efectivo por ventas deshechas o corregidas: ya están restados del efectivo a entregar. </>}
+                        {Number(liq.correcciones?.total) > 0 && <>Las correcciones cobraron {formatMoney(Number(liq.correcciones.total))} más en efectivo que los documentos que reemplazan: ya están sumados.</>}
                     </Notice>
                 )}
 

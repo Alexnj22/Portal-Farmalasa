@@ -45,11 +45,14 @@ import { rutaVolverAVender } from './rutas';
 //     —el servidor le pregunta a Hacienda antes— y el pedido vuelve a
 //     «Por facturar» para cambiarle lo que haga falta y facturarlo de nuevo;
 //   · si Hacienda lo RECHAZÓ: el pedido ya quedó libre, se corrige igual;
-//   · si tiene SELLO: «Corregir» abre un pedido NUEVO con lo mismo; al
-//     facturarlo, el servidor invalida el original citando al nuevo (CAT-024
-//     tipo 1). «Deshacer la venta» lo invalida sin reemplazo (tipo 2) y el
-//     pedido queda anulado. La invalidación sale cuando Hacienda ya conoce al
-//     reemplazo; mientras tanto queda «pendiente» y se ve acá.
+//   · si tiene SELLO: «Corregir» y «Deshacer la venta» se PIDEN (auditoría
+//     H3, decisión del dueño: «se manda solicitud como en el portal»). La
+//     solicitud la decide quien tenga permiso en Solicitudes; al aprobar una
+//     corrección se abre un pedido NUEVO con lo mismo y, al facturarlo, el
+//     servidor invalida el original citando al nuevo (CAT-024 tipo 1); al
+//     aprobar «deshacer» se invalida sin reemplazo (tipo 2) y el pedido queda
+//     anulado. Lo cobrado vuelve: el efectivo sale de la caja del vendedor y lo
+//     demás queda a favor del cliente (auditoría H2).
 
 const VISTAS = [
     // Lo vendido como INFORMACIÓN, no como papel (pedido del usuario,
@@ -188,7 +191,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const [error, setError] = useState('');
     const [ocupado, setOcupado] = useState(null);
     const [pdf, setPdf] = useState({ blob: null, url: null, error: null });
-    const [deshaciendo, setDeshaciendo] = useState(false);
+    // Qué se está pidiendo sobre un sellado: null | 'anular' | 'corregir'.
+    const [pidiendo, setPidiendo] = useState(null);
+    const deshaciendo = pidiendo !== null;
     const [devolviendo, setDevolviendo] = useState(false);
     const [motivo, setMotivo] = useState('');
     const [plazo, setPlazo] = useState(null);   // hasta cuándo se puede invalidar (sólo sellados)
@@ -267,19 +272,18 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
 
     const corregir = async () => {
         if (d.estado === 'rechazado') { onCorregirPedido?.(d.pedido_id); return; }
-        if (d.estado === 'sellado') {
-            const r = await accion('corregir', () => corregirDocumentoSellado(id), 'DISTRIBUCION_CORRECCION_ABIERTA');
-            if (r?.pedido_id) onCorregirPedido?.(r.pedido_id);
-            return;
-        }
+        if (d.estado === 'sellado') { setMotivo(''); setPidiendo('corregir'); return; }
         const r = await accion('corregir', () => descartarDocumento(id), 'DISTRIBUCION_DTE_DESCARTADO');
         if (r?.estado === 'descartado') onCorregirPedido?.(d.pedido_id);
         else { cargar(); onCambio?.(); }
     };
 
-    const deshacer = async () => {
-        await accion('deshacer', () => anularVenta(id, motivo), 'DISTRIBUCION_VENTA_DESHECHA');
-        setDeshaciendo(false);
+    // Un sellado no se invalida desde acá: se pide, y lo decide otra persona.
+    const pedir = async () => {
+        const corrige = pidiendo === 'corregir';
+        const r = await accion('pedir', () => (corrige ? corregirDocumentoSellado(id, motivo) : anularVenta(id, motivo)),
+            corrige ? 'DISTRIBUCION_CORRECCION_PEDIDA' : 'DISTRIBUCION_INVALIDACION_PEDIDA');
+        if (r) { setPidiendo(null); setMotivo(''); }
         cargar();
         onCambio?.();
     };
@@ -382,8 +386,11 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                             <p className="text-caption text-content-3">{ayudaDelSellado(d.tipo)}</p>
                         )}
                         {deshaciendo && (
-                            <PortalInput label="¿Por qué se deshace la venta? (lo lee Hacienda)" name="motivo-invalidacion" value={motivo}
-                                placeholder="Ej.: el cliente devolvió toda la mercadería" onChange={(e) => setMotivo(e.target.value)} />
+                            <PortalInput
+                                label={pidiendo === 'corregir' ? '¿Qué hay que corregir? (lo lee quien aprueba)' : '¿Por qué se deshace la venta? (lo lee Hacienda)'}
+                                name="motivo-invalidacion" value={motivo}
+                                placeholder={pidiendo === 'corregir' ? 'Ej.: el NIT del cliente está mal escrito' : 'Ej.: el cliente devolvió toda la mercadería'}
+                                onChange={(e) => setMotivo(e.target.value)} />
                         )}
                         {vista === 'datos' && d.pedido_id && (
                             <PagosDelPedido pedidoId={d.pedido_id} puedeEditar={puedeVender} onCambio={onCambio} />
@@ -415,14 +422,15 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         <Button variant="secondary" icon={FileMinus} disabled={!!ocupado} onClick={() => setDevolviendo(true)}>Devolución</Button>
                     )}
                     {puedeDeshacer && !deshaciendo && (
-                        <Button variant="secondary" tone="danger" icon={Ban} disabled={!!ocupado} onClick={() => setDeshaciendo(true)}>Deshacer la venta</Button>
+                        <Button variant="secondary" tone="danger" icon={Ban} disabled={!!ocupado} onClick={() => { setMotivo(''); setPidiendo('anular'); }}>Deshacer la venta</Button>
                     )}
-                    {deshaciendo && (
-                        <Button variant="secondary" tone="danger" icon={ocupado === 'deshacer' ? Loader2 : Ban}
-                            disabled={!!ocupado || !motivo.trim()} onClick={deshacer}>Invalidar ante Hacienda</Button>
-                    )}
+                    {deshaciendo && (<>
+                        <Button variant="ghost" disabled={!!ocupado} onClick={() => { setPidiendo(null); setMotivo(''); }}>Cancelar</Button>
+                        <Button variant="secondary" tone={pidiendo === 'anular' ? 'danger' : undefined} icon={ocupado === 'pedir' ? Loader2 : (pidiendo === 'anular' ? Ban : Undo2)}
+                            disabled={!!ocupado || !motivo.trim()} onClick={pedir}>{pidiendo === 'anular' ? 'Pedir que se deshaga' : 'Pedir la corrección'}</Button>
+                    </>)}
                     {/* Rechazado: el botón está en la tarjeta de Hacienda, arriba. */}
-                    {puedeCorregir && d.estado !== 'rechazado' && (
+                    {puedeCorregir && d.estado !== 'rechazado' && !deshaciendo && (
                         <Button variant="secondary" icon={ocupado === 'corregir' ? Loader2 : (d.estado === 'rechazado' ? Pencil : Undo2)}
                             disabled={!!ocupado} onClick={corregir}>Corregir</Button>
                     )}

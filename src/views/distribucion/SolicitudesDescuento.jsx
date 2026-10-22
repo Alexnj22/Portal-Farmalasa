@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Tag, CheckCircle2, XCircle, Clock, Loader2, ExternalLink, Inbox } from 'lucide-react';
+import { Tag, CheckCircle2, XCircle, Clock, Loader2, ExternalLink, Inbox, Ban, Undo2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
@@ -11,7 +11,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { fetchSolicitudesDescuento, resolverDescuento, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { fetchSolicitudesDescuento, resolverSolicitudDistribucion, avisoDeDecision, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { rutaVenta } from './rutas';
 import { ESTADO_SOLICITUD_DESCUENTO } from '@nucleo/utils/distribucionComercial';
 
@@ -23,6 +23,12 @@ import { ESTADO_SOLICITUD_DESCUENTO } from '@nucleo/utils/distribucionComercial'
 // Decidir lo hace `dist_resolver_descuento` en la base: aplica o descarta,
 // firma, avisa al vendedor y no deja que quien pidió se lo apruebe. Acá se
 // esconde el botón en ese caso para no ofrecer lo que la base va a rechazar.
+//
+// Desde la auditoría H3 llegan también las de INVALIDAR un documento sellado
+// (corregirlo o deshacer la venta): el vendedor ya no invalida por su cuenta.
+// Aprobarla la ejecuta en el servidor con el nombre de quien aprueba; la
+// tarjeta dice antes qué pasa con el dinero (cuánto efectivo sale de la caja y
+// cuánto queda a favor del cliente).
 
 const ICONO_ESTADO = { PENDING: Clock, APPROVED: CheckCircle2, REJECTED: XCircle, CANCELLED: XCircle };
 const ESTADO = Object.fromEntries(Object.entries(ESTADO_SOLICITUD_DESCUENTO).map(([k, v]) => [k, { ...v, icon: ICONO_ESTADO[k] }]));
@@ -84,11 +90,9 @@ export default function SolicitudesDescuento() {
     const decidir = async (fila, aprobar) => {
         setOcupado(`${fila.id}-${aprobar ? 'a' : 'r'}`);
         try {
-            await resolverDescuento(fila.id, aprobar, aprobar ? null : motivo);
-            showToast(aprobar ? 'Descuento aprobado' : 'Descuento rechazado',
-                aprobar ? 'La venta ya se puede facturar con el descuento. Se le avisó al vendedor.'
-                        : 'La venta queda sin el descuento. Se le avisó al vendedor.',
-                aprobar ? 'success' : 'info');
+            const r = await resolverSolicitudDistribucion(fila.id, fila.type, aprobar, aprobar ? null : motivo);
+            const aviso = avisoDeDecision(fila.type, fila.metadata?.accion, aprobar, r);
+            showToast(aviso.titulo, aviso.texto, aviso.tono);
             setRechazando(null);
             setMotivo('');
             await cargar();
@@ -108,7 +112,7 @@ export default function SolicitudesDescuento() {
                 <SegmentedControl value={filtro} onChange={cambiarFiltro}
                     options={FILTROS.map(f => (f.value === 'pendientes' && pendientes ? { ...f, label: `${f.label} · ${pendientes}` } : f))} />
                 {!puedeDecidir && (
-                    <p className="text-caption text-content-3">Ves las que pediste. Las decide quien tiene permiso para aprobar descuentos.</p>
+                    <p className="text-caption text-content-3">Ves las que pediste. Las decide quien tiene permiso para aprobar solicitudes de Distribución.</p>
                 )}
             </div>
             {error && <Notice variant="danger">{error}</Notice>}
@@ -117,7 +121,7 @@ export default function SolicitudesDescuento() {
                 <div data-surface="card" className="p-10 flex flex-col items-center gap-2 text-center">
                     <Inbox size={28} className="text-content-3" />
                     <p className="text-body-sm font-bold text-content-2">
-                        {filtro === 'pendientes' ? 'No hay descuentos esperando decisión' : 'Todavía no hay solicitudes resueltas'}
+                        {filtro === 'pendientes' ? 'No hay solicitudes esperando decisión' : 'Todavía no hay solicitudes resueltas'}
                     </p>
                 </div>
             )}
@@ -128,6 +132,7 @@ export default function SolicitudesDescuento() {
                     const mia = user?.id && f.employee_id === user.id;
                     const renglones = Array.isArray(m.renglones) ? m.renglones : [];
                     const esDestacada = destacada && String(f.id) === destacada;
+                    const invalida = f.type === 'DIST_INVALIDACION';
                     return (
                         <article key={f.id} ref={esDestacada ? refDestacada : undefined} data-surface="card"
                             className={`p-4 flex flex-col gap-3 ${esDestacada ? 'ring-2 ring-brand/45' : ''}`}>
@@ -135,12 +140,39 @@ export default function SolicitudesDescuento() {
                                 <div className="min-w-0">
                                     <p className="text-body font-black text-content truncate">{m.cliente || 'Cliente'}</p>
                                     <p className="text-caption text-content-3">
-                                        Venta {m.pedido_id} · pidió {shortEmployeeName(f.solicitante?.name) || '—'} · {fechaHora12(f.created_at)}
+                                        {invalida ? `${m.accion === 'corregir' ? 'Corregir' : 'Deshacer'} ${m.numero_control ?? ''}` : `Venta ${m.pedido_id}`}
+                                        {' '}· pidió {shortEmployeeName(f.solicitante?.name) || '—'} · {fechaHora12(f.created_at)}
                                     </p>
                                 </div>
                                 <Badge size="sm" variant={est.variant} icon={est.icon} uppercase={false}>{est.label}</Badge>
                             </div>
 
+                            {invalida ? (
+                                <div className="rounded-xl border border-divider overflow-hidden">
+                                    <div className="flex items-baseline justify-between gap-3 px-3 py-2 border-b border-divider">
+                                        <span className="text-caption text-content-3 flex items-center gap-1.5">
+                                            {m.accion === 'corregir' ? <Undo2 size={12} /> : <Ban size={12} />}
+                                            {m.tipo_documento === '03' ? 'Crédito Fiscal' : 'Factura'} · total del documento
+                                        </span>
+                                        <span className="text-body font-black text-content tabular-nums">{formatMoney(m.total)}</span>
+                                    </div>
+                                    {m.accion === 'corregir' ? (
+                                        <p className="px-3 py-2 text-caption text-content-3">
+                                            Se abre una venta nueva con lo mismo; al facturarla, ésta se invalida ante Hacienda con tu nombre.
+                                            {Number(m.abonado) > 0 ? ` Lo abonado (${formatMoney(m.abonado)}) pasa a la cuenta nueva.` : ''}
+                                        </p>
+                                    ) : (<>
+                                        <div className="flex items-baseline justify-between gap-3 px-3 py-2 border-b border-divider">
+                                            <span className="text-caption text-content-3">Efectivo que se le devuelve (sale de la caja del vendedor)</span>
+                                            <span className="text-body-sm font-black text-content-2 tabular-nums">{formatMoney(m.devolver_efectivo ?? 0)}</span>
+                                        </div>
+                                        <div className="flex items-baseline justify-between gap-3 px-3 py-2">
+                                            <span className="text-caption text-content-3">Queda a favor del cliente (tarjeta, transferencia, cheque)</span>
+                                            <span className="text-body-sm font-black text-content-2 tabular-nums">{formatMoney(m.a_favor ?? 0)}</span>
+                                        </div>
+                                    </>)}
+                                </div>
+                            ) : (
                             <div className="rounded-xl border border-divider overflow-hidden">
                                 {renglones.map((r, i) => (
                                     <div key={i} className="flex items-start justify-between gap-3 px-3 py-2 border-b border-divider last:border-b-0">
@@ -161,6 +193,7 @@ export default function SolicitudesDescuento() {
                                     <span className="text-body font-black text-brand-text tabular-nums">{formatMoney(m.total)}</span>
                                 </div>
                             </div>
+                            )}
 
                             {f.note && <p className="text-body-sm text-content-2"><span className="text-content-3">Motivo: </span>«{f.note}»</p>}
                             {f.status !== 'PENDING' && (

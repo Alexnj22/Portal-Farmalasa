@@ -4,13 +4,24 @@
 //   { accion: "facturar",   pedido_id }  arma, firma, guarda y transmite
 //   { accion: "transmitir", dte_id }     reintenta uno que quedó sin firmar o sin enviar
 //   { accion: "descartar",  dte_id }     retira uno que Hacienda NO tiene, para corregir el pedido
-//   { accion: "corregir_sellado", dte_id }        abre un pedido nuevo que lo reemplaza e invalida
-//   { accion: "anular_venta", dte_id, motivo }    invalida un sellado sin reemplazo (se deshizo la venta)
+//   { accion: "corregir_sellado", dte_id, motivo } PIDE corregir un sellado (solicitud DIST_INVALIDACION)
+//   { accion: "anular_venta", dte_id, motivo }     PIDE deshacer la venta (solicitud DIST_INVALIDACION)
+//   { accion: "resolver_invalidacion", solicitud_id, aprobar, nota }
+//                                                 quien decide: aprueba (y se ejecuta) o rechaza
 //   { accion: "enviar_invalidacion", dte_id }     reintenta una invalidación pendiente
 //   { accion: "facturar", pedido_id, contingencia: { tipo, emitido_at, codigo_generacion } }
 //                                                 una venta hecha SIN SEÑAL: sale en contingencia
 //   { accion: "enviar_contingencia" }             el aviso de contingencia a Hacienda, y después
 //                                                 transmite los documentos que cubre
+//
+// ── Invalidar se PIDE, no se hace (2026-10-22, auditoría H3) ──────────────
+// Decisión del dueño: «se manda solicitud como en el portal». Quien vende ya no
+// invalida un documento sellado por su cuenta: `anular_venta` y
+// `corregir_sellado` crean una solicitud (`dist_pedir_invalidacion`) que decide
+// quien tenga `requests_distribucion`, y recién al aprobarla se ejecuta. El
+// responsable ante Hacienda es QUIEN APRUEBA (su nombre y DUI van en el
+// evento), no quien pidió. Una corrección aprobada abre el pedido nuevo; al
+// facturarlo, la invalidación del original lleva también al aprobador.
 //
 // ── Contingencia (2026-09-30) ──────────────────────────────────────────────
 // Pedido del usuario: «termina el aviso de contingencia para cuando no hay
@@ -607,7 +618,83 @@ async function corregirSellado(admin: Admin, dteId: number, empleadoId: string) 
   const { error: eIns } = await admin.from("dist_pedido_items").insert(
     (its ?? []).map((i: any) => ({ ...i, pedido_id: nuevo.id, precio_con_iva: 0 })));
   if (eIns) throw new ErrorUsuario(`No se pudieron copiar los productos: ${eIns.message}`);
+  // Las formas de pago también (auditoría H2): sin ellas el reemplazo salía
+  // con la forma de pago a secas por el total y el contado del original se
+  // volvía a cobrar. La última va como «el resto», por si el total cambia.
+  const { data: pgs, error: ePg } = await admin.from("dist_pagos")
+    .select("orden, forma, monto, referencia").eq("pedido_id", d.pedido_id).order("orden");
+  if (ePg) throw new Error(`leer las formas de pago: ${ePg.message}`);
+  if (pgs?.length) {
+    const { error: ePgIns } = await admin.from("dist_pagos").insert(pgs.map((x: any, i: number) => ({
+      pedido_id: nuevo.id, orden: x.orden, forma: x.forma, referencia: x.referencia,
+      monto: i === pgs.length - 1 ? null : x.monto, registrado_por: empleadoId,
+    })));
+    if (ePgIns) throw new ErrorUsuario(`No se pudieron copiar las formas de pago: ${ePgIns.message}`);
+  }
   return { pedido_id: nuevo.id };
+}
+
+// ── La solicitud de invalidar (auditoría H3) ────────────────────────────────
+
+/** Quien decide: aprueba (y se ejecuta con su nombre ante Hacienda) o rechaza. */
+async function resolverInvalidacion(admin: Admin, comoUsuario: Admin, aprobadorId: string, cuerpo: any) {
+  const solicitudId = typeof cuerpo?.solicitud_id === "string" ? cuerpo.solicitud_id : "";
+  if (!solicitudId) throw new ErrorUsuario("falta la solicitud");
+  const nota = typeof cuerpo?.nota === "string" ? cuerpo.nota.trim() : "";
+  if (cuerpo?.aprobar !== true) {
+    // El rechazo no toca Hacienda: lo decide la base con la sesión de quien rechaza.
+    const { data, error } = await comoUsuario.rpc("dist_rechazar_invalidacion", { p_solicitud: solicitudId, p_nota: nota });
+    if (error) throw new ErrorUsuario(error.message.replace(/^[A-Z_]+:\s*/, ""), 409);
+    return data;
+  }
+  const { data: puede, error: ePu } = await admin.rpc("puede_aprobar_modulo", { p_employee_id: aprobadorId, p_module_key: "requests_distribucion" });
+  if (ePu) throw new Error(`permiso: ${ePu.message}`);
+  if (!puede) throw new ErrorUsuario("No puedes decidir solicitudes de Distribución.", 403);
+  const { data: s, error: eS } = await admin.from("approval_requests")
+    .select("id, type, status, employee_id, note, metadata").eq("id", solicitudId).maybeSingle();
+  if (eS) throw new Error(`leer la solicitud: ${eS.message}`);
+  if (!s || s.type !== "DIST_INVALIDACION") throw new ErrorUsuario("No existe esa solicitud.", 404);
+  if (s.status !== "PENDING") throw new ErrorUsuario("Esa solicitud ya está resuelta.", 409);
+  if (s.employee_id === aprobadorId) throw new ErrorUsuario("No puedes decidir una solicitud que pediste tú.", 403);
+  const { data: tomada, error: eT } = await admin.rpc("reclamar_solicitud", { p_request_id: solicitudId });
+  if (eT) throw new Error(`reclamar la solicitud: ${eT.message}`);
+  if (!tomada) throw new ErrorUsuario("Esta solicitud se está aplicando en este momento.", 409);
+  try {
+    const m = s.metadata ?? {};
+    const dteId = Number(m.dte_id);
+    let aplicado: Record<string, unknown>;
+    if (m.accion === "corregir") {
+      // El pedido nuevo es de quien vendió: él lo revisa y lo factura.
+      aplicado = await corregirSellado(admin, dteId, s.employee_id);
+    } else {
+      const tipo = m.tipo_invalidacion === 3 ? 3 : 2;
+      await prepararInvalidacion(admin, dteId, tipo, s.note ?? "Se deshizo la venta.", null, aprobadorId);
+      aplicado = { dte_id: dteId, ...(await enviarInvalidacion(admin, dteId)) };
+    }
+    const { error: eC } = await admin.rpc("dist_cerrar_invalidacion", {
+      p_solicitud: solicitudId, p_aprobador: aprobadorId, p_nota: nota || null, p_aplicado: aplicado,
+    });
+    if (eC) throw new Error(`cerrar la solicitud: ${eC.message}`);
+    return { solicitud_id: solicitudId, estado: "APPROVED", ...aplicado };
+  } finally {
+    // Soltar el reclamo no puede tapar el resultado: si falla, el reclamo
+    // vence solo (180 s) y queda escrito en el registro.
+    const { error: eLib } = await admin.rpc("liberar_solicitud", { p_request_id: solicitudId });
+    if (eLib) console.error(`liberar la solicitud ${solicitudId}: ${eLib.message}`);
+  }
+}
+
+/** La corrección aprobada de un sellado: quién la aprobó responde por la invalidación. */
+async function aprobadorDeLaCorreccion(admin: Admin, dteId: number): Promise<string> {
+  const { data, error } = await admin.from("approval_requests").select("approver_id")
+    .eq("type", "DIST_INVALIDACION").eq("status", "APPROVED")
+    .eq("metadata->>dte_id", String(dteId)).eq("metadata->>accion", "corregir")
+    .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  if (error) throw new Error(`leer la aprobación: ${error.message}`);
+  if (!data?.approver_id) {
+    throw new ErrorUsuario("Esta corrección no tiene una solicitud aprobada: pídela desde el documento.", 409);
+  }
+  return data.approver_id;
 }
 
 // ── Facturar un pedido ──────────────────────────────────────────────────────
@@ -632,6 +719,32 @@ function leerContingencia(c: any): PedidoContingencia | null {
 }
 
 async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont: PedidoContingencia | null = null) {
+  // ── Un pedido se factura de a uno (auditoría H7) ──
+  // Dos clics (o el reintento del teléfono) llegaban los dos a pedir lotes y
+  // correlativo; el índice único del documento frenaba al segundo DESPUÉS de
+  // haber gastado un número. El arriendo se toma ANTES de todo eso y se suelta
+  // siempre, salga bien o mal (si el proceso muere, vence a los 3 minutos).
+  const { data: tomado, error: eTom } = await admin.rpc("dist_tomar_para_facturar", { p_pedido: pedidoId });
+  if (eTom) throw new Error(`tomar el pedido: ${eTom.message}`);
+  if (!tomado) {
+    const { data: ya, error: eYa } = await admin.from("dist_pedidos").select("estado, dte_id").eq("id", pedidoId).maybeSingle();
+    if (eYa) throw new Error(`leer el pedido: ${eYa.message}`);
+    if (!ya) throw new ErrorUsuario("no existe ese pedido", 404);
+    if (ya.estado !== "confirmado") {
+      if (ya.dte_id) return { dte_id: ya.dte_id, ...(await transmitirDte(admin, ya.dte_id)) };
+      throw new ErrorUsuario(`el pedido está ${ya.estado}`);
+    }
+    throw new ErrorUsuario("Este pedido ya se está facturando: espera un momento.", 409);
+  }
+  try {
+    return await facturarTomado(admin, pedidoId, empleadoId, cont);
+  } finally {
+    const { error: eSol } = await admin.rpc("dist_soltar_facturacion", { p_pedido: pedidoId });
+    if (eSol) console.error("distribucion-dte: soltar el pedido", pedidoId, eSol.message);
+  }
+}
+
+async function facturarTomado(admin: Admin, pedidoId: number, empleadoId: string, cont: PedidoContingencia | null) {
   const { data: p, error } = await admin.from("dist_pedidos")
     .select("id, emisor_id, cliente_id, estado, tipo_documento, condicion, forma_pago, plazo_dias, observaciones, dte_id, reemplaza_dte_id")
     .eq("id", pedidoId).maybeSingle();
@@ -652,6 +765,9 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
   const e = emi.data!, c = cli.data!;
   if (!e.activo) throw new ErrorUsuario("el emisor está desactivado");
   if (!its.data!.length) throw new ErrorUsuario("el pedido no tiene productos");
+  // Una corrección de un sellado sólo se factura si alguien la aprobó; esa
+  // persona responde ante Hacienda por invalidar el original.
+  const responsableCorreccion = p.reemplaza_dte_id ? await aprobadorDeLaCorreccion(admin, p.reemplaza_dte_id) : null;
   // Un descuento pedido y todavía sin decidir: la venta es preventa hasta que
   // lo resuelvan en Solicitudes (borrador 0008). Facturarla ahora sería
   // emitir sin el descuento que el cliente espera, o con uno que nadie dio.
@@ -698,13 +814,22 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
   // ── El límite de crédito FRENA (borrador 0014) ──
   // Lo que ya debe más lo que se fía ahora no puede pasar del límite aprobado.
   // El atraso no frena (es un hallazgo, igual que en la cartera de las
-  // farmacias). Una venta hecha SIN SEÑAL no se frena: la mercadería ya se
-  // entregó y el documento tiene que salir; queda a la vista en la cartera.
+  // farmacias). Una venta hecha SIN SEÑAL también se frena (auditoría H4,
+  // decisión del dueño): antes pasaba de largo y era la puerta para fiar sin
+  // límite; el teléfono la guarda y al volver la señal se cobra o se cambia la
+  // forma de pago. Una CORRECCIÓN no cuenta la deuda del documento que
+  // reemplaza: esa cuenta se cierra al invalidarlo.
   const aCredito = validados.pagos.filter((x) => x.codigo === CREDITO).reduce((a, x) => a + Number(x.monto), 0);
-  if (aCredito > 0 && !cont) {
+  if (aCredito > 0) {
     const { data: cr, error: eCr } = await admin.rpc("dist_credito_cliente", { p_cliente: c.id });
     if (eCr) throw new Error(`leer el crédito del cliente: ${eCr.message}`);
-    const saldo = Number((cr as any)?.saldo ?? 0);
+    let saldo = Number((cr as any)?.saldo ?? 0);
+    if (p.reemplaza_dte_id) {
+      const { data: vieja, error: eV } = await admin.from("dist_cxc").select("saldo")
+        .eq("dte_id", p.reemplaza_dte_id).eq("estado", "abierta").maybeSingle();
+      if (eV) throw new Error(`leer la cuenta del documento corregido: ${eV.message}`);
+      saldo = Math.max(0, saldo - Number(vieja?.saldo ?? 0));
+    }
     const limite = Number(c.limite_credito ?? 0);
     if (Math.round((saldo + aCredito) * 100) > Math.round(limite * 100)) {
       throw new ErrorUsuario(`${c.nombre} ya debe $${saldo.toFixed(2)} y su límite es $${limite.toFixed(2)}: `
@@ -764,7 +889,7 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
     // Este documento corrige a uno sellado: el original se invalida citando a
     // éste (CAT-024 tipo 1). Se prepara ya; sale hacia Hacienda cuando éste
     // tenga su sello (Hacienda tiene que conocer al reemplazo primero).
-    await prepararInvalidacion(admin, p.reemplaza_dte_id, 1, "Se corrigió la información del documento.", ins.id, empleadoId);
+    await prepararInvalidacion(admin, p.reemplaza_dte_id, 1, "Se corrigió la información del documento.", ins.id, responsableCorreccion ?? empleadoId);
   }
   // En contingencia no se transmite todavía: va con el aviso.
   const envio = cont
@@ -941,12 +1066,25 @@ Deno.serve(async (req) => {
   const comoUsuario = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
     global: { headers: { Authorization: req.headers.get("Authorization")! } },
   });
-  const { data: puede, error: ePerm } = await comoUsuario.rpc("auth_can_edit_any", { p_modules: ["distribucion"] });
-  if (ePerm) return json(req, 500, { error: `permiso: ${ePerm.message}` });
-  if (!puede) return json(req, 403, { error: "No tienes permiso para facturar en distribución" });
 
   let cuerpo: any;
   try { cuerpo = await req.json(); } catch { return json(req, 400, { error: "cuerpo inválido" }); }
+
+  // Decidir una solicitud no exige poder vender: exige `requests_distribucion`,
+  // y eso lo comprueba resolverInvalidacion (y la base, en el rechazo).
+  if (cuerpo?.accion === "resolver_invalidacion") {
+    try {
+      return json(req, 200, await resolverInvalidacion(admin, comoUsuario, empleado.id, cuerpo));
+    } catch (e) {
+      if (e instanceof ErrorUsuario) return json(req, e.status, { error: e.message });
+      console.error("distribucion-dte", e);
+      return json(req, 500, { error: (e as Error).message });
+    }
+  }
+
+  const { data: puede, error: ePerm } = await comoUsuario.rpc("auth_can_edit_any", { p_modules: ["distribucion"] });
+  if (ePerm) return json(req, 500, { error: `permiso: ${ePerm.message}` });
+  if (!puede) return json(req, 403, { error: "No tienes permiso para facturar en distribución" });
 
   try {
     if (cuerpo?.accion === "facturar" && Number.isInteger(cuerpo.pedido_id)) {
@@ -955,15 +1093,24 @@ Deno.serve(async (req) => {
     if (cuerpo?.accion === "descartar" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await descartar(admin, cuerpo.dte_id)) });
     }
-    if (cuerpo?.accion === "corregir_sellado" && Number.isInteger(cuerpo.dte_id)) {
-      return json(req, 200, await corregirSellado(admin, cuerpo.dte_id, empleado.id));
-    }
-    if (cuerpo?.accion === "anular_venta" && Number.isInteger(cuerpo.dte_id)) {
-      const tipo = cuerpo.tipo === 3 ? 3 : 2;
+    if ((cuerpo?.accion === "corregir_sellado" || cuerpo?.accion === "anular_venta") && Number.isInteger(cuerpo.dte_id)) {
+      // Se PIDE (auditoría H3): la solicitud la decide quien tenga permiso.
+      const accion = cuerpo.accion === "anular_venta" ? "anular" : "corregir";
       const motivo = typeof cuerpo.motivo === "string" ? cuerpo.motivo.trim() : "";
-      if (!motivo) throw new ErrorUsuario("Escribe por qué se deshace la venta.");
-      await prepararInvalidacion(admin, cuerpo.dte_id, tipo, motivo, null, empleado.id);
-      return json(req, 200, { dte_id: cuerpo.dte_id, ...(await enviarInvalidacion(admin, cuerpo.dte_id)) });
+      if (!motivo) {
+        throw new ErrorUsuario(accion === "anular" ? "Escribe por qué se deshace la venta." : "Escribe qué hay que corregir.");
+      }
+      const { data: sol, error: eSol } = await comoUsuario.rpc("dist_pedir_invalidacion", {
+        p_dte: cuerpo.dte_id, p_accion: accion, p_motivo: motivo,
+      });
+      if (eSol) throw new ErrorUsuario(eSol.message.replace(/^[A-Z_]+:\s*/, ""), 409);
+      const n = Number((sol as any)?.aprobadores ?? 0);
+      return json(req, 200, {
+        dte_id: cuerpo.dte_id, estado: "sellado", solicitud_id: (sol as any)?.solicitud_id,
+        aviso: n > 0
+          ? "Solicitud enviada: el documento sigue vigente hasta que la aprueben."
+          : "Solicitud enviada, pero nadie tiene hoy permiso para aprobarla: avisa a tu supervisor.",
+      });
     }
     if (cuerpo?.accion === "enviar_invalidacion" && Number.isInteger(cuerpo.dte_id)) {
       return json(req, 200, { dte_id: cuerpo.dte_id, ...(await enviarInvalidacion(admin, cuerpo.dte_id)) });

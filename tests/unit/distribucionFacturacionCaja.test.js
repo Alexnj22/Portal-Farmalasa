@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
-    accionesDelDocumento, avisoDelPlazo, correoValido, documentosDeLaCubeta, estadoDelCorreo, gruposDeFacturacion,
+    accionesDelDocumento, avisoDeAccion, avisoDelPlazo, ayudaDelSellado, correoValido, queHaceCorregir, documentosDeLaCubeta, estadoDelCorreo, gruposDeFacturacion,
     nombreFormaPago, revisionDelComprobante, semaforoDeFacturacion,
 } from '@nucleo/utils/distribucionFacturacion';
 import {
@@ -119,5 +119,26 @@ describe('Caja', () => {
         expect(cierreDelDiaListo(d, 20, '').listo).toBe(false);
         expect(cierreDelDiaListo(d, 20, 'caja fuerte').listo).toBe(true);
         expect(cierreDelDiaListo({ ...d, pendientes: 2 }, 0, '').motivo).toMatch(/Faltan 2/);
+    });
+});
+
+describe('invalidar un sellado se PIDE (auditoría H3)', () => {
+    it('lo que vuelve de pedir es una solicitud, no un documento invalidado', () => {
+        const r = { estado: 'sellado', solicitud_id: 'abc', aviso: 'Solicitud enviada: el documento sigue vigente hasta que la aprueben.' };
+        const av = avisoDeAccion(r, { sellado: { label: 'Sellado' } });
+        expect(av.titulo).toBe('Solicitud enviada');
+        expect(av.bien).toBe(true);
+        expect(av.texto).toMatch(/sigue vigente/);
+    });
+
+    it('sin solicitud sigue diciendo el estado del documento', () => {
+        expect(avisoDeAccion({ estado: 'invalidado', mensaje: 'ok' }, { invalidado: { label: 'Invalidado' } }).titulo).toBe('Invalidado');
+    });
+
+    it('la ayuda y la confirmación dicen que se pide y qué pasa con el dinero', () => {
+        expect(queHaceCorregir({ estado: 'sellado' })).toMatch(/solicitud/);
+        expect(queHaceCorregir({ estado: 'sellado' })).toMatch(/abonado pasa a la cuenta nueva/);
+        expect(ayudaDelSellado('01')).toMatch(/se piden/);
+        expect(ayudaDelSellado('01')).toMatch(/efectivo sale de tu caja/);
     });
 });

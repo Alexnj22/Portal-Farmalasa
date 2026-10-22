@@ -98,6 +98,17 @@ export function detalleDeSolicitud(s) {
                 renglones: (m.renglones ?? []).map((r) => [String(r.descripcion ?? 'Producto'), `−${dinero(r.descuento)}${r.pct != null ? ` (${Number(r.pct).toFixed(1)}%)` : ''}`]),
                 pie: `Total ${dinero(m.total)}${m.tope_pct != null ? ` · tope ${Number(m.tope_pct)}%` : ''}`,
             };
+        // Corregir o deshacer un documento sellado de la distribuidora: cuál, de
+        // quién y qué pasa con el dinero si se aprueba.
+        case 'DIST_INVALIDACION':
+            return {
+                contexto: `${m.accion === 'corregir' ? 'Corregir' : 'Deshacer'} ${m.numero_control ?? 'un documento'} · ${m.cliente ?? 'un cliente'}`,
+                renglones: m.accion === 'corregir'
+                    ? [['Total del documento', dinero(m.total)], ['Abonado (pasa a la cuenta nueva)', dinero(m.abonado ?? 0)]]
+                    : [['Total del documento', dinero(m.total)], ['Efectivo que se devuelve', dinero(m.devolver_efectivo ?? 0)],
+                        ['Queda a favor del cliente', dinero(m.a_favor ?? 0)]],
+                pie: s?.note ?? undefined,
+            };
         default:
             return { renglones: [], pie: s?.note ?? undefined };
     }

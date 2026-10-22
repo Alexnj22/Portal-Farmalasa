@@ -936,6 +936,7 @@ const TIPO_DE_SOLICITUD = {
     ABONO_CREDITO_CHANGE:       { tono: 'naranja', Icono: HandCoins },
     ABONO_APROBACION:           { tono: 'verde',   Icono: HandCoins },
     DIST_DESCUENTO:             { tono: 'azul',    Icono: Tag },
+    DIST_INVALIDACION:          { tono: 'rojo',    Icono: FileX },
     INVENTORY_TRANSFER_REQUEST: { tono: 'azul',    Icono: ArrowLeftRight },
     INVENTORY_TRANSFER_PUSH:    { tono: 'azul',    Icono: PackageCheck },
     INVENTORY_LOAD_REQUEST:     { tono: 'verde',   Icono: PackagePlus },

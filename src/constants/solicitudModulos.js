@@ -54,6 +54,8 @@ export const MODULO_QUE_DECIDE = {
     // Un descuento de Distribución que el vendedor no puede dar solo. Espejo
     // de `modulo_de_aprobacion()` (borrador distribucion/0008).
     DIST_DESCUENTO:            'requests_distribucion',
+    // Corregir o deshacer un documento sellado (auditoría H3). Mismo espejo.
+    DIST_INVALIDACION:         'requests_distribucion',
 };
 
 /**
@@ -109,5 +111,6 @@ export const QUIEN_RESUELVE = {
     CLIENT_CHANGE_REQUEST:     'Quien apruebe facturación',
     INVENTORY_LOAD_REQUEST:    'Quien apruebe inventario',
     INVENTORY_DISCARD_REQUEST: 'Quien apruebe inventario',
-    DIST_DESCUENTO:            'Quien apruebe descuentos de Distribución',
+    DIST_DESCUENTO:            'Quien apruebe solicitudes de Distribución',
+    DIST_INVALIDACION:         'Quien apruebe solicitudes de Distribución',
 };

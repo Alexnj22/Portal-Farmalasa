@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { HandCoins, Wallet, Loader2, Printer, Ban, AlertTriangle, CheckCircle2, FileText, SlidersHorizontal } from 'lucide-react';
+import { HandCoins, Wallet, Loader2, Printer, Ban, AlertTriangle, CheckCircle2, FileText, SlidersHorizontal, PiggyBank } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -18,9 +18,9 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { imprimirDocumento } from '@nucleo/utils/ticketPrint';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ticketDeRecibo, ticketDeEstadoDeCuenta } from '@nucleo/utils/distribucionDocumento';
-import { fetchEstadoCuenta, cobrar, anularRecibo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
+import { fetchEstadoCuenta, cobrar, anularRecibo, aplicarSaldoAFavor, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { FORMA_PAGO, leerMonto } from './comun';
-import { repartoDelCobro, problemaDelCobro, cambioDelCobro } from './cartera';
+import { repartoDelCobro, problemaDelCobro, cambioDelCobro, saldoAFavor, usoDelSaldoAFavor } from './cartera';
 import { MARCA_PAPEL } from './marca';
 import useBorrador from '@nucleo/hooks/useBorrador';
 
@@ -31,6 +31,11 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 // misma regla que la base, primero lo que vence antes— o deja repartirlo a
 // mano. Un reintento no cobra dos veces (`clientUuid`), el monto no puede
 // pasar de lo que se debe, y un cheque o una transferencia llevan su número.
+//
+// El saldo a favor (lo que volvió de un documento invalidado o lo que dejó una
+// nota de crédito) se usa como PAGO PARCIAL de una cuenta, entero o por partes
+// (`dist_aplicar_saldo_a_favor`): no es dinero que entra a la caja, así que no
+// sale recibo ni cuenta en la liquidación.
 
 const FORMAS_COBRO = FORMA_PAGO; // sin «a crédito»: un abono no se fía
 const aC = (n) => Math.round(Number(n || 0) * 100);
@@ -51,6 +56,10 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
     const [uuid, setUuid] = useState(() => crypto.randomUUID());
     const [anulando, setAnulando] = useState(null); // recibo id
     const [motivo, setMotivo] = useState('');
+    const [favorCuenta, setFavorCuenta] = useState(null);   // cxc_id
+    const [favorMonto, setFavorMonto] = useState('');
+    const [favorNota, setFavorNota] = useState('');
+    const [aplicando, setAplicando] = useState(false);
 
     // Un cobro a medio escribir sobrevive a que la sesión se cierre sola. Y con
     // él su `uuid`: si el cobro llegó a la base pero la respuesta se perdió,
@@ -76,6 +85,10 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
     const abiertas = useMemo(() => (estado?.cuentas ?? []).filter(x => x.estado === 'abierta'), [estado]);
     const saldo = Number(cr.saldo ?? 0);
     const vencido = Number(cr.vencido ?? 0);
+    const aFavor = saldoAFavor(cr);
+    // Por defecto, la cuenta que vence antes (la misma que tomaría un cobro).
+    const cuentaFavor = abiertas.find(x => x.id === favorCuenta) ?? abiertas[0] ?? null;
+    const usoFavor = usoDelSaldoAFavor({ aFavor, cuenta: cuentaFavor, montoTexto: favorMonto, leer: leerMonto });
 
     // El reparto: a mano (lo escrito por cuenta) o el automático de la base.
     const n = leerMonto(monto) ?? 0;
@@ -116,6 +129,25 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
             setError(mensajeDeDistribucion(e));
         } finally {
             setCobrando(false);
+        }
+    };
+
+    const usarSaldoAFavor = async () => {
+        if (usoFavor.problema || aplicando || !puedeCobrar) return;
+        setAplicando(true);
+        setError('');
+        try {
+            const r = await aplicarSaldoAFavor(cuentaFavor.id, usoFavor.monto, favorNota.trim() || null);
+            useStaff.getState().appendAuditLog('DISTRIBUCION_SALDO_A_FAVOR_USADO', String(r?.id ?? cuentaFavor.id),
+                { cliente: cliente.id, cxc: cuentaFavor.id, monto: usoFavor.monto });
+            showToast('Saldo a favor usado', `${formatMoney(usoFavor.monto)} a ${cuentaFavor.numero_control} · le quedan ${formatMoney(Math.max(0, Number(r?.a_favor ?? 0)))} a favor`, 'success');
+            setFavorMonto(''); setFavorNota(''); setFavorCuenta(null);
+            cargar();
+            onCambio?.();
+        } catch (e) {
+            setError(mensajeDeDistribucion(e));
+        } finally {
+            setAplicando(false);
         }
     };
 
@@ -228,6 +260,40 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                             })}
                         </div>
 
+                        {/* ── El saldo a favor: un pago parcial que no pasa por la caja ── */}
+                        {aFavor > 0 && (
+                            <section data-surface="card" className="p-3 flex flex-col gap-3" data-saldo-a-favor>
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="text-body font-black text-content flex items-center gap-2"><PiggyBank size={16} className="text-brand-text" /> Saldo a favor</p>
+                                    <p className="text-title font-black tabular-nums text-success-text">{formatMoney(aFavor)}</p>
+                                </div>
+                                {puedeCobrar && abiertas.length > 0 ? (<>
+                                    <p className="text-caption text-content-3">Se puede usar como pago parcial de una cuenta, entero o por partes, hasta lo que deba esa cuenta.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className="flex flex-col gap-1.5">
+                                            <span className={rotuloCampo()}>Cuenta</span>
+                                            <LiquidSelect value={cuentaFavor?.id ?? null} clearable={false} ariaLabel="Cuenta a la que va el saldo a favor"
+                                                options={abiertas.map(x => ({ value: x.id, label: `${x.numero_control} · debe ${formatMoney(x.saldo)}` }))}
+                                                onChange={(v) => { setFavorCuenta(v); setFavorMonto(''); }} />
+                                        </div>
+                                        <PortalInput label="Monto" name="monto-saldo-a-favor" inputMode="decimal" prefix="$" placeholder={usoFavor.tope.toFixed(2)}
+                                            value={favorMonto} hasError={!!favorMonto && !!usoFavor.problema}
+                                            helperText={`Hasta ${formatMoney(usoFavor.tope)}`}
+                                            onChange={(e) => setFavorMonto(e.target.value.replace(/[^0-9.]/g, ''))} />
+                                        <PortalInput label="Nota (opcional)" name="nota-saldo-a-favor" value={favorNota} onChange={(e) => setFavorNota(e.target.value)} />
+                                    </div>
+                                    <div className="flex flex-wrap items-center justify-end gap-3">
+                                        {usoFavor.problema && favorMonto && <p className="text-caption text-danger-text">{usoFavor.problema}</p>}
+                                        <Button variant="secondary" icon={aplicando ? Loader2 : PiggyBank} disabled={!!usoFavor.problema || aplicando} onClick={usarSaldoAFavor} data-usar-saldo-a-favor>
+                                            {usoFavor.monto > 0 ? `Usar ${formatMoney(usoFavor.monto)}` : 'Usar'}
+                                        </Button>
+                                    </div>
+                                </>) : (
+                                    <p className="text-caption text-content-3">{abiertas.length ? 'Lo puede usar quien cobra en Distribución.' : 'Se usará como pago parcial de su próxima cuenta.'}</p>
+                                )}
+                            </section>
+                        )}
+
                         {/* ── El cobro ── */}
                         {puedeCobrar && abiertas.length > 0 && (
                             <section data-surface="card" className="p-3 flex flex-col gap-3" data-cobro-cartera
@@ -279,6 +345,25 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                     </div>
                                 </div>
                             </section>
+                        )}
+
+                        {/* ── El saldo a favor ya usado: cuándo, en qué cuenta y quién ── */}
+                        {(estado.a_favor_usado ?? []).length > 0 && (
+                            <div className="flex flex-col gap-2">
+                                <p className="text-micro font-bold uppercase tracking-wide text-content-3">Saldo a favor usado</p>
+                                {estado.a_favor_usado.slice(0, 8).map(a => (
+                                    <div key={a.id} data-surface="card" className="px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            {a.por && <AvatarConEstado emp={a.por} px={28} radio="rounded-full" marco="" />}
+                                            <div className="min-w-0">
+                                                <p className="text-body-sm font-bold text-content-2 font-mono truncate">{a.numero_control}</p>
+                                                <p className="text-caption text-content-3">{fechaHora12(a.fecha)} · {shortEmployeeName(a.por) || '—'}{a.nota ? ` · ${a.nota}` : ''}</p>
+                                            </div>
+                                        </div>
+                                        <span className="font-black tabular-nums text-content">{formatMoney(a.monto)}</span>
+                                    </div>
+                                ))}
+                            </div>
                         )}
 
                         {/* ── Lo que ya pagó ── */}

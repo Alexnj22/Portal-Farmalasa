@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1339.1 — App: escáner de documentos del sistema al adjuntar un papel
+
+Pedido del usuario: «desde la app, al subir una foto, no me permite editarla
+para confirmar las esquinas».
+
+- **«Escanear documento»** reemplaza a «Tomar foto» en todo lo que adjunta un
+  papel desde la app: expediente, DUI por caras, acreditaciones, documentos y
+  pagos de sala, seguro de vida. Abre el escáner del sistema —VisionKit en
+  iPhone, ML Kit de Google en Android—: ve las esquinas en vivo, deja moverlas
+  y endereza la hoja.
+- Si el escáner no está (Expo Go, una versión anterior de la app, Android sin
+  servicios de Google) cae a la cámara de siempre: nunca deja sin adjuntar.
+- Módulo nativo (`react-native-document-scanner-plugin` 2.0.4): llega con la
+  próxima versión de la app. La galería y los PDF siguen igual.
+
 ## v2.1339.0 — Reserva en camino también en la app y anular un cobro ya repartido
 
 - **App del personal**: Reservas muestra en qué va el traslado y su nota.

@@ -8,6 +8,7 @@ import { ActionSheetIOS, Alert, Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { problemaDelArchivo, TIPOS_DEL_EXPEDIENTE } from '@nucleo/utils/expedienteDeSucursal';
+import { escanearDocumento } from '../escanearDocumento';
 
 export const extDe = (nombre, tipo) => {
   const e = String(nombre || '').split('.').pop()?.toLowerCase();
@@ -16,6 +17,13 @@ export const extDe = (nombre, tipo) => {
 };
 
 async function desdeFotos(camara) {
+  // Todo lo que pasa por acá es un PAPEL (expediente, DUI, comprobantes), así
+  // que la cámara abre el escáner del sistema: esquinas y enderezado. Si el
+  // escáner no está en este teléfono, la cámara de siempre.
+  if (camara) {
+    const escaneo = await escanearDocumento();
+    if (escaneo.disponible) return escaneo.foto;
+  }
   const permiso = camara ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permiso.granted) { Alert.alert('Sin permiso', camara ? 'La app necesita la cámara.' : 'La app necesita tus fotos.'); return null; }
   const op = { mediaTypes: ['images'], quality: 0.7 };
@@ -33,7 +41,7 @@ async function desdeArchivos() {
   return { uri: a.uri, tipo: a.mimeType || 'application/pdf', tamano: a.size ?? null, nombre: a.name || 'documento.pdf' };
 }
 
-const OPCIONES = ['Tomar foto', 'Elegir de la galería', 'Elegir un archivo (PDF)'];
+const OPCIONES = ['Escanear documento', 'Elegir de la galería', 'Elegir un archivo (PDF)'];
 const preguntar = () => new Promise((resolve) => {
   const elegir = async (i) => { try { resolve(i === 2 ? await desdeArchivos() : i === 0 || i === 1 ? await desdeFotos(i === 0) : null); } catch { resolve(null); } };
   if (Platform.OS !== 'web') { // en Android lo dibuja HojasAndroid: Alert sólo muestra 3 botones

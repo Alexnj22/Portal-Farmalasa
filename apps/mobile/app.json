@@ -66,7 +66,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "FarmaSalud usa la cámara para escanear el código de las cajas de traslado y de los productos.",
+          "cameraPermission": "FarmaSalud usa la cámara para escanear cajas, productos y documentos, y para fotografiar la evidencia de una solicitud.",
           "recordAudioAndroid": false
         }
       ],
@@ -77,6 +77,7 @@
           "cameraPermission": "FarmaSalud usa la cámara para escanear cajas y fotografiar la evidencia de una solicitud."
         }
       ],
+      "react-native-document-scanner-plugin",
       [
         "expo-audio",
         {

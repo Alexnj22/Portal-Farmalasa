@@ -485,7 +485,9 @@ def main():
                     # reintenta tres veces: se confiesa, y queda a la vista en
                     # el portal con su motivo.
                     ok, detalle = False, "Documento ilegible: {}".format(e)[:400]
+                    definitivo = True
                 else:
+                    definitivo = False
                     ok, detalle = imprimir(
                         datos, job.get("impresora") or "pos-80", cfg["CORTAR"],
                         cfg["DISPOSITIVO"],
@@ -502,6 +504,9 @@ def main():
                         "p_device": cfg["DEVICE_ID"], "p_token": cfg["DEVICE_TOKEN"],
                         "p_id": job.get("id"), "p_ok": bool(ok),
                         "p_error": None if ok else detalle,
+                        # Ilegible no mejora al reintentar: pasa a ERROR de una
+                        # vez en vez de ocupar tres vueltas de la cola.
+                        "p_definitivo": definitivo,
                     })
                 except Exception as e:                        # noqa: BLE001
                     print("  no se pudo avisar al portal: {}".format(e), flush=True)

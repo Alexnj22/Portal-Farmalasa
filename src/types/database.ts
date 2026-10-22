@@ -29060,6 +29060,7 @@ export type Database = {
       }
       confirmar_impresion: {
         Args: {
+          p_definitivo?: boolean
           p_device: string
           p_error?: string
           p_id: number

@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1341.1 — Impresión: un documento ilegible no se reintenta y sólo salen las cajas vinculadas
+
+Auditoría 2026-10-21, grupo 1 · H10 y H11. Migración
+`auditoria_impresion_fallo_definitivo_y_salas_vinculadas` aplicada.
+
+- **Un documento ilegible pasa a error de una vez.** `confirmar_impresion`
+  acepta `p_definitivo` y el agente de la caja lo manda cuando no puede leer el
+  ticket: antes volvía a la cola y fallaba otras dos veces. Los agentes que
+  todavía no se actualizaron siguen funcionando igual.
+- **Sólo aparecen como destino las salas con caja vinculada.** Una caja con el
+  código generado y nunca instalada hacía aparecer la sala, y al elegirla la
+  impresión se rechazaba.
+
 ## v2.1341.0 — Reservas: enlace de pago para el anticipo de un apartado
 
 La sala puede **mandarle al cliente un enlace de pago** (tarjeta, Wompi) en vez de cobrar en caja, en «Apartar o encargar» (nuevo y «Por cobrar») del portal y en la app del personal. Reglamento de reservas v3.

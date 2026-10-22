@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1345.4 — Reservas en camino no disparan «falta existencia»
+
+- **Aviso «Falta existencia para una reserva»**: ya no salta por una reserva que espera un traslado o un encargo a Bodega. `app_existencias_netas` ya no cuenta como apartado lo que todavía no llega (`traslado_por_llegar`), y la app deja de restarlo de los disponibles. Lo que ya llegó sigue contando. Nació de R-000114: 2 en camino, 0 en la sala y un aviso a las 13:00.
+
 ## v2.1345.3 — Reservas y Apartar según el canon; cobro en un bloque
 
 - **Reservas** (pantalla), según el canon de vista:

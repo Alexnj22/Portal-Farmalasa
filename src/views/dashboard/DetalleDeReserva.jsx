@@ -1,6 +1,7 @@
 import React from 'react';
 import { MessageCircle, Phone } from 'lucide-react';
 import Badge from '../../components/common/Badge';
+import { BotonDeAccion } from './TarjetaDeReserva';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -10,11 +11,12 @@ import { TRASLADO, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, renglo
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El detalle de una reserva (2026-10-22): lo que la tarjeta resume, entero.
-// Sólo mira: las acciones viven en la tarjeta, al pie, y desde acá se cierra
-// para usarlas — dos lugares que hacen lo mismo terminan haciendo cosas
-// distintas.
+// Las acciones son las MISMAS que las de la tarjeta (`accionesDeReserva` de
+// WidgetReservas, una sola lista): la tarjeta muestra las dos primeras y acá
+// están todas, con su nombre. Cada una cierra el detalle antes de actuar, para
+// que el diálogo que abre no quede debajo de éste.
 // ═══════════════════════════════════════════════════════════════════════════
-export default function DetalleDeReserva({ r, onClose }) {
+export default function DetalleDeReserva({ r, acciones = [], onClose }) {
     if (!r) return null;
     const filas = renglonesDe(r);
     const estado = estadoDeReserva(r);
@@ -25,6 +27,10 @@ export default function DetalleDeReserva({ r, onClose }) {
     const cuando = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
     const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
     const fiscal = r.documento === 'credito_fiscal' ? r.datos_fiscales : null;
+
+    const conCierre = (a) => ({ ...a, onClick: () => { onClose(); a.onClick(); } });
+    const mayores = acciones.filter((a) => !a.menor).map(conCierre);
+    const menores = acciones.filter((a) => a.menor).map(conCierre);
 
     const fechas = [
         ['Creada', r.creada && cuando(r.creada)],
@@ -46,6 +52,15 @@ export default function DetalleDeReserva({ r, onClose }) {
             </LiquidModal.Header>
             <LiquidModal.Body>
                 <div className="space-y-6">
+                    {mayores.length > 0 && (
+                        <Bloque titulo="Qué hacer">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {mayores.map((a, i) => (
+                                    <BotonDeAccion key={a.k} a={a} variant={i === 0 ? 'primary' : 'secondary'} className="w-full" />
+                                ))}
+                            </div>
+                        </Bloque>
+                    )}
                     <Bloque titulo="Cliente">
                         <p className="text-body font-bold text-content break-words">{r.cliente ?? 'Sin cliente'}</p>
                         <Datos filas={[
@@ -134,7 +149,11 @@ export default function DetalleDeReserva({ r, onClose }) {
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
-                <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+                <div className="flex flex-wrap items-center gap-2 w-full">
+                    {menores.map((a) => <BotonDeAccion key={a.k} a={a} variant="ghost" />)}
+                    <span className="flex-1" />
+                    <Button variant="ghost" size="sm" onClick={onClose}>Cerrar</Button>
+                </div>
             </LiquidModal.Footer>
         </LiquidModal>
     );

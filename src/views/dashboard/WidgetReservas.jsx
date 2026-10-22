@@ -255,6 +255,44 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         }
     };
 
+    // Lo que se puede hacer con una reserva, EN ORDEN de importancia (2026-10-22).
+    // La tarjeta muestra las dos primeras con su nombre; todas, también las
+    // menores, viven en el detalle. Una sola lista para las dos piezas: si cada
+    // una armara la suya, terminarían ofreciendo cosas distintas.
+    const accionesDeReserva = (r) => {
+        if (soloLectura && !(r.estado === 'en_revision')) return [];
+        const filasDe = r.renglones ?? [r];
+        const hayPendiente = filasDe.some((x) => x.estado === 'pendiente');
+        const hayLista = filasDe.some((x) => x.estado === 'lista');
+        const porResolverDe = filasDe.find(reservaPorResolver);
+        const porTraerDe = filasDe.find(reservaPorTraer);
+        const enCamino = filasDe.some((x) => x.estado === 'pendiente' && x.traslado_estado);
+        const lista = [];
+        if (r.estado === 'en_revision') {
+            if (r.receta_ruta && (r.puede_revisar_receta ?? puedeRecetas)) {
+                lista.push({ k: 'receta', label: r.receta_estado === 'pendiente' ? 'Revisar receta' : 'Ver receta', icon: FileCheck, onClick: () => setReceta(r) });
+            }
+        } else if (!soloLectura) {
+            if (porResolverDe) lista.push({ k: 'resolver', label: 'Resolver', icon: Wrench, onClick: () => setResolviendo(porResolverDe),
+                title: 'La otra sala no la manda, llega una parte o Bodega cambió el precio: decide qué hacer' });
+            if (hayPendiente) lista.push({ k: 'apartar', label: enCamino ? 'Ya llegó: apartar' : 'Apartar y avisar', icon: PackageCheck,
+                title: enCamino ? 'Si el traslado ya llegó y no quedó lista sola: déjala lista y avisa al cliente' : 'Déjala lista para retirar y avisa al cliente' ,
+                onClick: () => mover(r, 'lista') });
+            if (hayLista) lista.push({ k: 'retirar', label: 'Retirar', icon: CheckCircle2, title: 'El cliente vino: cobra lo que falta y entrégala',
+                onClick: () => setRetirando(filasDe.filter((x) => x.estado === 'lista').map((x) => ({ id: x.id, sala: x.branch_id ?? r.branch_id ?? miSala }))) });
+            if (puedePreventa && filasDe.some(puedeEnviarPreventa)) lista.push({ k: 'caja', label: 'Enviar a caja', icon: Send,
+                title: 'Deja la venta armada en caja: producto, cliente y tú como vendedor', onClick: () => enviarACaja(r) });
+            if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sala', icon: ArrowLeftRight,
+                title: `Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega`, onClick: () => setResolviendo(porTraerDe) });
+            if (hayLista && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp', icon: MessageCircle,
+                onClick: () => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) }) });
+            if (filasDe.some((x) => x.estado === 'lista' && !x.prorrogada_at)) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', icon: CalendarPlus,
+                title: 'Una sola prórroga', onClick: () => prorrogar(r) });
+            lista.push({ k: 'cancelar', label: 'Cancelar reserva', icon: XCircle, menor: true, onClick: () => mover(r, 'cancelada') });
+        }
+        return lista.map((a) => ({ ...a, loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar'].includes(a.k) }));
+    };
+
     const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && !esBodega ? (
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
     ) : null;
@@ -390,7 +428,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 : [[null, grupos, null]]).filter(([, g]) => g.length).map(([titulo, lista, ayuda]) => (
             <section key={titulo ?? 'todo'} className="space-y-2">
             {titulo && <Encabezado titulo={titulo} n={lista.length} ayuda={ayuda} />}
-            <ul className={completa ? 'grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-start min-w-0' : 'space-y-1.5 min-w-0'}>
+            <ul className={completa ? 'grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-stretch min-w-0' : 'space-y-1.5 min-w-0'}>
                 {lista.map((r) => {
                     const enRevision = r.estado === 'en_revision';
                     const espera = enRevision ? esperaDeReceta(r.receta_subida_at, ahora) : null;
@@ -501,7 +539,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     );
                     return completa ? (
                     <li key={`${r.pedido ?? ''}-${r.id}`} className="min-w-0">
-                        <TarjetaDeReserva r={r} todas={todas} acciones={acciones} onAbrir={setViendo} />
+                        <TarjetaDeReserva r={r} todas={todas} acciones={accionesDeReserva(r)} onAbrir={setViendo} />
                     </li>
                     ) : (
                     <li key={`${r.pedido ?? ''}-${r.id}`}>
@@ -588,7 +626,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             {modalRetirar}
             {viendo && (
                 <Suspense fallback={null}>
-                    <DetalleDeReserva r={viendo} onClose={() => setViendo(null)} />
+                    <DetalleDeReserva r={viendo} acciones={accionesDeReserva(viendo)} onClose={() => setViendo(null)} />
                 </Suspense>
             )}
             {modalReceta}

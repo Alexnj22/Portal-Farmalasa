@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1349.3 — Reservas: tarjetas parejas, dos productos a la vista y botones con nombre
+
+- **Reservas** (pantalla): segunda vuelta de las tarjetas, pedida por el usuario: «si una tiene 6 productos se verá muy larga, no se verá alineada, los botones no se entienden».
+  - **Todas las tarjetas de una fila miden lo mismo**: el dinero va al pie y cada texto ocupa una línea. Un nombre largo se corta; el completo está al pasar el puntero y en el detalle.
+  - **A lo sumo dos productos a la vista**; el resto dice «+ N productos más». Probado con un pedido de 6.
+  - **Botones con nombre**, en un orden fijo: a la derecha la acción que toca ahora (Apartar y avisar, Ya llegó: apartar, Retirar, Resolver, Revisar receta) y la siguiente; a la izquierda «Más», que abre el detalle. Se acabó el ✕ suelto: ahora es «Cancelar reserva», dentro del detalle.
+  - **El detalle trae «Qué hacer»** con todas las acciones nombradas (también Avisar por WhatsApp y Prorrogar 7 días). Es la MISMA lista que la tarjeta (`accionesDeReserva`).
+  - Crédito fiscal y pago de prueba se ven en la tarjeta.
+  - Verificado con capturas en escritorio y teléfono contra el entorno de pruebas; las reservas de muestra se borraron.
+
 ## v2.1349.2 — Reglamento de reservas: 3.2 sin la confirmación de cantidad
 
 - **Reglamento de reservas, 3.2**: se quitó «si la cantidad no es la habitual, la aplicación le pide confirmarla». Describía una pantalla de la app y no una regla; la app la sigue pidiendo.

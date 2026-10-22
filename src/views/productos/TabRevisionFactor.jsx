@@ -4,7 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -228,12 +228,7 @@ function FilaExistencia({ fila: f, onHecho }) {
 }
 
 // ─── Un factor que no cuadra ─────────────────────────────────────────────────
-const QUE_DICE = {
-    texto:      (s) => `El texto de la presentación dice ${s.dice} y el factor ${s.catalogo}.`,
-    existencia: (s) => `La existencia dice ${s.dice} por ${s.presentacion.toLowerCase()} y el catálogo ${s.catalogo}.`,
-    venta:      (s) => `${s.filas} ventas de los últimos 30 días entraron con ${s.dice} por ${s.presentacion.toLowerCase()} y el catálogo dice ${s.catalogo}.`,
-};
-
+// Por qué no cuadra: `textoDelSospechoso` (núcleo), el mismo texto de la app.
 function FilaSospechoso({ s }) {
     return (
         <li data-surface="card" className="border-divider px-3.5 py-3 space-y-1">
@@ -241,7 +236,7 @@ function FilaSospechoso({ s }) {
                 <p className="text-body-sm font-black text-content truncate min-w-0" title={s.nombre}>{s.nombre}</p>
                 <Badge size="sm" variant="warning" uppercase={false}>{s.presentacion}</Badge>
             </div>
-            <p className="text-label font-bold text-content-2">{(QUE_DICE[s.tipo] ?? QUE_DICE.texto)(s)}</p>
+            <p className="text-label font-bold text-content-2">{textoDelSospechoso(s)}</p>
         </li>
     );
 }
@@ -266,7 +261,7 @@ function FilaCambio({ c }) {
             )}
             {minmax.length > 0 && (
                 <p className="text-label font-bold text-content-3">
-                    MIN·MAX: {minmax.map(m => `${m.sala} ${m.antes?.[0] ?? '—'}·${m.antes?.[1] ?? '—'} → ${m.ahora?.[0] ?? '—'}·${m.ahora?.[1] ?? '—'}`).join(', ')}
+                    MIN·MAX: {minmaxDelCambio(r)}
                 </p>
             )}
             {(r.ventas_sin_convertir ?? 0) > 0 && (

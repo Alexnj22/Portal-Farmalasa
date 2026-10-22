@@ -35,18 +35,17 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
 import EntregarPremioEscaneado from './EntregarPremioEscaneado';
 import {
+    ESTADO_DE_PREMIO, TITULO_DIALOGO_REGALO, detalleDelPremio, dondeSeRetiraElPremio, faltaEnRegalo,
+} from '@nucleo/utils/nivelesDePuntos';
+import {
     ajustarPromocional, enviarPromocional, fetchPremiosPorEntregar, fetchPromocionales,
     guardarPromocional, recibirPromocional,
 } from '@nucleo/data/puntos';
 
 const fechaCorta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' }, '—');
 
-const ESTADO = {
-    POR_RETIRAR: { texto: 'Por retirar', variante: 'info' },
-    ENTREGANDO: { texto: 'Entregándose', variante: 'warning' },
-    ENTREGADO: { texto: 'Entregado', variante: 'success' },
-    VENCIDO: { texto: 'Vencido', variante: 'neutral' },
-};
+// El estado, dónde se retira y qué le falta a un regalo: núcleo (`nivelesDePuntos`), lo mismo en la app.
+const ESTADO = ESTADO_DE_PREMIO;
 
 /** El rótulo de un campo que no lo trae (LiquidSelect), con la letra de PortalInput. */
 const Campo = ({ rotulo, children }) => (
@@ -131,12 +130,7 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
                 <ul className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     {premios.map((p) => {
                         const e = ESTADO[p.estado] ?? ESTADO.POR_RETIRAR;
-                        /* Se retira en CUALQUIER sucursal (2026-10-20). Un regalo
-                         * apartado se retira en la suya; uno pedido espera el envío. */
-                        const donde = p.reserva_branch ? `Apartado en ${nombreSala(p.reserva_branch)}`
-                            : p.espera_envio ? `Pedido para ${nombreSala(p.branch_id)} · esperando el envío`
-                                : p.estado === 'ENTREGADO' ? `Entregado en ${nombreSala(p.entregado_branch)}`
-                                    : 'Se retira en cualquier sucursal';
+                        const donde = dondeSeRetiraElPremio(p, nombreSala);
                         return (
                             <li key={p.id} data-surface="card" className="rounded-xl p-3 flex flex-col gap-1.5 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
@@ -144,10 +138,7 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
                                         <p className="text-body-sm font-bold text-content truncate">
                                             {Number(p.cantidad) > 1 ? `${p.cantidad} × ` : ''}{p.nombre}
                                         </p>
-                                        <p className="text-caption text-content-3">
-                                            {p.codigo} · {p.tipo === 'producto' ? `Producto${p.presentacion ? ` · ${p.presentacion}` : ''}` : 'Regalo promocional'}
-                                            {p.nivel ? ` · Raspable ${p.nivel}` : ''}
-                                        </p>
+                                        <p className="text-caption text-content-3">{detalleDelPremio(p)}</p>
                                     </div>
                                     <Badge variant={e.variante} tone="soft" uppercase={false}>{e.texto}</Badge>
                                 </div>
@@ -296,7 +287,7 @@ function Regalos({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
     );
 }
 
-const TITULOS = { nuevo: 'Nuevo regalo', editar: 'Editar regalo', entrada: 'Entrada o ajuste', enviar: 'Enviar a una sucursal' };
+const TITULOS = TITULO_DIALOGO_REGALO;
 
 function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = '', cantidad = '' }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -313,11 +304,7 @@ function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = ''
     const cerrar = () => { clearDraft(llave); onClose(); };
     const n = Number(f.cantidad);
 
-    const falta = modo === 'nuevo' || modo === 'editar' ? (f.nombre.trim().length < 2 ? 'Escribe el nombre.' : null)
-        : modo === 'entrada' ? (!f.sala ? 'Elige la sucursal.' : !Number.isInteger(n) || n === 0 ? 'Escribe la cantidad (negativa para restar).'
-            : n < 0 && f.nota.trim().length < 3 ? 'Para restar, di por qué.' : null)
-            : (!f.sala || !f.hacia ? 'Elige de dónde y a dónde.' : f.sala === f.hacia ? 'Tienen que ser sucursales distintas.'
-                : !Number.isInteger(n) || n <= 0 ? 'Escribe cuántos se mandan.' : null);
+    const falta = faltaEnRegalo(modo, f);
 
     const guardar = async () => {
         setGuardando(true);

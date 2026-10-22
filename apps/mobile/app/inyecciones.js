@@ -6,7 +6,9 @@
 //     aunque haya pagado en otra—. Quien opera una caja marca cuántas aplica
 //     ahora con el contador y confirma.
 //   · Bitácora: cada aplicación de los últimos días, quién cobró, quién aplicó,
-//     cuándo y dónde.
+//     cuándo y dónde. La que se cobró SIN ficha no sale en la app del cliente:
+//     la fila lo dice y, a quien asigna cobros (`inyecciones_dosis`), le ofrece
+//     ponérsela (`inyeccion-ficha`, 2026-10-17 en el portal).
 //
 //   · Por cobrar: las ventas con inyección y su cobro, por vendedor, y los
 //     cobros sueltos para asignar a mano (`componentes/inyecciones/PorCobrar`).
@@ -17,7 +19,7 @@
 // `inyeccionesAjustes`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { Stack, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -49,6 +51,7 @@ import Tocable from '../componentes/Tocable';
 import { compartirCsv } from '../componentes/fiscal/csv';
 import PorCobrar, { periodosDePorCobrar } from '../componentes/inyecciones/PorCobrar';
 import Ajustes from '../componentes/inyecciones/Ajustes';
+import { guardar as dejar } from '../componentes/comercial/elegido';
 
 const factura = (c) => String(c || '').replace(/^0+/, '');
 const fechaCorta = (f) => fechaNumerica(String(f || '').slice(0, 10), { anio: false });
@@ -203,11 +206,17 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
   const [error, setError] = useState(null);
   const [fijados, setFijados] = useState([]);
   const filtros = useMemo(() => filtrosEfectivosDeBitacora(fijados, busqueda), [fijados, busqueda]);
+  const { hasPermission } = useAuth();
+  const puedeAsignarFicha = hasPermission('inyecciones_dosis');
+  // Al volver de asignar la ficha se relee (no en la primera vez: ya cargó).
+  const [vuelta, setVuelta] = useState(0);
+  const primera = useRef(true);
+  useFocusEffect(useCallback(() => { if (primera.current) primera.current = false; else setVuelta((v) => v + 1); }, []));
   const todoElHistorial = filtros.length > 0 && periodo === '30';
   const [desde, hasta] = todoElHistorial ? [null, null] : rangoDeBitacora(periodo, libre);
   const pedir = useCallback((offset) => buscarBitacoraDeAplicaciones({
     sala: sala || null, desde, hasta, filtros, estado, limite: POR_PAGINA, offset,
-  }), [sala, desde, hasta, filtros, estado]);
+  }), [sala, desde, hasta, filtros, estado, vuelta]); // eslint-disable-line react-hooks/exhaustive-deps -- `vuelta` relee al volver
   useEffect(() => {
     let vivo = true;
     setRes(null);
@@ -313,9 +322,23 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                 {[f.correlativo ? `Factura ${factura(f.correlativo)}` : null, f.sala, formatMoney(f.precio), fechaHora12(f.cobrada_at)].filter(Boolean).join(' · ')}
               </Text>
+              {f.venta_sala || f.asignada_a_mano || f.sin_ficha ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {f.venta_sala ? <Pildora texto={`Venta de ${f.venta_sala}`} color={MARCA.azulClaro} /> : null}
+                  {f.asignada_a_mano ? <Pildora texto="Asignada después" color="#8E8E93" /> : null}
+                  {f.sin_ficha ? <Pildora texto="Sin ficha · no sale en su app" color={MARCA.ambar} /> : null}
+                </View>
+              ) : null}
               <Persona nombre={f.cobrada_por} id={f.cobrada_por_id} rol="Cobró" />
               {f.vendedor && f.vendedor_id !== f.cobrada_por_id ? <Persona nombre={f.vendedor} id={f.vendedor_id} rol="Vendió" /> : null}
               {f.estado === 'APLICADA' ? <Persona nombre={f.aplicada_por} id={f.aplicada_por_id} rol={`Aplicó${f.aplicada_en ? ` en ${f.aplicada_en}` : ''} ·`} /> : null}
+              {f.sin_ficha && puedeAsignarFicha ? (
+                <Tocable accessibilityRole="button" hitSlop={6}
+                  onPress={() => { Haptics.selectionAsync().catch(() => {}); dejar('inyeccion-ficha', f); router.push('/inyeccion-ficha'); }}
+                  style={{ alignSelf: 'flex-start', minHeight: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: `${MARCA.azul}2E`, marginTop: 4 }}>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Asignar a un cliente</Text>
+                </Tocable>
+              ) : null}
             </View>
           </Vidrio>
         </View>

@@ -22,6 +22,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { nombreDeAutor, recorteDeMensaje } from '@nucleo/utils/chatClientes';
+import { guardarBorrador, leerBorrador } from '@nucleo/utils/chatBorradores';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
@@ -141,7 +142,10 @@ async function tomarFoto(desdeCamara) {
 }
 
 export default function Compositor({ conversacion, onEnviar, respondiendoA = null, onQuitarRespuesta, equipo, cliente }) {
-  const [texto, setTexto] = useState('');
+  // Arranca con lo que quedó escrito en esta conversación (`chatBorradores`,
+  // núcleo, el mismo del portal): salir del hilo no borra lo escrito ni la
+  // foto, el producto o la oferta adjuntos (2026-10-22).
+  const [texto, setTexto] = useState(() => leerBorrador(conversacion.id)?.texto ?? '');
   const ultimoAviso = useRef(0);
   const escribir = (valor) => {
     setTexto(valor);
@@ -152,8 +156,9 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
     // Una señal efímera: si falla, no se le dice nada a quien escribe.
     Promise.resolve(marcarEscribiendo(conversacion.id)).catch(() => {});
   };
-  const [foto, setFoto] = useState(null);
-  const [adjunto, setAdjunto] = useState(null);
+  const [foto, setFoto] = useState(() => leerBorrador(conversacion.id)?.foto ?? null);
+  const [adjunto, setAdjunto] = useState(() => leerBorrador(conversacion.id)?.adjunto ?? null);
+  useEffect(() => { guardarBorrador(conversacion.id, { texto, foto, adjunto }); }, [conversacion.id, texto, foto, adjunto]);
   const [hoja, setHoja] = useState(null);
   const [grabando, setGrabando] = useState(false);
 

@@ -18,6 +18,7 @@
 
 import { formatearNit, formatearNrc } from './nitUtils';
 import { fechaNumerica } from './fecha';
+import { hora12 } from './hora';
 import { tokenMatch } from './searchUtils';
 import { debitoDeConsumidor } from './librosIva';
 
@@ -77,6 +78,17 @@ export const csvRetencionVentas = (filas) => {
         ]]),
     ];
 };
+// ── Consumidor final después de las 6:00 p. m. (2026-10-19) ─────────────────
+// La evidencia de los COF de la noche que no se envían a Hacienda, documento
+// por documento (`get_cof_sin_envio_mh` con detalle). La exportan la web
+// (`CofNocheSinEnvio`) y la app: el mismo encabezado y las mismas filas.
+export const CSV_COF_NOCHE_HEADERS = ['FECHA', 'HORA', 'SUCURSAL', 'CORRELATIVO', 'CLIENTE', 'SUBTOTAL', 'IVA', 'TOTAL', 'SELLO DE HACIENDA'];
+export const csvCofNoche = (detalle) => (detalle || []).map(d => [
+    fmtFecha(d.fecha), hora12(d.hora), d.sucursal, d.correlativo, d.cliente || '',
+    Number(d.subtotal || 0).toFixed(2), Number(d.iva || 0).toFixed(2), Number(d.total || 0).toFixed(2),
+    d.con_sello ? 'SI' : 'NO',
+]);
+
 export const CSV_RET_VENTAS_HEADERS = ['N.', 'FECHA', 'CLIENTE', 'NRC', 'NIT', 'TIPO',
     'DOCUMENTO', 'NUMERO DE CONTROL', 'CODIGO DE GENERACION', 'SELLO',
     'BASE', 'IVA RETENIDO', 'TOTAL', 'ESTADO'];

@@ -9,7 +9,7 @@ import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { familiasDisponibles } from '@nucleo/constants/familiasOperativas';
-import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
+import { rotuloDeSolicitud } from '@nucleo/store/slices/requestsSlice';
 import { nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 import { Chip } from '../componentes/inicio/Widget';
 import Vidrio from '../componentes/Vidrio';
@@ -68,7 +68,7 @@ export default function NuevaSolicitud() {
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Personales</Text>
             <Vidrio radio={22}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {PERSONALES.map((t, i) => (
-                <Opcion key={t} primero={!i} icono={nombreDelIconoDeTipo(t)} color={MARCA.violeta} titulo={REQUEST_TYPES[t]?.label ?? t}
+                <Opcion key={t} primero={!i} icono={nombreDelIconoDeTipo(t)} color={MARCA.violeta} titulo={rotuloDeSolicitud(t)}
                   onPress={() => router.push({ pathname: '/nueva/personal', params: { tipo: t } })} />
               ))}
             </View></Vidrio>

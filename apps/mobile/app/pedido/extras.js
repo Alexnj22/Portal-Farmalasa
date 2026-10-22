@@ -145,13 +145,16 @@ export default function ExtrasDelPedido() {
               <View key={e.id} style={{ gap: 8, paddingVertical: 8, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{e.nombre}</Text>
-                  {!e.bloqueado ? (
+                  {/* Se puede QUITAR mientras Bodega no contestó la propuesta
+                      (`retirable`, núcleo; la base aplica la misma regla):
+                      un extra anotado con el producto equivocado no queda trabado. */}
+                  {!e.bloqueado || e.retirable !== false ? (
                     <Pressable onPress={() => quitar(i)} hitSlop={8} style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '600' }}>Quitar</Text>
                     </Pressable>
                   ) : null}
                 </View>
-                {e.bloqueado ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${e.fQty} · ya tiene una propuesta en curso.`}</Text> : (
+                {e.bloqueado ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{e.retirable === false ? `${e.fQty} · Bodega ya contestó: no se puede quitar.` : `${e.fQty} · ya tiene una propuesta en curso; todavía se puede quitar.`}</Text> : (
                   <>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                       {(opciones[e.erp_product_id] ?? []).map((o) => (

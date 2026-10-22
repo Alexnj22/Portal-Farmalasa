@@ -56,7 +56,7 @@ import { getStoragePathFromUrl } from '@nucleo/utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
 import { DOS_CARAS, COMPARTIBLES, VARIAS_HOJAS, SIN_VENCIMIENTO, ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado,
-    POR_ANIO_CALENDARIO, vencimientoDelAnio, anioDelVencimiento, anioQueCubre, estadoDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+    POR_ANIO_CALENDARIO, vencimientoDelAnio, anioDelVencimiento, anioQueCubre, estadoDelDocumento, carasConElVencimientoDelDui } from '@nucleo/utils/documentosDelExpediente';
 import TarjetaDeDocumento from './TarjetaDeDocumento';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '@nucleo/utils/economicDependents';
 import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
@@ -1270,11 +1270,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
              * lector —o, si confirmó lo que había, la ficha—, no el archivo
              * anterior: ver el reemplazo en `handleDocFile`. */
             const vence = next.dui_fecha_vencimiento || null;
-            if (vence) {
-                next.employee_documents = (prev.employee_documents || []).map(d =>
-                    (CATEGORIAS_DE_DUI.has(d?.category) && d.url && d.expiry_date !== vence
-                        ? { ...d, expiry_date: vence } : d));
-            }
+            if (vence) next.employee_documents = carasConElVencimientoDelDui(prev.employee_documents || [], vence);
             return next;
         });
         /* Cuántos campos trajo el lector, de verdad.

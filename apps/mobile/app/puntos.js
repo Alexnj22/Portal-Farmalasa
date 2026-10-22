@@ -13,6 +13,12 @@
 //   · Avisos: lo que hay que revisar (canjes sin saldo, anulaciones con puntos
 //     gastados, movimientos fuera de lo normal).
 //
+//   · Niveles (2026-10-22, del portal): los dos interruptores del programa,
+//     el tope del raspable, cada nivel y cada rango de mayoreo con sus premios
+//     del raspable, y el historial de cambios (`componentes/puntos/Niveles`).
+//   · Premios: los premios del raspable que no son puntos —por entregar— y
+//     los regalos promocionales con su inventario y envíos
+//     (`componentes/puntos/Premios`).
 //   · Por asignar: las cuentas del sistema anterior que no pasaron solas; tocar
 //     una abre `asignar-cuenta`. En Avisos, arriba, los traspasos de puntos de
 //     los cambios de cliente que quedaron a medias (reintentar o resolver a mano).
@@ -24,9 +30,11 @@ import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { apartarPremio, buscarClientePorTarjeta, entregarPremio, fetchAvisosDePuntos, pedirPremio, fetchClientesConPuntos, fetchPremiosPorEntregar, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
+import { buscarClientePorTarjeta, fetchAvisosDePuntos, fetchClientesConPuntos, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
+import { entregarPremioPorCodigo } from '../componentes/puntos/entregarPremio';
+import Niveles from '../componentes/puntos/Niveles';
+import Premios from '../componentes/puntos/Premios';
 import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
-import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { leerEntradaDeTarjeta, NOMBRE_DE_ENTRADA } from '@nucleo/utils/expedienteDelCliente';
 import Escaner from '../componentes/Escaner';
 import { avisoDePuntos, dolaresDePuntos, puntosTexto } from '@nucleo/utils/puntosTexto';
@@ -58,9 +66,8 @@ function EscanearTarjeta() {
   const [abierto, setAbierto] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [candidatos, setCandidatos] = useState(null);
-  const { user, hasPermission } = useAuth();
+  const { user } = useAuth();
   const miSala = user?.branchId ?? user?.branch_id ?? null;
-  const administra = hasPermission('puntos_tab_niveles', 'can_edit');
   const sucursales = useStaffStore((s) => s.branches);
   const nombreSala = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? 'otra sucursal';
 
@@ -68,44 +75,7 @@ function EscanearTarjeta() {
   // cliente, confirmar, y queda entregado —el producto se descarga del
   // inventario de la sala—. La misma regla que el portal: sólo en la sala
   // donde el cliente lo retira, salvo quien administra los niveles.
-  const entregarEscaneado = async (codigo) => {
-    try {
-      // Se retira en CUALQUIER sucursal (2026-10-20): entrega la que escanea.
-      const lista = await fetchPremiosPorEntregar(miSala, codigo, true);
-      const p = (lista ?? []).find((x) => x.codigo === codigo);
-      const no = !p ? `No hay un premio ${codigo}.`
-        : p.estado === 'ENTREGADO' ? 'Ese premio ya se entregó.'
-          : p.estado === 'VENCIDO' ? 'Ese premio ya venció.'
-            : p.tipo === 'promocional' && p.reserva_branch && Number(p.reserva_branch) !== Number(miSala)
-              ? `Ese regalo está apartado para el cliente en ${nombreSala(p.reserva_branch)}: se retira allá.`
-              : null;
-      if (no) { Alert.alert('No se puede entregar', no); return; }
-      // Un regalo que aquí no hay: se dice dónde hay y el cliente elige.
-      if (p.tipo === 'promocional' && p.hay_en_sala === false) {
-        const otras = (p.hay_en ?? []).filter((x) => Number(x.branch_id) !== Number(miSala));
-        const hacer = async (fn, sala, ok) => {
-          trabajando('Guardando…');
-          try { await fn(p.id, sala); listo(ok); } catch (e) { fallo('No se pudo', mensajeAmigable(e)); }
-        };
-        Alert.alert(`Aquí no hay ${p.nombre}`, 'Pregúntale al cliente qué prefiere. Se le avisa en la app.', [
-          ...otras.slice(0, 2).map((x) => ({ text: `Apartarlo en ${nombreSala(x.branch_id)}`, onPress: () => hacer(apartarPremio, x.branch_id, 'Regalo apartado') })),
-          { text: 'Pedirlo para esta sucursal', onPress: () => hacer(pedirPremio, miSala, 'Regalo pedido') },
-          { text: 'Cancelar', style: 'cancel' },
-        ]);
-        return;
-      }
-      const cuantos = Number(p.cantidad) > 1 ? `${p.cantidad} × ` : '';
-      Alert.alert(`¿Entregar ${cuantos}${p.nombre}?`,
-        `Premio ${p.codigo} de ${p.cliente?.nombre ?? 'el cliente'}. ${p.tipo === 'producto' ? 'Se descarga del inventario de esta sucursal.' : 'Sale del inventario de regalos de esta sucursal.'} Confirma con su documento que es la persona.`,
-        [{ text: 'Cancelar', style: 'cancel' }, { text: 'Entregar', onPress: async () => {
-          trabajando('Entregando…');
-          try { await entregarPremio(p.id, miSala); listo('Premio entregado', `${p.codigo} · ${p.nombre}`); }
-          catch (e) { fallo('No se pudo entregar', mensajeAmigable(e)); }
-        } }]);
-    } catch (e) {
-      Alert.alert('No se pudo buscar el premio', mensajeAmigable(e));
-    }
-  };
+  const entregarEscaneado = (codigo) => entregarPremioPorCodigo({ codigo, sala: miSala, nombreSala });
 
   // `false` deja el escáner abierto: el código no era una tarjeta conocida.
   const alEscanear = async (codigo) => {
@@ -195,14 +165,15 @@ function Consulta({ busqueda, orden, dir, masRef }) {
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
                   {[c.dui, c.telefono, c.ultima_acumulacion ? `acumuló ${fechaTexto(c.ultima_acumulacion, { day: 'numeric', month: 'short' })}` : null].filter(Boolean).join(' · ') || 'Sin datos de contacto'}
                 </Text>
+                {/* Historial, apagado a propósito (2026-10-15 en el portal): «7,003
+                    acumulados» junto al saldo se leía como lo que puede canjear. */}
                 <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-                  <Text style={{ color: COLOR_ACUMULADO, fontWeight: '700' }}>{`+${puntosTexto(c.acumulados)}`}</Text>{' acumulados · '}
-                  <Text style={{ color: COLOR_CANJEADO, fontWeight: '700' }}>{`−${puntosTexto(c.canjeados)}`}</Text>{' canjeados'}
+                  {`${puntosTexto(c.acumulados)} ganados en total · ${puntosTexto(c.canjeados)} canjeados`}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: Number(c.saldo) ? colorSistema.texto : colorSistema.texto2, fontSize: 17, fontWeight: '800' }}>{dolaresDePuntos(c.saldo)}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${puntosTexto(c.saldo)} pts`}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${puntosTexto(c.saldo)} pts · puede canjear`}</Text>
               </View>
             </View>
           </Vidrio>
@@ -266,6 +237,11 @@ export default function Puntos() {
     hasPermission('puntos_tab_consulta', 'can_view') && { id: 'consulta', label: 'Consulta' },
     hasPermission('puntos_tab_avisos', 'can_view') && { id: 'avisos', label: 'Avisos' },
     hasPermission('puntos_tab_por_asignar', 'can_view') && { id: 'por_asignar', label: 'Por asignar' },
+    // Los niveles, el raspable y los beneficios del mayorista (2026-10-19 en
+    // el portal): sólo administración. Los premios que no son puntos y los
+    // regalos promocionales: el mismo permiso que Consulta, que es quien atiende.
+    hasPermission('puntos_tab_niveles', 'can_view') && { id: 'niveles', label: 'Niveles' },
+    hasPermission('puntos_tab_consulta', 'can_view') && { id: 'premios', label: 'Premios' },
   ].filter(Boolean), [hasPermission]);
   const [elegida, setPestana] = useState(null);
   const pestana = elegida && pestanas.some((p) => p.id === elegida) ? elegida : pestanas[0]?.id;
@@ -296,8 +272,8 @@ export default function Puntos() {
     <>
       <Stack.Screen options={{
         ...BARRA_NATIVA, title: 'Puntos', headerLargeTitle: true,
-        headerSearchBarOptions: pestana === 'consulta' || pestana === 'por_asignar' ? {
-          placeholder: 'Nombre, DUI o teléfono', hideWhenScrolling: false,
+        headerSearchBarOptions: pestana === 'consulta' || pestana === 'por_asignar' || pestana === 'premios' ? {
+          placeholder: pestana === 'premios' ? 'Código del premio, cliente o DUI' : 'Nombre, DUI o teléfono', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         } : undefined,
       }} />
@@ -311,6 +287,8 @@ export default function Puntos() {
           : pestana === 'resumen' ? <Resumen key={llave} onIrA={(p) => { if (pestanas.some((x) => x.id === p)) setPestana(p); }} />
             : pestana === 'consulta' ? (<><EscanearTarjeta /><Consulta key={llave} busqueda={busqueda} orden={ordenCol} dir={ordenDir} masRef={masConsulta} /></>)
               : pestana === 'por_asignar' ? <PorAsignar key={llave} busqueda={busqueda} motivo={motivo} />
+                : pestana === 'niveles' ? <Niveles key={llave} puedeEditar={hasPermission('puntos_tab_niveles', 'can_edit')} />
+                : pestana === 'premios' ? <Premios key={llave} busqueda={busqueda} puedeAdministrar={hasPermission('puntos_tab_niveles', 'can_edit')} />
                 : (<><Traspasos key={`t${llave}`} puedeResolver={hasPermission('puntos_ajustar', 'can_view')} /><Avisos key={llave} /></>)}
       </ScrollView>
     </>

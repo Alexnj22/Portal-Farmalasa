@@ -56,6 +56,7 @@ import { correrMes, diasEntre, etiquetaMes, fechaNumerica, fechaTexto, hoySV, me
 import {
     conteoDeObservaciones, esSolventable, metaObs, NON_CASH_TYPES, OBSERVACIONES, diasQuedanDelMes, observacionesPendientes, observacionesSolventadas, resumenDeRegularizacion, resumenDeRegularizarUna, sinResolver,
     claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
+    GRACIA_SELLO_DIAS, numerosFaltantes,
 } from '@nucleo/utils/colasDeFacturacion';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
@@ -1063,12 +1064,10 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
 // que el sello de Hacienda todavía no llegó. Un sello presente pero corrupto ya
 // no entra acá — no se resuelve esperando, así que vive en Observaciones.
 //
-// El mismo número de gracia que usa el RPC de Observaciones para el código de
-// generación: Hacienda tarda hasta 2 días en emitir sello y código, que llegan
-// juntos. Antes de eso una factura sin sello no tiene nada de raro. Desde que
-// `SIN_SELLO_VENCIDO` salió de aquel catálogo, esta pestaña es la única que
-// marca el vencimiento — de ahí el badge en warning de la fila de fecha.
-const GRACIA_SELLO_DIAS = 2;
+// La gracia del sello (2 días) es del núcleo: `GRACIA_SELLO_DIAS` en
+// `colasDeFacturacion`, la misma con que la app cuenta «Vencidas». Desde que
+// `SIN_SELLO_VENCIDO` salió del catálogo de Observaciones, esta pestaña es la
+// única que marca el vencimiento — de ahí el badge en warning de la fecha.
 
 function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, recargaRef, onCuenta }) {
     const employees = useStaff((state) => state.employees);
@@ -1622,7 +1621,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros,
 
     // Cuántos NÚMEROS faltan, no cuántos huecos: un salto de 1 y uno de 40
     // contaban igual en la tarjeta.
-    const faltantes = pendingGaps.reduce((a, g) => a + (Number(g.gap_count) || 0), 0);
+    const faltantes = numerosFaltantes(pendingGaps);
 
     useEffect(() => {
         if (!loading) onCuenta?.(pendingGaps.length + activeNulls.length);

@@ -74,3 +74,19 @@ export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador }) 
     };
     return insertMovimientoInventario(payload, { lineas: 1, correccion_de_factor: true });
 }
+
+// ── Lo que se le dice a quien revisa (los textos de la web y de la app) ─────
+
+const QUE_DICE = {
+    texto:      (s) => `El texto de la presentación dice ${s.dice} y el factor ${s.catalogo}.`,
+    existencia: (s) => `La existencia dice ${s.dice} por ${String(s.presentacion ?? '').toLowerCase()} y el catálogo ${s.catalogo}.`,
+    venta:      (s) => `${s.filas} ventas de los últimos 30 días entraron con ${s.dice} por ${String(s.presentacion ?? '').toLowerCase()} y el catálogo dice ${s.catalogo}.`,
+};
+
+/** Por qué un factor no cuadra, en una frase. */
+export const textoDelSospechoso = (s) => (QUE_DICE[s?.tipo] ?? QUE_DICE.texto)(s);
+
+/** El MIN·MAX que se convirtió solo en un cambio: «Salud 1 4·9 → 1·3, …». */
+export const minmaxDelCambio = (resultado) => (Array.isArray(resultado?.minmax) ? resultado.minmax : [])
+    .map(m => `${m.sala} ${m.antes?.[0] ?? '—'}·${m.antes?.[1] ?? '—'} → ${m.ahora?.[0] ?? '—'}·${m.ahora?.[1] ?? '—'}`)
+    .join(', ');

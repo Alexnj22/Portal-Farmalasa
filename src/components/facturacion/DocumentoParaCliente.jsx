@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Download, Loader2, Mail, FileText } from 'lucide-react';
 import Button from '../common/Button';
 import PortalInput from '../common/PortalInput';
-import { entregarDteAlCliente } from '@nucleo/data/facturacion';
+import { avisoDeEntregaDeDte, correoDelClienteValido, entregarDteAlCliente } from '@nucleo/data/facturacion';
 
 /* ─── El documento electrónico, para el cliente que lo pide (2026-10-19) ──────
    Directo, sin solicitud: el cliente está enfrente. Si la venta no tiene sello
@@ -19,7 +19,7 @@ export default function DocumentoParaCliente({ inv }) {
   const [correo, setCorreo] = useState('');
   const [trabajando, setTrabajando] = useState(null);   // 'descargar' | 'correo'
   const [aviso, setAviso] = useState(null);             // { ok, texto }
-  const correoOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo.trim());
+  const correoOk = correoDelClienteValido(correo);
 
   const pedir = async (accion) => {
     setTrabajando(accion);
@@ -27,8 +27,7 @@ export default function DocumentoParaCliente({ inv }) {
     const r = await entregarDteAlCliente({ accion, invoiceId: inv.id, correo: accion === 'correo' ? correo.trim() : null });
     setTrabajando(null);
     if (!r.ok) { setAviso({ ok: false, texto: r.error }); return; }
-    const envio = r.se_envio ? ' Se envió a Hacienda en este momento.' : '';
-    setAviso({ ok: true, texto: accion === 'correo' ? `Enviado a ${correo.trim()}.${envio}` : `Documento descargado.${envio}` });
+    setAviso({ ok: true, texto: avisoDeEntregaDeDte({ accion, correo, seEnvio: r.se_envio }) });
     if (accion === 'correo') setPorCorreo(false);
   };
 

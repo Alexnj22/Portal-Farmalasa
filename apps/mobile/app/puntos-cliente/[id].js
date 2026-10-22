@@ -11,8 +11,12 @@
 // reservas, encargos, créditos, inyecciones, tratamientos y compras. Lo mismo
 // que la pestaña «Escanear» del portal; abrirlo queda en la bitácora.
 //
-// Abajo, el código de acceso del cliente (`componentes/puntos/CodigoDeAcceso`)
-// y dar o quitar puntos a mano (`componentes/puntos/AjustarPuntos`).
+// Abajo, el código de acceso del cliente (`componentes/puntos/CodigoDeAcceso`),
+// dar o quitar puntos a mano (`componentes/puntos/AjustarPuntos`) y unir esta
+// cuenta con otra de la misma persona (`componentes/puntos/UnirCuentas`,
+// 2026-10-15 en el portal). Una cuenta unida a otra ya no lleva saldo: se
+// ajusta y se une desde esa. Lo que se puede canjear va separado del
+// historial: «ganados en total» no es saldo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -37,6 +41,7 @@ import Grafica, { BarraDePartes } from '../../componentes/metas/Graficas';
 import { COLOR_ACUMULADO, COLOR_CANJEADO, ejeDe, etiquetaMes } from '../../componentes/puntos/Resumen';
 import CodigoDeAcceso from '../../componentes/puntos/CodigoDeAcceso';
 import AjustarPuntos from '../../componentes/puntos/AjustarPuntos';
+import UnirCuentas, { AvisoDeUniones, useUnionesDeCuenta } from '../../componentes/puntos/UnirCuentas';
 import VentaDelAviso from '../../componentes/puntos/VentaDelAviso';
 import Expediente from '../../componentes/puntos/Expediente';
 import { anotar } from '@nucleo/data/audit';
@@ -63,6 +68,9 @@ export default function PuntosCliente() {
   const cargar = useCallback(async () => {
     try { setD(await fetchPuntosCliente(Number(id))); setError(null); } catch (e) { setError(mensajeAmigable(e)); }
   }, [id]);
+  // Las uniones se releen con cada lectura de la cuenta (después de un ajuste o una unión).
+  const { fusionadaEn, recibidas } = useUnionesDeCuenta(Number(id), d);
+  const [uniendo, setUniendo] = useState(false);
   useEffect(() => { cargar(); }, [cargar]);
   // El expediente, sólo cuando se escaneó. Una vez por apertura: recargar el
   // saldo no vuelve a anotar en la bitácora que se miró al cliente.
@@ -153,7 +161,8 @@ export default function PuntosCliente() {
                     <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{hasPermission('clientes', 'can_edit') ? 'Editar cliente' : 'Ver ficha'}</Text>
                   </Pressable>
                 ) : null}
-                <Text style={{ color: colorSistema.texto, fontSize: 40, fontWeight: '800', marginTop: 6 }}>{dolaresDePuntos(saldo)}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', marginTop: 6 }}>Puede canjear hoy</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 40, fontWeight: '800' }}>{dolaresDePuntos(saldo)}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${puntosTexto(saldo)} puntos de descuento`}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                   {d.cliente?.acumula === false ? <Pildora texto="Esta ficha no acumula" color={colorSistema.texto2} />
@@ -162,19 +171,22 @@ export default function PuntosCliente() {
                 </View>
                 {partes.length ? (
                   <View style={{ gap: 6, marginTop: 8 }}>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{`De los ${puntosTexto(cuenta.ganados)} acumulados`}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{`Qué pasó con los ${puntosTexto(cuenta.ganados)} que ha ganado`}</Text>
                     <BarraDePartes partes={partes} total={cuenta.ganados} />
                   </View>
                 ) : null}
               </View>
             </Vidrio>
+            <AvisoDeUniones fusionadaEn={fusionadaEn} recibidas={recibidas} />
             {aviso ? <VentaDelAviso aviso={aviso} /> : null}
             {errorExp ? <Aviso tono="freno" texto={errorExp} /> : null}
             {como && !exp && !errorExp ? <ActivityIndicator /> : null}
             {exp ? <Expediente exp={exp} /> : null}
             <Grilla celdas={[
-              { rotulo: 'Acumulados', valor: `${puntosTexto(cuenta.ganados)}\n${dolaresDePuntos(cuenta.ganados)}` },
-              { rotulo: 'Canjeados', valor: `${puntosTexto(reparto.canjeado)}\n${dolaresDePuntos(reparto.canjeado)}` },
+              // Historial, no saldo (2026-10-15 en el portal): sin dólares en lo
+              // ganado, el dinero sólo va en lo que puede canjear.
+              { rotulo: 'Ganados en total', valor: `${puntosTexto(cuenta.ganados)}\nhistorial, no es saldo` },
+              { rotulo: 'Ya canjeados', valor: `${puntosTexto(reparto.canjeado)}\n${dolaresDePuntos(reparto.canjeado)} descontados` },
               { rotulo: 'Próximo vencimiento', valor: `${proximo ? puntosTexto(proximo.puntos) : '—'}\n${proximo ? fechaTexto(proximo.vence_el, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Nada por vencer'}` },
               { rotulo: 'Última compra', valor: `${ultimaCompra ? fechaTexto(ultimaCompra.fecha, { day: 'numeric', month: 'short' }) : '—'}\n${ultimaCompra ? (d.salas?.[ultimaCompra.sucursal] ?? '') : 'Sin compras'}` },
             ]} />
@@ -225,8 +237,14 @@ export default function PuntosCliente() {
               <CodigoDeAcceso customerId={d.cliente.id} nombre={d.cliente.nombre || ''} telefono={d.cliente.telefono}
                 puedeEditar={hasPermission('clientes', 'can_edit')} />
             ) : null}
-            {d?.cliente?.id != null && hasPermission('puntos_ajustar', 'can_view') ? (
-              <AjustarPuntos customerId={d.cliente.id} nombre={d.cliente.nombre || ''} saldo={saldo} onHecho={cargar} />
+            {d?.cliente?.id != null && hasPermission('puntos_ajustar', 'can_view') && !fusionadaEn ? (
+              <>
+                <AjustarPuntos customerId={d.cliente.id} nombre={d.cliente.nombre || ''} saldo={saldo} onHecho={cargar} />
+                {uniendo ? (
+                  <UnirCuentas customerId={d.cliente.id} nombre={d.cliente.nombre || ''} onCerrar={() => setUniendo(false)}
+                    onHecho={() => { setUniendo(false); cargar(); }} />
+                ) : <BotonGrande texto="Unir con otra cuenta" borde color={MARCA.azulClaro} onPress={() => setUniendo(true)} />}
+              </>
             ) : null}
           </>
         ) : null}

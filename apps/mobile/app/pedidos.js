@@ -17,6 +17,11 @@
 // `pedido/rutas`; finalizar (las cajas y hojas), el papel, el reenvío y armar
 // la ruta, desde la ficha. Las reglas de despacho, en `pedido/reglas`.
 //
+// «Reportar un error» (2026-10-21, como el portal): durante 2 días desde que
+// la sala cerró la recepción (`puedeReportarError`, núcleo; Supervisión sin
+// plazo) la tarjeta vuelve a abrir `pedido/recibir` — corregir lo ya contado
+// y anotar un extra. El plazo lo decide la base.
+//
 // Como el tablero del portal: buscador por número (y nota), la lista se
 // actualiza sola cuando cambia un pedido (`escucharCambios`) y, para una sala,
 // un aviso cuando Bodega le manda un pedido nuevo.
@@ -28,7 +33,8 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchPedidosEnCurso } from '@nucleo/data/pedidos';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { ESTADOS_DEL_TABLERO, filtrarPedidos, pedidosPorSala, rangoDeMes, tieneObservacion } from '@nucleo/utils/tableroDePedidos';
+import { ESTADOS_DEL_TABLERO, filtrarPedidos, pedidosPorSala, puedeReportarError, rangoDeMes, tieneObservacion } from '@nucleo/utils/tableroDePedidos';
+import { esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
 import { BRANCH_A_ERP, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -50,7 +56,7 @@ const PERIODOS = [
   { id: 'todo', label: 'Todo', rango: () => null },
 ];
 
-function Tarjeta({ r, todas, puede }) {
+function Tarjeta({ r, todas, puede, miErp, esSupervision }) {
   const etapa = etapaDeLaTarjeta(r);
   const [rotulo, color] = ETAPA[etapa] ?? [etapa, MARCA.azulClaro];
   const abrir = (pathname) => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname, params: { pedidoId: String(r.pedido_id), sucId: String(r.erp_sucursal_id), numero: String(r.numero ?? '') } }); };
@@ -83,6 +89,10 @@ function Tarjeta({ r, todas, puede }) {
           ) : null}
           {puede && etapa === 'transito' ? <BotonGrande texto="Confirmar que llegó" color={MARCA.azul} onPress={() => abrir('/pedido/llegada')} /> : null}
           {puede && etapa === 'contando' ? <BotonGrande texto="Contar lo que llegó" color={MARCA.verde} onPress={() => abrir('/pedido/recibir')} /> : null}
+          {puede && etapa === 'erp' && r.pedido_status !== 'anulado' && (esSupervision || (miErp != null && Number(miErp) === Number(r.erp_sucursal_id)))
+            && puedeReportarError({ recibidoAt: r.recibido_erp_at, pendientes: 0, esSupervision }) ? (
+            <BotonGrande texto="Reportar un error de la recepción" color={MARCA.ambar} borde onPress={() => abrir('/pedido/recibir')} />
+          ) : null}
           {puede && (r.reenvios_historial ?? []).some((c) => c.sent_at && !c.arrived_at) ? (
             <BotonGrande texto="Llegó el reenvío" color={MARCA.azul} borde onPress={() => abrir('/pedido/reenvio')} />
           ) : null}
@@ -100,6 +110,7 @@ export default function Pedidos() {
   const verRutas = hasPermission('pedidos_tab_rutas');
   const verReglas = hasPermission('pedidos_tab_reglas');
   const miErp = BRANCH_A_ERP[Number(salaDelUsuario(user))] ?? null;
+  const esSupervision = esCargoDeSupervision(user?.rango);
   const [vista, setVista] = useState('pedidos');
   const [salaElegida, setSala] = useState('todas');
   const [estado, setEstado] = useState('all');
@@ -213,7 +224,7 @@ export default function Pedidos() {
               </View>
             ) : null}
             {filas == null ? null : visibles.length
-              ? visibles.map((r) => <Tarjeta key={`${r.pedido_id}-${r.erp_sucursal_id}`} r={r} todas={todas} puede={puede} />)
+              ? visibles.map((r) => <Tarjeta key={`${r.pedido_id}-${r.erp_sucursal_id}`} r={r} todas={todas} puede={puede} miErp={miErp} esSupervision={esSupervision} />)
               : (
                 <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 50, fontSize: 15 }}>
                   {q ? `Ningún pedido coincide con «${q}».` : estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}

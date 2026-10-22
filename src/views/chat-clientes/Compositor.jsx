@@ -23,7 +23,7 @@ import {
 } from '@nucleo/data/chatClientes';
 import { FranjaDeRespuesta } from './AccionesDeMensaje';
 import useGrabadora from './useGrabadora';
-import { guardarBorrador, leerBorrador } from './borradores';
+import { guardarBorrador, leerBorrador } from '@nucleo/utils/chatBorradores';
 
 // El cuadro para responder: texto, una foto, una respuesta rápida guardada, o
 // un producto / una oferta vigente que el cliente puede tocar en la app.

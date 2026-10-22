@@ -10,7 +10,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, paraDecidir } from '@nucleo/data/solicitudDeAviso';
 import { decidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
-import { fallo, listo, trabajando } from '../Progreso';
+import { fallo, listo, listoODecirAviso, trabajando } from '../Progreso';
 
 // El store deja el porqué de un «no» en su única ranura de toast (la app no
 // dibuja toasts): se lee de ahí para decirlo.
@@ -35,7 +35,7 @@ export async function decidirConAjustes({ clave, modo, nota = '', aceptadas = nu
   if (!req) { fallo('Ya no está', 'Esta solicitud ya no está disponible.'); return false; }
   if (req.status && req.status !== 'PENDING') { fallo('Ya estaba resuelta', 'Alguien más la decidió mientras tanto.'); return false; }
   const r = await decidirSolicitud({ req, modo, nota: nota.trim(), aceptadas, userId });
-  if (r.ok) { listo(modo === 'approve' ? 'Aprobada' : 'Rechazada', r.mensaje); return true; }
+  if (r.ok) { listoODecirAviso(r, modo === 'approve' ? 'Aprobada' : 'Rechazada'); return true; }
   fallo('No se pudo', (r.yaAvisado && ultimoMotivo()) || r.error);
   return false;
 }

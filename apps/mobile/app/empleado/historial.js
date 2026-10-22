@@ -22,7 +22,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { EVENT_TYPES } from '@nucleo/data/constants';
 import { fetchEmployeeTimeline } from '@nucleo/data/employees';
 import { fetchEmployeeApprovalRequestsDetail } from '@nucleo/data/requests';
-import { REQUEST_STATUS, REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
+import { REQUEST_STATUS, rotuloDeSolicitud } from '@nucleo/store/slices/requestsSlice';
 import { ausenciasFiltradas, diasDeAusencia, diasDeSeguro, eventoVigente, historialDeFicha, varianteDeEvento } from '@nucleo/utils/historialDeFicha';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
@@ -97,7 +97,7 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
       if (!motivo?.trim()) { fallo('Falta el motivo', 'Escribe por qué se cancela.'); return; }
       trabajando('Cancelando…');
       const ok = await Promise.resolve(anular(ev.eventoId, motivo.trim())).catch(() => false);
-      if (ok) { listo('Evento cancelado', EVENT_TYPES[ev.type]?.label || ev.type); onCambio(); } else fallo('No se canceló', 'Intenta de nuevo.');
+      if (ok) { listo('Evento cancelado', EVENT_TYPES[ev.type]?.label || 'Movimiento'); onCambio(); } else fallo('No se canceló', 'Intenta de nuevo.');
     } },
   ], 'plain-text');
 
@@ -106,7 +106,7 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
       <Vidrio radio={18}>
         <View style={{ padding: 12, gap: 6 }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-            <Pildora texto={ev.category && ev.category !== ev.type ? ev.category : (EVENT_TYPES[ev.type]?.label || ev.category || ev.type)} color={colorDeVariante(varianteDeEvento(ev.type, EVENT_TYPES))} />
+            <Pildora texto={ev.category && ev.category !== ev.type ? ev.category : (EVENT_TYPES[ev.type]?.label || ev.category || 'Movimiento')} color={colorDeVariante(varianteDeEvento(ev.type, EVENT_TYPES))} />
             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{corta(ev.date)}{ev.endDate && ev.endDate !== ev.date ? ` → ${corta(ev.endDate)}` : ''}</Text>
             {m.status === 'CANCELLED' ? <Pildora texto="Cancelado" color={MARCA.rojo} /> : null}
             {m.status === 'SUPERSEDED' ? <Pildora texto="Editado" color={colorSistema.texto2} /> : null}
@@ -261,7 +261,7 @@ export default function Historial() {
         {seccion === 'solicitudes' ? (
           <>
             {solicitudes == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : solicitudes.map((r) => {
-              const t = REQUEST_TYPES[r.type] || { label: r.type };
+              const t = { label: rotuloDeSolicitud(r.type) };
               const e = REQUEST_STATUS[r.status] || { label: r.status };
               return (
                 <Pressable key={r.id} onPress={() => router.push(`/solicitud/${r.id}`)} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>

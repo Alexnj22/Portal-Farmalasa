@@ -12,7 +12,7 @@ import {
   fetchGapResolutions, fetchNullResolutionIds, fetchSalesInvoiceGaps, fetchSalesInvoiceNulls, insertGapResolution, insertNullResolution,
 } from '@nucleo/data/facturacion';
 import {
-  claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
+  claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, numerosFaltantes, saltosPendientes, saltosSolventados,
 } from '@nucleo/utils/colasDeFacturacion';
 import { fechaTexto, relojSV } from '@nucleo/utils/fecha';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -34,7 +34,7 @@ const pedirComentario = (titulo, mensaje) => new Promise((resolve) => {
   ], 'plain-text', '');
 });
 
-export default function Saltos({ sala, nombreSala, recarga, canEdit = false, user = null }) {
+export default function Saltos({ sala, nombreSala, recarga, canEdit = false, user = null, onCuenta }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const [verHistorial, setVerHistorial] = useState(false);
@@ -49,6 +49,9 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
   const pendientes = useMemo(() => saltosPendientes(d?.gaps, d?.res), [d]);
   const nulos = useMemo(() => nulosPendientes(d?.nulls, d?.nullRes), [d]);
   const mes = relojSV().toISOString().slice(0, 7);
+  // El número de la pestaña: saltos y campos nulos sin resolver, como el portal.
+  useEffect(() => { if (d) onCuenta?.(pendientes.length + nulos.length); }, [d, pendientes, nulos, onCuenta]);
+  const faltan = numerosFaltantes(pendientes);
   const solventados = useMemo(() => saltosSolventados(d?.gaps, d?.res, todos ? null : mes), [d, todos, mes]);
   const quien = user?.name || user?.email || 'Desconocido';
 
@@ -83,7 +86,8 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
     <View style={{ gap: 10 }}>
       <FilaDeKpis>
         <Kpi icono="Hourglass" rotulo="Saltos" valor={String(d.gaps.length)} color={MARCA.azulClaro} apoyo={`${d.res.length} solventados`} />
-        <Kpi icono="AlertTriangle" rotulo="Sin resolver" valor={String(pendientes.length)} color={pendientes.length ? MARCA.rojo : MARCA.verde} pide={pendientes.length > 0} apoyo={`${nulos.length} con campos nulos`} />
+        <Kpi icono="AlertTriangle" rotulo="Sin resolver" valor={String(pendientes.length)} color={pendientes.length ? MARCA.rojo : MARCA.verde} pide={pendientes.length > 0}
+          apoyo={pendientes.length ? `${faltan} número${faltan === 1 ? '' : 's'} faltante${faltan === 1 ? '' : 's'} · ${nulos.length} con campos nulos` : `correlativos en orden · ${nulos.length} con campos nulos`} />
       </FilaDeKpis>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {pendientes.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Cada salto indica correlativos que faltan entre dos documentos consecutivos. Solventarlo es decir que se revisó el talonario." /></View> : null}

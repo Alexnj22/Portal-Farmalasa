@@ -12,6 +12,11 @@
 // `libros_iva_descargar`, que también abre el paquete del mes: el mismo ZIP de
 // todas las salas que baja el portal (`paqueteDeLibrosIva`, núcleo),
 // comprimido con `fflate` y compartido por la hoja del sistema.
+//
+// Como el portal (2026-10-19): a los cuatro cargos del área administrativa —y
+// sólo a ellos, el contador no la ve— el resumen de los consumidores finales
+// de después de las 6:00 p. m., que no se envían a Hacienda
+// (`componentes/fiscal/CofNocheSinEnvio`), con su CSV.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
@@ -22,7 +27,10 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   fetchAnexoRetencionRenta, fetchLibroAnulados, fetchLibroCompras, fetchLibroConsumidor, fetchLibroContribuyente,
   fetchLibroPercepcion, fetchLibroRetencion, fetchNotasCreditoCompras, fetchRetencionVentas, fetchVentasFueraDelLibro,
+  fetchCofSinEnvioMh,
 } from '@nucleo/data/librosIva';
+import { CARGOS_DEL_AREA_ADMINISTRATIVA } from '@nucleo/utils/marcaDeLaSala';
+import CofNocheSinEnvio from '../componentes/fiscal/CofNocheSinEnvio';
 import { calcularTotales } from '@nucleo/utils/librosIva';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mesSV, rangoDelMes } from '@nucleo/utils/fecha';
@@ -59,6 +67,10 @@ export default function LibrosIva() {
   const verMontos = hasPermission('libros_iva_ver_montos');
   const puedeExportar = hasPermission('libros_iva_descargar');
   const libros = LIBROS.filter((l) => hasPermission(`libros_iva_tab_${l.tab}`));
+  // El candado de verdad está en `get_cof_sin_envio_mh`; acá sólo se evita
+  // pedirla y pintar un error.
+  const esAdmin = CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.roleId)) || CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.secondaryRoleId));
+  const verCofNoche = esAdmin && hasPermission('libros_iva_tab_consumidor');
   const [abierto, setAbierto] = useState(null);
   const sucursales = useStaffStore((s) => s.branches);
   const todas = getScope?.('libros_iva') === 'ALL';
@@ -88,17 +100,20 @@ export default function LibrosIva() {
 
   const cargar = useCallback(async () => {
     const [desde, hasta] = rangoDelMes(mes);
+    // Aparte: es un resumen de admin, y si falla no es un libro que falta.
+    const cofNoche = verCofNoche ? Promise.resolve(fetchCofSinEnvioMh(desde, hasta, sala)).catch(() => ({ data: null })) : null;
     const r = await Promise.all([
       fetchLibroConsumidor(desde, hasta, sala), fetchLibroContribuyente(desde, hasta, sala), fetchLibroAnulados(desde, hasta, sala),
       fetchLibroCompras(desde, hasta, sala), fetchLibroPercepcion(desde, hasta, sala), fetchLibroRetencion(desde, hasta, sala),
       fetchNotasCreditoCompras(desde, hasta), fetchAnexoRetencionRenta(desde, hasta), fetchVentasFueraDelLibro(desde, hasta, sala),
       fetchRetencionVentas(desde, hasta, sala),
     ]);
+    const cn = cofNoche ? await cofNoche : null;
     const fallo = r.find((x) => x.error)?.error;
     setError(fallo ? fallo.message : null);
     const [c, k, a, co, pe, re, nc, rt, fu, rv] = r.map((x) => x.data || []);
-    setDatos({ libros: { consumidor: c, contribuyente: k, anulados: a, compras: co, percepcion: pe, retencion: re, notas: nc, renta: rt, retencionVentas: rv }, fuera: fu[0] ?? null });
-  }, [mes, sala]);
+    setDatos({ libros: { consumidor: c, contribuyente: k, anulados: a, compras: co, percepcion: pe, retencion: re, notas: nc, renta: rt, retencionVentas: rv }, fuera: fu[0] ?? null, cofNoche: cn?.data ?? null });
+  }, [mes, sala, verCofNoche]);
   useEffect(() => { setDatos(null); setAbierto(null); cargar(); }, [cargar]);
   const nombreSala = useCallback((id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? '', [sucursales]);
   const sufijo = `${mes}${sala ? `_${nombreSala(sala).replace(/\s+/g, '-')}` : ''}`;
@@ -162,6 +177,10 @@ export default function LibrosIva() {
                 </View>
               );
             })}
+            {verCofNoche ? (() => {
+              const [desde, hasta] = rangoDelMes(mes);
+              return <CofNocheSinEnvio resumen={datos.cofNoche} mes={mes} desde={desde} hasta={hasta} sala={sala} sufijo={sufijo} />;
+            })() : null}
           </>
         )}
       </ScrollView>

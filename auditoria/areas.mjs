@@ -482,6 +482,8 @@ export const AREAS = [
             'src/views/PuntosView.jsx',
             'src/views/puntos/',
             'src/utils/codigoDePuntos.js',
+            // Las cuentas de la pestaña Niveles, del portal y de la app (2026-10-22).
+            'src/utils/nivelesDePuntos.js',
             // Escanear la tarjeta del cliente (2026-10-15): qué es lo que leyó
             // el lector y cómo se dice cada dato del expediente. Lo usan la
             // pestaña «Escanear» de Puntos y la app del personal.
@@ -817,6 +819,8 @@ export const AREAS = [
             // Las reglas que comparten portal y app (2026-10-12).
             'src/utils/mayoristas.js',
             'src/utils/chatClientes.js',
+            // Lo escrito por conversación, del portal y de la app (2026-10-22).
+            'src/utils/chatBorradores.js',
             'src/hooks/useBandejaDelChat.js',
             'src/hooks/useSinLeerDelChat.js',
             'src/utils/chatPersonal.js',

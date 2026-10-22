@@ -3,7 +3,9 @@
 //   · Compró aquí: se elige la venta de la sala y cuántas se pagan de cada
 //     inyección (o, con dos o más, «se mezclan en la misma jeringa»: se cobra
 //     UNA por vez). Lo que va por mililitros pide cuánto se pone.
-//   · Otra sucursal: se busca la venta por el número de comprobante del ticket.
+//   · Otra sucursal: se busca la venta por el número de comprobante del ticket
+//     o —si no lo trae— por el NOMBRE del cliente (2026-10-21 en el portal); por
+//     nombre sólo salen ventas con inyección.
 //   · La trajo: qué inyección y cuántas (vale distinto).
 //   · Ya la pagó: se marcan aplicadas las pendientes a nombre del cliente.
 // Lo pagado y no aplicado queda PENDIENTE a nombre del cliente (obligatorio).
@@ -161,9 +163,9 @@ export default function AplicacionInyeccion() {
   const cambiarModo = (m) => { setModo(m); setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); setEncontradas(null); };
 
   const buscarComp = async () => {
-    trabajando('Buscando el comprobante…');
+    trabajando('Buscando la venta…');
     try { setEncontradas(await buscarVentaPorComprobante({ sala, comprobante })); listo('Búsqueda lista'); }
-    catch (e) { setEncontradas(null); fallo('No se pudo buscar el comprobante', mensajeAmigable(e)); }
+    catch (e) { setEncontradas(null); fallo('No se pudo buscar la venta', mensajeAmigable(e)); }
   };
 
   const cobrar = () => Alert.alert(`¿Cobrar ${formatMoney(c.monto)}?`,
@@ -231,12 +233,19 @@ export default function AplicacionInyeccion() {
                 </>
               ) : (
                 <>
-                  <Campo multiline={false} value={comprobante} onChangeText={setComprobante} keyboardType="number-pad" placeholder="Número de comprobante del ticket" />
+                  <Aviso texto="Escribe el número de comprobante del ticket o, si no lo trae, el nombre del cliente. Sólo así aparece una venta de otra sucursal." />
+                  <Campo multiline={false} value={comprobante} maxLength={60} autoCapitalize="words" returnKeyType="search"
+                    onChangeText={(v) => { setComprobante(v); setEncontradas(null); }} onSubmitEditing={() => { if (comprobante.trim()) buscarComp(); }}
+                    placeholder="88134 o María López" accessibilityLabel="Comprobante o nombre del cliente" />
                   <BotonGrande texto="Buscar" borde deshabilitado={!comprobante.trim()} onPress={buscarComp} />
-                  {encontradas && !encontradas.length ? <Aviso texto="No se encontró una venta con ese comprobante." /> : null}
+                  {encontradas && !encontradas.length ? (
+                    <Aviso texto={/[a-zñáéíóú]/i.test(comprobante)
+                      ? 'Ningún cliente con ese nombre tiene una venta con inyección en los últimos 90 días. Revisa cómo se escribió.'
+                      : 'No hay una venta con ese comprobante en los últimos 90 días. Revisa el número del ticket.'} />
+                  ) : null}
                   {(encontradas || []).map((v) => (v.estado === 'ok'
                     ? <Venta key={v.id} v={v} activa={false} onElegir={() => elegirVenta(v, true)} />
-                    : <Aviso key={v.id ?? v.correlativo} tono="cuidado" texto={`Factura ${factura(v.correlativo)} · ${v.sala}: ${v.estado === 'sin_inyeccion' ? 'esa venta no tiene inyecciones.' : v.estado === 'pagada' ? 'ya tiene todas sus aplicaciones pagadas.' : 'esa venta está anulada.'}`} />))}
+                    : <Aviso key={v.id ?? v.correlativo} tono="cuidado" texto={`Factura ${factura(v.correlativo)} · ${v.sala}${v.cliente ? ` · ${v.cliente}` : ''}: ${v.estado === 'sin_inyeccion' ? 'esa venta no tiene inyecciones.' : v.estado === 'pagada' ? 'ya tiene todas sus aplicaciones pagadas.' : 'esa venta está anulada.'}`} />))}
                 </>
               )
             ) : null}

@@ -99,6 +99,28 @@ export function diasQuedanDelMes(hoy = hoySV()) {
     return diasEntre(hoy, ultimoDiaDelMes(hoy));
 }
 
+/**
+ * Cuántos días se espera el sello de Hacienda antes de darlo por vencido:
+ * Hacienda tarda hasta 2 días en emitir sello y código de generación, que
+ * llegan juntos. Antes de eso una factura sin sello no tiene nada de raro. Es
+ * el mismo número de gracia que usa el RPC de Observaciones. Vivía en
+ * `FacturacionView`; se mudó el 2026-10-22 para que la app cuente «Vencidas»
+ * con la misma regla.
+ */
+export const GRACIA_SELLO_DIAS = 2;
+
+/** Las que ya pasaron la gracia: ésas no se van a arreglar esperando. */
+export const vencidasSinSello = (rows = [], hoy = hoySV()) =>
+    (rows || []).filter((r) => r.fecha && diasEntre(String(r.fecha).slice(0, 10), hoy) > GRACIA_SELLO_DIAS).length;
+
+/** Los días de la más vieja de una cola: dice si la cola se está trabajando. */
+export const diasDeLaMasVieja = (rows = [], hoy = hoySV()) =>
+    (rows || []).reduce((m, r) => Math.max(m, r.fecha ? diasEntre(String(r.fecha).slice(0, 10), hoy) : 0), 0);
+
+/** Cuántos números faltan en total entre los saltos (no cuántos huecos). */
+export const numerosFaltantes = (saltos = []) =>
+    (saltos || []).reduce((a, g) => a + (Number(g.gap_count) || 0), 0);
+
 /** El tono de esos días: rojo con dos o menos, ámbar hasta cinco. */
 export const tonoDeDiasQuedan = (d) => (d <= 2 ? 'danger' : d <= 5 ? 'warning' : 'success');
 

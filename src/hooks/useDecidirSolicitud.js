@@ -118,12 +118,22 @@ export async function decidirSolicitud({ req, modo, nota, aceptadas, userId }) {
      * sin más pista que «entrá al módulo y probá de nuevo». Acá la fila ya
      * está —recién leída de la base, que es mejor que la copia de la
      * lista—, así que se pasa. */
+    /* Algunas ramas del store terminan bien pero con algo que decir —rechazar
+     * un movimiento sin comprobante que no se pudo anular («día ya cerrado»,
+     * «parte de una bolsa»)— y lo dicen en la única ranura de toast. La app
+     * del teléfono no dibuja toasts y el hook de abajo la pisaba con «Listo»:
+     * así el aviso no llegaba a nadie. Se recoge acá y viaja como `aviso`. */
+    const toastAntes = useToastStore.getState();
     const resultado = modo === 'approve'
         ? await approveRequest(req.id, userId, nota, req, aceptadas)
         : await rejectRequest(req.id, userId, nota, req);
     if (resultado === true) {
+        const t = useToastStore.getState();
+        const aviso = t !== toastAntes && t.isOpen && ['warning', 'info', 'error'].includes(t.type)
+            ? { titulo: t.title, texto: t.message, tipo: t.type } : null;
         return {
             ok: true,
+            aviso,
             mensaje: modo === 'approve'
                 ? (aceptadas ? `Se aplicaron ${aceptadas.length} líneas; el resto quedó rechazado.` : 'Solicitud aprobada.')
                 : 'Solicitud rechazada.',
@@ -174,7 +184,8 @@ export function useDecidirSolicitud({ onAplicado } = {}) {
         const r = await decidirSolicitud({ req, modo, nota, aceptadas, userId: user.id });
         setOcupado(false);
         if (r.ok) {
-            useToastStore.getState().showToast('Listo', r.mensaje, 'success');
+            if (r.aviso) useToastStore.getState().showToast(r.aviso.titulo, r.aviso.texto, r.aviso.tipo);
+            else useToastStore.getState().showToast('Listo', r.mensaje, 'success');
             onAplicado?.({ req, modo, nota, minmax: r.minmax ?? null });
             return true;
         }

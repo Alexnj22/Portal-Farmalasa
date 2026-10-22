@@ -19,6 +19,8 @@
 //   · lo ya contado se puede CORREGIR (`corregirRecepcionDeItem`): no mueve
 //     existencias, deja la diferencia para hablarla con Bodega;
 //   · lo que llegó y no venía se anota en `pedido/extras`;
+//   · con la recepción ya cerrada se vuelve acá por «Reportar un error» de la
+//     tarjeta (2 días, `puedeReportarError`): corregir y anotar extras;
 //   · cada renglón dice de qué LOTES debe venir (`lotesQueDebenVenir`) y se
 //     puede contar en otra presentación (`opcionesDePresentacionDeRenglon`);
 //   · «¿Necesitas un producto ya?» lo busca en TODO el pedido (dice en qué
@@ -421,7 +423,12 @@ export default function Recibir() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-        {!porContar.length ? <Aviso tono="nota" texto="No queda nada por contar en este pedido." /> : null}
+        {datos.fila?.recibido_erp_at ? (
+          // Se entró por «Reportar un error» (2026-10-21): la recepción ya se
+          // cerró, pero durante 2 días se corrige lo contado y se anota un
+          // extra. El plazo lo decide la base; el motivo es obligatorio.
+          <Aviso tono="cuidado" texto="La recepción ya se cerró. Puedes corregir lo ya contado o anotar algo que llegó de más hasta 2 días después; escribe qué pasó. Lo que corrijas queda como diferencia para hablarlo con Bodega." />
+        ) : !porContar.length ? <Aviso tono="nota" texto="No queda nada por contar en este pedido." /> : null}
         {(() => {
           // «¿Necesitas un producto ya?»: buscarlo en todo el pedido y recibirlo
           // solo, contado (no dando por bueno el papel). Lo ya contado también sale.

@@ -15,7 +15,7 @@ import Conversacion from './Conversacion';
 import FilaDeConversacion from './FilaDeConversacion';
 import { FILTROS, estadoDeConversacion, estadoServidor } from './estados';
 import { useBandejaDelChat, useEquipoDelChat } from './useBandeja';
-import { tieneBorrador } from './borradores';
+import { tieneBorrador } from '@nucleo/utils/chatBorradores';
 import { ordenarConPreferentes } from '@nucleo/utils/chatClientes';
 
 /**

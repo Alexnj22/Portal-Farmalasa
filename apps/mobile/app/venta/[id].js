@@ -9,12 +9,20 @@
 // Clínica, Mayoreo, Premium, P7, Viñeta, Especial…; núcleo: `tierDelRenglon`)
 // y los «Cambios registrados» de la factura (forma de pago, sello de
 // Hacienda) con el valor anterior y el nuevo.
+//
+// Como el portal (2026-10-19): el consumidor final de después de las 6:00 p. m.
+// no se envía a Hacienda por regla (`cofNoSeEnviaMh`, núcleo), así que no se
+// marca «sin sello» —no está pendiente de nada—, salvo los clientes que sí se
+// envían (Mapfre y la Diócesis). Y al pie, el documento electrónico para el
+// cliente: compartir el PDF y el JSON o mandarlo por correo
+// (`DocumentoParaCliente`).
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchCualesVanBajoReceta, fetchInvoiceById, fetchInvoiceChangelog, fetchInvoiceItemsForInvoice, fetchProductPreciosActivos } from '@nucleo/data/ventas';
-import { tieneSelloMh } from '@nucleo/data/facturacion';
+import { fetchClientesQueSiempreSeEnvian, tieneSelloMh } from '@nucleo/data/facturacion';
+import { cofNoSeEnviaMh } from '@nucleo/utils/cofNoche';
 import { ROTULO_PUNTOS } from '@nucleo/data/puntos';
 import { CAMPO_LABELS, RELEVANT_CAMPOS, fmtCampoVal, renglonesDeLaVenta, tierDelRenglon } from '@nucleo/utils/ventasPeriodo';
 import { ESTADOS_ANULADA, ROTULO_PAGO } from '@nucleo/utils/solicitudFacturacion';
@@ -28,6 +36,7 @@ import { Aviso, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
+import DocumentoParaCliente from '../../componentes/ventas/DocumentoParaCliente';
 
 const cantidad = (n) => { const f = parseFloat(n || 0); return f % 1 === 0 ? String(f) : f.toFixed(3).replace(/\.?0+$/, ''); };
 
@@ -41,6 +50,13 @@ export default function Venta() {
   const [precios, setPrecios] = useState(null);   // product_id → filas de precio
   const [cambios, setCambios] = useState([]);
   const [recargando, setRecargando] = useState(false);
+  // `null` mientras carga o si falla: ahí se marca «sin sello» como antes.
+  const [clientesSiempre, setClientesSiempre] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    fetchClientesQueSiempreSeEnvian().then((s) => { if (vivo) setClientesSiempre(s); }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
 
   const cargar = useCallback(async () => {
     const [{ data: inv }, { data: renglones }, { data: log }] = await Promise.all([
@@ -77,6 +93,7 @@ export default function Venta() {
   const emp = v ? (empleados || []).find((e) => e.code === v.cod_vendedor) : null;
   const { productos, descuento } = renglonesDeLaVenta(items, v?.total);
   const puntos = ROTULO_PUNTOS[v?.puntos_enviados?.estado_puntos ?? v?.puntos_enviados?.[0]?.estado_puntos];
+  const deLaNoche = !!v && cofNoSeEnviaMh(v.tipo_documento, v.fecha, v.hora, v.customer_id, clientesSiempre);
   const fiscal = v && (v.tipo_documento === 'CCF' || v.tipo_documento === 'COF') && v.subtotal != null;
 
   return (
@@ -94,7 +111,9 @@ export default function Venta() {
                   textDecorationLine: anulada ? 'line-through' : 'none' }}>{formatMoney(v.total)}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                   {anulada ? <Pildora texto="Anulada" color={MARCA.rojo} /> : null}
-                  {tieneSelloMh(v.recibido_mh) ? <Pildora texto="Sellada por Hacienda" color={MARCA.verde} /> : <Pildora texto="Sin sello de Hacienda" color={MARCA.ambar} />}
+                  {tieneSelloMh(v.recibido_mh) ? <Pildora texto="Sellada por Hacienda" color={MARCA.verde} />
+                    : deLaNoche ? <Pildora texto="Después de las 6:00 p. m. · no se envía" color={colorSistema.texto2} />
+                    : <Pildora texto="Sin sello de Hacienda" color={MARCA.ambar} />}
                   {puntos ? <Pildora texto={`Puntos ${puntos.label.toLowerCase()}`} color={MARCA.ambar} /> : null}
                 </View>
               </View>
@@ -159,6 +178,7 @@ export default function Venta() {
             <Dato rotulo="Total" valor={formatMoney(v.total)} fuerte />
           </Seccion>
         ) : null}
+        {v && !anulada ? <DocumentoParaCliente invoiceId={v.id} /> : null}
       </ScrollView>
     </>
   );

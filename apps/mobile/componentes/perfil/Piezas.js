@@ -100,7 +100,7 @@ export function Historial({ historial }) {
   const [cuantos, setCuantos] = useState(10);
   const tipos = useMemo(() => [...new Set(historial.map((e) => e.type))], [historial]);
   const filtrado = useMemo(() => filtrarHistorial(historial, { desde, hasta, tipo, busqueda: busca, rotulos: EVENT_TYPES }), [historial, desde, hasta, tipo, busca]);
-  const rotulo = (t) => (t === 'HIRING' ? 'Contratación inicial' : EVENT_TYPES[t]?.label ?? t);
+  const rotulo = (t) => (t === 'HIRING' ? 'Contratación inicial' : EVENT_TYPES[t]?.label ?? 'Movimiento');
   const hayFiltro = busca.trim() || tipo || desde || hasta;
   const elegirTipo = () => {
     const opciones = ['Todos los tipos', ...tipos.map(rotulo), 'Cancelar'];

@@ -16,7 +16,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { router } from 'expo-router';
 import { abrirRuta, abrirSolicitud } from '../pantallas';
 import { fetchApprovalRequestById } from '@nucleo/data/requests';
-import { fallo, listo, trabajando } from './Progreso';
+import { fallo, listo, listoODecirAviso, trabajando } from './Progreso';
 
 let tokenActual = null;
 
@@ -165,7 +165,7 @@ export async function decidirDesdeAviso(d, modo, userId, nota = '') {
   if (!req) { fallo('Ya no está', 'Esta solicitud ya no está disponible.'); return false; }
   if (req.status && req.status !== 'PENDING') { fallo('Ya estaba resuelta', 'Alguien más la decidió mientras tanto.'); return false; }
   const r = await decidirSolicitud({ req, modo, nota, aceptadas: null, userId });
-  if (r.ok) { listo(modo === 'approve' ? 'Aprobada' : 'Rechazada', r.mensaje); return true; }
+  if (r.ok) { listoODecirAviso(r, modo === 'approve' ? 'Aprobada' : 'Rechazada'); return true; }
   fallo('No se pudo', (r.yaAvisado && ultimoMotivo()) || r.error);
   return false;
 }

@@ -1,6 +1,8 @@
 // Un pre-registro de la app de clientes, NATIVO — el `ResolverModal` del
 // portal. Busca la ficha por DOCUMENTO (nunca por nombre) y la vincula, o lo
-// descarta. Lo hace `app_preregistro_resolver`, la misma función del portal.
+// elimina. Lo hace `app_preregistro_resolver`, la misma función del portal.
+// Eliminar (2026-10-22, «descartar» en la base) libera el documento: es el caso
+// de soporte de alguien que pre-registró el DUI de otra persona con su teléfono.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
@@ -29,7 +31,7 @@ export default function Preregistro() {
     setOcupado(true);
     try {
       await resolverPreregistro(pre.id, accion, customerId);
-      listo(accion === 'vincular' ? 'Pre-registro vinculado' : 'Pre-registro descartado', '');
+      listo(accion === 'vincular' ? 'Pre-registro vinculado' : 'Pre-registro eliminado', '');
       router.back();
     } catch (e) {
       fallo('No se pudo completar', mensajeAmigable(e, 'Intenta de nuevo.'));
@@ -37,9 +39,9 @@ export default function Preregistro() {
       setOcupado(false);
     }
   };
-  const descartar = () => Alert.alert('Descartar pre-registro', `${pre.nombre} deja de aparecer aquí. Si de verdad es cliente, la sala lo registra en caja.`, [
+  const descartar = () => Alert.alert('Eliminar pre-registro', `El documento ${pre.documento} queda libre y quien tenga la app con este pre-registro sale de su sesión. La persona dueña del documento ya se puede registrar desde la app.`, [
     { text: 'Cancelar', style: 'cancel' },
-    { text: 'Descartar', style: 'destructive', onPress: () => hacer('descartar') },
+    { text: 'Eliminar', style: 'destructive', onPress: () => hacer('descartar') },
   ]);
 
   return (
@@ -69,7 +71,7 @@ export default function Preregistro() {
             </View>
           )) : <Aviso tono="cuidado" texto="No hay ficha con ese documento. Hay que crearla en caja con estos datos; la app la reconocerá sola." />}
         </Seccion>
-        <BotonGrande texto="Descartar" color={MARCA.rojo} borde onPress={descartar} deshabilitado={ocupado} />
+        <BotonGrande texto="Eliminar" color={MARCA.rojo} borde onPress={descartar} deshabilitado={ocupado} />
       </ScrollView>
     </>
   );

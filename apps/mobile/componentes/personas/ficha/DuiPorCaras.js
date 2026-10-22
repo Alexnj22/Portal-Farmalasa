@@ -15,11 +15,18 @@
 // error del alta: el archivo ya quedó subido y los campos se escriben a mano.
 //
 // Los archivos quedan en `form.employee_documents`; se guardan con la ficha.
+//
+// Renovar el DUI (2026-10-22, igual que el portal): la cara nueva NO hereda el
+// vencimiento del archivo anterior —lo toma del documento leído, o de la ficha
+// si confirmó lo que había (`carasConElVencimientoDelDui`)—, la cara anterior
+// queda en el historial del documento, y lo que la lectura cambió en la ficha
+// se junta en `form._cambiosDelDui`: al guardar, el store lo deja en su propio
+// asiento de bitácora (`DATOS_DEL_DUI_ACTUALIZADOS`).
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { leerDui } from '@nucleo/data/ia';
-import { aplicarDuiLeido, avisoDeCaras } from '@nucleo/utils/duiLeido';
-import { documentoReemplazado } from '@nucleo/utils/documentosDelExpediente';
+import { aplicarDuiLeido, avisoDeCaras, juntarCambiosDelDui } from '@nucleo/utils/duiLeido';
+import { carasConElVencimientoDelDui, documentoReemplazado, parcheDeArchivoNuevo } from '@nucleo/utils/documentosDelExpediente';
 import { getStoragePathFromUrl, openStoredFile } from '@nucleo/utils/storageFiles';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -58,9 +65,12 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
   const docs = form.employee_documents || [];
   const doc = (cat) => docs.find((d) => d.category === cat) || null;
 
-  const ponerDoc = (cat, patch) => setForm((prev) => ({
+  // Un archivo nuevo en la casilla: si reemplaza a otro, no hereda su vencimiento.
+  const ponerDoc = (cat, subida) => setForm((prev) => ({
     ...prev,
-    employee_documents: documentoReemplazado(prev.employee_documents, cat, patch, { quien: quien?.name || '', quienId: quien?.id || null, hoy: hoySV() }),
+    employee_documents: documentoReemplazado(prev.employee_documents, cat,
+      parcheDeArchivoNuevo((prev.employee_documents || []).find((d) => d.category === cat), subida),
+      { quien: quien?.name || '', quienId: quien?.id || null, hoy: hoySV() }),
   }));
 
   const leer = async (cuerpo, unArchivo) => {
@@ -76,7 +86,16 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
       setCaras(avisoDeCaras(data, unArchivo));
       const leido = { ...data.datos, nacionalidad: data.nacionalidad, numeroIlegible: data.numeroIlegible };
       let resumen = null;
-      setForm((prev) => { const r = aplicarDuiLeido(leido, prev); resumen = r; return { ...prev, ...r.parche }; });
+      setForm((prev) => {
+        const r = aplicarDuiLeido(leido, prev);
+        resumen = r;
+        const next = { ...prev, ...r.parche };
+        // Para el asiento de bitácora al guardar: el panel se cierra, la bitácora queda.
+        if (r.reemplazos.length) next._cambiosDelDui = juntarCambiosDelDui(prev._cambiosDelDui, r.reemplazos);
+        // Las caras vencen cuando vence el DUI.
+        next.employee_documents = carasConElVencimientoDelDui(next.employee_documents || [], next.dui_fecha_vencimiento || null);
+        return next;
+      });
       // El `setForm` corre en el mismo ciclo: `resumen` ya está.
       setTimeout(() => setLectura({
         aplicados: Object.keys(resumen?.parche || {}).length,

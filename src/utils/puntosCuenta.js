@@ -21,7 +21,7 @@ export function partesDelReparto({ ganados, saldo, canjeado, vencido, anulado })
     const g = Number(ganados) || 0;
     if (g <= 0) return [];
     return [
-        { clave: 'saldo',    rotulo: 'Disponibles', valor: Number(saldo) || 0 },
+        { clave: 'saldo',    rotulo: 'Para canjear', valor: Number(saldo) || 0 },
         { clave: 'canjeado', rotulo: 'Canjeados',   valor: canjeado },
         { clave: 'vencido',  rotulo: 'Vencidos',    valor: vencido },
         { clave: 'anulado',  rotulo: 'Anulados',    valor: anulado },

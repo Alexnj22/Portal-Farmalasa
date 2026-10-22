@@ -36,11 +36,21 @@ export async function leerOrden(archivos) {
     return data.leido;
 }
 
-/** Sube una foto a la carpeta del empleado; devuelve `{ url, file_name }`. */
-export async function subirFotoDeOrden(employeeId, archivo) {
-    const limpio = String(archivo?.name || 'orden').replace(/[^\w.-]+/g, '_');
-    const url = await subirArchivo('documents', `employees/${employeeId}/ordenes-descuento/${Date.now()}_${limpio}`, archivo);
-    return { url, file_name: archivo.name };
+/**
+ * Sube una foto a la carpeta del empleado; devuelve `{ url, file_name }`.
+ *
+ * En el portal `archivo` es un `File`. En la app del teléfono es lo elegido
+ * (`{ uri, nombre, tipo }`) y su contenido ya leído viaja en `cuerpo`: la
+ * MISMA carpeta y el mismo nombre, para que el expediente no dependa de desde
+ * dónde se cargó la orden.
+ */
+export async function subirFotoDeOrden(employeeId, archivo, { cuerpo = null, contentType } = {}) {
+    const nombre = archivo?.name || archivo?.nombre || 'orden';
+    const limpio = String(nombre).replace(/[^\w.-]+/g, '_');
+    const url = await subirArchivo('documents', `employees/${employeeId}/ordenes-descuento/${Date.now()}_${limpio}`,
+        cuerpo ?? archivo, { contentType: contentType || archivo?.tipo || undefined });
+    if (!url) throw new Error('La subida no devolvió una URL.');
+    return { url, file_name: nombre };
 }
 
 const limpiar = (orden) => {

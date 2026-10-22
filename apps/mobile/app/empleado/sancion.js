@@ -159,7 +159,7 @@ export default function Sancion() {
                   {antecedentes.slice(0, 6).map((a, i) => (
                     <View key={a.id ?? i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 32 }}>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13, width: 92 }}>{corta(a.fecha || a.date)}</Text>
-                      <Text style={{ color: colorSistema.texto, fontSize: 14, flex: 1 }}>{EVENT_TYPES[a.type]?.label || a.type}</Text>
+                      <Text style={{ color: colorSistema.texto, fontSize: 14, flex: 1 }}>{EVENT_TYPES[a.type]?.label || 'Movimiento'}</Text>
                       {a.reclamo === 'REVOCADA' ? <Pildora texto="Revocada" color={colorSistema.texto2} /> : null}
                     </View>
                   ))}

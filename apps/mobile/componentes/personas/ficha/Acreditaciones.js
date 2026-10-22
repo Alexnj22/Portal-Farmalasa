@@ -20,7 +20,7 @@ import { ESTADO_PREVISIONAL_OPTIONS, TIPO_ACREDITACION_OPTIONS, fijarTipoAcredit
   promoverADefinitiva, tipoDeAcreditacion } from '@nucleo/utils/acreditaciones';
 import { AFP_OPTIONS } from '@nucleo/utils/fichaDelEmpleado';
 import { revisarNup } from '@nucleo/utils/nupAfp';
-import { documentoReemplazado } from '@nucleo/utils/documentosDelExpediente';
+import { documentoReemplazado, parcheDeArchivoNuevo } from '@nucleo/utils/documentosDelExpediente';
 import { normalizarCarne, porQueNoSirve } from '@nucleo/utils/carneDeDependiente';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -39,7 +39,8 @@ function Comprobante({ form, setForm, categoria, empleadoId, quien }) {
     setSubiendo(true);
     try {
       const r = await elegirYSubir(empleadoId);
-      if (r) setForm((prev) => ({ ...prev, employee_documents: documentoReemplazado(prev.employee_documents, categoria, r, { quien: quien?.name || '', quienId: quien?.id || null, hoy: hoySV() }) }));
+      if (r) setForm((prev) => ({ ...prev, employee_documents: documentoReemplazado(prev.employee_documents, categoria,
+        parcheDeArchivoNuevo((prev.employee_documents || []).find((d) => d.category === categoria), r), { quien: quien?.name || '', quienId: quien?.id || null, hoy: hoySV() }) }));
     } catch (e) { fallo('No se pudo subir', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setSubiendo(false); }
   };
   return (

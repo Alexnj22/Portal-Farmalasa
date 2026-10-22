@@ -30,7 +30,7 @@ export default function Salud({ form, setForm, cambiar, catalogos }) {
 
   return (
     <Seccion titulo="Salud y a quién avisar">
-      <Elegir rotulo="Tipo de sangre" valor={form.blood_type} opciones={op(BLOOD_TYPE_OPTIONS)} onCambiar={cambiar('blood_type')} vacio="Sin indicar" />
+      <Elegir rotulo="Tipo de sangre" valor={form.blood_type} opciones={op(BLOOD_TYPE_OPTIONS)} onCambiar={cambiar('blood_type')} vacio="Sin dato" />
 
       <Subtitulo texto="Enfermedad crónica / condición médica" />
       {cronicas.map((c, i) => (

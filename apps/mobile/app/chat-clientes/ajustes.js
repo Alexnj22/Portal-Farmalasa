@@ -4,12 +4,16 @@
 // con el horario REAL de las salas; la vista previa los rellena con el estado
 // de ahora (`trozosDelMensaje`, núcleo). Sólo quien edita `chat_clientes`
 // guarda; la policy de la base lo vuelve a exigir.
+//
+// Arriba, el interruptor de las respuestas automáticas (2026-10-20 en el
+// portal): horario de hoy, teléfonos, direcciones y precio y existencias de un
+// producto, contestados solos con los datos del portal. Se guarda al tocarlo.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchAjustesDelChat, guardarAjustesDelChat } from '@nucleo/data/horarios';
+import { fetchAjustesDelChat, guardarAjustesDelChat, guardarRespuestasAutomaticas } from '@nucleo/data/horarios';
 import { LARGO_MAXIMO_MENSAJE, MARCADORES_DEL_CHAT, trozosDelMensaje } from '@nucleo/utils/horarioDelChat';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -20,6 +24,7 @@ import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
+import Interruptor from '../../componentes/Interruptor';
 import { EstadoDeLaFarmacia } from '../../componentes/chat/Encabezado';
 
 const CAMPOS = [
@@ -96,6 +101,16 @@ export default function AjustesDelChat() {
   const valido = f.mensaje_abierto.trim() && f.mensaje_cerrado.trim();
   const puedeGuardar = puedeEditar && cambiado && valido && !guardando && !!user?.id;
 
+  const [cambiandoAuto, setCambiandoAuto] = useState(false);
+  const cambiarAuto = async (v) => {
+    setCambiandoAuto(true);
+    try {
+      setFila(await guardarRespuestasAutomaticas({ encendidas: v, employeeId: user.id }));
+      listo(v ? 'Respuestas automáticas encendidas' : 'Respuestas automáticas apagadas', '');
+    } catch (e) { fallo('No se pudo guardar', e?.message || ''); }
+    setCambiandoAuto(false);
+  };
+
   const guardar = async () => {
     setGuardando(true);
     try {
@@ -115,6 +130,18 @@ export default function AjustesDelChat() {
           <Aviso texto="Respuestas automáticas que recibe el cliente al escribir. El horario sale de las sucursales: los feriados y los horarios especiales se aplican solos." />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}><EstadoDeLaFarmacia estado={estado} /></View>
           {error ? <Aviso tono="freno" texto={error} /> : null}
+          {fila ? (
+            <Seccion titulo="Respuestas automáticas">
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>Contestar solo lo sencillo</Text>
+                <Interruptor value={fila.respuestas_automaticas !== false} onValueChange={cambiarAuto}
+                  disabled={!puedeEditar || cambiandoAuto || !user?.id} accessibilityLabel="Respuestas automáticas del chat" />
+              </View>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, lineHeight: 18 }}>
+                Horario de hoy, teléfonos, direcciones y precio y existencias de un producto, con los datos del portal. Nunca contesta solo dosis, síntomas, embarazo, niños ni recomendaciones: eso te llega a ti. El cliente lo ve como «Respuesta automática» y puede pedir hablar con una persona.
+              </Text>
+            </Seccion>
+          ) : null}
           {!fila ? <ActivityIndicator style={{ marginTop: 24 }} /> : CAMPOS.map((c) => (
             <Editor key={c.clave} campo={c} valor={f[c.clave]} estado={estado} deshabilitado={!puedeEditar || guardando}
               onCambio={(v) => setF((x) => ({ ...x, [c.clave]: v }))} />

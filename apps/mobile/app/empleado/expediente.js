@@ -30,7 +30,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { DOS_CARAS, EDUCATION_OPTIONS, LEVELS_WITH_PROFESSION, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, SECCIONES_DE_DOCUMENTOS,
-  VARIAS_HOJAS, documentoReemplazado, rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+  VARIAS_HOJAS, documentoReemplazado, parcheDeArchivoNuevo, rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
 import { elegirYSubir } from '../../componentes/personas/ficha/documentos';
 import { openStoredFile, subirArchivo } from '@nucleo/utils/storageFiles';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -116,7 +116,8 @@ export default function Expediente() {
       const r = await elegirYSubir(emp.id);
       if (!r) return;
       trabajando('Guardando el documento…');
-      const lista = documentoReemplazado(docs, cat, r, { quien: user?.name || '', quienId: user?.id || null, hoy: hoySV() });
+      // Si reemplaza a otro, no hereda su vencimiento (`parcheDeArchivoNuevo`).
+      const lista = documentoReemplazado(docs, cat, parcheDeArchivoNuevo(docDe(cat), r), { quien: user?.name || '', quienId: user?.id || null, hoy: hoySV() });
       await guardar({ employee_documents: lista }, 'Documento guardado');
     } catch (e) { fallo('No se pudo subir el documento', e?.message || ''); }
   };

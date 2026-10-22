@@ -63,6 +63,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import Enlazar from '../../componentes/personas/ficha/Enlazar';
 import DuiPorCaras from '../../componentes/personas/ficha/DuiPorCaras';
+import OrdenesDeDescuento from '../../componentes/personas/ficha/OrdenesDeDescuento';
 import Contacto from '../../componentes/personas/ficha/Contacto';
 import Salud from '../../componentes/personas/ficha/Salud';
 import Dependientes from '../../componentes/personas/ficha/Dependientes';
@@ -268,6 +269,8 @@ export default function EditarEmpleado() {
     if (form.contactos_extra !== undefined) d.contactos_extra = form.contactos_extra;
     d.enlazar_con_id = form.enlazar_con_id || '';
     if (form.enlazar_con_id) d._fichaCargada = form._fichaCargada;
+    // Lo que el DUI leído cambió: el store lo anota aparte al guardar y no va a la fila.
+    if (form._cambiosDelDui?.length) d._cambiosDelDui = form._cambiosDelDui;
     d.username = usuarioSugerido;
     if (!contratoConPlazo(d.contract_type)) d.contract_end_date = '';
     if (!veSalario) delete d.base_salary;
@@ -288,6 +291,8 @@ export default function EditarEmpleado() {
       if (grupo.some((k) => k in c)) for (const k of grupo) if (!(k in c) && form[k] !== undefined) c[k] = form[k];
     }
     if (c.username !== undefined && !c.username) delete c.username;
+    // Sólo si algo se guarda: el asiento de lo que cambió el DUI va con lo que cambió.
+    if (Object.keys(c).length && form._cambiosDelDui?.length) c._cambiosDelDui = form._cambiosDelDui;
     return c;
   };
 
@@ -333,6 +338,8 @@ export default function EditarEmpleado() {
   if (!puedeEditar) return <Aviso tono="freno" texto="Tu cargo no puede dar de alta ni editar fichas." />;
   if (!esAlta && !emp) return <Aviso tono="freno" texto="No se encontró la ficha." />;
 
+  // La ficha de las órdenes de descuento: la que se edita, o la que se enlaza en el alta.
+  const idDeFicha = emp?.id || form.enlazar_con_id || null;
   const nombreDe = (lista, val) => lista.find((o) => String(o.id) === String(val))?.label || '—';
 
   return (
@@ -434,6 +441,12 @@ export default function EditarEmpleado() {
               {veBanco ? <Banco form={form} cambiar={cambiar} /> : null}
               <Acceso form={form} setForm={setForm} cambiar={cambiar} esAlta={esAlta} usuarioSugerido={usuarioSugerido} usuarioGuardado={usuarioGuardado}
                 credencialesListas={credencialesListas} />
+              {/* Se guardan al momento, en su propia tabla: con la ficha que se
+                  edita o con la que se ENLAZA en el alta (`key` la vuelve a
+                  montar si se cambia de persona enlazada). */}
+              <OrdenesDeDescuento key={idDeFicha || 'nueva'} puedeEditar={puedeEditar}
+                empleado={idDeFicha ? { id: idDeFicha, name: emp?.name || `${form.first_names || ''} ${form.last_names || ''}`.trim(),
+                  first_names: form.first_names, last_names: form.last_names } : null} />
             </>
           ) : null}
 

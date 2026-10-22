@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPendingApprovalRequests } from '@nucleo/data/dashboard';
 import { fetchPresentesPorDia } from '@nucleo/data/employees';
-import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
+import { rotuloDeSolicitud } from '@nucleo/store/slices/requestsSlice';
 import { getTodayAttendanceStatus } from '@nucleo/utils/helpers';
 import { empleadosActivos, presentesEl, problemaDeSucursal } from '@nucleo/utils/inicio';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -155,7 +155,7 @@ export function Ausencias({ datos: d, ctx }) {
         const hasta = m.endDate || (m.permissionDates || []).slice(-1)[0];
         return (
           <Renglon key={a.id} primero={!i} titulo={shortEmployeeName(e)} izquierda={<Avatar empleado={e} tamano={30} />}
-            detalle={`${REQUEST_TYPES[a.type]?.label ?? a.type}${hasta ? ` · hasta ${fechaTexto(String(hasta).slice(0, 10))}` : ''}`}
+            detalle={`${rotuloDeSolicitud(a.type)}${hasta ? ` · hasta ${fechaTexto(String(hasta).slice(0, 10))}` : ''}`}
             derecha={<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TIPO_AUSENCIA[a.type] ?? '#8E8E93' }} />} />
         );
       }) : <Vacio texto="Nadie falta" bien />}
@@ -178,7 +178,7 @@ export function SolicitudesPendientes({ ctx }) {
       {cargando && !dato ? <Esqueleto lineas={3} /> : lista.length ? lista.slice(0, 5).map((r, i) => {
         const e = porId.get(String(r.employee_id));
         return (
-          <Renglon key={r.id} primero={!i} titulo={shortEmployeeName(e)} detalle={REQUEST_TYPES[r.type]?.label ?? 'Solicitud'}
+          <Renglon key={r.id} primero={!i} titulo={shortEmployeeName(e)} detalle={rotuloDeSolicitud(r.type)}
             izquierda={<Avatar empleado={e} tamano={30} />} derecha={cuandoLlego(r.created_at)}
             onPress={() => ctx.abrirSolicitud(r.id)} />
         );

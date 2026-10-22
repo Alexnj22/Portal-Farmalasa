@@ -460,6 +460,39 @@ export function documentoReemplazado(lista, categoria, patch, { quien = '', quie
     return docs;
 }
 
+/**
+ * Lo que se le pasa a `documentoReemplazado` cuando ENTRA un archivo a una
+ * casilla (`subida` = `{ url, file_name }`).
+ *
+ * Un archivo que REEMPLAZA a otro no hereda su vencimiento (2026-10-22): lo
+ * heredaba, y como la lectura sólo llena una fecha vacía, el papel renovado
+ * quedaba con la del anterior —el DUI de una persona se volvió a subir con su
+ * renovación y la tarjeta siguió diciendo «vencido»—. La fecha que alguien
+ * escribió ANTES de subir el primer archivo sí se respeta. El formulario del
+ * portal lo hace en `handleDocFile`; esto es lo mismo para la app.
+ */
+export function parcheDeArchivoNuevo(anterior, subida, ahora = new Date().toISOString()) {
+    return { ...subida, uploaded_at: ahora, ...(anterior?.url ? { expiry_date: '' } : {}) };
+}
+
+/** Las caras del DUI vencen cuando vence el DUI. */
+export const CARAS_DEL_DUI = new Set(['DUI_FRENTE', 'DUI_REVERSO', 'DUI_COMPLETO']);
+
+/**
+ * Pone el vencimiento del DUI (`dui_fecha_vencimiento` de la ficha) en sus
+ * caras cargadas. Lo dice el lector —o, si confirmó lo que había, la ficha—,
+ * no el archivo anterior. Devuelve la misma lista si no hay nada que cambiar.
+ */
+export function carasConElVencimientoDelDui(lista, vence) {
+    if (!vence) return lista;
+    let cambio = false;
+    const nueva = (lista || []).map(d => {
+        if (CARAS_DEL_DUI.has(d?.category) && d.url && d.expiry_date !== vence) { cambio = true; return { ...d, expiry_date: vence }; }
+        return d;
+    });
+    return cambio ? nueva : lista;
+}
+
 /** El estado de un documento: lo que dice la píldora de la tarjeta. */
 export function estadoDelDocumento(doc, { conVencimiento = true } = {}) {
     if (!doc?.url) return { label: 'Pendiente', variant: 'warning', listo: false };

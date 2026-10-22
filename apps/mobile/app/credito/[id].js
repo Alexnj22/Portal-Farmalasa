@@ -8,6 +8,8 @@
 // «Recibir un pago» abre el cobro nativo (`cobrar-credito`). Con el permiso de
 // abonar, cada abono que la caja deja borrar lleva «Corregir»: abre la
 // solicitud de corrección (`credito/corregir`), como el lápiz del portal.
+// Un abono que el cliente pagó solo desde su app con tarjeta (Wompi,
+// 2026-10-20) dice «pagado por el cliente en la app» en vez de quién cobró.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -15,7 +17,7 @@ import { guardar } from '../../componentes/comercial/elegido';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchCreditoDetalle, fetchHistorialDelOrigen } from '@nucleo/data/creditos';
+import { fetchCreditoDetalle, fetchHistorialDelOrigen, pagadoEnLaApp } from '@nucleo/data/creditos';
 import { abonosDelCredito, pagadoPct, tituloDeDias } from '@nucleo/utils/cartera';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -118,12 +120,13 @@ export default function Credito() {
           <Seccion titulo={`Abonos${abonos.length ? ` · ${abonos.length}` : ''}`}>
             {abonos.length ? abonos.map((a, i) => (
               <View key={a.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                {a.abonado_por ? <Avatar empleado={porId.get(String(a.abonado_por)) ?? { name: a.cobrado_por }} tamano={28} /> : null}
+                {a.abonado_por && !pagadoEnLaApp(a) ? <Avatar empleado={porId.get(String(a.abonado_por)) ?? { name: a.cobrado_por }} tamano={28} /> : null}
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(a.monto)}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                    {[`${fecha(a.fecha)}${a.hora ? `, ${hora12(a.hora) || a.hora}` : ''}`, a.cobrado_por || 'cobrado en la caja', a.forma].filter(Boolean).join(' · ')}
+                    {[`${fecha(a.fecha)}${a.hora ? `, ${hora12(a.hora) || a.hora}` : ''}`, pagadoEnLaApp(a) ? 'pagado por el cliente en la app' : (a.cobrado_por || 'cobrado en la caja'), a.forma].filter(Boolean).join(' · ')}
                   </Text>
+                  {pagadoEnLaApp(a) ? <View style={{ flexDirection: 'row', marginTop: 3 }}><Pildora texto="Pagado en la app" color={MARCA.azulClaro} /></View> : null}
                   {a.saldo_despues != null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`quedó ${formatMoney(a.saldo_despues)}`}</Text> : null}
                 </View>
                 {puedeAbonar && a.erp_id_borrable ? (

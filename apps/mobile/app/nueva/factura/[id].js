@@ -6,6 +6,9 @@
 //                          trigger y la Edge Function). Con duda, no se ofrece.
 //   · Forma de pago, vendedor, cliente.
 //
+// Y, sin solicitud, el documento electrónico para el cliente que lo pide
+// (`DocumentoParaCliente`, como el portal desde el 2026-10-19).
+//
 // Una factura anulada (`esAnulada`: NULA o invalidada en Hacienda) no se toca.
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -25,6 +28,7 @@ import Vidrio from '../../../componentes/Vidrio';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { MARCA } from '../../../componentes/inicio/marca';
+import DocumentoParaCliente from '../../../componentes/ventas/DocumentoParaCliente';
 
 function Opcion({ icono, color, titulo, detalle, deshabilitada, onPress }) {
   return (
@@ -87,6 +91,9 @@ export default function Factura() {
             </View>
           )) : <Text style={{ color: colorSistema.texto2 }}>Sin detalle.</Text>}
         </Seccion>
+
+        {/* El documento para el cliente que lo pide, sin solicitud (2026-10-19). */}
+        {!anulada ? <DocumentoParaCliente invoiceId={inv.id} /> : null}
 
         {anulada ? <Aviso tono="freno" texto="Esta factura ya está anulada: no se le puede pedir ningún cambio." /> : (
           <View style={{ gap: 10 }}>

@@ -50,6 +50,24 @@ export function fallo(titulo, texto) {
   Alert.alert(titulo || 'No se pudo', texto || undefined, [{ text: 'Aceptar' }]);
 }
 
+/** Terminó, pero con algo que hay que leer (se hizo a medias, o distinto de
+ *  lo pedido): la alerta del sistema, con vibración de advertencia. */
+export function avisar(titulo, texto) {
+  clearTimeout(cierre);
+  publicar(null);
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+  Alert.alert(titulo || 'Atención', texto || undefined, [{ text: 'Aceptar' }]);
+}
+
+/** El resultado de `decidirSolicitud`: su `aviso` si el store dejó uno (el
+ *  rechazo de un movimiento sin comprobante que no se pudo anular), si no el
+ *  ✓ de siempre. */
+export function listoODecirAviso(r, titulo) {
+  if (r?.aviso && r.aviso.tipo !== 'info') avisar(r.aviso.titulo, r.aviso.texto);
+  else if (r?.aviso) listo(r.aviso.titulo || titulo, r.aviso.texto || r.mensaje);
+  else listo(titulo, r?.mensaje);
+}
+
 export function cerrarProgreso() { clearTimeout(cierre); publicar(null); }
 
 export function CapaDeProgreso() {

@@ -14,12 +14,12 @@
 // Las cinco pestañas del portal: Ofertas, Historias (`componentes/ofertas/
 // Historias`), Banners (`Banners`), Reservas de todas las salas (`Reservas`,
 // con `ofertas_clientes` editar) y Pre-registros.
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { borrarOferta, fetchOfertas, fetchPreregistros, fetchSalas, publicarOferta } from '@nucleo/data/ofertasClientes';
+import { borrarOferta, fetchOfertas, fetchPreregistroPorDocumento, fetchPreregistros, fetchSalas, publicarOferta } from '@nucleo/data/ofertasClientes';
 import { ESTADOS_DE_OFERTA, estadoDeOferta, etiquetaDeDescuento, nivelDeOferta } from '@nucleo/utils/ofertasClientes';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -78,7 +78,22 @@ export default function OfertasClientes() {
   const visibles = conEstado
     .filter((o) => estado === 'todas' || o._estado.key === estado)
     .filter((o) => !texto.trim() || tokenMatch(texto, o.titulo, o.etiqueta ?? ''));
-  const preVisibles = (pre ?? []).filter((p) => !texto.trim() || tokenMatch(texto, p.nombre, p.documento, p.telefono));
+  // Buscar por DUI va a la base (H9, 2026-10-22 en el portal): la lista
+  // cargada tiene tope, y el pre-registro que soporte necesita encontrar puede
+  // no estar en ella. Se escribe con o sin guion.
+  const docBuscado = texto.replace(/[^A-Za-z0-9]/g, '');
+  const esDocumento = pestana === 'preregistros' && /\d/.test(docBuscado) && docBuscado.length >= 7;
+  const [porDocumento, setPorDocumento] = useState(null);
+  useEffect(() => {
+    if (!esDocumento) { setPorDocumento(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- limpiar al dejar de buscar
+    let vivo = true;
+    Promise.resolve(fetchPreregistroPorDocumento(docBuscado))
+      .then((r) => { if (vivo) setPorDocumento(r ?? []); })
+      .catch((e) => { if (vivo) { setPorDocumento([]); fallo('No se pudo buscar', mensajeAmigable(e, 'Intenta de nuevo.')); } });
+    return () => { vivo = false; };
+  }, [esDocumento, docBuscado, pre]);
+  const preVisibles = esDocumento && porDocumento ? porDocumento
+    : (pre ?? []).filter((p) => !texto.trim() || tokenMatch(texto, p.nombre, p.documento, p.telefono));
 
   const grupos = pestana === 'ofertas' || pestana === 'banners' ? [{
     id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todas', onCambiar: setEstado,
@@ -198,6 +213,9 @@ export default function OfertasClientes() {
             <>
               <View style={{ marginHorizontal: 16 }}>
                 <Aviso texto="Se unieron desde la app y todavía no tienen ficha. Cuando la sala los registra con el mismo documento y teléfono, la app los reconoce sola. Aquí quedan los que no coincidieron." />
+              </View>
+              <View style={{ marginHorizontal: 16 }}>
+                <Aviso texto="Si alguien escribe a soporte porque no puede unirse con su DUI, búscalo aquí por el número: otra persona lo pre-registró con su teléfono. Verifica que el documento sea de quien escribe y elimina el pre-registro; después ya se puede registrar desde la app." />
               </View>
               {preVisibles.map((p) => (
                 <Pressable key={p.id} disabled={!editaClientes}

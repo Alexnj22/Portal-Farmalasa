@@ -257,7 +257,7 @@ export default function Empleado() {
           {historial.slice(0, cuantos).map((ev, i) => (
             <View key={ev.id ?? i} style={{ flexDirection: 'row', gap: 10, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{EVENT_TYPES[ev.type]?.label ?? (ev.type === 'HIRING' ? 'Ingreso' : ev.type)}</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{EVENT_TYPES[ev.type]?.label ?? (ev.type === 'HIRING' ? 'Ingreso' : 'Movimiento')}</Text>
                 {ev.note ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{ev.note}</Text> : null}
               </View>
               <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fechaTexto(ev.date, { day: 'numeric', month: 'short', year: 'numeric' })}</Text>

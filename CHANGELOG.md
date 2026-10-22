@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1348.0 — App: lo que la web ganó desde el 15-oct, ahora en el teléfono
+
+- **App · Personal**: órdenes de descuento en la ficha (no existían en la app): lista con lo que falta, papel adjunto y lectura, alta/edición/borrado; también al enlazar una ficha en un alta. El DUI renovado toma el vencimiento nuevo y deja historial (`DATOS_DEL_DUI_ACTUALIZADOS`); un archivo reemplazado no hereda el vencimiento del viejo (helper del núcleo que ahora usa también la web). Tipo de sangre vacío dice «Sin dato».
+- **App · Solicitudes y avisos**: ninguna tarjeta muestra la clave cruda de una solicitud. El detalle de «Movimiento sin comprobante» muestra el movimiento (sentido, concepto, monto, foto, si es de una bolsa). Al rechazar una salida de bolsa que no se puede anular sola, el aviso del servidor se ve — en la app y en la web, donde el «Listo» lo tapaba.
+- **App · Facturación y ventas**: DTE para el cliente (compartir PDF+JSON o mandarlo por correo) desde la venta y desde Modificar facturación. El COF de la noche no se pinta «Sin sello» (salvo los clientes que siempre se envían). Colas: «Vencidas» en Hacienda, más antigua y monto en Anuladas, números faltantes en Saltos, contadores en pestañas. Libros IVA: evidencia de COF de la noche, sólo admin.
+- **App · Créditos, pedidos y productos**: marca «Pagado en la app» en movimientos de caja y abonos; «Reportar un error de la recepción» hasta 2 días después; pestaña «Revisión de factor» con «Corregir en la caja».
+- **App · Chat, puntos, mayoreo, inyecciones y ofertas**: borrador por conversación e interruptor de respuestas automáticas; Niveles del programa (editor de nivel y premios del raspable), Premios por entregar y regalos promocionales, unir dos cuentas, rótulos de lo canjeable; mayoreo con aprobar/no aprobar, bajada en 15 días con motivo y filtros de candidatos; venta de otra sucursal por nombre y «Asignar a un cliente» desde la bitácora de inyecciones; pre-registro buscado por documento.
+- **Núcleo**: la lógica que la app necesitaba salió de las pantallas web (`colasDeFacturacion`, `libroIva`, `revisionFactor`, `nivelesDePuntos`, `chatBorradores`, `documentosDelExpediente`, `ordenesDeDescuento`, `facturacion`) y la web la usa desde ahí, sin cambiar su comportamiento.
+- Nada probado todavía en un teléfono: queda para la build nueva.
+
 ## v2.1347.1 — Reglamento y procedimiento de reservas: versión 1 y fecha a mano
 
 - **Reglamento de reservas y procedimiento interno**: quedan como **versión 1** (todavía no son oficiales; el reglamento decía versión 4), y la fecha «vigente a partir del» y la de la firma van en blanco, para escribirlas a mano el día que se firmen.

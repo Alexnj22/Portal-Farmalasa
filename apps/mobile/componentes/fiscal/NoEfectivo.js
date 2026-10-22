@@ -80,7 +80,7 @@ async function facturasPorId(ids) {
 
 const PAGINA_CONF = 25;
 
-export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdit, user, verMontos }) {
+export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdit, user, verMontos, onCuenta }) {
   const [mes, setMes] = useState(mesSV());
   const [pend, setPend] = useState(null);
   const [confirmadas, setConfirmadas] = useState(new Set());
@@ -113,6 +113,9 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
     for (const r of visibles) { const t = String(r.tipo_pago || 'otro').toLowerCase(); (g[t] ||= []).push(r); }
     return Object.entries(g);
   }, [visibles]);
+  // El número de la pestaña: los pagos que faltan confirmar (sin el buscador).
+  const porConfirmar = pend ? pend.filter((r) => !confirmadas.has(r.id)).length : null;
+  useEffect(() => { if (porConfirmar != null) onCuenta?.(porConfirmar); }, [porConfirmar, onCuenta]);
   const total = visibles.reduce((s, r) => s + Number(r.total || 0), 0);
   const delMes = historial.filter((h) => String(h.confirmed_at || '').startsWith(mes)).length;
 

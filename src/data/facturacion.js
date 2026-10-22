@@ -77,7 +77,17 @@ function getZipLib() {
     return zipPromise;
 }
 
-export async function entregarDteAlCliente({ accion, invoiceId, correo = null }) {
+/** ¿Se puede mandar el documento a este correo? La misma regla en la web y en la app. */
+export const correoDelClienteValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(correo ?? '').trim());
+
+/**
+ * La mitad que no depende del dispositivo: pide el documento a
+ * `dte-para-cliente` y devuelve `{ ok, se_envio, archivos }` (cada archivo
+ * `{ nombre, tipo, base64 }`) o `{ ok:false, error }`. Nunca lanza. Quien la
+ * llama decide cómo se entrega el archivo —el navegador lo descarga, el
+ * teléfono lo pasa a la hoja de compartir— y anota con `anotarEntregaDeDte`.
+ */
+export async function pedirDteParaCliente({ accion, invoiceId, correo = null }) {
     try {
         const { data, error } = await supabase.functions.invoke('dte-para-cliente', {
             body: { accion, invoice_id: invoiceId, correo },
@@ -88,19 +98,40 @@ export async function entregarDteAlCliente({ accion, invoiceId, correo = null })
             return { ok: false, error: detalle || error.message };
         }
         if (!data?.ok) return { ok: false, error: data?.error || 'El servidor no devolvió respuesta.' };
+        return { ok: true, se_envio: !!data.se_envio, archivos: data.archivos || [] };
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
+/** La bitácora de una entrega al cliente (correo o descarga). */
+export function anotarEntregaDeDte(accion, invoiceId, seEnvio) {
+    anotar(accion === 'correo' ? 'DTE_CLIENTE_CORREO' : 'DTE_CLIENTE_DESCARGA', invoiceId, { se_envio: !!seEnvio });
+}
+
+/** El texto que se le muestra a quien lo pidió, el mismo en la web y en la app. */
+export function avisoDeEntregaDeDte({ accion, correo, seEnvio }) {
+    const envio = seEnvio ? ' Se envió a Hacienda en este momento.' : '';
+    return accion === 'correo' ? `Enviado a ${String(correo ?? '').trim()}.${envio}` : `Documento descargado.${envio}`;
+}
+
+export async function entregarDteAlCliente({ accion, invoiceId, correo = null }) {
+    const r = await pedirDteParaCliente({ accion, invoiceId, correo });
+    if (!r.ok) return r;
+    try {
         if (accion === 'descargar') {
             const { downloadZip } = await getZipLib();
-            const entradas = (data.archivos || []).map(a => ({
+            const entradas = r.archivos.map(a => ({
                 name: a.nombre,
                 input: new Blob([Uint8Array.from(atob(a.base64), c => c.charCodeAt(0))], { type: a.tipo }),
             }));
             const blob = await downloadZip(entradas).blob();
-            const base = (data.archivos?.[0]?.nombre || 'documento').replace(/\.[^.]+$/, '');
+            const base = (r.archivos[0]?.nombre || 'documento').replace(/\.[^.]+$/, '');
             descargarArchivo(blob, `${base}.zip`);
             registrarEgreso('dte_venta', { formato: 'zip', filas: entradas.length, detalle: { invoice_id: invoiceId, para: 'cliente' } });
         }
-        anotar(accion === 'correo' ? 'DTE_CLIENTE_CORREO' : 'DTE_CLIENTE_DESCARGA', invoiceId, { se_envio: !!data.se_envio });
-        return { ok: true, se_envio: !!data.se_envio };
+        anotarEntregaDeDte(accion, invoiceId, r.se_envio);
+        return { ok: true, se_envio: r.se_envio };
     } catch (e) {
         return { ok: false, error: e?.message || String(e) };
     }

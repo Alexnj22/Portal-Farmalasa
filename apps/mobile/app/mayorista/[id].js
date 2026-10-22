@@ -5,6 +5,13 @@
 // `accionesDeMayorista` del núcleo): proponerlo, aprobar o rechazar su
 // solicitud (quien la pidió no puede), cambiar el precio o avisar el retiro.
 // Mismas funciones del portal, con confirmación y anotado en la bitácora.
+//
+// Desde el 2026-10-19 (portal): quien aprueba decide al candidato directamente
+// —aprobar o no aprobar, uno por uno, sin solicitud previa—; «no aprobar» no le
+// avisa al cliente y lo saca de la lista. Rechazar una solicitud pide motivo y
+// se le avisa. Bajar de Mayoreo Plus a Mayoreo y retirar rigen 15 días después
+// del aviso (Condiciones §6) y hasta entonces se pueden cancelar. Quién decidió
+// y quién propuso, con foto y nombre corto.
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -27,6 +34,21 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { mayoristaRecordado, recordarMayorista } from '../../componentes/mayoristas/elegido';
 import { volver } from '../../componentes/volver';
+import Avatar from '../../componentes/Avatar';
+
+// Foto y nombre corto (canon del portal: `PersonaConFoto`).
+function Persona({ id, nombre, detalle }) {
+  if (!nombre) return null;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <Avatar empleado={{ id, name: nombre }} tamano={20} />
+      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${shortEmployeeName(nombre)}${detalle ? ` · ${detalle}` : ''}`}</Text>
+    </View>
+  );
+}
+
+// Aprobado o en revisión: su precio. Candidato (o no aprobado antes): el sugerido —«(5)» en el nombre = Mayoreo Plus—.
+const precioInicial = (c) => (c ? (['aprobado', 'solicitado'].includes(c.estado) ? c.precio : c.precio_sugerido) : null);
 
 function Numero({ titulo, valor, nota }) {
   return (
@@ -49,7 +71,7 @@ export default function Mayorista() {
   const [cliente, setCliente] = useState(() => mayoristaRecordado(id));
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
-  const [precio, setPrecio] = useState(() => mayoristaRecordado(id)?.precio ?? mayoristaRecordado(id)?.precio_sugerido ?? 'mayoreo');
+  const [precio, setPrecio] = useState(() => precioInicial(mayoristaRecordado(id)) ?? 'mayoreo');
   const [nota, setNota] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [recargando, setRecargando] = useState(false);
@@ -60,7 +82,7 @@ export default function Mayorista() {
       const fila = (filas ?? []).find((f) => String(f.customer_id) === String(id)) ?? { customer_id: Number(id), nombre: detalle?.nombre };
       recordarMayorista(fila);
       setCliente(fila); setD(detalle); setError(null);
-      setPrecio((p) => (fila.precio ?? p));
+      setPrecio((p) => precioInicial(fila) ?? p);
     } catch (e) { setError(mensajeAmigable(e, 'No se pudo cargar el cliente.')); }
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
@@ -69,6 +91,10 @@ export default function Mayorista() {
     puedeProponer: hasPermission?.('mayoristas', 'can_edit'), puedeAprobar: hasPermission?.('mayoristas', 'can_approve'), userId: user?.id,
   });
   const est = cliente?.estado;
+  // Quien aprueba decide al candidato directamente; proponer queda para quien no aprueba.
+  const puedeProponer = acciones.proponer && !acciones.decidir;
+  // Bajar de Mayoreo Plus a Mayoreo rige a los 15 días y se le avisa: pide motivo (§6).
+  const esBajada = acciones.gestionar && cliente?.precio === 'mayoreo_plus' && precio === 'mayoreo';
   const meses = (d?.meses ?? []).slice(-7);
 
   const correr = (titulo, mensaje, boton, accion, fn, hecho, destructivo = false) => Alert.alert(titulo, mensaje, [
@@ -90,7 +116,8 @@ export default function Mayorista() {
   const nombre = cliente?.nombre ?? 'Cliente';
   const sub = [cliente?.documento, cliente?.telefono, est ? ESTADOS[est]?.label : null,
     est === 'aprobado' ? `${PRECIOS[cliente.precio]} · ${RANGOS[d?.rango ?? cliente.rango]?.nombre ?? 'Jade'}` : null].filter(Boolean).join(' · ');
-  const conAcciones = acciones.proponer || acciones.resolver || acciones.gestionar;
+  const conPrecio = puedeProponer || acciones.decidir || acciones.resolver || acciones.gestionar;
+  const conAcciones = conPrecio || acciones.cancelar;
 
   return (
     <>
@@ -108,8 +135,23 @@ export default function Mayorista() {
                 {sub ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{sub}</Text> : null}
               </View>
               {cliente.ficha_completa === false ? <Aviso tono="freno" texto="La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar." /> : null}
+              {cliente.resuelto_por && est && est !== 'solicitado' ? (
+                <View style={{ gap: 4 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${est === 'aprobado' ? 'Última decisión' : ESTADOS[est]?.label}:${cliente.motivo && est !== 'aprobado' ? ` «${cliente.motivo}»` : ''}`}</Text>
+                  <Persona id={cliente.resuelto_por_id} nombre={cliente.resuelto_por}
+                    detalle={cliente.resuelto_at ? fechaTexto(cliente.resuelto_at, { day: 'numeric', month: 'short', year: 'numeric' }) : null} />
+                </View>
+              ) : null}
+              {est === 'aprobado' && (cliente.retiro_programado || cliente.precio_programado_el) ? (
+                <Aviso tono="cuidado" texto={`${cliente.retiro_programado
+                  ? `Retiro avisado: deja de ser Cliente Mayorista el ${fechaTexto(cliente.retiro_programado, { day: 'numeric', month: 'long' })}.`
+                  : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`} Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.`} />
+              ) : null}
               {est === 'solicitado' ? (
-                <Aviso texto={`${ORIGENES[cliente.origen] ?? 'Solicitado'}${cliente.solicitado_por ? ` por ${shortEmployeeName(cliente.solicitado_por)}` : ''}${cliente.solicitado_at ? ` el ${fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}` : ''}${cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}.${acciones.esSolicitante ? ' Tú la hiciste: la tiene que resolver otra persona.' : ''}`} />
+                <View style={{ gap: 4 }}>
+                  <Aviso texto={`${ORIGENES[cliente.origen] ?? 'Solicitado'}${cliente.solicitado_at ? ` el ${fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}` : ''}${cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}.${acciones.esSolicitante ? ' Tú la hiciste: la tiene que resolver otra persona.' : ''}`} />
+                  <Persona id={cliente.solicitado_por_id} nombre={cliente.solicitado_por} detalle="Lo propuso" />
+                </View>
               ) : null}
 
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 }}>
@@ -136,23 +178,44 @@ export default function Mayorista() {
               {d?.historial?.length ? (
                 <Seccion titulo="Historial">
                   {d.historial.map((h, i) => (
-                    <Text key={i} style={{ color: colorSistema.texto, fontSize: 14, paddingVertical: 4 }}>
-                      <Text style={{ color: colorSistema.texto2 }}>{`${fechaTexto(h.cuando, { day: 'numeric', month: 'short', year: 'numeric' })} · `}</Text>
-                      {`${textoDeAccion(h)}${h.por ? ` · ${shortEmployeeName(h.por)}` : ''}${h.nota ? ` — «${h.nota}»` : ''}`}
-                    </Text>
+                    <View key={i} style={{ gap: 3, paddingVertical: 4 }}>
+                      <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
+                        <Text style={{ color: colorSistema.texto2 }}>{`${fechaTexto(h.cuando, { day: 'numeric', month: 'short', year: 'numeric' })} · `}</Text>
+                        {`${textoDeAccion(h)}${h.nota ? ` — «${h.nota}»` : ''}`}
+                      </Text>
+                      <Persona id={h.por_id} nombre={h.por} />
+                    </View>
                   ))}
                 </Seccion>
               ) : null}
 
               {conAcciones ? (
-                <Seccion titulo="Precio y nota">
-                  <Segmentos margen={0} activa={precio} onCambiar={setPrecio} opciones={[{ id: 'mayoreo', label: 'Mayoreo' }, { id: 'mayoreo_plus', label: 'Mayoreo Plus' }]} />
+                <Seccion titulo={conPrecio ? 'Precio y nota' : 'Nota'}>
+                  {conPrecio ? <Segmentos margen={0} activa={precio} onCambiar={setPrecio} opciones={[{ id: 'mayoreo', label: 'Mayoreo' }, { id: 'mayoreo_plus', label: 'Mayoreo Plus' }]} /> : null}
                   <Campo value={nota} onChangeText={setNota} maxLength={300}
-                    placeholder={acciones.resolver || acciones.gestionar ? 'Motivo (obligatorio para rechazar o retirar)' : 'Nota (opcional)'} />
+                    placeholder={acciones.resolver ? 'Motivo (obligatorio para rechazar: se le avisa al cliente)'
+                      : acciones.gestionar ? 'Motivo (obligatorio para retirar o bajar a Mayoreo: se le avisa al cliente)'
+                        : 'Nota (opcional, interna)'} />
                 </Seccion>
               ) : null}
 
-              {acciones.proponer ? (
+              {acciones.decidir ? (
+                <View style={{ gap: 10 }}>
+                  <BotonGrande texto={`Aprobar con ${PRECIOS[precio]}`} color={MARCA.verde} deshabilitado={ocupado || cliente.ficha_completa === false}
+                    onPress={() => correr('Aprobar como mayorista', `${nombre} pasa a comprar con ${PRECIOS[precio]}.`, 'Aprobar', 'aprobado',
+                      () => resolverMayorista(cliente.customer_id, 'aprobar', precio, nota), `Aprobado con ${PRECIOS[precio]}`)} />
+                  <BotonGrande texto="No aprobar" borde color={MARCA.rojo} deshabilitado={ocupado}
+                    onPress={() => correr('No aprobar', `${nombre} sale de los candidatos. No se le avisa: no pidió nada.`, 'No aprobar', 'descartado',
+                      () => resolverMayorista(cliente.customer_id, 'descartar', null, nota), 'No aprobado: sale de los candidatos', true)} />
+                </View>
+              ) : null}
+              {acciones.cancelar ? (
+                <BotonGrande texto="Cancelar el cambio avisado" borde deshabilitado={ocupado}
+                  onPress={() => correr('Cancelar el cambio avisado', cliente.retiro_programado ? 'Sigue siendo Cliente Mayorista.' : 'Se queda con Mayoreo Plus.', 'Cancelar el cambio', 'cambio_cancelado',
+                    () => resolverMayorista(cliente.customer_id, 'cancelar_cambio', null, nota), 'Cambio cancelado')} />
+              ) : null}
+
+              {puedeProponer ? (
                 <BotonGrande texto="Proponer como mayorista" deshabilitado={ocupado}
                   onPress={() => correr('Proponer como mayorista', `Se envía a Administración con ${PRECIOS[precio]}.`, 'Proponer', 'propuesto',
                     () => proponerMayorista(cliente.customer_id, precio, nota), 'Solicitud enviada a Administración')} />
@@ -163,15 +226,19 @@ export default function Mayorista() {
                     onPress={() => correr('Aprobar como mayorista', `${nombre} pasa a comprar con ${PRECIOS[precio]}.`, 'Aprobar', 'aprobado',
                       () => resolverMayorista(cliente.customer_id, 'aprobar', precio, nota), `Aprobado con ${PRECIOS[precio]}`)} />
                   <BotonGrande texto="Rechazar" borde color={MARCA.rojo} deshabilitado={ocupado || !nota.trim()}
-                    onPress={() => correr('Rechazar la solicitud', `Motivo: «${nota.trim()}».`, 'Rechazar', 'rechazado',
+                    onPress={() => correr('Rechazar la solicitud', `Se le avisa al cliente. Motivo: «${nota.trim()}».`, 'Rechazar', 'rechazado',
                       () => resolverMayorista(cliente.customer_id, 'rechazar', null, nota), 'Solicitud rechazada', true)} />
                 </View>
               ) : null}
               {acciones.gestionar ? (
                 <View style={{ gap: 10 }}>
-                  <BotonGrande texto="Cambiar precio" deshabilitado={ocupado || precio === cliente.precio}
-                    onPress={() => correr('Cambiar el precio', `De ${PRECIOS[cliente.precio]} a ${PRECIOS[precio]}.`, 'Cambiar', 'precio',
-                      () => resolverMayorista(cliente.customer_id, 'cambiar_precio', precio, nota), `Precio cambiado a ${PRECIOS[precio]}`)} />
+                  <BotonGrande texto={esBajada ? 'Bajar a Mayoreo (en 15 días)' : 'Cambiar precio'}
+                    deshabilitado={ocupado || precio === cliente.precio || (esBajada && !nota.trim()) || (esBajada && !!cliente.precio_programado)}
+                    onPress={() => correr(esBajada ? 'Bajar a Mayoreo' : 'Cambiar el precio',
+                      esBajada ? `Pasa a Mayoreo en 15 días y se le avisa. Motivo: «${nota.trim()}».` : `De ${PRECIOS[cliente.precio]} a ${PRECIOS[precio]}.`,
+                      esBajada ? 'Avisar la bajada' : 'Cambiar', 'precio',
+                      () => resolverMayorista(cliente.customer_id, 'cambiar_precio', precio, nota),
+                      esBajada ? 'Bajada avisada: rige en 15 días' : `Precio cambiado a ${PRECIOS[precio]}`)} />
                   <BotonGrande texto="Retirar" borde color={MARCA.rojo} deshabilitado={ocupado || !nota.trim()}
                     onPress={() => correr('Avisar el retiro', `El retiro rige en 15 días. Motivo: «${nota.trim()}».`, 'Retirar', 'retiro',
                       () => resolverMayorista(cliente.customer_id, 'retirar', null, nota), 'Retiro avisado: rige en 15 días', true)} />

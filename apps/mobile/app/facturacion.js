@@ -15,6 +15,11 @@
 //     del portal (`useVisitados`, núcleo), del documento y no de la cola.
 //   · Saltos (solventar saltos y campos nulos, con su historial) y No efectivo
 //     (confirmar pagos con comprobante).
+//   · Como el portal desde el 2026-10-17: cada pestaña lleva cuánto queda
+//     (Saltos y No efectivo, una vez abiertas: un cero no medido diría que no
+//     hay nada); Hacienda cuenta las «Vencidas» (pasada la gracia de 2 días,
+//     `GRACIA_SELLO_DIAS`), Anuladas la más antigua y el monto pendiente, y
+//     Saltos cuántos NÚMEROS faltan, no sólo cuántos huecos.
 //
 // Acciones, con las MISMAS funciones del portal:
 //   · «Solventar» una pendiente: corrige lo que haga falta y la reenvía
@@ -45,7 +50,7 @@ import {
   insertInvoiceResolution, regularizarDte,
 } from '@nucleo/data/facturacion';
 import {
-  conteoDeObservaciones, observacionesSolventadas, diasQuedanDelMes, esSolventable, metaObs, observacionesPendientes, resumenDeRegularizacion,
+  conteoDeObservaciones, observacionesSolventadas, diasQuedanDelMes, diasDeLaMasVieja, GRACIA_SELLO_DIAS, vencidasSinSello, esSolventable, metaObs, observacionesPendientes, resumenDeRegularizacion,
   resumenDeRegularizarUna, sinResolver, tonoDeDiasQuedan,
 } from '@nucleo/utils/colasDeFacturacion';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -102,6 +107,11 @@ export default function Facturacion() {
   const [nota, setNota] = useState('');
   const [ocupado, setOcupado] = useState(null);
   const [recargaHija, setRecargaHija] = useState(0);
+  // Lo que queda en Saltos y No efectivo: lo informan ellas al cargar.
+  const [cuentas, setCuentas] = useState({});
+  const alContar = useCallback((id) => (n) => setCuentas((c) => (c[id] === n ? c : { ...c, [id]: n })), []);
+  const contarSaltos = useMemo(() => alContar('saltos'), [alContar]);
+  const contarNoEf = useMemo(() => alContar('noef'), [alContar]);
   const { visitedIds, toggleVisited, clearVisited } = useVisitados();
   const copiarId = (erpId) => {
     if (!erpId) return;
@@ -151,7 +161,10 @@ export default function Facturacion() {
   const n = (k) => datos?.[k]?.length ?? 0;
   const ccf = (k) => (datos?.[k] || []).filter((r) => r.tipo_documento === 'CCF').length;
   const diasQuedan = diasQuedanDelMes();
-  const masVieja = (datos?.obs || []).reduce((m, r) => Math.max(m, r.fecha ? diasEntre(r.fecha, hoySV()) : 0), 0);
+  const masVieja = diasDeLaMasVieja(datos?.obs);
+  const nulaMasVieja = diasDeLaMasVieja(datos?.nulas);
+  const montoNulas = (datos?.nulas || []).reduce((a, r) => a + (Number(r.total) || 0), 0);
+  const vencidas = vencidasSinSello(datos?.mh);
 
   const salasOrdenadas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const marcadas = useMemo(() => (datos?.[cola] || []).filter((r) => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length, [datos, cola, visitedIds]);
@@ -224,26 +237,32 @@ export default function Facturacion() {
         <FiltrosActivos grupos={grupos} />
         {colas.length > 1 ? (
           <Segmentos activa={cola} onCambiar={setCola} opciones={colas.map((c) => ({
-            id: c.id, label: datos && ['mh', 'obs', 'nulas'].includes(c.id) && n(c.id) ? `${c.label} · ${n(c.id)}` : c.label,
+            id: c.id, label: (() => {
+              const k = ['mh', 'obs', 'nulas'].includes(c.id) ? (datos ? n(c.id) : null) : cuentas[c.id];
+              return k ? `${c.label} · ${k}` : c.label;
+            })(),
           }))} />
         ) : null}
         {!colas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu cargo no tiene ninguna cola de Facturación." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {ocupado === 'todas' ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Enviando a Hacienda… puede tardar un par de minutos." /></View> : null}
 
-        {cola === 'saltos' ? <Saltos sala={sala} nombreSala={nombreSala} recarga={recargaHija} canEdit={canEdit} user={user} /> : null}
-        {cola === 'noef' ? <NoEfectivo sala={sala} nombreSala={nombreSala} salas={salasOrdenadas} texto={texto} canEdit={canEdit} user={user} verMontos={verMontos} /> : null}
+        {cola === 'saltos' ? <Saltos sala={sala} nombreSala={nombreSala} recarga={recargaHija} canEdit={canEdit} user={user} onCuenta={contarSaltos} /> : null}
+        {cola === 'noef' ? <NoEfectivo sala={sala} nombreSala={nombreSala} salas={salasOrdenadas} texto={texto} canEdit={canEdit} user={user} verMontos={verMontos} onCuenta={contarNoEf} /> : null}
 
         {['mh', 'obs', 'nulas'].includes(cola) && datos ? (
           <>
             {cola === 'mh' ? (
               <>
                 <FilaDeKpis>
-                  <Kpi icono="Clock" rotulo="Pendientes" valor={String(n('mh'))} color={n('mh') ? MARCA.ambar : MARCA.verde} apoyo="sin sello de Hacienda" />
-                  <Kpi icono="AlertTriangle" rotulo="CCF urgentes" valor={String(ccf('mh'))} color={ccf('mh') ? MARCA.rojo : MARCA.verde} pide={ccf('mh') > 0} apoyo="créditos fiscales" />
+                  <Kpi icono="Clock" rotulo="Sin sello" valor={String(n('mh'))} color={n('mh') ? MARCA.ambar : MARCA.verde} apoyo={n('mh') ? 'esperan a Hacienda' : 'todo sellado'} />
+                  <Kpi icono="AlertTriangle" rotulo="Vencidas" valor={String(vencidas)} color={vencidas ? MARCA.rojo : MARCA.verde} pide={vencidas > 0} apoyo={`más de ${GRACIA_SELLO_DIAS} días`} />
                 </FilaDeKpis>
                 <FilaDeKpis>
-                  <Kpi icono="Hourglass" rotulo="Días restantes" valor={textoDias} color={colorDeVariante(tonoDeDiasQuedan(diasQuedan))} pide={diasQuedan <= 2} apoyo="para cerrar el mes" />
+                  <Kpi icono="AlertTriangle" rotulo="CCF urgentes" valor={String(ccf('mh'))} color={ccf('mh') ? MARCA.rojo : MARCA.verde} pide={ccf('mh') > 0} apoyo="créditos fiscales" />
+                  <Kpi icono="Hourglass" rotulo="Al cierre" valor={textoDias} color={colorDeVariante(tonoDeDiasQuedan(diasQuedan))} pide={diasQuedan <= 2} apoyo={diasQuedan === 0 ? 'hoy cierra el mes' : `día${diasQuedan === 1 ? '' : 's'} del mes`} />
+                </FilaDeKpis>
+                <FilaDeKpis>
                   <Kpi icono="CheckCircle2" rotulo="Selladas" valor={datos.confirmadasMes == null ? '—' : String(datos.confirmadasMes)} color={MARCA.verde} apoyo="por Hacienda este mes" />
                 </FilaDeKpis>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Sin sello de Hacienda. El envío nocturno las reintenta solo.</Text>
@@ -252,14 +271,21 @@ export default function Facturacion() {
             {cola === 'obs' ? (
               <FilaDeKpis>
                 <Kpi icono="AlertTriangle" rotulo="Facturas" valor={String(n('obs'))} color={n('obs') ? MARCA.rojo : MARCA.verde} apoyo={obsCode !== 'todos' ? `${lista.length} en el filtro` : 'con observaciones'} />
-                <Kpi icono="Hourglass" rotulo="Más antigua" valor={n('obs') ? `${masVieja} d` : '—'} color={MARCA.ambar} apoyo="sin solventar" />
+                <Kpi icono="Hourglass" rotulo="Más antigua" valor={n('obs') ? `${masVieja} d` : '—'} color={MARCA.ambar} apoyo="sigue abierta" />
               </FilaDeKpis>
             ) : null}
             {cola === 'nulas' ? (
+              <>
               <FilaDeKpis>
-                <Kpi icono="Clock" rotulo="Pendientes" valor={String(n('nulas'))} color={n('nulas') ? MARCA.ambar : MARCA.verde} apoyo={`${ccf('nulas')} CCF urgentes`} />
+                <Kpi icono="Ban" rotulo="Pendientes" valor={String(n('nulas'))} color={n('nulas') ? MARCA.ambar : MARCA.verde}
+                  apoyo={n('nulas') ? (verMontos ? formatMoney(montoNulas) : 'por atender') : 'nada por atender'} />
+                <Kpi icono="Hourglass" rotulo="Más antigua" valor={n('nulas') ? `${nulaMasVieja} d` : '—'} color={nulaMasVieja > 7 ? MARCA.ambar : colorSistema.texto2} apoyo="sin solventar" />
+              </FilaDeKpis>
+              <FilaDeKpis>
+                <Kpi icono="AlertTriangle" rotulo="CCF urgentes" valor={String(ccf('nulas'))} color={ccf('nulas') ? MARCA.rojo : MARCA.verde} pide={ccf('nulas') > 0} apoyo="crédito fiscal" />
                 <Kpi icono="FileCheck" rotulo="Solventadas" valor={String(datos.nulasSolventadasMes)} color={MARCA.verde} apoyo="este mes" />
               </FilaDeKpis>
+              </>
             ) : null}
 
             {marcadas ? (
@@ -299,7 +325,7 @@ export default function Facturacion() {
                         </Tocable>
                       ) : null}
                       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                        {cola !== 'obs' ? <Pildora texto={d ? `${d} día${d === 1 ? '' : 's'} esperando` : 'de hoy'} color={d > 3 ? MARCA.rojo : d ? MARCA.ambar : MARCA.verde} /> : null}
+                        {cola !== 'obs' ? <Pildora texto={d ? `${d} día${d === 1 ? '' : 's'} esperando` : 'de hoy'} color={d > GRACIA_SELLO_DIAS + 1 ? MARCA.rojo : d > (cola === 'mh' ? GRACIA_SELLO_DIAS : 0) ? MARCA.ambar : MARCA.verde} /> : null}
                         {r.cliente_categoria ? <Pildora texto={r.cliente_categoria} color={MARCA.azulClaro} /> : null}
                         {r.tipo_pago ? <Pildora texto={String(r.tipo_pago)} color={colorSistema.texto2} /> : null}
                         {cola === 'obs' ? (r.observaciones || []).map((c) => <Pildora key={c} texto={metaObs(c).label} color={colorDeVariante(metaObs(c).variant)} />) : null}

@@ -43,7 +43,7 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { formatQty } from '@nucleo/utils/formatNumber';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
@@ -51,79 +51,18 @@ import {
     fetchPanelDeNiveles, guardarNivelDePuntos, guardarRangoMayoreoDePuntos, guardarConfigDePuntos, fetchPromocionales,
 } from '@nucleo/data/puntos';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
+import {
+    CAMPOS_NIVEL, TIPOS_DE_PREMIO, dolaresDePremio, diferenciasDeConfig, esperadoDelRaspable, filaDePremio,
+    numeroONulo as num, parteEnRegalos, premiosCanonicos, premiosLimpios, sujetoDelHistorial, CONFIRMAR_INTERRUPTOR_DE_PUNTOS,
+} from '@nucleo/utils/nivelesDePuntos';
 
-// 100 puntos = US$1.00 (cláusula 4 del reglamento).
-const dolares = (puntos) => formatMoney((Number(puntos) || 0) / 100);
+// Las cuentas (rótulos, premios, qué cambió, cuánto cuesta un raspable) viven
+// en el núcleo desde el 2026-10-22: la app del personal configura lo mismo.
+const dolares = dolaresDePremio;
 const pts = (n) => formatQty(Number(n) || 0);
-const num = (v) => (v === '' || v == null ? null : Number(v));
-
-// Los campos que se editan de un nivel, con su rótulo. El orden es el de la tarjeta.
-const CAMPOS_NIVEL = [
-    { key: 'nombre', label: 'Nombre', tipo: 'text' },
-    { key: 'desde', label: 'Compra en 12 meses desde', prefix: '$', tipo: 'number', ayuda: 'Todas las facturas válidas, no sólo las que dieron puntos.' },
-    { key: 'factor', label: 'Puntos por cada $1', tipo: 'number', ayuda: 'De 1 a 5.' },
-    { key: 'puntos_cumpleanos', label: 'Puntos de cumpleaños', tipo: 'number' },
-    { key: 'horas_reserva', label: 'Horas para retirar una reserva', tipo: 'number', ayuda: 'De 1 a 168. La pagada espera 7 días siempre.' },
-    { key: 'dias_anticipo_ofertas', label: 'Días antes para ver las ofertas', tipo: 'number', ayuda: '0 = el mismo día que todos. Máximo 14.' },
-];
-
-const ROTULO_CAMPO = {
-    ...Object.fromEntries(CAMPOS_NIVEL.map((c) => [c.key, c.label])),
-    cupon_mensual: 'Raspable sin tabla (puntos)',
-    cupon_premios: 'Premios del raspable',
-    cupon_presupuesto_mensual: 'Tope del raspable al mes',
-    niveles_activos: 'Niveles encendidos',
-    mayoreo_beneficios_activos: 'Beneficios del Cliente Mayorista',
-};
-
-/** Un premio en palabras: «300 pts», «2 × MICROPORE», «Termo Salud». */
-const premioTexto = (p) => (p.tipo === 'producto' ? `${Number(p.cantidad) > 1 ? `${p.cantidad} × ` : ''}${p.nombre}`
-    : p.tipo === 'promocional' ? p.nombre : `${pts(p.puntos)} pts`);
-
-/** La tabla de premios en palabras, para el historial. */
-const premiosTexto = (lista) => (Array.isArray(lista) && lista.length
-    ? lista.map((p) => `${premioTexto(p)} (${p.peso})`).join(' · ') : 'ninguno');
-
-const valorTexto = (key, v) => {
-    if (key === 'cupon_premios') return premiosTexto(v);
-    if (typeof v === 'boolean') return v ? 'Sí' : 'No';
-    if (key === 'cupon_presupuesto_mensual' && v == null) return 'sin tope';
-    if (v == null || v === '') return '—';
-    if (key === 'desde') return formatMoney(Number(v));
-    return String(v);
-};
-
-/** Qué cambió entre dos fotos de una fila del historial. */
-function diferencias(antes, despues) {
-    const claves = new Set([...Object.keys(antes || {}), ...Object.keys(despues || {})]);
-    const out = [];
-    for (const k of claves) {
-        if (['clave', 'orden'].includes(k)) continue;
-        const a = antes?.[k]; const d = despues?.[k];
-        if (JSON.stringify(a ?? null) === JSON.stringify(d ?? null)) continue;
-        out.push(`${ROTULO_CAMPO[k] ?? k}: ${valorTexto(k, a)} → ${valorTexto(k, d)}`);
-    }
-    return out;
-}
-
-const esRegalo = (p) => p.tipo === 'producto' || p.tipo === 'promocional';
-/**
- * Valor esperado de un raspable EN PUNTOS: lo que cuesta en promedio cada uno.
- * Los regalos cuentan como 0 puntos (su costo es de inventario, no de puntos),
- * así que pesan en el total y bajan el promedio.
- */
-function esperado(premios, defecto) {
-    const lista = (premios || []).filter((p) => Number(p.peso) > 0);
-    if (!lista.length) return Number(defecto) || 0;
-    const total = lista.reduce((a, p) => a + Number(p.peso), 0);
-    return lista.reduce((a, p) => a + (esRegalo(p) ? 0 : Number(p.puntos) || 0) * Number(p.peso), 0) / total;
-}
-/** Qué parte de los raspables sale en regalo, en %. */
-const parteEnRegalos = (premios) => {
-    const lista = (premios || []).filter((p) => Number(p.peso) > 0);
-    const total = lista.reduce((a, p) => a + Number(p.peso), 0);
-    return total ? Math.round((lista.filter(esRegalo).reduce((a, p) => a + Number(p.peso), 0) / total) * 100) : 0;
-};
+const diferencias = diferenciasDeConfig;
+const esperado = esperadoDelRaspable;
+const canonico = premiosCanonicos;
 
 export default function NivelesDelPrograma({ puedeEditar }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -216,32 +155,7 @@ function EstadoDelPrograma({ config, dadoMes, puedeEditar, alGuardar }) {
         }
     };
 
-    const TEXTO = {
-        niveles_activos: {
-            on: {
-                titulo: '¿Encender los niveles?',
-                mensaje: 'Desde ahora cada cliente queda en el nivel de lo que compró en los últimos 12 meses: cambian los puntos que gana por dólar, el regalo de cumpleaños, el raspable del mes y los días de anticipo de las ofertas. Hazlo sólo con el reglamento que los describe ya publicado.',
-                boton: 'Encender niveles',
-            },
-            off: {
-                titulo: '¿Apagar los niveles?',
-                mensaje: 'Todos los clientes vuelven al nivel de entrada: 1 punto por dólar, el cumpleaños de ese nivel y sin raspable. Lo ya ganado no se toca.',
-                boton: 'Apagar niveles',
-            },
-        },
-        mayoreo_beneficios_activos: {
-            on: {
-                titulo: '¿Encender los beneficios del Cliente Mayorista?',
-                mensaje: 'El Cliente Mayorista aprobado deja de recibir el cumpleaños y el raspable de su nivel y recibe los de su rango (Jade, Zafiro, Rubí o Diamante), como dicen las Condiciones §5.',
-                boton: 'Encender',
-            },
-            off: {
-                titulo: '¿Apagar los beneficios del Cliente Mayorista?',
-                mensaje: 'El Cliente Mayorista vuelve a recibir el cumpleaños y el raspable como cualquier cliente.',
-                boton: 'Apagar',
-            },
-        },
-    };
+    const TEXTO = CONFIRMAR_INTERRUPTOR_DE_PUNTOS;
     const t = pidiendo ? TEXTO[pidiendo.campo][pidiendo.valor ? 'on' : 'off'] : null;
 
     return (
@@ -297,13 +211,7 @@ function FilaInterruptor({ titulo, detalle, valor, alCambiar, puedeEditar }) {
 }
 
 // ── El editor del raspable ──────────────────────────────────────────────────
-// Cada premio es de PUNTOS (los de siempre), de PRODUCTO o PROMOCIONAL. La
-// forma de cada uno es la que guarda la base y valida `puntos_premios_validos`.
-const TIPOS_DE_PREMIO = [
-    { value: 'puntos', label: 'Puntos' },
-    { value: 'producto', label: 'Producto' },
-    { value: 'promocional', label: 'Promocional' },
-];
+// La forma de cada premio es la que guarda la base y valida `puntos_premios_validos`.
 
 /** El rótulo de un campo que no lo trae (LiquidSelect), con la letra de PortalInput. */
 const Campo = ({ rotulo, className = '', children }) => (
@@ -312,13 +220,6 @@ const Campo = ({ rotulo, className = '', children }) => (
         {children}
     </div>
 );
-
-/** Un premio guardado → la fila del formulario (todo en texto). */
-const filaDePremio = (p) => ({
-    tipo: p.tipo ?? 'puntos', peso: String(p.peso ?? ''), puntos: p.puntos != null ? String(p.puntos) : '',
-    product_id: p.product_id ?? null, presentacion_tipo: p.presentacion_tipo ?? '', factor: p.factor ?? null,
-    cantidad: p.cantidad != null ? String(p.cantidad) : '1', nombre: p.nombre ?? '', promocional_id: p.promocional_id ?? null,
-});
 
 function FilaDeProducto({ p, poner, puedeEditar }) {
     const [buscando, setBuscando] = useState(!p.product_id);
@@ -442,25 +343,6 @@ function EditorDePremios({ premios, alCambiar, puedeEditar }) {
         </div>
     );
 }
-
-/** El formulario → la lista que guarda la base, sin filas a medio llenar. */
-const premiosLimpios = (lista) => (lista ?? []).flatMap((p) => {
-    if (p.peso === '' || p.peso == null) return [];
-    const peso = Number(p.peso);
-    if ((p.tipo ?? 'puntos') === 'puntos') return p.puntos === '' ? [] : [{ puntos: Number(p.puntos), peso }];
-    if (p.tipo === 'producto') {
-        if (!p.product_id || !p.presentacion_tipo || !p.factor) return [];
-        return [{ tipo: 'producto', product_id: Number(p.product_id), presentacion_tipo: p.presentacion_tipo,
-            factor: Number(p.factor), cantidad: Number(p.cantidad) || 1, nombre: p.nombre, peso }];
-    }
-    if (p.tipo === 'promocional') {
-        if (!p.promocional_id) return [];
-        return [{ tipo: 'promocional', promocional_id: Number(p.promocional_id), nombre: p.nombre, peso }];
-    }
-    return [];
-});
-/** Para comparar con lo guardado: la base reordena las claves de cada premio. */
-const canonico = (lista) => JSON.stringify((lista ?? []).map((o) => Object.fromEntries(Object.entries(o).sort())));
 
 // ── Un nivel ────────────────────────────────────────────────────────────────
 function TarjetaDeNivel({ nivel, conRaspable, esEntrada, puedeEditar, alGuardar }) {
@@ -639,12 +521,7 @@ function TarjetaDeRango({ rango, conRaspable, puedeEditar, alGuardar }) {
 
 // ── Historial ───────────────────────────────────────────────────────────────
 function Historial({ filas, niveles, mayoreo }) {
-    const nombreDe = (h) => {
-        if (h.tabla === 'config') return 'Programa';
-        const lista = h.tabla === 'nivel' ? niveles : mayoreo;
-        const n = lista.find((x) => x.clave === h.clave)?.nombre ?? h.clave;
-        return h.tabla === 'nivel' ? `Nivel ${n}` : `Mayoreo ${n}`;
-    };
+    const nombreDe = (h) => sujetoDelHistorial(h, niveles, mayoreo);
     return (
         <section className="flex flex-col gap-3">
             <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">

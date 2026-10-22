@@ -9,7 +9,9 @@
 // mes, modificados del mes y —con costos— en pérdida y con margen bajo); las
 // que filtran, filtran igual (núcleo: `fetchIdsModificadosDesde`,
 // `fetchIdsPorMargen`). La ficha edita foto, devolutivo, categoría, principios
-// activos y ubicaciones. Las presentaciones se ven en `presentaciones`.
+// activos y ubicaciones. Las presentaciones se ven en `presentaciones`, y con
+// el mismo permiso la «Revisión de factor» (`producto/revision-factor`): qué
+// presentación cambió de tamaño y la existencia que hay que corregir.
 //
 // Como el portal: filtro por laboratorio, orden por producto, laboratorio,
 // categoría o estado, y las marcas de cada fila — margen (pérdida / bajo),
@@ -100,6 +102,7 @@ export default function Productos() {
   const [resumen, setResumen] = useState({ total: null, aproximado: false });
   const { hasPermission, maxPriceLevel } = useAuth();
   const conCosto = hasPermission('productos_ver_costos');
+  const verRevision = hasPermission('productos_tab_presentaciones');
   const [cuentas, setCuentas] = useState(null);
   const [modificados, setModificados] = useState(null);
   const [margen, setMargen] = useState(null);
@@ -201,6 +204,7 @@ export default function Productos() {
             </ScrollView>
             <View style={{ marginHorizontal: 16, gap: 8 }}>
               <BotonGrande texto="Presentaciones" borde onPress={() => router.push('/presentaciones')} />
+              {verRevision ? <BotonGrande texto="Revisión de factor" borde color={MARCA.ambar} onPress={() => router.push('/producto/revision-factor')} /> : null}
               <BotonGrande texto="Enriquecer SRS" borde color={MARCA.violetaClaro} onPress={() => router.push('/producto/enriquecer-srs')} />
             </View>
             <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Todos' }]} />

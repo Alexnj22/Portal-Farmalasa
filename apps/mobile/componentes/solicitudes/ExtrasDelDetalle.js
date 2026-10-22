@@ -10,9 +10,16 @@
 //   · qué pasa con los PUNTOS en un cambio de cliente (antes de aprobar se le
 //     pregunta a la base con la misma función que hace el traspaso, en modo
 //     consulta; después, lo que quedó en `erp_aplicado.puntos`);
-//   · el motivo de quien la envió.
+//   · el motivo de quien la envió;
+//   · un movimiento sin comprobante (`CAJA_INGRESO_AUTORIZACION`, del cajón o
+//     de una bolsa): si entra o sale, de qué, cuánto, con qué, por qué se
+//     rechazó la vez anterior y la foto si la hay — lo único que tiene quien
+//     decide sobre dinero que no está en ningún cajón.
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { Host, Icon } from '@expo/ui';
 import { fetchPuntosDelCambioDeCliente } from '@nucleo/data/puntos';
 import { avisoDeCambioDeCliente } from '@nucleo/utils/puntosTexto';
@@ -61,6 +68,41 @@ function PuntosDelCambio({ invoiceId, customerNuevo, aplicado }) {
   );
 }
 
+/** Lo que la sala dijo de un movimiento sin comprobante (`DetalleSolicitud` del portal). */
+function MovimientoSinComprobante({ meta }) {
+  const forma = meta.forma_pago === 'TRANSFERENCIA' ? 'Por transferencia' : meta.forma_pago === 'TARJETA' ? 'Con tarjeta' : 'En efectivo';
+  const sale = meta.sentido === 'SALIDA';
+  const linea = [forma, meta.fecha ? fechaTexto(meta.fecha) : null, meta.numero_boleta ? `comprobante ${meta.numero_boleta}` : null,
+    meta.operacion_bolsa ? 'de una bolsa' : null].filter(Boolean).join(' · ');
+  const foto = meta.foto_url || meta.foto_nueva || null;
+  return (
+    <>
+      <Bloque rotulo={sale ? 'Salida sin comprobante' : 'Ingreso sin comprobante'} color={MARCA.ambar}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{meta.detalle || meta.concepto || 'Sin concepto'}</Text>
+          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(meta.monto)}</Text>
+        </View>
+        {linea ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{linea}</Text> : null}
+        {foto ? (
+          <Pressable onPress={() => Promise.resolve(openStoredFile(foto)).catch(() => {})} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Ver la foto</Text>
+          </Pressable>
+        ) : null}
+      </Bloque>
+      {meta.reenvio && meta.rechazo_anterior ? (
+        <Bloque rotulo="Se reenvía. Antes no se autorizó porque">
+          <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{meta.rechazo_anterior}</Text>
+        </Bloque>
+      ) : null}
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, lineHeight: 18, marginHorizontal: 4 }}>
+        {sale
+          ? 'El dinero ya salió. Autorizarlo dice que la salida está bien; rechazarlo la anula y el dinero vuelve a contar donde estaba.'
+          : 'No entra al cajón. Autorizarlo dice que el dinero sí llegó; si no, explica qué prueba hace falta y la sala lo puede volver a mandar.'}
+      </Text>
+    </>
+  );
+}
+
 export default function ExtrasDelDetalle({ req }) {
   const meta = (typeof req?.metadata === 'object' && req.metadata) ? req.metadata : {};
   const t = req?.type;
@@ -78,6 +120,7 @@ export default function ExtrasDelDetalle({ req }) {
       {t === 'CLIENT_CHANGE_REQUEST' && meta.correlativo ? (
         <PuntosDelCambio invoiceId={meta.invoice_id} customerNuevo={meta.new_client_id} aplicado={meta.erp_aplicado?.puntos} />
       ) : null}
+      {t === 'CAJA_INGRESO_AUTORIZACION' ? <MovimientoSinComprobante meta={meta} /> : null}
       {req?.note ? (
         <Bloque rotulo="Motivo de quien la envió">
           <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{req.note}</Text>

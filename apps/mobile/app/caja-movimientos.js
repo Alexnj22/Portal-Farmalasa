@@ -12,13 +12,17 @@
 // «Salió» (sin los que ya no están en la caja; tocarlos filtra), y en cada
 // renglón anotado desde el portal, quién lo anotó, su hora exacta, su concepto
 // completo y la boleta (`fetchAnotadosDelPortal`).
+//
+// Un cobro de crédito que el cliente pagó solo, desde su app y con tarjeta
+// (Wompi, 2026-10-20; `pagadoEnLaApp`, núcleo), sale marcado y sin «quién lo
+// cobró»: el dinero está en la cuenta de Wompi, no en el cajón.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchHistorialDeMovimientos, fetchMovimientosDeCaja, fetchPersonas } from '@nucleo/data/cortes';
-import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
+import { fetchCobrosDelPortal, pagadoEnLaApp } from '@nucleo/data/creditos';
 import { fetchAnotadosDelPortal, fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
 import RangoDeFechas from '../componentes/formulario/RangoDeFechas';
 import { filtrarMovimientos, fueEditado, historiaPorMovimiento, renglonesDeMovimientos } from '@nucleo/utils/movimientosDeCaja';
@@ -180,12 +184,14 @@ export default function CajaMovimientos() {
           const salaTxt = sala ? null : nombreDeSala.get(it.branchId);
           if (it.kind === 'cobro') {
             const c = it.cb;
+            const app = pagadoEnLaApp(c);
             return (
               <Renglon key={it.clave} entra tachado={!!c.anulado_at} sala={salaTxt} monto={c.monto}
                 titulo={`Cobro de crédito · ${c.cliente || 'Sin nombre'}`}
-                detalle={[`crédito ${c.credito_erp}`, String(c.forma || '').toLowerCase(), horaDeIso(c.created_at)].filter(Boolean).join(' · ')}
-                pildoras={[['Del portal', MARCA.azulClaro], ...(c.anulado_at ? [['Anulado', MARCA.rojo]] : [])]}
-                quien={personas.get(c.abonado_por)} />
+                detalle={[`crédito ${c.credito_erp}`, app ? 'tarjeta en la app (Wompi), no en el cajón' : String(c.forma || '').toLowerCase(), horaDeIso(c.created_at),
+                  Number(c.saldo_despues) > 0.004 ? `queda ${formatMoney(c.saldo_despues)}` : 'saldado'].filter(Boolean).join(' · ')}
+                pildoras={[app ? ['Pagado en la app', MARCA.azulClaro] : ['Del portal', MARCA.azulClaro], ...(c.anulado_at ? [['Anulado', MARCA.rojo]] : [])]}
+                quien={app ? null : personas.get(c.abonado_por)} />
             );
           }
           if (it.kind === 'portal') {

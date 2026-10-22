@@ -3,8 +3,8 @@ import { Download, Moon } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fmtFecha } from '@nucleo/utils/libroIva';
-import { rango12, hora12 } from '@nucleo/utils/hora';
+import { CSV_COF_NOCHE_HEADERS, csvCofNoche, fmtFecha } from '@nucleo/utils/libroIva';
+import { rango12 } from '@nucleo/utils/hora';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { etiquetaMes } from '@nucleo/utils/fecha';
 import { fetchCofSinEnvioMh } from '@nucleo/data/librosIva';
@@ -33,8 +33,6 @@ const COLS = [
     { key: 'monto',    label: 'Total',      align: 'right' },
 ];
 
-const CSV_HEADERS = ['FECHA', 'HORA', 'SUCURSAL', 'CORRELATIVO', 'CLIENTE', 'SUBTOTAL', 'IVA', 'TOTAL', 'SELLO DE HACIENDA'];
-
 export default function CofNocheSinEnvio({ resumen, loading, mes, desde, hasta, filterBranch, sufijoArchivo, onError }) {
     const [bajando, setBajando] = useState(false);
     const total = resumen?.total;
@@ -46,12 +44,8 @@ export default function CofNocheSinEnvio({ resumen, loading, mes, desde, hasta, 
         try {
             const { data, error } = await fetchCofSinEnvioMh(desde, hasta, filterBranch, true);
             if (error) throw new Error(error.message);
-            const rows = (data?.detalle ?? []).map(d => [
-                fmtFecha(d.fecha), hora12(d.hora), d.sucursal, d.correlativo, d.cliente || '',
-                Number(d.subtotal || 0).toFixed(2), Number(d.iva || 0).toFixed(2), Number(d.total || 0).toFixed(2),
-                d.con_sello ? 'SI' : 'NO',
-            ]);
-            exportCsv(CSV_HEADERS, rows, `consumidor-final-despues-de-6pm_${sufijoArchivo}.csv`, 'libros_iva');
+            const rows = csvCofNoche(data?.detalle);
+            exportCsv(CSV_COF_NOCHE_HEADERS, rows, `consumidor-final-despues-de-6pm_${sufijoArchivo}.csv`, 'libros_iva');
         } catch (e) {
             onError?.(e.message);
         } finally {

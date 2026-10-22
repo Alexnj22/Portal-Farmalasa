@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1346.0 — Reserva de la app sin existencia: se trae de otra sala y el plazo se detiene
+
+- **Reserva de la app sin existencia en la sala**: ahora se puede traer de otra sala o de Bodega. En Reservas, la reserva pendiente tiene **«Traer de otra sala»** (pide a otra sala o encarga a Bodega). Si el traslado no sale o llega una parte, aparece **«Resolver»**, que antes era sólo para los apartados de sala. En un pedido de varios productos, el botón actúa sobre el renglón que lo necesita y no sobre el primero.
+- **El plazo de 24 h para preparar se detiene** mientras lo que falta viene en camino (traslado pedido o enviado, o encargo a Bodega), así que ya no vence como «sin preparar» ni cuenta como incumplimiento de la sala. Si el traslado no sale, llega una parte o Bodega da otro precio, la sala tiene otras 24 h desde ese cambio. Cuando llega, queda lista sola y la app le avisa al cliente: desde ahí corren sus 3 días (7 si está pagada). Columna nueva `app_reservas.traslado_cambio_at`, la mantiene un trigger. Probado en prod con ROLLBACK: sin traslado vence; con traslado pedido, el plazo queda en NULL y no vence; con el traslado rechazado vuelve a tener 24 h, y a las 25 h vence como `sin_preparar`.
+- En una reserva pagada en línea no se acepta un precio de Bodega distinto: se cancela y lo pagado queda a favor. El resto partido conserva el origen de la reserva.
+- Reglamento de reservas 3.3, procedimiento 2.1 y 3.3, y términos de la app (versión 2026-10-22.5) con la regla nueva.
+- La migración `20261022204341` quedó registrada vacía por error: no hace nada.
+
 ## v2.1345.5 — Reserva con varios traslados: la llegada parcial no manda a pedir de nuevo
 
 - **Reserva amarrada a varios traslados**: cuando llega el primero, el aviso a la sala dice «el resto viene en camino: queda lista sola cuando llegue» en vez de mandar a pedirlo a otra sala o a Bodega. Probado sobre R-000114 en una transacción revertida: con Bodega queda «1 de 2, el resto en camino»; con Salud 5 pasa a **lista**, con plazo de 7 días, y el aviso al cliente lo manda `avisos-clientes`.

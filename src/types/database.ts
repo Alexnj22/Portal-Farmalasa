@@ -1874,6 +1874,7 @@ export type Database = {
           saldo_favor_vence: string | null
           saldo_incluye_envio: boolean
           terminos_version: string
+          traslado_cambio_at: string | null
           traslado_desde: number | null
           traslado_estado: string | null
           traslado_llegaron: number
@@ -1952,6 +1953,7 @@ export type Database = {
           saldo_favor_vence?: string | null
           saldo_incluye_envio?: boolean
           terminos_version: string
+          traslado_cambio_at?: string | null
           traslado_desde?: number | null
           traslado_estado?: string | null
           traslado_llegaron?: number
@@ -2030,6 +2032,7 @@ export type Database = {
           saldo_favor_vence?: string | null
           saldo_incluye_envio?: boolean
           terminos_version?: string
+          traslado_cambio_at?: string | null
           traslado_desde?: number | null
           traslado_estado?: string | null
           traslado_llegaron?: number

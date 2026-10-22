@@ -52,10 +52,13 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
         }
     };
 
+    // Una reserva de la app no se ajusta acá (`reserva_ajustar` es de sala): si
+    // el cliente no la quiere así, se cancela y lo pagado queda a su favor.
+    const deLaApp = r.origen === 'app';
     const opciones = [
         ...(precioDistinto ? [{ value: 'precio', label: 'Precio de Bodega' }] : []),
         ...(falta > 0 && !precioDistinto ? [{ value: 'pedir', label: 'Pedir a otra sala' }, { value: 'bodega', label: 'A Bodega' }] : []),
-        { value: 'cliente', label: 'Lo decide el cliente' },
+        ...(deLaApp ? [] : [{ value: 'cliente', label: 'Lo decide el cliente' }]),
     ];
 
     return (
@@ -95,7 +98,13 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
                             </Button>
                         </div>
                     )}
-                    {vista === 'cliente' && <LoDecideElCliente reserva={r} ocupado={ocupado} hacer={hacer} />}
+                    {vista === 'cliente' && !deLaApp && <LoDecideElCliente reserva={r} ocupado={ocupado} hacer={hacer} />}
+                    {deLaApp && (
+                        <p className="text-caption text-content-3">
+                            Reserva de la app: mientras viene en camino no vence. Si el cliente no la quiere así, cancélala desde la
+                            lista (o él desde la app); lo pagado queda a su favor.
+                        </p>
+                    )}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>

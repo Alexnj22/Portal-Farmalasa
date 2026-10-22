@@ -1,0 +1,3 @@
+-- placeholder
+-- (2026-10-22) Registro vacío: se mandó por error sin el SQL. No hace nada;
+-- el cambio real está en 20261022204600_reservas_app_plazo_detenido_en_camino.sql.

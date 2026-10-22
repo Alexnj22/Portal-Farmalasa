@@ -114,11 +114,14 @@ const TERMINOS_RESERVA = {
   // sola prórroga de 7 días que se pide en la sucursal (`reserva_plazos()`).
   // 2026-10-22 (reglamento v4): la sucursal responde en 24 h; la reserva se
   // cancela y la prórroga se pide también desde la app.
-  version: "2026-10-22.4",
+  // 2026-10-22.5: si la sucursal no lo tiene lo trae de otra o de Bodega, y
+  // mientras viene en camino el plazo de preparación se detiene.
+  version: "2026-10-22.5",
   titulo: "Así funciona tu reserva",
   puntos: [
     "Puedes reservar productos en oferta y también a precio normal.",
     "La sucursal tiene 24 horas para preparar tu reserva. Te avisamos cuando esté lista, y puedes retirarla durante los 3 días siguientes (si te avisamos un lunes, hasta el jueves).",
+    "Si la sucursal no tiene el producto, lo trae de otra sucursal o de la bodega: mientras viene en camino, el plazo de preparación se detiene, y te avisamos cuando esté lista. Si no quieres esperar, cancélala desde la app.",
     "Si la sucursal no alcanza a revisar tu receta o a preparar tu reserva a tiempo, la reserva vence y no cuenta en tu contra.",
     "El precio de oferta vale si la retiras dentro de las fechas de la oferta.",
     "Puedes tener hasta 3 reservas sin pagar al mismo tiempo. Las que pagas en línea no tienen límite.",

@@ -310,8 +310,15 @@ export async function vincularProductoDeEncargo(id, productId) {
 export const faltaDeReserva = (r) => Math.max(0, Number(r?.cantidad ?? 0) - Number(r?.traslado_llegaron ?? 0) - Number(r?.traslado_por_llegar ?? 0));
 
 /** La reserva espera una decisión de la sala (o del cliente). */
-export const reservaPorResolver = (r) => r?.origen === 'sucursal' && r?.estado === 'pendiente'
+export const reservaPorResolver = (r) => ['sucursal', 'app'].includes(r?.origen) && r?.estado === 'pendiente'
     && ['rechazado', 'parcial', 'sin_existencia', 'precio'].includes(r?.traslado_estado);
+
+/**
+ * Reserva de la app que la sala todavía no apartó ni pidió (2026-10-22): si no
+ * la tiene, la trae de otra sala o de Bodega. Mientras viene en camino, su
+ * plazo de 24 h para preparar está detenido (`reserva_plazo_hasta`).
+ */
+export const reservaPorTraer = (r) => r?.origen === 'app' && r?.estado === 'pendiente' && !r?.traslado_estado;
 
 export async function encargarRestoABodega(id, nota = null) {
     return sinError(await supabase.rpc('reserva_encargar_a_bodega', { p_id: Number(id), p_nota: nota?.trim() || null }));

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.6 — Reglamento de reservas: la reserva sin respuesta, desde el cliente
+
+- **Reglamento de reservas**: la cláusula de la reserva que la sucursal no atiende a tiempo está dicha desde el cliente: «Si el Cliente no recibe respuesta de la sucursal dentro de las 24 horas que esta tiene para preparar la reserva o revisar la receta, la reserva se cierra sin ninguna consecuencia para él…». Sigue en 4 hojas.
+
 ## v2.1350.5 — Reservas: las acciones y la tarjeta salen del núcleo
 
 - **Reservas** (por dentro, sin cambio visible): `accionesDeReserva` de `WidgetReservas` ya no decide qué acciones van ni en qué orden; lo toma de `accionesDeReservaNucleo` (`src/utils/reservasDeSala.js`), que es la misma lista que usa la app, y sólo le pone ícono y manejador a cada una. La tarjeta toma del núcleo `PRODUCTOS_EN_TARJETA`, `detalleDelRenglonDeReserva`, `plazoDeReserva` y `productosOcultos`. Así la regla vive en un solo lugar y el portal y la app no pueden ofrecer cosas distintas.

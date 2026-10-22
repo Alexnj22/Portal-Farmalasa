@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1337.2 — Recetas por receta entera y bienvenida de referidos
+
+Dos funciones de la base, con el OK del usuario:
+
+- **Recetas:** el estado (abierta/cerrada) se decide por la receta entera. Antes
+  la corrida de cada minuto y «anular entrega» miraban un solo renglón, y una
+  receta con un medicamento sin entregar podía quedar «cerrada». Probado en el
+  entorno de pruebas; 0 recetas en producción.
+- **Referidos:** el invitado recibe los 50 puntos de bienvenida sólo si su ficha
+  está en el programa, igual que quien invita.
+
+Además se desplegaron `consolidate-timesheets` y `auto-copy-weekly-roster` con
+los arreglos de horarios de v2.1337.1.
+
 ## v2.1337.1 — Auditoría: kiosco, notificaciones y planilla
 
 **Kiosco**

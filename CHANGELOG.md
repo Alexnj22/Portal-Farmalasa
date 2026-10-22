@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.11 — DUI: se endereza siempre y el recorte no deja la pared
+
+- **Foto del DUI (ficha de empleado y captura desde el teléfono)**: se endereza SIEMPRE. Antes, si las esquinas las encontraba la foto por píxeles, el giro quedaba en 0 y un DUI de costado se guardaba de costado; y cuando lo calculaba el modelo, fallaba 2 de 6 sobre un DUI real girado. Ahora, ya recortada la tarjeta, se le muestran al modelo sus cuatro rotaciones y elige la que se lee derecha (`leer-dui`, modo `cualDerecha`): 12 de 12 en la medición.
+- **El recorte del DUI ya no se queda con la pared**: el detector por píxeles buscaba «la mancha clara más grande», que sobre un escritorio blanco es el fondo. La tarjeta se ubica con el modelo (`soloTarjeta`, caja en su formato nativo), con margen para no cortar nunca, y el afinado contra los bordes sólo se acepta si deja la forma de una tarjeta (85.6 × 54 mm); medido, sin eso cortaba el encabezado en 2 de 8.
+- Cuesta dos preguntas cortas al lector por cara (~5 s).
+
 ## v2.1350.10 — El borrador del alta de personal guarda todos los datos
 
 - **Personal · nuevo empleado**: el borrador vuelve a guardar todo lo escrito, también el DUI (número, lugar y fechas), el NUP de AFP, el ISSS, el salario, el banco, la cuenta y el código de carné. Desde v2.738.2 esos campos se descartaban y, al cerrar el formulario a medias, el borrador volvía con ellos en blanco. Sigue venciendo a las 24 h y se borra al cerrar sesión.

@@ -24,7 +24,7 @@
  * recuadro de siempre. Una ayuda que se cae no puede impedir adjuntar un papel.
  */
 import { supabase } from '../supabaseClient';
-import { reducirAJpeg } from '@plataforma/imagenes';
+import { lienzoReducido, reducirAJpeg } from '@plataforma/imagenes';
 
 /* La imagen se achica ANTES de mandarla. Para decir DÓNDE está un documento no
  * hace falta resolución: 1024 px del lado mayor alcanzan de sobra y la pregunta
@@ -63,6 +63,86 @@ export async function sugerirRecorte(file, { secretoDeCaptura } = {}) {
 }
 
 /**
+ * Dónde está una TARJETA (el DUI) dentro de la foto, preguntado al modelo.
+ *
+ * No pasa por `detectarPapel`, y no por descuido: ese detector busca «la mancha
+ * clara más grande», y un DUI se fotografía sobre una hoja o un escritorio
+ * BLANCO — la mancha clara es el fondo. Medido el 2026-10-22: las dos caras de
+ * un ingreso quedaron con un tercio de pared. Se probaron dos arreglos por
+ * píxeles (umbral en gris y distancia de color al fondo) y ninguno separó la
+ * tarjeta; ver el encabezado de `PROMPT_TARJETA` en `leer-dui`.
+ *
+ * @returns {Promise<{recuadro, giro: 0, esquinas}|null>}
+ */
+/** Cuánto se agranda la caja del modelo hacia cada lado, en fracción de su tamaño. */
+const MARGEN_DE_LA_CAJA = 0.04;
+
+export async function ubicarTarjeta(file, { secretoDeCaptura } = {}) {
+    if (!file?.type?.startsWith('image/')) return null;
+    try {
+        const chica = await achicar(file);
+        const { data, error } = await supabase.functions.invoke('leer-dui', {
+            body: {
+                soloTarjeta: true, imagenBase64: chica.base64, tipo: chica.tipo,
+                ...(secretoDeCaptura ? { secretoDeCaptura } : {}),
+            },
+        });
+        if (error || !data?.ok || !data.recuadro) return null;
+        /* Se usa la CAJA, no las esquinas que devolvió el modelo. Medido el
+         * 2026-10-22 sobre el DUI de un ingreso girado de cuatro formas: la caja
+         * cae a pocos puntos de la tarjeta, y las esquinas le inventan una
+         * inclinación —15° en una tarjeta que estaba derecha— que deforma el
+         * recorte. La caja va con margen para no cortar NUNCA la tarjeta (un
+         * encabezado cortado es un dato perdido; un borde de mesa, no), y
+         * `afinarEsquinas` la ajusta después al borde real, inclinación incluida. */
+        const { x, y, w, h } = data.recuadro;
+        const mx = w * MARGEN_DE_LA_CAJA, my = h * MARGEN_DE_LA_CAJA;
+        const x0 = Math.max(0, x - mx), y0 = Math.max(0, y - my);
+        const x1 = Math.min(1, x + w + mx), y1 = Math.min(1, y + h + my);
+        return {
+            recuadro: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 },
+            esquinas: [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }],
+            // El giro se decide DESPUÉS, sobre la tarjeta ya recortada: ver `cuartosParaEnderezar`.
+            giro: 0,
+            deLaTarjeta: true,
+        };
+    } catch {
+        return null;
+    }
+}
+
+/** Lado de cada una de las cuatro rotaciones: para decidir si el texto está
+ *  de pie alcanza de sobra, y son cuatro imágenes en una sola pregunta. */
+const LADO_PARA_ENDEREZAR = 512;
+
+/**
+ * Cuántos cuartos de vuelta, en el sentido del reloj, hay que girar el
+ * documento ya recortado para que se lea derecho. `null` si no se pudo saber.
+ *
+ * Se le muestran al modelo las CUATRO rotaciones y elige la que se lee derecha.
+ * Preguntarle «cuántos grados» falló 2 de 6 sobre un DUI real (el de cabeza lo
+ * dio por 270); elegir entre cuatro es reconocer texto, que es lo que mejor
+ * hace. Va sobre el recorte y no sobre la foto: así lo único distinto entre las
+ * cuatro es el giro, y no hay mesa que distraiga.
+ *
+ * @param {HTMLCanvasElement} lienzo  el documento ya rectificado
+ */
+export async function cuartosParaEnderezar(lienzo, { secretoDeCaptura } = {}) {
+    try {
+        const imagenes = [0, 90, 180, 270].map(g =>
+            lienzoReducido(lienzo, { ladoMaximo: LADO_PARA_ENDEREZAR, girar: g })
+                .toDataURL('image/jpeg', 0.8).split(',')[1]);
+        const { data, error } = await supabase.functions.invoke('leer-dui', {
+            body: { cualDerecha: true, imagenes, ...(secretoDeCaptura ? { secretoDeCaptura } : {}) },
+        });
+        if (error || !data?.ok || !Number.isInteger(data.indice)) return null;
+        return data.indice;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Dónde está el papel: primero mirando los píxeles, y sólo si no se puede
  * decidir, preguntándole al modelo.
  *
@@ -84,8 +164,15 @@ export async function sugerirRecorte(file, { secretoDeCaptura } = {}) {
  * @param {File} file
  * @param {{secretoDeCaptura?: string}} [opciones]
  */
-export async function buscarEsquinas(file, { secretoDeCaptura } = {}) {
+export async function buscarEsquinas(file, { secretoDeCaptura, tipo } = {}) {
     if (!file?.type?.startsWith('image/')) return null;
+
+    // Una tarjeta va directo al modelo, con su pregunta propia. Si no contesta,
+    // queda el camino de siempre: peor recorte, pero recorte.
+    if (tipo === 'dui') {
+        const tarjeta = await ubicarTarjeta(file, { secretoDeCaptura });
+        if (tarjeta) return tarjeta;
+    }
 
     try {
         const [{ detectarPapel }, imagen] = await Promise.all([

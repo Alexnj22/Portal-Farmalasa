@@ -46,6 +46,21 @@ function cargar(file) {
     });
 }
 
+/** Formato ID-1 (DUI, carnés): 85.6 × 54 mm. */
+const PROPORCION_TARJETA = 85.6 / 54;
+const TOLERANCIA_TARJETA = 0.06;
+
+/** ¿Las cuatro esquinas (ya ordenadas, en fracciones) miden como una tarjeta? */
+function tieneFormaDeTarjeta(esquinas, ancho, alto) {
+    if (!Array.isArray(esquinas) || esquinas.length !== 4) return false;
+    const p = esquinas.map(e => ({ x: e.x * ancho, y: e.y * alto }));
+    const l = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+    const h = (l(p[0], p[1]) + l(p[3], p[2])) / 2;
+    const v = (l(p[0], p[3]) + l(p[1], p[2])) / 2;
+    const r = Math.max(h, v) / Math.max(1e-6, Math.min(h, v));
+    return Math.abs(r - PROPORCION_TARJETA) / PROPORCION_TARJETA <= TOLERANCIA_TARJETA;
+}
+
 /**
  * Detecta, endereza, ajusta al papel y aplica el acabado.
  *
@@ -59,7 +74,7 @@ export async function prepararAutomatico(file, tipo = 'documento') {
     const doc = DOCS[tipo] || DOCS.documento;
     try {
         const { buscarEsquinas } = await import('./recorteSugerido');
-        const propuesta = await buscarEsquinas(file);
+        const propuesta = await buscarEsquinas(file, { tipo });
         const esquinas = propuesta?.esquinas;
         if (!Array.isArray(esquinas) || esquinas.length !== 4) {
             return { ok: false, motivo: 'no se reconoció el documento' };
@@ -95,13 +110,45 @@ export async function prepararAutomatico(file, tipo = 'documento') {
         let afinado = null;
         try {
             const { gris, ancho, alto } = grisDe(imagen);
-            afinado = afinarEsquinas(gris, ancho, alto, orden);
+            /* La caja de una tarjeta llega con margen y sin inclinación (ver
+             * `ubicarTarjeta`): se le da más banda y más ángulo para que llegue
+             * al borde real. */
+            afinado = afinarEsquinas(gris, ancho, alto, orden,
+                propuesta.deLaTarjeta ? { banda: 0.06, grados: 10 } : undefined);
+            /* En una tarjeta el borde más fuerte no siempre es el BORDE: la
+             * franja del encabezado o el código de barras dan rectas más
+             * marcadas que el contorno contra una mesa blanca, y medido el
+             * 22-oct el afinado se les pegó y cortó «REPÚBLICA DE EL SALVADOR»
+             * en 2 de 8 fotos. La forma lo delata —recortada así, la tarjeta ya
+             * no mide 85.6 × 54—, y entonces vale la caja con margen, que nunca
+             * corta. */
+            if (propuesta.deLaTarjeta && !tieneFormaDeTarjeta(afinado.esquinas, ancho, alto)) {
+                afinado = { ...afinado, esquinas: orden, ladosAfinados: 0, movimiento: 0, motivo: 'no quedaba con forma de tarjeta' };
+            }
             orden = afinado.esquinas;
         } catch (e) { console.warn('afinarEsquinas:', e?.message || e); }
         const cuartos = ((Math.round((propuesta.giro || 0) / 90) % 4) + 4) % 4;
         for (let i = 0; i < cuartos; i++) orden = girarEsquinas(orden);
 
-        const r = rectificarPapel(imagen, orden);
+        let r = rectificarPapel(imagen, orden);
+
+        /* ── El DUI se endereza SIEMPRE (2026-10-22) ──────────────────────────
+         *
+         * Hasta hoy el giro venía en la misma respuesta que las esquinas, y si
+         * las esquinas las encontraban los píxeles el giro era 0: un DUI
+         * fotografiado de costado se guardaba de costado. Y cuando lo daba el
+         * modelo, se equivocaba 2 de cada 6. Ahora se pregunta aparte, sobre la
+         * tarjeta ya recortada, eligiendo entre sus cuatro rotaciones. Si la
+         * pregunta no contesta, queda como estaba: el botón de girar está a un
+         * toque en «Ajustar». */
+        if (r && tipo === 'dui') {
+            const { cuartosParaEnderezar } = await import('./recorteSugerido');
+            const extra = await cuartosParaEnderezar(r.canvas);
+            if (extra) {
+                for (let i = 0; i < extra; i++) orden = girarEsquinas(orden);
+                r = rectificarPapel(imagen, orden);
+            }
+        }
         const archivo = r ? await aArchivo(r.canvas, {
             doc, acabado: acabadoPorDefecto(doc), nombre: file.name,
         }) : null;

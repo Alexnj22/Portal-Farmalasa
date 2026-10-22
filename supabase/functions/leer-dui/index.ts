@@ -203,6 +203,42 @@ REGLAS QUE NO PUEDES ROMPER:
 - "giro" mira cómo está el TEXTO: si para leerlo hay que inclinar la cabeza a la derecha, son 90.
 - Devuelve "esquinas": null SÓLO si en la foto no hay ningún papel. Si lo hay, devuelve siempre las cuatro: aunque queden a unos milímetros, quien las revisa las corrige arrastrando; un null lo obliga a marcar las cuatro a mano.`
 
+/* ── La TARJETA y su giro, preguntados de otra forma (2026-10-22) ──────────
+ *
+ * Medido sobre el DUI real de un ingreso, girado 0/90/180/270: con
+ * `PROMPT_RECUADRO` el giro salió mal en 2 de 6 (el de cabeza dijo 270) y las
+ * esquinas se desviaban hasta un 10% del ancho. Dos cambios de pregunta, no de
+ * modelo:
+ *
+ *  · Las esquinas en el formato en que Gemini fue ENTRENADO para ubicar cosas:
+ *    `[y, x]` normalizados a 0–1000, junto con su `box_2d`. Fracciones de 0 a 1
+ *    con `x` primero es un formato que el modelo traduce, y en la traducción
+ *    se equivoca.
+ *  · El giro no se pregunta en grados. «¿Cuántos grados?» es razonar sobre una
+ *    rotación; «¿cuál de estas cuatro se lee derecha?» es reconocer texto, que
+ *    es lo que mejor hace. Las cuatro las arma el navegador con la tarjeta YA
+ *    recortada, así lo único distinto entre ellas es el giro. */
+const PROMPT_TARJETA = `En esta foto hay UNA tarjeta de identidad (un DUI, un carné, una licencia) apoyada sobre una superficie.
+
+Ubícala. Devuelve ÚNICAMENTE un JSON válido, sin markdown:
+{
+  "box_2d": [ymin, xmin, ymax, xmax],
+  "esquinas": [[y, x], [y, x], [y, x], [y, x]]
+}
+
+Coordenadas normalizadas de 0 a 1000 sobre el alto (y) y el ancho (x) de la foto.
+- "box_2d" es la caja que encierra la tarjeta, ajustada a su borde.
+- "esquinas" son las cuatro esquinas de la TARJETA (no de la caja), en cualquier orden. Si la tarjeta está inclinada o en perspectiva, no forman un rectángulo alineado.
+- La tarjeta tiene esquinas redondeadas: cada esquina es donde se cruzarían sus dos bordes rectos.
+- Sólo la tarjeta: nada de la mesa, la pared o la hoja de abajo.
+- Si no hay ninguna tarjeta, {"box_2d": null, "esquinas": null}.`
+
+const PROMPT_DERECHA = `Te paso 4 imágenes, en orden: la 1, la 2, la 3 y la 4. Son el MISMO documento, cada una girada un cuarto de vuelta respecto de la anterior.
+
+¿En cuál el texto se lee DERECHO: los renglones horizontales, las letras de pie y de izquierda a derecha, sin girar la cabeza ni el papel?
+
+Devuelve ÚNICAMENTE un JSON válido, sin markdown: {"derecha": 1 | 2 | 3 | 4}`
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = { ...getCorsHeaders(req), "Access-Control-Allow-Methods": "POST, OPTIONS" }
   const json = (body: unknown) =>
@@ -243,7 +279,9 @@ Deno.serve(async (req: Request) => {
      * ningún dato del documento ni toca la base.
      */
     const secretoDeCaptura = typeof body?.secretoDeCaptura === 'string' ? body.secretoDeCaptura : ''
-    if (body?.soloRecuadro && secretoDeCaptura) {
+    // El secreto del QR abre SÓLO las preguntas de ubicar y enderezar: no
+    // devuelven ningún dato de la persona.
+    if ((body?.soloRecuadro || body?.soloTarjeta || body?.cualDerecha) && secretoDeCaptura) {
       const { data: vigente, error: errVigente } = await admin.rpc(
         'captura_de_foto_vigente', { p_secreto: secretoDeCaptura })
       // El error se distingue del «no vale»: si la comprobación no se pudo
@@ -295,6 +333,51 @@ Deno.serve(async (req: Request) => {
      * Sigue siendo una SUGERENCIA: lo que cambió es cuándo se decide, no que se
      * decida.
      */
+    if (body?.soloTarjeta) {
+      const b64 = String(body?.imagenBase64 || '').replace(/^data:[^,]+,/, '')
+      if (!b64) return json({ ok: false, error: "MISSING_FIELDS", details: "Se esperaba la imagen." })
+      if (Math.floor(b64.length * 3 / 4) > TOPE_BYTES) return json({ ok: false, error: "ARCHIVO_MUY_GRANDE" })
+      const mime = typeof body?.tipo === 'string' && /^image\//.test(body.tipo) ? body.tipo : 'image/jpeg'
+      const r = parseGeminiJson<Record<string, unknown>>(await callGemini({
+        prompt: PROMPT_TARJETA,
+        inlineData: [{ mimeType: mime, data: b64 }],
+        jsonOutput: true,
+        temperature: 0,
+        // Ubicar es reconocer, no razonar: Google recomienda apagar el
+        // pensamiento para detección, y además cuesta menos.
+        thinkingBudget: 0,
+      }))
+      const enRango = (v: unknown) => typeof v === 'number' && Number.isFinite(v)
+      const fr = (v: number) => Math.min(1, Math.max(0, v / 1000))
+      const crudas = Array.isArray(r?.esquinas) ? r.esquinas as unknown[] : []
+      const esquinas = crudas.length === 4 && crudas.every(p => Array.isArray(p) && enRango(p[0]) && enRango(p[1]))
+        ? (crudas as number[][]).map(([y, x]) => ({ x: fr(x), y: fr(y) }))
+        : null
+      const caja = Array.isArray(r?.box_2d) && (r.box_2d as unknown[]).length === 4 && (r.box_2d as unknown[]).every(enRango)
+        ? (r.box_2d as number[]) : null
+      const recuadro = caja ? { x: fr(caja[1]), y: fr(caja[0]), w: fr(caja[3]) - fr(caja[1]), h: fr(caja[2]) - fr(caja[0]) } : null
+      if (!esquinas || !recuadro || recuadro.w <= 0 || recuadro.h <= 0) return json({ ok: true, esquinas: null, recuadro: null })
+      return json({ ok: true, esquinas, recuadro })
+    }
+
+    if (body?.cualDerecha) {
+      const imgs = Array.isArray(body?.imagenes) ? body.imagenes : []
+      if (imgs.length !== 4) return json({ ok: false, error: "MISSING_FIELDS", details: "Se esperaban las 4 rotaciones." })
+      const datos = imgs.map((v: unknown) => String(v || '').replace(/^data:[^,]+,/, ''))
+      if (datos.some((d: string) => !d) || datos.reduce((n: number, d: string) => n + d.length, 0) * 3 / 4 > TOPE_BYTES) {
+        return json({ ok: false, error: "ARCHIVO_MUY_GRANDE" })
+      }
+      const r = parseGeminiJson<Record<string, unknown>>(await callGemini({
+        prompt: PROMPT_DERECHA,
+        inlineData: datos.map((d: string) => ({ mimeType: 'image/jpeg', data: d })),
+        jsonOutput: true,
+        temperature: 0,
+        thinkingBudget: 512,
+      }))
+      const n = Number(r?.derecha)
+      return json({ ok: true, indice: [1, 2, 3, 4].includes(n) ? n - 1 : null })
+    }
+
     if (body?.soloRecuadro) {
       const b64 = String(body?.imagenBase64 || '').replace(/^data:[^,]+,/, '')
       if (!b64) return json({ ok: false, error: "MISSING_FIELDS", details: "Se esperaba la imagen." })

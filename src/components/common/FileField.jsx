@@ -394,7 +394,7 @@ const FileField = memo(({
         setBuscandoRecorte(true);
         (async () => {
             const { buscarEsquinas } = await sugerencia();
-            const r = await buscarEsquinas(porEditar);
+            const r = await buscarEsquinas(porEditar, { tipo: tipoDeDocumento });
             if (vivo) setBuscandoRecorte(false);
             // Se comprueba que siga siendo LA MISMA foto: alguien pudo cancelar
             // y elegir otra mientras la pregunta viajaba, y aplicar el recuadro
@@ -402,7 +402,7 @@ const FileField = memo(({
             if (vivo && r) setSugerido(prev => (prev === null ? r : prev));
         })();
         return () => { vivo = false; setBuscandoRecorte(false); };
-    }, [porEditar, ajustando]);
+    }, [porEditar, ajustando, tipoDeDocumento]);
 
     // ── Tomar la foto con el teléfono ──────────────────────────────────────
     const cerrarCaptura = useCallback(() => setCaptura(null), []);

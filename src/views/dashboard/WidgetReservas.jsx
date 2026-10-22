@@ -30,7 +30,7 @@ import { anotarSalida } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import {
-    agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
+    accionesDeReservaNucleo, agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
     origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas,
 } from '@nucleo/utils/reservasDeSala';
 
@@ -260,37 +260,24 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // menores, viven en el detalle. Una sola lista para las dos piezas: si cada
     // una armara la suya, terminarían ofreciendo cosas distintas.
     const accionesDeReserva = (r) => {
-        if (soloLectura && !(r.estado === 'en_revision')) return [];
+        if (!r) return [];
         const filasDe = r.renglones ?? [r];
-        const hayPendiente = filasDe.some((x) => x.estado === 'pendiente');
-        const hayLista = filasDe.some((x) => x.estado === 'lista');
-        const porResolverDe = filasDe.find(reservaPorResolver);
-        const porTraerDe = filasDe.find(reservaPorTraer);
-        const enCamino = filasDe.some((x) => x.estado === 'pendiente' && x.traslado_estado);
-        const lista = [];
-        if (r.estado === 'en_revision') {
-            if (r.receta_ruta && (r.puede_revisar_receta ?? puedeRecetas)) {
-                lista.push({ k: 'receta', label: r.receta_estado === 'pendiente' ? 'Revisar receta' : 'Ver receta', icon: FileCheck, onClick: () => setReceta(r) });
-            }
-        } else if (!soloLectura) {
-            if (porResolverDe) lista.push({ k: 'resolver', label: 'Resolver', icon: Wrench, onClick: () => setResolviendo(porResolverDe),
-                title: 'La otra sala no la manda, llega una parte o Bodega cambió el precio: decide qué hacer' });
-            if (hayPendiente) lista.push({ k: 'apartar', label: enCamino ? 'Ya llegó: apartar' : 'Apartar y avisar', icon: PackageCheck,
-                title: enCamino ? 'Si el traslado ya llegó y no quedó lista sola: déjala lista y avisa al cliente' : 'Déjala lista para retirar y avisa al cliente' ,
-                onClick: () => mover(r, 'lista') });
-            if (hayLista) lista.push({ k: 'retirar', label: 'Retirar', icon: CheckCircle2, title: 'El cliente vino: cobra lo que falta y entrégala',
-                onClick: () => setRetirando(filasDe.filter((x) => x.estado === 'lista').map((x) => ({ id: x.id, sala: x.branch_id ?? r.branch_id ?? miSala }))) });
-            if (puedePreventa && filasDe.some(puedeEnviarPreventa)) lista.push({ k: 'caja', label: 'Enviar a caja', icon: Send,
-                title: 'Deja la venta armada en caja: producto, cliente y tú como vendedor', onClick: () => enviarACaja(r) });
-            if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sala', icon: ArrowLeftRight,
-                title: `Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega`, onClick: () => setResolviendo(porTraerDe) });
-            if (hayLista && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp', icon: MessageCircle,
-                onClick: () => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) }) });
-            if (filasDe.some((x) => x.estado === 'lista' && !x.prorrogada_at)) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', icon: CalendarPlus,
-                title: 'Una sola prórroga', onClick: () => prorrogar(r) });
-            lista.push({ k: 'cancelar', label: 'Cancelar reserva', icon: XCircle, menor: true, onClick: () => mover(r, 'cancelada') });
-        }
-        return lista.map((a) => ({ ...a, loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar'].includes(a.k) }));
+        const hacer = {
+            receta: { icon: FileCheck, onClick: () => setReceta(r) },
+            resolver: { icon: Wrench, onClick: (a) => setResolviendo(a.renglon) },
+            apartar: { icon: PackageCheck, onClick: () => mover(r, 'lista') },
+            retirar: { icon: CheckCircle2, onClick: () => setRetirando(filasDe.filter((x) => x.estado === 'lista')
+                .map((x) => ({ id: x.id, sala: x.branch_id ?? r.branch_id ?? miSala }))) },
+            caja: { icon: Send, onClick: () => enviarACaja(r) },
+            traer: { icon: ArrowLeftRight, onClick: (a) => setResolviendo(a.renglon) },
+            whatsapp: { icon: MessageCircle, onClick: () => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) }) },
+            prorrogar: { icon: CalendarPlus, onClick: () => prorrogar(r) },
+            cancelar: { icon: XCircle, onClick: () => mover(r, 'cancelada') },
+        };
+        return accionesDeReservaNucleo(r, { soloLectura, puedeRecetas, puedePreventa })
+            .filter((a) => hacer[a.k])
+            .map((a) => ({ ...a, icon: hacer[a.k].icon, onClick: () => hacer[a.k].onClick(a),
+                loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar'].includes(a.k) }));
     };
 
     const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && !esBodega ? (

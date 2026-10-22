@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.5 — Reservas: las acciones y la tarjeta salen del núcleo
+
+- **Reservas** (por dentro, sin cambio visible): `accionesDeReserva` de `WidgetReservas` ya no decide qué acciones van ni en qué orden; lo toma de `accionesDeReservaNucleo` (`src/utils/reservasDeSala.js`), que es la misma lista que usa la app, y sólo le pone ícono y manejador a cada una. La tarjeta toma del núcleo `PRODUCTOS_EN_TARJETA`, `detalleDelRenglonDeReserva`, `plazoDeReserva` y `productosOcultos`. Así la regla vive en un solo lugar y el portal y la app no pueden ofrecer cosas distintas.
+
 ## v2.1350.4 — Reglamento de reservas: más amable y en 4 hojas
 
 - **Reglamento de reservas**:

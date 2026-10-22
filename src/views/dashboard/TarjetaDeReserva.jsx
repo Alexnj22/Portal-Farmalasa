@@ -4,9 +4,11 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fechaTexto } from '@nucleo/utils/fecha';
 import { codigoDeReserva } from '@nucleo/data/reservas';
 import { cuentasDeReserva, estadoDeReserva, renglonesDe, telefonoLegible } from './reservaVista';
+import {
+    PRODUCTOS_EN_TARJETA, detalleDelRenglonDeReserva, plazoDeReserva, productosOcultos,
+} from '@nucleo/utils/reservasDeSala';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La tarjeta de una reserva en la pantalla de Reservas (2026-10-22).
@@ -29,20 +31,18 @@ import { cuentasDeReserva, estadoDeReserva, renglonesDe, telefonoLegible } from 
 //   1. Todas las tarjetas de una fila miden lo mismo: el dinero va al pie
 //      (`mt-auto`) y cada texto ocupa UNA línea — un nombre largo se corta y el
 //      completo vive en el `title` y en el detalle.
-//   2. A lo sumo MAX_PRODUCTOS renglones; el resto es «+N productos más».
+//   2. A lo sumo PRODUCTOS_EN_TARJETA renglones; el resto es «+N productos más».
 //   3. Botones: los dos que importan, con nombre, a la derecha; el resto
 //      (avisar, prorrogar, cancelar) en «Más», que abre el detalle. Nunca un
 //      ícono suelto que haya que adivinar.
 // ═══════════════════════════════════════════════════════════════════════════
-const MAX_PRODUCTOS = 2;
-
 export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAbrir }) {
     const filas = renglonesDe(r);
     const estado = estadoDeReserva(r);
     const { total, pagado, falta, pagadoTodo } = cuentasDeReserva(r);
     const codigo = r.pedido ?? codigoDeReserva(r.id);
     const tel = telefonoLegible(r.telefono);
-    const visibles = filas.slice(0, MAX_PRODUCTOS);
+    const visibles = filas.slice(0, PRODUCTOS_EN_TARJETA);
     const ocultos = filas.length - visibles.length;
     const [principal, segunda] = acciones;
     const hayMas = acciones.length > 2;
@@ -80,7 +80,7 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                     </span>
                 </span>
 
-                {/* Qué lleva: a lo sumo MAX_PRODUCTOS renglones, una línea cada uno */}
+                {/* Qué lleva: a lo sumo PRODUCTOS_EN_TARJETA renglones, una línea cada uno */}
                 <span className="block border-t border-divider pt-3 space-y-2">
                     {visibles.map((x) => (
                         <span key={x.id} className="flex items-start justify-between gap-3 min-w-0">
@@ -90,7 +90,7 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                                 </span>
                                 <span className="flex items-center gap-1 text-caption text-content-3 mt-0.5 min-w-0">
                                     {x.estado === 'pendiente' && x.traslado_estado && <Truck size={12} className="shrink-0" aria-hidden />}
-                                    <span className="truncate">{detalleDelRenglon(x) || `${formatMoney(Number(x.precio ?? 0))} c/u`}</span>
+                                    <span className="truncate">{detalleDelRenglonDeReserva(x) || `${formatMoney(Number(x.precio ?? 0))} c/u`}</span>
                                 </span>
                             </span>
                             <span className="text-body-sm font-semibold text-content-2 tabular-nums shrink-0">
@@ -100,7 +100,7 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                     ))}
                     {ocultos > 0 && (
                         <span className="block text-caption font-semibold text-accent-text">
-                            + {ocultos} {ocultos === 1 ? 'producto más' : 'productos más'}
+                            {productosOcultos(ocultos)}
                         </span>
                     )}
                 </span>
@@ -114,9 +114,9 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                     </span>
                     {r.pago_prueba ? (
                         <span className="block mt-2 text-caption font-semibold text-danger-text">El cobro en línea fue de prueba: se cobra en caja</span>
-                    ) : plazoDe(r) && (
+                    ) : plazoDeReserva(r) && (
                         <span className="flex items-center gap-1 mt-2 text-caption text-content-3 min-w-0">
-                            <Clock size={12} className="shrink-0" aria-hidden /> <span className="truncate">{plazoDe(r)}</span>
+                            <Clock size={12} className="shrink-0" aria-hidden /> <span className="truncate">{plazoDeReserva(r)}</span>
                         </span>
                     )}
                 </span>
@@ -151,30 +151,4 @@ function Cifra({ rotulo, valor, tono = 'text-content' }) {
             <span className={`block text-body font-bold tabular-nums ${tono}`}>{formatMoney(valor)}</span>
         </span>
     );
-}
-
-// Una línea por producto: en qué va SU parte (sólo cuando dice algo).
-function detalleDelRenglon(x) {
-    if (x.estado === 'pendiente' && x.traslado_estado) {
-        const de = x.traslado_sala ? ` de ${x.traslado_sala}` : '';
-        const llegaron = Number(x.traslado_llegaron ?? 0);
-        return `${x.traslado_nota || `En camino${de}`}${llegaron > 0 ? ` · llegaron ${llegaron} de ${x.cantidad}` : ''}`;
-    }
-    if (x.estado === 'pendiente') return 'Por apartar en la sala';
-    if (x.estado === 'lista' && x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Lista · precio Mayoreo Plus' : 'Lista · precio Mayoreo';
-    if (x.estado === 'lista') return 'Lista';
-    if (x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Precio Mayoreo Plus' : 'Precio Mayoreo';
-    return '';
-}
-
-// Hasta cuándo vale lo que está pasando ahora.
-function plazoDe(r) {
-    const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
-    if (r.estado === 'lista' && r.vence_at) return `Retira hasta el ${dia(r.vence_at)}${r.prorrogada_at ? ' (prorrogada)' : ''}`;
-    if (r.estado === 'pendiente' && r.horas_al_preparar) {
-        const dias = Math.round(Number(r.horas_al_preparar) / 24);
-        return `Al quedar lista tiene ${dias >= 1 ? `${dias} ${dias === 1 ? 'día' : 'días'}` : `${r.horas_al_preparar} h`} para retirarla`;
-    }
-    if (r.creada) return `Creada el ${dia(r.creada)}`;
-    return '';
 }

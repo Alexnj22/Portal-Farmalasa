@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles } from 'lucide-react';
+import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, Wallet } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -13,7 +13,7 @@ import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
-import { fetchEncargos, mensajeDeEncargo, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
+import { fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, prorrogarEncargo, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -36,6 +36,11 @@ const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar')
  *
  * A quien no tiene la app se le avisa por WhatsApp desde aquí: el precio y la
  * fecha cuando Bodega confirma, y que ya llegó.
+ *
+ * Reglamento v2 (2026-10-22): lo que llegó se retira en 7 días (`retirar_hasta`),
+ * con UNA prórroga de 7 más. Si no se retira, la base avisa a la sala para que
+ * llame al cliente (`reservas_vigilar`), y si no lo va a retirar —o desiste—
+ * la sala lo pasa a saldo a favor: el producto queda para la venta.
  */
 const sinVincular = (e) => e.producto_nuevo && !e.product_id;
 const ESTADO = {
@@ -61,6 +66,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
     const [rechazando, setRechazando] = useState(null);
     const [retirando, setRetirando] = useState(null);
     const [vinculando, setVinculando] = useState(null);
+    const [aSaldo, setASaldo] = useState(null);
 
     const cargar = useCallback(async () => {
         try { setFilas(await fetchEncargos(branchId, true)); } catch (err) { console.error('WidgetEncargos: no se pudieron cargar', err); setFilas([]); }
@@ -83,6 +89,31 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
         }
     };
 
+    const prorrogar = async (e) => {
+        setOcupado(e.id);
+        try {
+            const r = await prorrogarEncargo(e.id);
+            showToast('Plazo prorrogado', `Puede retirarlo hasta el ${fechaTexto(r?.retirar_hasta, { day: 'numeric', month: 'long' })}. No admite otra prórroga.`, 'success');
+            cargar();
+        } catch (err) {
+            showToast('No se pudo prorrogar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setOcupado(null);
+        }
+    };
+    // No lanza: el error se avisa acá (el diálogo sólo espera).
+    const pasarASaldo = async (motivo) => {
+        try {
+            const r = await pasarEncargoASaldo(aSaldo.id, motivo);
+            showToast('Quedó como saldo a favor', `${formatMoney(r?.saldo)} a favor del cliente (${r?.reserva}). El producto queda para la venta.`, 'success');
+            setASaldo(null);
+            cargar();
+        } catch (err) {
+            showToast('No se pudo pasar a saldo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        }
+    };
+    const vencido = (e) => e.estado === 'listo' && e.retirar_hasta && e.retirar_hasta < hoySV();
+
     if (!filas?.length) return null;
     return (
         <div className="space-y-1.5 mt-3">
@@ -90,10 +121,10 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
             <ul className="space-y-1.5 min-w-0">
                 {filas.map((e) => (
                     <li key={e.id}>
-                        <FilaConAcciones tone={e.estado === 'solicitado' || e.estado === 'aceptado' ? 'warning' : null}
+                        <FilaConAcciones tone={e.estado === 'solicitado' || e.estado === 'aceptado' || vencido(e) ? 'warning' : null}
                             icon={e.producto_nuevo ? PackagePlus : PackageSearch}
                             titulo={`${e.cantidad} × ${e.producto}${e.producto_nuevo ? (e.product_id ? ` → ${e.producto_catalogo ?? 'vinculado'}` : ' · producto nuevo') : ''}`}
-                            detalle={`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}`}
+                            detalle={`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}${e.retirar_hasta ? ` · retira hasta ${fechaTexto(e.retirar_hasta, { day: 'numeric', month: 'short' })}${e.prorrogado_at ? ' (prorrogado)' : ''}` : ''}`}
                             acciones={(
                                 <>
                                     <Badge variant={estadoDe(e)?.variant ?? 'neutral'} uppercase={false}>{estadoDe(e)?.label ?? e.estado}</Badge>
@@ -111,7 +142,13 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
                                     {!soloLectura && sinVincular(e) && <Button variant="secondary" size="xs" icon={Link2} onClick={() => setVinculando(e)}>Vincular producto</Button>}
                                     {!soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && <Button variant="secondary" size="xs" icon={PackageCheck} loading={ocupado === e.id}
                                         disabled={sinVincular(e)} title={sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined} onClick={() => mover(e, 'listo')}>Llegó</Button>}
+                                    {vencido(e) && <Badge variant="warning" uppercase={false}>Sin retirar · llamar</Badge>}
                                     {!soloLectura && e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setRetirando(e)}>Entregar</Button>}
+                                    {!soloLectura && e.estado === 'listo' && !e.prorrogado_at && <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupado === e.id}
+                                        title="Una sola prórroga de 7 días" onClick={() => prorrogar(e)}>Prorrogar</Button>}
+                                    {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && (
+                                        <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste: lo pagado queda a su favor" onClick={() => setASaldo(e)}>A saldo a favor</Button>
+                                    )}
                                 </>
                             )} />
                     </li>
@@ -127,6 +164,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
             )}
             {vinculando && <Vincular encargo={vinculando} onClose={() => setVinculando(null)}
                 onListo={() => { setVinculando(null); cargar(); }} />}
+            {aSaldo && <ASaldo encargo={aSaldo} onClose={() => setASaldo(null)} onConfirmar={pasarASaldo} />}
             {rechazando && <Rechazar encargo={rechazando} onClose={() => setRechazando(null)}
                 onRechazar={async (nota) => { if (await mover(rechazando, 'rechazar', { nota })) setRechazando(null); }} />}
         </div>
@@ -186,6 +224,29 @@ function Rechazar({ encargo, onClose, onRechazar }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button variant="danger" icon={X} disabled={exigeMotivo && !nota.trim()} onClick={() => onRechazar(nota.trim() || null)}>Avisar al cliente</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+function ASaldo({ encargo, onClose, onConfirmar }) {
+    const [motivo, setMotivo] = useState('');
+    const [enviando, setEnviando] = useState(false);
+    return (
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pasar a saldo a favor">
+            <LiquidModal.Header><h2 className="text-body-xl font-semibold text-content">{`${encargo.codigo} a saldo a favor`}</h2></LiquidModal.Header>
+            <LiquidModal.Body>
+                <Notice variant="info" compact icon={Wallet}>
+                    Lo pagado ({formatMoney(encargo.anticipo)}) queda a favor del cliente por 60 días, para cualquier compra en cualquier sala.
+                    El producto queda para la venta. No se deshace.
+                </Notice>
+                <PortalTextarea label="Motivo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
+                    placeholder="Ej. Se le llamó dos veces y no contestó / dijo que ya no lo necesita" />
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onClose}>Volver</Button>
+                <Button variant="primary" icon={Wallet} loading={enviando} disabled={motivo.trim().length < 3}
+                    onClick={async () => { setEnviando(true); await onConfirmar(motivo.trim()); setEnviando(false); }}>Pasar a saldo a favor</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

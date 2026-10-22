@@ -44,9 +44,11 @@ import { fechaCorta, juntarSiEntra, recortar, selloCorto, soloAscii } from './ti
  *
  * Redactadas en segunda persona y sin tildes (el rollo no lee UTF-8).
  */
+// Reglamento de reservas v2 (2026-10-22): 7 días (prorrogables una vez por 7
+// más) y saldo a favor de 60 (`saldo_favor_dias()`). Antes: 15 y 30.
 export const POLITICA_DE_RESERVA = [
-    'El producto queda apartado 15 dias desde la fecha del comprobante. Vencido el plazo sin retirarlo, la farmacia puede volver a venderlo.',
-    'El abono no se devuelve en efectivo. Si el cliente desiste, queda como saldo a favor por 30 dias, aplicable a cualquier compra.',
+    'El producto queda apartado 7 dias desde la fecha del comprobante; el plazo se puede prorrogar una sola vez, por 7 dias mas. Vencido sin retirarlo, la farmacia puede volver a venderlo.',
+    'Si el cliente desiste o no retira a tiempo, el abono queda como saldo a favor por 60 dias, aplicable a cualquier compra en cualquier sucursal. No se devuelve en efectivo salvo que la administracion lo autorice.',
     'El retiro se hace presentando el comprobante. Sin el, se entrega solo al titular con documento de identidad.',
     'El precio queda fijo al del comprobante durante el plazo de reserva.',
     'Si el producto no llega por causa del proveedor, se devuelve el abono completo o se aplica a otro producto, a eleccion del cliente.',
@@ -72,17 +74,17 @@ export const POLITICA_DE_RESERVA = [
  * caracteres centrada se lee torcida.
  */
 export const CONDICIONES_DEL_PAPEL = [
-    'Apartado 15 dias desde esta fecha.',
-    'El abono no se devuelve en efectivo.',
+    'Apartado 7 dias desde esta fecha.',
+    'Si no retiras, queda a tu favor 60 dias.',
     'Trae este comprobante para retirar.',
     'El precio no cambia dentro del plazo.',
 ];
 
 /** Cuántos días vale la reserva. Sale de la cláusula 1 y se usa para `vence_el`. */
-export const DIAS_DE_RESERVA = 15;
+export const DIAS_DE_RESERVA = 7;
 
 /**
- * `2026-09-01` + 15 → `2026-09-16`, en fecha pura y sin husos.
+ * `2026-09-01` + 7 → `2026-09-08`, en fecha pura y sin husos.
  *
  * Se arma a mediodía UTC a propósito: una fecha leída como medianoche retrocede
  * un día en cualquier huso al oeste, y acá el día que vence es el que dice el

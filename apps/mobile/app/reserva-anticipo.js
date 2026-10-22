@@ -1,7 +1,8 @@
 // Reservar con anticipo en el mostrador, NATIVO — `NuevaReservaSucursal` del
 // portal. Un cliente deja un anticipo y se le aparta el producto. Política (la
-// misma del portal y de la base, `reserva_en_sucursal_crear`): anticipo de al
-// menos el 50 % y 7 días para retirarlo. Al guardar se imprime la constancia
+// misma del portal y de la base, `apartado_cotizar`; reglamento v2): sin monto
+// mínimo —se sugieren 50 % y 100 %, y con muy baja rotación viene elegido el
+// 100 %— y 7 días para retirarlo. Al guardar se imprime la constancia
 // con el código en barras (`construirConstanciaDeReserva` del núcleo, el mismo
 // papel del portal) en la caja de la sala.
 //
@@ -125,24 +126,25 @@ export default function ReservaConAnticipo() {
     if (!producto || !pres || cant < 1 || !sala) { setOpciones(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- vaciar al cambiar
     const t = setTimeout(() => {
       opcionesDeApartado(sala, producto.id, pres.factor, cant)
-        .then((o) => { if (vivo) setOpciones(o); })
+        // Muy baja rotación: viene elegido el total (se puede cambiar).
+        .then((o) => { if (vivo) { setOpciones(o); if (o?.baja_rotacion) setCuanto('todo'); } })
         .catch(() => { if (vivo) setOpciones(null); });
     }, 300);
     return () => { vivo = false; clearTimeout(t); };
   }, [producto, pres, cant, sala]);
   const seEncarga = opciones?.modo === 'encargo';
   const total = pres ? redondear(pres.precio * cant) : 0;
-  const minimo = redondear(total * 0.5);
-  const ant = cuanto === 'mitad' ? minimo : cuanto === 'todo' ? total : (Number(anticipo) || 0);
+  const mitad = redondear(total * 0.5);
+  const ant = cuanto === 'mitad' ? mitad : cuanto === 'todo' ? total : (Number(anticipo) || 0);
   const estadoPago = estadoDeFormaDePago(pago, ant);
   const problema = !cliente ? 'Elige el cliente.' : !producto ? 'Elige el producto.' : precios && !pres ? 'Ese producto no tiene precio.'
     : !pres ? null : cant < 1 || cant > 50 ? 'La cantidad va de 1 a 50.' : !opciones ? null : seEncarga ? null
-      : ant < minimo ? `El anticipo mínimo es ${formatMoney(minimo)} (50 %).`
+      : ant < 0.01 ? 'Escribe cuánto deja.'
         : ant > total ? 'El anticipo no puede pasar del total.' : estadoPago.falta;
   const listoParaGuardar = !problema && !!pres && !!opciones;
   const nombreDe = () => `${producto.nombre}${pres.tipo ? ` · ${pres.tipo}` : ''}`;
 
-  // Sin existencia (o insumo): se encarga sin cobrar.
+  // Sin existencia: se encarga sin cobrar.
   const encargar = () => {
     if (!listoParaGuardar || guardando) return;
     Alert.alert('¿Registrar el encargo?', `${shortEmployeeName(cliente.name)} encarga ${cant} × ${nombreDe()}. Compras o administración confirma el precio y la fecha; cuando el cliente acepte, se cobra el 100 %.`, [
@@ -204,7 +206,7 @@ export default function ReservaConAnticipo() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>
-            {`El cliente deja al menos el 50 % y tiene 7 días para retirarlo en ${nombreSala || 'la sala'}. Sale la constancia con el código para encontrarla al volver.`}
+            {`El cliente deja lo que quiera y tiene 7 días para retirarlo en ${nombreSala || 'la sala'}. Sale la constancia con el código para encontrarla al volver.`}
           </Text>
           {!sala ? <Aviso tono="freno" texto="Las reservas son de una sala de ventas, y tu ficha no tiene sala." /> : (
             <>
@@ -228,18 +230,17 @@ export default function ReservaConAnticipo() {
                   {seEncarga ? (
                     <Seccion titulo="Cantidad">
                       <View style={{ width: 90 }}><Campo multiline={false} value={cantidad} keyboardType="number-pad" onChangeText={(v) => setCantidad(v.replace(/\D/g, '').slice(0, 2))} placeholder="Cant." style={{ textAlign: 'center' }} /></View>
-                      <Aviso tono="cuidado" texto={opciones.insumo ? 'Es un insumo: se encarga sin cobrar. Compras o administración confirma el precio.'
-                        : `En ${nombreSala || 'la sala'} hay ${Number(opciones.disponibles)} y se piden ${Number(opciones.necesita)}: se encarga sin cobrar. Compras o administración confirma el precio.`} />
+                      <Aviso tono="cuidado" texto={`En ${nombreSala || 'la sala'} hay ${Number(opciones.disponibles)} y se piden ${Number(opciones.necesita)}: se encarga sin cobrar. Compras o administración confirma el precio.`} />
                     </Seccion>
                   ) : (<>
-                  <Seccion titulo="Cantidad y anticipo" pie={`${formatMoney(pres.precio)} c/u · total ${formatMoney(total)} · mínimo ${formatMoney(minimo)}`}>
+                  <Seccion titulo="Cantidad y anticipo" pie={`${formatMoney(pres.precio)} c/u · total ${formatMoney(total)}${opciones?.baja_rotacion ? ' · muy baja rotación: conviene cobrarlo completo' : ''}`}>
                     <View style={{ width: 90 }}><Campo multiline={false} value={cantidad} keyboardType="number-pad" onChangeText={(v) => setCantidad(v.replace(/\D/g, '').slice(0, 2))} placeholder="Cant." style={{ textAlign: 'center' }} /></View>
-                    <Segmentos opciones={[{ id: 'mitad', label: `50 % · ${formatMoney(minimo)}` }, { id: 'todo', label: `Todo · ${formatMoney(total)}` }, { id: 'otro', label: 'Otro' }]}
+                    <Segmentos opciones={[{ id: 'mitad', label: `50 % · ${formatMoney(mitad)}` }, { id: 'todo', label: `Todo · ${formatMoney(total)}` }, { id: 'otro', label: 'Otro' }]}
                       activa={cuanto} onCambiar={setCuanto} margen={0} />
                     {cuanto === 'otro' ? (
-                      <Campo multiline={false} value={anticipo} keyboardType="decimal-pad" onChangeText={(v) => setAnticipo(dinero(v))} placeholder={`Anticipo, mínimo ${formatMoney(minimo)}`} style={{ textAlign: 'center', fontWeight: '700' }} autoFocus />
+                      <Campo multiline={false} value={anticipo} keyboardType="decimal-pad" onChangeText={(v) => setAnticipo(dinero(v))} placeholder="Anticipo" style={{ textAlign: 'center', fontWeight: '700' }} autoFocus />
                     ) : null}
-                    <Dato rotulo="Saldo al retirar" valor={ant >= minimo && ant <= total ? formatMoney(total - ant) : '—'} fuerte />
+                    <Dato rotulo="Saldo al retirar" valor={ant >= 0.01 && ant <= total ? formatMoney(total - ant) : '—'} fuerte />
                   </Seccion>
                   <FormaDePago valor={pago} onCambiar={setPago} monto={ant || null} />
                   </>)}

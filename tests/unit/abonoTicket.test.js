@@ -88,7 +88,7 @@ describe('comprobante de abono', () => {
     it('el vencimiento se calcula sin que el huso le reste un día', () => {
         // Una fecha leída como medianoche retrocede un día en cualquier huso al
         // oeste. Acá el día que vence es el que dice el papel.
-        expect(vencimientoDeReserva('2026-09-01')).toBe('2026-09-16');
-        expect(vencimientoDeReserva('2026-12-25')).toBe('2027-01-09');
+        expect(vencimientoDeReserva('2026-09-01')).toBe('2026-09-08');
+        expect(vencimientoDeReserva('2026-12-28')).toBe('2027-01-04');
     });
 });

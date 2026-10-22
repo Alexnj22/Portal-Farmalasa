@@ -325,6 +325,20 @@ export function repartoDelAjuste({ pagado, precio, cantidad, totalAlternativa = 
     return { queda, alternativa: alt, aFavor: r2(pagado - queda - alt) };
 }
 
+/** Una sola prórroga de 7 días para retirar (reglamento v2, cláusula 7). La base la limita a una. */
+export async function prorrogarReserva(id) {
+    return sinError(await supabase.rpc('reserva_prorrogar', { p_id: Number(id) }));
+}
+
+export async function prorrogarEncargo(id) {
+    return sinError(await supabase.rpc('encargo_prorrogar', { p_id: Number(id) }));
+}
+
+/** El cliente no retira (o desiste de) un encargo pagado: lo pagado queda a su favor. */
+export async function pasarEncargoASaldo(id, motivo) {
+    return sinError(await supabase.rpc('encargo_pasar_a_saldo', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));
+}
+
 /** La sala pide devolver un saldo a favor en efectivo; lo autoriza administración. */
 export async function pedirDevolucionEnEfectivo(id, motivo) {
     return sinError(await supabase.rpc('reserva_saldo_pedir_devolucion', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));

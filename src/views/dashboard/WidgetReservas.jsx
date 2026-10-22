@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { Banknote, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
+import { Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -20,7 +20,7 @@ import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import {
     buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
-    devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver,
+    devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver, prorrogarReserva,
 } from '@nucleo/data/reservas';
 import { anotarSalida } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -169,6 +169,22 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             .catch((err) => { console.error('WidgetReservas: no se pudo buscar el saldo a favor', err); if (vivo) setSaldosDeFuera([]); });
         return () => { vivo = false; };
     }, [codigoCompleto, miSala]);
+
+    // Una sola prórroga de 7 días (reglamento v2); un pedido se prorroga entero.
+    const prorrogar = async (r) => {
+        setOcupada(r.id);
+        try {
+            const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && !x.prorrogada_at).map((x) => x.id);
+            let vence = null;
+            for (const id of ids) vence = (await prorrogarReserva(id))?.vence_at ?? vence;
+            showToast('Plazo prorrogado', vence ? `Puede retirarla hasta el ${fechaTexto(vence, { weekday: 'long', day: 'numeric', month: 'long' })}. No admite otra prórroga.` : '', 'success');
+            cargar();
+        } catch (err) {
+            showToast('No se pudo prorrogar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setOcupada(null);
+        }
+    };
 
     // Un pedido del carrito se mueve ENTERO: todos sus renglones a la vez.
     const mover = async (r, estado) => {
@@ -433,6 +449,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                                 {!r.tiene_app && (
                                                     <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
                                                         onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) })} />
+                                                )}
+                                                {(r.renglones ?? [r]).some((x) => x.estado === 'lista' && !x.prorrogada_at) && (
+                                                    <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupada === r.id}
+                                                        title="Una sola prórroga de 7 días" onClick={() => prorrogar(r)}>Prorrogar</Button>
                                                 )}
                                                 <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id}
                                                     onClick={() => setRetirando((r.renglones ?? [r]).filter((x) => x.estado === 'lista')

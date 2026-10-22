@@ -110,11 +110,13 @@ const TERMINOS_RESERVA = {
   // 2026-10-21: el plazo para retirar es un DÍA entero (no una hora), el saldo
   // a favor dura 60 días (lo que la base aplica, `saldo_favor_dias()`; decía 90)
   // y ya no se limita a ofertas: el carrito reserva cualquier producto.
-  version: "2026-10-21",
+  // 2026-10-22 (reglamento v2): 3 días para retirar sin pagar, 7 pagada, y una
+  // sola prórroga de 7 días que se pide en la sucursal (`reserva_plazos()`).
+  version: "2026-10-22",
   titulo: "Así funciona tu reserva",
   puntos: [
     "Puedes reservar productos en oferta y también a precio normal.",
-    "La sucursal tiene 48 horas para preparar tu reserva. Te avisamos cuando esté lista y tienes hasta el final del día siguiente para retirarla.",
+    "La sucursal tiene 48 horas para preparar tu reserva. Te avisamos cuando esté lista y desde ese aviso tienes 3 días para retirarla (el último cuenta entero).",
     "Si la sucursal no alcanza a revisar tu receta o a preparar tu reserva a tiempo, la reserva vence y no cuenta en tu contra.",
     "El precio de oferta vale si la retiras dentro de las fechas de la oferta.",
     "Puedes tener hasta 3 reservas sin pagar al mismo tiempo. Las que pagas en línea no tienen límite.",
@@ -122,6 +124,7 @@ const TERMINOS_RESERVA = {
     "Si no la retiras a tiempo, el producto vuelve a la venta. Con 3 reservas sin retirar en 30 días, no podrás reservar por 30 días.",
     "Los productos bajo receta se reservan con una foto de tu receta: tienes 24 horas para subirla y la sucursal 48 horas para revisarla. Cuando la aprueba, tu reserva queda confirmada. Mientras está en revisión no se puede pagar, y si el pedido lleva algún producto bajo receta, todo el pedido espera esa revisión.",
     "Puedes pagarla en línea desde la app o al retirarla en la sucursal.",
+    "Si necesitas más tiempo, pídelo en la sucursal: el plazo se puede prorrogar una sola vez, por 7 días más.",
     "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista (el último cuenta entero). Si no la retiras, el producto vuelve a la venta y lo que pagaste queda como saldo a favor por 60 días, para usarlo en cualquier sucursal. Sólo la administración puede autorizar devolverlo en dinero.",
     "Una reserva pagada en línea no se cancela desde la app: escríbele a la sucursal.",
     "Si no puedes ir tú, comparte el código de tu reserva (desde Mis reservas) con alguien de confianza: quien lo presente en la sucursal puede retirarla, y pagarla si falta. Como el código basta para retirarla, no lo publiques.",

@@ -34,9 +34,11 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
  *
  * Nace de una FICHA del listado de clientes y de un producto del CATÁLOGO, y
  * el portal decide (decisiones del usuario, 2026-10-17/19/20):
- *   · HAY en la sala y no es insumo → se APARTA: el precio queda fijo, 7 días,
- *     y el anticipo (mínimo 50 %) se cobra YA, con su forma de pago;
- *   · NO hay, o es insumo → se ENCARGA: se registra sin cobrar; Compras o
+ *   · HAY en la sala → se APARTA: el precio queda fijo, 7 días, y el anticipo
+ *     se cobra YA, con su forma de pago. Sin monto mínimo, también si se trae
+ *     de otra sala: se sugieren 50 % y 100 %, y con muy baja rotación en la
+ *     sala viene elegido el 100 % (`producto_baja_rotacion`, reglamento v2);
+ *   · NO hay → se ENCARGA: se registra sin cobrar; Compras o
  *     administración confirma precio y fecha, y cuando el cliente acepta se
  *     cobra el 100 % desde «Por cobrar».
  * El cobro va por `operar-caja` (tipo APARTADO), que vuelve a validar todo.
@@ -143,17 +145,19 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         if (!producto || !elegida || cant < 1) { setOpciones(null); return undefined; }
         let vivo = true;
         opcionesDeApartado(sala, producto.id, elegida.factor, cant)
-            .then((o) => { if (vivo) setOpciones(o); })
+            // Muy baja rotación: viene elegido el total (se puede cambiar).
+            .then((o) => { if (vivo) { setOpciones(o); if (o?.baja_rotacion) setCuanto('todo'); } })
             .catch((e) => { if (vivo) { setOpciones(null); showToast('No se pudo revisar la existencia', mensajeAmigable(e), 'error'); } });
         return () => { vivo = false; };
     }, [sala, producto, elegida, cant, showToast]);
 
     const total = elegida ? redondear(elegida.precio * cant) : 0;
-    const minimo = redondear(total * 0.5);
     // 'traslado': no hay en la sala, se pide a otra y se aparta igual.
-    const modo = opciones?.modo === 'encargo' && !opciones.insumo && traslado ? 'traslado' : (opciones?.modo ?? null);
+    const modo = opciones?.modo === 'encargo' && traslado ? 'traslado' : (opciones?.modo ?? null);
+    // Reglamento v2 (lo vuelve a decidir `apartado_cotizar`): sin monto mínimo.
+    const mitad = redondear(total * 0.5);
     const conAnticipo = modo === 'reserva' || modo === 'traslado';
-    const montoAnticipo = cuanto === 'mitad' ? minimo : cuanto === 'todo' ? total : (anticipo === '' ? 0 : Number(anticipo));
+    const montoAnticipo = cuanto === 'mitad' ? mitad : cuanto === 'todo' ? total : (anticipo === '' ? 0 : Number(anticipo));
     const estadoPago = estadoDeFormaDePago(pago, montoAnticipo);
     const nombreProducto = producto ? `${producto.nombre}${elegida?.tipo ? ` · ${elegida.tipo}` : ''}` : '';
 
@@ -166,7 +170,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`
             // La base acepta encargos de 1 a 20: decirlo antes y no con su error.
             : modo === 'encargo' && cant > 20 ? 'Un encargo va de 1 a 20 unidades.'
-            : conAnticipo && (montoAnticipo < minimo - 0.004) ? `El anticipo mínimo es ${formatMoney(minimo)} (50 %).`
+            : conAnticipo && montoAnticipo < 0.01 ? 'Escribe cuánto deja.'
                 : conAnticipo && montoAnticipo > total + 0.004 ? 'El anticipo no puede pasar del total.'
                     : conAnticipo ? estadoPago.falta : null;
 
@@ -281,7 +285,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 </div>
             )}
 
-            {!sinCatalogo && opciones?.modo === 'encargo' && !opciones.insumo && (
+            {!sinCatalogo && opciones?.modo === 'encargo' && (
                 <DeOtraSala producto={producto} factor={elegida.factor} cantidad={cant} disponibles={Number(opciones.disponibles)}
                     apiRef={trasladoApi} onCambio={setTraslado} />
             )}
@@ -290,19 +294,21 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     {modo === 'reserva' ? (
                         <Notice variant="info" compact icon={PackageSearch}>
                             Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta 7 días</b> con el precio de hoy. Total {formatMoney(total)};
-                            el anticipo mínimo es {formatMoney(minimo)} (50 %) y el resto se paga al retirar.
+                            el cliente deja lo que quiera y el resto se paga al retirar.
+                            {opciones.baja_rotacion && <> Es de muy baja rotación: <b>conviene cobrarlo completo</b>.</>}
                         </Notice>
                     ) : (
                         <Notice variant="info" compact icon={ArrowLeftRight}>
                             <b>Se pide a {traslado.sala} y se aparta</b> con el precio de hoy. Queda en camino hasta que llegue; ahí se marca lista
-                            y empieza su plazo. Total {formatMoney(total)}; el anticipo mínimo es {formatMoney(minimo)} (50 %).
+                            y empieza su plazo. Total {formatMoney(total)}; el cliente deja lo que quiera.
+                            {opciones.baja_rotacion && <> Es de muy baja rotación: <b>conviene cobrarlo completo</b>.</>}
                         </Notice>
                     )}
                     <SegmentedControl label="Cuánto deja" value={cuanto} onChange={setCuanto}
-                        options={[{ value: 'mitad', label: `50 % · ${formatMoney(minimo)}` }, { value: 'todo', label: `Todo · ${formatMoney(total)}` },
+                        options={[{ value: 'mitad', label: `50 % · ${formatMoney(mitad)}` }, { value: 'todo', label: `Todo · ${formatMoney(total)}` },
                             { value: 'otro', label: 'Otro monto' }]} />
                     {cuanto === 'otro' && (
-                        <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo} placeholder={String(minimo)} autoFocus
+                        <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo} placeholder={String(mitad)} autoFocus
                             onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
                     )}
                     <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />
@@ -311,7 +317,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             {!sinCatalogo && opciones && modo === 'encargo' && (
                 <>
                     <Notice variant="warning" compact icon={Truck}>
-                        {opciones.insumo ? 'Es un insumo: ' : 'Sin pedirlo a otra sala: '}
+                        Sin pedirlo a otra sala:{' '}
                         <b>se encarga</b>. Compras confirma el precio y la fecha; cuando el cliente acepte, se cobra el 100 % en «Por cobrar».
                         Ahora no se cobra nada.
                     </Notice>

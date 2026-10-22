@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1340.0 — Reservas: apartar sin monto mínimo, prórroga única de 7 días, encargo sin retirar a saldo a favor
+
+Reglamento de reservas versión 3 (decisiones del 2026-10-22), en la base, el portal, la app del personal y la de clientes:
+
+- **Apartar no tiene monto mínimo**, haya existencia en la sala o se traiga de otra. Se ofrecen 50 %, todo u otro monto; con muy baja rotación en la sala (`producto_baja_rotacion`: ≤2 u. en 6 meses) viene elegido el total. El encargo se sigue pagando completo.
+- **Un insumo con existencia se aparta** como cualquier producto; sólo se encarga lo que no hay.
+- **Reserva de la app**: 3 días para retirar sin pagar y 7 pagada (`reserva_plazos()`).
+- **Una sola prórroga de 7 días** para reservas (`reserva_prorrogar`) y encargos (`encargo_prorrogar`), con botón «Prorrogar» en Reservas y Encargos.
+- **Encargo que llegó**: se retira en 7 días (`retirar_hasta`). Si no se retira, `reservas_vigilar` avisa una vez a la sala para que llame, y «A saldo a favor» (`encargo_pasar_a_saldo`) devuelve el producto a la venta y deja lo pagado como saldo a favor de 60 días.
+- El comprobante del abono impreso pasa de 15/30 días a 7 días y saldo de 60.
+- Términos de la app de clientes versión 2026-10-22.
 ## v2.1339.3 — Distribución: deshacer y corregir por solicitud, el dinero vuelve y saldo a favor como pago parcial
 
 Auditoría de Distribución (H2, H3, H4, H7) con las decisiones del dueño del

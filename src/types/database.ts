@@ -199,6 +199,65 @@ export type Database = {
           },
         ]
       }
+      anticipos_en_planilla: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          monto: number
+          period_id: string
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          monto: number
+          period_id: string
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          monto?: number
+          period_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anticipos_en_planilla_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticipos_en_planilla_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticipos_en_planilla_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticipos_en_planilla_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apartado_aplicaciones: {
         Row: {
           branch_id: number
@@ -276,36 +335,6 @@ export type Database = {
           id?: boolean
           updated_at?: string
           updated_by?: string | null
-        }
-        Relationships: []
-      }
-      anticipos_en_planilla: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          employee_id: string
-          id: string
-          monto: number
-          period_id: string
-          request_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          employee_id: string
-          id?: string
-          monto: number
-          period_id: string
-          request_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          employee_id?: string
-          id?: string
-          monto?: number
-          period_id?: string
-          request_id?: string
         }
         Relationships: []
       }
@@ -1447,6 +1476,7 @@ export type Database = {
       app_encargos: {
         Row: {
           anticipo: number | null
+          aviso_sin_retirar_at: string | null
           branch_id: number
           cantidad: number
           cerrado_at: string | null
@@ -1457,6 +1487,7 @@ export type Database = {
           fecha_estimada: string | null
           foto_url: string | null
           id: number
+          listo_at: string | null
           nota_cliente: string | null
           nota_sucursal: string | null
           pagado_at: string | null
@@ -1465,9 +1496,12 @@ export type Database = {
           product_id: number | null
           producto_nombre: string
           producto_nuevo: boolean
+          prorrogado_at: string | null
+          prorrogado_por: string | null
           reserva_id: number | null
           respondido_at: string | null
           respondido_por: string | null
+          saldo_reserva_id: number | null
           srs: Json | null
           sugerido_at: string | null
           sugerido_product_id: number | null
@@ -1477,6 +1511,7 @@ export type Database = {
         }
         Insert: {
           anticipo?: number | null
+          aviso_sin_retirar_at?: string | null
           branch_id: number
           cantidad: number
           cerrado_at?: string | null
@@ -1487,6 +1522,7 @@ export type Database = {
           fecha_estimada?: string | null
           foto_url?: string | null
           id?: never
+          listo_at?: string | null
           nota_cliente?: string | null
           nota_sucursal?: string | null
           pagado_at?: string | null
@@ -1495,9 +1531,12 @@ export type Database = {
           product_id?: number | null
           producto_nombre: string
           producto_nuevo?: boolean
+          prorrogado_at?: string | null
+          prorrogado_por?: string | null
           reserva_id?: number | null
           respondido_at?: string | null
           respondido_por?: string | null
+          saldo_reserva_id?: number | null
           srs?: Json | null
           sugerido_at?: string | null
           sugerido_product_id?: number | null
@@ -1507,6 +1546,7 @@ export type Database = {
         }
         Update: {
           anticipo?: number | null
+          aviso_sin_retirar_at?: string | null
           branch_id?: number
           cantidad?: number
           cerrado_at?: string | null
@@ -1517,6 +1557,7 @@ export type Database = {
           fecha_estimada?: string | null
           foto_url?: string | null
           id?: never
+          listo_at?: string | null
           nota_cliente?: string | null
           nota_sucursal?: string | null
           pagado_at?: string | null
@@ -1525,9 +1566,12 @@ export type Database = {
           product_id?: number | null
           producto_nombre?: string
           producto_nuevo?: boolean
+          prorrogado_at?: string | null
+          prorrogado_por?: string | null
           reserva_id?: number | null
           respondido_at?: string | null
           respondido_por?: string | null
+          saldo_reserva_id?: number | null
           srs?: Json | null
           sugerido_at?: string | null
           sugerido_product_id?: number | null
@@ -1574,6 +1618,13 @@ export type Database = {
           {
             foreignKeyName: "app_encargos_reserva_id_fkey"
             columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_encargos_saldo_reserva_id_fkey"
+            columns: ["saldo_reserva_id"]
             isOneToOne: false
             referencedRelation: "app_reservas"
             referencedColumns: ["id"]
@@ -1800,6 +1851,8 @@ export type Database = {
           preventa_id: number | null
           producto_id: number
           producto_nombre: string
+          prorrogada_at: string | null
+          prorrogada_por: string | null
           receta_escalada_at: string | null
           receta_estado: string | null
           receta_fotos: number
@@ -1876,6 +1929,8 @@ export type Database = {
           preventa_id?: number | null
           producto_id: number
           producto_nombre: string
+          prorrogada_at?: string | null
+          prorrogada_por?: string | null
           receta_escalada_at?: string | null
           receta_estado?: string | null
           receta_fotos?: number
@@ -1952,6 +2007,8 @@ export type Database = {
           preventa_id?: number | null
           producto_id?: number
           producto_nombre?: string
+          prorrogada_at?: string | null
+          prorrogada_por?: string | null
           receta_escalada_at?: string | null
           receta_estado?: string | null
           receta_fotos?: number
@@ -11259,6 +11316,7 @@ export type Database = {
           dte_id: number | null
           emisor_id: number
           estado: string
+          facturando_desde: string | null
           forma_pago: string
           id: number
           lat: number | null
@@ -11281,6 +11339,7 @@ export type Database = {
           dte_id?: number | null
           emisor_id: number
           estado?: string
+          facturando_desde?: string | null
           forma_pago?: string
           id?: never
           lat?: number | null
@@ -11303,6 +11362,7 @@ export type Database = {
           dte_id?: number | null
           emisor_id?: number
           estado?: string
+          facturando_desde?: string | null
           forma_pago?: string
           id?: never
           lat?: number | null
@@ -11738,6 +11798,114 @@ export type Database = {
           },
         ]
       }
+      dist_reintegros: {
+        Row: {
+          cliente_id: number
+          creado_por: string | null
+          created_at: string
+          destino: string
+          dte_id: number
+          emisor_id: number
+          fecha: string
+          forma: string
+          id: number
+          monto: number
+          origen: string
+          pago_orden: number | null
+          recibo_id: number | null
+          vendedor_id: string | null
+        }
+        Insert: {
+          cliente_id: number
+          creado_por?: string | null
+          created_at?: string
+          destino: string
+          dte_id: number
+          emisor_id: number
+          fecha?: string
+          forma: string
+          id?: never
+          monto: number
+          origen: string
+          pago_orden?: number | null
+          recibo_id?: number | null
+          vendedor_id?: string | null
+        }
+        Update: {
+          cliente_id?: number
+          creado_por?: string | null
+          created_at?: string
+          destino?: string
+          dte_id?: number
+          emisor_id?: number
+          fecha?: string
+          forma?: string
+          id?: never
+          monto?: number
+          origen?: string
+          pago_orden?: number | null
+          recibo_id?: number | null
+          vendedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_reintegros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reintegros_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reintegros_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reintegros_dte_id_fkey"
+            columns: ["dte_id"]
+            isOneToOne: false
+            referencedRelation: "dist_dte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reintegros_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reintegros_recibo_id_fkey"
+            columns: ["recibo_id"]
+            isOneToOne: false
+            referencedRelation: "dist_recibos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reintegros_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_reintegros_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dist_reservas: {
         Row: {
           cliente_id: number | null
@@ -11874,6 +12042,75 @@ export type Database = {
             columns: ["vendedor_id"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dist_saldo_aplicaciones: {
+        Row: {
+          cliente_id: number
+          creado_por: string
+          created_at: string
+          cxc_id: number
+          emisor_id: number
+          id: number
+          monto: number
+          nota: string | null
+        }
+        Insert: {
+          cliente_id: number
+          creado_por?: string
+          created_at?: string
+          cxc_id: number
+          emisor_id: number
+          id?: never
+          monto: number
+          nota?: string | null
+        }
+        Update: {
+          cliente_id?: number
+          creado_por?: string
+          created_at?: string
+          cxc_id?: number
+          emisor_id?: number
+          id?: never
+          monto?: number
+          nota?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dist_saldo_aplicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "dist_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_saldo_aplicaciones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_saldo_aplicaciones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_saldo_aplicaciones_cxc_id_fkey"
+            columns: ["cxc_id"]
+            isOneToOne: false
+            referencedRelation: "dist_cxc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dist_saldo_aplicaciones_emisor_id_fkey"
+            columns: ["emisor_id"]
+            isOneToOne: false
+            referencedRelation: "dist_emisores"
             referencedColumns: ["id"]
           },
         ]
@@ -29311,6 +29548,18 @@ export type Database = {
         Returns: Json
       }
       dist_asignar_lotes: { Args: { p_pedido: number }; Returns: Json }
+      dist_avisar: {
+        Args: {
+          p_cuerpo: string
+          p_dest: string[]
+          p_link: string
+          p_metadata: Json
+          p_por: string
+          p_tipo: string
+          p_titulo: string
+        }
+        Returns: undefined
+      }
       dist_avisar_cartera_atrasada: { Args: never; Returns: number }
       dist_camion_del_dia: {
         Args: { p_fecha: string; p_vendedor: string }
@@ -29329,6 +29578,15 @@ export type Database = {
       dist_cerrar_dia: {
         Args: { p_fecha: string; p_nota?: string }
         Returns: number
+      }
+      dist_cerrar_invalidacion: {
+        Args: {
+          p_aplicado: Json
+          p_aprobador: string
+          p_nota: string
+          p_solicitud: string
+        }
+        Returns: undefined
       }
       dist_cerrar_liquidacion: {
         Args: {
@@ -29462,6 +29720,10 @@ export type Database = {
         Args: { p_nota?: string; p_pedido: number }
         Returns: string
       }
+      dist_pedir_invalidacion: {
+        Args: { p_accion: string; p_dte: number; p_motivo: string }
+        Returns: Json
+      }
       dist_plazo_invalidacion: {
         Args: { p_dia_sello: string; p_hoy?: string; p_tipo: string }
         Returns: Json
@@ -29487,6 +29749,10 @@ export type Database = {
       dist_reabrir_liquidacion: {
         Args: { p_id: number; p_motivo: string }
         Returns: undefined
+      }
+      dist_rechazar_invalidacion: {
+        Args: { p_nota: string; p_solicitud: string }
+        Returns: Json
       }
       dist_recibir_compra: { Args: { p_compra: number }; Returns: Json }
       dist_recibo: { Args: { p_recibo: number }; Returns: Json }
@@ -29532,6 +29798,7 @@ export type Database = {
         }
         Returns: number
       }
+      dist_reintegrar_documento: { Args: { p_dte: number }; Returns: Json }
       dist_relacionadas: {
         Args: { p_desde: string; p_hasta: string }
         Returns: Json
@@ -29563,6 +29830,7 @@ export type Database = {
         Args: { p_fecha: string; p_vendedor: string }
         Returns: Json
       }
+      dist_saldo_a_favor: { Args: { p_cliente: number }; Returns: number }
       dist_siguiente_correlativo: {
         Args: {
           p_ambiente: string
@@ -29583,6 +29851,10 @@ export type Database = {
         }
         Returns: number
       }
+      dist_soltar_facturacion: {
+        Args: { p_pedido: number }
+        Returns: undefined
+      }
       dist_tablero: {
         Args: {
           p_desde: string
@@ -29590,6 +29862,14 @@ export type Database = {
           p_ruta?: string
           p_vendedor?: string
         }
+        Returns: Json
+      }
+      dist_tomar_para_facturar: {
+        Args: { p_pedido: number; p_segundos?: number }
+        Returns: boolean
+      }
+      dist_trasladar_abonos: {
+        Args: { p_desde: number; p_dte_origen: number; p_hacia: number }
         Returns: Json
       }
       dist_utilidad: {
@@ -29731,6 +30011,11 @@ export type Database = {
         }
         Returns: Json
       }
+      encargo_pasar_a_saldo: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: Json
+      }
+      encargo_prorrogar: { Args: { p_id: number }; Returns: Json }
       encargo_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       encargo_responder: {
         Args: {
@@ -29741,6 +30026,10 @@ export type Database = {
           p_precio?: number
         }
         Returns: Json
+      }
+      encargo_retirar_hasta: {
+        Args: { e: Database["public"]["Tables"]["app_encargos"]["Row"] }
+        Returns: string
       }
       encargo_vincular_producto: {
         Args: { p_id: number; p_product_id: number }
@@ -32682,6 +32971,10 @@ export type Database = {
         Returns: Json
       }
       procesar_cambios_de_factor: { Args: never; Returns: Json }
+      producto_baja_rotacion: {
+        Args: { p_branch_id: number; p_producto_id: number }
+        Returns: boolean
+      }
       producto_insumo_marcar: {
         Args: { p_insumo: boolean; p_motivo?: string; p_product_id: number }
         Returns: boolean
@@ -33661,6 +33954,7 @@ export type Database = {
         Args: { p_acepta: boolean; p_id: number }
         Returns: Json
       }
+      reserva_prorrogar: { Args: { p_id: number }; Returns: Json }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       reserva_quitar_de_familia: {
         Args: { p_id: number; p_monto: number; p_nota: string }

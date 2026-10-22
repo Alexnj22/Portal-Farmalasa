@@ -87,7 +87,7 @@ export default function SacarDinero() {
   const delCajon = eleccion.origen === 'CAJA';
   const esOtro = TIPOS_OTRO.includes(t?.caja_tipo);
   const avisoOtro = esOtro ? vaEnOtroLado(conceptos, 'SALIDA', nota) : null;
-  // Sin foto en un tipo que la pide como prueba: del cajón, autorización; de una bolsa, no.
+  // Sin foto en un tipo que la pide como prueba: sale igual (cajón o bolsa) y queda pendiente de autorización.
   const sinComprobante = !!tiposCaja.find((c) => c.codigo === t?.caja_tipo)?.sin_comprobante_autoriza && !fotos.length;
 
   useEffect(() => {
@@ -106,7 +106,6 @@ export default function SacarDinero() {
               : t.foto === 'OBLIGATORIA' && !fotos.length ? 'Falta la foto del comprobante.'
                 : esOtro && !detalleSuficiente(nota) ? 'En «Otro» escribe de qué fue, con detalle.'
                 : avisoOtro ? avisoOtro
-                : sinComprobante && !delCajon ? `Lo que sale de una bolsa para «${t.etiqueta}» lleva la foto del comprobante.`
                 : sinComprobante && motivoSinFoto.trim().length < 5 ? 'Sin foto del comprobante, explica por qué: quedará pendiente de autorización.'
                 : t.pide_receptor && !identidad ? 'Falta identificar a quien se lo lleva.'
                   : null;
@@ -139,6 +138,7 @@ export default function SacarDinero() {
           tipo: t.codigo, monto: n, repartos: eleccion.repartos.map(({ bolsa_id, monto: m }) => ({ bolsa_id, monto: m })),
           entidad, numeroBoleta: boleta, fotoUrl, nota,
           recibidoPor: t.pide_receptor ? identidad?.persona?.id : null, vale: t.pide_receptor ? identidad?.vale : null,
+          motivoSinComprobante: sinComprobante ? motivoSinFoto.trim() : '',
         });
         if (error) { if (t.pide_receptor) setIdentidad(null); throw error; }
         // El vale y la etiqueta nueva de cada bolsa tocada: sin la etiqueta, la
@@ -197,7 +197,7 @@ export default function SacarDinero() {
               {t.pide_boleta ? <Campo multiline={false} value={boleta} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
               {t.foto && t.foto !== 'NO' ? <Fotos fotos={fotos} onCambiar={setFotos} max={1} /> : null}
               <Campo value={nota} onChangeText={setNota} placeholder={esOtro ? 'De qué fue: qué se pagó, a quién y quién lo autorizó' : 'Nota (opcional)'} />
-              {sinComprobante && delCajon ? (
+              {sinComprobante ? (
                 <>
                   <Aviso tono="cuidado" texto="Sin foto del comprobante, esta salida queda pendiente de autorización." />
                   <Campo value={motivoSinFoto} onChangeText={setMotivoSinFoto} placeholder="Por qué no hay comprobante" />

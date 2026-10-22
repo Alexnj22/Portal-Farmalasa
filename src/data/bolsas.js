@@ -827,7 +827,7 @@ export async function boletaYaEnCaja(branchId, numeroBoleta) {
  */
 export function registrarSalida({
     tipo, monto, repartos, entidad, numeroBoleta, fotoUrl, nota,
-    recibidoPor, vale,
+    recibidoPor, vale, motivoSinComprobante,
 }) {
     return supabase.rpc('registrar_salida_de_bolsa', {
         p_tipo: tipo,
@@ -839,6 +839,9 @@ export function registrarSalida({
         p_nota: nota || null,
         p_recibido_por: recibidoPor || null,
         p_vale: vale || null,
+        // Sin foto en un tipo que la pide, la salida sale igual y queda
+        // pendiente de autorización (2026-10-22): esto es el porqué.
+        p_motivo_sin_comprobante: motivoSinComprobante || null,
     });
 }
 

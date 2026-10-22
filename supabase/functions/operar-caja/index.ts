@@ -783,6 +783,18 @@ Deno.serve(async (req) => {
         return json({ ok: false, error: "Esa solicitud ya se resolvió." }, 409);
       }
 
+      /* Una salida de BOLSA sin comprobante (2026-10-22): la anula
+       * `caja_ingreso_resolver` en la base —no hay nada que borrar en la caja—,
+       * así que acá sólo se informa cómo quedó. */
+      if (meta.operacion_bolsa != null) {
+        const { data: op, error: errOp } = await supabase.from("bolsas_operaciones")
+          .select("id, anulada_at").eq("id", Number(meta.operacion_bolsa)).maybeSingle();
+        if (errOp) throw new Error(`leyendo la salida de bolsa: ${errOp.message}`);
+        if (op?.anulada_at) return json({ ok: true, rechazado: true, anulado: true });
+        return json({ ok: true, rechazado: true,
+          aviso: "Se rechazó, pero la salida de la bolsa no se pudo anular: si también sacó de la caja o la bolsa ya salió de la sala, anúlala pidiendo la corrección." });
+      }
+
       const { data: mov, error: errMov } = await supabase.from("caja_movimientos_portal")
         .select("id, monto, concepto, forma_pago, erp_movimiento_id, erp_apertura_id, anulado_at, autorizacion, bolsa_operacion_id, reserva_id, encargo_id")
         .eq("id", Number(meta.movimiento_portal)).maybeSingle();
@@ -1723,7 +1735,9 @@ Deno.serve(async (req) => {
           return json({ ok: false, error: "No se pudo revisar el movimiento. Vuelve a intentarlo." }, 503);
         }
         if (regla?.error) return json({ ok: false, error: String(regla.error) }, 400);
-        pideAutorizacion = regla?.autoriza === true;
+        // La parte del cajón de una salida mixta no pide su propia
+        // autorización: la lleva la salida de la bolsa (2026-10-22).
+        pideAutorizacion = regla?.autoriza === true && !body.operacion_bolsa;
       }
       /* Sin comprobante en un tipo que lo pide, el efectivo igual se mueve —la
        * sala no puede quedarse esperando— y queda pendiente de autorización

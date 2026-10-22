@@ -472,8 +472,8 @@ export default function SalidaDeBolsa({
         [tiposCaja, t],
     );
     const esOtro = TIPOS_OTRO.includes(t?.caja_tipo);
-    // Sin foto en un tipo que la pide como prueba: del cajón, autorización;
-    // de una bolsa, no se puede (ver `caja_movimiento_regla`).
+    // Sin foto en un tipo que la pide como prueba: sale igual —del cajón o de
+    // una bolsa— y queda pendiente de autorización (2026-10-22).
     const pideComprobante = !!tipoCaja?.sin_comprobante_autoriza;
     const sinComprobante = pideComprobante && !foto;
     // Bolsa primero y el cajón el resto (2026-10-02). Ver `elegirOrigen`.
@@ -950,9 +950,6 @@ export default function SalidaDeBolsa({
             const aviso = vaEnOtroLado(conceptos, 'SALIDA', nota);
             if (aviso) return aviso;
         }
-        if (sinComprobante && !delCajon) {
-            return `Lo que sale de una bolsa para «${t.etiqueta}» lleva la foto del comprobante.`;
-        }
         if (sinComprobante && motivoSinFoto.trim().length < 5) {
             return 'Sin foto del comprobante, explica por qué: quedará pendiente de autorización.';
         }
@@ -967,7 +964,7 @@ export default function SalidaDeBolsa({
         return null;
     }, [t, n, eleccion, lista, entidad, boleta, foto, bloqueoDeLaFoto, problemaDeLaBoleta,
         laFotoManda, puedeSalirDelCajon, lectura, leyendo, esOtro, nota, conceptos,
-        sinComprobante, delCajon, motivoSinFoto]);
+        sinComprobante, motivoSinFoto]);
 
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
@@ -1101,6 +1098,7 @@ export default function SalidaDeBolsa({
                 entidad, numeroBoleta: boleta, fotoUrl, nota,
                 recibidoPor: t.pide_receptor ? persona?.id : null,
                 vale: t.pide_receptor ? vale : null,
+                motivoSinComprobante: sinComprobante ? motivoSinFoto.trim() : '',
             });
             if (err) {
                 // El vale se gasta en el servidor y vive 5 minutos: si algo
@@ -1714,10 +1712,11 @@ export default function SalidaDeBolsa({
                             />
                         )}
 
-                        {/* Sin comprobante, del cajón sale igual y queda
-                            pendiente de autorización (2026-10-21). De una bolsa
-                            no: ahí la foto es obligatoria y lo dice `falta`. */}
-                        {!!t && sinComprobante && delCajon && (
+                        {/* Sin comprobante sale igual y queda pendiente de
+                            autorización: del cajón desde el 2026-10-21, de una
+                            bolsa desde el 2026-10-22 («sigue opcional con
+                            aprobación de solicitud»). */}
+                        {!!t && sinComprobante && (
                             <>
                                 <Notice variant="warning" compact>
                                     Sin foto del comprobante, esta salida queda pendiente de autorización.

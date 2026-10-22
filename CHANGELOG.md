@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1344.0 — Bolsas: la salida sin comprobante sale y queda pendiente de autorización
+
+- **Sacar efectivo de una bolsa sin foto del comprobante** («Otro», pago a proveedor, gasto): antes el campo decía «(opcional)» pero el botón no dejaba continuar («lleva la foto del comprobante»). Ahora sale igual, pide «por qué no hay comprobante» y queda pendiente de autorización, igual que lo que sale del cajón. Portal y app.
+- La solicitud es la misma «Movimiento sin comprobante» (`requests_caja`). Autorizarla la deja firme; rechazarla anula la salida y el dinero vuelve a contar como de la bolsa. Si también sacó de la caja o la bolsa ya salió de la sala, el rechazo queda anotado y avisa que hay que pedir la corrección.
+- Base: `caja_movimiento_regla` ya no distingue bolsa/cajón para esto; `registrar_salida_de_bolsa(… p_motivo_sin_comprobante)`; `caja_ingreso_resolver` resuelve también `operacion_bolsa`; `bolsas_operaciones.autorizacion*`. `operar-caja`: la parte de caja de una salida mixta no abre una segunda solicitud.
+
 ## v2.1343.0 — Apartar lo que ya viene en camino; encargo con varios productos
 
 - **Apartar lo que ya viene en camino**: si no hay en la sala pero ya hay un traslado de ese producto hacia ella (pedido o despachado) que nadie apartó, el diálogo lo ofrece primero: «Apartar lo que viene de Bodega». Se cobra el anticipo como siempre y la reserva queda en camino amarrada a ese traslado; cuando llega, se marca lista sola. Antes decía «se encarga» aunque el producto ya viniera (Claritromicina en La Popular, 22-oct).

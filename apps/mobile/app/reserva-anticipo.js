@@ -13,14 +13,14 @@
 // lo que se pide, no se aparta: se ENCARGA sin cobrar, y Compras o
 // administración confirma el precio.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buscarClientes } from '@nucleo/data/customers';
-import { crearEncargoEnSucursal, opcionesDeApartado, preciosDeProducto } from '@nucleo/data/reservas';
-import { anotarIngreso } from '@nucleo/data/bolsas';
+import { crearEncargoEnSucursal, mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto } from '@nucleo/data/reservas';
+import { anotarIngreso, enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
 import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
 import { construirConstanciaDeReserva } from '@nucleo/utils/reservaConstancia';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -102,6 +102,8 @@ export default function ReservaConAnticipo() {
   // Cuánto deja (2026-10-20): botones rápidos del 50 % y del total, u otro monto.
   const [cuanto, setCuanto] = useState('mitad');
   const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
+  // Reglamento v3 (2026-10-22): se cobra en caja o se le manda un enlace de pago.
+  const [cobroEn, setCobroEn] = useState('caja');
   const [opciones, setOpciones] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [clave] = useState(() => `app-apartar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
@@ -140,7 +142,7 @@ export default function ReservaConAnticipo() {
   const problema = !cliente ? 'Elige el cliente.' : !producto ? 'Elige el producto.' : precios && !pres ? 'Ese producto no tiene precio.'
     : !pres ? null : cant < 1 || cant > 50 ? 'La cantidad va de 1 a 50.' : !opciones ? null : seEncarga ? null
       : ant < 0.01 ? 'Escribe cuánto deja.'
-        : ant > total ? 'El anticipo no puede pasar del total.' : estadoPago.falta;
+        : ant > total ? 'El anticipo no puede pasar del total.' : cobroEn === 'caja' ? estadoPago.falta : null;
   const listoParaGuardar = !problema && !!pres && !!opciones;
   const nombreDe = () => `${producto.nombre}${pres.tipo ? ` · ${pres.tipo}` : ''}`;
 
@@ -158,6 +160,28 @@ export default function ReservaConAnticipo() {
           listo('Encargo registrado', `${r.codigo} · se confirma el precio antes de cobrar`);
           router.back();
         } catch (e) { fallo('No se pudo registrar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setGuardando(false); }
+      } },
+    ]);
+  };
+
+  // El enlace de pago: no entra al cajón; al pagarlo se suma solo al anticipo.
+  const mandarEnlace = () => {
+    if (!listoParaGuardar || guardando) return;
+    const nombre = nombreDe();
+    Alert.alert(`¿Crear un enlace por ${formatMoney(ant)}?`, `${shortEmployeeName(cliente.name)} aparta ${cant} × ${nombre}. Queda separado 3 días mientras paga; al pagar, el plazo pasa a 7.`, [
+      { text: 'Volver', style: 'cancel' },
+      { text: 'Crear y compartir', onPress: async () => {
+        setGuardando(true); trabajando('Creando el enlace…');
+        try {
+          const r = await enlaceDePagoDeApartado({ sala, monto: ant,
+            apartado: { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombre,
+              factor: pres.factor, cantidad: cant, precio: pres.precio } });
+          if (r?.error) throw r.error;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          listo('Enlace creado', `${r.codigo} · ${r.prueba ? 'enlace de PRUEBA' : 'compártelo con el cliente'}`);
+          await Share.share({ message: mensajeDeEnlaceDePago(r, nombreSala) }).catch(() => {});
+          router.back();
+        } catch (e) { fallo('No se pudo crear el enlace', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setGuardando(false); }
       } },
     ]);
   };
@@ -242,13 +266,16 @@ export default function ReservaConAnticipo() {
                     ) : null}
                     <Dato rotulo="Saldo al retirar" valor={ant >= 0.01 && ant <= total ? formatMoney(total - ant) : '—'} fuerte />
                   </Seccion>
-                  <FormaDePago valor={pago} onCambiar={setPago} monto={ant || null} />
+                  <Seccion titulo="Cómo paga">
+                    <Segmentos opciones={[{ id: 'caja', label: 'En caja' }, { id: 'enlace', label: 'Enlace de pago' }]} activa={cobroEn} onCambiar={setCobroEn} margen={0} />
+                  </Seccion>
+                  {cobroEn === 'caja' ? <FormaDePago valor={pago} onCambiar={setPago} monto={ant || null} /> : null}
                   </>)}
                 </>
               ) : null}
               {problema ? <Aviso tono="cuidado" texto={problema} /> : null}
-              <BotonGrande texto={guardando ? 'Guardando…' : seEncarga ? 'Registrar encargo' : `Cobrar anticipo${ant ? ` ${formatMoney(ant)}` : ''}`}
-                color={MARCA.verde} deshabilitado={guardando || !listoParaGuardar} onPress={seEncarga ? encargar : guardar} />
+              <BotonGrande texto={guardando ? 'Guardando…' : seEncarga ? 'Registrar encargo' : cobroEn === 'enlace' ? `Crear enlace de pago${ant ? ` ${formatMoney(ant)}` : ''}` : `Cobrar anticipo${ant ? ` ${formatMoney(ant)}` : ''}`}
+                color={MARCA.verde} deshabilitado={guardando || !listoParaGuardar} onPress={seEncarga ? encargar : cobroEn === 'enlace' ? mandarEnlace : guardar} />
             </>
           )}
         </ScrollView>

@@ -84,6 +84,15 @@ export function mensajeDeEncargo(e, sala) {
         + '. Para pedirlo se paga completo en la sala. ¿Le confirmamos?';
 }
 
+/** El mensaje con el enlace de pago que manda la sala (reglamento v3). */
+export function mensajeDeEnlaceDePago(e, sala) {
+    const nombre = String(e.cliente ?? '').trim().split(/\s+/)[0] ?? '';
+    const primero = nombre ? nombre[0] + nombre.slice(1).toLowerCase() : '';
+    return `Hola${primero ? ` ${primero}` : ''}, le saludamos de Farmacia Salud ${sala ?? ''}. `
+        + `Este es el enlace para pagar ${formatMoney(Number(e.monto ?? 0))} de ${e.codigo}${e.detalle ? ` (${e.detalle})` : ''}: ${e.url} `
+        + 'Puede pagar con tarjeta. Al pagarlo queda registrado y le avisamos cuando esté listo para retirar.';
+}
+
 /** El teléfono en formato de WhatsApp (El Salvador): sólo dígitos, con 503. */
 export function whatsappDe(telefono) {
     const d = String(telefono ?? '').replace(/\D/g, '');

@@ -1356,6 +1356,18 @@ async function operar(body) {
 }
 
 /**
+ * Un enlace de pago para el anticipo de un apartado (reglamento v3, 2026-10-22).
+ *
+ * La sala no cobra: `operar-caja` crea el enlace de Wompi y la base prepara el
+ * cobro —en un apartado nuevo, separa el producto con el plazo de una reserva
+ * sin pagar—. Cuando el cliente paga, se suma solo al anticipo. `apartado` es
+ * el mismo de `anotarIngreso` (`nueva`, `reserva` o `encargo`).
+ */
+export async function enlaceDePagoDeApartado({ sala, apartado, monto }) {
+    return operar({ accion: 'enlace_apartado', sala, apartado, monto });
+}
+
+/**
  * El corte, con el conteo a ciegas.
  *
  * Manda el efectivo contado y NO recibe lo esperado hasta que contesta: ésa es

@@ -102,14 +102,16 @@ async function confirmar(admin: any, identificador: string, idTransaccion: strin
   return data;
 }
 
-const pagina = (titulo: string, texto: string, volver = VOLVER_A_LA_APP) => `<!doctype html>
+// `volver` vacío (2026-10-22): quien pagó un enlace que le mandó la sala puede
+// no tener la app; la página se queda y no intenta abrirla.
+const pagina = (titulo: string, texto: string, volver: string | null = VOLVER_A_LA_APP) => `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="1;url=${volver}"><title>${titulo}</title>
+${volver ? `<meta http-equiv="refresh" content="1;url=${volver}">` : ""}<title>${titulo}</title>
 <style>body{font-family:-apple-system,system-ui,sans-serif;text-align:center;padding:48px 24px;color:#1c1c1e;background:#fff}
 @media(prefers-color-scheme:dark){body{color:#f2f2f7;background:#000}}h1{font-size:22px}p{font-size:16px;opacity:.75}
 a{display:inline-block;margin-top:20px;padding:14px 24px;border-radius:14px;background:#C2185B;color:#fff;text-decoration:none;font-weight:700}</style>
-</head><body><h1>${titulo}</h1><p>${texto}</p><a href="${volver}">Volver a la app</a>
-<script>setTimeout(function(){location.href=${JSON.stringify(volver)}},300)</script></body></html>`;
+</head><body><h1>${titulo}</h1><p>${texto}</p>${volver ? `<a href="${volver}">Volver a la app</a>
+<script>setTimeout(function(){location.href=${JSON.stringify(volver)}},300)</script>` : ""}</body></html>`;
 
 Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -133,6 +135,15 @@ Deno.serve(async (req) => {
         : r?.ok
         ? pagina("¡Pago recibido!", "Tu crédito se actualiza en unos segundos.", VOLVER_A_CREDITOS)
         : pagina("Volviendo a la app", "Si completaste el pago, tu crédito se actualiza en unos segundos.", VOLVER_A_CREDITOS);
+      return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+    }
+    // El enlace que mandó la sala (identificador «AP-», 2026-10-22).
+    if (identificador.startsWith("AP-")) {
+      const html = r?.ok && r?.prueba
+        ? pagina("Pago de prueba", "Este cobro fue de prueba: no se cargó dinero. Paga en la sucursal.", null)
+        : r?.ok
+        ? pagina("¡Pago recibido!", "La sucursal ya lo tiene registrado. Puedes cerrar esta ventana.", null)
+        : pagina("Gracias", "Si completaste el pago, la sucursal lo recibe en unos segundos. Puedes cerrar esta ventana.", null);
       return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
     }
     // Un cobro de PRUEBA (2026-10-19) no es dinero: se dice, y la sala lo cobra en caja.

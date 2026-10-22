@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1341.0 — Reservas: enlace de pago para el anticipo de un apartado
+
+La sala puede **mandarle al cliente un enlace de pago** (tarjeta, Wompi) en vez de cobrar en caja, en «Apartar o encargar» (nuevo y «Por cobrar») del portal y en la app del personal. Reglamento de reservas v3.
+
+- «Cómo paga: En caja / Enlace de pago». Con enlace no se pide forma de pago ni comprobante: el dinero no pasa por el cajón.
+- En un apartado nuevo el producto queda separado **3 días sin pagar**; al pagar, el plazo pasa a los 7 de un apartado. Con traslado, se pide igual a la otra sala.
+- Al aprobarse, `app_reserva_pago_confirmar` **suma el monto al anticipo** (no da la reserva por pagada entera) y avisa a la sala. Si llega de más —ya lo pagaron en caja— lo sobrante queda anotado para devolverlo o dejarlo a favor.
+- Al retirar, ese anticipo se trata como pago en línea (factura al crédito y abono), igual que una reserva pagada desde la app.
+- Sirve también para el encargo confirmado (se paga completo).
+- «Copiar enlace» y «Mandar por WhatsApp» con el mensaje armado; la página de vuelta no intenta abrir la app (quien paga puede no tenerla).
+- Nuevas: `apartado_enlace_preparar` / `_guardar` / `_anular` (sólo servidor), acción `enlace_apartado` de `operar-caja`, columna `app_reservas_pagos.es_anticipo`.
+
 ## v2.1340.0 — Reservas: apartar sin monto mínimo, prórroga única de 7 días, encargo sin retirar a saldo a favor
 
 Reglamento de reservas versión 3 (decisiones del 2026-10-22), en la base, el portal, la app del personal y la de clientes:

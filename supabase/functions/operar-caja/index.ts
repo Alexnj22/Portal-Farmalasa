@@ -3,6 +3,7 @@ import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
 import { hora12 } from "../_shared/hora.ts";
+import { crearEnlace } from "../_shared/wompi.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los actos de caja que faltaban en el portal: ABRIR, anotar un INGRESO o una
@@ -387,7 +388,7 @@ Deno.serve(async (req) => {
     // rama existía y nunca se alcanzó. Es lo que esta lista tiene de traicionero
     // en el otro sentido: no sólo deja pasar de más, también deja afuera.
     if (!["abrir", "iniciar_turno", "ingreso", "salida", "abono", "cerrar", "estado", "corregir",
-          "aplicar_correccion", "rechazar_autorizacion"].includes(accion)) {
+          "aplicar_correccion", "rechazar_autorizacion", "enlace_apartado"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
@@ -431,6 +432,48 @@ Deno.serve(async (req) => {
     if (!["aplicar_correccion", "corregir", "rechazar_autorizacion"].includes(accion)
         && !permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
       return json({ ok: false, error: "Solo puedes operar la caja de tu propia sala." }, 403);
+    }
+
+    // ── EL ENLACE DE PAGO DE UN APARTADO (reglamento v3, 2026-10-22) ────────
+    //
+    // La sala no cobra: le manda al cliente un enlace de Wompi por el anticipo
+    // (o por el encargo confirmado). No toca la caja —el dinero no entra al
+    // cajón— y por eso no pide la caja abierta. La base prepara el cobro y, en
+    // un apartado nuevo, separa el producto con el plazo de una reserva sin
+    // pagar; cuando Wompi lo aprueba, `wompi-pagos` lo suma al anticipo. El
+    // permiso y la sala ya se miraron arriba (`caja_vales`, su propia sala).
+    if (accion === "enlace_apartado") {
+      const apartado = (body.apartado && typeof body.apartado === "object") ? body.apartado : null;
+      const monto = Math.round(Number(body.monto) * 100) / 100;
+      if (!apartado) return json({ ok: false, error: "Falta qué se aparta." }, 400);
+      if (!(monto > 0)) return json({ ok: false, error: "Falta cuánto se cobra." }, 400);
+      const { data: prep, error: errPrep } = await supabase.rpc("apartado_enlace_preparar", {
+        p_branch_id: sala, p_apartado: apartado, p_monto: monto, p_employee: quien.id,
+      });
+      if (errPrep || !prep) return json({ ok: false, error: errPrep?.message || "No se pudo preparar el cobro." }, 409);
+      const p = prep as { identificador: string; codigo: string; monto: number; detalle?: string; cliente?: string };
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      try {
+        // 24 h para pagar desde el enlace: se manda por WhatsApp y el cliente
+        // lo abre cuando puede. El plazo del apartado sin pagar es aparte.
+        const enlace = await crearEnlace({
+          identificador: p.identificador, monto: Number(p.monto),
+          producto: `${p.codigo}: ${p.detalle ?? "Apartado"}`.slice(0, 120),
+          descripcion: `Anticipo de ${p.codigo} en Farmacia Salud`,
+          urlRedirect: `${base}?ref=${encodeURIComponent(p.identificador)}`, urlWebhook: base, minutos: 24 * 60,
+        });
+        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
+        const { error: errG } = await supabase.rpc("apartado_enlace_guardar", {
+          p_identificador: p.identificador, p_enlace_id: enlace.idEnlace, p_url: url, p_prueba: !enlace.estaProductivo,
+        });
+        if (errG) console.error("operar-caja: no se guardó el enlace:", errG.message);
+        return json({ ok: true, ...prep, url, prueba: !enlace.estaProductivo });
+      } catch (e) {
+        console.error("operar-caja: wompi no creó el enlace del apartado:", (e as Error)?.message ?? e);
+        const { error: errA } = await supabase.rpc("apartado_enlace_anular", { p_identificador: p.identificador });
+        if (errA) console.error("operar-caja: no se anuló el cobro sin enlace:", errA.message);
+        return json({ ok: false, error: "El pago en línea no está disponible ahora. Cóbralo en caja o intenta en un rato." }, 503);
+      }
     }
 
     // ── PEDIR UNA CORRECCIÓN ────────────────────────────────────────────────

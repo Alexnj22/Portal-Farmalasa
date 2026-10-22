@@ -2156,6 +2156,7 @@ export type Database = {
           abono_intentos: number
           abono_tomado_at: string | null
           codigo_autorizacion: string | null
+          creado_por: string | null
           created_at: string
           credito_branch_id: number | null
           credito_erp: string | null
@@ -2167,6 +2168,7 @@ export type Database = {
           enlace_id: number | null
           enlace_prueba: boolean | null
           enlace_url: string | null
+          es_anticipo: boolean
           es_real: boolean | null
           estado: string
           forma_pago: string | null
@@ -2186,6 +2188,7 @@ export type Database = {
           abono_intentos?: number
           abono_tomado_at?: string | null
           codigo_autorizacion?: string | null
+          creado_por?: string | null
           created_at?: string
           credito_branch_id?: number | null
           credito_erp?: string | null
@@ -2197,6 +2200,7 @@ export type Database = {
           enlace_id?: number | null
           enlace_prueba?: boolean | null
           enlace_url?: string | null
+          es_anticipo?: boolean
           es_real?: boolean | null
           estado?: string
           forma_pago?: string | null
@@ -2216,6 +2220,7 @@ export type Database = {
           abono_intentos?: number
           abono_tomado_at?: string | null
           codigo_autorizacion?: string | null
+          creado_por?: string | null
           created_at?: string
           credito_branch_id?: number | null
           credito_erp?: string | null
@@ -2227,6 +2232,7 @@ export type Database = {
           enlace_id?: number | null
           enlace_prueba?: boolean | null
           enlace_url?: string | null
+          es_anticipo?: boolean
           es_real?: boolean | null
           estado?: string
           forma_pago?: string | null
@@ -28095,6 +28101,28 @@ export type Database = {
         Args: { p_anular?: boolean; p_movimiento: number }
         Returns: undefined
       }
+      apartado_enlace_anular: {
+        Args: { p_identificador: string }
+        Returns: undefined
+      }
+      apartado_enlace_guardar: {
+        Args: {
+          p_enlace_id: number
+          p_identificador: string
+          p_prueba: boolean
+          p_url: string
+        }
+        Returns: undefined
+      }
+      apartado_enlace_preparar: {
+        Args: {
+          p_apartado: Json
+          p_branch_id: number
+          p_employee: string
+          p_monto: number
+        }
+        Returns: Json
+      }
       apartado_entregar: {
         Args: { p_apartado: Json; p_branch_id: number }
         Returns: Json
@@ -29304,6 +29332,7 @@ export type Database = {
           abono_intentos: number
           abono_tomado_at: string | null
           codigo_autorizacion: string | null
+          creado_por: string | null
           created_at: string
           credito_branch_id: number | null
           credito_erp: string | null
@@ -29315,6 +29344,7 @@ export type Database = {
           enlace_id: number | null
           enlace_prueba: boolean | null
           enlace_url: string | null
+          es_anticipo: boolean
           es_real: boolean | null
           estado: string
           forma_pago: string | null

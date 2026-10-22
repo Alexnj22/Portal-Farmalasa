@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeftRight, Check, PackagePlus, PackageSearch, Pencil, Phone, Search, Truck } from 'lucide-react';
+import { ArrowLeftRight, Check, Copy, Link2, MessageCircle, PackagePlus, PackageSearch, Pencil, Phone, Search, Truck } from 'lucide-react';
 import Button from '../common/Button';
 import BuscadorDeProducto from '../common/BuscadorDeProducto';
 import LiquidModal from '../common/LiquidModal';
@@ -13,8 +13,9 @@ import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
     codigoDeEncargo, codigoDeReserva, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, fetchEncargos, fetchReservasDeSucursal,
-    opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo,
+    mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
 } from '@nucleo/data/reservas';
+import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
 import { buscarEnSrs } from '@nucleo/data/srs';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import { mensajeDeError, motivoSinAplicar, pushClienteAlErp, updateCustomerFiscal } from '@nucleo/data/customers';
@@ -115,6 +116,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     const [traslado, setTraslado] = useState(null);
     const trasladoApi = useRef(null);
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
+    // Reglamento v3 (2026-10-22): se cobra en caja o se le manda un enlace de pago.
+    const [cobroEn, setCobroEn] = useState('caja');
+    const [enlace, setEnlace] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const claveDeEnvio = useRef(null);
     if (claveDeEnvio.current === null) claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `apartar-${Date.now()}`;
@@ -172,7 +176,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             : modo === 'encargo' && cant > 20 ? 'Un encargo va de 1 a 20 unidades.'
             : conAnticipo && montoAnticipo < 0.01 ? 'Escribe cuánto deja.'
                 : conAnticipo && montoAnticipo > total + 0.004 ? 'El anticipo no puede pasar del total.'
-                    : conAnticipo ? estadoPago.falta : null;
+                    : conAnticipo && cobroEn === 'caja' ? estadoPago.falta : null;
 
     // El papel del encargo: no se cobró nada, pero el cliente se lleva su código.
     const imprimirEncargo = async (codigo, productoTexto, nuevo) => {
@@ -197,6 +201,23 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 await imprimirEncargo(r.codigo, nombreNuevo.trim(), true);
                 clearDraft(llave(sala));
                 onClose();
+                return;
+            }
+            if (conAnticipo && cobroEn === 'enlace') {
+                const desde = modo === 'traslado' ? traslado : null;
+                const r = await enlaceDePagoDeApartado({ sala, monto: redondear(montoAnticipo),
+                    apartado: { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombreProducto,
+                        factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...(desde ? { traslado_desde: desde.branch_id } : {}) } });
+                if (r.error) throw r.error;
+                if (desde) {
+                    try {
+                        await trasladoApi.current.enviar(`Reserva ${r.codigo} para ${shortEmployeeName(cliente.name)}`, { reserva_id: r.reserva_id });
+                    } catch (e) {
+                        showToast('El apartado quedó, pero el traslado no se pidió', `${mensajeAmigable(e)} Pídelo desde Inventario.`, 'warning');
+                    }
+                }
+                clearDraft(llave(sala));
+                setEnlace(r);
                 return;
             }
             if (conAnticipo) {
@@ -237,6 +258,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     };
     const enviar = useMemo(() => unaSolaVez(() => cuerpo.current()), []);
 
+    if (enlace) return <EnlaceListo enlace={enlace} nombreSala={nombreSala} onListo={onClose} />;
     return (
         <div className="space-y-4">
             <div>
@@ -311,7 +333,8 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                         <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo} placeholder={String(mitad)} autoFocus
                             onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
                     )}
-                    <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />
+                    <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />
+                    {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />}
                 </>
             )}
             {!sinCatalogo && opciones && modo === 'encargo' && (
@@ -330,6 +353,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             <div className="flex justify-end">
                 <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>
                     {sinCatalogo ? 'Enviar consulta a Bodega' : modo === 'encargo' ? 'Registrar encargo'
+                        : conAnticipo && cobroEn === 'enlace' ? `${modo === 'traslado' ? 'Pedir y crear enlace' : 'Crear enlace de pago'} ${formatMoney(montoAnticipo)}`
                         : `${modo === 'traslado' ? 'Pedir y cobrar anticipo' : 'Cobrar anticipo'} ${conAnticipo ? formatMoney(montoAnticipo) : ''}`}
                 </Button>
             </div>
@@ -507,6 +531,8 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
     const [elegido, setElegido] = useState(null);
     const [monto, setMonto] = useState('');
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
+    const [cobroEn, setCobroEn] = useState('caja');
+    const [enlace, setEnlace] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const [vuelta, setVuelta] = useState(0);
     const claveDeEnvio = useRef(null);
@@ -533,17 +559,24 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
     }, [sala, vuelta, showToast]);
 
     const elegir = (f) => {
-        setElegido(f); setMonto(String(f.saldo)); setPago(FORMA_DE_PAGO_INICIAL);
+        setElegido(f); setMonto(String(f.saldo)); setPago(FORMA_DE_PAGO_INICIAL); setCobroEn('caja');
         claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `cobrar-${f.clave}-${Date.now()}`;
     };
     const n = Number(monto);
     const estadoPago = estadoDeFormaDePago(pago, n);
     const falta = !elegido ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
-        : elegido.tipo === 'encargo' && Math.abs(n - elegido.saldo) > 0.004 ? 'Un encargo se paga completo.' : estadoPago.falta;
+        : elegido.tipo === 'encargo' && Math.abs(n - elegido.saldo) > 0.004 ? 'Un encargo se paga completo.' : cobroEn === 'caja' ? estadoPago.falta : null;
 
     const cobrar = async () => {
         setEnviando(true);
         try {
+            if (cobroEn === 'enlace') {
+                const r = await enlaceDePagoDeApartado({ sala, monto: redondear(n),
+                    apartado: elegido.tipo === 'encargo' ? { modo: 'encargo', encargo_id: elegido.id } : { modo: 'reserva', reserva_id: elegido.id } });
+                if (r.error) throw r.error;
+                setEnlace(r);
+                return;
+            }
             const ok = await onCobrar({
                 clave: claveDeEnvio.current, monto: redondear(n), pago,
                 apartado: elegido.tipo === 'encargo' ? { modo: 'encargo', encargo_id: elegido.id } : { modo: 'reserva', reserva_id: elegido.id },
@@ -557,6 +590,7 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
         }
     };
 
+    if (enlace) return <EnlaceListo enlace={enlace} onListo={() => { setEnlace(null); setElegido(null); setVuelta((v) => v + 1); }} />;
     if (filas == null) return <p className="text-body-sm text-content-3">Cargando…</p>;
     if (!filas.length) return <p className="text-body-sm text-content-3">No hay encargos confirmados ni reservas con saldo en esta sala.</p>;
     return (
@@ -581,15 +615,57 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
                 <>
                     <PortalInput label="Monto" prefix="$" inputMode="decimal" value={monto} readOnly={elegido.tipo === 'encargo'}
                         onChange={(e) => setMonto(e.target.value.replace(/[^0-9.]/g, ''))} />
-                    <FormaDePago valor={pago} onCambiar={setPago} monto={n} montoFijo={elegido.tipo === 'encargo'} />
+                    <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />
+                    {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={n} montoFijo={elegido.tipo === 'encargo'} />}
                     {falta && <p className="text-caption text-content-3">{falta}</p>}
                     <div className="flex justify-end">
                         <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={cobrar}>
-                            Cobrar {formatMoney(n || 0)}
+                            {cobroEn === 'enlace' ? 'Crear enlace de pago' : 'Cobrar'} {formatMoney(n || 0)}
                         </Button>
                     </div>
                 </>
             )}
+        </div>
+    );
+}
+
+// ── El enlace de pago (reglamento v3, 2026-10-22) ───────────────────────────
+// En caja: entra al cajón con su forma de pago. Enlace: el cliente paga con
+// tarjeta desde el teléfono y se suma solo al anticipo; no pasa por el cajón.
+function ComoPaga({ valor, onCambiar }) {
+    return (
+        <SegmentedControl label="Cómo paga" value={valor} onChange={onCambiar}
+            options={[{ value: 'caja', label: 'En caja' }, { value: 'enlace', label: 'Enlace de pago' }]} />
+    );
+}
+
+function EnlaceListo({ enlace, nombreSala = null, onListo }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const wa = whatsappDe(enlace.telefono);
+    const mensaje = mensajeDeEnlaceDePago(enlace, nombreSala);
+    const copiar = async () => {
+        try { await navigator.clipboard.writeText(enlace.url); showToast('Enlace copiado', '', 'success'); }
+        catch (e) { showToast('No se pudo copiar', mensajeAmigable(e), 'error'); }
+    };
+    return (
+        <div className="space-y-4">
+            <Notice variant={enlace.prueba ? 'warning' : 'success'} compact icon={Link2}>
+                <b>{enlace.codigo}</b> · enlace por {formatMoney(Number(enlace.monto))} para {shortEmployeeName(enlace.cliente ?? '')}.
+                {enlace.nueva && ' El producto queda separado 3 días mientras paga; al pagar, el plazo pasa a 7.'}
+                {' '}Cuando pague, la sala recibe el aviso y se suma solo.
+                {enlace.prueba && ' Este enlace es de PRUEBA: no cobra dinero.'}
+            </Notice>
+            <PortalInput label="Enlace" value={enlace.url} readOnly onFocus={(e) => e.target.select()} />
+            <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="secondary" icon={Copy} onClick={copiar}>Copiar enlace</Button>
+                {wa && (
+                    <Button variant="secondary" icon={MessageCircle}
+                        onClick={() => window.open(`https://wa.me/${wa}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener')}>
+                        Mandar por WhatsApp
+                    </Button>
+                )}
+                <Button variant="primary" icon={Check} onClick={onListo}>Listo</Button>
+            </div>
         </div>
     );
 }

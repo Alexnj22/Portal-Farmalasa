@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.13 — fix(errores): un NOT NULL de la base ya no dice «falta llenar un campo»
+
+- **El aviso «Falta llenar un campo obligatorio» mandaba a buscar algo que no existía**: lo dispara la base cuando el PORTAL deja de mandar un dato obligatorio — los campos de la persona los valida el formulario antes y señala cuál. Ahora dice que es un error del sistema, que lo escrito sigue en pantalla y que se avise.
+
 ## v2.1350.12 — fix(personal): el alta ya no rebota por la certificación de discapacidad
 
 - **Guardar un empleado nuevo se quedaba en «Guardando…»**: cuando el formulario llegaba sin `has_disability` (formulario abierto con código ya puesto), `undefined && …` mandaba `disability_has_certification` como `null` y la columna es NOT NULL — la base rechazaba el alta entera (400, 4 intentos de Talento Humano el 22-oct). Ahora se manda siempre un booleano.

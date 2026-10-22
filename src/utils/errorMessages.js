@@ -260,7 +260,13 @@ const REGLAS = [
         + 'Avisa al equipo de sistemas para cerrarlo antes de volver a cortar.'],
     [/duplicate key|unique constraint|23505/i, 'Ya existe un registro con esos datos.'],
     [/foreign key constraint|23503/i, 'No se puede completar: hay otros registros que dependen de este.'],
-    [/not-null constraint|null value in column|23502/i, 'Falta llenar un campo obligatorio.'],
+    // Los campos que la persona tiene que llenar los valida el formulario
+    // ANTES de mandar, señalando cuál. Un NOT NULL que llega hasta la base es
+    // un dato que el portal debió poner y no puso: decir «falta llenar un
+    // campo» mandaba a buscar algo que no existe (alta de empleado, 22-oct).
+    [/not-null constraint|null value in column|23502/i,
+        'No se pudo guardar por un error del sistema, no por algo que hayas llenado. '
+        + 'Lo escrito sigue en pantalla: avisa al equipo de sistemas.'],
     [/check constraint|23514/i, 'Uno de los valores está fuera del rango permitido.'],
     [/invalid input syntax|22P02|out of range|22003/i, 'Uno de los valores tiene un formato incorrecto.'],
 

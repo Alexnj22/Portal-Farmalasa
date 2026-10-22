@@ -350,11 +350,19 @@ export const HISTORIAL_MAXIMO = 10;
  * que pesa dos campos y contesta «¿esto quién lo tocó?». */
 // La oferta, la declaración ética y la inducción (2026-10-14) son de cada
 // ingreso, igual que el contrato: en una recontratación las dos son ciertas.
+//
+// El DUI entró el 2026-10-22, y contradice lo de arriba a propósito. Pedido del
+// usuario al renovarse el DUI de una persona: «que quede registro o historial
+// de los cambios». El DUI vencido no prueba nada que el vigente no diga mejor
+// —eso sigue siendo cierto—, pero sin el archivo no se puede ver QUÉ decía el
+// documento con el que se firmaron los papeles de antes, y la traza sola
+// («lo cambió Fulana el 22-oct») no contesta eso.
 export const CON_ARCHIVO_ANTERIOR = new Set([
     'SOLICITUD_EMPLEO', 'CONTRATO', 'ACUSE_MTPS',
     'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION',
     'CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO',
     'ANUALIDAD_JVPQF', 'ANUALIDAD_JVPE',
+    'DUI_FRENTE', 'DUI_REVERSO', 'DUI_COMPLETO',
 ]);
 
 /* ── El certificado médico vale por AÑO CALENDARIO ─────────────────────────

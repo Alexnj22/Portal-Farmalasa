@@ -14,7 +14,7 @@
 // es el documento, así que debe siempre sustituir». Antes NO pisaba lo tecleado.
 
 import { describe, it, expect } from 'vitest';
-import { aplicarDuiLeido, avisoDeCaras } from '@nucleo/utils/duiLeido';
+import { aplicarDuiLeido, avisoDeCaras, juntarCambiosDelDui, asientoDeCambiosDelDui } from '@nucleo/utils/duiLeido';
 
 const LEIDO = {
     numero: '01234567-8',
@@ -396,5 +396,30 @@ describe('el municipio anterior a la reforma de 2023', () => {
         const r = aplicarDuiLeido({ departamento: 'CHALATENANGO', municipio: 'NO EXISTE' }, {});
         expect(r.parche.municipality).toBeUndefined();
         expect(r.descartados[0]).toMatch(/municipio/);
+    });
+});
+
+describe('el historial de lo que cambió el DUI (2026-10-22)', () => {
+    const vence = { campo: 'dui_fecha_vencimiento', rotulo: 'Vence', actual: '2026-03-12', documento: '2034-03-08' };
+
+    it('dos lecturas guardan el primer «antes» y el último «documento»', () => {
+        const otra = { ...vence, actual: '2034-03-08', documento: '2034-03-09' };
+        expect(juntarCambiosDelDui([vence], [otra])).toEqual([{ ...vence, documento: '2034-03-09' }]);
+    });
+
+    it('lo que se devolvió a mano no se anota', () => {
+        expect(asientoDeCambiosDelDui([vence], { dui_fecha_vencimiento: '2026-03-12' })).toBeNull();
+    });
+
+    it('anota antes y después, salvo el número del DUI', () => {
+        const numero = { campo: 'dui', rotulo: 'DUI', actual: '01234567-8', documento: '87654321-0' };
+        const a = asientoDeCambiosDelDui([vence, numero],
+            { dui_fecha_vencimiento: '2034-03-08', dui: '87654321-0' });
+        expect(a.cambios).toEqual([
+            { campo: 'dui_fecha_vencimiento', rotulo: 'Vence', antes: '2026-03-12', despues: '2034-03-08' },
+            { campo: 'dui', rotulo: 'DUI' },
+        ]);
+        expect(JSON.stringify(a)).not.toContain('87654321');
+        expect(JSON.stringify(a)).not.toContain('01234567');
     });
 });

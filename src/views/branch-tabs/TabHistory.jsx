@@ -42,6 +42,7 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
             return { icon: Settings, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3-lg)]' , variante: 'chart-3' };
         case 'PERSONAL_ASIGNADO':
         case 'EDITAR_EMPLEADO':
+        case 'DATOS_DEL_DUI_ACTUALIZADOS':
         case 'ELIMINAR_EMPLEADO':
         case 'ACCION_RRHH':
         case 'ASIGNAR_TURNO_SEMANAL':

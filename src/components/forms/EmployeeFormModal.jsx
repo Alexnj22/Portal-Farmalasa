@@ -12,7 +12,7 @@ import { loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
 import { faltantesDelExpediente } from '@nucleo/utils/expediente';
 import { TEMPORAL_LEGAL_BASIS_OPTIONS } from '@nucleo/utils/reingresoYRecontratacion';
-import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI } from '@nucleo/utils/duiLeido';
+import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI, juntarCambiosDelDui } from '@nucleo/utils/duiLeido';
 import { SIEMPRE_DE_LA_FICHA, vacioParaEnlazar, hayHomonimo, aplicarFichaEnlazada,
     GENDER_OPTIONS, BLOOD_TYPE_OPTIONS, MARITAL_STATUS_OPTIONS, ESTADO_HERRAMIENTA_OPTIONS, PERIODO_PAGO_OPTIONS,
     ALT_ID_DOCUMENT_TYPE_OPTIONS, PARENTESCO_OPTIONS, DISABILITY_GRADE_OPTIONS, AFP_OPTIONS, ACCOUNT_TYPE_OPTIONS,
@@ -509,6 +509,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         delete limpio.code;
         delete limpio._fichaCargada;
         delete limpio._fichaFallo;
+        // Lleva el antes y el después del DUI: tampoco va al disco.
+        delete limpio._cambiosDelDui;
         return limpio;
     }, [formData, isEditMode]);
 
@@ -1257,7 +1259,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         setFormData(prev => {
             const r = aplicarDuiLeido(leido, prev);
             resumen = r;
-            return { ...prev, ...r.parche };
+            const next = { ...prev, ...r.parche };
+            // Lo que cambió se junta para el asiento de bitácora al guardar
+            // (`asientoDeCambiosDelDui`): el panel de abajo se cierra, la
+            // bitácora queda.
+            if (r.reemplazos.length) {
+                next._cambiosDelDui = juntarCambiosDelDui(prev._cambiosDelDui, r.reemplazos);
+            }
+            /* Las caras del DUI vencen cuando vence el DUI. Su fecha la dice el
+             * lector —o, si confirmó lo que había, la ficha—, no el archivo
+             * anterior: ver el reemplazo en `handleDocFile`. */
+            const vence = next.dui_fecha_vencimiento || null;
+            if (vence) {
+                next.employee_documents = (prev.employee_documents || []).map(d =>
+                    (CATEGORIAS_DE_DUI.has(d?.category) && d.url && d.expiry_date !== vence
+                        ? { ...d, expiry_date: vence } : d));
+            }
+            return next;
         });
         /* Cuántos campos trajo el lector, de verdad.
          *
@@ -1330,7 +1348,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             const url = await uploadFileToStorage(file, 'documents', folder);
             if (!url) throw new Error('La subida no devolvió una URL.');
             const stored = getStoragePathFromUrl(url);
-            let expiryDate = getDocEntry(category).expiry_date || null;
+            /* Un archivo que REEMPLAZA a otro no hereda su vencimiento
+             * (2026-10-22). Lo heredaba, y como la lectura sólo llena una
+             * fecha vacía, el papel renovado quedaba con la del anterior: el
+             * DUI de una persona se volvió a subir con su renovación y la
+             * tarjeta siguió diciendo «vencido el 12-mar-2026». La fecha que
+             * alguien escribió ANTES de subir el primer archivo sí se respeta. */
+            const entradaAnterior = getDocEntry(category);
+            let expiryDate = entradaAnterior.url ? null : (entradaAnterior.expiry_date || null);
             /* Declarada AFUERA del `if`, y no es estilo.
              *
              * Estuvo dentro, y el certificado médico anual —que la lee 40
@@ -1413,7 +1438,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (!expiryDate && POR_ANIO_CALENDARIO.has(category)) {
                 expiryDate = vencimientoDelAnio(anioDelVencimiento(aiResponse?.aiData?.issueDate)) || null;
             }
-            updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
+            updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate,
+                                  uploaded_at: new Date().toISOString() });
 
             /* ── ¿Este papel nombra a más gente? ────────────────────────────
              *

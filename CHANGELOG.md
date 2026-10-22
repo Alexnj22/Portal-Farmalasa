@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1338.1 — DUI renovado: la tarjeta toma el vencimiento nuevo y queda historial
+
+Caso real: se subió el DUI renovado de una persona y la tarjeta siguió diciendo
+«vencido el 12-mar-2026».
+
+- **Un archivo que reemplaza a otro ya no hereda su vencimiento.** La lectura
+  sólo llena una fecha vacía, así que el papel renovado se quedaba con la del
+  anterior (`handleDocFile`). Además se actualiza `uploaded_at`.
+- **Las caras del DUI toman el vencimiento que lee `leer-dui`**, el mismo que
+  va a la ficha.
+- **Historial**: las caras del DUI conservan el archivo anterior y su
+  vencimiento (`CON_ARCHIVO_ANTERIOR`), y lo que la lectura cambió en la ficha
+  queda en su propio asiento `DATOS_DEL_DUI_ACTUALIZADOS`, con antes y después
+  (el número del DUI sólo como «cambió», igual que el trigger de auditoría).
+- Corregidas en la base las dos caras del DUI de la ficha afectada.
+
 ## v2.1338.0 — Reserva en camino de punta a punta
 
 Migración `20261022152201_reserva_en_camino_de_punta_a_punta`.

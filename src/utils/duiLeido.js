@@ -375,3 +375,55 @@ export function avisoDeCaras(r, unArchivo = false) {
 
     return null;
 }
+
+/* ── Lo que el DUI cambió, para la bitácora (2026-10-22) ───────────────────
+ *
+ * Pedido del usuario: «si se actualiza es para modificar también la info que
+ * trae. que quede registro o historial de los cambios». La lista de
+ * `reemplazos` vivía sólo en el panel del formulario: se veía en el momento y
+ * se perdía al cerrar. Esto la junta entre lecturas y la deja lista para un
+ * asiento al GUARDAR — no al leer, porque una lectura que nadie guarda no
+ * cambió la ficha.
+ *
+ * `juntarCambiosDelDui` conserva el PRIMER «antes» de cada campo y el ÚLTIMO
+ * «documento»: leer dos veces no tiene que anotar el valor intermedio como si
+ * hubiera sido el de la ficha. */
+export function juntarCambiosDelDui(previos = [], nuevos = []) {
+    const porCampo = new Map((previos || []).map(c => [c.campo, c]));
+    for (const c of nuevos || []) {
+        const ya = porCampo.get(c.campo);
+        porCampo.set(c.campo, ya ? { ...ya, documento: c.documento } : c);
+    }
+    return [...porCampo.values()];
+}
+
+/* El número del DUI no va a la bitácora con su valor: la lee gente que no
+ * necesariamente tiene la llave del expediente, y es la misma regla del
+ * trigger `audit_employee_sensitive_changes` («sólo los NOMBRES de los
+ * campos»). Se dice que cambió; los otros campos —fechas, nombre, domicilio—
+ * van con los dos valores, que es lo que hace útil al historial. */
+const SIN_VALOR_EN_LA_BITACORA = new Set(['dui']);
+
+/**
+ * El asiento de bitácora de lo que el DUI cambió, o `null` si nada quedó.
+ *
+ * Sólo cuenta lo que al guardar SIGUE valiendo lo que dijo el documento: si
+ * alguien apretó «Dejar lo que estaba» o lo corrigió a mano, ese campo no
+ * cambió por el DUI y anotarlo sería mentir.
+ */
+export function asientoDeCambiosDelDui(cambios, form) {
+    const vigentes = (cambios || []).filter(c =>
+        sinTildes(form?.[c.campo]) === sinTildes(c.documento));
+    if (!vigentes.length) return null;
+    const linea = c => (SIN_VALOR_EN_LA_BITACORA.has(c.campo)
+        ? `${c.rotulo}: cambió`
+        : `${c.rotulo}: ${c.actual}`);
+    return {
+        old_value: vigentes.map(linea).join(' · '),
+        new_value: vigentes.map(c => (SIN_VALOR_EN_LA_BITACORA.has(c.campo)
+            ? `${c.rotulo}: cambió` : `${c.rotulo}: ${c.documento}`)).join(' · '),
+        cambios: vigentes.map(c => (SIN_VALOR_EN_LA_BITACORA.has(c.campo)
+            ? { campo: c.campo, rotulo: c.rotulo }
+            : { campo: c.campo, rotulo: c.rotulo, antes: c.actual, despues: c.documento })),
+    };
+}

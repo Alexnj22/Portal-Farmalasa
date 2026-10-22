@@ -25,8 +25,28 @@ import { mensajeAmigable } from '../../utils/errorMessages';
 
 // El motivo de un paso del alta que falló, legible para quien da de alta.
 const mensajeDeFallo = (err) => mensajeAmigable(err, err?.message || 'sin motivo');
+
+/* Lo que la lectura del DUI cambió en la ficha, en su propio asiento: dentro de
+ * «Expediente modificado» no se distinguiría de cualquier otra edición, y es
+ * justo el historial que se pidió. Va DESPUÉS de guardar —lo que no se guardó
+ * no cambió— y no puede tumbar el guardado: la ficha ya está escrita. */
+async function anotarCambiosDelDui(get, id, nombre, branchId, form) {
+    const asiento = asientoDeCambiosDelDui(form?._cambiosDelDui, form);
+    if (!asiento) return;
+    try {
+        await get().appendAuditLog('DATOS_DEL_DUI_ACTUALIZADOS', id, {
+            timeline_title: `Datos del DUI actualizados: ${nombre}`,
+            dimension: 'HR',
+            branch_id: branchId,
+            ...asiento,
+        });
+    } catch (err) {
+        console.warn('anotarCambiosDelDui:', err?.message || err);
+    }
+}
 import { revisarNup } from '../../utils/nupAfp';
 import { contratoConPlazo } from '../../utils/contrato';
+import { asientoDeCambiosDelDui } from '../../utils/duiLeido';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -1066,6 +1086,7 @@ export const createEmployeeSlice = (set, get) => ({
                     ? 'Expediente rehecho sobre la ficha existente — historial conservado'
                     : 'Expediente creado'
             });
+            await anotarCambiosDelDui(get, newEmp.id, newEmp.name, newEmp.branch_id, formData);
             
             emitir('force-history-refresh');
 
@@ -1417,6 +1438,7 @@ export const createEmployeeSlice = (set, get) => ({
                 branch_id: updated.branch_id,
                 new_value: 'Expediente modificado'
             });
+            await anotarCambiosDelDui(get, id, updated.name, updated.branch_id, updatedData);
 
             // Cambiarle a alguien CON QUÉ ENTRA no es «expediente modificado»:
             // es la única línea que explica por qué mañana no puede entrar con

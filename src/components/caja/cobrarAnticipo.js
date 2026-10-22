@@ -27,7 +27,8 @@ export async function cobrarAnticipo({ sala, nombreSala, userId, quienAtiende, c
     if (!a) return { ok: false, error: new Error('El cobro no quedó ligado a la reserva. Revisa la lista del día.') };
     try {
         await imprimirConstanciaDeReserva({
-            codigo: a.codigo, cliente: shortEmployeeName(papel?.cliente ?? ''), producto: papel?.producto,
+            codigo: a.codigo, cliente: shortEmployeeName(papel?.cliente ?? ''), telefono: papel?.telefono ?? null,
+            enCamino: a.traslado_desde ?? papel?.enCamino ?? null, producto: papel?.producto,
             cantidad: papel?.cantidad, precio: papel?.precio, anticipo: Number(a.anticipo),
             metodo: FORMAS_DE_PAGO.find((f) => f.value === pago?.forma)?.label ?? 'Efectivo',
             venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(quienAtiende ?? ''),

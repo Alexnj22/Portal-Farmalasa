@@ -493,6 +493,55 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
      * separadas una de las dos se olvidaría de rehacer el reparto por lote. */
     const editarRenglon = (i, cambios) => editarEnStore(i, cambios);
 
+    /* Una fila de `approval_requests` por estante de origen. Vivía dentro de
+     * `enviar`; salió de ahí para que `enviarSoloEsta` arme la MISMA fila. */
+    const filaDeSolicitud = (grupo, causaTexto, grupoId = null) => ({
+        employee_id: user?.id,
+        type: 'INVENTORY_TRANSFER_REQUEST',
+        status: 'PENDING',
+        note: causaTexto.trim(),
+        metadata: {
+            reason: causaTexto.trim(),
+            // Mi sala: la que recibe.
+            branch_id: miBranch,
+            branch_name: user?.branchName ?? user?.branch_name ?? NOMBRE_SALA[miErp] ?? '',
+            erp_sucursal_id: miErp,
+            // La sala de origen: la que tiene el producto.
+            origen_erp_sucursal_id: grupo[0].origen.erp_sucursal_id,
+            origen_branch_name: grupo[0].origen.sala,
+            // De qué ESTANTE de esa sala. Bodega tiene dos y la sucursal
+            // sola no los distingue; es lo que la Edge Function traduce a
+            // la ubicación real del sistema al despachar, y lo que la
+            // base usa para medir la existencia contra el estante que
+            // corresponde. Sólo viaja cuando es cierto: una clave en
+            // `false` ensucia el metadata de las 189 solicitudes que no
+            // tienen nada que ver con esto.
+            ...(grupo[0].origen.vencidos ? { origen_vencidos: true } : {}),
+            // Las hermanas de la misma composición, para que quien pidió
+            // las vea juntas. Cada sala sigue viendo SÓLO la suya: esto
+            // no abre nada, es un rótulo para el lado que las pidió.
+            ...(grupoId ? { grupo_id: grupoId } : {}),
+            total_unidades: grupo.reduce((s, r) => s + r.unidades, 0),
+            items: grupo.map(r => r.item),
+        },
+    });
+
+    /* Pedir SÓLO el renglón que está armado, sin tocar la composición
+     * (2026-10-21): apartar para un cliente lo que hay en otra sala manda la
+     * solicitud en el mismo acto, y no puede llevarse de arrastre lo que la
+     * persona venía juntando en «En la solicitud». Lanza si no se pudo. */
+    const enviarSoloEsta = async (causaTexto) => {
+        if (!lineaActual) throw new Error('El traslado no está completo.');
+        if (!String(causaTexto ?? '').trim()) throw new Error('Falta para qué se pide.');
+        const { error: e } = await crearSolicitudTraslado([filaDeSolicitud([lineaActual], causaTexto)]);
+        if (e) {
+            const msg = String(e?.message ?? '');
+            throw new Error(msg.includes('approval_requests_un_traslado_pendiente')
+                ? 'Ya hay una solicitud de ese producto a esa sala esperando respuesta.'
+                : msg.includes('row-level security') ? 'No tienes permiso para solicitar traslados.' : (e?.message ?? 'No se pudo pedir el traslado.'));
+        }
+    };
+
     const enviar = async () => {
         if (!puedeEnviar) return;
         setError(''); setEnviando(true);
@@ -521,36 +570,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
                 ? (globalThis.crypto?.randomUUID?.() ?? String(Date.now()))
                 : null;
 
-            const filas = [...porSala.values()].map(grupo => ({
-                employee_id: user?.id,
-                type: 'INVENTORY_TRANSFER_REQUEST',
-                status: 'PENDING',
-                note: causa.trim(),
-                metadata: {
-                    reason: causa.trim(),
-                    // Mi sala: la que recibe.
-                    branch_id: miBranch,
-                    branch_name: user?.branchName ?? user?.branch_name ?? NOMBRE_SALA[miErp] ?? '',
-                    erp_sucursal_id: miErp,
-                    // La sala de origen: la que tiene el producto.
-                    origen_erp_sucursal_id: grupo[0].origen.erp_sucursal_id,
-                    origen_branch_name: grupo[0].origen.sala,
-                    // De qué ESTANTE de esa sala. Bodega tiene dos y la sucursal
-                    // sola no los distingue; es lo que la Edge Function traduce a
-                    // la ubicación real del sistema al despachar, y lo que la
-                    // base usa para medir la existencia contra el estante que
-                    // corresponde. Sólo viaja cuando es cierto: una clave en
-                    // `false` ensucia el metadata de las 189 solicitudes que no
-                    // tienen nada que ver con esto.
-                    ...(grupo[0].origen.vencidos ? { origen_vencidos: true } : {}),
-                    // Las hermanas de la misma composición, para que quien pidió
-                    // las vea juntas. Cada sala sigue viendo SÓLO la suya: esto
-                    // no abre nada, es un rótulo para el lado que las pidió.
-                    ...(grupoId ? { grupo_id: grupoId } : {}),
-                    total_unidades: grupo.reduce((s, r) => s + r.unidades, 0),
-                    items: grupo.map(r => r.item),
-                },
-            }));
+            const filas = [...porSala.values()].map(grupo => filaDeSolicitud(grupo, causa, grupoId));
 
             /* Entran TODAS o no entra ninguna: es un solo `insert` con varias
              * filas. Si una choca —el mismo producto a la misma sala ya
@@ -610,6 +630,6 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
         lineaLista, lineaActual, yaEstaEnLaLista, aMedias, aEnviar, salasDestino, conProblema,
         puedeEnviar, faltaElParaQue,
         renglones, causa, setCausa, agregar, quitarDelStore, editarRenglon, limpiarStore,
-        enviar, enviando, listo, error, setError, resumen,
+        enviar, enviarSoloEsta, enviando, listo, error, setError, resumen,
     };
 }

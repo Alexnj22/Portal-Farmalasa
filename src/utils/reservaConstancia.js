@@ -17,18 +17,22 @@ const recortar = (t, n) => (String(t ?? '').length > n ? `${String(t).slice(0, n
 // en el título, DÓNDE se retira y hasta cuándo arriba, el producto en una
 // línea, los montos como totales y el pie en dos renglones. Sin tabla de
 // productos —es uno solo— ni el código repetido en grande.
-export function construirConstanciaDeReserva({ codigo, cliente, producto, cantidad, precio, anticipo, metodo, venceAt, sala, atendio, ahora = new Date() }) {
+// `telefono` (2026-10-21): para avisarle cuando esté lista. `enCamino`: la sala
+// de donde viene por traslado; ahí no hay plazo todavía —empieza al llegar—.
+export function construirConstanciaDeReserva({ codigo, cliente, telefono, producto, cantidad, precio, anticipo, metodo, venceAt, enCamino, sala, atendio, ahora = new Date() }) {
     const total = Math.round(Number(precio) * Number(cantidad) * 100) / 100;
     const saldo = Math.round((total - Number(anticipo)) * 100) / 100;
     return {
         titulo: '',
         encabezado: {
             titulo: `RESERVA ${codigo}`,
-            lineas: [sala ? `Retira en ${String(sala).toUpperCase()}` : null, `Hasta el ${fechaHora(new Date(venceAt))}`].filter(Boolean),
+            lineas: [sala ? `Retira en ${String(sala).toUpperCase()}` : null,
+                venceAt ? `Hasta el ${fechaHora(new Date(venceAt))}` : (enCamino ? `Viene de ${String(enCamino).toUpperCase()}` : null)].filter(Boolean),
         },
         bloques: [{ texto: `${cantidad} x ${recortar(producto, 80)}` }],
         datos: [
             ...(cliente ? [['Cliente', cliente]] : []),
+            ...(telefono ? [['Telefono', telefono]] : []),
             ['Impreso', fechaHora(ahora)],
             ...(atendio ? [['Atendio', atendio]] : []),
         ],
@@ -44,6 +48,7 @@ export function construirConstanciaDeReserva({ codigo, cliente, producto, cantid
         // «Si no la retiras: 60 dias a tu favor» no se entendía: lo que queda
         // a favor es el ANTICIPO, como saldo para otra compra.
         pie: [
+            ...(enCamino && !venceAt ? ['Te avisamos cuando llegue.'] : []),
             'Trae este papel para retirar.',
             // Partido a mano: el pie viaja tal cual y el rollo cortaría a
             // mitad de palabra en la columna 54.
@@ -55,4 +60,32 @@ export function construirConstanciaDeReserva({ codigo, cliente, producto, cantid
 
 export function imprimirConstanciaDeReserva(datos, { sala = null } = {}) {
     return imprimirDocumento(construirConstanciaDeReserva(datos), { sala, tituloDeCola: `Reserva ${datos.codigo}` });
+}
+
+// La constancia de un ENCARGO (2026-10-21): no se cobró nada, así que no lleva
+// montos; dice qué se pidió, para quién y que se le avisa con precio y fecha.
+export function construirConstanciaDeEncargo({ codigo, cliente, telefono, producto, cantidad, nuevo, sala, atendio, ahora = new Date() }) {
+    return {
+        titulo: '',
+        encabezado: {
+            titulo: `ENCARGO ${codigo}`,
+            lineas: [sala ? `Retira en ${String(sala).toUpperCase()}` : null].filter(Boolean),
+        },
+        bloques: [{ texto: `${cantidad} x ${recortar(producto, 80)}` }],
+        datos: [
+            ...(cliente ? [['Cliente', cliente]] : []),
+            ...(telefono ? [['Telefono', telefono]] : []),
+            ['Impreso', fechaHora(ahora)],
+            ...(atendio ? [['Atendio', atendio]] : []),
+        ],
+        codigos: [{ valor: codigo, simbologia: 'CODE128' }],
+        pie: [
+            nuevo ? 'Lo consultamos y te avisamos si se puede conseguir,' : 'Te avisamos el precio y para cuando llega,',
+            nuevo ? 'el precio y para cuando llega. No has pagado nada.' : 'y ahi se paga completo. No has pagado nada.',
+        ],
+    };
+}
+
+export function imprimirConstanciaDeEncargo(datos, { sala = null } = {}) {
+    return imprimirDocumento(construirConstanciaDeEncargo(datos), { sala, tituloDeCola: `Encargo ${datos.codigo}` });
 }

@@ -1318,7 +1318,7 @@ export default function MiCajaView({ comoPestana = false }) {
                 reserva o al encargo; la constancia lleva el código en barras. */}
             {dialogo === 'apartar' && (
                 <Suspense fallback={null}>
-                    <DialogoApartar abierto ocupado={ocupado} sala={sala}
+                    <DialogoApartar abierto ocupado={ocupado} sala={sala} nombreSala={nombreSala} atiende={user?.name}
                         onClose={() => setDialogo(null)}
                         onCobrar={async ({ clave, monto, apartado, pago, papel }) => {
                             setOcupado(true);
@@ -1331,7 +1331,8 @@ export default function MiCajaView({ comoPestana = false }) {
                                 r.aviso ? 'warning' : 'success');
                             if (r.papel) showToast('No se imprimió la constancia', mensajeAmigable(r.papel), 'warning');
                             cargar();
-                            return true;
+                            // Lo apartado vuelve: quien apartó con traslado lo necesita para pedirlo.
+                            return r.apartado;
                         }} />
                 </Suspense>
             )}

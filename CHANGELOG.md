@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1337.0 — Apartar: teléfono confirmado, catálogo en producto nuevo y pedir a otra sala
+
+Correcciones pedidas sobre «Apartar o encargar»:
+
+- **Producto nuevo que sí tenemos:** al escribir el nombre se busca también en
+  el catálogo («colestor z» pasaba como nuevo y estaba como COLESTOR Z X 30
+  TABLETAS); si aparece, se ofrece usar ése.
+- **La presentación más chica viene elegida**, así la existencia se ve al
+  momento y no queda en «¿Cuál?».
+- **No hay en la sala pero sí en otra:** se muestra dónde hay y se ofrece
+  «Pedir a <sala> y apartar». Se cobra el anticipo, la reserva queda en camino
+  (sin plazo hasta que llega y se marca lista) y la solicitud de traslado sale
+  en el mismo acto, armada igual que desde Inventario. Migración
+  `20261022144355` (`app_reservas.traslado_desde`).
+- **Papeles:** la constancia de la reserva lleva el teléfono del cliente (y
+  «Viene de …» si está en camino); el encargo ahora también imprime su
+  constancia.
+- **Teléfono del cliente:** al elegirlo se confirma; si cambió se corrige ahí
+  y se manda a la ficha del sistema de la caja.
+
 ## v2.1336.3 — Auditoría: inventario, conteos, Mín·Máx e impresión
 
 - **Conteos — agregar a mano:** un lote con el mismo número y dos vencimientos ahora sale dos veces en la lista, cada uno con su fecha. Antes se ofrecía uno solo y el renglón podía guardarse con el vencimiento del otro (portal y app).

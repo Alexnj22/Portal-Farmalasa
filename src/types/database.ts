@@ -1769,6 +1769,7 @@ export type Database = {
           saldo_favor_vence: string | null
           saldo_incluye_envio: boolean
           terminos_version: string
+          traslado_desde: number | null
           updated_at: string
           vence_at: string | null
           vencida_motivo: string | null
@@ -1833,6 +1834,7 @@ export type Database = {
           saldo_favor_vence?: string | null
           saldo_incluye_envio?: boolean
           terminos_version: string
+          traslado_desde?: number | null
           updated_at?: string
           vence_at?: string | null
           vencida_motivo?: string | null
@@ -1897,6 +1899,7 @@ export type Database = {
           saldo_favor_vence?: string | null
           saldo_incluye_envio?: boolean
           terminos_version?: string
+          traslado_desde?: number | null
           updated_at?: string
           vence_at?: string | null
           vencida_motivo?: string | null
@@ -1984,6 +1987,13 @@ export type Database = {
             columns: ["saldo_favor_usado_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_traslado_desde_fkey"
+            columns: ["traslado_desde"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]

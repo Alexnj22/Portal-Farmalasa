@@ -29,7 +29,10 @@ import {
 import { anotarSalida } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
-import { codigoLimpio, coincideCodigo, esPagoDePrueba, origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor } from '@nucleo/utils/reservasDeSala';
+import {
+    agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
+    origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas,
+} from '@nucleo/utils/reservasDeSala';
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
 function esperaDeReceta(desde, ahora) {
@@ -165,17 +168,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         : { texto: 'Sin reservas' });
 
     // El carril de la pantalla: cuánto hay que preparar, cuánto espera al cliente y los saldos.
-    // Cuenta TARJETAS, no renglones: un pedido P- es una sola, igual que en la lista.
-    const porTarjeta = new Map();
-    for (const r of abiertasVistazo) {
-        const k = r.pedido && r.estado !== 'en_revision' ? `p:${r.pedido}` : `r:${r.id}`;
-        porTarjeta.set(k, [...(porTarjeta.get(k) ?? []), r]);
-    }
-    const tarjetas = [...porTarjeta.values()];
-    const preparar = tarjetas.filter((g) => g.some((x) => x.estado === 'en_revision' || x.estado === 'pendiente')).length;
-    const conteo = cargando ? null : {
-        preparar, listas: tarjetas.length - preparar, saldos: saldosAFavor(filas).length,
-    };
+    const conteo = cargando ? null : conteoDeReservas(filas);
     const claveConteo = conteo ? `${conteo.preparar}|${conteo.listas}|${conteo.saldos}` : '';
     useEffect(() => {
         if (onConteo && claveConteo) {
@@ -186,7 +179,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
 
     // Un código completo (R-000123 o P-XXXXXX) que no es de esta sala puede
     // ser un saldo a favor de otra: se busca en toda la red.
-    const codigoCompleto = /^(R-\d{6,}|P-[A-Z0-9]{6})$/.test(codigo.trim().toUpperCase()) ? codigo.trim().toUpperCase() : '';
+    const codigoCompleto = codigoCompletoDe(codigo);
     useEffect(() => {
         let vivo = true;
         if (!codigoCompleto) { setSaldosDeFuera([]); return undefined; }
@@ -336,14 +329,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const delPedido = renglonesDelPedido(visibles, codigo);
     const buscado = delPedido[0]?.pedido ?? codigo.trim().toUpperCase();
     // Un pedido del carrito es UNA tarjeta con todos sus productos (2026-10-07).
-    const grupos = [];
-    for (const r of visibles) {
-        // Un renglón con receta por revisar va solo: se decide aparte del resto del pedido.
-        const agrupa = r.pedido && r.estado !== 'en_revision';
-        const g = agrupa ? grupos.find((x) => x.pedido === r.pedido && x.estado !== 'en_revision') : null;
-        if (g) { g.renglones.push(r); continue; }
-        grupos.push(agrupa ? { ...r, renglones: [r] } : r);
-    }
+    // Un renglón con receta por revisar va solo: se decide aparte del resto del pedido.
+    const grupos = agruparPorPedido(visibles);
     const totalPedido = delPedido.reduce((t, r) => t + Number(r.precio ?? 0) * Number(r.cantidad ?? 1), 0);
     // Lo dejado en caja sobre el pedido (un cobro de caja se reparte entre sus renglones).
     const anticipoPedido = delPedido.reduce((t, r) => t + Number(r.anticipo ?? 0), 0);
@@ -399,10 +386,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             {/* En la pantalla completa la lista se parte en lo que hay que hacer
                 y lo que espera al cliente (2026-10-22, «me pierdo»). */}
             {(completa && !buscado
-                ? [['Por preparar', grupos.filter((r) => r.estado === 'en_revision' || (r.renglones ?? [r]).some((x) => x.estado === 'pendiente')),
-                    'Llegan de otra sala, esperan receta o hay que apartarlas'],
-                   ['Listas para retirar', grupos.filter((r) => r.estado !== 'en_revision' && !(r.renglones ?? [r]).some((x) => x.estado === 'pendiente')),
-                    'Apartadas: el cliente ya puede pasar']]
+                ? seccionesDeReservas(grupos).map((x) => [x.titulo, x.lista, x.ayuda])
                 : [[null, grupos, null]]).filter(([, g]) => g.length).map(([titulo, lista, ayuda]) => (
             <section key={titulo ?? 'todo'} className="space-y-2">
             {titulo && <Encabezado titulo={titulo} n={lista.length} ayuda={ayuda} />}
@@ -418,6 +402,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     const porTraerDe = filasDe.find(reservaPorTraer);
                     const anticipoDe = filasDe.reduce((t, x) => t + Number(x.anticipo ?? 0), 0);
                     const totalDe = filasDe.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0);
+                    const listaDePrecio = listaDePrecioDelGrupo(r);
                     // Las mismas acciones en la tarjeta de la pantalla y en la fila de la baldosa.
                     const acciones = (
                                 <>
@@ -459,10 +444,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                     )}
                                     {/* Mayoreo (2026-10-19): se cobró a precio de mayoreo en la app; en caja
                                         se factura con ESA lista para cobrar lo mismo. */}
-                                    {(r.renglones ?? [r]).some((x) => x.lista_precio) && (
+                                    {listaDePrecio && (
                                         <Badge variant="info" uppercase={false}
                                             title="Facturar con esta lista de precio: es la que se cobró al reservar">
-                                            {(r.renglones ?? [r]).some((x) => x.lista_precio === 'mayoreo_plus') ? 'Precio Mayoreo Plus' : 'Precio Mayoreo'}
+                                            {listaDePrecio}
                                         </Badge>
                                     )}
                                     {r.documento === 'credito_fiscal' && (

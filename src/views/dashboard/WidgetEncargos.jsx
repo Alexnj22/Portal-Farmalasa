@@ -16,6 +16,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, prorrogarEncargo, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo } from '@nucleo/utils/reservasDeSala';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
 const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar'));
@@ -43,20 +44,10 @@ const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar')
  * llame al cliente (`reservas_vigilar`), y si no lo va a retirar —o desiste—
  * la sala lo pasa a saldo a favor: el producto queda para la venta.
  */
-const sinVincular = (e) => e.producto_nuevo && !e.product_id;
-const ESTADO = {
-    solicitado: { label: 'Por responder', variant: 'warning' },
-    confirmado: { label: 'Esperando pago', variant: 'info' },
-    aceptado: { label: 'Pagado · pedir', variant: 'success' },
-    pedido: { label: 'Pedido', variant: 'info' },
-    listo: { label: 'Llegó', variant: 'success' },
-};
-// El resto de una reserva: lo que decide es el cliente, y ya pagó con la reserva.
-const ESTADO_DE_RESERVA = {
-    confirmado: { label: 'Otro precio · decide el cliente', variant: 'warning' },
-    aceptado: { label: 'Reservado · pedir', variant: 'success' },
-};
-const estadoDe = (e) => (e.reserva && ESTADO_DE_RESERVA[e.estado]) || ESTADO[e.estado];
+// El estado, si falta vincular y si se pasó el plazo salen del núcleo: los
+// mismos de la app del personal.
+const sinVincular = encargoSinVincular;
+const estadoDe = (e) => { const x = estadoDeEncargo(e); return { label: x.texto, variant: x.tono }; };
 
 // `soloLectura`: quien sólo puede mirar las reservas ve el estado sin los botones.
 export default function WidgetEncargos({ branchId = null, soloLectura = false }) {
@@ -113,7 +104,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
             showToast('No se pudo pasar a saldo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         }
     };
-    const vencido = (e) => e.estado === 'listo' && e.retirar_hasta && e.retirar_hasta < hoySV();
+    const vencido = (e) => encargoVencido(e, hoySV());
 
     if (!filas?.length) return null;
     return (
@@ -179,7 +170,7 @@ function Confirmar({ encargo, onClose, onConfirmar }) {
     const p = Number(precio);
     const valido = p > 0 && fecha && fecha >= hoySV();
     // Política del plan: un producto raro, caro y no devolvible necesita el visto bueno del gerente.
-    const riesgo = !encargo.producto_nuevo && (!encargo.devolutivo || !encargo.vendido_antes);
+    const riesgo = encargoConRiesgo(encargo);
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Confirmar encargo">
             <LiquidModal.Header><h2 className="text-body-xl font-semibold text-content">Confirmar {encargo.codigo}</h2></LiquidModal.Header>
@@ -258,8 +249,7 @@ function FichaDeProductoNuevo({ encargo }) {
     return (
         <Notice variant={r ? 'info' : 'warning'} compact icon={PackagePlus}>
             <b>Producto que no está en el catálogo.</b>{' '}
-            {r ? `En el SRS: ${[r.nombre, r.principio, r.conc, r.forma, r.lab, r.noregistro && `Reg. ${r.noregistro}`].filter(Boolean).join(' · ')}.`
-                : 'No aparece en el SRS: revisar antes de responder.'}
+            {fichaDeProductoNuevo(encargo)}
             {encargo.foto_url && (<>{' '}<button type="button" className="underline font-semibold" onClick={() => openStoredFile(encargo.foto_url)}>Ver la foto</button></>)}
         </Notice>
     );

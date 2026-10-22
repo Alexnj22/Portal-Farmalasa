@@ -837,6 +837,10 @@ export const AREAS = [
             'src/utils/ofertasClientes.js',
             // Las reservas vistas desde la sala (widget del portal y app del personal).
             'src/utils/reservasDeSala.js',
+            // Apartar o encargar en el mostrador (2026-10-22): las cuentas que
+            // comparten `DialogoApartar` del portal y `reserva-anticipo` de la app.
+            'src/utils/apartar.js',
+            'tests/unit/apartar.test.js',
             // La preventa de una reserva (2026-10-21): la venta la arma el núcleo
             // y el adaptador la deja en la caja; el cierre lo hace un cron.
             'src/utils/preventa.js',

@@ -14,7 +14,7 @@ import FormaDePago from './FormaDePago';
 import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    codigoDeEncargo, codigoDeReserva, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal,
+    crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal,
     mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
@@ -30,6 +30,8 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
+import { apartadoDelPedido, clavePresentacion, origenesDelPedido, planDeApartar, redondear, telefonoDeFicha, tomaDeCadaTraslado } from '@nucleo/utils/apartar';
+import { apartadoPorCobrar, porCobrarDeSala } from '@nucleo/utils/reservasDeSala';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 
 /**
@@ -68,7 +70,6 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
  *   · un encargo puede llevar varios productos: se van agregando y se
  *     registran juntos (un encargo y un papel por producto).
  */
-const redondear = (n) => Math.round(Number(n) * 100) / 100;
 const llave = (sala) => `apartar_${sala ?? 'sin-sala'}`;
 
 export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = null, atiende = null, onClose, onCobrar }) {
@@ -157,10 +158,10 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     useEffect(() => {
         if (pres || !presentaciones?.length) return;
         const p = presentaciones[0];
-        setPres(`${p.tipo}|${p.factor}|${p.precio}`);
+        setPres(clavePresentacion(p));
     }, [presentaciones, pres]);
 
-    const elegida = useMemo(() => (presentaciones ?? []).find((p) => `${p.tipo}|${p.factor}|${p.precio}` === pres) ?? null, [presentaciones, pres]);
+    const elegida = useMemo(() => (presentaciones ?? []).find((p) => clavePresentacion(p) === pres) ?? null, [presentaciones, pres]);
     const cant = Math.trunc(Number(cantidad)) || 0;
 
     useEffect(() => {
@@ -173,73 +174,17 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         return () => { vivo = false; };
     }, [sala, producto, elegida, cant, showToast]);
 
-    const total = elegida ? redondear(elegida.precio * cant) : 0;
-    // Con productos ya agregados al encargo, el que sigue sólo puede encargarse.
-    const soloEncargo = lineas.length > 0;
-    // Con productos ya en el pedido, el que sigue se aparta (en sala o en camino).
-    const enPedido = apartados.length > 0;
-    // Lo que ya viene en camino a la sala. Se pueden juntar varios traslados, y
-    // si no alcanzan, el resto se encarga a Bodega con la misma reserva. Un
-    // traslado que ya tomó otro renglón del pedido no se ofrece otra vez.
-    const vienen = useMemo(() => {
-        if (opciones?.modo !== 'encargo' || !elegida || soloEncargo) return [];
-        const usados = new Set(apartados.flatMap((a) => a.enCamino?.traslados_en_camino ?? []));
-        return (opciones.en_camino ?? []).filter((v) => !usados.has(v.id));
-    }, [opciones, elegida, soloEncargo, apartados]);
-    const sugeridos = useMemo(() => {
-        const ids = []; let u = 0;
-        for (const v of vienen) { if (elegida && u >= cant * elegida.factor) break; ids.push(v.id); u += Number(v.unidades); }
-        return ids;
-    }, [vienen, cant, elegida]);
-    // Nunca más traslados que los que la cantidad necesita (2026-10-22): al
-    // bajar la cantidad, los que sobran se sueltan solos.
-    const elegidosIds = useMemo(() => {
-        const ids = []; let u = 0;
-        for (const id of vienenElegidos ?? sugeridos) {
-            const v = vienen.find((x) => x.id === id);
-            if (!v || (elegida && u >= cant * elegida.factor)) continue;
-            ids.push(id); u += Number(v.unidades);
-        }
-        return ids;
-    }, [vienenElegidos, sugeridos, vienen, cant, elegida]);
-    const vieneSel = vienen.filter((v) => elegidosIds.includes(v.id));
-    const vienenUnidades = elegida ? Math.floor(vieneSel.reduce((t, v) => t + Number(v.unidades), 0) / (elegida.factor || 1)) : 0;
-    const restoABodega = vieneSel.length ? Math.max(cant - vienenUnidades, 0) : 0;
-    const origenes = vieneSel.map((v) => v.origen).join(' y ');
-    // 'viene': no hay en la sala pero ya viene en camino; 'traslado': se pide a otra y se aparta igual.
-    const modo = opciones?.modo === 'encargo' && vieneSel.length ? 'viene'
-        : opciones?.modo === 'encargo' && traslado && !soloEncargo && !enPedido ? 'traslado' : (opciones?.modo ?? null);
-    const seAparta = modo === 'reserva' || modo === 'viene';
-    const totalApartados = redondear(apartados.reduce((t, a) => t + a.precio * a.cantidad, 0));
-    // En un pedido, el cobro es por todo: lo agregado más el de la pantalla.
-    const totalCobro = enPedido ? redondear(totalApartados + (producto && elegida && seAparta ? total : 0)) : total;
-    // Reglamento v2 (lo vuelve a decidir `apartado_cotizar`): sin monto mínimo.
-    const mitad = redondear(totalCobro * 0.5);
-    const conAnticipo = !soloEncargo && (enPedido || modo === 'reserva' || modo === 'traslado' || modo === 'viene');
-    const montoAnticipo = cuanto === 'mitad' ? mitad : cuanto === 'todo' ? totalCobro : (anticipo === '' ? 0 : Number(anticipo));
-    const estadoPago = estadoDeFormaDePago(pago, montoAnticipo);
-    const nombreProducto = producto ? `${producto.nombre}${elegida?.tipo ? ` · ${elegida.tipo}` : ''}` : '';
-
-    const faltaTel = cliente && !telOk ? 'Confirma el teléfono del cliente.' : null;
-    const faltaNuevo = !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel : nombreNuevo.trim().length < 3 ? 'Escribe el nombre del producto.'
-        : !srs && !srsNoAparece ? 'Búscalo en el SRS, o marca que no aparece.' : cant < 1 || cant > 20 ? 'Un encargo va de 1 a 20 unidades.' : errorFoto || null;
-    const falta = sinCatalogo ? faltaNuevo : !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel
-        // Con productos ya agregados, el de la pantalla es opcional.
-        : soloEncargo && !producto ? null
-        : enPedido && !producto ? (montoAnticipo < 0.01 ? 'Escribe cuánto deja.' : montoAnticipo > totalCobro + 0.004
-            ? 'El anticipo no puede pasar del total.' : estadoPago.falta)
-        : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
-        : cant < 1 || cant > 999 ? 'La cantidad va de 1 a 999.' : !opciones ? 'Revisando la existencia…'
-            : soloEncargo && modo !== 'encargo' ? 'Éste sí se puede apartar: quítalo y apártalo aparte, después del encargo.'
-            : enPedido && !seAparta ? 'Éste no hay en la sala ni viene en camino: quítalo del pedido y encárgalo aparte.'
-            : enPedido && apartados.some((a) => a.productoId === producto.id) ? 'Ese producto ya está en el pedido: quítalo y agrégalo con la cantidad total.'
-            : modo === 'viene' && restoABodega > 20 ? `Bodega encarga hasta 20 por pedido y faltan ${restoABodega}.`
-            : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`
-            // La base acepta encargos de 1 a 20: decirlo antes y no con su error.
-            : modo === 'encargo' && cant > 20 ? 'Un encargo va de 1 a 20 unidades.'
-            : conAnticipo && montoAnticipo < 0.01 ? 'Escribe cuánto deja.'
-                : conAnticipo && montoAnticipo > totalCobro + 0.004 ? 'El anticipo no puede pasar del total.'
-                    : conAnticipo && (cobroEn === 'caja' || enPedido) ? estadoPago.falta : null;
+    // Las cuentas y lo que falta salen del núcleo (`planDeApartar`), las mismas
+    // de la app del personal: lo que ya viene en camino, el pedido de varios
+    // productos, el encargo y el cobro.
+    const plan = useMemo(() => planDeApartar({
+        opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn,
+        cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece, errorFoto,
+    }), [opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn,
+        cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece, errorFoto]);
+    const { total, soloEncargo, enPedido, vienen, elegidosIds, vieneSel, restoABodega, origenes, modo, totalApartados,
+        totalCobro, mitad, conAnticipo, montoAnticipo, nombreProducto, lineaActual, totalLineas, enCamino, puedeAgregar,
+        puedeApartarOtro, renglonActual, renglonesDelPedido, falta } = plan;
 
     // El papel del encargo: no se cobró nada, pero el cliente se lleva su código.
     const imprimirEncargo = async (codigo, productoTexto, nuevo, cantidadDelPapel = cant) => {
@@ -252,33 +197,14 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         }
     };
 
-    // El producto de la pantalla como renglón del encargo.
-    const lineaActual = producto && elegida ? { productoId: producto.id, productoNombre: nombreProducto, factor: elegida.factor,
-        cantidad: cant, precio: elegida.precio } : null;
-    const puedeAgregar = !sinCatalogo && modo === 'encargo' && lineaActual && cant >= 1 && cant <= 20 && lineas.length < 9;
     const agregarOtro = () => {
         setLineas((ls) => [...ls, lineaActual]);
         setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
     };
-    const totalLineas = redondear(lineas.reduce((s, l) => s + l.precio * l.cantidad, 0));
-
-    // Cómo llega lo que se aparta sin existencia: el traslado que ya viene, o el que se pide ahora.
-    const enCamino = modo === 'viene' ? { traslados_en_camino: elegidosIds, encargar_resto: restoABodega > 0 }
-        : modo === 'traslado' ? { traslado_desde: traslado.branch_id } : {};
-
-    // Al pedido: lo que se aparta en sala o lo que ya viene, nunca lo que se pide
-    // a otra sala (ése pide su traslado al cobrarse y va solo).
-    const puedeApartarOtro = !sinCatalogo && !soloEncargo && seAparta && lineaActual && cant >= 1 && cant <= 999
-        && apartados.length < 9 && !(modo === 'viene' && restoABodega > 20)
-        && !apartados.some((a) => a.productoId === lineaActual.productoId);
     const apartarOtro = () => {
-        setApartados((as) => [...as, { ...lineaActual, enCamino: modo === 'viene' ? enCamino : null,
-            origen: modo === 'viene' ? origenes : null }]);
+        setApartados((as) => [...as, renglonActual]);
         setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
     };
-    // Los renglones del pedido que se cobra: los agregados y el de la pantalla.
-    const renglonesDelPedido = [...apartados, ...(producto && elegida && seAparta
-        ? [{ ...lineaActual, enCamino: modo === 'viene' ? enCamino : null, origen: modo === 'viene' ? origenes : null }] : [])];
 
     const cuerpo = useRef(null);
     cuerpo.current = async () => {
@@ -297,12 +223,10 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             if (enPedido) {
                 const ap = await onCobrar({
                     clave: claveDeEnvio.current, monto: redondear(montoAnticipo), pago,
-                    apartado: { modo: 'pedido', customer_id: cliente.id, lineas: renglonesDelPedido.map((l) => ({
-                        producto_id: l.productoId, producto_nombre: l.productoNombre, factor: l.factor, cantidad: l.cantidad,
-                        precio: l.precio, ...(l.enCamino ?? {}) })) },
+                    apartado: apartadoDelPedido(cliente.id, renglonesDelPedido),
                     papel: { cliente: cliente.name, telefono: cliente.phone ?? null,
                         renglones: renglonesDelPedido.map((l) => ({ producto: l.productoNombre, cantidad: l.cantidad, precio: l.precio })),
-                        enCamino: [...new Set(renglonesDelPedido.map((l) => l.origen).filter(Boolean))].join(' y ') || null },
+                        enCamino: origenesDelPedido(renglonesDelPedido) },
                 });
                 if (!ap) return;
                 clearDraft(llave(sala)); onClose();
@@ -372,7 +296,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
 
 
     if (enlace) return <EnlaceListo enlace={enlace} nombreSala={nombreSala} onListo={onClose} />;
-    const deja = Math.min(redondear(montoAnticipo || 0), totalCobro);
+    const { deja } = plan;
     const etiquetaBoton = sinCatalogo ? 'Enviar consulta a Bodega'
         : enPedido ? `Apartar ${renglonesDelPedido.length} productos · cobrar ${formatMoney(montoAnticipo)}`
         : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
@@ -422,7 +346,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                             <div className="flex flex-col gap-1.5 min-w-0">
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Presentación</span>
                                 <LiquidSelect clearable={false} placeholder={presentaciones == null ? 'Cargando…' : '¿Cuál?'} value={pres} onChange={setPres}
-                                options={(presentaciones ?? []).map((p) => ({ value: `${p.tipo}|${p.factor}|${p.precio}`, label: `${p.tipo} · ${formatMoney(p.precio)}` }))} />
+                                options={(presentaciones ?? []).map((p) => ({ value: clavePresentacion(p), label: `${p.tipo} · ${formatMoney(p.precio)}` }))} />
                             </div>
                             <PortalInput label="Cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
                         </div>
@@ -546,11 +470,7 @@ function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
     const plegada = !abierta && (cubierto || elegidos.length === 0);
     const elegir = (ids) => { onCambiar(ids); setAbierta(false); };
     // Cuánto toma cada traslado elegido, en orden, hasta cubrir la cantidad.
-    const tomaDe = new Map();
-    vienen.filter((v) => elegidos.includes(v.id)).reduce((resta, v) => {
-        tomaDe.set(v.id, Math.min(Math.floor(Number(v.unidades) / f), Math.ceil(Math.max(resta, 0) / f)));
-        return resta - Number(v.unidades);
-    }, necesita);
+    const tomaDe = tomaDeCadaTraslado(vienen, elegidos, f, cantidad);
     const opciones = [
         ...vienen.map((v) => {
             const activa = elegidos.includes(v.id);
@@ -761,7 +681,7 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
         setGuardando(true); setError('');
         try {
             // Con guion, como el resto de las fichas (`7941-6817`).
-            const tel = `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+            const tel = telefonoDeFicha(digitos);
             await updateCustomerFiscal(cliente.id, { phone: tel }, {}, { nombre: cliente.name });
             const r = await pushClienteAlErp(cliente.id);
             if (!r?.empujado) showToast('Teléfono guardado', motivoSinAplicar(r), 'info');
@@ -821,20 +741,7 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
     useEffect(() => {
         let vivo = true;
         Promise.all([fetchEncargos(sala, true), fetchReservasDeSucursal(sala, true)])
-            .then(([encargos, reservas]) => {
-                if (!vivo) return;
-                const e = (encargos ?? []).filter((x) => x.estado === 'confirmado' && x.pago_estado === 'pendiente' && !x.reserva_id).map((x) => ({
-                    clave: `e${x.id}`, tipo: 'encargo', id: x.id, codigo: codigoDeEncargo(x.id), cliente: x.cliente, producto: x.producto,
-                    cantidad: x.cantidad, precio: Number(x.precio_unitario), saldo: Number(x.anticipo), fecha: x.fecha_estimada,
-                }));
-                const r = (reservas ?? []).filter((x) => x.origen === 'sucursal' && ['lista', 'pendiente'].includes(x.estado)
-                    && Number(x.precio) * Number(x.cantidad) - Number(x.anticipo || 0) > 0.004).map((x) => ({
-                    clave: `r${x.id}`, tipo: 'reserva', id: x.id, codigo: codigoDeReserva(x.id), cliente: x.cliente,
-                    producto: x.producto, cantidad: x.cantidad, precio: Number(x.precio),
-                    saldo: redondear(Number(x.precio) * Number(x.cantidad) - Number(x.anticipo || 0)),
-                }));
-                setFilas([...e, ...r]);
-            })
+            .then(([encargos, reservas]) => { if (vivo) setFilas(porCobrarDeSala(encargos, reservas)); })
             .catch((err) => { if (vivo) { setFilas([]); showToast('No se pudo cargar', mensajeAmigable(err), 'error'); } });
         return () => { vivo = false; };
     }, [sala, vuelta, showToast]);
@@ -853,14 +760,14 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
         try {
             if (cobroEn === 'enlace') {
                 const r = await enlaceDePagoDeApartado({ sala, monto: redondear(n),
-                    apartado: elegido.tipo === 'encargo' ? { modo: 'encargo', encargo_id: elegido.id } : { modo: 'reserva', reserva_id: elegido.id } });
+                    apartado: apartadoPorCobrar(elegido) });
                 if (r.error) throw r.error;
                 setEnlace(r);
                 return;
             }
             const ok = await onCobrar({
                 clave: claveDeEnvio.current, monto: redondear(n), pago,
-                apartado: elegido.tipo === 'encargo' ? { modo: 'encargo', encargo_id: elegido.id } : { modo: 'reserva', reserva_id: elegido.id },
+                apartado: apartadoPorCobrar(elegido),
                 papel: { cliente: elegido.cliente, producto: elegido.producto, cantidad: elegido.cantidad, precio: elegido.precio },
             });
             if (ok) { setElegido(null); setVuelta((v) => v + 1); }

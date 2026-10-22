@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1349.0 — App: Reservas, Apartar y Encargos como en la web
+
+- **App · Reservas de la sala**: secciones «Por preparar» / «Listas para retirar» y contadores (por tarjeta: un pedido P- es una), filtro por sucursal cuando el alcance es toda la red, enviar la preventa a caja, prórroga única, precio de mayoreo, saldo a favor de otra sala por código y «Devolver en dinero». Sin permiso de reservas ni del widget, la pantalla es sólo de consulta.
+- **App · Apartar**: los cuatro caminos (en la sala, ya en camino —sobre varios traslados—, pedido a otra sala en el mismo paso, encargo a Bodega), varios productos en un solo cobro como pedido P-, teléfono confirmado, producto que no tenemos (SRS, foto, consulta a Bodega), «precio de hoy», hasta 999 unidades.
+- **App · Encargos y «Por cobrar»**: la lista con todas sus acciones (confirmar con precio/fecha, no se consigue, pedido, llegó, entregar, prórroga, a saldo, vincular al catálogo, WhatsApp) en una pantalla nueva; encargos confirmados y reservas con saldo se cobran en caja o por enlace.
+- **Núcleo**: `src/utils/apartar.js` (`planDeApartar` y el reparto de traslados) y lo que la lista de la sala calcula (`reservasDeSala.js`) los usan la web y la app; `conteoDeReservas` cuenta tarjetas como la pantalla nueva de Reservas.
+- Nada probado todavía en un teléfono.
+
 ## v2.1348.0 — App: lo que la web ganó desde el 15-oct, ahora en el teléfono
 
 - **App · Personal**: órdenes de descuento en la ficha (no existían en la app): lista con lo que falta, papel adjunto y lectura, alta/edición/borrado; también al enlazar una ficha en un alta. El DUI renovado toma el vencimiento nuevo y deja historial (`DATOS_DEL_DUI_ACTUALIZADOS`); un archivo reemplazado no hereda el vencimiento del viejo (helper del núcleo que ahora usa también la web). Tipo de sangre vacío dice «Sin dato».

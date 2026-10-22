@@ -682,8 +682,8 @@ export async function fetchEntidadesDeSalida() {
  * `OK` significa «la foto no es la boleta que dice el formulario»; un `error`
  * significa «no se pudo preguntar» y se arregla reintentando.
  */
-export async function leerBoleta(archivo, esperado) {
-    const primera = await unaLectura(archivo, esperado, 0);
+export async function leerBoleta(archivo, esperado, { clase } = {}) {
+    const primera = await unaLectura(archivo, esperado, 0, clase);
 
     /* ── El segundo intento, GIRADO ─────────────────────────────────────────
      *
@@ -704,16 +704,18 @@ export async function leerBoleta(archivo, esperado) {
      * primera y el formulario pide el monto a mano. Cambiar un número no
      * confirmado por otro no confirmado no es leer mejor, es elegir al azar. */
     if (primera?.montoConfianza !== 'CONTRADICHO') return primera;
-    const girada = await unaLectura(archivo, esperado, 90);
+    const girada = await unaLectura(archivo, esperado, 90, clase);
     return girada?.montoConfianza === 'CONFIRMADO' ? { ...girada, seGiro: true } : primera;
 }
 
-/** Una pasada del lector sobre la foto, opcionalmente girada un cuarto de vuelta. */
-async function unaLectura(archivo, esperado, girar) {
+/** Una pasada del lector sobre la foto, opcionalmente girada un cuarto de vuelta.
+ *  `clase: 'PROVEEDOR'` lee una factura, una orden de despacho o un PDF en vez
+ *  de la boleta del POS (ver `documentoProveedorPrompt.ts`). */
+async function unaLectura(archivo, esperado, girar, clase) {
     try {
         const base64 = await aBase64Reducido(archivo, { girar });
         const { data, error } = await supabase.functions.invoke('leer-boleta', {
-            body: { imagenBase64: base64, mimeType: archivo.type || 'image/jpeg', esperado },
+            body: { imagenBase64: base64, mimeType: archivo.type || 'image/jpeg', esperado, ...(clase ? { clase } : {}) },
         });
         if (error) return { error };
         if (!data || data.error) return { error: new Error(data?.error || 'NO_SE_PUDO_LEER') };

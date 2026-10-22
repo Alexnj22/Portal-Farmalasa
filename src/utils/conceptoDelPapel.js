@@ -75,7 +75,27 @@ function enTitulo(texto) {
         .join(' ');
 }
 
+const DOCUMENTO_DE_PROVEEDOR = {
+    FACTURA: 'Factura',
+    CREDITO_FISCAL: 'Crédito fiscal',
+    NOTA_DE_REMISION: 'Nota de remisión',
+    ORDEN_DE_DESPACHO: 'Orden de despacho',
+    RECIBO: 'Recibo',
+    TIQUETE: 'Tiquete',
+};
+
 export function conceptoDelPapel(leido) {
+    /* El documento de un PROVEEDOR no es una operación del POS: el concepto es
+     * a quién se le pagó y con qué papel —«AGUA FRIA · Orden de despacho
+     * 0801»—, que es lo que pide la pista del motivo («qué factura se paga»).
+     * Acá la cabecera SÍ es la contraparte: el membrete es quien cobra. */
+    if (leido?.clase === 'PROVEEDOR') {
+        const doc = DOCUMENTO_DE_PROVEEDOR[String(leido?.tipo_documento || '').toUpperCase()]
+            || enTitulo(leido?.documento_impreso) || '';
+        const numero = String(leido?.numero_documento ?? leido?.numero_boleta ?? '').trim();
+        const papel = [doc, numero].filter(Boolean).join(' ');
+        return [String(leido?.proveedor ?? leido?.entidad ?? '').trim(), papel].filter(Boolean).join(' · ');
+    }
     const impresa = enTitulo(leido?.operacion_impresa);
     // Los dos salen del DETALLE, no de la cabecera. Ver el comentario de arriba.
     const red = String(leido?.red_remesas || '').trim();

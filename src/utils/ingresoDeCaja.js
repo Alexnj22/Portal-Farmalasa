@@ -68,7 +68,9 @@ export function lecturaDeBoleta(r, { pideBoleta = false } = {}) {
                 ? `La boleta trae el monto dos veces y no dicen lo mismo: leí ${formatMoney(montoLeido)}. Escribe el que dice el papel.`
                 : !seguro
                     ? `Leí ${formatMoney(montoLeido)}, pero no lo pude comprobar en la foto.${cola}`
-                    : `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}, y la boleta lo confirma.${cola}`;
+                    : leido.clase === 'PROVEEDOR'
+                        ? `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, documento ${leido.numero_boleta}` : ''}, y los renglones lo confirman.${cola}`
+                        : `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}, y la boleta lo confirma.${cola}`;
     return { ...salida, puesto, aviso, aMano: nada };
 }
 
@@ -102,7 +104,12 @@ export function frenoDelMonto({ lectura, monto, intentos = 0, unaSolaVez = false
     if (!lectura || !Number.isFinite(leido) || leido <= 0) return null;
     if (lectura.montoConfianza === 'CONFIRMADO') return null;
     if (Math.abs(Number(monto) - leido) >= 0.005) return null;
-    if (intentos < 2 && !unaSolaVez) {
+    /* Un documento de PROVEEDOR va directo a cotejar: una factura escrita a
+     * mano o un PDF trae el total UNA vez, y pedir otra foto no lo cambia —
+     * del PDF ni siquiera hay otra foto que tomar. Lo que podía comprobarlo
+     * (que los renglones sumen el total) ya lo intentó el lector. */
+    const deProveedor = lectura?.leido?.clase === 'PROVEEDOR';
+    if (intentos < 2 && !unaSolaVez && !deProveedor) {
         return {
             paso: 'OTRA_FOTO', bloquea: true,
             texto: lectura.montoConfianza === 'CONTRADICHO'
@@ -112,7 +119,9 @@ export function frenoDelMonto({ lectura, monto, intentos = 0, unaSolaVez = false
     }
     return {
         paso: 'COTEJAR', bloquea: !cotejado,
-        texto: 'La foto no comprueba el monto. Compáralo con el papel antes de anotar.',
+        texto: deProveedor
+            ? 'La foto no comprueba el total. Compáralo con el documento antes de anotar.'
+            : 'La foto no comprueba el monto. Compáralo con el papel antes de anotar.',
         casilla: `Lo comparé con el papel: dice ${formatMoney(leido)}`,
     };
 }

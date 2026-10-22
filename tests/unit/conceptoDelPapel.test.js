@@ -217,3 +217,22 @@ describe('sentidoDelPapel', () => {
         expect(sentidoDelPapel({ tipo_operacion: 'pago_servicio' })).toBe('ENTRADA');
     });
 });
+
+// El documento de un PROVEEDOR (2026-10-22): la orden de despacho de Agua Fría
+// que el lector de boletas no reconocía. Ahí el membrete SÍ es quien cobra.
+describe('conceptoDelPapel — documento de proveedor', () => {
+    it('dice a quién se le pagó y con qué papel', () => {
+        expect(conceptoDelPapel({
+            clase: 'PROVEEDOR', proveedor: 'AGUA FRIA', tipo_documento: 'ORDEN_DE_DESPACHO',
+            numero_documento: '0801', tipo_operacion: 'COMPRA', entidad: 'AGUA FRIA',
+        })).toBe('AGUA FRIA · Orden de despacho 0801');
+    });
+    it('sin tipo conocido usa el título impreso; sin número, sólo el papel', () => {
+        expect(conceptoDelPapel({ clase: 'PROVEEDOR', proveedor: 'DROGUERIA X', tipo_documento: 'OTRO', documento_impreso: 'NOTA DE ENTREGA' }))
+            .toBe('DROGUERIA X · Nota De Entrega');
+    });
+    it('no se la trata como compra de tienda', () => {
+        expect(conceptoDelPapel({ clase: 'PROVEEDOR', proveedor: 'AGUA FRIA', tipo_operacion: 'COMPRA', tipo_documento: 'FACTURA' }))
+            .toBe('AGUA FRIA · Factura');
+    });
+});

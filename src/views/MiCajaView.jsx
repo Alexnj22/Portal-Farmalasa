@@ -2656,6 +2656,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         ? frenoDelMonto({ lectura, monto, intentos: intentosSinComprobar, unaSolaVez, cotejado })
         : null;
 
+    /* El pago a un proveedor no trae boleta de POS: trae una factura, una
+     * orden de despacho a mano o el PDF de un DTE. Se lee con otro lector y
+     * acepta PDF (2026-10-22, la orden de Agua Fría que no se reconoció). */
+    const deProveedor = tipo?.codigo === 'PAGO_PROVEEDOR';
+
     const alElegirFoto = async (f) => {
         setFoto(f);
         setAviso(null);
@@ -2664,7 +2669,8 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         setCotejado(false);
         if (!f) return;
         setLeyendo(true);
-        const r = await leerBoleta(f, { entidad: null, numeroBoleta: null, monto: null });
+        const r = await leerBoleta(f, { entidad: null, numeroBoleta: null, monto: null },
+            deProveedor ? { clase: 'PROVEEDOR' } : undefined);
         setLeyendo(false);
         const l = lecturaDeBoleta(r, { pideBoleta: !!tipo?.pide_boleta });
         if (l.error) { setAviso(l.aviso); setAMano(true); return; }
@@ -2852,8 +2858,8 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 pasara por el aro de «no tengo boleta» seiscientas veces. */}
             {tipo && tipo.foto !== 'NO' && !noEfectivo && (
                 <>
-                    <FileField label={tipo.foto === 'OBLIGATORIA' ? 'Foto de la boleta (obligatoria)' : 'Foto de la boleta'}
-                        accept="image/*" value={foto}
+                    <FileField label={`${deProveedor ? 'Foto o PDF de la factura' : 'Foto de la boleta'}${tipo.foto === 'OBLIGATORIA' ? ' (obligatoria)' : ''}`}
+                        accept={deProveedor ? 'image/*,.pdf' : 'image/*'} value={foto}
                         onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
                     {aviso && <p className="text-caption text-content-2">{aviso}</p>}
                     {frenoMonto && !leyendo && (

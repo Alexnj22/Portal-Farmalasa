@@ -46,4 +46,18 @@ describe('ingresoDeCaja', () => {
             expect(frenoDelMonto({ lectura: { montoConfianza: 'UNICO', leido: {} }, monto: '5', intentos: 1 })).toBeNull();
         });
     });
+    describe('documento de proveedor', () => {
+        const leido = { clase: 'PROVEEDOR', monto: 6, numero_boleta: '0801', proveedor: 'AGUA FRIA', tipo_documento: 'ORDEN_DE_DESPACHO', numero_documento: '0801' };
+        it('confirmado por los renglones: lo dice así', () => {
+            const l = lecturaDeBoleta({ leido, montoConfianza: 'CONFIRMADO' });
+            expect(l.puesto.monto).toBe(true);
+            expect(l.concepto).toBe('AGUA FRIA · Orden de despacho 0801');
+            expect(l.aviso).toMatch(/renglones lo confirman/);
+        });
+        it('sin comprobar va directo a cotejar, sin pedir otra foto', () => {
+            const f = frenoDelMonto({ lectura: { montoConfianza: 'UNICO', leido }, monto: '6', intentos: 0 });
+            expect(f).toMatchObject({ paso: 'COTEJAR', bloquea: true });
+            expect(f.texto).toMatch(/documento/);
+        });
+    });
 });

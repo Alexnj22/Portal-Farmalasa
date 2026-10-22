@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.7 — Pago a proveedor: el lector entiende facturas, órdenes a mano y PDF
+
+- **Mi caja → Pago a proveedor**: la foto ya no se lee como una boleta de POS. Usa su propio lector (`documentoProveedorPrompt.ts`, `clase: 'PROVEEDOR'` en `leer-boleta`) que acepta tiquete térmico, factura o crédito fiscal, orden de despacho llenada a mano y **PDF**; el campo dice «Foto o PDF de la factura».
+- Llena el monto, el número del documento y el detalle («AGUA FRIA · Orden de despacho 0801»). El total queda **comprobado** cuando los renglones lo suman (con o sin IVA); si no, se pasa directo a «Lo comparé con el documento», sin pedir otra foto.
+- Nació de la orden de despacho de Agua Fría ($6.00, Salud 28, 22-oct) que terminó anotada sin comprobante y pidiendo autorización.
+
 ## v2.1350.6 — Reglamento de reservas: la reserva sin respuesta, desde el cliente
 
 - **Reglamento de reservas**: la cláusula de la reserva que la sucursal no atiende a tiempo está dicha desde el cliente: «Si el Cliente no recibe respuesta de la sucursal dentro de las 24 horas que esta tiene para preparar la reserva o revisar la receta, la reserva se cierra sin ninguna consecuencia para él…». Sigue en 4 hojas.

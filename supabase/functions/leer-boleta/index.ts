@@ -2,7 +2,8 @@ import { createClient } from "npm:@supabase/supabase-js@2"
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts"
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
 import { callClaude, parseClaudeJson } from "../_shared/claude.ts"
-import { PROMPT_BOLETA as PROMPT } from "../_shared/boletaPrompt.ts"
+import { PROMPT_BOLETA } from "../_shared/boletaPrompt.ts"
+import { PROMPT_DOCUMENTO_PROVEEDOR } from "../_shared/documentoProveedorPrompt.ts"
 import { boletaSinReferencia } from "../_shared/boletaReferencia.ts"
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -143,6 +144,55 @@ const confianzaDelMonto = (leido: Record<string, unknown>): 'CONFIRMADO' | 'CONT
 }
 
 /**
+ * ¿Cuánto se le cree al total de un documento de PROVEEDOR?
+ *
+ * La regla de la boleta —«el papel imprime el total dos veces»— no le sirve a
+ * una factura: el total sale una vez, y al lado hay SUMAS, IVA, SUB-TOTAL y
+ * los totales de cada renglón, todos con rótulos que contienen «TOTAL» y
+ * valores distintos. Con `confianzaDelMonto` una factura bien leída quedaría
+ * `CONTRADICHO` siempre.
+ *
+ * Lo que un documento de proveedor SÍ trae para cotejar son los renglones: la
+ * orden de despacho de Agua Fría (22-oct-2026) dice «3 × $2.00 = $6.00» y
+ * «T= $6.00». Si los renglones suman el total, dos partes del papel dicen lo
+ * mismo — con o sin el IVA, porque el crédito fiscal lista los renglones sin
+ * él y lo suma al final.
+ *
+ * `CONTRADICHO` sólo cuando los renglones están COMPLETOS y no dan el total:
+ * ahí un dígito se leyó mal, y la pantalla reintenta girando la foto.
+ */
+const confianzaDelProveedor = (leido: Record<string, unknown>): 'CONFIRMADO' | 'CONTRADICHO' | 'UNICO' => {
+  const total = Number(leido.monto)
+  if (!Number.isFinite(total) || total <= 0) return 'UNICO'
+  const renglones = (Array.isArray(leido.renglones) ? leido.renglones : [])
+    .map((r) => {
+      const f = (r ?? {}) as Record<string, unknown>
+      const propio = Number(f.total)
+      if (f.total != null && Number.isFinite(propio)) return propio
+      const cant = Number(f.cantidad), pu = Number(f.precio_unitario)
+      return f.cantidad != null && f.precio_unitario != null && Number.isFinite(cant) && Number.isFinite(pu)
+        ? Math.round(cant * pu * 100) / 100
+        : NaN
+    })
+  const completos = renglones.length > 0 && renglones.every(Number.isFinite)
+  if (completos) {
+    const suma = renglones.reduce((a, b) => a + b, 0)
+    const ivas = (Array.isArray(leido.importes_del_papel) ? leido.importes_del_papel : [])
+      .map((i) => (i ?? {}) as Record<string, unknown>)
+      .filter((i) => /\bIVA\b/.test(norm(i.rotulo)))
+      .map((i) => Number(i.valor))
+      .filter(Number.isFinite)
+    if (mismoMonto(suma, total) || ivas.some((iva) => mismoMonto(suma + iva, total))) return 'CONFIRMADO'
+    return 'CONTRADICHO'
+  }
+  // Sin renglones completos queda el cotejo de la boleta, sin su rama de
+  // contradicción: acá un rótulo con «TOTAL» y otro valor es lo normal.
+  const lista = Array.isArray(leido.importes_del_papel) ? leido.importes_del_papel : []
+  const iguales = lista.filter((i) => mismoMonto(((i ?? {}) as Record<string, unknown>).valor, total)).length
+  return iguales >= 2 ? 'CONFIRMADO' : 'UNICO'
+}
+
+/**
  * La entidad se compara con tolerancia: en la boleta puede salir
  * `TRANSNETWORK WS` y en el portal `TRANSNETWORK`. Basta con que una contenga
  * a la otra una vez normalizadas — es el mismo criterio de `buscarCargo`.
@@ -201,7 +251,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { imagenBase64, mimeType, esperado } = await req.json()
+    const { imagenBase64, mimeType, esperado, clase } = await req.json()
+    // Qué papel se espera. Por defecto la boleta del POS, que es lo que manda
+    // todo el que llamaba antes de que existiera el otro.
+    const deProveedor = clase === 'PROVEEDOR'
+    const PROMPT = deProveedor ? PROMPT_DOCUMENTO_PROVEEDOR : PROMPT_BOLETA
     if (!imagenBase64) {
       return new Response(JSON.stringify({ error: 'SIN_IMAGEN' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -226,10 +280,23 @@ Deno.serve(async (req) => {
           timeoutMs: TIMEOUT_MS,
         }))
 
+    // El documento de proveedor se traduce a las claves de la boleta: el resto
+    // de esta función, la pantalla y `monto_origen` en la base las leen sin
+    // saber qué prompt corrió. `clase` queda para saberlo después.
+    if (deProveedor) {
+      leido.clase = 'PROVEEDOR'
+      leido.entidad = leido.proveedor ?? null
+      leido.numero_boleta = leido.numero_documento ?? null
+      leido.tipo_operacion = 'COMPRA'
+    }
+
     // La referencia del POS leída como boleta se corrige ANTES de comparar y de
     // devolver: la pantalla llena (y cierra) el campo con `numero_boleta`. Lo
-    // leído original queda al lado para el rastro de `foto_lectura`.
-    const boletaCorregida = boletaSinReferencia(leido.numero_boleta, leido.numeros_del_papel)
+    // leído original queda al lado para el rastro de `foto_lectura`. Sólo en
+    // la boleta: en una factura no hay referencia de POS que confundir.
+    const boletaCorregida = deProveedor
+      ? (leido.numero_boleta ?? null)
+      : boletaSinReferencia(leido.numero_boleta, leido.numeros_del_papel)
     if (boletaCorregida !== (leido.numero_boleta ?? null)) {
       leido.numero_boleta_leido = leido.numero_boleta
       leido.numero_boleta = boletaCorregida
@@ -265,7 +332,7 @@ Deno.serve(async (req) => {
      * modificar cuando la foto los detecta, y esa regla sigue en pie — lo que
      * cambia es qué cuenta como «detectado». Un número que el papel no confirma
      * por segunda vez no está detectado: está leído. */
-    const montoConfianza = confianzaDelMonto(leido)
+    const montoConfianza = deProveedor ? confianzaDelProveedor(leido) : confianzaDelMonto(leido)
 
     // El VEREDICTO es lo que frena. Son los cuatro que prueban que esta foto es
     // de ESTA operación y no de otra: que sea una boleta, que se lea, y que el

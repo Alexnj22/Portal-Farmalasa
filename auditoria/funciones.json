@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-22T17:11:32.021Z",
+ "generado": "2026-10-22T18:52:54.196Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -130,9 +130,17 @@
    "area": "cortes-efectivo",
    "por": "código"
   },
+  "apartado_codigo_de_pedido": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
   "apartado_cotizar": {
    "area": "cortes-efectivo",
    "por": "código"
+  },
+  "apartado_crear_reserva": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "apartado_deshacer": {
    "area": "cortes-efectivo",
@@ -165,6 +173,10 @@
   "apartado_para_retirar": {
    "area": "cortes-efectivo",
    "por": "código"
+  },
+  "apartado_traslados_pedidos": {
+   "area": "app-clientes",
+   "por": "llamada"
   },
   "aperturas_de_la_manana": {
    "area": "cortes-efectivo",
@@ -1890,6 +1902,10 @@
    "por": "código"
   },
   "encargos_de_sucursal": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encargos_en_sucursal_crear": {
    "area": "app-clientes",
    "por": "código"
   },
@@ -4423,6 +4439,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "reserva_amarrar_traslados": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
   "reserva_avisada_whatsapp": {
    "area": "app-clientes",
    "por": "código"
@@ -4904,6 +4924,10 @@
   "traslado_por_codigo": {
    "area": "traslados",
    "por": "código"
+  },
+  "traslados_en_camino_a_sala": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "traslados_en_vuelo": {
    "area": "sucursales",

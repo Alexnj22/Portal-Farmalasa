@@ -3,6 +3,7 @@ import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Imag
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
+import Encabezado from './EncabezadoDeLista';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
@@ -116,8 +117,8 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
 
     if (!filas?.length) return null;
     return (
-        <div className="space-y-1.5 mt-3">
-            <p className="text-label font-semibold text-content-2 flex items-center gap-1.5"><PackageSearch size={14} /> Encargos de clientes</p>
+        <div className="space-y-1.5">
+            <Encabezado titulo="Encargos" n={filas.length} ayuda="Lo que no hay en la red: Compras lo consigue y confirma el precio" />
             <ul className="space-y-1.5 min-w-0">
                 {filas.map((e) => (
                     <li key={e.id}>

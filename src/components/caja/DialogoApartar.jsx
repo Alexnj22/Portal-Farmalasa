@@ -370,17 +370,25 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
 
 
     if (enlace) return <EnlaceListo enlace={enlace} nombreSala={nombreSala} onListo={onClose} />;
+    const deja = Math.min(redondear(montoAnticipo || 0), totalCobro);
+    const etiquetaBoton = sinCatalogo ? 'Enviar consulta a Bodega'
+        : enPedido ? `Apartar ${renglonesDelPedido.length} productos · cobrar ${formatMoney(montoAnticipo)}`
+        : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
+        : modo === 'encargo' ? 'Registrar encargo'
+        : conAnticipo && cobroEn === 'enlace' ? `${modo === 'traslado' ? 'Pedir y crear enlace' : 'Crear enlace de pago'} · ${formatMoney(montoAnticipo)}`
+        : `${modo === 'traslado' ? 'Pedir y cobrar' : 'Apartar y cobrar'} ${conAnticipo ? formatMoney(montoAnticipo) : ''}`;
+    // Ordenado en bloques (2026-10-22, «que se vea más ordenado»): quién, qué,
+    // cómo llega y el cobro, cada uno con su rótulo; los avisos en una línea.
     return (
-        <div className="space-y-4">
-            <div>
-                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Cliente</p>
+        <div className="space-y-6">
+            <Seccion titulo="Cliente">
                 <BuscarFicha ficha={cliente} onElegir={(c) => { setCliente(c); setTelOk(false); }} rotulo="Cliente"
                     ayuda="Búscalo en el listado de clientes. Si no tiene ficha, créala primero en Clientes." />
                 {cliente && (
                     <TelefonoDelCliente cliente={cliente} confirmado={telOk} onConfirmar={() => setTelOk(true)}
                         onCambiado={(phone) => { setCliente((c) => ({ ...c, phone })); setTelOk(true); }} />
                 )}
-            </div>
+            </Seccion>
 
             {enPedido && (
                 <LineasDelEncargo titulo="En el pedido" lineas={apartados} total={totalApartados}
@@ -390,87 +398,98 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 <LineasDelEncargo lineas={lineas} total={totalLineas} onQuitar={(i) => setLineas((ls) => ls.filter((_, j) => j !== i))} />
             )}
 
-            {sinCatalogo ? (
-                <ProductoQueNoTenemos nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
-                    onNombre={(v) => { setNombreNuevo(v); setSrs(null); setSrsNoAparece(false); }}
-                    onSrs={(r) => { setSrs(r); setSrsNoAparece(false); }} onNoAparece={() => { setSrs(null); setSrsNoAparece(true); }}
-                    onVolver={() => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]); }}
-                    cantidad={cantidad} onCantidad={setCantidad} fotos={fotos} onFotos={setFotos} onErrorFoto={setErrorFoto}
-                    nota={nota} onNota={setNota}
-                    onUsarCatalogo={(p) => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]);
-                        setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
-            ) : producto ? (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
-                    <p className="text-body-sm font-semibold text-content truncate min-w-0">{producto.nombre}</p>
-                    <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setTraslado(null); setVienenElegidos(null); }}>
-                        {soloEncargo || enPedido ? 'Quitar' : 'Cambiar'}
-                    </Button>
-                </div>
-            ) : (
-                <BuscadorDeProducto placeholder="Producto a apartar o encargar…"
-                    invitacion={{ icono: Search, texto: 'Escribe el nombre del producto' }}
-                    onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
-            )}
-            {!sinCatalogo && !producto && !soloEncargo && !enPedido && (
-                <Button variant="ghost" size="sm" icon={PackagePlus} onClick={() => setSinCatalogo(true)}>
-                    ¿No lo tenemos? Consultar un producto nuevo a Bodega
-                </Button>
-            )}
-
-            {!sinCatalogo && producto && (
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5 min-w-0">
-                        <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Presentación</span>
-                        <LiquidSelect clearable={false} placeholder={presentaciones == null ? 'Cargando…' : '¿Cuál?'} value={pres} onChange={setPres}
-                            options={(presentaciones ?? []).map((p) => ({ value: `${p.tipo}|${p.factor}|${p.precio}`, label: `${p.tipo} · ${formatMoney(p.precio)}` }))} />
+            <Seccion titulo={enPedido || soloEncargo ? 'Otro producto (opcional)' : 'Producto'}>
+                {sinCatalogo ? (
+                    <ProductoQueNoTenemos nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
+                        onNombre={(v) => { setNombreNuevo(v); setSrs(null); setSrsNoAparece(false); }}
+                        onSrs={(r) => { setSrs(r); setSrsNoAparece(false); }} onNoAparece={() => { setSrs(null); setSrsNoAparece(true); }}
+                        onVolver={() => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]); }}
+                        cantidad={cantidad} onCantidad={setCantidad} fotos={fotos} onFotos={setFotos} onErrorFoto={setErrorFoto}
+                        nota={nota} onNota={setNota}
+                        onUsarCatalogo={(p) => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]);
+                            setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
+                ) : producto ? (
+                    <div data-surface="card" className="rounded-xl p-3 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <p className="text-body font-semibold text-content min-w-0 break-words">{producto.nombre}</p>
+                            <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setTraslado(null); setVienenElegidos(null); }}>
+                                {soloEncargo || enPedido ? 'Quitar' : 'Cambiar'}
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-[1fr_7rem] gap-3">
+                            <div className="flex flex-col gap-1.5 min-w-0">
+                                <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Presentación</span>
+                                <LiquidSelect clearable={false} placeholder={presentaciones == null ? 'Cargando…' : '¿Cuál?'} value={pres} onChange={setPres}
+                                options={(presentaciones ?? []).map((p) => ({ value: `${p.tipo}|${p.factor}|${p.precio}`, label: `${p.tipo} · ${formatMoney(p.precio)}` }))} />
+                            </div>
+                            <PortalInput label="Cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
+                        </div>
+                        {elegida && cant > 0 && (
+                            <p className="text-caption text-content-3">
+                                {cant} × {formatMoney(elegida.precio)} = <b className="text-content tabular-nums">{formatMoney(total)}</b> con el precio de hoy
+                            </p>
+                        )}
                     </div>
-                    <PortalInput label="Cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
-                </div>
-            )}
+                ) : (
+                    <>
+                        <BuscadorDeProducto placeholder="Producto a apartar o encargar…"
+                            invitacion={{ icono: Search, texto: 'Escribe el nombre del producto' }}
+                            onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
+                        {!soloEncargo && !enPedido && (
+                            <Button variant="ghost" size="sm" icon={PackagePlus} onClick={() => setSinCatalogo(true)}>
+                                ¿No lo tenemos? Consultar un producto nuevo a Bodega
+                            </Button>
+                        )}
+                    </>
+                )}
+            </Seccion>
 
-            {!sinCatalogo && vienen.length > 0 && (
-                <YaVieneEnCamino vienen={vienen} factor={elegida.factor} cantidad={cant} elegidos={elegidosIds}
-                    onCambiar={(ids) => setVienenElegidos(ids)} />
-            )}
-            {!sinCatalogo && opciones?.modo === 'encargo' && !vieneSel.length && !soloEncargo && !enPedido && (
-                <DeOtraSala producto={producto} factor={elegida.factor} cantidad={cant} disponibles={Number(opciones.disponibles)}
-                    apiRef={trasladoApi} onCambio={setTraslado} />
-            )}
-            {!sinCatalogo && conAnticipo && (opciones || (enPedido && !producto)) && (
-                <>
-                    {!producto || !opciones ? null : modo === 'viene' ? (
+            {!sinCatalogo && producto && opciones && (
+                <Seccion titulo={modo === 'reserva' ? 'Disponibilidad' : 'Cómo llega'}>
+                    {vienen.length > 0 && (
+                        <YaVieneEnCamino vienen={vienen} factor={elegida.factor} cantidad={cant} elegidos={elegidosIds}
+                            onCambiar={(ids) => setVienenElegidos(ids)} />
+                    )}
+                    {opciones.modo === 'encargo' && !vieneSel.length && !soloEncargo && !enPedido && (
+                        <DeOtraSala producto={producto} factor={elegida.factor} cantidad={cant} disponibles={Number(opciones.disponibles)}
+                            apiRef={trasladoApi} onCambio={setTraslado} />
+                    )}
+                    {modo === 'viene' ? (
                         <Notice variant="info" compact icon={ArrowLeftRight}>
-                            <b>Viene{vienenUnidades === 1 ? '' : 'n'} {Math.min(vienenUnidades, cant)} de {origenes}: se aparta</b> con el precio de hoy.
-                            {restoABodega > 0 && <> <b>Faltan {restoABodega}: se encargan a Bodega</b> con la misma reserva; Compras confirma su precio
-                                y fecha.</>}{' '}
-                            Queda en camino hasta que llegue; ahí se marca lista sola y empieza su plazo. Total {formatMoney(total)}; el cliente deja
-                            lo que quiera.
-                            {opciones.baja_rotacion && <> Es de muy baja rotación: <b>conviene cobrarlo completo</b>.</>}
+                            Queda <b>en camino</b> y se marca lista sola al llegar; ahí empieza su plazo.
+                            {restoABodega > 0 && <> Los {restoABodega} que faltan <b>se encargan a Bodega</b> con la misma reserva.</>}
                         </Notice>
                     ) : modo === 'reserva' ? (
-                        <Notice variant="info" compact icon={PackageSearch}>
-                            Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta 7 días</b> con el precio de hoy. Total {formatMoney(total)};
-                            el cliente deja lo que quiera y el resto se paga al retirar.
-                            {opciones.baja_rotacion && <> Es de muy baja rotación: <b>conviene cobrarlo completo</b>.</>}
+                        <Notice variant="success" compact icon={PackageSearch}>
+                            Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta 7 días</b> con el precio de hoy.
                         </Notice>
-                    ) : (
+                    ) : modo === 'traslado' ? (
                         <Notice variant="info" compact icon={ArrowLeftRight}>
-                            <b>Se pide a {traslado.sala} y se aparta</b> con el precio de hoy. Queda en camino hasta que llegue; ahí se marca lista
-                            y empieza su plazo. Total {formatMoney(total)}; el cliente deja lo que quiera.
-                            {opciones.baja_rotacion && <> Es de muy baja rotación: <b>conviene cobrarlo completo</b>.</>}
+                            <b>Se pide a {traslado.sala}</b>: queda en camino y se marca lista al llegar.
                         </Notice>
+                    ) : modo === 'encargo' ? (
+                        <Notice variant="warning" compact icon={Truck}>
+                            <b>Se encarga.</b> Compras confirma precio y fecha; cuando el cliente acepte se cobra completo en «Por cobrar».
+                            Ahora no se cobra nada.
+                        </Notice>
+                    ) : null}
+                    {conAnticipo && opciones.baja_rotacion && (
+                        <p className="text-caption text-warning-text ml-1">Es de muy baja rotación: conviene cobrarlo completo.</p>
                     )}
                     {puedeApartarOtro && (
-                        <Button variant="ghost" size="sm" icon={Plus} onClick={apartarOtro}>
-                            {enPedido ? 'Agregar otro producto al pedido' : 'Apartar otro producto en el mismo cobro'}
+                        <Button variant="secondary" size="sm" icon={Plus} onClick={apartarOtro}>
+                            {enPedido ? 'Agregar al pedido y elegir otro' : 'Apartar otro producto en el mismo cobro'}
                         </Button>
                     )}
-                    {enPedido && (
-                        <p className="text-caption text-content-3 ml-1">
-                            Pedido de {renglonesDelPedido.length} productos · total {formatMoney(totalCobro)}. Un solo cobro; cada producto
-                            queda apartado con su parte y se retira con el código del pedido.
-                        </p>
+                    {puedeAgregar && (
+                        <Button variant="secondary" size="sm" icon={Plus} onClick={agregarOtro}>Agregar al encargo y elegir otro</Button>
                     )}
+                </Seccion>
+            )}
+
+            {!sinCatalogo && conAnticipo && (opciones || (enPedido && !producto)) && (
+                <Seccion titulo={enPedido ? `Cobro del pedido · ${renglonesDelPedido.length} productos` : 'Cobro'}>
+                    <ResumenDeCobro total={totalCobro} deja={deja} />
                     <SegmentedControl label="Cuánto deja" value={cuanto} onChange={setCuanto}
                         options={[{ value: 'mitad', label: `50 % · ${formatMoney(mitad)}` }, { value: 'todo', label: `Todo · ${formatMoney(totalCobro)}` },
                             { value: 'otro', label: 'Otro monto' }]} />
@@ -479,40 +498,26 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                             onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
                     )}
                     {/* El enlace de pago es para un solo producto: un pedido se cobra en caja. */}
-                    {!enPedido && <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />}
+                    <div className="flex flex-wrap gap-3 items-end">
+                        {!enPedido && <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />}
+                    </div>
                     {(cobroEn === 'caja' || enPedido) && <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />}
-                </>
+                    {enPedido && (
+                        <p className="text-caption text-content-3 ml-1">
+                            Un solo cobro: cada producto queda apartado con su parte y se retira con el código del pedido.
+                        </p>
+                    )}
+                </Seccion>
             )}
-            {soloEncargo && !producto && (
+
+            {(modo === 'encargo' || (soloEncargo && !producto)) && !sinCatalogo && (
                 <PortalInput label="Nota para Compras (opcional)" value={nota} onChange={(e) => setNota(e.target.value)}
                     placeholder="Lo necesita para el viernes" />
             )}
-            {!sinCatalogo && opciones && modo === 'encargo' && (
-                <>
-                    <Notice variant="warning" compact icon={Truck}>
-                        {soloEncargo ? 'También ' : 'Sin pedirlo a otra sala: '}
-                        <b>se encarga</b>. Con el precio de hoy serían <b>{formatMoney(total)}</b>
-                        {cant > 1 && <> ({cant} × {formatMoney(elegida.precio)})</>}; Compras confirma el precio final y la fecha, y cuando
-                        el cliente acepte se cobra el 100 % en «Por cobrar». Ahora no se cobra nada.
-                    </Notice>
-                    {puedeAgregar && (
-                        <Button variant="ghost" size="sm" icon={Plus} onClick={agregarOtro}>Agregar otro producto al encargo</Button>
-                    )}
-                    <PortalInput label="Nota para Compras (opcional)" value={nota} onChange={(e) => setNota(e.target.value)}
-                        placeholder="Lo necesita para el viernes" />
-                </>
-            )}
 
-            {falta && <p className="text-caption text-content-3">{falta}</p>}
-            <div className="flex justify-end">
-                <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>
-                    {sinCatalogo ? 'Enviar consulta a Bodega'
-                        : enPedido ? `Apartar ${renglonesDelPedido.length} productos y cobrar ${formatMoney(montoAnticipo)}`
-                        : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
-                        : modo === 'encargo' ? 'Registrar encargo'
-                        : conAnticipo && cobroEn === 'enlace' ? `${modo === 'traslado' ? 'Pedir y crear enlace' : 'Crear enlace de pago'} ${formatMoney(montoAnticipo)}`
-                        : `${modo === 'traslado' ? 'Pedir y cobrar anticipo' : modo === 'viene' ? 'Apartar y cobrar anticipo' : 'Cobrar anticipo'} ${conAnticipo ? formatMoney(montoAnticipo) : ''}`}
-                </Button>
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-border-subtle">
+                <p className="text-caption text-content-3 min-w-0">{falta ?? ''}</p>
+                <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>{etiquetaBoton}</Button>
             </div>
         </div>
     );
@@ -533,48 +538,91 @@ function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
     const cubierto = elegidos.length > 0 && tomadas >= necesita;
     const plegada = !abierta && (cubierto || elegidos.length === 0);
     const elegir = (ids) => { onCambiar(ids); setAbierta(false); };
-    let falta = necesita;
+    // Cuánto toma cada traslado elegido, en orden, hasta cubrir la cantidad.
+    const tomaDe = new Map();
+    vienen.filter((v) => elegidos.includes(v.id)).reduce((resta, v) => {
+        tomaDe.set(v.id, Math.min(Math.floor(Number(v.unidades) / f), Math.ceil(Math.max(resta, 0) / f)));
+        return resta - Number(v.unidades);
+    }, necesita);
     const opciones = [
         ...vienen.map((v) => {
             const activa = elegidos.includes(v.id);
             const hay = Math.floor(Number(v.unidades) / f);
-            const toma = activa ? Math.min(hay, Math.ceil(Math.max(falta, 0) / f)) : 0;
-            if (activa) falta -= Number(v.unidades);
+            const toma = tomaDe.get(v.id) ?? 0;
             return {
                 value: v.id, activa,
-                onClick: () => (plegada ? setAbierta(true)
-                    : activa ? elegir(elegidos.filter((x) => x !== v.id))
+                onClick: () => (activa ? elegir(elegidos.filter((x) => x !== v.id))
                     : cubierto ? elegir([v.id]) : elegir([...elegidos, v.id])),
-                titulo: `Apartar lo que viene de ${v.origen}`,
+                titulo: `De ${v.origen}`,
                 detalle: `${hay} en camino${activa && toma < hay ? ` · se apartan ${toma}` : ''} · ${v.estado === 'enviado' ? 'ya salió' : 'pedido, todavía no sale'}`,
             };
         }),
-        { value: 'no', activa: elegidos.length === 0, onClick: () => (plegada ? setAbierta(true) : elegir([])),
+        { value: 'no', activa: elegidos.length === 0, onClick: () => elegir([]),
             titulo: 'No: pedirlo a otra sala o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
     ];
-    const visibles = plegada ? opciones.filter((o) => o.activa) : opciones;
+    const elegidosV = vienen.filter((v) => elegidos.includes(v.id));
+    // Plegada: una sola tarjeta con lo elegido y un «Cambiar».
+    if (plegada) {
+        const titulo = elegidosV.length ? `Viene de ${elegidosV.map((v) => v.origen).join(' y ')}` : 'No se toma lo que viene en camino';
+        const detalle = elegidosV.length
+            ? `${Math.min(Math.floor(tomadas / f), cantidad)} de ${cantidad} · ${elegidosV.every((v) => v.estado === 'enviado') ? 'ya salió' : 'pedido, todavía no sale'}`
+            : 'Se pide a otra sala o se encarga';
+        return (
+            <button type="button" onClick={() => setAbierta(true)} data-surface="card" data-tono={elegidosV.length ? 'brand' : undefined}
+                aria-expanded={false} className="w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97] flex items-center gap-3">
+                {elegidosV.length > 0 && <Truck size={18} className="text-brand-text shrink-0" aria-hidden />}
+                <span className="flex-1 min-w-0">
+                    <span className="block text-body-sm font-semibold text-content">{titulo}</span>
+                    <span className="block text-caption text-content-3">{detalle}</span>
+                </span>
+                <span className="text-caption font-semibold text-brand-text shrink-0">Cambiar</span>
+            </button>
+        );
+    }
     return (
         <div className="space-y-1.5">
-            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                Aquí no hay · ya viene en camino{!plegada && vienen.length > 1 && cantidad > 1 ? ' · marca los que hagan falta' : ''}
+            <p className="text-caption text-content-3 ml-1">
+                Aquí no hay, pero ya viene en camino{vienen.length > 1 && cantidad > 1 ? ' · marca los que hagan falta' : ''}:
             </p>
             <ul className="space-y-1.5">
-                {visibles.map((o) => (
+                {opciones.map((o) => (
                     <li key={o.value}>
                         <button type="button" onClick={o.onClick} data-surface="card" data-tono={o.activa ? 'brand' : undefined} aria-pressed={o.activa}
-                            aria-expanded={plegada ? false : undefined}
                             className="w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] flex items-center gap-3">
                             <span className="flex-1 min-w-0">
                                 <span className="block text-body-sm font-semibold text-content">{o.titulo}</span>
                                 <span className="block text-caption text-content-3">{o.detalle}</span>
                             </span>
-                            {plegada
-                                ? <span className="text-caption font-semibold text-brand-text shrink-0">Cambiar</span>
-                                : o.activa && <Check size={18} className="text-brand-text shrink-0" aria-hidden />}
+                            {o.activa && <Check size={18} className="text-brand-text shrink-0" aria-hidden />}
                         </button>
                     </li>
                 ))}
             </ul>
+        </div>
+    );
+}
+
+// Un bloque del formulario con su rótulo (2026-10-22).
+function Seccion({ titulo, children }) {
+    return (
+        <section className="space-y-2.5">
+            <h3 className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">{titulo}</h3>
+            {children}
+        </section>
+    );
+}
+
+// Lo que se cobra hoy, a la vista: total, lo que deja y lo que falta al retirar.
+function ResumenDeCobro({ total, deja }) {
+    const celdas = [['Total', total], ['Deja hoy', deja], ['Al retirar', Math.max(redondear(total - deja), 0)]];
+    return (
+        <div data-surface="card" className="rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
+            {celdas.map(([rotulo, valor], n) => (
+                <div key={rotulo} className="min-w-0">
+                    <p className="text-caption text-content-3">{rotulo}</p>
+                    <p className={`text-body-lg font-bold tabular-nums ${n === 1 ? 'text-brand-text' : 'text-content'}`}>{formatMoney(valor)}</p>
+                </div>
+            ))}
         </div>
     );
 }

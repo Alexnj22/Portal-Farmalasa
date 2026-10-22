@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1345.2 — Reservas y Apartar: más ordenado, filtro por sucursal
+
+- **Apartar o encargar**: el formulario va en bloques con su rótulo: Cliente, Producto, Cómo llega y Cobro. La presentación y la cantidad están dentro de la tarjeta del producto, con la cuenta «2 × $21.71 = $43.42». El cobro muestra **Total · Deja hoy · Al retirar** antes de elegir el monto. El aviso largo se partió en uno corto por caso. Lo que viene en camino, una vez elegido, se pliega en una sola tarjeta («Viene de Bodega y Salud 5 · 2 de 2») con «Cambiar». El botón final queda separado abajo, junto a lo que falta.
+- **Reservas** (pantalla): con alcance de toda la red hay un **filtro por sucursal** («Todas las sucursales» o una), que queda en la dirección. La lista se parte en **Por preparar**, **Listas para retirar**, **Saldos a favor**, **Devoluciones por entregar** y **Encargos**, cada bloque con su cuenta y una línea de qué es.
+- `auditoria/funciones.json`: las funciones nuevas de apartar y traslados quedan con su área.
+
 ## v2.1345.1 — Reservas: el pedido P- se muestra entero
 
 - **Reservas**: al escanear o escribir el código **P-** de un pedido de caja sale el pedido completo en una tarjeta. La línea de resumen dice el anticipo dejado y cuánto falta al retirar, y avisa si una parte todavía viene en camino. La tarjeta suma el anticipo de todos los productos y, con productos listos y otros en camino, ofrece **«Retirar»** para los listos y **«Ya llegó: apartar»** para los que faltan; antes sólo miraba el primer producto.

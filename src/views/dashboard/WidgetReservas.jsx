@@ -5,6 +5,7 @@ import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
 import SearchInput from '../../components/common/SearchInput';
 import WidgetEncargos from './WidgetEncargos';
+import Encabezado from './EncabezadoDeLista';
 import { useResumenWidget } from './tamanoWidget';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -73,6 +74,7 @@ const TRASLADO = {
 };
 
 const REFRESCO_MS = 2 * 60 * 1000;
+
 const MAX_FILAS = 6;
 
 
@@ -81,7 +83,8 @@ const MAX_FILAS = 6;
 // desplazamiento propio (desplaza la página).
 // `soloLectura`: quien tiene «ver» y no «editar» en la pantalla de Reservas mira
 // sin botones que cambien nada.
-export default function WidgetReservas({ todas = false, completa = false, soloLectura = false }) {
+// `sala`: una sucursal elegida en el filtro de la pantalla (alcance «todas»).
+export default function WidgetReservas({ todas = false, completa = false, soloLectura = false, sala = undefined }) {
     const { user, hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const appendAuditLog = useStaff((st) => st.appendAuditLog);
@@ -94,7 +97,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // Enviar la preventa a caja (2026-10-21): editar la pantalla de Reservas.
     // La sala y el permiso los vuelve a decidir el servidor.
     const puedePreventa = !soloLectura && hasPermission('reservas', 'can_edit');
-    const miSala = todas ? null : (user?.branchId ?? user?.branch_id ?? null);
+    const miSala = sala ?? (todas ? null : (user?.branchId ?? user?.branch_id ?? null));
     const branches = useStaff((st) => st.branches);
     const nombreSala = (branches || []).find((b) => String(b.id) === String(miSala))?.name ?? '';
     // Bodega no tiene reservas propias, pero ve TODOS los encargos (2026-10-07).
@@ -349,7 +352,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             <SearchInput value={codigo} onChange={setCodigo} placeholder="Escanea o escribe el código (R-… o P-…)"
                 ariaLabel="Buscar una reserva por su código" />
             </div>
-            <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 flex flex-col gap-2'}>
+            <div className={completa ? 'flex flex-col gap-6 mt-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 flex flex-col gap-2'}>
             {delPedido.length > 0 && (
                 <p className="text-body-sm text-content break-words">
                     <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total {formatMoney(totalPedido)}
@@ -368,8 +371,18 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 </div>
             )}
             {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código{todas ? '' : ' en esta sala'}.</p>}
+            {/* En la pantalla completa la lista se parte en lo que hay que hacer
+                y lo que espera al cliente (2026-10-22, «me pierdo»). */}
+            {(completa && !buscado
+                ? [['Por preparar', grupos.filter((r) => r.estado === 'en_revision' || (r.renglones ?? [r]).some((x) => x.estado === 'pendiente')),
+                    'Llegan de otra sala, esperan receta o hay que apartarlas'],
+                   ['Listas para retirar', grupos.filter((r) => r.estado !== 'en_revision' && !(r.renglones ?? [r]).some((x) => x.estado === 'pendiente')),
+                    'Apartadas: el cliente ya puede pasar']]
+                : [[null, grupos, null]]).filter(([, g]) => g.length).map(([titulo, lista, ayuda]) => (
+            <section key={titulo ?? 'todo'} className="space-y-2">
+            {titulo && <Encabezado titulo={titulo} n={lista.length} ayuda={ayuda} />}
             <ul className="space-y-1.5 min-w-0">
-                {grupos.map((r) => {
+                {lista.map((r) => {
                     const enRevision = r.estado === 'en_revision';
                     const espera = enRevision ? esperaDeReceta(r.receta_subida_at, ahora) : null;
                     const urgente = enRevision && r.receta_estado === 'pendiente' && espera.horas >= HORAS_RECETA_URGENTE;
@@ -486,12 +499,14 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     );
                 })}
             </ul>
+            </section>
+            ))}
             {!todas && !completa && !buscado && abiertas.length > MAX_FILAS && (
                 <span className="text-label text-content-3">y {abiertas.length - MAX_FILAS} más</span>
             )}
             {saldos.length > 0 && (
                 <div className="space-y-1.5">
-                    <p className="text-label font-semibold text-content-2">Saldos a favor · se usan en cualquier sucursal</p>
+                    <Encabezado titulo="Saldos a favor" n={saldos.length} ayuda="Se usan en cualquier sucursal" />
                     <ul className="space-y-1.5 min-w-0">
                         {saldos.map((r) => (
                             <li key={r.id}>
@@ -527,7 +542,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             )}
             {porEntregar.length > 0 && (
                 <div className="space-y-1.5">
-                    <p className="text-label font-semibold text-content-2">Devoluciones autorizadas · entregar en efectivo</p>
+                    <Encabezado titulo="Devoluciones por entregar" n={porEntregar.length} ayuda="Autorizadas: se entregan en efectivo" />
                     <ul className="space-y-1.5 min-w-0">
                         {porEntregar.map((r) => (
                             <li key={r.id}>

@@ -3,6 +3,9 @@ import { ShoppingBag } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetReservas from './dashboard/WidgetReservas';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import LiquidSelect from '../components/common/LiquidSelect';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Reservas — la pantalla del menú, en Comercial (2026-10-21).
@@ -33,11 +36,25 @@ export default function ReservasView() {
     const { hasPermission, getScope } = useAuth();
     const todas = getScope('reservas') === 'ALL';
     const puedeEditar = hasPermission('reservas', 'can_edit');
+    // Con alcance «todas», un filtro por sucursal (2026-10-22, «no me sale para
+    // ver todas, de una sucursal»). Vive en la dirección como una pestaña.
+    const branches = useStaff((st) => st.branches);
+    const salas = (branches || []).filter((b) => b.type === 'FARMACIA')
+        .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es', { numeric: true }));
+    const opciones = [{ value: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ value: String(b.id), label: b.name }))];
+    const [sala, setSala] = usePestanaEnUrl(opciones, 'todas', 'sala');
+    const fija = todas && sala !== 'todas' ? Number(sala) : undefined;
 
     return (
-        <GlassViewLayout icon={ShoppingBag} title="Reservas" transparentBody>
+        <GlassViewLayout icon={ShoppingBag} title="Reservas" transparentBody
+            filtersContent={todas && salas.length > 0 ? (
+                <div className="w-56 max-w-full">
+                    <LiquidSelect clearable={false} value={sala} onChange={(v) => setSala(v || 'todas')} options={opciones}
+                        placeholder="Sucursal" ariaLabel="Ver las reservas de una sucursal" />
+                </div>
+            ) : null}>
             <div className="p-4 md:p-6">
-                <WidgetReservas todas={todas} completa soloLectura={!puedeEditar} />
+                <WidgetReservas key={sala} todas={todas && fija == null} sala={fija} completa soloLectura={!puedeEditar} />
             </div>
         </GlassViewLayout>
     );

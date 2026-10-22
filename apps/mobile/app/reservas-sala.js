@@ -23,20 +23,18 @@
 // Ver sin editar: quien tiene la pantalla de Reservas sólo para mirar (y no la
 // tarjeta del Inicio) la ve sin botones que cambien nada, como en el portal.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista,
-  prorrogarReserva, whatsappDe, HORAS_RECETA_URGENTE, devolucionesPorEntregar, reservaPorResolver, reservaPorTraer,
+  buscarSaldoAFavor, codigoDeReserva, fetchReservasDeSucursal, HORAS_RECETA_URGENTE, devolucionesPorEntregar,
 } from '@nucleo/data/reservas';
 import {
-  agruparPorPedido, codigoCompleto, conteoDeReservas, cuentasDelGrupo, esPagoDePrueba, listaDePrecioDelGrupo, origenDelSaldo, pilaDelCliente,
+  accionesDeReservaNucleo, agruparPorPedido, codigoCompleto, conteoDeReservas, listaDePrecioDelGrupo, origenDelSaldo, pilaDelCliente,
   reservasAbiertas, reservasPorCodigo, resumenDelPedido, saldosAFavor, seccionesDeReservas,
 } from '@nucleo/utils/reservasDeSala';
-import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
+import { textoDePreventa } from '@nucleo/utils/preventa';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -47,9 +45,10 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Pestanas from '../componentes/inicio/Pestanas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
-import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { fallo } from '../componentes/Progreso';
 import { Accion } from '../componentes/reservas/piezas';
 import TarjetaDeReserva from '../componentes/reservas/TarjetaDeReserva';
+import { permisosDeReservas, useAccionesDeReserva } from '../componentes/reservas/useAccionesDeReserva';
 import Encargos from '../componentes/reservas/Encargos';
 
 const REFRESCO_MS = 2 * 60 * 1000;
@@ -79,16 +78,12 @@ export default function ReservasDeSala() {
   const { todas: todasParam } = useLocalSearchParams();
   const { user, hasPermission, getScope } = useAuth();
   const puedeDevolver = hasPermission('dash_reservas_devolver_saldo');
-  const puedeRecetas = hasPermission('recetas_app', 'can_approve');
-  // La pantalla de Reservas con «ver» y sin «editar» se mira sin botones; la
-  // tarjeta del Inicio (`dash_reservas`) trabaja la lista como en el portal.
-  const soloLectura = !hasPermission('reservas', 'can_edit') && !hasPermission('dash_reservas');
-  // Enviar la preventa a caja: editar la pantalla de Reservas (el servidor lo vuelve a decidir).
-  const puedePreventa = !soloLectura && hasPermission('reservas', 'can_edit');
+  // Ver sin editar, revisar recetas y enviar a caja: lo mismo que el detalle (`permisosDeReservas`).
+  const permisos = permisosDeReservas(hasPermission);
+  const { soloLectura, puedeRecetas } = permisos;
   const todas = todasParam === '1' || getScope?.('reservas') === 'ALL';
   const miSala = user?.branchId ?? user?.branch_id ?? null;
   const branches = useStaffStore((s) => s.branches);
-  const appendAuditLog = useStaffStore((s) => s.appendAuditLog);
   // Con alcance «todas», la sucursal es un filtro (como la píldora del portal).
   const [salaFija, setSalaFija] = useState('todas');
   const salasDeVenta = (branches || []).filter((b) => b.type === 'FARMACIA')
@@ -105,7 +100,6 @@ export default function ReservasDeSala() {
   const [filas, setFilas] = useState(null);
   const [codigo, setCodigo] = useState('');
   const [saldosDeFuera, setSaldosDeFuera] = useState([]);
-  const [ocupada, setOcupada] = useState(null);
   const [recargando, setRecargando] = useState(false);
   const [recarga, setRecarga] = useState(0);
 
@@ -116,6 +110,8 @@ export default function ReservasDeSala() {
   useEffect(() => { const t = setInterval(cargar, REFRESCO_MS); return () => clearInterval(t); }, [cargar]);
   // Al volver de revisar una receta, de apartar o de retirar, se relee.
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  // Qué se puede hacer con cada tarjeta lo decide el núcleo; el cómo, este hook (el mismo del detalle).
+  const { ocupada, ejecutar } = useAccionesDeReserva({ sala, nombreSala, verTodas, recargar: cargar });
 
   // Un código completo que no es de esta sala puede ser un saldo a favor de
   // otra: el saldo vale en cualquier sucursal, así que se busca en toda la red.
@@ -129,108 +125,13 @@ export default function ReservasDeSala() {
     return () => { vivo = false; };
   }, [completo, sala]);
 
-  const avisarPorWhatsapp = (r) => {
-    const numero = whatsappDe(r.telefono);
-    if (!numero) { Alert.alert('Sin teléfono válido', 'La ficha del cliente no tiene un teléfono válido para WhatsApp.'); return; }
-    const texto = mensajeDeReservaLista(r, r.sala ?? nombreSala);
-    Alert.alert('Avisar por WhatsApp', `Al +${numero}:\n\n${texto}`, [
-      { text: 'Ahora no', style: 'cancel' },
-      { text: 'Abrir WhatsApp', onPress: async () => {
-        await Linking.openURL(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`).catch(() => {});
-        await Promise.resolve(marcarAvisadaPorWhatsapp(r.id)).catch(() => {});
-        cargar();
-      } },
-    ]);
-  };
-
-  // Un pedido se mueve ENTERO: «ya llegó» mueve sólo los renglones que esperaban.
-  const mover = (r, estado) => {
-    const filasDe = r.renglones ?? [r];
-    const ids = filasDe.filter((x) => estado === 'cancelada' || (estado === 'lista' ? x.estado === 'pendiente' : x.estado === r.estado)).map((x) => x.id);
-    const que = r.renglones?.length > 1 ? `el pedido ${r.pedido} (${ids.length} ${ids.length === 1 ? 'producto' : 'productos'})` : `${r.cantidad} × ${r.producto}`;
-    const textos = {
-      lista: ['Apartar y avisar', `Se aparta ${que}${r.tiene_app ? ' y se le avisa al cliente en la app.' : '. El cliente no tiene la app: después se le avisa por WhatsApp.'}`, 'Apartar'],
-      cancelada: ['Cancelar la reserva', `${r.pedido ?? codigoDeReserva(r.id)} · ${que} se cancela.`, 'Cancelar reserva'],
-    }[estado];
-    Alert.alert(textos[0], textos[1], [
-      { text: 'Volver', style: 'cancel' },
-      { text: textos[2], style: estado === 'cancelada' ? 'destructive' : 'default', onPress: async () => {
-        setOcupada(r.id);
-        try {
-          for (const id of ids) await cambiarEstadoReserva(id, estado);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          if (estado === 'lista') {
-            if (r.tiene_app) listo('Reserva lista', 'Le avisamos al cliente en la app.');
-            else avisarPorWhatsapp({ ...r, estado: 'lista' });
-          } else listo('Reserva cancelada', '');
-          cargar();
-        } catch (e) { fallo('No se pudo cambiar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
-      } },
-    ]);
-  };
-
-  // Una sola prórroga de 7 días (reglamento v2); un pedido se prorroga entero.
-  const prorrogar = (r) => {
-    Alert.alert('Prorrogar el plazo', 'Una sola prórroga de 7 días para retirarla. No admite otra.', [
-      { text: 'Volver', style: 'cancel' },
-      { text: 'Prorrogar', onPress: async () => {
-        setOcupada(r.id);
-        try {
-          const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && !x.prorrogada_at).map((x) => x.id);
-          let vence = null;
-          for (const id of ids) vence = (await prorrogarReserva(id))?.vence_at ?? vence;
-          listo('Plazo prorrogado', vence ? `Puede retirarla hasta el ${fechaTexto(vence, { weekday: 'long', day: 'numeric', month: 'long' })}. No admite otra prórroga.` : '');
-          cargar();
-        } catch (e) { fallo('No se pudo prorrogar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
-      } },
-    ]);
-  };
-
-  // La venta de la reserva, ya armada en la caja: producto, cliente y quien la
-  // envía como vendedor. Un pedido va en UNA preventa.
-  const enviarACaja = (r) => {
-    const ids = (r.renglones ?? [r]).filter(puedeEnviarPreventa).map((x) => x.id);
-    if (!ids.length) return;
-    Alert.alert('Enviar a caja', 'Deja la venta armada en la caja: producto, cliente y tú como vendedor.', [
-      { text: 'Volver', style: 'cancel' },
-      { text: 'Enviar', onPress: async () => {
-        setOcupada(r.id); trabajando('Enviando a caja…');
-        try {
-          const res = await enviarPreventa(ids);
-          if (!res?.ok) { fallo('No se envió a caja', mensajeAmigable(res?.error, 'Intenta de nuevo.')); return; }
-          Promise.resolve(appendAuditLog?.('RESERVA_PREVENTA', ids.join(','), { referencia: res.referencia ?? null, sala: r.branch_id ?? sala })).catch(() => {});
-          const notas = [
-            res.cliente_generico ? 'Va como cliente frecuente: el código de la reserva viaja en la nota.' : '',
-            ...(res.avisos ?? []),
-            res.externo_id ? 'Al facturarla, la reserva se cierra sola.' : 'Al facturarla, ciérrala con «Retirar».',
-          ].filter(Boolean).join(' ');
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          (res.avisos?.length ? fallo : listo)(`Preventa #${res.referencia} en caja`, notas);
-        } catch (e) { fallo('No se envió a caja', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); cargar(); }
-      } },
-    ]);
-  };
-
-  // Retirar: los renglones listos, de a uno (un pedido trae varios).
-  const retirar = (r) => {
-    const listos = (r.renglones ?? [r]).filter((x) => x.estado === 'lista');
-    const ir = (x) => router.push({ pathname: '/reserva-retirar', params: { id: String(x.id), tipo: 'reserva', sala: String(x.branch_id ?? r.branch_id ?? sala) } });
-    if (listos.length <= 1) { if (listos[0]) ir(listos[0]); return; }
-    Alert.alert('¿Cuál se retira?', 'Cada producto del pedido se factura aparte.', [
-      ...listos.map((x) => ({ text: `${x.cantidad} × ${x.producto}`, onPress: () => ir(x) })),
-      { text: 'Volver', style: 'cancel' },
-    ]);
-  };
-
   const usarSaldo = (r) => router.push({ pathname: '/reserva-saldo', params: { id: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id) } });
-  const resolver = (r) => router.push({ pathname: '/reserva-resolver', params: { id: String(r.id), sala: String(r.branch_id ?? sala) } });
   // El detalle de la tarjeta: todo lo que la tarjeta resume, con todos los productos.
   const abrir = (r) => router.push({ pathname: '/reserva/[id]', params: r.branch_id != null || sala != null
     ? { id: String(r.id), sala: String(r.branch_id ?? sala) } : { id: String(r.id), todas: '1' } });
   const devolucion = (r, modo) => router.push({ pathname: '/reserva-devolucion', params: {
     id: String(r.id), modo, codigo: r.pedido ?? codigoDeReserva(r.id), cliente: pilaDelCliente(r), sala: String(r.branch_id ?? sala),
     monto: String(modo === 'entregar' ? r.saldo_favor_devuelto_monto : r.saldo_favor), motivo: r.devolucion_pedida_motivo ?? '' } });
-  const verReceta = (r) => router.push({ pathname: '/reserva-receta', params: verTodas ? { id: String(r.id), todas: '1' } : { id: String(r.id), sala: String(r.branch_id ?? sala) } });
 
   const lista = filas || [];
   const abiertas = reservasAbiertas(lista);
@@ -249,60 +150,28 @@ export default function ReservasDeSala() {
     const enRevision = r.estado === 'en_revision';
     const espera = enRevision ? esperaDeReceta(r.receta_subida_at, ahora) : null;
     const urgente = enRevision && r.receta_estado === 'pendiente' && espera.horas >= HORAS_RECETA_URGENTE;
-    const c = cuentasDelGrupo(r);
     const listaDePrecio = listaDePrecioDelGrupo(r);
     const preventa = textoDePreventa(r);
-    // Por renglón (2026-10-22, igual que el portal): en un pedido de varios
-    // productos se resuelve —o se trae de otra sala— el que lo necesita.
-    const porResolverDe = c.filas.find(reservaPorResolver);
-    const porTraerDe = c.filas.find(reservaPorTraer);
     const extras = [
       r.entrega === 'domicilio' ? `A domicilio: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : '',
       r.avisado_via === 'whatsapp' ? 'Avisado por WhatsApp' : '',
       preventa,
     ].filter(Boolean).join(' · ');
+    const sinPermisoDeReceta = enRevision && r.receta_ruta && !(r.puede_revisar_receta ?? puedeRecetas);
+    // Lo que se dice aparte de los cuatro bloques: cada cosa en UNA línea.
     const marcas = (
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
-        {/* (2026-10-19) Un cobro en línea de PRUEBA no es dinero: se cobra en caja. */}
-        {esPagoDePrueba(r) ? <Pildora texto="PAGO DE PRUEBA — cobrar en caja" color={MARCA.rojo} /> : null}
+      <>
+        {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}${urgente ? ' · ya se avisó a supervisión' : ''}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
+        {sinPermisoDeReceta ? <Pildora texto="Sin permiso para revisar la receta" color={colorSistema.texto2} /> : null}
         {/* Mayoreo: se cobró a precio de mayoreo en la app; en caja se factura con ESA lista. */}
         {listaDePrecio ? <Pildora texto={listaDePrecio} color={MARCA.azulClaro} /> : null}
-        {r.documento === 'credito_fiscal' ? <Pildora texto="Crédito fiscal" color={MARCA.azulClaro} /> : null}
-      </View>
-    );
-    const nota = (
-      <>
-        {extras ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{extras}</Text> : null}
-        {urgente ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>{`Lleva más de ${HORAS_RECETA_URGENTE} h: ya se avisó a supervisión.`}</Text> : null}
-        {enRevision && r.receta_estado === 'otra_foto' && r.receta_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Se pidió otra foto: ${r.receta_motivo}`}</Text> : null}
-      </>
-    );
-    const acciones = (
-      <>
-        {!soloLectura && porResolverDe ? <Accion texto={c.filas.length > 1 ? `Resolver ${porResolverDe.producto}` : 'Resolver'} onPress={() => resolver(porResolverDe)} deshabilitado={!!ocupada} /> : null}
-        {!soloLectura && !porResolverDe && porTraerDe ? <Accion texto={c.filas.length > 1 ? `Traer de otra sala: ${porTraerDe.producto}` : 'Traer de otra sala'} onPress={() => resolver(porTraerDe)} deshabilitado={!!ocupada} /> : null}
-        {enRevision ? (r.receta_ruta ? ((r.puede_revisar_receta ?? puedeRecetas)
-          ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} />
-          : <Pildora texto="Receta por revisar · sin permiso para revisarla" color={colorSistema.texto2} />) : null)
-          : soloLectura ? null : (
-            <>
-              {puedePreventa && c.filas.some(puedeEnviarPreventa) ? <Accion texto="Enviar a caja" onPress={() => enviarACaja(r)} deshabilitado={!!ocupada} /> : null}
-              {c.hayPendiente ? <Accion texto={c.vieneDeTraslado ? 'Ya llegó: apartar' : 'Apartar y avisar'} color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} /> : null}
-              {c.hayLista ? (
-                <>
-                  {!r.tiene_app ? <Accion texto="Avisar por WhatsApp" onPress={() => avisarPorWhatsapp(r)} /> : null}
-                  {c.prorrogable ? <Accion texto="Prorrogar" onPress={() => prorrogar(r)} deshabilitado={!!ocupada} /> : null}
-                  <Accion texto="Retirar" color={MARCA.verde} deshabilitado={!!ocupada} onPress={() => retirar(r)} />
-                </>
-              ) : null}
-            </>
-          )}
-        {!soloLectura ? <Accion texto="Cancelar reserva" color={MARCA.rojo} onPress={() => mover(r, 'cancelada')} deshabilitado={!!ocupada} /> : null}
+        {enRevision && r.receta_estado === 'otra_foto' && r.receta_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{`Se pidió otra foto: ${r.receta_motivo}`}</Text> : null}
+        {extras ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{extras}</Text> : null}
       </>
     );
     return (
-      <TarjetaDeReserva key={`${r.pedido ?? ''}-${r.id}`} r={r} verTodas={verTodas} marcas={marcas} nota={nota} acciones={acciones}
+      <TarjetaDeReserva key={`${r.pedido ?? ''}-${r.id}`} r={r} verTodas={verTodas} marcas={marcas}
+        acciones={accionesDeReservaNucleo(r, permisos)} onAccion={(a) => ejecutar(r, a)}
         onAbrir={abrir} ocupada={ocupada === r.id} tinte={urgente ? 'rgba(240,68,56,0.12)' : undefined} />
     );
   };

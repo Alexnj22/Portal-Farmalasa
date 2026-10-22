@@ -2,8 +2,9 @@
 // widget del portal (`WidgetReservas`) y la pantalla de la app, escrito UNA
 // vez: buscar por el código que el cliente muestra (R-000123 o el pedido del
 // carrito P-XXXXXX, que el lector escribe como un teclado) y sumar el pedido.
-import { codigoDeEncargo, codigoDeReserva } from '../data/reservas';
+import { codigoDeEncargo, codigoDeReserva, reservaPorResolver, reservaPorTraer } from '../data/reservas';
 import { fechaTexto } from './fecha';
+import { puedeEnviarPreventa } from './preventa';
 
 const ABIERTAS = ['en_revision', 'pendiente', 'lista'];
 
@@ -167,15 +168,20 @@ export const recetaLegible = (estado) => ({
     pendiente: 'Por revisar', aprobada: 'Aprobada', rechazada: 'Rechazada', otra_foto: 'Se pidió otra foto',
 }[estado] ?? 'Sin receta');
 
-/** Una línea por producto: en qué va SU parte (sólo cuando dice algo). */
-export function detalleDelRenglonDeReserva(x, esPedido) {
+/**
+ * Una línea por producto: en qué va SU parte (sólo cuando dice algo; si no,
+ * la tarjeta pone «$x c/u»). Igual que `detalleDelRenglon` de la tarjeta del
+ * portal (v2.1349.3).
+ */
+export function detalleDelRenglonDeReserva(x) {
     if (x.estado === 'pendiente' && x.traslado_estado) {
         const de = x.traslado_sala ? ` de ${x.traslado_sala}` : '';
         const llegaron = Number(x.traslado_llegaron ?? 0);
         return `${x.traslado_nota || `En camino${de}`}${llegaron > 0 ? ` · llegaron ${llegaron} de ${x.cantidad}` : ''}`;
     }
     if (x.estado === 'pendiente') return 'Por apartar en la sala';
-    if (esPedido && x.estado === 'lista') return 'Lista';
+    if (x.estado === 'lista' && x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Lista · precio Mayoreo Plus' : 'Lista · precio Mayoreo';
+    if (x.estado === 'lista') return 'Lista';
     if (x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Precio Mayoreo Plus' : 'Precio Mayoreo';
     return '';
 }
@@ -194,6 +200,54 @@ export function plazoDeReserva(r) {
 
 /** Cuántos productos muestra la tarjeta antes del «+N más» (el resto, en el detalle). */
 export const PRODUCTOS_EN_TARJETA = 2;
+
+/** «+ 1 producto más» / «+ 3 productos más». */
+export const productosOcultos = (n) => (n > 0 ? `+ ${n} ${n === 1 ? 'producto más' : 'productos más'}` : '');
+
+/**
+ * Qué se puede hacer con una tarjeta de reserva, EN ORDEN y con su rótulo
+ * (2026-10-22). Es la decisión de `accionesDeReserva` del `WidgetReservas` del
+ * portal sin los handlers, para que el portal y la app ofrezcan lo mismo:
+ *
+ *   receta («Revisar receta» / «Ver receta») | resolver, apartar, retirar,
+ *   caja, traer (sólo sin resolver), whatsapp (lista y sin app),
+ *   prorrogar, cancelar (`menor`).
+ *
+ * La PRIMERA es la principal; la tarjeta muestra las dos primeras y el resto
+ * va al detalle. `renglon` es el renglón sobre el que actúa resolver/traer:
+ * en un pedido de varios productos, el que lo necesita y no el primero.
+ */
+export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas = false, puedePreventa = false } = {}) {
+    if (!r) return [];
+    const enRevision = r.estado === 'en_revision';
+    if (soloLectura && !enRevision) return [];
+    const filas = renglonesDe(r);
+    const lista = [];
+    if (enRevision) {
+        if (r.receta_ruta && (r.puede_revisar_receta ?? puedeRecetas)) {
+            lista.push({ k: 'receta', label: r.receta_estado === 'pendiente' ? 'Revisar receta' : 'Ver receta' });
+        }
+        return lista;
+    }
+    const hayPendiente = filas.some((x) => x.estado === 'pendiente');
+    const hayLista = filas.some((x) => x.estado === 'lista');
+    const porResolverDe = filas.find(reservaPorResolver);
+    const porTraerDe = filas.find(reservaPorTraer);
+    const enCamino = filas.some((x) => x.estado === 'pendiente' && x.traslado_estado);
+    if (porResolverDe) lista.push({ k: 'resolver', label: 'Resolver', renglon: porResolverDe,
+        title: 'La otra sala no la manda, llega una parte o Bodega cambió el precio: decide qué hacer' });
+    if (hayPendiente) lista.push({ k: 'apartar', label: enCamino ? 'Ya llegó: apartar' : 'Apartar y avisar',
+        title: enCamino ? 'Si el traslado ya llegó y no quedó lista sola: déjala lista y avisa al cliente' : 'Déjala lista para retirar y avisa al cliente' });
+    if (hayLista) lista.push({ k: 'retirar', label: 'Retirar', title: 'El cliente vino: cobra lo que falta y entrégala' });
+    if (puedePreventa && filas.some(puedeEnviarPreventa)) lista.push({ k: 'caja', label: 'Enviar a caja',
+        title: 'Deja la venta armada en caja: producto, cliente y tú como vendedor' });
+    if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sala', renglon: porTraerDe,
+        title: `Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega` });
+    if (hayLista && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp' });
+    if (filas.some((x) => x.estado === 'lista' && !x.prorrogada_at)) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', title: 'Una sola prórroga' });
+    lista.push({ k: 'cancelar', label: 'Cancelar reserva', menor: true });
+    return lista;
+}
 
 /**
  * Un pedido (del carrito de la app, o de varios productos cobrados juntos en

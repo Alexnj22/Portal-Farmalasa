@@ -14,11 +14,13 @@ import { listo } from '../Progreso';
 /** El color de un `tono` del núcleo (info, warning, danger, success). */
 export const colorDeTono = (tono) => ({ info: MARCA.azulClaro, warning: MARCA.ambar, danger: MARCA.rojo, success: MARCA.verde }[tono] ?? colorSistema.texto2);
 
-export function Accion({ texto, color = MARCA.azulClaro, onPress, deshabilitado }) {
+/** El botón de píldora. `relleno`: la acción principal (fondo lleno); `sinFondo`: la menor (sólo texto). */
+export function Accion({ texto, color = MARCA.azulClaro, onPress, deshabilitado, relleno = false, sinFondo = false }) {
   return (
     <Pressable onPress={onPress} disabled={deshabilitado} hitSlop={6} accessibilityRole="button"
-      style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999, backgroundColor: `${color}26`, opacity: deshabilitado ? 0.4 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{texto}</Text>
+      style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999,
+        backgroundColor: relleno ? color : sinFondo ? 'transparent' : `${color}26`, opacity: deshabilitado ? 0.4 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      <Text style={{ color: relleno ? '#fff' : color, fontSize: 14, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
 }

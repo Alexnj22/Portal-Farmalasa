@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.3 — App: la tarjeta de reserva igual a la del portal y el detalle con «Qué hacer»
+
+- **App · Reservas**: la tarjeta sigue la del portal (v2.1349.3): alto parejo con el dinero al pie, cada texto en una línea, hasta 2 productos con su detalle o «$x c/u» y «+ N productos más». Al pie, «Más» y las dos acciones principales. El detalle tiene «Qué hacer» con todas las acciones y «Cancelar reserva» al final.
+- **Núcleo**: `accionesDeReservaNucleo` decide qué acciones tocan, en qué orden y con qué rótulo (receta | resolver, apartar, retirar, caja, traer, WhatsApp, prorrogar, cancelar), sin handlers; la app la usa y el portal puede importarla.
+
 ## v2.1350.2 — Distribución: el saldo a favor no se pierde al invalidar, y el documento dice qué lo frena
 
 Defectos hallados en la prueba en vivo de Distribución.

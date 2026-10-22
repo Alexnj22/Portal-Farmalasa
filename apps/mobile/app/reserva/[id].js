@@ -1,9 +1,15 @@
 // El detalle de una reserva, NATIVO (2026-10-22) — el `DetalleDeReserva` del
 // portal: lo que la tarjeta de `reservas-sala` resume, entero. El cliente (con
 // llamar y WhatsApp), TODOS los productos con su estado, traslado, encargo y
-// oferta, el pago, las fechas y la receta. Sólo mira: las acciones viven en la
-// tarjeta, como en el portal — dos lugares que hacen lo mismo terminan
-// haciendo cosas distintas.
+// oferta, el pago, las fechas y la receta.
+//
+// Desde la segunda vuelta (2026-10-22) también se TRABAJA desde acá: la
+// tarjeta sólo lleva las dos acciones que importan y «Más» abre este detalle,
+// con «Qué hacer» —todas las acciones, la primera como principal— y «Cancelar
+// reserva» al pie. La lista sale del núcleo (`accionesDeReservaNucleo`) y el
+// cómo de cada una del mismo hook que usa la lista (`useAccionesDeReserva`):
+// dos lugares que hacen lo mismo con código propio terminan haciendo cosas
+// distintas.
 //
 // Se abre con el id de cualquier renglón; si es de un pedido del carrito
 // (P-XXXXXX) se muestra el pedido entero, igual que su tarjeta
@@ -11,19 +17,23 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { codigoDeReserva, fetchReservasDeSucursal, whatsappDe } from '@nucleo/data/reservas';
 import {
-  agruparPorPedido, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, recetaLegible, renglonesDe, reservasAbiertas, telefonoLegible, TRASLADO_DE_RESERVA,
+  accionesDeReservaNucleo, agruparPorPedido, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, recetaLegible, renglonesDe, reservasAbiertas, telefonoLegible, TRASLADO_DE_RESERVA,
 } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { Accion, colorDeTono } from '../../componentes/reservas/piezas';
+import { colorDeAccion } from '../../componentes/reservas/TarjetaDeReserva';
+import { permisosDeReservas, useAccionesDeReserva } from '../../componentes/reservas/useAccionesDeReserva';
 
 const cuando = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
@@ -44,20 +54,26 @@ function Datos({ filas }) {
 
 export default function DetalleDeReserva() {
   const { id, sala, todas } = useLocalSearchParams();
+  const { hasPermission } = useAuth();
+  const permisos = permisosDeReservas(hasPermission);
+  const branches = useStaffStore((s) => s.branches);
+  const salaVista = todas === '1' ? null : sala;
+  const nombreSala = (branches || []).find((b) => String(b.id) === String(salaVista))?.name || '';
   const [r, setR] = useState(null);
   const [error, setError] = useState('');
   const [recargando, setRecargando] = useState(false);
 
   const cargar = useCallback(async () => {
     try {
-      const filas = await fetchReservasDeSucursal(todas === '1' ? null : sala, true);
+      const filas = await fetchReservasDeSucursal(salaVista, true);
       const g = agruparPorPedido(reservasAbiertas(filas)).find((x) => renglonesDe(x).some((y) => String(y.id) === String(id)));
       if (!g) { setError('Esa reserva ya no está abierta.'); setR(null); return; }
       setError(''); setR(g);
     } catch (e) { setError(mensajeAmigable(e, 'No se pudo cargar la reserva.')); }
-  }, [id, sala, todas]);
+  }, [id, salaVista]);
   // Al volver de otra pantalla se relee (igual que la lista).
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  const { ocupada, ejecutar } = useAccionesDeReserva({ sala: salaVista, nombreSala, verTodas: todas === '1', recargar: cargar });
 
   if (!r) {
     return (
@@ -75,6 +91,9 @@ export default function DetalleDeReserva() {
   const tel = telefonoLegible(r.telefono);
   const wa = whatsappDe(r.telefono);
   const fiscal = r.documento === 'credito_fiscal' ? r.datos_fiscales : null;
+  const acciones = accionesDeReservaNucleo(r, permisos);
+  const mayores = acciones.filter((a) => !a.menor);
+  const menores = acciones.filter((a) => a.menor);
   const fechas = [
     ['Creada', r.creada && cuando(r.creada)],
     ['Lista', r.lista_at && cuando(r.lista_at)],
@@ -93,6 +112,15 @@ export default function DetalleDeReserva() {
             {`${r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sala'}${r.sala ? ` · ${r.sala}` : ''}`}
           </Text>
         </View>
+
+        {mayores.length ? (
+          <Seccion titulo="Qué hacer">
+            {mayores.map((a, i) => (
+              <BotonGrande key={a.k} texto={a.label} color={colorDeAccion(a)} borde={i > 0} deshabilitado={ocupada === r.id}
+                onPress={() => ejecutar(r, a)} />
+            ))}
+          </Seccion>
+        ) : null}
 
         <Seccion titulo="Cliente">
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{r.cliente ?? 'Sin cliente'}</Text>
@@ -165,6 +193,11 @@ export default function DetalleDeReserva() {
             <Datos filas={[['Estado', recetaLegible(r.receta_estado)], r.receta_motivo && ['Motivo', r.receta_motivo]]} />
           </Seccion>
         ) : null}
+
+        {/* La menor (cancelar), al pie y lejos de las demás. */}
+        {menores.map((a) => (
+          <BotonGrande key={a.k} texto={a.label} color={colorDeAccion(a)} borde deshabilitado={ocupada === r.id} onPress={() => ejecutar(r, a)} />
+        ))}
       </ScrollView>
     </>
   );

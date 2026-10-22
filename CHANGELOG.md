@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1337.3 — App de clientes: pre-registro por soporte, avisos de pago y tope de reservas
+
+Tres hallazgos de la auditoría de la app de clientes (H5, H6, H9). Las dos
+funciones del servidor quedan **sin desplegar**.
+
+- **Pre-registro de un DUI ajeno (H9):** si alguien pre-registró el DUI de otra
+  persona con su teléfono, la dueña ya no queda trabada sin explicación: la app
+  le dice que escriba a soporte y le ofrece el WhatsApp de las sucursales. En
+  el portal (Ofertas para clientes → Pre-registros) el pre-registro se busca por
+  DUI —en la base, no en la lista cargada— y se **elimina** con confirmación;
+  el documento queda libre, las sesiones de ese pre-registro se cierran y queda
+  en la bitácora.
+- **Aviso de pago sin firma (H6):** la firma no se exige (el banco la manda sólo
+  en algunos casos); si viene, se valida. Un aviso sin firma recibe los mismos
+  controles que la vuelta del navegador: si nada ata el pago a ese cobro, no se
+  confirma.
+- **Tope de reservas (H5):** el tope de 3 reservas sin pagar vale también
+  cuando se elige pagar en línea.
+
 ## v2.1337.2 — Recetas por receta entera y bienvenida de referidos
 
 Dos funciones de la base, con el OK del usuario:

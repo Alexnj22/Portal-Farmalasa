@@ -477,10 +477,17 @@ const DOCUMENTOS_VIGENTES = { reglamento: "reglamento-2026-10-01", aviso: TEXTOS
 // Para el alta que no se puede hacer desde la app (el documento ya tiene un
 // registro pendiente con otro teléfono). No dice por qué: confirmar que ese
 // documento está registrado sería regalar el dato.
+//
+// H9 (auditoría 2026-10-21, decisión del dueño 2026-10-22): antes era un
+// callejón sin salida —el pre-registro ajeno no vence— y la persona dueña del
+// DUI no sabía qué hacer. Ahora se la manda a soporte: ahí se verifica que el
+// documento es suyo y, desde el portal (Ofertas para clientes → Pre-registros),
+// se elimina el pre-registro ajeno; después se puede registrar normalmente.
+// `motivo: "soporte"` es lo que la app usa para ofrecer el contacto.
 const NO_SE_PUDO_REGISTRAR = {
   ok: false,
-  motivo: "no_se_pudo",
-  mensaje: "No pudimos registrarte desde la app. Pasa a cualquiera de nuestras salas y te ayudamos.",
+  motivo: "soporte",
+  mensaje: "No pudimos completar tu registro con este documento. Escríbenos a soporte: verificamos tus datos y te habilitamos para que te registres.",
 };
 
 /** 'AAAA-MM-DD' de una fecha REAL entre 1900 y hoy; null si viene vacía; false si es inválida. */
@@ -3424,7 +3431,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && r.pago_estado !== "pagado").map((r: any) => r.pedido ?? `r${r.id}`)).size;
       const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
       if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
-      if (activas >= 3 && !pagoEnLinea) return json({ ok: false, mensaje: "Ya tienes 3 reservas sin pagar. Págalas, retíralas o cancela una para reservar otra." });
+      // H5 (auditoría 2026-10-21): el tope cuenta igual cuando el cliente PIDE
+      // pagar en línea. Las filas se insertan antes del cobro y apartan
+      // existencia aunque nunca se pague; «sin pagar» es el estado, no la intención.
+      if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas sin pagar. Págalas, retíralas o cancela una para reservar otra." });
       const ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       const pedido = "P-" + Array.from(crypto.getRandomValues(new Uint8Array(6)), (n) => ABC[n % ABC.length]).join("");
       const subtotal = Math.round(filas.reduce((s, f) => s + f.precio_unitario * f.cantidad, 0) * 100) / 100;

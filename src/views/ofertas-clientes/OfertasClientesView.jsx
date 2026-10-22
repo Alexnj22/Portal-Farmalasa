@@ -29,7 +29,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import {
     fetchOfertas, fetchSalas, publicarOferta, borrarOferta,
-    fetchPreregistros, resolverPreregistro, buscarFichasPorDocumento,
+    fetchPreregistros, fetchPreregistroPorDocumento, resolverPreregistro, buscarFichasPorDocumento,
 } from '@nucleo/data/ofertasClientes';
 
 /**
@@ -250,8 +250,25 @@ function Preregistros({ busqueda, puedeEditar, showToast }) {
     }, []);
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- la carga inicial
 
-    const visibles = useMemo(() => (filas ?? [])
-        .filter((p) => !busqueda || tokenMatch(busqueda, p.nombre, p.documento, p.telefono)), [filas, busqueda]);
+    // Buscar por DUI va a la base (H9, 2026-10-22): la lista cargada tiene
+    // tope, y el pre-registro que soporte necesita encontrar puede no estar en
+    // ella. Se escribe con o sin guion.
+    const docBuscado = busqueda.replace(/[^A-Za-z0-9]/g, '');
+    const esDocumento = /\d/.test(docBuscado) && docBuscado.length >= 7;
+    const [porDocumento, setPorDocumento] = useState(null);
+    useEffect(() => {
+        if (!esDocumento) { setPorDocumento(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- limpiar al dejar de buscar
+        let vivo = true;
+        fetchPreregistroPorDocumento(docBuscado)
+            .then((r) => { if (vivo) setPorDocumento(r); })
+            .catch((err) => { if (vivo) { setPorDocumento([]); showToast('No se pudo buscar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error'); } });
+        return () => { vivo = false; };
+    }, [esDocumento, docBuscado, showToast, filas]);
+
+    const visibles = useMemo(() => {
+        if (esDocumento && porDocumento) return porDocumento;
+        return (filas ?? []).filter((p) => !busqueda || tokenMatch(busqueda, p.nombre, p.documento, p.telefono));
+    }, [filas, busqueda, esDocumento, porDocumento]);
 
     if (error) return <Notice variant="danger">{error}</Notice>;
     if (!filas) return <LoadingState label="Cargando pre-registros" />;
@@ -261,6 +278,11 @@ function Preregistros({ busqueda, puedeEditar, showToast }) {
             <Notice variant="info">
                 Se unieron desde la app y todavía no tienen ficha. Cuando la sala los registra con el mismo documento y
                 teléfono, la app los reconoce sola. Aquí quedan los que no coincidieron.
+            </Notice>
+            <Notice variant="neutral">
+                Si alguien escribe a soporte porque no puede unirse con su DUI, búscalo aquí por el número: otra persona
+                lo pre-registró con su teléfono. Verifica que el documento sea de quien escribe y elimina el pre-registro;
+                después ya se puede registrar desde la app.
             </Notice>
             {visibles.length === 0 ? (
                 <EmptyState icon={UserPlus} title="Sin pre-registros pendientes" />
@@ -300,6 +322,7 @@ function Preregistros({ busqueda, puedeEditar, showToast }) {
 function ResolverModal({ pre, onClose, onListo, onError }) {
     const [fichas, setFichas] = useState(null);
     const [ocupado, setOcupado] = useState(false);
+    const [eliminando, setEliminando] = useState(false);
 
     useEffect(() => {
         let vivo = true;
@@ -319,7 +342,7 @@ function ResolverModal({ pre, onClose, onListo, onError }) {
         setOcupado(true);
         try {
             await resolverPreregistro(pre.id, accion, customerId);
-            onListo(accion === 'vincular' ? 'Pre-registro vinculado' : 'Pre-registro descartado');
+            onListo(accion === 'vincular' ? 'Pre-registro vinculado' : 'Pre-registro eliminado');
         } catch (err) {
             onError(err);
         } finally {
@@ -352,8 +375,14 @@ function ResolverModal({ pre, onClose, onListo, onError }) {
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-                <Button variant="destructive" icon={XCircle} loading={ocupado} onClick={() => hacer('descartar')}>Descartar</Button>
+                <Button variant="destructive" icon={XCircle} loading={ocupado} onClick={() => setEliminando(true)}>Eliminar</Button>
             </LiquidModal.Footer>
+            {eliminando && (
+                <ConfirmModal isOpen title="Eliminar pre-registro"
+                    message={`El documento ${pre.documento} queda libre y quien tenga la app con este pre-registro sale de su sesión. La persona dueña del documento ya se puede registrar desde la app.`}
+                    confirmText="Eliminar" isProcessing={ocupado} onClose={() => setEliminando(false)}
+                    onConfirm={async () => { await hacer('descartar'); setEliminando(false); }} />
+            )}
         </LiquidModal>
     );
 }

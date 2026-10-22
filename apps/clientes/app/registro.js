@@ -34,6 +34,7 @@ export default function Registro() {
   const [promos, setPromos] = useState(false);
   const [textos, setTextos] = useState(null);
   const [error, setError] = useState(null);
+  const [soporte, setSoporte] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
   const duiRef = useRef(null);
@@ -62,6 +63,7 @@ export default function Registro() {
   async function enviar() {
     if (!listo || enviando) return;
     setError(null);
+    setSoporte(false);
     setEnviando(true);
     const r = await llamar('registrar', {
       ...f, fecha_nacimiento: nacimiento || null, acepta_programa: programa, acepta_promociones: promos,
@@ -69,7 +71,13 @@ export default function Registro() {
     });
     setEnviando(false);
     if (r?.ok && r.token) { useBloqueo.setState({ bloqueada: false }); await abrir(r.token); }
-    else setError(r?.mensaje ?? 'No se pudo completar el registro.');
+    else {
+      setError(r?.mensaje ?? 'No se pudo completar el registro.');
+      // Ese documento no se puede registrar desde acá (H9, 2026-10-22): lo
+      // resuelve soporte. El contacto que la app ya tiene sin sesión es el
+      // WhatsApp de cada sucursal.
+      setSoporte(r?.motivo === 'soporte');
+    }
   }
 
   return (
@@ -121,7 +129,16 @@ export default function Registro() {
           <Text onPress={pedirTextos} style={{ fontWeight: '700', textDecorationLine: 'underline' }}>vuelve a intentar</Text>.
         </Aviso>
       ) : null}
-      {error ? <Aviso>{error}</Aviso> : null}
+      {error ? (
+        <Aviso>{error}
+          {soporte ? (
+            <>{' '}
+              <Text onPress={() => navegar('/sucursales')} accessibilityRole="link"
+                style={{ fontWeight: '700', textDecorationLine: 'underline' }}>Escríbenos por WhatsApp</Text>.
+            </>
+          ) : null}
+        </Aviso>
+      ) : null}
       <BotonSistema etiqueta={enviando ? 'Enviando…' : 'Unirme'} alTocar={enviar} deshabilitado={!listo || enviando} color={t.color.magenta} />
     </Formulario>
   );

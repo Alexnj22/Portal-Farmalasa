@@ -154,8 +154,10 @@ Deno.serve(async (req) => {
     console.error("[wompi] aviso con firma inválida");
     return new Response("firma inválida", { status: 401 });
   }
-  // Sin firma no se rechaza (un proxy puede tirar una cabecera con «_»): el
-  // veredicto igual sale de la API, así que un aviso falso no marca nada.
+  // Sin firma no se rechaza (decisión del dueño, 2026-10-22: la firma la exige
+  // el banco sólo en algunos casos, y un proxy puede tirar una cabecera con
+  // «_»). Con firma, se valida arriba; sin ella, recibe los mismos controles
+  // que la vuelta del navegador (ver la llamada a `confirmar`).
   if (!firma) console.warn("[wompi] aviso sin cabecera wompi_hash; se verifica contra la API");
 
   // deno-lint-ignore no-explicit-any
@@ -164,7 +166,12 @@ Deno.serve(async (req) => {
   const identificador = String(aviso?.EnlacePago?.IdentificadorEnlaceComercio ?? "");
   const idTransaccion = String(aviso?.IdTransaccion ?? "");
   try {
-    const r = await confirmar(admin, identificador, idTransaccion, { enlaceAviso: enlaceDe(aviso) });
+    // H6 (auditoría 2026-10-21): un aviso SIN firma no es más confiable que la
+    // vuelta del navegador. Se le aplica la misma regla (`vuelta: true` →
+    // sin datos que la aten a este cobro, `sin_enlace` y no se confirma), y el
+    // enlace que trae su cuerpo NO se usa: lo escribió quien mandó el POST.
+    const r = await confirmar(admin, identificador, idTransaccion,
+      firma ? { enlaceAviso: enlaceDe(aviso) } : { vuelta: true });
     abonarSiEsCredito(admin, r);
     // 200 también cuando no se confirmó por una razón definitiva (no aprobada,
     // prueba, monto distinto): reintentarlo no la va a cambiar.

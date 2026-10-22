@@ -108,7 +108,29 @@ export async function fetchPreregistros(estado = 'pendiente') {
         .limit(500));
 }
 
-/** `accion`: 'vincular' (con la ficha) o 'descartar'. */
+/**
+ * El pre-registro PENDIENTE de un documento, buscado en la base y no en la
+ * lista cargada: la lista tiene tope, y un tope antes del filtro esconde justo
+ * el que se busca (H9, 2026-10-22). Es el caso de soporte: alguien pre-registró
+ * el DUI de otra persona con su teléfono y la dueña no puede unirse desde la
+ * app. El documento se guarda limpio (sólo letras y números, en mayúsculas).
+ */
+export async function fetchPreregistroPorDocumento(documento) {
+    const doc = String(documento ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (doc.length < 7) return [];
+    return sinError(await supabase.from('app_cliente_preregistros')
+        .select('id, nombre, documento, telefono, email, fecha_nacimiento, acepta_promociones, estado, customer_id, created_at, resuelto_at')
+        .eq('estado', 'pendiente')
+        .eq('documento', doc));
+}
+
+/**
+ * `accion`: 'vincular' (con la ficha) o 'descartar'. Descartar es lo que en
+ * pantalla se llama «Eliminar»: libera el documento (el índice único sólo mira
+ * los pendientes), cierra las sesiones de ese pre-registro y deja la entrada
+ * en la bitácora — todo adentro de `app_preregistro_resolver`, que además exige
+ * `clientes.can_edit`.
+ */
 export async function resolverPreregistro(id, accion, customerId = null) {
     return sinError(await supabase.rpc('app_preregistro_resolver', {
         p_id: id, p_accion: accion, p_customer_id: customerId,

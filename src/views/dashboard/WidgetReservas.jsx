@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { Banknote, CheckCircle2, FileCheck, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, XCircle } from 'lucide-react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Banknote, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -20,7 +20,9 @@ import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import {
     buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
+    devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver,
 } from '@nucleo/data/reservas';
+import { anotarSalida } from '@nucleo/data/bolsas';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import { codigoLimpio, coincideCodigo, esPagoDePrueba, origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 
@@ -55,6 +57,19 @@ const DialogoApartar = lazy(() => import('../../components/caja/DialogoApartar')
 const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar'));
 // La revisión de la receta (2026-10-12) también se baja al abrirla.
 const RevisarReceta = lazy(() => import('./RevisarReceta'));
+// Lo que no llegó entero (2026-10-22): pedir a otra sala, a Bodega, o lo que decida el cliente.
+const ResolverReserva = lazy(() => import('./ResolverReserva'));
+
+// En qué va una reserva que viene de otra sala (2026-10-22).
+const TRASLADO = {
+    pedido: { label: 'Pedida a otra sala', variant: 'info' },
+    enviado: { label: 'En camino', variant: 'info' },
+    parcial: { label: 'Viene una parte', variant: 'warning' },
+    rechazado: { label: 'No la mandan', variant: 'danger' },
+    bodega: { label: 'Encargada a Bodega', variant: 'info' },
+    precio: { label: 'Bodega: otro precio', variant: 'warning' },
+    sin_existencia: { label: 'No se consigue', variant: 'danger' },
+};
 
 const REFRESCO_MS = 2 * 60 * 1000;
 const MAX_FILAS = 6;
@@ -102,6 +117,13 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // El saldo a favor que se devuelve en dinero (modal con el motivo).
     const [devolver, setDevolver] = useState(null);
     const [usando, setUsando] = useState(null);
+    // La reserva que no llegó entera y se está resolviendo.
+    const [resolviendo, setResolviendo] = useState(null);
+    // Devolución en efectivo (2026-10-22): la sala la pide, administración la
+    // autoriza o la niega, y la sala la entrega con un vale de caja.
+    const [pidiendoDevolucion, setPidiendoDevolucion] = useState(null);
+    const [negando, setNegando] = useState(null);
+    const [entregando, setEntregando] = useState(null);
     // Saldos a favor de OTRA sala encontrados por el código (2026-10-19): el
     // saldo vale en cualquier sucursal, así que el código del cliente se busca
     // también fuera de esta sala cuando aquí no aparece.
@@ -212,7 +234,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     ) : null;
     const modalNueva = nueva ? (
         <Suspense fallback={null}>
-            <DialogoApartar abierto ocupado={false} sala={miSala} onClose={() => setNueva(false)}
+            <DialogoApartar abierto ocupado={false} sala={miSala} nombreSala={nombreSala} atiende={user?.name} onClose={() => setNueva(false)}
                 onCobrar={async ({ clave, monto, apartado, pago, papel }) => {
                     const r = await cobrarAnticipo({ sala: miSala, nombreSala, userId: user?.id, quienAtiende: user?.name,
                         clave, monto, apartado, pago, papel });
@@ -222,7 +244,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                         r.aviso ? 'warning' : 'success');
                     if (r.papel) showToast('No se imprimió la constancia', mensajeAmigable(r.papel), 'warning');
                     cargar();
-                    return true;
+                    // La reserva con su id: si viene de otra sala, el traslado se amarra a ella.
+                    return r.apartado;
                 }} />
         </Suspense>
     ) : null;
@@ -253,6 +276,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // 2026-10-19 nacen también de lo pagado en línea y no entregado, y se
     // aplican en cualquier sala (los de otra aparecen al buscar su código).
     const saldos = [...saldosAFavor(filas), ...saldosDeFuera];
+    const porEntregar = devolucionesPorEntregar(filas);
     const abiertas = reservasAbiertas(filas);
     // Usar el saldo (2026-10-21): un diálogo confirma al titular y pide cuánto.
     const usarSaldo = (r) => setUsando(r);
@@ -336,10 +360,18 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                 todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
                                 r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
+                                r.estado === 'pendiente' && r.traslado_nota ? ` · ${r.traslado_nota}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}${
                                 textoDePreventa(r) ? ` · ${textoDePreventa(r)}` : ''}`}
                             acciones={(
                                 <>
+                                    {r.estado === 'pendiente' && TRASLADO[r.traslado_estado] && (
+                                        <Badge variant={TRASLADO[r.traslado_estado].variant} uppercase={false}
+                                            title={r.traslado_sala ? `Viene de ${r.traslado_sala}` : undefined}>{TRASLADO[r.traslado_estado].label}</Badge>
+                                    )}
+                                    {!soloLectura && reservaPorResolver(r) && (
+                                        <Button variant="primary" size="xs" icon={Wrench} onClick={() => setResolviendo(r)}>Resolver</Button>
+                                    )}
                                     {enRevision && r.receta_estado === 'otra_foto' && (
                                         <Badge variant="info" uppercase={false}
                                             title={r.receta_motivo ? `Se pidió otra foto: ${r.receta_motivo}` : undefined}>Esperando nueva foto del cliente</Badge>
@@ -393,7 +425,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                         )}
                                         {r.estado === 'pendiente' ? (
                                             <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}
-                                                onClick={() => mover(r, 'lista')}>Apartar y avisar</Button>
+                                                title={r.traslado_estado ? 'Si ya llegó y no quedó lista sola' : undefined}
+                                                onClick={() => mover(r, 'lista')}>{r.traslado_estado ? 'Ya llegó: apartar' : 'Apartar y avisar'}</Button>
                                         ) : (
                                             <>
                                                 {!r.tiene_app && (
@@ -436,11 +469,38 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                         : `${r.pedido ?? codigoDeReserva(r.id)} · ${r.producto} · ${origenDelSaldo(r)}${Number(r.saldo_favor_inicial) > Number(r.saldo_favor) ? ` · de ${formatMoney(Number(r.saldo_favor_inicial))}` : ''} · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}${(todas || String(r.branch_id) !== String(miSala)) && r.sala ? ` · ${r.sala}` : ''}`}
                                     acciones={soloLectura ? null : (
                                         <>
+                                            {r.devolucion_pedida_at && (
+                                                <Badge variant="warning" uppercase={false} title={r.devolucion_pedida_motivo ?? undefined}>Devolución en efectivo pedida</Badge>
+                                            )}
                                             {puedeDevolver && r.confirmado !== false && (
-                                                <Button variant="ghost" size="xs" icon={Banknote} onClick={() => setDevolver(r)}>Devolver en dinero</Button>
+                                                <Button variant={r.devolucion_pedida_at ? 'primary' : 'ghost'} size="xs" icon={Banknote}
+                                                    onClick={() => setDevolver(r)}>{r.devolucion_pedida_at ? 'Autorizar devolución' : 'Devolver en dinero'}</Button>
+                                            )}
+                                            {puedeDevolver && r.devolucion_pedida_at && (
+                                                <Button variant="ghost" size="xs" icon={XCircle} onClick={() => setNegando(r)}>No autorizar</Button>
+                                            )}
+                                            {!puedeDevolver && !r.devolucion_pedida_at && r.confirmado !== false && String(r.branch_id) === String(miSala) && (
+                                                <Button variant="ghost" size="xs" icon={Banknote} onClick={() => setPidiendoDevolucion(r)}>Pedir en efectivo</Button>
                                             )}
                                             <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => usarSaldo(r)}>Usar en caja</Button>
                                         </>
+                                    )} />
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {porEntregar.length > 0 && (
+                <div className="space-y-1.5">
+                    <p className="text-label font-semibold text-content-2">Devoluciones autorizadas · entregar en efectivo</p>
+                    <ul className="space-y-1.5 min-w-0">
+                        {porEntregar.map((r) => (
+                            <li key={r.id}>
+                                <FilaConAcciones icon={HandCoins} tone="warning"
+                                    titulo={`${formatMoney(Number(r.saldo_favor_devuelto_monto))} para ${String(r.cliente ?? '').split(/\s+/)[0]}`}
+                                    detalle={`${r.pedido ?? codigoDeReserva(r.id)} · ${r.devolucion_pedida_motivo ?? ''}`}
+                                    acciones={soloLectura || todas ? null : (
+                                        <Button variant="primary" size="xs" icon={HandCoins} onClick={() => setEntregando(r)}>Entregar en efectivo</Button>
                                     )} />
                             </li>
                         ))}
@@ -452,6 +512,35 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             {modalNueva}
             {modalRetirar}
             {modalReceta}
+            {resolviendo && (
+                <Suspense fallback={null}>
+                    <ResolverReserva reserva={resolviendo} onClose={() => setResolviendo(null)}
+                        onListo={() => { setResolviendo(null); cargar(); }} />
+                </Suspense>
+            )}
+            {pidiendoDevolucion && (
+                <ConMotivo titulo={`Pedir ${formatMoney(Number(pidiendoDevolucion.saldo_favor))} en efectivo`}
+                    texto="Administración lo autoriza. Cuando lo autorice, aquí aparece para entregarlo con un vale de caja."
+                    etiqueta="Por qué lo quiere en efectivo" boton="Pedir a administración" onCerrar={() => setPidiendoDevolucion(null)}
+                    onConfirmar={async (motivo) => {
+                        await pedirDevolucionEnEfectivo(pidiendoDevolucion.id, motivo);
+                        showToast('Devolución pedida', 'Administración recibe el aviso para autorizarla.', 'success');
+                        setPidiendoDevolucion(null); cargar();
+                    }} />
+            )}
+            {negando && (
+                <ConMotivo titulo="No autorizar la devolución" texto="El saldo sigue a favor del cliente para usarlo en caja."
+                    etiqueta="Motivo (se le dice a la sala)" boton="No autorizar" onCerrar={() => setNegando(null)}
+                    onConfirmar={async (motivo) => {
+                        await negarDevolucionEnEfectivo(negando.id, motivo);
+                        showToast('Devolución no autorizada', 'La sala recibe el aviso.', 'success');
+                        setNegando(null); cargar();
+                    }} />
+            )}
+            {entregando && (
+                <EntregarDevolucion reserva={entregando} sala={miSala} onCerrar={() => setEntregando(null)}
+                    onEntregada={() => { setEntregando(null); cargar(); }} />
+            )}
             {usando && (
                 <UsarSaldo saldo={usando} onCerrar={() => setUsando(null)}
                     onUsado={() => { setSaldosDeFuera([]); setUsando(null); cargar(); }}
@@ -618,7 +707,9 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
                         {saldo.pedido ?? codigoDeReserva(saldo.id)} · {saldo.producto} · {origenDelSaldo(saldo)}. Al autorizarla, el saldo deja de
-                        poder usarse en caja. La devolución del dinero se hace aparte.
+                        poder usarse en caja. {saldo.devolucion_pedida_at
+                            ? `La sala lo pidió («${saldo.devolucion_pedida_motivo ?? ''}») y lo entrega con un vale de su caja.`
+                            : 'La devolución del dinero se hace aparte.'}
                     </p>
                     <PortalTextarea label="Motivo" name="motivo" rows={3} maxLength={300} value={motivo}
                         onChange={(e) => setMotivo(e.target.value)} />
@@ -628,6 +719,86 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
                 <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
                 <Button variant="destructive" icon={Banknote} loading={enviando} disabled={motivo.trim().length < 3}
                     onClick={confirmar}>Autorizar devolución</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+// Un motivo y un botón (2026-10-22): pedir la devolución en efectivo y negarla.
+function ConMotivo({ titulo, texto, etiqueta, boton, onCerrar, onConfirmar }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [motivo, setMotivo] = useState('');
+    const [enviando, setEnviando] = useState(false);
+    const confirmar = async () => {
+        setEnviando(true);
+        try { await onConfirmar(motivo.trim()); } catch (err) {
+            showToast('No se pudo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally { setEnviando(false); }
+    };
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel={titulo}>
+            <LiquidModal.Header>
+                <h2 className="text-body-xl font-semibold text-content">{titulo}</h2>
+            </LiquidModal.Header>
+            <LiquidModal.Body>
+                <div className="space-y-3">
+                    <p className="text-body-sm text-content-2">{texto}</p>
+                    <PortalTextarea label={etiqueta} name="motivo" rows={3} maxLength={300} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                </div>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
+                <Button loading={enviando} disabled={motivo.trim().length < 3} onClick={confirmar}>{boton}</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+// Entregar en efectivo una devolución ya autorizada (2026-10-22): sale de la
+// caja de la sala como vale «Devolución a un cliente» y queda amarrado a la
+// reserva. Si el vale sale pero el amarre falla, se dice: el dinero ya salió.
+function EntregarDevolucion({ reserva: r, sala, onCerrar, onEntregada }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [enviando, setEnviando] = useState(false);
+    const clave = useRef(null);
+    const monto = Number(r.saldo_favor_devuelto_monto);
+    const codigo = r.pedido ?? codigoDeReserva(r.id);
+    const entregar = async () => {
+        setEnviando(true);
+        if (!clave.current) clave.current = globalThis.crypto?.randomUUID?.() ?? `dev-${r.id}-${monto}`;
+        try {
+            const res = await anotarSalida({ sala, monto, tipo: 'DEVOLUCION', concepto: `Devolucion saldo ${codigo}`,
+                detalle: `Devolución en efectivo del saldo a favor de ${codigo}`, clave: clave.current });
+            if (res?.error) throw res.error;
+            try {
+                await marcarDevolucionEntregada(r.id, res.movimiento_del_portal);
+            } catch (err) {
+                showToast('El vale salió, pero no quedó amarrado', `${mensajeAmigable(err)} Avísale a administración: ${codigo}.`, 'warning');
+                onEntregada();
+                return;
+            }
+            showToast('Devolución entregada', `${formatMoney(monto)} · vale de caja de ${codigo}`, 'success');
+            onEntregada();
+        } catch (err) {
+            showToast('No se pudo entregar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setEnviando(false);
+        }
+    };
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel="Entregar devolución">
+            <LiquidModal.Header>
+                <h2 className="text-body-xl font-semibold text-content">Entregar {formatMoney(monto)} en efectivo</h2>
+            </LiquidModal.Header>
+            <LiquidModal.Body>
+                <p className="text-body-sm text-content-2">
+                    {codigo} · {String(r.cliente ?? '').split(/\s+/)[0]}. Sale de la caja de esta sala como vale «Devolución a un cliente»:
+                    el corte ya lo descuenta. Entrega el dinero al cliente al confirmar.
+                </p>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
+                <Button variant="destructive" icon={HandCoins} loading={enviando} onClick={entregar}>Sacar de caja y entregar</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

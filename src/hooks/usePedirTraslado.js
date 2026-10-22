@@ -495,7 +495,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
 
     /* Una fila de `approval_requests` por estante de origen. Vivía dentro de
      * `enviar`; salió de ahí para que `enviarSoloEsta` arme la MISMA fila. */
-    const filaDeSolicitud = (grupo, causaTexto, grupoId = null) => ({
+    const filaDeSolicitud = (grupo, causaTexto, grupoId = null, extra = null) => ({
         employee_id: user?.id,
         type: 'INVENTORY_TRANSFER_REQUEST',
         status: 'PENDING',
@@ -523,17 +523,21 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
             ...(grupoId ? { grupo_id: grupoId } : {}),
             total_unidades: grupo.reduce((s, r) => s + r.unidades, 0),
             items: grupo.map(r => r.item),
+            // Lo que el pedido lleva amarrado (`{ reserva_id }`): la base sigue
+            // el traslado y le avisa a la reserva cuando sale o llega.
+            ...(extra ?? {}),
         },
     });
 
     /* Pedir SÓLO el renglón que está armado, sin tocar la composición
      * (2026-10-21): apartar para un cliente lo que hay en otra sala manda la
      * solicitud en el mismo acto, y no puede llevarse de arrastre lo que la
-     * persona venía juntando en «En la solicitud». Lanza si no se pudo. */
-    const enviarSoloEsta = async (causaTexto) => {
+     * persona venía juntando en «En la solicitud». Lanza si no se pudo.
+     * `extra` viaja en el metadata (p. ej. `{ reserva_id }`). */
+    const enviarSoloEsta = async (causaTexto, extra = null) => {
         if (!lineaActual) throw new Error('El traslado no está completo.');
         if (!String(causaTexto ?? '').trim()) throw new Error('Falta para qué se pide.');
-        const { error: e } = await crearSolicitudTraslado([filaDeSolicitud([lineaActual], causaTexto)]);
+        const { error: e } = await crearSolicitudTraslado([filaDeSolicitud([lineaActual], causaTexto, null, extra)]);
         if (e) {
             const msg = String(e?.message ?? '');
             throw new Error(msg.includes('approval_requests_un_traslado_pendiente')

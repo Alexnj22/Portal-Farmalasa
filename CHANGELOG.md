@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1338.0 — Reserva en camino de punta a punta
+
+Migración `20261022152201_reserva_en_camino_de_punta_a_punta`.
+
+- **Plazo de una reserva de sala**: al quedar lista vale los 7 días de
+  `dias_apartado`, no las horas de la app.
+- **Reserva amarrada a su traslado** (`reserva_seguir_traslado` sobre
+  `approval_requests`). Si el traslado sale entero, la reserva queda «en camino».
+  Si sale una parte, queda «parcial» y la sala recibe aviso. Si lo rechazan, la
+  sala recibe aviso con el motivo. Al recibirlo, la reserva queda lista sola y
+  la sala recibe aviso. Las unidades se suman aunque lleguen de varios
+  traslados o de Bodega.
+- **Resolver** (Reservas → `ResolverReserva`) para lo que no llegó entero:
+  - pedir a otra sala, viendo cuál lo tiene;
+  - encargar el resto a Bodega. Si responde al mismo precio sigue sola; con otro
+    precio, decide el cliente;
+  - lo que decida el cliente: quedarse con una parte, cambiar a una
+    alternativa (se puede mezclar) o todo a saldo a favor.
+
+  Lo pagado se reparte primero a lo que se queda, después a la alternativa, y
+  el sobrante queda a favor.
+- **Devolución en efectivo**: la sala la pide con un motivo y administración la
+  autoriza o la niega (permiso `dash_reservas_devolver_saldo`). La sala la
+  entrega con un vale de caja «Devolución a un cliente», amarrado a la reserva.
+- **Encargos**:
+  - la sala recibe aviso cuando Bodega confirma o rechaza;
+  - WhatsApp al cliente sin app cuando el encargo se confirma o llega;
+  - un cron por hora sugiere a Bodega el producto del catálogo para un
+    «producto nuevo» ya creado;
+  - si la reserva se cierra, el encargo del resto se cancela o Bodega recibe
+    aviso.
+- **Arreglos**:
+  - el WhatsApp de «lista» ya no promete precio de oferta si no la hay;
+  - el aviso de un encargo de sala ya no dice «de la app»;
+  - un encargo de más de 20 unidades da un mensaje claro;
+  - el resto de una reserva no se puede cobrar dos veces en «Por cobrar».
+
 ## v2.1337.3 — App de clientes: pre-registro por soporte, avisos de pago y tope de reservas
 
 Tres hallazgos de la auditoría de la app de clientes (H5, H6, H9). Las dos

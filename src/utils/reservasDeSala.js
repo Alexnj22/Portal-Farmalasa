@@ -28,11 +28,12 @@ export const saldosAFavor = (filas) => (filas || []).filter((r) => !ABIERTAS.inc
 
 /** De dónde salió un saldo a favor, en palabras de la sala. */
 export const origenDelSaldo = (r) => ({
-    anticipo: 'anticipo de una reserva vencida',
+    // Vencida, cancelada o ajustada con el cliente (2026-10-22): no sólo vencida.
+    anticipo: 'anticipo de una reserva que no se llevó',
     pago_en_linea: 'pagado en línea y no entregado',
     pago_tardio: 'pago que llegó con la reserva ya cerrada',
     pago_duplicado: 'pago en línea de más',
-}[r?.saldo_favor_origen] ?? 'anticipo de una reserva vencida');
+}[r?.saldo_favor_origen] ?? 'anticipo de una reserva que no se llevó');
 
 /** Un cobro en línea de PRUEBA no es dinero: la sala lo cobra en caja. */
 export const esPagoDePrueba = (r) => r?.pago_estado === 'pagado' && r?.pago_metodo === 'en_linea' && r?.pago_prueba === true;

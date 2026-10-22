@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus } from 'lucide-react';
+import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -13,7 +13,7 @@ import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
-import { fetchEncargos, responderEncargo, vincularProductoDeEncargo } from '@nucleo/data/reservas';
+import { fetchEncargos, mensajeDeEncargo, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -28,7 +28,14 @@ const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar')
  * Un producto que no tenemos (2026-10-21) llega como consulta, con la ficha del
  * SRS (o «no aparece») y la foto si la hay. Rechazarlo exige motivo. Como es
  * nuevo, Bodega lo crea en el sistema y, cuando ya está en el catálogo, lo
- * vincula aquí: sin eso no se puede marcar «Llegó».
+ * vincula aquí: sin eso no se puede marcar «Llegó». Desde el 2026-10-22 la base
+ * lo busca sola cada hora y, si lo encuentra, lo sugiere (`sugerido`).
+ *
+ * El resto de una reserva (2026-10-22, `reserva`) se cobra con la reserva: no
+ * pasa por «Esperando pago», y al llegar la reserva queda lista sola.
+ *
+ * A quien no tiene la app se le avisa por WhatsApp desde aquí: el precio y la
+ * fecha cuando Bodega confirma, y que ya llegó.
  */
 const sinVincular = (e) => e.producto_nuevo && !e.product_id;
 const ESTADO = {
@@ -38,6 +45,12 @@ const ESTADO = {
     pedido: { label: 'Pedido', variant: 'info' },
     listo: { label: 'Llegó', variant: 'success' },
 };
+// El resto de una reserva: lo que decide es el cliente, y ya pagó con la reserva.
+const ESTADO_DE_RESERVA = {
+    confirmado: { label: 'Otro precio · decide el cliente', variant: 'warning' },
+    aceptado: { label: 'Reservado · pedir', variant: 'success' },
+};
+const estadoDe = (e) => (e.reserva && ESTADO_DE_RESERVA[e.estado]) || ESTADO[e.estado];
 
 // `soloLectura`: quien sólo puede mirar las reservas ve el estado sin los botones.
 export default function WidgetEncargos({ branchId = null, soloLectura = false }) {
@@ -58,7 +71,8 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
         setOcupado(e.id);
         try {
             await responderEncargo(e.id, accion, datos);
-            showToast('Encargo actualizado', accion === 'confirmar' ? 'Le avisamos al cliente con el precio y la fecha.' : '', 'success');
+            // La app del cliente no recibe este aviso: lo da la sala (le llega una notificación).
+            showToast('Encargo actualizado', accion === 'confirmar' ? 'La sala recibe el aviso para confirmarlo con el cliente.' : '', 'success');
             cargar();
             return true;
         } catch (err) {
@@ -79,10 +93,15 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
                         <FilaConAcciones tone={e.estado === 'solicitado' || e.estado === 'aceptado' ? 'warning' : null}
                             icon={e.producto_nuevo ? PackagePlus : PackageSearch}
                             titulo={`${e.cantidad} × ${e.producto}${e.producto_nuevo ? (e.product_id ? ` → ${e.producto_catalogo ?? 'vinculado'}` : ' · producto nuevo') : ''}`}
-                            detalle={`${e.codigo} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}`}
+                            detalle={`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}`}
                             acciones={(
                                 <>
-                                    <Badge variant={ESTADO[e.estado]?.variant ?? 'neutral'} uppercase={false}>{ESTADO[e.estado]?.label ?? e.estado}</Badge>
+                                    <Badge variant={estadoDe(e)?.variant ?? 'neutral'} uppercase={false}>{estadoDe(e)?.label ?? e.estado}</Badge>
+                                    {sinVincular(e) && e.sugerido && <Badge variant="info" uppercase={false} title={`Parece que ya entró como «${e.sugerido}»`}>¿Ya está en el catálogo?</Badge>}
+                                    {!soloLectura && !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono) && (
+                                        <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
+                                            onClick={() => window.open(`https://wa.me/${whatsappDe(e.telefono)}?text=${encodeURIComponent(mensajeDeEncargo(e))}`, '_blank', 'noopener')} />
+                                    )}
                                     {!soloLectura && e.estado === 'solicitado' && (<>
                                         <Button variant="primary" size="xs" icon={Check} onClick={() => setConfirmando(e)}>Confirmar</Button>
                                         <Button variant="ghost" size="xs" iconOnly icon={X} title="No se puede conseguir" onClick={() => setRechazando(e)} />
@@ -209,6 +228,13 @@ function Vincular({ encargo, onClose, onListo }) {
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <FichaDeProductoNuevo encargo={encargo} />
+                    {encargo.sugerido && !ocupado && (
+                        <Notice variant="info" compact icon={Sparkles}>
+                            Parece que ya entró como <b>{encargo.sugerido}</b>.{' '}
+                            <Button variant="secondary" size="xs" icon={Link2}
+                                onClick={() => elegir({ id: encargo.sugerido_product_id, nombre: encargo.sugerido })}>Es éste</Button>
+                        </Notice>
+                    )}
                     {ocupado ? <p className="text-body-sm text-content-3">Vinculando…</p> : (
                         <BuscadorDeProducto placeholder="Producto del catálogo…"
                             invitacion={{ icono: Link2, texto: 'Busca el producto que se creó para este encargo' }} onElegir={elegir} />

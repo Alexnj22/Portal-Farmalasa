@@ -160,6 +160,13 @@ const CRONS = [
           + 'disparador sobre `inventory`. 7:00–21:45 SV.',
   },
   {
+    job: 'encargos-sugerir-producto', slug: null, cadencia: '23 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'Producto nuevo encargado que ya entró al catálogo (2026-10-22): busca por trigramas sólo '
+          + 'los encargos «producto nuevo» sin vincular ni sugerir (unos pocos) contra los productos '
+          + 'creados desde el encargo. Avisa a Bodega una vez por encargo. Sin llamadas salientes.',
+  },
+  {
     job: 'preventas-cerrar-facturadas', slug: null, cadencia: '*/3 12-23,0-5 * * *',
     corridasDia: 400, sistema: 0,
     motivo: 'Cierra la reserva cuando llega la factura de su preventa (2026-10-21): liga '

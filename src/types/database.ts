@@ -1435,9 +1435,12 @@ export type Database = {
           product_id: number | null
           producto_nombre: string
           producto_nuevo: boolean
+          reserva_id: number | null
           respondido_at: string | null
           respondido_por: string | null
           srs: Json | null
+          sugerido_at: string | null
+          sugerido_product_id: number | null
           updated_at: string
           vinculado_at: string | null
           vinculado_por: string | null
@@ -1462,9 +1465,12 @@ export type Database = {
           product_id?: number | null
           producto_nombre: string
           producto_nuevo?: boolean
+          reserva_id?: number | null
           respondido_at?: string | null
           respondido_por?: string | null
           srs?: Json | null
+          sugerido_at?: string | null
+          sugerido_product_id?: number | null
           updated_at?: string
           vinculado_at?: string | null
           vinculado_por?: string | null
@@ -1489,9 +1495,12 @@ export type Database = {
           product_id?: number | null
           producto_nombre?: string
           producto_nuevo?: boolean
+          reserva_id?: number | null
           respondido_at?: string | null
           respondido_por?: string | null
           srs?: Json | null
+          sugerido_at?: string | null
+          sugerido_product_id?: number | null
           updated_at?: string
           vinculado_at?: string | null
           vinculado_por?: string | null
@@ -1530,6 +1539,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_encargos_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
             referencedColumns: ["id"]
           },
         ]
@@ -1710,6 +1726,7 @@ export type Database = {
       }
       app_reservas: {
         Row: {
+          ajuste_de: number | null
           anticipo: number
           avisado_at: string | null
           avisado_por: string | null
@@ -1724,6 +1741,11 @@ export type Database = {
           created_at: string
           customer_id: number
           datos_fiscales: Json | null
+          devolucion_entregada_at: string | null
+          devolucion_movimiento: number | null
+          devolucion_pedida_at: string | null
+          devolucion_pedida_motivo: string | null
+          devolucion_pedida_por: string | null
           direccion_entrega: string | null
           documento: string
           entrega: string
@@ -1770,11 +1792,17 @@ export type Database = {
           saldo_incluye_envio: boolean
           terminos_version: string
           traslado_desde: number | null
+          traslado_estado: string | null
+          traslado_llegaron: number
+          traslado_nota: string | null
+          traslado_por_llegar: number
+          traslado_request_id: string | null
           updated_at: string
           vence_at: string | null
           vencida_motivo: string | null
         }
         Insert: {
+          ajuste_de?: number | null
           anticipo?: number
           avisado_at?: string | null
           avisado_por?: string | null
@@ -1789,6 +1817,11 @@ export type Database = {
           created_at?: string
           customer_id: number
           datos_fiscales?: Json | null
+          devolucion_entregada_at?: string | null
+          devolucion_movimiento?: number | null
+          devolucion_pedida_at?: string | null
+          devolucion_pedida_motivo?: string | null
+          devolucion_pedida_por?: string | null
           direccion_entrega?: string | null
           documento?: string
           entrega?: string
@@ -1835,11 +1868,17 @@ export type Database = {
           saldo_incluye_envio?: boolean
           terminos_version: string
           traslado_desde?: number | null
+          traslado_estado?: string | null
+          traslado_llegaron?: number
+          traslado_nota?: string | null
+          traslado_por_llegar?: number
+          traslado_request_id?: string | null
           updated_at?: string
           vence_at?: string | null
           vencida_motivo?: string | null
         }
         Update: {
+          ajuste_de?: number | null
           anticipo?: number
           avisado_at?: string | null
           avisado_por?: string | null
@@ -1854,6 +1893,11 @@ export type Database = {
           created_at?: string
           customer_id?: number
           datos_fiscales?: Json | null
+          devolucion_entregada_at?: string | null
+          devolucion_movimiento?: number | null
+          devolucion_pedida_at?: string | null
+          devolucion_pedida_motivo?: string | null
+          devolucion_pedida_por?: string | null
           direccion_entrega?: string | null
           documento?: string
           entrega?: string
@@ -1900,11 +1944,23 @@ export type Database = {
           saldo_incluye_envio?: boolean
           terminos_version?: string
           traslado_desde?: number | null
+          traslado_estado?: string | null
+          traslado_llegaron?: number
+          traslado_nota?: string | null
+          traslado_por_llegar?: number
+          traslado_request_id?: string | null
           updated_at?: string
           vence_at?: string | null
           vencida_motivo?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "app_reservas_ajuste_de_fkey"
+            columns: ["ajuste_de"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "app_reservas_branch_id_fkey"
             columns: ["branch_id"]
@@ -1925,6 +1981,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "dte_rechazos_vigentes"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_reservas_devolucion_movimiento_fkey"
+            columns: ["devolucion_movimiento"]
+            isOneToOne: false
+            referencedRelation: "caja_movimientos_portal"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "app_reservas_oferta_id_fkey"
@@ -29643,6 +29706,7 @@ export type Database = {
         Args: { p_abiertos?: boolean; p_branch_id: number }
         Returns: Json
       }
+      encargos_sugerir_producto: { Args: never; Returns: number }
       encolar_impresion: {
         Args: { p_branch_id: number; p_contenido: string; p_titulo: string }
         Returns: number
@@ -33499,7 +33563,25 @@ export type Database = {
         Args: { p_cajas_especiales: Json; p_labels: string[] }
         Returns: number[]
       }
+      reserva_ajustar: {
+        Args: {
+          p_alternativa?: Json
+          p_cantidad: number
+          p_id: number
+          p_motivo?: string
+        }
+        Returns: Json
+      }
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
+      reserva_avisar_sala: {
+        Args: {
+          p_clave: string
+          p_cuerpo: string
+          p_id: number
+          p_titulo: string
+        }
+        Returns: undefined
+      }
       reserva_cambiar_estado: {
         Args: { p_estado: string; p_id: number; p_motivo?: string }
         Returns: Json
@@ -33512,6 +33594,14 @@ export type Database = {
           total: number
         }[]
       }
+      reserva_devolucion_entregada: {
+        Args: { p_id: number; p_movimiento: number }
+        Returns: Json
+      }
+      reserva_encargar_a_bodega: {
+        Args: { p_id: number; p_nota?: string }
+        Returns: Json
+      }
       reserva_envio: { Args: { p_id: number }; Returns: number }
       reserva_horas_al_preparar: {
         Args: { r: Database["public"]["Tables"]["app_reservas"]["Row"] }
@@ -33522,6 +33612,10 @@ export type Database = {
         Returns: string
       }
       reserva_plazos: { Args: never; Returns: Record<string, unknown> }
+      reserva_precio_de_bodega: {
+        Args: { p_acepta: boolean; p_id: number }
+        Returns: Json
+      }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       reserva_receta_decidir: {
         Args: { p_decision: string; p_id: number; p_motivo?: string }
@@ -33530,6 +33624,18 @@ export type Database = {
       reserva_saldo_devolver: {
         Args: { p_id: number; p_motivo: string }
         Returns: Json
+      }
+      reserva_saldo_negar_devolucion: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: Json
+      }
+      reserva_saldo_pedir_devolucion: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: Json
+      }
+      reserva_sumar_llegada: {
+        Args: { p_de: string; p_id: number; p_unidades: number }
+        Returns: undefined
       }
       reserva_usar_saldo_favor: {
         Args: { p_id: number; p_monto: number; p_prueba: string }
@@ -34027,6 +34133,10 @@ export type Database = {
       }
       tope_renglones_envio: { Args: never; Returns: number }
       touch_session: { Args: { p_device_class?: string }; Returns: undefined }
+      traslado_enviada_del_renglon: {
+        Args: { p_i: number; p_meta: Json }
+        Returns: number
+      }
       traslado_por_codigo: { Args: { p_codigo: string }; Returns: Json }
       traslados_en_vuelo: {
         Args: never

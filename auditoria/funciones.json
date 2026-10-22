@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-21T22:55:14.150Z",
+ "generado": "2026-10-22T15:22:25.747Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -242,6 +242,10 @@
    "area": "app-clientes",
    "por": "trigger"
   },
+  "app_encargos_seguir": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
   "app_existencias_netas": {
    "area": "app-clientes",
    "por": "código"
@@ -295,6 +299,10 @@
    "por": "trigger"
   },
   "app_reservas_avisar_sucursal": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_reservas_cerrar_encargo": {
    "area": "app-clientes",
    "por": "trigger"
   },
@@ -1808,6 +1816,10 @@
   "encargos_de_sucursal": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "encargos_sugerir_producto": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "encolar_impresion": {
    "area": "impresion",
@@ -4322,15 +4334,31 @@
    "area": "pedidos",
    "por": "llamada"
   },
+  "reserva_ajustar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "reserva_avisada_whatsapp": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "reserva_avisar_sala": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "reserva_cambiar_estado": {
    "area": "app-clientes",
    "por": "código"
   },
   "reserva_cuenta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_devolucion_entregada": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_encargar_a_bodega": {
    "area": "app-clientes",
    "por": "código"
   },
@@ -4350,6 +4378,10 @@
    "area": "app-clientes",
    "por": "llamada"
   },
+  "reserva_precio_de_bodega": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "reserva_puede_manejar": {
    "area": "app-clientes",
    "por": "código"
@@ -4361,6 +4393,22 @@
   "reserva_saldo_devolver": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "reserva_saldo_negar_devolucion": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_saldo_pedir_devolucion": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_seguir_traslado": {
+   "area": "solicitudes",
+   "por": "trigger"
+  },
+  "reserva_sumar_llegada": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "reserva_usar_saldo_favor": {
    "area": "app-clientes",
@@ -4747,6 +4795,10 @@
   "touch_session": {
    "area": "plataforma",
    "por": "código"
+  },
+  "traslado_enviada_del_renglon": {
+   "area": "solicitudes",
+   "por": "llamada"
   },
   "traslado_por_codigo": {
    "area": "traslados",

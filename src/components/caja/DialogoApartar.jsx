@@ -18,9 +18,9 @@ import {
 import { buscarEnSrs } from '@nucleo/data/srs';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import { mensajeDeError, motivoSinAplicar, pushClienteAlErp, updateCustomerFiscal } from '@nucleo/data/customers';
-import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { imprimirConstanciaDeEncargo } from '@nucleo/utils/reservaConstancia';
+import DeOtraSala from './DeOtraSala';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -164,6 +164,8 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
         : cant < 1 || cant > 999 ? 'La cantidad va de 1 a 999.' : !opciones ? 'Revisando la existencia…'
             : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`
+            // La base acepta encargos de 1 a 20: decirlo antes y no con su error.
+            : modo === 'encargo' && cant > 20 ? 'Un encargo va de 1 a 20 unidades.'
             : conAnticipo && (montoAnticipo < minimo - 0.004) ? `El anticipo mínimo es ${formatMoney(minimo)} (50 %).`
                 : conAnticipo && montoAnticipo > total + 0.004 ? 'El anticipo no puede pasar del total.'
                     : conAnticipo ? estadoPago.falta : null;
@@ -206,8 +208,10 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 if (desde) {
                     // La reserva ya quedó y el dinero ya entró: si el traslado no sale, se avisa y se pide a mano.
                     try {
-                        await trasladoApi.current.enviar(`Reserva ${ap.codigo ?? ''} para ${shortEmployeeName(cliente.name)}`.trim());
-                        showToast('Traslado pedido', `${desde.sala} lo manda para la reserva ${ap.codigo ?? ''}. Márcala lista cuando llegue.`, 'success');
+                        // `reserva_id` amarra el traslado: la base pasa la reserva a lista cuando llega.
+                        await trasladoApi.current.enviar(`Reserva ${ap.codigo ?? ''} para ${shortEmployeeName(cliente.name)}`.trim(),
+                            ap.id ? { reserva_id: ap.id } : null);
+                        showToast('Traslado pedido', `${desde.sala} lo manda para la reserva ${ap.codigo ?? ''}. Cuando llegue, queda lista sola.`, 'success');
                     } catch (e) {
                         showToast('La reserva quedó, pero el traslado no se pidió', `${mensajeAmigable(e)} Pídelo desde Inventario.`, 'warning');
                     }
@@ -490,65 +494,6 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
     );
 }
 
-// ── No hay en la sala: ¿lo tiene otra? ──────────────────────────────────────
-// Usa el MISMO armado que «Pedir a otra sala» (`usePedirTraslado`): la sala,
-// el estante y el reparto por lote salen de ahí, así que la solicitud es igual
-// a la que se haría desde Inventario. Sólo manda ESTE renglón (`enviarSoloEsta`)
-// y no toca lo que la persona venía juntando para otro traslado.
-function DeOtraSala({ producto, factor, cantidad, disponibles, apiRef, onCambio }) {
-    const productoInicial = useMemo(() => ({ erp_product_id: producto.id, descripcion: producto.nombre }), [producto.id, producto.nombre]);
-    const h = usePedirTraslado({ productoInicial });
-    const { setCantidad, setPresIdx, setOrigenId, presentaciones } = h;
-    const necesita = cantidad * factor;
-    // Sólo el estante de operación (lo próximo a vencer no se aparta) y sólo quien alcanza.
-    const candidatos = useMemo(() => h.donde.filter((d) => !d.vencidos && d.branch_id && Number(d.unidades) >= necesita), [h.donde, necesita]);
-    const [eleccion, setEleccion] = useState(null);
-
-    useEffect(() => { setCantidad(String(cantidad)); }, [cantidad, setCantidad]);
-    useEffect(() => {
-        const i = (presentaciones ?? []).findIndex((p) => Number(p.factor || 1) === Number(factor));
-        if (i >= 0) setPresIdx(String(i));
-    }, [presentaciones, factor, setPresIdx]);
-    // Sugerida mientras nadie elija: la primera que alcanza (la de más unidades).
-    const efectiva = eleccion ?? (candidatos[0] ? String(candidatos[0].erp_sucursal_id) : null);
-    const elegido = candidatos.find((d) => String(d.erp_sucursal_id) === efectiva) ?? null;
-    useEffect(() => { if (elegido) setOrigenId(`${elegido.erp_sucursal_id}`); }, [elegido, setOrigenId]);
-
-    const { enviarSoloEsta } = h;
-    useEffect(() => { apiRef.current = { enviar: enviarSoloEsta }; });
-    const lista = Boolean(elegido && h.lineaLista && String(h.origenId) === String(elegido.erp_sucursal_id));
-    useEffect(() => {
-        onCambio(elegido ? { branch_id: elegido.branch_id, sala: elegido.sala, lista } : null);
-    }, [elegido, lista, onCambio]);
-
-    if (h.donde.length === 0 && !candidatos.length) {
-        return <p className="text-caption text-content-3">{disponibles > 0 ? `En esta sala hay sólo ${disponibles}.` : 'En esta sala no hay.'} Revisando otras salas…</p>;
-    }
-    if (!candidatos.length) {
-        return <p className="text-caption text-content-3">{disponibles > 0 ? `En esta sala hay sólo ${disponibles}` : 'En esta sala no hay'} y ninguna otra sala tiene {necesita}.</p>;
-    }
-    return (
-        <div className="space-y-1.5">
-            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                {disponibles > 0 ? `Aquí hay sólo ${disponibles}` : 'Aquí no hay'} · ¿Lo pedimos a otra sala?
-            </p>
-            <ul className="space-y-1.5">
-                {[...candidatos.map((d) => ({ value: String(d.erp_sucursal_id), titulo: `Pedir a ${d.sala} y apartar`, detalle: `Tiene ${Number(d.unidades)} unidades` })),
-                    { value: 'encargo', titulo: 'No pedir: encargar a Compras', detalle: 'Compras confirma el precio y la fecha' }].map((o) => (
-                    <li key={o.value}>
-                        <button type="button" onClick={() => setEleccion(o.value)} data-surface="card" aria-pressed={efectiva === o.value}
-                            className={`w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] ${efectiva === o.value ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
-                            <p className="text-body-sm font-semibold text-content">{o.titulo}</p>
-                            <p className="text-caption text-content-3">{o.detalle}</p>
-                        </button>
-                    </li>
-                ))}
-            </ul>
-            {elegido && h.avisoVence && <p className={`text-caption ${h.avisoVence.grave ? 'text-danger-text' : 'text-warning-text'}`}>{h.avisoVence.texto}</p>}
-        </div>
-    );
-}
-
 // ── Por cobrar: encargos con precio confirmado y reservas con saldo ─────────
 function PorCobrar({ sala, ocupado, onCobrar }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -565,7 +510,7 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
         Promise.all([fetchEncargos(sala, true), fetchReservasDeSucursal(sala, true)])
             .then(([encargos, reservas]) => {
                 if (!vivo) return;
-                const e = (encargos ?? []).filter((x) => x.estado === 'confirmado' && x.pago_estado === 'pendiente').map((x) => ({
+                const e = (encargos ?? []).filter((x) => x.estado === 'confirmado' && x.pago_estado === 'pendiente' && !x.reserva_id).map((x) => ({
                     clave: `e${x.id}`, tipo: 'encargo', id: x.id, codigo: codigoDeEncargo(x.id), cliente: x.cliente, producto: x.producto,
                     cantidad: x.cantidad, precio: Number(x.precio_unitario), saldo: Number(x.anticipo), fecha: x.fecha_estimada,
                 }));

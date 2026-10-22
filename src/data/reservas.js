@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { fechaTexto } from '../utils/fecha';
+import { formatMoney } from '../utils/formatNumber';
 import { subirArchivo } from '../utils/storageFiles';
 
 /**
@@ -63,7 +64,24 @@ export function mensajeDeReservaLista(r, sala) {
         + `Su reserva ${codigoDeReserva(r.id)} (${r.cantidad} × ${r.producto}) ya está lista. `
         // El plazo es un día entero, no una hora (2026-10-20): se dice el día.
         + (r.vence_at ? `Puede pasar a retirarla hasta el ${fechaTexto(r.vence_at, { weekday: 'long', day: 'numeric', month: 'long' })}` : 'Puede pasar a retirarla')
-        + '; el precio de oferta se respeta. ¡Le esperamos!';
+        // Sólo una reserva de oferta tiene «precio de oferta» (2026-10-22): la
+        // apartada en sala lleva el precio de ese día, que también se respeta.
+        + (r.oferta ? '; el precio de oferta se respeta. ¡Le esperamos!' : '; se respeta el precio con que la apartó. ¡Le esperamos!');
+}
+
+/**
+ * El mensaje de un encargo para quien no tiene la app (2026-10-22): con el
+ * precio y la fecha que confirmó Bodega, o que ya llegó.
+ */
+export function mensajeDeEncargo(e, sala) {
+    const nombre = String(e.cliente ?? '').trim().split(/\s+/)[0] ?? '';
+    const primero = nombre ? nombre[0] + nombre.slice(1).toLowerCase() : '';
+    const hola = `Hola${primero ? ` ${primero}` : ''}, le saludamos de Farmacia Salud ${sala ?? e.sala ?? ''}. `;
+    if (e.estado === 'listo') return `${hola}Su encargo ${e.codigo} (${e.cantidad} × ${e.producto}) ya llegó. Puede pasar a retirarlo. ¡Le esperamos!`;
+    return `${hola}Conseguimos su encargo ${e.codigo} (${e.cantidad} × ${e.producto}): `
+        + `${formatMoney(Number(e.precio_unitario ?? 0))} c/u, total ${formatMoney(Number(e.anticipo ?? 0))}`
+        + (e.fecha_estimada ? `, llega aproximadamente el ${fechaTexto(e.fecha_estimada, { weekday: 'long', day: 'numeric', month: 'long' })}` : '')
+        + '. Para pedirlo se paga completo en la sala. ¿Le confirmamos?';
 }
 
 /** El teléfono en formato de WhatsApp (El Salvador): sólo dígitos, con 503. */
@@ -262,3 +280,65 @@ export async function crearEncargoDeProductoNuevo({ branchId, customerId, nombre
 export async function vincularProductoDeEncargo(id, productId) {
     return sinError(await supabase.rpc('encargo_vincular_producto', { p_id: Number(id), p_product_id: Number(productId) }));
 }
+
+// ── La reserva en camino (2026-10-22) ────────────────────────────────────────
+// Lo que no llegó entero se resuelve desde Reservas: pedirlo a otra sala (con
+// `usePedirTraslado` y `reserva_id` en la solicitud), encargar el resto a
+// Bodega, o lo que el cliente decida. La base hace las cuentas del dinero.
+
+/** Lo que falta por pedir: ni llegó ni viene en camino. */
+export const faltaDeReserva = (r) => Math.max(0, Number(r?.cantidad ?? 0) - Number(r?.traslado_llegaron ?? 0) - Number(r?.traslado_por_llegar ?? 0));
+
+/** La reserva espera una decisión de la sala (o del cliente). */
+export const reservaPorResolver = (r) => r?.origen === 'sucursal' && r?.estado === 'pendiente'
+    && ['rechazado', 'parcial', 'sin_existencia', 'precio'].includes(r?.traslado_estado);
+
+export async function encargarRestoABodega(id, nota = null) {
+    return sinError(await supabase.rpc('reserva_encargar_a_bodega', { p_id: Number(id), p_nota: nota?.trim() || null }));
+}
+
+/** El cliente acepta (o no) el precio con que Bodega consigue el resto. */
+export async function decidirPrecioDeBodega(id, acepta) {
+    return sinError(await supabase.rpc('reserva_precio_de_bodega', { p_id: Number(id), p_acepta: !!acepta }));
+}
+
+/**
+ * Lo que decidió el cliente: cuánto se queda del original (0 = nada) y, si
+ * quiere, una alternativa de ESTA sala `{ producto_id, producto_nombre, factor,
+ * cantidad, precio }`. Lo pagado cubre primero lo que se queda, después la
+ * alternativa; lo que sobre queda a su favor.
+ */
+export async function ajustarReserva(id, { cantidad, alternativa = null, motivo }) {
+    return sinError(await supabase.rpc('reserva_ajustar', {
+        p_id: Number(id), p_cantidad: Number(cantidad), p_alternativa: alternativa, p_motivo: String(motivo ?? '').trim(),
+    }));
+}
+
+/**
+ * El reparto del dinero de `reserva_ajustar`, para mostrarlo ANTES de
+ * confirmar. Es la misma cuenta que hace la base; la que vale es la de allá.
+ */
+export function repartoDelAjuste({ pagado, precio, cantidad, totalAlternativa = 0 }) {
+    const r2 = (n) => Math.round(Number(n) * 100) / 100;
+    const queda = r2(Math.min(pagado, r2(precio * cantidad)));
+    const alt = r2(Math.min(r2(pagado - queda), totalAlternativa));
+    return { queda, alternativa: alt, aFavor: r2(pagado - queda - alt) };
+}
+
+/** La sala pide devolver un saldo a favor en efectivo; lo autoriza administración. */
+export async function pedirDevolucionEnEfectivo(id, motivo) {
+    return sinError(await supabase.rpc('reserva_saldo_pedir_devolucion', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));
+}
+
+export async function negarDevolucionEnEfectivo(id, motivo) {
+    return sinError(await supabase.rpc('reserva_saldo_negar_devolucion', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));
+}
+
+/** Amarra a la reserva el vale de caja (salida DEVOLUCION) con que se entregó. */
+export async function marcarDevolucionEntregada(id, movimientoId) {
+    return sinError(await supabase.rpc('reserva_devolucion_entregada', { p_id: Number(id), p_movimiento: Number(movimientoId) }));
+}
+
+/** Las devoluciones ya autorizadas que la sala todavía tiene que entregar. */
+export const devolucionesPorEntregar = (filas) => (filas || []).filter((r) => r.devolucion_pedida_at
+    && r.saldo_favor_devuelto_at && !r.devolucion_entregada_at);

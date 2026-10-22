@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1345.1 — Reservas: el pedido P- se muestra entero
+
+- **Reservas**: al escanear o escribir el código **P-** de un pedido de caja sale el pedido completo en una tarjeta. La línea de resumen dice el anticipo dejado y cuánto falta al retirar, y avisa si una parte todavía viene en camino. La tarjeta suma el anticipo de todos los productos y, con productos listos y otros en camino, ofrece **«Retirar»** para los listos y **«Ya llegó: apartar»** para los que faltan; antes sólo miraba el primer producto.
+- Prueba `salidaDeBolsaMotivos`: quedó con la regla de v2.1344.0 (de una bolsa, sin comprobante, sale con motivo y queda pendiente de autorización).
+
 ## v2.1345.0 — Apartar varios productos en un solo cobro: reserva de pedido
 
 **Varios productos apartados en un solo cobro** («quedaría una reserva de pedido»).

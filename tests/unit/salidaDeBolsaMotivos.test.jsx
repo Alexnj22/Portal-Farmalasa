@@ -170,10 +170,11 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
         expect(arg.vale).toBeNull();
     });
 
-    // Desde 2026-10-21: si el catálogo de la caja dice que el pago a proveedor
-    // lleva comprobante, sacarlo de una BOLSA sin foto ya no se puede — del
-    // cajón quedaría pendiente de autorización, de una bolsa no hay esa salida.
-    it('con el comprobante pedido, de una bolsa no sale sin foto', async () => {
+    // Desde 2026-10-22 (v2.1344.0): si el catálogo de la caja dice que el pago a
+    // proveedor lleva comprobante, sacarlo de una BOLSA sin foto SÍ se puede —igual
+    // que del cajón—, pero pide el motivo y queda pendiente de autorización.
+    // Antes (2026-10-21) de una bolsa no salía.
+    it('con el comprobante pedido, sin foto sale con motivo y queda pendiente de autorización', async () => {
         const antes = TIPOS.map((x) => ({ ...x }));
         TIPOS.find((x) => x.codigo === 'PAGO_PROVEEDOR').caja_tipo = 'PAGO_PROVEEDOR';
         TIPOS_CAJA = [{ codigo: 'PAGO_PROVEEDOR', sin_comprobante_autoriza: true }];
@@ -182,10 +183,17 @@ describe('SalidaDeBolsa — el catálogo decide qué se pide', () => {
             await elegirMotivo('Pago a proveedor');
             fireEvent.change(screen.getByLabelText('Proveedor'), { target: { value: 'Droguería X' } });
             await escribirMonto('120.50');
-            expect(screen.getAllByText(/lleva la foto del comprobante/i).length).toBeGreaterThan(0);
+            expect(screen.getAllByText(/queda pendiente de autorización/i).length).toBeGreaterThan(0);
+            // Sin motivo no se registra.
             fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
             await act(async () => {});
             expect(registrarSalida).not.toHaveBeenCalled();
+            // Con el motivo, sale y el motivo viaja a la base.
+            fireEvent.change(screen.getByLabelText('Por qué no hay comprobante'), { target: { value: 'El proveedor no dio factura' } });
+            fireEvent.click(screen.getByRole('button', { name: /Registrar e imprimir/i }));
+            await act(async () => {});
+            expect(registrarSalida).toHaveBeenCalledTimes(1);
+            expect(registrarSalida.mock.calls[0][0].motivoSinComprobante).toBe('El proveedor no dio factura');
         } finally {
             TIPOS.splice(0, TIPOS.length, ...antes);
             TIPOS_CAJA = [];

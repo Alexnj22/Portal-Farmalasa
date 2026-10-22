@@ -190,7 +190,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const mover = async (r, estado) => {
         setOcupada(r.id);
         try {
-            const ids = r.renglones ? r.renglones.filter((x) => x.estado === r.estado || estado === 'cancelada').map((x) => x.id) : [r.id];
+            // Un pedido de caja (2026-10-22) mezcla renglones listos y en camino:
+            // «ya llegó» mueve sólo los que esperaban.
+            const ids = r.renglones ? r.renglones.filter((x) => estado === 'cancelada'
+                || (estado === 'lista' ? x.estado === 'pendiente' : x.estado === r.estado)).map((x) => x.id) : [r.id];
             for (const id of ids) await cambiarEstadoReserva(id, estado);
             if (estado === 'lista') {
                 if (r.tiene_app) showToast('Reserva lista', 'Le avisamos al cliente en la app.', 'success');
@@ -316,6 +319,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         grupos.push(agrupa ? { ...r, renglones: [r] } : r);
     }
     const totalPedido = delPedido.reduce((t, r) => t + Number(r.precio ?? 0) * Number(r.cantidad ?? 1), 0);
+    // Lo dejado en caja sobre el pedido (un cobro de caja se reparte entre sus renglones).
+    const anticipoPedido = delPedido.reduce((t, r) => t + Number(r.anticipo ?? 0), 0);
 
     // ── Cómo se reparte el alto de la baldosa ─────────────────────────────
     // `WidgetCard` le da a su cuerpo `flex-1 min-h-0 overflow-hidden`: lo que no
@@ -349,7 +354,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 <p className="text-body-sm text-content break-words">
                     <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total {formatMoney(totalPedido)}
                     {delPedido.some(esPagoDePrueba) ? ' · PAGO DE PRUEBA — cobrar en caja'
-                        : delPedido.every((r) => r.pago_estado === 'pagado') ? ' · pagado en línea' : ' · se cobra en caja'}
+                        : delPedido.every((r) => r.pago_estado === 'pagado') ? (delPedido[0].origen === 'sucursal' ? ' · pagado' : ' · pagado en línea')
+                        : anticipoPedido > 0.004 ? ` · anticipo ${formatMoney(anticipoPedido)} · falta ${formatMoney(totalPedido - anticipoPedido)} al retirar`
+                        : ' · se cobra en caja'}
+                    {delPedido.some((r) => r.estado === 'pendiente') && delPedido.some((r) => r.estado === 'lista') ? ' · una parte todavía en camino' : ''}
                 </p>
             )}
             {delPedido[0]?.documento === 'credito_fiscal' && delPedido[0]?.datos_fiscales && (
@@ -365,6 +373,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     const enRevision = r.estado === 'en_revision';
                     const espera = enRevision ? esperaDeReceta(r.receta_subida_at, ahora) : null;
                     const urgente = enRevision && r.receta_estado === 'pendiente' && espera.horas >= HORAS_RECETA_URGENTE;
+                    const filasDe = r.renglones ?? [r];
+                    const hayPendiente = filasDe.some((x) => x.estado === 'pendiente');
+                    const hayLista = filasDe.some((x) => x.estado === 'lista');
+                    const anticipoDe = filasDe.reduce((t, x) => t + Number(x.anticipo ?? 0), 0);
+                    const totalDe = filasDe.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0);
                     return (
                     <li key={`${r.pedido ?? ''}-${r.id}`}>
                         <FilaConAcciones
@@ -373,7 +386,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                             titulo={r.renglones && r.renglones.length > 1
                                 ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
                                 : `${r.cantidad} × ${r.producto}`}
-                            detalle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
+                            detalle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.estado === 'pendiente' && hayLista ? ' (en camino)' : ''}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
                                 todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
                                 r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
@@ -404,12 +417,12 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                     {esPagoDePrueba(r) ? (
                                         <Badge variant="danger" uppercase={false}
                                             title="El cobro en línea fue de prueba: no entró dinero">PAGO DE PRUEBA — cobrar en caja</Badge>
-                                    ) : r.pago_estado === 'pagado' && (
+                                    ) : filasDe.every((x) => x.pago_estado === 'pagado') && (
                                         <Badge variant="success" uppercase={false}>{r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'}</Badge>
                                     )}
-                                    {r.pago_estado === 'anticipo' && Number(r.anticipo) > 0 && (
+                                    {!filasDe.every((x) => x.pago_estado === 'pagado') && anticipoDe > 0.004 && (
                                         <Badge variant="warning" uppercase={false}
-                                            title={`Saldo al retirar: ${formatMoney(Number(r.precio ?? 0) * Number(r.cantidad ?? 1) - Number(r.anticipo))}`}>Anticipo {formatMoney(Number(r.anticipo))}</Badge>
+                                            title={`Saldo al retirar: ${formatMoney(totalDe - anticipoDe)}`}>Anticipo {formatMoney(anticipoDe)}</Badge>
                                     )}
                                     {/* Mayoreo (2026-10-19): se cobró a precio de mayoreo en la app; en caja
                                         se factura con ESA lista para cobrar lo mismo. */}
@@ -440,11 +453,12 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                                 title="Deja la venta armada en caja: producto, cliente y tú como vendedor"
                                                 onClick={() => enviarACaja(r)}>Enviar a caja</Button>
                                         )}
-                                        {r.estado === 'pendiente' ? (
+                                        {hayPendiente && (
                                             <Button variant="primary" size="xs" icon={PackageCheck} loading={ocupada === r.id}
                                                 title={r.traslado_estado ? 'Si ya llegó y no quedó lista sola' : undefined}
-                                                onClick={() => mover(r, 'lista')}>{r.traslado_estado ? 'Ya llegó: apartar' : 'Apartar y avisar'}</Button>
-                                        ) : (
+                                                onClick={() => mover(r, 'lista')}>{filasDe.some((x) => x.estado === 'pendiente' && x.traslado_estado) ? 'Ya llegó: apartar' : 'Apartar y avisar'}</Button>
+                                        )}
+                                        {hayLista && (
                                             <>
                                                 {!r.tiene_app && (
                                                     <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"

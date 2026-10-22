@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeftRight, Check, Copy, Link2, MessageCircle, PackagePlus, PackageSearch, Pencil, Phone, Search, Truck } from 'lucide-react';
+import { ArrowLeftRight, Check, Copy, Link2, MessageCircle, PackagePlus, PackageSearch, Pencil, Phone, Plus, Search, Trash2, Truck } from 'lucide-react';
 import Button from '../common/Button';
 import BuscadorDeProducto from '../common/BuscadorDeProducto';
 import LiquidModal from '../common/LiquidModal';
@@ -12,7 +12,7 @@ import FormaDePago from './FormaDePago';
 import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    codigoDeEncargo, codigoDeReserva, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, fetchEncargos, fetchReservasDeSucursal,
+    codigoDeEncargo, codigoDeReserva, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal,
     mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
@@ -57,6 +57,14 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
  *     apartar en el mismo acto (la reserva queda «en camino» hasta que llega);
  *   · todo sale con su papel: la reserva y también el encargo, con el
  *     teléfono del cliente.
+ *
+ * 2026-10-22 (pedido del usuario):
+ *   · si ya VIENE en camino a la sala un traslado de ese producto que nadie
+ *     apartó, se aparta sobre ése (`traslado_request_id`): la reserva queda
+ *     en camino y se marca lista sola cuando llega. Nació de una sala que
+ *     pidió el producto desde Inventario y el diálogo le decía «se encarga»;
+ *   · un encargo puede llevar varios productos: se van agregando y se
+ *     registran juntos (un encargo y un papel por producto).
  */
 const redondear = (n) => Math.round(Number(n) * 100) / 100;
 const llave = (sala) => `apartar_${sala ?? 'sin-sala'}`;
@@ -115,6 +123,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     // Pedirlo a otra sala: `{ clave, branch_id, sala, lista }` o null (se encarga).
     const [traslado, setTraslado] = useState(null);
     const trasladoApi = useRef(null);
+    // Lo que ya viene en camino a la sala: el `id` del traslado elegido, 'no' si
+    // se descartó, o null mientras nadie elija (se sugiere el primero que alcanza).
+    const [vieneElegido, setVieneElegido] = useState(null);
+    // Los productos ya agregados al encargo (además del que se está eligiendo).
+    const [lineas, setLineas] = useState(guardado?.lineas ?? []);
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
     // Reglamento v3 (2026-10-22): se cobra en caja o se le manda un enlace de pago.
     const [cobroEn, setCobroEn] = useState('caja');
@@ -124,8 +137,8 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     if (claveDeEnvio.current === null) claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `apartar-${Date.now()}`;
 
     useEffect(() => {
-        saveDraft(llave(sala), { cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece });
-    }, [sala, cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece]);
+        saveDraft(llave(sala), { cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas });
+    }, [sala, cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas]);
 
     useEffect(() => {
         if (!producto) { setPresentaciones(null); return undefined; }
@@ -156,11 +169,18 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     }, [sala, producto, elegida, cant, showToast]);
 
     const total = elegida ? redondear(elegida.precio * cant) : 0;
-    // 'traslado': no hay en la sala, se pide a otra y se aparta igual.
-    const modo = opciones?.modo === 'encargo' && traslado ? 'traslado' : (opciones?.modo ?? null);
+    // Con productos ya agregados al encargo, el que sigue sólo puede encargarse.
+    const soloEncargo = lineas.length > 0;
+    // Lo que ya viene en camino y alcanza para lo que se pide.
+    const vienen = useMemo(() => (opciones?.modo === 'encargo' && elegida && !soloEncargo
+        ? (opciones.en_camino ?? []).filter((v) => Number(v.unidades) >= cant * elegida.factor) : []), [opciones, elegida, cant, soloEncargo]);
+    const viene = vieneElegido === 'no' ? null : (vienen.find((v) => v.id === vieneElegido) ?? vienen[0] ?? null);
+    // 'viene': no hay en la sala pero ya viene en camino; 'traslado': se pide a otra y se aparta igual.
+    const modo = opciones?.modo === 'encargo' && viene ? 'viene'
+        : opciones?.modo === 'encargo' && traslado && !soloEncargo ? 'traslado' : (opciones?.modo ?? null);
     // Reglamento v2 (lo vuelve a decidir `apartado_cotizar`): sin monto mínimo.
     const mitad = redondear(total * 0.5);
-    const conAnticipo = modo === 'reserva' || modo === 'traslado';
+    const conAnticipo = !soloEncargo && (modo === 'reserva' || modo === 'traslado' || modo === 'viene');
     const montoAnticipo = cuanto === 'mitad' ? mitad : cuanto === 'todo' ? total : (anticipo === '' ? 0 : Number(anticipo));
     const estadoPago = estadoDeFormaDePago(pago, montoAnticipo);
     const nombreProducto = producto ? `${producto.nombre}${elegida?.tipo ? ` · ${elegida.tipo}` : ''}` : '';
@@ -169,8 +189,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     const faltaNuevo = !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel : nombreNuevo.trim().length < 3 ? 'Escribe el nombre del producto.'
         : !srs && !srsNoAparece ? 'Búscalo en el SRS, o marca que no aparece.' : cant < 1 || cant > 20 ? 'Un encargo va de 1 a 20 unidades.' : errorFoto || null;
     const falta = sinCatalogo ? faltaNuevo : !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel
+        // Con productos ya agregados, el de la pantalla es opcional.
+        : soloEncargo && !producto ? null
         : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
         : cant < 1 || cant > 999 ? 'La cantidad va de 1 a 999.' : !opciones ? 'Revisando la existencia…'
+            : soloEncargo && modo !== 'encargo' ? 'Éste sí se puede apartar: quítalo y apártalo aparte, después del encargo.'
             : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`
             // La base acepta encargos de 1 a 20: decirlo antes y no con su error.
             : modo === 'encargo' && cant > 20 ? 'Un encargo va de 1 a 20 unidades.'
@@ -179,15 +202,29 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     : conAnticipo && cobroEn === 'caja' ? estadoPago.falta : null;
 
     // El papel del encargo: no se cobró nada, pero el cliente se lleva su código.
-    const imprimirEncargo = async (codigo, productoTexto, nuevo) => {
+    const imprimirEncargo = async (codigo, productoTexto, nuevo, cantidadDelPapel = cant) => {
         try {
             const r = await imprimirConstanciaDeEncargo({ codigo, cliente: shortEmployeeName(cliente.name), telefono: cliente.phone ?? null,
-                producto: productoTexto, cantidad: cant, nuevo, sala: nombreSala, atendio: shortEmployeeName(atiende ?? '') }, { sala });
+                producto: productoTexto, cantidad: cantidadDelPapel, nuevo, sala: nombreSala, atendio: shortEmployeeName(atiende ?? '') }, { sala });
             if (r && r.ok === false) showToast('No se imprimió la constancia', r.detalle ?? '', 'warning');
         } catch (e) {
             showToast('No se imprimió la constancia', mensajeAmigable(e), 'warning');
         }
     };
+
+    // El producto de la pantalla como renglón del encargo.
+    const lineaActual = producto && elegida ? { productoId: producto.id, productoNombre: nombreProducto, factor: elegida.factor,
+        cantidad: cant, precio: elegida.precio } : null;
+    const puedeAgregar = !sinCatalogo && modo === 'encargo' && lineaActual && cant >= 1 && cant <= 20 && lineas.length < 9;
+    const agregarOtro = () => {
+        setLineas((ls) => [...ls, lineaActual]);
+        setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVieneElegido(null);
+    };
+    const totalLineas = redondear(lineas.reduce((s, l) => s + l.precio * l.cantidad, 0));
+
+    // Cómo llega lo que se aparta sin existencia: el traslado que ya viene, o el que se pide ahora.
+    const enCamino = modo === 'viene' ? { traslado_request_id: viene.id }
+        : modo === 'traslado' ? { traslado_desde: traslado.branch_id } : {};
 
     const cuerpo = useRef(null);
     cuerpo.current = async () => {
@@ -207,7 +244,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 const desde = modo === 'traslado' ? traslado : null;
                 const r = await enlaceDePagoDeApartado({ sala, monto: redondear(montoAnticipo),
                     apartado: { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombreProducto,
-                        factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...(desde ? { traslado_desde: desde.branch_id } : {}) } });
+                        factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...enCamino } });
                 if (r.error) throw r.error;
                 if (desde) {
                     try {
@@ -225,9 +262,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 const ap = await onCobrar({
                     clave: claveDeEnvio.current, monto: redondear(montoAnticipo), pago,
                     apartado: { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombreProducto,
-                        factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...(desde ? { traslado_desde: desde.branch_id } : {}) },
+                        factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...enCamino },
                     papel: { cliente: cliente.name, telefono: cliente.phone ?? null, producto: nombreProducto, cantidad: cant, precio: elegida.precio,
-                        ...(desde ? { enCamino: desde.sala } : {}) },
+                        ...(desde ? { enCamino: desde.sala } : modo === 'viene' ? { enCamino: viene.origen } : {}) },
                 });
                 if (!ap) return;
                 if (desde) {
@@ -242,6 +279,13 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     }
                 }
                 clearDraft(llave(sala)); onClose();
+            } else if (soloEncargo) {
+                const todas = [...lineas, ...(producto && elegida ? [lineaActual] : [])];
+                const r = await crearEncargosEnSucursal({ branchId: sala, customerId: cliente.id, lineas: todas, nota });
+                showToast(`Encargo registrado · ${r.length} productos`, `${r.map((e) => e.codigo).join(', ')} · Compras confirma precios y fechas; después se cobra en «Por cobrar».`, 'success');
+                for (const e of r) await imprimirEncargo(e.codigo, e.producto_nombre, false, e.cantidad);
+                clearDraft(llave(sala));
+                onClose();
             } else {
                 const r = await crearEncargoEnSucursal({ branchId: sala, customerId: cliente.id, productoId: producto.id,
                     productoNombre: nombreProducto, factor: elegida.factor, cantidad: cant, nota });
@@ -258,6 +302,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     };
     const enviar = useMemo(() => unaSolaVez(() => cuerpo.current()), []);
 
+
     if (enlace) return <EnlaceListo enlace={enlace} nombreSala={nombreSala} onListo={onClose} />;
     return (
         <div className="space-y-4">
@@ -271,6 +316,10 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 )}
             </div>
 
+            {lineas.length > 0 && (
+                <LineasDelEncargo lineas={lineas} total={totalLineas} onQuitar={(i) => setLineas((ls) => ls.filter((_, j) => j !== i))} />
+            )}
+
             {sinCatalogo ? (
                 <ProductoQueNoTenemos nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
                     onNombre={(v) => { setNombreNuevo(v); setSrs(null); setSrsNoAparece(false); }}
@@ -283,14 +332,16 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             ) : producto ? (
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
                     <p className="text-body-sm font-semibold text-content truncate min-w-0">{producto.nombre}</p>
-                    <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setTraslado(null); }}>Cambiar</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setTraslado(null); setVieneElegido(null); }}>
+                        {soloEncargo ? 'Quitar' : 'Cambiar'}
+                    </Button>
                 </div>
             ) : (
                 <BuscadorDeProducto placeholder="Producto a apartar o encargar…"
                     invitacion={{ icono: Search, texto: 'Escribe el nombre del producto' }}
                     onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
             )}
-            {!sinCatalogo && !producto && (
+            {!sinCatalogo && !producto && !soloEncargo && (
                 <Button variant="ghost" size="sm" icon={PackagePlus} onClick={() => setSinCatalogo(true)}>
                     ¿No lo tenemos? Consultar un producto nuevo a Bodega
                 </Button>
@@ -307,13 +358,22 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 </div>
             )}
 
-            {!sinCatalogo && opciones?.modo === 'encargo' && (
+            {!sinCatalogo && vienen.length > 0 && (
+                <YaVieneEnCamino vienen={vienen} factor={elegida.factor} elegido={viene?.id ?? 'no'} onElegir={setVieneElegido} />
+            )}
+            {!sinCatalogo && opciones?.modo === 'encargo' && !viene && !soloEncargo && (
                 <DeOtraSala producto={producto} factor={elegida.factor} cantidad={cant} disponibles={Number(opciones.disponibles)}
                     apiRef={trasladoApi} onCambio={setTraslado} />
             )}
             {!sinCatalogo && opciones && conAnticipo && (
                 <>
-                    {modo === 'reserva' ? (
+                    {modo === 'viene' ? (
+                        <Notice variant="info" compact icon={ArrowLeftRight}>
+                            <b>Ya viene de {viene.origen}: se aparta</b> con el precio de hoy. Queda en camino hasta que llegue; ahí se marca lista
+                            sola y empieza su plazo. Total {formatMoney(total)}; el cliente deja lo que quiera.
+                            {opciones.baja_rotacion && <> Es de muy baja rotación: <b>conviene cobrarlo completo</b>.</>}
+                        </Notice>
+                    ) : modo === 'reserva' ? (
                         <Notice variant="info" compact icon={PackageSearch}>
                             Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta 7 días</b> con el precio de hoy. Total {formatMoney(total)};
                             el cliente deja lo que quiera y el resto se paga al retirar.
@@ -337,14 +397,21 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />}
                 </>
             )}
+            {soloEncargo && !producto && (
+                <PortalInput label="Nota para Compras (opcional)" value={nota} onChange={(e) => setNota(e.target.value)}
+                    placeholder="Lo necesita para el viernes" />
+            )}
             {!sinCatalogo && opciones && modo === 'encargo' && (
                 <>
                     <Notice variant="warning" compact icon={Truck}>
-                        Sin pedirlo a otra sala:{' '}
+                        {soloEncargo ? 'También ' : 'Sin pedirlo a otra sala: '}
                         <b>se encarga</b>. Con el precio de hoy serían <b>{formatMoney(total)}</b>
                         {cant > 1 && <> ({cant} × {formatMoney(elegida.precio)})</>}; Compras confirma el precio final y la fecha, y cuando
                         el cliente acepte se cobra el 100 % en «Por cobrar». Ahora no se cobra nada.
                     </Notice>
+                    {puedeAgregar && (
+                        <Button variant="ghost" size="sm" icon={Plus} onClick={agregarOtro}>Agregar otro producto al encargo</Button>
+                    )}
                     <PortalInput label="Nota para Compras (opcional)" value={nota} onChange={(e) => setNota(e.target.value)}
                         placeholder="Lo necesita para el viernes" />
                 </>
@@ -353,11 +420,62 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             {falta && <p className="text-caption text-content-3">{falta}</p>}
             <div className="flex justify-end">
                 <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>
-                    {sinCatalogo ? 'Enviar consulta a Bodega' : modo === 'encargo' ? 'Registrar encargo'
+                    {sinCatalogo ? 'Enviar consulta a Bodega'
+                        : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
+                        : modo === 'encargo' ? 'Registrar encargo'
                         : conAnticipo && cobroEn === 'enlace' ? `${modo === 'traslado' ? 'Pedir y crear enlace' : 'Crear enlace de pago'} ${formatMoney(montoAnticipo)}`
-                        : `${modo === 'traslado' ? 'Pedir y cobrar anticipo' : 'Cobrar anticipo'} ${conAnticipo ? formatMoney(montoAnticipo) : ''}`}
+                        : `${modo === 'traslado' ? 'Pedir y cobrar anticipo' : modo === 'viene' ? 'Apartar y cobrar anticipo' : 'Cobrar anticipo'} ${conAnticipo ? formatMoney(montoAnticipo) : ''}`}
                 </Button>
             </div>
+        </div>
+    );
+}
+
+// ── Ya viene en camino a la sala (2026-10-22) ──────────────────────────────
+// Un traslado de ese producto que alguien ya pidió y nadie apartó: se aparta
+// sobre ése en vez de encargarlo o pedirlo otra vez.
+function YaVieneEnCamino({ vienen, factor, elegido, onElegir }) {
+    const opciones = [
+        ...vienen.map((v) => ({ value: v.id, titulo: `Apartar lo que viene de ${v.origen}`,
+            detalle: `${Math.floor(Number(v.unidades) / (factor || 1))} en camino · ${v.estado === 'enviado' ? 'ya salió' : 'pedido, todavía no sale'}` })),
+        { value: 'no', titulo: 'No: pedirlo a otra sala o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
+    ];
+    return (
+        <div className="space-y-1.5">
+            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Aquí no hay · ya viene en camino</p>
+            <ul className="space-y-1.5">
+                {opciones.map((o) => (
+                    <li key={o.value}>
+                        <button type="button" onClick={() => onElegir(o.value)} data-surface="card" aria-pressed={elegido === o.value}
+                            className={`w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] ${elegido === o.value ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
+                            <p className="text-body-sm font-semibold text-content">{o.titulo}</p>
+                            <p className="text-caption text-content-3">{o.detalle}</p>
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+// ── Los productos ya agregados al encargo (2026-10-22) ──────────────────────
+function LineasDelEncargo({ lineas, total, onQuitar }) {
+    return (
+        <div className="space-y-1.5">
+            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                En el encargo · {lineas.length} · {formatMoney(total)} con el precio de hoy
+            </p>
+            <ul className="space-y-1.5">
+                {lineas.map((l, i) => (
+                    <li key={`${l.productoId}-${l.factor}-${i}`} className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
+                        <div className="min-w-0">
+                            <p className="text-body-sm font-semibold text-content truncate">{l.cantidad} × {l.productoNombre}</p>
+                            <p className="text-caption text-content-3">{formatMoney(redondear(l.precio * l.cantidad))}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar del encargo" onClick={() => onQuitar(i)} />
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }

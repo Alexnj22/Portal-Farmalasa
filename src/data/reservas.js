@@ -259,6 +259,17 @@ export async function crearEncargoEnSucursal({ branchId, customerId, productoId,
     }));
 }
 
+/** Varios productos en un mismo encargo (2026-10-22): un encargo por producto,
+ *  todos en una sola llamada —se registran todos o ninguno—. `lineas`:
+ *  `[{ productoId, productoNombre, factor, cantidad }]`. Devuelve `[{ id, codigo, producto_nombre, cantidad }]`. */
+export async function crearEncargosEnSucursal({ branchId, customerId, lineas, nota }) {
+    return sinError(await supabase.rpc('encargos_en_sucursal_crear', {
+        p_branch_id: Number(branchId), p_customer_id: Number(customerId), p_nota: nota?.trim() || null,
+        p_lineas: lineas.map((l) => ({ producto_id: Number(l.productoId), producto_nombre: l.productoNombre,
+            factor: Number(l.factor) || 1, cantidad: Number(l.cantidad) })),
+    }));
+}
+
 // ── Encargar un producto que NO tenemos (2026-10-21) ───────────────────────
 // La sala escribe el nombre, lo busca en el SRS y puede agregar una foto. Si
 // no aparece en el SRS va igual, como consulta: Bodega responde precio y fecha

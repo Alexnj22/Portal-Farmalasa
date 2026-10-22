@@ -30074,6 +30074,15 @@ export type Database = {
         Args: { p_abiertos?: boolean; p_branch_id: number }
         Returns: Json
       }
+      encargos_en_sucursal_crear: {
+        Args: {
+          p_branch_id: number
+          p_customer_id: number
+          p_lineas: Json
+          p_nota?: string
+        }
+        Returns: Json
+      }
       encargos_sugerir_producto: { Args: never; Returns: number }
       encolar_impresion: {
         Args: { p_branch_id: number; p_contenido: string; p_titulo: string }
@@ -33945,6 +33954,10 @@ export type Database = {
         }
         Returns: Json
       }
+      reserva_amarrar_traslado: {
+        Args: { p_request: string; p_reserva: number }
+        Returns: undefined
+      }
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
       reserva_avisar_sala: {
         Args: {
@@ -34524,6 +34537,10 @@ export type Database = {
         Returns: number
       }
       traslado_por_codigo: { Args: { p_codigo: string }; Returns: Json }
+      traslados_en_camino_a_sala: {
+        Args: { p_branch_id: number; p_producto_id: number }
+        Returns: Json
+      }
       traslados_en_vuelo: {
         Args: never
         Returns: {

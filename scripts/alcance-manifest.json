@@ -852,6 +852,10 @@
       "guarda": "alcance",
       "motivo": "Consulta de un producto que no tenemos, para la sala propia (compara contra auth_employee_branch_id) o quien edita Ofertas para clientes; la foto tiene que ser de la carpeta de esa sala."
     },
+    "encargos_en_sucursal_crear": {
+      "guarda": "alcance",
+      "motivo": "Varios productos en un encargo: llama a encargo_en_sucursal_crear por renglón, que compara contra auth_employee_branch_id (o quien edita Ofertas para clientes)."
+    },
     "encargo_en_sucursal_crear": {
       "guarda": "alcance",
       "motivo": "Registra un encargo sin cobrar para la sala propia (compara contra auth_employee_branch_id) o quien edita Ofertas para clientes."

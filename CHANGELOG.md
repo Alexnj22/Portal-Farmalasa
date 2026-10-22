@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1343.0 — Apartar lo que ya viene en camino; encargo con varios productos
+
+- **Apartar lo que ya viene en camino**: si no hay en la sala pero ya hay un traslado de ese producto hacia ella (pedido o despachado) que nadie apartó, el diálogo lo ofrece primero: «Apartar lo que viene de Bodega». Se cobra el anticipo como siempre y la reserva queda en camino amarrada a ese traslado; cuando llega, se marca lista sola. Antes decía «se encarga» aunque el producto ya viniera (Claritromicina en La Popular, 22-oct).
+- **Encargo con varios productos**: «Agregar otro producto al encargo» junta hasta 10 productos y los registra juntos (todos o ninguno), con el total estimado al precio de hoy. Cada producto sigue siendo su propio encargo y sale con su propio papel, porque Compras confirma precio y fecha de cada uno.
+- Base: `traslados_en_camino_a_sala`, `reserva_amarrar_traslado`, `encargos_en_sucursal_crear`; `apartado_opciones` devuelve `en_camino`; `apartado_cotizar`/`apartado_aplicar`/`apartado_enlace_preparar` aceptan `traslado_request_id`; `reserva_seguir_traslado` busca el renglón del producto en vez de suponer el primero.
+
 ## v2.1342.3 — Apartar: «ninguna sala lo tiene» ya no se queda en «Revisando…»
 
 - **Apartar o encargar / pedir a otra sala**: cuando ninguna otra sala tenía el producto, la lista vacía se pintaba «Revisando qué salas lo tienen…» para siempre, igual que si siguiera cargando. Ahora dice que ninguna sala lo tiene; si la consulta falla, lo dice; y a quien no está asignado a una sala le explica que no se pregunta.

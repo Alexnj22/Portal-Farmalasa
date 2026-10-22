@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1349.2 — Reglamento de reservas: 3.2 sin la confirmación de cantidad
+
+- **Reglamento de reservas, 3.2**: se quitó «si la cantidad no es la habitual, la aplicación le pide confirmarla». Describía una pantalla de la app y no una regla; la app la sigue pidiendo.
+
 ## v2.1349.1 — Procedimiento de reservas: sin la versión del reglamento
 
 - **Procedimiento interno de reservas**, cláusula 1.1: ya no dice «(versión 1)» al nombrar el reglamento, porque se confundía con la versión del propio procedimiento.

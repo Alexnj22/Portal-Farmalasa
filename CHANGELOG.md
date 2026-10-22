@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1342.1 — Reservas: procedimiento interno y reglamento v4 sin lo interno
+
+- **Procedimiento interno de reservas, apartados y encargos** (`docs/legal/procedimiento-reservas.html` + PDF): plazos de la sala, preparar y revisar recetas, apartar con anticipo (caja o enlace), traslados y lo que no llegó entero, encargos, retiro, cancelaciones, saldo a favor y devolución en efectivo, los avisos que recibe el personal y quién responde por qué.
+- Reglamento v4: el 3.8 ya no menciona el aviso a supervisión y jefatura (es interno y vive en el procedimiento, 2.6); el 3.3 dice explícito que los 3 días son para la reserva **no pagada**.
+
 ## v2.1342.0 — Reservas: reglamento v4 — 24 h para la sala, cancelar y prorrogar desde la app
 
 Comentarios del usuario sobre el reglamento v3, llevados al sistema y al documento.

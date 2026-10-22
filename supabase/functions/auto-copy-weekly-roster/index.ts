@@ -131,20 +131,46 @@ Deno.serve(async (req) => {
     const missingIds = missing.map(r => r.employee_id);
 
     // 3. Check for blocking events that overlap next week (Mon–Sun) for the missing employees
+    //
+    // Por RANGO y no por fecha de inicio (auditoría 2026-10-21): buscar
+    // `date` dentro de las dos semanas no veía una incapacidad o unas
+    // vacaciones que empezaron antes y siguen la semana que viene. Se traen
+    // los que empezaron hasta un año atrás y se filtra por su fin
+    // (`metadata.endDate`, o el mismo día si no lo trae).
+    const desdeUnAnio = new Date(curMonday);
+    desdeUnAnio.setUTCDate(desdeUnAnio.getUTCDate() - 365);
     const { data: blockingEvents, error: evErr } = await supabase
       .from('employee_events')
-      .select('employee_id, type, date, note')
+      .select('id, employee_id, type, date, note, metadata')
       .in('employee_id', missingIds)
       .in('type', BLOCKING_EVENT_TYPES)
-      .gte('date', curWeekStr)
-      .lte('date', nextSunStr);
+      .gte('date', toISO(desdeUnAnio))
+      .lte('date', nextSunStr)
+      .order('date').order('id')
+      .range(0, 4999);
     if (evErr) throw evErr;
 
     const conflictMap = new Map<string, { type: string; date: string; note: string | null }[]>();
-    for (const ev of blockingEvents || []) {
-      const empId = String(ev.employee_id);
+    const anotarConflicto = (empId: string, c: { type: string; date: string; note: string | null }) => {
       if (!conflictMap.has(empId)) conflictMap.set(empId, []);
-      conflictMap.get(empId)!.push({ type: ev.type, date: ev.date, note: ev.note });
+      conflictMap.get(empId)!.push(c);
+    };
+    for (const ev of blockingEvents || []) {
+      const fin = String(ev.metadata?.endDate || ev.date).slice(0, 10);
+      if (fin < curWeekStr) continue;   // terminó antes de esta semana
+      anotarConflicto(String(ev.employee_id), { type: ev.type, date: ev.date, note: ev.note });
+    }
+
+    // Un día `shiftId: 'LIBRE'` lo escriben las ausencias (incapacidad,
+    // vacaciones, regreso anticipado). Copiarlo dejaba libre la semana que
+    // viene a quien ya volvió, sin que nadie lo decidiera: ese horario no se
+    // copia y se avisa, igual que un conflicto.
+    for (const r of missing) {
+      const dias = Object.values((r.schedule_data || {}) as Record<string, { shiftId?: unknown; shift_id?: unknown }>);
+      const heredaLibre = dias.some(d => String(d?.shiftId ?? d?.shift_id ?? '').toUpperCase() === 'LIBRE');
+      if (heredaLibre) {
+        anotarConflicto(String(r.employee_id), { type: 'LIBRE_HEREDADO', date: curWeekStr, note: null });
+      }
     }
 
     // 3b. ¿Cae un feriado en la semana que viene?
@@ -268,6 +294,7 @@ Deno.serve(async (req) => {
         VACATION:   'Vacaciones',
         DISABILITY: 'Incapacidad Médica',
         PERMIT:     'Permiso Especial',
+        LIBRE_HEREDADO: 'Días libres por una ausencia en el horario de esta semana',
       };
 
       const lines = conflicted.map(r => {

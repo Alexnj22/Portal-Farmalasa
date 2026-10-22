@@ -449,6 +449,7 @@ export const assertHeadcountAvailable = (state, roleId, branchId, excludeEmploye
 export const createEmployeeSlice = (set, get) => ({
     employees: safeJsonParse(almacen.leer(CACHE_KEYS.EMPLOYEES), []) || [],
     attendanceLoaded: false,
+    attendanceDias: 0,
 
     setEmployees: (updater) => set((state) => {
         const next = typeof updater === 'function' ? updater(state.employees) : updater;
@@ -1669,10 +1670,14 @@ export const createEmployeeSlice = (set, get) => ({
         // 3. Incrementar hours_owed en employees
         const currentOwed = parseFloat(emp.hours_owed || 0);
         const newOwed = currentOwed + hoursWorked;
-        await updateEmployeeRow(id, { hours_owed: newOwed });
+        // Los dos con su `error` (auditoría 2026-10-21): antes, si el update
+        // fallaba (RLS, red), la pantalla mostraba las horas debidas y al
+        // recargar volvían a 0 — la persona perdía el día trabajado.
+        const { error: owedErr } = await updateEmployeeRow(id, { hours_owed: newOwed });
+        if (owedErr) throw owedErr;
 
         // 4. Registrar en employee_events
-        await insertEmployeeEventRaw({
+        const { error: eventErr } = await insertEmployeeEventRaw({
             employee_id: id,
             type: 'VACATION_RECALL',
             date,
@@ -1685,6 +1690,7 @@ export const createEmployeeSlice = (set, get) => ({
                 reason,
             }
         });
+        if (eventErr) throw eventErr;
 
         await get().appendAuditLog('INGRESO_EN_VACACIONES', id, {
             timeline_title: `Ingreso en Vacaciones: ${emp.name}`,
@@ -1731,9 +1737,12 @@ export const createEmployeeSlice = (set, get) => ({
         return !!eventId;
     },
 
+    // `attendanceDias` recuerda cuántos días cubre la copia cargada. Antes
+    // bastaba `attendanceLoaded`: el Inicio cargaba 14 días y Auditoría de
+    // asistencia, que pide 62, recibía esos 14 (auditoría 2026-10-21).
     loadAttendanceLastDays: async (days = 15) => {
         const state = get();
-        if (state.attendanceLoaded) return true;
+        if (state.attendanceLoaded && (state.attendanceDias || 0) >= days) return true;
         try {
             const sinceISO = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
             const { data: attData, error } = await fetchAttendanceSince(sinceISO);
@@ -1752,7 +1761,7 @@ export const createEmployeeSlice = (set, get) => ({
                     attendance: byEmp.get(String(e.id))?.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) || e.attendance || [],
                 }));
                 persistEmployees(next);
-                return { employees: next, attendanceLoaded: true };
+                return { employees: next, attendanceLoaded: true, attendanceDias: days };
             });
             return true;
         } catch { return false; }

@@ -781,14 +781,20 @@ const submitEarlyExit = useCallback((e) => {
                 code:        codeToFind,
             });
 
-            // Sin red no hay forma de verificar. Híbrido decidido en la auditoría:
-            // quien ya se autorizó en ESTE kiosco dentro de la ventana de gracia
-            // pasa normal; el resto se acepta como PENDIENTE —nunca como OK— y
-            // queda marcado para revisión. No se guarda el código tecleado: una
-            // credencial que no se puede verificar tampoco se debe almacenar.
+            // Sin red no hay forma de verificar, así que TODA excepción aceptada
+            // sin red queda PENDIENTE —nunca como OK— y anotada para revisión.
+            // No se guarda el código tecleado: una credencial que no se puede
+            // verificar tampoco se debe almacenar.
+            //
+            // La ventana de gracia ya NO la deja pasar limpia (auditoría
+            // 2026-10-21): se guarda con el id del empleado AUTORIZADO, no del
+            // supervisor, así que quien fue autorizado el lunes podía cortar el
+            // wifi el miércoles, teclear cualquier cosa y marcar sin rastro.
+            // Hoy sólo viaja como dato en la marca y en la bitácora, para que
+            // quien revise sepa que esa persona sí se autorizó hace poco.
             const offline = auth.networkError;
             const graced  = offline && hasRecentKioskVerification(authPrompt.employee?.id);
-            const pendingVerification = offline && !graced;
+            const pendingVerification = offline;
             const kioskPinAuthorizerName = auth.authorizerName;
 
             if (auth.ok) recordKioskVerification(authPrompt.employee?.id);
@@ -797,7 +803,11 @@ const submitEarlyExit = useCallback((e) => {
                 // Marca que viaja con el marcaje hasta la BD: un marcaje aceptado
                 // sin haber podido verificar NO es lo mismo que uno autorizado.
                 const authMetadata = pendingVerification
-                    ? { pendingVerification: true, authOfflineAt: new Date().toISOString() }
+                    ? {
+                        pendingVerification: true,
+                        authOfflineAt: new Date().toISOString(),
+                        ...(graced ? { authGraceWindow: true } : {}),
+                    }
                     : null;
 
                 if (kioskPinAuthorizerName || pendingVerification) {
@@ -806,7 +816,8 @@ const submitEarlyExit = useCallback((e) => {
                         authPrompt.employee?.id || null,
                         {
                             empleado:          authPrompt.employee?.name || 'Desconocido',
-                            autorizador:       kioskPinAuthorizerName || (graced ? 'VENTANA_DE_GRACIA' : 'SIN_VERIFICAR'),
+                            autorizador:       kioskPinAuthorizerName || 'SIN_VERIFICAR',
+                            ventana_de_gracia: graced || undefined,
                             accion_autorizada: authPrompt.type,
                             metodo:            auth.method || (offline ? 'OFFLINE' : null),
                         }

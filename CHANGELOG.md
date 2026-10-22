@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1337.1 — Auditoría: kiosco, notificaciones y planilla
+
+**Kiosco**
+- Una excepción aceptada sin red ya no pasa limpia por la «ventana de gracia»: sale siempre pendiente de verificación y queda en la bitácora (la gracia sólo se anota como contexto).
+- Un error transitorio del servidor (`PGRST003` del pool, `57014`, 5xx) ya no se toma como rechazo: el marcaje se encola en vez de perderse, y la cola no lo descarta al reintentar (`utils/errorTransitorio.js`).
+
+**Datos personales**
+- El filtro de fechas de Solicitudes usa el día de El Salvador (un acuse de las 18:30 caía en el día siguiente).
+
+**Notificaciones**
+- La búsqueda ya no manda hasta 500 ids en la URL: corta la página en el navegador, pide «sin leer» en tandas de 100 y sólo baja los avisos de la página. Si la búsqueda llega a su tope el total dice «Al menos».
+- «Leídos de este mes» y el orden por día usan el mes y el día de El Salvador.
+
+**Planilla**
+- Generar con filtro de sucursal ya no borra los pendientes ni el banco de horas de las demás sucursales.
+- Regenerar respeta los renglones editados (antes chocaban con la clave única y la planilla quedaba con uno solo) y revisa el error del borrado.
+- Sólo se puede generar o regenerar una planilla en borrador (portal y app).
+- Editar un renglón sin el sueldo disponible ya no lo guarda en cero.
+- Los anticipos se cortan con el día de El Salvador.
+- El banco de horas revisa los errores del borrado y del guardado.
+
+**Asistencia y horarios**
+- La asistencia del store se pagina y recuerda cuántos días cargó: Auditoría (62 días) ya no recibe los 14 que cargó el Inicio.
+- Confirmar un turno extra revisa la escritura en la ficha; si falla, la solicitud vuelve a pendiente.
+- La ventana de vacaciones (Art. 182) toma el último aniversario: una ventana que cruza el fin de año ya no se rechaza.
+- El solapamiento de vacaciones se busca por fechas (no por año) y revisa el error.
+- Ingreso en vacaciones revisa los errores de `hours_owed` y del evento.
+
+**Funciones del servidor (en el repo, falta desplegar)**
+- `consolidate-timesheets`: revisa el error de feriados y resuelve el día con las reglas del canónico (`isOffDay`, `shift_id`, `LIBRE`, `""`, entrada = salida).
+- `auto-copy-weekly-roster`: los conflictos se buscan por rango de la ausencia, y un horario con días `LIBRE` heredados no se copia: se avisa.
+
 ## v2.1337.0 — Apartar: teléfono confirmado, catálogo en producto nuevo y pedir a otra sala
 
 Correcciones pedidas sobre «Apartar o encargar»:

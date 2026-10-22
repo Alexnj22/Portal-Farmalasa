@@ -8,7 +8,8 @@ import {
 } from '../../data/vacationPlans';
 import { resolverApprovalRequest, updateApprovalRequest } from '../../data/requests';
 import { SUPABASE_URL } from '@plataforma/config';
-import { fechaTexto } from '../../utils/fecha';
+import { fechaTexto, fechaNumerica } from '../../utils/fecha';
+import { ventanaDeVacaciones } from '../../utils/planDeVacaciones';
 
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
@@ -230,18 +231,21 @@ export const createVacationPlanSlice = (set, get) => ({
             if (emp?.hire_date) {
                 const activeHeadcount = employees.filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE').length;
                 const windowMonths = activeHeadcount > 100 ? 6 : 4;
-                const hireDate    = new Date(emp.hire_date      + 'T12:00:00');
-                const startDate   = new Date(planData.start_date + 'T12:00:00');
-                const anniversary = new Date(startDate.getFullYear(), hireDate.getMonth(), hireDate.getDate());
-                const windowEnd   = new Date(anniversary);
-                windowEnd.setMonth(windowEnd.getMonth() + windowMonths);
-                if (startDate < anniversary || startDate > windowEnd) {
-                    throw new Error(`WINDOW_ERROR: Las vacaciones deben asignarse dentro de los ${windowMonths} meses posteriores al aniversario (${anniversary.toLocaleDateString('es-SV')} — ${windowEnd.toLocaleDateString('es-SV')}).`);
+                // El aniversario que cuenta es el último ya llegado, no el del
+                // año de inicio: ver `ventanaDeVacaciones`.
+                const ventana = ventanaDeVacaciones(emp.hire_date, planData.start_date, windowMonths);
+                if (ventana && !ventana.dentro) {
+                    throw new Error(`WINDOW_ERROR: Las vacaciones deben asignarse dentro de los ${windowMonths} meses posteriores al aniversario (${fechaNumerica(ventana.desde)} — ${fechaNumerica(ventana.hasta)}).`);
                 }
             }
 
-            // Validar solapamiento en misma sucursal
-            const { data: existing } = await fetchOverlappingVacationPlans(planData.branch_id, planData.year);
+            // Validar solapamiento en misma sucursal. Por FECHAS y no por `year`
+            // (un plan de 2026 que termina el 5-ene-2027 no lo veía uno de 2027),
+            // y con su `error`: si la lectura fallaba se aceptaba cualquier plan
+            // (auditoría 2026-10-21).
+            const { data: existing, error: overlapErr } = await fetchOverlappingVacationPlans(
+                planData.branch_id, planData.start_date, planData.end_date);
+            if (overlapErr) throw new Error(`No se pudo comprobar si las fechas se cruzan con otro plan: ${overlapErr.message}`);
 
             const hasOverlap = (existing || []).some(vp => {
                 if (String(vp.employee_id) === String(planData.employee_id)) return false;

@@ -176,6 +176,9 @@ Deno.serve(async (req) => {
       .select('id')
       .eq('holiday_date', workDate)
       .limit(1);
+    // El `error` se desestructuraba y nunca se miraba (auditoría 2026-10-21):
+    // si la lectura fallaba el 15-sep, el día se consolidaba sin recargo.
+    if (holidayErr) throw holidayErr;
     const isHoliday = (holidayRows?.length ?? 0) > 0;
 
     // 2. Load PUBLISHED rosters for this exact week + shifts in parallel
@@ -337,12 +340,19 @@ Deno.serve(async (req) => {
     let failed   = 0;
 
     for (const empId of idsAConsolidar) {
-      const scheduleData = rosterPorEmpleado.get(empId) as Record<string, { isOff?: boolean; shiftId?: string; customStart?: string; customEnd?: string }> | undefined;
+      const scheduleData = rosterPorEmpleado.get(empId) as Record<string, { isOff?: boolean; isOffDay?: boolean; shiftId?: string; shift_id?: string; customStart?: string; customEnd?: string }> | undefined;
       const dayData   = scheduleData?.[dayKey];
       const exception = exceptionMap.get(empId);
       const marcoHoy  = (punchMap.get(empId) || []).length > 0;
 
-      const isOffInRoster = !dayData || dayData.isOff;
+      // Las formas de «no trabaja» del canónico (`src/utils/turnoDelDia.js` /
+      // `public.turno_del_dia`), auditoría 2026-10-21: acá sólo se miraba
+      // `isOff`, así que un `isOffDay` sin marcaciones salía como AUSENCIA, y la
+      // clave `shift_id` no se leía. Hasta que esta función llame al gemelo de
+      // SQL, las reglas se copian de ahí y se mueven juntas.
+      const rawShiftId = dayData?.shiftId ?? dayData?.shift_id ?? null;
+      const isOffInRoster = !dayData || !!dayData.isOff || !!dayData.isOffDay
+        || String(rawShiftId).toUpperCase() === 'LIBRE';
       // Sin turno y sin marcar: no hay nada que consolidar. Pero si marcó, sí
       // hay — y ahí se consolida lo que efectivamente trabajó.
       if (isOffInRoster && !exception && !marcoHoy) {
@@ -351,19 +361,31 @@ Deno.serve(async (req) => {
       }
 
       // Resolve scheduled start/end
-      let scheduledStart: string | null = exception?.customStart ?? dayData?.customStart ?? null;
-      let scheduledEnd:   string | null = exception?.customEnd   ?? dayData?.customEnd   ?? null;
+      // `||` y no `??`, como el canónico: un `customStart: ""` le ganaba al
+      // turno del catálogo y dejaba el día sin horario de referencia (ni
+      // tardanza ni horas extra). Las horas propias de un día LIBRE no cuentan.
+      const dayStart = isOffInRoster ? null : (dayData?.customStart || null);
+      const dayEnd   = isOffInRoster ? null : (dayData?.customEnd   || null);
+      let scheduledStart: string | null = exception?.customStart || dayStart;
+      let scheduledEnd:   string | null = exception?.customEnd   || dayEnd;
 
-      const shiftId = (!isOffInRoster && dayData?.shiftId && dayData.shiftId !== 'LIBRE')
-        ? parseInt(dayData.shiftId, 10)
+      const shiftId = (!isOffInRoster && rawShiftId != null && rawShiftId !== '')
+        ? parseInt(String(rawShiftId), 10)
         : null;
 
       if ((!scheduledStart || !scheduledEnd) && shiftId !== null && !isNaN(shiftId)) {
         const shift = shiftMap.get(shiftId);
         if (shift) {
-          scheduledStart = scheduledStart ?? shift.start;
-          scheduledEnd   = scheduledEnd   ?? shift.end;
+          scheduledStart = scheduledStart || shift.start;
+          scheduledEnd   = scheduledEnd   || shift.end;
         }
+      }
+
+      // Entrada igual a salida no es una jornada (canónico): antes daba un
+      // turno de 24 h.
+      if (scheduledStart && scheduledEnd && toMinutes(scheduledStart) === toMinutes(scheduledEnd)) {
+        scheduledStart = null;
+        scheduledEnd   = null;
       }
 
       const empPunches = punchMap.get(empId) || [];

@@ -51,12 +51,17 @@ export function fetchVacationPlans(year, branchId) {
     return q;
 }
 
-export function fetchOverlappingVacationPlans(branchId, year) {
+// Los planes de la sucursal que se cruzan en FECHAS con [desde, hasta], de
+// cualquier `year`: un plan que cruza el fin de año pertenece a uno solo.
+export function fetchOverlappingVacationPlans(branchId, desde, hasta) {
     return supabase.from('vacation_plans')
         .select('id, employee_id, start_date, end_date')
         .eq('branch_id', branchId)
-        .eq('year', year)
-        .neq('status', 'CANCELLED');
+        .lte('start_date', hasta)
+        .gte('end_date', desde)
+        .neq('status', 'CANCELLED')
+        .order('start_date').order('id')
+        .range(0, 499);
 }
 
 export function insertVacationPlan(payload) {

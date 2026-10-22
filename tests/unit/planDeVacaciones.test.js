@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diasDeVacacion, diasUsadosPorPersona, planesVisibles } from '@nucleo/utils/planDeVacaciones';
+import { diasDeVacacion, diasUsadosPorPersona, planesVisibles, ventanaDeVacaciones } from '@nucleo/utils/planDeVacaciones';
 
 describe('planDeVacaciones', () => {
     it('un extremo con hora no cuenta', () => {
@@ -24,5 +24,16 @@ describe('planDeVacaciones', () => {
         ];
         expect(planesVisibles(ps).planes.map((p) => p.employee.name)).toEqual(['Eva', 'Luis', 'Ana']);
         expect(planesVisibles(ps, { estado: 'APPROVED' }).planes.length).toBe(2);
+    });
+});
+
+describe('ventanaDeVacaciones (Art. 182)', () => {
+    it('una ventana que cruza el fin de año se acepta', () => {
+        // Ingreso 10-nov: el 15-ene-2027 cae en la ventana 10-nov-2026 → 10-mar-2027.
+        expect(ventanaDeVacaciones('2020-11-10', '2027-01-15', 4)).toEqual({ dentro: true, desde: '2026-11-10', hasta: '2027-03-10' });
+    });
+    it('fuera de los meses de la ventana, no; el día del aniversario, sí', () => {
+        expect(ventanaDeVacaciones('2020-11-10', '2027-04-01', 4).dentro).toBe(false);
+        expect(ventanaDeVacaciones('2020-03-01', '2027-03-01', 4)).toEqual({ dentro: true, desde: '2027-03-01', hasta: '2027-07-01' });
     });
 });

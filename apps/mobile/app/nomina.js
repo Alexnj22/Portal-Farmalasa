@@ -326,7 +326,9 @@ export default function Nomina() {
           </>
         ) : null}
 
-        {periodo && puedeDecidir && (estadoKey === 'DRAFT' || estadoKey === 'APPROVED') ? (
+        {/* Sólo en borrador: regenerar una aprobada cambiaba sus montos sin
+            que nadie la volviera a aprobar (auditoría 2026-10-21). */}
+        {periodo && puedeDecidir && estadoKey === 'DRAFT' ? (
           <View style={{ marginHorizontal: 16 }}>
             <BotonGrande texto={conRenglones ? 'Regenerar la planilla' : 'Generar la planilla'} borde color={MARCA.azulClaro} onPress={generar} deshabilitado={ocupado} />
           </View>

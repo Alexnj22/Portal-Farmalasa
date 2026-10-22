@@ -433,7 +433,7 @@ const PayrollView = ({ openModal }) => {
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Badge variant={STATUS_META[activePeriod?.status]?.variante || 'neutral'}>{(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).label}</Badge>
-                                            {(isDraft||isApproved) && (
+                                            {isDraft && (
                                                 <Button variant="secondary" icon={RotateCcw} disabled={generating} onClick={handleGenerate}>{generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}</Button>
                                             )}
                                             {payrollEntries.length > 0 && canDownload && (

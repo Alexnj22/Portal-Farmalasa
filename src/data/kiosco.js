@@ -16,11 +16,14 @@
 
 import { supabase } from '../supabaseClient';
 import * as almacen from '@plataforma/almacen';
+import { esFalloTransitorio } from '../utils/errorTransitorio';
 
-// Un error de PostgREST que trae `code` es una respuesta REAL del servidor;
-// sin `code` es una caída de red. La diferencia decide si el marcaje se
-// descarta o se encola.
-const esRechazoDelServidor = (error) => Boolean(error?.code);
+// La diferencia entre «el servidor dijo que no» y «no se pudo preguntar»
+// decide si el marcaje se descarta o se encola. Hasta el 2026-10-21 era
+// `Boolean(error?.code)`, pero los fallos transitorios TAMBIÉN traen código
+// (`PGRST003` del pool saturado, `57014` del timeout): en una saturación el
+// marcaje se perdía. Ver `errorTransitorio.js`.
+const esRechazoDelServidor = (error) => !esFalloTransitorio(error);
 
 function credenciales() {
     try {

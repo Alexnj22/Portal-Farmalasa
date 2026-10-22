@@ -3,6 +3,7 @@
 // (`app/comunicados.js`). Vivía dentro de la vista: qué le aplica, qué ya leyó,
 // el orden de cada pestaña y los subfiltros de «Leídos».
 import { announcementAppliesToUser } from './announcementAudience';
+import { diaSV, diaDe } from './fecha';
 
 const idDeLector = (r) => String(typeof r === 'object' && r !== null ? r.employeeId : r);
 
@@ -29,8 +30,15 @@ export function comunicadosDeLaPersona(announcements, user, roles, ahora = new D
     }).sort((a, b) => urgenteAntes(a, b) || (new Date(a.date).getTime() - new Date(b.date).getTime()));
 }
 
-/** El mes en curso, «AAAA-MM», que es lo que «Leídos» muestra sin pedir más. */
-export const mesDe = (ahora = new Date()) => ahora.toISOString().slice(0, 7);
+/** El mes en curso, «AAAA-MM», que es lo que «Leídos» muestra sin pedir más.
+ *  En hora de El Salvador: con `toISOString()` el último día del mes, desde
+ *  las 18:00, «este mes» ya era el siguiente (auditoría 2026-10-21). */
+export const mesDe = (ahora = new Date()) => diaSV(new Date(ahora).getTime()).slice(0, 7);
+
+// El día del comunicado en la sala, no el del ISO en UTC: uno publicado el 31
+// a las 19:00 caía en el mes siguiente.
+const diaDelAviso = (a) => diaDe(a?.date) || '';
+const mesDelAviso = (a) => diaDelAviso(a).slice(0, 7);
 
 /**
  * Una pestaña: 'UNREAD' (orden del mazo) o 'READ' (día más reciente primero,
@@ -41,9 +49,9 @@ export function comunicadosDeLaPestana(lista, pestana, userId, { verViejos = fal
     if (pestana === 'UNREAD') return lista.filter((a) => !yaLoLeyo(a, userId));
     const mes = mesDe(ahora);
     let leidos = lista.filter((a) => yaLoLeyo(a, userId));
-    if (!verViejos) leidos = leidos.filter((a) => (a.date || '').slice(0, 7) === mes);
+    if (!verViejos) leidos = leidos.filter((a) => mesDelAviso(a) === mes);
     return [...leidos].sort((a, b) => {
-        const da = (a.date || '').slice(0, 10); const db = (b.date || '').slice(0, 10);
+        const da = diaDelAviso(a); const db = diaDelAviso(b);
         if (db !== da) return db > da ? 1 : -1;
         return urgenteAntes(a, b) || (new Date(b.date).getTime() - new Date(a.date).getTime());
     });
@@ -52,7 +60,7 @@ export function comunicadosDeLaPestana(lista, pestana, userId, { verViejos = fal
 /** ¿Hay leídos de meses anteriores escondidos? (el botón «Ver anteriores»). */
 export const hayLeidosViejos = (lista, userId, ahora = new Date()) => {
     const mes = mesDe(ahora);
-    return lista.some((a) => yaLoLeyo(a, userId) && (a.date || '').slice(0, 7) !== mes);
+    return lista.some((a) => yaLoLeyo(a, userId) && mesDelAviso(a) !== mes);
 };
 
 /** Los subfiltros de «Leídos», con su cuenta; los vacíos no se ofrecen. */

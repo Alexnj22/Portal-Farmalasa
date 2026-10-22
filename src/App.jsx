@@ -556,7 +556,19 @@ function MainApp() {
                     const empId    = dataToSave._entry?.employee_id;
                     const periodId = dataToSave._entry?.period_id;
                     const by       = user?.name || user?.email || 'Admin';
-                    const ok = await updatePayrollEntry(entryId, dataToSave, by, dataToSave._reason);
+                    // `updatePayrollEntry` LANZA cuando el sueldo no llegó (no
+                    // guarda un renglón en cero): se le dice a quien edita por qué.
+                    let ok = false;
+                    try {
+                        ok = await updatePayrollEntry(entryId, dataToSave, by, dataToSave._reason);
+                    } catch (err) {
+                        // Texto fijo y no el del error: el único que llega
+                        // marcado es el del sueldo que no llegó.
+                        showToast('No se guardó', err?.userFacing
+                            ? 'No llegó el sueldo de esta persona y el renglón se habría guardado en cero. Suele ser el permiso de «Salarios e ingresos».'
+                            : 'No se pudo guardar.', 'error');
+                        return;
+                    }
                     if (ok) {
                         // Persist OT bank redemptions — diurnal and nocturnal, pay and/or time-off
                         if (redeemOvertimeBank && dataToSave._otBank) {

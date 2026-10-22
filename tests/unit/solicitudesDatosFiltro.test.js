@@ -17,6 +17,12 @@ describe('filtrarSolicitudes', () => {
     it('la fecha es la del acuse, y si no hay, la de impresión', () => {
         expect(filtrarSolicitudes(filas, { desde: '2026-10-01' }).map((s) => s.id)).toEqual([4]);
     });
+    it('el día es el de El Salvador, no el del ISO en UTC', () => {
+        // 20-oct 18:30 en la sala = 21-oct 00:30 UTC.
+        const tarde = [{ id: 9, estado: 'RECIBIDA', recibida_at: '2026-10-21T00:30:00Z' }];
+        expect(filtrarSolicitudes(tarde, { hasta: '2026-10-20' }).map((s) => s.id)).toEqual([9]);
+        expect(filtrarSolicitudes(tarde, { desde: '2026-10-21' })).toEqual([]);
+    });
     it('busca con la función que le pasan', () => {
         expect(filtrarSolicitudes(filas, { texto: 'luis' }, contiene).map((s) => s.id)).toEqual([2]);
     });

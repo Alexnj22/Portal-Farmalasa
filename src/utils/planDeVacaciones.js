@@ -79,3 +79,32 @@ export function elegibilidadDeVacaciones(fechaIngreso, hoy) {
         tono, rotulo: ROTULO[tono],
     };
 }
+
+// Un día `YYYY-MM-DD` armado en UTC: con `new Date(y, m, d)` la cuenta
+// dependía del huso de la computadora de quien asignaba.
+const diaUTC = (y, m, d) => new Date(Date.UTC(y, m, d)).toISOString().slice(0, 10);
+
+/**
+ * La ventana del Art. 182 en la que se puede asignar un período que empieza
+ * en `inicio`: desde el aniversario de ingreso hasta `meses` después.
+ *
+ * El aniversario es el ÚLTIMO que ya llegó respecto de `inicio`, no el del año
+ * de `inicio`. Con el del año, una ventana que cruza el fin de año se
+ * rechazaba: ingreso 10-nov, vacaciones el 15-ene → aniversario 10-nov de ese
+ * mismo año, todavía no llegado → «fuera de ventana», cuando la real (10-nov a
+ * 10-mar) lo permite (auditoría 2026-10-21).
+ *
+ * @returns {{ dentro: boolean, desde: string, hasta: string } | null}
+ */
+export function ventanaDeVacaciones(fechaIngreso, inicio, meses) {
+    const ing = String(fechaIngreso || '').slice(0, 10);
+    const ini = String(inicio || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ing) || !/^\d{4}-\d{2}-\d{2}$/.test(ini)) return null;
+    const [, mI, dI] = ing.split('-').map(Number);
+    const anio = Number(ini.slice(0, 4));
+    let desde = diaUTC(anio, mI - 1, dI);
+    if (ini < desde) desde = diaUTC(anio - 1, mI - 1, dI);
+    const [yD, mD, dD] = desde.split('-').map(Number);
+    const hasta = diaUTC(yD, mD - 1 + meses, dD);
+    return { dentro: ini >= desde && ini <= hasta, desde, hasta };
+}

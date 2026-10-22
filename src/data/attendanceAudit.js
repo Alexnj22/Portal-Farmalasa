@@ -163,8 +163,16 @@ export async function resolverTurnoExtra(req, aprobar, {
     if (aprobar && confirmedStart && confirmedEnd) {
         // La excepción va a la ficha para que consolidate-timesheets use las
         // horas declaradas.
-        const { data: empRow } = await fetchEmployeeExceptions(req.employee_id);
-        if (empRow) {
+        // Los dos `error` se miran (auditoría 2026-10-21): antes se ignoraban y
+        // la solicitud quedaba «Aprobada» sin las horas en la ficha, así que
+        // la persona no cobraba lo aprobado y, ya fuera de PENDING, nadie podía
+        // reintentarlo desde la pantalla. Si la ficha no se pudo escribir, la
+        // solicitud vuelve a PENDING para que se pueda confirmar de nuevo.
+        const { data: empRow, error: exErr } = await fetchEmployeeExceptions(req.employee_id);
+        if (exErr || !empRow) {
+            return devolverAPendiente(req.id, exErr || new Error('No se encontró la ficha de la persona.'));
+        }
+        {
             const existing = Array.isArray(empRow.exceptions) ? empRow.exceptions : [];
             const filtered = existing.filter(ex => ex.date !== meta.date);
             const newEx = {
@@ -175,7 +183,8 @@ export async function resolverTurnoExtra(req, aprobar, {
                 customEnd: confirmedEnd,
                 note: `Turno extra confirmado por TH (${approverName || 'supervisor'})`,
             };
-            await updateEmployee(req.employee_id, { exceptions: [...filtered, newEx], updated_at: new Date().toISOString() });
+            const { error: updErr } = await updateEmployee(req.employee_id, { exceptions: [...filtered, newEx], updated_at: new Date().toISOString() });
+            if (updErr) return devolverAPendiente(req.id, updErr);
         }
     }
 
@@ -183,6 +192,21 @@ export async function resolverTurnoExtra(req, aprobar, {
         requestId: req.id, empId: req.employee_id, date: meta.date, confirmedStart, confirmedEnd,
     });
     return { error: null, yaResuelta: false };
+}
+
+// La decisión entró pero la ficha no: se deshace la decisión (sólo si sigue
+// APPROVED) para que la solicitud vuelva a la lista. Si tampoco eso entra, el
+// error lo dice, para que no se lea como un «Confirmado».
+async function devolverAPendiente(requestId, causa) {
+    const { error } = await supabase.from('approval_requests')
+        .update({ status: 'PENDING', approver_id: null, updated_at: new Date().toISOString() })
+        .eq('id', requestId).eq('status', 'APPROVED');
+    const e = new Error(error
+        ? 'Se aprobó el turno extra pero no se pudo escribir en el horario de la persona, y tampoco se pudo devolver a pendiente. Avisa a sistemas.'
+        : 'No se pudo escribir el turno extra en el horario de la persona. La solicitud sigue pendiente: vuelve a intentarlo.');
+    Object.assign(e, { userFacing: true });
+    e.cause = causa;
+    return { error: e, yaResuelta: false };
 }
 
 export function closeQuincenaTimesheets(ids) {

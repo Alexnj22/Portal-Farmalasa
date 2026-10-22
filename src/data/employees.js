@@ -230,8 +230,15 @@ export function insertEmployeeEventRaw(payload) {
 
 // ── Asistencia ────────────────────────────────────────────────────────────
 
-export function fetchAttendanceSince(sinceIso) {
-    return supabase.from('attendance').select('*').gte('timestamp', sinceIso);
+// Paginada (auditoría 2026-10-21): era un `select('*')` sin `range` ni orden,
+// y con 14 o 62 días de la red entera el techo de 1000 filas cortaba en
+// silencio — la gente salía ausente o sin salida. Con `completo: true`, una
+// página que falla devuelve error en vez de una lista a medias.
+export async function fetchAttendanceSince(sinceIso) {
+    const filas = await fetchAllRows(() => supabase.from('attendance').select('*')
+        .gte('timestamp', sinceIso).order('timestamp').order('id'), { completo: true });
+    if (!filas) return { data: null, error: new Error('No se pudieron leer todas las marcaciones.') };
+    return { data: filas, error: null };
 }
 
 /**

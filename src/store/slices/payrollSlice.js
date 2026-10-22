@@ -2,7 +2,7 @@ import {
     fetchPayrollPeriods as fetchPayrollPeriodsData, insertPayrollPeriod, updatePayrollPeriod,
     fetchPayrollEntriesByPeriod, deletePendingPayrollEntries, insertPayrollEntries, updatePayrollEntry as updatePayrollEntryData,
     fetchTimesheetsForPeriod, fetchApprovedAdvances, fetchVacationPlansOverlapping,
-    fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank,
+    fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank, fetchPayrollEntriesNoRegenerables,
 } from '../../data/payroll';
 import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 import { rotuloDePeriodo } from '../../utils/planilla';
@@ -225,6 +225,17 @@ export const createPayrollSlice = (set, get) => ({
             const period = get().payrollPeriods.find(p => p.id === periodId);
             if (!period) throw new Error('Período no encontrado');
 
+            // Sólo se genera sobre un BORRADOR. La pantalla ofrecía «Regenerar»
+            // también con el período aprobado, y esto no miraba el estado: los
+            // montos de una planilla ya autorizada cambiaban y el período seguía
+            // diciendo «Aprobada» (auditoría 2026-10-21). Una corrección sobre
+            // una aprobada se hace renglón por renglón (queda EDITED, con motivo).
+            if ((period.status || 'DRAFT') !== 'DRAFT') {
+                const e = new Error('Esta planilla ya fue aprobada y no se vuelve a calcular entera. Si hay que corregir a alguien, edita su renglón.');
+                Object.assign(e, { userFacing: true });
+                throw e;
+            }
+
             // `esPersonalEnPlanilla` primero, y no es cosmético: acá se GENERA la
             // planilla. Sin ese filtro, «QA Testing» y el «Contador Externo»
             // recibían su renglón de nómina —en $0, porque no tienen salario
@@ -265,7 +276,7 @@ export const createPayrollSlice = (set, get) => ({
             // se tiene, que es el modo de falla que este trabajo viene cerrando.
             if (employees.length && !employees.some(e => e.salario_conocido)) {
                 const e = new Error('No llegaron los sueldos, así que la quincena saldría en cero y no se generó. Suele ser el permiso de «Salarios e ingresos»; si ya lo tienes, vuelve a entrar al portal e intenta de nuevo.');
-                e.userFacing = true;
+                Object.assign(e, { userFacing: true });
                 throw e;
             }
 
@@ -294,7 +305,7 @@ export const createPayrollSlice = (set, get) => ({
             }
 
             // #1 — Fix: request type is 'ADVANCE' in DB (was incorrectly querying 'ADELANTO')
-            const { data: advances, error: advancesErr } = await fetchApprovedAdvances(period.start_date, period.end_date + 'T23:59:59');
+            const { data: advances, error: advancesErr } = await fetchApprovedAdvances(period.start_date, period.end_date);
             if (advancesErr) throw new Error(`No se pudieron cargar los anticipos aprobados del período: ${advancesErr.message}`);
 
             const advanceMap = new Map();
@@ -345,10 +356,28 @@ export const createPayrollSlice = (set, get) => ({
             const end      = new Date(period.end_date   + 'T12:00:00');
             const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-            // Delete existing PENDING entries for this period
-            await deletePendingPayrollEntries(periodId);
+            // Quién ya tiene un renglón editado (u otro no-PENDING): ése se
+            // respeta y NO se reinserta. Antes se borraban sólo los PENDING y se
+            // reinsertaba a TODOS: el editado chocaba con UNIQUE (period_id,
+            // employee_id), el insert fallaba entero y la planilla quedaba con
+            // un solo renglón (auditoría 2026-10-21).
+            const { data: fijos, error: fijosErr } = await fetchPayrollEntriesNoRegenerables(periodId);
+            if (fijosErr) throw new Error(`No se pudieron leer los renglones ya editados: ${fijosErr.message}`);
+            const yaFijados = new Set((fijos || []).map(f => String(f.employee_id)));
 
-            const rows = employees.map(emp => {
+            // Con filtro de sucursal se borra SÓLO lo de esas personas: antes
+            // `deletePendingPayrollEntries(periodId)` vaciaba los PENDING de la
+            // red entera y se reinsertaban los de una sola sucursal.
+            const idsDelAlcance = branchId ? employees.map(e => e.id) : null;
+            if (idsDelAlcance && idsDelAlcance.length === 0) {
+                const e = new Error('Esa sucursal no tiene personal en planilla: no hay nada que generar.');
+                Object.assign(e, { userFacing: true });
+                throw e;
+            }
+            const { error: delErr } = await deletePendingPayrollEntries(periodId, idsDelAlcance);
+            if (delErr) throw new Error(`No se pudieron quitar los renglones pendientes: ${delErr.message}`);
+
+            const rows = employees.filter(emp => !yaFijados.has(String(emp.id))).map(emp => {
                 const empId      = String(emp.id);
                 const hasTS      = daysMap.has(empId);
                 const workedDays = hasTS ? daysMap.get(empId) : diffDays;
@@ -380,7 +409,10 @@ export const createPayrollSlice = (set, get) => ({
 
             // OT Bank — seed EARNED entries for both diurnal and nocturnal OT.
             // Idempotent: delete prior EARNED entries for this period before re-inserting.
-            await deleteEarnedOvertimeBank(periodId);
+            // Los dos con su `error`: si el insert fallaba, las horas EARNED de la
+            // quincena desaparecían y la pantalla decía «generada» igual.
+            const { error: delBankErr } = await deleteEarnedOvertimeBank(periodId, idsDelAlcance);
+            if (delBankErr) throw new Error(`No se pudo rehacer el banco de horas: ${delBankErr.message}`);
             const bankRows = [];
             for (const emp of employees) {
                 const empId    = String(emp.id);
@@ -390,7 +422,8 @@ export const createPayrollSlice = (set, get) => ({
                 if (nocturnal > 0) bankRows.push({ employee_id: emp.id, hours: nocturnal, type: 'EARNED', subtype: 'NOCTURNAL', period_id: periodId });
             }
             if (bankRows.length > 0) {
-                await insertOvertimeBank(bankRows);
+                const { error: bankErr } = await insertOvertimeBank(bankRows);
+                if (bankErr) throw new Error(`Los renglones se generaron, pero no se pudo guardar el banco de horas: ${bankErr.message}. Vuelve a generar la planilla.`);
             }
 
             await get().fetchPayrollEntries(periodId);
@@ -399,6 +432,7 @@ export const createPayrollSlice = (set, get) => ({
             // tiene explicación posible.
             await get().appendAuditLog('CALCULAR_PLANILLA', periodId, {
                 renglones: rows.length, banco_de_horas: bankRows.length,
+                sucursal: branchId || null, editados_respetados: yaFijados.size,
                 sin_salario: noSalary.length,
                 con_orden_de_descuento: rows.filter(r => r.order_discount > 0).length,
             });
@@ -446,6 +480,14 @@ export const createPayrollSlice = (set, get) => ({
         if (!existing) return false;
 
         const emp      = existing.employee;
+        // Mismo freno que al generar: sin la llave de «Salarios e ingresos» el
+        // sueldo llega vacío y el recálculo guardaba `ordinary_salary = 0`, con
+        // ISSS, AFP y renta en cero (auditoría 2026-10-21).
+        if (!emp?.salario_conocido) {
+            const e = new Error('No llegó el sueldo de esta persona, así que el renglón se recalcularía en cero y no se guardó. Suele ser el permiso de «Salarios e ingresos»; si ya lo tienes, vuelve a entrar al portal e intenta de nuevo.');
+            Object.assign(e, { userFacing: true });
+            throw e;
+        }
         const newCalc  = calcPayrollEntry(emp, updates.days_worked ?? existing.days_worked, updates);
         const editSnap = {
             at:     new Date().toISOString(),

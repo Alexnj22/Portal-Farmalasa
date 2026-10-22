@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
 import { correoValido, duiValido, telefonoValido } from '../utils/clienteValidacion';
+import { diaDe } from '../utils/fecha';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las solicitudes que una persona presenta sobre sus propios datos.
@@ -108,7 +109,9 @@ export function filtrarSolicitudes(filas, { pestana = 'todas', estado = 'TODOS',
         if (pestana === 'tramite' && (s.estado === 'RESUELTA' || s.estado === 'ANULADA')) return false;
         if (estado !== 'TODOS' && s.estado !== estado) return false;
         if (desde || hasta) {
-            const d = String(s.recibida_at ?? s.impresa_at ?? '').slice(0, 10);
+            // El día EN LA SALA, no el del ISO en UTC: un acuse recibido a las
+            // 18:30 del 20-oct salía en el 21 (auditoría 2026-10-21).
+            const d = diaDe(s.recibida_at ?? s.impresa_at) ?? '';
             if (desde && d < desde) return false;
             if (hasta && d > hasta) return false;
         }

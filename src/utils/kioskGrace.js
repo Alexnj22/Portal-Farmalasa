@@ -13,6 +13,12 @@ import * as almacen from '@plataforma/almacen';
 //
 // Un atacante que lea este localStorage obtiene una lista de ids y fechas.
 // Antes obtenía las credenciales.
+//
+// Desde la auditoría del 2026-10-21 la gracia YA NO autoriza: la ventana
+// guarda el id del empleado autorizado (no el del supervisor), así que el
+// mismo empleado podía repetir la excepción sin red y sin rastro. Hoy toda
+// excepción aceptada sin red sale PENDIENTE; la gracia sólo se anota como
+// contexto para quien la revise.
 
 const GRACE_KEY  = 'kiosk_auth_grace';
 const GRACE_DAYS = 7;

@@ -107,18 +107,18 @@ export const DIAS_VISIBLES = 60;
  * @param estado  'todas' | 'sin_leer'
  * @param busca   texto libre sobre título y cuerpo, o null
  */
+// Cuántos ids viajan en la URL por consulta. `notificaciones_que_coinciden`
+// devuelve hasta 500 uuid: los 500 en un solo `.in()` son ~18.5 kB de URL
+// (auditoría 2026-10-21), el caso «ni en la respuesta ni en la URL» de
+// CLAUDE.md. De a 100 son ~3.7 kB.
+const TANDA_DE_IDS = 100;
+// El techo de la función: si vuelve con exactamente esto, puede haber más.
+export const TOPE_DE_BUSQUEDA = 500;
+
 export async function fetchNotificationsPage({ estado = 'todas', busca = null, pagina = 0, porPagina = 25 } = {}) {
     const piso = new Date(Date.now() - DIAS_VISIBLES * 86400000).toISOString();
 
-    // La búsqueda con la regla del portal (`notificaciones_que_coinciden`: sin
-    // tildes, palabras en cualquier orden). Antes era `ilike` de la frase.
-    let idsBuscados = null;
-    if (busca) {
-        const { data, error } = await supabase.rpc('notificaciones_que_coinciden', { p_q: busca, p_desde: piso });
-        if (error) return { data: null, error, count: 0 };
-        idsBuscados = data ?? [];
-        if (!idsBuscados.length) return { data: [], error: null, count: 0 };
-    }
+    if (busca) return paginaDeBusqueda({ estado, busca, piso, pagina, porPagina });
 
     let q = supabase.from('notifications')
         .select(CAMPOS, { count: 'exact' })
@@ -129,9 +129,46 @@ export async function fetchNotificationsPage({ estado = 'todas', busca = null, p
     // Ningún estado mira `deleted_at`: ése es el punto de esta pantalla.
     if (estado === 'sin_leer') q = q.is('read_at', null);
 
-    if (idsBuscados) q = q.in('id', idsBuscados);
-
     return q;
+}
+
+/* La búsqueda con la regla del portal (`notificaciones_que_coinciden`: sin
+   tildes, palabras en cualquier orden). La función ya devuelve los ids en el
+   orden de la lista (más nuevo primero) y desde el piso de días, así que la
+   página se corta ACÁ y a la tabla sólo se le piden los ≤`porPagina` de esa
+   página. «Sin leer» sí necesita la tabla, y se pregunta en tandas: el id es
+   único, así que cada tanda devuelve ≤100 filas y el techo de 1000 no aplica.
+
+   `topado` avisa que la función llegó a su límite: el total que se muestra es
+   «al menos», no «exactamente». */
+async function paginaDeBusqueda({ estado, busca, piso, pagina, porPagina }) {
+    const { data, error } = await supabase.rpc('notificaciones_que_coinciden', { p_q: busca, p_desde: piso });
+    if (error) return { data: null, error, count: 0, topado: false };
+    let ids = (data ?? []).map(String);
+    const topado = ids.length >= TOPE_DE_BUSQUEDA;
+    if (!ids.length) return { data: [], error: null, count: 0, topado };
+
+    if (estado === 'sin_leer') {
+        const tandas = [];
+        for (let i = 0; i < ids.length; i += TANDA_DE_IDS) tandas.push(ids.slice(i, i + TANDA_DE_IDS));
+        const respuestas = await Promise.all(tandas.map((t) => supabase.from('notifications')
+            .select('id').in('id', t).is('read_at', null)));
+        const fallo = respuestas.find((r) => r.error);
+        if (fallo) return { data: null, error: fallo.error, count: 0, topado };
+        const sinLeer = new Set(respuestas.flatMap((r) => (r.data || []).map((f) => String(f.id))));
+        ids = ids.filter((id) => sinLeer.has(id));
+    }
+
+    const deLaPagina = ids.slice(pagina * porPagina, pagina * porPagina + porPagina);
+    if (!deLaPagina.length) return { data: [], error: null, count: ids.length, topado };
+
+    const { data: filas, error: errFilas } = await supabase.from('notifications')
+        .select(CAMPOS)
+        .in('id', deLaPagina)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
+    if (errFilas) return { data: null, error: errFilas, count: 0, topado };
+    return { data: filas || [], error: null, count: ids.length, topado };
 }
 
 export function markNotificationRead(id, readAt) {

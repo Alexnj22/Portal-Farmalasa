@@ -84,6 +84,8 @@ export default function NotificacionesView() {
 
     const [filas, setFilas]       = useState([]);
     const [total, setTotal]       = useState(0);
+    // La búsqueda tiene techo (500): si lo tocó, el total es «al menos».
+    const [topado, setTopado]     = useState(false);
     const [cargando, setCargando] = useState(true);
     const [error, setError]       = useState(null);
     const [recarga, setRecarga]   = useState(0);
@@ -170,17 +172,19 @@ export default function NotificacionesView() {
         fetchNotificationsPage({
             estado: tab, busca: buscaAplicada || null,
             pagina: page - 1, porPagina: pageSize,
-        }).then(({ data, error: err, count }) => {
+        }).then(({ data, error: err, count, topado: alTope }) => {
             if (mia !== peticion.current) return;
             if (err) throw err;
             setFilas(data || []);
             setTotal(count ?? 0);
+            setTopado(Boolean(alTope));
         }).catch((e) => {
             if (mia !== peticion.current) return;
             console.error('Error cargando el historial de notificaciones:', e);
             setError(e);
             setFilas([]);
             setTotal(0);
+            setTopado(false);
         }).finally(() => {
             if (mia === peticion.current) setCargando(false);
         });
@@ -248,7 +252,7 @@ export default function NotificacionesView() {
                         {tab === 'sin_leer' ? 'Sin leer' : 'En total'}
                     </span>
                     <span className="block text-h3 font-black tabular-nums text-content">
-                        {cargando ? '—' : total.toLocaleString('es-SV')}
+                        {cargando ? '—' : `${topado ? 'Al menos ' : ''}${total.toLocaleString('es-SV')}`}
                     </span>
                 </div>
 

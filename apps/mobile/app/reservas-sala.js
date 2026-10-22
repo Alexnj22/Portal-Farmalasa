@@ -17,6 +17,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   cambiarEstadoReserva, codigoDeReserva, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
+  devolucionesPorEntregar, reservaPorResolver,
 } from '@nucleo/data/reservas';
 import { esPagoDePrueba, pilaDelCliente, plazoDeRetiro, reservasAbiertas, reservasPendientes, reservasPorCodigo, resumenDelPedido, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -31,6 +32,17 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 
 const REFRESCO_MS = 2 * 60 * 1000;
+
+// En qué va una reserva que viene de otra sala (2026-10-22), como el portal.
+const TRASLADO = {
+  pedido: { texto: 'Pedida a otra sala', color: MARCA.azulClaro },
+  enviado: { texto: 'En camino', color: MARCA.azulClaro },
+  parcial: { texto: 'Viene una parte', color: MARCA.ambar },
+  rechazado: { texto: 'No la mandan', color: MARCA.rojo },
+  bodega: { texto: 'Encargada a Bodega', color: MARCA.azulClaro },
+  precio: { texto: 'Bodega: otro precio', color: MARCA.ambar },
+  sin_existencia: { texto: 'No se consigue', color: MARCA.rojo },
+};
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»), como el portal.
 function esperaDeReceta(desde, ahora) {
@@ -51,7 +63,8 @@ function Accion({ texto, color = MARCA.azulClaro, onPress, deshabilitado }) {
 
 export default function ReservasDeSala() {
   const { todas: todasParam } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
+  const puedeDevolver = hasPermission('dash_reservas_devolver_saldo');
   const todas = todasParam === '1';
   const sala = todas ? null : (user?.branchId ?? user?.branch_id ?? null);
   const nombreSala = useStaffStore((s) => s.branches?.find((b) => String(b.id) === String(sala))?.name) || '';
@@ -111,10 +124,17 @@ export default function ReservasDeSala() {
   // (2026-10-21): `reserva-saldo` confirma al titular, pide cuánto y lo pasa a
   // puntos, que la caja descuenta como un canje (`reserva_usar_saldo_favor`).
   const usarSaldo = (r) => router.push({ pathname: '/reserva-saldo', params: { id: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id) } });
+  // Lo que no llegó entero (2026-10-22): otra sala, Bodega o lo que decida el cliente.
+  const resolver = (r) => router.push({ pathname: '/reserva-resolver', params: { id: String(r.id), sala: String(r.branch_id ?? sala) } });
+  // La devolución en efectivo: la sala la pide, administración decide, la sala la entrega.
+  const devolucion = (r, modo) => router.push({ pathname: '/reserva-devolucion', params: {
+    id: String(r.id), modo, codigo: r.pedido ?? codigoDeReserva(r.id), cliente: pilaDelCliente(r), sala: String(r.branch_id ?? sala),
+    monto: String(modo === 'entregar' ? r.saldo_favor_devuelto_monto : r.saldo_favor), motivo: r.devolucion_pedida_motivo ?? '' } });
 
   const lista = filas || [];
   const abiertas = reservasAbiertas(lista);
   const saldos = saldosAFavor(lista);
+  const porEntregar = devolucionesPorEntregar(lista);
   const buscado = codigo.trim().toUpperCase();
   const visibles = reservasPorCodigo(lista, codigo);
   const pedido = resumenDelPedido(visibles, codigo);
@@ -152,7 +172,29 @@ export default function ReservasDeSala() {
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${formatMoney(Number(r.saldo_favor))} a favor de ${pilaDelCliente(r)}`}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${codigoDeReserva(r.id)} · ${r.producto}${r.saldo_favor_vence ? ` · vale hasta el ${fechaTexto(r.saldo_favor_vence, { day: 'numeric', month: 'short' })}` : ''}${todas && r.sala ? ` · ${r.sala}` : ''}`}</Text>
                 </View>
-                <Accion texto="Usar en caja" color={MARCA.verde} onPress={() => usarSaldo(r)} deshabilitado={!!ocupada} />
+                <View style={{ gap: 6, alignItems: 'flex-end' }}>
+                  <Accion texto="Usar en caja" color={MARCA.verde} onPress={() => usarSaldo(r)} deshabilitado={!!ocupada} />
+                  {r.devolucion_pedida_at ? (puedeDevolver ? (
+                    <>
+                      <Accion texto="Autorizar efectivo" onPress={() => devolucion(r, 'autorizar')} />
+                      <Accion texto="No autorizar" color={MARCA.rojo} onPress={() => devolucion(r, 'negar')} />
+                    </>
+                  ) : <Pildora texto="Efectivo pedido" color={MARCA.ambar} />)
+                    : !todas && r.confirmado !== false ? <Accion texto="Pedir en efectivo" onPress={() => devolucion(r, 'pedir')} /> : null}
+                </View>
+              </View>
+            ))}
+          </Seccion>
+        ) : null}
+        {porEntregar.length && !buscado ? (
+          <Seccion titulo="Devoluciones autorizadas" pie="Entrégalas en efectivo: salen de la caja como vale «Devolución a un cliente».">
+            {porEntregar.map((r, i) => (
+              <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${formatMoney(Number(r.saldo_favor_devuelto_monto))} para ${pilaDelCliente(r)}`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${r.pedido ?? codigoDeReserva(r.id)}${r.devolucion_pedida_motivo ? ` · ${r.devolucion_pedida_motivo}` : ''}`}</Text>
+                </View>
+                {!todas ? <Accion texto="Entregar" color={MARCA.rojo} onPress={() => devolucion(r, 'entregar')} /> : null}
               </View>
             ))}
           </Seccion>
@@ -170,7 +212,7 @@ export default function ReservasDeSala() {
                   <Pildora texto={enRevision ? 'Receta' : r.estado === 'pendiente' ? 'Por apartar' : 'Lista'} color={urgente ? MARCA.rojo : enRevision || r.estado === 'pendiente' ? MARCA.ambar : MARCA.verde} />
                 </View>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                  {`${todas && r.sala ? `${r.sala} · ` : ''}${r.entrega === 'domicilio' ? `A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''} · ` : ''}${r.pedido ? `${r.pedido} · ` : ''}${codigoDeReserva(r.id)} · ${pilaDelCliente(r)}${r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
+                  {`${todas && r.sala ? `${r.sala} · ` : ''}${r.entrega === 'domicilio' ? `A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''} · ` : ''}${r.pedido ? `${r.pedido} · ` : ''}${codigoDeReserva(r.id)} · ${pilaDelCliente(r)}${r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${r.estado === 'pendiente' && r.traslado_nota ? ` · ${r.traslado_nota}` : ''}${r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}`}
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
@@ -180,11 +222,17 @@ export default function ReservasDeSala() {
                     : r.pago_estado === 'pagado' ? <Pildora texto={r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'} color={MARCA.verde} /> : null}
                   {r.pago_estado === 'anticipo' && Number(r.anticipo) > 0 ? <Pildora texto={`Anticipo ${formatMoney(Number(r.anticipo))} · saldo ${formatMoney(Number(r.precio ?? 0) * Number(r.cantidad ?? 1) - Number(r.anticipo))}`} color={MARCA.ambar} /> : null}
                   {r.documento === 'credito_fiscal' ? <Pildora texto="Crédito fiscal" color={MARCA.azulClaro} /> : null}
+                  {r.estado === 'pendiente' && TRASLADO[r.traslado_estado] ? <Pildora texto={`${TRASLADO[r.traslado_estado].texto}${r.traslado_sala ? ` · ${r.traslado_sala}` : ''}`} color={TRASLADO[r.traslado_estado].color} /> : null}
                 </View>
                 {urgente ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>{`Lleva más de ${HORAS_RECETA_URGENTE} h: ya se avisó a supervisión.`}</Text> : null}
                 {enRevision && r.receta_estado === 'otra_foto' && r.receta_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Se pidió otra foto: ${r.receta_motivo}`}</Text> : null}
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {enRevision ? (r.receta_ruta && r.puede_revisar_receta ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} /> : null) : r.estado === 'pendiente' ? <Accion texto="Apartar y avisar" color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} /> : (
+                  {enRevision ? (r.receta_ruta && r.puede_revisar_receta ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} /> : null) : r.estado === 'pendiente' ? (
+                    <>
+                      {reservaPorResolver(r) ? <Accion texto="Resolver" onPress={() => resolver(r)} deshabilitado={!!ocupada} /> : null}
+                      <Accion texto={r.traslado_estado ? 'Ya llegó: apartar' : 'Apartar y avisar'} color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} />
+                    </>
+                  ) : (
                     <>
                       {!r.tiene_app ? <Accion texto="WhatsApp" onPress={() => avisarPorWhatsapp(r)} /> : null}
                       <Accion texto="Retirar" color={MARCA.verde} deshabilitado={!!ocupada}

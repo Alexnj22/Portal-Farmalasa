@@ -23,6 +23,7 @@ import {
     devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver,
 } from '@nucleo/data/reservas';
 import { anotarSalida } from '@nucleo/data/bolsas';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import { codigoLimpio, coincideCodigo, esPagoDePrueba, origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor } from '@nucleo/utils/reservasDeSala';
 
@@ -767,7 +768,7 @@ function EntregarDevolucion({ reserva: r, sala, onCerrar, onEntregada }) {
         setEnviando(true);
         if (!clave.current) clave.current = globalThis.crypto?.randomUUID?.() ?? `dev-${r.id}-${monto}`;
         try {
-            const res = await anotarSalida({ sala, monto, tipo: 'DEVOLUCION', concepto: `Devolucion saldo ${codigo}`,
+            const res = await anotarSalida({ sala, monto, tipo: 'DEVOLUCION', concepto: `Devolucion saldo ${codigo}`, recibe: shortEmployeeName(r.cliente ?? ''),
                 detalle: `Devolución en efectivo del saldo a favor de ${codigo}`, clave: clave.current });
             if (res?.error) throw res.error;
             try {

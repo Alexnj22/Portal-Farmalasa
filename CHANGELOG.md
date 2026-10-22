@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1339.0 — Reserva en camino también en la app y anular un cobro ya repartido
+
+- **App del personal**: Reservas muestra en qué va el traslado y su nota.
+  Agrega **Resolver** (`reserva-resolver`): otra sala, Bodega, precio de Bodega
+  o lo que decida el cliente, con alternativa. También la devolución en
+  efectivo (`reserva-devolucion`): pedir, autorizar o negar, y entregar con un
+  vale de caja. Usa las mismas funciones del núcleo que el portal.
+- **Anular o corregir a la baja un cobro de una reserva ya ajustada**
+  (migración `20261022153525`). Antes, `apartado_deshacer` intentaba borrar la
+  reserva y la FK lo impedía, o restaba sólo de la original. En los dos casos
+  la alternativa o el saldo a favor quedaban pagados con dinero anulado, sin
+  error. Ahora `reserva_quitar_de_familia` lo descuenta de toda la familia.
+  Del saldo a favor descuenta sólo lo no usado y lo anota en su libro como
+  `anulacion`. Si algo ya se usó o se entregó, la sala recibe un aviso con el
+  monto.
+- El vale de la devolución en efectivo anota a quién se le entregó.
+
 ## v2.1338.1 — DUI renovado: la tarjeta toma el vencimiento nuevo y queda historial
 
 Caso real: se subió el DUI renovado de una persona y la tarjeta siguió diciendo

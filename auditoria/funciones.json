@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-22T15:22:25.747Z",
+ "generado": "2026-10-22T15:35:41.817Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1819,7 +1819,7 @@
   },
   "encargos_sugerir_producto": {
    "area": "app-clientes",
-   "por": "tablas"
+   "por": "cron"
   },
   "encolar_impresion": {
    "area": "impresion",
@@ -4385,6 +4385,10 @@
   "reserva_puede_manejar": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "reserva_quitar_de_familia": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "reserva_receta_decidir": {
    "area": "app-clientes",

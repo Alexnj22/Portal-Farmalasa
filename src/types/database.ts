@@ -33617,6 +33617,10 @@ export type Database = {
         Returns: Json
       }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
+      reserva_quitar_de_familia: {
+        Args: { p_id: number; p_monto: number; p_nota: string }
+        Returns: number
+      }
       reserva_receta_decidir: {
         Args: { p_decision: string; p_id: number; p_motivo?: string }
         Returns: Json

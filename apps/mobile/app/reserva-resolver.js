@@ -9,6 +9,14 @@
 //      esta sala (puede ser mixto) o todo a su favor.
 // Las cuentas del dinero las hace la base (`reserva_ajustar`); acá sólo se
 // muestran antes de confirmar, con el mismo `repartoDelAjuste`.
+//
+// (2026-10-22, v2.1346.0 del portal) También las reservas de la APP: si la
+// sala no tiene lo que el cliente reservó («Traer de otra sala»,
+// `reservaPorTraer`) o la otra sala no lo mandó (`reservaPorResolver`), se
+// pide a otra sala o a Bodega, y mientras viene en camino su plazo de 24 h
+// para preparar está detenido. Una reserva de la app NO se ajusta acá
+// (`reserva_ajustar` es de sala): si el cliente no la quiere así, se cancela
+// y lo pagado queda a su favor.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -17,6 +25,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import {
   ajustarReserva, codigoDeReserva, decidirPrecioDeBodega, encargarRestoABodega, faltaDeReserva, fetchReservasDeSucursal, preciosDeProducto, repartoDelAjuste,
+  reservaPorTraer,
 } from '@nucleo/data/reservas';
 import { pilaDelCliente } from '@nucleo/utils/reservasDeSala';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -74,15 +83,16 @@ export default function ResolverReservaNativo() {
 
   const falta = faltaDeReserva(r);
   const precioDistinto = r.traslado_estado === 'precio' && r.encargo?.estado === 'confirmado';
+  const deLaApp = r.origen === 'app';
   const opciones = [
     ...(precioDistinto ? [{ id: 'precio', label: 'Precio' }] : []),
     ...(falta > 0 && !precioDistinto ? [{ id: 'pedir', label: 'Otra sala' }, { id: 'bodega', label: 'Bodega' }] : []),
-    { id: 'cliente', label: 'El cliente' },
+    ...(deLaApp ? [] : [{ id: 'cliente', label: 'El cliente' }]),
   ];
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: `Resolver ${codigoDeReserva(r.id)}` }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: `${reservaPorTraer(r) ? 'Traer' : 'Resolver'} ${codigoDeReserva(r.id)}` }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
@@ -103,7 +113,10 @@ export default function ResolverReservaNativo() {
                 onPress={() => hacer(() => encargarRestoABodega(r.id), 'Encargado a Bodega', (res) => `${res?.codigo ?? ''} · ${falta} × ${r.producto}`)} />
             </>
           ) : null}
-          {vista === 'cliente' ? <LoDecideElCliente r={r} ocupado={ocupado} hacer={hacer} /> : null}
+          {vista === 'cliente' && !deLaApp ? <LoDecideElCliente r={r} ocupado={ocupado} hacer={hacer} /> : null}
+          {deLaApp ? (
+            <Aviso texto="Reserva de la app: mientras viene en camino no vence. Si el cliente no la quiere así, cancélala desde la lista (o él desde la app); lo pagado queda a su favor." />
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </>

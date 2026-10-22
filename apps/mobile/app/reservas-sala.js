@@ -8,9 +8,13 @@
 // con su total, si se pagó en línea y los datos para el crédito fiscal). Un
 // pedido es UNA tarjeta con todos sus productos, y la lista se parte en «Por
 // preparar» y «Listas para retirar» (`reservasDeSala` del núcleo, lo mismo que
-// el portal). Cada una se aparta y avisa, se manda a caja como preventa, se
+// el portal). Cada tarjeta va en cuatro bloques —qué es, de quién, qué lleva
+// (dos productos y «+N más») y cuánto— y se toca para ver el detalle entero
+// (`reserva/[id]`). Cada una se aparta y avisa, se manda a caja como preventa, se
 // prorroga una vez, se retira (`reserva-retirar`: lo pagado se aplica a la
-// factura) o se cancela; lo que no llegó entero se resuelve (`reserva-resolver`).
+// factura) o se cancela; lo que no llegó entero se resuelve (`reserva-resolver`),
+// y una reserva de la app que la sala no tiene se trae de otra sala o de Bodega
+// («Traer de otra sala», `reservaPorTraer`): mientras viene, su plazo se detiene.
 // A quien no tiene la app se le avisa por WhatsApp con el mensaje del núcleo.
 // Las recetas («en revisión») se abren en `reserva-receta`; pasadas las 4 h se
 // marcan urgentes. Abajo, los saldos a favor (también los de otra sala, al
@@ -26,11 +30,11 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, mensajeDeReservaLista,
-  prorrogarReserva, whatsappDe, HORAS_RECETA_URGENTE, devolucionesPorEntregar, reservaPorResolver,
+  prorrogarReserva, whatsappDe, HORAS_RECETA_URGENTE, devolucionesPorEntregar, reservaPorResolver, reservaPorTraer,
 } from '@nucleo/data/reservas';
 import {
   agruparPorPedido, codigoCompleto, conteoDeReservas, cuentasDelGrupo, esPagoDePrueba, listaDePrecioDelGrupo, origenDelSaldo, pilaDelCliente,
-  plazoDeRetiro, productosDelPedido, reservasAbiertas, reservasPorCodigo, resumenDelPedido, saldosAFavor, seccionesDeReservas, tituloDelGrupo, TRASLADO_DE_RESERVA,
+  reservasAbiertas, reservasPorCodigo, resumenDelPedido, saldosAFavor, seccionesDeReservas,
 } from '@nucleo/utils/reservasDeSala';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -44,7 +48,8 @@ import Pestanas from '../componentes/inicio/Pestanas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
-import { Accion, colorDeTono } from '../componentes/reservas/piezas';
+import { Accion } from '../componentes/reservas/piezas';
+import TarjetaDeReserva from '../componentes/reservas/TarjetaDeReserva';
 import Encargos from '../componentes/reservas/Encargos';
 
 const REFRESCO_MS = 2 * 60 * 1000;
@@ -219,6 +224,9 @@ export default function ReservasDeSala() {
 
   const usarSaldo = (r) => router.push({ pathname: '/reserva-saldo', params: { id: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id) } });
   const resolver = (r) => router.push({ pathname: '/reserva-resolver', params: { id: String(r.id), sala: String(r.branch_id ?? sala) } });
+  // El detalle de la tarjeta: todo lo que la tarjeta resume, con todos los productos.
+  const abrir = (r) => router.push({ pathname: '/reserva/[id]', params: r.branch_id != null || sala != null
+    ? { id: String(r.id), sala: String(r.branch_id ?? sala) } : { id: String(r.id), todas: '1' } });
   const devolucion = (r, modo) => router.push({ pathname: '/reserva-devolucion', params: {
     id: String(r.id), modo, codigo: r.pedido ?? codigoDeReserva(r.id), cliente: pilaDelCliente(r), sala: String(r.branch_id ?? sala),
     monto: String(modo === 'entregar' ? r.saldo_favor_devuelto_monto : r.saldo_favor), motivo: r.devolucion_pedida_motivo ?? '' } });
@@ -242,61 +250,60 @@ export default function ReservasDeSala() {
     const espera = enRevision ? esperaDeReceta(r.receta_subida_at, ahora) : null;
     const urgente = enRevision && r.receta_estado === 'pendiente' && espera.horas >= HORAS_RECETA_URGENTE;
     const c = cuentasDelGrupo(r);
-    const titulo = tituloDelGrupo(r);
     const listaDePrecio = listaDePrecioDelGrupo(r);
-    const productos = productosDelPedido(r);
     const preventa = textoDePreventa(r);
-    const traslado = r.estado === 'pendiente' ? TRASLADO_DE_RESERVA[r.traslado_estado] : null;
-    return (
-      <View key={`${r.pedido ?? ''}-${r.id}`} style={{ marginHorizontal: 16 }}>
-        <Vidrio radio={18} tinte={urgente ? 'rgba(240,68,56,0.12)' : r.estado === 'pendiente' || enRevision ? 'rgba(247,144,9,0.10)' : undefined}>
-          <View style={{ padding: 12, gap: 6, opacity: ocupada === r.id ? 0.5 : 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-              <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{titulo.pedido ? `${titulo.texto} · ${formatMoney(titulo.total)}` : titulo.texto}</Text>
-              <Pildora texto={enRevision ? 'Receta' : c.hayPendiente && c.hayLista ? 'Una parte en camino' : c.hayPendiente ? 'Por apartar' : 'Lista'}
-                color={urgente ? MARCA.rojo : enRevision || c.hayPendiente ? MARCA.ambar : MARCA.verde} />
-            </View>
-            {productos ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{productos}</Text> : null}
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              {`${verTodas && r.sala ? `${r.sala} · ` : ''}${r.entrega === 'domicilio' ? `A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''} · ` : ''}${r.pedido && !titulo.pedido ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${pilaDelCliente(r)}${r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${r.estado === 'pendiente' && r.traslado_nota ? ` · ${r.traslado_nota}` : ''}${r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}${preventa ? ` · ${preventa}` : ''}`}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {traslado ? <Pildora texto={`${traslado.texto}${r.traslado_sala ? ` · ${r.traslado_sala}` : ''}`} color={colorDeTono(traslado.tono)} /> : null}
-              {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
-              {enRevision && r.receta_estado === 'otra_foto' ? <Pildora texto="Esperando nueva foto del cliente" color={MARCA.azulClaro} /> : null}
-              {/* (2026-10-19) Un cobro en línea de PRUEBA no es dinero: se cobra en caja. */}
-              {esPagoDePrueba(r) ? <Pildora texto="PAGO DE PRUEBA — cobrar en caja" color={MARCA.rojo} />
-                : c.todoPagado ? <Pildora texto={r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'} color={MARCA.verde} /> : null}
-              {!c.todoPagado && c.anticipo > 0.004 ? <Pildora texto={`Anticipo ${formatMoney(c.anticipo)} · saldo ${formatMoney(c.total - c.anticipo)}`} color={MARCA.ambar} /> : null}
-              {/* Mayoreo: se cobró a precio de mayoreo en la app; en caja se factura con ESA lista. */}
-              {listaDePrecio ? <Pildora texto={listaDePrecio} color={MARCA.azulClaro} /> : null}
-              {r.documento === 'credito_fiscal' ? <Pildora texto="Crédito fiscal" color={MARCA.azulClaro} /> : null}
-            </View>
-            {urgente ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>{`Lleva más de ${HORAS_RECETA_URGENTE} h: ya se avisó a supervisión.`}</Text> : null}
-            {enRevision && r.receta_estado === 'otra_foto' && r.receta_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Se pidió otra foto: ${r.receta_motivo}`}</Text> : null}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {!soloLectura && reservaPorResolver(r) ? <Accion texto="Resolver" onPress={() => resolver(r)} deshabilitado={!!ocupada} /> : null}
-              {enRevision ? (r.receta_ruta ? ((r.puede_revisar_receta ?? puedeRecetas)
-                ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} />
-                : <Pildora texto="Receta por revisar · sin permiso para revisarla" color={colorSistema.texto2} />) : null)
-                : soloLectura ? null : (
-                  <>
-                    {puedePreventa && c.filas.some(puedeEnviarPreventa) ? <Accion texto="Enviar a caja" onPress={() => enviarACaja(r)} deshabilitado={!!ocupada} /> : null}
-                    {c.hayPendiente ? <Accion texto={c.vieneDeTraslado ? 'Ya llegó: apartar' : 'Apartar y avisar'} color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} /> : null}
-                    {c.hayLista ? (
-                      <>
-                        {!r.tiene_app ? <Accion texto="WhatsApp" onPress={() => avisarPorWhatsapp(r)} /> : null}
-                        {c.prorrogable ? <Accion texto="Prorrogar" onPress={() => prorrogar(r)} deshabilitado={!!ocupada} /> : null}
-                        <Accion texto="Retirar" color={MARCA.verde} deshabilitado={!!ocupada} onPress={() => retirar(r)} />
-                      </>
-                    ) : null}
-                  </>
-                )}
-              {!soloLectura ? <Accion texto="Cancelar" color={MARCA.rojo} onPress={() => mover(r, 'cancelada')} deshabilitado={!!ocupada} /> : null}
-            </View>
-          </View>
-        </Vidrio>
+    // Por renglón (2026-10-22, igual que el portal): en un pedido de varios
+    // productos se resuelve —o se trae de otra sala— el que lo necesita.
+    const porResolverDe = c.filas.find(reservaPorResolver);
+    const porTraerDe = c.filas.find(reservaPorTraer);
+    const extras = [
+      r.entrega === 'domicilio' ? `A domicilio: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : '',
+      r.avisado_via === 'whatsapp' ? 'Avisado por WhatsApp' : '',
+      preventa,
+    ].filter(Boolean).join(' · ');
+    const marcas = (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
+        {/* (2026-10-19) Un cobro en línea de PRUEBA no es dinero: se cobra en caja. */}
+        {esPagoDePrueba(r) ? <Pildora texto="PAGO DE PRUEBA — cobrar en caja" color={MARCA.rojo} /> : null}
+        {/* Mayoreo: se cobró a precio de mayoreo en la app; en caja se factura con ESA lista. */}
+        {listaDePrecio ? <Pildora texto={listaDePrecio} color={MARCA.azulClaro} /> : null}
+        {r.documento === 'credito_fiscal' ? <Pildora texto="Crédito fiscal" color={MARCA.azulClaro} /> : null}
       </View>
+    );
+    const nota = (
+      <>
+        {extras ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{extras}</Text> : null}
+        {urgente ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>{`Lleva más de ${HORAS_RECETA_URGENTE} h: ya se avisó a supervisión.`}</Text> : null}
+        {enRevision && r.receta_estado === 'otra_foto' && r.receta_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Se pidió otra foto: ${r.receta_motivo}`}</Text> : null}
+      </>
+    );
+    const acciones = (
+      <>
+        {!soloLectura && porResolverDe ? <Accion texto={c.filas.length > 1 ? `Resolver ${porResolverDe.producto}` : 'Resolver'} onPress={() => resolver(porResolverDe)} deshabilitado={!!ocupada} /> : null}
+        {!soloLectura && !porResolverDe && porTraerDe ? <Accion texto={c.filas.length > 1 ? `Traer de otra sala: ${porTraerDe.producto}` : 'Traer de otra sala'} onPress={() => resolver(porTraerDe)} deshabilitado={!!ocupada} /> : null}
+        {enRevision ? (r.receta_ruta ? ((r.puede_revisar_receta ?? puedeRecetas)
+          ? <Accion texto="Ver receta" color={r.receta_estado === 'pendiente' ? MARCA.verde : MARCA.azulClaro} onPress={() => verReceta(r)} />
+          : <Pildora texto="Receta por revisar · sin permiso para revisarla" color={colorSistema.texto2} />) : null)
+          : soloLectura ? null : (
+            <>
+              {puedePreventa && c.filas.some(puedeEnviarPreventa) ? <Accion texto="Enviar a caja" onPress={() => enviarACaja(r)} deshabilitado={!!ocupada} /> : null}
+              {c.hayPendiente ? <Accion texto={c.vieneDeTraslado ? 'Ya llegó: apartar' : 'Apartar y avisar'} color={MARCA.verde} onPress={() => mover(r, 'lista')} deshabilitado={!!ocupada} /> : null}
+              {c.hayLista ? (
+                <>
+                  {!r.tiene_app ? <Accion texto="Avisar por WhatsApp" onPress={() => avisarPorWhatsapp(r)} /> : null}
+                  {c.prorrogable ? <Accion texto="Prorrogar" onPress={() => prorrogar(r)} deshabilitado={!!ocupada} /> : null}
+                  <Accion texto="Retirar" color={MARCA.verde} deshabilitado={!!ocupada} onPress={() => retirar(r)} />
+                </>
+              ) : null}
+            </>
+          )}
+        {!soloLectura ? <Accion texto="Cancelar reserva" color={MARCA.rojo} onPress={() => mover(r, 'cancelada')} deshabilitado={!!ocupada} /> : null}
+      </>
+    );
+    return (
+      <TarjetaDeReserva key={`${r.pedido ?? ''}-${r.id}`} r={r} verTodas={verTodas} marcas={marcas} nota={nota} acciones={acciones}
+        onAbrir={abrir} ocupada={ocupada === r.id} tinte={urgente ? 'rgba(240,68,56,0.12)' : undefined} />
     );
   };
 

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.0 — App: la tarjeta y el detalle de cada reserva; traer de otra sala
+
+- **App · Reservas de la sala**: cada reserva es una tarjeta en cuatro bloques —código y estado en palabras, cliente (teléfono, con o sin la app, a domicilio), hasta 2 productos y «+N más», Total / Pagado o Anticipo / Falta con el plazo—; las acciones van al pie con su nombre. Tocarla abre el detalle nuevo (`reserva/[id]`): todos los productos con traslado, encargo y oferta, el pago, las fechas, la receta, y Llamar / WhatsApp.
+- **App · Resolver**: cada renglón se revisa como en el portal; una reserva de la app sin existencia ofrece «Traer de otra sala» y avisa que su plazo se detiene mientras viene en camino.
+- **Núcleo**: la lógica de `reservaVista.js` (estado, cuentas, teléfono, forma de pago) vive en `reservasDeSala.js` y `reservaVista.js` sólo la reexporta; `TRASLADO` sale de `TRASLADO_DE_RESERVA` en vez de estar copiado. La web no cambia.
+
 ## v2.1349.3 — Reservas: tarjetas parejas, dos productos a la vista y botones con nombre
 
 - **Reservas** (pantalla): segunda vuelta de las tarjetas, pedida por el usuario: «si una tiene 6 productos se verá muy larga, no se verá alineada, los botones no se entienden».

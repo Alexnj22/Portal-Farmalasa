@@ -103,6 +103,98 @@ export const TRASLADO_DE_RESERVA = {
     sin_existencia: { texto: 'No se consigue', tono: 'danger' },
 };
 
+// ── La tarjeta y el detalle de una reserva (2026-10-22) ─────────────────────
+// Lo que la tarjeta y el detalle dicen IGUAL —el estado en palabras, las
+// cuentas, el teléfono, el plazo—, escrito una vez para el portal
+// (`TarjetaDeReserva`/`DetalleDeReserva`, vía `views/dashboard/reservaVista`)
+// y la app (`reservas-sala`, `reserva/[id]`). Antes vivía en la vista del
+// portal; se mudó acá para que las dos no terminen contando cosas distintas.
+
+/**
+ * `TRASLADO_DE_RESERVA` con las claves del `Badge` del portal (`label`,
+ * `variant`). DERIVADO, no copiado: los rótulos se escriben una sola vez.
+ */
+export const TRASLADO = Object.fromEntries(Object.entries(TRASLADO_DE_RESERVA)
+    .map(([k, v]) => [k, { label: v.texto, variant: v.tono }]));
+
+/** Los renglones de una tarjeta: un pedido trae `renglones`; una reserva sola es su único renglón. */
+export const renglonesDe = (r) => r?.renglones ?? [r];
+
+/**
+ * Un estado por tarjeta: lo que pide la próxima acción de la sala.
+ * `{ label, variant, tono? }` — `tono` sólo cuando la tarjeta entera se tiñe.
+ */
+export function estadoDeReserva(r) {
+    const filas = renglonesDe(r);
+    if (r.estado === 'en_revision') {
+        return r.receta_estado === 'otra_foto'
+            ? { label: 'Esperando otra foto', variant: 'info' }
+            : { label: 'Receta por revisar', variant: 'warning', tono: 'warning' };
+    }
+    const pendientes = filas.filter((x) => x.estado === 'pendiente');
+    if (pendientes.length && pendientes.length < filas.length) return { label: 'Una parte en camino', variant: 'info' };
+    if (pendientes.length) {
+        const t = pendientes.map((x) => TRASLADO[x.traslado_estado]).find(Boolean);
+        if (t) return { ...t, tono: t.variant === 'danger' ? 'danger' : undefined };
+        return { label: 'Por apartar', variant: 'warning' };
+    }
+    return { label: 'Lista para retirar', variant: 'success' };
+}
+
+/** Total (con el envío), lo pagado y lo que falta. Pagada en línea cuenta entera; si no, el anticipo. */
+export function cuentasDeReserva(r) {
+    const filas = renglonesDe(r);
+    const total = filas.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0);
+    const pagadoTodo = filas.every((x) => x.pago_estado === 'pagado') && !filas.some((x) => x.pago_prueba);
+    const anticipo = filas.reduce((t, x) => t + Number(x.anticipo ?? 0), 0);
+    const pagado = pagadoTodo ? total : Math.min(anticipo, total);
+    return { total, pagado, falta: Math.max(0, Math.round((total - pagado) * 100) / 100), pagadoTodo };
+}
+
+/** 72557451 → 7255-7451 */
+export function telefonoLegible(tel) {
+    const d = String(tel ?? '').replace(/\D/g, '');
+    if (!d) return '';
+    return d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4)}` : d;
+}
+
+export const formaDePagoLegible = (m) => ({
+    efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', en_linea: 'En línea',
+}[String(m ?? '').toLowerCase()] ?? (m || '—'));
+
+/** El estado de la receta de una reserva bajo receta, en palabras. */
+export const recetaLegible = (estado) => ({
+    pendiente: 'Por revisar', aprobada: 'Aprobada', rechazada: 'Rechazada', otra_foto: 'Se pidió otra foto',
+}[estado] ?? 'Sin receta');
+
+/** Una línea por producto: en qué va SU parte (sólo cuando dice algo). */
+export function detalleDelRenglonDeReserva(x, esPedido) {
+    if (x.estado === 'pendiente' && x.traslado_estado) {
+        const de = x.traslado_sala ? ` de ${x.traslado_sala}` : '';
+        const llegaron = Number(x.traslado_llegaron ?? 0);
+        return `${x.traslado_nota || `En camino${de}`}${llegaron > 0 ? ` · llegaron ${llegaron} de ${x.cantidad}` : ''}`;
+    }
+    if (x.estado === 'pendiente') return 'Por apartar en la sala';
+    if (esPedido && x.estado === 'lista') return 'Lista';
+    if (x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Precio Mayoreo Plus' : 'Precio Mayoreo';
+    return '';
+}
+
+/** Hasta cuándo vale lo que está pasando ahora con la reserva. */
+export function plazoDeReserva(r) {
+    const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
+    if (r.estado === 'lista' && r.vence_at) return `Retira hasta el ${dia(r.vence_at)}${r.prorrogada_at ? ' (prorrogada)' : ''}`;
+    if (r.estado === 'pendiente' && r.horas_al_preparar) {
+        const dias = Math.round(Number(r.horas_al_preparar) / 24);
+        return `Al quedar lista tiene ${dias >= 1 ? `${dias} ${dias === 1 ? 'día' : 'días'}` : `${r.horas_al_preparar} h`} para retirarla`;
+    }
+    if (r.creada) return `Creada el ${dia(r.creada)}`;
+    return '';
+}
+
+/** Cuántos productos muestra la tarjeta antes del «+N más» (el resto, en el detalle). */
+export const PRODUCTOS_EN_TARJETA = 2;
+
 /**
  * Un pedido (del carrito de la app, o de varios productos cobrados juntos en
  * caja) es UNA tarjeta con todos sus renglones (`renglones`). Un renglón con

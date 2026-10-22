@@ -30047,6 +30047,10 @@ export type Database = {
         Returns: Json
       }
       encargo_prorrogar: { Args: { p_id: number }; Returns: Json }
+      encargo_prorrogar_por_cliente: {
+        Args: { p_customer: number; p_id: number }
+        Returns: Json
+      }
       encargo_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       encargo_responder: {
         Args: {
@@ -33955,6 +33959,10 @@ export type Database = {
         Args: { p_estado: string; p_id: number; p_motivo?: string }
         Returns: Json
       }
+      reserva_cancelar_por_cliente: {
+        Args: { p_customer: number; p_id: number }
+        Returns: Json
+      }
       reserva_cuenta: {
         Args: { p_id: number }
         Returns: {
@@ -33986,6 +33994,10 @@ export type Database = {
         Returns: Json
       }
       reserva_prorrogar: { Args: { p_id: number }; Returns: Json }
+      reserva_prorrogar_por_cliente: {
+        Args: { p_customer: number; p_id: number }
+        Returns: Json
+      }
       reserva_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
       reserva_quitar_de_familia: {
         Args: { p_id: number; p_monto: number; p_nota: string }

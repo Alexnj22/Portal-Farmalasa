@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1342.0 — Reservas: reglamento v4 — 24 h para la sala, cancelar y prorrogar desde la app
+
+Comentarios del usuario sobre el reglamento v3, llevados al sistema y al documento.
+
+- **24 h** para preparar una reserva de la app y para revisar la receta (eran 48). `reserva_plazos()`.
+- Si la sala no alcanza, además del aviso al cliente, **se avisa a supervisión de ventas y a la jefatura de esa sala** (`reservas_vencer`).
+- El cliente **cancela desde la app** cualquier reserva o apartado que vea ahí, aunque la haya apartado en la sala o esté pagada: lo pagado queda a favor y se le avisa antes de confirmar; la sala recibe el aviso (`reserva_cancelar_por_cliente`).
+- La **prórroga única** de 7 días también se pide desde la app, para reservas, pedidos y encargos (`reserva_prorrogar_por_cliente`, `encargo_prorrogar_por_cliente`).
+- Arreglo: un anticipo pagado **en línea a medias** (enlace de pago de v2.1341.0) no quedaba a favor al cancelar o vencer: la condición excluía todo pago en línea y el traspaso automático sólo cubre el pagado completo. Sin casos en producción.
+- Reglamento v4 (HTML + PDF): 3.2/3.3 reescritas, plazo «durante los N días siguientes» con ejemplo en vez de «el último día cuenta entero», 4.6 reescrita, 5.1 sin tope de unidades, pago con enlace en 6.1, prórroga «o desde la aplicación» en 7.2. Términos de la app versión `2026-10-22.4` (se vuelven a aceptar).
+
 ## v2.1341.1 — Impresión: un documento ilegible no se reintenta y sólo salen las cajas vinculadas
 
 Auditoría 2026-10-21, grupo 1 · H10 y H11. Migración

@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-22T16:59:56.618Z",
+ "generado": "2026-10-22T17:11:32.021Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1866,6 +1866,10 @@
    "por": "código"
   },
   "encargo_prorrogar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encargo_prorrogar_por_cliente": {
    "area": "app-clientes",
    "por": "código"
   },
@@ -4426,6 +4430,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "reserva_cancelar_por_cliente": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "reserva_cuenta": {
    "area": "app-clientes",
    "por": "código"
@@ -4459,6 +4467,10 @@
    "por": "código"
   },
   "reserva_prorrogar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_prorrogar_por_cliente": {
    "area": "app-clientes",
    "por": "código"
   },

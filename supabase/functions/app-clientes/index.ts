@@ -112,21 +112,23 @@ const TERMINOS_RESERVA = {
   // y ya no se limita a ofertas: el carrito reserva cualquier producto.
   // 2026-10-22 (reglamento v2): 3 días para retirar sin pagar, 7 pagada, y una
   // sola prórroga de 7 días que se pide en la sucursal (`reserva_plazos()`).
-  version: "2026-10-22",
+  // 2026-10-22 (reglamento v4): la sucursal responde en 24 h; la reserva se
+  // cancela y la prórroga se pide también desde la app.
+  version: "2026-10-22.4",
   titulo: "Así funciona tu reserva",
   puntos: [
     "Puedes reservar productos en oferta y también a precio normal.",
-    "La sucursal tiene 48 horas para preparar tu reserva. Te avisamos cuando esté lista y desde ese aviso tienes 3 días para retirarla (el último cuenta entero).",
+    "La sucursal tiene 24 horas para preparar tu reserva. Te avisamos cuando esté lista, y puedes retirarla durante los 3 días siguientes (si te avisamos un lunes, hasta el jueves).",
     "Si la sucursal no alcanza a revisar tu receta o a preparar tu reserva a tiempo, la reserva vence y no cuenta en tu contra.",
     "El precio de oferta vale si la retiras dentro de las fechas de la oferta.",
     "Puedes tener hasta 3 reservas sin pagar al mismo tiempo. Las que pagas en línea no tienen límite.",
     "Puedes reservar las unidades que necesites. Si la cantidad no es la habitual para ese producto, te preguntamos si es correcta antes de reservar.",
     "Si no la retiras a tiempo, el producto vuelve a la venta. Con 3 reservas sin retirar en 30 días, no podrás reservar por 30 días.",
-    "Los productos bajo receta se reservan con una foto de tu receta: tienes 24 horas para subirla y la sucursal 48 horas para revisarla. Cuando la aprueba, tu reserva queda confirmada. Mientras está en revisión no se puede pagar, y si el pedido lleva algún producto bajo receta, todo el pedido espera esa revisión.",
+    "Los productos bajo receta se reservan con una foto de tu receta: tienes 24 horas para subirla y la sucursal otras 24 horas para revisarla. Cuando la aprueba, tu reserva queda confirmada. Mientras está en revisión no se puede pagar, y si el pedido lleva algún producto bajo receta, todo el pedido espera esa revisión.",
     "Puedes pagarla en línea desde la app o al retirarla en la sucursal.",
-    "Si necesitas más tiempo, pídelo en la sucursal: el plazo se puede prorrogar una sola vez, por 7 días más.",
-    "Si la pagaste en línea, tienes 7 días para retirarla desde que esté lista (el último cuenta entero). Si no la retiras, el producto vuelve a la venta y lo que pagaste queda como saldo a favor por 60 días, para usarlo en cualquier sucursal. Sólo la administración puede autorizar devolverlo en dinero.",
-    "Una reserva pagada en línea no se cancela desde la app: escríbele a la sucursal.",
+    "Si necesitas más tiempo, pídelo desde la app o en la sucursal: el plazo se puede prorrogar una sola vez, por 7 días más.",
+    "Si la pagaste en línea, tienes los 7 días siguientes al aviso de que está lista para retirarla. Si no la retiras, el producto vuelve a la venta y lo que pagaste queda como saldo a favor por 60 días, para usarlo en cualquier sucursal. Sólo la administración puede autorizar devolverlo en dinero.",
+    "Puedes cancelar tu reserva desde la app mientras no la hayas retirado. Si pagaste algo, queda como saldo a favor.",
     "Si no puedes ir tú, comparte el código de tu reserva (desde Mis reservas) con alguien de confianza: quien lo presente en la sucursal puede retirarla, y pagarla si falta. Como el código basta para retirarla, no lo publiques.",
   ],
 };
@@ -1567,7 +1569,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
-    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
+    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -2287,7 +2289,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       };
     };
     if (accion === "mis_reservas") {
-      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, saldo_favor_inicial, plazo_hasta:reserva_plazo_hasta";
+      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, saldo_favor_inicial, prorrogada_at, plazo_hasta:reserva_plazo_hasta";
       // `plazo_hasta` (2026-10-21) lo calcula la base (`reserva_plazo_hasta`):
       // hasta cuándo vale el estado actual, para no escribir «24 horas» en la app.
       // `en_revision` (2026-10-12): esperando que la sucursal revise la receta.
@@ -2608,7 +2610,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
 
     if (accion === "mis_encargos") {
       const { data, error } = await admin.from("app_encargos")
-        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at")
+        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at, listo_at, prorrogado_at")
         .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 90 * 86400_000).toISOString())
         .order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
@@ -3454,19 +3456,24 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     }
 
     if (accion === "cancelar_reserva") {
-      const { data, error } = await admin.from("app_reservas")
-        .update({ estado: "cancelada", cerrada_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq("id", Number(body?.id)).eq("customer_id", customerId).in("estado", ["en_revision", "pendiente", "lista"])
-        // Pagada en línea no se cancela desde la app: habría que devolver el
-        // dinero, y eso lo hace una persona desde el panel de Wompi.
-        .neq("pago_estado", "pagado")
-        // Ni la apartada en la sucursal ni la que tiene anticipo (2026-10-21): ésas
-        // las cancela la sucursal, que deja el anticipo a favor (`reserva_cambiar_estado`).
-        // Desde acá se cancelaban sin saldo, sin bitácora y sin avisar a nadie.
-        .eq("origen", "app").or("anticipo.is.null,anticipo.eq.0")
-        .select("id");
+      // Reglamento v4 (2026-10-22): el cliente cancela lo que ve en la app,
+      // también lo apartado en la sucursal o lo pagado. Lo pagado queda a
+      // favor y la sala recibe el aviso (`reserva_cancelar_por_cliente`).
+      const { data, error } = await admin.rpc("reserva_cancelar_por_cliente", { p_id: Number(body?.id), p_customer: customerId });
       if (error) throw error;
-      return json(data?.length ? { ok: true } : { ok: false, mensaje: "Esa reserva ya no se puede cancelar desde la app. Si la pagaste o dejaste un anticipo, escríbele a la sucursal." });
+      return json(data);
+    }
+
+    // ── La prórroga única, pedida desde la app (reglamento v4, 7.2) ───────
+    if (accion === "prorrogar_reserva") {
+      const { data, error } = await admin.rpc("reserva_prorrogar_por_cliente", { p_id: Number(body?.id), p_customer: customerId });
+      if (error) throw error;
+      return json(data);
+    }
+    if (accion === "prorrogar_encargo") {
+      const { data, error } = await admin.rpc("encargo_prorrogar_por_cliente", { p_id: Number(body?.id), p_customer: customerId });
+      if (error) throw error;
+      return json(data);
     }
 
     // ── Pagar una reserva en línea, con Wompi (2026-10-07) ────────────────

@@ -22,7 +22,7 @@
 // sucursal pidió otra («Subir otra foto»), y en Anteriores, «Rechazada: …».
 //
 // Recetas y saldo a favor (2026-10-19, decisiones del dueño): la sala tiene
-// plazos (24 h sin foto, 48 h con la foto sin revisar, 48 h para preparar) y
+// plazos (24 h sin foto, 24 h con la foto sin revisar, 24 h para preparar) y
 // al vencer se dice por qué —si fue de la sala, no cuenta en contra—. En un
 // pedido con productos bajo receta, el cliente puede QUITAR esos productos y
 // seguir con lo demás; si la sala rechaza la receta, sólo se cancelan esos.
@@ -101,6 +101,19 @@ const datosDe = (filtro) => (filtro === 'todas' ? undefined : { estado: filtro }
 // primera fila) y uno por cada reserva suelta. Se llama por separado para las
 // abiertas y las terminadas: un renglón cancelado de un pedido abierto va con
 // las terminadas.
+// Lo pagado de unas filas (anticipo de caja o en línea, o el total pagado en
+// línea), para avisar ANTES de cancelar que queda a favor (reglamento v4).
+const pagadoDe = (filas) => filas.reduce((n, r) => n + (r.pago_prueba ? 0
+  : r.pago_estado === 'pagado' && !(Number(r.anticipo) > 0) ? Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 0) : Number(r.anticipo ?? 0)), 0);
+const avisoDeSaldo = (filas) => {
+  const p = pagadoDe(filas);
+  return p > 0 ? `\n\nLo que pagaste (${dolares(p)}) queda como saldo a favor por 60 días, para otra compra en cualquier sucursal.` : '';
+};
+const quedoAFavor = (res) => {
+  const saldo = res.reduce((n, x) => n + Number(x?.saldo_favor ?? 0), 0);
+  if (saldo > 0) Alert.alert('Quedó a tu favor', `Tienes ${dolares(saldo)} de saldo a favor por 60 días. Lo ves en Mis reservas.`);
+};
+
 function agruparPorPedido(filas) {
   const grupos = [];
   const porPedido = new Map();
@@ -304,9 +317,33 @@ export default function Reservas() {
     return () => clearInterval(id);
   }, [visible]);
 
+  // La prórroga única (reglamento v4, 7.2): 7 días más, una sola vez. Un
+  // pedido se prorroga entero, renglón por renglón (la misma acción).
+  const prorrogar = (filas) => Alert.alert('¿Necesitas más tiempo?',
+    'Te damos 7 días más para retirarla. Sólo se puede pedir una vez.', [
+    { text: 'No', style: 'cancel' },
+    { text: 'Pedir 7 días más', onPress: async () => {
+      if (esDeMuestra(filas[0])) { avisoMuestra('En la vista de muestra no se cambia el plazo.'); return; }
+      const res = await Promise.all(filas.map((r) => pedir('prorrogar_reserva', { id: r.id })));
+      const mal = res.find((x) => !x?.ok);
+      if (mal) Alert.alert('No se pudo', mal?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      cargar();
+    } },
+  ]);
+  const prorrogarEncargo = (e) => Alert.alert('¿Necesitas más tiempo?',
+    'Te damos 7 días más para retirar tu encargo. Sólo se puede pedir una vez.', [
+    { text: 'No', style: 'cancel' },
+    { text: 'Pedir 7 días más', onPress: async () => {
+      const res = await pedir('prorrogar_encargo', { id: e.id });
+      if (!res?.ok) Alert.alert('No se pudo', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      cargar();
+    } },
+  ]);
+
   // Un pedido se cancela entero: cada renglón por su cuenta (la misma acción
   // del servidor, que sólo cancela los suyos, abiertos y sin pagar en línea).
-  const cancelarPedido = (g) => Alert.alert('Cancelar pedido', `¿Cancelar el pedido ${g.pedido} completo (${g.filas.length} productos)?`, [
+  const cancelarPedido = (g) => Alert.alert('Cancelar pedido', `¿Cancelar el pedido ${g.pedido} completo (${g.filas.length} productos)?${avisoDeSaldo(g.filas)}`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar pedido', style: 'destructive', onPress: async () => {
       if (esDeMuestra(g.filas[0])) {
@@ -316,14 +353,17 @@ export default function Reservas() {
       }
       const res = await Promise.all(g.filas.map((r) => pedir('cancelar_reserva', { id: r.id })));
       const fallidas = res.filter((x) => !x?.ok);
-      if (!fallidas.length) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      if (!fallidas.length) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        quedoAFavor(res);
+      }
       else Alert.alert(fallidas.length === res.length ? 'No se pudo cancelar' : 'Se canceló sólo una parte del pedido',
         fallidas[0]?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
       cargar();
       useCuenta.getState().cargar({ forzar: true }).catch(() => {});
     } },
   ]);
-  const cancelar = (r) => Alert.alert('Cancelar reserva', `¿Cancelar ${r.producto_nombre}?`, [
+  const cancelar = (r) => Alert.alert('Cancelar reserva', `¿Cancelar ${r.producto_nombre}?${avisoDeSaldo([r])}`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar reserva', style: 'destructive', onPress: async () => {
       if (esDeMuestra(r)) {
@@ -332,8 +372,10 @@ export default function Reservas() {
         return;
       }
       const res = await pedir('cancelar_reserva', { id: r.id });
-      if (res?.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      else Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      if (res?.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        quedoAFavor([res]);
+      } else Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
       cargar();
       // El carrito y el aviso de duplicado leen las reservas del resumen.
       useCuenta.getState().cargar({ forzar: true }).catch(() => {});
@@ -423,9 +465,9 @@ export default function Reservas() {
     return (
       <Entrada key={`a:${g.clave}`} indice={Math.min(i, 8)}>
         {g.filas.length > 1 ? (
-          <PedidoAbierto g={g} ahora={ahora} alCancelar={() => cancelarPedido(g)} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
+          <PedidoAbierto g={g} ahora={ahora} alCancelar={() => cancelarPedido(g)} alProrrogar={() => prorrogar(g.filas)} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
         ) : (
-          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
+          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alProrrogar={() => prorrogar([r])} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
         )}
       </Entrada>
     );
@@ -437,7 +479,7 @@ export default function Reservas() {
       {filtro === 'todas' && encargos.length ? (
         <>
           <SeccionUi>Encargos</SeccionUi>
-          {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} />)}
+          {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} alProrrogar={() => prorrogarEncargo(e)} />)}
         </>
       ) : null}
       {d.saldo_a_favor?.total > 0 ? <ResumenSaldo s={d.saldo_a_favor} /> : null}
@@ -563,7 +605,7 @@ const Separador = () => <View style={{ height: 0.5, backgroundColor: colorSistem
 
 // Una reserva en curso: qué es (promoción o producto), en qué paso va
 // (Recibida → Lista → Retirada), cómo se entrega, cómo se paga y cuánto.
-function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = false, productosDelPedido = 1 }) {
+function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, resaltada = false, productosDelPedido = 1 }) {
   const t = useTema();
   const lista = r.estado === 'lista';
   const e = estadoDe(t, r.estado);
@@ -680,18 +722,19 @@ function ReservaAbierta({ r, ahora, alCancelar, alPagar, pagando, resaltada = fa
         }} />
       ) : null}
 
-      {/* Con anticipo, o apartada en la sucursal, la cancela la sucursal (2026-10-21):
-          ahí el anticipo queda a favor. Desde la app se perdía sin rastro. */}
-      {r.pago_estado === 'pagado' || Number(r.anticipo) > 0 || r.origen === 'sucursal' ? (
-        <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
-          {r.pago_estado === 'pagado' ? (r.pago_prueba ? 'El cobro en línea fue de prueba: pagas al retirar.' : 'Ya está pagada.')
-            : Number(r.anticipo) > 0 ? `Dejaste ${dolares(r.anticipo)} de anticipo.` : 'La apartaste en la sucursal.'} Para cancelarla, escríbele a la sucursal.
-        </Text>
-      ) : (
-        <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+      {/* Reglamento v4 (2026-10-22): se cancela desde la app aunque la hayan
+          apartado en la sucursal o esté pagada; lo pagado queda a favor y se
+          avisa ANTES (`avisoDeSaldo`). La prórroga única también se pide acá. */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 20 }}>
+        {lista && !r.prorrogada_at ? (
+          <Presionable onPress={alProrrogar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Pedir 7 días más</Text>
+          </Presionable>
+        ) : null}
+        <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar reserva</Text>
         </Presionable>
-      )}
+      </View>
     </Tarjeta>
   );
 }
@@ -742,7 +785,7 @@ function CuentaRegresiva({ vence, ahora, domicilio }) {
 // (nombre, cantidad, precio), el total con el envío, un solo código y un solo
 // pagar / compartir / cancelar. La sucursal, la entrega y la fecha son las del
 // pedido (el carrito las elige una vez para todos sus renglones).
-function PedidoAbierto({ g, ahora, alCancelar, alPagar, pagando, resaltada = false }) {
+function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, resaltada = false }) {
   const t = useTema();
   const r = g.filas[0];
   const estado = estadoDeGrupo(g);
@@ -887,15 +930,16 @@ function PedidoAbierto({ g, ahora, alCancelar, alPagar, pagando, resaltada = fal
         }} />
       ) : null}
 
-      {algunaPagada ? (
-        <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
-          {pagoClave === 'prueba' ? 'El cobro en línea fue de prueba: pagas al retirar.' : 'Ya está pagado.'} Para cancelarlo, escríbele a la sucursal.
-        </Text>
-      ) : (
-        <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 20 }}>
+        {g.filas.every((f) => f.estado === 'lista' && !f.prorrogada_at) ? (
+          <Presionable onPress={alProrrogar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Pedir 7 días más</Text>
+          </Presionable>
+        ) : null}
+        <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.rojo }}>Cancelar pedido</Text>
         </Presionable>
-      )}
+      </View>
     </Tarjeta>
   );
 }
@@ -1182,7 +1226,7 @@ const TEXTO_ENCARGO = {
   rechazado: 'No se pudo conseguir',
   cancelado: 'Cancelado',
 };
-function Encargo({ e, alPagar, alCancelar, pagando = false }) {
+function Encargo({ e, alPagar, alCancelar, alProrrogar, pagando = false }) {
   const t = useTema();
   const paso = PASOS_ENCARGO.indexOf(e.estado);
   const cerrado = paso < 0;
@@ -1212,6 +1256,11 @@ function Encargo({ e, alPagar, alCancelar, pagando = false }) {
       {e.nota_sucursal ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>«{e.nota_sucursal}»</Text> : null}
       {e.estado === 'confirmado' && e.pago_estado !== 'pagado' ? (
         <Boton alTocar={alPagar} cargando={pagando}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
+      ) : null}
+      {e.estado === 'listo' && !e.prorrogado_at ? (
+        <Presionable onPress={alProrrogar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Pedir 7 días más</Text>
+        </Presionable>
       ) : null}
       {(e.estado === 'solicitado' || e.estado === 'confirmado') && e.pago_estado !== 'pagado' ? (
         <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' }}>

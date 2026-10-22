@@ -19,17 +19,20 @@ const recortar = (t, n) => (String(t ?? '').length > n ? `${String(t).slice(0, n
 // productos —es uno solo— ni el código repetido en grande.
 // `telefono` (2026-10-21): para avisarle cuando esté lista. `enCamino`: la sala
 // de donde viene por traslado; ahí no hay plazo todavía —empieza al llegar—.
-export function construirConstanciaDeReserva({ codigo, cliente, telefono, producto, cantidad, precio, anticipo, metodo, venceAt, enCamino, sala, atendio, ahora = new Date() }) {
-    const total = Math.round(Number(precio) * Number(cantidad) * 100) / 100;
+// `renglones` (2026-10-22): un pedido de varios productos con un solo cobro;
+// sin él, el producto único de siempre.
+export function construirConstanciaDeReserva({ codigo, cliente, telefono, producto, cantidad, precio, renglones, anticipo, metodo, venceAt, enCamino, sala, atendio, ahora = new Date() }) {
+    const lista = renglones?.length ? renglones : [{ producto, cantidad, precio }];
+    const total = Math.round(lista.reduce((t, r) => t + Number(r.precio) * Number(r.cantidad), 0) * 100) / 100;
     const saldo = Math.round((total - Number(anticipo)) * 100) / 100;
     return {
         titulo: '',
         encabezado: {
-            titulo: `RESERVA ${codigo}`,
+            titulo: `${renglones?.length ? 'PEDIDO' : 'RESERVA'} ${codigo}`,
             lineas: [sala ? `Retira en ${String(sala).toUpperCase()}` : null,
                 venceAt ? `Hasta el ${fechaHora(new Date(venceAt))}` : (enCamino ? `Viene de ${String(enCamino).toUpperCase()}` : null)].filter(Boolean),
         },
-        bloques: [{ texto: `${cantidad} x ${recortar(producto, 80)}` }],
+        bloques: lista.map((r) => ({ texto: `${r.cantidad} x ${recortar(r.producto, 80)}` })),
         datos: [
             ...(cliente ? [['Cliente', cliente]] : []),
             ...(telefono ? [['Telefono', telefono]] : []),

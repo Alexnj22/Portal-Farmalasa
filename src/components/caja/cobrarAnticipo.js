@@ -29,7 +29,7 @@ export async function cobrarAnticipo({ sala, nombreSala, userId, quienAtiende, c
         await imprimirConstanciaDeReserva({
             codigo: a.codigo, cliente: shortEmployeeName(papel?.cliente ?? ''), telefono: papel?.telefono ?? null,
             enCamino: a.traslado_desde ?? papel?.enCamino ?? null, producto: papel?.producto,
-            cantidad: papel?.cantidad, precio: papel?.precio, anticipo: Number(a.anticipo),
+            cantidad: papel?.cantidad, precio: papel?.precio, renglones: papel?.renglones, anticipo: Number(a.anticipo),
             metodo: FORMAS_DE_PAGO.find((f) => f.value === pago?.forma)?.label ?? 'Efectivo',
             venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(quienAtiende ?? ''),
         }, { sala });

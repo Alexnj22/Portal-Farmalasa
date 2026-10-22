@@ -28118,9 +28118,23 @@ export type Database = {
         Args: { p_antes: number; p_movimiento: number; p_nuevo: number }
         Returns: undefined
       }
+      apartado_codigo_de_pedido: { Args: never; Returns: string }
       apartado_cotizar: {
         Args: { p_apartado: Json; p_branch_id: number }
         Returns: Json
+      }
+      apartado_crear_reserva: {
+        Args: {
+          p_anticipo: number
+          p_branch_id: number
+          p_customer_id: number
+          p_employee: string
+          p_linea: Json
+          p_metodo: string
+          p_pedido: string
+          p_sin_pagar: boolean
+        }
+        Returns: number
       }
       apartado_deshacer: {
         Args: { p_anular?: boolean; p_movimiento: number }

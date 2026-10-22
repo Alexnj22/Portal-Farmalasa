@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1345.0 — Apartar varios productos en un solo cobro: reserva de pedido
+
+**Varios productos apartados en un solo cobro** («quedaría una reserva de pedido»).
+
+- En «Apartar o encargar», con un producto que se aparta (hay en la sala o ya viene en camino) aparece **«Apartar otro producto en el mismo cobro»**. Se juntan hasta 10; el cobro es por el total del pedido (50 %, todo u otro monto) y se hace en caja.
+- Queda **un pedido con código P-** y una reserva por producto. El cobro se reparte entre ellas en proporción a cada total (`apartado_previo.reparto` del movimiento); retirar, anular y corregir el monto leen ese reparto.
+- La constancia sale como **PEDIDO P-…** con todos los productos.
+- Lo que se pide a otra sala y lo que se encarga van aparte; el enlace de pago sigue siendo para un solo producto.
+- Base: `apartado_cotizar` / `apartado_aplicar` aceptan el modo `pedido`; nuevas `apartado_crear_reserva` y `apartado_codigo_de_pedido` (sólo servidor).
+
 ## v2.1344.3 — Sanción, planilla e inventario: defectos de la prueba en vivo
 
 - **Sanción**: al guardar, el aviso ya no revienta; el diálogo se cierra, avisa y el historial se refresca. Una vez escrita, el botón queda apagado: un error después de guardar (o un doble toque) ya no crea una segunda sanción. La constancia sale con el logo (antes fallaba al armar la imagen).

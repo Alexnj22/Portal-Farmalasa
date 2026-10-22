@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1347.0 — Reservas: tarjeta por reserva con cliente, productos, pago y detalle
+
+- **Reservas** (pantalla): cada reserva es una **tarjeta** en cuatro bloques, siempre en el mismo orden:
+  1. código y estado, en palabras («Por apartar», «En camino», «Una parte en camino», «Lista para retirar»), con la sucursal;
+  2. cliente: nombre, teléfono y si tiene la app;
+  3. productos, uno por línea, con su subtotal y en qué va su parte (de dónde viene, cuántos llegaron);
+  4. **Total · Anticipo/Pagado · Falta**, con el plazo.
+
+  Las acciones van al pie. Las tarjetas van en grilla de 1, 2 o 3 columnas según el ancho. Al tocarla (ojo arriba a la derecha) se abre el **detalle**: cliente con Llamar y WhatsApp, cada producto con precio unitario, traslado y encargo, el pago con la forma, la preventa y la factura, las fechas y la receta. El carril cuenta tarjetas: un pedido P- cuenta una vez. La baldosa del Inicio no cambia. Verificado con capturas en escritorio y teléfono contra el entorno de pruebas, con reservas de muestra que se borraron al terminar.
+
 ## v2.1346.0 — Reserva de la app sin existencia: se trae de otra sala y el plazo se detiene
 
 - **Reserva de la app sin existencia en la sala**: ahora se puede traer de otra sala o de Bodega. En Reservas, la reserva pendiente tiene **«Traer de otra sala»** (pide a otra sala o encarga a Bodega). Si el traslado no sale o llega una parte, aparece **«Resolver»**, que antes era sólo para los apartados de sala. En un pedido de varios productos, el botón actúa sobre el renglón que lo necesita y no sobre el primero.

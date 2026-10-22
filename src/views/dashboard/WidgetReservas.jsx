@@ -1,11 +1,14 @@
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
+import { ArrowLeftRight, Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
 import SearchInput from '../../components/common/SearchInput';
 import WidgetEncargos from './WidgetEncargos';
 import Encabezado from './EncabezadoDeLista';
+import TarjetaDeReserva from './TarjetaDeReserva';
+import { TRASLADO } from './reservaVista';
+const DetalleDeReserva = lazy(() => import('./DetalleDeReserva'));
 import { useResumenWidget } from './tamanoWidget';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -21,7 +24,7 @@ import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import {
     buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
-    devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver, prorrogarReserva,
+    devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver, reservaPorTraer, prorrogarReserva,
 } from '@nucleo/data/reservas';
 import { anotarSalida } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -62,16 +65,6 @@ const RevisarReceta = lazy(() => import('./RevisarReceta'));
 // Lo que no llegó entero (2026-10-22): pedir a otra sala, a Bodega, o lo que decida el cliente.
 const ResolverReserva = lazy(() => import('./ResolverReserva'));
 
-// En qué va una reserva que viene de otra sala (2026-10-22).
-const TRASLADO = {
-    pedido: { label: 'Pedida a otra sala', variant: 'info' },
-    enviado: { label: 'En camino', variant: 'info' },
-    parcial: { label: 'Viene una parte', variant: 'warning' },
-    rechazado: { label: 'No la mandan', variant: 'danger' },
-    bodega: { label: 'Encargada a Bodega', variant: 'info' },
-    precio: { label: 'Bodega: otro precio', variant: 'warning' },
-    sin_existencia: { label: 'No se consigue', variant: 'danger' },
-};
 
 const REFRESCO_MS = 2 * 60 * 1000;
 
@@ -131,6 +124,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const [usando, setUsando] = useState(null);
     // La reserva que no llegó entera y se está resolviendo.
     const [resolviendo, setResolviendo] = useState(null);
+    // La reserva abierta en su detalle (pantalla completa).
+    const [viendo, setViendo] = useState(null);
     // Devolución en efectivo (2026-10-22): la sala la pide, administración la
     // autoriza o la niega, y la sala la entrega con un vale de caja.
     const [pidiendoDevolucion, setPidiendoDevolucion] = useState(null);
@@ -170,10 +165,16 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         : { texto: 'Sin reservas' });
 
     // El carril de la pantalla: cuánto hay que preparar, cuánto espera al cliente y los saldos.
+    // Cuenta TARJETAS, no renglones: un pedido P- es una sola, igual que en la lista.
+    const porTarjeta = new Map();
+    for (const r of abiertasVistazo) {
+        const k = r.pedido && r.estado !== 'en_revision' ? `p:${r.pedido}` : `r:${r.id}`;
+        porTarjeta.set(k, [...(porTarjeta.get(k) ?? []), r]);
+    }
+    const tarjetas = [...porTarjeta.values()];
+    const preparar = tarjetas.filter((g) => g.some((x) => x.estado === 'en_revision' || x.estado === 'pendiente')).length;
     const conteo = cargando ? null : {
-        preparar: abiertasVistazo.filter((r) => r.estado === 'en_revision' || r.estado === 'pendiente').length,
-        listas: abiertasVistazo.filter((r) => r.estado === 'lista').length,
-        saldos: saldosAFavor(filas).length,
+        preparar, listas: tarjetas.length - preparar, saldos: saldosAFavor(filas).length,
     };
     const claveConteo = conteo ? `${conteo.preparar}|${conteo.listas}|${conteo.saldos}` : '';
     useEffect(() => {
@@ -405,7 +406,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 : [[null, grupos, null]]).filter(([, g]) => g.length).map(([titulo, lista, ayuda]) => (
             <section key={titulo ?? 'todo'} className="space-y-2">
             {titulo && <Encabezado titulo={titulo} n={lista.length} ayuda={ayuda} />}
-            <ul className="space-y-1.5 min-w-0">
+            <ul className={completa ? 'grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-start min-w-0' : 'space-y-1.5 min-w-0'}>
                 {lista.map((r) => {
                     const enRevision = r.estado === 'en_revision';
                     const espera = enRevision ? esperaDeReceta(r.receta_subida_at, ahora) : null;
@@ -413,31 +414,26 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     const filasDe = r.renglones ?? [r];
                     const hayPendiente = filasDe.some((x) => x.estado === 'pendiente');
                     const hayLista = filasDe.some((x) => x.estado === 'lista');
+                    const porResolverDe = filasDe.find(reservaPorResolver);
+                    const porTraerDe = filasDe.find(reservaPorTraer);
                     const anticipoDe = filasDe.reduce((t, x) => t + Number(x.anticipo ?? 0), 0);
                     const totalDe = filasDe.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0);
-                    return (
-                    <li key={`${r.pedido ?? ''}-${r.id}`}>
-                        <FilaConAcciones
-                            tone={urgente ? 'danger' : enRevision || r.estado === 'pendiente' ? 'warning' : null}
-                            icon={enRevision ? FileCheck : r.entrega === 'domicilio' ? Truck : r.estado === 'lista' ? PackageCheck : ShoppingBag}
-                            titulo={r.renglones && r.renglones.length > 1
-                                ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
-                                : `${r.cantidad} × ${r.producto}`}
-                            detalle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.estado === 'pendiente' && hayLista ? ' (en camino)' : ''}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
-                                todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
-                                r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
-                                r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
-                                r.estado === 'pendiente' && r.traslado_nota ? ` · ${r.traslado_nota}` : ''}${
-                                r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}${
-                                textoDePreventa(r) ? ` · ${textoDePreventa(r)}` : ''}`}
-                            acciones={(
+                    // Las mismas acciones en la tarjeta de la pantalla y en la fila de la baldosa.
+                    const acciones = (
                                 <>
-                                    {r.estado === 'pendiente' && TRASLADO[r.traslado_estado] && (
+                                    {!completa && r.estado === 'pendiente' && TRASLADO[r.traslado_estado] && (
                                         <Badge variant={TRASLADO[r.traslado_estado].variant} uppercase={false}
                                             title={r.traslado_sala ? `Viene de ${r.traslado_sala}` : undefined}>{TRASLADO[r.traslado_estado].label}</Badge>
                                     )}
-                                    {!soloLectura && reservaPorResolver(r) && (
-                                        <Button variant="primary" size="xs" icon={Wrench} onClick={() => setResolviendo(r)}>Resolver</Button>
+                                    {/* Por renglón (2026-10-22): en un pedido de varios productos
+                                        se resuelve el que lo necesita, no el primero. */}
+                                    {!soloLectura && porResolverDe && (
+                                        <Button variant="primary" size="xs" icon={Wrench} onClick={() => setResolviendo(porResolverDe)}
+                                            title={filasDe.length > 1 ? porResolverDe.producto : undefined}>Resolver</Button>
+                                    )}
+                                    {!soloLectura && !porResolverDe && porTraerDe && (
+                                        <Button variant="ghost" size="xs" icon={ArrowLeftRight} onClick={() => setResolviendo(porTraerDe)}
+                                            title={`Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega`}>Traer de otra sala</Button>
                                     )}
                                     {enRevision && r.receta_estado === 'otra_foto' && (
                                         <Badge variant="info" uppercase={false}
@@ -454,10 +450,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                     {esPagoDePrueba(r) ? (
                                         <Badge variant="danger" uppercase={false}
                                             title="El cobro en línea fue de prueba: no entró dinero">PAGO DE PRUEBA — cobrar en caja</Badge>
-                                    ) : filasDe.every((x) => x.pago_estado === 'pagado') && (
+                                    ) : !completa && filasDe.every((x) => x.pago_estado === 'pagado') && (
                                         <Badge variant="success" uppercase={false}>{r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'}</Badge>
                                     )}
-                                    {!filasDe.every((x) => x.pago_estado === 'pagado') && anticipoDe > 0.004 && (
+                                    {!completa && !filasDe.every((x) => x.pago_estado === 'pagado') && anticipoDe > 0.004 && (
                                         <Badge variant="warning" uppercase={false}
                                             title={`Saldo al retirar: ${formatMoney(totalDe - anticipoDe)}`}>Anticipo {formatMoney(anticipoDe)}</Badge>
                                     )}
@@ -517,7 +513,27 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                             onClick={() => mover(r, 'cancelada')} />
                                     )}
                                 </>
-                            )}
+                    );
+                    return completa ? (
+                    <li key={`${r.pedido ?? ''}-${r.id}`} className="min-w-0">
+                        <TarjetaDeReserva r={r} todas={todas} acciones={acciones} onAbrir={setViendo} />
+                    </li>
+                    ) : (
+                    <li key={`${r.pedido ?? ''}-${r.id}`}>
+                        <FilaConAcciones
+                            tone={urgente ? 'danger' : enRevision || r.estado === 'pendiente' ? 'warning' : null}
+                            icon={enRevision ? FileCheck : r.entrega === 'domicilio' ? Truck : r.estado === 'lista' ? PackageCheck : ShoppingBag}
+                            titulo={r.renglones && r.renglones.length > 1
+                                ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
+                                : `${r.cantidad} × ${r.producto}`}
+                            detalle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.estado === 'pendiente' && hayLista ? ' (en camino)' : ''}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
+                                todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
+                                r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
+                                r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
+                                r.estado === 'pendiente' && r.traslado_nota ? ` · ${r.traslado_nota}` : ''}${
+                                r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}${
+                                textoDePreventa(r) ? ` · ${textoDePreventa(r)}` : ''}`}
+                            acciones={acciones}
                         />
                     </li>
                     );
@@ -585,6 +601,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             </div>
             {modalNueva}
             {modalRetirar}
+            {viendo && (
+                <Suspense fallback={null}>
+                    <DetalleDeReserva r={viendo} onClose={() => setViendo(null)} />
+                </Suspense>
+            )}
             {modalReceta}
             {resolviendo && (
                 <Suspense fallback={null}>

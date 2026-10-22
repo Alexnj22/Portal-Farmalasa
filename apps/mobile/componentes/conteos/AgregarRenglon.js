@@ -94,7 +94,10 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
     );
   };
 
-  const loteFinal = lote === OTRO ? loteOtro.trim() : lote;
+  // `lote` guarda la CLAVE de la opción (número + vencimiento): hay lotes con
+  // el mismo número y dos fechas. Lo que se guarda es el número.
+  const loteElegido = opciones?.lotes?.find((l) => l.clave === lote) || null;
+  const loteFinal = lote === OTRO ? loteOtro.trim() : (loteElegido?.lote || '');
   const puede = producto && presentacion && (simple || loteFinal);
 
   const guardar = async () => {
@@ -167,16 +170,16 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
                   {!simple ? (
                     <>
                       <View style={{ borderTopWidth: 0.5, borderTopColor: colorSistema.separador }} />
-                      <Fila rotulo="Lote" valor={lote === OTRO ? 'Otro' : (lote || null)}
+                      <Fila rotulo="Lote" valor={lote === OTRO ? 'Otro' : (loteElegido?.lote || null)}
                         onPress={() => hoja('Lote', [
-                          ...opciones.lotes.map((l) => ({ label: `${l.lote}${l.fecha ? ` · vence ${fechaTexto(l.fecha, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`, value: l.lote, fecha: l.fecha })),
+                          ...opciones.lotes.map((l) => ({ label: `${l.lote}${l.fecha ? ` · vence ${fechaTexto(l.fecha, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`, value: l.clave, fecha: l.fecha })),
                           { label: 'Otro lote…', value: OTRO },
                         ], (o) => { setLote(o.value); setVence(o.value === OTRO ? '' : (o.fecha || '')); })} />
                       {lote === OTRO ? <Campo multiline={false} value={loteOtro} onChangeText={setLoteOtro} placeholder="Número de lote" autoCapitalize="characters" autoCorrect={false} /> : null}
                       <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Vence</Text>
                         {vence ? <Fecha valor={vence} onCambiar={setVence} /> : null}
-                        <Pressable onPress={() => setVence(vence ? '' : (opciones.lotes.find((l) => l.lote === lote)?.fecha || hoySV()))} hitSlop={8} style={{ marginLeft: 10 }}>
+                        <Pressable onPress={() => setVence(vence ? '' : (loteElegido?.fecha || hoySV()))} hitSlop={8} style={{ marginLeft: 10 }}>
                           <Text style={{ color: colorSistema.acento, fontSize: 15 }}>{vence ? 'Quitar' : 'Poner fecha'}</Text>
                         </Pressable>
                       </View>

@@ -11,6 +11,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { Campo, CajaFecha } from './camposDeConteo';
 import { searchActiveProductsForConteo, opcionesParaAgregarAlConteo } from '@nucleo/data/conteoInventario';
+import { fechaTexto } from '@nucleo/utils/fecha';
 
 // Mismo motivo que en la vista: `@zxing` sólo hace falta al tocar «Escanear», y
 // este formulario ya viaja diferido. Estático lo volvería a meter en el paquete
@@ -118,7 +119,10 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
         // lo mismo que usa la app.
         const { presentaciones, lotes } = await opcionesParaAgregarAlConteo(found.id, branchId, simple);
         setPresentacionOpts(presentaciones.map((t) => ({ value: t, label: t })));
-        setLoteOpts(lotes.map((l) => ({ value: l.lote, fecha: l.fecha })));
+        // El valor de la opción es la CLAVE (número + vencimiento): hay lotes
+        // con el mismo número y dos fechas, y con el número como valor el
+        // segundo no se podía elegir.
+        setLoteOpts(lotes.map((l) => ({ value: l.clave, lote: l.lote, fecha: l.fecha })));
     }, [branchId, simple]);
 
     const handleSelectProduct = (val) => {
@@ -176,7 +180,9 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
         setFechaVencimiento(match?.fecha || '');
     };
 
-    const finalLote = lote === '__OTRO__' ? loteOtro.trim() : lote;
+    const finalLote = lote === '__OTRO__'
+        ? loteOtro.trim()
+        : (loteOpts.find((l) => l.value === lote)?.lote || '');
     const canSubmit = selected && presentacion && (simple || finalLote);
 
     // El costo ya no lo manda el cliente: lo pone agregar_item_conteo con el
@@ -350,7 +356,7 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                                 <LiquidSelect
                                     value={lote || null}
                                     onChange={handleSelectLote}
-                                    options={[...loteOpts.map((l) => ({ value: l.value, label: l.value })), { value: '__OTRO__', label: '+ Otro lote (nuevo)' }]}
+                                    options={[...loteOpts.map((l) => ({ value: l.value, label: l.fecha ? `${l.lote} · vence ${fechaTexto(l.fecha, { day: 'numeric', month: 'short', year: 'numeric' })}` : l.lote })), { value: '__OTRO__', label: '+ Otro lote (nuevo)' }]}
                                     placeholder="Lote..."
                                     clearable={false}
                                     ariaLabel="Lote"

@@ -105,15 +105,27 @@ export function saludoDeLaHora(fecha = new Date()) {
 
 const meta = (m) => (typeof m === 'string' ? (() => { try { return JSON.parse(m); } catch { return {}; } })() : (m || {}));
 
+/**
+ * Si una ausencia aprobada cubre el día `fecha` (`YYYY-MM-DD`).
+ *
+ * Un permiso por DÍAS SUELTOS (`permissionDates`) no es un rango: con el 1 y
+ * el 30 de octubre, tomar el primero y el último daba a la persona por
+ * ausente del 2 al 29. Si hay días sueltos se mira si `fecha` es uno de ellos;
+ * si no, el rango `startDate`–`endDate` (sin fin = sigue vigente).
+ */
+export function ausenciaCubreElDia(metadata, fecha) {
+    const m = meta(metadata);
+    const dias = (Array.isArray(m.permissionDates) ? m.permissionDates : [])
+        .filter(Boolean).map((d) => String(d).slice(0, 10));
+    if (dias.length) return dias.includes(fecha);
+    const inicio = m.startDate ? String(m.startDate).slice(0, 10) : null;
+    const fin = m.endDate ? String(m.endDate).slice(0, 10) : null;
+    return !!inicio && inicio <= fecha && (!fin || fin >= fecha);
+}
+
 /** Las ausencias aprobadas (vacaciones, incapacidad, permiso) vigentes `fecha`. */
 export function ausenciasDelDia(filas = [], fecha) {
-    return filas.filter((r) => {
-        const m = meta(r.metadata);
-        const dias = m.permissionDates || [];
-        const inicio = m.startDate || dias[0];
-        const fin = m.endDate || dias[dias.length - 1];
-        return inicio && inicio <= fecha && (!fin || fin >= fecha);
-    });
+    return filas.filter((r) => ausenciaCubreElDia(r.metadata, fecha));
 }
 
 /** Quienes cumplen años `fecha` (AAAA-MM-DD). */

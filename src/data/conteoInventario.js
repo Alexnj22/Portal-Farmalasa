@@ -8,11 +8,13 @@
 // snapshot.
 import { supabase } from '../supabaseClient';
 import { buscarProductos } from './busquedaProductos';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
-// Un conteo por sucursal cada vez que se audita: la tabla crece del orden de
-// decenas al año, muy lejos del tope de 1000 de PostgREST. El límite va
-// explícito para que el día que se acerque sea un cambio deliberado y no un
-// truncado silencioso (CLAUDE.md, regla del cap de 1000).
+// La lista de conteos va PAGINADA con `fetchAllRows`. Antes llevaba
+// `.limit(1000)`, que es exactamente el techo de PostgREST: el día que la tabla
+// lo pasara —los conteos cíclicos mensuales la hacen crecer sin tope— los más
+// viejos desaparecían sin error. `{ completo: true }`: una lista a medias no se
+// distingue de una completa, así que si falla una página se devuelve el error.
 //
 // Las columnas van enumeradas y SIN `valor_faltante`/`valor_sobrante`: desde el
 // 2026-09-23 la base no las entrega por la tabla (son el valorizado del conteo,
@@ -29,9 +31,16 @@ const CONTEO_COLS = 'id, created_at, branch_id, created_by, scope_type, scope_fi
 async function conValor(res) {
     if (res.error || !res.data) return res;
     const filas = Array.isArray(res.data) ? res.data : [res.data];
-    const { data: valores, error } = filas.length
-        ? await supabase.rpc('get_conteos_valor', { p_ids: filas.map(c => c.id) })
-        : { data: [] };
+    // Por tandas de 1000 ids: `id` es único, así que cada tanda devuelve como
+    // mucho 1000 filas y no cae bajo el techo de PostgREST (Patrón A).
+    const ids = filas.map(c => c.id);
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += 1000) tandas.push(ids.slice(i, i + 1000));
+    const respuestas = await Promise.all(tandas.map(t => supabase.rpc('get_conteos_valor', { p_ids: t })));
+    const error = respuestas.find(r => r.error)?.error ?? null;
+    // La función devuelve `json` (un arreglo): se aplana como lista de objetos.
+    /** @type {Array<{ id: number, valor_faltante?: number|null, valor_sobrante?: number|null }>} */
+    const valores = respuestas.flatMap(r => (Array.isArray(r.data) ? /** @type {any[]} */ (r.data) : []));
     if (error) console.error('[conteo] valorizado', error);
     const porId = new Map((valores || []).map(v => [v.id, v]));
     const conMontos = filas.map(c => ({
@@ -43,10 +52,14 @@ async function conValor(res) {
 }
 
 export async function fetchConteosInventario() {
-    return conValor(await supabase.from('conteos_inventario')
+    // Desempate por `id`: sin él, dos conteos con el mismo `created_at`
+    // pueden cambiar de página entre una lectura y la siguiente.
+    const data = await fetchAllRows(() => supabase.from('conteos_inventario')
         .select(CONTEO_COLS)
         .order('created_at', { ascending: false })
-        .limit(1000));
+        .order('id', { ascending: false }), { completo: true });
+    if (data === null) return { data: null, error: new Error('No se pudo leer la lista de conteos.') };
+    return conValor({ data, error: null });
 }
 
 export async function fetchConteoDetalle(conteoId) {
@@ -123,9 +136,31 @@ export async function opcionesParaAgregarAlConteo(productId, branchId, simple = 
     if (erpIds.length && !simple) {
         const { data, error } = await fetchInventoryLotesForProduct(productId, erpIds);
         if (error) console.error('opcionesParaAgregarAlConteo: lotes', error.message);
-        const vistos = new Map();
-        (data || []).forEach((l) => { if (!vistos.has(l.lote)) vistos.set(l.lote, l.fecha_vencimiento); });
-        lotes = [...vistos.entries()].map(([lote, fecha]) => ({ lote, fecha }));
+        lotes = lotesDistintos(data);
     }
     return { presentaciones, lotes };
+}
+
+/**
+ * Los lotes distintos de un producto, cada uno con su vencimiento.
+ *
+ * La identidad de un lote es NÚMERO + VENCIMIENTO, no el número a secas: el
+ * inventario tiene el mismo «L31800» de GLIMEPIRIDA con dos fechas (ver
+ * `inventoryMovements.js`). Deduplicar sólo por número se quedaba con la
+ * primera fecha que llegaba, y el renglón contado podía guardarse con el
+ * vencimiento del OTRO lote — sin error, porque las dos fechas son válidas.
+ *
+ * `clave` es lo que identifica la opción en la lista (dos opciones pueden
+ * mostrar el mismo número); `lote` es lo que se guarda.
+ * Devuelve `[{ clave, lote, fecha }]`, en el orden en que llegaron.
+ */
+export function lotesDistintos(filas) {
+    const vistos = new Map();
+    (filas || []).forEach((l) => {
+        if (!l?.lote) return;
+        const fecha = l.fecha_vencimiento || null;
+        const clave = `${l.lote}|${fecha || ''}`;
+        if (!vistos.has(clave)) vistos.set(clave, { clave, lote: l.lote, fecha });
+    });
+    return [...vistos.values()];
 }

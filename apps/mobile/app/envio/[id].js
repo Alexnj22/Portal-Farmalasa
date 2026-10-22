@@ -22,7 +22,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion } from '@nucleo/data/envios';
+import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion, TOPE_ENVIOS_CERRADOS } from '@nucleo/data/envios';
 import { buscadorDePersonas, desdeHace } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -89,7 +89,9 @@ export default function Envio() {
     const vivo = (r.envios || []).find((e) => String(e.id) === String(id));
     if (vivo) { setCerrado(false); setEnvio(vivo); return; }
     // No está entre los vivos: puede estar cerrado (se abre desde el historial).
-    const h = await fetchEnviosHistorial(200);
+    // Con el techo de la función: la lista del historial ya lee hasta ahí, y un
+    // envío que salió en ella tiene que poder abrirse.
+    const h = await fetchEnviosHistorial(TOPE_ENVIOS_CERRADOS);
     setCerrado(true);
     setEnvio((h.envios || []).find((e) => String(e.id) === String(id)) ?? null);
   }, [id]);

@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
 import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { hoySV, relojSV, sumarDias } from '../utils/fecha';
+import { unidadesDe } from '../utils/unidadesInventario';
 
 // Datos del widget de cargas y descartes de inventario.
 //
@@ -86,16 +87,20 @@ export async function buscarEnCatalogo({ erpSucursalId, texto }) {
     // todas las existencias en cero y eso se ve idéntico a que no haya nada.
     const { data: exis, error: exisErr } = await supabase
         .from('inventory')
-        .select('erp_product_id, cantidad')
+        .select('erp_product_id, cantidad, detalle')
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .eq('is_vencidos', false)
         .gt('cantidad', 0)
         .in('erp_product_id', productos.map(p => p.id))
         .range(0, 999);
 
+    // En UNIDADES: `cantidad` está en la presentación de cada fila, y el mismo
+    // producto llega partido en CAJA, BLISTER y UNIDAD. Sumarlas crudas daba
+    // «había 28» sobre 24 cajas de 30, un blíster de 10 y 3 sueltas — que son
+    // 733 unidades. `detalle` viaja para que `unidadesDe` saque el factor.
     const porProducto = new Map();
     for (const r of exisErr ? [] : (exis ?? [])) {
-        porProducto.set(r.erp_product_id, (porProducto.get(r.erp_product_id) ?? 0) + Number(r.cantidad || 0));
+        porProducto.set(r.erp_product_id, (porProducto.get(r.erp_product_id) ?? 0) + unidadesDe(r));
     }
 
     return {

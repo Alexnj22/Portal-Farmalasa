@@ -180,6 +180,9 @@ export default function TrasladosView() {
     const [historial,    setHistorial]    = useState(null);
     const [envios,       setEnvios]       = useState(null);
     const [enviosCerrados, setEnviosCerrados] = useState(null);
+    /* Si los envíos cerrados de la semana pudieron quedar cortos (ver
+     * `recortarEnviosCerrados`): se dice en pantalla en vez de callarlo. */
+    const [enviosIncompletos, setEnviosIncompletos] = useState(false);
     const [faltantes,    setFaltantes]    = useState(null);
     const [abrirEnvio,   setAbrirEnvio]   = useState(false);
     /* El diálogo que confirma una llegada escaneando el ticket de la bolsa. */
@@ -268,13 +271,19 @@ export default function TrasladosView() {
             fetchTrasladosHistorial({ branchId: salaQueRecorta, semana }),
             /* Los envíos CERRADOS. `get_envios_historial` estaba escrita desde
              * el primer día y no la llamaba nadie: un envío desaparecía en
-             * cuanto terminaba, con su motivo y lo que la otra sala devolvió. */
-            fetchEnviosHistorial(200),
+             * cuanto terminaba, con su motivo y lo que la otra sala devolvió.
+             *
+             * Con la MISMA sala y semana que los traslados de arriba: antes
+             * traía los 200 más nuevos de todo, y en una pestaña recortada a
+             * «Salud 3, semana del 5» la tabla de abajo mostraba otras salas y
+             * otras semanas sin que nada lo distinguiera. */
+            fetchEnviosHistorial(200, { branchId: salaQueRecorta, semana }),
         ]);
         const fallo = c.error ?? e.error;
         setErrorArchivo(fallo ? (fallo.message ?? 'No se pudo leer el historial.') : '');
         setHistorial(c.filas);
         setEnviosCerrados(e.envios);
+        setEnviosIncompletos(!!e.incompleto);
     }, [salaQueRecorta, semana]);
 
     const enHistorial = activeTab === 'historial';
@@ -664,6 +673,11 @@ export default function TrasladosView() {
             enHistorial ? (
                 <div className="p-4 md:p-5 flex flex-col gap-3">
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                    {!cargando && enviosIncompletos && (
+                        <p className="text-label text-content-2 font-medium px-1">
+                            Los envíos cerrados de esta semana pueden estar incompletos: se ven los más recientes.
+                        </p>
+                    )}
                     {cargando ? <SkeletonText lines={6} /> : (
                         <Suspense fallback={<SkeletonText lines={6} />}>
                             <HistorialTraslados

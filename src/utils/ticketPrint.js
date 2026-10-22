@@ -1,4 +1,5 @@
 import * as almacen from '@plataforma/almacen';
+import { mensajeAmigable } from './errorMessages';
 import { svgDeCodigoDeBarras, ajustarAltoDelMarco, imprimirMarco as imprimirMarcoDelNavegador, imprimirHtmlSinVista, permisoDeRedLocal } from '@plataforma/impresion';
 // ─── Impresión en rollo (ticketera) ──────────────────────────────────────────
 //
@@ -1463,10 +1464,16 @@ export async function imprimirDocumento(
             // Sin una caja registrada la función rechaza a propósito: una
             // cola que nadie lee es papel que nunca sale. Se sigue a los otros
             // dos caminos — salvo que la sala la haya elegido una persona.
+            //
+            // Y se dice el MOTIVO real, no «no tiene caja» para todo: la cola
+            // también rechaza por permiso de sala, por un documento demasiado
+            // largo o porque la caja tiene 50 esperando (la impresora no
+            // responde). Con el texto fijo, quien veía esto último iba a
+            // registrar una caja nueva cuando el problema era la impresora.
             if (soloCola) {
                 return {
                     via: 'cola', ok: false,
-                    detalle: 'Esa sala no tiene una caja que reciba el documento. '
+                    detalle: `${mensajeAmigable(error, 'No se pudo mandar a la caja de esa sala.')} `
                         + 'Elige otra o imprímelo en esta computadora.',
                 };
             }

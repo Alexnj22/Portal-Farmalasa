@@ -634,7 +634,13 @@ export const createSystemSlice = (set, get) => ({
 
             // 2.5 Validar solapamiento de eventos del mismo tipo (antes de insertar)
             if (['VACATION', 'DISABILITY', 'SUPPORT'].includes(eventData.type)) {
-                const { data: existing } = await fetchOverlappingEvents(employeeId, eventData.type, options.excludeEventId);
+                const { data: existing, error: errSolape } = await fetchOverlappingEvents(employeeId, eventData.type, options.excludeEventId);
+                // Si la lectura falla NO se sigue: con `existing` en undefined la
+                // validación de solapamiento se saltaba en silencio y se podía
+                // registrar una vacación encima de otra vigente.
+                if (errSolape) {
+                    throw new Error(`No se pudo comprobar si choca con otro evento: ${errSolape.message || 'error de lectura'}`);
+                }
 
                 if (existing && existing.length > 0) {
                     const parseMeta = (ev) => {

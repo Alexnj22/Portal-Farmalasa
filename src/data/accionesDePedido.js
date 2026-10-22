@@ -169,6 +169,19 @@ export async function vistaPreviaDePedido({ salas, globalMode = false }) {
 }
 
 /**
+ * El número de cada sala en el mes: cuántos pedidos previos del mes la
+ * incluyeron, más uno. `previos` son filas `{ erp_sucursal_id }` de
+ * `pedido_sucursal_status`. Pura para poder probarla; quien la llama decide
+ * qué hacer si no pudo leer los previos (no llamarla).
+ */
+export function numeroDelMesPorSala(sucIds, previos) {
+    const cuenta = {};
+    for (const id of sucIds) cuenta[id] = 1;
+    for (const r of (previos ?? [])) if (cuenta[r.erp_sucursal_id] !== undefined) cuenta[r.erp_sucursal_id]++;
+    return cuenta;
+}
+
+/**
  * Confirma una vista previa YA calculada y deja el código de cada sala. Va
  * aparte de `vistaPreviaDePedido` para que el portal muestre el resumen por
  * sala ANTES de confirmar: lo que se ve es lo que se guarda.
@@ -198,28 +211,45 @@ export async function confirmarPedidoDirecto({ rows, salas, globalMode = false, 
     const sucIds = SUCURSALES.filter((id) => map[id]);
 
     // El número de cada sala en el mes: cuántos pedidos tuvo este mes + 1.
+    //
+    // Si cualquiera de las dos lecturas falla NO se arma ningún código: con la
+    // cuenta en cero la numeración volvía a 1 y el pedido salía con el código
+    // de otro del mismo mes —impreso en el PDF y que es el que se busca
+    // después—. Sin código, el papel sale con el nombre de la sala y el aviso
+    // de `codigosError` pide que se asigne; dos pedidos con el mismo código no
+    // se notan hasta que alguien busca uno y encuentra el otro.
     const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-    const { data: delMes } = await fetchPedidoIdsSinceExcluding(inicioMes, pedidoId);
-    const idsDelMes = (delMes ?? []).map((p) => p.id);
-    const cuenta = {};
-    for (const id of sucIds) cuenta[id] = 1;
-    if (idsDelMes.length) {
-        const { data: previos } = await fetchPedidoSucursalStatusForPedidos(idsDelMes, sucIds);
-        for (const r of (previos ?? [])) if (cuenta[r.erp_sucursal_id] !== undefined) cuenta[r.erp_sucursal_id]++;
-    }
-    const codigoFn = buildPedidoCodigo(cuenta, new Date(), globalMode ? SUCURSALES.length : sucIds.length);
-    const codigos = {};
-    for (const id of sucIds) codigos[id] = codigoFn(id);
-    // Los códigos de sala son los que llevan los PDF y los que se buscan
-    // después: el error ya no se descarta, vuelve en `codigosError`.
+    let cuenta = null;
     let codigosError = null;
-    try {
-        const { error } = await iniciarCodigosDeSucursalesDelPedido({
-            p_pedido_id: pedidoId, p_codigos: sucIds.map((id) => ({ erp_sucursal_id: id, codigo: codigos[id] })),
-        });
-        codigosError = error ?? null;
-    } catch (e) {
-        codigosError = e;
+    const { data: delMes, error: errMes } = await fetchPedidoIdsSinceExcluding(inicioMes, pedidoId);
+    if (errMes) {
+        codigosError = errMes;
+    } else {
+        const idsDelMes = (delMes ?? []).map((p) => p.id);
+        let previos = [];
+        if (idsDelMes.length) {
+            const { data, error: errPrev } = await fetchPedidoSucursalStatusForPedidos(idsDelMes, sucIds);
+            if (errPrev) codigosError = errPrev;
+            else previos = data ?? [];
+        }
+        if (!codigosError) cuenta = numeroDelMesPorSala(sucIds, previos);
+    }
+
+    let codigoFn = null;
+    const codigos = {};
+    if (cuenta) {
+        codigoFn = buildPedidoCodigo(cuenta, new Date(), globalMode ? SUCURSALES.length : sucIds.length);
+        for (const id of sucIds) codigos[id] = codigoFn(id);
+        // Los códigos de sala son los que llevan los PDF y los que se buscan
+        // después: el error ya no se descarta, vuelve en `codigosError`.
+        try {
+            const { error } = await iniciarCodigosDeSucursalesDelPedido({
+                p_pedido_id: pedidoId, p_codigos: sucIds.map((id) => ({ erp_sucursal_id: id, codigo: codigos[id] })),
+            });
+            codigosError = error ?? null;
+        } catch (e) {
+            codigosError = e;
+        }
     }
     if (codigosError) console.error('[pedidos] códigos de sala:', codigosError);
 

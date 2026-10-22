@@ -669,7 +669,9 @@ function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar,
                                     <FileText size={16} className="text-content-3 shrink-0" aria-hidden="true" />
                                     <span className="min-w-0 flex-1">
                                         <span className="block text-body font-bold text-content">{ERP_NAMES[sid] ?? `Sucursal ${sid}`}</span>
-                                        <span className="block text-caption text-content-3 tabular-nums">{flujo.codigoFn?.(sid)}.pdf</span>
+                                        {/* Sin código (no se pudo contar el mes) no hay nombre que anunciar:
+                                            `codigoFn` llega en null y el papel sale con el de la sala. */}
+                                        {flujo.codigoFn && <span className="block text-caption text-content-3 tabular-nums">{flujo.codigoFn(sid)}.pdf</span>}
                                     </span>
                                     {chip && <Badge variant={chip.variante} size="sm" uppercase={false}>{chip.label}</Badge>}
                                     <Button variant="secondary" icon={Download} loading={est === 'preparando'}

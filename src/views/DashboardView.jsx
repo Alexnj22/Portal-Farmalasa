@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas } from '@nucleo/utils/inicio';
+import { ausenciasDelDia, nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas } from '@nucleo/utils/inicio';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
@@ -1877,12 +1877,9 @@ const DashboardView = ({ openModal }) => {
     // `fetchTodayInvoicesSummary` más abajo.
     fetchActiveLeaveRequests()
       .then((rows) => {
-        const active = (rows||[]).filter(r => {
-          const meta = parseMeta(r.metadata);
-          const start = meta.startDate || (meta.permissionDates||[])[0];
-          const end   = meta.endDate   || (meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
-          return start && start <= today && (!end || end >= today);
-        });
+        // El juez es el del núcleo (`ausenciasDelDia`), el mismo del Inicio de
+        // la app: un permiso por días sueltos no es un rango del primero al último.
+        const active = ausenciasDelDia(rows || [], today);
         setAbsences(active); setAbsLoading(false);
       })
       .catch((e) => { console.error('DashboardView: ausencias vigentes falló:', e?.message ?? e); setAbsLoading(false); });

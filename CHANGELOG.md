@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1336.3 — Auditoría: inventario, conteos, Mín·Máx e impresión
+
+- **Conteos — agregar a mano:** un lote con el mismo número y dos vencimientos ahora sale dos veces en la lista, cada uno con su fecha. Antes se ofrecía uno solo y el renglón podía guardarse con el vencimiento del otro (portal y app).
+- **Cargas de inventario:** el «había N» de la búsqueda cuenta unidades. Antes sumaba cajas, blísteres y sueltas como si fueran lo mismo (24 cajas + 1 blíster + 3 sueltas daba 28 en vez de 733).
+- **Traslados — historial:** los envíos cerrados respetan la sala y la semana elegidas, igual que los traslados de arriba. Si la semana pudo quedar incompleta, la pantalla lo avisa (portal y app).
+- **Pedidos:** si no se pudieron contar los pedidos del mes de una sala, el pedido ya no sale con un código repetido. Queda sin código y con el aviso para asignarlo.
+- **Conteos — lista:** la lista de conteos se lee completa, sin el tope de 1000 que algún día iba a esconder los más viejos.
+- **Impresión:** cuando la caja de una sala no acepta un documento, el aviso da el motivo real (impresora que no responde, permiso de sala, documento muy largo). Antes siempre decía «no tiene caja».
+- **Personal:** al registrar vacaciones, incapacidad o apoyo, si no se puede comprobar el choque con otro evento, el registro se detiene en vez de guardarse sin revisar.
+- **Tablero — ausentes del día:** un permiso de días sueltos cuenta sólo esos días. Antes se tomaba todo el tramo entre el primero y el último.
+
 ## v2.1336.2 — Tipos de bolsas al día
 
 `gate:tipos` estaba en rojo por `rechazarYAnularMovimiento` (le agregaba `rechazado` a un `Error`). Se declara el tipo, y de paso los filtros `desde`/`hasta` de bolsas, depósitos y conteos: el archivo baja de 19 a 12 avisos. Sin cambio de comportamiento.

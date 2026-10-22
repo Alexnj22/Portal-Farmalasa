@@ -110,6 +110,7 @@ export default function Traslados() {
   const [datos, setDatos] = useState(null);
   const [historial, setHistorial] = useState(null);
   const [enviosCerrados, setEnviosCerrados] = useState(null);
+  const [enviosIncompletos, setEnviosIncompletos] = useState(false);
   const [semana, setSemana] = useState(() => getLocalMonday());
   const [salaFiltro, setSalaFiltro] = useState(null);
   const [desenlace, setDesenlace] = useState('todos');
@@ -149,10 +150,12 @@ export default function Traslados() {
   const cargarHistorial = useCallback(async () => {
     const [r, e] = await Promise.all([
       fetchTrasladosHistorial({ branchId: salaHistorial, semana }),
-      fetchEnviosHistorial(200),
+      // Con la misma sala y semana que los traslados (ver `recortarEnviosCerrados`).
+      fetchEnviosHistorial(200, { branchId: salaHistorial, semana }),
     ]);
     setHistorial(r.filas || r.data || []);
     setEnviosCerrados(e.envios || []);
+    setEnviosIncompletos(!!e.incompleto);
   }, [salaHistorial, semana]);
   useEffect(() => { if (vista === 'historial') cargarHistorial(); }, [vista, cargarHistorial]);
 
@@ -274,9 +277,10 @@ export default function Traslados() {
         estado={{ texto: 'En camino', color: MARCA.azulClaro }} onPress={() => abrir(f)} />
     );
   };
-  // Los envíos cerrados: los 200 más recientes, como en el portal. NO se
-  // recortan por semana ni por sala acá afuera: la consulta trae un tope, y
-  // recortar después de un tope esconde sin avisar (la regla de las 1000 filas).
+  // Los envíos cerrados ya vienen recortados por sala y semana desde el núcleo
+  // (`recortarEnviosCerrados`), que además dice si la semana pudo quedar corta
+  // por el tope de la consulta: un tope se aplica antes del filtro, así que eso
+  // se avisa en vez de callarlo. Acá sólo pasa el buscador.
   const enviosVistos = (enviosCerrados ?? []).filter((e) => {
     if (!busqueda.trim()) return true;
     return smartFilter(busqueda, [e], (x) => [[x.origen_branch_name, x.branch_name, x.motivo_tipo, x.reason, ...(x.lineas || []).map((l) => l.descripcion)].filter(Boolean).join(' ')]).results.length > 0;
@@ -412,7 +416,7 @@ export default function Traslados() {
             ) : <Vacio titulo="Nada esa semana" detalle="Usa las flechas para mirar otra semana." />}
             {desenlace === 'todos' && enviosVistos.length ? (
               <>
-                <Titulo texto="Envíos cerrados · los más recientes" n={enviosVistos.length} />
+                <Titulo texto={enviosIncompletos ? 'Envíos cerrados · pueden faltar' : 'Envíos cerrados'} n={enviosVistos.length} />
                 {enviosVistos.map((e) => {
                   const devueltas = (e.lineas || []).filter((l) => String(l.estado).startsWith('devuelta')).length;
                   return <TarjetaEnvio key={e.id} envio={e} color={devueltas ? MARCA.rojo : MARCA.verde}

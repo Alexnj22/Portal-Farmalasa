@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { subirEvidencia as subirEvidenciaEn } from './evidencia';
 import { anotar } from './audit';
+import { rangoDeSemana } from '../utils/semana';
 
 // Enviar producto a otra sala: el traslado al REVÉS.
 //
@@ -376,10 +377,64 @@ export async function fetchEnviosVivos() {
     return { envios: data ?? [], error };
 }
 
-/** Los que ya se cerraron. Sin esto, un envío desaparece en cuanto termina. */
-export async function fetchEnviosHistorial(limite = 100) {
-    const { data, error } = await supabase.rpc('get_envios_historial', { p_limite: limite });
-    return { envios: data ?? [], error };
+/** El techo de `get_envios_historial`: pedir más devuelve lo mismo. */
+export const TOPE_ENVIOS_CERRADOS = 500;
+
+/**
+ * Los envíos cerrados de UNA sala y UNA semana, a partir de los más recientes.
+ *
+ * `get_envios_historial` no recibe ni sala ni fecha, así que el recorte se hace
+ * acá — y por eso tiene que decir si pudo quedar corto: **un tope se aplica
+ * antes del filtro**. Si la consulta llegó a su techo y lo más viejo que trajo
+ * todavía cae dentro de la semana (o después), puede haber envíos de esa
+ * semana más atrás que no vinieron. Eso es `incompleto`, y la pantalla lo dice
+ * en vez de mostrar «los de esa semana entre los 500 más nuevos» como si
+ * fueran todos.
+ *
+ * La sala vale de los dos lados —quien lo mandó o quien lo recibió—, igual que
+ * el historial de traslados. La semana se mide por `updated_at`, que es CUÁNDO
+ * SE CERRÓ: el mismo criterio que usa el historial de traslados de al lado.
+ */
+export function recortarEnviosCerrados(envios, { branchId = null, semana = null, tope = TOPE_ENVIOS_CERRADOS } = {}) {
+    const todos = envios ?? [];
+    const sala = branchId == null || branchId === '' ? null : String(branchId);
+    const rango = semana ? rangoDeSemana(semana) : null;
+    const desde = rango ? Date.parse(rango.desde) : null;
+    const hasta = rango ? Date.parse(rango.hasta) : null;
+
+    const vistos = todos.filter((e) => {
+        if (sala && String(e.origen_branch_id ?? '') !== sala && String(e.branch_id ?? '') !== sala) return false;
+        if (rango) {
+            const t = Date.parse(e.updated_at);
+            if (!Number.isFinite(t) || t < desde || t >= hasta) return false;
+        }
+        return true;
+    });
+
+    let incompleto = false;
+    if (rango && todos.length >= tope) {
+        // Vienen del más nuevo al más viejo: el último es el borde de lo leído.
+        const borde = Date.parse(todos[todos.length - 1]?.updated_at);
+        incompleto = !Number.isFinite(borde) || borde >= desde;
+    }
+    return { envios: vistos, incompleto };
+}
+
+/**
+ * Los que ya se cerraron. Sin esto, un envío desaparece en cuanto termina.
+ *
+ * Con `branchId` o `semana` se piden todos los que la función da (su techo) y
+ * se recortan con `recortarEnviosCerrados`; `incompleto` avisa si la semana
+ * pudo quedar corta. Sin ellos, son «los últimos `limite`».
+ */
+export async function fetchEnviosHistorial(limite = 100, { branchId = null, semana = null } = {}) {
+    const recorta = (branchId != null && branchId !== '') || !!semana;
+    const { data, error } = await supabase.rpc('get_envios_historial', {
+        p_limite: recorta ? TOPE_ENVIOS_CERRADOS : limite,
+    });
+    if (error || !recorta) return { envios: data ?? [], incompleto: false, error };
+    const { envios, incompleto } = recortarEnviosCerrados(data, { branchId, semana });
+    return { envios, incompleto, error: null };
 }
 
 /**

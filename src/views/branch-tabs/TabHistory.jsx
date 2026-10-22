@@ -53,7 +53,7 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
     }
 };
 
-const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, employees = [], openModal }) => {
+const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, historyError = null, employees = [], openModal }) => {
     const { hasPermission } = useAuth();
     const canDownload = hasPermission('branches_descargar');
     const [typeFilter, setTypeFilter] = useState('ALL');
@@ -461,6 +461,10 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    ) : historyError && propHistory.length === 0 ? (
+                        <div className="relative z-base pt-10">
+                            <Notice variant="danger" icon={AlertTriangle}>{historyError}</Notice>
                         </div>
                     ) : filteredHistory.length === 0 ? (
                         <div className="text-center py-20 opacity-60 relative z-base"><FileText className="text-content-3 mx-auto mb-4" size={48} /> Sin registros en esta sucursal</div>

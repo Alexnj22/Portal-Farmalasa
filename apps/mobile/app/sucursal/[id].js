@@ -36,6 +36,7 @@ import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { cupoDeKioscos, sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
@@ -321,12 +322,18 @@ function Historial({ b, empleados }) {
   const [lista, setLista] = useState(null);
   const [dim, setDim] = useState('ALL');
   const [cuantos, setCuantos] = useState(40);
-  useEffect(() => { traer?.(b.id).then((d) => setLista(d || [])).catch(() => setLista([])); }, [b.id, traer]);
+  // Un error de lectura no es un historial vacío: se dice (auditoría 2026-10, H3).
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    traer?.(b.id).then((d) => { setLista(d || []); setError(null); })
+      .catch((e) => { setError(mensajeAmigable(e, 'No se pudo cargar el historial de la sucursal.')); setLista((l) => l ?? []); });
+  }, [b.id, traer]);
   const porNombre = useMemo(() => new Map((empleados || []).map((e) => [String(e.name || '').toLowerCase(), e])), [empleados]);
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
   const todos = useMemo(() => historialConApertura(lista, b.opening_date || b.openingDate), [lista, b]);
   const visibles = dim === 'ALL' ? todos : todos.filter((i) => dimensionDelRegistro(i) === dim);
   if (lista == null) return <ActivityIndicator style={{ marginTop: 20 }} />;
+  if (error && !lista.length) return <Aviso texto={error} tono="freno" />;
   return (
     <>
       <Segmentos activa={dim} onCambiar={(v) => { setDim(v); setCuantos(40); }}

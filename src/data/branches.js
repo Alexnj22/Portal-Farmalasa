@@ -29,8 +29,10 @@ export function deleteBranch(branchId) {
 
 // ── Documentos / historial ───────────────────────────────────────────────────
 
+// Acepta una fila o varias: varias van en UN solo INSERT, que entra entero o
+// no entra (lo usa `updateBranch` para el historial de un guardado).
 export function insertBranchDocument(payload) {
-    return supabase.from('branch_documents').insert([payload]);
+    return supabase.from('branch_documents').insert(Array.isArray(payload) ? payload : [payload]);
 }
 
 export function fetchBranchDocuments(branchId) {

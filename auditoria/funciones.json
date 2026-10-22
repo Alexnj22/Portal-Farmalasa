@@ -2602,7 +2602,15 @@
    "area": "fiscal",
    "por": "código"
   },
+  "get_libro_compras_completo_json": {
+   "area": "fiscal",
+   "por": "código"
+  },
   "get_libro_compras_declarable": {
+   "area": "fiscal",
+   "por": "código"
+  },
+  "get_libro_compras_declarable_json": {
    "area": "fiscal",
    "por": "código"
   },

@@ -129,12 +129,27 @@ describe('el resumen fiscal', () => {
 });
 
 describe('el libro de compras completo', () => {
-    it('PAGINA: junio-julio ya dieron 1.384 filas', async () => {
-        // PostgREST cortaría en 1000 sin avisar, y a un libro fiscal le
-        // faltarían documentos sin que nada falle.
-        await fetchLibroComprasCompleto('2026-06-01', '2026-07-31', null);
-        expect(espia.uso('range')).toBe(true);
-        expect(espia.rpc[0].nombre).toBe('get_libro_compras_completo');
+    it('UNA sola llamada a la envoltura json: sin páginas que puedan duplicar u omitir', async () => {
+        // Junio-julio ya dieron 1.384 filas. Paginada con `.range()` sobre un
+        // orden con empates, un documento en el corte entre páginas podía salir
+        // dos veces y otro ninguna (auditoría 2026-10, grupo 4 H5).
+        espia.responderRpc('get_libro_compras_completo_json', [{ documento_completo: 'A' }, { documento_completo: 'B' }]);
+        const r = await fetchLibroComprasCompleto('2026-06-01', '2026-07-31', null);
+        expect(espia.rpc).toHaveLength(1);
+        expect(espia.rpc[0].nombre).toBe('get_libro_compras_completo_json');
+        expect(espia.uso('range')).toBe(false);
+        expect(r).toHaveLength(2);
+    });
+
+    it('la sucursal viaja como número', async () => {
+        await fetchLibroComprasCompleto('2026-06-01', '2026-07-31', '4');
+        expect(espia.rpc[0].args).toEqual({ p_desde: '2026-06-01', p_hasta: '2026-07-31', p_branch_id: 4 });
+    });
+
+    it('si falla devuelve null, nunca un libro vacío que parezca entero', async () => {
+        espia.supabase.rpc = () => Promise.resolve({ data: null, error: { message: 'timeout' } });
+        expect(await fetchLibroComprasCompleto('2026-06-01', '2026-07-31', null)).toBeNull();
+        expect(await fetchLibroComprasDeclarable('2026-06-01', '2026-07-31')).toBeNull();
     });
 
     it('el DECLARABLE no recibe sucursal, y eso no es un olvido', async () => {
@@ -146,8 +161,10 @@ describe('el libro de compras completo', () => {
         expect(fetchLibroComprasDeclarable).toHaveLength(2);
     });
 
-    it('el declarable también pagina', async () => {
+    it('el declarable también va en una sola llamada', async () => {
         await fetchLibroComprasDeclarable('2026-06-01', '2026-07-31');
-        expect(espia.uso('range')).toBe(true);
+        expect(espia.rpc).toHaveLength(1);
+        expect(espia.rpc[0].nombre).toBe('get_libro_compras_declarable_json');
+        expect(espia.uso('range')).toBe(false);
     });
 });

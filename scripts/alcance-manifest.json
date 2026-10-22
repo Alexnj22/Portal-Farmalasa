@@ -601,6 +601,11 @@
     "get_libro_compras_completo": {
       "guarda": "alcance"
     },
+    "get_libro_compras_completo_json": {
+      "guarda": "alcance",
+      "delega": "get_libro_compras_completo",
+      "motivo": "Envoltura json (Patrón C) de get_libro_compras_completo: la sala la filtra la original con auth_module_scope."
+    },
     "get_libro_percepcion": {
       "guarda": "alcance"
     },

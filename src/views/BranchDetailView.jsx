@@ -9,6 +9,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatTime12h } from '@nucleo/utils/helpers';
 import { WEEK_DAYS } from '../components/common/catalogos/constantes';
 
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import TabHistory from './branch-tabs/TabHistory';
 import TabExpediente from './branch-tabs/TabExpediente';
 import TabExpenses from './branch-tabs/TabExpenses';
@@ -37,6 +38,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
     const [history, setHistory] = useState([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [historyError, setHistoryError] = useState(null);
     
     const [refreshKey, setRefreshKey] = useState(0);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -95,10 +97,15 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         const fetchHistory = async () => {
             if (!liveBranch?.id) return;
             if (history.length === 0) setIsLoadingHistory(true);
-            const data = await getBranchHistory(liveBranch.id);
-            if (isMounted) {
-                setHistory(data || []);
-                setIsLoadingHistory(false);
+            // Un error de lectura NO es un historial vacío: se muestra como
+            // error y no como «Sin registros» (auditoría 2026-10, H3).
+            try {
+                const data = await getBranchHistory(liveBranch.id);
+                if (isMounted) { setHistory(data || []); setHistoryError(null); }
+            } catch (err) {
+                if (isMounted) setHistoryError(mensajeAmigable(err, 'No se pudo cargar el historial de la sucursal.'));
+            } finally {
+                if (isMounted) setIsLoadingHistory(false);
             }
         };
         fetchHistory();
@@ -414,7 +421,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                     <div data-surface="card" className="p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
                         <div key={activeTab} className="animate-view-enter flex-1 flex flex-col">
                         {activeTab === 'history' && (
-                            <TabHistory liveBranch={liveBranch} history={history} isLoadingHistory={isLoadingHistory} employees={employees} openModal={openModal} />
+                            <TabHistory liveBranch={liveBranch} history={history} isLoadingHistory={isLoadingHistory} historyError={historyError} employees={employees} openModal={openModal} />
                         )}
 
                         {activeTab === 'staff' && (

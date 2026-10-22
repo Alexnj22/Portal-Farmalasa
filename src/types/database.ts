@@ -31235,6 +31235,10 @@ export type Database = {
           total: number
         }[]
       }
+      get_libro_compras_completo_json: {
+        Args: { p_branch_id?: number; p_desde: string; p_hasta: string }
+        Returns: Json
+      }
       get_libro_compras_declarable: {
         Args: { p_desde: string; p_hasta: string }
         Returns: {
@@ -31261,6 +31265,10 @@ export type Database = {
           total: number
           veces_en_el_libro: number
         }[]
+      }
+      get_libro_compras_declarable_json: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
       }
       get_libro_percepcion: {
         Args: { p_branch_id?: number; p_desde: string; p_hasta: string }

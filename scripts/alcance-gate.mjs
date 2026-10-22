@@ -152,7 +152,14 @@ if (!arg('--hook')) {
       }
       if (!GUARDAS_RPC.includes(decl.guarda)) { fallar(donde, `guarda desconocida «${decl.guarda}»`); continue; }
       if (CON_MOTIVO.includes(decl.guarda) && !String(decl.motivo ?? '').trim()) fallar(donde, `«${decl.guarda}» exige motivo escrito`);
-      if (decl.guarda === 'alcance' && !ALCANCE_RPC.test(r.src)) fallar(donde, 'declarada «alcance» pero su cuerpo no compara la sala');
+      // Una envoltura (p. ej. la versión `_json` de una SETOF) no compara la
+      // sala: la compara la función a la que delega. Se acepta sólo si
+      // `delega` nombra una función declarada «alcance» y el cuerpo la llama.
+      const delegaBien = decl.delega
+        && MANIFIESTO.rpc?.[decl.delega]?.guarda === 'alcance'
+        && new RegExp(`\\b${decl.delega}\\s*\\(`).test(r.src);
+      if (decl.delega && !delegaBien) fallar(donde, `«delega» en ${decl.delega}, que no está declarada «alcance» o el cuerpo no la llama`);
+      if (decl.guarda === 'alcance' && !delegaBien && !ALCANCE_RPC.test(r.src)) fallar(donde, 'declarada «alcance» pero su cuerpo no compara la sala');
       if (decl.guarda === 'solo-servidor' && r.autenticado) fallar(donde, '«solo-servidor» pero authenticated la puede ejecutar — REVOKE EXECUTE');
       if (decl.guarda === 'modulo-de-red') {
         if (!decl.modulos?.length) fallar(donde, '«modulo-de-red» sin `modulos`');

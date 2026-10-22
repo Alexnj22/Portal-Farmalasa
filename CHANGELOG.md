@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.9 — Sucursales miran sus errores; libro de compras completo y declarable en una sola llamada
+
+- **Sucursales · crear con contrato de alquiler**: si el contrato se sube pero no se puede enlazar a la ficha, la sucursal queda creada igual y aparece el aviso «Falta el contrato» para volver a adjuntarlo. Antes se daba por completa sin el contrato, y reintentar habría creado otra sucursal igual.
+- **Sucursales · reemplazar o quitar un documento**: el documento anterior se guarda en el historial ANTES de tocar la ficha, todos en una sola escritura. Si eso falla, no se cambia nada y se avisa. Antes la ficha quedaba con el documento nuevo y el anterior desaparecía del historial sin aviso.
+- **Sucursales · Historial** (portal y app): si el historial no se puede cargar, se dice. Antes se mostraba «Sin registros en esta sucursal», igual que una sucursal sin historia.
+- **Libro de compras completo y declarable**: se piden en una sola llamada (`get_libro_compras_completo_json` / `get_libro_compras_declarable_json`), con el mismo orden y un desempate total. Antes se pedían por páginas de 1000 sobre un orden con empates: un documento en el corte entre páginas podía salir dos veces y otro ninguna. Mismas columnas y mismos valores que antes. **Requiere aplicar la migración antes de publicar.**
+
 ## v2.1350.8 — Reservas: saldos, devoluciones y encargos en tarjeta; main:al-dia con archivos nuevos
 
 - **Reservas** (pantalla): **saldos a favor, devoluciones por entregar y encargos** pasan a tarjeta, como las reservas (`TarjetaCompacta`).

@@ -11,6 +11,7 @@ import { LIMITE_KIOSCOS } from '../../utils/kioscos';
 import { buscarCargo } from '../../utils/roles';
 import { yaEstabaPagado } from '../../utils/pagoDeSucursal';
 import { SIN_ASIGNAR } from '../../data/constants';
+import { useToastStore } from '../toastStore';
 
 const persistBranches = (branches) => {
     almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -91,6 +92,7 @@ export const createBranchSlice = (set, get) => ({
             if (error) throw error;
 
             let finalSettings = typeof newBranch.settings === 'string' ? JSON.parse(newBranch.settings) : (newBranch.settings || {});
+            let contratoSinEnlazar = false;
 
             if (pendingRentFile) {
                 const documentUrl = await handleDocumentVersioning(newBranch.id, 'inmueble', 'contrato_alquiler', pendingRentFile);
@@ -98,7 +100,18 @@ export const createBranchSlice = (set, get) => ({
                     if (!finalSettings.rent) finalSettings.rent = {};
                     if (!finalSettings.rent.contract) finalSettings.rent.contract = {};
                     finalSettings.rent.contract.documentUrl = documentUrl;
-                    await updateBranch(newBranch.id, { settings: finalSettings });
+                    // El error se mira: sin él la sala quedaba creada con el
+                    // contrato subido al almacén pero sin enlazar, y la pantalla
+                    // la daba por completa (auditoría 2026-10, H3). La sala YA
+                    // existe, así que no se lanza —el formulario quedaría
+                    // abierto y reintentar crearía otra igual—: se termina de
+                    // registrar sin el enlace y se avisa qué faltó.
+                    const { error: contratoErr } = await updateBranch(newBranch.id, { settings: finalSettings });
+                    if (contratoErr) {
+                        console.error('La sucursal se creó, pero no se pudo enlazar el contrato:', contratoErr);
+                        delete finalSettings.rent.contract.documentUrl;
+                        contratoSinEnlazar = true;
+                    }
                 }
             }
 
@@ -124,6 +137,13 @@ export const createBranchSlice = (set, get) => ({
                 const next = [...state.branches, appBranch];
                 return { branches: persistBranches(next) };
             });
+            if (contratoSinEnlazar) {
+                useToastStore.getState().showToast(
+                    'Falta el contrato',
+                    `La sucursal «${newBranch.name}» se creó, pero no se pudo guardar el contrato de alquiler. Ábrela y vuelve a adjuntarlo.`,
+                    'error'
+                );
+            }
             return appBranch.id;
         } catch (err) {
             console.error("Fallo al crear sucursal:", err);
@@ -157,9 +177,19 @@ export const createBranchSlice = (set, get) => ({
                 location: { ...(oldSettings.location || {}), ...(newSettings.location || {}) }
             };
 
+            // Las filas «Histórico» se juntan acá y se escriben TODAS en un solo
+            // INSERT, antes de la ficha. Antes se escribían una por una sin mirar
+            // el error: si fallaba, la ficha quedaba con el documento nuevo y el
+            // anterior sin rastro en el historial, sin aviso (auditoría 2026-10,
+            // H3). Un solo INSERT entra entero o no entra, y si no entra se
+            // corta antes de tocar la ficha: queda exactamente como estaba (lo
+            // ya subido al almacén queda huérfano con nombre propio, no pisa
+            // nada). `branch_documents` no tiene DELETE —es append-only—, así
+            // que escribirla una por una no se podría deshacer.
+            const historialPendiente = [];
             const archiveOldDoc = async (docType, docName, oldUrl, metadata = {}) => {
                 if (!oldUrl) return;
-                await insertBranchDocument({
+                historialPendiente.push({
                     branch_id: id,
                     document_type: docType,
                     name: docName,
@@ -257,6 +287,14 @@ export const createBranchSlice = (set, get) => ({
                 weekly_hours: payload.weekly_hours || payload.weeklyHours || {},
                 settings: cleanSettingsForDB
             };
+
+            if (historialPendiente.length > 0) {
+                const { error: histErr } = await insertBranchDocument(historialPendiente);
+                if (histErr) {
+                    console.error('No se pudo guardar el documento anterior en el historial:', histErr);
+                    throw new Error('No se pudo guardar el documento anterior en el historial, así que no se cambió nada. Intenta de nuevo.');
+                }
+            }
 
             const { data: updated, error } = await updateBranchReturning(id, dbPayload);
             if (error) throw error;
@@ -515,27 +553,32 @@ export const createBranchSlice = (set, get) => ({
         return { authorized: Array.isArray(data) && data.length > 0, networkError: false };
     },
 
+    // Lanza si alguna de las dos lecturas falla. Antes se tragaba el error y
+    // devolvía `[]`, que la pantalla pintaba «Sin registros en esta sucursal»:
+    // un historial que no se pudo leer se veía igual que uno vacío (auditoría
+    // 2026-10, H3). Quien llama distingue: lista (puede ser vacía) o error.
     getBranchHistory: async (branchId) => {
-        try {
-            const { data: docs } = await fetchBranchDocuments(branchId);
-            const { data: logs } = await fetchAuditLogsForBranch(branchId);
-
-            const combined = [
-                ...(docs || []).map(d => ({ ...d, isDoc: true, sortDate: new Date(d.created_at) })),
-                ...(logs || []).map(l => ({ ...l, isLog: true, sortDate: new Date(l.created_at) }))
-            ].sort((a, b) => b.sortDate - a.sortDate);
-
-            // 🔴 NUEVO: ACTUALIZAMOS LA MEMORIA DE ZUSTAND
-            // Esto permite a React reaccionar y mostrar el historial sin dar F5
-            set((state) => ({
-                branchHistory: { ...state.branchHistory, [branchId]: combined }
-            }));
-
-            return combined;
-        } catch (err) { 
-            console.error("Fallo al obtener historial de sucursal:", err);
-            return []; 
+        const [{ data: docs, error: docsErr }, { data: logs, error: logsErr }] = await Promise.all([
+            fetchBranchDocuments(branchId),
+            fetchAuditLogsForBranch(branchId),
+        ]);
+        if (docsErr || logsErr) {
+            console.error('Fallo al obtener historial de sucursal:', docsErr || logsErr);
+            throw new Error('No se pudo cargar el historial de la sucursal. Intenta de nuevo.');
         }
+
+        const combined = [
+            ...(docs || []).map(d => ({ ...d, isDoc: true, sortDate: new Date(d.created_at) })),
+            ...(logs || []).map(l => ({ ...l, isLog: true, sortDate: new Date(l.created_at) }))
+        ].sort((a, b) => b.sortDate - a.sortDate);
+
+        // 🔴 NUEVO: ACTUALIZAMOS LA MEMORIA DE ZUSTAND
+        // Esto permite a React reaccionar y mostrar el historial sin dar F5
+        set((state) => ({
+            branchHistory: { ...state.branchHistory, [branchId]: combined }
+        }));
+
+        return combined;
     },
 
     registerBranchExpense: async (branchId, expenseData) => {

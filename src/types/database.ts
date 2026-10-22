@@ -4119,6 +4119,11 @@ export type Database = {
           anulada_at: string | null
           anulada_motivo: string | null
           anulada_por: string | null
+          autorizacion: string | null
+          autorizacion_at: string | null
+          autorizacion_nota: string | null
+          autorizacion_por: string | null
+          autorizacion_solicitud: string | null
           branch_id: number
           created_at: string
           entidad: string | null
@@ -4141,6 +4146,11 @@ export type Database = {
           anulada_at?: string | null
           anulada_motivo?: string | null
           anulada_por?: string | null
+          autorizacion?: string | null
+          autorizacion_at?: string | null
+          autorizacion_nota?: string | null
+          autorizacion_por?: string | null
+          autorizacion_solicitud?: string | null
           branch_id: number
           created_at?: string
           entidad?: string | null
@@ -4163,6 +4173,11 @@ export type Database = {
           anulada_at?: string | null
           anulada_motivo?: string | null
           anulada_por?: string | null
+          autorizacion?: string | null
+          autorizacion_at?: string | null
+          autorizacion_nota?: string | null
+          autorizacion_por?: string | null
+          autorizacion_solicitud?: string | null
           branch_id?: number
           created_at?: string
           entidad?: string | null
@@ -28005,6 +28020,11 @@ export type Database = {
           anulada_at: string | null
           anulada_motivo: string | null
           anulada_por: string | null
+          autorizacion: string | null
+          autorizacion_at: string | null
+          autorizacion_nota: string | null
+          autorizacion_por: string | null
+          autorizacion_solicitud: string | null
           branch_id: number
           created_at: string
           entidad: string | null
@@ -28036,6 +28056,11 @@ export type Database = {
           anulada_at: string | null
           anulada_motivo: string | null
           anulada_por: string | null
+          autorizacion: string | null
+          autorizacion_at: string | null
+          autorizacion_nota: string | null
+          autorizacion_por: string | null
+          autorizacion_solicitud: string | null
           branch_id: number
           created_at: string
           entidad: string | null
@@ -28143,6 +28168,10 @@ export type Database = {
       apartado_para_retirar: {
         Args: { p_apartado: Json; p_branch_id: number }
         Returns: Json
+      }
+      apartado_traslados_pedidos: {
+        Args: { p_apartado: Json }
+        Returns: string[]
       }
       aperturas_de_la_manana: { Args: { p_fecha?: string }; Returns: Json }
       aplicar_barrido_proveedores: {
@@ -28501,6 +28530,11 @@ export type Database = {
           anulada_at: string | null
           anulada_motivo: string | null
           anulada_por: string | null
+          autorizacion: string | null
+          autorizacion_at: string | null
+          autorizacion_nota: string | null
+          autorizacion_por: string | null
+          autorizacion_solicitud: string | null
           branch_id: number
           created_at: string
           entidad: string | null
@@ -33882,6 +33916,7 @@ export type Database = {
           p_foto_url?: string
           p_metodo?: string
           p_monto: number
+          p_motivo_sin_comprobante?: string
           p_nota?: string
           p_numero_boleta?: string
           p_recibido_por?: string
@@ -33893,6 +33928,11 @@ export type Database = {
           anulada_at: string | null
           anulada_motivo: string | null
           anulada_por: string | null
+          autorizacion: string | null
+          autorizacion_at: string | null
+          autorizacion_nota: string | null
+          autorizacion_por: string | null
+          autorizacion_solicitud: string | null
           branch_id: number
           created_at: string
           entidad: string | null
@@ -33954,8 +33994,8 @@ export type Database = {
         }
         Returns: Json
       }
-      reserva_amarrar_traslado: {
-        Args: { p_request: string; p_reserva: number }
+      reserva_amarrar_traslados: {
+        Args: { p_requests: string[]; p_reserva: number; p_resto: boolean }
         Returns: undefined
       }
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }

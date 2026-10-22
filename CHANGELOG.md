@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1344.1 — Apartar sobre varios traslados en camino y el resto a Bodega
+
+- **Varios traslados en camino en un mismo apartado**: se marcan los que se toman (uno o varios) y la reserva queda amarrada a todos; se marca lista cuando llegan. Con 2 en camino y 3 pedidos, **el que falta se encarga a Bodega con la misma reserva** (el mismo encargo que «Encargar a Bodega»; Compras confirma su precio y la fecha).
+- **La opción elegida ahora se ve**: borde y ✓. Con `ring` sobre `data-surface="card"` no se dibujaba nada — pasaba también en «¿Lo pedimos a otra sala?».
+- Base: `reserva_amarrar_traslados` reemplaza a `reserva_amarrar_traslado`; `apartado_cotizar`/`aplicar`/`enlace_preparar` aceptan `traslados_en_camino` y `encargar_resto`; `reserva_seguir_traslado` cuenta el cambio de cualquier traslado que nombre la reserva, no sólo el último.
+
 ## v2.1344.0 — Bolsas: la salida sin comprobante sale y queda pendiente de autorización
 
 - **Sacar efectivo de una bolsa sin foto del comprobante** («Otro», pago a proveedor, gasto): antes el campo decía «(opcional)» pero el botón no dejaba continuar («lleva la foto del comprobante»). Ahora sale igual, pide «por qué no hay comprobante» y queda pendiente de autorización, igual que lo que sale del cajón. Portal y app.

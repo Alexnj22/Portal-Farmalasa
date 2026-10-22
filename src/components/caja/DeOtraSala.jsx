@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Check } from 'lucide-react';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 
 // ── No hay en la sala: ¿lo tiene otra? ──────────────────────────────────────
@@ -57,10 +58,15 @@ export default function DeOtraSala({ producto, factor, cantidad, disponibles = n
                 {[...candidatos.map((d) => ({ value: String(d.erp_sucursal_id), titulo: `Pedir a ${d.sala}${disponibles == null ? '' : ' y apartar'}`, detalle: `Tiene ${Number(d.unidades)} unidades` })),
                     ...(opcionNo ? [{ value: 'encargo', ...opcionNo }] : [])].map((o) => (
                     <li key={o.value}>
+                        {/* La marca va con `data-tono`: sobre `data-surface="card"` un `ring` no se ve. */}
                         <button type="button" onClick={() => setEleccion(o.value)} data-surface="card" aria-pressed={efectiva === o.value}
-                            className={`w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] ${efectiva === o.value ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
-                            <p className="text-body-sm font-semibold text-content">{o.titulo}</p>
-                            <p className="text-caption text-content-3">{o.detalle}</p>
+                            data-tono={efectiva === o.value ? 'brand' : undefined}
+                            className="w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] flex items-center gap-3">
+                            <span className="flex-1 min-w-0">
+                                <span className="block text-body-sm font-semibold text-content">{o.titulo}</span>
+                                <span className="block text-caption text-content-3">{o.detalle}</span>
+                            </span>
+                            {efectiva === o.value && <Check size={18} className="text-brand-text shrink-0" aria-hidden />}
                         </button>
                     </li>
                 ))}

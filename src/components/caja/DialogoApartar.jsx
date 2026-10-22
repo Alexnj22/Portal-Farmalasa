@@ -123,9 +123,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     // Pedirlo a otra sala: `{ clave, branch_id, sala, lista }` o null (se encarga).
     const [traslado, setTraslado] = useState(null);
     const trasladoApi = useRef(null);
-    // Lo que ya viene en camino a la sala: el `id` del traslado elegido, 'no' si
-    // se descartó, o null mientras nadie elija (se sugiere el primero que alcanza).
-    const [vieneElegido, setVieneElegido] = useState(null);
+    // Lo que ya viene en camino a la sala: los `id` de los traslados elegidos
+    // ([] si se descartó), o null mientras nadie elija (se sugieren los que alcanzan).
+    const [vienenElegidos, setVienenElegidos] = useState(null);
     // Los productos ya agregados al encargo (además del que se está eligiendo).
     const [lineas, setLineas] = useState(guardado?.lineas ?? []);
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
@@ -171,12 +171,22 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     const total = elegida ? redondear(elegida.precio * cant) : 0;
     // Con productos ya agregados al encargo, el que sigue sólo puede encargarse.
     const soloEncargo = lineas.length > 0;
-    // Lo que ya viene en camino y alcanza para lo que se pide.
-    const vienen = useMemo(() => (opciones?.modo === 'encargo' && elegida && !soloEncargo
-        ? (opciones.en_camino ?? []).filter((v) => Number(v.unidades) >= cant * elegida.factor) : []), [opciones, elegida, cant, soloEncargo]);
-    const viene = vieneElegido === 'no' ? null : (vienen.find((v) => v.id === vieneElegido) ?? vienen[0] ?? null);
+    // Lo que ya viene en camino a la sala. Se pueden juntar varios traslados, y
+    // si no alcanzan, el resto se encarga a Bodega con la misma reserva.
+    const vienen = useMemo(() => (opciones?.modo === 'encargo' && elegida && !soloEncargo ? (opciones.en_camino ?? []) : []),
+        [opciones, elegida, soloEncargo]);
+    const sugeridos = useMemo(() => {
+        const ids = []; let u = 0;
+        for (const v of vienen) { if (elegida && u >= cant * elegida.factor) break; ids.push(v.id); u += Number(v.unidades); }
+        return ids;
+    }, [vienen, cant, elegida]);
+    const elegidosIds = (vienenElegidos ?? sugeridos).filter((id) => vienen.some((v) => v.id === id));
+    const vieneSel = vienen.filter((v) => elegidosIds.includes(v.id));
+    const vienenUnidades = elegida ? Math.floor(vieneSel.reduce((t, v) => t + Number(v.unidades), 0) / (elegida.factor || 1)) : 0;
+    const restoABodega = vieneSel.length ? Math.max(cant - vienenUnidades, 0) : 0;
+    const origenes = vieneSel.map((v) => v.origen).join(' y ');
     // 'viene': no hay en la sala pero ya viene en camino; 'traslado': se pide a otra y se aparta igual.
-    const modo = opciones?.modo === 'encargo' && viene ? 'viene'
+    const modo = opciones?.modo === 'encargo' && vieneSel.length ? 'viene'
         : opciones?.modo === 'encargo' && traslado && !soloEncargo ? 'traslado' : (opciones?.modo ?? null);
     // Reglamento v2 (lo vuelve a decidir `apartado_cotizar`): sin monto mínimo.
     const mitad = redondear(total * 0.5);
@@ -194,6 +204,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
         : cant < 1 || cant > 999 ? 'La cantidad va de 1 a 999.' : !opciones ? 'Revisando la existencia…'
             : soloEncargo && modo !== 'encargo' ? 'Éste sí se puede apartar: quítalo y apártalo aparte, después del encargo.'
+            : modo === 'viene' && restoABodega > 20 ? `Bodega encarga hasta 20 por pedido y faltan ${restoABodega}.`
             : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`
             // La base acepta encargos de 1 a 20: decirlo antes y no con su error.
             : modo === 'encargo' && cant > 20 ? 'Un encargo va de 1 a 20 unidades.'
@@ -218,12 +229,12 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     const puedeAgregar = !sinCatalogo && modo === 'encargo' && lineaActual && cant >= 1 && cant <= 20 && lineas.length < 9;
     const agregarOtro = () => {
         setLineas((ls) => [...ls, lineaActual]);
-        setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVieneElegido(null);
+        setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
     };
     const totalLineas = redondear(lineas.reduce((s, l) => s + l.precio * l.cantidad, 0));
 
     // Cómo llega lo que se aparta sin existencia: el traslado que ya viene, o el que se pide ahora.
-    const enCamino = modo === 'viene' ? { traslado_request_id: viene.id }
+    const enCamino = modo === 'viene' ? { traslados_en_camino: elegidosIds, encargar_resto: restoABodega > 0 }
         : modo === 'traslado' ? { traslado_desde: traslado.branch_id } : {};
 
     const cuerpo = useRef(null);
@@ -264,7 +275,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     apartado: { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombreProducto,
                         factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...enCamino },
                     papel: { cliente: cliente.name, telefono: cliente.phone ?? null, producto: nombreProducto, cantidad: cant, precio: elegida.precio,
-                        ...(desde ? { enCamino: desde.sala } : modo === 'viene' ? { enCamino: viene.origen } : {}) },
+                        ...(desde ? { enCamino: desde.sala } : modo === 'viene' ? { enCamino: origenes } : {}) },
                 });
                 if (!ap) return;
                 if (desde) {
@@ -332,7 +343,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             ) : producto ? (
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
                     <p className="text-body-sm font-semibold text-content truncate min-w-0">{producto.nombre}</p>
-                    <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setTraslado(null); setVieneElegido(null); }}>
+                    <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setTraslado(null); setVienenElegidos(null); }}>
                         {soloEncargo ? 'Quitar' : 'Cambiar'}
                     </Button>
                 </div>
@@ -359,9 +370,10 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             )}
 
             {!sinCatalogo && vienen.length > 0 && (
-                <YaVieneEnCamino vienen={vienen} factor={elegida.factor} elegido={viene?.id ?? 'no'} onElegir={setVieneElegido} />
+                <YaVieneEnCamino vienen={vienen} factor={elegida.factor} elegidos={elegidosIds}
+                    onCambiar={(ids) => setVienenElegidos(ids)} />
             )}
-            {!sinCatalogo && opciones?.modo === 'encargo' && !viene && !soloEncargo && (
+            {!sinCatalogo && opciones?.modo === 'encargo' && !vieneSel.length && !soloEncargo && (
                 <DeOtraSala producto={producto} factor={elegida.factor} cantidad={cant} disponibles={Number(opciones.disponibles)}
                     apiRef={trasladoApi} onCambio={setTraslado} />
             )}
@@ -369,8 +381,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 <>
                     {modo === 'viene' ? (
                         <Notice variant="info" compact icon={ArrowLeftRight}>
-                            <b>Ya viene de {viene.origen}: se aparta</b> con el precio de hoy. Queda en camino hasta que llegue; ahí se marca lista
-                            sola y empieza su plazo. Total {formatMoney(total)}; el cliente deja lo que quiera.
+                            <b>Viene{vienenUnidades === 1 ? '' : 'n'} {Math.min(vienenUnidades, cant)} de {origenes}: se aparta</b> con el precio de hoy.
+                            {restoABodega > 0 && <> <b>Faltan {restoABodega}: se encargan a Bodega</b> con la misma reserva; Compras confirma su precio
+                                y fecha.</>}{' '}
+                            Queda en camino hasta que llegue; ahí se marca lista sola y empieza su plazo. Total {formatMoney(total)}; el cliente deja
+                            lo que quiera.
                             {opciones.baja_rotacion && <> Es de muy baja rotación: <b>conviene cobrarlo completo</b>.</>}
                         </Notice>
                     ) : modo === 'reserva' ? (
@@ -432,24 +447,33 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
 }
 
 // ── Ya viene en camino a la sala (2026-10-22) ──────────────────────────────
-// Un traslado de ese producto que alguien ya pidió y nadie apartó: se aparta
-// sobre ése en vez de encargarlo o pedirlo otra vez.
-function YaVieneEnCamino({ vienen, factor, elegido, onElegir }) {
+// Traslados de ese producto que alguien ya pidió y nadie apartó: se marcan los
+// que se toman (uno o varios) en vez de encargarlo o pedirlo otra vez.
+// La marca va con `data-tono`: sobre `data-surface="card"` un `ring` no se ve.
+function YaVieneEnCamino({ vienen, factor, elegidos, onCambiar }) {
+    const alternar = (id) => onCambiar(elegidos.includes(id) ? elegidos.filter((x) => x !== id) : [...elegidos, id]);
     const opciones = [
-        ...vienen.map((v) => ({ value: v.id, titulo: `Apartar lo que viene de ${v.origen}`,
+        ...vienen.map((v) => ({ value: v.id, activa: elegidos.includes(v.id), onClick: () => alternar(v.id),
+            titulo: `Apartar lo que viene de ${v.origen}`,
             detalle: `${Math.floor(Number(v.unidades) / (factor || 1))} en camino · ${v.estado === 'enviado' ? 'ya salió' : 'pedido, todavía no sale'}` })),
-        { value: 'no', titulo: 'No: pedirlo a otra sala o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
+        { value: 'no', activa: elegidos.length === 0, onClick: () => onCambiar([]),
+            titulo: 'No: pedirlo a otra sala o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
     ];
     return (
         <div className="space-y-1.5">
-            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Aquí no hay · ya viene en camino</p>
+            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
+                Aquí no hay · ya viene en camino{vienen.length > 1 ? ' · puedes marcar varios' : ''}
+            </p>
             <ul className="space-y-1.5">
                 {opciones.map((o) => (
                     <li key={o.value}>
-                        <button type="button" onClick={() => onElegir(o.value)} data-surface="card" aria-pressed={elegido === o.value}
-                            className={`w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] ${elegido === o.value ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
-                            <p className="text-body-sm font-semibold text-content">{o.titulo}</p>
-                            <p className="text-caption text-content-3">{o.detalle}</p>
+                        <button type="button" onClick={o.onClick} data-surface="card" data-tono={o.activa ? 'brand' : undefined} aria-pressed={o.activa}
+                            className="w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] flex items-center gap-3">
+                            <span className="flex-1 min-w-0">
+                                <span className="block text-body-sm font-semibold text-content">{o.titulo}</span>
+                                <span className="block text-caption text-content-3">{o.detalle}</span>
+                            </span>
+                            {o.activa && <Check size={18} className="text-brand-text shrink-0" aria-hidden />}
                         </button>
                     </li>
                 ))}

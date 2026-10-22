@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1342.3 — Apartar: «ninguna sala lo tiene» ya no se queda en «Revisando…»
+
+- **Apartar o encargar / pedir a otra sala**: cuando ninguna otra sala tenía el producto, la lista vacía se pintaba «Revisando qué salas lo tienen…» para siempre, igual que si siguiera cargando. Ahora dice que ninguna sala lo tiene; si la consulta falla, lo dice; y a quien no está asignado a una sala le explica que no se pregunta.
+- Caso que lo destapó: Claritromicina 250 mg en La Popular, con dos frascos ya despachados desde Bodega y Salud 5 y todavía en camino — no estaban en ninguna sala, y el diálogo no lo explicaba.
+
 ## v2.1342.2 — Encargo muestra el monto con el precio de hoy
 
 - **Apartar o encargar**: cuando no hay en la sala y se encarga, el aviso ahora dice cuánto sería con el precio de hoy (y el desglose cantidad × precio si es más de una). Antes no mostraba ningún monto. Sigue sin cobrarse nada: Compras confirma el precio final.

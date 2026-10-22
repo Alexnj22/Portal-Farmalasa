@@ -34,8 +34,16 @@ export default function DeOtraSala({ producto, factor, cantidad, disponibles = n
     }, [elegido, lista, onCambio]);
 
     const aqui = disponibles == null ? 'Ninguna sala' : disponibles > 0 ? `En esta sala hay sólo ${disponibles} y ninguna otra` : 'En esta sala no hay y ninguna otra';
-    if (h.donde.length === 0 && !candidatos.length) {
+    // Sin sala asignada no se pregunta a las demás (usePedirTraslado): decir
+    // «ninguna lo tiene» ahí sería afirmar algo que no se miró.
+    if (!h.miErp) {
+        return <p className="text-caption text-content-3">Pedir a otra sala lo hace alguien asignado a una sala.</p>;
+    }
+    if (h.dondeCargando) {
         return <p className="text-caption text-content-3">Revisando qué salas lo tienen…</p>;
+    }
+    if (h.dondeError) {
+        return <p className="text-caption text-warning-text">No se pudo revisar qué salas lo tienen.</p>;
     }
     if (!candidatos.length) {
         return <p className="text-caption text-content-3">{aqui} sala tiene {necesita}.</p>;

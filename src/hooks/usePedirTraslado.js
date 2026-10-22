@@ -105,6 +105,9 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
     // La lista de faltantes ya trae sus salas; la búsqueda no. En ese caso se
     // preguntan acá, para que el modal sea UNO solo y no dos que se parecen.
     const [dondeTraido, setDondeTraido] = useState(null);
+    // Una lista VACÍA («ninguna sala lo tiene») y una que todavía no llegó no
+    // son lo mismo: sin esto, la vacía se pintaba «Revisando…» para siempre.
+    const [dondeError, setDondeError] = useState(false);
     const donde = useMemo(
         () => ((producto?.donde ?? dondeTraido) ?? []).filter(d => d?.erp_sucursal_id),
         [producto, dondeTraido],
@@ -129,8 +132,10 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
          * explicara por qué. Se veía poco cuando cambiar de producto era raro;
          * con el compositor es el camino normal. */
         setDondeTraido(null);
+        setDondeError(false);
         fetchDondeHay(producto.erp_product_id, miErp).then(r => {
-            if (!cancelado && !r.error) setDondeTraido(r.donde);
+            if (cancelado) return;
+            if (r.error) setDondeError(true); else setDondeTraido(r.donde);
         });
         return () => { cancelado = true; };
     }, [producto?.erp_product_id, producto?.donde, miErp]);
@@ -627,6 +632,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
         user, miBranch, miErp,
         producto, setElegido,
         donde, origenId, setOrigenId, sala,
+        dondeCargando: !producto?.donde && dondeTraido === null && !dondeError && Boolean(miErp), dondeError,
         presentaciones, presIdx, setPresIdx, pres, opcionesPres, primeraQueAlcanza, ningunaAlcanza,
         cantidad, setCantidad, unidades, unidadesPedidas,
         esAntibiotico, avisoVence,

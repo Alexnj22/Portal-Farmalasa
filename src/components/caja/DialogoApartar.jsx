@@ -180,7 +180,17 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         for (const v of vienen) { if (elegida && u >= cant * elegida.factor) break; ids.push(v.id); u += Number(v.unidades); }
         return ids;
     }, [vienen, cant, elegida]);
-    const elegidosIds = (vienenElegidos ?? sugeridos).filter((id) => vienen.some((v) => v.id === id));
+    // Nunca más traslados que los que la cantidad necesita (2026-10-22): al
+    // bajar la cantidad, los que sobran se sueltan solos.
+    const elegidosIds = useMemo(() => {
+        const ids = []; let u = 0;
+        for (const id of vienenElegidos ?? sugeridos) {
+            const v = vienen.find((x) => x.id === id);
+            if (!v || (elegida && u >= cant * elegida.factor)) continue;
+            ids.push(id); u += Number(v.unidades);
+        }
+        return ids;
+    }, [vienenElegidos, sugeridos, vienen, cant, elegida]);
     const vieneSel = vienen.filter((v) => elegidosIds.includes(v.id));
     const vienenUnidades = elegida ? Math.floor(vieneSel.reduce((t, v) => t + Number(v.unidades), 0) / (elegida.factor || 1)) : 0;
     const restoABodega = vieneSel.length ? Math.max(cant - vienenUnidades, 0) : 0;
@@ -370,7 +380,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
             )}
 
             {!sinCatalogo && vienen.length > 0 && (
-                <YaVieneEnCamino vienen={vienen} factor={elegida.factor} elegidos={elegidosIds}
+                <YaVieneEnCamino vienen={vienen} factor={elegida.factor} cantidad={cant} elegidos={elegidosIds}
                     onCambiar={(ids) => setVienenElegidos(ids)} />
             )}
             {!sinCatalogo && opciones?.modo === 'encargo' && !vieneSel.length && !soloEncargo && (
@@ -450,30 +460,55 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
 // Traslados de ese producto que alguien ya pidió y nadie apartó: se marcan los
 // que se toman (uno o varios) en vez de encargarlo o pedirlo otra vez.
 // La marca va con `data-tono`: sobre `data-surface="card"` un `ring` no se ve.
-function YaVieneEnCamino({ vienen, factor, elegidos, onCambiar }) {
-    const alternar = (id) => onCambiar(elegidos.includes(id) ? elegidos.filter((x) => x !== id) : [...elegidos, id]);
+// Se marcan sólo los que la cantidad necesita, y de un traslado con más se
+// toma sólo lo que falta: el resto sigue libre para otra reserva. Decidido,
+// la lista se pliega a lo elegido; tocarlo la vuelve a abrir.
+function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
+    const [abierta, setAbierta] = useState(false);
+    const f = factor || 1;
+    const necesita = cantidad * f;
+    const tomadas = vienen.filter((v) => elegidos.includes(v.id)).reduce((t, v) => t + Number(v.unidades), 0);
+    const cubierto = elegidos.length > 0 && tomadas >= necesita;
+    const plegada = !abierta && (cubierto || elegidos.length === 0);
+    const elegir = (ids) => { onCambiar(ids); setAbierta(false); };
+    let falta = necesita;
     const opciones = [
-        ...vienen.map((v) => ({ value: v.id, activa: elegidos.includes(v.id), onClick: () => alternar(v.id),
-            titulo: `Apartar lo que viene de ${v.origen}`,
-            detalle: `${Math.floor(Number(v.unidades) / (factor || 1))} en camino · ${v.estado === 'enviado' ? 'ya salió' : 'pedido, todavía no sale'}` })),
-        { value: 'no', activa: elegidos.length === 0, onClick: () => onCambiar([]),
+        ...vienen.map((v) => {
+            const activa = elegidos.includes(v.id);
+            const hay = Math.floor(Number(v.unidades) / f);
+            const toma = activa ? Math.min(hay, Math.ceil(Math.max(falta, 0) / f)) : 0;
+            if (activa) falta -= Number(v.unidades);
+            return {
+                value: v.id, activa,
+                onClick: () => (plegada ? setAbierta(true)
+                    : activa ? elegir(elegidos.filter((x) => x !== v.id))
+                    : cubierto ? elegir([v.id]) : elegir([...elegidos, v.id])),
+                titulo: `Apartar lo que viene de ${v.origen}`,
+                detalle: `${hay} en camino${activa && toma < hay ? ` · se apartan ${toma}` : ''} · ${v.estado === 'enviado' ? 'ya salió' : 'pedido, todavía no sale'}`,
+            };
+        }),
+        { value: 'no', activa: elegidos.length === 0, onClick: () => (plegada ? setAbierta(true) : elegir([])),
             titulo: 'No: pedirlo a otra sala o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
     ];
+    const visibles = plegada ? opciones.filter((o) => o.activa) : opciones;
     return (
         <div className="space-y-1.5">
             <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                Aquí no hay · ya viene en camino{vienen.length > 1 ? ' · puedes marcar varios' : ''}
+                Aquí no hay · ya viene en camino{!plegada && vienen.length > 1 && cantidad > 1 ? ' · marca los que hagan falta' : ''}
             </p>
             <ul className="space-y-1.5">
-                {opciones.map((o) => (
+                {visibles.map((o) => (
                     <li key={o.value}>
                         <button type="button" onClick={o.onClick} data-surface="card" data-tono={o.activa ? 'brand' : undefined} aria-pressed={o.activa}
+                            aria-expanded={plegada ? false : undefined}
                             className="w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] flex items-center gap-3">
                             <span className="flex-1 min-w-0">
                                 <span className="block text-body-sm font-semibold text-content">{o.titulo}</span>
                                 <span className="block text-caption text-content-3">{o.detalle}</span>
                             </span>
-                            {o.activa && <Check size={18} className="text-brand-text shrink-0" aria-hidden />}
+                            {plegada
+                                ? <span className="text-caption font-semibold text-brand-text shrink-0">Cambiar</span>
+                                : o.activa && <Check size={18} className="text-brand-text shrink-0" aria-hidden />}
                         </button>
                     </li>
                 ))}

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1344.2 — Lo que viene en camino: sólo lo que hace falta, y la lista se pliega
+
+Al apartar lo que ya viene en camino a la sala:
+
+- **Se marcan sólo los traslados que la cantidad necesita.** Con cantidad 1 ya no se pueden marcar dos; al bajar la cantidad, los que sobran se sueltan solos.
+- **Un traslado con más unidades de las que se apartan ya no se pierde entero.** Si vienen 5 y se aparta 1, la reserva toma 1 y las otras 4 siguen ofreciéndose para otro cliente. Cuando el traslado sale o llega, se reparte entre las reservas que lo esperan, cada una con lo suyo (`metadata.reservas` en la solicitud).
+- **La lista se pliega a lo elegido** y deja un «Cambiar» para volver a abrirla.
+
 ## v2.1344.1 — Apartar sobre varios traslados en camino y el resto a Bodega
 
 - **Varios traslados en camino en un mismo apartado**: se marcan los que se toman (uno o varios) y la reserva queda amarrada a todos; se marca lista cuando llegan. Con 2 en camino y 3 pedidos, **el que falta se encarga a Bodega con la misma reserva** (el mismo encargo que «Encargar a Bodega»; Compras confirma su precio y la fecha).

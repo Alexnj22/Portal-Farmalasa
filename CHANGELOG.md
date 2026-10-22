@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1345.5 — Reserva con varios traslados: la llegada parcial no manda a pedir de nuevo
+
+- **Reserva amarrada a varios traslados**: cuando llega el primero, el aviso a la sala dice «el resto viene en camino: queda lista sola cuando llegue» en vez de mandar a pedirlo a otra sala o a Bodega. Probado sobre R-000114 en una transacción revertida: con Bodega queda «1 de 2, el resto en camino»; con Salud 5 pasa a **lista**, con plazo de 7 días, y el aviso al cliente lo manda `avisos-clientes`.
+
 ## v2.1345.4 — Reservas en camino no disparan «falta existencia»
 
 - **Aviso «Falta existencia para una reserva»**: ya no salta por una reserva que espera un traslado o un encargo a Bodega. `app_existencias_netas` ya no cuenta como apartado lo que todavía no llega (`traslado_por_llegar`), y la app deja de restarlo de los disponibles. Lo que ya llegó sigue contando. Nació de R-000114: 2 en camino, 0 en la sala y un aviso a las 13:00.

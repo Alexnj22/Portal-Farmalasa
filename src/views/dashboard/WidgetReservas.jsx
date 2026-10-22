@@ -83,8 +83,13 @@ const MAX_FILAS = 6;
 // desplazamiento propio (desplaza la página).
 // `soloLectura`: quien tiene «ver» y no «editar» en la pantalla de Reservas mira
 // sin botones que cambien nada.
-// `sala`: una sucursal elegida en el filtro de la pantalla (alcance «todas»).
-export default function WidgetReservas({ todas = false, completa = false, soloLectura = false, sala = undefined }) {
+// La pantalla del menú (2026-10-22) controla desde afuera lo que en la
+// baldosa vive adentro, para cumplir el canon de vista (DESIGN §17 y §24):
+// `sala` sale del `FilterBar.Sucursal`, `codigo` del buscador del encabezado
+// (`ViewTabBar`), `nueva` de la acción de la píldora, y `onConteo` alimenta
+// el carril de métricas. Sin esas props, la baldosa sigue como siempre.
+export default function WidgetReservas({ todas = false, completa = false, soloLectura = false, sala = undefined,
+    codigo: codigoDeAfuera = undefined, nueva: nuevaDeAfuera = false, onNuevaCerrada = null, onConteo = null }) {
     const { user, hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const appendAuditLog = useStaff((st) => st.appendAuditLog);
@@ -110,8 +115,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const [whatsapp, setWhatsapp] = useState(null);
     // El código que el cliente muestra en la app (R-000123 o el pedido del
     // carrito P-XXXXXX): el lector de la caja lo escribe como un teclado.
-    const [codigo, setCodigo] = useState('');
-    const [nueva, setNueva] = useState(false);
+    const [codigoPropio, setCodigo] = useState('');
+    const codigo = codigoDeAfuera ?? codigoPropio;
+    const [nuevaPropia, setNueva] = useState(false);
+    const nueva = nuevaPropia || nuevaDeAfuera;
+    const cerrarNueva = () => { setNueva(false); onNuevaCerrada?.(); };
     // Los renglones que faltan por retirar, de a uno (un pedido del carrito trae varios).
     const [retirando, setRetirando] = useState([]);
     // La reserva cuya receta se está mirando, y la hora de la última lectura
@@ -160,6 +168,20 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         : porRevisarVistazo > 0 ? { valor: porRevisarVistazo, texto: porRevisarVistazo === 1 ? 'receta por revisar' : 'recetas por revisar', tono: 'warning' }
         : abiertasVistazo.length > 0 ? { valor: abiertasVistazo.length, texto: abiertasVistazo.length === 1 ? 'reserva abierta' : 'reservas abiertas', tono: 'brand' }
         : { texto: 'Sin reservas' });
+
+    // El carril de la pantalla: cuánto hay que preparar, cuánto espera al cliente y los saldos.
+    const conteo = cargando ? null : {
+        preparar: abiertasVistazo.filter((r) => r.estado === 'en_revision' || r.estado === 'pendiente').length,
+        listas: abiertasVistazo.filter((r) => r.estado === 'lista').length,
+        saldos: saldosAFavor(filas).length,
+    };
+    const claveConteo = conteo ? `${conteo.preparar}|${conteo.listas}|${conteo.saldos}` : '';
+    useEffect(() => {
+        if (onConteo && claveConteo) {
+            const [preparar, listas, saldos] = claveConteo.split('|').map(Number);
+            onConteo({ preparar, listas, saldos });
+        }
+    }, [onConteo, claveConteo]);
 
     // Un código completo (R-000123 o P-XXXXXX) que no es de esta sala puede
     // ser un saldo a favor de otra: se busca en toda la red.
@@ -239,7 +261,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         }
     };
 
-    const botonNueva = !todas && !soloLectura && miSala && !esBodega ? (
+    const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && !esBodega ? (
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
     ) : null;
     const modalReceta = receta ? (
@@ -257,7 +279,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     ) : null;
     const modalNueva = nueva ? (
         <Suspense fallback={null}>
-            <DialogoApartar abierto ocupado={false} sala={miSala} nombreSala={nombreSala} atiende={user?.name} onClose={() => setNueva(false)}
+            <DialogoApartar abierto ocupado={false} sala={miSala} nombreSala={nombreSala} atiende={user?.name} onClose={cerrarNueva}
                 onCobrar={async ({ clave, monto, apartado, pago, papel }) => {
                     const r = await cobrarAnticipo({ sala: miSala, nombreSala, userId: user?.id, quienAtiende: user?.name,
                         clave, monto, apartado, pago, papel });
@@ -283,7 +305,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-2'}>
                     {!esBodega && <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />}
                     {/* El saldo a favor de un cliente vale en cualquier sala: su código se busca aunque aquí no haya reservas. */}
-                    {!esBodega && (
+                    {!esBodega && codigoDeAfuera === undefined && (
                         <SearchInput value={codigo} onChange={setCodigo} placeholder="¿Saldo a favor? Escanea el código (R-… o P-…)"
                             ariaLabel="Buscar un saldo a favor por su código" />
                     )}
@@ -341,7 +363,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     return (
         <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
             <div className={completa ? 'flex flex-col gap-2' : 'shrink-0 flex flex-col gap-2 px-2 pt-2'}>
-            {(resumen || botonNueva) && (
+            {!onConteo && (resumen || botonNueva) && (
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-label text-content-2 min-w-0 break-words">
                     {resumen}
@@ -349,8 +371,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 {botonNueva}
             </div>
             )}
-            <SearchInput value={codigo} onChange={setCodigo} placeholder="Escanea o escribe el código (R-… o P-…)"
-                ariaLabel="Buscar una reserva por su código" />
+            {codigoDeAfuera === undefined && (
+                <SearchInput value={codigo} onChange={setCodigo} placeholder="Escanea o escribe el código (R-… o P-…)"
+                    ariaLabel="Buscar una reserva por su código" />
+            )}
             </div>
             <div className={completa ? 'flex flex-col gap-6 mt-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 flex flex-col gap-2'}>
             {delPedido.length > 0 && (

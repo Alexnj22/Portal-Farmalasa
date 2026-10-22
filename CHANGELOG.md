@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1345.3 — Reservas y Apartar según el canon; cobro en un bloque
+
+- **Reservas** (pantalla), según el canon de vista:
+  - el buscador por código va en el encabezado (`ViewTabBar`);
+  - abajo, el carril de métricas (Por preparar, Listas para retirar, Saldos a favor) y la píldora `FilterBar`, con la ranura `FilterBar.Sucursal` y la acción «Reservar con anticipo»;
+  - con otra sucursal elegida no se ofrece apartar, porque el cobro va a la caja propia.
+- **Apartar o encargar**:
+  - lo que viene en camino se elige con `ListRow` + `Checkbox`;
+  - el cobro es un solo bloque: arriba el total, lo que deja y lo que queda al retirar, y debajo «Cuánto deja», «Dónde paga» y «Cómo pagó», cada uno con su rótulo y a lo ancho.
+- `FormaDePago` acepta `aLoAncho`.
+
 ## v2.1345.2 — Reservas y Apartar: más ordenado, filtro por sucursal
 
 - **Apartar o encargar**: el formulario va en bloques con su rótulo: Cliente, Producto, Cómo llega y Cobro. La presentación y la cantidad están dentro de la tarjeta del producto, con la cuenta «2 × $21.71 = $43.42». El cobro muestra **Total · Deja hoy · Al retirar** antes de elegir el monto. El aviso largo se partió en uno corto por caso. Lo que viene en camino, una vez elegido, se pliega en una sola tarjeta («Viene de Bodega y Salud 5 · 2 de 2») con «Cambiar». El botón final queda separado abajo, junto a lo que falta.

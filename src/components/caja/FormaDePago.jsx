@@ -27,7 +27,9 @@ import {
  * `montoFijo`: el cobro lo pone el servidor (la inyección, Mapfre) y no se
  * puede tocar desde acá — se dice que el voucher cubre ese monto y nada más.
  */
-export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, montoFijo = false, deshabilitado = false }) {
+// `aLoAncho`: las opciones ocupan toda la fila, parejas con los demás controles
+// del bloque donde va (el cobro de Apartar, 2026-10-22).
+export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, montoFijo = false, deshabilitado = false, aLoAncho = false }) {
     const v = valor ?? FORMA_DE_PAGO_INICIAL;
     const [leyendo, setLeyendo] = useState(false);
     const [aviso, setAviso] = useState(null);
@@ -72,7 +74,8 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
             <div>
                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Cómo pagó</p>
                 <SegmentedControl label="Cómo pagó" options={FORMAS_DE_PAGO} value={v.forma}
-                    onChange={alElegirForma} disabled={deshabilitado} />
+                    onChange={alElegirForma} disabled={deshabilitado}
+                    {...(aLoAncho ? { layout: 'block', columns: FORMAS_DE_PAGO.length } : {})} />
             </div>
 
             {estado.noEfectivo && (

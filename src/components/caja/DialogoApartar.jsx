@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeftRight, Check, Copy, Link2, MessageCircle, PackagePlus, PackageSearch, Pencil, Phone, Plus, Search, Trash2, Truck } from 'lucide-react';
 import Button from '../common/Button';
+import Checkbox from '../common/Checkbox';
+import ListRow from '../common/ListRow';
 import BuscadorDeProducto from '../common/BuscadorDeProducto';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
@@ -489,24 +491,29 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
 
             {!sinCatalogo && conAnticipo && (opciones || (enPedido && !producto)) && (
                 <Seccion titulo={enPedido ? `Cobro del pedido · ${renglonesDelPedido.length} productos` : 'Cobro'}>
-                    <ResumenDeCobro total={totalCobro} deja={deja} />
-                    <SegmentedControl label="Cuánto deja" value={cuanto} onChange={setCuanto}
-                        options={[{ value: 'mitad', label: `50 % · ${formatMoney(mitad)}` }, { value: 'todo', label: `Todo · ${formatMoney(totalCobro)}` },
-                            { value: 'otro', label: 'Otro monto' }]} />
-                    {cuanto === 'otro' && (
-                        <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo} placeholder={String(mitad)} autoFocus
-                            onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
-                    )}
-                    {/* El enlace de pago es para un solo producto: un pedido se cobra en caja. */}
-                    <div className="flex flex-wrap gap-3 items-end">
+                    {/* Un solo bloque, de arriba abajo: cuánto es, cuánto deja,
+                        dónde y con qué paga. Los tres controles a lo ancho para
+                        que se lean como una columna y no como tres rieles sueltos. */}
+                    <div data-surface="card" className="rounded-xl p-4 space-y-4">
+                        <ResumenDeCobro total={totalCobro} deja={deja} />
+                        <Campo rotulo="Cuánto deja">
+                            <SegmentedControl label="Cuánto deja" value={cuanto} onChange={setCuanto} layout="block" columns={3}
+                                options={[{ value: 'mitad', label: `50 % · ${formatMoney(mitad)}` }, { value: 'todo', label: `Todo · ${formatMoney(totalCobro)}` },
+                                    { value: 'otro', label: 'Otro monto' }]} />
+                        </Campo>
+                        {cuanto === 'otro' && (
+                            <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo} placeholder={String(mitad)} autoFocus
+                                onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
+                        )}
+                        {/* El enlace de pago es para un solo producto: un pedido se cobra en caja. */}
                         {!enPedido && <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />}
+                        {(cobroEn === 'caja' || enPedido) && <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} aLoAncho />}
+                        {enPedido && (
+                            <p className="text-caption text-content-3">
+                                Un solo cobro: cada producto queda apartado con su parte y se retira con el código del pedido.
+                            </p>
+                        )}
                     </div>
-                    {(cobroEn === 'caja' || enPedido) && <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} />}
-                    {enPedido && (
-                        <p className="text-caption text-content-3 ml-1">
-                            Un solo cobro: cada producto queda apartado con su parte y se retira con el código del pedido.
-                        </p>
-                    )}
                 </Seccion>
             )}
 
@@ -515,7 +522,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     placeholder="Lo necesita para el viernes" />
             )}
 
-            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-border-subtle">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
                 <p className="text-caption text-content-3 min-w-0">{falta ?? ''}</p>
                 <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>{etiquetaBoton}</Button>
             </div>
@@ -561,43 +568,29 @@ function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
             titulo: 'No: pedirlo a otra sala o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
     ];
     const elegidosV = vienen.filter((v) => elegidos.includes(v.id));
-    // Plegada: una sola tarjeta con lo elegido y un «Cambiar».
+    // Plegada: una sola fila con lo elegido; tocarla vuelve a abrir la lista.
     if (plegada) {
-        const titulo = elegidosV.length ? `Viene de ${elegidosV.map((v) => v.origen).join(' y ')}` : 'No se toma lo que viene en camino';
-        const detalle = elegidosV.length
-            ? `${Math.min(Math.floor(tomadas / f), cantidad)} de ${cantidad} · ${elegidosV.every((v) => v.estado === 'enviado') ? 'ya salió' : 'pedido, todavía no sale'}`
-            : 'Se pide a otra sala o se encarga';
         return (
-            <button type="button" onClick={() => setAbierta(true)} data-surface="card" data-tono={elegidosV.length ? 'brand' : undefined}
-                aria-expanded={false} className="w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97] flex items-center gap-3">
-                {elegidosV.length > 0 && <Truck size={18} className="text-brand-text shrink-0" aria-hidden />}
-                <span className="flex-1 min-w-0">
-                    <span className="block text-body-sm font-semibold text-content">{titulo}</span>
-                    <span className="block text-caption text-content-3">{detalle}</span>
-                </span>
-                <span className="text-caption font-semibold text-brand-text shrink-0">Cambiar</span>
-            </button>
+            <ListRow density="lg" surface="card" selected={elegidosV.length > 0} onClick={() => setAbierta(true)} aria-expanded={false}
+                icon={elegidosV.length ? Truck : PackageSearch}
+                title={elegidosV.length ? `Viene de ${elegidosV.map((v) => v.origen).join(' y ')}` : 'No se toma lo que viene en camino'}
+                subtitle={elegidosV.length
+                    ? `${Math.min(Math.floor(tomadas / f), cantidad)} de ${cantidad} · ${elegidosV.every((v) => v.estado === 'enviado') ? 'ya salió' : 'pedido, todavía no sale'}`
+                    : 'Se pide a otra sala o se encarga'}
+                trailing={<span className="text-caption font-semibold text-brand-text">Cambiar</span>} />
         );
     }
+    // Abierta: tarjeta seleccionable = ListRow + Checkbox (§15.7).
     return (
         <div className="space-y-1.5">
             <p className="text-caption text-content-3 ml-1">
                 Aquí no hay, pero ya viene en camino{vienen.length > 1 && cantidad > 1 ? ' · marca los que hagan falta' : ''}:
             </p>
-            <ul className="space-y-1.5">
-                {opciones.map((o) => (
-                    <li key={o.value}>
-                        <button type="button" onClick={o.onClick} data-surface="card" data-tono={o.activa ? 'brand' : undefined} aria-pressed={o.activa}
-                            className="w-full text-left rounded-xl p-2.5 min-h-[var(--tap-min)] active:scale-[0.97] flex items-center gap-3">
-                            <span className="flex-1 min-w-0">
-                                <span className="block text-body-sm font-semibold text-content">{o.titulo}</span>
-                                <span className="block text-caption text-content-3">{o.detalle}</span>
-                            </span>
-                            {o.activa && <Check size={18} className="text-brand-text shrink-0" aria-hidden />}
-                        </button>
-                    </li>
-                ))}
-            </ul>
+            {opciones.map((o) => (
+                <ListRow key={o.value} density="lg" surface="card" selected={o.activa} onClick={o.onClick}
+                    icon={o.value === 'no' ? PackageSearch : Truck} title={o.titulo} subtitle={o.detalle}
+                    trailing={<Checkbox checked={o.activa} size="sm" />} />
+            ))}
         </div>
     );
 }
@@ -616,7 +609,7 @@ function Seccion({ titulo, children }) {
 function ResumenDeCobro({ total, deja }) {
     const celdas = [['Total', total], ['Deja hoy', deja], ['Al retirar', Math.max(redondear(total - deja), 0)]];
     return (
-        <div data-surface="card" className="rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
+        <div className="grid grid-cols-3 gap-2 text-center pb-4 border-b border-divider">
             {celdas.map(([rotulo, valor], n) => (
                 <div key={rotulo} className="min-w-0">
                     <p className="text-caption text-content-3">{rotulo}</p>
@@ -922,8 +915,21 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
 // tarjeta desde el teléfono y se suma solo al anticipo; no pasa por el cajón.
 function ComoPaga({ valor, onCambiar }) {
     return (
-        <SegmentedControl label="Cómo paga" value={valor} onChange={onCambiar}
-            options={[{ value: 'caja', label: 'En caja' }, { value: 'enlace', label: 'Enlace de pago' }]} />
+        <Campo rotulo="Dónde paga">
+            <SegmentedControl label="Dónde paga" value={valor} onChange={onCambiar} layout="block" columns={2}
+                options={[{ value: 'caja', label: 'En caja' }, { value: 'enlace', label: 'Enlace de pago' }]} />
+        </Campo>
+    );
+}
+
+// Un control con su rótulo visible (el `label` de SegmentedControl es sólo
+// para el lector de pantalla): la misma letra que «Cómo pagó» de FormaDePago.
+function Campo({ rotulo, children }) {
+    return (
+        <div>
+            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">{rotulo}</p>
+            {children}
+        </div>
     );
 }
 

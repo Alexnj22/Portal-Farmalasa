@@ -341,8 +341,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 <>
                     <Notice variant="warning" compact icon={Truck}>
                         Sin pedirlo a otra sala:{' '}
-                        <b>se encarga</b>. Compras confirma el precio y la fecha; cuando el cliente acepte, se cobra el 100 % en «Por cobrar».
-                        Ahora no se cobra nada.
+                        <b>se encarga</b>. Con el precio de hoy serían <b>{formatMoney(total)}</b>
+                        {cant > 1 && <> ({cant} × {formatMoney(elegida.precio)})</>}; Compras confirma el precio final y la fecha, y cuando
+                        el cliente acepte se cobra el 100 % en «Por cobrar». Ahora no se cobra nada.
                     </Notice>
                     <PortalInput label="Nota para Compras (opcional)" value={nota} onChange={(e) => setNota(e.target.value)}
                         placeholder="Lo necesita para el viernes" />

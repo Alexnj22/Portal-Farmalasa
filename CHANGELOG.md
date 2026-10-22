@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1342.2 — Encargo muestra el monto con el precio de hoy
+
+- **Apartar o encargar**: cuando no hay en la sala y se encarga, el aviso ahora dice cuánto sería con el precio de hoy (y el desglose cantidad × precio si es más de una). Antes no mostraba ningún monto. Sigue sin cobrarse nada: Compras confirma el precio final.
+
 ## v2.1342.1 — Reservas: procedimiento interno y reglamento v4 sin lo interno
 
 - **Procedimiento interno de reservas, apartados y encargos** (`docs/legal/procedimiento-reservas.html` + PDF): plazos de la sala, preparar y revisar recetas, apartar con anticipo (caja o enlace), traslados y lo que no llegó entero, encargos, retiro, cancelaciones, saldo a favor y devolución en efectivo, los avisos que recibe el personal y quién responde por qué.

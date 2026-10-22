@@ -1103,7 +1103,10 @@ Deno.serve(async (req) => {
       const { data: sol, error: eSol } = await comoUsuario.rpc("dist_pedir_invalidacion", {
         p_dte: cuerpo.dte_id, p_accion: accion, p_motivo: motivo,
       });
-      if (eSol) throw new ErrorUsuario(eSol.message.replace(/^[A-Z_]+:\s*/, ""), 409);
+      if (eSol) {
+        const motivoSol = eSol.message.replace(/^[A-Z_]+:\s*/, "");
+        throw new ErrorUsuario(motivoSol.charAt(0).toUpperCase() + motivoSol.slice(1), 409);
+      }
       const n = Number((sol as any)?.aprobadores ?? 0);
       return json(req, 200, {
         dte_id: cuerpo.dte_id, estado: "sellado", solicitud_id: (sol as any)?.solicitud_id,

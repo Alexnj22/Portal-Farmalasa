@@ -23,11 +23,11 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   anularVenta, corregirDocumentoSellado, descartarDocumento, enviarContingencia, fetchDocumento, fetchPagos,
-  fetchPlazoInvalidacion, mensajeDeDistribucion, reenviarInvalidacion, reintentarDocumento,
+  fetchFrenosDeInvalidacion, fetchPlazoInvalidacion, mensajeDeDistribucion, reenviarInvalidacion, reintentarDocumento,
 } from '@nucleo/data/distribucion';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from '@nucleo/utils/distribucionComun';
 import {
-  accionesDelDocumento, avisoDeAccion, avisoDelPlazo, ayudaDelSellado, queHaceCorregir, resumenDeContingencia,
+  accionesDelDocumento, avisoDeAccion, avisoDeFreno, avisoDelPlazo, ayudaDelSellado, queHaceCorregir, resumenDeContingencia,
 } from '@nucleo/utils/distribucionFacturacion';
 import { ticketDeVenta, urlConsultaPublica } from '@nucleo/utils/distribucionDocumento';
 import { MARCA_PAPEL } from '@nucleo/utils/distribucionMarca';
@@ -70,6 +70,8 @@ export default function Documento() {
   const [d, setD] = useState(undefined);
   const [pagos, setPagos] = useState(null);
   const [plazo, setPlazo] = useState(null);
+  // Lo que frena pedir la invalidación: una solicitud esperando o una nota de crédito.
+  const [frenos, setFrenos] = useState(null);
   const [error, setError] = useState(null);
   const [vista, setVista] = useState('detalle');
   const [ocupado, setOcupado] = useState(false);
@@ -87,15 +89,18 @@ export default function Documento() {
       setD(doc); setError(null);
       if (!doc?.pedido_id) setPagos([]);
       else fetchPagos(doc.pedido_id).then(setPagos).catch(() => setPagos([]));
-      if (doc?.estado === 'sellado') fetchPlazoInvalidacion(id).then(setPlazo).catch(() => setPlazo(null));
-      else setPlazo(null);
+      if (doc?.estado === 'sellado') {
+        fetchPlazoInvalidacion(id).then(setPlazo).catch(() => setPlazo(null));
+        fetchFrenosDeInvalidacion(id).then(setFrenos).catch(() => setFrenos(null));
+      } else { setPlazo(null); setFrenos(null); }
     } catch (e) {
       setD(null); setError(mensajeDeDistribucion(e));
     }
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const base = accionesDelDocumento(d, { puedeVender, plazo });
+  const base = accionesDelDocumento(d, { puedeVender, plazo, frenos });
+  const freno = avisoDeFreno(base);
   // Sólo consulta (soloConsulta.js): devolver, corregir y deshacer le hablan a
   // Hacienda; se hacen desde el portal.
   const a = ACCIONES_DE_DINERO ? base : { ...base, puedeDevolver: false, puedeCorregir: false, puedeDeshacer: false };
@@ -234,7 +239,8 @@ export default function Documento() {
 
             <View style={{ marginHorizontal: 16, gap: 10 }}>
               {aviso ? <Aviso tono={TONO_PLAZO[aviso.tono]} texto={aviso.texto} /> : null}
-              {ACCIONES_DE_DINERO && d.estado === 'sellado' && puedeVender && !a.invalidando && !a.vencido ? <Aviso tono="nota" texto={ayudaDelSellado(d.tipo)} /> : null}
+              {freno ? <Aviso tono={freno.tono === 'cuidado' ? 'cuidado' : 'nota'} texto={`${freno.titulo}. ${freno.texto}`} /> : null}
+              {ACCIONES_DE_DINERO && d.estado === 'sellado' && puedeVender && !a.invalidando && !a.vencido && !freno ? <Aviso tono="nota" texto={ayudaDelSellado(d.tipo)} /> : null}
               {a.conArchivo ? <BotonGrande color={PETROLEO} texto="Compartir o imprimir" deshabilitado={!ticket} onPress={papeles} /> : null}
               {puedeVender && d.pedido_id ? <BotonGrande borde color={PETROLEO} texto="Volver a vender" onPress={() => router.push(`/torogoz/venta?desde=${d.pedido_id}`)} /> : null}
               {enElPortal ? <SeHaceEnElPortal texto="Corregirlo, deshacer la venta o hacer una devolución se hace desde el portal." /> : null}

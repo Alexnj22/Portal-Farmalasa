@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.2 — Distribución: el saldo a favor no se pierde al invalidar, y el documento dice qué lo frena
+
+Defectos hallados en la prueba en vivo de Distribución.
+
+- **El saldo a favor usado para pagar una cuenta se perdía al invalidar su documento.** La cuenta lo contaba como pagado, pero al deshacer o corregir la venta sólo se movían los cobros: ese dinero ni pasaba al documento nuevo ni volvía al cliente, y su saldo a favor lo seguía descontando (en el entorno de pruebas, $112.20 perdidos). Ahora, al **corregir**, lo pagado con saldo a favor pasa a la cuenta nueva, como los cobros; lo que no cabe en ella vuelve al saldo a favor. Al **deshacer**, vuelve entero al saldo a favor. Lo usado en una cuenta anulada ya no resta. La solicitud de deshacer incluye ese monto en lo que queda a favor del cliente. *(Cambio en la base: redactado y probado en el entorno de pruebas, pendiente de aplicar.)*
+- **El documento muestra la solicitud que espera decisión.** Después de pedir «Deshacer la venta» o «Corregir», el documento dice qué se pidió, quién y cuándo, y deja de ofrecer los dos botones (y la devolución) hasta que se decida. En el portal y en la app.
+- **Documento con nota de crédito**: ya no se ofrecen «Deshacer» ni «Corregir»; se explica que primero hay que invalidar la nota. El aviso de ese freno empieza con mayúscula.
+- **Cuentas por cobrar en el teléfono**: la hoja del cliente ya no abre con el teclado sobre el monto de «Cobrar», así que se ve lo que debe y el saldo a favor. Y la barra superior de Torogoz tenía el fondo transparente: la lista pasaba por debajo con el texto encimado. Ahora es sólida.
+- **Liquidación con sólo devoluciones**: el efectivo esperado negativo ya no se sugiere como conteo. Se lee «Hay que devolver $X» (también en el papel) y el conteo sugerido es $0.00.
+- **Aclaración a v2.1339.3**: aquella entrada dice que las invalidaciones se deciden «en Solicitudes del portal o en Torogoz». No es así: las solicitudes de Distribución (descuentos y deshacer o corregir un documento) se deciden **sólo en Torogoz › Solicitudes**; la sección Solicitudes del portal no las muestra, a propósito.
+
 ## v2.1350.1 — Reglamento de reservas: «sucursal» y redacción del producto en camino
 
 - **Reglamento de reservas**: dice **«sucursal»** en vez de «sala de ventas» (21 menciones). Es la palabra que usa el cliente y la que ya usa la app. El procedimiento interno sigue diciendo «sala», que es como habla el personal.

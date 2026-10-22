@@ -18,7 +18,7 @@ import {
   cerrarLiquidacion, fetchCamionDelDia, fetchLiquidacion, fetchLiquidacionesDelDia, fetchVendedores, mensajeDeDistribucion, reabrirLiquidacion,
 } from '@nucleo/data/distribucion';
 import {
-  cuentaDelCierre, formasDeLaLiquidacion, resumenDelCamion, rotuloDiferencia, vendedoresParaElegir,
+  cuentaDelCierre, efectivoDelCierre, formasDeLaLiquidacion, textoDeLaDiferencia, resumenDelCamion, rotuloDiferencia, vendedoresParaElegir,
 } from '@nucleo/utils/distribucionCaja';
 import { TIPO_DOCUMENTO } from '@nucleo/utils/distribucionComun';
 import { nombreFormaPago } from '@nucleo/utils/distribucionFacturacion';
@@ -75,6 +75,8 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
 
   const esperado = Number(liq?.efectivo?.esperado ?? 0);
   const cuenta = cuentaDelCierre(esperado, contado, nota);
+  // Con sólo devoluciones el esperado queda negativo: se dice «hay que devolver», no se sugiere un conteo negativo.
+  const efe = efectivoDelCierre(esperado, formatMoney);
   const formas = useMemo(() => formasDeLaLiquidacion(liq), [liq]);
   const cam = camion.length ? resumenDelCamion(camion) : null;
   const c = liq?.cierre;
@@ -164,7 +166,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
           <FilaDeKpis>
             <Kpi icono="ArrowLeftRight" rotulo="Devuelto" valor={formatMoney(Number(liq.devoluciones.total), { decimales: 0 })} color={MARCA.ambar}
               apoyo={Number(liq.devoluciones.a_favor) > 0 ? `${formatMoney(Number(liq.devoluciones.a_favor))} a favor` : 'Notas de crédito'} />
-            <Kpi icono="Wallet" rotulo="Efectivo a entregar" valor={formatMoney(esperado)} color={MARCA.violeta}
+            <Kpi icono="Wallet" rotulo={efe.rotulo} valor={formatMoney(efe.monto)} color={efe.negativo ? MARCA.ambar : MARCA.violeta}
               apoyo={Number(liq.efectivo.fondo) > 0 ? `Incluye ${formatMoney(Number(liq.efectivo.fondo))} de fondo` : `${formatMoney(Number(liq.efectivo.ventas), { decimales: 0 })} ventas + ${formatMoney(Number(liq.efectivo.cobros), { decimales: 0 })} cobros`} />
           </FilaDeKpis>
 
@@ -231,11 +233,12 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
                 </>
               ) : liq.puede_cerrar && ACCIONES_DE_DINERO ? (
                 <>
-                  <Campo multiline={false} value={contado} onChangeText={(v) => setContado(soloMonto(v))} keyboardType="decimal-pad" placeholder={`Efectivo contado (${esperado.toFixed(2)})`}
+                  <Campo multiline={false} value={contado} onChangeText={(v) => setContado(soloMonto(v))} keyboardType="decimal-pad" placeholder={`Efectivo contado (${efe.sugerido})`}
                     style={{ fontSize: 20, fontWeight: '700', textAlign: 'center' }} />
+                  {efe.aviso ? <Aviso tono="cuidado" texto={efe.aviso} /> : null}
                   {cuenta.diferencia != null ? (
-                    <Text style={{ color: cuenta.diferencia === 0 ? MARCA.verde : MARCA.rojo, fontSize: 16, fontWeight: '800' }}>
-                      {cuenta.diferencia === 0 ? '✓ Cuadra' : `${cuenta.diferencia > 0 ? 'Sobran' : 'Faltan'} ${formatMoney(Math.abs(cuenta.diferencia))}`}
+                    <Text style={{ color: cuenta.diferencia === 0 ? MARCA.verde : efe.negativo && cuenta.contado === 0 ? MARCA.ambar : MARCA.rojo, fontSize: 16, fontWeight: '800' }}>
+                      {cuenta.diferencia === 0 ? '✓ Cuadra' : textoDeLaDiferencia(esperado, cuenta.contado, cuenta.diferencia, formatMoney)}
                     </Text>
                   ) : null}
                   {cuenta.diferencia != null && cuenta.diferencia !== 0 ? (

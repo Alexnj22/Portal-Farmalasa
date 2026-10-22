@@ -105,24 +105,65 @@ export const nombreFormaPago = (f) => (f === '13' ? 'A crédito' : f === '99' ? 
  * `plazo` es el de `fetchPlazoInvalidacion` (sólo de sellados). Pasado el
  * plazo, Hacienda no sella el evento: ni «Corregir» (que invalida el sellado)
  * ni «Deshacer» sirven. Queda la Nota de Crédito.
+ *
+ * `frenos` es el de `fetchFrenosDeInvalidacion`, y frena lo mismo que el
+ * servidor (`dist_pedir_invalidacion`) pero ANTES de apretar:
+ *   · `solicitud`: ya hay una pedida esperando decisión — ni «Corregir» ni
+ *     «Deshacer» otra vez, ni «Devolución» mientras se decide (una nota encima
+ *     de una invalidación devolvería lo mismo dos veces);
+ *   · `nota`: el documento tiene una nota de crédito vigente — primero se
+ *     invalida la nota.
  */
-export function accionesDelDocumento(d, { puedeVender = false, plazo = null } = {}) {
-    if (!d) return { sinSello: false, conArchivo: false, invalidando: false, vencido: false, puedeCorregir: false, puedeDeshacer: false, puedeDevolver: false, conCorreo: false };
+export function accionesDelDocumento(d, { puedeVender = false, plazo = null, frenos = null } = {}) {
+    if (!d) return { sinSello: false, conArchivo: false, invalidando: false, vencido: false, pedida: null, conNota: null, puedeCorregir: false, puedeDeshacer: false, puedeDevolver: false, conCorreo: false };
     const sinSello = ['sin_firmar', 'firmado', 'contingencia'].includes(d.estado);
     const invalidando = d.invalidacion_estado === 'pendiente' || d.invalidacion_estado === 'procesada';
     const vencido = d.estado === 'sellado' && plazo?.estado === 'vencido';
+    const pedida = d.estado === 'sellado' ? frenos?.solicitud ?? null : null;
+    const conNota = d.estado === 'sellado' ? frenos?.nota ?? null : null;
+    const invalidable = d.estado === 'sellado' && !invalidando && !vencido && !pedida && !conNota;
     return {
         sinSello,
         conArchivo: !!d.json?.identificacion,
         invalidando,
         vencido,
-        puedeCorregir: !!(puedeVender && d.pedido_id && (sinSello || d.estado === 'rechazado' || (d.estado === 'sellado' && !invalidando && !vencido))),
-        puedeDeshacer: !!(puedeVender && d.estado === 'sellado' && !invalidando && !vencido),
+        pedida,
+        conNota,
+        puedeCorregir: !!(puedeVender && d.pedido_id && (sinSello || d.estado === 'rechazado' || invalidable)),
+        puedeDeshacer: !!(puedeVender && invalidable),
         // Devolución parcial: Nota de Crédito, que sólo corrige un Crédito Fiscal (borrador 0017).
-        puedeDevolver: !!(puedeVender && d.tipo === '03' && d.estado === 'sellado' && !invalidando),
+        puedeDevolver: !!(puedeVender && d.tipo === '03' && d.estado === 'sellado' && !invalidando && !pedida),
         // El correo va con el documento de venta, y nunca con uno invalidado.
         conCorreo: ['01', '03', '05'].includes(d.tipo) && d.estado !== 'invalidado',
     };
+}
+
+/**
+ * Lo que se le dice a quien abre un sellado que no se puede invalidar todavía:
+ * la solicitud que espera, o la nota de crédito que hay que invalidar antes.
+ * @returns {{ tono: 'nota'|'cuidado', titulo: string, texto: string }|null}
+ */
+/** @param {{ pedida?: any, conNota?: any }} [frenos] */
+export function avisoDeFreno({ pedida, conNota } = {}) {
+    if (pedida) {
+        const que = pedida.accion === 'corregir' ? 'corregir este documento' : 'deshacer esta venta';
+        const quien = pedida.solicitante ? ` ${pedida.solicitante} la pidió` : ' Se pidió';
+        const cuando = pedida.created_at ? ` el ${fechaNumerica(pedida.created_at)}` : '';
+        return {
+            tono: 'nota',
+            titulo: `Solicitud pendiente: ${pedida.accion === 'corregir' ? 'corregir' : 'deshacer la venta'}`,
+            texto: `Hay una solicitud para ${que} esperando decisión.${quien}${cuando}. Mientras no la decidan, el documento sigue vigente y no se puede pedir otra.`,
+        };
+    }
+    if (conNota) {
+        return {
+            tono: 'cuidado',
+            titulo: 'Tiene una nota de crédito',
+            texto: `Este documento tiene la nota de crédito ${conNota.numero_control ?? ''}`.trimEnd()
+                + '. Para corregirlo o deshacer la venta, primero hay que invalidar la nota.',
+        };
+    }
+    return null;
 }
 
 /** Qué hace «Corregir» según el estado, dicho antes de apretarlo. */
@@ -130,14 +171,14 @@ export function queHaceCorregir(d) {
     if (!d) return '';
     if (d.estado === 'rechazado') return 'El pedido vuelve a «por facturar» para corregir lo que dijo Hacienda y facturarlo de nuevo.';
     if (d.estado === 'sellado') {
-        return 'Se manda una solicitud: cuando la aprueben se abre un pedido NUEVO con lo mismo, y al facturarlo éste se invalida ante Hacienda y el nuevo lo reemplaza. Lo abonado pasa a la cuenta nueva.';
+        return 'Se manda una solicitud: cuando la aprueben se abre un pedido NUEVO con lo mismo, y al facturarlo éste se invalida ante Hacienda y el nuevo lo reemplaza. Lo abonado y lo pagado con saldo a favor pasan a la cuenta nueva.';
     }
     return 'Se retira antes de llegar a Hacienda y el pedido vuelve a «por facturar» para cambiarle lo que haga falta.';
 }
 
 /** La ayuda de abajo del documento sellado: qué hace cada botón. */
 export function ayudaDelSellado(tipo) {
-    return 'Con sello, «Corregir» y «Deshacer la venta» se piden: los aprueba quien tenga permiso en Solicitudes. Corregir emite un documento nuevo que reemplaza a éste; deshacer lo invalida y devuelve lo cobrado (el efectivo sale de tu caja, lo demás queda a favor del cliente).'
+    return 'Con sello, «Corregir» y «Deshacer la venta» se piden: los aprueba quien tenga permiso en las Solicitudes de Torogoz. Corregir emite un documento nuevo que reemplaza a éste; deshacer lo invalida y devuelve lo cobrado (el efectivo sale de tu caja; lo demás, y lo pagado con saldo a favor, queda a favor del cliente).'
         + (tipo === '03'
             ? ' Si el cliente regresa sólo una parte, «Devolución» emite una nota de crédito por eso.'
             : ' A una Factura no se le hace nota de crédito: si el cliente regresa una parte, «Corregir» y deja sólo lo que se queda.');

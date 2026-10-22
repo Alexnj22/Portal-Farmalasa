@@ -782,7 +782,8 @@ export function ticketDeLiquidacion(liq, marca = null, emisor = {}) {
         ...(Number(ef.fondo) > 0 ? [['Fondo de cambio', dinero(ef.fondo)]] : []),
         ...(Number(ef.gastos) > 0 ? [['Gastos de ruta', `-${dinero(ef.gastos)}`]] : []),
         ...(Number(ef.entregas) > 0 ? [['Entregas parciales', `-${dinero(ef.entregas)}`]] : []),
-        ['EFECTIVO A ENTREGAR', dinero(esperado), true],
+        // Sólo devoluciones: el esperado negativo es plata que hay que devolverle.
+        esperado < 0 ? ['HAY QUE DEVOLVER', dinero(-esperado), true] : ['EFECTIVO A ENTREGAR', dinero(esperado), true],
     ];
     if (c) {
         totales.push(['Efectivo contado', dinero(c.contado)]);

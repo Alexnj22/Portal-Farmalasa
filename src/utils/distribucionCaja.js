@@ -39,6 +39,36 @@ export function cuentaDelCierre(esperado, contadoTexto, nota) {
     return { contado: cont, diferencia: dif, listo: cont != null && (dif === 0 || String(nota ?? '').trim() !== '') };
 }
 
+/**
+ * El efectivo de la liquidación dicho en palabras. Un día con sólo
+ * devoluciones en efectivo deja el esperado NEGATIVO: salió de la caja del
+ * vendedor más de lo que entró. Eso no es un conteo —nadie cuenta «−$12.00»
+ * en un sobre—, así que no se sugiere como monto: se dice que hay que
+ * devolverle esa plata al vendedor, y el conteo sugerido es $0.00.
+ * @returns {{ negativo: boolean, rotulo: string, monto: number, sugerido: string, aviso: string|null }}
+ */
+export function efectivoDelCierre(esperado, formatMoney) {
+    const n = c(esperado) / 100;
+    if (n < 0) {
+        return {
+            negativo: true, rotulo: 'Hay que devolver', monto: -n, sugerido: '0.00',
+            aviso: `Hay que devolverle ${formatMoney(-n)} al vendedor: devolvió en efectivo más de lo que cobró este día. Si no le queda efectivo, el conteo es $0.00.`,
+        };
+    }
+    return { negativo: false, rotulo: 'Efectivo a entregar', monto: n, sugerido: n.toFixed(2), aviso: null };
+}
+
+/**
+ * Lo que dice la diferencia antes de cerrar. Con el esperado negativo, contar
+ * $0.00 no es un «sobrante»: es exactamente lo que hay que devolverle.
+ */
+export function textoDeLaDiferencia(esperado, contado, diferencia, formatMoney) {
+    if (diferencia == null) return null;
+    if (diferencia === 0) return 'Cuadra';
+    if (c(esperado) < 0 && c(contado) === 0) return `Contado $0.00 · hay que devolverle ${formatMoney(-c(esperado) / 100)}`;
+    return `${diferencia > 0 ? 'Sobran' : 'Faltan'} ${formatMoney(Math.abs(diferencia))}`;
+}
+
 /** «Sin diferencia» / «Sobrante $x» / «Faltante $x». */
 export function rotuloDiferencia(dif, formatMoney) {
     const n = Number(dif);

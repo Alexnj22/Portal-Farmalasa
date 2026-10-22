@@ -29,7 +29,7 @@ import FiltroDia from './FiltroDia';
 import CajaDelVendedor from './CajaDelVendedor';
 import { TIPO_DOCUMENTO } from './comun';
 import { nombreFormaPago as rotuloForma } from '@nucleo/utils/distribucionFacturacion';
-import { formasDeLaLiquidacion, cuentaDelCierre, resumenDelCamion, vendedoresParaElegir, rotuloDiferencia } from '@nucleo/utils/distribucionCaja';
+import { formasDeLaLiquidacion, cuentaDelCierre, efectivoDelCierre, textoDeLaDiferencia, resumenDelCamion, vendedoresParaElegir, rotuloDiferencia } from '@nucleo/utils/distribucionCaja';
 import { MARCA_PAPEL } from './marca';
 
 // La liquidación diaria del vendedor (borrador 0020): lo que vendió, lo que
@@ -133,6 +133,9 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
     const dif = cuenta.diferencia;
     const listo = cuenta.listo && !ocupado;
     const formas = useMemo(() => formasDeLaLiquidacion(liq), [liq]);
+    // Con sólo devoluciones el esperado queda negativo: se dice «hay que devolver», no se sugiere un conteo negativo.
+    const efe = efectivoDelCierre(esperado, formatMoney);
+    const textoDif = textoDeLaDiferencia(esperado, cont, dif, formatMoney);
 
     const cerrar = async () => {
         setOcupado('cerrar');
@@ -180,7 +183,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                             iconBg="bg-success/10" iconCls="text-success" sub={`${formatQty(liq.cobros.lista.length)} cobros`} />
                         <StatCard icon={Undo2} label="Devuelto" value={formatMoney(Number(liq.devoluciones.total))} loading={cargando}
                             iconBg="bg-warning/10" iconCls="text-warning" sub={Number(liq.devoluciones.a_favor) > 0 ? `${formatMoney(Number(liq.devoluciones.a_favor))} a favor de clientes` : 'Notas de crédito'} />
-                        <StatCard icon={Wallet} label="Efectivo a entregar" value={formatMoney(esperado)} loading={cargando}
+                        <StatCard icon={Wallet} label={efe.rotulo} value={formatMoney(efe.monto)} loading={cargando}
                             iconBg="bg-chart-3/10" iconCls="text-chart-3"
                             sub={Number(liq.efectivo.fondo) > 0 ? `Incluye ${formatMoney(Number(liq.efectivo.fondo))} de fondo de cambio` : `${formatMoney(Number(liq.efectivo.ventas))} ventas + ${formatMoney(Number(liq.efectivo.cobros))} cobros`} />
                     </CarrilCards>
@@ -306,11 +309,12 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                             ) : <Button size="sm" variant="ghost" icon={Unlock} onClick={() => setReabriendo(true)}>Reabrir</Button>)}
                         </>) : liq.puede_cerrar ? (<>
                             <PortalInput label="Efectivo contado" name="efectivo-contado" inputMode="decimal" value={contado}
-                                onChange={(e) => setContado(e.target.value)} placeholder={esperado.toFixed(2)}
+                                onChange={(e) => setContado(e.target.value)} placeholder={efe.sugerido}
                                 hasError={contado !== '' && cont == null} errorMessage="Escribe un monto" />
+                            {efe.aviso && <Notice variant="warning" bloque data-esperado-negativo>{efe.aviso}</Notice>}
                             {dif != null && (
-                                <p className={`text-body-sm font-black tabular-nums ${dif === 0 ? 'text-success-text' : 'text-danger-text'}`} data-diferencia-previa>
-                                    {dif === 0 ? <><CheckCircle2 size={14} className="inline -mt-0.5" /> Cuadra</> : `${dif > 0 ? 'Sobran' : 'Faltan'} ${formatMoney(Math.abs(dif))}`}
+                                <p className={`text-body-sm font-black tabular-nums ${dif === 0 ? 'text-success-text' : efe.negativo && cont === 0 ? 'text-warning-text' : 'text-danger-text'}`} data-diferencia-previa>
+                                    {dif === 0 ? <><CheckCircle2 size={14} className="inline -mt-0.5" /> Cuadra</> : textoDif}
                                 </p>
                             )}
                             {dif != null && dif !== 0 && (

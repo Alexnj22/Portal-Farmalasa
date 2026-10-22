@@ -19,7 +19,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import {
     fetchDocumento, fetchPagos, reintentarDocumento, descartarDocumento, mensajeDeDistribucion,
     corregirDocumentoSellado, anularVenta, reenviarInvalidacion, enviarContingencia,
-    fetchPlazoInvalidacion,
+    fetchPlazoInvalidacion, fetchFrenosDeInvalidacion,
 } from '@nucleo/data/distribucion';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo, abrirEnPestanaNueva } from '../../plataforma/descargas';
@@ -29,7 +29,7 @@ import {
 } from '@nucleo/utils/distribucionDocumento';
 import { MARCA_PAPEL } from './marca';
 import { ESTADO_DOCUMENTO, TIPO_DOCUMENTO } from './comun';
-import { nombreFormaPago as nombreForma, accionesDelDocumento, avisoDelPlazo, ayudaDelSellado, avisoDeAccion, resumenDeContingencia } from '@nucleo/utils/distribucionFacturacion';
+import { nombreFormaPago as nombreForma, accionesDelDocumento, avisoDelPlazo, avisoDeFreno, ayudaDelSellado, avisoDeAccion, resumenDeContingencia } from '@nucleo/utils/distribucionFacturacion';
 import EstadoHacienda from './EstadoHacienda';
 import { useNavigate } from 'react-router-dom';
 import { rutaVolverAVender } from './rutas';
@@ -197,6 +197,9 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const [devolviendo, setDevolviendo] = useState(false);
     const [motivo, setMotivo] = useState('');
     const [plazo, setPlazo] = useState(null);   // hasta cuándo se puede invalidar (sólo sellados)
+    // Lo que frena pedir la invalidación: una solicitud esperando o una nota de crédito.
+    const [frenos, setFrenos] = useState(null);
+    const [vueltaFrenos, setVueltaFrenos] = useState(0);
     const yaImprimio = useRef(false);
 
     const cargar = useCallback(() => {
@@ -218,6 +221,14 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
             .catch(e => console.error('DocumentoModal: plazo de invalidación', e));
         return () => { vivo = false; };
     }, [id, estadoDoc]);
+    useEffect(() => {
+        if (estadoDoc !== 'sellado') { setFrenos(null); return undefined; }
+        let vivo = true;
+        fetchFrenosDeInvalidacion(id)
+            .then(f => { if (vivo) setFrenos(f); })
+            .catch(e => console.error('DocumentoModal: frenos de invalidación', e));
+        return () => { vivo = false; };
+    }, [id, estadoDoc, vueltaFrenos]);
 
     const imprimirTicket = useCallback(async (doc) => {
         const r = await imprimirTicketDeVenta(doc, MARCA_PAPEL, { pagos: pagos ?? [] });
@@ -284,6 +295,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
         const r = await accion('pedir', () => (corrige ? corregirDocumentoSellado(id, motivo) : anularVenta(id, motivo)),
             corrige ? 'DISTRIBUCION_CORRECCION_PEDIDA' : 'DISTRIBUCION_INVALIDACION_PEDIDA');
         if (r) { setPidiendo(null); setMotivo(''); }
+        setVueltaFrenos(v => v + 1);
         cargar();
         onCambio?.();
     };
@@ -323,7 +335,8 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const est = d ? ESTADO_DOCUMENTO[d.estado] : null;
     // Qué se puede hacer, con la MISMA regla que la app (núcleo): pasado el
     // plazo, ni «Corregir» ni «Deshacer»; la devolución es Nota de Crédito.
-    const { conArchivo, invalidando, vencido, puedeCorregir, puedeDeshacer, puedeDevolver, conCorreo } = accionesDelDocumento(d, { puedeVender, plazo });
+    const { conArchivo, invalidando, vencido, pedida, conNota, puedeCorregir, puedeDeshacer, puedeDevolver, conCorreo } = accionesDelDocumento(d, { puedeVender, plazo, frenos });
+    const freno = avisoDeFreno({ pedida, conNota });
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Documento">
@@ -382,7 +395,13 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                             </dl>
                         )}
                         {d.estado === 'sellado' && !invalidando && plazo && <AvisoPlazo plazo={plazo} tipo={d.tipo} />}
-                        {d.estado === 'sellado' && puedeVender && !invalidando && !vencido && (
+                        {freno && (
+                            <Notice variant={freno.tono === 'cuidado' ? 'warning' : 'info'} bloque data-freno={pedida ? 'solicitud' : 'nota'}>
+                                <span className="block font-black">{freno.titulo}</span>
+                                <span className="block font-semibold">{freno.texto}</span>
+                            </Notice>
+                        )}
+                        {d.estado === 'sellado' && puedeVender && !invalidando && !vencido && !freno && (
                             <p className="text-caption text-content-3">{ayudaDelSellado(d.tipo)}</p>
                         )}
                         {deshaciendo && (

@@ -23,6 +23,7 @@ import { FORMA_PAGO, leerMonto } from './comun';
 import { repartoDelCobro, problemaDelCobro, cambioDelCobro, saldoAFavor, usoDelSaldoAFavor } from './cartera';
 import { MARCA_PAPEL } from './marca';
 import useBorrador from '@nucleo/hooks/useBorrador';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 
 // La ficha de cobro de un cliente: qué debe, cobrarle y lo que ya pagó.
 //
@@ -42,6 +43,9 @@ const aC = (n) => Math.round(Number(n || 0) * 100);
 
 export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, puedeAnular, onClose, onCambio }) {
     const showToast = useToastStore(s => s.showToast);
+    // En el teléfono el foco abre el teclado y lleva la hoja hasta «Cobrar»,
+    // dejando fuera de la vista lo que debe y el saldo a favor: ahí no se enfoca.
+    const conDedo = useCoarsePointer();
     const [estado, setEstado] = useState(null);
     const [error, setError] = useState('');
     const [monto, setMonto] = useState('');
@@ -316,7 +320,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                             <span className="text-title font-black tabular-nums text-content">{formatMoney(totalManual)}</span>
                                         </div>
                                     ) : (
-                                        <PortalInput label="Monto" name="monto-cobro" inputMode="decimal" prefix="$" placeholder="0.00" value={monto} autoFocus
+                                        <PortalInput label="Monto" name="monto-cobro" inputMode="decimal" prefix="$" placeholder="0.00" value={monto} autoFocus={!conDedo}
                                             hasError={aC(n) > aC(saldo)} onChange={(e) => setMonto(e.target.value.replace(/[^0-9.]/g, ''))} />
                                     )}
                                     <div className="flex flex-col gap-1.5">

@@ -137,7 +137,7 @@ describe('invalidar un sellado se PIDE (auditoría H3)', () => {
 
     it('la ayuda y la confirmación dicen que se pide y qué pasa con el dinero', () => {
         expect(queHaceCorregir({ estado: 'sellado' })).toMatch(/solicitud/);
-        expect(queHaceCorregir({ estado: 'sellado' })).toMatch(/abonado pasa a la cuenta nueva/);
+        expect(queHaceCorregir({ estado: 'sellado' })).toMatch(/abonado y lo pagado con saldo a favor pasan a la cuenta nueva/);
         expect(ayudaDelSellado('01')).toMatch(/se piden/);
         expect(ayudaDelSellado('01')).toMatch(/efectivo sale de tu caja/);
     });

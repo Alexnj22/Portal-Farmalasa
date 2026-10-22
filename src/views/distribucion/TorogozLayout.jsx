@@ -193,7 +193,19 @@ export default function TorogozLayout({ children, handleLogout }) {
 
             <main className="flex-1 flex flex-col relative z-content lg:overflow-hidden min-w-0">
                 {/* Teléfono: barra pegada arriba, con el menú detrás del botón. */}
-                <header className="lg:hidden sticky top-0 z-tabs bg-surface-page/95 border-b border-divider pt-[var(--sa-top)] px-[max(0.75rem,var(--sa-left))]">
+                {/* El fondo es el del encabezado móvil del portal (`--header-mobile`,
+                    sólido y por tema). Era `bg-surface-page/95`, pero `--surface-page`
+                    vale `transparent`: la barra no tenía fondo y la lista pasaba por
+                    debajo con el texto encimado. Y se pega DEBAJO de la franja de aviso
+                    (`--banner-h`), igual que el del portal. */}
+                <header className="lg:hidden sticky z-tabs border-b px-[max(0.75rem,var(--sa-left))]"
+                    style={{
+                        top: 'var(--banner-h, 0px)',
+                        paddingTop: 'max(0px, calc(var(--sa-top) - var(--banner-h, 0px)))',
+                        background: 'var(--header-mobile)',
+                        borderColor: 'var(--header-mobile-border)',
+                        boxShadow: 'var(--header-mobile-shadow)',
+                    }}>
                     <div className="flex items-center justify-between gap-2 h-14">
                         <button type="button" onClick={() => setAbierto(true)} aria-label="Abrir el menú"
                             className="w-11 h-11 rounded-xl flex items-center justify-center text-content-2 active:scale-[0.95] transition-transform">

@@ -7,6 +7,7 @@
 // por eso los errores de la base se devuelven tal cual y la vista los traduce.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 /** Los códigos que lanzan los triggers de la base, en lenguaje de la pantalla. */
 const MENSAJES = {
@@ -45,7 +46,9 @@ export function mensajeDeDistribucion(error) {
     if (texto.includes('dist_clientes_ccf_completo')) {
         return 'Un contribuyente necesita NIT, actividad económica y dirección completa para recibir Crédito Fiscal.';
     }
-    return texto || 'No se pudo completar la operación.';
+    // La función del servidor manda el motivo sin el código (y a veces en
+    // minúscula, como lo escribió la base): la pantalla lo empieza en mayúscula.
+    return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : 'No se pudo completar la operación.';
 }
 
 // ── Emisor ─────────────────────────────────────────────────────────────────
@@ -395,6 +398,35 @@ export async function fetchDocumento(id) {
         .select('*, dist_clientes(nombre, correo), correo:dist_correo_vigente(estado, destinatario, enviado_at, ultimo_error)').eq('id', id).single();
     if (error) throw error;
     return data;
+}
+
+/**
+ * Lo que frena pedir que se invalide un sellado, para decirlo ANTES de apretar
+ * (el juez sigue siendo `dist_pedir_invalidacion`):
+ *   · `solicitud`: la DIST_INVALIDACION que espera decisión. El RLS decide si
+ *     se ve —quien la pidió y quien decide sí—; si no se ve, frena el servidor.
+ *   · `nota`: una nota de crédito vigente sobre el documento.
+ * → { solicitud: { id, accion, created_at, solicitante } | null, nota: { id, numero_control } | null }
+ */
+export async function fetchFrenosDeInvalidacion(dteId) {
+    const [sol, dev] = await Promise.all([
+        supabase.from('approval_requests')
+            .select('id, metadata, created_at, solicitante:employees!approval_requests_employee_id_fkey(name)')
+            .eq('type', 'DIST_INVALIDACION').eq('status', 'PENDING').eq('metadata->>dte_id', String(dteId))
+            .order('created_at', { ascending: false }).limit(1),
+        supabase.from('dist_devoluciones')
+            .select('id, nota:dist_dte!dist_devoluciones_nota_id_fkey(id, numero_control, estado)')
+            .eq('dte_origen_id', dteId).eq('estado', 'emitida'),
+    ]);
+    if (sol.error) throw sol.error;
+    if (dev.error) throw dev.error;
+    const s = sol.data?.[0] ?? null;
+    const n = (dev.data ?? []).map(x => x.nota).find(x => x && !['descartado', 'rechazado', 'invalidado'].includes(x.estado)) ?? null;
+    return {
+        solicitud: s ? { id: s.id, accion: /** @type {{ accion?: string }} */ (s.metadata ?? {}).accion ?? null, created_at: s.created_at,
+            solicitante: s.solicitante?.name ? shortEmployeeName(s.solicitante.name) : null } : null,
+        nota: n ? { id: n.id, numero_control: n.numero_control } : null,
+    };
 }
 
 /** Los puntos de venta de los vendedores (borrador 0028): uno por vendedor, se crea al emitir. */

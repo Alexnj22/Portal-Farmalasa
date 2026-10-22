@@ -9,7 +9,6 @@ const AsignarDocumentoAVarios = lazy(() => import('./AsignarDocumentoAVarios'));
 const VisorDeDocumento = lazy(() => import('../common/VisorDeDocumento'));
 const DialogoDeCaptura = lazy(() => import('../common/DialogoDeCaptura'));
 import { loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
-import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
 import { faltantesDelExpediente } from '@nucleo/utils/expediente';
 import { TEMPORAL_LEGAL_BASIS_OPTIONS } from '@nucleo/utils/reingresoYRecontratacion';
 import { aplicarDuiLeido, avisoDeCaras, ROTULO_DUI, juntarCambiosDelDui } from '@nucleo/utils/duiLeido';
@@ -413,10 +412,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 // ¿La persona del borrador ya está guardada? Entonces el
                 // borrador es basura y ofrecerlo sólo confunde.
                 //
-                // El DUI ya NO viaja en el borrador (es un campo sensible), así
-                // que la comparación queda por NOMBRE. Es más floja, y es el
-                // precio aceptado: el caso que resuelve —alguien que completó
-                // el alta y vuelve a abrir— se reconoce igual por nombre y
+                // Se compara por NOMBRE: el caso que resuelve —alguien que
+                // completó el alta y vuelve a abrir— se reconoce por nombre y
                 // apellido, y el costo de fallar es ofrecer un botón de más, no
                 // perder un dato.
                 const isAlreadySaved = employees.some(emp =>
@@ -495,22 +492,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      * Al pasar por `draftUtils` gana además el vencimiento a 24 h que la
      * versión a mano no tenía — un borrador de hace un mes seguía ahí,
      * ofreciéndose para restaurar. */
+    /* ── …y desde el 2026-10-22 se lleva TODO otra vez ─────────────────────
+     *
+     * Decisión del usuario: «debe guardar TODO el borrador, no borrar nada».
+     * Un alta se cerró a medias y volvió sin DUI, sin NUP de AFP y sin
+     * salario. El borrador es de la sesión de quien da de alta —Talento
+     * Humano, que ya tiene acceso a esos datos—: vence a las 24 h y
+     * `borrarTodosLosBorradores` lo borra al cerrar sesión, así que el
+     * siguiente que se siente en esa computadora no lo encuentra.
+     *
+     * Sólo se quedan fuera el archivo y la miniatura (no pasan a JSON) y las
+     * marcas de carga de la ficha enlazada, que no son datos: un borrador
+     * restaurado tiene que volver a pedir la ficha. */
     const borradorSeguro = useMemo(() => {
         if (isEditMode || formData?.id) return null;
         if (!(formData?.first_names || formData?.last_names || formData?.dui)) return null;
         const limpio = { ...formData };
         delete limpio.file;
         delete limpio.photoPreview;
-        for (const campo of SENSITIVE_FIELDS) delete limpio[campo];
-        // El código de carné es la contraseña del portal y del kiosco: al
-        // enlazar es el REAL de la persona, y no se deja en el disco de una
-        // computadora compartida. Las marcas de carga tampoco viajan: un
-        // borrador restaurado tiene que volver a pedir la ficha.
-        delete limpio.code;
         delete limpio._fichaCargada;
         delete limpio._fichaFallo;
-        // Lleva el antes y el después del DUI: tampoco va al disco.
-        delete limpio._cambiosDelDui;
         return limpio;
     }, [formData, isEditMode]);
 
@@ -545,9 +546,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const restoreDraft = () => {
         const parsed = loadDraft(CLAVE_BORRADOR);
         if (!parsed) { setHasDraft(false); return; }
-        // El DUI y los datos de dinero NO están en el borrador a propósito
-        // (ver arriba): se vuelven a escribir, que es el precio de no dejarlos
-        // en el disco de una computadora compartida.
         setFormData(prev => ({ ...prev, ...parsed, _fichaCargada: null, _fichaFallo: null }));
         // Un borrador de un ENLACE vuelve sin el sueldo, la cuenta, el ISSS ni
         // el código de la persona. Sin volver a pedirlos, guardar los dejaba

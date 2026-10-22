@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.10 — El borrador del alta de personal guarda todos los datos
+
+- **Personal · nuevo empleado**: el borrador vuelve a guardar todo lo escrito, también el DUI (número, lugar y fechas), el NUP de AFP, el ISSS, el salario, el banco, la cuenta y el código de carné. Desde v2.738.2 esos campos se descartaban y, al cerrar el formulario a medias, el borrador volvía con ellos en blanco. Sigue venciendo a las 24 h y se borra al cerrar sesión.
+
 ## v2.1350.9 — Sucursales miran sus errores; libro de compras completo y declarable en una sola llamada
 
 - **Sucursales · crear con contrato de alquiler**: si el contrato se sube pero no se puede enlazar a la ficha, la sucursal queda creada igual y aparece el aviso «Falta el contrato» para volver a adjuntarlo. Antes se daba por completa sin el contrato, y reintentar habría creado otra sucursal igual.

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1347.1 — Reglamento y procedimiento de reservas: versión 1 y fecha a mano
+
+- **Reglamento de reservas y procedimiento interno**: quedan como **versión 1** (todavía no son oficiales; el reglamento decía versión 4), y la fecha «vigente a partir del» y la de la firma van en blanco, para escribirlas a mano el día que se firmen.
+
 ## v2.1347.0 — Reservas: tarjeta por reserva con cliente, productos, pago y detalle
 
 - **Reservas** (pantalla): cada reserva es una **tarjeta** en cuatro bloques, siempre en el mismo orden:

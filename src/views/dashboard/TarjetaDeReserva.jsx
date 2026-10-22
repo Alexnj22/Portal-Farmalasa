@@ -139,7 +139,7 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
 
 export function BotonDeAccion({ a, variant = 'secondary', size = 'sm', className = '' }) {
     return (
-        <Button variant={variant} size={size} icon={a.icon} loading={a.loading} title={a.title}
+        <Button variant={variant} size={size} icon={a.icon} loading={a.loading} disabled={a.disabled} title={a.title}
             onClick={a.onClick} className={className}>{a.label}</Button>
     );
 }

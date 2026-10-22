@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.8 — Reservas: saldos, devoluciones y encargos en tarjeta; main:al-dia con archivos nuevos
+
+- **Reservas** (pantalla): **saldos a favor, devoluciones por entregar y encargos** pasan a tarjeta, como las reservas (`TarjetaCompacta`).
+  - Cada tarjeta tiene arriba el código y el estado, después el cliente, una línea por dato y las cifras al pie, con la misma altura en toda la fila.
+  - Los botones llevan nombre: la acción que toca, a la derecha, y el resto en «Más». Se acabaron los íconos sueltos («No se puede conseguir», «Ver la foto», «Avisar por WhatsApp»).
+  - En un encargo aceptado se ofrece primero «Ya se pidió» y después «Llegó».
+  - La baldosa del Inicio no cambia.
+  - Verificado con capturas en escritorio y teléfono contra el entorno de pruebas; los datos de muestra se borraron.
+- **`npm run main:al-dia`**: ya no se rompe cuando hay un archivo **nuevo** preparado con `git add` que arriba ya trae. Antes intentaba `git checkout HEAD -- <archivo>` sobre algo que HEAD no tiene y abortaba todo. Ahora lo saca del índice y lo borra, igual que a uno sin seguir. Probado reproduciendo el caso en un repositorio desechable: un archivo ajeno quedó intacto.
+
 ## v2.1350.7 — Pago a proveedor: el lector entiende facturas, órdenes a mano y PDF
 
 - **Mi caja → Pago a proveedor**: la foto ya no se lee como una boleta de POS. Usa su propio lector (`documentoProveedorPrompt.ts`, `clase: 'PROVEEDOR'` en `leer-boleta`) que acepta tiquete térmico, factura o crédito fiscal, orden de despacho llenada a mano y **PDF**; el campo dice «Foto o PDF de la factura».

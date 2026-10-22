@@ -91,10 +91,17 @@ const sucios          = lineas(git('diff', '--name-only', 'HEAD'));
 const sinSeguir       = lineas(git('ls-files', '--others', '--exclude-standard'));
 const enOrigen        = (f) => gitOk('cat-file', '-e', `origin/main:${f}`);
 
+const enHead          = (f) => gitOk('cat-file', '-e', `HEAD:${f}`);
+
 const aRestaurar = [];   // seguidos y sucios que arriba cambió
 const aQuitar    = [];   // sin seguir que arriba ya trae
+// «Seguido» quiere decir que HEAD lo tiene. Un archivo NUEVO preparado con
+// `git add` aparece en `diff HEAD` pero no está en HEAD: `checkout HEAD -- f`
+// no lo encuentra y aborta TODO el checkout (pasó el 2026-10-22, con tres
+// archivos de una versión ya publicada desde otro worktree). Ése se trata como
+// sin seguir: se saca del índice y se borra, porque arriba ya lo trae.
 const enRiesgo = [
-  ...sucios.filter(f => cambiadosArriba.has(f)).map(f => ({ f, seguido: true })),
+  ...sucios.filter(f => cambiadosArriba.has(f)).map(f => ({ f, seguido: enHead(f) })),
   ...sinSeguir.filter(f => enOrigen(f)).map(f => ({ f, seguido: false })),
 ];
 
@@ -149,7 +156,10 @@ console.log(`\n  · Respaldo en ${destino}`);
 
 // ── 4. Mover main ────────────────────────────────────────────────────────────
 if (aRestaurar.length) git('checkout', 'HEAD', '--', ...aRestaurar);
-for (const f of aQuitar) rmSync(f);
+for (const f of aQuitar) {
+  if (gitOk('ls-files', '--error-unmatch', '--', f)) git('rm', '-q', '--cached', '--', f);
+  if (existsSync(f)) rmSync(f);
+}
 try {
   git('reset', '--keep', 'origin/main');
 } catch (e) {

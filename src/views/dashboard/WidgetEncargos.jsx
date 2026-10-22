@@ -3,6 +3,7 @@ import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Imag
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
+import TarjetaCompacta from './TarjetaCompacta';
 import Encabezado from './EncabezadoDeLista';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -50,7 +51,9 @@ const sinVincular = encargoSinVincular;
 const estadoDe = (e) => { const x = estadoDeEncargo(e); return { label: x.texto, variant: x.tono }; };
 
 // `soloLectura`: quien sólo puede mirar las reservas ve el estado sin los botones.
-export default function WidgetEncargos({ branchId = null, soloLectura = false }) {
+// `completa` (2026-10-22): en la pantalla de Reservas, una tarjeta por encargo
+// como las de las reservas; en la baldosa del Inicio, la fila de siempre.
+export default function WidgetEncargos({ branchId = null, soloLectura = false, completa = false }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     const [ocupado, setOcupado] = useState(null);
@@ -110,6 +113,53 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
     return (
         <div className="space-y-1.5">
             <Encabezado titulo="Encargos" n={filas.length} ayuda="Lo que no hay en la red: Compras lo consigue y confirma el precio" />
+            {completa ? (
+            <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-stretch min-w-0">
+                {filas.map((e) => {
+                    const wa = !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono);
+                    const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
+                    // En orden: lo que destraba al encargo primero.
+                    const acc = [
+                        !soloLectura && e.estado === 'solicitado' && { k: 'confirmar', label: 'Confirmar', icon: Check, onClick: () => setConfirmando(e) },
+                        !soloLectura && e.estado === 'aceptado' && { k: 'pedido', label: 'Ya se pidió', icon: Truck, loading: ocupado === e.id, onClick: () => mover(e, 'pedido') },
+                        !soloLectura && sinVincular(e) && { k: 'vincular', label: 'Vincular producto', icon: Link2, onClick: () => setVinculando(e) },
+                        !soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && { k: 'llego', label: 'Llegó', icon: PackageCheck,
+                            loading: ocupado === e.id, disabled: sinVincular(e),
+                            title: sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined, onClick: () => mover(e, 'listo') },
+                        !soloLectura && e.estado === 'listo' && { k: 'entregar', label: 'Entregar', icon: CheckCircle2, onClick: () => setRetirando(e) },
+                        !soloLectura && wa && { k: 'whatsapp', label: 'Avisar por WhatsApp', icon: MessageCircle,
+                            onClick: () => window.open(`https://wa.me/${wa}?text=${encodeURIComponent(mensajeDeEncargo(e))}`, '_blank', 'noopener') },
+                        e.foto_url && { k: 'foto', label: 'Ver la foto', icon: ImageIcon, onClick: () => openStoredFile(e.foto_url) },
+                        !soloLectura && e.estado === 'listo' && !e.prorrogado_at && { k: 'prorrogar', label: 'Prorrogar 7 días', icon: CalendarPlus,
+                            loading: ocupado === e.id, title: 'Una sola prórroga', onClick: () => prorrogar(e) },
+                        !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: 'Pasar a saldo a favor',
+                            icon: Wallet, title: 'El cliente no lo retira o desiste: lo pagado queda a su favor', onClick: () => setASaldo(e) },
+                        !soloLectura && e.estado === 'solicitado' && { k: 'rechazar', label: 'No se puede conseguir', icon: X, onClick: () => setRechazando(e) },
+                    ].filter(Boolean);
+                    const estado = estadoDe(e);
+                    return (
+                        <li key={e.id} className="min-w-0">
+                            <TarjetaCompacta codigo={e.codigo} sala={e.sala ? `Retira en ${e.sala}` : null}
+                                tono={vencido(e) ? 'warning' : null}
+                                estado={{ label: estado?.label ?? e.estado, variant: estado?.variant ?? 'neutral' }}
+                                cliente={e.cliente}
+                                lineas={[
+                                    `${e.cantidad} × ${e.producto}`,
+                                    e.producto_nuevo ? (e.product_id ? `Producto nuevo → ${e.producto_catalogo ?? 'vinculado'}` : sinVincular(e) && e.sugerido ? `Producto nuevo · ¿ya está como «${e.sugerido}»?` : 'Producto nuevo') : null,
+                                    e.reserva ? `Resto de la reserva ${e.reserva}` : null,
+                                ]}
+                                cifras={[
+                                    ...(e.anticipo ? [{ rotulo: 'Pagado', valor: Number(e.anticipo), tono: 'text-success-text' }] : []),
+                                    ...(e.fecha_estimada ? [{ rotulo: 'Llega', valor: fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' }) }] : []),
+                                ]}
+                                aviso={vencido(e) ? 'No lo retiró a tiempo: llamar al cliente' : null}
+                                plazo={e.retirar_hasta ? `Retira hasta el ${dia(e.retirar_hasta)}${e.prorrogado_at ? ' (prorrogado)' : ''}` : null}
+                                acciones={acc} />
+                        </li>
+                    );
+                })}
+            </ul>
+            ) : (
             <ul className="space-y-1.5 min-w-0">
                 {filas.map((e) => (
                     <li key={e.id}>
@@ -146,6 +196,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false })
                     </li>
                 ))}
             </ul>
+            )}
             {confirmando && <Confirmar encargo={confirmando} onClose={() => setConfirmando(null)}
                 onConfirmar={async (datos) => { if (await mover(confirmando, 'confirmar', datos)) setConfirmando(null); }} />}
             {retirando && (

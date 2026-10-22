@@ -7,6 +7,7 @@ import SearchInput from '../../components/common/SearchInput';
 import WidgetEncargos from './WidgetEncargos';
 import Encabezado from './EncabezadoDeLista';
 import TarjetaDeReserva from './TarjetaDeReserva';
+import TarjetaCompacta from './TarjetaCompacta';
 import { TRASLADO } from './reservaVista';
 const DetalleDeReserva = lazy(() => import('./DetalleDeReserva'));
 import { useResumenWidget } from './tamanoWidget';
@@ -557,6 +558,36 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             {saldos.length > 0 && (
                 <div className="space-y-1.5">
                     <Encabezado titulo="Saldos a favor" n={saldos.length} ayuda="Se usan en cualquier sucursal" />
+                    {completa ? (
+                    <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-stretch min-w-0">
+                        {saldos.map((r) => {
+                            const otraSala = (todas || String(r.branch_id) !== String(miSala)) && r.sala;
+                            const vence = `Vale hasta el ${fechaTexto(r.saldo_favor_vence, { weekday: 'short', day: 'numeric', month: 'short' })}`;
+                            const acc = soloLectura || r.confirmado === false ? [] : [
+                                puedeDevolver && r.devolucion_pedida_at && { k: 'autorizar', label: 'Autorizar devolución', icon: Banknote, onClick: () => setDevolver(r) },
+                                { k: 'usar', label: 'Usar en caja', icon: CheckCircle2, onClick: () => usarSaldo(r) },
+                                puedeDevolver && r.devolucion_pedida_at && { k: 'negar', label: 'No autorizar', icon: XCircle, onClick: () => setNegando(r) },
+                                puedeDevolver && !r.devolucion_pedida_at && { k: 'devolver', label: 'Devolver en dinero', icon: Banknote, onClick: () => setDevolver(r) },
+                                !puedeDevolver && !r.devolucion_pedida_at && String(r.branch_id) === String(miSala)
+                                    && { k: 'pedir', label: 'Pedir en efectivo', icon: Banknote, onClick: () => setPidiendoDevolucion(r) },
+                            ].filter(Boolean);
+                            return (
+                                <li key={r.id} className="min-w-0">
+                                    <TarjetaCompacta codigo={r.pedido ?? codigoDeReserva(r.id)} sala={otraSala || null}
+                                        estado={r.devolucion_pedida_at ? { label: 'Devolución pedida', variant: 'warning' } : { label: 'Saldo a favor', variant: 'success' }}
+                                        cliente={r.confirmado === false ? 'Confirma al cliente para verlo' : r.cliente}
+                                        lineas={r.confirmado === false ? [] : [r.producto, origenDelSaldo(r)]}
+                                        cifras={r.confirmado === false ? [] : [
+                                            { rotulo: 'A favor', valor: Number(r.saldo_favor), tono: 'text-success-text' },
+                                            ...(Number(r.saldo_favor_inicial) > Number(r.saldo_favor) ? [{ rotulo: 'De', valor: Number(r.saldo_favor_inicial), tono: 'text-content-3' }] : []),
+                                        ]}
+                                        aviso={r.devolucion_pedida_at ? `Pide el dinero en efectivo${r.devolucion_pedida_motivo ? `: ${r.devolucion_pedida_motivo}` : ''}` : null}
+                                        plazo={vence} acciones={acc} />
+                                </li>
+                            );
+                        })}
+                    </ul>
+                    ) : (
                     <ul className="space-y-1.5 min-w-0">
                         {saldos.map((r) => (
                             <li key={r.id}>
@@ -588,11 +619,27 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                             </li>
                         ))}
                     </ul>
+                    )}
                 </div>
             )}
             {porEntregar.length > 0 && (
                 <div className="space-y-1.5">
                     <Encabezado titulo="Devoluciones por entregar" n={porEntregar.length} ayuda="Autorizadas: se entregan en efectivo" />
+                    {completa ? (
+                    <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-stretch min-w-0">
+                        {porEntregar.map((r) => (
+                            <li key={r.id} className="min-w-0">
+                                <TarjetaCompacta codigo={r.pedido ?? codigoDeReserva(r.id)} tono="warning"
+                                    estado={{ label: 'Por entregar', variant: 'warning' }} cliente={r.cliente}
+                                    lineas={[r.producto, r.devolucion_pedida_motivo && `Motivo: ${r.devolucion_pedida_motivo}`]}
+                                    cifras={[{ rotulo: 'Entregar', valor: Number(r.saldo_favor_devuelto_monto), tono: 'text-warning-text' }]}
+                                    acciones={soloLectura || todas ? [] : [
+                                        { k: 'entregar', label: 'Entregar en efectivo', icon: HandCoins, onClick: () => setEntregando(r) },
+                                    ]} />
+                            </li>
+                        ))}
+                    </ul>
+                    ) : (
                     <ul className="space-y-1.5 min-w-0">
                         {porEntregar.map((r) => (
                             <li key={r.id}>
@@ -605,9 +652,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                             </li>
                         ))}
                     </ul>
+                    )}
                 </div>
             )}
-            <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} />
+            <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} completa={completa} />
             </div>
             {modalNueva}
             {modalRetirar}

@@ -102,10 +102,16 @@ const etiqueta = (t) => ({ text: t, fontSize: 7.5, color: MARCA.gris,
  */
 export function definicionDeLaConstancia({
     nombre, dui, cargo, sala, falta, faltaArticulo, peldano, fecha,
-    dias, hasta, autorizacion, hechos, impuestaPor, logoPng, lugar, codigo,
+    dias, hasta, autorizacion, hechos, impuestaPor, logoPng, lugar, codigo, conDescuento = true,
 } = {}) {
-    const s = SANCION[peldano] || SANCION[1];
     const esSuspension = peldano === 3 || peldano === 4;
+    // Con o sin descuento lo decide Talento Humano (el dueño, 2026-10-22):
+    // el papel dice lo que se decidió, no lo que el numeral sugiere.
+    const goce = conDescuento === false ? 'con goce de salario' : 'sin goce de salario';
+    const base = SANCION[peldano] || SANCION[1];
+    const s = esSuspension && conDescuento === false
+        ? { ...base, titulo: base.titulo.replace('SIN GOCE', 'CON GOCE') }
+        : base;
 
     const dato = (rotulo, valor) => [
         etiqueta(rotulo),
@@ -245,8 +251,8 @@ export function definicionDeLaConstancia({
                               margin: [0, 2, 0, 0] },
                             ...(esSuspension ? [{
                                 text: peldano === 3
-                                    ? `Un día sin goce de salario: ${enLetras(fecha)}.`
-                                    : `${dias} días sin goce de salario, del ${enLetras(fecha)} al ${enLetras(hasta)}.`,
+                                    ? `Un día ${goce}: ${enLetras(fecha)}.`
+                                    : `${dias} días ${goce}, del ${enLetras(fecha)} al ${enLetras(hasta)}.`,
                                 fontSize: 10, margin: [0, 3, 0, 0],
                             }] : []),
                             // La autorización del Director General de Inspección de

@@ -2,6 +2,7 @@
 // horas extra). Extraído de payrollSlice.js: 14 llamadas supabase.from().
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { sumarDias } from '../utils/fecha';
 
 // ── Períodos ─────────────────────────────────────────────────────────────────
 
@@ -64,23 +65,104 @@ async function todasOError(armar) {
 
 export function fetchTimesheetsForPeriod(startDate, endDate) {
     return todasOError(() => supabase.from('timesheets')
-        .select('id, employee_id, is_absent, work_date, nocturnal_hours, nocturnal_overtime_hours, overtime_hours')
+        .select('id, employee_id, is_absent, absence_type, work_date, nocturnal_hours, nocturnal_overtime_hours, overtime_hours')
         .gte('work_date', startDate)
         .lte('work_date', endDate)
         .order('work_date').order('id'));
 }
 
-// Los bordes van con el huso de El Salvador: `'2026-10-15T23:59:59'` sin huso
-// se lee en UTC, y un anticipo pedido el 15 a las 19:00 de la sala caía en la
-// quincena siguiente (auditoría 2026-10-21).
+// Los CANDIDATOS a descontarse en la quincena: el día exacto de aprobación se
+// decide en `anticiposDeLaQuincena` (núcleo), que lo lee de `approvals`. Acá
+// sólo se acota sin perder ninguno: la aprobación pasa después de pedirlo
+// (`created_at` ≤ fin) y `updated_at` nunca queda antes de la aprobación
+// (`updated_at` ≥ inicio, ver abajo). Bordes con el huso de El Salvador: sin huso se leen
+// en UTC (auditoría 2026-10-21, H5).
+//
+// Con los REZAGADOS (aprobados en una quincena ya cerrada sin descontarse) la
+// ventana mira 90 días hacia atrás; `anticiposDeLaQuincena` decide cuáles pasan.
 export function fetchApprovedAdvances(startDate, endDate) {
     return todasOError(() => supabase.from('approval_requests')
-        .select('id, employee_id, metadata')
+        .select('id, employee_id, status, metadata, approvals, updated_at')
         .eq('type', 'ADVANCE')
         .eq('status', 'APPROVED')
-        .gte('created_at', `${startDate}T00:00:00-06:00`)
+        .lte('created_at', `${endDate}T23:59:59.999-06:00`)
+        .gte('updated_at', `${sumarDias(startDate, -90)}T00:00:00-06:00`)
+        .order('created_at').order('id'));
+}
+
+// ── Incapacidades y bajas que tocan la quincena (2026-10-22) ────────────────
+// La incapacidad más larga es la de maternidad (112 días, Art. 309): 200 días
+// hacia atrás alcanzan para ver una que empezó antes y sigue en la quincena.
+// Paginadas: `type` se repite, acotar por tipo no acota la respuesta.
+
+/** Novedades DISABILITY, SUSPENSION y TERMINATION del legajo que pueden caer en la quincena. */
+export function fetchNovedadesParaPlanilla(startDate, endDate) {
+    return todasOError(() => supabase.from('employee_events')
+        .select('id, employee_id, type, date, metadata')
+        .in('type', ['DISABILITY', 'SUSPENSION', 'TERMINATION'])
+        .gte('date', sumarDias(startDate, -200))
+        .lte('date', endDate)
+        .order('date').order('id'));
+}
+
+/** Solicitudes de incapacidad aprobadas o todavía sin decisión. */
+export function fetchSolicitudesDeIncapacidad(startDate, endDate) {
+    return todasOError(() => supabase.from('approval_requests')
+        .select('id, employee_id, type, status, metadata')
+        .eq('type', 'DISABILITY')
+        .or('status.eq.APPROVED,status.eq.PENDING')   // paginada: ver todasOError
+        .gte('created_at', `${sumarDias(startDate, -200)}T00:00:00-06:00`)
         .lte('created_at', `${endDate}T23:59:59.999-06:00`)
         .order('created_at').order('id'));
+}
+
+/**
+ * Renglones del período con días que esperan a Talento Humano (incapacidad sin
+ * validar o suspensión sin decidir el descuento). Aprobar la planilla se frena
+ * mientras haya alguno. Un renglón por persona: muy por debajo de 1000.
+ */
+export function fetchRenglonesPendientesDeTH(periodId) {
+    return supabase.from('payroll_entries')
+        .select('employee_id, incapacidad_pendiente_dias, suspension_pendiente_dias')
+        .eq('period_id', periodId)
+        .or('incapacidad_pendiente_dias.gt.0,suspension_pendiente_dias.gt.0')
+        .order('employee_id')
+        .range(0, 1999);
+}
+
+/** Refresca sólo las marcas de «pendiente de Talento Humano» de un renglón editado. */
+export function updatePendientesDeTH(periodId, employeeId, { incapacidad, suspension }) {
+    return supabase.from('payroll_entries')
+        .update({ incapacidad_pendiente_dias: incapacidad, suspension_pendiente_dias: suspension })
+        .eq('period_id', periodId).eq('employee_id', employeeId);
+}
+
+// ── Anticipos ya descontados (una sola vez por anticipo) ────────────────────
+// `anticipos_en_planilla` guarda en qué período entró cada anticipo; su UNIQUE
+// sobre `request_id` es el freno real contra descontarlo dos veces.
+
+/** En qué período se descontó cada una de estas solicitudes. */
+export async function fetchAnticiposYaDescontados(requestIds) {
+    const ids = [...new Set((requestIds || []).map(String))];
+    if (!ids.length) return { data: [], error: null };
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += 200) tandas.push(ids.slice(i, i + 200));
+    // request_id es UNIQUE: cada id trae a lo sumo una fila, la tanda acota la respuesta.
+    const res = await Promise.all(tandas.map(t => supabase.from('anticipos_en_planilla')
+        .select('request_id, period_id').in('request_id', t)));
+    const err = res.find(r => r.error)?.error;
+    if (err) return { data: null, error: err };
+    return { data: res.flatMap(r => r.data || []), error: null };
+}
+
+/** Suelta los anticipos que este período ligó a estas personas (al regenerar sus renglones). */
+export function deleteAnticiposDelPeriodo(periodId, employeeIds) {
+    return supabase.from('anticipos_en_planilla').delete()
+        .eq('period_id', periodId).in('employee_id', employeeIds);
+}
+
+export function insertAnticiposEnPlanilla(rows) {
+    return supabase.from('anticipos_en_planilla').insert(rows);
 }
 
 export function fetchVacationPlansOverlapping(periodEndDate, periodStartDate) {

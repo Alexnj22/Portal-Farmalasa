@@ -3,7 +3,7 @@
 // (`app/empleado/sancion.js`). La escalera y el registro los decide la base
 // (`escalera_disciplinaria`, `registrar_sancion`).
 
-/** Peldaños 3 y 4: suspensión sin goce de salario. */
+/** Peldaños 3 y 4: suspensión. Si lleva descuento de sueldo lo decide Talento Humano. */
 export const esSuspension = (peldano) => peldano === 3 || peldano === 4;
 
 /** Los días que pide cada peldaño cuando se elige: el 3 es un día; el 4, dos o más. */
@@ -23,9 +23,15 @@ export function hastaDeLaSuspension(peldano, fecha, dias) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** ¿Se puede guardar? El peldaño 4 exige 2 a 30 días y la autorización de Inspección de Trabajo. */
-export function sancionCompleta({ falta, peldano, fecha, dias, autorizacion }) {
+/**
+ * ¿Se puede guardar? El peldaño 4 exige 2 a 30 días y la autorización de
+ * Inspección de Trabajo; toda suspensión exige decir si lleva descuento de
+ * sueldo (`conDescuento` true/false), porque la planilla no la descuenta ni la
+ * paga sin esa decisión (el dueño, 2026-10-22).
+ */
+export function sancionCompleta({ falta, peldano, fecha, dias, autorizacion, conDescuento }) {
     if (!falta || !peldano || !fecha) return false;
+    if (esSuspension(peldano) && conDescuento !== true && conDescuento !== false) return false;
     if (peldano === 4) {
         const n = Number(dias);
         if (!Number.isFinite(n) || n < 2 || n > 30) return false;

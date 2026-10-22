@@ -65,18 +65,34 @@ export async function consultarEscalera(employeeId, falta, fecha = null) {
  * intenta registrar la terminación (que es una baja, no una sanción).
  */
 export async function registrarSancion({ employeeId, falta, peldano, fecha, dias = null,
-                                         nota = null, autorizacion = null }) {
+                                         nota = null, autorizacion = null, conDescuento = null }) {
     const { data, error } = await supabase.rpc('registrar_sancion', {
-        p_employee_id:  employeeId,
-        p_falta:        falta,
-        p_peldano:      peldano,
-        p_fecha:        fecha,
-        p_dias:         dias,
-        p_nota:         nota,
-        p_autorizacion: autorizacion,
+        p_employee_id:   employeeId,
+        p_falta:         falta,
+        p_peldano:       peldano,
+        p_fecha:         fecha,
+        p_dias:          dias,
+        p_nota:          nota,
+        p_autorizacion:  autorizacion,
+        // Sólo cuenta en una suspensión: si lleva descuento de sueldo lo decide
+        // Talento Humano. Sin decidir, la planilla la marca pendiente.
+        p_con_descuento: conDescuento,
     });
     if (error) throw error;
     return data;
+}
+
+/**
+ * Decidir (o corregir) si una suspensión ya registrada lleva descuento de
+ * sueldo. «Las sanciones pueden ser o no descontadas, así que queda a criterio
+ * de TH» (el dueño, 2026-10-22). Quién y cuándo lo pone la base.
+ */
+export async function decidirDescuentoDeSuspension(eventoId, conDescuento) {
+    const { error } = await supabase.rpc('decidir_descuento_de_suspension', {
+        p_evento_id:     eventoId,
+        p_con_descuento: conDescuento,
+    });
+    if (error) throw error;
 }
 
 /**
@@ -118,7 +134,7 @@ export async function resolverReclamo(eventoId, estado, resolucion = null) {
 export const PELDANOS = [
     { n: 1, nombre: 'Amonestación verbal',  detalle: 'Se registra con la firma del trabajador' },
     { n: 2, nombre: 'Amonestación escrita', detalle: 'Cuando ya hay verbales por la misma causa' },
-    { n: 3, nombre: 'Suspensión de 1 día',  detalle: 'Sin goce de salario' },
+    { n: 3, nombre: 'Suspensión de 1 día',  detalle: 'Con o sin descuento de sueldo, según decida Talento Humano' },
     { n: 4, nombre: 'Suspensión de 2 a 30 días', detalle: 'Exige la calificación del Director General de Inspección de Trabajo' },
     { n: 5, nombre: 'Terminación del contrato', detalle: 'Se registra como baja, no como sanción', noElegible: true },
 ];

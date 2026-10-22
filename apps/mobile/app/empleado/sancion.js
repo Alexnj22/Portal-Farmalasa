@@ -47,7 +47,8 @@ export default function Sancion() {
   const sala = useMemo(() => (sucursales || []).find((b) => String(b.id) === String(emp?.branchId ?? emp?.branch_id))?.name, [sucursales, emp]);
 
   const [faltas, setFaltas] = useState(null);
-  const [f, setF] = useState({ falta: '', fecha: hoySV(), dias: '', autorizacion: '', nota: '' });
+  // `descuento`: 'CON' | 'SIN' | '' — lo decide Talento Humano (el dueño, 2026-10-22).
+  const [f, setF] = useState({ falta: '', fecha: hoySV(), dias: '', autorizacion: '', nota: '', descuento: '' });
   const [peldano, setPeldano] = useState(null);
   const [escalera, setEscalera] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -76,7 +77,8 @@ export default function Sancion() {
 
   const suspension = esSuspension(peldano);
   const hasta = hastaDeLaSuspension(peldano, f.fecha, f.dias);
-  const completa = sancionCompleta({ falta: f.falta, peldano, fecha: f.fecha, dias: f.dias, autorizacion: f.autorizacion });
+  const conDescuento = f.descuento === 'CON' ? true : f.descuento === 'SIN' ? false : null;
+  const completa = sancionCompleta({ falta: f.falta, peldano, fecha: f.fecha, dias: f.dias, autorizacion: f.autorizacion, conDescuento });
   const antecedentes = escalera?.antecedentes || [];
   const elegida = (faltas || []).find((x) => x.clave === f.falta);
   const elegir = (n) => { Haptics.selectionAsync().catch(() => {}); setPeldano(n); pon({ dias: diasAlElegir(n, f.dias) }); };
@@ -85,7 +87,7 @@ export default function Sancion() {
     nombre: emp.name, dui: emp.dui, cargo: emp.role, sala,
     falta: elegida?.nombre || f.falta, faltaArticulo: elegida?.articulo, peldano, fecha: f.fecha,
     dias: suspension ? Number(f.dias) : null, hasta, autorizacion: f.autorizacion.trim() || null,
-    hechos: f.nota.trim() || null, impuestaPor: user?.name, codigo,
+    hechos: f.nota.trim() || null, impuestaPor: user?.name, codigo, conDescuento,
   });
 
   const guardar = () => {
@@ -99,6 +101,7 @@ export default function Sancion() {
             const eventoId = await registrarSancion({
               employeeId: emp.id, falta: f.falta, peldano, fecha: f.fecha,
               dias: suspension ? Number(f.dias) : null, nota: f.nota.trim() || null, autorizacion: f.autorizacion.trim() || null,
+              conDescuento: suspension ? conDescuento : null,
             });
             descartar();
             listo('Sanción registrada', 'Comparte la constancia para imprimirla y firmarla.');
@@ -174,12 +177,18 @@ export default function Sancion() {
                 </View>
                 {suspension ? (
                   <>
-                    <Campo multiline={false} keyboardType="number-pad" editable={peldano !== 3} placeholder="Días sin goce de salario"
+                    <Campo multiline={false} keyboardType="number-pad" editable={peldano !== 3} placeholder="Días de suspensión"
                       value={String(f.dias || '')} onChangeText={(t) => pon({ dias: t.replace(/\D/g, '') })} />
                     {hasta ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Hasta el ${corta(hasta)}`}</Text> : null}
                   </>
                 ) : null}
               </Seccion>
+              {suspension ? (
+                <Seccion titulo="¿Se descuenta del sueldo?" pie="Lo decide Talento Humano. Sin decidirlo no se guarda.">
+                  <Opciones valor={f.descuento} onCambiar={(v) => pon({ descuento: v })}
+                    opciones={[{ id: 'CON', label: 'Con descuento de sueldo' }, { id: 'SIN', label: 'Sin descuento de sueldo' }]} />
+                </Seccion>
+              ) : null}
               {peldano === 4 ? (
                 <Seccion titulo="Autorización">
                   <Aviso tono="cuidado" texto="Una suspensión de más de un día necesita la autorización y calificación de motivos del Director General de Inspección de Trabajo. Sin ese dato no se guarda." />

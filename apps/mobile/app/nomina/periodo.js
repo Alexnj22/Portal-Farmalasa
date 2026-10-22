@@ -9,7 +9,7 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { quincenaPorDefecto, rotuloDePeriodo } from '@nucleo/utils/planilla';
+import { problemaDeQuincena, quincenaPorDefecto, rotuloDePeriodo } from '@nucleo/utils/planilla';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -34,7 +34,10 @@ export default function NuevoPeriodo() {
   const crear = useStaffStore((s) => s.createPayrollPeriod);
   const [f, setF] = useState(() => ({ ...quincenaPorDefecto(hoySV()), pay_date: '' }));
   const [guardando, setGuardando] = useState(false);
-  const valido = f.start_date && f.end_date && f.end_date >= f.start_date;
+  // Una quincena es 1–15 o 16–fin de mes: elegir el inicio propone la quincena
+  // entera que lo contiene; un fin que no la cierra se avisa y no se guarda.
+  const problema = problemaDeQuincena(f.start_date, f.end_date);
+  const valido = !problema;
   const nombre = valido ? rotuloDePeriodo(f.start_date, f.end_date) : '';
 
   const guardar = () => Alert.alert('Abrir quincena', `Se crea «${nombre}» en borrador. Después se genera la planilla.`, [
@@ -58,9 +61,9 @@ export default function NuevoPeriodo() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800', marginHorizontal: 4 }}>{nombre}</Text> : null}
         <Seccion titulo="Período">
-          <Fila rotulo="Inicio" valor={f.start_date} onCambiar={(v) => setF((x) => ({ ...x, start_date: v }))} />
+          <Fila rotulo="Inicio" valor={f.start_date} onCambiar={(v) => setF((x) => ({ ...x, ...(v ? quincenaPorDefecto(v) : { start_date: v }) }))} />
           <Fila rotulo="Fin" valor={f.end_date} desde={f.start_date} onCambiar={(v) => setF((x) => ({ ...x, end_date: v }))} />
-          {!valido ? <Aviso tono="cuidado" texto="El fin es anterior al inicio." /> : null}
+          {problema ? <Aviso tono="cuidado" texto={problema} /> : null}
         </Seccion>
         <Seccion titulo="Pago" pie="Opcional: la fecha en que se paga la quincena.">
           <Fila rotulo="Fecha de pago" valor={f.pay_date || f.end_date} desde={f.start_date} onCambiar={(v) => setF((x) => ({ ...x, pay_date: v }))} />

@@ -28,7 +28,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchUnapprovedTimesheetsCount } from '@nucleo/data/payroll';
 import { registrarEgreso } from '@nucleo/data/egreso';
-import { ESTADO_PLANILLA, csvDelBanco, ordenDeCargo, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
+import { ESTADO_PLANILLA, csvDelBanco, ordenDeCargo, pendienteDeTH, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
 import { documentoDeBoletas } from '@nucleo/utils/boletaDePapel';
 import { documentoDePlanilla } from '@nucleo/utils/planillaDePapel';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -172,8 +172,11 @@ export default function Nomina() {
           try {
             const r = await generatePayrollEntries(periodo.id, sala === 'ALL' ? null : sala);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            const pendTH = (r?.incapacidadesPendientes || 0) + (r?.suspensionesSinDecidir || 0);
             if (r?.warnings?.length) {
               listo('Planilla generada con advertencias', `${r.warnings.length} persona(s) sin salario base: ${r.warnings.slice(0, 2).join(', ')}${r.warnings.length > 2 ? ' y más…' : ''}`);
+            } else if (pendTH > 0) {
+              listo('Planilla generada con pendientes', `${pendTH} fila(s) esperan una decisión de Talento Humano (incapacidad o suspensión). No se podrá aprobar hasta resolverlas.`);
             } else listo('Planilla generada', nombre);
           } catch (e) {
             fallo('No se pudo generar', mensajeAmigable(e, 'Intenta de nuevo.'));
@@ -370,6 +373,7 @@ export default function Nomina() {
                           {[`${e.days_worked ?? '—'} días`, Number(e.subtotal_b) ? `extras ${formatMoney(e.subtotal_b)}` : null, `desc. ${formatMoney(e.total_deductions)}`].filter(Boolean).join(' · ')}
                         </Text>
                         {e.status === 'EDITED' ? <Text style={{ color: MARCA.ambar, fontSize: 11, fontWeight: '700' }}>Editada</Text> : null}
+                        {pendienteDeTH(e) ? <Text style={{ color: MARCA.rojo, fontSize: 11, fontWeight: '700' }}>{pendienteDeTH(e)}</Text> : null}
                       </View>
                       <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(e.net_pay)}</Text>
                     </Pressable>

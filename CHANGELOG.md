@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1339.2 — Planilla: quincenas, anticipos, incapacidad y suspensión según Talento Humano
+
+Reglas de planilla decididas por el dueño (2026-10-22). Hallazgos H3 y H5 de
+la auditoría de nómina. Dos migraciones aplicadas con su OK.
+
+- **Quincenas siempre del 1 al 15 y del 16 al fin de mes**: lo validan el
+  formulario (web y app), el generador y un CHECK en la base.
+- **Cada quincena paga 15 días** (mitad del sueldo, sueldo diario = mensual/30)
+  aunque tenga 13 o 16 días de calendario. Se descuentan sólo las ausencias sin
+  justificar y las suspensiones con descuento; descansos, asuetos y días sin
+  marcación se pagan. Las vacaciones ya van dentro de los 15 (el recargo del 30%
+  sigue).
+- **Ingreso o salida a mitad de quincena: según días contratados.** El día en
+  que se firma la renuncia o el despido todavía se paga.
+- **Incapacidad: decide Talento Humano.** Se paga si está aprobada o registrada
+  en el expediente; rechazada, se descuenta; pendiente, el renglón la muestra y
+  la planilla no se deja aprobar. Antes, una incapacidad registrada directo en
+  el expediente salía como ausencia sin justificar.
+- **Suspensión con o sin descuento de sueldo: decide Talento Humano** al
+  registrarla, o después desde el historial de la persona. Sin decidir, frena la
+  aprobación igual que la incapacidad. La constancia dice «con/sin goce».
+- **Anticipos**: se descuentan una sola vez (`anticipos_en_planilla`, UNIQUE por
+  solicitud) en la quincena de su día de aprobación; si esa ya estaba cerrada,
+  en la primera abierta posterior.
 ## v2.1339.1 — App: escáner de documentos del sistema al adjuntar un papel
 
 Pedido del usuario: «desde la app, al subir una foto, no me permite editarla

@@ -95,6 +95,10 @@ describe('sanción, reingreso y comunicados', () => {
         expect(hastaDeLaSuspension(4, '2026-10-30', 3)).toBe('2026-11-01');
         expect(sancionCompleta({ falta: 'x', peldano: 4, fecha: '2026-10-01', dias: '2', autorizacion: '' })).toBe(false);
         expect(sancionCompleta({ falta: 'x', peldano: 1, fecha: '2026-10-01' })).toBe(true);
+        // Una suspensión exige que Talento Humano diga si lleva descuento (2026-10-22).
+        expect(sancionCompleta({ falta: 'x', peldano: 3, fecha: '2026-10-01', dias: '1' })).toBe(false);
+        expect(sancionCompleta({ falta: 'x', peldano: 3, fecha: '2026-10-01', dias: '1', conDescuento: false })).toBe(true);
+        expect(sancionCompleta({ falta: 'x', peldano: 4, fecha: '2026-10-01', dias: '2', autorizacion: 'R-1', conDescuento: true })).toBe(true);
         expect(codigoDeSancion('ab-cd-ef12', '2026-10-01')).toBe('S-2026-ABCDEF');
     });
     it('constancia en HTML', () => {

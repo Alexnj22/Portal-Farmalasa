@@ -1,24 +1,19 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { problemaDeQuincena, quincenaPorDefecto, rotuloDePeriodo } from '@nucleo/utils/planilla';
 
 const InputLabel = ({ children }) => (
     <p className="text-caption font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
-function periodLabel(start, end) {
-    if (!start || !end) return '';
-    const s = new Date(start + 'T12:00:00');
-    const cap = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-    const m = cap(s.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' }));
-    if (s.getDate() === 1)  return `Primera Quincena de ${m}`;
-    if (s.getDate() === 16) return `Segunda Quincena de ${m}`;
-    return `${s.toLocaleDateString('es-SV')} — ${fechaTexto(end)}`;
-}
-
+// Una quincena va del 1 al 15 o del 16 al último día del mes (decisión del
+// dueño, 2026-10-22). Elegir cualquier día del inicio propone la quincena
+// entera que lo contiene; el fin se puede tocar, pero si no cierra la quincena
+// se avisa acá y `createPayrollPeriod` no la guarda (la base tampoco).
 const FormNewPayrollPeriod = ({ formData = {}, setFormData }) => {
     const { start_date = '', end_date = '', pay_date = '' } = formData;
-    const name = useMemo(() => periodLabel(start_date, end_date), [start_date, end_date]);
+    const problema = (start_date || end_date) ? problemaDeQuincena(start_date, end_date) : null;
+    const name = start_date && end_date && !problema ? rotuloDePeriodo(start_date, end_date) : '';
 
     return (
         <div className="space-y-5">
@@ -30,13 +25,14 @@ const FormNewPayrollPeriod = ({ formData = {}, setFormData }) => {
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <InputLabel>Inicio del período</InputLabel>
-                    <LiquidDatePicker value={start_date} onChange={val => setFormData(f => ({ ...f, start_date: val }))} />
+                    <LiquidDatePicker value={start_date} onChange={val => setFormData(f => ({ ...f, ...(val ? quincenaPorDefecto(val) : { start_date: val }) }))} />
                 </div>
                 <div>
                     <InputLabel>Fin del período</InputLabel>
                     <LiquidDatePicker value={end_date} onChange={val => setFormData(f => ({ ...f, end_date: val }))} />
                 </div>
             </div>
+            {problema && <p className="text-caption font-bold text-danger-text ml-1">{problema}</p>}
             <div>
                 <InputLabel>Fecha de pago</InputLabel>
                 <LiquidDatePicker value={pay_date} onChange={val => setFormData(f => ({ ...f, pay_date: val }))} />

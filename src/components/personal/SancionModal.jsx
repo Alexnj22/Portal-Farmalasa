@@ -60,6 +60,9 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     const [dias, setDias]             = useState('');
     const [autorizacion, setAutoriz]  = useState('');
     const [nota, setNota]             = useState('');
+    // 'CON' | 'SIN' | '' — si la suspensión lleva descuento de sueldo lo decide
+    // Talento Humano (el dueño, 2026-10-22); sin decidir no se guarda.
+    const [descuento, setDescuento]   = useState('');
     const [escalera, setEscalera]     = useState(null);
     const [cargando, setCargando]     = useState(false);
     const [guardando, setGuardando]   = useState(false);
@@ -75,13 +78,14 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             setDias(b.dias || '');
             setAutoriz(b.autorizacion || '');
             setNota(b.nota || '');
+            setDescuento(b.descuento || '');
         }
     }, [open, claveBorrador, toast]);
 
     useEffect(() => {
         if (!open || !falta) return;
-        saveDraft(claveBorrador, { falta, fecha, dias, autorizacion, nota });
-    }, [open, claveBorrador, falta, fecha, dias, autorizacion, nota]);
+        saveDraft(claveBorrador, { falta, fecha, dias, autorizacion, nota, descuento });
+    }, [open, claveBorrador, falta, fecha, dias, autorizacion, nota, descuento]);
 
     // Al elegir la falta se le pregunta a la base qué peldaño toca. La consulta
     // depende de la FECHA además de la falta: la ventana de 60 días se cuenta
@@ -109,8 +113,9 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     }, [peldano]);
     const esSuspension = suspende(peldano);
     const hastaISO = useMemo(() => hastaDeLaSuspension(peldano, fecha, dias), [peldano, fecha, dias]);
-    const puedeGuardar = useMemo(() => !guardando && sancionCompleta({ falta, peldano, fecha, dias, autorizacion }),
-        [falta, peldano, fecha, dias, autorizacion, guardando]);
+    const conDescuento = descuento === 'CON' ? true : descuento === 'SIN' ? false : null;
+    const puedeGuardar = useMemo(() => !guardando && sancionCompleta({ falta, peldano, fecha, dias, autorizacion, conDescuento }),
+        [falta, peldano, fecha, dias, autorizacion, conDescuento, guardando]);
     const guardar = useCallback(async () => {
         setGuardando(true);
         try {
@@ -122,6 +127,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 dias:         esSuspension ? Number(dias) : null,
                 nota:         nota.trim() || null,
                 autorizacion: autorizacion.trim() || null,
+                conDescuento: esSuspension ? conDescuento : null,
             });
             // El código del papel sale del id del evento: es el único dato del
             // pie que devuelve al registro digital. No es un correlativo —no
@@ -158,6 +164,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 hechos:        nota.trim() || null,
                 impuestaPor:   firmante,
                 codigo,
+                conDescuento,
             });
 
             // Que el PDF falle NO deshace la sanción: ya está escrita. Se dice
@@ -173,7 +180,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
         } finally {
             setGuardando(false);
         }
-    }, [empleado, falta, peldano, fecha, dias, nota, autorizacion, esSuspension,
+    }, [empleado, falta, peldano, fecha, dias, nota, autorizacion, esSuspension, conDescuento,
         hastaISO, faltas, sala, firmante, claveBorrador, toast, onGuardado, onClose]);
 
     const antecedentes = escalera?.antecedentes || [];
@@ -270,12 +277,27 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                     />
                     {esSuspension && (
                         <PortalInput
-                            name="dias" label="Días sin goce de salario" inputMode="numeric"
+                            name="dias" label="Días de suspensión" inputMode="numeric"
                             value={dias} onChange={e => setDias(e.target.value)}
                             readOnly={guardando || peldano === 3}
                         />
                     )}
                 </div>
+
+                {esSuspension && (
+                    <LiquidSelect
+                        label="¿Se descuenta del sueldo?"
+                        value={descuento}
+                        onChange={setDescuento}
+                        options={[
+                            { value: 'CON', label: 'Con descuento de sueldo' },
+                            { value: 'SIN', label: 'Sin descuento de sueldo' },
+                        ]}
+                        placeholder="Lo decide Talento Humano"
+                        disabled={guardando}
+                        clearable={false}
+                    />
+                )}
 
                 {peldano === 4 && (
                     <>

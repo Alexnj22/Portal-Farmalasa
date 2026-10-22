@@ -28,6 +28,8 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { descuentoDeSuspension } from '@nucleo/utils/planilla';
+import { decidirDescuentoDeSuspension } from '@nucleo/data/disciplina';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
@@ -72,6 +74,23 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
       } },
     ]);
   };
+  // Una suspensión lleva o no descuento de sueldo según decida Talento Humano
+  // (el dueño, 2026-10-22). Sin decisión, la planilla la marca pendiente.
+  const esSuspensionViva = ev.type === 'SUSPENSION' && ev.eventoId && m.reclamo?.estado !== 'REVOCADA';
+  const descuento = esSuspensionViva ? descuentoDeSuspension(ev) : undefined;
+  const decidir = (con) => Alert.alert(con ? 'Con descuento de sueldo' : 'Sin descuento de sueldo',
+    `La planilla ${con ? 'descuenta' : 'paga'} los días de esta suspensión.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Guardar', onPress: async () => {
+        trabajando('Guardando…');
+        try {
+          await decidirDescuentoDeSuspension(ev.eventoId, con);
+          await useStaffStore.getState().traerEventoAlHistorial(emp.id, ev.eventoId);
+          listo('Decidido', con ? 'Se descuenta del sueldo.' : 'No se descuenta del sueldo.');
+          onCambio();
+        } catch (e) { fallo('No se guardó', mensajeAmigable(e)); }
+      } },
+    ]);
   const cancelar = () => Alert.prompt('Cancelar el evento', 'Si ya cambió algo en la ficha, se revierte. Escribe el motivo: queda en la bitácora.', [
     { text: 'Volver', style: 'cancel' },
     { text: 'Cancelar el evento', style: 'destructive', onPress: async (motivo) => {
@@ -92,6 +111,9 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
             {m.status === 'CANCELLED' ? <Pildora texto="Cancelado" color={MARCA.rojo} /> : null}
             {m.status === 'SUPERSEDED' ? <Pildora texto="Editado" color={colorSistema.texto2} /> : null}
             {m.applyStatus === 'SCHEDULED' ? <Pildora texto="Programado" color={MARCA.violetaClaro} /> : null}
+            {descuento === true ? <Pildora texto="Con descuento de sueldo" color={MARCA.rojo} /> : null}
+            {descuento === false ? <Pildora texto="Sin descuento de sueldo" color={MARCA.verde} /> : null}
+            {descuento === null ? <Pildora texto="Descuento sin decidir" color={MARCA.ambar} /> : null}
           </View>
           <Text style={{ color: colorSistema.texto, fontSize: 14, lineHeight: 19 }}>{ev.note}</Text>
           {m.permissionDates?.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{m.permissionDates.map(corta).join(' · ')}</Text> : null}
@@ -100,6 +122,8 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {doc?.url ? <Enlace texto="Ver respaldo" onPress={() => Promise.resolve(openStoredFile(doc.url)).catch(() => fallo('No se pudo abrir', ''))} />
                 : puedeEditar && m.status !== 'CANCELLED' ? <Enlace texto="Adjuntar respaldo" color={MARCA.violetaClaro} onPress={adjuntar} /> : null}
+              {puedeEditar && descuento === null ? <Enlace texto="Con descuento" color={MARCA.rojo} onPress={() => decidir(true)} /> : null}
+              {puedeEditar && descuento === null ? <Enlace texto="Sin descuento" color={MARCA.verde} onPress={() => decidir(false)} /> : null}
               {puedeEditar && vigente ? <Enlace texto="Corregir" onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id), evento: String(ev.eventoId) } })} /> : null}
               {puedeEditar && vigente ? <Enlace texto="Cancelar" color={MARCA.rojo} onPress={cancelar} /> : null}
             </View>

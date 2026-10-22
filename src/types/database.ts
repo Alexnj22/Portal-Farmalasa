@@ -279,6 +279,36 @@ export type Database = {
         }
         Relationships: []
       }
+      anticipos_en_planilla: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          monto: number
+          period_id: string
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          monto: number
+          period_id: string
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          monto?: number
+          period_id?: string
+          request_id?: string
+        }
+        Relationships: []
+      }
       app_banners: {
         Row: {
           creada_por: string | null
@@ -17510,6 +17540,7 @@ export type Database = {
           extra_hours_nocturnal: number | null
           holiday_surcharge: number | null
           id: string
+          incapacidad_pendiente_dias: number
           isss_deduction: number | null
           net_pay: number | null
           night_hours_extra: number | null
@@ -17523,6 +17554,7 @@ export type Database = {
           status: string | null
           subtotal_a: number | null
           subtotal_b: number | null
+          suspension_pendiente_dias: number
           total_deductions: number | null
           updated_at: string | null
           vacation_bonus: number | null
@@ -17541,6 +17573,7 @@ export type Database = {
           extra_hours_nocturnal?: number | null
           holiday_surcharge?: number | null
           id?: string
+          incapacidad_pendiente_dias?: number
           isss_deduction?: number | null
           net_pay?: number | null
           night_hours_extra?: number | null
@@ -17554,6 +17587,7 @@ export type Database = {
           status?: string | null
           subtotal_a?: number | null
           subtotal_b?: number | null
+          suspension_pendiente_dias?: number
           total_deductions?: number | null
           updated_at?: string | null
           vacation_bonus?: number | null
@@ -17572,6 +17606,7 @@ export type Database = {
           extra_hours_nocturnal?: number | null
           holiday_surcharge?: number | null
           id?: string
+          incapacidad_pendiente_dias?: number
           isss_deduction?: number | null
           net_pay?: number | null
           night_hours_extra?: number | null
@@ -17585,6 +17620,7 @@ export type Database = {
           status?: string | null
           subtotal_a?: number | null
           subtotal_b?: number | null
+          suspension_pendiente_dias?: number
           total_deductions?: number | null
           updated_at?: string | null
           vacation_bonus?: number | null
@@ -29121,6 +29157,10 @@ export type Database = {
         }
         Returns: Json
       }
+      decidir_descuento_de_suspension: {
+        Args: { p_con_descuento: boolean; p_evento_id: string }
+        Returns: undefined
+      }
       decidir_devolucion_pedido: {
         Args: { p_accion: string; p_id: string; p_nota?: string }
         Returns: Json
@@ -33540,6 +33580,7 @@ export type Database = {
       registrar_sancion: {
         Args: {
           p_autorizacion?: string
+          p_con_descuento?: boolean
           p_dias?: number
           p_employee_id: string
           p_falta: string

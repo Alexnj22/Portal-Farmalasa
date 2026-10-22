@@ -28,7 +28,7 @@ import { registrarEgreso } from '@nucleo/data/egreso';
 import { abrirVentanaDeImpresion, escribirEImprimir } from '../plataforma/ventanaDeImpresion';
 import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { ESTADO_PLANILLA, csvDelBanco, ordenDeCargo } from '@nucleo/utils/planilla';
+import { ESTADO_PLANILLA, csvDelBanco, ordenDeCargo, pendienteDeTH } from '@nucleo/utils/planilla';
 import { PRINT_CSS, buildBoletaHTML } from '@nucleo/utils/boletaDePapel';
 import { documentoDePlanilla } from '@nucleo/utils/planillaDePapel';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -174,6 +174,8 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                                     <p className="font-black text-content text-label leading-tight">{shortEmployeeName(emp)}</p>
                                                     {emp.role && <p className="text-micro text-content-3 font-medium leading-tight">{emp.role}</p>}
                                                     {edited && <Badge variant="warning" size="sm" uppercase={false} className="mt-0.5">editado</Badge>}
+                                                    {/* Lo que espera una decisión de Talento Humano: ni se pagó ni se descontó, y la planilla no se aprueba hasta resolverlo. */}
+                                                    {pendienteDeTH(e) && <Badge variant="danger" size="sm" uppercase={false} className="mt-0.5">{pendienteDeTH(e)}</Badge>}
                                                 </div>
                                             </div>
                                         </DataCell>
@@ -287,9 +289,12 @@ const PayrollView = ({ openModal }) => {
         setGenerating(true);
         try {
             const result = await generatePayrollEntries(activePeriod.id, filterBranch || null);
+            const pendTH = (result?.incapacidadesPendientes || 0) + (result?.suspensionesSinDecidir || 0);
             if (result?.warnings?.length > 0) {
                 const names = result.warnings.slice(0, 2).join(', ') + (result.warnings.length > 2 ? ' y más…' : '');
                 showToast('Planilla generada con advertencias', `${result.warnings.length} empleado(s) sin salario base: ${names}`, 'warning');
+            } else if (pendTH > 0) {
+                showToast('Planilla generada con pendientes', `${pendTH} renglón(es) esperan una decisión de Talento Humano (incapacidad o suspensión). No se podrá aprobar hasta resolverlos.`, 'warning');
             } else {
                 showToast('Generado', 'Planilla generada correctamente.', 'success');
             }
@@ -303,7 +308,7 @@ const PayrollView = ({ openModal }) => {
             await updatePayrollPeriodStatus(activePeriod.id, status);
             setActivePeriod(p => ({ ...p, status }));
             showToast('Listo', `Planilla ${status === 'APPROVED' ? 'aprobada' : 'marcada como pagada'}.`, 'success');
-        } catch { showToast('Error', 'No se pudo actualizar el estado.', 'error'); }
+        } catch (e) { showToast('Error', mensajeAmigable(e, 'No se pudo actualizar el estado.'), 'error'); }
         setConfirming(null);
     };
 

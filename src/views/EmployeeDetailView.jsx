@@ -21,6 +21,8 @@ import { formatDate, formatTime12h, getEffectiveStatus } from '@nucleo/utils/hel
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { descuentoDeSuspension } from '@nucleo/utils/planilla';
+import { decidirDescuentoDeSuspension } from '@nucleo/data/disciplina';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '@nucleo/data/requests';
 import { fetchEmployeeTimeline, fetchCredenciales } from '@nucleo/data/employees';
@@ -729,6 +731,36 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                  </p>
                                                             )}
                                                             
+                                                            {/* Una suspensión lleva o no descuento de sueldo según decida
+                                                                Talento Humano (el dueño, 2026-10-22). Sin decisión, la
+                                                                planilla la marca pendiente y no se aprueba. */}
+                                                            {ev.type === 'SUSPENSION' && ev.eventoId && ev.metadata?.reclamo?.estado !== 'REVOCADA' && (
+                                                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                                    {descuentoDeSuspension(ev) === true && <Badge variant="danger" size="sm" uppercase={false}>Con descuento de sueldo</Badge>}
+                                                                    {descuentoDeSuspension(ev) === false && <Badge variant="success" size="sm" uppercase={false}>Sin descuento de sueldo</Badge>}
+                                                                    {descuentoDeSuspension(ev) === null && (
+                                                                        <>
+                                                                            <Badge variant="warning" size="sm" uppercase={false}>Descuento sin decidir</Badge>
+                                                                            {canEdit && [true, false].map(con => (
+                                                                                <Button key={String(con)} tone={con ? 'danger' : 'success'} soft size="xs"
+                                                                                    onClick={async () => {
+                                                                                        try {
+                                                                                            await decidirDescuentoDeSuspension(ev.eventoId, con);
+                                                                                            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+                                                                                            useStaffStore.getState().traerEventoAlHistorial(emp.id, ev.eventoId);
+                                                                                            useToastStore.getState().showToast('Decidido', con ? 'La suspensión se descuenta del sueldo.' : 'La suspensión no se descuenta del sueldo.', 'success');
+                                                                                        } catch (err) {
+                                                                                            useToastStore.getState().showToast('No se guardó', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+                                                                                        }
+                                                                                    }}>
+                                                                                    {con ? 'Con descuento' : 'Sin descuento'}
+                                                                                </Button>
+                                                                            ))}
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            )}
+
                                                             {!ev.isSystem && typeof openModal === 'function' && (
                                                                 <div className="pt-4 mt-3 border-t border-divider flex justify-between items-center">
                                                                     {ev.metadata?.status === 'CANCELLED' ? (

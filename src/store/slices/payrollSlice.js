@@ -3,9 +3,13 @@ import {
     fetchPayrollEntriesByPeriod, deletePendingPayrollEntries, insertPayrollEntries, updatePayrollEntry as updatePayrollEntryData,
     fetchTimesheetsForPeriod, fetchApprovedAdvances, fetchVacationPlansOverlapping,
     fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank, fetchPayrollEntriesNoRegenerables,
+    fetchAnticiposYaDescontados, deleteAnticiposDelPeriodo, insertAnticiposEnPlanilla,
+    fetchNovedadesParaPlanilla, fetchSolicitudesDeIncapacidad, fetchRenglonesPendientesDeTH,
+    updatePendientesDeTH,
 } from '../../data/payroll';
 import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
-import { rotuloDePeriodo } from '../../utils/planilla';
+import { diasEntre } from '../../utils/fecha';
+import { anticiposDeLaQuincena, bajasEnQuincena, contratoEnQuincena, diasPagadosDeQuincena, incapacidadesPorPersona, mensajeDePendientesDeTH, problemaDeQuincena, rotuloDePeriodo, suspensionesPorPersona } from '../../utils/planilla';
 
 // Lo escrito sobre este módulo:
 // `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md` — por qué las secciones
@@ -148,12 +152,21 @@ export const createPayrollSlice = (set, get) => ({
 
     createPayrollPeriod: async (periodData) => {
         const user = get().user;
+        // Una quincena es 1–15 o 16–fin de mes (decisión del dueño, 2026-10-22).
+        // La base tiene el mismo CHECK; esto es para decirlo en palabras.
+        const tipo = periodData.period_type || 'QUINCENA';
+        const problema = tipo === 'QUINCENA' ? problemaDeQuincena(periodData.start_date, periodData.end_date) : null;
+        if (problema) {
+            const e = new Error(problema);
+            Object.assign(e, { userFacing: true });
+            throw e;
+        }
         // `name` es NOT NULL y el formulario del portal no lo mandaba: el
         // rótulo se calcula acá («Primera Quincena de octubre 2026»), el mismo
         // que se pinta en pantalla.
         const { data, error } = await insertPayrollPeriod({
             name:        periodData.name || rotuloDePeriodo(periodData.start_date, periodData.end_date),
-            period_type: periodData.period_type || 'QUINCENA',
+            period_type: tipo,
             start_date:  periodData.start_date,
             end_date:    periodData.end_date,
             pay_date:    periodData.pay_date || null,
@@ -174,6 +187,20 @@ export const createPayrollSlice = (set, get) => ({
 
     updatePayrollPeriodStatus: async (periodId, status) => {
         const user = get().user;
+        // Talento Humano tiene la última palabra sobre incapacidades y
+        // suspensiones (decisiones del dueño, 2026-10-22): con días sin
+        // decisión, la planilla no se aprueba — ni se pagan ni se descuentan
+        // en silencio.
+        if (status === 'APPROVED') {
+            const { data: conPendiente, error: pendErr } = await fetchRenglonesPendientesDeTH(periodId);
+            if (pendErr) throw new Error(`No se pudo revisar si quedan decisiones de Talento Humano: ${pendErr.message}`);
+            const msg = mensajeDePendientesDeTH(conPendiente);
+            if (msg) {
+                const e = new Error(msg);
+                Object.assign(e, { userFacing: true });
+                throw e;
+            }
+        }
         const updatePayload = { status, updated_at: new Date().toISOString() };
         if (status === 'APPROVED') {
             updatePayload.approved_by = user?.id;
@@ -236,16 +263,45 @@ export const createPayrollSlice = (set, get) => ({
                 throw e;
             }
 
+            // Los días que se pagan suponen una quincena 1–15 o 16–fin de mes:
+            // 15 días de sueldo diario = la mitad del mensual.
+            if ((period.period_type || 'QUINCENA') === 'QUINCENA') {
+                const problema = problemaDeQuincena(period.start_date, period.end_date);
+                if (problema) {
+                    const e = new Error(`Este período no es una quincena: ${problema}`);
+                    Object.assign(e, { userFacing: true });
+                    throw e;
+                }
+            }
+
             // `esPersonalEnPlanilla` primero, y no es cosmético: acá se GENERA la
             // planilla. Sin ese filtro, «QA Testing» y el «Contador Externo»
             // recibían su renglón de nómina —en $0, porque no tienen salario
             // base, y de paso entraban al aviso de «sin salario base»—. Una
             // cuenta de pruebas con renglón en la planilla es justo el registro
             // que no puede existir. Ver `utils/tipoDeFicha.js`.
+            //
+            // Ingreso o salida a mitad de quincena (decisión del dueño,
+            // 2026-10-22: «según días trabajados»): se paga sólo lo contratado.
+            // Quien se dio de baja DENTRO de la quincena ya figura INACTIVO pero
+            // trabajó días de ella: entra igual, con sus días.
+            const rango = { start: period.start_date, end: period.end_date };
+            const { data: novedades, error: novedadesErr } = await fetchNovedadesParaPlanilla(period.start_date, period.end_date);
+            if (novedadesErr) throw new Error(`No se pudieron cargar las incapacidades y bajas del período: ${novedadesErr.message}`);
+            const { data: solicitudesInc, error: solicitudesIncErr } = await fetchSolicitudesDeIncapacidad(period.start_date, period.end_date);
+            if (solicitudesIncErr) throw new Error(`No se pudieron cargar las solicitudes de incapacidad: ${solicitudesIncErr.message}`);
+            const bajas = bajasEnQuincena(novedades, rango);
+            const incapacidades = incapacidadesPorPersona(novedades, solicitudesInc);
+            const suspensiones = suspensionesPorPersona(novedades);
+            const contratoDe = new Map();
             const employees = (get().employees || []).filter(e => {
                 if (!esPersonalEnPlanilla(e)) return false;
-                if ((e.status || '').toUpperCase() === 'INACTIVO') return false;
+                const baja = bajas.get(String(e.id)) || null;
+                if ((e.status || '').toUpperCase() === 'INACTIVO' && !baja) return false;
                 if (branchId && String(e.branchId || e.branch_id) !== String(branchId)) return false;
+                const contrato = contratoEnQuincena(rango, e.hireDate || e.hire_date || null, baja);
+                if (contrato.dias <= 0) return false;
+                contratoDe.set(String(e.id), contrato);
                 return true;
             });
 
@@ -289,14 +345,19 @@ export const createPayrollSlice = (set, get) => ({
             const { data: sheets, error: sheetsErr } = await fetchTimesheetsForPeriod(period.start_date, period.end_date);
             if (sheetsErr) throw new Error(`No se pudieron cargar los timesheets del período: ${sheetsErr.message}`);
 
-            const daysMap      = new Map();
+            // Los días que se pagan NO salen de contar marcaciones: la quincena
+            // paga 15 días (la mitad del mensual) menos las ausencias que se
+            // descuentan — `diasPagadosDeQuincena`, núcleo. Contar filas
+            // trabajadas dejaba sin pagar el descanso semanal y los asuetos, y
+            // sin marcaciones pagaba los días de calendario (H3, 2026-10-21).
+            const tsPorPersona = new Map();
             const noctMap      = new Map();
             const noctOTMap    = new Map();
             const diurnalOTMap = new Map();
             for (const s of sheets || []) {
                 const key = String(s.employee_id);
-                if (!daysMap.has(key)) { daysMap.set(key, 0); noctMap.set(key, 0); noctOTMap.set(key, 0); diurnalOTMap.set(key, 0); }
-                if (!s.is_absent) daysMap.set(key, daysMap.get(key) + 1);
+                if (!tsPorPersona.has(key)) { tsPorPersona.set(key, []); noctMap.set(key, 0); noctOTMap.set(key, 0); diurnalOTMap.set(key, 0); }
+                tsPorPersona.get(key).push(s);
                 noctMap.set(key,   (noctMap.get(key)   || 0) + (s.nocturnal_hours          || 0));
                 noctOTMap.set(key, (noctOTMap.get(key) || 0) + (s.nocturnal_overtime_hours  || 0));
                 // Diurnal OT = total OT minus the nocturnal portion (they overlap in the timesheet)
@@ -304,33 +365,35 @@ export const createPayrollSlice = (set, get) => ({
                 diurnalOTMap.set(key, (diurnalOTMap.get(key) || 0) + diurnalOT);
             }
 
-            // #1 — Fix: request type is 'ADVANCE' in DB (was incorrectly querying 'ADELANTO')
+            // Anticipos: los aprobados en un día de ESTA quincena (hora de El
+            // Salvador) y que no se descontaron ya en otra. Antes se elegían por
+            // cuándo se pidieron: uno pedido el 14 y aprobado el 17 no se
+            // descontaba nunca (H5, 2026-10-21).
             const { data: advances, error: advancesErr } = await fetchApprovedAdvances(period.start_date, period.end_date);
             if (advancesErr) throw new Error(`No se pudieron cargar los anticipos aprobados del período: ${advancesErr.message}`);
+            const { data: ligados, error: ligadosErr } = await fetchAnticiposYaDescontados((advances || []).map(a => a.id));
+            if (ligadosErr) throw new Error(`No se pudo saber qué anticipos ya se descontaron: ${ligadosErr.message}`);
+            const advanceMap = anticiposDeLaQuincena(advances,
+                { periodId, start: period.start_date, end: period.end_date },
+                new Map((ligados || []).map(l => [String(l.request_id), String(l.period_id)])),
+                get().payrollPeriods);
 
-            const advanceMap = new Map();
-            for (const adv of advances || []) {
-                const key = String(adv.employee_id);
-                advanceMap.set(key, (advanceMap.get(key) || 0) + parseFloat(adv.metadata?.amount || 0));
-            }
-
-            // #7 — Vacation plans overlapping period: those days are paid (not absent)
+            // #7 — Vacaciones dentro del período: los días ya van dentro de los
+            // 15 pagados; acá sólo sale el recargo del 30% (Art. 177).
             const { data: vacPlans, error: vacPlansErr } = await fetchVacationPlansOverlapping(period.end_date, period.start_date);
             if (vacPlansErr) throw new Error(`No se pudieron cargar los planes de vacaciones del período: ${vacPlansErr.message}`);
 
-            const vacDaysMap  = new Map();
             const vacBonusMap = new Map();
             for (const vp of vacPlans || []) {
                 const empId = String(vp.employee_id);
-                if (!daysMap.has(empId)) continue; // skip if no timesheet data
+                if (!tsPorPersona.has(empId)) continue; // skip if no timesheet data
                 const emp = employees.find(e => String(e.id) === empId);
                 if (!emp) continue;
                 // Days of this plan that fall inside the payroll period
                 const planStart = vp.start_date > period.start_date ? vp.start_date : period.start_date;
                 const planEnd   = vp.end_date   < period.end_date   ? vp.end_date   : period.end_date;
-                const vacDays   = Math.round((new Date(planEnd + 'T12:00:00') - new Date(planStart + 'T12:00:00')) / 86400000) + 1;
+                const vacDays   = diasEntre(planStart, planEnd) + 1;
                 if (vacDays <= 0) continue;
-                vacDaysMap.set(empId, (vacDaysMap.get(empId) || 0) + vacDays);
                 const dailyRate = parseFloat((parseFloat(emp.base_salary || 0) / 30).toFixed(4));
                 vacBonusMap.set(empId, (vacBonusMap.get(empId) || 0) + parseFloat((vacDays * dailyRate * 0.30).toFixed(2)));
             }
@@ -350,11 +413,6 @@ export const createPayrollSlice = (set, get) => ({
             ]);
             const ordenesVigentes = await fetchOrdenesVigentes();
             const ordenMap = descuentosPorOrdenes(ordenesVigentes, period.start_date);
-
-            // Period working days (fallback when no timesheets)
-            const start    = new Date(period.start_date + 'T12:00:00');
-            const end      = new Date(period.end_date   + 'T12:00:00');
-            const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
             // Quién ya tiene un renglón editado (u otro no-PENDING): ése se
             // respeta y NO se reinserta. Antes se borraban sólo los PENDING y se
@@ -377,17 +435,39 @@ export const createPayrollSlice = (set, get) => ({
             const { error: delErr } = await deletePendingPayrollEntries(periodId, idsDelAlcance);
             if (delErr) throw new Error(`No se pudieron quitar los renglones pendientes: ${delErr.message}`);
 
-            const rows = employees.filter(emp => !yaFijados.has(String(emp.id))).map(emp => {
+            // Los días que Talento Humano todavía tiene que decidir, con la
+            // misma regla para renglones nuevos y editados.
+            const diasDe = (empId) => {
+                const contrato = contratoDe.get(empId);
+                const inc = incapacidades.get(empId);
+                return diasPagadosDeQuincena(tsPorPersona.get(empId), {
+                    contratados: contrato.dias, desde: contrato.desde, hasta: contrato.hasta,
+                    incapacidadesValidadas: inc?.validadas, incapacidadesPendientes: inc?.pendientes,
+                    suspensiones: suspensiones.get(empId),
+                });
+            };
+
+            const aRegenerar = employees.filter(emp => !yaFijados.has(String(emp.id)));
+
+            // Los anticipos que este período había ligado a quienes se
+            // regeneran se sueltan y se vuelven a ligar abajo; los de renglones
+            // editados se quedan, igual que su renglón.
+            if (aRegenerar.length) {
+                const { error: soltarErr } = await deleteAnticiposDelPeriodo(periodId, aRegenerar.map(e => e.id));
+                if (soltarErr) throw new Error(`No se pudieron rehacer los anticipos del período: ${soltarErr.message}`);
+            }
+
+            const rows = aRegenerar.map(emp => {
                 const empId      = String(emp.id);
-                const hasTS      = daysMap.has(empId);
-                const workedDays = hasTS ? daysMap.get(empId) : diffDays;
-                const vacDays    = hasTS ? (vacDaysMap.get(empId) || 0) : 0;
-                const advance    = advanceMap.get(empId) || 0;
+                // Las vacaciones ya están dentro de los 15 días: son ausencias
+                // con tipo y no se descuentan. Sumarlas aparte las pagaría dos veces.
+                const { dias, pendientes, suspensionPendiente } = diasDe(empId);
+                const advance    = advanceMap.get(empId)?.monto || 0;
                 const noctOrd    = parseFloat((noctMap.get(empId) || 0).toFixed(2));
                 const vacBonus   = vacBonusMap.get(empId) || 0;
 
                 // Nocturnal OT goes to the bank — HR decides pay vs compensate
-                const calc = calcPayrollEntry(emp, workedDays + vacDays, {
+                const calc = calcPayrollEntry(emp, dias, {
                     salary_advance:       advance,
                     night_hours_ordinary: noctOrd,
                     vacation_bonus:       vacBonus,
@@ -399,8 +479,39 @@ export const createPayrollSlice = (set, get) => ({
                     branch_id:   emp.branchId || emp.branch_id || null,
                     status:      'PENDING',
                     ...calc,
+                    // Días que Talento Humano todavía no decidió —incapacidad
+                    // sin validar, suspensión sin decir si lleva descuento—: no
+                    // se descuentan, pero el renglón lo muestra y la planilla
+                    // no se aprueba.
+                    incapacidad_pendiente_dias: pendientes,
+                    suspension_pendiente_dias:  suspensionPendiente,
                 };
             });
+
+            // Los renglones editados no se recalculan, pero las marcas de
+            // «pendiente de Talento Humano» sí se refrescan: si no, una decisión
+            // posterior nunca destrabaría la aprobación.
+            for (const emp of employees.filter(e => yaFijados.has(String(e.id)))) {
+                const { pendientes, suspensionPendiente } = diasDe(String(emp.id));
+                const { error: marcaErr } = await updatePendientesDeTH(periodId, emp.id, { incapacidad: pendientes, suspension: suspensionPendiente });
+                if (marcaErr) throw new Error(`No se pudo actualizar lo pendiente de Talento Humano en un renglón editado: ${marcaErr.message}`);
+            }
+
+            // Antes que los renglones: el UNIQUE (request_id) es lo que impide
+            // que dos quincenas generadas a la vez descuenten el mismo anticipo.
+            const ligar = aRegenerar.flatMap(emp => (advanceMap.get(String(emp.id))?.solicitudes || [])
+                .map(s => ({ request_id: s.id, period_id: periodId, employee_id: emp.id, monto: s.monto })));
+            if (ligar.length) {
+                const { error: ligarErr } = await insertAnticiposEnPlanilla(ligar);
+                if (ligarErr) {
+                    if (ligarErr.code === '23505') {
+                        const e = new Error('Un anticipo ya se descontó en otra quincena mientras se generaba esta. Vuelve a generar la planilla.');
+                        Object.assign(e, { userFacing: true });
+                        throw e;
+                    }
+                    throw new Error(`No se pudieron registrar los anticipos descontados: ${ligarErr.message}`);
+                }
+            }
 
             if (rows.length > 0) {
                 const { error } = await insertPayrollEntries(rows);
@@ -435,8 +546,17 @@ export const createPayrollSlice = (set, get) => ({
                 sucursal: branchId || null, editados_respetados: yaFijados.size,
                 sin_salario: noSalary.length,
                 con_orden_de_descuento: rows.filter(r => r.order_discount > 0).length,
+                anticipos_descontados: ligar.length,
+                anticipos_rezagados: aRegenerar.reduce((n, e) => n + (advanceMap.get(String(e.id))?.solicitudes || []).filter(x => x.rezagado).length, 0),
+                con_incapacidad_pendiente: rows.filter(r => r.incapacidad_pendiente_dias > 0).length,
+                con_suspension_sin_decidir: rows.filter(r => r.suspension_pendiente_dias > 0).length,
+                ingreso_o_baja_en_quincena: [...contratoDe.values()].filter(c => c.dias < 15).length,
             });
-            return { warnings: noSalary };
+            return {
+                warnings: noSalary,
+                incapacidadesPendientes: rows.filter(r => r.incapacidad_pendiente_dias > 0).length,
+                suspensionesSinDecidir: rows.filter(r => r.suspension_pendiente_dias > 0).length,
+            };
         } catch (err) {
             console.error('Error generating payroll:', err);
             set({ isLoadingPayroll: false });

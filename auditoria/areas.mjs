@@ -349,7 +349,7 @@ export const AREAS = [
             'src/store/slices/payrollSlice.js',
             'src/components/forms/FormNewPayrollPeriod.jsx', 'src/components/forms/FormEditPayrollEntry.jsx',
         ],
-        tablas: ['payroll_entries', 'payroll_periods'],
+        tablas: ['payroll_entries', 'payroll_periods', 'anticipos_en_planilla'],
         edge: [],
         crons: [],
         docs: ['docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md',

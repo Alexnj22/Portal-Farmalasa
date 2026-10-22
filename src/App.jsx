@@ -35,6 +35,7 @@ const MisPuntosView = lazy(() => import("./views/MisPuntosView"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
 import { hoySV } from '@nucleo/utils/fecha';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { quincenaPorDefecto } from '@nucleo/utils/planilla';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
@@ -542,7 +543,13 @@ function MainApp() {
                     break;
                 case "newPayrollPeriod": {
                     const { showToast } = useToastStore.getState();
-                    await createPayrollPeriod({ ...dataToSave, period_type: 'QUINCENA' });
+                    try {
+                        await createPayrollPeriod({ ...dataToSave, period_type: 'QUINCENA' });
+                    } catch (err) {
+                        // Bordes que no son 1–15 / 16–fin de mes: se dice y el formulario queda abierto.
+                        if (err?.userFacing) { showToast('No se creó la quincena', mensajeAmigable(err), 'error'); return; }
+                        throw err;
+                    }
                     showToast('Período creado', 'La nueva quincena fue creada.', 'success');
                     break;
                 }

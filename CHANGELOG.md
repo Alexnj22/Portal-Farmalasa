@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1349.1 — Procedimiento de reservas: sin la versión del reglamento
+
+- **Procedimiento interno de reservas**, cláusula 1.1: ya no dice «(versión 1)» al nombrar el reglamento, porque se confundía con la versión del propio procedimiento.
+
 ## v2.1349.0 — App: Reservas, Apartar y Encargos como en la web
 
 - **App · Reservas de la sala**: secciones «Por preparar» / «Listas para retirar» y contadores (por tarjeta: un pedido P- es una), filtro por sucursal cuando el alcance es toda la red, enviar la preventa a caja, prórroga única, precio de mayoreo, saldo a favor de otra sala por código y «Devolver en dinero». Sin permiso de reservas ni del widget, la pantalla es sólo de consulta.

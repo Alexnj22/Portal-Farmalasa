@@ -13,14 +13,14 @@
 // Si la sala está contando inventario, no se puede ajustar (lo frena también
 // la base). A Supervisión le avisa la base. Guarda borrador: la sesión se
 // cierra sola y un ajuste de veinte renglones no se puede perder.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buscarConExistencia, buscarEnCatalogo, fetchLotesDeProducto, fetchPerecederos, fetchPresentaciones, fetchSucursalEnConteo, insertMovimientoInventario } from '@nucleo/data/inventoryMovements';
-import { BUCKET_EVIDENCIA, causaObligatoria, llevaControlDeLote, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, OPS_CON_FOTO, problemasDeLinea, solicitudDeAjuste, unidadesEnSala } from '@nucleo/utils/ajusteInventario';
+import { BUCKET_EVIDENCIA, causaObligatoria, llevaControlDeLote, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, OPS_CON_FOTO, problemasDeLinea, solicitudDeAjuste } from '@nucleo/utils/ajusteInventario';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { BRANCH_A_ERP, ERP_ORDEN, ERP_UBICACION_POR_SUCURSAL } from '@nucleo/constants/erp';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
@@ -78,6 +78,7 @@ export default function Ajuste() {
   const [presPorProducto, setPres] = useState(new Map());
   const [perecederos, setPerecederos] = useState(new Set());
   const [lotesPorProducto, setLotes] = useState(new Map());
+  const unidadesPorProducto = useRef(new Map());
   const [borrador, setBorrador] = useState(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -127,12 +128,18 @@ export default function Ajuste() {
     const pres = presPorProducto.get(fila.erp_product_id) ?? [];
     const unidad = pres.find((p) => p.factor === 1) ?? pres[0];
     setBorrador({ erp_product_id: fila.erp_product_id, descripcion: fila.descripcion, tipo: unidad?.tipo ?? 'UNIDAD', factor: unidad?.factor ?? 1,
-      cantidad: '', unidadesEnSala: unidadesEnSala(candidatos, fila.erp_product_id), lote: '', vence: '', regulado: fila.regulado ?? null });
+      // Las unidades de la sala salen de TODAS las filas del producto (las trae
+      // `fetchLotesDeProducto`), no de los candidatos: el buscador deja una
+      // fila por producto y TEGADERM con 7 sueltas + una caja de 8 decía «7».
+      cantidad: '', unidadesEnSala: esCarga ? null : (unidadesPorProducto.current.get(fila.erp_product_id) ?? null),
+      lote: '', vence: '', regulado: fila.regulado ?? null });
     if (!lotesPorProducto.has(fila.erp_product_id)) {
-      const { lotes } = await fetchLotesDeProducto({ erpProductId: fila.erp_product_id, erpSucursalId });
+      const { lotes, unidades } = await fetchLotesDeProducto({ erpProductId: fila.erp_product_id, erpSucursalId });
+      unidadesPorProducto.current.set(fila.erp_product_id, unidades ?? null);
+      if (!esCarga) setBorrador((b) => (b && b.erp_product_id === fila.erp_product_id ? { ...b, unidadesEnSala: unidades ?? null } : b));
       setLotes((m) => new Map(m).set(fila.erp_product_id, lotes));
     }
-  }, [presPorProducto, lotesPorProducto, erpSucursalId, candidatos]);
+  }, [presPorProducto, lotesPorProducto, erpSucursalId, esCarga]);
 
   const lotesBorrador = borrador ? lotesPorProducto.get(borrador.erp_product_id) : null;
   const faltaBorrador = !borrador || lotesBorrador === undefined ? ['cargando'] : problemasDeLinea(borrador, {

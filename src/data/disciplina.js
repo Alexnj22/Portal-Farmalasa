@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { anotar } from './audit';
 
 /**
  * Régimen disciplinario del RIT Art. 83.
@@ -79,6 +80,13 @@ export async function registrarSancion({ employeeId, falta, peldano, fecha, dias
         p_con_descuento: conDescuento,
     });
     if (error) throw error;
+    // La bitácora la anota la capa de datos para que el portal y la app la
+    // hereden sin acordarse (regla: toda acción de usuario deja fila). No
+    // lanza: la sanción ya está escrita.
+    anotar('SANCION_REGISTRADA', String(employeeId), {
+        evento_id: data ?? null, falta, peldano, fecha, dias,
+        con_descuento: conDescuento, con_autorizacion: !!autorizacion,
+    });
     return data;
 }
 
@@ -93,6 +101,7 @@ export async function decidirDescuentoDeSuspension(eventoId, conDescuento) {
         p_con_descuento: conDescuento,
     });
     if (error) throw error;
+    anotar('SUSPENSION_DESCUENTO_DECIDIDO', String(eventoId), { con_descuento: conDescuento });
 }
 
 /**

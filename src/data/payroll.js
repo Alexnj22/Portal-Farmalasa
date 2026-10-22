@@ -105,15 +105,29 @@ export function fetchNovedadesParaPlanilla(startDate, endDate) {
         .order('date').order('id'));
 }
 
-/** Solicitudes de incapacidad aprobadas o todavía sin decisión. */
-export function fetchSolicitudesDeIncapacidad(startDate, endDate) {
-    return todasOError(() => supabase.from('approval_requests')
-        .select('id, employee_id, type, status, metadata')
-        .eq('type', 'DISABILITY')
-        .or('status.eq.APPROVED,status.eq.PENDING')   // paginada: ver todasOError
-        .gte('created_at', `${sumarDias(startDate, -200)}T00:00:00-06:00`)
-        .lte('created_at', `${endDate}T23:59:59.999-06:00`)
-        .order('created_at').order('id'));
+/**
+ * Solicitudes de incapacidad aprobadas o todavía sin decisión cuyos DÍAS se
+ * cruzan con la quincena.
+ *
+ * Por una función de la base (prueba en vivo, 2026-10-22) y no por un select:
+ *  · el select pasaba por el RLS de SOLICITUDES — con alcance de sala, quien
+ *    genera la planilla no veía las incapacidades de otra sala y esos días se
+ *    trataban como faltas, sin aviso. La función decide con el permiso de
+ *    PLANILLA (`payroll` can_edit).
+ *  · filtraba por `created_at <= fin de quincena`: una incapacidad presentada
+ *    el 17 por días del 10 al 14 quedaba fuera. La función filtra por el rango
+ *    de días de la incapacidad.
+ * Devuelve `json` (una sola fila): no cae bajo el techo de las 1000.
+ */
+export async function fetchSolicitudesDeIncapacidad(startDate, endDate) {
+    const { data, error } = await supabase.rpc('planilla_incapacidades_de_quincena', {
+        p_desde: startDate,
+        p_hasta: endDate,
+    });
+    // Sin caída a la lectura vieja: daba otro número con otro permiso, que es
+    // justo el defecto. La migración va ANTES que este código (CLAUDE.md).
+    if (error) return { data: null, error };
+    return { data: Array.isArray(data) ? data : [], error: null };
 }
 
 /**

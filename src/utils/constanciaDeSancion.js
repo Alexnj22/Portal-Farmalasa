@@ -169,8 +169,15 @@ export function definicionDeLaConstancia({
                     {
                         width: '*',
                         stack: [
+                            // `logoComoDataUrl` devuelve `{ dataUrl, ancho, alto }`,
+                            // no la cadena: pasarle el objeto a `image` era el
+                            // «Invalid image» de pdfmake (prueba en vivo,
+                            // 2026-10-22). El alto sale de su proporción, como
+                            // en el documento de bienvenida.
                             logoPng
-                                ? { image: logoPng, width: 150, margin: [0, 0, 0, 6] }
+                                ? { image: logoPng.dataUrl || logoPng, width: 150,
+                                    ...(logoPng.ancho && logoPng.alto ? { height: 150 * logoPng.alto / logoPng.ancho } : {}),
+                                    margin: [0, 0, 0, 6] }
                                 : { text: EMPRESA.nombreComercial, bold: true, fontSize: 12,
                                     color: MARCA.magenta, margin: [0, 0, 0, 6] },
                             { text: EMPRESA.patrono, bold: true, fontSize: 9.5, color: MARCA.tinta },

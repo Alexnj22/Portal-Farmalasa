@@ -3683,6 +3683,11 @@
    "area": "plataforma",
    "por": "código"
   },
+  "planilla_incapacidades_de_quincena": {
+   "area": "nomina",
+   "por": "código",
+   "manual": true
+  },
   "precio_de_lista": {
    "area": "app-clientes",
    "por": "código"

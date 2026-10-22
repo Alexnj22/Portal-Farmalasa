@@ -298,7 +298,19 @@ export function mensajeAmigable(err, fallback = MENSAJE_GENERICO) {
 
     if (!crudo) return fallback;
 
-    // Se registra siempre, traduzca o no: es el único rastro que queda del texto
+    // Un error marcado `userFacing` lo escribió el portal PARA una persona
+    // (`Object.assign(new Error('…'), { userFacing: true })`): se muestra tal
+    // cual, sin pasar por las REGLAS — una frase propia que nombre «tiempo» o
+    // «red» no tiene que cambiarse por la traducción de otra cosa. Sigue
+    // pasando por `esTextoTecnico` (largo y marcas): la marca dice quién
+    // escribió la frase, no que lo que lleva interpolado sea presentable.
+    const marcado = /** @type {{ userFacing?: boolean, message?: unknown }} */ (err);
+    if (marcado.userFacing === true && typeof marcado.message === 'string'
+        && !esTextoTecnico(marcado.message)) {
+        return marcado.message.trim();
+    }
+
+    // Se registra siempre que se traduce: es el único rastro que queda del texto
     // real una vez que la UI lo reemplaza.
     if (typeof console !== 'undefined') console.error('[error crudo]', err);
 

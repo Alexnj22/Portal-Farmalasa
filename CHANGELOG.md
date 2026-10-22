@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1344.3 — Sanción, planilla e inventario: defectos de la prueba en vivo
+
+- **Sanción**: al guardar, el aviso ya no revienta; el diálogo se cierra, avisa y el historial se refresca. Una vez escrita, el botón queda apagado: un error después de guardar (o un doble toque) ya no crea una segunda sanción. La constancia sale con el logo (antes fallaba al armar la imagen).
+- **Sanción en el teléfono**: el diálogo tiene tope de alto y su cuerpo se desplaza; los peldaños ya no quedan fuera de la pantalla por arriba. Los botones de ícono de la ficha (Sanción, Acción de RRHH) dicen qué son al lector de pantalla.
+- **Planilla**: el aviso de «falta que Talento Humano decida» es corto y claro y llega entero a la pantalla («1 persona con incapacidad sin validar y 1 persona con suspensión sin decidir el descuento»). Un error escrito por el portal para una persona ya no se reemplaza por un mensaje genérico.
+- **Planilla**: las incapacidades se leen con el permiso de planilla y por los días que cubren, no por cuándo se presentaron: ya no se pierden las de otra sala ni una presentada después del 15 por días de la quincena. Requiere la función nueva de la base.
+- **Nómina**: el botón de nueva quincena y el de generar sólo aparecen con permiso de edición; si algo falla al guardar, el mensaje sale en español.
+- **Descargo de inventario**: el tope cuenta todas las presentaciones y lotes del producto en la sala (7 sueltas + una caja de 8 = 15, no 7), en el portal y en la app.
+- **Bitácora**: registrar una sanción y decidir el descuento de una suspensión quedan anotados, desde el portal y desde la app.
+
 ## v2.1344.2 — Lo que viene en camino: sólo lo que hace falta, y la lista se pliega
 
 Al apartar lo que ya viene en camino a la sala:

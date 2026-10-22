@@ -32,3 +32,27 @@ describe('mensajeAmigable · qué se compara y qué se muestra', () => {
         expect(mensajeAmigable(null, 'No se pudo confirmar el carné.')).toBe('No se pudo confirmar el carné.');
     });
 });
+
+// Prueba en vivo 2026-10-22: un error escrito por el portal para una persona
+// (`userFacing`) no tiene que pasar por las REGLAS; sí por el filtro de texto
+// técnico, porque lo interpolado adentro puede venir de una máquina.
+describe('mensajeAmigable · errores marcados userFacing', () => {
+    beforeEach(() => { vi.spyOn(console, 'error').mockImplementation(() => {}); });
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    it('se muestra tal cual aunque nombre algo que una regla traduciría', () => {
+        const e = Object.assign(new Error('Falta que Talento Humano decida: 1 persona con incapacidad sin validar (en Solicitudes).'), { userFacing: true });
+        expect(mensajeAmigable(e, 'No se pudo actualizar el estado.')).toBe(e.message);
+        // «403» sin la marca se leería como sesión vencida.
+        const sala = Object.assign(new Error('El renglón 403 no tiene sueldo base.'), { userFacing: true });
+        expect(mensajeAmigable(sala)).toBe('El renglón 403 no tiene sueldo base.');
+        expect(mensajeAmigable(new Error('El renglón 403 no tiene sueldo base.'))).not.toContain('renglón');
+    });
+
+    it('la marca no deja pasar un volcado interpolado', () => {
+        const e = Object.assign(new Error('La ficha se guardó, pero: relation "employee_branches" does not exist'), { userFacing: true });
+        expect(mensajeAmigable(e)).not.toContain('employee_branches');
+        const largo = Object.assign(new Error('x'.repeat(300)), { userFacing: true });
+        expect(mensajeAmigable(largo)).toBe(MENSAJE_GENERICO);
+    });
+});

@@ -886,8 +886,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 descartarBorrador();
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
             } catch (err) {
-                const msg = (err?.message || "Ocurrió un error inesperado.")
-                    .replace(/^(OVERLAP_ERROR|HEADCOUNT_LIMIT):\s*/, '');
+                // Los dos prefijos de protocolo traen copy escrita a mano; todo
+                // lo demás pasa por el traductor. Con `err.message` pelado, crear
+                // una quincena sin permiso mostraba el rechazo del RLS en inglés
+                // (prueba en vivo, 2026-10-22).
+                const msg = /^(OVERLAP_ERROR|HEADCOUNT_LIMIT):/.test(err?.message || '')
+                    ? mensajeConPrefijo(err, err.message.split(':')[0], 'Ocurrió un error inesperado.')
+                    : mensajeAmigable(err, 'Ocurrió un error inesperado.');
                 setValidationError(msg);
             } finally {
                 setIsSaving(false);

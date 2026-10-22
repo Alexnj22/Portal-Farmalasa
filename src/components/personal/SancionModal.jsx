@@ -20,7 +20,7 @@
  */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShieldAlert, Loader2, AlertTriangle, Info } from 'lucide-react';
-import ModalShell from '../common/ModalShell';
+import LiquidModal from '../common/LiquidModal';
 import Button from '../common/Button';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalInput from '../common/PortalInput';
@@ -66,7 +66,19 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     const [escalera, setEscalera]     = useState(null);
     const [cargando, setCargando]     = useState(false);
     const [guardando, setGuardando]   = useState(false);
-    const toast = useToastStore(s => s.addToast);
+    // Una vez escrita la sanción, este formulario ya no vuelve a escribir. Lo
+    // que pasa DESPUÉS (la constancia, el aviso, refrescar el historial) puede
+    // fallar, y si el botón quedaba vivo, reintentar creaba OTRA sanción —
+    // prueba en vivo del 2026-10-22, cuando el aviso reventaba tras guardar.
+    // Ref y no sólo estado: dos toques en el mismo cuadro no ven el setState.
+    const yaEscrita = useRef(null);
+    const enCurso   = useRef(false);
+    const showToast = useToastStore(s => s.showToast);
+    // `addToast` no existe en el store: la API es `showToast(título, texto, tipo)`.
+    const toast = useCallback((texto, tipo = 'success') => {
+        const titulo = tipo === 'error' ? 'No se pudo' : tipo === 'warning' ? 'Atención' : 'Listo';
+        showToast(titulo, texto, tipo);
+    }, [showToast]);
 
     useEffect(() => {
         if (!open) return;
@@ -114,12 +126,15 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     const esSuspension = suspende(peldano);
     const hastaISO = useMemo(() => hastaDeLaSuspension(peldano, fecha, dias), [peldano, fecha, dias]);
     const conDescuento = descuento === 'CON' ? true : descuento === 'SIN' ? false : null;
-    const puedeGuardar = useMemo(() => !guardando && sancionCompleta({ falta, peldano, fecha, dias, autorizacion, conDescuento }),
+    const puedeGuardar = useMemo(() => !guardando && !yaEscrita.current && sancionCompleta({ falta, peldano, fecha, dias, autorizacion, conDescuento }),
         [falta, peldano, fecha, dias, autorizacion, conDescuento, guardando]);
     const guardar = useCallback(async () => {
+        if (enCurso.current || yaEscrita.current) return;
+        enCurso.current = true;
         setGuardando(true);
+        let eventoId;
         try {
-            const eventoId = await registrarSancion({
+            eventoId = await registrarSancion({
                 employeeId:   empleado.id,
                 falta,
                 peldano,
@@ -129,6 +144,18 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 autorizacion: autorizacion.trim() || null,
                 conDescuento: esSuspension ? conDescuento : null,
             });
+        } catch (err) {
+            // No se escribió nada: se puede corregir y volver a intentar.
+            toast(mensajeAmigable(err), 'error');
+            enCurso.current = false;
+            setGuardando(false);
+            return;
+        }
+        // ── Desde acá la sanción YA existe ─────────────────────────────────
+        // Nada de lo que sigue puede dejar el formulario listo para escribir
+        // otra: el botón queda apagado y el modal se cierra pase lo que pase.
+        yaEscrita.current = eventoId || true;
+        try {
             // El código del papel sale del id del evento: es el único dato del
             // pie que devuelve al registro digital. No es un correlativo —no
             // cuenta ni ordena— y por eso no se muestra como si lo fuera: es un
@@ -170,24 +197,29 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             // Que el PDF falle NO deshace la sanción: ya está escrita. Se dice
             // lo que pasó y se dice qué hacer, en vez de dejar a quien sancionó
             // creyendo que no se guardó nada.
-            if (r.ok) toast('Sanción registrada. Imprime la constancia y súbela firmada.', 'success');
+            if (r?.ok) toast('Sanción registrada. Imprime la constancia y súbela firmada.', 'success');
             else toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el expediente para descargarla.', 'warning');
-
-            onGuardado?.(eventoId);
-            onClose?.();
         } catch (err) {
-            toast(mensajeAmigable(err), 'error');
-        } finally {
-            setGuardando(false);
+            console.error('sanción: registrada, falló lo de después', err);
+            toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el expediente para descargarla.', 'warning');
         }
+        try { onGuardado?.(eventoId); } catch (err) { console.error('sanción: no se pudo refrescar el historial', err); }
+        enCurso.current = false;
+        setGuardando(false);
+        onClose?.();
     }, [empleado, falta, peldano, fecha, dias, nota, autorizacion, esSuspension, conDescuento,
         hastaISO, faltas, sala, firmante, claveBorrador, toast, onGuardado, onClose]);
 
     const antecedentes = escalera?.antecedentes || [];
 
     return (
-        <ModalShell open={open} onClose={onClose} maxWidthClass="max-w-xl" ariaLabel="Registrar una sanción">
-            <div className="p-5 sm:p-6 space-y-5">
+        // `LiquidModal` y no `ModalShell` con un div plano: en el iPhone el
+        // formulario es más alto que la pantalla, y sin el tope de 88dvh y un
+        // cuerpo que desplaza el panel se salía por ARRIBA — los peldaños
+        // quedaban a y=−464, fuera de alcance (prueba en vivo, 2026-10-22).
+        // El pie con los botones queda fijo; lo que se desplaza es el cuerpo.
+        <LiquidModal open={open} onClose={guardando ? undefined : onClose} maxWidth="max-w-xl" ariaLabel="Registrar una sanción">
+            <LiquidModal.Header>
                 <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-btn bg-warning/10 flex items-center justify-center shrink-0">
                         <ShieldAlert size={22} className="text-warning-text" />
@@ -197,6 +229,9 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                         <p className="text-caption text-content-3 truncate">{empleado?.name} · RIT Art. 83</p>
                     </div>
                 </div>
+            </LiquidModal.Header>
+
+            <LiquidModal.Body className="space-y-5">
 
                 <LiquidSelect
                     label="Falta cometida"
@@ -328,14 +363,14 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                     reglamento exige la firma de ambas partes y su compromiso escrito a mano— y
                     súbela al expediente.
                 </Notice>
+            </LiquidModal.Body>
 
-                <div className="flex gap-3 justify-end">
-                    <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-                    <Button variant="primary" onClick={guardar} disabled={!puedeGuardar}>
-                        {guardando ? <><Loader2 size={16} className="animate-spin" /> Guardando…</> : 'Registrar sanción'}
-                    </Button>
-                </div>
-            </div>
-        </ModalShell>
+            <LiquidModal.Footer className="gap-3">
+                <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
+                <Button variant="primary" onClick={guardar} disabled={!puedeGuardar}>
+                    {guardando ? <><Loader2 size={16} className="animate-spin" /> Guardando…</> : 'Registrar sanción'}
+                </Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
     );
 }

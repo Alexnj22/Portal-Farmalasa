@@ -3,6 +3,7 @@ import { insertApprovalRequestSilent } from './requests';
 import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { hoySV, relojSV, sumarDias } from '../utils/fecha';
 import { unidadesDe } from '../utils/unidadesInventario';
+import { unidadesEnSala } from '../utils/ajusteInventario';
 
 // Datos del widget de cargas y descartes de inventario.
 //
@@ -197,19 +198,30 @@ export async function fetchPresentaciones(productIds) {
  *
  * La identidad de un lote es **número + fecha**, no el número: GLIMEPIRIDA
  * tiene dos «L31800» con vencimientos distintos y son existencias separadas.
+ *
+ * Devuelve además `unidades`: TODO lo que la sala tiene del producto, sumando
+ * cada fila (todas las presentaciones y lotes, el GENERICO incluido). Es el
+ * tope de un descargo. Se contaba sobre la fila que dejaba el buscador —que
+ * deja UNA por producto— y TEGADERM con 7 sueltas y una caja de 8 decía
+ * «7 unidades» cuando había 15 (prueba en vivo, 2026-10-22). `null` si la
+ * lectura pudo quedar cortada: un tope inventado es peor que ninguno.
  */
+const TOPE_FILAS_DE_PRODUCTO = 200;
 export async function fetchLotesDeProducto({ erpProductId, erpSucursalId }) {
     const { data, error } = await supabase
         .from('inventory')
-        .select('lote, fecha_vencimiento, presentacion, cantidad')
+        .select('erp_product_id, lote, fecha_vencimiento, presentacion, detalle, cantidad')
         .eq('erp_product_id', Number(erpProductId))
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .eq('is_vencidos', false)
         .gt('cantidad', 0)
         .order('fecha_vencimiento', { ascending: true })
-        .range(0, 200);
+        .range(0, TOPE_FILAS_DE_PRODUCTO);
 
-    if (error) return { lotes: [], error };
+    if (error) return { lotes: [], unidades: null, error };
+    const unidades = (data ?? []).length > TOPE_FILAS_DE_PRODUCTO
+        ? null
+        : unidadesEnSala(data ?? [], Number(erpProductId));
 
     // Un producto sin control de lote guarda todo bajo 'GENERICO'. Eso no es un
     // lote: es la ausencia de uno, y ofrecerlo para elegir sería mentir.
@@ -225,7 +237,7 @@ export async function fetchLotesDeProducto({ erpProductId, erpSucursalId }) {
             presentaciones: [{ presentacion: r.presentacion, cantidad: r.cantidad }],
         });
     }
-    return { lotes: [...porClave.values()], error: null };
+    return { lotes: [...porClave.values()], unidades, error: null };
 }
 
 /**

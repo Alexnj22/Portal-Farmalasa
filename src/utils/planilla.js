@@ -290,16 +290,24 @@ export function pendienteDeTH(entry) {
  * Por qué no se puede aprobar la planilla, o `null` si se puede. Recibe los
  * renglones con algo pendiente de Talento Humano.
  */
+//
+// Tiene que caber en un aviso: el toast descarta como «volcado» todo texto de
+// más de 240 caracteres, y la versión anterior pasaba de ese largo con los dos
+// pendientes a la vez — la pantalla decía «No se pudo actualizar el estado.»
+// sin explicar nada (prueba en vivo, 2026-10-22). Las cifras cuentan PERSONAS
+// (un renglón por persona), y cada parte lleva su propio sustantivo: la versión
+// anterior decía «hay 1 persona 1 con suspensión…».
 export function mensajeDePendientesDeTH(renglones) {
     const lista = (renglones || []).filter(r => pendienteDeTH(r));
     if (!lista.length) return null;
     const inc = lista.filter(r => Number(r.incapacidad_pendiente_dias) > 0).length;
     const sus = lista.filter(r => Number(r.suspension_pendiente_dias) > 0).length;
+    const personas = (n) => `${n} ${n === 1 ? 'persona' : 'personas'}`;
     const que = [
-        inc ? `${inc} con incapacidad sin validar (se aprueba o rechaza en Solicitudes)` : null,
-        sus ? `${sus} con suspensión sin decidir si lleva descuento (se decide en el historial de la persona)` : null,
+        inc ? `${personas(inc)} con incapacidad sin validar (en Solicitudes)` : null,
+        sus ? `${personas(sus)} con suspensión sin decidir el descuento (en su historial)` : null,
     ].filter(Boolean).join(' y ');
-    return `Talento Humano tiene que decidir antes de aprobar: ${lista.length === 1 ? 'hay 1 persona' : `hay ${lista.length} personas`} ${que}. Después vuelve a generar la planilla.`;
+    return `Falta que Talento Humano decida: ${que}. Después vuelve a generar la planilla.`;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { anticiposDeLaQuincena, bajasEnQuincena, contratoEnQuincena, descuentoDeSuspension, incapacidadesPorPersona, mensajeDePendientesDeTH, pendienteDeTH, suspensionesPorPersona, diaDeAprobacion, diasPagadosDeQuincena, esAusenciaDescontable, esQuincena, montoEnLetras, numeroEnLetras, ordenDeCargo, partidasDeBoleta, problemaDeQuincena, quincenaPorDefecto, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
 import { calcPayrollEntry } from '@nucleo/store/slices/payrollSlice';
+import { esTextoTecnico, mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 describe('planilla', () => {
     it('el monto en letras de la boleta', () => {
@@ -225,6 +226,24 @@ describe('suspensión: con o sin descuento según Talento Humano', () => {
         expect(pendienteDeTH({ incapacidad_pendiente_dias: 0 })).toBeNull();
         expect(mensajeDePendientesDeTH([])).toBeNull();
         expect(mensajeDePendientesDeTH([{ suspension_pendiente_dias: 1 }])).toMatch(/1 persona.*suspensión/);
+    });
+    // Prueba en vivo 2026-10-22: con los dos pendientes el texto pasaba de 240
+    // caracteres, el aviso lo descartaba como volcado y decía «No se pudo
+    // actualizar el estado.»; y la cifra salía doble («hay 1 persona 1 con…»).
+    it('con incapacidad Y suspensión el freno sigue siendo un aviso legible', () => {
+        const msg = mensajeDePendientesDeTH([
+            { employee_id: 'a', incapacidad_pendiente_dias: 3 },
+            { employee_id: 'b', suspension_pendiente_dias: 1 },
+        ]);
+        expect(msg).toBe('Falta que Talento Humano decida: 1 persona con incapacidad sin validar (en Solicitudes) '
+            + 'y 1 persona con suspensión sin decidir el descuento (en su historial). Después vuelve a generar la planilla.');
+        expect(msg).not.toMatch(/persona \d/);
+        expect(esTextoTecnico(msg)).toBe(false);
+        const muchas = Array.from({ length: 999 }, (_, i) => ({ incapacidad_pendiente_dias: 1, suspension_pendiente_dias: 1, employee_id: i }));
+        expect(esTextoTecnico(mensajeDePendientesDeTH(muchas))).toBe(false);
+        // Y llega intacto a la pantalla por el mismo camino que la vista.
+        const e = Object.assign(new Error(msg), { userFacing: true });
+        expect(mensajeAmigable(e, 'No se pudo actualizar el estado.')).toBe(msg);
     });
 });
 

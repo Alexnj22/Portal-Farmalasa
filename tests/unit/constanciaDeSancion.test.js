@@ -187,3 +187,26 @@ describe('constancia de sanción · lo que el Art. 83 exige', () => {
             .toBe('constancia-juana-perez-2026-08-31.pdf');
     });
 });
+
+// Prueba en vivo 2026-10-22: pdfmake rechazaba la constancia con «Invalid
+// image» porque recibía el objeto `{ dataUrl, ancho, alto }` de
+// `logoComoDataUrl` en vez de la cadena.
+describe('constancia de sanción · el logo', () => {
+    const imagenes = (nodo, out = []) => {
+        if (nodo == null || typeof nodo !== 'object') return out;
+        if (Array.isArray(nodo)) { nodo.forEach(n => imagenes(n, out)); return out; }
+        if ('image' in nodo) out.push(nodo);
+        ['stack', 'columns', 'content'].forEach(k => imagenes(nodo[k], out));
+        return out;
+    };
+    it('le pasa a pdfmake la cadena, con la proporción del archivo', () => {
+        const logoPng = { dataUrl: 'data:image/png;base64,AAAA', ancho: 734, alto: 100 };
+        const [img] = imagenes(definicionDeLaConstancia({ ...base, peldano: 1, logoPng }).content);
+        expect(typeof img.image).toBe('string');
+        expect(img.image).toBe(logoPng.dataUrl);
+        expect(img.height).toBeCloseTo(150 * 100 / 734);
+    });
+    it('sin logo, el nombre en texto', () => {
+        expect(imagenes(definicionDeLaConstancia({ ...base, peldano: 1, logoPng: null }).content)).toHaveLength(0);
+    });
+});

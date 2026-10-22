@@ -212,6 +212,9 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
 const PayrollView = ({ openModal }) => {
     const { user, hasPermission, getScope } = useAuth();
     const canApprove             = hasPermission('payroll', 'can_approve');
+    // Crear una quincena escribe `payroll_periods`, cuya policy pide `can_edit`.
+    // Sin él el botón se ofrecía y el guardado rebotaba con el RLS.
+    const canEdit                = hasPermission('payroll', 'can_edit');
     // Imprimir boletas/planilla y bajar el CSV del banco es un permiso aparte de
     // ver la nómina en pantalla (canon 2026-08-03): el papel se lleva el salario
     // de cada empleado fuera del portal.
@@ -389,11 +392,13 @@ const PayrollView = ({ openModal }) => {
                         <div data-surface="card" className="p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
-                                <Button size="sm" icon={Plus} iconOnly onClick={() => openModal?.('newPayrollPeriod')} />
+                                {canEdit && (
+                                    <Button size="sm" icon={Plus} iconOnly title="Nueva quincena" onClick={() => openModal?.('newPayrollPeriod')} />
+                                )}
                             </div>
                             {filteredPeriods.length === 0 ? (
                                 <EmptyState compact icon={CalendarDays} title="Sin períodos"
-                                    subtitle="Crea el primero con el botón de arriba." />
+                                    subtitle={canEdit ? 'Crea el primero con el botón de arriba.' : 'Todavía no hay quincenas creadas.'} />
                             ) : (
                                 <div className="space-y-2">
                                     {filteredPeriods.map(p => {
@@ -425,7 +430,7 @@ const PayrollView = ({ openModal }) => {
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-subtitle font-black text-content-2 uppercase tracking-tight">Selecciona un período</p>
-                                <p className="text-body-sm text-content-3 mt-1">O crea una nueva quincena con el botón +</p>
+                                <p className="text-body-sm text-content-3 mt-1">{canEdit ? 'O crea una nueva quincena con el botón +' : 'Elige una de la lista.'}</p>
                             </div>
                         ) : (
                             <>
@@ -438,7 +443,8 @@ const PayrollView = ({ openModal }) => {
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Badge variant={STATUS_META[activePeriod?.status]?.variante || 'neutral'}>{(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).label}</Badge>
-                                            {isDraft && (
+                                            {/* Generar escribe `payroll_entries`: la misma llave `can_edit`. */}
+                                            {isDraft && canEdit && (
                                                 <Button variant="secondary" icon={RotateCcw} disabled={generating} onClick={handleGenerate}>{generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}</Button>
                                             )}
                                             {payrollEntries.length > 0 && canDownload && (

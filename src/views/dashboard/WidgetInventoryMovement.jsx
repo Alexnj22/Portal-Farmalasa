@@ -23,7 +23,7 @@ import {
 } from '@nucleo/data/inventoryMovements';
 import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
-import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, unidadesEnSala, topeDeLinea } from '@nucleo/utils/ajusteInventario';
+import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
@@ -193,6 +193,10 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const [lineas, setLineas] = useState([]);
     const [presPorProducto, setPresPorProducto] = useState(new Map());
     const [lotesPorProducto, setLotesPorProducto] = useState(new Map());
+    // Cuántas unidades tiene la sala de cada producto, contadas sobre TODAS sus
+    // filas del inventario (las trae `fetchLotesDeProducto`). No sale de los
+    // candidatos: el buscador deja una fila por producto.
+    const unidadesPorProducto = useRef(new Map());
     const [perecederos, setPerecederos] = useState(new Set());
 
     const [causa, setCausa]       = useState('');
@@ -369,7 +373,10 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             tipo:   unidad?.tipo ?? 'UNIDAD',
             factor: unidad?.factor ?? 1,
             cantidad: '',
-            unidadesEnSala: unidadesEnSala(candidatos, fila.erp_product_id),
+            // Se completa al llegar los lotes: contarlo sobre `candidatos`
+            // sumaba sólo la fila que dejó el buscador (TEGADERM: «7 unidades»
+            // con 15 en la sala). Mientras viaja, el compositor no deja enviar.
+            unidadesEnSala: esCarga ? null : (unidadesPorProducto.current.get(fila.erp_product_id) ?? null),
             lote: '',
             vence: '',
             loteNuevo: false,
@@ -384,12 +391,17 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
         const cacheados = lotesPorProducto.get(fila.erp_product_id);
         if (cacheados) { setLotesBorrador(cacheados); return; }
         setLotesBorrador(null);
-        const { lotes } = await fetchLotesDeProducto({
+        const { lotes, unidades } = await fetchLotesDeProducto({
             erpProductId: fila.erp_product_id, erpSucursalId,
         });
+        unidadesPorProducto.current.set(fila.erp_product_id, unidades ?? null);
         setLotesPorProducto(prev => new Map(prev).set(fila.erp_product_id, lotes));
-        if (pedidoLotes.current === token) setLotesBorrador(lotes);
-    }, [presPorProducto, lotesPorProducto, erpSucursalId, candidatos]);
+        if (pedidoLotes.current === token) {
+            if (!esCarga) setBorrador(b => (b && b.erp_product_id === fila.erp_product_id
+                ? { ...b, unidadesEnSala: unidades ?? null } : b));
+            setLotesBorrador(lotes);
+        }
+    }, [presPorProducto, lotesPorProducto, erpSucursalId, esCarga]);
 
     const cerrarBorrador = useCallback(() => {
         pedidoLotes.current++;

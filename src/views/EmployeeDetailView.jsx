@@ -413,16 +413,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             {canEdit && <div className="w-px h-6 bg-divider mx-1 shrink-0"></div>}
 
             {canEdit && getEffectiveStatus(emp) === 'En Vacaciones' && (
-                <Button tone="warning" size="sm" icon={Palmtree} disabled={!canEdit} onClick={handleVacationRecall}><span className="hidden sm:inline">Ingreso en Vacaciones</span></Button>
+                <Button tone="warning" size="sm" icon={Palmtree} disabled={!canEdit} onClick={handleVacationRecall} aria-label="Ingreso en vacaciones"><span className="hidden sm:inline">Ingreso en Vacaciones</span></Button>
             )}
+            {/* En el teléfono el rótulo es `hidden sm:inline`: sin `aria-label`
+                el botón quedaba como un ícono mudo para el lector de pantalla
+                (prueba en vivo, 2026-10-22). */}
             {canEdit && (
-                <Button size="sm" icon={Plus} disabled={!canEdit} onClick={handleNewHRAction}><span className="hidden sm:inline">Acción RRHH</span></Button>
+                <Button size="sm" icon={Plus} disabled={!canEdit} onClick={handleNewHRAction} aria-label="Acción de RRHH"><span className="hidden sm:inline">Acción RRHH</span></Button>
             )}
             {/* Sanciona quien puede editar la ficha — el mismo permiso que exige
                 `registrar_sancion` en la base. Que los dos coincidan importa: un
                 botón visible que la base rechaza enseña a desconfiar del portal. */}
             {canEdit && (
-                <Button tone="warning" size="sm" icon={ShieldAlert} onClick={() => setSancionAbierta(true)}><span className="hidden sm:inline">Sanción</span></Button>
+                <Button tone="warning" size="sm" icon={ShieldAlert} onClick={() => setSancionAbierta(true)} aria-label="Registrar una sanción"><span className="hidden sm:inline">Sanción</span></Button>
             )}
             {/* Sólo se monta cuando se abre: montarlo siempre traería el chunk
                 al entrar al expediente, que es exactamente lo que el `lazy`

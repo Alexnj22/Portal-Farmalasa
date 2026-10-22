@@ -33004,6 +33004,10 @@ export type Database = {
         Args: { p_pedido_id: string; p_run_id: string; p_sucursal_id: number }
         Returns: Json
       }
+      planilla_incapacidades_de_quincena: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
       precio_de_lista: {
         Args: {
           p_clave: string

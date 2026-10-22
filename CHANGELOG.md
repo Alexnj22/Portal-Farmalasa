@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.12 — fix(personal): el alta ya no rebota por la certificación de discapacidad
+
+- **Guardar un empleado nuevo se quedaba en «Guardando…»**: cuando el formulario llegaba sin `has_disability` (formulario abierto con código ya puesto), `undefined && …` mandaba `disability_has_certification` como `null` y la columna es NOT NULL — la base rechazaba el alta entera (400, 4 intentos de Talento Humano el 22-oct). Ahora se manda siempre un booleano.
+
 ## v2.1350.11 — DUI: se endereza siempre y el recorte no deja la pared
 
 - **Foto del DUI (ficha de empleado y captura desde el teléfono)**: se endereza SIEMPRE. Antes, si las esquinas las encontraba la foto por píxeles, el giro quedaba en 0 y un DUI de costado se guardaba de costado; y cuando lo calculaba el modelo, fallaba 2 de 6 sobre un DUI real girado. Ahora, ya recortada la tarjeta, se le muestran al modelo sus cuatro rotaciones y elige la que se lee derecha (`leer-dui`, modo `cualDerecha`): 12 de 12 en la medición.

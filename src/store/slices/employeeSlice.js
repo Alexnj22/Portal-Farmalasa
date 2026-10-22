@@ -780,7 +780,10 @@ export const createEmployeeSlice = (set, get) => ({
                 has_disability: !!formData.has_disability,
                 disability_type: formData.has_disability ? normalizeCatalogValue(formData.disability_type) : null,
                 disability_grade: formData.has_disability ? (formData.disability_grade || null) : null,
-                disability_has_certification: formData.has_disability && !!formData.disability_has_certification,
+                // `!!` sobre TODO: con `has_disability` ausente, `undefined && …` da
+                // `undefined`, el `insert([…])` lo manda como null y la columna
+                // es NOT NULL — el alta entera rebotaba (2026-10-22).
+                disability_has_certification: !!(formData.has_disability && formData.disability_has_certification),
 
                 contract_type: formData.contract_type || 'INDEFINIDO',
                 contract_start_date: formData.contract_start_date || null,

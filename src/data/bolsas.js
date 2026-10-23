@@ -681,6 +681,10 @@ export async function fetchEntidadesDeSalida() {
  * distintos y la pantalla los tiene que decir distinto: un veredicto que no es
  * `OK` significa «la foto no es la boleta que dice el formulario»; un `error`
  * significa «no se pudo preguntar» y se arregla reintentando.
+ *
+ * @param {any} archivo
+ * @param {any} esperado
+ * @param {{clase?: string}} [opciones]
  */
 export async function leerBoleta(archivo, esperado, { clase } = {}) {
     const primera = await unaLectura(archivo, esperado, 0, clase);

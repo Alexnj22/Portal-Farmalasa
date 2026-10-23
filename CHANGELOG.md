@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.16 — Los tipos del alta de personal vuelven a tener contrato
+
+- **`gate:tipos` volvió a verde** (estaba en rojo sobre `origin/main`). Sin cambio de comportamiento: sólo tipos.
+- **`employees.js`: la lista de columnas que devuelve el alta/edición era una SUMA de cadenas** (`'…' + '…'`). Para TypeScript eso es `string` a secas, el parser de columnas de supabase-js no la puede leer y la fila quedaba tipada como `GenericStringError`: cada `newEmp.id`/`.name`/`.branch_id` era un aviso, y el asiento del DUI renovado sumó cinco más. Las nueve columnas existen (verificado contra `database.ts`); ahora es una sola cadena literal. `employeeSlice.js` baja de 57 a 12 avisos y `payrollSlice.js` de 4 a 0.
+- **Parámetros con destructuring sin tipo** (`{ x } = {}` se infiere como `{}`): JSDoc en `subirFotoDeOrden` (`contentType`), `leerBoleta` (`clase`), `ubicarTarjeta`, `cuartosParaEnderezar` y `buscarEsquinas` (`secretoDeCaptura`, `tipo`, y el `deLaTarjeta` que lee `prepararDocumento`). El JSDoc de `ubicarTarjeta` estaba despegado de la función por una constante en el medio. `lienzoReducido` acepta también un lienzo, que es lo que ya recibía.
+- Baseline de `gate:tipos` fijado hacia abajo: **448 → 403**.
+
 ## v2.1350.15 — fix(app): la app se presenta como Portal Farmasalud
 
 - **La app decía «Farmalasa»** en la pantalla de entrada y al pedir la huella; ahora dice **Portal Farmasalud**. Los avisos de ubicación mandaban a «Ajustes › Farmalasa», que no existe en el teléfono: la app instalada se llama FarmaSalud.

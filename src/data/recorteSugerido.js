@@ -62,6 +62,9 @@ export async function sugerirRecorte(file, { secretoDeCaptura } = {}) {
     }
 }
 
+/** Cuánto se agranda la caja del modelo hacia cada lado, en fracción de su tamaño. */
+const MARGEN_DE_LA_CAJA = 0.04;
+
 /**
  * Dónde está una TARJETA (el DUI) dentro de la foto, preguntado al modelo.
  *
@@ -72,11 +75,12 @@ export async function sugerirRecorte(file, { secretoDeCaptura } = {}) {
  * píxeles (umbral en gris y distancia de color al fondo) y ninguno separó la
  * tarjeta; ver el encabezado de `PROMPT_TARJETA` en `leer-dui`.
  *
- * @returns {Promise<{recuadro, giro: 0, esquinas}|null>}
+ * @param {File} file
+ * @param {{secretoDeCaptura?: string}} [opciones]
+ * @returns {Promise<{recuadro: {x: number, y: number, w: number, h: number},
+ *                    giro: number, esquinas: {x: number, y: number}[],
+ *                    deLaTarjeta: boolean}|null>}
  */
-/** Cuánto se agranda la caja del modelo hacia cada lado, en fracción de su tamaño. */
-const MARGEN_DE_LA_CAJA = 0.04;
-
 export async function ubicarTarjeta(file, { secretoDeCaptura } = {}) {
     if (!file?.type?.startsWith('image/')) return null;
     try {
@@ -126,6 +130,7 @@ const LADO_PARA_ENDEREZAR = 512;
  * cuatro es el giro, y no hay mesa que distraiga.
  *
  * @param {HTMLCanvasElement} lienzo  el documento ya rectificado
+ * @param {{secretoDeCaptura?: string}} [opciones]
  */
 export async function cuartosParaEnderezar(lienzo, { secretoDeCaptura } = {}) {
     try {
@@ -162,7 +167,11 @@ export async function cuartosParaEnderezar(lienzo, { secretoDeCaptura } = {}) {
  * siempre y el trabajo sigue.
  *
  * @param {File} file
- * @param {{secretoDeCaptura?: string}} [opciones]
+ * @param {{secretoDeCaptura?: string, tipo?: string}} [opciones]  `tipo: 'dui'`
+ *   pregunta primero por la tarjeta (`ubicarTarjeta`)
+ * @returns {Promise<{recuadro: {x: number, y: number, w: number, h: number}|null,
+ *                    giro: number, esquinas: {x: number, y: number}[]|null,
+ *                    deLaTarjeta?: boolean, deLosPixeles?: boolean}|null>}
  */
 export async function buscarEsquinas(file, { secretoDeCaptura, tipo } = {}) {
     if (!file?.type?.startsWith('image/')) return null;

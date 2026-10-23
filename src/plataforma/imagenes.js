@@ -29,7 +29,7 @@ export function abrirImagen(archivo, mensaje = 'No se pudo leer la foto.') {
  * Dibuja la imagen reducida en un lienzo nuevo. Nunca la AGRANDA: estirar una
  * foto chica sólo agrega peso y le quita nitidez.
  *
- * @param {HTMLImageElement} img
+ * @param {HTMLImageElement|HTMLCanvasElement} img
  * @param {object} o
  * @param {number} [o.ladoMaximo]   tope del lado MAYOR
  * @param {number} [o.anchoMaximo]  tope del ANCHO (las fotos de empleado)

@@ -43,6 +43,10 @@ export async function leerOrden(archivos) {
  * (`{ uri, nombre, tipo }`) y su contenido ya leído viaja en `cuerpo`: la
  * MISMA carpeta y el mismo nombre, para que el expediente no dependa de desde
  * dónde se cargó la orden.
+ *
+ * @param {string} employeeId
+ * @param {any} archivo
+ * @param {{ cuerpo?: any, contentType?: string }} [opciones]
  */
 export async function subirFotoDeOrden(employeeId, archivo, { cuerpo = null, contentType } = {}) {
     const nombre = archivo?.name || archivo?.nombre || 'orden';

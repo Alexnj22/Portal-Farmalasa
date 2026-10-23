@@ -47,8 +47,11 @@ export function fetchEmployeesPublicByIds(ids) {
 // portal), un `.select()` sin argumentos pide `*` y el servidor responde
 // «permission denied for column code» — o sea que guardar un empleado fallaría
 // entero. Se listan los campos que el llamador realmente usa después.
-const DEVUELVE = 'id, name, branch_id, role_id, secondary_role_id, photo_url, '
-    + 'employee_documents, education_level, status';
+//
+// Una sola cadena literal y no una suma: con `+` TypeScript la ve como `string`
+// a secas, el parser de columnas de supabase-js no la puede leer y la fila que
+// vuelve queda tipada como error (`GenericStringError`) — o sea, sin contrato.
+const DEVUELVE = 'id, name, branch_id, role_id, secondary_role_id, photo_url, employee_documents, education_level, status';
 
 export function insertEmployee(dbPayload) {
     return supabase.from('employees').insert([dbPayload]).select(DEVUELVE).single();

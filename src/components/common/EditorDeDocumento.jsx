@@ -521,7 +521,13 @@ export default function EditorDeDocumento({
                     <div className="flex flex-wrap items-center gap-2 w-full">
                         <Button variant="secondary" size="sm" icon={RotateCw}
                             iconOnly={conElDedo} title="Girar un cuarto de vuelta"
-                            onClick={() => { setMostrarAyuda(false); setCuartos(c => (c + 1) % 4); }}>
+                            /* Gira y MUESTRA el resultado. Sólo subía el
+                               contador, y en el encuadre lo que se ve es la
+                               foto original: con el dedo (ícono sin el «· 90°»)
+                               el botón no hacía nada visible — «le doy girar y
+                               no gira» (2026-10-23, un carné ya guardado). */
+                            onClick={() => { setMostrarAyuda(false); girarResultado(); }}
+                            disabled={!imagen}>
                             {/* Dice cuánto se pidió: en el encuadre lo que se ve
                                 es la FOTO, no el resultado, así que sin el
                                 número el botón parece que no hace nada. */}

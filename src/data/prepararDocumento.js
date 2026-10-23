@@ -140,8 +140,13 @@ export async function prepararAutomatico(file, tipo = 'documento') {
          * modelo, se equivocaba 2 de cada 6. Ahora se pregunta aparte, sobre la
          * tarjeta ya recortada, eligiendo entre sus cuatro rotaciones. Si la
          * pregunta no contesta, queda como estaba: el botón de girar está a un
-         * toque en «Ajustar». */
-        if (r && tipo === 'dui') {
+         * toque en «Ajustar».
+         *
+         * Y no sólo el DUI (2026-10-23): un carné de junta llegó de costado y
+         * se guardó así, porque esto sólo corría con `tipo === 'dui'`. La
+         * pregunta es sobre el TEXTO y vale para cualquier papel. Si el modelo
+         * ya propuso un giro, se respeta ese. */
+        if (r && !cuartos) {
             const { cuartosParaEnderezar } = await import('./recorteSugerido');
             const extra = await cuartosParaEnderezar(r.canvas);
             if (extra) {

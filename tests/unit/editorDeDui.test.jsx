@@ -208,7 +208,10 @@ describe('el giro sale del orden de las esquinas', () => {
      * lo pidiera. Las esquinas se ordenan solas y el giro pedido se aplica
      * encima — la imagen sigue sin rotarse, que es lo que esta prueba cuida. */
     it('el botón de girar cuenta cuartos, no rota la imagen', () => {
-        expect(codigo).toMatch(/setCuartos\(c => \(c \+ 1\) % 4\)/);
+        // Desde el 2026-10-23 el botón del encuadre también MUESTRA el
+        // resultado (`girarResultado`): sólo contar no se veía con el dedo.
+        expect(codigo).toMatch(/const q = \(cuartos \+ 1\) % 4;\s*setCuartos\(q\)/);
+        expect(codigo).toMatch(/onClick=\{\(\) => \{ setMostrarAyuda\(false\); girarResultado\(\); \}\}/);
         expect(codigo).toMatch(/ordenarEsquinas\(puntos\)/);
         expect(codigo).not.toMatch(/setPuntos\(girarEsquinas\)/);
     });

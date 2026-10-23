@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.22 — Documentos: el carné se endereza solo y «Girar» gira a la vista
+
+- Al subir la foto de cualquier documento (no sólo el DUI) el portal pregunta
+  cuál de sus cuatro rotaciones se lee derecha y la guarda así. Un carné de
+  junta subido de costado se quedaba de costado.
+- En «Recortar y enderezar», el botón Girar ahora muestra el resultado girado.
+  Antes sólo contaba el giro sobre la foto original y, en el teléfono, no se
+  veía ningún cambio hasta tocar «Continuar».
+
 ## v2.1350.21 — Metas, promociones, marketing y productos: segunda revisión
 
 - **Metas — el bono cuenta en los meses en que estaba encendido.** Antes, si se encendía o apagaba hoy, cambiaba lo que valían los meses ya cerrados: encenderlo en noviembre volvía dinero los $1,496.97 de julio a septiembre, que se ganaron con el bono apagado. Ahora cada cambio vale desde su mes. La hoja del semestre muestra lo que se paga y, debajo, lo que se habría ganado. No se puede aprobar un semestre en que el bono estuvo apagado todos los meses; eso lo frena la base, no sólo la pantalla.

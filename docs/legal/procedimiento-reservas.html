@@ -144,8 +144,8 @@
        Bajando el ROOT baja todo junto y las proporciones se conservan. El
        interlineado también se aprieta: 1.55 es cómodo en pantalla y suelto
        en papel. */
-    html { font-size: 10.5pt; }
-    body { font-size: 1rem; line-height: 1.42; }
+    html { font-size: 10pt; }
+    body { font-size: 1rem; line-height: 1.38; }
     body { background: #fff; color: #000; }
     /* ── En papel no hay grises de apoyo ─────────────────────────────────
        El encabezado de una tabla y el número de una cláusula se pintan en
@@ -208,21 +208,22 @@
   <section>
     <h2><span class="num">1</span> Para qué es</h2>
     <ol class="clausulas">
-      <li>Dice <strong>qué hace el personal</strong> con las reservas —de la
-      aplicación o de la sala, con o sin anticipo— y los encargos especiales.
-      Lo que se le promete al cliente está en el <strong>Reglamento de reservas
-      y encargos especiales</strong>; este documento dice cómo se
-      cumple.</li>
-      <li>Todo se hace en el portal o en la aplicación del personal:
+      <li>Este procedimiento establece <strong>qué hace el personal</strong>
+      para cumplir el <strong>Reglamento de reservas y encargos
+      especiales</strong>: las reservas, hechas desde la aplicación o en la
+      sala, con o sin anticipo, y los encargos especiales. Es de uso interno y
+      no agrega ni quita derechos a ningún cliente.</li>
+      <li>Todo se registra en el portal o en la aplicación del personal:
         <ul class="viñetas">
-          <li><strong>Reservas</strong> (menú, o su tarjeta en el Inicio): las
-          reservas de la sala, los encargos especiales y los saldos a favor;</li>
-          <li><strong>Mi caja → <strong>Apartar o encargar</strong>: reservar en la
+          <li><strong>Reservas</strong> (en el menú o en su tarjeta del Inicio):
+          las reservas de la sala, los encargos especiales y los saldos a
+          favor;</li>
+          <li><strong>Mi caja → Apartar o encargar</strong>: reservar en la
           sala, encargar y cobrar lo pendiente (<strong>Por cobrar</strong>).</li>
         </ul>
       </li>
-      <li>Ningún paso se hace por fuera: una reserva anotada en papel, un
-      anticipo cobrado como venta o un producto separado sin registrar no
+      <li>Ningún paso se hace fuera del sistema. Una reserva anotada en papel,
+      un anticipo cobrado como venta o un producto separado sin registrar no
       existen para el sistema, y el cliente pierde las garantías del
       reglamento.</li>
     </ol>
@@ -231,27 +232,31 @@
   <section>
     <h2><span class="num">2</span> Plazos de la sala</h2>
     <ol class="clausulas">
-      <li><strong>Preparar una reserva: máximo 24 horas</strong> desde que
-      entra. Si se pide a otra sala o a Bodega, el plazo se detiene mientras
-      viene en camino; si el traslado no sale, llega sólo una parte o Bodega
-      da otro precio, hay un máximo de otras 24 horas desde ese aviso para
-      resolverla.</li>
-      <li><strong>Revisar una receta: máximo 24 horas</strong> desde que el
-      cliente sube la foto.</li>
-      <li><strong>Para retirar</strong>, el sistema calcula solo la fecha
-      límite y la muestra en cada reserva, contada desde que está lista —si se
-      trajo de otra sala, desde que llega—:
+      <li>La sala prepara cada reserva en un plazo <strong>máximo de
+      veinticuatro (24) horas</strong> desde que la recibe. Si el producto se
+      pide a otra sala o a Bodega, el plazo se detiene mientras viene en
+      camino. Si el traslado no sale, llega incompleto o Bodega informa otro
+      precio, la sala dispone de un máximo de veinticuatro (24) horas más,
+      desde ese aviso, para resolverla.</li>
+      <li>Quien revisa recetas decide cada una en un plazo <strong>máximo de
+      veinticuatro (24) horas</strong> desde que el cliente envía la
+      foto.</li>
+      <li>El sistema calcula y muestra en cada reserva la fecha límite para
+      retirarla, contada desde que está lista o, si se trajo de otra sala,
+      desde que llega:
         <ul class="viñetas">
-          <li><strong>máximo siete (7) días</strong>, la reserva sin pago;</li>
-          <li><strong>máximo treinta (30) días</strong>, la reserva con anticipo (pago parcial);</li>
-          <li><strong>máximo sesenta (60) días</strong>, la reserva pagada completa y el encargo especial que ya llegó.</li>
+          <li>reserva sin pago: <strong>máximo siete (7) días</strong>;</li>
+          <li>reserva con anticipo: <strong>máximo treinta (30) días</strong>;</li>
+          <li>reserva pagada en su totalidad y encargo especial recibido:
+          <strong>máximo sesenta (60) días</strong>.</li>
         </ul>
-        No hay prórroga.</li>
-      <li><strong>Saldo a favor: máximo un (1) año.</strong></li>
-      <li>Si la sala no prepara o no revisa a tiempo, la reserva vence sola,
-      no cuenta en contra del cliente, y el sistema se lo notifica a
-      <strong>supervisión de ventas y a la jefatura de la sala</strong>. Es un
-      incumplimiento de la sala, no del cliente.</li>
+        Estos plazos no se prorrogan.</li>
+      <li>El saldo a favor vence en un plazo <strong>máximo de un (1)
+      año</strong>.</li>
+      <li>Si la sala no prepara una reserva o no revisa una receta dentro de
+      su plazo, la reserva vence sin consecuencias para el cliente y el sistema
+      lo notifica a <strong>supervisión de ventas y a la jefatura de la
+      sala</strong>. Se considera un incumplimiento de la sala.</li>
       <li><strong>Máxima prioridad.</strong> Las reservas y los encargos
       especiales de los clientes <strong>Oro y Platino</strong>, y de los
       Clientes Mayoristas <strong>Rubí y Diamante</strong>, se atienden antes
@@ -262,192 +267,203 @@
   <section>
     <h2><span class="num">3</span> Reserva desde la aplicación</h2>
     <ol class="clausulas">
-      <li><strong>Llega sola.</strong> La sala recibe un aviso y la reserva
+      <li><strong>Recepción.</strong> La sala recibe un aviso y la reserva
       aparece en Reservas como pendiente, con su código (R-000123, o P-… si es
       un pedido de varios productos).</li>
-      <li><strong>Preparar.</strong> Se busca el producto en la sala y se
-      revisa que esté en buen estado y vigente. Se separa en el lugar de
-      reservas con una etiqueta que diga el código y el nombre del cliente. En
-      el portal se toca <strong>Apartar y avisar</strong>: la reserva queda
-      lista y el cliente recibe el aviso en la aplicación. Si el cliente no
-      tiene la aplicación, el portal abre WhatsApp con el mensaje ya escrito:
-      hay que enviarlo (sección 9).</li>
-      <li><strong>Si la sala no lo tiene</strong>, se toca <strong>Traer de
-      otra sala</strong>: se pide a una sala que lo tenga o, si ninguna, a
-      Bodega. La reserva queda <strong>en camino</strong>, su plazo se detiene y, cuando
-      llega, queda lista sola y se le avisa al cliente. Si el traslado no sale
-      o llega sólo una parte, aparece <strong>Resolver</strong>: pedirlo a
-      otra sala, a Bodega, o seguir el punto siguiente.</li>
-      <li><strong>Si ninguna sala ni Bodega lo tiene</strong>, se le ofrece al
-      cliente convertirla en <strong>encargo especial</strong> (sección 5). Si
-      no quiere esperar, o el proveedor tampoco lo puede conseguir, se cancela
-      en ese momento con el motivo, que le llega al cliente. Lo mismo si lo
-      que hay está dañado o vencido. Nunca se deja vencer: una reserva que
-      vence por la sala es un incumplimiento (2.5).</li>
-      <li><strong>Receta.</strong> Un producto bajo receta llega <strong>en
-      revisión</strong>. Quien tenga el permiso de revisar recetas toca
-      <strong>Ver receta</strong> y decide: <strong>Aprobar</strong> si es
+      <li><strong>Preparación.</strong> El dependiente busca el producto,
+      verifica que esté en buen estado y vigente, y lo separa en el lugar de
+      reservas con una etiqueta que indique el código y el nombre del cliente.
+      Después marca la reserva como lista con <strong>Apartar y
+      avisar</strong>, y el cliente recibe el aviso en la aplicación. Si el
+      cliente no tiene la aplicación, el portal abre WhatsApp con el mensaje
+      redactado, y el dependiente debe enviarlo (sección 9).</li>
+      <li><strong>Producto en otra sala.</strong> Si la sala no lo tiene, lo
+      solicita con <strong>Traer de otra sala</strong> a una sala que lo tenga
+      o, si ninguna lo tiene, a Bodega. La reserva queda <strong>en
+      camino</strong> y su plazo se detiene; cuando el producto llega, la
+      reserva queda lista y se avisa al cliente. Si el traslado no sale o
+      llega incompleto, se usa <strong>Resolver</strong> para pedirlo a otra
+      sala, a Bodega, o proceder conforme a la cláusula siguiente.</li>
+      <li><strong>Producto que no hay.</strong> Si ninguna sala ni Bodega lo
+      tiene, se ofrece al cliente convertir la reserva en <strong>encargo
+      especial</strong> (sección 5). Si el cliente no desea esperar, o el
+      proveedor tampoco puede conseguirlo, la reserva se cancela de inmediato
+      indicando el motivo, que se comunica al cliente. Se procede igual si el
+      producto disponible está dañado o vencido. Una reserva nunca se deja
+      vencer por la sala (cláusula 2.5).</li>
+      <li><strong>Receta.</strong> Una reserva con producto bajo receta llega
+      <strong>en revisión</strong>. Quien tenga el permiso abre la receta con
+      <strong>Ver receta</strong> y resuelve: <strong>Aprobar</strong>, si es
       legible, vigente y corresponde a lo reservado; <strong>Pedir otra
-      foto</strong>, con el motivo, si no se lee o falta un dato; o
-      <strong>Rechazar</strong>. En un pedido, rechazar cancela sólo los
-      productos bajo receta. Al retirar, la receta física se pide igual.</li>
-      <li><strong>Pagada en línea.</strong> La reserva lo dice, y en caja
-      <strong>no se vuelve a cobrar</strong>.</li>
-      <li><strong>Crédito fiscal.</strong> Si el cliente lo pidió, la reserva
-      muestra nombre, NIT, NRC, giro y dirección: se factura con esos
+      foto</strong>, indicando el motivo, si no se lee o le falta un dato; o
+      <strong>Rechazar</strong>. En un pedido, el rechazo cancela sólo los
+      productos bajo receta. Al retirar, la receta física se solicita
+      igualmente.</li>
+      <li><strong>Pago en línea.</strong> Si la reserva figura como pagada en
+      línea, en caja no se vuelve a cobrar.</li>
+      <li><strong>Crédito fiscal.</strong> Si el cliente lo solicitó, la
+      reserva muestra nombre, NIT, NRC, giro y dirección, y se factura con esos
       datos.</li>
     </ol>
   </section>
 
   <section>
-    <h2><span class="num">4</span> Reservar en la sala</h2>
+    <h2><span class="num">4</span> Reserva en la sala</h2>
     <ol class="clausulas">
-      <li><strong>Cliente.</strong> Se busca su ficha; si no tiene, se
-      registra. Se <strong>confirma el teléfono</strong> en el mismo diálogo y,
-      si cambió, se corrige ahí: es por donde se le avisa.</li>
+      <li><strong>Cliente.</strong> Se busca la ficha del cliente y, si no
+      existe, se registra. Se <strong>confirma su teléfono</strong> en el mismo
+      diálogo y, si cambió, se corrige ahí, porque es el medio por el que se le
+      avisa.</li>
       <li><strong>Producto.</strong> Se elige del catálogo, con su
-      presentación. El portal decide solo: si hay en la sala, se
-      <strong>reserva</strong>; si no hay pero sí en otra sala, ofrece
-      <strong>traerlo</strong> y reservarlo en el mismo acto; si no hay en
-      ninguna, se <strong>encarga</strong> (sección 5).</li>
-      <li><strong>Pago.</strong> El cliente elige: no pagar nada (siete días),
-      dejar un <strong>anticipo</strong> —un pago parcial, sin mínimo— (treinta
-      días) o pagar el total (sesenta días). En productos de muy baja rotación
-      se recomienda el pago total, porque si el cliente no vuelve el producto
-      queda sin salida.</li>
-      <li><strong>Cómo paga.</strong>
+      presentación. Si hay en la sala, se <strong>reserva</strong>; si no hay
+      pero sí en otra sala, el portal ofrece <strong>traerlo</strong> y
+      reservarlo en el mismo acto; si no hay en ninguna, se
+      <strong>encarga</strong> (sección 5).</li>
+      <li><strong>Pago.</strong> El cliente elige no pagar, dejar un
+      <strong>anticipo</strong> —un pago parcial, sin monto mínimo— o pagar el
+      total, con los plazos de la cláusula 2.3. En productos de muy baja
+      rotación se recomienda el pago total, porque si el cliente no regresa el
+      producto queda sin salida.</li>
+      <li><strong>Forma de pago.</strong>
         <ul class="viñetas">
           <li><strong>En caja</strong>: efectivo, tarjeta o transferencia, con
-          su comprobante cuando corresponde. Entra a la caja de la sala;</li>
-          <li><strong>Enlace de pago</strong>: el portal arma el enlace y se le
-          manda al cliente con <strong>Mandar por WhatsApp</strong> o <strong>Copiar enlace</strong>. No
-          entra a la caja. Mientras paga, la reserva tiene el plazo de sin pago;
-          cuando paga, la sala recibe el aviso <strong>Anticipo en línea</strong> y el plazo
-          pasa a treinta días si fue un anticipo, o a sesenta si fue el
-          total.</li>
+          su comprobante cuando corresponda. El pago ingresa a la caja de la
+          sala;</li>
+          <li><strong>Enlace de pago</strong>: el portal genera el enlace y se
+          envía al cliente con <strong>Mandar por WhatsApp</strong> o
+          <strong>Copiar enlace</strong>. No ingresa a la caja. Mientras el
+          cliente no paga, rige el plazo de la reserva sin pago; al recibir el
+          pago, la sala recibe el aviso <strong>Anticipo en línea</strong> y el
+          plazo pasa al que corresponda a lo pagado.</li>
         </ul>
       </li>
-      <li><strong>Comprobante.</strong> Se imprime y se le entrega al cliente.
-      El producto se separa con una etiqueta con el código y el nombre del
-      cliente.</li>
-      <li><strong>Traído de otra sala.</strong> La reserva queda <strong>en camino</strong>
-      y se pide el traslado. Cuando llega, queda lista sola —o con
-      <strong>Ya llegó: apartar</strong>— y se avisa al cliente.</li>
-      <li><strong>Si no llegó completo.</strong> Se abre
-      <strong>Resolver</strong> y se sigue este orden: pedir lo que falta a
-      otra sala; si ninguna lo tiene, a Bodega; si tampoco, ofrecer encargo
-      especial; y si el cliente no quiere esperar, lo que él decida: quedarse
-      con lo que llegó, llevar otro producto en su lugar, o cancelar —lo pagado
-      queda a su favor—. Las cuentas las hace el sistema y se muestran antes
-      de confirmar.</li>
+      <li><strong>Comprobante.</strong> Se imprime y se entrega al cliente. El
+      producto se separa con una etiqueta que indique el código y el nombre
+      del cliente.</li>
+      <li><strong>Producto traído de otra sala.</strong> La reserva queda
+      <strong>en camino</strong> y se solicita el traslado. Cuando llega, la
+      reserva queda lista —o se marca con <strong>Ya llegó:
+      apartar</strong>— y se avisa al cliente.</li>
+      <li><strong>Traslado incompleto.</strong> Con <strong>Resolver</strong>
+      se sigue este orden: pedir lo que falta a otra sala; si ninguna lo
+      tiene, a Bodega; si tampoco, ofrecer un encargo especial; y si el cliente
+      no desea esperar, lo que él decida: quedarse con lo que llegó, llevar
+      otro producto en su lugar o cancelar, en cuyo caso lo pagado queda como
+      saldo a favor. El sistema calcula los montos y los muestra antes de
+      confirmar.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">5</span> Encargos especiales</h2>
     <ol class="clausulas">
-      <li><strong>Registro.</strong> Sólo cuando el producto no hay en ninguna
-      sala ni en Bodega, o no está en el catálogo. En la sala, desde
-      <strong>Apartar o encargar</strong>: si no está en el catálogo, se escribe el nombre,
-      se busca en el registro sanitario y se agrega una foto si se tiene.
-      <strong>No se cobra nada</strong>; se imprime la constancia. El cliente
-      también lo puede pedir desde la aplicación: llega solo a la sala y a
+      <li><strong>Registro.</strong> Procede sólo cuando el producto no está
+      disponible en ninguna sala ni en Bodega, o no forma parte del catálogo.
+      En la sala se registra desde <strong>Apartar o encargar</strong>; si el
+      producto no está en el catálogo, se escribe su nombre, se verifica en el
+      registro sanitario y se agrega una foto si se tiene. <strong>No se cobra
+      nada</strong> y se imprime la constancia. El cliente también puede
+      pedirlo desde la aplicación; en ese caso la solicitud llega a la sala y a
       Bodega.</li>
-      <li><strong>Bodega responde.</strong> Confirma
-      el precio por unidad y la fecha estimada (<strong>Confirmar y
-      avisar</strong>), o dice que no se puede conseguir, con un motivo para el
-      cliente. Si el producto es nuevo, lo crea en el sistema y lo vincula al
-      encargo (<strong>Vincular producto</strong>): sin eso no se puede
-      marcar que llegó.</li>
-      <li><strong>Cobro del 100 %.</strong> El cliente lo paga desde la
-      aplicación, o en la sala desde <strong>Por cobrar</strong>, en caja o
-      con enlace de pago. Sin pago no se pide al proveedor.</li>
-      <li><strong>Pedido.</strong> Al pedirlo al proveedor se marca
-      <strong>Pedido</strong>. Si la fecha estimada cambia, se le avisa al cliente.</li>
-      <li><strong>Llegó.</strong> Se marca <strong>Llegó</strong>, se separa
-      con una etiqueta con el nombre del cliente y se le avisa (sección 9).
-      Tiene un máximo de sesenta días para retirarlo.</li>
-      <li><strong>Sin retirar.</strong> Pasados los sesenta días, el encargo
-      muestra <strong>Sin retirar · llamar</strong> y la sala recibe el aviso. <strong>Se
-      llama al cliente</strong> y se anota la llamada (sección 9). Si no
-      contesta o desiste, <strong>Pasar a saldo a favor</strong>, con el
-      motivo: lo pagado queda a su favor y el producto pasa a la venta.</li>
-      <li><strong>Si el proveedor no entrega,</strong> el cliente elige:
-      aplicar lo pagado a otro producto, o la devolución completa, que se
-      tramita como devolución en efectivo (8.3) indicando que el proveedor no
-      entregó.</li>
+      <li><strong>Respuesta de Bodega.</strong> Bodega confirma el precio por
+      unidad y la fecha estimada con <strong>Confirmar y avisar</strong>, o
+      informa que no se puede conseguir, con el motivo para el cliente. Si el
+      producto es nuevo, lo crea en el sistema y lo vincula al encargo con
+      <strong>Vincular producto</strong>; sin ese paso no se puede registrar su
+      llegada.</li>
+      <li><strong>Cobro del cien por ciento (100 %).</strong> El cliente lo paga
+      desde la aplicación, o en la sala desde <strong>Por cobrar</strong>, en
+      caja o con enlace de pago. Sin el pago, no se solicita al
+      proveedor.</li>
+      <li><strong>Pedido.</strong> Al solicitarlo al proveedor se marca como
+      <strong>Pedido</strong>. Si la fecha estimada cambia, se avisa al
+      cliente.</li>
+      <li><strong>Llegada.</strong> Se marca <strong>Llegó</strong>, se separa
+      con una etiqueta con el nombre del cliente y se le avisa (sección 9). El
+      cliente dispone de un máximo de sesenta (60) días para retirarlo.</li>
+      <li><strong>Encargo sin retirar.</strong> Vencido ese plazo, el encargo
+      aparece como <strong>Sin retirar · llamar</strong> y la sala recibe el
+      aviso. Se llama al cliente y se registra la llamada (sección 9). Si no
+      contesta o desiste, se usa <strong>Pasar a saldo a favor</strong>,
+      indicando el motivo: lo pagado queda a su favor y el producto pasa a la
+      venta.</li>
+      <li><strong>Proveedor que no entrega.</strong> El cliente elige entre
+      aplicar lo pagado a otro producto o la devolución completa, que se
+      tramita como devolución en efectivo (cláusula 8.3) indicando que el
+      proveedor no entregó.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">6</span> Retiro</h2>
     <ol class="clausulas">
-      <li><strong>Encontrarla.</strong> Se escanea o se escribe el código en
-      el buscador de Reservas. Si el cliente no lo trae, se busca por su
+      <li><strong>Búsqueda.</strong> Se escanea o se escribe el código en el
+      buscador de Reservas. Si el cliente no lo presenta, se busca por su
       nombre, documento o teléfono.</li>
-      <li><strong>Verificar quién retira.</strong> Se entrega a quien presente
-      el comprobante o el código. Sin ellos, sólo al titular, con su documento
-      de identidad. Un producto bajo receta se entrega únicamente contra
-      receta vigente.</li>
-      <li><strong>Revisar el producto con el cliente</strong>: que sea el
-      reservado, en la cantidad y presentación correctas, en buen estado y
+      <li><strong>Quién retira.</strong> Se entrega a quien presente el
+      comprobante o el código. Sin ellos, sólo al titular, con su documento de
+      identidad. Un producto bajo receta se entrega únicamente contra receta
       vigente.</li>
-      <li><strong>Facturar.</strong> La factura sale siempre <strong>a nombre
-      del titular</strong>, así acumula sus puntos.
+      <li><strong>Revisión.</strong> Se verifica con el cliente que el producto
+      sea el reservado, en la cantidad y presentación correctas, en buen estado
+      y vigente.</li>
+      <li><strong>Facturación.</strong> La factura se emite siempre <strong>a
+      nombre del titular</strong>, para que acumule sus puntos.
         <ul class="viñetas">
-          <li><strong>Con algo pagado</strong>, siempre con
-          <strong>Retirar</strong>: el portal descuenta lo ya pagado y en
-          caja se cobra sólo lo que falta. Nunca se factura aparte ni se vuelve
-          a cobrar lo pagado.</li>
-          <li><strong>Sin pago</strong>, con <strong>Enviar a caja</strong>:
-          la venta queda armada en caja con el producto, el cliente y quien la
+          <li><strong>Con algún pago</strong>, siempre con
+          <strong>Retirar</strong>: el portal descuenta lo pagado y en caja se
+          cobra sólo lo que falta. Nunca se factura por separado ni se cobra de
+          nuevo lo pagado.</li>
+          <li><strong>Sin pago</strong>, con <strong>Enviar a caja</strong>: la
+          venta queda preparada en caja con el producto, el cliente y quien la
           envía como vendedor.</li>
         </ul>
       </li>
-      <li><strong>Plazo vencido.</strong> Si la reserva ya venció, no se
-      entrega por ella: el producto volvió a la venta y lo pagado es saldo a
-      favor, que el cliente puede usar en esa misma compra (sección 8).</li>
+      <li><strong>Plazo vencido.</strong> Una reserva vencida ya no ampara la
+      entrega: el producto volvió a la venta y lo pagado es saldo a favor, que
+      el cliente puede usar en esa misma compra (sección 8).</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">7</span> Cancelaciones y vencimientos</h2>
     <ol class="clausulas">
-      <li><strong>La sala cancela</strong> con el motivo, que le llega al
+      <li>La sala cancela una reserva indicando el motivo, que se comunica al
       cliente: porque desistió, porque no se pudo conseguir el producto o
-      porque la receta no corresponde. Lo pagado pasa a saldo a favor
-      solo.</li>
-      <li><strong>El cliente cancela</strong> desde la aplicación cualquier
-      reserva que vea ahí, o en la sala. Si lo hace desde la aplicación, la
-      sala recibe el aviso.</li>
-      <li><strong>Al cancelar o vencer, el producto vuelve al estante el mismo
-      día.</strong> El sistema ya lo libera para la venta: si sigue en el
-      lugar de reservas, se pierde una venta y la existencia no cuadra.</li>
-      <li>Una reserva ya facturada no se cancela: es una venta hecha.</li>
+      porque la receta no corresponde. Lo pagado pasa a saldo a favor de forma
+      automática.</li>
+      <li>El cliente puede cancelar cualquier reserva desde la aplicación o en
+      la sala. Si lo hace desde la aplicación, la sala recibe el aviso.</li>
+      <li><strong>Al cancelarse o vencer una reserva, el producto se devuelve
+      al estante el mismo día.</strong> El sistema ya lo libera para la venta:
+      si permanece en el lugar de reservas, se pierde una venta y la existencia
+      no cuadra.</li>
+      <li>Una reserva ya facturada no se cancela, porque constituye una venta
+      realizada.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">8</span> Saldo a favor</h2>
     <ol class="clausulas">
-      <li><strong>Vale en cualquier sala.</strong> Se busca por el código o
-      con la tarjeta de Puntos Salud, el documento o el teléfono del titular,
-      y se toca <strong>Usar en caja</strong>: se confirma al titular y se
-      elige cuánto usar.</li>
-      <li><strong>La factura va a nombre del titular.</strong> El monto pasa a
-      sus puntos y la caja lo descuenta como un canje. Si en una hora ninguna
-      factura a su nombre lo descontó —por ejemplo, salió como consumidor
-      final—, el monto vuelve al saldo y la sala recibe un aviso para revisar
-      esa venta con el cliente.</li>
-      <li><strong>Devolución en efectivo.</strong> Es una excepción. La sala
-      la pide con <strong>Pedir en efectivo</strong> y el motivo;
-      administración la <strong>autoriza</strong> o la
-      <strong>niega</strong>; si la autoriza, la sala la entrega con
-      <strong>Entregar en efectivo</strong>, que sale de la caja como vale
-      <strong>Devolución a un cliente</strong>. Nadie entrega dinero sin la autorización en el
-      sistema.</li>
-      <li>El saldo vence al año. El sistema le avisa al cliente siete días
-      antes y el día del vencimiento.</li>
+      <li><strong>Uso.</strong> El saldo a favor vale en cualquier sala. Se
+      busca por el código o con la tarjeta de Puntos Salud, el documento o el
+      teléfono del titular, y se aplica con <strong>Usar en caja</strong>,
+      confirmando al titular y el monto a usar.</li>
+      <li><strong>Factura a nombre del titular.</strong> El monto se acredita en
+      sus puntos y la caja lo descuenta como un canje. Si en el plazo de una
+      hora ninguna factura a su nombre lo descontó —por ejemplo, porque se
+      facturó como consumidor final—, el monto regresa al saldo y la sala
+      recibe un aviso para revisar esa venta con el cliente.</li>
+      <li><strong>Devolución en efectivo.</strong> Es una excepción. La sala la
+      solicita con <strong>Pedir en efectivo</strong>, indicando el motivo;
+      administración la <strong>autoriza</strong> o la <strong>niega</strong>;
+      si la autoriza, la sala la entrega con <strong>Entregar en
+      efectivo</strong>, que se registra en la caja como vale
+      <strong>Devolución a un cliente</strong>. Nadie entrega dinero sin la
+      autorización registrada en el sistema.</li>
+      <li><strong>Vencimiento.</strong> El saldo vence al año. El sistema avisa
+      al cliente siete (7) días antes y el día del vencimiento.</li>
     </ol>
   </section>
 
@@ -455,35 +471,38 @@
     <h2><span class="num">9</span> Avisos</h2>
     <ol class="clausulas">
       <li><strong>Todo aviso al cliente queda registrado</strong>, porque el
-      plazo para retirar corre desde que se avisa. Es la prueba de que se le
-      avisó a tiempo:
+      plazo para retirar corre desde que se le avisa y el registro es la prueba
+      de que se hizo a tiempo:
         <ul class="viñetas">
-          <li><strong>Aplicación</strong>: el sistema guarda solo cuándo se
-          envió y cuándo el cliente lo leyó;</li>
+          <li><strong>Aplicación</strong>: el sistema registra cuándo se envió
+          el aviso y cuándo lo leyó el cliente;</li>
           <li><strong>WhatsApp</strong>: se envía desde el botón del portal, que
-          guarda quién avisó y cuándo; nunca desde un teléfono por fuera;</li>
+          registra quién avisó y cuándo; nunca desde un teléfono fuera del
+          sistema;</li>
           <li><strong>Llamada</strong>: se anota en la reserva quién llamó,
-          cuándo y qué respondió el cliente, también si no contestó.</li>
+          cuándo y qué respondió el cliente, aunque no haya contestado.</li>
         </ul>
       </li>
-      <li><strong>Avisos que recibe el personal</strong>, y qué pide cada uno:
+      <li><strong>Avisos al personal</strong> y la acción que corresponde a
+      cada uno:
         <ul class="viñetas">
-          <li><strong>Reserva nueva de la aplicación</strong> → prepararla
-          (máximo 24 h);</li>
-          <li><strong>Receta por revisar</strong> → revisarla (máximo 24 h);</li>
-          <li><strong>Encargo especial nuevo</strong> → Bodega lo responde;</li>
-          <li><strong>Existencia por debajo de lo reservado</strong> → revisar
-          la reserva antes de que el cliente llegue;</li>
-          <li><strong>Anticipo en línea recibido</strong> → nada: el plazo ya
-          se ajustó; es para que la sala lo sepa;</li>
-          <li><strong>El cliente canceló</strong> → devolver el producto al
+          <li><strong>Reserva nueva de la aplicación</strong>: prepararla en un
+          máximo de veinticuatro (24) horas;</li>
+          <li><strong>Receta por revisar</strong>: revisarla en un máximo de
+          veinticuatro (24) horas;</li>
+          <li><strong>Encargo especial nuevo</strong>: Bodega lo responde;</li>
+          <li><strong>Existencia por debajo de lo reservado</strong>: revisar la
+          reserva antes de que el cliente llegue;</li>
+          <li><strong>Anticipo en línea recibido</strong>: ninguna; el plazo ya
+          se ajustó y el aviso es informativo;</li>
+          <li><strong>El cliente canceló</strong>: devolver el producto al
           estante;</li>
-          <li><strong>Encargo especial sin retirar</strong> → llamar al cliente
-          y anotarlo (5.6);</li>
-          <li><strong>Saldo a favor no descontado</strong> → revisar la venta
-          con el cliente (8.2);</li>
-          <li><strong>Reserva vencida por la sala</strong> → le llega a
-          supervisión de ventas y a la jefatura (2.5).</li>
+          <li><strong>Encargo especial sin retirar</strong>: llamar al cliente y
+          registrar la llamada (cláusula 5.6);</li>
+          <li><strong>Saldo a favor no descontado</strong>: revisar la venta con
+          el cliente (cláusula 8.2);</li>
+          <li><strong>Reserva vencida por la sala</strong>: llega a supervisión
+          de ventas y a la jefatura (cláusula 2.5).</li>
         </ul>
       </li>
     </ol>
@@ -495,16 +514,18 @@
       <li><strong>Dependientes</strong>: preparar, reservar, cobrar, avisar y
       registrar cada aviso, entregar, y devolver al estante lo que se cancela o
       vence.</li>
-      <li><strong>Quien revisa recetas</strong>: decidir cada receta en un
-      máximo de 24 horas.</li>
+      <li><strong>Quien revisa recetas</strong>: resolver cada receta en un
+      máximo de veinticuatro (24) horas.</li>
       <li><strong>Jefatura de sala</strong>: que ninguna reserva venza por la
-      sala y que se respete la prioridad (2.6). Revisa Reservas al abrir y
-      antes de cerrar, y responde a supervisión por cada vencida.</li>
-      <li><strong>Bodega (Compras y Logística)</strong>: responder los
-      encargos especiales con precio y fecha,
-      vincular los productos nuevos, pedirlos y marcar <strong>Pedido</strong>.</li>
+      sala y que se respete la prioridad de la cláusula 2.6. Revisa Reservas al
+      abrir y antes de cerrar, y responde a supervisión por cada reserva
+      vencida.</li>
+      <li><strong>Bodega (Compras y Logística)</strong>: responder los encargos
+      especiales con precio y fecha, vincular los productos nuevos, solicitarlos
+      al proveedor y marcarlos como <strong>Pedido</strong>.</li>
       <li><strong>Supervisión de ventas</strong>: dar seguimiento a las
-      reservas vencidas por la sala y a que cada sala cumpla los plazos.</li>
+      reservas vencidas por la sala y al cumplimiento de los plazos de cada
+      sala.</li>
       <li><strong>Administración</strong>: autorizar o negar las devoluciones
       en efectivo.</li>
     </ol>

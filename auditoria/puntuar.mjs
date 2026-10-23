@@ -246,11 +246,6 @@ const PENDIENTES = {
                         // de crédito se reescribió entero —reclamo atómico, clave por
                         // intento, firma del servidor—, y el origen no deshace un abono.
                         'falta el PRIMER cobro de crédito real con el código nuevo (reclamo atómico y firma del servidor, b596827ce)'],
-    // Segunda revisión 2026-10-23: la sección F de gate:perf levantó la cola de
-    // Pendiente MH (363 MB por llamada). Se declaró con `deuda: true` en
-    // scripts/bloques-por-llamada.json —protege contra que crezca—, pero nadie
-    // la auditó todavía.
-    'facturacion-dte': ['get_pending_mh_invoices lee 363 MB por llamada: declarada como deuda en bloques-por-llamada.json, sin auditar el plan'],
     // Medido el 2026-08-24: son SIETE pares, no seis (creció uno el 1-ago), y dos
     // de ellos tienen proveedores DISTINTOS bajo el mismo sello — o sea que uno
     // de los dos lo tiene mal asignado. Ver §8.20 del informe.

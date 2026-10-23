@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.2 — Pendiente MH abre en milisegundos
+
+- **La cola de Pendiente MH ya no tarda.** Cada vez que alguien la abría, la base recorría unas 197,000 facturas (363 MB) para encontrar las pocas sin sello, y tardaba de 300 a 4,000 ms. Ahora tarda de 2 a 18 ms y devuelve exactamente las mismas facturas.
+- La consulta estaba bien escrita y su índice ya existía; lo que fallaba era la estimación. La base creía que unas 150,000 facturas no tenían sello cuando son unas 500, y por eso no usaba el índice. Se le agregó una estadística del largo del sello (migración `estadistica_del_sello_de_hacienda`); no bloquea a los procesos que escriben facturas.
+- Se quita la deuda de `bloques-por-llamada.json` y el pendiente de Facturación en la auditoría, que pasa a 95%.
+
 ## v2.1351.1 — Alcance: el cargo de revisión de Google Play queda como está, por decisión
 
 - El cargo «Revisión de tienda (Google Play)» —una sola cuenta, la que usa la revisión de la tienda— tiene módulos de toda la red con alcance de una sala. Se deja así por decisión del usuario. El control de alcance lo acepta porque está declarado con su motivo. Si deja de tener esos módulos, el control avisa para quitarlo de la lista. Cualquier otro cargo de sala con un módulo de red sigue fallando.

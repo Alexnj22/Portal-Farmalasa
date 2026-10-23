@@ -1355,11 +1355,9 @@
     "facturacion-dte": {
       "ejes": {
         "flujo": {
-          "pct": 89,
-          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
-          "hallazgos": [
-            "get_pending_mh_invoices lee 363 MB por llamada: declarada como deuda en bloques-por-llamada.json, sin auditar el plan"
-          ]
+          "pct": 95,
+          "evidencia": "sin pendientes declarados en memoria",
+          "hallazgos": []
         },
         "datos": {
           "pct": 95,

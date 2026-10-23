@@ -899,5 +899,8 @@
     "inventario-evidencia": {
       "motivo": "Fotos de cajas de envíos de producto (`envios/<sala>/…`), sin datos personales ni dinero: 7 archivos al 2026-10-02. Si empieza a guardar otra cosa, se acota por sala como payment-proofs."
     }
+  },
+  "cargos_de_sala_con_modulos_de_red": {
+    "Revisión de tienda (Google Play)": "Cuenta única (1 activa) que usa la revisión de Google Play para recorrer la app. Tiene módulos de toda la red con alcance de una sala a propósito: decisión del usuario el 2026-10-23 («está bien así como está»). Si el cargo suma personas reales, se revisa."
   }
 }

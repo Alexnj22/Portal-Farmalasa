@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.1 — Alcance: el cargo de revisión de Google Play queda como está, por decisión
+
+- El cargo «Revisión de tienda (Google Play)» —una sola cuenta, la que usa la revisión de la tienda— tiene módulos de toda la red con alcance de una sala. Se deja así por decisión del usuario. El control de alcance lo acepta porque está declarado con su motivo. Si deja de tener esos módulos, el control avisa para quitarlo de la lista. Cualquier otro cargo de sala con un módulo de red sigue fallando.
+
 ## v2.1351.0 — Las dos caras de licencias, carnés y tarjetas desde el teléfono, con un solo QR
 
 En el alta y la edición de personal, el DUI se subía desde el teléfono con un

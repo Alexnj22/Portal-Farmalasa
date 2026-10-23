@@ -210,8 +210,14 @@ if (!arg('--hook')) {
          where rp.module_key in (${lista})
            and coalesce(rp.scope, 'ALL') <> 'ALL'
            and (rp.can_view or rp.can_edit or coalesce(rp.can_approve, false))`);
+      // Cargos de una sala que tienen módulos «de red» por DECISIÓN, no por
+      // descuido: van en `cargos_de_sala_con_modulos_de_red` con su motivo.
+      const aceptados = MANIFIESTO.cargos_de_sala_con_modulos_de_red ?? {};
+      for (const c of Object.keys(aceptados)) {
+        if (!deSala.some((x) => x.cargo === c)) fallar(`cargo ${c}`, 'declarado en `cargos_de_sala_con_modulos_de_red` y ya no tiene módulos de red con alcance de una sala — sacarlo de la lista');
+      }
       for (const [donde, m] of modulosAVerificar) {
-        for (const f of deSala.filter((x) => x.modulo === m)) {
+        for (const f of deSala.filter((x) => x.modulo === m && !aceptados[x.cargo])) {
           fallar(donde, `«modulo-de-red» pero el cargo «${f.cargo}» (${f.activos} activos) tiene «${m}» con alcance de una sala — esta función ya no frena a nadie`);
         }
       }

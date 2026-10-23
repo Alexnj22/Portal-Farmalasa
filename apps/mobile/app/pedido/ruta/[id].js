@@ -50,7 +50,7 @@ function Pin({ texto, color, alto = 28 }) {
 }
 
 const MOTIVO_GPS = {
-  denegado: 'El teléfono no da permiso de ubicación: Bodega no ve dónde vas. Se activa en Ajustes › Farmalasa › Ubicación.',
+  denegado: 'El teléfono no da permiso de ubicación: Bodega no ve dónde vas. Se activa en Ajustes › FarmaSalud › Ubicación.',
   'sin-senal': 'Sin señal de GPS por ahora.',
   'sin-gps': 'El GPS del teléfono no respondió.',
 };

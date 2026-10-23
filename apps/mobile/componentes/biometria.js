@@ -63,7 +63,7 @@ export async function leerConBiometria() {
   try {
     const crudo = await SecureStore.getItemAsync(CREDENCIALES, {
       requireAuthentication: true,
-      authenticationPrompt: 'Entrar a Farmalasa',
+      authenticationPrompt: 'Entrar a Portal Farmasalud',
     });
     return crudo ? JSON.parse(crudo) : null;
   } catch {

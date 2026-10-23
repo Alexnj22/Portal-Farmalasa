@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.15 — fix(app): la app se presenta como Portal Farmasalud
+
+- **La app decía «Farmalasa»** en la pantalla de entrada y al pedir la huella; ahora dice **Portal Farmasalud**. Los avisos de ubicación mandaban a «Ajustes › Farmalasa», que no existe en el teléfono: la app instalada se llama FarmaSalud.
+
 ## v2.1350.14 — fix(personal): el alta crea usuario aunque el nombre venga de leer el DUI
 
 - **Un empleado dado de alta leyendo su DUI quedaba sin usuario del portal**: el usuario sólo se generaba al teclear el nombre, así que cuando el nombre entraba por la lectura del DUI (o por un borrador) la ficha se guardaba sin usuario y sin acceso, sin ningún aviso. Ahora el alta lo deriva del nombre al guardar; al enlazar con una ficha existente conserva el que ya tenía.

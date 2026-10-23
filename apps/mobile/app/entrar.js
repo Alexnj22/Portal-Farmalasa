@@ -189,7 +189,7 @@ export default function Entrar() {
           <Image source={require('../assets/icono.png')} style={{ width: 96, height: 96, borderRadius: 24 }} />
         </View>
         <Text style={{ color: colorSistema.texto, fontSize: 30, fontWeight: '800', letterSpacing: -0.5 }}>
-          {pendiente ? 'Elige tu contraseña' : 'Farmalasa'}
+          {pendiente ? 'Elige tu contraseña' : 'Portal Farmasalud'}
         </Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginHorizontal: 32 }}>
           {pendiente ? 'Es tu primera entrada: la contraseña que te dieron es temporal.' : 'Portal del equipo'}

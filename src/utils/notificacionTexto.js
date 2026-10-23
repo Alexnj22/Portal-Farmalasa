@@ -90,7 +90,7 @@ export const enlaceDeAviso = (n) => {
     const conv = n?.type === 'CHAT_CLIENTE' || n?.type === 'CHAT_INCUMPLIMIENTO' ? n?.metadata?.conversacion_id : null;
     if (conv != null && /^\d+$/.test(String(conv))) return `/chat-clientes?c=${conv}`;
     if (n?.link) return n.link;
-    return n?.metadata?.request_id ? `/requests?solicitud=${n.metadata.request_id}` : null;
+    return n?.metadata?.request_id ? `/solicitudes?solicitud=${n.metadata.request_id}` : null;
 };
 
 /* El recordatorio de las 7:30 nombra UNO o VARIOS cortes según lo que haya

@@ -144,6 +144,7 @@ export type Database = {
           metadata: Json | null
           prev_read_by: Json
           priority: string
+          push_enviado_at: string | null
           read_by: Json
           scheduled_for: string | null
           target_type: string
@@ -160,6 +161,7 @@ export type Database = {
           metadata?: Json | null
           prev_read_by?: Json
           priority?: string
+          push_enviado_at?: string | null
           read_by?: Json
           scheduled_for?: string | null
           target_type: string
@@ -176,6 +178,7 @@ export type Database = {
           metadata?: Json | null
           prev_read_by?: Json
           priority?: string
+          push_enviado_at?: string | null
           read_by?: Json
           scheduled_for?: string | null
           target_type?: string
@@ -28405,6 +28408,10 @@ export type Database = {
         Returns: Json
       }
       audit_log_de_sucursal: { Args: { p_branch_id: string }; Returns: Json }
+      audiencia_de_aviso: {
+        Args: { p_target_type: string; p_target_value: Json }
+        Returns: string[]
+      }
       auth_can_edit_any: { Args: { p_modules: string[] }; Returns: boolean }
       auth_can_edit_scope_all: {
         Args: { p_modules: string[] }
@@ -28518,6 +28525,7 @@ export type Database = {
         Args: { p_ids: string[]; p_payload: Json }
         Returns: string[]
       }
+      avisos_programados_enviar_push: { Args: never; Returns: number }
       backfill_daily_stats_chunk: { Args: never; Returns: string }
       backup_dump_table: { Args: { p_table: string }; Returns: Json }
       bitacora_ahora_sv: { Args: never; Returns: string }
@@ -28860,6 +28868,7 @@ export type Database = {
         Args: { p_motivo: string; p_request_id: string }
         Returns: boolean
       }
+      cancelar_mi_solicitud: { Args: { p_solicitud: string }; Returns: Json }
       canjear_codigo_de_vinculacion: {
         Args: { p_codigo: string; p_equipo?: string; p_impresora?: string }
         Returns: {
@@ -29515,6 +29524,15 @@ export type Database = {
           p_motivo: string
           p_pagar: boolean
           p_semestre: string
+        }
+        Returns: Json
+      }
+      decidir_cambio_de_turno_como_par: {
+        Args: {
+          p_aprobar: boolean
+          p_nota?: string
+          p_siguiente?: string
+          p_solicitud: string
         }
         Returns: Json
       }
@@ -30354,6 +30372,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      enviar_push_de_aviso: { Args: { p_id: string }; Returns: boolean }
       envio_json: { Args: { p_request_id: string }; Returns: Json }
       envios_json: {
         Args: { p_ids: string[] }

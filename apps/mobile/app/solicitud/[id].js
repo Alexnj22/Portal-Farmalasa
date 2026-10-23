@@ -33,7 +33,7 @@ import { detalleDeMinMax, detalleDeSolicitud } from '@nucleo/utils/tarjetaDeSoli
 import { puedeDecidirAviso } from '@nucleo/utils/accionesDeAviso';
 import { REQUEST_STATUS, REQUEST_TYPES, adaptarMinMax } from '@nucleo/store/slices/requestsSlice';
 import { buscadorDePersonas, esParcial, fmtFechaHora } from '@nucleo/utils/movimientoTexto';
-import { deQuienEs } from '@nucleo/utils/bandejaDeSolicitudes';
+import { sePuedeCancelarPropia } from '@nucleo/utils/bandejaDeSolicitudes';
 import {
   acotarCantidad, ajustesPosibles, cantidadesIniciales, esAbonoPorConfirmar, faltaMotivo,
   lineasDeDecision, resumenDeDecision, rotulosDeDecision, seleccionInicial,
@@ -157,7 +157,7 @@ export default function Solicitud() {
 
   // Cancelar la propia: sólo pendiente y de quien la mandó. Min/Max vive en
   // otra tabla y su cancelación es otro camino (igual que en el portal).
-  const esPropiaPendiente = !!req && pendiente && deQuienEs(req) === String(user?.id ?? '') && tipo !== 'MINMAX_CHANGE_REQUEST';
+  const esPropiaPendiente = !!req && pendiente && sePuedeCancelarPropia({ ...req, status: 'PENDING', type: tipo }, user?.id);
 
   const terminar = (ok) => {
     setOcupado(false);

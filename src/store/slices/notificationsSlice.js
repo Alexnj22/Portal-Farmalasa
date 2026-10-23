@@ -1,8 +1,14 @@
 import {
     fetchNotifications as fetchNotificationsData, markNotificationRead as markNotificationReadData,
-    markNotificationsReadBulk, deleteNotificationsByIds as deleteNotificationsByIdsData,
+    markNotificationsReadBulk, markNotificationsReadBefore, deleteNotificationsByIds as deleteNotificationsByIdsData,
     deleteNotificationsBefore, restoreNotificationsByIds as restoreNotificationsByIdsData,
 } from '../../data/notifications';
+
+/* Los tipos de aviso que pueden estar esperando una decisión (los que mira
+   `avisoEsperaDecision`/`…ConMayoristas` en `utils/accionesDeAviso.js`).
+   «Leer todas» no los marca en el servidor a ciegas: cuáles se conservan lo
+   decide quien llama, aviso por aviso. */
+const TIPOS_QUE_ESPERAN_DECISION = ['REQUEST_PENDING', 'MINMAX_PENDING', 'MAYORISTA_SOLICITUD'];
 
 // ============================================================================
 // 🔔 NOTIFICACIONES — mensajes automáticos 1-a-1 (sistema → empleado)
@@ -127,17 +133,34 @@ export const createNotificationsSlice = (set, get) => ({
     // `conservar(n)`: lo que NO se marca —lo que todavía espera una decisión
     // (`avisoEsperaDecision`). «Leer todas» no contesta ninguna solicitud y no
     // puede sacarlas de la campana (2026-10-12).
+    //
+    // H14 (2026-10-23): la campana carga como mucho 100 no leídas, así que
+    // marcar sólo las cargadas dejaba aparecer otras 100 en el siguiente
+    // fetch. Lo que NO puede esperar una decisión se marca en el servidor hasta
+    // el momento del clic; lo de los tipos que sí pueden esperarla se resuelve
+    // con `conservar` sobre lo cargado, como antes. Y supabase-js no lanza:
+    // devuelve `{ error }`, que antes nadie miraba — la campana quedaba vacía,
+    // nada se marcaba y todo volvía en el próximo fetch.
     markAllNotificationsRead: async (/** @type {{ conservar?: (n: any) => boolean }} */ { conservar } = {}) => {
         const readAt = new Date().toISOString();
-        const unreadIds = get().notifications.filter(n => !n.read_at && !(conservar?.(n))).map(n => n.id);
-        if (!unreadIds.length) return;
+        const aMarcar = get().notifications.filter(n => !n.read_at && !(conservar?.(n)));
+        const unreadIds = aMarcar.map(n => n.id);
+        const decisiones = aMarcar.filter(n => TIPOS_QUE_ESPERAN_DECISION.includes(n.type)).map(n => n.id);
         set(state => ({
             notifications: state.notifications.filter(n => !unreadIds.includes(n.id)),
         }));
         try {
-            await markNotificationsReadBulk(unreadIds, readAt);
+            const [todo, sueltas] = await Promise.all([
+                markNotificationsReadBefore(readAt, readAt, TIPOS_QUE_ESPERAN_DECISION),
+                decisiones.length ? markNotificationsReadBulk(decisiones, readAt) : Promise.resolve({ error: null }),
+            ]);
+            const error = todo?.error || sueltas?.error;
+            if (error) throw error;
         } catch (err) {
             console.error('Error marcando notificaciones leídas:', err);
+            // Lo que se sacó de la pantalla sin quedar marcado vuelve: que se
+            // vea lo que de verdad hay, no una campana vacía que miente.
+            await get().fetchNotifications?.();
         }
     },
 
@@ -156,9 +179,11 @@ export const createNotificationsSlice = (set, get) => ({
         if (!idSet.size) return;
         set(state => ({ notifications: state.notifications.filter(n => !idSet.has(n.id)) }));
         try {
-            await deleteNotificationsByIdsData([...idSet]);
+            const res = await deleteNotificationsByIdsData([...idSet]);
+            if (res?.error) throw res.error;
         } catch (err) {
             console.error('Error borrando notificaciones:', err);
+            await get().fetchNotifications?.();
         }
     },
 
@@ -191,9 +216,11 @@ export const createNotificationsSlice = (set, get) => ({
         const cutoffIso = cutoff || new Date().toISOString();
         set(state => ({ notifications: state.notifications.filter(n => n.created_at > cutoffIso) }));
         try {
-            await deleteNotificationsBefore(cutoffIso);
+            const res = await deleteNotificationsBefore(cutoffIso);
+            if (res?.error) throw res.error;
         } catch (err) {
             console.error('Error borrando todas las notificaciones:', err);
+            await get().fetchNotifications?.();
         }
     },
 });

@@ -75,7 +75,9 @@ export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUs
     const elegida = FAMILIAS.find(f => f.key === familia) ?? null;
 
     // El selector de sala se ofrece SOLO con alcance sobre todas. Con alcance
-    // de sucursal la base rechaza cualquier otra, así que ofrecerlo prometería
+    // de sucursal la base rechaza cualquier otra —lo hace
+    // `validar_solicitud_movimiento_inventario` desde el 2026-10-23: antes este
+    // comentario lo afirmaba y no era cierto—, así que ofrecerlo prometería
     // un alcance que no existe.
     const selectorErp = alcanceTodas ? (
         <LiquidSelect

@@ -12,7 +12,10 @@ import {
     aplicarMovimientoInventarioEnErp,
     aplicarCorreccionDeCaja,
     fetchPersonasDeSolicitudes,
+    fetchPuedeAprobarModulo, cancelarMiSolicitud, decidirCambioDeTurnoComoPar,
 } from '../../data/requests';
+import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
+import { mensajeAmigable } from '../../utils/errorMessages';
 // El horario se escribe UN día a la vez desde el 2026-08-27: leer el roster,
 // tocarle una clave y reescribirlo entero pierde lo que otra sesión haya
 // guardado en otro día de esa misma semana.
@@ -452,6 +455,52 @@ const avisarYaDecidida = (get) => {
 };
 
 /**
+ * Un UPDATE que tocó cero filas NO siempre es «ya estaba resuelta» (H4,
+ * 2026-10-23). La policy filtra en silencio a quien no puede decidir, y eso
+ * también da cero: se le decía «alguien la decidió antes» a quien
+ * simplemente no tenía permiso. Se relee la fila: si sigue pendiente, el motivo
+ * es el permiso.
+ */
+const avisarSinEscribir = async (get, requestId, desdeNivel = null) => {
+    try {
+        const { data } = await fetchApprovalRequestById(requestId);
+        const sigueIgual = data?.status === 'PENDING'
+            && (desdeNivel == null || Number(data.current_level ?? 1) === Number(desdeNivel));
+        if (sigueIgual) {
+            useToastStore.getState().showToast(
+                'No te toca decidirla',
+                'Tu cargo no puede aprobar este tipo de solicitud, así que no se cambió nada. Sigue pendiente para quien la decide.',
+                'error');
+            emitir('requests-updated');
+            return YA_AVISADO;
+        }
+    } catch { /* sin la relectura, el aviso de siempre */ }
+    return avisarYaDecidida(get);
+};
+
+/** El módulo cuyo permiso hace falta para decidir este tipo. Espejo de
+ *  `modulo_de_aprobacion()`; lo que no es operativo es de la persona. */
+const moduloQueDecide = (type) => MODULO_QUE_DECIDE[type] || 'requests_personales';
+
+/**
+ * ¿Esta persona puede, de verdad, decidir? Si la base no contesta se asume que
+ * sí —igual que `isUnavailable`—: es mejor enrutar a alguien que quizá no
+ * pueda que dejar la solicitud sin aprobador. El error queda en consola.
+ */
+const puedeDecidir = async (employeeId, modulo) => {
+    try {
+        const { data, error } = await fetchPuedeAprobarModulo(employeeId, modulo);
+        if (error) {
+            console.error('puedeDecidir: puede_aprobar_modulo falló:', error.message);
+            return true;
+        }
+        return data === true;
+    } catch {
+        return true;
+    }
+};
+
+/**
  * Verifica si un empleado está actualmente en vacaciones o incapacidad.
  * Consulta employee_events tipo VACATION o DISABILITY cuya fecha de inicio ≤ hoy
  * y cuya endDate ≥ hoy (o sin endDate = vigente indefinidamente).
@@ -482,7 +531,7 @@ const isUnavailable = async (employeeId) => {
  * Resuelve el aprobador designado subiendo recursivamente por la jerarquía de roles
  * hasta encontrar un empleado disponible, con fallback a admin de sucursal y global.
  */
-const resolveApprover = async (employeeId, branchId, roleId) => {
+const resolveApprover = async (employeeId, branchId, roleId, modulo = 'requests_personales') => {
     try {
         // Cargar todos los roles de una vez para recorrer el árbol sin N queries
         const { data: allRoles, error: rolesErr } = await fetchAllRolesHierarchy();
@@ -496,7 +545,7 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
             if (error) console.error('resolveApprover.findAvailableInRole failed:', error.message);
 
             for (const c of (data || [])) {
-                if (!(await isUnavailable(c.id))) return c.id;
+                if (!(await isUnavailable(c.id)) && await puedeDecidir(c.id, modulo)) return c.id;
             }
             return null;
         };
@@ -529,13 +578,18 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
         const { data: admins, error: adminsErr } = await fetchBranchAdmins(branchId, employeeId);
         if (adminsErr) console.error('resolveApprover: fetch branch admins failed:', adminsErr.message);
 
-        if (admins?.[0]?.id) return admins[0].id;
+        for (const a of (admins || [])) {
+            if (await puedeDecidir(a.id, modulo)) return a.id;
+        }
 
         // Último fallback: cualquier admin global
         const { data: globalAdmins, error: globalErr } = await fetchGlobalAdmins(employeeId);
         if (globalErr) console.error('resolveApprover: fetch global admins failed:', globalErr.message);
 
-        return globalAdmins?.[0]?.id || null;
+        for (const a of (globalAdmins || [])) {
+            if (await puedeDecidir(a.id, modulo)) return a.id;
+        }
+        return null;
     } catch (err) {
         console.error('Error resolviendo aprobador:', err);
         return null;
@@ -547,9 +601,12 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
 // esto garantiza que la solicitud NUNCA quede con approver_id null — antes eso
 // la volvía invisible para todo aprobador, incluso admins (fetchRequests filtra
 // por eq('approver_id', ...), que nunca matchea null).
-const resolveFallbackApprover = async (excludeId) => {
+const resolveFallbackApprover = async (excludeId, modulo = 'requests_personales') => {
     try {
-        const { data: roleRows, error: roleErr } = await fetchApprovalRolePermissions();
+        // Los cargos que pueden aprobar EL MÓDULO de la solicitud. Antes miraba
+        // `requests` para todo, y una personal podía terminar en alguien que
+        // sólo decide las de la sala.
+        const { data: roleRows, error: roleErr } = await fetchApprovalRolePermissions(modulo);
         if (roleErr) console.error('resolveFallbackApprover: fetch role_permissions failed:', roleErr.message);
         const roleIds = (roleRows || []).map(r => r.role_id);
         if (!roleIds.length) return null;
@@ -563,8 +620,14 @@ const resolveFallbackApprover = async (excludeId) => {
     }
 };
 
-const resolveNextApprover = async (level, branchId, excludeId = null) => {
+const resolveNextApprover = async (level, branchId, excludeId = null, { modulo = 'requests_personales', excluirTambien = null } = {}) => {
     try {
+        // Sólo quien puede decidir el módulo, está disponible y no es quien
+        // pidió (en un cambio de turno el que avanza es el compañero, y el
+        // solicitante puede ser jefe de sala: se saltearía a sí mismo).
+        const sirve = async (id) => String(id) !== String(excluirTambien ?? '')
+            && !(await isUnavailable(id)) && await puedeDecidir(id, modulo);
+
         // Busca por TRAMO de la escala de cargos. Antes recorría una lista de
         // valores de `system_role` —'JEFE', 'SUBJEFE', 'ADMIN'…— escrita a mano
         // en cada llamada; con la escala ordenada, «la jefatura de esta sala» es
@@ -573,7 +636,7 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
             const { data, error } = await fetchActiveEmployeesByRangoConditional(min, max, branchId, excludeId, sameBranch);
             if (error) console.error('resolveNextApprover.findByRango failed:', error.message);
             for (const c of (data || [])) {
-                if (!(await isUnavailable(c.id))) return c.id;
+                if (await sirve(c.id)) return c.id;
             }
             return null;
         };
@@ -588,7 +651,7 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
                 const { data, error } = await fetchActiveEmployeesByRoleIdConditional(roleId, branchId, excludeId, sameBranch);
                 if (error) console.error('resolveNextApprover.findByRoleName failed:', error.message);
                 for (const c of (data || [])) {
-                    if (!(await isUnavailable(c.id))) return c.id;
+                    if (await sirve(c.id)) return c.id;
                 }
             }
             return null;
@@ -617,7 +680,10 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
 
             const { data: anyAdmin, error: anyAdminErr } = await fetchAnyActiveAdmin();
             if (anyAdminErr) console.error('resolveNextApprover(level 3): fetch fallback admin failed:', anyAdminErr.message);
-            return anyAdmin?.[0]?.id || null;
+            for (const a of (anyAdmin || [])) {
+                if (String(a.id) !== String(excludeId ?? '') && await puedeDecidir(a.id, modulo)) return a.id;
+            }
+            return null;
         }
 
         return null;
@@ -1113,10 +1179,10 @@ export const createRequestsSlice = (set, get) => ({
             // DISABILITY: va directamente a Talento Humano, sin pasar por la jerarquía intermedia
             const resolvedApproverId = emp
                 ? (type === 'DISABILITY'
-                    ? await resolveNextApprover(3, emp.branch_id, employeeId)
-                    : await resolveApprover(employeeId, emp.branch_id, emp.role_id))
+                    ? await resolveNextApprover(3, emp.branch_id, employeeId, { modulo: moduloQueDecide(type) })
+                    : await resolveApprover(employeeId, emp.branch_id, emp.role_id, moduloQueDecide(type)))
                 : null;
-            const approverId = resolvedApproverId || await resolveFallbackApprover(employeeId);
+            const approverId = resolvedApproverId || await resolveFallbackApprover(employeeId, moduloQueDecide(type));
 
             const finalMetadata = type === 'DISABILITY'
                 ? { ...payload, priority: 'URGENT' }
@@ -1522,18 +1588,24 @@ export const createRequestsSlice = (set, get) => ({
         return true;
     },
 
-    _runFinalApproval: async (requestId, req, approverId, approverNote, newApprovals, toastMsg) => {
+    _runFinalApproval: async (requestId, req, approverId, approverNote, newApprovals, toastMsg, { yaEscrita = false } = {}) => {
         /* El candado. Todo lo que sigue —el evento en el legajo, el aviso al
          * empleado, el parche de los rosters— se dispara UNA vez porque este
          * UPDATE entra una sola vez. Sin él, la segunda aprobación desde una
          * pestaña vieja lo repetía entero. `count === 0` estricto: si el
          * servidor no devolviera el conteo, esto se comporta como antes en vez
-         * de negarse a aprobar nada. */
-        const { error, count } = await resolverApprovalRequest(requestId,
-            { status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() },
-            req.current_level ?? null);
-        if (error) throw error;
-        if (count === 0) return avisarYaDecidida(get);
+         * de negarse a aprobar nada.
+         *
+         * `yaEscrita`: el compañero de un cambio de turno cierra por
+         * `decidir_cambio_de_turno_como_par`, que ya escribió la fila con su
+         * propio candado; acá sólo queda lo que cuelga de aprobar. */
+        if (!yaEscrita) {
+            const { error, count } = await resolverApprovalRequest(requestId,
+                { status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() },
+                req.current_level ?? null);
+            if (error) throw error;
+            if (count === 0) return avisarSinEscribir(get, requestId, req.current_level ?? null);
+        }
 
         set(state => ({
             requests: state.requests.map(r =>
@@ -1741,7 +1813,7 @@ export const createRequestsSlice = (set, get) => ({
                 level: currentLevel, approverId, approverNote, approvedAt: new Date().toISOString(),
             }];
 
-            // ── SHIFT_CHANGE nivel 1: el peer acaba de aprobar ─────────────────
+            // ── SHIFT_CHANGE nivel 1: el compañero acaba de aprobar ────────────
             if (req.type === 'SHIFT_CHANGE' && currentLevel === 1) {
                 const { data: peerEmp, error: peerEmpErr } = await fetchEmployeeRango(approverId);
                 if (peerEmpErr) console.error('approveRequest: fetch peer employee failed:', peerEmpErr.message);
@@ -1749,22 +1821,44 @@ export const createRequestsSlice = (set, get) => ({
                 // un cambio de turno sin escalarlo.
                 const peerIsJefe = Number(peerEmp?.rango ?? 0) >= RANGO.SUBJEFATURA
                                 && Number(peerEmp?.rango ?? 0) <= RANGO.JEFATURA;
-                const nextApprover = peerIsJefe ? null : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId);
+                // El siguiente tiene que poder CERRARLA (requests_personales) y
+                // no puede ser quien la pidió: lo comprueba también la base.
+                const nextApprover = peerIsJefe ? null : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId,
+                    { modulo: 'requests_personales', excluirTambien: req.employee_id ?? req.employee?.id });
 
-                if (!nextApprover) {
-                    return await get()._runFinalApproval(requestId, req, approverId, approverNote, newApprovals,
-                        peerIsJefe ? 'Cambio de turno aprobado.' : 'Aprobado (sin jefe disponible en sucursal).');
+                /* El compañero no tiene permiso de aprobar solicitudes —es un
+                 * compañero—, así que no escribe la fila: lo hace la base, que
+                 * comprueba que le toca a él (H4, 2026-10-23). Quien decide
+                 * EN SU LUGAR (un aprobador de verdad) sigue por el camino de
+                 * siempre. */
+                const esElCompanero = String(req.approver_id) === String(approverId)
+                    && String(req.employee_id ?? req.employee?.id) !== String(approverId);
+                if (esElCompanero) {
+                    const { data: r, error: rpcErr } = await decidirCambioDeTurnoComoPar(requestId,
+                        { aprobar: true, nota: approverNote, siguiente: nextApprover });
+                    if (rpcErr) {
+                        useToastStore.getState().showToast('No se pudo aprobar', mensajeAmigable(rpcErr), 'error');
+                        return YA_AVISADO;
+                    }
+                    if (!r?.ok) return avisarYaDecidida(get);
+                    if (r.estado === 'APPROVED') {
+                        return await get()._runFinalApproval(requestId, req, approverId, approverNote, newApprovals,
+                            'Cambio de turno aprobado.', { yaEscrita: true });
+                    }
+                } else {
+                    if (!nextApprover) {
+                        return await get()._runFinalApproval(requestId, req, approverId, approverNote, newApprovals,
+                            peerIsJefe ? 'Cambio de turno aprobado.' : 'Aprobado (sin jefe disponible en sucursal).');
+                    }
+                    // El nivel va en el candado además del estado: una solicitud que
+                    // ya avanzó sigue PENDING, así que sin comparar el nivel la
+                    // pestaña vieja la empujaba otra vez y el jefe recibía dos avisos.
+                    const { error: adv, count: filasAdv } = await resolverApprovalRequest(requestId,
+                        { current_level: 2, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() },
+                        currentLevel);
+                    if (adv) throw adv;
+                    if (filasAdv === 0) return avisarSinEscribir(get, requestId, currentLevel);
                 }
-
-                // Avanzar a nivel 2 → jefe de sucursal
-                // El nivel va en el candado además del estado: una solicitud que
-                // ya avanzó sigue PENDING, así que sin comparar el nivel la
-                // pestaña vieja la empujaba otra vez y el jefe recibía dos avisos.
-                const { error: adv, count: filasAdv } = await resolverApprovalRequest(requestId,
-                    { current_level: 2, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() },
-                    currentLevel);
-                if (adv) throw adv;
-                if (filasAdv === 0) return avisarYaDecidida(get);
 
                 set(state => ({
                     requests: state.requests.map(r =>
@@ -1775,7 +1869,7 @@ export const createRequestsSlice = (set, get) => ({
                     type: 'REQUEST_PENDING',
                     title: 'Solicitud pendiente de aprobación final',
                     body: `Cambio de turno de ${req.employee?.name} aprobado por el compañero — requiere tu aprobación final.`,
-                    link: '/solicitudes',
+                    link: '/solicitudes-personales',
                     push: true,
                 });
                 useToastStore.getState().showToast('Aprobado — Nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
@@ -1789,7 +1883,8 @@ export const createRequestsSlice = (set, get) => ({
                 : 3;
 
             if (nextLevel <= maxLevels) {
-                const nextApprover = await resolveNextApprover(nextLevel, req.employee?.branch_id, approverId);
+                const nextApprover = await resolveNextApprover(nextLevel, req.employee?.branch_id, approverId,
+                    { modulo: moduloQueDecide(req.type), excluirTambien: req.employee_id ?? req.employee?.id });
 
                 if (!nextApprover) {
                     // Sin siguiente aprobador → aprobación final directa
@@ -1801,7 +1896,7 @@ export const createRequestsSlice = (set, get) => ({
                     { current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() },
                     currentLevel);
                 if (error) throw error;
-                if (count === 0) return avisarYaDecidida(get);
+                if (count === 0) return avisarSinEscribir(get, requestId, currentLevel);
 
                 set(state => ({
                     requests: state.requests.map(r =>
@@ -1884,6 +1979,32 @@ export const createRequestsSlice = (set, get) => ({
                 return await get()._decidirIngreso(requestId, req, approverId, approverNote, false);
             }
 
+            /* El compañero de un cambio de turno rechaza por la base: no tiene
+             * permiso de escribir la fila (H4, 2026-10-23). */
+            if (req?.type === 'SHIFT_CHANGE' && Number(req.current_level ?? 1) === 1
+                && String(req.approver_id) === String(approverId)
+                && String(req.employee_id ?? req.employee?.id) !== String(approverId)) {
+                const { data: r, error: rpcErr } = await decidirCambioDeTurnoComoPar(requestId,
+                    { aprobar: false, nota: approverNote });
+                if (rpcErr) {
+                    useToastStore.getState().showToast('No se pudo rechazar', mensajeAmigable(rpcErr), 'error');
+                    return YA_AVISADO;
+                }
+                if (!r?.ok) return avisarYaDecidida(get);
+                set((state) => ({
+                    requests: state.requests.map(x =>
+                        x.id === requestId
+                            ? { ...x, status: 'REJECTED', ...selloDeQuienDecidio(get, approverId), approver_note: approverNote }
+                            : x
+                    ),
+                }));
+                apagarAviso(get, requestId, 'REJECTED');
+                if (req.employee?.id) {
+                    await notifyEmployee(req.employee.id, approverId, req.type, 'REJECTED', approverNote, parseMeta(req.metadata));
+                }
+                return true;
+            }
+
             /* Mismo candado que al aprobar, y por el mismo motivo: rechazar dos
              * veces manda dos avisos al empleado. El nivel también entra —si la
              * solicitud ya avanzó, quien la tenía antes ya dijo lo suyo y no le
@@ -1896,7 +2017,7 @@ export const createRequestsSlice = (set, get) => ({
             }, req?.current_level ?? null);
 
             if (error) throw error;
-            if (count === 0) return avisarYaDecidida(get);
+            if (count === 0) return avisarSinEscribir(get, requestId, req?.current_level ?? null);
 
             set((state) => ({
                 requests: state.requests.map(r =>
@@ -1962,18 +2083,18 @@ export const createRequestsSlice = (set, get) => ({
     // ── Cancel (by employee) ───────────────────────────────────────────────
     cancelRequest: async (requestId) => {
         try {
-            /* Cancelar una ya decidida no tiene sentido, y la RLS ya lo impedía
-             * —su policy exige `status = 'PENDING'`—, pero lo hacía en silencio:
-             * el UPDATE devolvía cero filas, nadie las contaba y la pantalla
-             * decía que se canceló. El candado explícito es el que permite
-             * avisarlo. */
-            const { error, count } = await resolverApprovalRequest(requestId, {
-                status: 'CANCELLED',
-                updated_at: new Date().toISOString(),
-            });
-
-            if (error) throw error;
-            if (count === 0) return avisarYaDecidida(get);
+            /* Por la base (H3, 2026-10-23). Con el UPDATE directo, la fila
+             * nueva (CANCELLED) tenía que volver a pasar la policy de quien
+             * pidió, que exige PENDING: rebotaba con un error de permiso que
+             * nadie mostraba, y la solicitud seguía pendiente. Y esa misma rama
+             * dejaba reescribir la solicitud entera (H1), así que se quitó: lo
+             * único que quien pidió puede hacer con su fila es cancelarla. */
+            const { data: res, error } = await cancelarMiSolicitud(requestId);
+            if (error) {
+                useToastStore.getState().showToast('No se pudo cancelar', mensajeAmigable(error), 'error');
+                return YA_AVISADO;
+            }
+            if (!res?.ok) return avisarYaDecidida(get);
 
             set((state) => ({
                 requests: state.requests.map(r =>

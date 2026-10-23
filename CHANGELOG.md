@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.20 — Solicitudes, comunicados y encuestas: quien pide ya no reescribe su solicitud, cancelar funciona, el push llega sólo a su audiencia
+
+- **Cancelar una solicitud propia ya funciona.** Antes la base lo rechazaba sin avisar y la solicitud seguía pendiente. Ahora se cancela, y si no se puede, la pantalla dice por qué. Los tipos que ya movieron algo (un abono que entró a la caja, un envío que salió) no ofrecen «Cancelar»: se piden rechazar.
+- **Quien pide una solicitud ya no puede cambiarla después de enviarla**: ni los productos, ni la sala, ni quién la aprueba. Lo único que puede hacer con ella es cancelarla.
+- **Un movimiento de inventario sólo se pide para la propia sala** (salvo quien trabaja con todas), y la sala que se muestra es siempre la del movimiento.
+- **Cambio de turno**: el compañero ya puede aprobar o rechazar su parte, y la aprobación final llega a alguien que de verdad puede darla. Si alguien intenta decidir una solicitud que no le toca, se le dice eso y no «ya estaba resuelta».
+- **Los enlaces de los avisos abren la solicitud**, no la lista general.
+- **Un cambio de venta que no se quedó se avisa aunque la venta sea del mes anterior.**
+- **No se puede pedir un cambio sobre una factura invalidada.**
+- **Comunicados**: el aviso al teléfono de un comunicado para una sucursal o un cargo llega sólo a esa sucursal o ese cargo, no a todo el personal. Y un comunicado programado avisa al teléfono cuando se publica.
+- **«Leer todas» marca todas**, no sólo las primeras 100; si no se pudo, la campana lo muestra en vez de quedar vacía.
+- **Encuestas internas**: editar o crear una encuesta guarda de verdad; si no se pudo, se dice.
+- **Encuestas a clientes**: una ráfaga de respuestas desde el código QR ya no entra sin límite ni llena de alertas los teléfonos de supervisión, y el premio en puntos se da una vez por cliente aunque responda por varios medios.
+
 ## v2.1350.19 — Cobro de créditos sin doble abono, consulta de puntos con freno por documento y ventas al corte
 
 Segunda revisión, tanda B (cobros de crédito, puntos, ventas). Lo de la base

@@ -273,7 +273,15 @@ const IrAEfectivo = () => {
 
 const IrAPersonales = () => {
     const { search, hash } = useLocation();
-    return <Navigate to={`/requests-personales${search}${hash}`} replace />;
+    return <Navigate to={`/solicitudes-personales${search}${hash}`} replace />;
+};
+
+/** Una ruta vieja → la nueva, conservando consulta y ancla. Los avisos de la
+ *  base enlazan `/requests?solicitud=<id>`, y el `<Navigate>` a secas tiraba el
+ *  `?solicitud=`: el push abría la lista general (H5, 2026-10-23). */
+const IrConConsulta = ({ a }) => {
+    const { search, hash } = useLocation();
+    return <Navigate to={`${a}${search}${hash}`} replace />;
 };
 
 // Igual que `IrAFichaDePersonal`, para la ficha de una sucursal: vivía bajo
@@ -1042,8 +1050,8 @@ function MainApp() {
                                     <Route path="payroll" element={<Navigate to="/nomina" replace />} />
                                     <Route path="permissions" element={<Navigate to="/permisos" replace />} />
                                     <Route path="profile" element={<Navigate to="/mi-perfil" replace />} />
-                                    <Route path="requests-personales" element={<Navigate to="/solicitudes-personales" replace />} />
-                                    <Route path="requests" element={<Navigate to="/solicitudes" replace />} />
+                                    <Route path="requests-personales" element={<IrConConsulta a="/solicitudes-personales" />} />
+                                    <Route path="requests" element={<IrConConsulta a="/solicitudes" />} />
                                     <Route path="roles" element={<Navigate to="/cargos" replace />} />
                                     <Route path="schedules" element={<Navigate to="/horarios" replace />} />
                                     <Route path="sync-health" element={<Navigate to="/actualizacion-de-datos" replace />} />

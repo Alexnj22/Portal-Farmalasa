@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { salaDeSolicitud, reglasDeBandeja, ordenarCola } from '@nucleo/utils/bandejaDeSolicitudes';
+import { salaDeSolicitud, reglasDeBandeja, ordenarCola, sePuedeCancelarPropia } from '@nucleo/utils/bandejaDeSolicitudes';
 import { BRANCH_A_ERP } from '@nucleo/constants/erp';
 
 const permisos = (lista) => (m, a) => lista.includes(`${m}.${a}`);
@@ -61,5 +61,25 @@ describe('ordenarCola', () => {
         const a2 = { status: 'APPROVED', created_at: '2026-09-05' };
         expect(ordenarCola([p2, p1])).toEqual([p1, p2]);
         expect(ordenarCola([a1, a2])).toEqual([a2, a1]);
+    });
+});
+
+// H3 (2026-10-23): cancelar pasa por `cancelar_mi_solicitud`, que rechaza los
+// tipos que ya movieron algo. La pantalla no puede ofrecer lo que la base niega.
+describe('sePuedeCancelarPropia', () => {
+    const mia = { employee_id: '1', status: 'PENDING', type: 'VACATION' };
+    it('lo propio y pendiente, sí', () => {
+        expect(sePuedeCancelarPropia(mia, '1')).toBe(true);
+    });
+    it('lo ajeno, lo resuelto o sin sesión, no', () => {
+        expect(sePuedeCancelarPropia(mia, '2')).toBe(false);
+        expect(sePuedeCancelarPropia({ ...mia, status: 'APPROVED' }, '1')).toBe(false);
+        expect(sePuedeCancelarPropia(mia, null)).toBe(false);
+    });
+    it('los tipos que la base no deja cancelar, tampoco se ofrecen', () => {
+        for (const type of ['ABONO_APROBACION', 'CAJA_INGRESO_AUTORIZACION', 'INVENTORY_TRANSFER_PUSH',
+                            'DIST_DESCUENTO', 'DIST_INVALIDACION', 'MINMAX_CHANGE_REQUEST']) {
+            expect(sePuedeCancelarPropia({ ...mia, type }, '1'), type).toBe(false);
+        }
     });
 });

@@ -107,19 +107,42 @@ serve(async (req) => {
     }
 
     // A quién: los mismos destinatarios para los dos canales. `null` = GLOBAL.
+    //
+    // H9 (2026-10-23): el portal y la app guardan BRANCH y ROLE como ESCALAR
+    // (`"25"`, `"Jefe/a de Sala"`) y esto sólo filtraba BRANCH si venía en
+    // arreglo y no conocía ROLE: los dos caían a «todas las suscripciones».
+    // Hoy el trigger de comunicados ya resuelve la audiencia en la base y manda
+    // EMPLOYEE; esto queda como red para cualquier otro llamador. Escalar o
+    // arreglo valen igual, y un tipo que no se reconoce NO se manda a todos.
+    const sinNadie = () => new Response(JSON.stringify({ sent: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const valores: string[] = target_value == null ? []
+      : (Array.isArray(target_value) ? target_value : [target_value]).map((v: unknown) => String(v)).filter(Boolean);
     let destinatarios: string[] | null = null;
-    if (target_type === 'EMPLOYEE' && Array.isArray(target_value) && target_value.length > 0) {
-      destinatarios = target_value;
-    } else if (target_type === 'BRANCH' && Array.isArray(target_value) && target_value.length > 0) {
+    if (target_type === 'EMPLOYEE') {
+      if (valores.length === 0) return sinNadie();
+      destinatarios = valores;
+    } else if (target_type === 'BRANCH' || target_type === 'ROLE') {
+      if (valores.length === 0) return sinNadie();
       // Sin este chequeo, un error acá devuelve `sent: 0` con cara de éxito:
       // la sucursal entera se queda sin push y nadie se entera.
-      const { data: emps, error: empsErr } = await supabase
-        .from('employees')
-        .select('id')
-        .in('branch_id', target_value);
-      if (empsErr) throw new Error(`employees por sucursal: ${empsErr.message}`);
+      let q = supabase.from('employees').select('id').eq('status', 'ACTIVO');
+      if (target_type === 'BRANCH') {
+        q = q.in('branch_id', valores);
+      } else {
+        // El cargo por su nombre, como lo lee la policy de `announcements`.
+        const { data: roles, error: rolesErr } = await supabase.from('roles').select('id').in('name', valores);
+        if (rolesErr) throw new Error(`roles por nombre: ${rolesErr.message}`);
+        const ids = (roles || []).map((r: { id: number }) => r.id);
+        if (ids.length === 0) return sinNadie();
+        q = q.in('role_id', ids);
+      }
+      const { data: emps, error: empsErr } = await q;
+      if (empsErr) throw new Error(`employees por ${target_type === 'BRANCH' ? 'sucursal' : 'cargo'}: ${empsErr.message}`);
       destinatarios = (emps || []).map((e: { id: string }) => e.id);
-      if (destinatarios.length === 0) return new Response(JSON.stringify({ sent: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (destinatarios.length === 0) return sinNadie();
+    } else if (target_type != null && target_type !== 'GLOBAL') {
+      console.error(`send-push-notification: target_type desconocido «${target_type}», no se manda a nadie`);
+      return sinNadie();
     }
     // GLOBAL: no filter — all subscriptions
 

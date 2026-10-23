@@ -179,6 +179,22 @@ export function markNotificationsReadBulk(ids, readAt) {
     return supabase.from('notifications').update({ read_at: readAt }).in('id', ids).is('read_at', null);
 }
 
+/* «Leer todas» de verdad (H14, 2026-10-23). La campana carga como mucho 100 no
+   leídas, y marcar sólo esas dejaba reaparecer las siguientes 100 en el próximo
+   fetch: 18 personas tenían más de 100. Marca en el servidor todo lo propio
+   (el RLS ya acota) hasta `cutoffIso`, salvo los TIPOS que pueden estar
+   esperando una decisión: ésos los resuelve quien llama, uno por uno, con lo
+   que tiene cargado. */
+export function markNotificationsReadBefore(cutoffIso, readAt, tiposQueSeConservan = []) {
+    let q = supabase.from('notifications')
+        .update({ read_at: readAt })
+        .lte('created_at', cutoffIso)
+        .is('read_at', null)
+        .is('deleted_at', null);
+    if (tiposQueSeConservan.length) q = q.not('type', 'in', `(${tiposQueSeConservan.join(',')})`);
+    return q;
+}
+
 /* `.is('deleted_at', null)` en el UPDATE, no sólo por prolijidad: sin él,
    borrar de nuevo algo que ya estaba en la papelera le pisaría la fecha y la
    mandaría al tope de la lista como si se acabara de tirar. */

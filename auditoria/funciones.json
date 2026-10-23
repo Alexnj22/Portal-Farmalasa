@@ -362,6 +362,11 @@
    "area": "compras",
    "por": "código"
   },
+  "approval_requests_candado_cliente": {
+   "area": "solicitudes",
+   "por": "código",
+   "manual": true
+  },
   "approve_minmax_request": {
    "area": "minmax",
    "por": "código"
@@ -414,6 +419,11 @@
   "attendance_kiosko_pedido_lifecycle": {
    "area": "asistencia",
    "por": "trigger"
+  },
+  "audiencia_de_aviso": {
+   "area": "comunicacion",
+   "por": "código",
+   "manual": true
   },
   "audit_employee_sensitive_changes": {
    "area": "personal",
@@ -626,6 +636,11 @@
   "avisos_horario_notificacion": {
    "area": "comunicacion",
    "por": "trigger"
+  },
+  "avisos_programados_enviar_push": {
+   "area": "comunicacion",
+   "por": "código",
+   "manual": true
   },
   "backfill_daily_stats_chunk": {
    "area": "ventas",
@@ -904,6 +919,11 @@
   "cancelar_envio": {
    "area": "traslados",
    "por": "código"
+  },
+  "cancelar_mi_solicitud": {
+   "area": "solicitudes",
+   "por": "código",
+   "manual": true
   },
   "canjear_codigo_de_vinculacion": {
    "area": "impresion",
@@ -1336,6 +1356,11 @@
   "decidir_bono_semestral": {
    "area": "metas",
    "por": "código"
+  },
+  "decidir_cambio_de_turno_como_par": {
+   "area": "solicitudes",
+   "por": "código",
+   "manual": true
   },
   "decidir_descuento_de_suspension": {
    "area": "personal",
@@ -2092,6 +2117,11 @@
   "entregar_bolsas": {
    "area": "cortes-efectivo",
    "por": "código"
+  },
+  "enviar_push_de_aviso": {
+   "area": "comunicacion",
+   "por": "código",
+   "manual": true
   },
   "envio_json": {
    "area": "plataforma",

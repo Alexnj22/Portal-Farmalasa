@@ -129,8 +129,17 @@ export function fetchAnyActiveAdmin() {
     return porRango(RANGO.DIRECCION, RANGO.DIRECCION);
 }
 
-export function fetchApprovalRolePermissions() {
-    return supabase.from('role_permissions').select('role_id').eq('module_key', 'requests').eq('can_approve', true);
+export function fetchApprovalRolePermissions(modulo = 'requests') {
+    return supabase.from('role_permissions').select('role_id').eq('module_key', modulo).eq('can_approve', true);
+}
+
+// ¿Esta persona puede decidir solicitudes de este módulo? La misma pregunta
+// que hace la policy de UPDATE, contestada por la base: el enrutador sólo le
+// manda una solicitud a quien después va a poder aprobarla (H4, 2026-10-23).
+// Antes subía por `parent_role_id` hasta el Jefe/a de Sala, que no tiene
+// `requests_personales`: el aviso le llegaba y el botón no escribía nada.
+export function fetchPuedeAprobarModulo(employeeId, modulo) {
+    return supabase.rpc('puede_aprobar_modulo', { p_employee_id: employeeId, p_module_key: modulo });
 }
 
 export function fetchActiveEmployeesInRoles(roleIds, excludeId) {
@@ -507,6 +516,35 @@ export function resolverApprovalRequest(requestId, patch, desdeNivel = null) {
         .eq('status', 'PENDING');
     if (desdeNivel != null) q = q.eq('current_level', desdeNivel);
     return q;
+}
+
+/**
+ * Quien pidió una solicitud la cancela por la base (H3, 2026-10-23). La policy
+ * de UPDATE ya no deja escribir a quien pidió —podía reescribir su propia
+ * solicitud entera—, así que el único cambio que le queda pasa por una función
+ * que sólo sabe hacer eso: PENDING → CANCELLED, y sólo sobre lo suyo.
+ * Devuelve `{ data: { ok, ya_resuelta, estado }, error }`.
+ */
+/** @typedef {{ ok?: boolean, ya_resuelta?: boolean, estado?: string } | null} ResultadoDeDecision */
+
+export async function cancelarMiSolicitud(requestId) {
+    const { data, error } = await supabase.rpc('cancelar_mi_solicitud', { p_solicitud: requestId });
+    return { data: /** @type {ResultadoDeDecision} */ (data), error };
+}
+
+/**
+ * El compañero de un cambio de turno decide su parte (H4, 2026-10-23). No tiene
+ * permiso de aprobar solicitudes —es un compañero—, así que no puede escribir
+ * la fila; la función comprueba que la solicitud le toca a él y que el
+ * siguiente aprobador puede de verdad cerrarla.
+ * Devuelve `{ data: { ok, ya_resuelta, estado: 'REJECTED'|'NIVEL_2'|'APPROVED' }, error }`.
+ */
+export async function decidirCambioDeTurnoComoPar(requestId, { aprobar, nota = null, siguiente = null }) {
+    const { data, error } = await supabase.rpc('decidir_cambio_de_turno_como_par', {
+        p_solicitud: requestId, p_aprobar: !!aprobar,
+        p_nota: nota || undefined, p_siguiente: siguiente || undefined,
+    });
+    return { data: /** @type {ResultadoDeDecision} */ (data), error };
 }
 
 export function fetchApprovalRequestById(requestId) {

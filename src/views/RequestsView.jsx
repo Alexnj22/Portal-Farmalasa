@@ -11,6 +11,7 @@ import {
     CheckCircle2, Search, Plus, Users, User,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
@@ -23,7 +24,7 @@ import { REQUEST_TYPES, esOperativa, adaptarMinMax, DISTRIBUCION_REQUEST_TYPES, 
 import { fetchAllMinMaxChangeRequests } from '@nucleo/data/minmaxRequests';
 import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { ICONO_POR_TIPO } from '../components/common/catalogos/tiposDeAviso';
-import { salaDeSolicitud, reglasDeBandeja, ordenarCola, deQuienEs as deQuienEsLaSolicitud } from '@nucleo/utils/bandejaDeSolicitudes';
+import { salaDeSolicitud, reglasDeBandeja, ordenarCola, deQuienEs as deQuienEsLaSolicitud, sePuedeCancelarPropia } from '@nucleo/utils/bandejaDeSolicitudes';
 import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 /* Los dos formularios se cargan tarde. No es una optimización de gusto: es la
  * regla del proyecto —lo que sólo hace falta al apretar un botón no viaja en el
@@ -728,8 +729,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                  * perdido en silencio, porque el modal canónico no la ofrece
                  * por su cuenta. Min/Max vive en otra tabla y su cancelación
                  * es otro camino: queda fuera a propósito. */
-                const esPropiaPendiente = deQuienEs(req) === miId && req.status === 'PENDING'
-                    && req.type !== 'MINMAX_CHANGE_REQUEST';
+                const esPropiaPendiente = sePuedeCancelarPropia(req, miId);
                 return (
                     <ModalSolicitud
                         key={req.id}
@@ -757,7 +757,10 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                 isOpen={!!cancelarId}
                 onClose={() => setCancelarId(null)}
                 onConfirm={async () => {
-                    await cancelRequest(cancelarId);
+                    // `false` es un error que nadie explicó todavía; YA_AVISADO
+                    // ya dejó su motivo en el aviso (H3, 2026-10-23).
+                    const ok = await cancelRequest(cancelarId);
+                    if (ok === false) useToastStore.getState().showToast('No se pudo cancelar', 'La solicitud sigue pendiente. Intenta de nuevo.', 'error');
                     setCancelarId(null);
                     fetchRequests(criterios);
                 }}

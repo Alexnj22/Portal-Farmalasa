@@ -24,12 +24,14 @@ vi.mock('@nucleo/data/notifications', () => ({
     fetchNotifications: vi.fn(),
     markNotificationRead: vi.fn(async () => ({ error: null })),
     markNotificationsReadBulk: vi.fn(async () => ({ error: null })),
+    markNotificationsReadBefore: vi.fn(async () => ({ error: null })),
     deleteNotificationsByIds: vi.fn(async () => ({ error: null })),
     deleteNotificationsBefore: vi.fn(async () => ({ error: null })),
     restoreNotificationsByIds: vi.fn(async () => ({ error: null })),
 }));
 
 const { createNotificationsSlice } = await import('@nucleo/store/slices/notificationsSlice');
+const datos = await import('@nucleo/data/notifications');
 
 const REQ = '11111111-1111-1111-1111-111111111111';
 
@@ -63,6 +65,30 @@ describe('la campana: qué se queda y qué se va', () => {
     it('marcar todas como leídas la vacía', async () => {
         await store.acciones().markAllNotificationsRead();
         expect(store.get().notifications).toHaveLength(0);
+    });
+
+    // H14 (2026-10-23): la campana carga 100 no leídas; marcar sólo esas
+    // dejaba aparecer otras 100. Se marca en el servidor hasta el clic, sin
+    // tocar los tipos que pueden esperar una decisión.
+    it('«leer todas» marca en el servidor, no sólo lo cargado, y respeta lo que espera decisión', async () => {
+        datos.markNotificationsReadBefore.mockClear();
+        datos.markNotificationsReadBulk.mockClear();
+        await store.acciones().markAllNotificationsRead({ conservar: (n) => n.id === 'a' });
+        expect(datos.markNotificationsReadBefore).toHaveBeenCalledTimes(1);
+        const [, , tipos] = datos.markNotificationsReadBefore.mock.calls[0];
+        expect(tipos).toEqual(expect.arrayContaining(['REQUEST_PENDING', 'MINMAX_PENDING', 'MAYORISTA_SOLICITUD']));
+        expect(datos.markNotificationsReadBulk, 'nada de decisión que marcar a mano').not.toHaveBeenCalled();
+        expect(store.get().notifications.map(n => n.id), 'la que espera decisión se queda').toEqual(['a']);
+    });
+
+    it('si el servidor no marca, la campana se vuelve a leer en vez de quedar vacía', async () => {
+        datos.markNotificationsReadBefore.mockResolvedValueOnce({ error: new Error('red') });
+        const recargar = vi.fn();
+        store.get().fetchNotifications = recargar;
+        const errorConsola = vi.spyOn(console, 'error').mockImplementation(() => {});
+        await store.acciones().markAllNotificationsRead();
+        expect(recargar).toHaveBeenCalled();
+        errorConsola.mockRestore();
     });
 
     it('`quitar: false` la deja, para que el sello de la decisión alcance a verse', async () => {

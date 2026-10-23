@@ -44,8 +44,16 @@ export async function fetchSurveyResponses(surveyId) {
 // Sin bitácora a propósito: además de la edición del administrador, la usa
 // EncuestaView para guardar el resumen de IA en caché, que no es una acción de
 // nadie. La edición del administrador pasa por `actualizarEncuesta`.
-export function updateSurvey(surveyId, payload) {
-    return supabase.from('surveys').update(payload).eq('id', surveyId);
+//
+// Con `.select('id')` y cero filas = error (H10, 2026-10-23): `surveys` no
+// tenía policy de UPDATE, el UPDATE tocaba cero filas sin error, la pantalla
+// decía «Encuesta actualizada» y la bitácora lo anotaba. Ahora la base deja
+// escribir a quien EDITA el módulo, y si igual no entra, se dice.
+export async function updateSurvey(surveyId, payload) {
+    const { data, error } = await supabase.from('surveys').update(payload).eq('id', surveyId).select('id');
+    if (error) return { data: null, error };
+    if (!data?.length) return { data: null, error: new Error('No se guardó: no tienes permiso para editar esta encuesta.') };
+    return { data, error: null };
 }
 
 // ── Escrituras del administrador: se anotan solas (D3, 2026-09-28) ─────────
@@ -109,8 +117,10 @@ export async function generarResumenDeComentarios(surveyId, comments, segment) {
         const { data: current, error: errLeer } = await fetchSurveyAiSummaries(surveyId);
         if (errLeer) throw errLeer;
         const merged = { .../** @type {Record<string, string>} */ (current?.ai_summaries || {}), [segment]: summary };
+        // Guardarlo es caché, no el resultado: quien sólo VE la encuesta no
+        // puede escribirla, y el resumen igual se le muestra.
         const { error: errGuardar } = await updateSurvey(surveyId, { ai_summaries: merged });
-        if (errGuardar) throw errGuardar;
+        if (errGuardar) console.warn('generarResumenDeComentarios: el resumen no quedó guardado:', errGuardar.message);
     }
     return summary;
 }

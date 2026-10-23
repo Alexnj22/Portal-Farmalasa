@@ -49,6 +49,21 @@ export const salaDeSolicitud = (r) => {
 };
 
 export const deQuienEs = (r) => String(r?.employee_id ?? r?.employee?.id ?? '');
+
+/* Los tipos que quien pidió NO cancela: ya movieron algo (un abono ya entró a
+ * la caja, un envío ya salió) o los decide otro circuito. Cancelarlos dejaría
+ * el efecto sin la solicitud que lo explica: se piden rechazar. Espejo de la
+ * lista de `cancelar_mi_solicitud()` en la base (2026-10-23). Min/Max vive en
+ * otra tabla y tampoco se cancela desde acá. */
+const NO_SE_CANCELAN = new Set([
+    'ABONO_APROBACION', 'CAJA_INGRESO_AUTORIZACION', 'INVENTORY_TRANSFER_PUSH',
+    'DIST_DESCUENTO', 'DIST_INVALIDACION', 'MINMAX_CHANGE_REQUEST',
+]);
+
+/** ¿Quien la pidió puede cancelarla? Portal y app. */
+export const sePuedeCancelarPropia = (r, yo) =>
+    !!r && r.status === 'PENDING' && deQuienEs(r) === String(yo ?? '') && !!String(yo ?? '')
+    && !NO_SE_CANCELAN.has(r.type);
 export const paraQuien = (r) => String(r?.approver_id ?? r?.approver?.id ?? '');
 
 /**

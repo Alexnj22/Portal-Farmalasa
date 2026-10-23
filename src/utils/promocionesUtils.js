@@ -777,7 +777,7 @@ export function csvPagosBono(promos) {
         rows: (promos || []).flatMap((p) => [
             ...(p.salas || []).map((x) => [p.promocion, 'Vendedores', x.sala, x.personas, x.total, x.pagado,
                 Number(x.pendientes) > 0 ? `${x.pendientes} por pagar` : 'Pagado']),
-            ...(p.bodega ? [[p.promocion, 'Bodega', 'Salud 3', '', p.bodega.monto, '',
+            ...(p.bodega ? [[p.promocion, 'Bodega', 'Salud 3', '', p.bodega.monto, p.bodega.pagado ?? '',
                 PAGO_BONO_HECHO.has(p.bodega.estado) ? 'Pagado' : 'Por pagar']] : []),
             ...(Number(p.administracion) > 0 ? [[p.promocion, 'Administracion', 'Planilla', '', p.administracion, '', '']] : []),
         ]),

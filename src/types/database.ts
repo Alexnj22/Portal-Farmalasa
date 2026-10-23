@@ -16809,6 +16809,41 @@ export type Database = {
           },
         ]
       }
+      metas_bono_interruptor: {
+        Row: {
+          activo: boolean
+          cambiado_por: string | null
+          created_at: string
+          desde_ym: string
+          hasta_ym: string | null
+          id: number
+        }
+        Insert: {
+          activo: boolean
+          cambiado_por?: string | null
+          created_at?: string
+          desde_ym: string
+          hasta_ym?: string | null
+          id?: never
+        }
+        Update: {
+          activo?: boolean
+          cambiado_por?: string | null
+          created_at?: string
+          desde_ym?: string
+          hasta_ym?: string | null
+          id?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_bono_interruptor_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metas_bono_persona: {
         Row: {
           bono: number
@@ -20486,6 +20521,7 @@ export type Database = {
           monto: number
           motivo: string | null
           renglon_id: number
+          tramo: number
           unidades: number
         }
         Insert: {
@@ -20499,6 +20535,7 @@ export type Database = {
           monto: number
           motivo?: string | null
           renglon_id: number
+          tramo?: number
           unidades: number
         }
         Update: {
@@ -20512,6 +20549,7 @@ export type Database = {
           monto?: number
           motivo?: string | null
           renglon_id?: number
+          tramo?: number
           unidades?: number
         }
         Relationships: [
@@ -28721,8 +28759,11 @@ export type Database = {
       buscar_personas_por_nombre: { Args: { p_nombre: string }; Returns: Json }
       buscar_productos_ids: {
         Args: {
+          p_categoria?: string
           p_con_laboratorio?: boolean
           p_con_pactivo?: boolean
+          p_creado_desde?: string
+          p_laboratorio_id?: number
           p_limite?: number
           p_q: string
           p_solo_activos?: boolean
@@ -32234,6 +32275,10 @@ export type Database = {
           total_sum: number
         }[]
       }
+      guardar_principios_activos: {
+        Args: { p_filas: Json; p_product_id: number; p_texto: string }
+        Returns: Json
+      }
       guardar_conteo_item: {
         Args: {
           p_estado_item?: string
@@ -34196,6 +34241,10 @@ export type Database = {
         Returns: undefined
       }
       resolver_carne_temporal: { Args: { p_valor: string }; Returns: string }
+      resolver_pago_bono_sin_confirmar: {
+        Args: { p_item: string; p_nota: string; p_salio: boolean }
+        Returns: Json
+      }
       resolver_clasificacion_pendiente: {
         Args: {
           p_clasificacion?: number

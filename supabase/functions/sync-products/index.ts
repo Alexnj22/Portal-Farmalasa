@@ -195,7 +195,6 @@ async function avisarFueraDeCatalogo(
     return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados: 0, callados, motivo: 'sin_destinatarios' };
   }
 
-  const pushUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push-notification`;
   let avisados = 0;
 
   for (const p of nuevos) {
@@ -209,24 +208,10 @@ async function avisarFueraDeCatalogo(
       + `${acc.unidades} unidad${acc.unidades === 1 ? '' : 'es'} en existencia. `
       + `Hay que decidir qué se hace con lo que queda antes de que el producto deje de poder moverse.`;
 
-    try {
-      await fetch(pushUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
-          'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
-        },
-        body: JSON.stringify({
-          title, message, url: '/inventario', urgent: false,
-          target_type: 'EMPLOYEE', target_value: destinatarios,
-        }),
-        signal: AbortSignal.timeout(20_000),
-      });
-    } catch (err) {
-      console.error('[fuera-de-catalogo] push:', err);
-    }
-
+    // El push lo manda el trigger de `announcements` (trg_push_on_announcement)
+    // al insertar el anuncio. Mandarlo también desde acá llegaba DOBLE a cada
+    // destinatario (H25; pasó el 8-sep y el 8-oct), y si el anuncio fallaba el
+    // push suelto ya había salido y la corrida siguiente lo repetía.
     const { error: annErr } = await supabase.from('announcements').insert({
       title, message,
       target_type: 'EMPLOYEE', target_value: destinatarios,
@@ -382,7 +367,7 @@ Deno.serve(async (req) => {
     while (true) {
       const { data: batch, error: epErr } = await supabase
         .from('products')
-        .select('id, nombre, laboratorio_id, activo, regulado')
+        .select('id, nombre, laboratorio_id, activo, regulado, es_antibiotico, codigo_barras, perecedero')
         .order('id')
         .range(epFrom, epFrom + CHUNK - 1);
       if (epErr) throw new Error(`Load products: ${epErr.message}`);
@@ -438,6 +423,45 @@ Deno.serve(async (req) => {
       if ((ep.regulado ?? null) !== (np.regulado ?? null)) {
         productChangelogs.push({ product_id: np.id, _activoOnly: true });
       }
+      // H23 (2026-10-23): estas tres columnas venían en la fila pero NO se
+      // comparaban, así que un producto existente en el que sólo cambiaba una
+      // de ellas nunca entraba al upsert y el cambio no llegaba al portal.
+      // Medido ese día: 3 productos con «bajo receta» desfasado (uno, ESOPRASEK
+      // PLUS, entraría nuevo al libro), 31 códigos de barras y 2 perecederos.
+      //
+      // Manda el catálogo de origen y no el portal: nada en el portal escribe
+      // estas columnas (ni pantallas, ni funciones, ni triggers). La corrección
+      // del portal para el libro bajo receta es `dispensacion_clases`, que el
+      // libro y `gate:receta` ya ponen POR ENCIMA de esta casilla — pisarla
+      // desde acá no deshace ninguna decisión tomada en el portal.
+      //
+      // «Bajo receta» y el código de barras se anotan (se ven en el historial
+      // del producto, con valores legibles); perecedero sólo dispara el upsert.
+      if ((ep.es_antibiotico ?? false) !== (np.es_antibiotico ?? false)) {
+        productChangelogs.push({
+          product_id:     np.id,
+          campo:          'bajo receta',
+          valor_anterior: (ep.es_antibiotico ?? false) ? 'Sí' : 'No',
+          valor_nuevo:    (np.es_antibiotico ?? false) ? 'Sí' : 'No',
+          detected_at:    now,
+        });
+      }
+      // Vacío y nulo son lo mismo (si no, la fila se reescribiría en cada
+      // corrida sin que nada cambie).
+      const cbAntes = String(ep.codigo_barras ?? '').trim();
+      const cbAhora = String(np.codigo_barras ?? '').trim();
+      if (cbAntes !== cbAhora) {
+        productChangelogs.push({
+          product_id:     np.id,
+          campo:          'código de barras',
+          valor_anterior: cbAntes || '(sin código)',
+          valor_nuevo:    cbAhora || '(sin código)',
+          detected_at:    now,
+        });
+      }
+      if ((ep.perecedero ?? false) !== (np.perecedero ?? false)) {
+        productChangelogs.push({ product_id: np.id, _activoOnly: true });
+      }
     }
 
     const changedProductIds = new Set(productChangelogs.map((c: any) => c.product_id));
@@ -451,7 +475,11 @@ Deno.serve(async (req) => {
     }
     const realProductChangelogs = productChangelogs.filter((c: any) => !c._activoOnly);
     if (realProductChangelogs.length > 0) {
-      await supabase.from('products_changelog').insert(realProductChangelogs);
+      // H36: el historial que no entra es un error de la corrida, no un
+      // silencio — el cambio ya se escribió en `products` y sin esta fila no
+      // queda dónde verlo (ni cuenta en «Modificados»).
+      const { error: clErr } = await supabase.from('products_changelog').insert(realProductChangelogs);
+      if (clErr) upsertErrors.push(`products_changelog: ${clErr.message}`);
     }
 
     // El producto que DEJÓ DE VENIR en el catálogo — ver `avisarFueraDeCatalogo`.
@@ -532,12 +560,15 @@ Deno.serve(async (req) => {
     }
 
     const syncSuccess = upsertErrors.length === 0;
-    await supabase.from('products_sync_log').insert({
+    // H36: la fila de la bitácora es lo que mira Salud de sincronización; si
+    // no entra, al menos queda en el log de la función.
+    const { error: logErr } = await supabase.from('products_sync_log').insert({
       success:          syncSuccess,
       error_msg:        syncSuccess ? null : upsertErrors.join('; ').slice(0, 2000),
       products_written: productRowsToUpsert.length,
       product_changes:  realProductChangelogs.length,
     });
+    if (logErr) console.error('[sync-products] products_sync_log:', logErr.message);
 
     return new Response(
       JSON.stringify({
@@ -564,10 +595,11 @@ Deno.serve(async (req) => {
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
-      await supabase.from('products_sync_log').insert({
+      const { error: logErr } = await supabase.from('products_sync_log').insert({
         success: false,
         error_msg: String(err.message ?? err).slice(0, 2000),
       });
+      if (logErr) console.error('[sync-products] products_sync_log:', logErr.message);
     } catch { /* logging no debe tapar el error original */ }
 
     return new Response(

@@ -894,7 +894,7 @@
       "motivo": "Bucket público por diseño (CLAUDE.md, regla 10): fotos que se muestran sin firmar."
     },
     "product-photos": {
-      "motivo": "Bucket público por diseño (CLAUDE.md, regla 10): fotos de producto del catálogo."
+      "motivo": "Bucket público para LEER por diseño (CLAUDE.md, regla 10): fotos de producto del catálogo. Escribir (INSERT/UPDATE) pide editar productos (productos | dash_srs_inv), el mismo criterio que products_update (2026-10-23, H29)."
     },
     "inventario-evidencia": {
       "motivo": "Fotos de cajas de envíos de producto (`envios/<sala>/…`), sin datos personales ni dinero: 7 archivos al 2026-10-02. Si empieza a guardar otra cosa, se acota por sala como payment-proofs."

@@ -6,7 +6,7 @@ import {
     alternarResumen, csvMatrizDeLaboratorio, csvVendedoresDePromocion, cuentaDelProducto, descuentosPorEstado,
     formaDeDescuento, ofertaDesdeDescuento, payloadDeDescuento, problemasAlCorregirDescuento, resumenElegido,
 } from '@nucleo/utils/promocionesUtils';
-import { cambioDeMeta, cambiosPorMeta, csvDelSemestre } from '@nucleo/utils/metasUtils';
+import { cambioDeMeta, cambiosPorMeta, csvDelSemestre, resumenDelSemestre } from '@nucleo/utils/metasUtils';
 import {
     archivoDeEncuesta, canalesCon, conMetaDeSucursal, enlaceDeEncuesta, encuestaBorrable, estadoDelResumen, loteParaResumir,
     numeroDeMetaEscrito, sucursalesCon,
@@ -67,8 +67,18 @@ describe('metas', () => {
     });
     it('el CSV del semestre', () => {
         const c = csvDelSemestre({ meses: [{ ym: '2026-07' }], personas: [{ nombre: 'A', por_mes: { '2026-07': 5 }, total: 5, pagar: true }] }, '2026-S2');
-        expect(c.rows[0]).toEqual(['A', '', '', 5, 5, 'SI']);
+        expect(c.rows[0]).toEqual(['A', '', '', 5, 5, 5, 'SI']);
         expect(c.nombre).toBe('bono_semestral_2026-S2');
+    });
+    it('el semestre paga sólo los meses con el bono encendido (H17)', () => {
+        const meses = ['07', '08', '09', '10', '11', '12'].map((m, i) => ({ ym: `2026-${m}`, estado: 'cerrado', informativo: i < 4 }));
+        const r = resumenDelSemestre({ meses, personas: [{ activo: true, pagar: true, total: 100, total_pagable: 30 }] }, '2027-01');
+        expect(r.aPagar).toBe(30);
+        expect(r.sePuedeAprobar).toBe(true);
+        const apagado = resumenDelSemestre({ meses: meses.map((m) => ({ ...m, informativo: true })), personas: [{ activo: true, pagar: true, total: 100, total_pagable: 0 }] }, '2027-01');
+        expect(apagado.aPagar).toBe(0);
+        expect(apagado.cuantosCobran).toBe(0);
+        expect(apagado.sePuedeAprobar).toBe(false);
     });
 });
 

@@ -580,7 +580,9 @@ export const AREAS = [
                  'metas_gasto_sala', 'metas_historial', 'metas_resultado', 'metas_sucursal',
                  // El pago semestral del bono (2026-09-22).
                  'metas_bono_persona', 'bono_semestre', 'bono_semestre_decision',
-                 'bono_semestre_detalle', 'bono_semestre_historial'],
+                 'bono_semestre_detalle', 'bono_semestre_historial',
+                 // El interruptor del bono, mes por mes (2026-10-23, H16).
+                 'metas_bono_interruptor'],
         edge: [],
         crons: ['metas-ciclo-diario'],
         docs: ['docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md',

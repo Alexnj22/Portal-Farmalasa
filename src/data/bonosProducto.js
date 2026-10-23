@@ -26,6 +26,20 @@ export async function reservarPagoBono(item) {
     return data;
 }
 
+/**
+ * Un pago que quedó «en la caja» sin respuesta (la caja no contestó) se
+ * resuelve a mano, mirando la caja: `salio` true lo da por pagado; false anula
+ * el movimiento del portal y deja el bono para pagarse de nuevo. Sin esto, la
+ * reserva lo dejaba repetir con otra clave y podía salir dos veces.
+ */
+export async function resolverPagoBonoSinConfirmar(item, salio, nota) {
+    const { data, error } = await supabase.rpc('resolver_pago_bono_sin_confirmar', {
+        p_item: item, p_salio: !!salio, p_nota: nota,
+    });
+    if (error) throw error;
+    return data;
+}
+
 /** Por promoción terminada: lo pagado por sala, bodega y lo de administración. */
 export async function fetchPagosBonoProducto() {
     const { data, error } = await supabase.rpc('get_pagos_bono_producto');

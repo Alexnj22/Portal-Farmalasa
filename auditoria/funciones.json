@@ -3046,6 +3046,10 @@
    "area": "minmax",
    "por": "código"
   },
+  "guardar_principios_activos": {
+   "area": "productos",
+   "por": "código"
+  },
   "guardar_texto_de_captura": {
    "area": "personal",
    "por": "código"
@@ -3403,6 +3407,10 @@
    "por": "tablas"
   },
   "marketing_comentario_hilo": {
+   "area": "marketing",
+   "por": "trigger"
+  },
+  "marketing_comentario_inmutable": {
    "area": "marketing",
    "por": "trigger"
   },
@@ -4631,6 +4639,10 @@
   },
   "resolver_envio_aparecido": {
    "area": "traslados",
+   "por": "código"
+  },
+  "resolver_pago_bono_sin_confirmar": {
+   "area": "promociones",
    "por": "código"
   },
   "resolver_reclamo_sancion": {

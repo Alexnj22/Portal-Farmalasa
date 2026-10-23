@@ -153,7 +153,7 @@ export default function Semestral({ canApprove }) {
               ))}
             </View>
           ) : null}
-          {r.informativo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Las bonificaciones están apagadas: estos montos dicen lo que se habría ganado; se vuelven dinero cuando se activan en la pestaña Bono." /></View> : null}
+          {r.informativo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Hubo meses con las bonificaciones apagadas: lo de esos meses dice lo que se habría ganado y no se paga. Encenderlas hoy vale desde este mes, no hacia atrás." /></View> : null}
           {!r.aprobado && !r.terminado ? <View style={{ marginHorizontal: 16 }}><Aviso texto="El semestre sigue abierto: los meses cerrados ya no cambian y el mes en curso se mueve con cada venta. Se aprueba cuando cierre el último mes (el cierre corre el día 5)." /></View> : null}
 
           {r.personas.length > 1 ? (
@@ -172,7 +172,7 @@ export default function Semestral({ canApprove }) {
                       <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{nombreDe(p)}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{(p.salas || []).join(' / ') || '—'}</Text>
                     </View>
-                    <Text style={{ color: p.pagar ? colorSistema.texto : colorSistema.texto2, fontSize: 17, fontWeight: '800', textDecorationLine: p.pagar ? 'none' : 'line-through' }}>{formatMoney(p.total)}</Text>
+                    <Text style={{ color: p.pagar ? colorSistema.texto : colorSistema.texto2, fontSize: 17, fontWeight: '800', textDecorationLine: p.pagar ? 'none' : 'line-through' }}>{formatMoney(p.total_pagable ?? p.total)}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                     {r.meses.map((m) => (

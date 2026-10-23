@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useState, useEffect, useCallback, useRef, forwar
 import { PRINCIPIO_PRESETS, editorDePrincipios, principiosParaGuardar, ubicacionesEditables, ubicacionesParaGuardar } from '@nucleo/utils/edicionDeProducto';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import Notice from '../../components/common/Notice';
 import { createPortal } from 'react-dom';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -63,6 +64,13 @@ const CHANGELOG_HIDDEN = new Set(['laboratorio_id']);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Las escrituras de la ficha devuelven `{ data, error }` y no lanzan: sin mirar
+// el error, una falla decía «Guardado» igual (H26).
+function conError(res) {
+    if (res?.error) throw res.error;
+    return res;
+}
+
 function fmtP(v) {
     if (v == null || v === '' || parseFloat(v) === 0) return '—';
     return formatMoney(v);
@@ -81,6 +89,11 @@ function MarginPct({ pct }) {
 function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading, filterNuevos, onFilterNuevos, filterModificados, onFilterModificados, modificadosStats, modificadosLoading }) {
     const perdidaCount = stats?.perdidaIds?.size ?? 0;
     const bajoCount    = stats?.bajoIds?.size    ?? 0;
+    // H34: si la cuenta falló, la tarjeta dice «—» y no 0. «0 en pérdida»
+    // después de un error de lectura se lee como «no hay productos en pérdida».
+    const sinMargen = !!stats?.error;
+    const sinConteo = !!productStats?.error;
+    const sinModificados = !!modificadosStats?.error;
 
     // El fondo, el borde y la sombra los pone `StatCard` con `data-surface`; acá
     // solo queda lo que la tarjeta no puede deducir sola.
@@ -135,8 +148,8 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             <StatCard
                 icon={Package} iconBg={statIconBg} iconCls="text-brand-text"
                 label="Activos"
-                value={(productStats?.activos ?? 0).toLocaleString()} valueCls={statText}
-                sub={(productStats?.inactivos ?? 0) > 0
+                value={sinConteo ? '—' : (productStats?.activos ?? 0).toLocaleString()} valueCls={statText}
+                sub={sinConteo ? 'no se pudo contar' : (productStats?.inactivos ?? 0) > 0
                     ? `${(productStats.inactivos).toLocaleString()} inactivos` : undefined}
                 loading={productStatsLoading}
             />
@@ -146,7 +159,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             <StatCard
                 icon={Sparkles} iconBg={nuevosIconBg} iconCls="text-success-text"
                 label="Nuevos"                 sub={`agregados en ${fechaTexto(hoySV(), { month: 'long' })}`}
-                value={productStatsLoading ? '–' : (productStats?.nuevos ?? 0).toLocaleString()}
+                value={productStatsLoading || sinConteo ? '–' : (productStats?.nuevos ?? 0).toLocaleString()}
                 valueCls="text-success-text"
                 tono="brand" active={filterNuevos}
                 loading={productStatsLoading}
@@ -155,8 +168,8 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
 
             <StatCard
                 icon={History} iconBg={filterModificados ? 'bg-surface-card' : 'bg-warning/10'} iconCls="text-warning-text"
-                label="Modificados" sub="precios o datos cambiados"
-                value={modificadosLoading ? '–' : (modificadosStats?.count ?? 0).toLocaleString()}
+                label="Modificados" sub={sinModificados ? 'no se pudo contar' : 'precios o datos cambiados'}
+                value={modificadosLoading || sinModificados ? '–' : (modificadosStats?.count ?? 0).toLocaleString()}
                 valueCls={(modificadosStats?.count ?? 0) > 0 ? 'text-warning-text' : 'text-content-3'}
                 tono="warning" active={filterModificados}
                 loading={modificadosLoading}
@@ -171,8 +184,8 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 return (
                     <StatCard key={c.id}
                         icon={c.Icon} iconBg={c.iconBg} iconCls={c.iconColor}
-                        label={c.label} sub={c.sub}
-                        value={loading ? '–' : c.count.toLocaleString()} valueCls={c.countColor}
+                        label={c.label} sub={sinMargen ? 'no se pudo contar' : c.sub}
+                        value={loading || sinMargen ? '–' : c.count.toLocaleString()} valueCls={c.countColor}
                         tono={c.tono} active={active}
                         loading={loading}
                         onClick={() => onFilter(c.id)}
@@ -224,7 +237,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
         try {
             const { rows, text, saved } = principiosParaGuardar(productId, { preset, items });
             // Borra, inserta, escribe el texto y anota (D3).
-            await guardarPrincipiosActivos(productId, rows, text);
+            conError(await guardarPrincipiosActivos(productId, rows, text));
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
             if (onSaved) onSaved(saved, text || null);
         } catch (e) {
@@ -314,7 +327,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
     const save = async ({ quiet = false } = {}) => {
         setSavingCat(true);
         try {
-            await updateProductCategoria(productId, selected);
+            conError(await updateProductCategoria(productId, selected));
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
             onCategoryUpdated?.(productId, selected || null);
         } catch (e) {
@@ -333,7 +346,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
 
     const handleCreate = async (nombre) => {
         try {
-            await insertProductCategory(nombre);
+            conError(await insertProductCategory(nombre));
             setSelected(nombre);
             if (onCategoryCreated) onCategoryCreated(nombre);
         } catch (e) {
@@ -380,7 +393,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     const save = async ({ quiet = false } = {}) => {
         try {
             const { toUpsert, toDelete } = ubicacionesParaGuardar(productId, locs);
-            await guardarUbicacionesProducto(productId, toUpsert, toDelete);
+            conError(await guardarUbicacionesProducto(productId, toUpsert, toDelete));
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
         } catch (e) {
             useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error');
@@ -907,7 +920,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
             const path = `${product.id}.jpg`;
             const publicUrl = await subirArchivo('product-photos', path, resized, { upsert: true, contentType: 'image/jpeg' });
             const cacheBust = `${publicUrl}?t=${Date.now()}`;
-            await updateProductFoto(product.id, cacheBust);
+            conError(await updateProductFoto(product.id, cacheBust));
             setLocalFoto(cacheBust);
             onPhotoUpdated(product.id, cacheBust);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
@@ -1423,6 +1436,7 @@ export default function TabCatalogo({
     const [products, setProducts]     = useState([]);
     const [total, setTotal]           = useState(0);
     const [sonParecidos, setSonParecidos] = useState(false);
+    const [busquedaTopada, setBusquedaTopada] = useState(false);
     const [loading, setLoading]       = useState(false);
     const [loadError, setLoadError]   = useState(null);
     const loadRef = useRef(0);
@@ -1476,7 +1490,7 @@ export default function TabCatalogo({
         const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
         fetchIdsPorMargen(marginCheckFields)
             .then(({ perdida, bajo }) => { if (!cancelled) { setMarginStats({ perdidaIds: perdida, bajoIds: bajo }); setStatsLoading(false); } })
-            .catch(() => { if (!cancelled) { setMarginStats({ perdidaIds: new Set(), bajoIds: new Set() }); setStatsLoading(false); } });
+            .catch(() => { if (!cancelled) { setMarginStats({ perdidaIds: new Set(), bajoIds: new Set(), error: true }); setStatsLoading(false); } });
         return () => { cancelled = true; };
     }, [allowedPriceFields]);
 
@@ -1487,8 +1501,8 @@ export default function TabCatalogo({
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         fetchProductCounts(startOfMonth).then(([{ count: activos }, { count: inactivos }, { count: nuevos }]) => {
             setProductStats({ activos: activos ?? 0, inactivos: inactivos ?? 0, nuevos: nuevos ?? 0 });
-            setProductStatsLoading(false);
-        });
+        }).catch(() => setProductStats({ error: true }))
+            .finally(() => setProductStatsLoading(false));
     }, []);
 
     // ── Load products modified this month (via changelogs) ────────────────
@@ -1500,7 +1514,7 @@ export default function TabCatalogo({
         // Núcleo (`fetchIdsModificadosDesde`), el mismo del teléfono.
         fetchIdsModificadosDesde(startOfMonth, CHANGELOG_HIDDEN)
             .then((ids) => { if (!cancelled) { setModificadosStats({ ids, count: ids.size }); setModificadosLoading(false); } })
-            .catch(() => { if (!cancelled) { setModificadosStats({ ids: new Set(), count: 0 }); setModificadosLoading(false); } });
+            .catch(() => { if (!cancelled) { setModificadosStats({ ids: new Set(), count: 0, error: true }); setModificadosLoading(false); } });
         return () => { cancelled = true; };
     }, []);
 
@@ -1528,11 +1542,11 @@ export default function TabCatalogo({
                 }
             }
             if (effectiveBids !== null && effectiveBids.length === 0) {
-                if (rid === loadRef.current) { setProducts([]); setTotal(0); setLoading(false); }
+                if (rid === loadRef.current) { setProducts([]); setTotal(0); setBusquedaTopada(false); setLoading(false); }
                 return;
             }
 
-            const { data, count, error, aproximado } = await fetchProductsList({
+            const { data, count, error, aproximado, topado } = await fetchProductsList({
                 search: term, page: pg, pageSize: ps, filterActivo: fa, laboratorioId: lab, categoria: cat,
                 filterNuevos: fNuevosIso, effectiveBids, sortField: sField, sortDir: sDir,
             });
@@ -1542,6 +1556,7 @@ export default function TabCatalogo({
             setProducts(rows);
             setTotal(count || 0);
             setSonParecidos(!!aproximado);
+            setBusquedaTopada(!!topado);
 
             if (rows.length > 0) {
                 const ids = rows.map(r => r.id);
@@ -1772,6 +1787,12 @@ export default function TabCatalogo({
 
             {/* ── Table ── */}
             {sonParecidos && !loadError && <AvisoParecidos texto={searchTerm} className="mb-3" />}
+            {busquedaTopada && !loadError && (
+                <Notice variant="info" className="mb-3">
+                    La búsqueda tiene más de 1,000 coincidencias y se muestran las 1,000 más parecidas.
+                    Escribe algo más preciso para ver el resto.
+                </Notice>
+            )}
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger-text" />

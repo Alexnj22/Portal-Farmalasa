@@ -247,9 +247,10 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
 
                     {informativo && (
                         <Notice variant="warning" icon={AlertTriangle}>
-                            <span className="font-semibold">Las bonificaciones están apagadas.</span>{' '}
-                            Estos montos dicen lo que se habría ganado; se vuelven dinero cuando se
-                            activan en la pestaña Bono.
+                            <span className="font-semibold">Hubo meses con las bonificaciones apagadas.</span>{' '}
+                            Lo de esos meses dice lo que se habría ganado y no se paga: encenderlas
+                            hoy vale desde este mes, no hacia atrás. «A pagar» cuenta sólo los meses
+                            con el bono encendido.
                         </Notice>
                     )}
 
@@ -308,8 +309,13 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                                 ))}
                                 <DataCell align="right">
                                     <span className={`font-black tabular-nums ${p.pagar ? 'text-content' : 'text-content-3 line-through'}`}>
-                                        {formatMoney(p.total)}
+                                        {formatMoney(p.total_pagable ?? p.total)}
                                     </span>
+                                    {Number(p.total) > Number(p.total_pagable ?? p.total) && (
+                                        <span className="block text-caption text-content-3 tabular-nums">
+                                            de {formatMoney(p.total)}
+                                        </span>
+                                    )}
                                 </DataCell>
                                 {canApprove && hayInactivos && !aprobado && (
                                     <DataCell align="right">
@@ -363,7 +369,7 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                     if (ok) showToast('Semestre aprobado', `${formatMoney(aPagar)} quedan congelados.`, 'success');
                 }}
                 title={`Aprobar ${semestreLabel(sem).toLowerCase()}`}
-                message={`Quedan congelados ${formatMoney(aPagar)} para ${personas.filter((p) => p.pagar).length} personas. A partir de aquí la hoja no cambia: es la que se paga.`}
+                message={`Quedan congelados ${formatMoney(aPagar)} para ${r.cuantosCobran} personas. A partir de aquí la hoja no cambia: es la que se paga.`}
                 confirmText="Aprobar"
                 isProcessing={ocupado}
             />

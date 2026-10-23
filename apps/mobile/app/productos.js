@@ -106,15 +106,17 @@ export default function Productos() {
   const [cuentas, setCuentas] = useState(null);
   const [modificados, setModificados] = useState(null);
   const [margen, setMargen] = useState(null);
+  // Una cuenta que falló no es cero (H34): la pastilla queda sin número.
+  const [fallaron, setFallaron] = useState({});
   const [foco, setFoco] = useState('todos');   // 'todos' | 'nuevos' | 'modificados' | 'perdida' | 'bajo'
   useEffect(() => {
     const ahora = new Date();
     const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
     Promise.resolve(fetchProductCounts(inicioMes)).then(([a, i, n]) => setCuentas({ activos: a.count ?? 0, inactivos: i.count ?? 0, nuevos: n.count ?? 0 })).catch(() => {});
-    Promise.resolve(fetchIdsModificadosDesde(inicioMes)).then(setModificados).catch(() => setModificados(new Set()));
+    Promise.resolve(fetchIdsModificadosDesde(inicioMes)).then(setModificados).catch(() => { setModificados(new Set()); setFallaron((f) => ({ ...f, modificados: true })); });
     if (conCosto) {
       const campos = nivelesVisibles(maxPriceLevel).filter((f) => f.key !== 'precio_7' && f.key !== 'premium');
-      Promise.resolve(fetchIdsPorMargen(campos)).then(setMargen).catch(() => setMargen({ perdida: new Set(), bajo: new Set() }));
+      Promise.resolve(fetchIdsPorMargen(campos)).then(setMargen).catch(() => { setMargen({ perdida: new Set(), bajo: new Set() }); setFallaron((f) => ({ ...f, margen: true })); });
     }
   }, [conCosto, maxPriceLevel]);
 
@@ -186,8 +188,8 @@ export default function Productos() {
                 ['todos', 'Activos', cuentas?.activos, null],
                 ['inactivos', 'Inactivos', cuentas?.inactivos, null],
                 ['nuevos', 'Nuevos del mes', cuentas?.nuevos, MARCA.verde],
-                ['modificados', 'Modificados', modificados?.size, MARCA.ambar],
-                ...(conCosto ? [['perdida', 'En pérdida', margen?.perdida.size, MARCA.rojo], ['bajo', 'Margen bajo', margen?.bajo.size, MARCA.ambar]] : []),
+                ['modificados', 'Modificados', fallaron.modificados ? undefined : modificados?.size, MARCA.ambar],
+                ...(conCosto ? [['perdida', 'En pérdida', fallaron.margen ? undefined : margen?.perdida.size, MARCA.rojo], ['bajo', 'Margen bajo', fallaron.margen ? undefined : margen?.bajo.size, MARCA.ambar]] : []),
               ].map(([id, rotulo, n, color]) => {
                 const activo = id === 'inactivos' ? estado === 'todos' && foco === 'todos' : foco === id && id !== 'todos';
                 return (

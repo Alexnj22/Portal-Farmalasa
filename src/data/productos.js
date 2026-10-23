@@ -12,29 +12,38 @@ import { specialLossKeys, worstMarginOf } from '../utils/preciosDeProducto';
 // 2026-09-28): cualquier cliente que las llame la deja. `contexto` son los
 // datos legibles que sólo la pantalla conoce; la acción es fija.
 
+// Un UPDATE que el RLS no deja pasar no da error: escribe CERO filas y la
+// pantalla decía «Guardado» (H26). Toda escritura de la ficha sobre UN producto
+// pide la fila de vuelta y convierte el cero en error. La forma `{ data, error }`
+// se mantiene: los llamadores ya miran `error`.
+async function unaFila(escritura, quePaso) {
+    const res = await escritura.select('id');
+    if (res.error) return res;
+    if (!Array.isArray(res.data) || res.data.length === 0) {
+        return { data: null, error: new Error(`PERMISSION_DENIED: no se pudo ${quePaso} (¿permiso de editar productos?)`) };
+    }
+    return res;
+}
+
 // ── Principios activos ──────────────────────────────────────────────────────
-
-export function deleteProductActivePrinciples(productId) {
-    return supabase.from('product_active_principles').delete().eq('product_id', productId);
-}
-
-export function insertProductActivePrinciples(rows) {
-    return supabase.from('product_active_principles').insert(rows);
-}
-
-export function updateProductPrincipioActivo(productId, text) {
-    return supabase.from('products').update({ principio_activo: text || null }).eq('id', productId);
-}
 
 /**
  * Reemplaza los principios activos de un producto —las filas y el texto de
  * `products.principio_activo`— y lo anota. Es lo que hace el editor de la ficha
- * del catálogo. Devuelve el resultado del último paso (el texto).
+ * del catálogo.
+ *
+ * Es UNA función de la base (H26): antes eran tres llamadas que no miraban su
+ * error, y si el insert fallaba el producto quedaba sin principios mientras la
+ * pantalla decía «Guardado». La función es INVOKER (el RLS sigue decidiendo),
+ * todo o nada, y lanza si el producto no se pudo escribir. Devuelve
+ * `{ data, error }`.
  */
 export async function guardarPrincipiosActivos(productId, rows, text, contexto = {}) {
-    await deleteProductActivePrinciples(productId);
-    if (rows.length > 0) await insertProductActivePrinciples(rows);
-    const res = await updateProductPrincipioActivo(productId, text);
+    const res = await supabase.rpc('guardar_principios_activos', {
+        p_product_id: Number(productId),
+        p_filas: (rows || []).map((r, i) => ({ nombre: r.nombre, concentracion: r.concentracion ?? null, orden: r.orden ?? i })),
+        p_texto: text || null,
+    });
     if (!res?.error) anotar('UPDATE_PRODUCT_PRINCIPLES', productId, { count: rows.length, ...contexto });
     return res;
 }
@@ -42,7 +51,7 @@ export async function guardarPrincipiosActivos(productId, rows, text, contexto =
 // ── Categoría ────────────────────────────────────────────────────────────────
 
 export function updateProductCategoria(productId, categoria) {
-    return conBitacora(supabase.from('products').update({ tipo_medicamento: categoria || null }).eq('id', productId),
+    return conBitacora(unaFila(supabase.from('products').update({ tipo_medicamento: categoria || null }).eq('id', productId), 'cambiar la categoría'),
         'UPDATE_PRODUCT_CATEGORY', productId, { categoria: categoria || null });
 }
 
@@ -75,7 +84,7 @@ export async function guardarUbicacionesProducto(productId, toUpsert, toDelete, 
 // ── Devolutivo / foto ────────────────────────────────────────────────────────
 
 export function updateProductDevolutivo(productId, value, contexto = {}) {
-    return conBitacora(supabase.from('products').update({ devolutivo: value }).eq('id', productId),
+    return conBitacora(unaFila(supabase.from('products').update({ devolutivo: value }).eq('id', productId), 'marcar el devolutivo'),
         'PRODUCTO_DEVOLUTIVO', productId, { devolutivo: value, ...contexto });
 }
 
@@ -110,7 +119,7 @@ export async function marcarInsumo(productId, insumo, contexto = {}) {
 }
 
 export function updateProductFoto(productId, fotoUrl) {
-    return supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId);
+    return unaFila(supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId), 'guardar la foto');
 }
 
 // Decir que un producto NO tiene principio activo lo saca de la clasificación
@@ -187,12 +196,16 @@ export async function fetchProductPreciosMarginPage(_priceSelect, from) {
 
 // ── Contadores de productos (activos/inactivos/nuevos del mes) ─────────────
 
-export function fetchProductCounts(startOfMonthIso) {
-    return Promise.all([
+export async function fetchProductCounts(startOfMonthIso) {
+    const res = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', true),
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', false),
         supabase.from('products').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonthIso),
     ]);
+    // H34: una cuenta que falló no es cero.
+    const fallo = res.find((r) => r.error);
+    if (fallo) throw fallo.error;
+    return res;
 }
 
 // ── Changelog (página recursiva, PostgREST cap-safe) ────────────────────────
@@ -203,6 +216,9 @@ export function fetchChangelogPage(table, isProd, startOfMonthIso, from, pageSiz
     return supabase.from(table)
         .select(isProd ? 'product_id, campo, valor_anterior' : 'product_id')
         .gte('detected_at', startOfMonthIso)
+        // H35: sin orden, Postgres no garantiza filas estables entre páginas:
+        // una página podía repetir o saltarse filas y «Modificados» salía corto.
+        .order('id')
         .range(from, from + pageSize - 1);
 }
 
@@ -264,42 +280,48 @@ export async function fetchProductsList({
         return { data: todas.slice((page - 1) * pageSize, page * pageSize), count: todas.length, error: null, aproximado: false };
     }
 
-    let idsBuscados = null;
-    let aproximado = false;
     if (search) {
-        const { ids, aproximado: sonParecidos, error } = await buscarIdsDeProducto(search, {
+        // H27: los filtros de la pantalla van DENTRO de la búsqueda, antes del
+        // tope de 1000. Antes se aplicaban acá sobre los 1000 primeros: «mg»
+        // tiene 1,345 coincidencias y con el laboratorio MK la tabla mostraba
+        // 65 de 96.
+        const { ids, aproximado, topado, error } = await buscarIdsDeProducto(search, {
             limite: 1000, conPrincipioActivo: true, conLaboratorio: true,
             soloActivos: filterActivo === 'activos',
+            laboratorioId: laboratorioId || null, categoria: categoria || null, creadoDesde: filterNuevos || null,
         });
         if (error) return { data: null, count: 0, error };
-        // Con un foco grande, la búsqueda ya acota: se cruzan acá y viaja sólo el cruce.
-        const enFoco = idsGrandes ? new Set(effectiveBids.map(String)) : null;
+        // Con un foco, la búsqueda ya acota: se cruzan acá.
+        const enFoco = effectiveBids !== null && effectiveBids !== undefined ? new Set(effectiveBids.map(String)) : null;
         const cruzados = enFoco ? ids.filter((id) => enFoco.has(String(id))) : ids;
-        if (!cruzados.length) return { data: [], count: 0, error: null };
-        idsBuscados = cruzados;
-        aproximado = sonParecidos;
+        if (!cruzados.length) return { data: [], count: 0, error: null, aproximado, topado };
 
-        // Orden por defecto + búsqueda = relevancia. Primero los ids que pasan
-        // los filtros (sólo el id: pocos bytes), después la página en ese orden.
+        // Orden por defecto + búsqueda = relevancia: la página sale de la
+        // lista ya filtrada y viaja sólo la página.
         if (sortField === 'nombre' && sortDir === 'asc') {
-            const { data: quedan, error: e1 } = await filtrar(
-                supabase.from('products').select('id').in('id', idsBuscados));
-            if (e1) return { data: null, count: 0, error: e1 };
-            const orden = enElOrdenDe(quedan, idsBuscados).map(r => r.id);
-            const pagina = orden.slice((page - 1) * pageSize, page * pageSize);
-            if (!pagina.length) return { data: [], count: orden.length, error: null, aproximado };
+            const pagina = cruzados.slice((page - 1) * pageSize, page * pageSize);
+            if (!pagina.length) return { data: [], count: cruzados.length, error: null, aproximado, topado };
             const { data, error: e2 } = await supabase.from('products')
                 .select(CATALOGO_SELECT).in('id', pagina);
             if (e2) return { data: null, count: 0, error: e2 };
-            return { data: enElOrdenDe(data, pagina), count: orden.length, error: null, aproximado };
+            return { data: enElOrdenDe(data, pagina), count: cruzados.length, error: null, aproximado, topado };
         }
+
+        // Otro orden: hasta 1000 ids no caben en una URL. Se piden en tandas,
+        // se ordenan y se pagina acá (como el foco grande).
+        const tandas = [];
+        for (let i = 0; i < cruzados.length; i += MAX_IDS_EN_URL) tandas.push(cruzados.slice(i, i + MAX_IDS_EN_URL));
+        const res = await Promise.all(tandas.map((t) => supabase.from('products').select(CATALOGO_SELECT).in('id', t)));
+        const fallo = res.find((r) => r.error);
+        if (fallo) return { data: null, count: 0, error: fallo.error, aproximado: false };
+        const todas = res.flatMap((r) => r.data ?? []).sort(compararCatalogo(sortField, sortDir));
+        return { data: todas.slice((page - 1) * pageSize, page * pageSize), count: todas.length, error: null, aproximado, topado };
     }
 
     let qb = supabase
         .from('products')
         .select(CATALOGO_SELECT, { count: 'exact' })
         .range((page - 1) * pageSize, page * pageSize - 1);
-    if (idsBuscados) qb = qb.in('id', idsBuscados);
     qb = filtrar(qb);
 
     if (sortField === 'nombre')        qb = qb.order('nombre', { ascending: sortDir === 'asc' });
@@ -308,7 +330,7 @@ export async function fetchProductsList({
     else if (sortField === 'lab')      qb = qb.order('nombre', { referencedTable: 'laboratorios', ascending: sortDir === 'asc', nullsFirst: false }).order('nombre');
     else                               qb = qb.order('nombre');
 
-    return { ...(await qb), aproximado };
+    return { ...(await qb), aproximado: false };
 }
 
 // ── Datos derivados (changelog + margen) para un lote de IDs visibles ──────
@@ -430,7 +452,10 @@ export async function fetchIdsPorMargen(campos) {
     const PAGE = 1000;
     for (let from = 0; ; from += PAGE) {
         const { data, error } = await fetchProductPreciosMarginPage(null, from);
-        if (error || !data) break;
+        // H34: un error no es «cero en pérdida». Lanzar deja que la pantalla
+        // diga que no se pudo contar en vez de mostrar 0.
+        if (error) throw error;
+        if (!data) break;
         for (const pp of data) {
             const w = worstMarginOf(pp, campos);
             if (w === null) continue;

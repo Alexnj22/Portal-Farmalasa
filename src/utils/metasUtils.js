@@ -308,15 +308,24 @@ export function resumenDelSemestre(hoja, ymActual) {
     const terminado = meses.length === 6 && meses[5].ym < ymActual;
     const todosCerrados = meses.length === 6 && meses.every((m) => m.estado === 'cerrado');
     const porDecidir = personas.filter((p) => !p.activo && !p.decision).length;
+    // Lo que se paga es lo PAGABLE: sólo los meses en que el bono estaba
+    // encendido. `total` es lo que se habría ganado con el bono encendido todo
+    // el semestre (los meses apagados quedan informativos). Una hoja vieja sin
+    // `total_pagable` cae al total.
+    const pagable = (p) => Number(p.total_pagable ?? p.total ?? 0);
+    const algunMesPagable = meses.some((m) => m.estado !== 'futuro' && !m.informativo);
     return {
         meses, personas, aprobado, terminado, todosCerrados,
         informativo: meses.some((m) => m.estado !== 'futuro' && m.informativo),
-        aPagar: personas.filter((p) => p.pagar).reduce((a, p) => a + Number(p.total || 0), 0),
-        cuantosCobran: personas.filter((p) => p.pagar).length,
+        aPagar: personas.filter((p) => p.pagar).reduce((a, p) => a + pagable(p), 0),
+        cuantosCobran: personas.filter((p) => p.pagar && pagable(p) > 0).length,
+        algunMesPagable,
         porDecidir,
         hayInactivos: personas.some((p) => !p.activo),
         cerrados: meses.filter((m) => m.estado === 'cerrado').length,
-        sePuedeAprobar: !aprobado && terminado && todosCerrados && porDecidir === 0,
+        // Con el bono apagado los seis meses no hay nada que aprobar: la base
+        // lo rechaza (BONO_APAGADO) y el botón no lo ofrece.
+        sePuedeAprobar: !aprobado && terminado && todosCerrados && porDecidir === 0 && algunMesPagable,
     };
 }
 
@@ -376,11 +385,12 @@ export function resumenDeGastos(gastos) {
 export function csvDelSemestre(r, sem) {
     const meses = r?.meses || [];
     return {
-        headers: ['PERSONA', 'CODIGO', 'SALA', ...meses.map((m) => ymLabelCorto(m.ym).toUpperCase()), 'TOTAL', 'SE PAGA'],
+        headers: ['PERSONA', 'CODIGO', 'SALA', ...meses.map((m) => ymLabelCorto(m.ym).toUpperCase()), 'TOTAL', 'A PAGAR', 'SE PAGA'],
         rows: (r?.personas || []).map((p) => [
             p.nombre, p.code || '', (p.salas || []).join(' / '),
             ...meses.map((m) => Number(p.por_mes?.[m.ym] ?? 0)),
             Number(p.total || 0),
+            Number(p.total_pagable ?? p.total ?? 0),
             p.pagar ? 'SI' : (p.decision ? 'NO' : 'POR DECIDIR'),
         ]),
         nombre: `bono_semestral_${sem}`,

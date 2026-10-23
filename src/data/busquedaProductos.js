@@ -17,9 +17,16 @@ import { supabase } from '../supabaseClient';
  *
  * `aproximado: true` significa que no hubo coincidencia exacta y lo que viene
  * es parecido. La pantalla lo tiene que decir.
+ *
+ * `laboratorioId`, `categoria` y `creadoDesde` filtran EN LA BASE, antes del
+ * tope (H27): filtrados acá, sobre los `limite` primeros, lo que quedaba fuera
+ * del tope no existía para el filtro. Sólo viajan si vienen, así una pantalla
+ * que no los usa sigue llamando con la firma de siempre. `topado: true` dice
+ * que hubo más coincidencias que `limite`.
  */
 export async function buscarIdsDeProducto(texto, {
     limite = 60, conPrincipioActivo = false, conLaboratorio = false, soloActivos = true,
+    laboratorioId = null, categoria = null, creadoDesde = null,
 } = {}) {
     const q = String(texto ?? '').trim();
     if (!q) return { ids: [], aproximado: false, error: null };
@@ -29,9 +36,13 @@ export async function buscarIdsDeProducto(texto, {
         p_con_pactivo: conPrincipioActivo,
         p_con_laboratorio: conLaboratorio,
         p_solo_activos: soloActivos,
+        ...(laboratorioId ? { p_laboratorio_id: Number(laboratorioId) } : {}),
+        ...(categoria ? { p_categoria: categoria } : {}),
+        ...(creadoDesde ? { p_creado_desde: creadoDesde } : {}),
     });
-    if (error) return { ids: [], aproximado: false, error };
-    return { ids: (data?.ids ?? []).map(Number), aproximado: !!data?.aproximado, error: null };
+    if (error) return { ids: [], aproximado: false, topado: false, error };
+    const r = /** @type {{ ids?: unknown[], aproximado?: boolean, topado?: boolean } | null} */ (data);
+    return { ids: (r?.ids ?? []).map(Number), aproximado: !!r?.aproximado, topado: !!r?.topado, error: null };
 }
 
 /** Reordena filas traídas con `.in(clave, ids)` en el orden de `ids`. */

@@ -1,12 +1,11 @@
 {
  "_comment": "Avisos de tsc por archivo del núcleo (gate:tipos). Sólo BAJA: npm run gate:tipos -- --fijar tras una mejora.",
  "actualizado": "2026-10-23",
- "total": 403,
+ "total": 401,
  "archivos": {
   "src/data/attendanceAudit.js": 2,
   "src/data/bitacoras.js": 9,
   "src/data/bolsas.js": 12,
-  "src/data/busquedaProductos.js": 2,
   "src/data/capturaDeFoto.js": 1,
   "src/data/cargarCompra.js": 1,
   "src/data/carneTemporal.js": 1,

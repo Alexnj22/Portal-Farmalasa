@@ -71,6 +71,8 @@ export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador }) 
         cambio_id: fila.cambio_id,
         de: fila.de, a: fila.a,
         muestra: fila.muestra, quedan: fila.quedan, sueltas: fila.sueltas,
+        // H28: la corrección es de ESTE lote; la revisión la busca por lote.
+        lote: fila.lote ?? null,
     };
     return insertMovimientoInventario(payload, { lineas: 1, correccion_de_factor: true });
 }

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.21 — Metas, promociones, marketing y productos: segunda revisión
+
+- **Metas — el bono cuenta en los meses en que estaba encendido.** Antes, si se encendía o apagaba hoy, cambiaba lo que valían los meses ya cerrados: encenderlo en noviembre volvía dinero los $1,496.97 de julio a septiembre, que se ganaron con el bono apagado. Ahora cada cambio vale desde su mes. La hoja del semestre muestra lo que se paga y, debajo, lo que se habría ganado. No se puede aprobar un semestre en que el bono estuvo apagado todos los meses; eso lo frena la base, no sólo la pantalla.
+- **Metas — el reparto usa la sala de la persona en ese mes.** Si alguien se trasladó, su venta cuenta para la sala donde estaba ese mes, aunque hoy esté en otra. Quien dejó de trabajar ese mes también entra si vendió. El tramo se decide con el porcentaje sin redondear, igual que en el histórico.
+- **Promociones — reactivar una promoción ya pagada ya no traba el pago de lo que se vendió después.** Se paga sólo la diferencia, y nunca dos veces lo mismo. Además:
+  - el bono de quien dejó de trabajar sigue en la lista;
+  - si el monto cambió desde que se abrió la lista, el pago se frena y muestra el monto nuevo;
+  - un pago que la caja no confirmó ya no se puede repetir a ciegas: queda «Sin confirmar» hasta que la jefatura revise la caja y diga si el dinero salió.
+- **Productos — el catálogo trae los cambios de «bajo receta», código de barras y perecedero de productos que ya existían.** Antes esos cambios no llegaban nunca. Los cambios de «bajo receta» y de código de barras quedan en el historial del producto.
+- **Productos — avisos.** Los productos nuevos dados de alta en sábado ahora se avisan: el lunes cubre sábado y domingo. El aviso de «salió del catálogo» llega una sola vez, no dos.
+- **Productos — la ficha.** Ya no dice «Guardado» si algo falló. Los principios activos se guardan en un solo paso. El filtro por laboratorio, categoría o «nuevos» se aplica antes del tope de la búsqueda, y la pantalla avisa si la búsqueda tiene más de 1,000 resultados. Las tarjetas muestran «—» cuando no se pudo contar, en vez de 0, y «Modificados» ya no se salta productos. Corregir un lote ya no marca como corregidos los otros lotes del mismo producto.
+- **Productos — fotos.** Sólo quien puede editar productos sube o cambia la foto de un producto.
+- **Marketing.** No se puede publicar una pieza que no se aprobó. Si se cambia el archivo de una pieza aprobada, la pieza vuelve a revisión, y el archivo de una pieza aprobada no se puede borrar del almacenamiento por debajo. De un comentario sólo se puede marcar si está resuelto: quién lo firmó y de qué tipo es ya no se cambian.
+- Necesita aplicar en la base los seis cambios de la segunda revisión A2 y desplegar `sync-products` y `notify-new-products-daily`.
+
 ## v2.1350.20 — Solicitudes, comunicados y encuestas: quien pide ya no reescribe su solicitud, cancelar funciona, el push llega sólo a su audiencia
 
 - **Cancelar una solicitud propia ya funciona.** Antes la base lo rechazaba sin avisar y la solicitud seguía pendiente. Ahora se cancela, y si no se puede, la pantalla dice por qué. Los tipos que ya movieron algo (un abono que entró a la caja, un envío que salió) no ofrecen «Cancelar»: se piden rechazar.

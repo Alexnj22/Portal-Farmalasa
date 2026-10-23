@@ -4,8 +4,9 @@ import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
+import PortalTextarea from '../common/PortalTextarea';
 import IdentidadDeQuienRetira from '../bolsas/IdentidadDeQuienRetira';
-import { fetchBonosProductoSala, reservarPagoBono } from '@nucleo/data/bonosProducto';
+import { fetchBonosProductoSala, reservarPagoBono, resolverPagoBonoSinConfirmar } from '@nucleo/data/bonosProducto';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -33,6 +34,7 @@ export default function BonosPorPagar({ sala, cajaAbierta, puedeOperar, onSalida
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(null);
     const [pagando, setPagando] = useState(null);      // el item que se está pagando
+    const [resolviendo, setResolviendo] = useState(null); // el item que quedó sin respuesta de la caja
     const [recarga, setRecarga] = useState(0);
 
     useEffect(() => {
@@ -86,12 +88,20 @@ export default function BonosPorPagar({ sala, cajaAbierta, puedeOperar, onSalida
                                 </p>
                                 <p className="text-label text-content-3 truncate">
                                     {it.promocion}{it.tipo === 'excedente' ? ' · excedente aprobado' : ''}
+                                    {/* Quien ya no trabaja sigue apareciendo: lo ganó y se le debe. */}
+                                    {it.activo === false ? ' · ya no trabaja' : ''}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                             <span className="text-body-sm font-black tabular-nums">{formatMoney(it.monto)}</span>
-                            {it.estado === 'enviado' ? (
+                            {it.estado === 'enviado' && it.sin_confirmar ? (
+                                puedePagar ? (
+                                    <Button size="sm" variant="secondary" icon={AlertTriangle} onClick={() => setResolviendo(it)}>
+                                        Sin confirmar
+                                    </Button>
+                                ) : <Badge variant="warning" size="sm">Sin confirmar</Badge>
+                            ) : it.estado === 'enviado' ? (
                                 <Badge variant="warning" size="sm">En la caja…</Badge>
                             ) : puedePagar && cajaAbierta ? (
                                 <Button size="sm" onClick={() => setPagando(it)}>Pagar</Button>
@@ -109,6 +119,14 @@ export default function BonosPorPagar({ sala, cajaAbierta, puedeOperar, onSalida
                     onPagado={() => { setPagando(null); setRecarga((n) => n + 1); }}
                 />
             )}
+
+            {resolviendo && (
+                <DialogoSinConfirmar
+                    item={resolviendo}
+                    onClose={() => setResolviendo(null)}
+                    onResuelto={() => { setResolviendo(null); setRecarga((n) => n + 1); }}
+                />
+            )}
         </div>
     );
 }
@@ -118,6 +136,12 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado }) {
     const [persona, setPersona] = useState(null);
     const [vale, setVale] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    // El monto lo pone la reserva, en vivo: si cambió desde que se leyó la
+    // lista (una anulación, una factura que llegó tarde) se frena y se muestra
+    // el número nuevo antes de sacar efectivo. La jefatura no puede contar un
+    // monto y que la caja registre otro.
+    const [montoNuevo, setMontoNuevo] = useState(null);
+    const monto = montoNuevo ?? Number(item.monto);
 
     const esBodega = item.tipo === 'bodega';
     const nombre = esBodega ? 'Bodega' : shortEmployeeName(item);
@@ -132,6 +156,11 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado }) {
         setGuardando(true);
         try {
             const r = await reservarPagoBono(item.item);
+            if (Math.abs(Number(r.monto) - monto) >= 0.005) {
+                setMontoNuevo(Number(r.monto));
+                showToast('El monto cambió', `Ahora son ${formatMoney(r.monto)}. Revisa y vuelve a apretar «Pagar».`, 'warning');
+                return;
+            }
             const salida = await onSalida({
                 monto: Number(r.monto),
                 concepto: r.concepto,
@@ -161,7 +190,7 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado }) {
                     <h3 className="text-h3 font-bold text-content">Pagar bono · {nombre}</h3>
                     <p className="text-body-sm text-content-2 mt-1">
                         {item.promocion}{item.tipo === 'excedente' ? ' (excedente aprobado)' : ''}.
-                        Saca <b className="text-content">{formatMoney(item.monto)}</b> del cajón y
+                        Saca <b className="text-content">{formatMoney(monto)}</b> del cajón y
                         entrégalo {esBodega ? 'a quien recibe por bodega' : `a ${nombre}`}.
                     </p>
                 </div>
@@ -176,6 +205,13 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado }) {
                     sujeto={esBodega ? 'quien recibe el bono de bodega' : nombre}
                 />
 
+                {montoNuevo != null && (
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        El bono cambió de {formatMoney(item.monto)} a {formatMoney(montoNuevo)} desde que
+                        se abrió la lista. Se paga el monto nuevo.
+                    </Notice>
+                )}
+
                 {otraPersona && (
                     <Notice variant="danger" icon={AlertTriangle}>
                         Se identificó {shortEmployeeName(persona)}, pero el bono es de {nombre}.
@@ -187,7 +223,64 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado }) {
                     <Button variant="secondary" onClick={onClose} disabled={guardando}>Volver</Button>
                     <Button onClick={pagar} loading={guardando}
                         disabled={!persona || !vale || otraPersona}>
-                        Pagar {formatMoney(item.monto)}
+                        Pagar {formatMoney(monto)}
+                    </Button>
+                </div>
+            </div>
+        </LiquidModal>
+    );
+}
+
+/**
+ * El pago se mandó a la caja y la caja no contestó. Pudo haberlo anotado
+ * igual, así que repetirlo a ciegas podía pagar dos veces: se mira la caja y
+ * se contesta. «Salió» lo da por pagado; «No salió» anula el movimiento y el
+ * bono vuelve a quedar por pagar.
+ */
+function DialogoSinConfirmar({ item, onClose, onResuelto }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [nota, setNota] = useState('');
+    const [guardando, setGuardando] = useState(false);
+    const nombre = item.tipo === 'bodega' ? 'Bodega' : shortEmployeeName(item);
+
+    const resolver = async (salio) => {
+        setGuardando(true);
+        try {
+            await resolverPagoBonoSinConfirmar(item.item, salio, nota.trim());
+            showToast(salio ? 'Bono pagado' : 'Pago anulado',
+                salio ? `${formatMoney(item.monto)} quedan como pagados.` : 'El bono vuelve a quedar por pagar.', 'success');
+            onResuelto();
+        } catch (err) {
+            showToast('No se pudo resolver', mensajeAmigable(err, 'Vuelve a intentarlo.'), 'error');
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    return (
+        <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Pago sin confirmar">
+            <div className="p-5 space-y-4">
+                <div>
+                    <h3 className="text-h3 font-bold text-content">Pago sin confirmar · {nombre}</h3>
+                    <p className="text-body-sm text-content-2 mt-1">
+                        Se mandó la salida de <b className="text-content">{formatMoney(item.monto)}</b> y la caja
+                        no confirmó. Revisa en la caja si el movimiento salió antes de repetirlo.
+                    </p>
+                </div>
+                <PortalTextarea
+                    label="Qué viste en la caja"
+                    value={nota}
+                    onChange={(e) => setNota(e.target.value)}
+                    rows={2}
+                    readOnly={guardando}
+                />
+                <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="secondary" onClick={onClose} disabled={guardando}>Volver</Button>
+                    <Button variant="secondary" onClick={() => resolver(false)} disabled={guardando || !nota.trim()}>
+                        No salió
+                    </Button>
+                    <Button onClick={() => resolver(true)} loading={guardando} disabled={!nota.trim()}>
+                        Sí salió
                     </Button>
                 </div>
             </div>

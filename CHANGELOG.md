@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.14 — fix(personal): el alta crea usuario aunque el nombre venga de leer el DUI
+
+- **Un empleado dado de alta leyendo su DUI quedaba sin usuario del portal**: el usuario sólo se generaba al teclear el nombre, así que cuando el nombre entraba por la lectura del DUI (o por un borrador) la ficha se guardaba sin usuario y sin acceso, sin ningún aviso. Ahora el alta lo deriva del nombre al guardar; al enlazar con una ficha existente conserva el que ya tenía.
+
 ## v2.1350.13 — fix(errores): un NOT NULL de la base ya no dice «falta llenar un campo»
 
 - **El aviso «Falta llenar un campo obligatorio» mandaba a buscar algo que no existía**: lo dispara la base cuando el PORTAL deja de mandar un dato obligatorio — los campos de la persona los valida el formulario antes y señala cuál. Ahora dice que es un error del sistema, que lo escrito sigue en pantalla y que se avise.

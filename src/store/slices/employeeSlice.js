@@ -11,6 +11,7 @@ import {
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
 import { insertEmployeeBranches, deleteEmployeeBranches } from '../../data/system';
+import { usuarioDesdeNombre } from '../../utils/nameUtils';
 import { aplicarPendientes } from '../../data/documentosCompartidos';
 // Un día a la vez: reescribir el roster entero pisa lo que otra sesión guardó
 // en otro día de la misma semana.
@@ -680,8 +681,17 @@ export const createEmployeeSlice = (set, get) => ({
             // Por eso, cuando cambia, lo mueve `renombrar-usuario-empleado`
             // —que cambia la columna y el correo juntos o no cambia ninguno— y
             // el `UPDATE` de acá deja el que ya tenía.
-            const usuarioPedido = formData.username ? formData.username.trim().toLowerCase() : null;
+            //
+            // Y si el formulario no trae usuario, se DERIVA acá (2026-10-22).
+            // `handleChange` sólo lo genera al TECLEAR el nombre: cuando el
+            // nombre entra por la lectura del DUI o por un borrador, el campo
+            // queda vacío, el alta guarda la ficha sin usuario y no le crea
+            // acceso al portal — sin error ni aviso. Al enlazar se queda el
+            // usuario que la ficha ya tenía: es con el que esa persona entra.
             const usuarioAnterior = (fichaAbsorbida?.username || '').toLowerCase() || null;
+            const usuarioPedido = (formData.username || '').trim().toLowerCase()
+                || (absorbeA ? usuarioAnterior : usuarioDesdeNombre(fNames, lNames))
+                || null;
             const renombraUsuario = !!absorbeA && !!usuarioPedido && usuarioPedido !== usuarioAnterior;
 
             // El código es la credencial del carné: SOLO números (regla de negocio,

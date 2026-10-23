@@ -20,7 +20,7 @@ import {
   crearMes, fetchCatalogos, fetchMes, fetchPiezas, firmarDisenos, guardarPauta, guardarPieza, quitarArchivo, quitarPauta, subirDiseno, moverIdea,
 } from '@nucleo/data/marketing';
 import {
-  asignadoEnPauta, datosDePieza, ESTADOS_DE_SALIDA, ESTADOS_DEL_DISENADOR, ESTADOS_PIEZA, faltaEnPieza, FORMATOS, PIEZA_VACIA, PILARES, tipoDeArchivo,
+  asignadoEnPauta, datosDePieza, ESTADOS_DE_SALIDA, ESTADOS_DEL_DISENADOR, ESTADOS_PIEZA, faltaEnPieza, FORMATOS, PIEZA_VACIA, PILARES, ROTULO_SIN_ENVIAR, tipoDeArchivo,
 } from '@nucleo/utils/marketing';
 import { etiquetaMes, mesSV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -213,6 +213,7 @@ export default function EditarPiezaDeMarketing() {
                   <Tocable key={a.id} onLongPress={() => quitarExistente(a)}>
                     {tipoDeArchivo(a) === 'imagen' && url ? <Image source={{ uri: url }} style={{ width: 84, height: 84, borderRadius: 12 }} />
                       : <View style={{ width: 84, height: 84, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.18)', alignItems: 'center', justifyContent: 'center', padding: 6 }}><Text style={{ color: colorSistema.texto2, fontSize: 11, textAlign: 'center' }} numberOfLines={3}>{a.nombre || a.enlace || 'Archivo'}</Text></View>}
+                    {a.borrador ? <Text style={{ color: MARCA.ambar, fontSize: 11, fontWeight: '700', textAlign: 'center', width: 84 }} numberOfLines={1}>{ROTULO_SIN_ENVIAR}</Text> : null}
                   </Tocable>
                 );
               })}

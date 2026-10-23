@@ -2,7 +2,7 @@ import React from 'react';
 import { ExternalLink, FileText, Film, Trash2, Link2, PenLine, Layers } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { tipoDeArchivo } from '@nucleo/utils/marketing';
+import { tipoDeArchivo, ROTULO_SIN_ENVIAR } from '@nucleo/utils/marketing';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 
@@ -13,6 +13,10 @@ import { abrirEnPestanaNueva } from '@plataforma/descargas';
  * guardada: el bucket es privado y la guardada sola no se puede pintar.
  *
  * `marcasPorArchivo`: cuántos comentarios marcados tiene cada diseño.
+ *
+ * «Sin enviar» (H32): lo subido después del envío a revisión sólo lo ve quien
+ * lo subió (y quien creó la pieza) hasta que la vuelva a enviar; el RLS se lo
+ * esconde al resto, así que si llega acá es porque esta persona es su autora.
  */
 export default function Disenos({ archivos, firmadas, marcasPorArchivo = {}, onQuitar, onAnotar, onVersiones, compacto = false }) {
     const vigentes = (archivos || []).filter((a) => !a.reemplazado);
@@ -45,6 +49,7 @@ export default function Disenos({ archivos, firmadas, marcasPorArchivo = {}, onQ
                                     )}
                                     <span className="absolute top-1 left-1 flex gap-1">
                                         {a.version > 1 && <Badge variant="info" size="sm">V{a.version}</Badge>}
+                                        {a.borrador && <Badge variant="warning" size="sm">{ROTULO_SIN_ENVIAR}</Badge>}
                                         {marcas > 0 && <Badge variant="danger" size="sm">{marcas} marca{marcas === 1 ? '' : 's'}</Badge>}
                                     </span>
                                 </div>
@@ -77,6 +82,7 @@ export default function Disenos({ archivos, firmadas, marcasPorArchivo = {}, onQ
                         title={a.enlace} onClick={() => abrirEnPestanaNueva(a.enlace)}>
                         <span className="truncate">{a.nombre || a.enlace}</span>
                     </Button>
+                    {a.borrador && <Badge variant="warning" size="sm">{ROTULO_SIN_ENVIAR}</Badge>}
                     {onQuitar && (
                         <Button variant="ghost" size="xs" iconOnly icon={Trash2}
                             title={`Quitar ${a.nombre || 'el enlace'}`} onClick={() => onQuitar(a)} className="ml-auto" />

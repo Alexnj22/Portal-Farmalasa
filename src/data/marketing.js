@@ -2,7 +2,7 @@ import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { subirArchivo, signPhotosDeep, signStorageUrls } from '../utils/storageFiles';
-import { primerDia } from '../utils/marketing';
+import { conVersionesAlDia, primerDia } from '../utils/marketing';
 
 /**
  * Planificador de contenido — migración `marketing_planificador`.
@@ -86,7 +86,9 @@ export async function aprobarMes(mesId, texto) {
 
 // ── Las piezas ─────────────────────────────────────────────────────────────
 
-const ARCHIVO_SELECT = 'id, url, enlace, nombre, mime, orden, version, anterior_id, reemplazado, tamano, ancho, alto, created_at';
+// `borrador` (H32): subido después del envío y sin reenviar; el RLS sólo se lo
+// muestra a quien lo subió y a quien creó la pieza.
+const ARCHIVO_SELECT = 'id, url, enlace, nombre, mime, orden, version, anterior_id, reemplazado, borrador, tamano, ancho, alto, created_at';
 const PIEZA_SELECT = `*, pauta:marketing_pautas(*), archivos:marketing_archivos(${ARCHIVO_SELECT})`;
 
 export async function fetchPiezas(mesId) {
@@ -98,7 +100,7 @@ export async function fetchPiezas(mesId) {
     return (data || []).map((p) => ({
         ...p,
         pauta: Array.isArray(p.pauta) ? (p.pauta[0] || null) : p.pauta,
-        archivos: (p.archivos || []).sort((a, b) => a.orden - b.orden || String(a.created_at).localeCompare(b.created_at)),
+        archivos: conVersionesAlDia(p.archivos).sort((a, b) => a.orden - b.orden || String(a.created_at).localeCompare(b.created_at)),
     }));
 }
 

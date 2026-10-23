@@ -9,7 +9,7 @@ import Campo from '../promociones/Campo';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaHora12 } from '@nucleo/utils/hora';
-import { versionesDe, tipoDeArchivo } from '@nucleo/utils/marketing';
+import { versionesDe, tipoDeArchivo, ROTULO_SIN_ENVIAR } from '@nucleo/utils/marketing';
 import { subirDiseno } from '@nucleo/data/marketing';
 import { medirArchivo } from './medir';
 
@@ -25,7 +25,7 @@ export default function VersionesModal({ archivos, archivo, firmadas, mesId, pie
     const [izq, setIzq] = useState(() => (cadena.length > 1 ? cadena[cadena.length - 2].id : ultima.id));
     const [der, setDer] = useState(ultima.id);
     const [subiendo, setSubiendo] = useState(false);
-    const opciones = cadena.map((a) => ({ value: a.id, label: `V${a.version} · ${fechaHora12(a.created_at, { day: 'numeric', month: 'short' })}` }));
+    const opciones = cadena.map((a) => ({ value: a.id, label: `V${a.version} · ${fechaHora12(a.created_at, { day: 'numeric', month: 'short' })}${a.borrador ? ` · ${ROTULO_SIN_ENVIAR}` : ''}` }));
 
     const subir = async (nuevo) => {
         if (!nuevo) return;

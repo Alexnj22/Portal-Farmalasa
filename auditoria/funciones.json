@@ -3366,6 +3366,10 @@
    "area": "marketing",
    "por": "código"
   },
+  "marketing_archivo_borrador": {
+   "area": "marketing",
+   "por": "trigger"
+  },
   "marketing_archivo_reabre_pieza": {
    "area": "marketing",
    "por": "trigger"
@@ -3450,6 +3454,10 @@
    "area": "marketing",
    "por": "llamada"
   },
+  "marketing_objeto_es_borrador_ajeno": {
+   "area": "marketing",
+   "por": "policy"
+  },
   "marketing_pieza_en_su_mes": {
    "area": "marketing",
    "por": "trigger"
@@ -3465,6 +3473,10 @@
   "marketing_promociones": {
    "area": "marketing",
    "por": "código"
+  },
+  "marketing_publicar_borradores": {
+   "area": "marketing",
+   "por": "llamada"
   },
   "marketing_publicar_mes": {
    "area": "marketing",

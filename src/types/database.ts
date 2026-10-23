@@ -15697,6 +15697,7 @@ export type Database = {
           alto: number | null
           ancho: number | null
           anterior_id: string | null
+          borrador: boolean
           created_at: string
           enlace: string | null
           id: string
@@ -15714,6 +15715,7 @@ export type Database = {
           alto?: number | null
           ancho?: number | null
           anterior_id?: string | null
+          borrador?: boolean
           created_at?: string
           enlace?: string | null
           id?: string
@@ -15731,6 +15733,7 @@ export type Database = {
           alto?: number | null
           ancho?: number | null
           anterior_id?: string | null
+          borrador?: boolean
           created_at?: string
           enlace?: string | null
           id?: string
@@ -32863,7 +32866,15 @@ export type Database = {
         Returns: Json
       }
       marketing_nombre_mes: { Args: { p_mes: string }; Returns: string }
+      marketing_objeto_es_borrador_ajeno: {
+        Args: { p_name: string }
+        Returns: boolean
+      }
       marketing_promociones: { Args: never; Returns: Json }
+      marketing_publicar_borradores: {
+        Args: { p_piezas: string[] }
+        Returns: number
+      }
       marketing_publicar_mes: {
         Args: { p_mes_id: string; p_nota?: string }
         Returns: Json

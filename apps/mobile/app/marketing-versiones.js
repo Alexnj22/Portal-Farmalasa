@@ -10,7 +10,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { firmarDisenos, subirDiseno } from '@nucleo/data/marketing';
-import { tipoDeArchivo, versionesDe } from '@nucleo/utils/marketing';
+import { ROTULO_SIN_ENVIAR, tipoDeArchivo, versionesDe } from '@nucleo/utils/marketing';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -45,7 +45,7 @@ export default function VersionesDelDiseno() {
     );
   }
 
-  const rotulo = (a) => `V${a.version} · ${fechaHora12(a.created_at, { day: 'numeric', month: 'short' })}`;
+  const rotulo = (a) => `V${a.version} · ${fechaHora12(a.created_at, { day: 'numeric', month: 'short' })}${a.borrador ? ` · ${ROTULO_SIN_ENVIAR}` : ''}`;
   const elegir = (setId) => {
     const opciones = [...cadena.map(rotulo), 'Cancelar'];
     ActionSheetIOS.showActionSheetWithOptions({ title: 'Versión', options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => { if (i < cadena.length) setId(cadena[i].id); });

@@ -26,7 +26,7 @@ import {
 } from '@nucleo/data/marketing';
 import { formatMoney, formatPct, formatQty } from '@nucleo/utils/formatNumber';
 import { correrMes, etiquetaMes } from '@nucleo/utils/fecha';
-import { aptoParaWhatsApp, estadoDe, formatoDe, fraseDeHistorial, tipoDeArchivo, variacionDeVentas } from '@nucleo/utils/marketing';
+import { aptoParaWhatsApp, estadoDe, formatoDe, fraseDeHistorial, ROTULO_SIN_ENVIAR, tipoDeArchivo, variacionDeVentas } from '@nucleo/utils/marketing';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
@@ -215,6 +215,12 @@ export default function PiezaDeMarketing() {
                 onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/marketing-anotar', params: { archivo: String(a.id) } }); }}
                 style={{ gap: 6 }}>
                 <Image source={{ uri: firmas.get(a.url) }} style={{ width: '100%', aspectRatio: a.ancho && a.alto ? a.ancho / a.alto : 1, borderRadius: 16 }} resizeMode="cover" />
+                {/* H32: lo subido después del envío sólo lo ve su autor hasta el reenvío. */}
+                {a.borrador ? (
+                  <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '700', marginHorizontal: 4 }}>
+                    {`${ROTULO_SIN_ENVIAR} · nadie más lo ve hasta que la envíes a revisión`}
+                  </Text>
+                ) : null}
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600', marginHorizontal: 4 }}>
                   {n ? `Ver y comentar sobre el diseño · ${n} ${n === 1 ? 'marca' : 'marcas'}` : 'Marcar y comentar sobre el diseño'}
                 </Text>

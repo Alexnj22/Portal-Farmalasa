@@ -526,6 +526,11 @@ export default function PiezaModal({
                                         {!vigentes.length && !pendientes.length && (puedeEditar || publicado) && (
                                             <p className="text-body-sm text-content-3">Sin diseños todavía.</p>
                                         )}
+                                        {vigentes.some((a) => a.borrador) && (
+                                            <Notice icon={EyeOff} compact>
+                                                Los diseños «Sin enviar» todavía no los ve nadie más: se verán cuando vuelvas a enviar la pieza o el mes a revisión.
+                                            </Notice>
+                                        )}
                                         <Disenos archivos={archivos} firmadas={firmadas} marcasPorArchivo={marcasPorArchivo}
                                             onQuitar={puedeEditar ? quitar : undefined}
                                             onAnotar={puedeVerDisenos && !esNueva ? setAnotando : undefined}

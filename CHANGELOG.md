@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.23 — Marketing: lo que se sube después del envío no lo ve nadie más hasta reenviar
+
+- **Lo que el diseñador sube a una pieza después de enviarla a revisión no lo ve nadie más hasta que la vuelva a enviar.** Antes, desde el primer envío del mes, cualquier diseño nuevo —la V2 de una pieza con cambios, una pieza agregada después— quedaba a la vista de todos al instante. Ahora queda «Sin enviar»: lo ven sólo quien lo subió y quien creó la pieza. Lo frena la base, no sólo la pantalla: tampoco se puede abrir el archivo por su enlace.
+- Mientras tanto, los demás siguen viendo la última versión que se envió. Al enviar la pieza o el mes, lo «Sin enviar» se publica, y si la pieza ya estaba aprobada vuelve a revisión: nadie aprueba un diseño que no vio.
+- En el portal y en la app, los diseños sin enviar llevan la marca «Sin enviar», también en el comparador de versiones.
+- Necesita aplicar en la base `h32-marketing-borradores` (después de `segunda_a2_06_marketing_candados`).
+
+## v2.1350.20 — Metas, promociones, marketing y productos: segunda revisión
+
 ## v2.1350.22 — Documentos: el carné se endereza solo y «Girar» gira a la vista
 
 - Al subir la foto de cualquier documento (no sólo el DUI) el portal pregunta

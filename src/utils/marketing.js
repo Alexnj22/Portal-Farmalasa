@@ -361,6 +361,21 @@ export function asignadoEnPauta(piezas, exceptoId = null) {
 
 // ── Versiones de un diseño ──────────────────────────────────────────────────
 
+/**
+ * H32: una versión «Sin enviar» (`borrador`) no retira a la anterior en la
+ * base —los demás siguen viendo la última que se envió—. Quien la subió recibe
+ * las dos, así que acá se retira la anterior SÓLO en lo que esta persona ve:
+ * un diseño con una versión más nueva entre las filas leídas cuenta como
+ * reemplazado. Para quien no ve el borrador no cambia nada.
+ */
+export function conVersionesAlDia(archivos) {
+    const conSucesor = new Set((archivos || []).map((a) => a.anterior_id).filter(Boolean));
+    return (archivos || []).map((a) => (!a.reemplazado && conSucesor.has(a.id) ? { ...a, reemplazado: true } : a));
+}
+
+/** El rótulo de un diseño que su autor subió después del envío y que nadie más ve todavía. */
+export const ROTULO_SIN_ENVIAR = 'Sin enviar';
+
 /** Todas las versiones de un diseño (de la V1 a la última), dado cualquiera de ellas. */
 export function versionesDe(archivos, archivo) {
     if (!archivo) return [];

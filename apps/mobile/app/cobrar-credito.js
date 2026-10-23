@@ -16,10 +16,10 @@
 // El servidor (`creditos-erp`) vuelve a validar el monto contra el saldo REAL
 // de la caja antes de escribir. El formulario guarda borrador: la sesión se
 // cierra sola y nadie vuelve a escribir un comprobante entero.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { fetchCreditosDelCliente, fetchCreditosReservados, fetchPosProveedores, leerPagoDeCredito, pagarCreditos } from '@nucleo/data/creditos';
+import { cobroSinRespuesta, fetchCreditosDelCliente, fetchCreditosReservados, fetchPosProveedores, leerPagoDeCredito, nuevaClaveDeCobro, pagarCreditos } from '@nucleo/data/creditos';
 import {
   aplicacionesDelPago, APROBACION, estadoDelCobro, FORMAS_DE_COBRO, FORMAS_REALES, MOTIVO_DEL_FRENO,
   repartoDelMasViejo, repartoDesdeElComprobante, ROTULO_DE_FORMA, sumaDeSaldos,
@@ -150,6 +150,9 @@ export default function CobrarCredito() {
         { text: e.iraAprobacion ? 'Enviar' : 'Cobrar', onPress: enviar },
       ]);
   };
+  /* La clave de ESTE intento de cobro: sobrevive sólo a los reintentos que no
+   * tuvieron respuesta (pudieron haber cobrado). Ver `nuevaClaveDeCobro`. */
+  const claveCobro = useRef(null);
   const enviar = async () => {
     setEnviando(true); trabajando(e.iraAprobacion ? 'Enviando a aprobación…' : 'Registrando el pago…');
     try {
@@ -157,12 +160,16 @@ export default function CobrarCredito() {
       if (fotos.length) {
         try { comprobanteUrl = (await subirFotos(fotos, { bucket: 'payment-proofs', carpeta: `abonos-credito/${sala}` }))[0] ?? null; } catch { comprobanteUrl = null; }
       }
+      if (!claveCobro.current) claveCobro.current = nuevaClaveDeCobro();
       const r = await pagarCreditos({
         sala, forma: e.pideAprobacion ? formaReal : forma, documento: documento.trim(),
         montoDocumento: Number(e.totalPago.toFixed(2)), aplicaciones: aplicacionesDelPago(lista, reparto),
         comprobanteUrl, lectura: lectura || null, fechaDocumento: fechaDoc || null, pos: pos || null,
         motivo: motivo.trim() || null, requiereAprobacion: e.iraAprobacion,
+        claveEnvio: claveCobro.current,
       });
+      // Con respuesta, el intento terminó: el próximo es otro cobro.
+      if (!cobroSinRespuesta(r)) claveCobro.current = null;
       if (r?.error || (r?.ok === false && !r?.aviso)) throw (r.error || new Error(r?.motivo || r?.mensaje || 'No se pudo cobrar.'));
       clearDraft(claveBorrador);
       if (r.aviso) fallo('El pago quedó a medias', r.aviso);

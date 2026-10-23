@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.19 — Cobro de créditos sin doble abono, consulta de puntos con freno por documento y ventas al corte
+
+Segunda revisión, tanda B (cobros de crédito, puntos, ventas). Lo de la base
+va en SQL aparte y se aplica a mano; las funciones del servidor se despliegan
+después de ese SQL.
+
+- **Un cobro no se aplica dos veces.** Aprobar un cobro guardado reclama el
+  envío antes de tocar la caja y relee el saldo de ese momento: un crédito que
+  ya se pagó por otro lado se devuelve con su motivo en vez de abonarse. Un
+  segundo toque después de que la red cortó recibe la respuesta del primero.
+- **Cobrar desde la pantalla lleva una clave por intento**: el reintento de un
+  cobro que no tuvo respuesta no vuelve a cobrar; si sigue en curso, avisa.
+- **Un crédito que espera aprobación no se cobra por otro lado**, y ya no se
+  propone al repartir una transferencia.
+- **Si el comprobante va a aprobación lo decide el servidor**, con la lectura
+  que él mismo firmó; sin lectura válida, el cobro espera firma.
+- **Consulta de puntos**: el freno cuenta también los intentos sobre el mismo
+  documento y los de toda la red, no sólo los de una dirección.
+- **Ventas**: la hora de corte ya no suma el día completo cuando el rango
+  cruza el resumen guardado; «hoy» es el día de El Salvador; las páginas no
+  repiten ni pierden filas con fechas iguales; si la lista no carga, lo dice
+  en vez de mostrar «sin ventas».
+- **Retención y cuentas por pagar** usan la regla única de qué cuenta como
+  venta y el día de El Salvador.
+
 ## v2.1350.18 — fix(app): íconos de Android e iOS según las guías vigentes
 
 - **Android — el ícono se recortaba**: el ícono adaptable usaba el logo de borde a borde. Según la guía de Android, de los 108 dp del lienzo sólo los 66 dp centrales quedan a salvo de la máscara de cada fabricante, y el logo no puede pasar de ahí. Ahora ocupa el 58% central (dentro del 61% permitido y sobre el mínimo de 48 dp). Se agrega la capa monocroma para los íconos temáticos (Android 13+).

@@ -26,7 +26,7 @@ import {
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
     pagarCreditos, pedirCorreccionDeAbono, severidadDeDias, fetchCreditosReservados,
     refrescarCreditosDeHoy, subirComprobanteDeAbono,
-    pagadoEnLaApp,
+    pagadoEnLaApp, nuevaClaveDeCobro, cobroSinRespuesta,
 } from '@nucleo/data/creditos';
 import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -172,6 +172,12 @@ export default function CuentasPorCobrarView() {
     const [creditos, setCreditos] = useState(VACIO);
     const [cargando, setCargando] = useState(true);
     const [abonando, setAbonando] = useState(null);
+    /* La clave del intento de cobro en curso (ver `nuevaClaveDeCobro`). Nace
+     * al primer envío y sobrevive SÓLO a los reintentos que no tuvieron
+     * respuesta: ésos pudieron haber cobrado, y el servidor los reconoce por
+     * ella. Al cerrar o cambiar de crédito se descarta. */
+    const claveCobro = useRef(null);
+    useEffect(() => { claveCobro.current = null; }, [abonando]);
     /* `credito_erp` de los que tienen un cobro esperando firma, por sala, y si
      * esa lista se pudo leer. Son dos estados y no uno: «no hay ninguno» y «no
      * pude preguntarlo» se ven iguales en un Map vacío, y uno de los dos tiene
@@ -372,12 +378,16 @@ export default function CuentasPorCobrarView() {
          * `archivo` es lo único que NO viaja: es el File del navegador y ya se
          * convirtió en `comprobanteUrl` unas líneas arriba. */
         const { archivo: _elFile, ...loPedido } = pago;
+        if (!claveCobro.current) claveCobro.current = nuevaClaveDeCobro();
         const r = await pagarCreditos({
             sala: abonando.branch_id,
             ...loPedido,
             lectura: pago.lectura || null,
             comprobanteUrl,
+            claveEnvio: claveCobro.current,
         });
+        // Con respuesta, el intento terminó: el próximo es otro cobro.
+        if (!cobroSinRespuesta(r)) claveCobro.current = null;
         if (r?.error || (r?.ok === false && !r?.aviso)) {
             showToast('No se pudo cobrar', mensajeAmigable(r.error || r), 'error');
             return false;

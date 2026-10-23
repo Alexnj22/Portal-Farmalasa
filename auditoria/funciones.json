@@ -1289,6 +1289,10 @@
    "area": "app-clientes",
    "por": "tablas"
   },
+  "creditos_cobro_tomar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
   "creditos_del_cliente": {
    "area": "cortes-efectivo",
    "por": "código"

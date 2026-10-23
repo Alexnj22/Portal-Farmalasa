@@ -244,6 +244,12 @@ export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch
         .gte('fecha', fini).lte('fecha', ffin)
         .order(col, { ascending: asc });
     if (col === 'fecha') q = q.order('hora', { ascending: asc });
+    /* Desempate ÚNICO al final, siempre. Con `.range()` una columna que se
+     * repite (Sucursal: ~3,000 filas por sala en un mes) no fija el orden entre
+     * la página 1 y la 2: una factura podía salir en las dos y otra en
+     * ninguna, sin error y con el total del paginador cuadrando. Es la misma
+     * familia que `fetchInvoiceItemsByIds`. */
+    if (col !== 'id') q = q.order('id', { ascending: asc });
     if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
     if (filterPuntosEstado) q = q.eq('puntos_enviados.estado_puntos', filterPuntosEstado);
     if (filterAnuladas) q = q.in('estado', cancelledEstados);
@@ -312,7 +318,7 @@ export async function fetchEstadoPuntosDeVentas(invoiceIds) {
         .select('invoice_id, estado_puntos')
         .in('invoice_id', invoiceIds);
     if (error) console.error('fetchEstadoPuntosDeVentas:', error.message);
-    return { data: data || [] };
+    return { data: data || [], error: error ?? null };
 }
 
 export function fetchInvoiceById(invoiceId) {

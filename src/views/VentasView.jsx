@@ -12,7 +12,7 @@ import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
     ChevronUp, Search, X, Trophy, Star, ChevronLeft,
-    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical
+    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical, AlertTriangle
 } from 'lucide-react';
 import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '@nucleo/data/puntos';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
@@ -357,6 +357,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [loadingStats, setLoadingStats] = useState(true);
     const [loadingItems, setLoadingItems] = useState(false);
     const [loadingRows, setLoadingRows]   = useState(true);
+    /* Una consulta que FALLA no es un período vacío. Sin esto, un 400 o un
+     * timeout pintaba «Sin ventas para este período» —el mismo texto que un
+     * mes sin ventas— y nadie podía distinguirlos. */
+    const [errorRows, setErrorRows]       = useState(null);
     const [antibioticIds, setAntibioticIds] = useState(new Set());
     const [filterAntibiotico, setFilterAntibiotico] = useState(false);
     const [filterAnuladas, setFilterAnuladas] = useState(false);
@@ -521,6 +525,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         const rid = ++fetchRowsRef.current;
         setLoadingRows(true);
         let fetched = [];
+        let fallo = null;
 
         if (filterPuntos && !isSearching) {
             const { data, error } = await fetchVentasConPuntos({
@@ -532,7 +537,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 p_sort_col:  sortCol,
                 p_sort_dir:  sortDir,
             });
-            if (error) console.error('fetchRows: get_ventas_con_puntos failed:', error.message);
+            if (error) { console.error('fetchRows: get_ventas_con_puntos failed:', error.message); fallo = error; }
             fetched = data || [];
             setPuntosCount(fetched.length > 0 ? Number(fetched[0].n) : 0);
         } else if (filterAntibiotico) {
@@ -547,7 +552,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 searchTerm: isSearching ? searchTerm : null,
                 sortCol, sortDir, page, pageSize,
             });
-            if (error) console.error('fetchRows: get_ventas_con_receta failed:', error.message);
+            if (error) { console.error('fetchRows: get_ventas_con_receta failed:', error.message); fallo = error; }
             fetched = data || [];
         } else if (isSearching) {
             // Buscar va por la BASE, igual que «Receta Médica» pero sin su filtro.
@@ -567,18 +572,19 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 searchTerm, sortCol, sortDir, page, pageSize,
                 soloReceta: false,
             });
-            if (error) console.error('fetchRows: get_ventas_con_receta (búsqueda) failed:', error.message);
+            if (error) { console.error('fetchRows: get_ventas_con_receta (búsqueda) failed:', error.message); fallo = error; }
             fetched = data || [];
         } else {
             // Sin búsqueda la lista pagina por índice con `.range()`, que es más
             // barato que la función y no tiene el problema del tope: `range()` ES
             // la paginación, no una respuesta que se recorta.
             const asc = sortDir === 'asc';
-            const { data, count } = await fetchInvoicesList({
+            const { data, count, error } = await fetchInvoicesList({
                 fini, ffin, sortCol, asc, filterBranch, filterAnuladas, filterPuntosEstado,
                 cancelledEstados: CANCELLED_ESTADOS,
                 isSearching, searchTerm, page, pageSize,
             });
+            if (error) { console.error('fetchRows: sales_invoices failed:', error.message); fallo = error; }
             fetched = data || [];
             // Con el filtro puesto, el total del paginador es el de ESTA
             // consulta. `get_ventas_stats` no sabe de puntos y contaría todas.
@@ -589,13 +595,16 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         // completa acá para que la columna diga lo mismo con o sin búsqueda.
         const sinEstado = fetched.filter(r => !('puntos_enviados' in r)).map(r => r.id);
         if (sinEstado.length > 0) {
-            const { data: estados } = await fetchEstadoPuntosDeVentas(sinEstado);
+            const { data: estados, error: errorPuntos } = await fetchEstadoPuntosDeVentas(sinEstado);
+            // La columna Puntos queda en «—» si esto falla: se dice, no se calla.
+            if (errorPuntos && !fallo) fallo = { message: 'no se pudo leer el estado de los puntos', parcial: true };
             const porId = new Map(estados.map(e => [e.invoice_id, e]));
             fetched = fetched.map(r => ('puntos_enviados' in r ? r : { ...r, puntos_enviados: porId.get(r.id) ?? null }));
         }
 
         if (rid !== fetchRowsRef.current) return;
         setRows(fetched);
+        setErrorRows(fallo);
         setLoadingRows(false);
 
         const fetchedIds = fetched.map(r => r.id);
@@ -639,7 +648,19 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             const init = Object.fromEntries(uncachedChg.map(id => [id, []]));
             setChangelogCache(prev => ({ ...init, ...prev }));
             fetchInvoiceChangelog(uncachedChg)
-                .then(({ data: logs }) => {
+                .then(({ data: logs, error: errorLogs }) => {
+                    /* Si falla, se SACAN del caché los vacíos que se pusieron
+                     * arriba: dejarlos diría «sin cambios» hasta recargar la
+                     * página, y la próxima pasada por estas filas lo reintenta. */
+                    if (errorLogs) {
+                        console.error('fetchRows: sales_invoice_changelog failed:', errorLogs.message);
+                        setChangelogCache(prev => {
+                            const sinVacios = { ...prev };
+                            for (const id of uncachedChg) if (sinVacios[id]?.length === 0) delete sinVacios[id];
+                            return sinVacios;
+                        });
+                        return;
+                    }
                     if (!logs || fetchRowsRef.current !== currentRid) return;
                     const grouped = Object.fromEntries(uncachedChg.map(id => [id, []]));
                     for (const c of logs) grouped[c.invoice_id].push(c);
@@ -924,6 +945,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     Escribe al menos {MIN_LETRAS_BUSQUEDA} letras para buscar
                 </Notice>
             )}
+            {errorRows && (
+                <Notice variant={errorRows.parcial ? 'warning' : 'danger'} icon={AlertTriangle} className="mb-3">
+                    {errorRows.parcial
+                        ? 'La lista cargó, pero no se pudo leer el estado de los puntos. Vuelve a intentarlo en un momento.'
+                        : 'No se pudo cargar la lista de ventas. Vuelve a intentarlo en un momento.'}
+                </Notice>
+            )}
             {isSearching && facturasParecidas && rows.length > 0 && (
                 <AvisoParecidos texto={searchTerm} className="mb-3" />
             )}
@@ -946,7 +974,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 onSort={handleSort}
                 loading={loadingRows && rows.length === 0}
                 skeletonRows={10}
-                empty={{ icon: TrendingUp, message: isSearching ? 'Sin resultados para esa búsqueda' : 'Sin ventas para este período' }}
+                empty={{ icon: errorRows && !errorRows.parcial ? AlertTriangle : TrendingUp, message: errorRows && !errorRows.parcial ? 'No se pudo cargar la lista' : isSearching ? 'Sin resultados para esa búsqueda' : 'Sin ventas para este período' }}
                 minWidth="700px"
             >
                 {rows.map((r, i) => {

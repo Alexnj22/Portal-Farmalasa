@@ -106,7 +106,17 @@ Deno.serve(async (req) => {
   // La IP real viene del proxy. Sin ella el freno no puede agrupar, así que se
   // usa una constante — que hace el freno GLOBAL en vez de por IP. Es más
   // estricto de lo debido y ése es el lado correcto para equivocarse.
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "desconocida";
+  //
+  // Primero `cf-connecting-ip`, que la pone Cloudflare y el cliente no puede
+  // elegir (2026-10-23, igual que `app-clientes`). El PRIMER valor de
+  // `x-forwarded-for` sí lo puede escribir quien llama: el proxy AGREGA la IP
+  // real al final de lo que vino, así que rotándolo cada pedido era una IP
+  // nueva y el freno no contaba nada. Por eso el freno ya no depende sólo de
+  // la IP: `puntos_consulta_registrar` suma un tope por documento y uno de
+  // toda la red, que no dependen de quién dice ser el que llama.
+  const ip = (req.headers.get("cf-connecting-ip")
+    ?? (req.headers.get("x-forwarded-for") ?? "").split(",")[0]
+    ?? "").trim() || "desconocida";
 
   let conn: any = null;
   try {

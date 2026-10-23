@@ -77,8 +77,15 @@ async function pedir(body) {
              *
              * Es lo que `aplicarCorreccionDeCaja` ya hacía en `data/requests`. */
             let detalle = '';
-            try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
-            return { ok: false, error: detalle || error };
+            let codigo = null;
+            try {
+                const cuerpo = await error.context?.json();
+                detalle = cuerpo?.error ?? '';
+                // `codigo` dice QUÉ pasó cuando el texto no alcanza: un cobro
+                // «en curso» se reintenta con la misma clave (`cobroSinRespuesta`).
+                codigo = cuerpo?.codigo ?? null;
+            } catch { /* sin cuerpo legible */ }
+            return { ok: false, error: detalle || error, codigo };
         }
         if (!data) return { error: new Error('NO_SE_PUDO') };
         return data;
@@ -227,12 +234,51 @@ export function aplicarAnticipoACredito({ sala, apartado, credito = null }) {
 export function pagarCreditos({
     sala, forma = 'Efectivo', documento = '', montoDocumento, aplicaciones,
     comprobanteUrl = null, lectura = null, fechaDocumento = null, pos = null,
-    motivo = null, requiereAprobacion = false,
+    motivo = null, requiereAprobacion = false, claveEnvio = null,
 }) {
     return pedir({
         accion: 'pagar', sala, forma, documento, montoDocumento, aplicaciones,
         comprobanteUrl, lectura, fechaDocumento, pos, motivo, requiereAprobacion,
+        clave_envio: claveEnvio,
     });
+}
+
+/**
+ * La clave de UN intento de cobro (2026-10-23).
+ *
+ * Un abono en la caja no se deshace. Si la llamada corta con el abono ya
+ * hecho —504, la red del mostrador—, la pantalla dice «No se pudo cobrar» y el
+ * segundo toque cobraba otra vez. Con la clave, `creditos-erp` reclama el
+ * envío antes de tocar la caja: el reintento con la MISMA clave recibe la
+ * respuesta del primero, o «se está enviando» si todavía no terminó.
+ *
+ * Sólo tiene que no repetirse, no ser secreta. En la app (Hermes no trae
+ * `randomUUID`) se arma con `getRandomValues` o, como último recurso, la hora.
+ */
+export function nuevaClaveDeCobro() {
+    const c = globalThis.crypto;
+    if (c?.randomUUID) return c.randomUUID();
+    if (c?.getRandomValues) {
+        const b = new Uint8Array(16);
+        c.getRandomValues(b);
+        return [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/**
+ * ¿El próximo intento tiene que llevar la MISMA clave?
+ *
+ * Sí cuando no se sabe si el cobro entró: la petición no llegó a contestar
+ * (red, 504 sin cuerpo) o el servidor dice que ese envío todavía está en
+ * curso. Con cualquier respuesta del servidor —cobró, quedó a medias, lo
+ * rechazó— el intento terminó y el siguiente es uno NUEVO: reusar la clave
+ * devolvería la respuesta vieja en vez de cobrar lo que faltó.
+ */
+export function cobroSinRespuesta(r) {
+    if (!r) return true;
+    if (r.codigo === 'envio_en_curso') return true;
+    return !!r.error && typeof r.error !== 'string';
 }
 
 /**

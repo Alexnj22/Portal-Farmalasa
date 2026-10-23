@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2"
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts"
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
 import { TITULAR, esElTitular, esNuestraFarmacia, elPapelNosNombra, norm } from "../_shared/titular.ts"
+import { firmarLectura } from "../_shared/cobroCredito.ts"
 
 // ════════════════════════════════════════════════════════════════════════════
 // Lee el comprobante con el que un cliente abona un crédito, y LLENA el
@@ -366,10 +367,24 @@ Deno.serve(async (req) => {
       beneficiario: leido.beneficiario ?? null, monto: tieneMonto ? monto : null,
     }))
 
+    /* ── La firma del veredicto (2026-10-23) ───────────────────────────────
+     *
+     * Esta respuesta viaja por el navegador hasta `creditos-erp`, y la duda
+     * sobre el beneficiario es lo que manda el cobro a firma. Sin firma, editar
+     * la petición —`nombreSinReconocer: false`— bastaba para que una
+     * transferencia a una cuenta personal entrara aplicada. `pagar` sólo le
+     * cree a una lectura firmada por el servidor, de ESTA persona, de ESTA
+     * forma y de las últimas seis horas; sin eso, el cobro va a aprobación. */
+    const firma = await firmarLectura(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+      quien: String(quien.id), forma: clave, veredicto, nombreSinReconocer,
+    })
+
     return json({
       leido,
       coincide,
       veredicto,
+      forma: clave,
+      firma,
       // La MARCA. Viaja adentro de `lectura` hasta
       // `creditos_abonos_portal.lectura`, que es donde se puede listar después.
       nombreSinReconocer,

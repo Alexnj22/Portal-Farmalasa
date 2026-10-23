@@ -7766,6 +7766,39 @@ export type Database = {
           },
         ]
       }
+      creditos_cobro_envios: {
+        Row: {
+          branch_id: number
+          clave: string
+          created_at: string
+          estado: string
+          respuesta: Json | null
+          terminado_at: string | null
+          tomado_at: string
+          tomado_por: string
+        }
+        Insert: {
+          branch_id: number
+          clave: string
+          created_at?: string
+          estado?: string
+          respuesta?: Json | null
+          terminado_at?: string | null
+          tomado_at?: string
+          tomado_por: string
+        }
+        Update: {
+          branch_id?: number
+          clave?: string
+          created_at?: string
+          estado?: string
+          respuesta?: Json | null
+          terminado_at?: string | null
+          tomado_at?: string
+          tomado_por?: string
+        }
+        Relationships: []
+      }
       creditos_cobros_por_aprobar: {
         Row: {
           branch_id: number
@@ -29415,6 +29448,15 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      creditos_cobro_tomar: {
+        Args: {
+          p_branch_id: number
+          p_clave: string
+          p_tomado_por: string
+          p_vencido_seg?: number
+        }
+        Returns: Json
       }
       creditos_del_cliente: {
         Args: { p_credito_id: number }

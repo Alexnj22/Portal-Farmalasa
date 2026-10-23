@@ -1,7 +1,7 @@
 {
   "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": "2026-10-02",
+  "recalculado": "2026-10-23",
   "areas": {
     "plataforma": {
       "ejes": {
@@ -62,8 +62,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 92,
-          "evidencia": "50 de 81 módulo(s) de lógica (.js) del área nombrados por alguna prueba (62%) · 2718 pruebas en 169 archivos, todas verdes",
+          "pct": 95,
+          "evidencia": "153 de 211 módulo(s) de lógica (.js) del área nombrados por alguna prueba (73%) · 4099 pruebas en 340 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -84,6 +84,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H13 registerEmployeeEvent seguía si fallaba la lectura de solapamientos → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -184,6 +188,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H7/H8 kiosco sin red: excepción aceptada sin red sale pendiente y anotada; errores transitorios encolan → b06b75f26. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -265,6 +273,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 la sección entera perdía scope y delegación (BRANCH→ALL) → 9a17e22ce; H2 alcance de la unión de cargos tomado de filas sin permiso (caso real: bitácoras de otras salas) → 66c4414fd (JS + auth_module_scope). Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -349,6 +361,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H6 ventas del día contaban DTE INVALIDADO EN MH → 45e819c54; H14 ausencias por días sueltos → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -436,6 +452,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H15 evento de personal sin revisar la lectura → b06b75f26. Todos corregidos en origin/main; CI en verde en b81b02ed4. Prueba en vivo en el entorno de pruebas el 2026-10-22 (sanción): los defectos que dio se corrigieron en d92120551."
         }
       ]
     },
@@ -514,6 +534,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H8–H11 carga paginada y por días, consolidate-timesheets → b06b75f26. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -598,6 +622,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H12–H14 solapamiento de vacaciones por fechas, ventana Art. 182, auto-copy-weekly-roster → b06b75f26. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -676,6 +704,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1–H7 planilla (filtro de sucursal borraba a las demás, renglones editados, sólo borrador, edición sin sueldo en cero, banco de horas, anticipos con huso, paginación) → b06b75f26 y 42a20e735. Todos corregidos en origin/main; CI en verde en b81b02ed4. Prueba en vivo en el entorno de pruebas el 2026-10-22 (planilla): los defectos que dio se corrigieron en d92120551."
         }
       ]
     },
@@ -754,6 +786,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
         }
       ]
     },
@@ -838,6 +874,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H5 resumen de encuesta pisaba los otros segmentos → 5e01c9be6; H6 500 uuid en la URL y H7 mes UTC → b06b75f26. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -922,6 +962,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 pago de un mes ya pagado retrocedía «pagado hasta» → 9a17e22ce; H2 histórico apuntando a un archivo movido → 5e01c9be6; H3 escrituras con error ignorado → b81b02ed4 (prueba sucursalErroresDeEscritura.test.js). Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1010,6 +1054,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H4 «Pts. Canjeados» ignoraba Anuladas/Receta mientras el encabezado no → 9a17e22ce. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1088,6 +1136,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
         }
       ]
     },
@@ -1166,6 +1218,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
         }
       ]
     },
@@ -1251,6 +1307,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 cartera con falso «no hay créditos» y H2 paginación por fecha repetida → 781fb3038. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1335,6 +1395,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H3 cola «No efectivo» paginada sin orden único y H4 mes actual con doble corrección de huso → 781fb3038 (colasDeFacturacion.test.js). Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1423,6 +1487,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
         }
       ]
     },
@@ -1510,6 +1578,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H4 descargo comparaba cajas contra unidades → 99c22b1c1; H7 lotes por número y vencimiento, H8 existencia en unidades, H11 .limit(1000) en conteos → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4. Prueba en vivo en el entorno de pruebas el 2026-10-22 (descargo): los defectos que dio se corrigieron en d92120551."
         }
       ]
     },
@@ -1593,6 +1665,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 plazo de envío a Bodega un mes antes y H12 días para vencer tras las 18:00 → 45e819c54; H5 ocultar/desocultar en lote sin mirar el error → 9a17e22ce; H6 laboratorio desocultado aunque fallara la lectura → 5e01c9be6. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1685,6 +1761,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H10 código de sala volvía a 1 si fallaba la lectura → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1774,6 +1854,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H3 historial recortado a 201 cierres → 45e819c54; H9 envíos cerrados sin sala ni semana → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1861,6 +1945,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H6 registrar_pago_compra sin bloqueo de fila → 66c4414fd. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -1949,6 +2037,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H5 libro de compras a medias si fallaba una página → 781fb3038 y b81b02ed4 (una sola llamada, capaFiscal.test.js); H7 TOTALES del CSV de notas de crédito → 781fb3038. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -2035,6 +2127,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H2 estado de la receta decidido por un renglón → ad734f82a. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -2133,6 +2229,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H9 aviso de la cola sin el motivo real → 28edadc84; H10 documento ilegible reintentado sin fin y H11 salas sin caja vinculada → d73022c4d. Todos corregidos en origin/main; CI en verde en b81b02ed4. Prueba en vivo en el entorno de pruebas el 2026-10-22."
         }
       ]
     },
@@ -2216,6 +2316,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H3/H4 Bitácora recortada a 1000 filas antes del filtro y CSV cortado por «#» → 9a17e22ce; H5 Respaldo y Min/Max «sin actualizaciones» falso → b4883a6ae. Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -2297,6 +2401,10 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H12 filtro de solicitudes por día UTC → b06b75f26 (día de El Salvador). Todos corregidos en origin/main; CI en verde en b81b02ed4."
         }
       ]
     },
@@ -2375,6 +2483,276 @@
         {
           "fecha": "2026-08-23",
           "evidencia": "Auditoría completa del portal: 11 gates + barrido propio + consultas a producción."
+        },
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
+        }
+      ]
+    },
+    "distribucion": {
+      "ejes": {
+        "flujo": {
+          "pct": 89,
+          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "faltan las credenciales reales de Hacienda: el emisor propio no ha transmitido un DTE real"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 87,
+          "evidencia": "barrido: 1 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": [
+            "src/data/distribucion.js: guardarCliente() — la llaman 1, ninguna audita: views/distribucion/ClienteModal.jsx"
+          ]
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
+          "hallazgos": [
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 93,
+          "evidencia": "28 de 44 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4099 pruebas en 340 archivos, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "1 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md",
+          "hallazgos": [
+            "el área no tiene un documento propio con cuerpo en docs/",
+            "tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
+          ]
+        }
+      },
+      "pct": 93,
+      "estado": "en-curso",
+      "sello_sala": null,
+      "hallazgos": [
+        "[flujo] faltan las credenciales reales de Hacienda: el emisor propio no ha transmitido un DTE real",
+        "[observabilidad] src/data/distribucion.js: guardarCliente() — la llaman 1, ninguna audita: views/distribucion/ClienteModal.jsx",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
+        "[doc] el área no tiene un documento propio con cuerpo en docs/",
+        "[doc] tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 dist_cobrar aceptaba montos negativos → 66c4414fd; H2 dinero de documentos invalidados, H3 invalidar ventas ajenas, H4 contingencia saltando el límite de crédito, H7 dos facturar simultáneos → 3be56be0a y 9043dded2. Todos corregidos en origin/main; CI en verde en b81b02ed4. Prueba en vivo en el entorno de pruebas el 2026-10-22 (saldo a favor al invalidar): los defectos que dio se corrigieron en 9043dded2."
+        }
+      ]
+    },
+    "app-clientes": {
+      "ejes": {
+        "flujo": {
+          "pct": 83,
+          "evidencia": "2 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "faltan confirmar niveles, mayoreo y reservas de medicamentos antes de enviarla a las tiendas",
+            "el escáner de sala no lee el código desde la pantalla: falta probar con otro teléfono"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 87,
+          "evidencia": "barrido: 1 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": [
+            "src/data/chatHilo.js: precargarHilo() — la llaman 1, ninguna audita: views/chat-clientes/FilaDeConversacion.jsx"
+          ]
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
+          "hallazgos": [
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 75,
+          "evidencia": "8 de 24 módulo(s) de lógica (.js) del área nombrados por alguna prueba (33%) · 4099 pruebas en 340 archivos, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "1 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: docs/APP-CLIENTES-2026-10-05.md",
+          "hallazgos": [
+            "el área no tiene un documento propio con cuerpo en docs/",
+            "tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
+          ]
+        }
+      },
+      "pct": 91,
+      "estado": "en-curso",
+      "sello_sala": null,
+      "hallazgos": [
+        "[flujo] faltan confirmar niveles, mayoreo y reservas de medicamentos antes de enviarla a las tiendas",
+        "[flujo] el escáner de sala no lee el código desde la pantalla: falta probar con otro teléfono",
+        "[observabilidad] src/data/chatHilo.js: precargarHilo() — la llaman 1, ninguna audita: views/chat-clientes/FilaDeConversacion.jsx",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
+        "[doc] el área no tiene un documento propio con cuerpo en docs/",
+        "[doc] tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H5 tope de reservas con pago en línea, H6 aviso de Wompi sin firma, H9 pre-registro de DUI ajeno → d2ab2de78; H8 bienvenida a quien no acumula → ad734f82a. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        }
+      ]
+    },
+    "marketing": {
+      "ejes": {
+        "flujo": {
+          "pct": 83,
+          "evidencia": "2 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "falta el barrido en el navegador (escritorio y teléfono)",
+            "el control del servicio del diseñador está anotado y sin construir"
+          ]
+        },
+        "datos": {
+          "pct": 95,
+          "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
+          "hallazgos": []
+        },
+        "bd": {
+          "pct": 98,
+          "evidencia": "0 tablas sin PK · 0 vistas sin security_invoker · 0 advisor ERROR · migraciones sin deriva local",
+          "hallazgos": []
+        },
+        "seguridad": {
+          "pct": 98,
+          "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
+          "hallazgos": []
+        },
+        "resiliencia": {
+          "pct": 95,
+          "evidencia": "barrido: 0 catch callado, 0 botón sin freno · gate:borradores: 0 formulario(s) largo(s) sin borrador",
+          "hallazgos": []
+        },
+        "observabilidad": {
+          "pct": 96,
+          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": []
+        },
+        "vista": {
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
+        },
+        "movil": {
+          "pct": 95,
+          "evidencia": "gate:movil con las 5 categorías en 0 · barrido e2e del 2026-08-24: **54 de 54 rutas medidas**, 0 hallazgos, 0 reventadas, 0 tablas en el teléfono, 0 desbordes, 0 toques perdidos. Destapó y cerró 2 defectos (v2.723.1) y 5 vacíos dibujados a mano (v2.727.1).",
+          "hallazgos": [
+            "el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
+          ]
+        },
+        "ux": {
+          "pct": 95,
+          "evidencia": "gate:ux en verde (medido 2026-08-17) · gate:design vigila la pestaña en la URL · 32 textos que nombraban el sistema de origen corregidos y verificados contra el bundle (v2.719.2) · las pestañas se anuncian como pestañas desde v2.719.3 · barrido: 0 texto(s) pendiente(s)",
+          "hallazgos": []
+        },
+        "eficiencia": {
+          "pct": 95,
+          "evidencia": "gate:perf en verde (14/14 índices, 5/5 planes por índice) · gate:eficiencia en verde (894 escrituras/h de 1240)",
+          "hallazgos": []
+        },
+        "pruebas": {
+          "pct": 67,
+          "evidencia": "1 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (20%) · 4099 pruebas en 340 archivos, todas verdes",
+          "hallazgos": []
+        },
+        "doc": {
+          "pct": 55,
+          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
+          "hallazgos": [
+            "el área no tiene un documento propio con cuerpo en docs/"
+          ]
+        }
+      },
+      "pct": 91,
+      "estado": "en-curso",
+      "sello_sala": null,
+      "hallazgos": [
+        "[flujo] falta el barrido en el navegador (escritorio y teléfono)",
+        "[flujo] el control del servicio del diseñador está anotado y sin construir",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
+        "[doc] el área no tiene un documento propio con cuerpo en docs/"
+      ],
+      "verificaciones": [
+        {
+          "fecha": "2026-10-22",
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
         }
       ]
     }

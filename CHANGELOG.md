@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.17 — Auditoría 2026-10-21/22 en el registro por área
+
+- **El registro de auditoría por área anota la auditoría del 21/22-oct.** Cada área revisada lleva su verificación con los hallazgos que se encontraron (64, todos corregidos) y el commit que los cerró; las que se revisaron sin hallazgos lo dicen.
+- **Distribución, App de clientes y Marketing entran al registro** (estaban «sin auditar»): 93, 91 y 91%, con los ejes que calcula `auditoria/puntuar.mjs`. Sus pendientes abiertos —credenciales reales de Hacienda; niveles, mayoreo y reservas antes de las tiendas, y el escáner de sala; el barrido en el navegador y el control del diseñador— se declararon en `PENDIENTES`, y por eso su flujo no está en 95.
+- **Plataforma: el eje de pruebas sube de 92 a 95** según la regla: 153 de 211 módulos de lógica tienen prueba que los nombra (4,099 pruebas en verde).
+- Ninguna área está congelada, así que ningún sello se tocó. El sello de sala lo sigue poniendo el usuario.
+
 ## v2.1350.16 — Los tipos del alta de personal vuelven a tener contrato
 
 - **`gate:tipos` volvió a verde** (estaba en rojo sobre `origin/main`). Sin cambio de comportamiento: sólo tipos.

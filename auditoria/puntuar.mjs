@@ -265,6 +265,13 @@ const PENDIENTES = {
     tablero:   ['la vista de venta por hora está lista y APAGADA hasta que se publiquen los horarios'],
     plataforma: ['el trabón al girar el teléfono está EN PAUSA'],
     sistema:   ['auditoría 2026-07-30: quedan puntos abiertos', 'auditoría DTE proveedores: H5b y D'],
+    // Las tres áreas que entraron al registro el 2026-10-23 (auditoría del
+    // 21/22-oct). Sus pendientes salen de INDICE-abierto.md de la memoria.
+    distribucion: ['faltan las credenciales reales de Hacienda: el emisor propio no ha transmitido un DTE real'],
+    'app-clientes': ['faltan confirmar niveles, mayoreo y reservas de medicamentos antes de enviarla a las tiendas',
+                     'el escáner de sala no lee el código desde la pantalla: falta probar con otro teléfono'],
+    marketing: ['falta el barrido en el navegador (escritorio y teléfono)',
+                'el control del servicio del diseñador está anotado y sin construir'],
     // `staff_salary` salió de acá en v2.720.0. `gate:permisos` quedó sin un solo
     // hallazgo abierto — era el último.
 };

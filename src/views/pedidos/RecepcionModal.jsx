@@ -124,6 +124,17 @@ function PanelProblema({ id, fQty, campos, onListo }) {
     const { errorVals, setErrorVals, cantProblemaVals, setCantProblemaVals, notaVals, setNotaVals } = campos;
     const tipo = errorVals[id] || '';
     return (
+        <div className="space-y-1.5">
+        {/* Lo que este panel NO es, dicho donde se abre (2026-10-23). Se usaba
+            para «no llegó» y para «llegó otro producto»: de las diferencias de
+            60 días, las dos «Otro» con la cantidad igual a lo enviado eran
+            problemas de CANTIDAD escritos en la nota («2 físico 1 sistema», un
+            cruce de Dexa), y la cantidad nunca cambió — o sea que el inventario
+            quedó con lo del papel. */}
+        <p className="text-micro text-content-3 leading-snug">
+            <span className="font-semibold text-chart-4-text">Llegó, pero vino mal.</span>{' '}
+            Si no llegó o llegó otra cantidad, no es aquí: cambia el número de «Llegó».
+        </p>
         <div className="flex items-center gap-2 flex-wrap">
             <SegmentedControl
                 size="sm" tone="chart-4"
@@ -164,6 +175,7 @@ function PanelProblema({ id, fQty, campos, onListo }) {
                 className="flex-1 min-w-0"
             />
             <Button tone="chart-4" icon={Check} onClick={onListo}>Listo</Button>
+        </div>
         </div>
     );
 }
@@ -290,7 +302,7 @@ function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRec
                                     if (cur === true) return { ...p, [r.id]: false };
                                     return { ...p, [r.id]: true };
                                 })}
-                                title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : 'Vino mal'}
+                                title={panelOpen ? 'Cancelar' : hasProb ? 'Editar el defecto' : 'Llegó con un defecto (dañado, vencido…)'}
                             />
                             <div className="flex-1" />
                             <Button tone="success" size="sm" icon={PackageCheck} disabled={saving} onClick={() => onRecibir(r)}>Recibir</Button>
@@ -355,7 +367,7 @@ function errorDeNegocio(frase, causa) {
 const ERROR_TIPOS = [
     { value: 'danado',  label: 'Dañado'  },
     { value: 'vencido', label: 'Vencido' },
-    { value: 'otro',    label: 'Otro'    },
+    { value: 'otro',    label: 'Otro defecto' },
 ];
 
 /**
@@ -1941,12 +1953,28 @@ export default function RecepcionModal({
                             Corregir reescribe cuántos contaste. Si el número no coincide con lo
                             enviado queda como diferencia y bodega tiene que contestar: el producto
                             no entra ni sale del inventario hasta que las dos partes acuerden.
+                            {!hayAtras && ' Si llegó un producto en lugar de otro, corrige el que no vino a lo que contaste y anota el que sí llegó como extra.'}
                         </p>
                     )}
                 </PedidoModal.Body>
 
+                {/* Con la recepción cerrada ésta es la única pantalla que abre
+                    «Reportar un error», y sin esta puerta no había cómo anotar un
+                    producto que llegó de más — ni resolver un cruce (llegó B en
+                    lugar de A: A se corrige a lo que llegó y B se anota como
+                    extra). La base ya lo aceptaba dentro del mismo plazo de 2
+                    días (`agregar_extra_a_pedido` → `recepcion_corregible`).
+                    Sólo sin «atrás»: si se llegó desde las hojas, la puerta ya
+                    está en esa pantalla y volver de extras armaría un bucle. */}
                 <PedidoModal.Footer>
-                    <div className="flex justify-end">
+                    <div className={`flex items-center gap-2 ${hayAtras ? 'justify-end' : 'justify-between'}`}>
+                        {!hayAtras && (
+                            <Button variant="ghost" icon={PackagePlus} disabled={saving}
+                                onClick={() => { setPrevScreen('confirmados'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>
+                                Anotar un extra
+                                {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}
+                            </Button>
+                        )}
                         <Button variant="secondary" disabled={saving} onClick={volver}>{hayAtras ? 'Volver' : 'Cerrar'}</Button>
                     </div>
                 </PedidoModal.Footer>
@@ -2295,6 +2323,14 @@ export default function RecepcionModal({
                         <span className="text-micro font-semibold text-chart-9-text uppercase tracking-wider text-center">Llegó</span>
                         <span />
                     </div>
+                    {/* La regla de la pantalla en una línea, donde se cuenta. Sin
+                        ella «no llegó» se reportaba con el ⚠ y una nota, y la
+                        cantidad quedaba en lo enviado. */}
+                    <p className="px-5 pb-2 text-micro text-content-3 leading-snug">
+                        ¿No llegó? Pon <span className="font-semibold text-content-2">0</span> en «Llegó».
+                        ¿Llegó otro producto en su lugar? 0 aquí y anota el que vino con «Anotar un extra».
+                        El <AlertTriangle size={11} className="inline align-[-1px] text-warning-text" aria-label="ícono de defecto" /> es sólo para lo que llegó dañado o vencido.
+                    </p>
                 </div>
 
                 {visibleRows.length === 0 && !extras.length && (
@@ -2356,6 +2392,9 @@ export default function RecepcionModal({
                                             tiene— pero no se cuenta ni se toca. */}
                                         {recibidoSolo && (
                                             <Badge variant="success" size="sm" icon={Check} uppercase={false}>Recibido</Badge>
+                                        )}
+                                        {!recibidoSolo && fRaw === 0 && enviado > 0 && (
+                                            <Badge variant="danger" size="sm" uppercase={false} className="ml-1 align-middle">No llegó</Badge>
                                         )}
                                         <LotesDelRenglon row={r} />
                                     </span>
@@ -2420,7 +2459,7 @@ export default function RecepcionModal({
                                                 variant="ghost"
                                                 className={hasProb || hasDiff ? 'text-warning-text bg-warning/10' : 'text-warning-text'}
                                                 onClick={toggleProblema}
-                                                title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
+                                                title={panelOpen ? 'Cancelar' : hasProb ? 'Editar el defecto' : 'Llegó con un defecto (dañado, vencido…)'}
                                             />
 
                                             {/* Recibir SOLO este, para poder venderlo antes de

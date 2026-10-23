@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.26 — Recepción: anotar un extra al reportar un error, y «no llegó» se dice con 0
+
+- **«Reportar un error» ahora deja anotar un producto extra.** Con la recepción
+  cerrada esa pantalla sólo corregía lo contado, así que un producto llegado de
+  más —o un cruce, B en lugar de A— no tenía dónde escribirse. La base ya lo
+  aceptaba con el mismo plazo de 2 días (`agregar_extra_a_pedido` →
+  `recepcion_corregible`); faltaba la puerta. Un cruce se resuelve corrigiendo A
+  a lo que llegó y anotando B como extra.
+- **«No llegó» se dice con 0, y la pantalla lo dice.** Una línea bajo el
+  encabezado de la grilla, una etiqueta «No llegó» al poner 0, y el panel del ⚠
+  arranca con «Llegó, pero vino mal»; «Otro» pasa a «Otro defecto». Medido en
+  60 días: las dos diferencias «Otro» con la cantidad igual a lo enviado eran
+  problemas de cantidad escritos en la nota (la Dexa Neuraxin de Salud 5, que
+  llegó cruzada con Dexa Neurobion, fue una), y tres cruces más quedaron sólo en
+  notas.
+
 ## v2.1350.25 — Puntos: en compra mixta acumula sólo lo que acumula (desde el 15-nov) y el cliente en observación
 
 Cambios del Reglamento Puntos Salud v2, vigente el 15 de noviembre de 2026.

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.18 — fix(app): íconos de Android e iOS según las guías vigentes
+
+- **Android — el ícono se recortaba**: el ícono adaptable usaba el logo de borde a borde. Según la guía de Android, de los 108 dp del lienzo sólo los 66 dp centrales quedan a salvo de la máscara de cada fabricante, y el logo no puede pasar de ahí. Ahora ocupa el 58% central (dentro del 61% permitido y sobre el mínimo de 48 dp). Se agrega la capa monocroma para los íconos temáticos (Android 13+).
+- **iOS — el ícono tenía fondo transparente y medía 512**: Apple y Expo piden 1024 × 1024, cuadrado lleno y sin píxeles transparentes (el sistema redondea las esquinas). Nuevo `ios.icon` opaco de 1024. Las variantes oscura, transparente y teñida las genera el sistema.
+- Entra con el próximo build de la app.
+
 ## v2.1350.17 — Auditoría 2026-10-21/22 en el registro por área
 
 - **El registro de auditoría por área anota la auditoría del 21/22-oct.** Cada área revisada lleva su verificación con los hallazgos que se encontraron (64, todos corregidos) y el commit que los cerró; las que se revisaron sin hallazgos lo dicen.

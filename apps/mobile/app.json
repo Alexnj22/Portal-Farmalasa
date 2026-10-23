@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/icono-ios.png",
       "bundleIdentifier": "lat.farmasalud.portal",
       "config": {
         "usesNonExemptEncryption": false
@@ -31,7 +32,8 @@
       "package": "lat.farmasalud.portal",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/icono.png"
+        "foregroundImage": "./assets/icono-android.png",
+        "monochromeImage": "./assets/icono-android-mono.png"
       }
     },
     "web": {

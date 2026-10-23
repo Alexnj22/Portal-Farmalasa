@@ -483,6 +483,10 @@ export default function ModalShell({
       // pasada corría 20ms ANTES de que el panel se fuera — justo lo que el
       // comentario decía estar evitando.
       setTimeout(() => {
+        // El diálogo pudo cerrarse justo cuando la página se fue (o, en las
+        // pruebas, cuando el entorno ya se desarmó): sin documento no hay foco
+        // que devolver.
+        if (typeof document === 'undefined') return;
         if (document.activeElement && document.activeElement !== document.body) return;
         // El disparador no sobrevivió (lo reemplazó un re-render, o la vista
         // cambió). Antes que dejar el foco en `<body>` —donde la próxima

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.24 — Un diálogo que se cierra cuando la página se va no deja un error suelto
+
+- El segundo intento de devolver el foco al cerrar un diálogo corre un instante después del cierre. Si para entonces la página ya no existe, ahora no hace nada en vez de lanzar un error. En las pruebas automáticas ese error aparecía al azar y tumbaba la corrida aunque todas pasaran.
+
 ## v2.1350.23 — Marketing: lo que se sube después del envío no lo ve nadie más hasta reenviar
 
 - **Lo que el diseñador sube a una pieza después de enviarla a revisión no lo ve nadie más hasta que la vuelva a enviar.** Antes, desde el primer envío del mes, cualquier diseño nuevo —la V2 de una pieza con cambios, una pieza agregada después— quedaba a la vista de todos al instante. Ahora queda «Sin enviar»: lo ven sólo quien lo subió y quien creó la pieza. Lo frena la base, no sólo la pantalla: tampoco se puede abrir el archivo por su enlace.

@@ -3,6 +3,7 @@ import { repartirPedido } from '../utils/unidadesInventario';
 import { saveDraft, loadDraft, clearDraft } from '../utils/draftUtils';
 
 // La solicitud que se está armando, viva por fuera del modal que la arma.
+// Plan completo: `docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
 //
 // ── Por qué no vive en el formulario ──────────────────────────────────────
 // Pedido del usuario, 2026-08-20: al agregar un producto, la pantalla tiene que

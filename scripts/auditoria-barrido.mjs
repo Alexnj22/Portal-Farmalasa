@@ -296,7 +296,7 @@ const CATEGORIAS = [
         eje: 'ux',
         titulo: 'La pantalla nombra el sistema de origen o la jerga de la tubería',
         ve: 'Un literal de texto que ve el usuario y nombra un sistema (ERP, WFM, Supabase, '
-          + 'PostgREST, SheetJS) o la jerga de la tubería («sincronizar», «sync», «inyección», '
+          + 'PostgREST, SheetJS) o la jerga de la tubería («sincronizar», «sync», «inyección de datos», '
           + '«volcado»). La regla del usuario, corregida dos veces: que todo parezca que sale '
           + 'del portal.',
         noVe: 'El identificador que SÍ se queda (`erp_id`, `ERP_ORDER`, `matchErpFilter`) — se '
@@ -336,8 +336,20 @@ const CATEGORIAS = [
                 .replace(/\.(invoke|functions\.invoke)\s*\([^)]*\)/g, '')
                 .replace(/className=\{[^}]*\}/g, 'className={}')
                 .replace(/className="[^"]*"/g, 'className=""')
+                // `escucharCambios('canal', …)` es el `.channel()` del portal
+                // envuelto (src/data/tiempoReal.js): su primer argumento es el
+                // nombre del canal de Realtime. Y la llamada abarca varias
+                // líneas, así que el `\([^)]*\)` de abajo no la alcanza — se
+                // borra sólo la cadena del primer argumento, nunca la línea.
+                .replace(/\b(escucharCambios|channel)\s*\(\s*(['"`])[^'"`]*\2/g, '$1(')
                 .replace(/\.(channel|from|rpc|getItem|setItem|removeItem|querySelector|getAttribute|setAttribute|addEventListener|includes|startsWith|endsWith|split|join|replace|match|test)\s*\([^)]*\)/g, '');
             const textos = [...limpia.matchAll(/(?:>|["'`])\s*([^"'`<>{}]{4,90}?)\s*(?:<|["'`])/g)].map(m => m[1]);
+            // El patrón de arriba avanza de comilla en comilla, así que con un
+            // `className=""` antes se queda con ` title=` como «texto» y salta
+            // el valor del atributo que sigue. Los atributos que se LEEN se
+            // toman aparte (2026-10-23: `title="Última sincronización"` después
+            // de un className pasaba sin aviso).
+            for (const m of limpia.matchAll(/\b(?:title|aria-label|ariaLabel|placeholder|label|alt)=(["'])([^"']{4,90})\1/g)) textos.push(m[2]);
             // El vocabulario arrancó en «ERP + sincronizar» y por eso dio 14 cuando
             // había 21: no conocía WFM. Seis textos visibles lo nombraban —uno
             // decía «Algoritmo predictivo leyendo Supabase» a la cara del
@@ -346,7 +358,18 @@ const CATEGORIAS = [
             // menor, que se lee como buena noticia.
             return textos.some(t =>
                 /\b(ERP|WFM|SheetJS|PostgREST|Supabase)\b/.test(t)
-                || /\bsincroniz|\bresync\b|\binyecci[oó]n\b|\bvolcado\b/i.test(t)
+                || /\bsincroniz|\bresync\b|\bvolcado\b/i.test(t)
+                // «Inyección» era jerga de la tubería cuando el único uso era
+                // «Ejecutar Inyección» (carga del histórico, v2.719.2). Desde
+                // que existe el módulo de Inyecciones —la que se APLICA a un
+                // cliente en la sala— la palabra es del negocio: a secas, el
+                // detector acusaba 22 rótulos correctos y bajaba Ventas y
+                // Cortes a 50. Se busca la palabra sólo en su sentido de
+                // tubería: con un verbo de correr un proceso, o «de datos /
+                // del histórico / de registros», o «masiva/express».
+                || /\b(ejecutar|correr|lanzar|iniciar|reintentar)\s+(la\s+)?inyecci[oó]n\b/i.test(t)
+                || /\binyecci[oó]n\s+(de(l)?\s+(datos|hist[oó]ric|registros|inventario|ventas)|masiva|express|hist[oó]rica)/i.test(t)
+                || /\binyectar\s+(los\s+|el\s+)?(datos|registros|hist[oó]ric)/i.test(t)
                 || /\bsync\b/i.test(t)
             ) && !/erp_[a-z]|_erp\b|ERP_[A-Z]|erpId|matchErp|syncKey|sync_|wfm_|_wfm|WFM_|data-/.test(limpia);
         },

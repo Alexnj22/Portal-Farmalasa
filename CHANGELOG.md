@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.27 — Auditoría: «inyección» es del negocio y los documentos de traslados se citan
+
+- **El barrido de auditoría deja de acusar a las Inyecciones de hablar del sistema de origen.** «Inyección» entró al vocabulario prohibido cuando la única vez que salía era «Ejecutar Inyección» (la carga del histórico). Hoy es el módulo donde se aplica una inyección a un cliente, y la palabra es del negocio: el detector acusaba 22 rótulos correctos («Aplicación de inyección», «Buscar cliente, factura o inyección…») y bajaba la UX de Ventas y de Cortes a 50. Ahora la busca sólo en su sentido de tubería: «Ejecutar/correr inyección», «inyección de datos / del histórico», «masiva», «express». Comprobado con una regresión fabricada: sigue cazando «Ejecutar Inyección» e «Inyección de datos».
+- **El nombre de un canal de tiempo real ya no cuenta como texto en pantalla**: `escucharCambios('sidebar-sync-status', …)` bajaba la UX de Plataforma y nadie lo ve. Se borra sólo la cadena del primer argumento, nunca la línea.
+- **El mismo detector ve ahora los `title`/`aria-label`/`placeholder` que van después de un `className`**: antes el patrón se quedaba con ` title=` como «texto» y saltaba el valor. No apareció ningún hallazgo nuevo en el portal.
+- **Traslados cita sus documentos desde el código**: el encabezado de `data/traslados.js` (y el store de la composición) nombran los dos planes del área; el único que lo citaba era una migración con la ruta de antes de mudarse a `planes-cerrados/`.
+
 ## v2.1350.26 — Recepción: anotar un extra al reportar un error, y «no llegó» se dice con 0
 
 - **«Reportar un error» ahora deja anotar un producto extra.** Con la recepción

@@ -18,6 +18,15 @@ import { rangoDeSemana } from '../utils/semana';
 // Tampoco avisa. La notificación nace en la misma transacción que la fila; una
 // llamada aparte desde el navegador es justo lo que dejó a Min/Max con cero
 // avisos en toda su historia.
+//
+// ── Dónde está escrito ─────────────────────────────────────────────────────
+// · `docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md` — el diseño de
+//   origen: el circuito pide/confirma/aplica, por qué confirma la sala que
+//   TIENE el producto, cómo se aplica en el inventario de las dos salas y las
+//   decisiones del usuario (los motivos de rechazo de abajo salen de ahí).
+// · `docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md` — una
+//   composición de varios productos y varias salas que sale como N
+//   solicitudes (ver también `store/composicionTraslado.js`).
 
 /**
  * Los motivos de rechazo, dictados por el usuario el 2026-08-06.

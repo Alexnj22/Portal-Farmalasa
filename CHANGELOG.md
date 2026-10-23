@@ -28,8 +28,6 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 - En el portal y en la app, los diseños sin enviar llevan la marca «Sin enviar», también en el comparador de versiones.
 - Necesita aplicar en la base `h32-marketing-borradores` (después de `segunda_a2_06_marketing_candados`).
 
-## v2.1350.20 — Metas, promociones, marketing y productos: segunda revisión
-
 ## v2.1350.22 — Documentos: el carné se endereza solo y «Girar» gira a la vista
 
 - Al subir la foto de cualquier documento (no sólo el DUI) el portal pregunta

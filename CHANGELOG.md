@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.0 — Las dos caras de licencias, carnés y tarjetas desde el teléfono, con un solo QR
+
+En el alta y la edición de personal, el DUI se subía desde el teléfono con un
+solo código: el teléfono pedía frente y reverso y los mandaba juntos. Los demás
+documentos de dos caras —licencias de moto y carro, carnés de SRS, Enfermería,
+Médico y Contaduría, tarjetas de ISSS y AFP— pedían un QR por cara.
+
+Ahora cada uno tiene «Las dos caras con el teléfono» (en la computadora, con
+las dos casillas vacías). El teléfono muestra el nombre del documento, pide
+frente y reverso, y cada cara entra a su casilla. Si la imagen no se puede
+partir, va entera al frente.
+
+Base: modo `dos_caras` y columna `documento` en `capturas_de_foto`;
+`abrir_captura_de_foto` recibe `p_documento` (se borró la firma vieja, sin
+sobrecarga) y `captura_de_foto_vigente` lo devuelve.
+
 ## v2.1350.31 — Puntos: sólo la persona natural acumula desde el 15-nov, con el tipo de persona en la ficha
 
 Reglamento Puntos Salud v2, cláusula 2.2. Hasta hoy acumulaban también

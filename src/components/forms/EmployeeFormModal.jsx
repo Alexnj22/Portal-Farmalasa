@@ -1618,6 +1618,46 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [capturaDui?.id]);
 
+    // ── Las dos caras de los DEMÁS documentos con el teléfono ────────────────
+    //
+    // Pedido del usuario (2026-10-23): que las licencias, los carnés de junta y
+    // las tarjetas de ISSS y AFP se suban desde el teléfono «así como el DUI».
+    // Antes cada cara era su propio QR —dos escaneos por documento—. Es el
+    // mismo canal del DUI: el teléfono pide frente y reverso y los manda
+    // unidos; acá se parten y cada cara va a su casilla por el camino de
+    // siempre (`handleDocFile` el frente, `handleDocHoja` el reverso). Sin
+    // lectura del DUI: estos papeles no llenan la ficha.
+    const [capturaDosCaras, setCapturaDosCaras] = useState(null);   // { ...captura, category }
+    const pedirDosCarasAlTelefono = async (category) => {
+        const r = await abrirCaptura(formData?.id || null, 'dos_caras', rotuloDelDoc(category).toLowerCase());
+        if (!r.ok) { useToastStore.getState().showToast('No se pudo', r.motivo, 'error'); return; }
+        setCapturaDosCaras({ ...r, category });
+    };
+    useEffect(() => {
+        if (!capturaDosCaras?.id) return undefined;
+        const { id, category } = capturaDosCaras;
+        return esperarFoto(id, async (url) => {
+            setCapturaDosCaras(null);
+            try {
+                const file = await fotoComoArchivo(url, 'documento.jpg');
+                /* Si la imagen no se deja partir, va entera al frente: que el
+                   documento quede adjunto vale más que el reverso en su
+                   casilla, y el reverso se puede subir aparte. */
+                const caras = await partirCarasDelDui(file).catch(() => null);
+                if (caras) {
+                    await Promise.all([handleDocFile(category, caras.frente), handleDocHoja(category, 0, caras.reverso)]);
+                } else {
+                    await handleDocFile(category, file);
+                }
+                soltarCaptura(id);
+            } catch {
+                useToastStore.getState().showToast('Llegó pero no se pudo abrir', 'Intenta de nuevo desde el teléfono.', 'error');
+            }
+        });
+        // Igual que la del DUI: depende sólo de la captura viva.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [capturaDosCaras?.id]);
+
 
     /* ── Las hojas que siguen a la primera ──────────────────────────────────
      *
@@ -1735,9 +1775,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     la subida dispara `analyze-document` y puede tardar varios
                     segundos, así que la fila tiene que decirlo. */}
                 {DOS_CARAS.has(category) && (
-                    <label className={rotuloCampo('text-content-2', { denso: true })}>
-                        <span>Frente</span>
-                    </label>
+                    <div className="flex items-center gap-2">
+                        <label className={rotuloCampo('text-content-2', { denso: true })}>
+                            <span>Frente</span>
+                        </label>
+                        {/* Las dos caras de una vez, como el DUI. Sólo en
+                            escritorio —en el teléfono ya está la cámara en cada
+                            casilla— y sólo con las dos casillas vacías: con una
+                            ya puesta, la otra se sube con su propio botón. */}
+                        {!esTactil && !hasFile && !hojas[0]?.url && (
+                            <Button variant="ghost" size="sm" icon={Smartphone} className="ml-auto"
+                                onClick={() => pedirDosCarasAlTelefono(category)}
+                                disabled={!!capturaDosCaras || isAnalyzing}>
+                                {capturaDosCaras?.category === category ? 'Esperando el teléfono…' : 'Las dos caras con el teléfono'}
+                            </Button>
+                        )}
+                    </div>
                 )}
                 <FileField
                     accept=".pdf,.jpg,.jpeg,.png"
@@ -5026,6 +5079,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 <Suspense fallback={null}>
                     <DialogoDeCaptura captura={capturaDui} modo="dui" etiqueta="el DUI"
                         alCerrar={() => setCapturaDui(null)} alRenovar={pedirDuiAlTelefono} />
+                </Suspense>
+            )}
+            {capturaDosCaras && (
+                <Suspense fallback={null}>
+                    <DialogoDeCaptura captura={capturaDosCaras} modo="dos_caras"
+                        etiqueta={rotuloDelDoc(capturaDosCaras.category).toLowerCase()}
+                        alCerrar={() => setCapturaDosCaras(null)}
+                        alRenovar={() => pedirDosCarasAlTelefono(capturaDosCaras.category)} />
                 </Suspense>
             )}
 

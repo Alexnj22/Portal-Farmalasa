@@ -35,14 +35,22 @@ export function enlaceDeCaptura(secreto) {
  * comprueba la función, no esta llamada.
  *
  * @param {string|null} employeeId a quién se le va a poner, si ya tiene ficha
- * @param {'foto'|'qr'} [modo]  `qr` = el teléfono abre el lector en vivo y
- *                              manda el TEXTO del código, no una imagen (el
- *                              carné digital de dependiente: lo que se guarda
- *                              es su enlace, y una foto reducida de un QR casi
- *                              nunca se deja leer).
+ * @param {'foto'|'qr'|'dui'|'dos_caras'} [modo]  `qr` = el teléfono abre el
+ *                              lector en vivo y manda el TEXTO del código, no
+ *                              una imagen (el carné digital de dependiente: lo
+ *                              que se guarda es su enlace, y una foto reducida
+ *                              de un QR casi nunca se deja leer). `dui` y
+ *                              `dos_caras` = el teléfono pide frente y reverso
+ *                              y los manda unidos en una imagen.
+ * @param {string|null} [documento]  en `dos_caras`, el nombre del documento
+ *                              que el teléfono muestra («la licencia de
+ *                              conducir»): sin él, la pantalla del teléfono no
+ *                              sabría qué papel pedir.
  */
-export async function abrirCaptura(employeeId = null, modo = 'foto') {
-    const { data, error } = await supabase.rpc('abrir_captura_de_foto', { p_employee_id: employeeId, p_modo: modo });
+export async function abrirCaptura(employeeId = null, modo = 'foto', documento = null) {
+    const { data, error } = await supabase.rpc('abrir_captura_de_foto', {
+        p_employee_id: employeeId, p_modo: modo, p_documento: documento,
+    });
     if (error) return { ok: false, motivo: 'No se pudo abrir. Revisa tu conexión.' };
     if (!data?.ok) return { ok: false, motivo: 'No se pudo abrir la captura.' };
     return data;

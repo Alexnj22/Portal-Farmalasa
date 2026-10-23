@@ -35,6 +35,7 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
     const esQr = modo === 'qr';
     // `dui`: el teléfono pide el frente y el reverso, cada uno con su nombre.
     const esDui = modo === 'dui';
+    const esDosCaras = modo === 'dos_caras';
     return (
         <ModalShell open onClose={alCerrar} maxWidthClass="max-w-sm"
             ariaLabel={esQr ? 'Escanear el código con el teléfono' : 'Tomar la foto con el teléfono'}>
@@ -60,6 +61,8 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
                         ? ` Después escanea el QR de ${etiqueta ? `«${etiqueta}»` : 'tu documento'} y su enlace va a aparecer aquí solo.`
                         : esDui
                             ? ' Te va a pedir el frente y el reverso; cuando mandes las dos caras, aparecen aquí y se leen solas.'
+                            : esDosCaras
+                                ? ` Te va a pedir el frente y el reverso${etiqueta ? ` de «${etiqueta}»` : ''}; cuando mandes las dos caras, aparecen aquí solas.`
                             : (etiqueta ? ` La foto de «${etiqueta}» va a aparecer aquí sola.` : ' La foto va a aparecer aquí sola.')}
                 </p>
 

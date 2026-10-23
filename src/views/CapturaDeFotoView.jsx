@@ -79,6 +79,12 @@ export default function CapturaDeFotoView() {
        y se mandan unidas en una imagen: el lector del DUI lee un archivo con
        las dos caras igual que dos sueltos. */
     const [caras, setCaras] = useState({ frente: null, reverso: null });   // { file, vista }
+    /* `dos_caras` es lo mismo para los demás documentos de dos caras (las
+       licencias, los carnés de junta, ISSS, AFP — 2026-10-23). `documento` es
+       el nombre que escribió la computadora: sin él, esta pantalla no sabría
+       qué papel está pidiendo. */
+    const [documento, setDocumento] = useState('');
+    const dosCaras = modo === 'dui' || modo === 'dos_caras';
     const [caraPorAjustar, setCaraPorAjustar] = useState(null);           // { cara, file }
     /* Las hojas ya confirmadas, en orden. Se juntan acá y se mandan de una sola
        vez: por eso el secreto sigue siendo de un uso. */
@@ -105,7 +111,8 @@ export default function CapturaDeFotoView() {
             setPara(r.para || '');
             // El lector NO se abre solo: en Android, pedir la cámara sin que la
             // persona haya tocado nada puede quedar bloqueado. Se abre al tocar.
-            if (r.modo === 'qr' || r.modo === 'dui') setModo(r.modo);
+            if (r.modo === 'qr' || r.modo === 'dui' || r.modo === 'dos_caras') setModo(r.modo);
+            setDocumento(r.documento || '');
             setEstado('listo');
         })();
         return () => { vivo = false; };
@@ -207,9 +214,13 @@ export default function CapturaDeFotoView() {
                     código. El rótulo describe lo que la pantalla HACE, que es lo
                     único cierto en todos los casos. */}
                 <p className="text-caption font-black uppercase tracking-widest text-content-3">
-                    {modo === 'qr' ? 'Código QR desde el teléfono' : modo === 'dui' ? 'DUI desde el teléfono' : 'Foto desde el teléfono'}
+                    {modo === 'qr' ? 'Código QR desde el teléfono' : modo === 'dui' ? 'DUI desde el teléfono'
+                        : modo === 'dos_caras' ? 'Dos caras desde el teléfono' : 'Foto desde el teléfono'}
                 </p>
                 {para && <p className="text-display-sm font-black text-content mt-1">{para}</p>}
+                {modo === 'dos_caras' && documento && (
+                    <p className="text-body-sm font-bold text-content-2 mt-1 first-letter:uppercase">{documento}</p>
+                )}
             </div>
 
             {vista && (
@@ -308,10 +319,10 @@ export default function CapturaDeFotoView() {
                 </Suspense>
             )}
 
-            {estado === 'listo' && modo === 'dui' && (
+            {estado === 'listo' && dosCaras && (
                 <div className="w-full max-w-xs flex flex-col gap-3">
-                    {[{ cara: 'frente', rotulo: 'Frente', ayuda: 'El lado de la foto y el número' },
-                      { cara: 'reverso', rotulo: 'Reverso', ayuda: 'El lado de la dirección' }].map(({ cara, rotulo, ayuda }) => (
+                    {[{ cara: 'frente', rotulo: 'Frente', ayuda: modo === 'dui' ? 'El lado de la foto y el número' : 'El lado principal' },
+                      { cara: 'reverso', rotulo: 'Reverso', ayuda: modo === 'dui' ? 'El lado de la dirección' : 'El otro lado' }].map(({ cara, rotulo, ayuda }) => (
                         <label key={cara} data-surface="card"
                             className="p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] min-h-[var(--tap-min)]">
                             {caras[cara]?.vista ? (
@@ -338,7 +349,8 @@ export default function CapturaDeFotoView() {
                     <Button icon={Send} disabled={!caras.frente || !caras.reverso} onClick={async () => {
                         setEstado('mandando');
                         try {
-                            const unidas = await unirCaras(caras.frente.file, caras.reverso.file);
+                            const unidas = await unirCaras(caras.frente.file, caras.reverso.file,
+                                modo === 'dui' ? 'dui.jpg' : 'documento.jpg');
                             const r = await mandarFoto(secreto, unidas);
                             if (r.ok) { setEstado('hecho'); return; }
                             setEstado('error');
@@ -360,7 +372,7 @@ export default function CapturaDeFotoView() {
                     </p>
                 }>
                     <EditorDeDocumento
-                        tipo="dui"
+                        tipo={modo === 'dui' ? 'dui' : 'documento'}
                         file={caraPorAjustar.file}
                         onCancel={() => setCaraPorAjustar(null)}
                         onConfirm={(listo) => {
@@ -496,7 +508,7 @@ export default function CapturaDeFotoView() {
             {estado === 'mandando' && (
                 <p className="text-body font-black text-brand-text flex items-center gap-2">
                     <Loader2 size={18} className="animate-spin" />
-                    {modo === 'qr' ? 'Mandando el código…' : modo === 'dui' ? 'Mandando las dos caras…'
+                    {modo === 'qr' ? 'Mandando el código…' : dosCaras ? 'Mandando las dos caras…'
                         : hojas.length > 1 ? `Mandando las ${hojas.length} fotos…` : 'Mandando la foto…'}
                 </p>
             )}
@@ -563,7 +575,7 @@ export default function CapturaDeFotoView() {
  * lado entran como «DUI en un solo archivo», que `leer-dui` ya lee. Mandarlas
  * como dos archivos habría pedido un segundo buzón por captura.
  */
-async function unirCaras(frente, reverso) {
+async function unirCaras(frente, reverso, nombre = 'dui.jpg') {
     const abrir = (file) => new Promise((ok, mal) => {
         const url = URL.createObjectURL(file);
         const img = new Image();
@@ -585,5 +597,5 @@ async function unirCaras(frente, reverso) {
     ctx.drawImage(b, Math.round((ancho - b.naturalWidth) / 2), a.naturalHeight + hueco);
     const blob = await new Promise(ok => lienzo.toBlob(ok, 'image/jpeg', 0.9));
     if (!blob) throw new Error('No se pudieron unir las dos caras.');
-    return new File([blob], 'dui.jpg', { type: 'image/jpeg' });
+    return new File([blob], nombre, { type: 'image/jpeg' });
 }

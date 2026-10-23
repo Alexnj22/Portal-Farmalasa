@@ -5344,6 +5344,7 @@ export type Database = {
       capturas_de_foto: {
         Row: {
           created_at: string
+          documento: string | null
           employee_id: string | null
           foto_url: string | null
           id: string
@@ -5356,6 +5357,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          documento?: string | null
           employee_id?: string | null
           foto_url?: string | null
           id?: string
@@ -5368,6 +5370,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          documento?: string | null
           employee_id?: string | null
           foto_url?: string | null
           id?: string
@@ -27920,7 +27923,7 @@ export type Database = {
         Returns: Json
       }
       abrir_captura_de_foto: {
-        Args: { p_employee_id?: string; p_modo?: string }
+        Args: { p_documento?: string; p_employee_id?: string; p_modo?: string }
         Returns: Json
       }
       activar_promocion: {

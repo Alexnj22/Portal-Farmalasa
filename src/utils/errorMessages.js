@@ -187,6 +187,23 @@ const REGLAS = [
         'No se pudo leer el bono de meta de una de las salas, así que no se escribió nada. Avisa al equipo de sistemas.'],
     [/META_DE_OTRA_SALA/i,
         'El bono de meta llegó con la sala equivocada y la liquidación se detuvo sin escribir nada. Avisa al equipo de sistemas.'],
+    // — Pago de bonos en la caja (H20) —
+    // `EN_CURSO` lo lanzan también los pedidos con otro sentido: por eso se
+    // ata a la frase del bono y no al código solo.
+    [/\bSIN_CONFIRMAR:/,
+        'La caja no confirmó la salida de este bono y no se sabe si el efectivo salió. '
+        + 'No lo repitas: revisa en la caja y resuélvelo desde «Sin confirmar».'],
+    [/EN_CURSO: ese pago se está registrando/,
+        'Ese pago se está registrando en la caja. Espera unos minutos antes de volver a intentarlo.'],
+    [/YA_PAGADO/, 'Ese bono ya se pagó. Recarga la lista.'],
+    [/NO_PENDIENTE: ese pago/, 'Ese pago ya se resolvió. Recarga la lista.'],
+    [/BONO_NO_RESERVADO|BONO_SIN_RESERVA/,
+        'Ese bono ya no está por pagar. Recarga la lista.'],
+    [/BONO_OTRA_PERSONA/, 'El efectivo lo tiene que recibir la persona que ganó el bono.'],
+    [/BONO_OTRO_MONTO/, 'El monto del bono cambió. Recarga la lista y vuelve a pagarlo.'],
+    [/BONO_SIN_JEFATURA/, 'El bono lo paga la jefatura de la sala.'],
+    [/BONO_SIN_RECEPTOR/, 'Falta identificar a quien recibe el efectivo.'],
+    [/BONO_OTRA_CAJA/, 'El bono se paga desde la caja de su sala.'],
     [/MOTIVO_REQUERIDO/i,
         'Falta escribir el motivo: esta acción siempre lleva su porqué.'],
 

@@ -299,10 +299,10 @@
    "nota": "remedida el 2026-09-22 COMO USUARIO tras 20260922163329: mediana 259 → 36 ms (alcance total), 810 → 7 MB por llamada. El costo era pedirle v_inventario_disponible renglón por renglón; ahora se calcula una vez para los productos de la solicitud. El único parámetro elige la solicitud por PK: el genérico es el mismo plan. La medición de agosto (213–249 ms, «la corrección la deja peor en las CINCO») era sobre force_custom_plan, que sigue sin hacer falta"
   },
   "get_ventas_stats": {
-   "ms": "30–150",
-   "casos": "mes en curso y un año",
-   "divergencia": null,
-   "nota": "barrido: bajo 200 ms"
+   "ms": "28–35 · 110–125",
+   "casos": "sesión de Gerente General, 7 llamadas seguidas por caso: mes en curso, hoy, mes de una sala con hora (28–35 ms); mes del año anterior con y sin hora, y el año corrido (110–125 ms)",
+   "divergencia": "ninguna",
+   "nota": "remedida el 2026-10-23 tras la reescritura HC1 (migración 20261023155526). Estable de la 1.ª a la 7.ª llamada: no es el plan genérico. Lo que cuesta es el RLS: con la sesión de un empleado la cota de `from_raw` armada con los subselect de `coverage`/`lim` queda de filtro y no de índice, y sin `fecha <= p_ffin` (la versión anterior la tenía) un período pasado recorre `idx_si_fecha_full` hasta hoy — 280,527 filas descartadas, 4,291 bloques. Con la cota redundante devuelta: 110 → 31 ms, resultado idéntico en 7 casos (propuesta, sin aplicar). El año corrido cuesta 122 ms con o sin ella: es trabajo real. Como postgres el plan sí usa la cota (7.8 ms): medir SIEMPRE con la sesión."
   },
   "insert_missing_products": {
    "ms": "3.3",

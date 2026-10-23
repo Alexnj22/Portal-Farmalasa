@@ -60,7 +60,16 @@ export default function BonosPorPagar({ sala, cajaAbierta, recarga = 0, puedeOpe
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${it.promocion || ''}${it.tipo === 'excedente' ? ' · excedente aprobado' : ''}`}</Text>
             </View>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(it.monto)}</Text>
-            {it.estado === 'enviado' ? <Pildora texto="En la caja…" color={MARCA.ambar} />
+            {/* H20: la caja no confirmó un pago. Repetirlo puede pagar dos
+                veces, así que lleva a resolverlo mirando la caja. */}
+            {it.estado === 'enviado' && it.sin_confirmar ? (
+              puedePagar ? (
+                <Pressable onPress={() => router.push({ pathname: '/bono-sin-confirmar', params: { item: JSON.stringify(it) } })} accessibilityRole="button"
+                  style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: MARCA.ambar, opacity: pressed ? 0.75 : 1 })}>
+                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Sin confirmar</Text>
+                </Pressable>
+              ) : <Pildora texto="Sin confirmar" color={MARCA.ambar} />
+            ) : it.estado === 'enviado' ? <Pildora texto="En la caja…" color={MARCA.ambar} />
               : puedePagar && cajaAbierta ? (
                 <Pressable onPress={() => router.push({ pathname: '/pagar-bono', params: { sala: String(sala), item: JSON.stringify(it) } })} accessibilityRole="button"
                   style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', backgroundColor: MARCA.verde, opacity: pressed ? 0.75 : 1 })}>

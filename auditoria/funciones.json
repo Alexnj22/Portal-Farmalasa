@@ -5159,6 +5159,14 @@
   "zero_out_product_all_branches": {
    "area": "minmax",
    "por": "código"
+  },
+  "puntos_observacion_abrir": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "puntos_observacion_cerrar": {
+   "area": "ventas",
+   "por": "código"
   }
  }
 }

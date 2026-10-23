@@ -1650,6 +1650,14 @@ Deno.serve(async (req) => {
        * un segundo. El navegador ya tiene su cerrojo (`utils/unaSolaVez`), pero
        * ése no cubre dos pestañas ni un reintento de red: esto sí. */
       const claveEnvio = String(body.clave_envio ?? "").trim().slice(0, 100) || null;
+      /* Un bono de promoción sólo sale con la clave de SU reserva
+       * (`reservar_pago_bono`): es lo que activa el trigger que valida monto,
+       * persona y jefatura, y lo que deja el bono marcado. Con el tipo y sin
+       * esa clave sería una salida suelta que el bono no ve, y se podría pagar
+       * otra vez desde la lista (H20). */
+      if (String(body.tipo ?? "") === "BONO_PROMOCION" && !claveEnvio?.startsWith("bono-")) {
+        return json({ ok: false, error: "El bono se paga desde «Bonos de promoción por pagar»." }, 400);
+      }
       if (claveEnvio) {
         const { data: ya, error: errYa } = await supabase
           .from("caja_movimientos_portal")
@@ -1674,6 +1682,20 @@ Deno.serve(async (req) => {
           const delApartado = ya.tipo_codigo === "APARTADO" || ya.tipo_codigo === "APLICA_ANTICIPO";
           if (delApartado && ya.anulado_at) {
             return json({ ok: false, error: "Ese intento no entró a la caja. Vuelve a intentarlo." }, 409);
+          }
+          /* El pago de un bono (H20) tampoco es «ya estaba» si no tiene el
+           * número de la caja: anulado, no salió; vivo y sin número, la caja
+           * todavía no lo confirmó. Contestar ok haría que la pantalla dijera
+           * «Bono pagado» sobre un efectivo que nadie sabe si salió. La clave
+           * es de esa reserva y no se repite: el freno de verdad es
+           * `reservar_pago_bono` (SIN_CONFIRMAR), esto evita el falso «listo». */
+          const delBono = claveEnvio.startsWith("bono-");
+          if (delBono && ya.anulado_at) {
+            return json({ ok: false, error: "Ese pago del bono no salió de la caja y quedó anulado. Vuelve a pagarlo desde la lista." }, 409);
+          }
+          if (delBono && !ya.erp_movimiento_id && !cajaSimulada) {
+            return json({ ok: false, sin_confirmar: true, movimiento_del_portal: ya.id,
+              error: "Ese pago del bono ya se mandó a la caja y todavía no está confirmado. No lo repitas: revisa en la caja si salió." }, 409);
           }
           // Y el anticipo que sí entró vuelve con su reserva o encargo, que es
           // lo que la pantalla necesita para la constancia.
@@ -2441,12 +2463,35 @@ Deno.serve(async (req) => {
           return json({ ok: false, movimiento_del_portal: fila.id,
             error: "La caja no contestó. Revisa en la caja si el vale salió antes de repetirlo." }, 504);
         }
+        /* El pago de un bono (H20) NO se anula acá: la caja pudo haberlo
+         * anotado. La fila queda viva y sin número, el bono queda «enviado» y
+         * `reservar_pago_bono` no deja pagarlo de nuevo (SIN_CONFIRMAR) hasta
+         * que alguien mire la caja y lo resuelva. Lo que cambia es la
+         * respuesta: antes era el `throw` crudo, que la pantalla leía como
+         * «No se pudo pagar» e invitaba a repetirlo. */
+        if (claveEnvio?.startsWith("bono-")) {
+          console.error(`[operar-caja] bono sin respuesta fila=${fila.id}: ${(e as Error)?.message ?? e}`);
+          return json({ ok: false, sin_confirmar: true, movimiento_del_portal: fila.id,
+            error: "La caja no contestó y no se sabe si el bono salió. No lo repitas: revisa en la caja y resuélvelo desde «Sin confirmar»." }, 504);
+        }
         throw e;
       }
 
       if (!cajaSimulada && !exito(resp)) {
         console.error(`[operar-caja] ${accion} sala=${sala} fila=${fila.id}: ${resp.slice(0, 1000)}`);
         await anularValeDeRetiro("La caja no aceptó el vale");
+        /* La caja CONTESTÓ que no: el bono no salió. Se anula la fila —sin
+         * tocar `clave_envio`, que es como el trigger `caja_movimiento_sigue_bono`
+         * encuentra el pago y lo pasa a 'anulado'—; si no, quedaba vivo y sin
+         * número y a los 3 minutos se leía como «sin confirmar» un rechazo que
+         * sí se conoce. Un reintento con la misma clave contesta «anulado». */
+        if (claveEnvio?.startsWith("bono-")) {
+          const { error: errAnB } = await supabase.from("caja_movimientos_portal")
+            .update({ anulado_at: new Date().toISOString(), anulado_motivo: "La caja no aceptó la salida del bono", anulado_por: quien.id,
+              updated_at: new Date().toISOString() })
+            .eq("id", fila.id);
+          if (errAnB) console.error(`[operar-caja] bono fila=${fila.id}: anular: ${errAnB.message}`);
+        }
         // El efectivo no entró: la reserva o el encargo vuelven a como estaban.
         if (apartadoRes) {
           const { error: errDes } = await supabase.rpc("apartado_deshacer", { p_movimiento: fila.id });

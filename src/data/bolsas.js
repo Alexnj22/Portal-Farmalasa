@@ -1348,7 +1348,10 @@ export async function cerrarElDia(sala, { reconocer = null } = {}) {
 async function motivoDelServidor(error) {
     try {
         const cuerpo = await error?.context?.json?.();
-        if (cuerpo?.error) return new Error(cuerpo.error);
+        // `sin_confirmar` (pago de bono, H20): la caja no confirmó y no se sabe
+        // si el efectivo salió. Viaja como marca para que la pantalla lleve a
+        // resolverlo en vez de invitar a repetir.
+        if (cuerpo?.error) return Object.assign(new Error(cuerpo.error), cuerpo.sin_confirmar ? { sinConfirmar: true } : {});
     } catch { /* la respuesta no era JSON: queda el error tal cual */ }
     return error;
 }

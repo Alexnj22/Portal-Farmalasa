@@ -12,7 +12,7 @@ import { Alert, ScrollView, Text } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { reservarPagoBono } from '@nucleo/data/bonosProducto';
+import { esPagoSinConfirmar, reservarPagoBono } from '@nucleo/data/bonosProducto';
 import { anotarSalida } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -47,8 +47,21 @@ export default function PagarBono() {
       { text: 'Pagar', onPress: async () => {
         setGuardando(true);
         trabajando('Pagando el bono…');
+        let r;
         try {
-          const r = await reservarPagoBono(item.item);
+          r = await reservarPagoBono(item.item);
+        } catch (e) {
+          setGuardando(false);
+          setIdentidad(null);
+          // H20: el pago anterior quedó sin confirmar. Repetirlo puede pagar
+          // dos veces: se lleva a resolverlo mirando la caja.
+          if (esPagoSinConfirmar(e)) {
+            fallo('Pago sin confirmar', mensajeAmigable(e));
+            router.replace({ pathname: '/bono-sin-confirmar', params: { item: JSON.stringify({ ...item, estado: 'enviado', sin_confirmar: true }) } });
+          } else fallo('No se pudo pagar', mensajeAmigable(e, 'Vuelve a intentarlo.'));
+          return;
+        }
+        try {
           const s = await anotarSalida({
             sala, monto: Number(r.monto), concepto: r.concepto, tipo: 'BONO_PROMOCION',
             recibidoPor: persona?.id ?? null, vale: identidad?.vale ?? null, clave: r.clave,
@@ -65,7 +78,10 @@ export default function PagarBono() {
           router.back();
         } catch (e) {
           setIdentidad(null);
-          fallo('No se pudo pagar', mensajeAmigable(e, 'Vuelve a intentarlo.'));
+          // La caja no contestó: el bono queda «en la caja» y la lista lo dice.
+          // No se ofrece repetir — se vuelve a la lista.
+          if (esPagoSinConfirmar(e)) { fallo('La caja no contestó', mensajeAmigable(e)); router.back(); }
+          else fallo('No se pudo pagar', mensajeAmigable(e, 'Vuelve a intentarlo.'));
         } finally { setGuardando(false); }
       } },
     ]);

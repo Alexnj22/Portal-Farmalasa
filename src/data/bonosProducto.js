@@ -19,6 +19,20 @@ export async function fetchBonosProductoSala(branchId) {
     return data ?? { items: [], puedo_pagar: false };
 }
 
+/**
+ * ¿El pago de este bono quedó «sin confirmar»? (H20). Lo dicen dos lados: la
+ * reserva (`reservar_pago_bono` lanza `SIN_CONFIRMAR`) y la salida
+ * (`operar-caja` contesta `sin_confirmar` cuando la caja no respondió). En los
+ * dos casos repetir puede pagar dos veces: hay que mirar la caja y resolverlo
+ * con `resolverPagoBonoSinConfirmar`.
+ */
+export function esPagoSinConfirmar(err) {
+    if (!err) return false;
+    if (err.sinConfirmar === true) return true;
+    const texto = typeof err === 'string' ? err : `${err.message ?? ''} ${err.details ?? ''}`;
+    return /\bSIN_CONFIRMAR:/.test(texto);
+}
+
 /** Reserva el pago: devuelve `{ clave, monto, concepto, tipo, employee_id }`. */
 export async function reservarPagoBono(item) {
     const { data, error } = await supabase.rpc('reservar_pago_bono', { p_item: item });

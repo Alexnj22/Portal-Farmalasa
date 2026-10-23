@@ -6,7 +6,7 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
 import IdentidadDeQuienRetira from '../bolsas/IdentidadDeQuienRetira';
-import { fetchBonosProductoSala, reservarPagoBono, resolverPagoBonoSinConfirmar } from '@nucleo/data/bonosProducto';
+import { esPagoSinConfirmar, fetchBonosProductoSala, reservarPagoBono, resolverPagoBonoSinConfirmar } from '@nucleo/data/bonosProducto';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -117,6 +117,17 @@ export default function BonosPorPagar({ sala, cajaAbierta, puedeOperar, onSalida
                     onClose={() => setPagando(null)}
                     onSalida={onSalida}
                     onPagado={() => { setPagando(null); setRecarga((n) => n + 1); }}
+                    // H20: la reserva dice que el pago anterior quedó sin
+                    // confirmar. Repetir puede pagar dos veces: se cierra el
+                    // pago y se abre el diálogo que lo resuelve mirando la caja.
+                    onSinConfirmar={(it) => {
+                        setPagando(null);
+                        setResolviendo({ ...it, estado: 'enviado', sin_confirmar: true });
+                        setRecarga((n) => n + 1);
+                    }}
+                    // Una salida que no salió puede haber dejado el bono «en la
+                    // caja»: la lista se relee para que lo diga.
+                    onFallo={() => setRecarga((n) => n + 1)}
                 />
             )}
 
@@ -131,7 +142,7 @@ export default function BonosPorPagar({ sala, cajaAbierta, puedeOperar, onSalida
     );
 }
 
-function DialogoPagarBono({ item, onClose, onSalida, onPagado }) {
+function DialogoPagarBono({ item, onClose, onSalida, onPagado, onSinConfirmar, onFallo }) {
     const showToast = useToastStore((s) => s.showToast);
     const [persona, setPersona] = useState(null);
     const [vale, setVale] = useState(null);
@@ -174,8 +185,13 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado }) {
                 clave: r.clave,
             });
             if (salida?.ok) onPagado();
-            else olvidar();   // el vale ya se gastó en el intento: hay que volver a identificarse
+            else { olvidar(); onFallo(); }   // el vale ya se gastó en el intento: hay que volver a identificarse
         } catch (err) {
+            if (esPagoSinConfirmar(err)) {
+                showToast('Pago sin confirmar', mensajeAmigable(err), 'warning');
+                onSinConfirmar(item);
+                return;
+            }
             showToast('No se pudo pagar', mensajeAmigable(err, 'Vuelve a intentarlo.'), 'error');
             olvidar();
         } finally {

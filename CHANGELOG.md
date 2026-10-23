@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.29 — Bonos: el pago sin confirmar lleva a resolverlo y la caja no lo repite (H20)
+
+- **Pagar un bono que quedó sin confirmar ya no termina en «No se pudo pagar».** Si la caja no confirmó un pago anterior del mismo bono, la reserva lo frena (`SIN_CONFIRMAR`) y ahora la pantalla dice qué pasa y abre «Pago sin confirmar», donde se mira la caja y se contesta «Sí salió» o «No salió». En el portal (Mi caja) y en la app (Efectivo → Bonos de promoción por pagar), donde la fila «Sin confirmar» también lleva a resolverlo.
+- **`operar-caja` no puede sacar el efectivo de un bono dos veces.**
+  - Si la caja no contesta, la salida del bono queda viva y «sin confirmar» (no se anula: pudo haber salido) y la respuesta lo dice en vez de ser un error crudo. La reserva no deja repetirla hasta que alguien la resuelve.
+  - Si la caja contesta que NO, la salida se anula y el bono vuelve a quedar por pagar, en vez de esperar 3 minutos para leerse como «sin confirmar».
+  - Un reintento con la clave de un pago anulado o todavía sin número ya no contesta «listo».
+  - Una salida de tipo bono sin la clave de su reserva se rechaza: sería efectivo que el bono no ve.
+- Los rechazos de la base sobre el pago de bonos (`EN_CURSO`, `YA_PAGADO`, `BONO_*`) se dicen en palabras.
+- **Requiere desplegar `operar-caja`** (con JWT, como está hoy).
+- `scripts/planes-genericos.json`: `get_ventas_stats` remedida con la sesión de un empleado. Un período pasado cuesta 110 ms y no 30 porque la reescritura HC1 le quitó a `from_raw` la cota `fecha <= p_ffin`. El arreglo queda propuesto, sin aplicar.
+
 ## v2.1350.28 — Seis escrituras que ya dejan rastro en la bitácora, y pruebas de Mín·Máx, Pedidos, Bitácoras y Ventas
 
 - **Seis cambios que no dejaban rastro ahora quedan en la bitácora**, en el portal y en la app (la entrada la escribe la función que guarda):

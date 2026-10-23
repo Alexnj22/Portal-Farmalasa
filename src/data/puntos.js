@@ -295,6 +295,28 @@ export async function fetchObservacionDeCliente(customerId) {
     return data ?? [];
 }
 
+/**
+ * Si la ficha es de una persona natural o jurídica (Reglamento v2, cláusula
+ * 2.2: desde el 15-nov sólo la natural acumula). La base la prellena sola por
+ * el nombre; `tipo_persona_revisar` es el nombre de negocio que falta decidir,
+ * y `tipo_persona_manual_at` dice que ya lo decidió una persona.
+ */
+export async function fetchTipoDePersona(customerId) {
+    const { data, error } = await supabase.from('customers')
+        .select('tipo_persona, tipo_persona_revisar, tipo_persona_manual_at')
+        .eq('id', customerId)
+        .maybeSingle();
+    if (error) throw error;
+    return data;
+}
+
+/** Decide a mano el tipo de persona: desde ahí la regla automática ya no la toca. */
+export const guardarTipoDePersona = async ({ customerId, tipo }, contexto = {}) => {
+    const r = await rpc('cliente_tipo_persona_guardar', { p_customer_id: customerId, p_tipo: tipo });
+    anotar('CLIENTE_TIPO_PERSONA', customerId, { ...contexto, tipo });
+    return r;
+};
+
 /** Cierra la observación del cliente (todas sus compras abiertas), con la nota de qué se revisó. */
 export const cerrarObservacion = async ({ customerId, nota }, contexto = {}) => {
     const n = await rpc('puntos_observacion_cerrar', { p_customer_id: customerId, p_nota: nota });

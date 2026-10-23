@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.31 — Puntos: sólo la persona natural acumula desde el 15-nov, con el tipo de persona en la ficha
+
+Reglamento Puntos Salud v2, cláusula 2.2. Hasta hoy acumulaban también
+empresas e instituciones (DIHARE SA DE CV, ISSS, una asociación…) porque la
+ficha del cliente no decía qué era.
+
+- **La ficha dice si es persona natural o jurídica** (`customers.tipo_persona`),
+  y se prellena sola por el nombre con `tipo_persona_sugerido`: forma legal
+  (S.A. DE C.V., ASOCIACIÓN, ISSS, BANCO…) → jurídica; nombre de negocio
+  (FARMACIA, CLÍNICA, FERRETERÍA…) → natural y «por evaluar», porque muchas son
+  de una persona natural. Las fichas nuevas y las que cambian de nombre se
+  clasifican al guardarse; lo decidido a mano no lo pisa la regla.
+  Hoy: 51 jurídicas, 8 por evaluar.
+- **Lo dudoso se avisa.** La vigilancia de puntos (sección 12) avisa cada ficha
+  nueva por evaluar; las que ya existían se anunciaron en un solo resumen.
+- **El selector** vive en la ficha de puntos del cliente: lo cambia quien puede
+  dar o quitar puntos (`cliente_tipo_persona_guardar`, queda en la bitácora).
+- **Desde el 15-nov** (`puntos_config.solo_personas_naturales_desde`) una ficha
+  jurídica no acumula, sea o no mayorista. Antes de esa fecha, todo igual.
+
 ## v2.1350.30 — Auditoría: la segunda revisión del 2026-10-23 en el registro por área
 
 - **El registro de auditoría anota la segunda revisión de código del 2026-10-23** (50 hallazgos, todos cerrados y desplegados): cada área lleva su verificación con los hallazgos y el commit que los cerró. Solicitudes, encuestas a clientes, metas, promociones, productos y marketing decían «sin hallazgos» por la revisión del 22; esa entrada queda, con la aclaración de que la segunda revisión sí encontró.

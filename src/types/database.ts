@@ -8188,6 +8188,10 @@ export type Database = {
           retencion_pct: number | null
           search_name: string | null
           telefono2: string | null
+          tipo_persona: string
+          tipo_persona_manual_at: string | null
+          tipo_persona_manual_por: string | null
+          tipo_persona_revisar: boolean
           updated_at: string | null
         }
         Insert: {
@@ -8221,6 +8225,10 @@ export type Database = {
           retencion_pct?: number | null
           search_name?: string | null
           telefono2?: string | null
+          tipo_persona?: string
+          tipo_persona_manual_at?: string | null
+          tipo_persona_manual_por?: string | null
+          tipo_persona_revisar?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -8254,6 +8262,10 @@ export type Database = {
           retencion_pct?: number | null
           search_name?: string | null
           telefono2?: string | null
+          tipo_persona?: string
+          tipo_persona_manual_at?: string | null
+          tipo_persona_manual_por?: string | null
+          tipo_persona_revisar?: boolean
           updated_at?: string | null
         }
         Relationships: [
@@ -22144,6 +22156,7 @@ export type Database = {
           niveles_activos: boolean
           nota: string | null
           puntos_cumpleanos: number
+          solo_personas_naturales_desde: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -22161,6 +22174,7 @@ export type Database = {
           niveles_activos?: boolean
           nota?: string | null
           puntos_cumpleanos?: number
+          solo_personas_naturales_desde?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -22178,6 +22192,7 @@ export type Database = {
           niveles_activos?: boolean
           nota?: string | null
           puntos_cumpleanos?: number
+          solo_personas_naturales_desde?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -29189,6 +29204,10 @@ export type Database = {
       cliente_expediente: { Args: { p_customer_id: number }; Returns: Json }
       cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }
       cliente_por_tarjeta: { Args: { p_entrada: string }; Returns: Json }
+      cliente_tipo_persona_guardar: {
+        Args: { p_customer_id: number; p_tipo: string }
+        Returns: Json
+      }
       cliente_vigente: { Args: { p_id: number }; Returns: number }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
       clientes_sin_distrito_corregibles: {
@@ -34790,6 +34809,7 @@ export type Database = {
         Args: { p_factor: number; p_product_id: number; p_tipo: string }
         Returns: string
       }
+      tipo_persona_sugerido: { Args: { p_nombre: string }; Returns: string }
       toggle_producto_oculto_ventas: {
         Args: { p_erp_product_id: number; p_oculto: boolean }
         Returns: undefined

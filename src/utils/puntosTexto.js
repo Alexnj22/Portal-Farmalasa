@@ -99,6 +99,8 @@ export const AVISOS_DE_PUNTOS = {
     canje_recien_ganado:         { rotulo: 'Canje con puntos recién ganados', severidad: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
     cambio_cliente:              { rotulo: 'Compra pasada de otro cliente', severidad: 'danger', puntos: (a) => `${ptsDe(a)} recibidos` },
     cambio_cliente_fallido:      { rotulo: 'Puntos de un cambio de cliente sin mover', severidad: 'danger', puntos: (a) => `${ptsDe(a)} sin mover` },
+    // Nombre de negocio: falta decidir si es persona natural o jurídica (Reglamento v2, 2.2 · 2026-10-23).
+    persona_por_evaluar:         { rotulo: 'Ficha por evaluar: ¿persona natural o jurídica?', severidad: 'info', puntos: () => 'Por evaluar' },
     // Saldo a favor de reservas (2026-10-21): se anota en la misma tabla y
     // `puntos` trae el monto en centavos (1 punto = $0.01).
     saldo_favor_no_canjeado:         { rotulo: 'Saldo a favor sin descontar: volvió a la reserva', severidad: 'warning', puntos: (a) => `${dolaresDePuntos(a.puntos)} devueltos` },

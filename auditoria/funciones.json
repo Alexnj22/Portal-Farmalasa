@@ -5167,6 +5167,18 @@
   "puntos_observacion_cerrar": {
    "area": "ventas",
    "por": "código"
+  },
+  "cliente_tipo_persona_guardar": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "customers_tipo_persona": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "tipo_persona_sugerido": {
+   "area": "ventas",
+   "por": "quien la llama"
   }
  }
 }

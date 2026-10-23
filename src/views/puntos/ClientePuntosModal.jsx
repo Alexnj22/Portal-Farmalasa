@@ -41,7 +41,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { fetchPuntosCliente, ajustarPuntos, fetchUnionesDeCuenta, fetchObservacionDeCliente, cerrarObservacion } from '@nucleo/data/puntos';
+import { fetchPuntosCliente, ajustarPuntos, fetchUnionesDeCuenta, fetchObservacionDeCliente, cerrarObservacion, fetchTipoDePersona, guardarTipoDePersona } from '@nucleo/data/puntos';
 import { claveDeMovimiento, detalleDeMovimiento, montoDeVenta, rotuloDeMovimiento, valeTexto, MOTIVOS_DE_AJUSTE_PUNTOS } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import CodigoDeAcceso from './CodigoDeAcceso';
@@ -258,6 +258,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                         <AvisoDeUniones fusionadaEn={fusionadaEn} recibidas={recibidas} />
                         <ObservacionDelCliente customerId={cliente.id} nombre={cliente.nombre}
                             sala={sala} puedeCerrar={puedeAjustar} version={version} onHecho={hecho} />
+                        <TipoDePersona customerId={cliente.id} nombre={cliente.nombre} puedeCambiar={puedeAjustar} />
 
                         {/* ── 1 · El saldo, y en qué se fue lo acumulado ─────
                             Una sola tarjeta: el saldo manda y los cuatro datos lo
@@ -642,6 +643,69 @@ function ObservacionDelCliente({ customerId, nombre, sala, puedeCerrar, version,
                             </Button>
                         </div>
                     </div>
+                )}
+            </div>
+        </Notice>
+    );
+}
+
+const TIPOS_DE_PERSONA = [{ value: 'natural', label: 'Persona natural' }, { value: 'juridica', label: 'Persona jurídica' }];
+
+/**
+ * Persona natural o jurídica (Reglamento v2, cláusula 2.2): desde el 15 de
+ * noviembre sólo la natural acumula. La base lo decide sola cuando el nombre
+ * lleva una forma legal (S.A. DE C.V., ASOCIACIÓN…) y pide evaluar los nombres
+ * de negocio (farmacia, clínica…), que pueden ser de una persona natural.
+ * Lo decide quien puede dar o quitar puntos; los demás sólo lo ven.
+ */
+function TipoDePersona({ customerId, nombre, puedeCambiar }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [ficha, setFicha] = useState(null);
+    const [guardando, setGuardando] = useState(false);
+
+    useEffect(() => {
+        let vivo = true;
+        fetchTipoDePersona(customerId)
+            .then((f) => { if (vivo) setFicha(f); })
+            .catch((e) => console.warn('[puntos] tipo de persona', e?.message));
+        return () => { vivo = false; };
+    }, [customerId]);
+
+    if (!ficha) return null;
+    const juridica = ficha.tipo_persona === 'juridica';
+    const porEvaluar = ficha.tipo_persona_revisar;
+    // Una natural decidida sola no necesita aviso: es el caso de casi todas.
+    if (!juridica && !porEvaluar && !puedeCambiar) return null;
+
+    const elegir = async (tipo) => {
+        if (guardando || (tipo === ficha.tipo_persona && !porEvaluar)) return;
+        setGuardando(true);
+        try {
+            // La bitácora la anota `guardarTipoDePersona`.
+            await guardarTipoDePersona({ customerId, tipo }, { nombre });
+            setFicha({ tipo_persona: tipo, tipo_persona_revisar: false, tipo_persona_manual_at: new Date().toISOString() });
+            showToast('Tipo de persona guardado',
+                tipo === 'juridica' ? 'Desde el 15 de noviembre esta ficha no acumula puntos.' : 'La ficha acumula puntos como persona natural.', 'success');
+        } catch (e) {
+            showToast('No se pudo guardar', mensajeAmigable(e), 'error');
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    const texto = porEvaluar
+        ? 'Su nombre parece de un negocio. Hay que decidir si es persona natural o jurídica: desde el 15 de noviembre sólo la persona natural acumula. Mientras tanto acumula.'
+        : juridica
+            ? `Es persona jurídica${ficha.tipo_persona_manual_at ? '' : ' por su nombre'}: desde el 15 de noviembre no acumula puntos.`
+            : 'Persona natural: acumula puntos.';
+
+    return (
+        <Notice variant={porEvaluar ? 'warning' : juridica ? 'info' : 'neutral'} bloque>
+            <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
+                <p className="min-w-0 flex-1">{texto}</p>
+                {puedeCambiar && (
+                    <SegmentedControl size="sm" label="Tipo de persona" options={TIPOS_DE_PERSONA}
+                        value={porEvaluar ? null : ficha.tipo_persona} onChange={elegir} disabled={guardando} />
                 )}
             </div>
         </Notice>

@@ -144,8 +144,8 @@
        Bajando el ROOT baja todo junto y las proporciones se conservan. El
        interlineado también se aprieta: 1.55 es cómodo en pantalla y suelto
        en papel. */
-    html { font-size: 10.5pt; }
-    body { font-size: 1rem; line-height: 1.42; }
+    html { font-size: 10pt; }
+    body { font-size: 1rem; line-height: 1.38; }
     body { background: #fff; color: #000; }
     /* ── En papel no hay grises de apoyo ─────────────────────────────────
        El encabezado de una tabla y el número de una cláusula se pintan en
@@ -208,14 +208,19 @@
   <section>
     <h2><span class="num">1</span> Para qué es</h2>
     <ol class="clausulas">
-      <li>Dice quién hace qué para cumplir el <strong>Reglamento del programa
-      Puntos Salud</strong> y las <strong>Condiciones del Cliente
-      Mayorista</strong>. Es de uso interno: no agrega ni quita derechos a
-      ningún cliente.</li>
-      <li>Lo aplican los <strong>dependientes</strong> (quienes atienden en
-      caja) y <strong>Administración</strong> (Gerente General, Administrador,
-      Supervisor/a de Ventas y Talento Humano).</li>
-      <li><strong>Los nombres de los precios:</strong>
+      <li>Este procedimiento dice quién hace qué para cumplir el
+      <strong>Reglamento del programa Puntos Salud</strong> y las
+      <strong>Condiciones del Cliente Mayorista</strong>. Es de uso interno: no
+      agrega ni quita derechos a ningún cliente.</li>
+      <li>Lo aplican dos grupos:
+        <ul class="viñetas">
+          <li><strong>Dependientes</strong>: quienes atienden en caja.</li>
+          <li><strong>Administración</strong>: Gerente General, Administrador,
+          Supervisor/a de Ventas y Talento Humano.</li>
+        </ul>
+      </li>
+      <li><strong>Los nombres de los precios.</strong> El sistema de ventas
+      tiene seis precios por producto, y se nombran así:
         <div class="tabla-caja">
           <table>
             <thead><tr><th>Antes</th><th>Ahora</th><th>Para quién</th></tr></thead>
@@ -237,74 +242,91 @@
     <h2><span class="num">2</span> En caja — dependientes</h2>
     <ol class="clausulas">
       <li><strong>Identificar al cliente antes de facturar.</strong> Sin
-      cliente en la factura no hay puntos ni precio de mayoreo, y después no se
-      puede asignar.</li>
-      <li><strong>Cobrar el precio asignado</strong> —Mayoreo o Mayoreo Plus,
-      que se ve al buscar al cliente en el portal—, ni más alto ni más
+      cliente en la factura no hay puntos ni precio de mayoreo, y después ya no
+      se le puede asignar.</li>
+      <li><strong>Cobrar el precio asignado.</strong> Al buscar al cliente en el
+      portal se ve si es Cliente Mayorista y qué precio tiene: Mayoreo o
+      Mayoreo Plus. Se le cobra exactamente ese precio, ni más alto ni más
       bajo.</li>
-      <li><strong>Sólo en presentación completa:</strong> caja, frasco o empaque
-      completo, docena o media caja. Las unidades sueltas van a Preferente,
-      aunque sea Cliente Mayorista.</li>
+      <li><strong>Sólo en presentación completa.</strong> El precio de mayoreo
+      se da en la caja, el frasco o el empaque completo, o por
+      <strong>docena</strong> o <strong>media caja</strong>. Lo que se vende en
+      unidades sueltas va a precio Preferente, aunque sea Cliente
+      Mayorista.</li>
       <li><strong>Quien no es Cliente Mayorista</strong> paga Preferente si
-      tiene cuenta en Puntos Salud, y Público si no. Si pide precio de mayoreo,
-      se le ofrece la solicitud (sección 3); no se le da hasta que se apruebe o
-      Administración lo autorice.</li>
-      <li><strong>Fichas de uso general</strong> («cliente frecuente»,
-      «clientes varios»): son compartidas, no de una persona, así que nunca
-      acumulan ni llevan precio de mayoreo. Para dar puntos o precio se busca
-      al cliente —o se le inscribe— antes de facturar.</li>
-      <li><strong>Empresas e instituciones:</strong> se facturan a su nombre.
-      Tienen su precio de mayoreo si son Clientes Mayoristas, pero no acumulan
-      puntos. Nunca se factura a nombre de una persona para que acumule.</li>
-      <li><strong>Canje:</strong> desde 100 puntos, sólo sobre medicamentos e
-      insumos médicos, y la factura queda con <strong>al menos US$0.01</strong>
-      a pagar (Hacienda rechaza una venta en cero).</li>
-      <li><strong>Premios del raspable:</strong> los puntos se canjean como los
-      demás; los otros premios se entregan hasta el último día del mes, salvo
-      que digan otra cosa, y se registran en la venta.</li>
-      <li><strong>Precio más bajo que el asignado:</strong> sólo con
-      autorización de Administración antes de facturar, que queda registrada
-      (sección 6).</li>
-      <li><strong>Anulaciones:</strong> sólo con motivo real. Los puntos de la
-      venta se descuentan de la cuenta; si el cliente ya los canjeó y no le
-      alcanzan, queda en observación.</li>
+      tiene cuenta en Puntos Salud, y Público si no la tiene. Si pide precio de
+      mayoreo porque compra en volumen, se le ofrece hacer la solicitud
+      (sección 3). No se le da ese precio hasta que la solicitud se apruebe o
+      Administración lo autorice (cláusula 2.9).</li>
+      <li><strong>Fichas de uso general.</strong> «Cliente frecuente»,
+      «clientes varios» y similares son fichas compartidas: no son de ninguna
+      persona. Por eso <strong>nunca acumulan puntos ni llevan precio de
+      mayoreo</strong>. Si el cliente quiere sus puntos o su precio, se busca
+      su propia ficha —o se le inscribe— antes de facturar.</li>
+      <li><strong>Empresas e instituciones.</strong> La compra para una empresa
+      o institución se factura a su nombre: tiene su precio de mayoreo si es
+      Cliente Mayorista, pero <strong>no acumula puntos</strong>. Nunca se
+      factura a nombre de una persona para que acumule.</li>
+      <li><strong>Canje de puntos.</strong> Desde 100 puntos. El descuento se
+      aplica sólo a medicamentos e insumos médicos, y la factura debe quedar
+      con <strong>al menos US$0.01</strong> a pagar: Hacienda rechaza una
+      venta en cero.</li>
+      <li><strong>Premios del raspable.</strong> Los puntos se canjean como los
+      demás. Los otros premios se entregan hasta el último día del mes, salvo
+      que el premio diga otra cosa, y se registran en la venta.</li>
+      <li><strong>Precio más bajo que el asignado.</strong> Nunca se cobra sin
+      autorización. Si una venta lo justifica, Administración lo autoriza antes
+      de facturar y la autorización queda registrada (sección 6).</li>
+      <li><strong>Anulaciones.</strong> Una venta se anula sólo con motivo real.
+      Sus puntos se descuentan de la cuenta del cliente. Si ya los canjeó y no
+      le quedan puntos suficientes para descontarlos, queda en
+      observación.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">3</span> Ingreso de un Cliente Mayorista</h2>
     <ol class="clausulas">
-      <li><strong>Solicitud.</strong> La hace el dependiente o vendedor desde
-      el portal, o el cliente desde la aplicación. El portal muestra sus compras
-      de los últimos tres meses y a qué precios. Se aprueba si cumple la
-      cláusula 2.3 de las Condiciones —US$100 al mes en promedio, o una compra
-      de US$500— y su información está completa.</li>
-      <li><strong>Decisión.</strong> La toma Administración, nunca quien hizo
-      la solicitud, en un <strong>máximo de cinco (5) días hábiles</strong>. Si
-      la niega, se le dice el motivo al cliente.</li>
-      <li><strong>Al aprobarse,</strong> el cliente queda con precio Mayoreo o
-      el que Administración le asigne (sección 4), y recibe las Condiciones y
-      un aviso en la aplicación.</li>
+      <li><strong>Quién lo pide y qué se revisa.</strong> Lo pide el
+      dependiente o vendedor desde el portal, o el cliente desde la aplicación.
+      Junto a la solicitud, el portal muestra lo que compró en los últimos tres
+      meses y a qué precios. Se aprueba si cumple la cláusula 2.3 de las
+      Condiciones —US$100 al mes en promedio, o una compra de US$500— y la ficha
+      está completa.</li>
+      <li><strong>Quién decide.</strong> Administración, y quien aprueba no
+      puede ser quien hizo la solicitud. Responde en un <strong>máximo de cinco
+      (5) días hábiles</strong>; si la niega, se le dice el motivo al
+      cliente.</li>
+      <li><strong>Al aprobarse.</strong> El cliente queda con precio Mayoreo, o
+      con el que Administración le asigne según su ficha (sección 4). Se le
+      entregan las Condiciones del Cliente Mayorista y se le avisa por la
+      aplicación.</li>
       <li><strong>El precio se asigna al cliente, no se escribe en su
-      nombre.</strong> Los clientes que hoy llevan anotaciones en el nombre
-      —«(4)», «(5)», «(TIENDA)», «(CLÍNICA)»…— pasan a Clientes Mayoristas
-      aprobados con el precio que les corresponda, y se les limpia el nombre.
-      Al inscribir o editar un cliente, el nombre se escribe como en su
-      documento, sin anotaciones.</li>
+      nombre.</strong> Los clientes que hoy llevan en el nombre el precio u
+      otra anotación —por ejemplo «(4)», «(5)», «(TIENDA)», «(CLÍNICA)»— pasan a ser Clientes Mayoristas aprobados con el precio que les
+      corresponda, y se les deja el nombre limpio. Al inscribir o editar un
+      cliente, el nombre se escribe tal como aparece en su documento, sin
+      anotaciones de precio, tipo de negocio u otras.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">4</span> Cambios de precio</h2>
     <ol class="clausulas">
-      <li>El precio no depende del rango: Administración lo decide para cada
-      cliente con lo que muestra el portal: <strong>margen</strong> (sólo de
-      uso interno; no se le menciona al cliente), <strong>volumen</strong>
-      mensual y rango, <strong>regularidad</strong> en los últimos meses y
-      <strong>antigüedad</strong>.</li>
-      <li>Todo cambio queda registrado con quién lo aprobó y por qué. El primer
-      día de cada mes, el portal avisa qué clientes ya cumplen las condiciones
-      para ser Clientes Mayoristas.</li>
+      <li>El precio no depende del rango: lo decide Administración para cada
+      cliente, con la <strong>ficha del cliente</strong> que muestra el portal:
+        <ul class="viñetas">
+          <li><strong>margen</strong>: lo que gana la Empresa con sus compras
+          (sólo para uso interno; no se le menciona al cliente);</li>
+          <li><strong>volumen</strong>: su compra mensual y su rango;</li>
+          <li><strong>regularidad</strong>: en cuántos de los últimos meses
+          compró;</li>
+          <li><strong>antigüedad</strong>: desde cuándo compra.</li>
+        </ul>
+      </li>
+      <li>Todo cambio de precio queda registrado con quién lo aprobó y por qué.
+      El primer día de cada mes, el portal avisa a Administración qué clientes
+      ya cumplen las condiciones para ser Clientes Mayoristas.</li>
     </ol>
   </section>
 
@@ -312,34 +334,42 @@
     <h2><span class="num">5</span> Revisión trimestral</h2>
     <ol class="clausulas">
       <li>El primer día hábil de enero, abril, julio y octubre, el portal
-      presenta a cada Cliente Mayorista, empezando por quienes menos
-      compraron. Administración mantiene, sube o baja su precio, o le retira
-      la condición, y deja escrito el motivo.</li>
-      <li>Nada cambia solo. Una bajada o un retiro se avisa al cliente y rige
-      quince días después; una subida, desde que se le comunica.</li>
+      presenta a Administración la ficha de cada Cliente Mayorista, empezando
+      por quienes menos compraron en el trimestre. Administración decide si
+      mantiene su precio, lo sube, lo baja o le retira la condición, y deja
+      escrito el motivo.</li>
+      <li>Nada cambia solo: no hay monto mínimo que haga perder la condición.
+      Una bajada o un retiro se le avisa al cliente y rige quince días después;
+      una subida, desde que se le comunica.</li>
     </ol>
   </section>
 
   <section>
     <h2><span class="num">6</span> Alertas</h2>
     <ol class="clausulas">
-      <li><strong>Precios.</strong> Sin autorización, el portal avisa a
-      Administración quién vendió, a quién y por cuánto si se da precio de
-      mayoreo a quien no es Cliente Mayorista, un precio más bajo que el suyo a
-      un Cliente Mayorista, o precio de mayoreo en unidades sueltas. La primera
-      vez se conversa con quien vendió; si se repite, se toman medidas
-      correctivas.</li>
-      <li><strong>Puntos.</strong> Administración resuelve desde la ficha de
-      puntos del cliente:
+      <li><strong>Precios.</strong> La caja no controla qué precio se da: el
+      control es la alerta. Cuando no hubo autorización, el portal avisa a
+      Administración quién vendió, a quién y por cuánto si:
         <ul class="viñetas">
-          <li><strong>Por evaluar</strong>: el nombre parece de un negocio; se
-          decide si es persona natural o jurídica (mientras tanto acumula).</li>
-          <li><strong>En observación</strong>: se anuló una compra cuyos puntos
-          ya había canjeado y no le alcanzaron para descontarlos. Se revisa y
-          se cierra con una nota; si se repite, aplica la cláusula 10 del
-          Reglamento.</li>
+          <li>se da precio de mayoreo a quien no es Cliente Mayorista;</li>
+          <li>se le da a un Cliente Mayorista un precio más bajo que el suyo;</li>
+          <li>se da precio de mayoreo en unidades sueltas.</li>
+        </ul>
+      </li>
+      <li>La primera vez, Administración lo conversa con quien vendió; si se
+      repite, se toman medidas correctivas.</li>
+      <li><strong>Puntos.</strong> El portal avisa también, y Administración
+      resuelve desde la ficha de puntos del cliente:
+        <ul class="viñetas">
+          <li><strong>Ficha por evaluar</strong>: el nombre parece de un
+          negocio. Se decide si es persona natural o jurídica; mientras tanto
+          acumula.</li>
+          <li><strong>Cliente en observación</strong>: se anuló una compra cuyos
+          puntos ya había canjeado, y no le quedaban puntos para
+          descontarlos. Se revisa y se cierra la observación con una
+          nota; si se repite, se aplica la cláusula 10 del Reglamento.</li>
           <li><strong>Venta en cero</strong>: un canje dejó una factura en
-          US$0.00; se corrige con la sala.</li>
+          US$0.00. Se corrige con la sala.</li>
         </ul>
       </li>
     </ol>
@@ -348,9 +378,9 @@
   <section>
     <h2><span class="num">7</span> Raspable mensual</h2>
     <ol class="clausulas">
-      <li>Lo reciben cada mes en la aplicación, si compraron el mes anterior,
-      los clientes Oro y Platino y los Clientes Mayoristas Rubí (el de Oro) y
-      Diamante (el de Platino). Los premios vigentes se publican en la
+      <li>Si compraron el mes anterior, reciben cada mes un raspable en la
+      aplicación los clientes Oro y Platino, y los Clientes Mayoristas Rubí (el
+      de Oro) y Diamante (el de Platino). Los premios vigentes se publican en la
       aplicación.</li>
     </ol>
   </section>

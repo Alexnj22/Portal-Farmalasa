@@ -241,7 +241,16 @@ const PENDIENTES = {
                 'falta medir el ancho del rollo',
                 'sigue sin probarse en otra sala'],
     'cortes-efectivo': ['falta probar en sala', 'dos diferencias confirmadas y grandes en Salud 3 (−$970.39 y −$499.50) sin revisar con la sala',
-                        'falta probar las bolsas en sala'],
+                        'falta probar las bolsas en sala',
+                        // Segunda revisión 2026-10-23 (HA1–HA5, b596827ce): el cobro
+                        // de crédito se reescribió entero —reclamo atómico, clave por
+                        // intento, firma del servidor—, y el origen no deshace un abono.
+                        'falta el PRIMER cobro de crédito real con el código nuevo (reclamo atómico y firma del servidor, b596827ce)'],
+    // Segunda revisión 2026-10-23: la sección F de gate:perf levantó la cola de
+    // Pendiente MH (363 MB por llamada). Se declaró con `deuda: true` en
+    // scripts/bloques-por-llamada.json —protege contra que crezca—, pero nadie
+    // la auditó todavía.
+    'facturacion-dte': ['get_pending_mh_invoices lee 363 MB por llamada: declarada como deuda en bloques-por-llamada.json, sin auditar el plan'],
     // Medido el 2026-08-24: son SIETE pares, no seis (creció uno el 1-ago), y dos
     // de ellos tienen proveedores DISTINTOS bajo el mismo sello — o sea que uno
     // de los dos lo tiene mal asignado. Ver §8.20 del informe.
@@ -258,7 +267,10 @@ const PENDIENTES = {
                 'hay ventas de gente de Bodega en salas, sin revisar'],
     acceso:    ['falta probar el lector físico en sala', 'falta que el papel conteste qué simbología lee el lector',
                 'falta prueba en vivo del candado doble', 'carné: turno y sala definido y sin implementar'],
-    bitacoras: ['falta la consulta al CSSP desde el portal', 'falta el aviso de franja por vencerse'],
+    bitacoras: ['falta la consulta al CSSP desde el portal', 'falta el aviso de franja por vencerse',
+                // Medido con gate:receta el 2026-10-23: EN ROJO. El tope del
+                // baseline (47) sólo baja; se baja cargando el dato en el catálogo.
+                '51 productos del libro bajo receta sin principio activo (gate:receta en rojo, tope 47)'],
     minmax:    ['MIN·MAX no lee el factor', 'falta el 1-sep del cron de La Popular'],
     comunicacion: ['push llega a 4 de 59 — la mayoría de los avisos no salen del portal'],
     personal:  ['falta el APK nuevo de la cámara en Android y probarlo en sala'],

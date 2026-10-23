@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.30 — Auditoría: la segunda revisión del 2026-10-23 en el registro por área
+
+- **El registro de auditoría anota la segunda revisión de código del 2026-10-23** (50 hallazgos, todos cerrados y desplegados): cada área lleva su verificación con los hallazgos y el commit que los cerró. Solicitudes, encuestas a clientes, metas, promociones, productos y marketing decían «sin hallazgos» por la revisión del 22; esa entrada queda, con la aclaración de que la segunda revisión sí encontró.
+- **Decisiones del usuario anotadas**: el bono de metas de julio a septiembre ($1,496.97) no se paga porque el bono estaba apagado; quien cubre en otra sala cobra el bono de esa sala con su venta ahí (la jefatura sólo en su sala de base); en marketing, lo subido después del envío no lo ve nadie hasta reenviar.
+- **Pendientes nuevos que bajan el eje de flujo** (`auditoria/puntuar.mjs`): el primer cobro de crédito real con el código nuevo (Cortes, 94 → 93); 51 productos del libro bajo receta sin principio activo, con `gate:receta` en rojo contra un tope de 47 (Bitácoras); y `get_pending_mh_invoices` (Facturación).
+- **`get_pending_mh_invoices` declarada en `scripts/bloques-por-llamada.json`**: 363 MB por llamada medidos hoy, techo de 61,000 bloques (~1.3x) y `deuda: true`, sin auditar el plan. Con eso `gate:perf` vuelve a verde; ningún otro techo se tocó.
+- **Ejes que recalculó la regla**: pruebas de Ventas 85 → 95 y de Promociones 70 → 85 (Promociones 94 → 95); pruebas de Facturación 95 → 94 y de Inventario 95 → 93.
+- Ninguna área está congelada; no se tocó ningún sello.
+
 ## v2.1350.29 — Bonos: el pago sin confirmar lleva a resolverlo y la caja no lo repite (H20)
 
 - **Pagar un bono que quedó sin confirmar ya no termina en «No se pudo pagar».** Si la caja no confirmó un pago anterior del mismo bono, la reserva lo frena (`SIN_CONFIRMAR`) y ahora la pantalla dice qué pasa y abre «Pago sin confirmar», donde se mira la caja y se contesta «Sí salió» o «No salió». En el portal (Mi caja) y en la app (Efectivo → Bonos de promoción por pagar), donde la fila «Sin confirmar» también lleva a resolverlo.

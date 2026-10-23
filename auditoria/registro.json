@@ -88,6 +88,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H13 registerEmployeeEvent seguía si fallaba la lectura de solapamientos → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: el detector de textos deja de acusar «inyección» (palabra del negocio) y los nombres de canales de tiempo real → ecc50dfc8; ModalShell: el respaldo del foco no lanza si la página ya no existe → 8bc2aa2b8. Ejes sin cambios."
         }
       ]
     },
@@ -277,6 +281,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 la sección entera perdía scope y delegación (BRANCH→ALL) → 9a17e22ce; H2 alcance de la unión de cargos tomado de filas sin permiso (caso real: bitácoras de otras salas) → 66c4414fd (JS + auth_module_scope). Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: lo que un cambio de permisos arrastra a otros módulos queda en la bitácora (PERMISOS_ARRASTRE) → fd2dc8c67. Ejes sin cambios."
         }
       ]
     },
@@ -381,7 +389,7 @@
           "pct": 90,
           "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
           "hallazgos": [
-            "src/components/forms/EmployeeFormModal.jsx:3425"
+            "src/components/forms/EmployeeFormModal.jsx:3328"
           ]
         },
         "bd": {
@@ -444,7 +452,7 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta el APK nuevo de la cámara en Android y probarlo en sala",
-        "[datos] src/components/forms/EmployeeFormModal.jsx:3425",
+        "[datos] src/components/forms/EmployeeFormModal.jsx:3328",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -538,6 +546,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H8–H11 carga paginada y por días, consolidate-timesheets → b06b75f26. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: cerrar la quincena desde el portal queda en la bitácora (CERRAR_QUINCENA) → fd2dc8c67. Ejes sin cambios."
         }
       ]
     },
@@ -789,7 +801,11 @@
         },
         {
           "fecha": "2026-10-22",
-          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener. — ACLARADO el 2026-10-23: «sin hallazgos» ya no vale; la segunda revisión del 2026-10-23 sí encontró (ver la entrada de esa fecha)."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): H1 quien pide podía reescribir su solicitud PENDING (metadata, sala, aprobador, nivel) y la Edge Function aplicaba lo reescrito; H2 un movimiento de inventario se podía pedir para otra sala pese a lo que decía el comentario; H3 «Cancelar» fallaba en silencio para quien pidió; H4 cambio de turno no avanzaba con los permisos reales; H5 los enlaces de los avisos perdían el ?solicitud= en la redirección; H6 cambios de venta del mes anterior nunca se vigilaban; H7 empleado_no_disponible usaba el día UTC (desde las 18:00 SV era «mañana»); H8 la solicitud de facturación sobre una factura DTE INVALIDADO EN MH no se frenaba → 36106b45c."
         }
       ]
     },
@@ -878,6 +894,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H5 resumen de encuesta pisaba los otros segmentos → 5e01c9be6; H6 500 uuid en la URL y H7 mes UTC → b06b75f26. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): H9 un comunicado para una sucursal o un cargo mandaba el push a TODA la empresa; H10 surveys sin policy de INSERT/UPDATE: editar una encuesta interna decía «actualizada» y no guardaba; H13 un comunicado programado nunca mandaba push al llegar su hora; H14 «Leer todas» marcaba sólo las 100 cargadas → 36106b45c."
         }
       ]
     },
@@ -1030,8 +1050,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 85,
-          "evidencia": "1 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 2718 pruebas en 169 archivos, todas verdes",
+          "pct": 95,
+          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4236 pruebas en 347 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1058,6 +1078,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H4 «Pts. Canjeados» ignoraba Anuladas/Receta mientras el encabezado no → 9a17e22ce. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): HC1 el comparativo con el período anterior no se cortaba a la misma hora cuando el rango cruzaba el resumen guardado; HC2 «hoy» era el día UTC (desde las 18:00 SV la venta del día dejaba de leerse en vivo); HC3 la lista paginaba sin orden total (repetía o perdía filas); HC4 un error de la lista se mostraba como «sin ventas»; HC5 filtro de venta escrito a mano en vez de venta_valida → b596827ce. Cota de fecha de get_ventas_stats (la reescritura HC1 la había quitado) → 8bf363954. Pruebas nuevas de Ventas → fd2dc8c67; el eje de pruebas sube de 85 a 95 por la regla (6 de 8 módulos con prueba)."
         }
       ]
     },
@@ -1139,7 +1163,11 @@
         },
         {
           "fecha": "2026-10-22",
-          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener. — ACLARADO el 2026-10-23: «sin hallazgos» ya no vale; la segunda revisión del 2026-10-23 sí encontró (ver la entrada de esa fecha)."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): H16 «¿estaba activo el bono ese mes?» se contestaba con el interruptor de HOY: encenderlo volvía dinero los meses cerrados; H17 aprobar el semestre no miraba si el bono estuvo apagado; H18 el reparto del mes usaba la sala y la plantilla del día de la foto, no las del mes; H22 el tramo pagado se decidía sobre el % redondeado y el histórico sin redondear → 747d10463. DECISIONES DEL USUARIO (2026-10-23): el bono de metas de julio a septiembre ($1,496.97) NO se paga, porque el interruptor estaba apagado esos meses; quien cubre en otra sala cobra el bono de ESA sala con la venta que hizo ahí, y la jefatura sólo en su sala de base (747d10463, «el bono por la sala donde se vendió»)."
         }
       ]
     },
@@ -1198,8 +1226,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 70,
-          "evidencia": "1 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (25%) · 2718 pruebas en 169 archivos, todas verdes",
+          "pct": 85,
+          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4236 pruebas en 347 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1208,8 +1236,8 @@
           "hallazgos": []
         }
       },
-      "pct": 94,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
@@ -1221,19 +1249,24 @@
         },
         {
           "fecha": "2026-10-22",
-          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener. — ACLARADO el 2026-10-23: «sin hallazgos» ya no vale; la segunda revisión del 2026-10-23 sí encontró (ver la entrada de esa fecha)."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): H15 reactivar o extender una promoción ya pagada trababa el pago de lo vendido después (se paga sólo la diferencia, nunca dos veces); H19 el bono de quien dejó de estar ACTIVO desaparecía de la lista; H21 el diálogo mostraba un monto y la salida registraba otro recalculado → 747d10463. H20 un pago que la caja no confirmó se podía repetir con clave nueva a los 3 minutos → 747d10463 (estado «Sin confirmar») y la parte de caja (operar-caja no saca dos veces el efectivo de un bono; la pantalla lleva a resolverlo) → 8bf363954. El eje de pruebas sube de 70 a 85 por la regla: 2 de 4 módulos de lógica con prueba (pagoBonoSinConfirmar.test.js)."
         }
       ]
     },
     "cortes-efectivo": {
       "ejes": {
         "flujo": {
-          "pct": 77,
-          "evidencia": "3 pendiente(s) declarado(s) en la memoria del proyecto",
+          "pct": 71,
+          "evidencia": "4 pendiente(s) declarado(s) en la memoria del proyecto",
           "hallazgos": [
             "falta probar en sala",
             "dos diferencias confirmadas y grandes en Salud 3 (−$970.39 y −$499.50) sin revisar con la sala",
-            "falta probar las bolsas en sala"
+            "falta probar las bolsas en sala",
+            "falta el PRIMER cobro de crédito real con el código nuevo (reclamo atómico y firma del servidor, b596827ce)"
           ]
         },
         "datos": {
@@ -1294,13 +1327,14 @@
           "hallazgos": []
         }
       },
-      "pct": 94,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta probar en sala",
         "[flujo] dos diferencias confirmadas y grandes en Salud 3 (−$970.39 y −$499.50) sin revisar con la sala",
         "[flujo] falta probar las bolsas en sala",
+        "[flujo] falta el PRIMER cobro de crédito real con el código nuevo (reclamo atómico y firma del servidor, b596827ce)",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1311,15 +1345,21 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 cartera con falso «no hay créditos» y H2 paginación por fecha repetida → 781fb3038. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): HA1 un crédito con cobro esperando firma se podía cobrar por otro lado (la reserva sólo la miraba la pantalla); HA2 aprobar un cobro no reclamaba la fila de forma atómica: dos aprobaciones abonaban dos veces; HA3 «pagar» no tenía clave por intento: un reintento tras corte de red volvía a cobrar; HA4 creditos_pasados_del_plazo (DEFINER) daba la cartera vencida de las 7 salas a cualquier sesión; HA5 la duda de beneficiario venía del navegador sin firma → b596827ce. Funciones de bolsas/cortes DEFINER cerradas a service_role en b596827ce; bolsa_saldo pasa a INVOKER → 8bf363954. PENDIENTE (eje flujo): el primer cobro de crédito real con el código nuevo — el origen no deshace un abono, así que sólo lo confirma el uso real."
         }
       ]
     },
     "facturacion-dte": {
       "ejes": {
         "flujo": {
-          "pct": 95,
-          "evidencia": "sin pendientes declarados en memoria",
-          "hallazgos": []
+          "pct": 89,
+          "evidencia": "1 pendiente(s) declarado(s) en la memoria del proyecto",
+          "hallazgos": [
+            "get_pending_mh_invoices lee 363 MB por llamada: declarada como deuda en bloques-por-llamada.json, sin auditar el plan"
+          ]
         },
         "datos": {
           "pct": 95,
@@ -1373,8 +1413,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 95,
-          "evidencia": "9 de 13 módulo(s) de lógica (.js) del área nombrados por alguna prueba (69%) · 2718 pruebas en 169 archivos, todas verdes",
+          "pct": 94,
+          "evidencia": "9 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4236 pruebas en 347 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1387,6 +1427,7 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
+        "[flujo] get_pending_mh_invoices lee 363 MB por llamada: declarada como deuda en bloques-por-llamada.json, sin auditar el plan",
         "[bd] índice sin lecturas en la ventana de 4 días: idx_customers_erp_id (968 kB)",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
@@ -1399,6 +1440,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H3 cola «No efectivo» paginada sin orden único y H4 mes actual con doble corrección de huso → 781fb3038 (colasDeFacturacion.test.js). Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): HB1 la consulta pública de /mis-puntos frenaba sólo por IP, tomada del primer elemento de x-forwarded-for (falsificable); ahora cuenta también por documento y en toda la red → b596827ce. PENDIENTE (eje flujo): gate:perf levantó get_pending_mh_invoices (cola de Pendiente MH) en 363 MB por llamada (46,524 bloques, 29 llamadas); se declaró en scripts/bloques-por-llamada.json con techo 61,000 y deuda: true —el manifiesto lo admite así y es lo que hace que la sección F la vuelva a vigilar contra que crezca—, sin auditar su plan. El eje de pruebas baja de 95 a 94 por la regla (9 de 14 módulos con prueba)."
         }
       ]
     },
@@ -1490,7 +1535,11 @@
         },
         {
           "fecha": "2026-10-22",
-          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener. — ACLARADO el 2026-10-23: «sin hallazgos» ya no vale; la segunda revisión del 2026-10-23 sí encontró (ver la entrada de esa fecha)."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): H23 sync-products nunca escribía cambios de «bajo receta», código de barras ni perecedero en productos existentes; H24 los productos dados de alta en sábado nunca se avisaban; H25 el aviso «salió del catálogo» llegaba dos veces; H26 cuatro guardados de la ficha decían «Guardado» sin mirar el error; H27 la búsqueda filtraba laboratorio/categoría/nuevos DESPUÉS del tope de 1000; H28 corregir un lote marcaba como corregidos los demás lotes; H29 cualquier sesión podía subir o reemplazar fotos en product-photos; H34 las tarjetas del catálogo mostraban 0 cuando la lectura fallaba; H35 el historial de cambios se paginaba sin orden; H36 sync-products ignoraba el error al escribir products_changelog → 747d10463. Bitácora de crear categoría y cambiar la foto → fd2dc8c67."
         }
       ]
     },
@@ -1554,8 +1603,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 95,
-          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 2718 pruebas en 169 archivos, todas verdes",
+          "pct": 93,
+          "evidencia": "7 de 11 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4236 pruebas en 347 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1582,6 +1631,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H4 descargo comparaba cajas contra unidades → 99c22b1c1; H7 lotes por número y vencimiento, H8 existencia en unidades, H11 .limit(1000) en conteos → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4. Prueba en vivo en el entorno de pruebas el 2026-10-22 (descargo): los defectos que dio se corrigieron en d92120551."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: el eje de pruebas baja de 95 a 93 por la regla (7 de 11 módulos de lógica con prueba: el área sumó módulos sin prueba). No es un hallazgo de la revisión de código."
         }
       ]
     },
@@ -1669,6 +1722,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H1 plazo de envío a Bodega un mes antes y H12 días para vencer tras las 18:00 → 45e819c54; H5 ocultar/desocultar en lote sin mirar el error → 9a17e22ce; H6 laboratorio desocultado aunque fallara la lectura → 5e01c9be6. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: pruebas nuevas de tabla, CSV y configuración → fd2dc8c67. Ejes sin cambios."
         }
       ]
     },
@@ -1765,6 +1822,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H10 código de sala volvía a 1 si fallaba la lectura → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: arrancar la ruta, guardar sus encargos y fijar las hojas de una sala quedan en la bitácora, y pruebas nuevas de despacho y rutas → fd2dc8c67. Ejes sin cambios."
         }
       ]
     },
@@ -1858,6 +1919,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H3 historial recortado a 201 cierres → 45e819c54; H9 envíos cerrados sin sala ni semana → 28edadc84. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: el código del área cita sus dos planes → ecc50dfc8. Ejes sin cambios."
         }
       ]
     },
@@ -1949,6 +2014,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H6 registrar_pago_compra sin bloqueo de fila → 66c4414fd. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): HB3 cuentas por pagar usaba current_date en UTC: desde las 18:00 SV lo que vence hoy salía como vencido; HB4 get_documentos_por_barrer (DEFINER) era ejecutable por cualquier sesión → b596827ce."
         }
       ]
     },
@@ -2041,17 +2110,22 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H5 libro de compras a medias si fallaba una página → 781fb3038 y b81b02ed4 (una sola llamada, capaFiscal.test.js); H7 TOTALES del CSV de notas de crédito → 781fb3038. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): HB2 la retención de IVA marcaba anuladas a mano y no filtraba con venta_fiscal: el «ACREDITABLE (SIN ANULADOS)» sumaba documentos sin sello válido → b596827ce."
         }
       ]
     },
     "bitacoras": {
       "ejes": {
         "flujo": {
-          "pct": 83,
-          "evidencia": "2 pendiente(s) declarado(s) en la memoria del proyecto",
+          "pct": 77,
+          "evidencia": "3 pendiente(s) declarado(s) en la memoria del proyecto",
           "hallazgos": [
             "falta la consulta al CSSP desde el portal",
-            "falta el aviso de franja por vencerse"
+            "falta el aviso de franja por vencerse",
+            "51 productos del libro bajo receta sin principio activo (gate:receta en rojo, tope 47)"
           ]
         },
         "datos": {
@@ -2120,6 +2194,7 @@
       "hallazgos": [
         "[flujo] falta la consulta al CSSP desde el portal",
         "[flujo] falta el aviso de franja por vencerse",
+        "[flujo] 51 productos del libro bajo receta sin principio activo (gate:receta en rojo, tope 47)",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
@@ -2131,6 +2206,10 @@
         {
           "fecha": "2026-10-22",
           "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): H2 estado de la receta decidido por un renglón → ad734f82a. Todos corregidos en origin/main; CI en verde en b81b02ed4."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión 2026-10-23: sin hallazgos propios del área en la revisión de código. La hora de apertura sin minutos («7») dejaba vacía la lista de horas, y pruebas nuevas de cierre y configuración → fd2dc8c67. PENDIENTE (eje flujo): gate:receta EN ROJO — 51 productos del libro bajo receta sin principio activo contra un tope de 47 (medido hoy; se baja cargando el dato, no subiendo el tope)."
         }
       ]
     },
@@ -2486,7 +2565,11 @@
         },
         {
           "fecha": "2026-10-22",
-          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener. — ACLARADO el 2026-10-23: «sin hallazgos» ya no vale; la segunda revisión del 2026-10-23 sí encontró (ver la entrada de esa fecha)."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): H11 el freno de respuestas repetidas del QR dependía de un id que inventa el navegador (ráfagas de detractores y cierre por meta con basura); H12 el premio en puntos se podía cobrar una vez por canal → 36106b45c."
         }
       ]
     },
@@ -2752,7 +2835,11 @@
       "verificaciones": [
         {
           "fecha": "2026-10-22",
-          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener."
+          "evidencia": "Auditoría 2026-10-21/22 (revisión de sólo lectura por grupos, verificada contra la definición viva en producción): revisada sin hallazgos que sostener. — ACLARADO el 2026-10-23: «sin hallazgos» ya no vale; la segunda revisión del 2026-10-23 sí encontró (ver la entrada de esa fecha)."
+        },
+        {
+          "fecha": "2026-10-23",
+          "evidencia": "Segunda revisión de código 2026-10-23 (sólo lectura, verificada contra la definición viva en producción; todo aplicado y desplegado en producción el mismo día): H30 quien creó la pieza podía pasarla a «publicado» sin aprobación; H31 cambiar o borrar el archivo de una pieza aprobada no la devolvía a revisión; H33 con can_edit se podía reescribir cualquier comentario, incluidas las firmas de aprobación → 747d10463. H32 lo subido después del primer envío del mes lo veía todo el mundo al instante → 3b17447e1. DECISIÓN DEL USUARIO (2026-10-23): lo subido después del envío no lo ve nadie más hasta que se reenvía la pieza (queda «Sin enviar»; lo frena la base, también por enlace)."
         }
       ]
     }

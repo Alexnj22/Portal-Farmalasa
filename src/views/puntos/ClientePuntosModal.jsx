@@ -23,7 +23,7 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import {
     Star, Pencil, TrendingUp, Gift, Undo2, CalendarX, Wrench, Wallet, History, CalendarClock, IdCard, Phone,
-    ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal, ArrowLeftRight, Merge,
+    ShoppingBag, X, KeyRound, BarChart3, Receipt, Cake, SlidersHorizontal, ArrowLeftRight, Merge, Eye,
 } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
@@ -41,7 +41,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { fetchPuntosCliente, ajustarPuntos, fetchUnionesDeCuenta } from '@nucleo/data/puntos';
+import { fetchPuntosCliente, ajustarPuntos, fetchUnionesDeCuenta, fetchObservacionDeCliente, cerrarObservacion } from '@nucleo/data/puntos';
 import { claveDeMovimiento, detalleDeMovimiento, montoDeVenta, rotuloDeMovimiento, valeTexto, MOTIVOS_DE_AJUSTE_PUNTOS } from '@nucleo/utils/puntosTexto';
 import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, repartoDeCuenta } from '@nucleo/utils/puntosCuenta';
 import CodigoDeAcceso from './CodigoDeAcceso';
@@ -256,6 +256,8 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                             </Notice>
                         )}
                         <AvisoDeUniones fusionadaEn={fusionadaEn} recibidas={recibidas} />
+                        <ObservacionDelCliente customerId={cliente.id} nombre={cliente.nombre}
+                            sala={sala} puedeCerrar={puedeAjustar} version={version} onHecho={hecho} />
 
                         {/* ── 1 · El saldo, y en qué se fue lo acumulado ─────
                             Una sola tarjeta: el saldo manda y los cuatro datos lo
@@ -560,6 +562,89 @@ function AjustarPuntos({ customerId, nombre, saldo, onCerrar, onHecho }) {
                 </div>
             </div>
         </section>
+    );
+}
+
+/**
+ * El cliente en observación (Reglamento v2, cláusula 8.2): se le anuló una
+ * compra después de canjear sus puntos y no se pudieron descontar enteros.
+ * Sólo es una marca —no bloquea el canje ni le cobra nada después
+ * (decisión del usuario, 2026-10-23)—; la abre la base sola y la cierra quien
+ * puede dar o quitar puntos, con la nota de qué se revisó.
+ */
+function ObservacionDelCliente({ customerId, nombre, sala, puedeCerrar, version, onHecho }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const [casos, setCasos] = useState([]);
+    const [cerrando, setCerrando] = useState(false);
+    const [nota, setNota] = useState('');
+    const [guardando, setGuardando] = useState(false);
+
+    useEffect(() => {
+        let vivo = true;
+        fetchObservacionDeCliente(customerId)
+            .then((c) => { if (vivo) setCasos(c); })
+            .catch((e) => console.warn('[puntos] observación', e?.message));
+        return () => { vivo = false; };
+    }, [customerId, version]);
+
+    if (!casos.length) return null;
+
+    const cerrar = async () => {
+        if (!nota.trim()) return;
+        setGuardando(true);
+        try {
+            // La bitácora la anota `cerrarObservacion`.
+            await cerrarObservacion({ customerId, nota }, { nombre });
+            showToast('Observación cerrada', 'El cliente ya no está en observación.', 'success');
+            setCerrando(false);
+            setNota('');
+            onHecho?.();
+        } catch (e) {
+            showToast('No se pudo cerrar', mensajeAmigable(e), 'error');
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    return (
+        <Notice variant="warning" bloque>
+            <div className="flex flex-col gap-3 min-w-0">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="font-black flex items-center gap-1.5"><Eye size={14} className="shrink-0" /> En observación</p>
+                        <p className="mt-0.5">
+                            {casos.length === 1
+                                ? 'Se le anuló una compra después de canjear los puntos que esa compra le dio.'
+                                : `Se le anularon ${casos.length} compras después de canjear los puntos que le dieron.`}
+                        </p>
+                    </div>
+                    {puedeCerrar && !cerrando && (
+                        <Button variant="secondary" size="sm" onClick={() => setCerrando(true)}>Cerrar observación</Button>
+                    )}
+                </div>
+                <ul className="flex flex-col gap-1">
+                    {casos.map((c) => (
+                        <li key={c.id} className="text-caption tabular-nums">
+                            {fechaNumerica(c.created_at)}
+                            {sala(c.sucursal) ? ` · ${sala(c.sucursal)}` : ''} · {c.motivo}
+                        </li>
+                    ))}
+                </ul>
+                {cerrando && (
+                    <div className="flex flex-col gap-2">
+                        <PortalInput label="Qué se revisó" name="nota_observacion" value={nota}
+                            placeholder="Ej.: se habló con el cliente, la anulación fue un error de caja"
+                            onChange={(e) => setNota(e.target.value.slice(0, 200))} />
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => { setCerrando(false); setNota(''); }} disabled={guardando}>Cancelar</Button>
+                            <Button variant="primary" size="sm" onClick={cerrar} disabled={!nota.trim() || guardando} loading={guardando}>
+                                Cerrar observación
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </Notice>
     );
 }
 

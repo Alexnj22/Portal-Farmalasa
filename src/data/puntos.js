@@ -279,6 +279,29 @@ export async function fetchUnionesDeCuenta(customerId) {
     return data ?? [];
 }
 
+/**
+ * Las compras anuladas después de canjear sus puntos que tienen al cliente en
+ * observación (Reglamento v2, cláusula 8.2). Sólo las abiertas: el cliente está
+ * en observación mientras quede alguna. Las abre la base sola.
+ */
+export async function fetchObservacionDeCliente(customerId) {
+    const { data, error } = await supabase.from('puntos_observacion')
+        .select('id, created_at, invoice_id, sucursal, motivo, no_recuperados')
+        .eq('customer_id', customerId)
+        .is('cerrada_at', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+    if (error) throw error;
+    return data ?? [];
+}
+
+/** Cierra la observación del cliente (todas sus compras abiertas), con la nota de qué se revisó. */
+export const cerrarObservacion = async ({ customerId, nota }, contexto = {}) => {
+    const n = await rpc('puntos_observacion_cerrar', { p_customer_id: customerId, p_nota: nota });
+    anotar('PUNTOS_OBSERVACION_CERRADA', customerId, { ...contexto, nota: nota?.trim() || null, casos: n });
+    return n;
+};
+
 /** Todo de un cliente: ficha, cuenta (saldo, vencimientos, movimientos) y cuentas viejas asignadas. */
 export const fetchPuntosCliente = (customerId) => rpc('puntos_panel_cliente', { p_customer_id: customerId });
 

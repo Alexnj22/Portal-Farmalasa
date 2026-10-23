@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.25 — Puntos: en compra mixta acumula sólo lo que acumula (desde el 15-nov) y el cliente en observación
+
+Cambios del Reglamento Puntos Salud v2, vigente el 15 de noviembre de 2026.
+
+- **Cláusula 3.3 — compra mixta.** Hasta hoy, una compra con un medicamento y
+  bebidas o telefonía acumulaba por el total entero. Desde el 15-nov acumula
+  sólo la parte del total que corresponde a los productos que acumulan
+  (proporcional, así el IVA del crédito fiscal y la retención quedan como en
+  el total). Medido del 1 al 22 de octubre: 420 de 9,213 compras eran mixtas,
+  759 puntos de diferencia en total, 13 como máximo en una. La fecha vive en
+  `puntos_config.acumula_por_renglon_desde`: hasta ese día
+  `ventas_elegibles_puntos` devuelve exactamente lo de antes.
+- **Cláusula 8.2 — el cliente en observación.** Si se anula una compra cuyos
+  puntos ya se canjearon y no alcanzan a descontarse, el cliente queda marcado
+  (`puntos_observacion`, la abre un trigger sobre `puntos_anulacion_gastada`).
+  La ficha de puntos muestra «En observación» con cada caso, y quien puede dar
+  o quitar puntos la cierra con una nota. Sólo marca: no bloquea el canje ni
+  descuenta nada después (decisión del usuario).
+
 ## v2.1350.24 — Un diálogo que se cierra cuando la página se va no deja un error suelto
 
 - El segundo intento de devolver el foco al cerrar un diálogo corre un instante después del cierre. Si para entonces la página ya no existe, ahora no hace nada en vez de lanzar un error. En las pruebas automáticas ese error aparecía al azar y tumbaba la corrida aunque todas pasaran.

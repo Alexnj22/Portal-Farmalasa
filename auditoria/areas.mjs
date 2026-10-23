@@ -492,6 +492,8 @@ export const AREAS = [
         tablas: [
                  // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                  'puntos_anulacion_gastada', 'puntos_producto_no_acumula',
+                 // El cliente en observación (Reglamento v2, 8.2 · 2026-10-23).
+                 'puntos_observacion',
                  'sales_invoices', 'sales_invoice_items', 'sales_invoice_changelog', 'sales_daily_stats',
                  'ventas_monthly_stats', 'sales_alert_log', 'sales_gap_resolutions',
                  'sales_invoice_resolutions', 'sales_null_resolutions', 'sales_observation_resolutions',

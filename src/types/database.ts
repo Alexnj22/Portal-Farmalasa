@@ -16845,6 +16845,13 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "metas_bono_interruptor_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       metas_bono_persona: {
@@ -22124,6 +22131,7 @@ export type Database = {
       }
       puntos_config: {
         Row: {
+          acumula_por_renglon_desde: string | null
           acumulacion_activa: boolean
           avisar_fallas_a: string | null
           cupon_presupuesto_mensual: number | null
@@ -22140,6 +22148,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          acumula_por_renglon_desde?: string | null
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
           cupon_presupuesto_mensual?: number | null
@@ -22156,6 +22165,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          acumula_por_renglon_desde?: string | null
           acumulacion_activa?: boolean
           avisar_fallas_a?: string | null
           cupon_presupuesto_mensual?: number | null
@@ -22810,6 +22820,74 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      puntos_observacion: {
+        Row: {
+          cerrada_at: string | null
+          cerrada_por: string | null
+          created_at: string
+          customer_id: number
+          id: number
+          invoice_id: number
+          motivo: string
+          no_recuperados: number
+          nota_cierre: string | null
+          sucursal: string | null
+        }
+        Insert: {
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          customer_id: number
+          id?: never
+          invoice_id: number
+          motivo: string
+          no_recuperados: number
+          nota_cierre?: string | null
+          sucursal?: string | null
+        }
+        Update: {
+          cerrada_at?: string | null
+          cerrada_por?: string | null
+          created_at?: string
+          customer_id?: number
+          id?: never
+          invoice_id?: number
+          motivo?: string
+          no_recuperados?: number
+          nota_cierre?: string | null
+          sucursal?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "puntos_observacion_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_observacion_cerrada_por_fkey"
+            columns: ["cerrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_observacion_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "puntos_observacion_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
       }
       puntos_premios: {
         Row: {
@@ -28440,6 +28518,10 @@ export type Database = {
         Args: { p_documento: Json; p_employee_ids: string[] }
         Returns: Json
       }
+      audiencia_de_aviso: {
+        Args: { p_target_type: string; p_target_value: Json }
+        Returns: string[]
+      }
       audit_log_de_producto: {
         Args: {
           p_actions: string[]
@@ -28449,10 +28531,6 @@ export type Database = {
         Returns: Json
       }
       audit_log_de_sucursal: { Args: { p_branch_id: string }; Returns: Json }
-      audiencia_de_aviso: {
-        Args: { p_target_type: string; p_target_value: Json }
-        Returns: string[]
-      }
       auth_can_edit_any: { Args: { p_modules: string[] }; Returns: boolean }
       auth_can_edit_scope_all: {
         Args: { p_modules: string[] }
@@ -32278,10 +32356,6 @@ export type Database = {
           total_sum: number
         }[]
       }
-      guardar_principios_activos: {
-        Args: { p_filas: Json; p_product_id: number; p_texto: string }
-        Returns: Json
-      }
       guardar_conteo_item: {
         Args: {
           p_estado_item?: string
@@ -32314,6 +32388,10 @@ export type Database = {
       }
       guardar_minmax_desde_pedido: {
         Args: { p_max: number; p_min: number; p_pedido_item_id: number }
+        Returns: Json
+      }
+      guardar_principios_activos: {
+        Args: { p_filas: Json; p_product_id: number; p_texto: string }
         Returns: Json
       }
       guardar_texto_de_captura: {
@@ -33604,6 +33682,10 @@ export type Database = {
         Returns: Json
       }
       puntos_niveles_panel: { Args: never; Returns: Json }
+      puntos_observacion_cerrar: {
+        Args: { p_customer_id: number; p_nota: string }
+        Returns: number
+      }
       puntos_panel_asignar: {
         Args: {
           p_customer_id: number
@@ -34252,10 +34334,6 @@ export type Database = {
         Returns: undefined
       }
       resolver_carne_temporal: { Args: { p_valor: string }; Returns: string }
-      resolver_pago_bono_sin_confirmar: {
-        Args: { p_item: string; p_nota: string; p_salio: boolean }
-        Returns: Json
-      }
       resolver_clasificacion_pendiente: {
         Args: {
           p_clasificacion?: number
@@ -34435,6 +34513,10 @@ export type Database = {
       }
       resolver_envio_aparecido: {
         Args: { p_actor: string; p_request_id: string }
+        Returns: Json
+      }
+      resolver_pago_bono_sin_confirmar: {
+        Args: { p_item: string; p_nota: string; p_salio: boolean }
         Returns: Json
       }
       resolver_reclamo_sancion: {

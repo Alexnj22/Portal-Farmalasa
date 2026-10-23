@@ -25,8 +25,8 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import Switch from '../components/common/Switch';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
-    fetchRolesForPermissions, fetchRolePermissions, upsertRolePermission, upsertRolePermissionsBulk,
-    guardarPermisoDeCargo, cambiarNivelDePrecioDeCargo, cambiarSuperUsuarioDeCargo,
+    fetchRolesForPermissions, fetchRolePermissions,
+    guardarPermisoDeCargo, guardarArrastreDePermiso, cambiarNivelDePrecioDeCargo, cambiarSuperUsuarioDeCargo,
     cambiarTiempoDeInactividadDeCargo, delegarDecisionesDeCargo, activarTodoParaCargo,
     copiarPermisosDeCargo, cambiarSeccionDeCargo,
 } from '@nucleo/data/permissions';
@@ -720,9 +720,13 @@ const PermissionsView = () => {
         /* La cascada va aparte y sólo si la principal entró: son filas de OTROS
          * módulos, y propagar un cambio que no se guardó dejaría el cuadro
          * diciendo una cosa y el módulo tocado otra. */
-        if (!error && plan.cascada.length) await upsertRolePermissionsBulk(plan.cascada);
-        if (!error && plan.apagadas.length) await upsertRolePermissionsBulk(plan.apagadas);
-        if (!error && plan.inicio) await upsertRolePermission(plan.inicio);
+        if (!error) {
+            // `PERMISOS_ARRASTRE` lo anota la función, con los módulos arrastrados.
+            await guardarArrastreDePermiso(roleId, plan, {
+                cargo: orgRoles.find(r => r.id === roleId)?.name,
+                desde_modulo: moduleKey,
+            });
+        }
 
         setSaving(prev => ({ ...prev, [k]: false }));
         if (!error) {

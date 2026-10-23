@@ -78,6 +78,28 @@ export function guardarPermisoDeCargo(row, contexto = {}) {
         { modulo: row.module_key, ...contexto });
 }
 
+/**
+ * Lo que ARRASTRA un cambio de permiso (`planDeCambioDePermiso`): la cascada
+ * a otros módulos, las filas que se apagan y el cambio de «Inicio» →
+ * `PERMISOS_ARRASTRE`. Son permisos de OTROS módulos que el administrador no
+ * tocó con la mano, así que si una fila no entra —o entra— tiene que poder
+ * leerse cuál fue. Antes la pantalla los escribía con el upsert crudo y la
+ * bitácora sólo decía «arrastró N».
+ *
+ * Se intentan las tres tandas aunque una falle (como hacía la pantalla) y se
+ * devuelve el primer error. La anotación nunca lanza.
+ */
+export async function guardarArrastreDePermiso(roleId, { cascada = [], apagadas = [], inicio = null } = {}, contexto = {}) {
+    const modulos = [...cascada, ...apagadas, ...(inicio ? [inicio] : [])].map(r => r.module_key);
+    if (!modulos.length) return { error: null };
+    const resultados = [];
+    if (cascada.length)  resultados.push(await upsertRolePermissionsBulk(cascada));
+    if (apagadas.length) resultados.push(await upsertRolePermissionsBulk(apagadas));
+    if (inicio)          resultados.push(await upsertRolePermission(inicio));
+    const error = resultados.find(r => r?.error)?.error || null;
+    return anotarIntento({ error }, 'PERMISOS_ARRASTRE', String(roleId), { ...contexto, modulos });
+}
+
 /** Tope de nivel de precio del cargo → `PERMISOS_NIVEL_PRECIO`. */
 export function cambiarNivelDePrecioDeCargo(roleId, level, contexto = {}) {
     return anotarIntento(updateRoleMaxPriceLevel(roleId, level), 'PERMISOS_NIVEL_PRECIO', String(roleId),

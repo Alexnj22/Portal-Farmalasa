@@ -34,7 +34,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import {
-  fetchRolePermissions, fetchRolesForPermissions, guardarPermisoDeCargo, upsertRolePermission, upsertRolePermissionsBulk,
+  fetchRolePermissions, fetchRolesForPermissions, guardarPermisoDeCargo, guardarArrastreDePermiso,
   cambiarNivelDePrecioDeCargo, cambiarSuperUsuarioDeCargo, cambiarTiempoDeInactividadDeCargo, copiarPermisosDeCargo,
   activarTodoParaCargo, cambiarSeccionDeCargo, delegarDecisionesDeCargo,
 } from '@nucleo/data/permissions';
@@ -125,9 +125,8 @@ export default function Permisos() {
       inicio: plan.inicioPasaA === null ? undefined : (plan.inicioPasaA ? 'encendido' : 'apagado'),
     });
     let falla = e;
-    if (!falla && plan.cascada.length) falla = (await upsertRolePermissionsBulk(plan.cascada)).error;
-    if (!falla && plan.apagadas.length) falla = (await upsertRolePermissionsBulk(plan.apagadas)).error;
-    if (!falla && plan.inicio) falla = (await upsertRolePermission(plan.inicio)).error;
+    // `PERMISOS_ARRASTRE` lo anota la función, con los módulos arrastrados.
+    if (!falla) falla = (await guardarArrastreDePermiso(roleId, plan, { ...contexto, desde_modulo: moduleKey })).error;
     setGuardando(null);
     if (falla) { fallo('No se pudo guardar', mensajeAmigable(falla)); cargar(); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

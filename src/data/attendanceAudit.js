@@ -209,8 +209,19 @@ async function devolverAPendiente(requestId, causa) {
     return { error: e, yaResuelta: false };
 }
 
-export function closeQuincenaTimesheets(ids) {
-    return supabase.from('timesheets').update({ status: 'APPROVED' }).in('id', ids);
+/**
+ * Cerrar la quincena: aprobar de una vez los días que quedaban sin aprobar →
+ * `CERRAR_QUINCENA` (D3: la anota esta función, así la pantalla del portal y
+ * la del teléfono dejan la misma entrada). `contexto.quincena` es el inicio
+ * de la quincena y va como target, igual que lo anotaba el teléfono.
+ */
+export function closeQuincenaTimesheets(ids, contexto = {}) {
+    const { quincena = null, ...resto } = contexto;
+    return conBitacora(supabase.from('timesheets').update({ status: 'APPROVED' }).in('id', ids),
+        'CERRAR_QUINCENA', quincena != null ? String(quincena) : null, {
+            timeline_title: 'Quincena cerrada', dimension: 'HR',
+            new_value: `${ids.length} días aprobados`, count: ids.length, ...resto,
+        });
 }
 
 export function fetchEmployeeExceptions(employeeId) {

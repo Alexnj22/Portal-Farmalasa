@@ -22,7 +22,6 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { approveTimesheetsBulk, closeQuincenaTimesheets, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra } from '@nucleo/data/attendanceAudit';
-import { useStaffStore } from '@nucleo/store/staffStore';
 import { getCurrentQuincenaStart, getQuincenaEnd, nextQuincena, prevQuincena } from '@nucleo/utils/quincena';
 import { resumenDeQuincena, RESUMEN_VACIO } from '@nucleo/utils/auditoriaDeTiempos';
 import { ordenDeCargo } from '@nucleo/utils/planilla';
@@ -53,7 +52,6 @@ function Cifra({ valor, rotulo, color }) {
 }
 
 export default function Quincena({ empleados, sucursales, puedeEditar, puedeDescargar = false, usuario, onRecargar, salaNombre = null }) {
-  const anotar = useStaffStore((s) => s.appendAuditLog);
   const [inicio, setInicio] = useState(() => getCurrentQuincenaStart());
   const fin = getQuincenaEnd(inicio);
   const [ts, setTs] = useState(null);
@@ -117,10 +115,10 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
           if (String(txt || '').trim().toUpperCase() !== 'CERRAR') { fallo('No se cerró', 'Escribe CERRAR para confirmar.'); return; }
           setOcupado('cerrar');
           const lista = sinAprobar.map((t) => t.id);
-          const { error } = await closeQuincenaTimesheets(lista);
+          // `CERRAR_QUINCENA` lo anota la función, igual que en el portal.
+          const { error } = await closeQuincenaTimesheets(lista, { quincena: inicio, new_value: `${lista.length} días aprobados ${quien}`, desde: 'app' });
           setOcupado(null);
           if (error) { fallo('No se pudo cerrar', mensajeAmigable(error, 'Intenta de nuevo.')); return; }
-          anotar?.('CERRAR_QUINCENA', inicio, { timeline_title: 'Quincena cerrada', dimension: 'HR', new_value: `${lista.length} días aprobados ${quien}`, desde: 'app' });
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           setTs((prev) => (prev || []).map((t) => (lista.includes(t.id) ? { ...t, status: 'APPROVED' } : t)));
           listo('Quincena cerrada', `${lista.length} día(s) aprobados.`);

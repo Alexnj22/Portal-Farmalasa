@@ -55,8 +55,11 @@ export function updateProductCategoria(productId, categoria) {
         'UPDATE_PRODUCT_CATEGORY', productId, { categoria: categoria || null });
 }
 
-export function insertProductCategory(nombre) {
-    return supabase.from('product_categories').insert({ nombre });
+// Una categoría nueva queda en el catálogo para todos: se anota (la app del
+// teléfono la crea con la misma función y hereda la entrada).
+export function insertProductCategory(nombre, contexto = {}) {
+    return conBitacora(supabase.from('product_categories').insert({ nombre }),
+        'CREAR_CATEGORIA_PRODUCTO', null, { categoria: nombre, ...contexto });
 }
 
 // ── Ubicaciones ──────────────────────────────────────────────────────────────
@@ -118,8 +121,11 @@ export async function marcarInsumo(productId, insumo, contexto = {}) {
     anotar(insumo ? 'PRODUCTO_MARCAR_INSUMO' : 'PRODUCTO_QUITAR_INSUMO', productId, { insumo, ...contexto });
 }
 
-export function updateProductFoto(productId, fotoUrl) {
-    return unaFila(supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId), 'guardar la foto');
+// Se anota que la foto cambió, no la URL: es la del bucket público y no dice
+// nada que el id del producto no diga.
+export function updateProductFoto(productId, fotoUrl, contexto = {}) {
+    return conBitacora(unaFila(supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId), 'guardar la foto'),
+        fotoUrl ? 'PRODUCTO_FOTO_CAMBIADA' : 'PRODUCTO_FOTO_QUITADA', productId, { ...contexto });
 }
 
 // Decir que un producto NO tiene principio activo lo saca de la clasificación

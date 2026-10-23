@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1350.28 — Seis escrituras que ya dejan rastro en la bitácora, y pruebas de Mín·Máx, Pedidos, Bitácoras y Ventas
+
+- **Seis cambios que no dejaban rastro ahora quedan en la bitácora**, en el portal y en la app (la entrada la escribe la función que guarda):
+  - Permisos: lo que un cambio arrastra a otros módulos (`PERMISOS_ARRASTRE`, con los módulos tocados; también si falla).
+  - Productos: crear una categoría (`CREAR_CATEGORIA_PRODUCTO`) y cambiar la foto (`PRODUCTO_FOTO_CAMBIADA`).
+  - Pedidos: arrancar la ruta o guardar sus encargos al crearla (`RUTA_INICIADA` / `RUTA_ENCARGOS_GUARDADOS`) y fijar las hojas de una sala (`PEDIDO_HOJAS_GUARDADAS`).
+  - Asistencia: cerrar la quincena desde el portal (`CERRAR_QUINCENA`; antes sólo la app lo anotaba).
+- Si la anotación falla, la acción igual se hace. Lo que la base no guardó no se anota.
+- Bitácoras: si la hora de apertura de la sala venía sin minutos («7»), la lista de horas para elegir quedaba vacía. Ya no.
+- Pruebas nuevas para Mín·Máx (tabla, CSV y configuración), Pedidos (reglas de despacho, armado de rutas y MIN·MAX desde el pedido), Bitácoras (cierre y configuración), Puntos (niveles, premios, lectura de la tarjeta y código por WhatsApp) y para las seis anotaciones.
+
 ## v2.1350.27 — Auditoría: «inyección» es del negocio y los documentos de traslados se citan
 
 - **El barrido de auditoría deja de acusar a las Inyecciones de hablar del sistema de origen.** «Inyección» entró al vocabulario prohibido cuando la única vez que salía era «Ejecutar Inyección» (la carga del histórico). Hoy es el módulo donde se aplica una inyección a un cliente, y la palabra es del negocio: el detector acusaba 22 rótulos correctos («Aplicación de inyección», «Buscar cliente, factura o inyección…») y bajaba la UX de Ventas y de Cortes a 50. Ahora la busca sólo en su sentido de tubería: «Ejecutar/correr inyección», «inyección de datos / del histórico», «masiva», «express». Comprobado con una regresión fabricada: sigue cazando «Ejecutar Inyección» e «Inyección de datos».

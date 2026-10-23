@@ -10,7 +10,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizarPorCarretera, armarRuta, tramoEnLineaRecta, totalRoute, getDirectionsREST } from '@nucleo/utils/routeOptimizer';
 import { loadGoogleMaps, loadLeaflet, matrizPorCarretera } from '../../plataforma/mapas';
-import { crearRuta, fetchSalasListasParaRuta, fetchReenviosPorDespachar, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, updateRutaStatus } from '@nucleo/data/pedidos';
+import { crearRuta, fetchSalasListasParaRuta, fetchReenviosPorDespachar, fetchPedidosDisponiblesParaRuta, fetchSucursalesConCoords, completarRutaRecienCreada } from '@nucleo/data/pedidos';
 import { fetchConductoresPosibles } from '@nucleo/data/rutas';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -568,14 +568,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       // si falla, la ruta queda en «pendiente» y abajo igual se avisaba a las
       // salas que su pedido «salió de bodega». Se corta antes — la ruta ya
       // existe y se arranca desde la pestaña de Rutas, que es la recuperación.
-      const patch = {
-        ...(salida === 'ahora' ? { status: 'en_ruta', salida_at: new Date().toISOString() } : {}),
-        ...(visitasData.length > 0 ? { visitas: visitasData } : {}),
-      };
-      if (Object.keys(patch).length > 0) {
-        const { error: salidaErr } = await updateRutaStatus(rutaId, patch);
-        if (salidaErr) throw salidaErr;
-      }
+      // La salida y los encargos los escribe y los anota `completarRutaRecienCreada`.
+      const { error: salidaErr } = await completarRutaRecienCreada(rutaId,
+        { saleAhora: salida === 'ahora', visitas: visitasData },
+        { conductor: conductorNombre });
+      if (salidaErr) throw salidaErr;
 
       // `RUTA_CREADA` lo anota `crearRuta` en la capa de datos.
 

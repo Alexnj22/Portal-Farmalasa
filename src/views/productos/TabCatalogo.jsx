@@ -920,7 +920,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
             const path = `${product.id}.jpg`;
             const publicUrl = await subirArchivo('product-photos', path, resized, { upsert: true, contentType: 'image/jpeg' });
             const cacheBust = `${publicUrl}?t=${Date.now()}`;
-            conError(await updateProductFoto(product.id, cacheBust));
+            conError(await updateProductFoto(product.id, cacheBust, { producto: product.nombre }));
             setLocalFoto(cacheBust);
             onPhotoUpdated(product.id, cacheBust);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');

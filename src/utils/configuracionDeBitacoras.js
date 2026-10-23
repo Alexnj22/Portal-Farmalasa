@@ -15,7 +15,7 @@ export const hhmm = (t) => String(t || '').slice(0, 5);
  */
 export function mediasHoras(abre = '05:00', cierra = '22:30') {
     const aMin = (t) => {
-        const [h, m] = String(t).split(':').map(Number);
+        const [h, m = 0] = String(t).split(':').map(Number); // «7» sin minutos: m = 0, no NaN
         return (Number.isNaN(h) ? 5 : h) * 60 + (Number.isNaN(m) ? 0 : m);
     };
     const ini = Math.floor(aMin(abre) / 30) * 30;

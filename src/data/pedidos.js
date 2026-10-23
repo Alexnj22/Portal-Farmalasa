@@ -219,9 +219,9 @@ function escrituraDeRecepcion(builder) {
     return escrituraQueDebeTocarFilas(builder, MSG_RECEPCION_SIN_EFECTO);
 }
 
-// Cambio de estado a secas, SIN bitácora: lo usa la creación de la ruta para
-// arrancarla en el mismo clic (esa acción ya anota `RUTA_CREADA`). Para
-// iniciar o cerrar una ruta existente, `iniciarRuta` / `completarRuta`.
+// Cambio de estado a secas, SIN bitácora: es la pieza de `iniciarRuta`,
+// `completarRuta` y `completarRutaRecienCreada`, que son las que anotan. Una
+// pantalla no la llama directo.
 export function updateRutaStatus(rutaId, patch) {
     return escrituraDeRuta(supabase.from('rutas').update(patch).eq('id', rutaId));
 }
@@ -233,6 +233,24 @@ export function iniciarRuta(rutaId, contexto = {}) {
     return conBitacora(
         updateRutaStatus(rutaId, { status: 'en_ruta', salida_at: new Date().toISOString() }),
         'RUTA_INICIADA', rutaId, { ...contexto });
+}
+
+/**
+ * Lo que la creación de una ruta escribe en el MISMO clic, después de
+ * `crearRuta` (que ya anota `RUTA_CREADA`): arrancarla si sale ahora y guardar
+ * los encargos extra. Arrancarla es la misma salida que `iniciarRuta` y se
+ * anota igual (`RUTA_INICIADA`); si sólo se guardan encargos,
+ * `RUTA_ENCARGOS_GUARDADOS`. Sin nada que escribir no toca la base.
+ */
+export function completarRutaRecienCreada(rutaId, { saleAhora = false, visitas = [] } = {}, contexto = {}) {
+    const patch = {
+        ...(saleAhora ? { status: 'en_ruta', salida_at: new Date().toISOString() } : {}),
+        ...(visitas.length > 0 ? { visitas } : {}),
+    };
+    if (Object.keys(patch).length === 0) return Promise.resolve({ data: null, error: null });
+    return conBitacora(updateRutaStatus(rutaId, patch),
+        saleAhora ? 'RUTA_INICIADA' : 'RUTA_ENCARGOS_GUARDADOS', rutaId,
+        { ...contexto, al_crear: true, encargos: visitas.length || undefined });
 }
 
 export function completarRuta(rutaId, contexto = {}) {
@@ -584,11 +602,18 @@ export function fetchPedidoSucursalStatus(pedidoId, sucId, columns) {
 // va por las funciones de un paso (`pasosDelPedido`, `llegadaDePedido`,
 // `recepcion`). Por eso no recibe un patch: un setter genérico invitaba a
 // mandar otra columna, que hoy daría «permission denied».
+//
+// Se anota (`PEDIDO_HOJAS_GUARDADAS`): son las hojas con las que la sala va a
+// contar y recibir, y sin ellas el traslado no sale — si un pedido aparece con
+// hojas distintas a las impresas, la bitácora dice cuándo y quién las fijó.
 export function guardarPaginasDeSala(pedidoId, sucId, paginas) {
-    return escrituraDeRecepcion(
+    return conBitacora(escrituraDeRecepcion(
         supabase.from('pedido_sucursal_status').update({ paginas })
             .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-    );
+    ), 'PEDIDO_HOJAS_GUARDADAS', pedidoId, {
+        sucursal: sucId,
+        hojas: Array.isArray(paginas) ? paginas.length : null,
+    });
 }
 
 // ── Pausas / asistencia ──────────────────────────────────────────────────────

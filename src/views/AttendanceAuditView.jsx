@@ -870,12 +870,12 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (unapproved.length === 0) { showToast('Sin cambios', 'Todos los registros ya están aprobados.', 'info'); return; }
     setIsClosingQuincena(true);
     const ids = unapproved.map(ts => ts.id);
-    const { error } = await closeQuincenaTimesheets(ids);
+    const { error } = await closeQuincenaTimesheets(ids, { quincena: selectedQuincena });
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
     }
     setIsClosingQuincena(false);
-  }, [isClosingQuincena, quincenaTS, showToast]);
+  }, [isClosingQuincena, quincenaTS, selectedQuincena, showToast]);
 
   // ── Export quincena CSV ──────────────────────────────────────────────────
   const handleExportCSVQuincena = useCallback(() => {

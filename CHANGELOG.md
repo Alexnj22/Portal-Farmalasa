@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.13 — Marketing en el teléfono: el camino de la pieza se lee y Quitar se alcanza
+
+Barrido en el navegador (entorno de pruebas, iPhone 13 de pie y acostado, y escritorio) de Marketing, Pedidos, Efectivo, Bitácoras y Torogoz › Clientes. El instrumento salió en cero; abriendo la pieza a mano aparecieron tres defectos en el teléfono, los tres en la ficha de una pieza de Marketing:
+
+- **El camino de la pieza ya se lee.** Los seis pasos no cabían en el ancho del teléfono y los rótulos se pisaban hasta leerse «AprobadaProgramadaPublicada». Ahora, cuando el carril es angosto (de pie, o en el panel lateral acostado), sólo se ve el rótulo del paso en que está la pieza; los íconos y la ✓ siguen diciendo cuál ya pasó. En escritorio se ven los seis como antes.
+- **«Quitar» se alcanza.** En el teléfono, el encabezado fijo (camino, día y hora) y cinco botones apilados dejaban 40px para la ficha y el botón «Quitar» quedaba debajo del borde de la pantalla, sin forma de llegar. El camino y el día pasan a ser lo primero del cuerpo —se desplazan con el resto—, y «Duplicar» y «Quitar» van al final de la ficha. En escritorio no cambia nada.
+- **El día se elige con el dedo.** El selector de día de la pieza salía en tamaño chico (32px y letra de 14px, que además hace que el iPhone agrande la pantalla al tocarlo); en el teléfono sale en tamaño normal.
+
 ## v2.1351.12 — Mi caja: lint en cero
 
 - **Mi caja, al anotar un movimiento con boleta:** la advertencia «este número ya está anotado» ya no se queda en pantalla un instante con el número anterior mientras se escribe otro.

@@ -14,7 +14,7 @@ import { tonoDeEstado } from './iconos';
 export default function FlujoDePieza({ estado, onElegir, permitidos = [], deshabilitado = false }) {
     const actual = pasoDelFlujo(estado);
     return (
-        <ol className="flex items-start w-full" aria-label="Estado de la pieza">
+        <ol className="@container flex items-start w-full" aria-label="Estado de la pieza">
             {PASOS_DEL_FLUJO.map((paso, i) => {
                 const enEste = i === actual;
                 const valor = enEste ? estado : paso;
@@ -32,8 +32,18 @@ export default function FlujoDePieza({ estado, onElegir, permitidos = [], deshab
                         {hecho ? <Check size={14} strokeWidth={3} /> : <Icono size={enEste ? 16 : 14} />}
                     </span>
                 );
+                // Con el carril angosto sólo se lee el rótulo del paso ACTUAL.
+                // Seis columnas de ~47px no alcanzan para «Aprobada»,
+                // «Programada» y «Publicada» —una palabra no se parte—, y se
+                // pisaban hasta leerse «AprobadaProgramadaPublicada» (iPhone 13,
+                // 2026-10-24). El corte es por el ancho del CARRIL (`@container`)
+                // y no de la pantalla: acostado el modal es un panel lateral
+                // igual de angosto en un viewport de 844px, y un `max-sm:` ahí
+                // los dejaba pisarse. Los demás quedan para el lector de
+                // pantalla; el ícono y el ✓ siguen diciendo cuál ya pasó.
                 const etiqueta = (
                     <span className={`mt-1.5 text-center leading-tight text-micro
+                        ${enEste ? '' : '@max-md:sr-only'}
                         ${enEste ? `font-bold ${tono.texto}` : hecho ? 'font-semibold text-content-2' : 'text-content-3'}`}>
                         {rotulo}
                     </span>

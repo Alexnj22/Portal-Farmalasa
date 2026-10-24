@@ -20,6 +20,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import Campo from '../promociones/Campo';
 import useBorrador from '@nucleo/hooks/useBorrador';
+import { useLayoutCompacto } from '@nucleo/hooks/useLayoutCompacto';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -105,6 +106,7 @@ export default function PiezaModal({
     const [guardando, setGuardando] = useState(false);
     const [subiendo, setSubiendo] = useState(false);
     const [enlace, setEnlace] = useState('');
+    const compacto = useLayoutCompacto();
     const [borrando, setBorrando] = useState(false);
     const [decision, setDecision] = useState(null);
     const [textoCambio, setTextoCambio] = useState('');
@@ -341,6 +343,49 @@ export default function PiezaModal({
     const sePuedeLiberar = !esNueva && ['aprobado', 'programado', 'publicado'].includes(pieza.estado)
         && (puedeEditar || puedeAprobar);
 
+    // ── El camino y el día: en el encabezado, salvo en el teléfono ──────────
+    // En escritorio va arriba y fijo (pedido del usuario). En el teléfono el
+    // encabezado no se desplaza, y con el camino, el día, la hora y un pie de
+    // cuatro o cinco botones apilados, al cuerpo le quedaban **40px** de alto en
+    // un iPhone 13 de pie, y «Quitar» quedaba debajo del borde de la pantalla,
+    // sin forma de llegar (barrido del 2026-10-24). Ahí va primero en el
+    // cuerpo: sigue siendo lo primero que se ve, pero se desplaza con el resto.
+    // El corte es `useLayoutCompacto`, el mismo que decide la hoja inferior.
+    const quitable = !esNueva && puedeMover && !despuesDeAprobar;
+    const duplicable = !esNueva && puedeEditar && !!onDuplicar;
+
+    const bloqueDelFlujo = (
+        <div className="rounded-2xl border border-border-card bg-surface-card-hover p-3 md:p-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <FlujoDePieza estado={puedeEditar ? form.estado : pieza?.estado}
+                onElegir={puedeMover ? set('estado') : undefined}
+                permitidos={opcionesEstado.map((o) => o.value)} />
+            {puedeEditar ? (
+                <div className="grid grid-cols-2 gap-3 lg:border-l lg:border-border-card lg:pl-4 lg:w-[380px]">
+                    <Campo rotulo="Día" falta>
+                        {puedeMover ? (
+                            <LiquidDatePicker value={form.fecha} onChange={set('fecha')} min={desde} max={hasta} compact={!compacto} />
+                        ) : (
+                            <p className="text-body-sm font-semibold text-content py-1.5">
+                                {fechaTexto(form.fecha, { weekday: 'short', day: 'numeric', month: 'short' })}
+                            </p>
+                        )}
+                    </Campo>
+                    <Campo rotulo="Hora">
+                        <TimePicker12 value={form.hora} onChange={set('hora')} />
+                    </Campo>
+                </div>
+            ) : (
+                <div className="flex items-center gap-2 lg:border-l lg:border-border-card lg:pl-4">
+                    <CalendarDays size={16} className="text-brand-text shrink-0" aria-hidden />
+                    <span className="text-body-sm font-semibold text-content">
+                        {pieza?.fecha ? fechaTexto(pieza.fecha, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
+                        {pieza?.hora ? ` · ${hora12(pieza.hora)}` : ''}
+                    </span>
+                </div>
+            )}
+        </div>
+    );
+
     if (!open) return null;
 
     return (
@@ -378,38 +423,11 @@ export default function PiezaModal({
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-border-card bg-surface-card-hover p-3 md:p-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                            <FlujoDePieza estado={puedeEditar ? form.estado : pieza?.estado}
-                                onElegir={puedeMover ? set('estado') : undefined}
-                                permitidos={opcionesEstado.map((o) => o.value)} />
-                            {puedeEditar ? (
-                                <div className="grid grid-cols-2 gap-3 lg:border-l lg:border-border-card lg:pl-4 lg:w-[380px]">
-                                    <Campo rotulo="Día" falta>
-                                        {puedeMover ? (
-                                            <LiquidDatePicker value={form.fecha} onChange={set('fecha')} min={desde} max={hasta} compact />
-                                        ) : (
-                                            <p className="text-body-sm font-semibold text-content py-1.5">
-                                                {fechaTexto(form.fecha, { weekday: 'short', day: 'numeric', month: 'short' })}
-                                            </p>
-                                        )}
-                                    </Campo>
-                                    <Campo rotulo="Hora">
-                                        <TimePicker12 value={form.hora} onChange={set('hora')} />
-                                    </Campo>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2 lg:border-l lg:border-border-card lg:pl-4">
-                                    <CalendarDays size={16} className="text-brand-text shrink-0" aria-hidden />
-                                    <span className="text-body-sm font-semibold text-content">
-                                        {pieza?.fecha ? fechaTexto(pieza.fecha, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
-                                        {pieza?.hora ? ` · ${hora12(pieza.hora)}` : ''}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
+                        {!compacto && bloqueDelFlujo}
                     </div>
                 </LiquidModal.Header>
                 <LiquidModal.Body>
+                    {compacto && <div className="mb-4">{bloqueDelFlujo}</div>}
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                         {/* ── Columna izquierda: la pieza ── */}
                         <div className="space-y-4 min-w-0">
@@ -643,8 +661,21 @@ export default function PiezaModal({
                             )}
                         </div>
                     </div>
+                    {/* En el teléfono «Duplicar» y «Quitar» van al final del
+                        cuerpo y no al pie: apilados a ancho completo eran cinco
+                        botones, y acostado el pie solo pasaba el alto de la
+                        hoja — «Quitar» quedaba fuera de la pantalla y el
+                        cuerpo en 40px (barrido del 2026-10-24). Se llega
+                        desplazando, que es lo que corresponde a lo que se usa
+                        poco; lo de todos los días se queda en el pie. */}
+                    {compacto && (quitable || duplicable) && (
+                        <div className="mt-4 pt-4 border-t border-border-card flex flex-wrap gap-2">
+                            {duplicable && <Button variant="secondary" icon={Copy} onClick={() => onDuplicar(pieza)}>Duplicar</Button>}
+                            {quitable && <Button variant="ghost" icon={Trash2} onClick={() => setBorrando(true)}>Quitar</Button>}
+                        </div>
+                    )}
                 </LiquidModal.Body>
-                <PieDeModal izquierda={(!esNueva && puedeMover && !despuesDeAprobar && (
+                <PieDeModal izquierda={(quitable && !compacto && (
                     <Button variant="ghost" icon={Trash2} onClick={() => setBorrando(true)}>Quitar</Button>
                 )) || (!esNueva && pieza.estado === 'cambios' && !puedeMover && (
                     <span className="text-caption text-warning flex items-center gap-1">
@@ -667,7 +698,7 @@ export default function PiezaModal({
                             {pieza.enviada_at ? 'Reenviar a revisión' : 'Enviar a revisión'}
                         </Button>
                     )}
-                    {!esNueva && puedeEditar && onDuplicar && (
+                    {duplicable && !compacto && (
                         <Button variant="secondary" icon={Copy} onClick={() => onDuplicar(pieza)}>Duplicar</Button>
                     )}
                     <Button variant="secondary" onClick={onClose}>{puedeEditar ? 'Cancelar' : 'Cerrar'}</Button>

@@ -884,6 +884,9 @@
     "get_cof_sin_envio_mh": {
       "guarda": "cruza-por-diseno",
       "motivo": "Evidencia de Libros IVA para el área administrativa: lanza FORBIDDEN salvo cargos 2, 3, 11 y 13 (cargos de toda la red), y es de sólo lectura. Mirar todas las salas es la pregunta que contesta."
+    },
+    "reclamo_registrar": {
+      "guarda": "alcance"
     }
   },
   "buckets_abiertos": {

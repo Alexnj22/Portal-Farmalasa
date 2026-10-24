@@ -230,6 +230,24 @@ const CRONS = [
     motivo: 'Retención de 30 días de los intentos de entrar a Mis puntos y a la app (guardan la IP).',
   },
   {
+    job: 'purge-app-cliente-correo-envios', slug: null, cadencia: '50 9 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Retención de 1 año del registro de facturas enviadas por correo desde la app (2026-10-24, '
+          + 'Ley de Protección de Datos). SQL puro sobre la propia base.',
+  },
+  {
+    job: 'avisar-incidentes-datos', slug: null, cadencia: '7 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'Vigila las 72 horas del Art. 25 de la ley de datos sobre los incidentes abiertos (2026-10-24). '
+          + 'SQL puro; recorre sólo los incidentes sin cerrar, que son casi siempre cero.',
+  },
+  {
+    job: 'avisar-reclamos-clientes', slug: null, cadencia: '15 14 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Avisa los reclamos de clientes que vencen sus diez días hábiles (2026-10-24). SQL puro sobre '
+          + 'los reclamos sin responder.',
+  },
+  {
     job: 'purge-app-cliente-sesiones', slug: null, cadencia: '45 9 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Borra las sesiones de la app de clientes revocadas hace 30 días o sin uso hace 210 '

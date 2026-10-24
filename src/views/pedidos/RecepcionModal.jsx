@@ -241,7 +241,11 @@ function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRec
                 const enviadoDisp = ini.fQty;
 
                 return (
-                    <div key={r.id} className={`mt-1.5 px-3 py-2.5 rounded-xl border ${delta !== 0 ? 'border-warning/40 bg-warning/10' : hasProb ? 'border-chart-4/40 bg-chart-4/10' : 'border-divider bg-surface-card'}`}>
+                    // Neutra → la tarjeta canónica. Con diferencia o problema el
+                    // tinte es del RELLENO, y ahí no se emite `data-surface`
+                    // (DESIGN.md §5.1: el canónico le ganaría al color).
+                    <div key={r.id} data-surface={delta !== 0 || hasProb ? undefined : 'card'}
+                        className={`mt-1.5 px-3 py-2.5 ${delta !== 0 ? 'rounded-xl border border-warning/40 bg-warning/10' : hasProb ? 'rounded-xl border border-chart-4/40 bg-chart-4/10' : ''}`}>
                         <p className="text-body-sm font-semibold text-content-2 leading-tight">
                             {r.products?.nombre}
                             {r.products?.es_antibiotico && (
@@ -1656,14 +1660,18 @@ export default function RecepcionModal({
                             // ACCIÓN de navegación. El estado ya lo dicen `disabled` y el
                             // texto de la fila.
                             return (
+                                // La hoja libre es la tarjeta canónica (§5); las de
+                                // estado llevan el tinte en el relleno y por eso
+                                // no emiten `data-surface` (§5.1).
                                 <button key={hojaNum}
                                     disabled={isContada || sinNada}
                                     onClick={() => { setSelectedHoja(hojaNum); setScreen('items'); }}
-                                    className={`flex items-center gap-2.5 p-2.5 rounded-2xl border-2 text-left transition-all ${
-                                        isContada  ? 'bg-success/10 border-success/30 cursor-default' :
-                                        sinNada    ? 'bg-surface-card-hover border-divider cursor-default opacity-50' :
-                                        isAlertada ? 'bg-warning/10 border-warning/40 hover:border-warning active:scale-[0.99] cursor-pointer' :
-                                                     'bg-surface-card border-divider hover:border-chart-3/40 hover:bg-chart-3/10 active:scale-[0.99] cursor-pointer'
+                                    data-surface={isContada || sinNada || isAlertada ? undefined : 'card'}
+                                    className={`flex items-center gap-2.5 p-2.5 text-left transition-all ${
+                                        isContada  ? 'rounded-2xl border-2 bg-success/10 border-success/30 cursor-default' :
+                                        sinNada    ? 'rounded-2xl border-2 bg-surface-card-hover border-divider cursor-default opacity-50' :
+                                        isAlertada ? 'rounded-2xl border-2 bg-warning/10 border-warning/40 hover:border-warning active:scale-[0.99] cursor-pointer' :
+                                                     'active:scale-[0.99] cursor-pointer'
                                     }`}>
                                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
                                         isContada  ? 'bg-success' :

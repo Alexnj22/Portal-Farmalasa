@@ -5,9 +5,14 @@
 // precio (sale de la lista de precios, no de lo que mande la pantalla), el tipo de
 // documento, el correlativo y la firma. Acá sólo se lee y se piden acciones;
 // por eso los errores de la base se devuelven tal cual y la vista los traduce.
+//
+// Cómo funciona el área entera —clientes, venta, emisión y envío a Hacienda
+// con emisor propio, y lo que falta para el primer DTE real—:
+// `docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md`.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { shortEmployeeName } from '../utils/nameUtils';
+import { anotar } from './audit';
 
 /** Los códigos que lanzan los triggers de la base, en lenguaje de la pantalla. */
 const MENSAJES = {
@@ -80,16 +85,23 @@ export async function fetchClientes() {
     return rows;
 }
 
+// La ficha se anota sola (patrón D3 de `audit.js`): quien la llame —la pantalla
+// o la app del teléfono— hereda la entrada. Sólo se anota lo que entró, y
+// nunca el documento: NIT, DUI y NRC son datos del cliente y la bitácora la
+// leen más personas que la ficha. Basta el id, el nombre y si fue alta o
+// edición; el detalle de qué cambió está en la propia fila.
 export async function guardarCliente(cliente) {
     const { id, contribuyente: _generada, created_at: _c, updated_at: _u, ...campos } = cliente;
     if (id) {
         const { error } = await supabase.from('dist_clientes').update(campos).eq('id', id);
         if (error) throw error;
+        anotar('DISTRIBUCION_CLIENTE_EDITAR', String(id), { cliente: campos.nombre ?? null, operacion: 'edicion' });
         return id;
     }
     const { data, error } = await supabase.from('dist_clientes')
         .insert(campos).select('id').single(); // creado_por lo pone la base
     if (error) throw error;
+    anotar('DISTRIBUCION_CLIENTE_ALTA', String(data.id), { cliente: campos.nombre ?? null, operacion: 'alta' });
     return data.id;
 }
 

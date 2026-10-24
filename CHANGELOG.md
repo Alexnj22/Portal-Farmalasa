@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.5 — Distribución anota los clientes en la bitácora y Pedidos usa la tarjeta canónica
+
+- **Distribución: dar de alta o editar un cliente queda en la bitácora.** Hasta hoy guardar la ficha de un cliente de ruta no dejaba rastro de quién lo hizo. Ahora queda anotado si fue un alta o una edición, con el cliente y la persona; el NIT, el DUI y el NRC no se copian a la bitácora. Si la anotación falla, el cliente se guarda igual.
+- **Distribución tiene su documento de cómo funciona** (`docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md`): clientes, venta, emisión y envío a Hacienda con el emisor propio, y lo que falta para mandar el primer documento real con las credenciales de la empresa.
+- **Pedidos: tres tarjetas pasan a la tarjeta del portal** — el renglón de recepción, la hoja por contar y la presentación a elegir en las reglas de despacho. Toman el borde, el brillo y el radio del tema elegido como el resto de las tarjetas; las que llevan color por su estado (diferencia, contada, elegida) se ven igual que antes.
+
 ## v2.1351.4 — Auditoría: el detector anon deja de acusar lo declarado
 
 - `auditoria/puntuar.mjs` contaba como «GRANT a anon de más» las seis funciones del kiosco (`kiosco_marcar`, `kiosco_identificar`, `kiosco_bitacora`, `kiosco_declarar_turno`, `kiosco_aviso_leido`, `kiosco_marcajes_recientes`) y las tres de impresión, desde una lista fija del 2026-08-23. Las nueve ya están declaradas con guarda y motivo en `auditoria/superficie-anon.json`, que `gate:auditoria` vigila contra producción. Ahora el detector sólo acusa las que NO están declaradas.

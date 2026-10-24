@@ -783,7 +783,7 @@ export const AREAS = [
             'scripts/entorno-pruebas/probar_distribucion.mjs', 'scripts/entorno-pruebas/distribucion_pruebas.sql',
             'scripts/entorno-pruebas/distribucion_tablero_pruebas.sql',
             'tests/unit/dteMotor.test.js', 'tests/unit/dteHacienda.test.js', 'tests/unit/dteLotes.test.js',
-            'tests/unit/distribucionLotes.test.js', 'tests/unit/distribucionPrecios.test.js',
+            'tests/unit/distribucionLotes.test.js', 'tests/unit/distribucionPrecios.test.js', 'tests/unit/distribucionClienteBitacora.test.js',
             'tests/unit/distribucionCartera.test.js', 'tests/unit/distribucionCompras.test.js', 'tests/unit/distribucionReportes.test.js', 'tests/unit/distribucionDevolucion.test.js', 'tests/unit/distribucionLiquidacion.test.js',
             'scripts/entorno-pruebas/distribucion.mjs',
             'tests/fixtures/dte-reales-2026-09.json',
@@ -795,7 +795,7 @@ export const AREAS = [
         tablas: ['dist_asuetos', 'dist_bajas', 'dist_caja_movimientos', 'dist_cajas', 'dist_carga_items', 'dist_cargas', 'dist_catalogo', 'dist_cierres_dia', 'dist_clientes', 'dist_compra_items', 'dist_compras', 'dist_conteo_items', 'dist_conteos', 'dist_contingencias', 'dist_correlativos', 'dist_correos', 'dist_cuarentena', 'dist_cxc', 'dist_cxc_abonos', 'dist_depositos', 'dist_devolucion_items', 'dist_devoluciones', 'dist_dte', 'dist_dte_intentos', 'dist_emisores', 'dist_liquidaciones', 'dist_listas', 'dist_lote_asignaciones', 'dist_lote_movimientos', 'dist_lotes', 'dist_mh_token', 'dist_pagos', 'dist_pedido_items', 'dist_pedidos', 'dist_precios', 'dist_proveedor_productos', 'dist_proveedores', 'dist_puntos_venta', 'dist_rastreo', 'dist_recibos', 'dist_reintegros', 'dist_reservas', 'dist_rutas', 'dist_saldo_aplicaciones', 'dist_ventas_perdidas', 'dist_visitas'],
         edge: ['distribucion-dte', 'distribucion-comprobante', 'distribucion-correo'],
         crons: ['dist-vencer-reservas', 'dist-aviso-cartera-atrasada'],
-        docs: ['docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
+        docs: ['docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md', 'docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
     },
     {
         // Área aparte y no dentro de `facturacion-dte` (donde vive /mis-puntos):

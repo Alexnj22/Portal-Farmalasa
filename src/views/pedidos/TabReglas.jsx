@@ -333,10 +333,14 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     role="radio"
                                     aria-checked={isActive}
                                     onClick={() => selectPres(pres.id_presentacion)}
-                                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-[var(--dur-fast)] select-none text-left ${
+                                    // Sin elegir es la tarjeta canónica (§5); la elegida
+                                    // se rellena con el color de su tipo, y un relleno
+                                    // no se pinta sobre `data-surface` (§5.1).
+                                    data-surface={isActive ? undefined : 'card'}
+                                    className={`flex items-center gap-2.5 px-3.5 py-2.5 transition-all duration-[var(--dur-fast)] select-none text-left ${
                                         isActive
-                                            ? `${style.bg} border-transparent ${style.text} shadow-lg`
-                                            : 'bg-surface-card border-divider text-content-2 hover:border-brand/40 hover:bg-surface-card-hover'
+                                            ? `rounded-xl border-2 ${style.bg} border-transparent ${style.text} shadow-lg`
+                                            : 'text-content-2'
                                     }`}
                                 >
                                     <Icon size={15} className={isActive ? 'text-white' : 'text-content-3'} />

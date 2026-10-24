@@ -220,10 +220,12 @@ const GATES = {
 // aparecen cuando alguien las pide. El baseline NO se tocó.
 const BUNDLE_ROTO = {};
 
-// Errores de lint que sobreviven (4). No son míos ni nuevos: estaban.
+// Errores de lint que sobreviven. No son míos ni nuevos: estaban.
+// Es una lista ESCRITA, y por eso se queda vieja sola: la de Pedidos
+// (`prueba-traslado.spec.js:40`, la variable `desde`) se había ido con
+// 18b947d1f el 2026-08-24 y siguió restando dos meses. Al cerrar una, borrarla.
 const LINT = {
     fiscal:    ['LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente'],
-    pedidos:   ['tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada'],
     impresion: ['tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular'],
 };
 

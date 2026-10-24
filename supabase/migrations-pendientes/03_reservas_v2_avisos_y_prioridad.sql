@@ -28,6 +28,10 @@
 -- CASCADE a propósito: `apartado_deshacer` BORRA la reserva que nació de un
 -- cobro anulado, y una FK sin cascada lo rompería.
 --
+-- ORDEN: va DESPUÉS de la 01 de la tanda PUNTOS
+-- (`01_puntos_reglas_v2_desde_y_encendido_por_fecha.sql`), que crea
+-- `puntos_nivel_de(numeric, date)` — `reserva_prioridad` la usa.
+--
 -- Partida de las tres funciones reescritas: `pg_get_functiondef` de producción
 -- del 2026-10-24 (md5 igual al del branch de pruebas).
 -- CÓMO SE VERIFICÓ: branch de pruebas, `execute_sql`, transacción que se deshace.
@@ -66,11 +70,9 @@ CREATE POLICY reserva_avisos_log_select ON public.reserva_avisos_log FOR SELECT 
 -- mayorista no tiene nivel de Puntos Salud). Los demás: su nivel por la compra
 -- de los últimos 12 meses (Oro y Platino). Sólo cuando rige v2.
 --
--- El nivel sale de `puntos_niveles` con la misma regla que `puntos_nivel_de`
--- (el mayor `desde` que alcanza la compra) pero SIN el interruptor
--- `niveles_activos`: los niveles rigen desde la misma fecha, y este cálculo
--- sólo corre cuando ya rige. Si la tanda de PUNTOS hace que `puntos_nivel_de`
--- dependa de la fecha, se puede volver a llamar a esa.
+-- El nivel sale de `puntos_nivel_de(compra, fecha)` (tanda PUNTOS), que ya
+-- depende de `reglas_v2_desde()`: antes de la fecha devuelve el de entrada. El
+-- rango mayorista, de `mayorista_rango` tal como lo expone.
 --
 -- Medido en producción (2026-10-24): `puntos_compra_12m` cuesta ~320 bloques y
 -- ~3 ms con los 30 clientes que más compran; `mayorista_rango` es la cara (lee
@@ -87,9 +89,8 @@ BEGIN
                 THEN jsonb_build_object('clave', v_rango, 'nombre', CASE v_rango WHEN 'rubi' THEN 'Rubí' ELSE 'Diamante' END, 'prioridad', true) END;
   END IF;
   v_c := public.puntos_titular(p_customer);
-  SELECT x.* INTO n FROM public.puntos_niveles x
-   WHERE x.desde <= public.puntos_compra_12m(v_c, (now() AT TIME ZONE 'America/El_Salvador')::date)
-   ORDER BY x.desde DESC LIMIT 1;
+  n := public.puntos_nivel_de(public.puntos_compra_12m(v_c, (now() AT TIME ZONE 'America/El_Salvador')::date),
+                              (now() AT TIME ZONE 'America/El_Salvador')::date);
   RETURN CASE WHEN n.clave IN ('oro', 'platino')
               THEN jsonb_build_object('clave', n.clave, 'nombre', n.nombre, 'prioridad', true) END;
 END $$;

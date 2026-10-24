@@ -9,15 +9,21 @@
 --     la sala uno para avisarle por WhatsApp o llamada si no tiene la app.
 --   · `encargo_proveedor_no_entrego(id, eleccion, motivo)` — cláusula 4.6: «Si
 --     el proveedor no entrega el producto, el Cliente elige entre la devolución
---     completa de lo pagado o aplicarlo a otro producto». Es un DERECHO del
---     cliente, no una excepción: por eso la devolución NO pasa por la
---     autorización de administración (la de la cláusula 8.4 es para el saldo a
---     favor común). Lo hace la sala con el cliente enfrente:
+--     completa de lo pagado o aplicarlo a otro producto». Procedimiento §5:
+--     la devolución «se tramita como devolución en efectivo (cláusula 8.3)
+--     indicando que el proveedor no entregó» — la sala PIDE, administración
+--     autoriza o niega, la sala entrega. Lo hace la sala con el cliente enfrente:
 --       'saldo'      → lo pagado queda como saldo a favor (para otro producto);
---       'devolucion' → el mismo saldo, ya marcado «devolución autorizada» con
---                      el motivo «El proveedor no entregó»: aparece en
---                      Reservas con «Entregar en efectivo» y sale como vale de
---                      caja (`reserva_devolucion_entregada`, sin cambios).
+--       'devolucion' → el mismo saldo con la devolución PEDIDA (motivo «El
+--                      proveedor no entregó»), igual que
+--                      `reserva_saldo_pedir_devolucion`: avisa a quien tiene
+--                      `dash_reservas_devolver_saldo` y sigue el circuito de
+--                      siempre (autorizar/negar, entregar en efectivo). NO
+--                      queda autorizada. Si administración la niega, el saldo
+--                      sigue a favor del cliente.
+--     La solicitud se arma acá y no llamando a `reserva_saldo_pedir_devolucion`
+--     porque ésa exige `reserva_puede_manejar` y un encargo lo maneja también
+--     Bodega (`encargo_puede_manejar`).
 --     El encargo queda 'cancelado' con su saldo ligado, como en
 --     `encargo_pasar_a_saldo` (de la que esto copia el armado del saldo).
 --
@@ -78,6 +84,7 @@ DECLARE
   v_hoy date := (now() AT TIME ZONE 'America/El_Salvador')::date;
   v_motivo text := 'El proveedor no entregó' || coalesce(': ' || nullif(btrim(coalesce(p_motivo, '')), ''), '');
   v_metodo text; v_id bigint; v_dev boolean := p_eleccion = 'devolucion'; v_cod text := 'E-' || lpad(p_id::text, 6, '0');
+  v_dest uuid[]; v_cliente text; v_sala text;
 BEGIN
   IF NOT public.reservas_v2_rige() THEN RAISE EXCEPTION 'Esta acción empieza a regir con el reglamento nuevo.'; END IF;
   IF p_eleccion NOT IN ('devolucion', 'saldo') THEN RAISE EXCEPTION 'Indica qué eligió el cliente: devolución o saldo a favor.'; END IF;
@@ -106,19 +113,31 @@ BEGIN
   INSERT INTO public.app_reservas (customer_id, branch_id, origen, producto_id, producto_nombre, cantidad, factor,
       precio_unitario, precio_normal, estado, terminos_version, anticipo, pago_estado, pago_metodo, pagado_at,
       cerrada_at, cerrada_por, saldo_favor, saldo_favor_vence, saldo_favor_origen,
-      devolucion_pedida_at, devolucion_pedida_por, devolucion_pedida_motivo,
-      saldo_favor_inicial, saldo_favor_devuelto_at, saldo_favor_devuelto_por, saldo_favor_devuelto_monto, saldo_favor_devuelto_motivo)
+      devolucion_pedida_at, devolucion_pedida_por, devolucion_pedida_motivo)
   VALUES (e.customer_id, e.branch_id, 'sucursal', coalesce(e.product_id, e.sugerido_product_id),
       left('Encargo ' || v_cod || ' · ' || e.producto_nombre, 200),
       1, greatest(coalesce(e.factor, 1), 1), 0, 0, 'cancelada', 'encargo', e.anticipo, 'anticipo', v_metodo, coalesce(e.pagado_at, now()),
       now(), v_emp, e.anticipo, v_hoy + public.saldo_favor_dias(), 'anticipo',
-      CASE WHEN v_dev THEN now() END, CASE WHEN v_dev THEN v_emp END, CASE WHEN v_dev THEN left(v_motivo, 300) END,
-      CASE WHEN v_dev THEN e.anticipo END, CASE WHEN v_dev THEN now() END, CASE WHEN v_dev THEN v_emp END,
-      CASE WHEN v_dev THEN e.anticipo END, CASE WHEN v_dev THEN left(v_motivo, 300) END)
+      CASE WHEN v_dev THEN now() END, CASE WHEN v_dev THEN v_emp END, CASE WHEN v_dev THEN left(v_motivo, 300) END)
   RETURNING id INTO v_id;
   IF v_dev THEN
-    INSERT INTO public.saldo_favor_movimientos (reserva_id, tipo, monto, saldo_despues, branch_id, employee_id, nota)
-    VALUES (v_id, 'devolucion', e.anticipo, 0, e.branch_id, v_emp, left(v_motivo || ' (devolución completa, cláusula 4.6)', 300));
+    -- La solicitud de devolución en efectivo (cláusula 8.3), con el mismo aviso
+    -- y la misma bitácora que `reserva_saldo_pedir_devolucion`.
+    SELECT initcap(split_part(name, ' ', 1)) INTO v_cliente FROM public.customers WHERE id = e.customer_id;
+    SELECT name INTO v_sala FROM public.branches WHERE id = e.branch_id;
+    SELECT array_agg(DISTINCT em.id) INTO v_dest
+      FROM public.employees em
+      JOIN public.role_permissions rp ON rp.role_id IN (em.role_id, em.secondary_role_id)
+       AND rp.module_key = 'dash_reservas_devolver_saldo' AND (rp.can_view OR rp.can_edit)
+     WHERE em.status = 'ACTIVO';
+    IF v_dest IS NOT NULL THEN
+      PERFORM public.notify_employees(v_dest, 'RESERVA_APP', 'Devolución en efectivo por autorizar · R-' || lpad(v_id::text, 6, '0'),
+        format('%s pide devolver $%s a %s: %s', coalesce(v_sala, 'Una sala'), to_char(e.anticipo, 'FM999990.00'),
+               coalesce(v_cliente, 'un cliente'), left(v_motivo || ' (encargo ' || v_cod || ')', 160)),
+        '/reservas', jsonb_build_object('codigo', 'R-' || lpad(v_id::text, 6, '0'), 'check_key', 'devolucion_pedida:' || v_id), true, e.branch_id::integer);
+    END IF;
+    INSERT INTO public.audit_logs (user_id, action, target_id, details, branch_id, source)
+    VALUES (v_emp, 'SALDO_DEVOLUCION_PEDIDA', v_id::text, jsonb_build_object('monto', e.anticipo, 'motivo', v_motivo, 'encargo', p_id), e.branch_id, 'ADMIN_PANEL');
   END IF;
   UPDATE public.app_encargos
      SET estado = 'cancelado', cerrado_at = now(), saldo_reserva_id = v_id, updated_at = now(),
@@ -128,7 +147,7 @@ BEGIN
   INSERT INTO public.app_cliente_avisos (customer_id, tipo, ref, titulo, cuerpo, url)
   VALUES (e.customer_id, 'reserva', 'base:encargo_no_entregado:' || p_id, 'El proveedor no entregó tu encargo ' || v_cod,
           CASE WHEN v_dev
-               THEN 'Te devolvemos lo que pagaste ($' || to_char(e.anticipo, 'FM999990.00') || ') en la sucursal: pásalo a recoger.'
+               THEN 'Pediste la devolución de lo que pagaste ($' || to_char(e.anticipo, 'FM999990.00') || '). Te avisamos cuando esté lista para recogerla en la sucursal; mientras tanto queda a tu favor.'
                ELSE 'Lo que pagaste ($' || to_char(e.anticipo, 'FM999990.00') || ') queda a tu favor por ' || public.saldo_favor_dias()
                     || ' días, para otro producto en cualquier sucursal.' END,
           '/reservas')

@@ -50,9 +50,10 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
     );
 }
 
-// Cláusula 4.6: el proveedor no entregó. Es el CLIENTE quien elige: la
-// devolución completa (sale autorizada, se entrega como vale de caja desde
-// Reservas) o dejarlo a su favor para otro producto.
+// Cláusula 4.6: el proveedor no entregó. Es el CLIENTE quien elige: aplicar lo
+// pagado a otro producto (saldo a favor) o la devolución completa, que se
+// tramita como devolución en efectivo (cláusula 8.3, procedimiento §5): la sala
+// la pide, administración la autoriza o la niega, y la sala la entrega.
 export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
     const [eleccion, setEleccion] = useState('devolucion');
     const [nota, setNota] = useState('');
@@ -66,12 +67,11 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <SegmentedControl label="Qué eligió el cliente" value={eleccion} onChange={setEleccion} layout="block" columns={2}
-                        options={[{ value: 'devolucion', label: 'Devolución completa' }, { value: 'saldo', label: 'Saldo a favor' }]} />
+                        options={[{ value: 'devolucion', label: 'Devolución completa' }, { value: 'saldo', label: 'Otro producto' }]} />
                     <Notice variant="info" compact icon={eleccion === 'devolucion' ? PackageX : Wallet}>
                         {eleccion === 'devolucion'
-                            ? `Se le devuelve todo (${formatMoney(encargo.anticipo)}) en efectivo. Queda en Reservas como «Entregar en efectivo» y sale como vale de caja.`
-                            : `Lo pagado queda a su favor por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal.`}
-                        {' '}No se deshace.
+                            ? `Se pide la devolución de ${formatMoney(encargo.anticipo)} en efectivo. Administración la autoriza o la niega; cuando esté autorizada, se entrega desde Reservas. Mientras tanto queda a su favor.`
+                            : `Lo pagado queda a su favor por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal. No se deshace.`}
                     </Notice>
                     <PortalTextarea label="Nota (opcional)" rows={2} value={nota} maxLength={200} onChange={(e) => setNota(e.target.value)}
                         placeholder="Ej. El proveedor lo descontinuó" />
@@ -81,7 +81,7 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button icon={eleccion === 'devolucion' ? PackageX : Wallet} loading={enviando}
                     onClick={async () => { setEnviando(true); await onResolver(eleccion, nota.trim() || null); setEnviando(false); }}>
-                    {eleccion === 'devolucion' ? 'Devolver todo' : 'Dejar a su favor'}
+                    {eleccion === 'devolucion' ? 'Pedir la devolución' : 'Dejar a su favor'}
                 </Button>
             </LiquidModal.Footer>
         </LiquidModal>

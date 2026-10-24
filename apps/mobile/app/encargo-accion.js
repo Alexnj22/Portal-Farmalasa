@@ -12,8 +12,8 @@
 //   · `fecha` (reglamento v2, 4.4): Compras cambia la fecha estimada y la base
 //     le avisa al cliente;
 //   · `no_entrego` (reglamento v2, 4.6): el proveedor no entregó y el CLIENTE
-//     elige devolución completa (sale ya autorizada, se entrega con un vale de
-//     caja desde Reservas) o saldo a favor. Los dos los habilita la base
+//     elige la devolución completa (se PIDE: administración la autoriza o la
+//     niega, cláusula 8.3) o aplicarlo a otro producto (saldo a favor). Los dos los habilita la base
 //     (`puede_cambiar_fecha`, `puede_no_entrego`) sólo desde la fecha.
 // El encargo se relee con `fetchEncargos` (la misma lista de la sala).
 import { useEffect, useState } from 'react';
@@ -160,20 +160,20 @@ export default function EncargoAccion() {
             <>
               <Seccion titulo="Qué eligió el cliente">
                 <Opciones valor={eleccion} onCambiar={setEleccion} opciones={[
-                  { id: 'devolucion', label: 'Devolución completa', detalle: `Se le entregan ${formatMoney(Number(e.anticipo ?? 0))} en efectivo con un vale de caja` },
-                  { id: 'saldo', label: 'Saldo a favor', detalle: `Por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal` },
+                  { id: 'devolucion', label: 'Devolución completa', detalle: `Se pide devolver ${formatMoney(Number(e.anticipo ?? 0))} en efectivo; administración la autoriza o la niega` },
+                  { id: 'saldo', label: 'Otro producto', detalle: `Por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal` },
                 ]} />
               </Seccion>
               <Seccion titulo="Nota (opcional)">
                 <Campo value={nota} onChangeText={setNota} maxLength={200} placeholder="Ej. El proveedor lo descontinuó" />
               </Seccion>
-              <Aviso tono="cuidado" texto="No se deshace." />
-              <BotonGrande texto={ocupado ? 'Guardando…' : eleccion === 'devolucion' ? 'Devolver todo' : 'Dejar a su favor'}
+              <Aviso tono="cuidado" texto={eleccion === 'devolucion' ? 'Mientras se autoriza, lo pagado queda a su favor.' : 'No se deshace.'} />
+              <BotonGrande texto={ocupado ? 'Guardando…' : eleccion === 'devolucion' ? 'Pedir la devolución' : 'Dejar a su favor'}
                 color={eleccion === 'devolucion' ? MARCA.rojo : MARCA.verde} deshabilitado={ocupado}
                 onPress={() => hacer(() => proveedorNoEntregoEncargo(e.id, eleccion, nota.trim() || null),
-                  eleccion === 'devolucion' ? 'Devolución lista para entregar' : 'Quedó como saldo a favor',
+                  eleccion === 'devolucion' ? 'Devolución pedida' : 'Quedó como saldo a favor',
                   (r) => (eleccion === 'devolucion'
-                    ? `${formatMoney(r?.monto)}: entrégalo en efectivo desde Reservas (${r?.reserva ?? ''}).`
+                    ? `${formatMoney(r?.monto)} por autorizar (${r?.reserva ?? ''}). Cuando la autoricen, se entrega desde Reservas.`
                     : `${formatMoney(r?.monto)} a favor del cliente (${r?.reserva ?? ''}).`))} />
             </>
           ) : null}

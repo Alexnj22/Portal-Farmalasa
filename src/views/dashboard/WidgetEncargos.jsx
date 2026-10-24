@@ -136,9 +136,9 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
     const resolverNoEntrego = async (eleccion, nota) => {
         try {
             const r = await proveedorNoEntregoEncargo(noEntrego.id, eleccion, nota);
-            showToast(eleccion === 'devolucion' ? 'Devolución lista para entregar' : 'Quedó como saldo a favor',
+            showToast(eleccion === 'devolucion' ? 'Devolución pedida' : 'Quedó como saldo a favor',
                 eleccion === 'devolucion'
-                    ? `${formatMoney(r?.monto)} para el cliente: entrégalo en efectivo desde Reservas (${r?.reserva}).`
+                    ? `${formatMoney(r?.monto)} por autorizar (${r?.reserva}). Cuando administración la autorice, se entrega desde Reservas.`
                     : `${formatMoney(r?.monto)} a favor del cliente (${r?.reserva}).`, 'success');
             setNoEntrego(null);
             cargar();
@@ -181,7 +181,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                         !soloLectura && e.puede_cambiar_fecha && { k: 'fecha', label: 'Cambiar fecha', icon: CalendarClock,
                             title: 'El proveedor cambió la fecha: el cliente recibe el aviso', onClick: () => setCambiandoFecha(e) },
                         !soloLectura && e.puede_no_entrego && { k: 'no_entrego', label: 'El proveedor no entregó', icon: PackageX,
-                            title: 'El cliente elige devolución completa o saldo a favor', onClick: () => setNoEntrego(e) },
+                            title: 'El cliente elige la devolución completa o aplicarlo a otro producto', onClick: () => setNoEntrego(e) },
                         e.foto_url && { k: 'foto', label: 'Ver la foto', icon: ImageIcon, onClick: () => openStoredFile(e.foto_url) },
                         !soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) && { k: 'prorrogar', label: 'Prorrogar 7 días', icon: CalendarPlus,
                             loading: ocupado === e.id, title: 'Una sola prórroga', onClick: () => prorrogar(e) },

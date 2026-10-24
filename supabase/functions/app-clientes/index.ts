@@ -925,9 +925,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // La cuenta de PRUEBA puede mirar «como» otro nivel (`prueba_nivel`,
     // `prueba_mayorista`, los mismos del modo de prueba de la app).
     const ORDEN_NIVEL: Record<string, number> = { vip: 0, bronce: 0, plata: 1, oro: 2, platino: 3 };
-    // `dias`: cuántos días antes ve las ofertas (2026-10-19). Antes era
-    // «Platino = 2» escrito acá; hoy es `puntos_niveles.dias_anticipo_ofertas`,
-    // que se cambia desde el portal. Apagados los niveles, 0 para todos.
+    // `dias`: cuántos días antes ve las ofertas. Desde el 2026-10-24 es 0 para
+    // todos: ver las ofertas antes por nivel no está en el reglamento
+    // (`nivelDeCliente` y `escaleraDeNiveles` ya lo devuelven en 0).
     type Acceso = { nivel: string | null; mayorista: boolean; dias: number };
     const accesoDeNivel = async (customerId: number | null): Promise<Acceso> => {
       if (!customerId) return { nivel: null, mayorista: false, dias: 0 };

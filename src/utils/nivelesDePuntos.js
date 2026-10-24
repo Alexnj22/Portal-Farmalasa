@@ -43,8 +43,9 @@ export const TIPOS_DE_PREMIO = [
 
 /**
  * El cupo del mes de un premio de producto o promocional (2026-10-24): cuántos
- * se pueden dar al mes, en toda la red o en cada sucursal (la sala donde más
- * compra el cliente). Vacío = sin cupo; igual no se da sin existencia.
+ * se pueden dar al mes. En toda la red se cuenta al repartir el raspable; en
+ * cada sucursal, en la sala donde se RETIRA (la base no deja apartarlo ni
+ * entregarlo en una sala que ya entregó su cupo del mes). Vacío = sin cupo.
  */
 export const CUPO_POR = [
     { value: 'general', label: 'En toda la red' },

@@ -136,7 +136,7 @@ export default function EditorDePremios({ premios, alCambiar, puedeEditar }) {
       ))}
       {puedeEditar && lista.length < 12 ? <BotonGrande texto="Agregar premio" borde onPress={() => alCambiar([...lista, filaDePremio({})])} /> : null}
       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-        El peso es la probabilidad relativa: «Sale» dice cuánto sale cada uno. Un producto se entrega en la sala y se descarga del inventario; un promocional sale del inventario de regalos de esa sala. Un premio sin existencia, sin cupo o que ya no cabe en el tope del mes no se sortea: sale otro de la lista. «En cada sucursal» cuenta en la sala donde más compra el cliente. No hay premios en descuento: la caja no cobra porcentajes.
+        El peso es la probabilidad relativa: «Sale» dice cuánto sale cada uno. Un producto se entrega en la sala y se descarga del inventario; un promocional sale del inventario de regalos de esa sala. Un premio sin existencia, sin cupo o que ya no cabe en el tope del mes no se sortea: sale otro de la lista. «En cada sucursal» cuenta en la sala donde se retira: la que ya entregó su cupo del mes no lo entrega, y se retira en otra. No hay premios en descuento: la caja no cobra porcentajes.
       </Text>
     </View>
   );

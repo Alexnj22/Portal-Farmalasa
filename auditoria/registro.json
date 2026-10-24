@@ -1,7 +1,7 @@
 {
   "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": "2026-10-23",
+  "recalculado": "2026-10-24",
   "areas": {
     "plataforma": {
       "ejes": {
@@ -118,16 +118,9 @@
           "hallazgos": []
         },
         "seguridad": {
-          "pct": 86,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "kiosco_marcar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-            "kiosco_identificar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-            "kiosco_bitacora(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-            "kiosco_declarar_turno(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-            "kiosco_aviso_leido(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-            "kiosco_marcajes_recientes(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
@@ -172,7 +165,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2233,13 +2226,9 @@
           "hallazgos": []
         },
         "seguridad": {
-          "pct": 92,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "canjear_codigo_de_vinculacion(): GRANT a anon de más; valida el token del equipo adentro",
-            "confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
-            "reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
@@ -2288,7 +2277,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [

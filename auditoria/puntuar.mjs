@@ -34,6 +34,10 @@ import { AREAS, EJES, areaDeArchivo } from './areas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ESCRIBIR = process.argv.includes('--escribir');
+// Lo que `anon` alcanza A PROPÓSITO, con guarda y motivo. Lo vigila
+// `gate:auditoria` contra producción; acá sólo se usa para no acusar lo declarado.
+const ANON_DECLARADAS = new Set(JSON.parse(fs.readFileSync(path.join(RAIZ, 'auditoria', 'superficie-anon.json'), 'utf8'))
+    .funciones.map(f => f.nombre));
 const FECHA = '2026-08-23';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -411,8 +415,17 @@ function puntuar(area) {
     // más sobre una función que se defiende sola cuesta 2; un permiso que la
     // pantalla ofrece y que no gatea NADA cuesta 25, porque ahí el dato sí sale.
     const higiene = [], abiertos = [];
-    if (area.id === 'acceso') higiene.push(...SERVIDOR.anon_funciones.kiosco_sin_documentar.map(f => `${f}(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila`));
-    if (area.id === 'impresion') higiene.push(...SERVIDOR.anon_funciones.impresion.map(f => `${f}(): GRANT a anon de más; valida el token del equipo adentro`));
+    // «De más» = ejecutable por anon SIN estar declarada. La lista de arriba es
+    // la foto del 2026-08-23, cuando ninguna estaba escrita; desde entonces
+    // las seis del kiosco y las tres de impresión viven en
+    // `superficie-anon.json` con su guarda y su motivo, y `gate:auditoria`
+    // falla si producción expone algo que no esté ahí. Seguir contándolas
+    // acusaba justo a lo que ya se había cerrado (2026-10-24: verificado en
+    // prod que las seis abren por `kiosco_sucursal(device_id, device_token)` y
+    // que `/kiosk` las llama sin sesión desde `src/data/kiosco.js`).
+    const sinDeclarar = f => !ANON_DECLARADAS.has(f);
+    if (area.id === 'acceso') higiene.push(...SERVIDOR.anon_funciones.kiosco_sin_documentar.filter(sinDeclarar).map(f => `${f}(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila`));
+    if (area.id === 'impresion') higiene.push(...SERVIDOR.anon_funciones.impresion.filter(sinDeclarar).map(f => `${f}(): GRANT a anon de más; valida el token del equipo adentro`));
     if (area.id === 'facturacion-dte') higiene.push(...SERVIDOR.search_path_mutable.map(f => `${f}(): sin SET search_path — viola la regla 4 del hardening`));
     if (area.id === 'sucursales') higiene.push('branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado');
     if (area.id === 'horarios') higiene.push('holidays y shifts: legibles por anon con USING(true), sin motivo escrito');

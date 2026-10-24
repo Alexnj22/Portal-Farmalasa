@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.4 — Auditoría: el detector anon deja de acusar lo declarado
+
+- `auditoria/puntuar.mjs` contaba como «GRANT a anon de más» las seis funciones del kiosco (`kiosco_marcar`, `kiosco_identificar`, `kiosco_bitacora`, `kiosco_declarar_turno`, `kiosco_aviso_leido`, `kiosco_marcajes_recientes`) y las tres de impresión, desde una lista fija del 2026-08-23. Las nueve ya están declaradas con guarda y motivo en `auditoria/superficie-anon.json`, que `gate:auditoria` vigila contra producción. Ahora el detector sólo acusa las que NO están declaradas.
+- Verificado en producción: las seis del kiosco son DEFINER y abren por `kiosco_sucursal(device_id, device_token)`; `/kiosk` las llama sin sesión desde `src/data/kiosco.js`, así que el EXECUTE de `anon` es necesario y no se revoca nada.
+- Seguridad: Acceso 86 → 98 (área 92 → 93 %), Impresión 92 → 98 (área 92 → 93 %).
+
 ## v2.1351.3 — App del portal: idioma español declarado para la App Store
 
 - La ficha de la App Store mostraba «Idiomas: Inglés» en la app del portal: el binario nunca declaró su idioma y Xcode pone inglés por defecto. Ahora `apps/mobile/app.json` declara español (`CFBundleDevelopmentRegion`, `CFBundleLocalizations`), igual que la app de clientes. Se ve en la tienda con la próxima versión que se suba; una actualización por aire no lo cambia.

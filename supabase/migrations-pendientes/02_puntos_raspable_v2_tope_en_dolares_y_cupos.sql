@@ -22,13 +22,17 @@
 --         de cada premio no-puntos (`puntos_premios.costo`, se guarda al darlo:
 --         cambiar el costo después no reescribe el mes).
 --     Y cada premio de producto o promocional puede llevar un CUPO al mes
---     (`cupo`), GENERAL (toda la red) o POR SUCURSAL (`cupo_por`). Por
---     sucursal = la SALA HABITUAL del cliente (donde más compró en 12 meses),
---     que queda sellada en `puntos_premios.sala_cupo`.
+--     (`cupo`), GENERAL (toda la red) o POR SUCURSAL (`cupo_por`).
+--       - GENERAL se cuenta AL REPARTIR (como el tope en $).
+--       - POR SUCURSAL se cuenta en la sala DONDE SE RETIRA (decisión del
+--         usuario, 2026-10-24): al repartir no hay sala. El premio lleva su
+--         cupo sellado (`puntos_premios.cupo_sala`) y apartar, pedir, tomar y
+--         cerrar la entrega lo verifican en esa sala con
+--         `puntos_premio_cupo_sala_libre`: si la sala ya entregó su cupo del
+--         mes, ahí no se entrega y el sistema lo dice.
 --   · Al repartir: de la lista del nivel se quitan los premios que no caben en
 --     el presupuesto, sin cupo o sin existencia (promocional: sus existencias
---     menos lo ya comprometido; producto: inventario sin vencer en la sala o en
---     la red), y se sortea entre los que quedan con sus mismos pesos. Si no
+--     menos lo ya comprometido; producto: inventario sin vencer en la red), y se sortea entre los que quedan con sus mismos pesos. Si no
 --     queda ninguno, ese cliente no recibe raspable ese mes (se cuenta en
 --     `sin_premio_disponible`). Primero los rangos/niveles más altos y las
 --     compras más grandes, como antes.
@@ -61,10 +65,9 @@ UPDATE public.puntos_config
 
 ALTER TABLE public.puntos_premios
   ADD COLUMN IF NOT EXISTS costo numeric(10,2),
-  ADD COLUMN IF NOT EXISTS sala_cupo integer REFERENCES public.branches(id);
+  ADD COLUMN IF NOT EXISTS cupo_sala integer CHECK (cupo_sala IS NULL OR cupo_sala > 0);
 COMMENT ON COLUMN public.puntos_premios.costo IS 'Lo que costó el premio al darlo (cuenta contra el tope del raspable de su mes).';
-COMMENT ON COLUMN public.puntos_premios.sala_cupo IS 'La sucursal cuyo cupo consumió (premio con cupo por sucursal). NULL = cupo general o sin cupo.';
-CREATE INDEX IF NOT EXISTS puntos_premios_sala_cupo ON public.puntos_premios (sala_cupo) WHERE sala_cupo IS NOT NULL;
+COMMENT ON COLUMN public.puntos_premios.cupo_sala IS 'Cupo al mes POR SUCURSAL del premio, sellado al darlo: se cuenta en la sala donde se retira. NULL = sin cupo por sucursal.';
 CREATE INDEX IF NOT EXISTS puntos_premios_mes ON public.puntos_premios (mes);
 
 -- ── Cuánto vale un premio, en dólares ─────────────────────────────────────
@@ -116,25 +119,9 @@ AS $function$
                  WHERE pp.mes = date_trunc('month', p_mes)::date), 0), 2);
 $function$;
 
--- ── La sala habitual: donde más compró en los últimos 12 meses ─────────────
-CREATE OR REPLACE FUNCTION public.puntos_sala_habitual(p_customer bigint, p_dia date)
- RETURNS integer
- LANGUAGE sql
- STABLE
- SET search_path TO 'public', 'extensions'
-AS $function$
-  SELECT si.branch_id::integer FROM public.sales_invoices si
-    JOIN public.branches b ON b.id = si.branch_id AND b.type = 'FARMACIA'
-   WHERE si.customer_id = ANY (public.puntos_clientes_de(p_customer))
-     AND si.fecha > p_dia - 365 AND si.fecha <= p_dia
-     AND public.venta_valida(si.estado)
-   GROUP BY si.branch_id
-   ORDER BY sum(si.total) DESC, max(si.fecha) DESC, si.branch_id
-   LIMIT 1;
-$function$;
-
 -- ── Cuántos premios iguales ya se dieron en el mes (para el cupo) ──────────
-CREATE OR REPLACE FUNCTION public.puntos_premio_usos(p_premio jsonb, p_sala integer, p_mes date)
+-- (cupo GENERAL: se cuenta al repartir, en toda la red)
+CREATE OR REPLACE FUNCTION public.puntos_premio_usos(p_premio jsonb, p_mes date)
  RETURNS integer
  LANGUAGE sql
  STABLE
@@ -143,7 +130,6 @@ AS $function$
   SELECT count(*)::integer FROM public.puntos_premios pp
    WHERE pp.mes = date_trunc('month', p_mes)::date
      AND pp.tipo = p_premio->>'tipo'
-     AND (p_sala IS NULL OR pp.sala_cupo = p_sala)
      AND CASE p_premio->>'tipo'
            WHEN 'producto' THEN pp.product_id = (p_premio->>'product_id')::bigint
                                 AND pp.presentacion_tipo = p_premio->>'presentacion_tipo'
@@ -152,12 +138,66 @@ AS $function$
            ELSE false END;
 $function$;
 
--- ── Existencia que queda para un premio (en la sala, o en toda la red) ─────
+-- ── Cupo POR SUCURSAL: cuántos le quedan a una sala este mes ──────────────
+-- Cuenta los premios IGUALES (mismo regalo, o mismo producto y presentación)
+-- que esa sala ya entregó este mes, más los que tiene en mano: apartados ahí,
+-- pedidos para ahí o entregándose ahí. NULL = el premio no tiene cupo por
+-- sucursal. `p_id` no se cuenta a sí mismo.
+CREATE OR REPLACE FUNCTION public.puntos_premio_cupo_sala_libre(p_id bigint, p_branch integer)
+ RETURNS integer
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v public.puntos_premios%ROWTYPE;
+  v_mes date := date_trunc('month', (now() AT TIME ZONE 'America/El_Salvador'))::date;
+  v_usados integer;
+BEGIN
+  SELECT * INTO v FROM public.puntos_premios WHERE id = p_id;
+  IF NOT FOUND OR v.cupo_sala IS NULL OR p_branch IS NULL THEN RETURN NULL; END IF;
+  SELECT count(*)::integer INTO v_usados FROM public.puntos_premios pp
+   WHERE pp.id <> v.id AND pp.tipo = v.tipo
+     AND CASE v.tipo
+           WHEN 'promocional' THEN pp.promocional_id = v.promocional_id
+           WHEN 'producto' THEN pp.product_id = v.product_id AND pp.presentacion_tipo = v.presentacion_tipo
+                                AND pp.factor = v.factor
+           ELSE false END
+     AND ((pp.estado = 'ENTREGADO' AND pp.entregado_branch = p_branch
+           AND (pp.entregado_at AT TIME ZONE 'America/El_Salvador') >= v_mes)
+       OR (pp.estado = 'ENTREGANDO' AND pp.branch_id = p_branch)
+       OR (pp.estado = 'POR_RETIRAR' AND pp.vence_el >= v_mes
+           AND (pp.reserva_branch = p_branch OR (pp.espera_envio AND pp.branch_id = p_branch))));
+  RETURN greatest(v.cupo_sala - v_usados, 0);
+END $function$;
+
+-- El freno, para las cuatro puertas (apartar, pedir, tomar, cerrar). Toma un
+-- candado por premio y sala para que dos entregas a la vez no pasen el cupo.
+CREATE OR REPLACE FUNCTION public.puntos_premio_exigir_cupo_sala(p_id bigint, p_branch integer)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE v public.puntos_premios%ROWTYPE; v_libre integer; v_sala text;
+BEGIN
+  SELECT * INTO v FROM public.puntos_premios WHERE id = p_id;
+  IF NOT FOUND OR v.cupo_sala IS NULL OR p_branch IS NULL THEN RETURN; END IF;
+  PERFORM pg_advisory_xact_lock(hashtext(concat_ws(':', 'premio-cupo', v.tipo, v.promocional_id, v.product_id,
+                                                   v.presentacion_tipo, v.factor, p_branch)));
+  v_libre := public.puntos_premio_cupo_sala_libre(p_id, p_branch);
+  IF v_libre IS NOT NULL AND v_libre < 1 THEN
+    SELECT name INTO v_sala FROM public.branches WHERE id = p_branch;
+    RAISE EXCEPTION '% ya entregó este mes su cupo de «%» (% al mes): este premio se retira en otra sucursal.',
+      coalesce(v_sala, 'Esta sucursal'), v.nombre, v.cupo_sala;
+  END IF;
+END $function$;
+
+-- ── Existencia que queda para un premio, en toda la red ───────────────────
 -- Promocional: sus existencias menos lo ya comprometido y sin entregar.
 -- Producto: el inventario sin vencer del producto (en la sala, o en las
 -- farmacias y Bodega) menos lo comprometido; es una guarda, no un conteo: el
 -- inventario viene por presentación y el descarte real se valida al entregar.
-CREATE OR REPLACE FUNCTION public.puntos_premio_existencia(p_premio jsonb, p_sala integer, p_dia date)
+CREATE OR REPLACE FUNCTION public.puntos_premio_existencia(p_premio jsonb, p_dia date)
  RETURNS integer
  LANGUAGE plpgsql
  STABLE
@@ -167,22 +207,18 @@ DECLARE v_hay integer; v_comprometido integer;
 BEGIN
   IF p_premio->>'tipo' = 'promocional' THEN
     SELECT coalesce(sum(e.cantidad), 0) INTO v_hay FROM public.promocionales_existencias e
-     WHERE e.promocional_id = (p_premio->>'promocional_id')::bigint
-       AND (p_sala IS NULL OR e.branch_id = p_sala);
+     WHERE e.promocional_id = (p_premio->>'promocional_id')::bigint;
     SELECT coalesce(sum(pp.cantidad), 0) INTO v_comprometido FROM public.puntos_premios pp
      WHERE pp.promocional_id = (p_premio->>'promocional_id')::bigint
-       AND pp.estado <> 'ENTREGADO' AND pp.vence_el >= p_dia
-       AND (p_sala IS NULL OR coalesce(pp.reserva_branch, pp.sala_cupo) = p_sala);
+       AND pp.estado <> 'ENTREGADO' AND pp.vence_el >= p_dia;
   ELSIF p_premio->>'tipo' = 'producto' THEN
     SELECT coalesce(sum(i.cantidad), 0) INTO v_hay FROM public.inventory i
       JOIN public.erp_sucursal_map m ON m.erp_sucursal_id = i.erp_sucursal_id
      WHERE i.erp_product_id = (p_premio->>'product_id')::integer
-       AND NOT coalesce(i.is_vencidos, false) AND i.cantidad > 0
-       AND (p_sala IS NULL OR m.branch_id = p_sala);
+       AND NOT coalesce(i.is_vencidos, false) AND i.cantidad > 0;
     SELECT coalesce(sum(pp.cantidad), 0) INTO v_comprometido FROM public.puntos_premios pp
      WHERE pp.tipo = 'producto' AND pp.product_id = (p_premio->>'product_id')::bigint
-       AND pp.estado <> 'ENTREGADO' AND pp.vence_el >= p_dia
-       AND (p_sala IS NULL OR pp.sala_cupo = p_sala);
+       AND pp.estado <> 'ENTREGADO' AND pp.vence_el >= p_dia;
   ELSE
     RETURN NULL;   -- los puntos no tienen existencia
   END IF;
@@ -190,11 +226,13 @@ BEGIN
 END $function$;
 
 REVOKE EXECUTE ON FUNCTION public.puntos_premio_costo(jsonb), public.puntos_raspable_usado(date),
-  public.puntos_sala_habitual(bigint, date), public.puntos_premio_usos(jsonb, integer, date),
-  public.puntos_premio_existencia(jsonb, integer, date) FROM PUBLIC, anon, authenticated;
+  public.puntos_premio_usos(jsonb, date), public.puntos_premio_existencia(jsonb, date),
+  public.puntos_premio_cupo_sala_libre(bigint, integer), public.puntos_premio_exigir_cupo_sala(bigint, integer)
+  FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.puntos_premio_costo(jsonb), public.puntos_raspable_usado(date),
-  public.puntos_sala_habitual(bigint, date), public.puntos_premio_usos(jsonb, integer, date),
-  public.puntos_premio_existencia(jsonb, integer, date) TO service_role;
+  public.puntos_premio_usos(jsonb, date), public.puntos_premio_existencia(jsonb, date),
+  public.puntos_premio_cupo_sala_libre(bigint, integer), public.puntos_premio_exigir_cupo_sala(bigint, integer)
+  TO service_role;
 
 -- ── Validación de la lista: ahora con cupo ─────────────────────────────────
 CREATE OR REPLACE FUNCTION public.puntos_premios_validos(p_premios jsonb)
@@ -293,7 +331,7 @@ DECLARE
   v_usos jsonb := '{}';    -- clave → cuántos van (cupo), leído una vez y llevado acá
   v_exist jsonb := '{}';   -- clave → existencia que queda, ídem
   r record; e jsonb; v_lista jsonb; v_disp jsonb; v_item jsonb;
-  v_costo numeric; v_sala integer; v_sala_leida boolean; v_s integer; v_clave text; v_k integer;
+  v_costo numeric; v_clave text;
   v_pts integer;
   v_n integer := 0; v_total bigint := 0; v_sin integer := 0; v_n_may integer := 0; v_n_reg integer := 0;
   v_gasto numeric := 0;
@@ -356,7 +394,7 @@ BEGIN
                     WHEN coalesce(r.cupon_mensual, 0) > 0
                       THEN jsonb_build_array(jsonb_build_object('tipo', 'puntos', 'puntos', r.cupon_mensual, 'peso', 1)) END;
     CONTINUE WHEN v_lista IS NULL;
-    v_disp := '[]'::jsonb; v_sala := NULL; v_sala_leida := false;
+    v_disp := '[]'::jsonb;
 
     -- Sólo quedan los premios que se pueden dar HOY a ESTE cliente.
     FOR e IN SELECT CASE WHEN x ? 'tipo' THEN x ELSE x || '{"tipo":"puntos"}'::jsonb END
@@ -364,27 +402,26 @@ BEGIN
       v_costo := public.puntos_premio_costo(e);
       CONTINUE WHEN v_costo IS NULL;                                        -- sin costo: no se sabe cuánto gasta
       CONTINUE WHEN v_tope IS NOT NULL AND v_usado + v_costo > v_tope;      -- no cabe en el mes
-      v_s := NULL; v_clave := NULL;
+      v_clave := NULL;
       IF e->>'tipo' IN ('producto', 'promocional') THEN
-        IF e->>'cupo_por' = 'sucursal' THEN
-          IF NOT v_sala_leida THEN v_sala := public.puntos_sala_habitual(r.id, v_dia); v_sala_leida := true; END IF;
-          CONTINUE WHEN v_sala IS NULL;                                     -- sin sala habitual no hay cupo de sala
-          v_s := v_sala;
-        END IF;
         v_clave := concat_ws(':', e->>'tipo', e->>'product_id', e->>'presentacion_tipo', e->>'factor',
-                             e->>'promocional_id', coalesce(v_s::text, 'red'));
-        IF e ? 'cupo' THEN
+                             e->>'promocional_id');
+        -- Cupo GENERAL: se cuenta al repartir. El POR SUCURSAL se cuenta en la
+        -- sala donde se retira (`puntos_premio_exigir_cupo_sala`): acá no hay sala.
+        IF e ? 'cupo' AND coalesce(e->>'cupo_por', 'general') = 'general' THEN
           IF NOT v_usos ? v_clave THEN
-            v_usos := v_usos || jsonb_build_object(v_clave, public.puntos_premio_usos(e, v_s, v_mes));
+            v_usos := v_usos || jsonb_build_object(v_clave, public.puntos_premio_usos(e, v_mes));
           END IF;
           CONTINUE WHEN (v_usos->>v_clave)::integer >= (e->>'cupo')::integer;
         END IF;
         IF NOT v_exist ? v_clave THEN
-          v_exist := v_exist || jsonb_build_object(v_clave, public.puntos_premio_existencia(e, v_s, v_dia));
+          v_exist := v_exist || jsonb_build_object(v_clave, public.puntos_premio_existencia(e, v_dia));
         END IF;
         CONTINUE WHEN (v_exist->>v_clave)::integer < coalesce((e->>'cantidad')::integer, 1);
       END IF;
-      v_disp := v_disp || jsonb_build_array(e || jsonb_build_object('_costo', v_costo, '_sala', v_s, '_clave', v_clave));
+      v_disp := v_disp || jsonb_build_array(e || jsonb_build_object(
+        '_costo', v_costo, '_clave', v_clave,
+        '_cupo_sala', CASE WHEN e ? 'cupo' AND e->>'cupo_por' = 'sucursal' THEN (e->>'cupo')::integer END));
     END LOOP;
 
     -- El sorteo, con los mismos pesos, entre los que quedaron.
@@ -408,11 +445,11 @@ BEGIN
       v_n_reg := v_n_reg + 1;
       CONTINUE WHEN p_simular;
       INSERT INTO public.puntos_premios (customer_id, tipo, nombre, product_id, presentacion_tipo, factor, cantidad,
-                                         promocional_id, nivel, mes, ganado_el, vence_el, costo, sala_cupo)
+                                         promocional_id, nivel, mes, ganado_el, vence_el, costo, cupo_sala)
       VALUES (r.id, v_item->>'tipo', v_item->>'nombre', (v_item->>'product_id')::bigint, v_item->>'presentacion_tipo',
               (v_item->>'factor')::integer, coalesce((v_item->>'cantidad')::integer, 1),
               (v_item->>'promocional_id')::bigint, r.nombre, v_mes, v_dia, v_fin,
-              v_costo, (v_item->>'_sala')::integer)
+              v_costo, (v_item->>'_cupo_sala')::integer)
       ON CONFLICT (customer_id, mes) DO NOTHING;
       CONTINUE;
     END IF;
@@ -510,4 +547,129 @@ BEGIN
   INSERT INTO public.puntos_config_historial (employee_id, tabla, clave, antes, despues, nota)
   VALUES (public.auth_employee_id(), 'config', NULL, v_antes, v_despues, nullif(btrim(p_nota), ''));
   RETURN json_build_object('ok', true, 'cambio', true);
+END $function$;
+
+-- ── Las cuatro puertas del premio verifican el cupo POR SUCURSAL ──────────
+-- (definiciones vivas de producción + una línea cada una). Apartar y pedir lo
+-- miran en la sala elegida; tomar en la que entrega; cerrar lo vuelve a mirar
+-- bajo candado justo antes de descontar.
+CREATE OR REPLACE FUNCTION public.puntos_premio_apartar(p_id bigint, p_branch integer)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE v public.puntos_premios%ROWTYPE; v_sala text;
+BEGIN
+  -- La sala que atiende, o el propio cliente desde la app (`app-clientes`
+  -- llama con la llave del servidor después de comprobar que el premio es suyo).
+  IF NOT (coalesce(auth.role(), '') = 'service_role'
+          OR coalesce((SELECT public.auth_has_module_permission('puntos', 'can_view')), false)) THEN
+    RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
+  END IF;
+  SELECT * INTO v FROM public.puntos_premios WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND OR v.tipo <> 'promocional' THEN RAISE EXCEPTION 'Sólo un regalo promocional se aparta.'; END IF;
+  IF v.estado <> 'POR_RETIRAR' OR v.vence_el < (now() AT TIME ZONE 'America/El_Salvador')::date THEN
+    RAISE EXCEPTION 'Ese premio ya no se puede apartar.';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.branches WHERE id = p_branch AND type = 'FARMACIA') THEN
+    RAISE EXCEPTION 'Un regalo se aparta en una farmacia.';
+  END IF;
+  IF public.promocional_libres(v.promocional_id, p_branch, v.id) < v.cantidad THEN
+    RAISE EXCEPTION 'En esa sucursal ya no hay de ese regalo.';
+  END IF;
+  PERFORM public.puntos_premio_exigir_cupo_sala(p_id, p_branch);   -- cupo por sucursal (2026-10-24)
+  UPDATE public.puntos_premios SET reserva_branch = p_branch, branch_id = p_branch, espera_envio = false WHERE id = p_id;
+  SELECT name INTO v_sala FROM public.branches WHERE id = p_branch;
+  INSERT INTO public.app_cliente_avisos (customer_id, tipo, ref, titulo, cuerpo, url)
+  VALUES (v.customer_id, 'ganado', 'premio:apartado:' || v.id, 'Tu regalo te espera',
+          v.nombre || ' quedó apartado para ti en ' || coalesce(v_sala, 'la sucursal') || '. Retíralo antes del '
+            || to_char(v.vence_el, 'DD/MM') || ' con el código de tu cupón.', '/puntos');
+  RETURN json_build_object('ok', true, 'sala', v_sala);
+END $function$;
+
+CREATE OR REPLACE FUNCTION public.puntos_premio_pedir(p_id bigint, p_branch integer)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE v public.puntos_premios%ROWTYPE;
+BEGIN
+  IF NOT (public.promocionales_puede_administrar()
+          OR (coalesce((SELECT public.auth_has_module_permission('puntos', 'can_view')), false)
+              AND p_branch IS NOT DISTINCT FROM (SELECT public.auth_employee_branch_id()))) THEN
+    RAISE EXCEPTION 'FORBIDDEN' USING ERRCODE = '42501';
+  END IF;
+  SELECT * INTO v FROM public.puntos_premios WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND OR v.tipo <> 'promocional' THEN RAISE EXCEPTION 'Sólo un regalo promocional se pide.'; END IF;
+  IF v.estado <> 'POR_RETIRAR' OR v.vence_el < (now() AT TIME ZONE 'America/El_Salvador')::date THEN
+    RAISE EXCEPTION 'Ese premio ya no se puede pedir.';
+  END IF;
+  PERFORM public.puntos_premio_exigir_cupo_sala(p_id, p_branch);   -- cupo por sucursal (2026-10-24)
+  -- Si estaba apartado en otra sala, se suelta: ahora se espera aquí.
+  UPDATE public.puntos_premios SET branch_id = p_branch, espera_envio = true, reserva_branch = NULL WHERE id = p_id;
+  RETURN json_build_object('ok', true);
+END $function$;
+
+CREATE OR REPLACE FUNCTION public.puntos_premio_tomar(p_id bigint, p_branch integer)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v_hoy date := (now() AT TIME ZONE 'America/El_Salvador')::date;
+  v public.puntos_premios%ROWTYPE;
+BEGIN
+  SELECT * INTO v FROM public.puntos_premios WHERE id = p_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Ese premio no existe.'; END IF;
+  IF v.estado = 'ENTREGADO' THEN RAISE EXCEPTION 'Ese premio ya se entregó.'; END IF;
+  IF v.vence_el < v_hoy THEN RAISE EXCEPTION 'Ese premio venció el %.', to_char(v.vence_el, 'DD/MM/YYYY'); END IF;
+  IF v.estado = 'ENTREGANDO' AND v.tomado_at >= now() - interval '3 minutes' THEN
+    RAISE EXCEPTION 'Ese premio se está entregando en este momento.';
+  END IF;
+  -- Un regalo apartado en otra sala se entrega allá: ésa lo guarda para él.
+  IF v.tipo = 'promocional' AND v.reserva_branch IS NOT NULL AND v.reserva_branch <> p_branch THEN
+    RAISE EXCEPTION 'Ese regalo está apartado en otra sucursal: se retira allá.';
+  END IF;
+  IF v.tipo = 'promocional' AND public.promocional_libres(v.promocional_id, p_branch, v.id) < v.cantidad THEN
+    RAISE EXCEPTION 'En esta sucursal no hay de ese regalo.';
+  END IF;
+  PERFORM public.puntos_premio_exigir_cupo_sala(p_id, p_branch);   -- cupo por sucursal (2026-10-24)
+  UPDATE public.puntos_premios SET estado = 'ENTREGANDO', tomado_at = now(), branch_id = p_branch WHERE id = p_id
+  RETURNING * INTO v;
+  RETURN (SELECT json_build_object('id', v.id, 'codigo', v.codigo, 'tipo', v.tipo, 'nombre', v.nombre,
+            'product_id', v.product_id, 'presentacion_tipo', v.presentacion_tipo, 'factor', v.factor,
+            'cantidad', v.cantidad, 'promocional_id', v.promocional_id, 'branch_id', v.branch_id,
+            'cliente', c.name, 'customer_id', c.id)
+            FROM public.customers c WHERE c.id = v.customer_id);
+END $function$;
+
+CREATE OR REPLACE FUNCTION public.puntos_premio_cerrar(p_id bigint, p_employee uuid, p_erp jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE v public.puntos_premios%ROWTYPE;
+BEGIN
+  SELECT * INTO v FROM public.puntos_premios WHERE id = p_id AND estado = 'ENTREGANDO' FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Ese premio no se estaba entregando.'; END IF;
+  PERFORM public.puntos_premio_exigir_cupo_sala(p_id, v.branch_id);   -- cupo por sucursal (2026-10-24)
+  IF v.tipo = 'promocional' THEN
+    -- Lo libre de esta sala, contando la unidad de este premio como suya.
+    IF public.promocional_libres(v.promocional_id, v.branch_id, v.id) < v.cantidad THEN
+      RAISE EXCEPTION 'En esta sucursal no hay de ese regalo.';
+    END IF;
+    UPDATE public.promocionales_existencias SET cantidad = cantidad - v.cantidad, updated_at = now()
+     WHERE promocional_id = v.promocional_id AND branch_id = v.branch_id AND cantidad >= v.cantidad;
+    IF NOT FOUND THEN RAISE EXCEPTION 'En esta sucursal no hay de ese regalo.'; END IF;
+    INSERT INTO public.promocionales_movimientos (promocional_id, branch_id, tipo, cantidad, premio_id, employee_id)
+    VALUES (v.promocional_id, v.branch_id, 'PREMIO', -v.cantidad, v.id, p_employee);
+  END IF;
+  UPDATE public.puntos_premios
+     SET estado = 'ENTREGADO', entregado_at = now(), entregado_por = p_employee,
+         entregado_branch = v.branch_id, erp_aplicado = p_erp, tomado_at = NULL, espera_envio = false
+   WHERE id = p_id;
 END $function$;

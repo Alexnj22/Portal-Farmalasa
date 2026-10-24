@@ -62,7 +62,7 @@ export const DESTINOS_DE_LA_APP = [
     { valor: '/ofertas', rotulo: 'Ofertas', boton: 'Ver ofertas' },
     { valor: '/sucursales', rotulo: 'Sucursales', boton: 'Ver sucursales' },
     { valor: '/puntos', rotulo: 'Mis puntos', boton: 'Ver mis puntos' },
-    // '/invitar' se quitó el 2026-10-24: invitar a un amigo no está en el reglamento.
+    { valor: '/invitar', rotulo: 'Invitar amigos', boton: 'Invitar' },
 ];
 
 /** Una historia se puede guardar con título de 3 letras y una imagen (nueva o la que ya tenía). */

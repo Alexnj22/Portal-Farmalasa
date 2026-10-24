@@ -383,7 +383,20 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* Invitar a un amigo se quitó el 2026-10-24: el reglamento no lo tiene. */}
+      {/* Invitar: 50 puntos para cada uno (ver app/invitar.js). */}
+      <Entrada indice={4}>
+        <Tocable alTocar={() => navegar('/invitar')} etiqueta="Invita y ganen 50 puntos">
+          <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Icono sf="person.2.fill" respaldo="🤝" tam={26} color={t.color.verdeTexto} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Titulo>Invita y ganen 50 puntos</Titulo>
+              <Texto nivel={2} estilo={{ fontSize: 14 }}>Cada uno, con la primera compra de tu amigo.</Texto>
+            </View>
+            <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
+          </Tarjeta>
+        </Tocable>
+      </Entrada>
+
       {/* Sucursales: entrada llamativa (pedido del usuario, 2026-10-06). */}
       <Entrada indice={4}>
         <Tocable alTocar={() => navegar('/sucursales')} etiqueta="Nuestras sucursales">

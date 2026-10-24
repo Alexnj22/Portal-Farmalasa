@@ -1,17 +1,9 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- Reglamento v2 de Puntos Salud — 4 de 4: fuera lo que el reglamento no tiene
+-- Reglamento v2 de Puntos Salud — 4: fuera la reserva y las ofertas por nivel
 -- (borrador 2026-10-24)
 --
 -- QUÉ CAMBIA (decisión del usuario: «lo que la app o el sistema promete y el
 -- reglamento no tiene se quita»)
---   · Referidos (50 pts por invitar a un amigo): ni la v1 ni la v2 lo
---     contemplan. `puntos_premiar_referidos` queda sin efecto (contesta
---     «omitido») y su cron `puntos-referidos-hora` se quita CON LA GUARDA de
---     CLAUDE.md (sólo si existe), para no romper el próximo branch. Medido en
---     producción el 2026-10-24: 0 invitaciones, 0 lotes de referido, 3 códigos
---     generados → no hay nadie a quien se le deba algo. Las tablas
---     `app_cliente_referidos` / `app_cliente_referido_codigo` se dejan (datos
---     de la app; borrarlas es otra decisión).
 --   · Horas de reserva por nivel (48 h Oro/Platino) y días de anticipo de
 --     ofertas por nivel (Platino 2): no están en el reglamento. Se ponen en el
 --     valor de todos (24 h, 0 días) — hoy, con los niveles apagados, ya era lo
@@ -19,30 +11,15 @@
 --     `puntos_nivel_guardar` ya no los acepta. Las columnas quedan (las lee
 --     `puntos_horas_reserva`, que es de la tanda RESERVAS y que con esto
 --     devuelve 24 h para cualquiera).
+--   · Invitar a un amigo (referidos) NO se toca: decisión del usuario,
+--     «queda en la app, pero no en el reglamento, así en cualquier momento
+--     solo se quita».
 --
--- DESDE CUÁNDO RIGE: al aplicarla (no son reglas de la v1 tampoco).
+-- DESDE CUÁNDO RIGE: al aplicarla.
 -- TABLA CALIENTE: no.
 -- CÓMO SE VERIFICÓ: staging con execute_sql — ver el informe de la tanda.
 -- ═══════════════════════════════════════════════════════════════════════════
 SET lock_timeout = '5s';
-
--- ── Referidos ──────────────────────────────────────────────────────────────
-SELECT cron.unschedule('puntos-referidos-hora')
- WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'puntos-referidos-hora');
-
-CREATE OR REPLACE FUNCTION public.puntos_premiar_referidos(p_simular boolean DEFAULT false)
- RETURNS json
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'extensions'
-AS $function$
-BEGIN
-  -- Sin efecto desde el 2026-10-24: invitar a un amigo no es parte del
-  -- programa (ni el reglamento v1 ni el v2 lo tienen). Se deja la función para
-  -- que un llamador viejo no reviente.
-  RETURN json_build_object('simulado', p_simular, 'premiados', 0, 'rechazados', 0, 'vencidos', 0,
-                           'omitido', 'invitar a un amigo no es parte del programa');
-END $function$;
 
 -- ── Reservas y ofertas por nivel ───────────────────────────────────────────
 UPDATE public.puntos_niveles n

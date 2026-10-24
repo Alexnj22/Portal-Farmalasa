@@ -892,8 +892,20 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         acepta_programa: true, acepta_promociones: aceptaPromos, version_aviso: VERSION_AVISO,
       }).select("id").single();
       if (eIns) throw eIns;
-      // Invitar a un amigo se quitó el 2026-10-24: el reglamento no lo tiene.
-      // Un `referido` que mande una app vieja se ignora sin frenar el alta.
+      // Llegó invitado: se anota quién lo invitó. El premio lo decide la base
+      // (`puntos_premiar_referidos`) cuando haga su primera compra de $10.
+      // Un código que no existe no frena el alta: se ignora.
+      const ref = String(body?.referido ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (ref.length === 6) {
+        const { data: quien, error: eR } = await admin.from("app_cliente_referido_codigo")
+          .select("customer_id").eq("codigo", ref).maybeSingle();
+        if (eR) console.error("no se pudo leer el código de invitación:", eR.message);
+        if (quien) {
+          const { error: eRef } = await admin.from("app_cliente_referidos")
+            .insert({ referidor_id: quien.customer_id, preregistro_id: nuevo.id, codigo: ref });
+          if (eRef) console.error("no se pudo anotar la invitación:", eRef.message);
+        }
+      }
       // A propósito NO se anota como acierto: cada alta nueva cuenta contra el
       // tope de la IP (8 en 15 min). Sin esto, desde un solo teléfono se podían
       // crear pre-registros sin límite con documentos ajenos.
@@ -913,9 +925,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // La cuenta de PRUEBA puede mirar «como» otro nivel (`prueba_nivel`,
     // `prueba_mayorista`, los mismos del modo de prueba de la app).
     const ORDEN_NIVEL: Record<string, number> = { vip: 0, bronce: 0, plata: 1, oro: 2, platino: 3 };
-    // `dias`: cuántos días antes ve las ofertas. Desde el 2026-10-24 es 0 para
-    // todos: ver las ofertas antes por nivel no está en el reglamento
-    // (`nivelDeCliente` y `escaleraDeNiveles` ya lo devuelven en 0).
+    // `dias`: cuántos días antes ve las ofertas (2026-10-19). Antes era
+    // «Platino = 2» escrito acá; hoy es `puntos_niveles.dias_anticipo_ofertas`,
+    // que se cambia desde el portal. Apagados los niveles, 0 para todos.
     type Acceso = { nivel: string | null; mayorista: boolean; dias: number };
     const accesoDeNivel = async (customerId: number | null): Promise<Acceso> => {
       if (!customerId) return { nivel: null, mayorista: false, dias: 0 };
@@ -4158,10 +4170,40 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, url: `${base}/functions/v1/app-clientes?wallet=${await enlaceDePase(customerId)}${nivel}` });
     }
 
-    // Invitar a un amigo se quitó el 2026-10-24 (el reglamento no lo tiene).
-    // Una app vieja que todavía lo pida recibe «no disponible», no un error.
+    // Invitar a un amigo: el código propio (se crea la primera vez) y cómo va.
     if (accion === "referido") {
-      return json({ ok: true, disponible: false, codigo: null, puntos: 0, minimo: 0, invitados: 0, pendientes: 0, premiados: 0, ganados: 0 });
+      let { data: cod, error: eC } = await admin.from("app_cliente_referido_codigo")
+        .select("codigo").eq("customer_id", customerId).maybeSingle();
+      if (eC) throw eC;
+      if (!cod) {
+        // Sin letras que se confunden al dictarlas (O/0, I/1, L).
+        const ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+        for (let i = 0; i < 6 && !cod; i++) {
+          const azar = crypto.getRandomValues(new Uint8Array(6));
+          const codigo = Array.from(azar, (n) => ABC[n % ABC.length]).join("");
+          const { data, error } = await admin.from("app_cliente_referido_codigo")
+            .insert({ customer_id: customerId, codigo }).select("codigo").maybeSingle();
+          if (!error) cod = data;
+          else if (error.code !== "23505") throw error;
+          else {
+            // Choque: o el código ya era de otro, o esta persona lo creó en paralelo.
+            const { data: ya, error: eYa } = await admin.from("app_cliente_referido_codigo").select("codigo").eq("customer_id", customerId).maybeSingle();
+            if (eYa) throw eYa;
+            if (ya) cod = ya;
+          }
+        }
+      }
+      const { data: refs, error: eRefs } = await admin.from("app_cliente_referidos")
+        .select("estado, motivo").eq("referidor_id", customerId);
+      if (eRefs) throw eRefs;
+      // deno-lint-ignore no-explicit-any
+      const premiados = (refs ?? []).filter((r: any) => r.estado === "premiado" && !r.motivo).length;
+      return json({
+        ok: true, codigo: cod?.codigo ?? null, puntos: 50, minimo: 10,
+        // deno-lint-ignore no-explicit-any
+        invitados: (refs ?? []).length, pendientes: (refs ?? []).filter((r: any) => r.estado === "pendiente").length,
+        premiados, ganados: premiados * 50,
+      });
     }
 
     if (accion === "permisos") {

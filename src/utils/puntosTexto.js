@@ -96,6 +96,9 @@ export const AVISOS_DE_PUNTOS = {
     ajuste_suma:                 { rotulo: 'Puntos dados a mano', severidad: 'warning', puntos: (a) => `+${ptsDe(a)}` },
     ajuste_resta:                { rotulo: 'Puntos quitados a mano', severidad: 'warning', puntos: (a) => `−${puntosTexto(Math.abs(a.puntos))}` },
     canje_grande:                { rotulo: 'Canje grande', severidad: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
+    // 2026-10-24: canjes que la caja no frena y el reglamento no permite (cl. 6.1 y 12.2).
+    canje_bajo_minimo:           { rotulo: 'Canje por debajo del mínimo', severidad: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
+    canje_fuera_del_programa:    { rotulo: 'Canje de un cliente fuera del programa', severidad: 'danger', puntos: (a) => `${ptsDe(a)} canjeados` },
     canje_recien_ganado:         { rotulo: 'Canje con puntos recién ganados', severidad: 'warning', puntos: (a) => `${ptsDe(a)} canjeados` },
     cambio_cliente:              { rotulo: 'Compra pasada de otro cliente', severidad: 'danger', puntos: (a) => `${ptsDe(a)} recibidos` },
     cambio_cliente_fallido:      { rotulo: 'Puntos de un cambio de cliente sin mover', severidad: 'danger', puntos: (a) => `${ptsDe(a)} sin mover` },

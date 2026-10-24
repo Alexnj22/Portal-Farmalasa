@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { fetchPromocionales } from '@nucleo/data/puntos';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
-import { TIPOS_DE_PREMIO, filaDePremio, probabilidadDePremio } from '@nucleo/utils/nivelesDePuntos';
+import { CUPO_POR, TIPOS_DE_PREMIO, filaDePremio, probabilidadDePremio } from '@nucleo/utils/nivelesDePuntos';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Opciones } from '../formulario/Piezas';
 import Segmentos from '../Segmentos';
@@ -118,12 +118,25 @@ export default function EditorDePremios({ premios, alCambiar, puedeEditar }) {
                   ) : <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{p.nombre || '—'}</Text>}
               </>
             ) : null}
+            {p.tipo === 'producto' || p.tipo === 'promocional' ? (
+              <>
+                <Rotulo>Cupo al mes</Rotulo>
+                <Campo multiline={false} value={p.cupo ?? ''} editable={puedeEditar} keyboardType="number-pad" placeholder="Sin cupo"
+                  onChangeText={(v) => ponerVarios(i, { cupo: v.replace(/\D/g, '') })} accessibilityLabel="Cupo al mes" />
+                {Number(p.cupo) > 0 ? (
+                  puedeEditar
+                    ? <Segmentos margen={0} activa={p.cupo_por ?? 'general'} opciones={CUPO_POR.map((c) => ({ id: c.value, label: c.label }))}
+                      onCambiar={(v) => ponerVarios(i, { cupo_por: v })} />
+                    : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{CUPO_POR.find((c) => c.value === (p.cupo_por ?? 'general'))?.label}</Text>
+                ) : null}
+              </>
+            ) : null}
           </View>
         </Vidrio>
       ))}
       {puedeEditar && lista.length < 12 ? <BotonGrande texto="Agregar premio" borde onPress={() => alCambiar([...lista, filaDePremio({})])} /> : null}
       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-        El peso es la probabilidad relativa: «Sale» dice cuánto sale cada uno. Un producto se entrega en la sala y se descarga del inventario; un promocional sale del inventario de regalos de esa sala. No hay premios en descuento: la caja no cobra porcentajes.
+        El peso es la probabilidad relativa: «Sale» dice cuánto sale cada uno. Un producto se entrega en la sala y se descarga del inventario; un promocional sale del inventario de regalos de esa sala. Un premio sin existencia, sin cupo o que ya no cabe en el tope del mes no se sortea: sale otro de la lista. «En cada sucursal» cuenta en la sala donde más compra el cliente. No hay premios en descuento: la caja no cobra porcentajes.
       </Text>
     </View>
   );

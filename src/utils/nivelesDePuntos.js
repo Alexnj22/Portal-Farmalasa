@@ -18,15 +18,18 @@ export const CAMPOS_NIVEL = [
     { key: 'desde', label: 'Compra en 12 meses desde', prefix: '$', tipo: 'number', ayuda: 'Todas las facturas válidas, no sólo las que dieron puntos.' },
     { key: 'factor', label: 'Puntos por cada $1', tipo: 'number', ayuda: 'De 1 a 5.' },
     { key: 'puntos_cumpleanos', label: 'Puntos de cumpleaños', tipo: 'number' },
-    { key: 'horas_reserva', label: 'Horas para retirar una reserva', tipo: 'number', ayuda: 'De 1 a 168. La pagada espera 7 días siempre.' },
-    { key: 'dias_anticipo_ofertas', label: 'Días antes para ver las ofertas', tipo: 'number', ayuda: '0 = el mismo día que todos. Máximo 14.' },
+    // Las horas de reserva y los días de anticipo de ofertas por nivel se
+    // quitaron el 2026-10-24: el Reglamento v2 no los tiene.
 ];
 
 export const ROTULO_CAMPO_NIVEL = {
     ...Object.fromEntries(CAMPOS_NIVEL.map((c) => [c.key, c.label])),
     cupon_mensual: 'Raspable sin tabla (puntos)',
     cupon_premios: 'Premios del raspable',
-    cupon_presupuesto_mensual: 'Tope del raspable al mes',
+    horas_reserva: 'Horas para retirar una reserva',
+    dias_anticipo_ofertas: 'Días antes para ver las ofertas',
+    cupon_presupuesto_mensual: 'Tope del raspable al mes (puntos)',
+    raspable_presupuesto_usd: 'Tope del raspable al mes',
     niveles_activos: 'Niveles encendidos',
     mayoreo_beneficios_activos: 'Beneficios del Cliente Mayorista',
 };
@@ -38,18 +41,33 @@ export const TIPOS_DE_PREMIO = [
     { value: 'promocional', label: 'Promocional' },
 ];
 
+/**
+ * El cupo del mes de un premio de producto o promocional (2026-10-24): cuántos
+ * se pueden dar al mes, en toda la red o en cada sucursal (la sala donde más
+ * compra el cliente). Vacío = sin cupo; igual no se da sin existencia.
+ */
+export const CUPO_POR = [
+    { value: 'general', label: 'En toda la red' },
+    { value: 'sucursal', label: 'En cada sucursal' },
+];
+
+/** «hasta 5 al mes en cada sucursal», o null sin cupo. */
+export const cupoTexto = (p) => (Number(p?.cupo) > 0
+    ? `hasta ${formatQty(Number(p.cupo))} al mes ${p.cupo_por === 'sucursal' ? 'en cada sucursal' : 'en toda la red'}` : null);
+
 /** Un premio en palabras: «300 pts», «2 × MICROPORE», «Termo Salud». */
 export const premioTexto = (p) => (p.tipo === 'producto' ? `${Number(p.cantidad) > 1 ? `${p.cantidad} × ` : ''}${p.nombre}`
     : p.tipo === 'promocional' ? p.nombre : `${pts(p.puntos)} pts`);
 
 /** La tabla de premios en palabras, para el historial. */
 export const premiosTexto = (lista) => (Array.isArray(lista) && lista.length
-    ? lista.map((p) => `${premioTexto(p)} (${p.peso})`).join(' · ') : 'ninguno');
+    ? lista.map((p) => `${premioTexto(p)} (${p.peso}${cupoTexto(p) ? `, ${cupoTexto(p)}` : ''})`).join(' · ') : 'ninguno');
 
 const valorTexto = (key, v) => {
     if (key === 'cupon_premios') return premiosTexto(v);
     if (typeof v === 'boolean') return v ? 'Sí' : 'No';
-    if (key === 'cupon_presupuesto_mensual' && v == null) return 'sin tope';
+    if ((key === 'cupon_presupuesto_mensual' || key === 'raspable_presupuesto_usd') && v == null) return 'sin tope';
+    if (key === 'raspable_presupuesto_usd') return formatMoney(Number(v));
     if (v == null || v === '') return '—';
     if (key === 'desde') return formatMoney(Number(v));
     return String(v);
@@ -116,7 +134,12 @@ export const filaDePremio = (p) => ({
     tipo: p.tipo ?? 'puntos', peso: String(p.peso ?? ''), puntos: p.puntos != null ? String(p.puntos) : '',
     product_id: p.product_id ?? null, presentacion_tipo: p.presentacion_tipo ?? '', factor: p.factor ?? null,
     cantidad: p.cantidad != null ? String(p.cantidad) : '1', nombre: p.nombre ?? '', promocional_id: p.promocional_id ?? null,
+    cupo: p.cupo != null ? String(p.cupo) : '', cupo_por: p.cupo_por ?? 'general',
 });
+
+/** El cupo tal como lo guarda la base: sólo si hay número. */
+const cupoLimpio = (p) => (p.cupo === '' || p.cupo == null || !(Number(p.cupo) > 0) ? {}
+    : { cupo: Number(p.cupo), cupo_por: p.cupo_por === 'sucursal' ? 'sucursal' : 'general' });
 
 /** El formulario → la lista que guarda la base, sin filas a medio llenar. */
 export const premiosLimpios = (lista) => (lista ?? []).flatMap((p) => {
@@ -126,11 +149,11 @@ export const premiosLimpios = (lista) => (lista ?? []).flatMap((p) => {
     if (p.tipo === 'producto') {
         if (!p.product_id || !p.presentacion_tipo || !p.factor) return [];
         return [{ tipo: 'producto', product_id: Number(p.product_id), presentacion_tipo: p.presentacion_tipo,
-            factor: Number(p.factor), cantidad: Number(p.cantidad) || 1, nombre: p.nombre, peso }];
+            factor: Number(p.factor), cantidad: Number(p.cantidad) || 1, nombre: p.nombre, peso, ...cupoLimpio(p) }];
     }
     if (p.tipo === 'promocional') {
         if (!p.promocional_id) return [];
-        return [{ tipo: 'promocional', promocional_id: Number(p.promocional_id), nombre: p.nombre, peso }];
+        return [{ tipo: 'promocional', promocional_id: Number(p.promocional_id), nombre: p.nombre, peso, ...cupoLimpio(p) }];
     }
     return [];
 });
@@ -178,33 +201,28 @@ export function cambiosDeRango(form, rango, conRaspable) {
     return c;
 }
 
-/** Los dos interruptores del programa: qué se pregunta antes de moverlos. */
-export const CONFIRMAR_INTERRUPTOR_DE_PUNTOS = {
-    niveles_activos: {
-        on: {
-            titulo: '¿Encender los niveles?',
-            mensaje: 'Desde ahora cada cliente queda en el nivel de lo que compró en los últimos 12 meses: cambian los puntos que gana por dólar, el regalo de cumpleaños, el raspable del mes y los días de anticipo de las ofertas. Hazlo sólo con el reglamento que los describe ya publicado.',
-            boton: 'Encender niveles',
-        },
-        off: {
-            titulo: '¿Apagar los niveles?',
-            mensaje: 'Todos los clientes vuelven al nivel de entrada: 1 punto por dólar, el cumpleaños de ese nivel y sin raspable. Lo ya ganado no se toca.',
-            boton: 'Apagar niveles',
-        },
-    },
-    mayoreo_beneficios_activos: {
-        on: {
-            titulo: '¿Encender los beneficios del Cliente Mayorista?',
-            mensaje: 'El Cliente Mayorista aprobado deja de recibir el cumpleaños y el raspable de su nivel y recibe los de su rango (Jade, Zafiro, Rubí o Diamante), como dicen las Condiciones §5.',
-            boton: 'Encender',
-        },
-        off: {
-            titulo: '¿Apagar los beneficios del Cliente Mayorista?',
-            mensaje: 'El Cliente Mayorista vuelve a recibir el cumpleaños y el raspable como cualquier cliente.',
-            boton: 'Apagar',
-        },
-    },
-};
+/**
+ * Desde el 2026-10-24 los niveles y los beneficios del Cliente Mayorista ya no
+ * se encienden a mano: rigen desde `reglas_v2_desde()` (2026-11-15), la fecha
+ * del Reglamento v2. Esto lo dice en palabras.
+ */
+export function vigenciaDelReglamentoTexto(config, hoy = new Date()) {
+    const desde = config?.reglas_v2_desde;
+    if (!desde) return null;
+    const [a, m, d] = String(desde).slice(0, 10).split('-').map(Number);
+    const fecha = `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${a}`;
+    const vigente = config?.v2_vigente ?? (hoy >= new Date(a, m - 1, d));
+    return vigente
+        ? `Rigen desde el ${fecha}: cada cliente está en el nivel de su compra de 12 meses, y el Cliente Mayorista recibe lo de su rango.`
+        : `Rigen desde el ${fecha}, con el reglamento nuevo. Hasta entonces todos están en el nivel de entrada y no hay raspable.`;
+}
+
+/** «Este mes van $13.00 de $150.00.» — el tope del raspable en dólares. */
+export function usoDelTopeTexto(config, usadoUsd) {
+    const usado = formatMoney(Number(usadoUsd) || 0);
+    const tope = config?.raspable_presupuesto_usd;
+    return tope == null ? `Sin tope. Este mes van ${usado}.` : `Este mes van ${usado} de ${formatMoney(Number(tope))}.`;
+}
 
 // ── Premios del raspable que no son puntos (pestaña Premios) ────────────────
 

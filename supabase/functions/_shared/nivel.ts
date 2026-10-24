@@ -35,6 +35,7 @@ export type Nivel = {
   siguiente: { clave: string; nombre: string; desde: number; factor: number; falta: number; beneficios: string[] } | null;
   /** false mientras los niveles estén apagados (Reglamento v2 sin publicar). */
   activos: boolean;
+  desde: string | null;
   /** Apagados: el nivel que su compra real ya alcanza (se aplica al encenderlos). */
   proyectado: { clave: string; nombre: string } | null;
 };
@@ -52,33 +53,37 @@ export function beneficiosDe(n: NivelFila, base: NivelFila | null): string[] {
     const conRegalos = (n.cupon_premios ?? []).some((x) => x.tipo === "producto" || x.tipo === "promocional");
     b.push(conRegalos ? "Raspable mensual con puntos y regalos" : "Raspable mensual con premios en puntos");
   }
-  const d = Number(n.dias_anticipo_ofertas ?? 0);
-  if (d > 0) b.push(d === 1 ? "Ves las ofertas un día antes" : `Ves las ofertas ${d} días antes`);
-  if (base && Number(n.horas_reserva) > Number(base.horas_reserva)) b.push(`Tus reservas te esperan ${Number(n.horas_reserva)} horas`);
+  // Ver las ofertas antes y reservas de 48 h por nivel se quitaron el
+  // 2026-10-24: el reglamento no los tiene. `base` queda en la firma para no
+  // romper a los llamadores.
+  void base;
   return b;
 }
 
 // deno-lint-ignore no-explicit-any
-export async function escaleraDeNiveles(admin: any): Promise<{ lista: NivelFila[]; activos: boolean }> {
+export async function escaleraDeNiveles(admin: any): Promise<{ lista: NivelFila[]; activos: boolean; desde: string | null }> {
   const [{ data: niveles, error: eN }, { data: cfg, error: eF }] = await Promise.all([
     admin.from("puntos_niveles")
       .select("clave, nombre, desde, factor, puntos_cumpleanos, horas_reserva, cupon_mensual, cupon_premios, dias_anticipo_ofertas")
       .order("desde"),
-    admin.from("puntos_config").select("niveles_activos").limit(1).maybeSingle(),
+    // Los niveles rigen por FECHA desde el 2026-10-24 (Reglamento v2), no por
+    // un interruptor: la misma regla que `puntos_nivel_de` en la base.
+    admin.from("puntos_config").select("reglas_v2_desde").limit(1).maybeSingle(),
   ]);
   if (eN) throw eN;
   if (eF) throw eF;
   // deno-lint-ignore no-explicit-any
   const lista: NivelFila[] = (niveles ?? []).map((n: any) => ({
     ...n, desde: Number(n.desde), factor: Number(n.factor), cupon_mensual: Number(n.cupon_mensual ?? 0),
-    dias_anticipo_ofertas: Number(n.dias_anticipo_ofertas ?? 0),
+    dias_anticipo_ofertas: 0,
   }));
-  return { lista, activos: cfg?.niveles_activos === true };
+  const desde: string | null = cfg?.reglas_v2_desde ?? null;
+  return { lista, activos: desde != null && hoySV() >= String(desde).slice(0, 10), desde };
 }
 
 // deno-lint-ignore no-explicit-any
 export async function nivelDeCliente(admin: any, customerId: number): Promise<Nivel> {
-  const [{ data: compra, error: eC }, { lista, activos }] = await Promise.all([
+  const [{ data: compra, error: eC }, { lista, activos, desde }] = await Promise.all([
     admin.rpc("puntos_compra_12m", { p_customer_id: customerId, p_hasta: hoySV() }),
     escaleraDeNiveles(admin),
   ]);
@@ -105,12 +110,15 @@ export async function nivelDeCliente(admin: any, customerId: number): Promise<Ni
     clave: n.clave, nombre: n.nombre, factor: n.factor, cumpleanos: n.puntos_cumpleanos, horas_reserva: n.horas_reserva,
     cupon_mensual: Number(n.cupon_mensual ?? 0),
     raspable,
-    dias_anticipo_ofertas: activos ? Number(n.dias_anticipo_ofertas ?? 0) : 0,
+    dias_anticipo_ofertas: 0,
     compra: Math.round(real * 100) / 100,
     // Apagados, `n` es el nivel de entrada: sólo lo que hoy rige para todos
     // (1 punto por $1 y el cumpleaños). Nada de lo que traen los demás niveles.
     beneficios: beneficiosDe(n, base),
     activos,
+    // Desde cuándo rigen (la fecha del Reglamento v2): la app la dice en vez
+    // de «pronto».
+    desde,
     proyectado,
     siguiente: s ? {
       clave: s.clave, nombre: s.nombre, desde: s.desde, factor: s.factor,
@@ -129,16 +137,15 @@ export async function nivelDeCliente(admin: any, customerId: number): Promise<Ni
  */
 // deno-lint-ignore no-explicit-any
 export async function programaParaApp(admin: any) {
-  const [{ lista, activos }, { data: rangos, error: eR }, { data: cfg, error: eC }] = await Promise.all([
+  const [{ lista, activos, desde }, { data: rangos, error: eR }] = await Promise.all([
     escaleraDeNiveles(admin),
     admin.from("puntos_mayoreo_beneficios").select("clave, nombre, orden, puntos_cumpleanos, cupon_mensual, cupon_premios").order("orden"),
-    admin.from("puntos_config").select("mayoreo_beneficios_activos").limit(1).maybeSingle(),
   ]);
   if (eR) throw eR;
-  if (eC) throw eC;
   const base = lista[0] ?? null;
   return {
     activos,
+    desde,
     niveles: lista.map((n) => ({
       clave: n.clave, nombre: n.nombre, desde: n.desde, factor: n.factor, cumpleanos: Number(n.puntos_cumpleanos ?? 0),
       raspable: Number(n.cupon_mensual) > 0 || (n.cupon_premios?.length ?? 0) > 0,
@@ -146,7 +153,8 @@ export async function programaParaApp(admin: any) {
       beneficios: beneficiosDe(n, base),
     })),
     mayoreo: {
-      activos: cfg?.mayoreo_beneficios_activos === true,
+      // Los beneficios del mayorista rigen desde la misma fecha que los niveles.
+      activos,
       // deno-lint-ignore no-explicit-any
       rangos: (rangos ?? []).map((r: any) => ({
         clave: r.clave, nombre: r.nombre, cumpleanos: Number(r.puntos_cumpleanos ?? 0),

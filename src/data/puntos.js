@@ -409,8 +409,9 @@ export const guardarRangoMayoreoDePuntos = async (clave, cambios, nota = null) =
 };
 
 /**
- * El tope del raspable (`null` = sin tope) y los dos interruptores
- * (`niveles_activos`, `mayoreo_beneficios_activos`).
+ * El tope del raspable en dólares (`raspable_presupuesto_usd`, `null` = sin
+ * tope). Los interruptores ya no existen: los niveles y los beneficios del
+ * Cliente Mayorista rigen desde `reglas_v2_desde()` (2026-10-24).
  */
 export const guardarConfigDePuntos = async (cambios, nota = null) => {
     const r = await rpc('puntos_config_guardar', { p_cambios: cambios, p_nota: nota?.trim() || null });

@@ -13,7 +13,6 @@ export const LECTURAS = new Set([
   'resumen', 'mis_reservas', 'mis_encargos', 'mis_facturas', 'mis_tratamientos', 'mis_encuestas',
   'bandeja', 'catalogo', 'catalogo_producto', 'banners', 'ofertas', 'ofertas_publicas', 'historias',
   'historias_publicas', 'salas', 'movimientos', 'compras', 'inyecciones', 'textos', 'reserva_terminos',
-  'referido', // el código para invitar: se ve sin señal y abre al instante (2026-10-15)
   'mis_creditos', // lo que se debe: se consulta también sin señal (2026-10-15)
 ]);
 

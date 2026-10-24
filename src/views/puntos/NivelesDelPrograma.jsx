@@ -9,11 +9,16 @@
  * Esta pestaña es el único lugar donde se cambia, sin migración, y cada cambio
  * queda con quién, cuándo, antes y después (`puntos_config_historial`).
  *
- *   · Estado        — los dos interruptores (niveles, beneficios del mayorista)
- *                      con confirmación, y el tope del raspable del mes.
- *   · Cada nivel    — umbral, puntos por dólar, cumpleaños, horas para retirar
- *                      una reserva, días de anticipo de ofertas; y en los dos
- *                      niveles más altos, los premios del raspable.
+ *   · Estado        — desde cuándo rigen los niveles (la fecha del Reglamento
+ *                      v2, `reglas_v2_desde()`: desde el 2026-10-24 ya no hay
+ *                      interruptores) y el tope del raspable del mes EN
+ *                      DÓLARES, con lo que va usado.
+ *   · Cada nivel    — umbral, puntos por dólar, cumpleaños; y en los dos
+ *                      niveles más altos, los premios del raspable, cada
+ *                      producto o promocional con su cupo al mes (en toda la
+ *                      red o en cada sucursal). Las horas de reserva y los
+ *                      días de anticipo de ofertas por nivel se quitaron: el
+ *                      reglamento no los tiene.
  *   · Mayoreo       — cumpleaños por rango y el raspable de los dos rangos más
  *                      altos (Condiciones del Cliente Mayorista §5).
  *   · Historial     — los últimos 100 cambios.
@@ -30,20 +35,18 @@
  * escribir: lo de acá sólo evita viajes que van a volver con error.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Crown, Gem, History, Plus, Save, Search, Trash2, Ticket, Power } from 'lucide-react';
+import { CalendarClock, Crown, Gem, History, Plus, Save, Search, Trash2, Ticket } from 'lucide-react';
 import Button from '../../components/common/Button';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
-import Switch from '../../components/common/Switch';
-import ConfirmModal from '../../components/common/ConfirmModal';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { formatQty } from '@nucleo/utils/formatNumber';
+import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
@@ -52,8 +55,9 @@ import {
 } from '@nucleo/data/puntos';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
 import {
-    CAMPOS_NIVEL, TIPOS_DE_PREMIO, dolaresDePremio, diferenciasDeConfig, esperadoDelRaspable, filaDePremio,
-    numeroONulo as num, parteEnRegalos, premiosCanonicos, premiosLimpios, sujetoDelHistorial, CONFIRMAR_INTERRUPTOR_DE_PUNTOS,
+    CAMPOS_NIVEL, CUPO_POR, TIPOS_DE_PREMIO, dolaresDePremio, diferenciasDeConfig, esperadoDelRaspable, filaDePremio,
+    numeroONulo as num, parteEnRegalos, premiosCanonicos, premiosLimpios, sujetoDelHistorial,
+    usoDelTopeTexto, vigenciaDelReglamentoTexto,
 } from '@nucleo/utils/nivelesDePuntos';
 
 // Las cuentas (rótulos, premios, qué cambió, cuánto cuesta un raspable) viven
@@ -93,7 +97,7 @@ export default function NivelesDelPrograma({ puedeEditar }) {
             {!puedeEditar && (
                 <Notice variant="info">Puedes ver la configuración, pero no cambiarla.</Notice>
             )}
-            <EstadoDelPrograma config={panel.config} dadoMes={panel.cupon_dado_mes}
+            <EstadoDelPrograma config={panel.config} usadoUsd={panel.raspable_usado_usd}
                 puedeEditar={puedeEditar} alGuardar={recargar} />
 
             <section className="flex flex-col gap-3">
@@ -114,8 +118,8 @@ export default function NivelesDelPrograma({ puedeEditar }) {
                     <Gem size={14} /> Cliente Mayorista, por rango
                 </h3>
                 <p className="text-caption text-content-3 -mt-1">
-                    Cumpleaños y raspable del Cliente Mayorista aprobado (Condiciones §5). Sólo se dan con
-                    «Beneficios del Cliente Mayorista» encendido; mientras tanto recibe lo de cualquier cliente.
+                    Cumpleaños y raspable del Cliente Mayorista aprobado (Condiciones §5). Rigen desde la misma
+                    fecha que los niveles; mientras tanto recibe lo de cualquier cliente.
                     El rango y los puntos por dólar de cada rango no se cambian aquí.
                 </p>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -131,82 +135,62 @@ export default function NivelesDelPrograma({ puedeEditar }) {
     );
 }
 
-// ── Estado: los interruptores y el tope ─────────────────────────────────────
-function EstadoDelPrograma({ config, dadoMes, puedeEditar, alGuardar }) {
+// ── Estado: desde cuándo rige y el tope en dólares ──────────────────────────
+function EstadoDelPrograma({ config, usadoUsd, puedeEditar, alGuardar }) {
     const showToast = useToastStore((s) => s.showToast);
-    const [pidiendo, setPidiendo] = useState(null); // { campo, valor }
     const [guardando, setGuardando] = useState(false);
-    const topeActual = config?.cupon_presupuesto_mensual;
+    const topeActual = config?.raspable_presupuesto_usd;
     const [tope, setTope] = useState(topeActual == null ? '' : String(topeActual));
     useEffect(() => { setTope(topeActual == null ? '' : String(topeActual)); }, [topeActual]);
-    const topeCambio = (tope === '' ? null : Number(tope)) !== (topeActual ?? null);
+    const topeCambio = (tope === '' ? null : Number(tope)) !== (topeActual == null ? null : Number(topeActual));
+    const tope0 = topeActual == null ? null : Number(topeActual);
+    const usado = Number(usadoUsd) || 0;
+    const pct = tope0 > 0 ? Math.min(100, Math.round((usado / tope0) * 100)) : null;
 
-    const guardar = async (cambios, que) => {
+    const guardar = async () => {
         setGuardando(true);
         try {
-            await guardarConfigDePuntos(cambios);
-            showToast('Guardado', que, 'success');
+            await guardarConfigDePuntos({ raspable_presupuesto_usd: tope === '' ? null : Number(tope) });
+            showToast('Guardado', 'Tope del raspable', 'success');
             alGuardar();
         } catch (e) {
             showToast('No se pudo guardar', mensajeAmigable(e), 'error');
         } finally {
             setGuardando(false);
-            setPidiendo(null);
         }
     };
-
-    const TEXTO = CONFIRMAR_INTERRUPTOR_DE_PUNTOS;
-    const t = pidiendo ? TEXTO[pidiendo.campo][pidiendo.valor ? 'on' : 'off'] : null;
 
     return (
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-4 min-w-0">
             <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
-                <Power size={14} /> Estado del programa
+                <CalendarClock size={14} /> Estado del programa
             </h3>
-            <div className="flex flex-col gap-3">
-                <FilaInterruptor titulo="Niveles"
-                    detalle={config?.niveles_activos
-                        ? 'Encendidos: cada cliente está en el nivel de su compra de 12 meses.'
-                        : 'Apagados: todos están en el nivel de entrada. La app dice «los niveles se activan pronto».'}
-                    valor={!!config?.niveles_activos} puedeEditar={puedeEditar}
-                    alCambiar={(v) => setPidiendo({ campo: 'niveles_activos', valor: v })} />
-                <FilaInterruptor titulo="Beneficios del Cliente Mayorista"
-                    detalle={config?.mayoreo_beneficios_activos
-                        ? 'Encendidos: cumpleaños y raspable por rango.'
-                        : 'Apagados: el mayorista recibe lo de cualquier cliente.'}
-                    valor={!!config?.mayoreo_beneficios_activos} puedeEditar={puedeEditar}
-                    alCambiar={(v) => setPidiendo({ campo: 'mayoreo_beneficios_activos', valor: v })} />
+            <div className="min-w-0">
+                <p className="text-body-sm font-bold text-content">Niveles y beneficios del Cliente Mayorista</p>
+                <p className="text-caption text-content-3">{vigenciaDelReglamentoTexto(config)}</p>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                <PortalInput className="sm:max-w-xs" label="Tope del raspable al mes (puntos)" type="number"
+                <PortalInput className="sm:max-w-xs" label="Tope del raspable al mes" prefix="$" inputMode="decimal" maskType="DECIMAL"
                     value={tope} onChange={(e) => setTope(e.target.value)} readOnly={!puedeEditar}
                     placeholder="Sin tope"
-                    helperText={`Vacío = sin tope. Este mes ya se dieron ${pts(dadoMes)} puntos (${dolares(dadoMes)}).`} />
+                    helperText="Cuenta los puntos ($1 cada 100), el costo de los productos y el de los promocionales que lo tienen. Vacío = sin tope." />
                 {puedeEditar && (
-                    <Button variant="secondary" icon={Save} disabled={!topeCambio} loading={guardando && !pidiendo}
-                        onClick={() => guardar({ cupon_presupuesto_mensual: tope === '' ? null : Number(tope) }, 'Tope del raspable')}>
+                    <Button variant="secondary" icon={Save} disabled={!topeCambio} loading={guardando} onClick={guardar}>
                         Guardar tope
                     </Button>
                 )}
             </div>
-            {t && (
-                <ConfirmModal isOpen onClose={() => setPidiendo(null)} isDestructive={false} isProcessing={guardando}
-                    title={t.titulo} message={t.mensaje} confirmText={t.boton}
-                    onConfirm={() => guardar({ [pidiendo.campo]: pidiendo.valor }, t.boton)} />
-            )}
-        </section>
-    );
-}
-
-function FilaInterruptor({ titulo, detalle, valor, alCambiar, puedeEditar }) {
-    return (
-        <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-                <p className="text-body-sm font-bold text-content">{titulo}</p>
-                <p className="text-caption text-content-3">{detalle}</p>
+            <div className="flex flex-col gap-1.5">
+                <p className="text-caption text-content-2 tabular-nums">{usoDelTopeTexto(config, usado)}</p>
+                {pct != null && (
+                    <div className="w-full h-2 rounded-full bg-surface-card-hover overflow-hidden" role="progressbar"
+                        aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Tope del raspable usado">
+                        <div data-medida="dato" className={`h-full rounded-full ${pct >= 100 ? 'bg-danger' : pct >= 80 ? 'bg-warning' : 'bg-success'}`}
+                            style={{ width: `${pct}%` }} />
+                    </div>
+                )}
             </div>
-            <Switch checked={valor} onChange={puedeEditar ? alCambiar : undefined} label={titulo} />
-        </div>
+        </section>
     );
 }
 
@@ -327,6 +311,25 @@ function EditorDePremios({ premios, alCambiar, puedeEditar }) {
                     {p.tipo === 'promocional' && promos?.length === 0 && (
                         <p className="text-caption text-content-3">No hay regalos en el catálogo: créalos en la pestaña Premios.</p>
                     )}
+                    {(p.tipo === 'producto' || p.tipo === 'promocional') && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <PortalInput label="Cupo al mes" type="number" compact value={p.cupo ?? ''} readOnly={!puedeEditar}
+                                onChange={(e) => poner(i, 'cupo', e.target.value)} placeholder="Sin cupo" />
+                            <Campo rotulo="Cupo">
+                                <LiquidSelect options={CUPO_POR} value={p.cupo_por ?? 'general'} clearable={false}
+                                    disabled={!puedeEditar || !(Number(p.cupo) > 0)}
+                                    onChange={(v) => poner(i, 'cupo_por', v)} />
+                            </Campo>
+                        </div>
+                    )}
+                    {p.tipo === 'promocional' && p.promocional_id && promos && (
+                        <p className="text-caption text-content-3">
+                            Cuenta contra el tope: {(() => {
+                                const c = (promos ?? []).find((x) => Number(x.id) === Number(p.promocional_id))?.costo;
+                                return c == null ? '$0.00 (no tiene costo)' : formatMoney(Number(c));
+                            })()}
+                        </p>
+                    )}
                 </div>
             ))}
             {puedeEditar && lista.length < 12 && (
@@ -338,7 +341,9 @@ function EditorDePremios({ premios, alCambiar, puedeEditar }) {
             <p className="text-caption text-content-3">
                 El peso es la probabilidad relativa: la columna de la derecha dice cuánto sale cada uno. Un producto
                 se entrega en la sala y se descarga del inventario; un promocional sale del inventario de regalos de
-                esa sala. No hay premios en descuento: la caja no cobra porcentajes.
+                esa sala. Un premio sin existencia, sin cupo o que ya no cabe en el tope del mes no se sortea: sale
+                otro de la lista. «En cada sucursal» cuenta en la sala donde más compra el cliente. No hay premios
+                en descuento: la caja no cobra porcentajes.
             </p>
         </div>
     );

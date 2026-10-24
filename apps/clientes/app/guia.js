@@ -48,6 +48,7 @@ import { colorSistema } from '../componentes/sistema';
 import { rangoReal } from '../componentes/Mayorista';
 import { suave, useTema } from '../tema/tema';
 import { useSesion } from '../lib/sesion';
+import { fechaLarga } from '../lib/formato';
 import { useCuenta } from '../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../lib/avisos';
 import { conBiometria, nombreBiometria, sinBloquear, useBloqueo } from '../lib/bloqueo';
@@ -239,7 +240,7 @@ export default function Guia() {
           <Pagina ancho={ancho} titulo="Tu nivel y tu cupón"
             arte={<Escalera actual={rangoReal(resumen?.mayorista) ? null : (resumen?.nivel?.clave === 'vip' ? 'bronce' : resumen?.nivel?.clave)} />}
             nota={resumen?.nivel?.activos === false
-              ? 'Los niveles se activan pronto, según el reglamento vigente.'
+              ? (resumen?.nivel?.desde ? `Los niveles empiezan el ${fechaLarga(resumen.nivel.desde)}, con el reglamento nuevo.` : 'Los niveles se activan pronto, según el reglamento vigente.')
               : 'Los niveles y sus beneficios siguen el reglamento vigente.'}>
             {/* 2026-10-19: apagados, sin prometer beneficios que el reglamento
                 vigente no da; encendidos, sin nombrar niveles a mano (el

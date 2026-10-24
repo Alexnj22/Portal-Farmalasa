@@ -6,7 +6,7 @@ import {
     dolaresDePremio, numeroONulo, premioTexto, premiosTexto, diferenciasDeConfig, sujetoDelHistorial,
     esperadoDelRaspable, parteEnRegalos, costoDelRaspableTexto, probabilidadDePremio,
     filaDePremio, premiosLimpios, premiosCanonicos, formDeNivel, cambiosDeNivel, cambiosDeRango, formDeRango,
-    dondeSeRetiraElPremio, detalleDelPremio, faltaEnRegalo,
+    dondeSeRetiraElPremio, detalleDelPremio, faltaEnRegalo, cupoTexto, vigenciaDelReglamentoTexto, usoDelTopeTexto,
 } from '@nucleo/utils/nivelesDePuntos';
 import {
     leerEntradaDeTarjeta, marcasDelCliente, estadoDeLaApp, pendientesDelCliente,
@@ -49,8 +49,25 @@ describe('nivelesDePuntos — historial', () => {
             'Puntos por cada $1: 2 → 3',
             'Compra en 12 meses desde: $500.00 → $1,000.00',
             'Niveles encendidos: No → Sí',
-            'Tope del raspable al mes: sin tope → 50',
+            'Tope del raspable al mes (puntos): sin tope → 50',
         ]);
+        // El tope en dólares (2026-10-24) se lee como dinero.
+        expect(diferenciasDeConfig({ raspable_presupuesto_usd: 150 }, { raspable_presupuesto_usd: null }))
+            .toEqual(['Tope del raspable al mes: $150.00 → sin tope']);
+    });
+
+    it('el cupo de un premio y la vigencia del reglamento se dicen en palabras', () => {
+        expect(cupoTexto({ cupo: 5, cupo_por: 'sucursal' })).toBe('hasta 5 al mes en cada sucursal');
+        expect(cupoTexto({ cupo: 2 })).toBe('hasta 2 al mes en toda la red');
+        expect(cupoTexto({ cupo: '' })).toBeNull();
+        expect(premiosLimpios([{ tipo: 'promocional', promocional_id: 7, nombre: 'Termo', peso: '1', cupo: '3', cupo_por: 'sucursal' }]))
+            .toEqual([{ tipo: 'promocional', promocional_id: 7, nombre: 'Termo', peso: 1, cupo: 3, cupo_por: 'sucursal' }]);
+        expect(premiosLimpios([{ tipo: 'promocional', promocional_id: 7, nombre: 'Termo', peso: '1', cupo: '' }]))
+            .toEqual([{ tipo: 'promocional', promocional_id: 7, nombre: 'Termo', peso: 1 }]);
+        expect(vigenciaDelReglamentoTexto({ reglas_v2_desde: '2026-11-15', v2_vigente: false })).toMatch(/^Rigen desde el 15\/11\/2026, con el reglamento nuevo/);
+        expect(vigenciaDelReglamentoTexto({ reglas_v2_desde: '2026-11-15', v2_vigente: true })).toMatch(/^Rigen desde el 15\/11\/2026: cada cliente/);
+        expect(usoDelTopeTexto({ raspable_presupuesto_usd: 150 }, 13)).toBe('Este mes van $13.00 de $150.00.');
+        expect(usoDelTopeTexto({ raspable_presupuesto_usd: null }, 0)).toBe('Sin tope. Este mes van $0.00.');
     });
 
     it('un campo que aparece o desaparece se lee con «—», y uno desconocido con su clave', () => {

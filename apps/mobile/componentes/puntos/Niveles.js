@@ -1,8 +1,9 @@
 // Puntos → Niveles, NATIVO — `NivelesDelPrograma` del portal (2026-10-19).
 // Todo lo que el programa promete por nivel, en un solo lugar y sin migración:
 //
-//   · Estado — los dos interruptores (niveles y beneficios del Cliente
-//     Mayorista), con confirmación, y el tope del raspable del mes.
+//   · Estado — desde cuándo rigen los niveles y lo del Cliente Mayorista (la
+//     fecha del Reglamento v2; desde el 2026-10-24 ya no hay interruptores) y
+//     el tope del raspable del mes en dólares, con lo que va usado.
 //   · Cada nivel y cada rango de mayoreo, resumido; tocarlo abre su editor
 //     (`app/puntos-nivel`), con los premios del raspable en los dos más altos.
 //   · Historial — los últimos cambios: quién (foto y nombre corto), qué y el
@@ -11,12 +12,13 @@
 // Las cuentas y los textos salen del núcleo (`nivelesDePuntos`), los mismos del
 // portal. Escribir exige `puntos_tab_niveles` can_edit; la base lo vuelve a exigir.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPanelDeNiveles, guardarConfigDePuntos } from '@nucleo/data/puntos';
 import {
-  CAMPOS_NIVEL, CONFIRMAR_INTERRUPTOR_DE_PUNTOS, costoDelRaspableTexto, diferenciasDeConfig, dolaresDePremio, premiosTexto, sujetoDelHistorial,
+  CAMPOS_NIVEL, costoDelRaspableTexto, diferenciasDeConfig, premiosTexto, sujetoDelHistorial,
+  usoDelTopeTexto, vigenciaDelReglamentoTexto,
 } from '@nucleo/utils/nivelesDePuntos';
 import { puntosTexto } from '@nucleo/utils/puntosTexto';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -27,7 +29,6 @@ import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Avatar from '../Avatar';
-import Interruptor from '../Interruptor';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
@@ -37,53 +38,30 @@ const Titulo = ({ children }) => (
   <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 32, marginTop: 6 }}>{children}</Text>
 );
 
-function FilaInterruptor({ titulo, detalle, valor, puedeEditar, alCambiar }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{titulo}</Text>
-        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle}</Text>
-      </View>
-      <Interruptor value={valor} onValueChange={alCambiar} disabled={!puedeEditar} accessibilityLabel={titulo} />
-    </View>
-  );
-}
-
-function Estado({ config, dadoMes, puedeEditar, alGuardar }) {
-  const topeActual = config?.cupon_presupuesto_mensual;
+function Estado({ config, usadoUsd, puedeEditar, alGuardar }) {
+  const topeActual = config?.raspable_presupuesto_usd;
   const [tope, setTope] = useState(topeActual == null ? '' : String(topeActual));
   useEffect(() => { setTope(topeActual == null ? '' : String(topeActual)); }, [topeActual]); // eslint-disable-line react-hooks/set-state-in-effect -- vuelve al guardado al recargar
-  const topeCambio = (tope === '' ? null : Number(tope)) !== (topeActual ?? null);
+  const topeCambio = (tope === '' ? null : Number(tope)) !== (topeActual == null ? null : Number(topeActual));
 
-  const guardar = async (cambios, que) => {
+  const guardar = async () => {
     trabajando('Guardando…');
-    try { await guardarConfigDePuntos(cambios); listo('Guardado', que); alGuardar(); }
+    try { await guardarConfigDePuntos({ raspable_presupuesto_usd: tope === '' ? null : Number(tope) }); listo('Guardado', 'Tope del raspable'); alGuardar(); }
     catch (e) { fallo('No se pudo guardar', mensajeAmigable(e)); }
-  };
-  const pedir = (campo, valor) => {
-    const t = CONFIRMAR_INTERRUPTOR_DE_PUNTOS[campo][valor ? 'on' : 'off'];
-    Alert.alert(t.titulo, t.mensaje, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: t.boton, style: valor ? 'default' : 'destructive', onPress: () => guardar({ [campo]: valor }, t.boton) },
-    ]);
   };
 
   return (
     <Seccion titulo="Estado del programa">
-      <FilaInterruptor titulo="Niveles" valor={!!config?.niveles_activos} puedeEditar={puedeEditar}
-        detalle={config?.niveles_activos ? 'Encendidos: cada cliente está en el nivel de su compra de 12 meses.'
-          : 'Apagados: todos están en el nivel de entrada. La app dice «los niveles se activan pronto».'}
-        alCambiar={(v) => pedir('niveles_activos', v)} />
-      <FilaInterruptor titulo="Beneficios del Cliente Mayorista" valor={!!config?.mayoreo_beneficios_activos} puedeEditar={puedeEditar}
-        detalle={config?.mayoreo_beneficios_activos ? 'Encendidos: cumpleaños y raspable por rango.' : 'Apagados: el mayorista recibe lo de cualquier cliente.'}
-        alCambiar={(v) => pedir('mayoreo_beneficios_activos', v)} />
+      <View style={{ gap: 2 }}>
+        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>Niveles y beneficios del Cliente Mayorista</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{vigenciaDelReglamentoTexto(config)}</Text>
+      </View>
       <View style={{ gap: 6, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>Tope del raspable al mes (puntos)</Text>
-        <Campo multiline={false} value={tope} editable={puedeEditar} keyboardType="number-pad" placeholder="Sin tope"
-          onChangeText={(v) => setTope(v.replace(/\D/g, ''))} accessibilityLabel="Tope del raspable al mes" />
-        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Vacío = sin tope. Este mes ya se dieron ${puntosTexto(dadoMes)} puntos (${dolaresDePremio(dadoMes)}).`}</Text>
-        {puedeEditar ? <BotonGrande texto="Guardar tope" borde deshabilitado={!topeCambio}
-          onPress={() => guardar({ cupon_presupuesto_mensual: tope === '' ? null : Number(tope) }, 'Tope del raspable')} /> : null}
+        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>Tope del raspable al mes ($)</Text>
+        <Campo multiline={false} value={tope} editable={puedeEditar} keyboardType="decimal-pad" placeholder="Sin tope"
+          onChangeText={(v) => setTope(v.replace(/[^\d.]/g, ''))} accessibilityLabel="Tope del raspable al mes, en dólares" />
+        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Cuenta los puntos ($1 cada 100), el costo de los productos y el de los promocionales que lo tienen. Vacío = sin tope. ${usoDelTopeTexto(config, usadoUsd)}`}</Text>
+        {puedeEditar ? <BotonGrande texto="Guardar tope" borde deshabilitado={!topeCambio} onPress={guardar} /> : null}
       </View>
     </Seccion>
   );
@@ -152,7 +130,7 @@ export default function Niveles({ puedeEditar }) {
     <>
       {!puedeEditar ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Puedes ver la configuración, pero no cambiarla." /></View> : null}
       <View style={{ marginHorizontal: 16 }}>
-        <Estado config={panel.config} dadoMes={panel.cupon_dado_mes} puedeEditar={puedeEditar} alGuardar={cargar} />
+        <Estado config={panel.config} usadoUsd={panel.raspable_usado_usd} puedeEditar={puedeEditar} alGuardar={cargar} />
       </View>
 
       <Titulo>Niveles de Puntos Salud</Titulo>

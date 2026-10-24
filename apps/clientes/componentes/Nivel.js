@@ -23,7 +23,7 @@ import { Tarjeta, Texto } from './ui';
 import { BarraAnimada, FlechaDesplegable } from './animacion';
 import { COLORES_NIVEL } from './TarjetaSocio';
 import { colorSistema } from './sistema';
-import { dolares } from '../lib/formato';
+import { dolares, fechaLarga } from '../lib/formato';
 import { useTema } from '../tema/tema';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icono from './Icono';
@@ -89,7 +89,7 @@ export default function Nivel({ nivel, pie = null }) {
       </Presionable>
 
       {apagados ? (
-        <Texto nivel={2} estilo={{ fontSize: 14 }}>Hoy: 1 punto por cada $1. Los niveles llegan pronto.</Texto>
+        <Texto nivel={2} estilo={{ fontSize: 14 }}>{nivel.desde ? `Hoy: 1 punto por cada $1. Los niveles empiezan el ${fechaLarga(nivel.desde)}.` : 'Hoy: 1 punto por cada $1. Los niveles llegan pronto.'}</Texto>
       ) : sig ? (
         <View style={{ gap: 6 }}>
           <BarraAnimada avance={avance} color={t.color.verde} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />

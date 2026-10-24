@@ -1380,6 +1380,15 @@ export async function enlaceDePagoDeApartado({ sala, apartado, monto }) {
 }
 
 /**
+ * Un ingreso en efectivo que quedó sin llegar a la caja (2026-10-24): el
+ * servidor mira si la caja ya lo tiene y, si no, lo manda. Nunca lo cobra dos
+ * veces — ver `resolverSinNumero` en `operar-caja`.
+ */
+export async function mandarALaCaja({ sala, movimiento }) {
+    return operar({ accion: 'reenviar_a_caja', sala, movimiento: Number(movimiento) });
+}
+
+/**
  * El corte, con el conteo a ciegas.
  *
  * Manda el efectivo contado y NO recibe lo esperado hasta que contesta: ésa es

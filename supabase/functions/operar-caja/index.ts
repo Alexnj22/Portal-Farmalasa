@@ -298,6 +298,41 @@ async function hayZdelDia(cookie: string, dia: string): Promise<boolean | null> 
 const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 const exito = (t: string) => /"typeinfo"\s*:\s*"Success"/i.test(t);
 
+const MOV_URL = `${BASE}admin_movimiento_caja_dt.php`;
+
+/**
+ * ¿La caja ya tiene el movimiento `P{id}` del portal? (2026-10-24)
+ *
+ * El portal escribe su fila ANTES de mandarla y el concepto viaja con su número
+ * adelante. Si la conexión se corta a mitad de la petición, la fila queda sin
+ * `erp_movimiento_id` y no se sabe si la caja lo anotó — Salud 3, 23-oct,
+ * `connection closed before message completed`. Se le pregunta a la caja EN
+ * VIVO (la captura llega con atraso) antes de mandarlo otra vez: mandarlo sin
+ * mirar sería cobrarlo dos veces.
+ *
+ * `null` = no se pudo leer, que NO es «no está».
+ */
+async function buscarEnLaCaja(cookie: string, dia: string, idPortal: number): Promise<{ id: number | null } | null> {
+  try {
+    const r = await fetch(`${MOV_URL}?fechai=${dia}&fechaf=${dia}&draw=1&start=0&length=1000`, {
+      headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" },
+      signal: AbortSignal.timeout(45_000),
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !Array.isArray(j?.data)) return null;
+    const filas = j.data as unknown[][];
+    const marca = new RegExp(`^P${idPortal}(\\s|$)`);
+    const fila = filas.find((f) =>
+      marca.test(String(f?.[1] ?? "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").trim()));
+    if (fila) return { id: Number(fila[0]) || null };
+    // Una lista llena puede estar cortada: «no lo vi» no prueba «no está».
+    return filas.length >= 1000 ? null : { id: null };
+  } catch (e) {
+    console.error(`[operar-caja] buscando P${idPortal} en la caja:`, e);
+    return null;
+  }
+}
+
 /**
  * **Cuántos BILLETES hay en el cajón ahora.** Otra pregunta que «Monto
  * Registrado», y la que decide de dónde sale una salida de efectivo.
@@ -675,6 +710,94 @@ Deno.serve(async (req) => {
     // cierre justo cuando no se pudo comprobar que hubiera alguno.
     if (errCortes) throw new Error(`revisando los cortes del día: ${errCortes.message}`);
 
+    /* ── Un ingreso en efectivo que quedó SIN número de la caja (2026-10-24) ──
+     *
+     * Pasa cuando la conexión se corta después de escribir la fila del portal:
+     * el portal cuenta el efectivo y la caja puede no tenerlo. Antes nadie lo
+     * resolvía: el reintento contestaba «ya estaba» sin mirar, la anulación
+     * decía «nunca llegó, no hay nada que corregir», y el dólar fantasma de
+     * Salud 3 frenó el cierre automático del 23-oct.
+     *
+     * Se le pregunta a la caja si lo tiene (por `P{id}`): si está, sólo se liga
+     * el número; si no, se manda ahora. Sólo un ingreso común y del día que la
+     * caja tiene abierto: una salida, un anticipo o el pago de un bono tienen
+     * su propio circuito, y meter hoy el efectivo de un día cerrado inflaría el
+     * esperado de un día que no lo recibió. */
+    const resolverSinNumero = async (mov: Record<string, unknown>):
+      Promise<{ ok: true; idMov: number | null; reenviado: boolean } | { ok: false; status: number; error: string }> => {
+      if (mov.tipo !== "ENTRADA" || ["APARTADO", "APLICA_ANTICIPO"].includes(String(mov.tipo_codigo ?? ""))
+          || String(mov.clave_envio ?? "").startsWith("bono-")) {
+        return { ok: false, status: 409, error: "Ese movimiento no llegó a confirmarse en la caja. Revisa en la caja si está antes de repetirlo." };
+      }
+      if (String(mov.erp_apertura_id ?? "") !== String(estado.aper ?? "")) {
+        return { ok: false, status: 409, error: "Ese ingreso no llegó a la caja y su día ya se cerró: no se puede meter en la caja de hoy." };
+      }
+      const visto = await buscarEnLaCaja(cookie, String(mov.fecha), Number(mov.id));
+      if (!visto) return { ok: false, status: 503, error: "No se pudo revisar la caja. Vuelve a intentarlo en un momento." };
+      let idMov = visto.id;
+      let reenviado = false;
+      if (!idMov) {
+        const { data: autor, error: errAutor } = await supabase.from("employees")
+          .select("code").eq("id", mov.registrado_por as string).maybeSingle();
+        // Sin el código el ingreso entraría a nombre de nadie: se frena antes
+        // de tocar la caja.
+        if (errAutor) {
+          console.error(`[operar-caja] sin número mov=${mov.id}: autor: ${errAutor.message}`);
+          return { ok: false, status: 503, error: "No se pudo leer quién anotó el ingreso. Vuelve a intentarlo." };
+        }
+        const r = await (await fetch(INGRESO, {
+          method: "POST",
+          headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+          body: new URLSearchParams({
+            process: "ingreso", id_apertura: estado.aper!, id_empleado: estado.emp!,
+            turno: estado.turno!, monto: dosDecimales(Number(mov.monto)),
+            concepto: `P${mov.id} ${mov.concepto}`.slice(0, 50), id_tipo: ID_TIPO,
+            // A nombre de quien lo ANOTÓ, no de quien lo reintenta.
+            codigo_vendedor: String(autor?.code ?? ""),
+          }).toString(),
+          signal: AbortSignal.timeout(45_000),
+        })).text();
+        if (!exito(r)) {
+          console.error(`[operar-caja] sin número mov=${mov.id}: ingreso en caja: ${r.slice(0, 1000)}`);
+          return { ok: false, status: 502, error: "La caja no aceptó el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." };
+        }
+        try { idMov = Number(JSON.parse(r)?.id_mov) || null; } catch { idMov = null; }
+        reenviado = true;
+      }
+      // Sin el número la fila sigue «sin llegar», y el próximo intento lo
+      // encuentra en la caja por su `P{id}`: no se manda dos veces.
+      if (idMov) {
+        const { error: errLigar } = await supabase.from("caja_movimientos_portal")
+          .update({ erp_movimiento_id: idMov, updated_at: new Date().toISOString() })
+          .eq("id", mov.id as number).is("erp_movimiento_id", null);
+        if (errLigar) console.error(`[operar-caja] sin número mov=${mov.id}: ligar ${idMov}: ${errLigar.message}`);
+      }
+      // Las aplicaciones de inyección nacen sin confirmar y se confirman cuando
+      // la caja aceptó — que es ahora.
+      const { error: errConf } = await supabase.from("inyeccion_aplicaciones")
+        .update({ confirmada: true }).eq("cobro_id", mov.id as number).eq("confirmada", false);
+      if (errConf) console.error(`[operar-caja] sin número mov=${mov.id}: confirmar aplicaciones: ${errConf.message}`);
+      console.log(`[operar-caja] sin número mov=${mov.id}: ${reenviado ? "mandado" : "ya estaba"} en la caja (${idMov ?? "sin número"})`);
+      return { ok: true, idMov, reenviado };
+    };
+
+    /* «Mandar a la caja» desde la lista del día: el mismo juez que el reintento. */
+    if (accion === "reenviar_a_caja") {
+      const { data: mov, error: errMov } = await supabase.from("caja_movimientos_portal")
+        .select("*").eq("id", Number(body.movimiento)).maybeSingle();
+      if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
+      if (!mov || mov.branch_id !== sala) return json({ ok: false, error: "Ese movimiento no es de esta sala." }, 404);
+      if (mov.anulado_at) return json({ ok: false, error: "Ese movimiento está anulado." }, 409);
+      if (mov.erp_movimiento_id) return json({ ok: true, movimiento_del_portal: mov.id, movimiento_en_caja: mov.erp_movimiento_id, repetido: true });
+      if (String(mov.forma_pago ?? "EFECTIVO") !== "EFECTIVO") {
+        return json({ ok: false, error: "Ese ingreso no es en efectivo: no va a la caja." }, 409);
+      }
+      if (cajaSimulada) return json({ ok: false, error: "En el entorno de pruebas la caja es simulada." }, 409);
+      const r = await resolverSinNumero(mov);
+      if (!r.ok) return json({ ok: false, error: r.error }, r.status);
+      return json({ ok: true, movimiento_del_portal: mov.id, movimiento_en_caja: r.idMov, reenviado: r.reenviado });
+    }
+
     if (accion === "estado") {
       const registrado = (estado as { registrado?: number | null }).registrado ?? null;
       const apertura = (estado as { apertura?: number | null }).apertura ?? null;
@@ -888,7 +1011,7 @@ Deno.serve(async (req) => {
 
       const { data: mov, error: errMov } = await supabase
         .from("caja_movimientos_portal")
-        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id, forma_pago, erp_apertura_id, registrado_por, autorizacion, reserva_id, encargo_id")
+        .select("id, tipo, monto, concepto, erp_movimiento_id, anulado_at, bolsa_operacion_id, forma_pago, erp_apertura_id, registrado_por, autorizacion, reserva_id, encargo_id, fecha")
         .eq("id", Number(meta.movimiento_portal)).maybeSingle();
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
       if (!mov) return json({ ok: false, error: "Ese movimiento ya no existe." }, 404);
@@ -901,8 +1024,27 @@ Deno.serve(async (req) => {
        * con tarjeta anotado de más era imposible. */
       const formaAntes = String(mov.forma_pago ?? "EFECTIVO");
       const soloPortal = formaAntes !== "EFECTIVO";
+      /* Sin número no prueba «nunca llegó» (2026-10-24): un envío cortado pudo
+       * entrar igual. Se le pregunta a la caja por su `P{id}`. Si está, se liga
+       * y la corrección sigue como cualquier otra. Si de verdad no está,
+       * anularlo es sólo del portal —no hay nada que borrar allá—, y era
+       * justo lo que no se podía hacer: el duplicado sin número de Salud 3
+       * (23-oct) no tenía forma de anularse, y por eso se anuló el bueno. */
+      let nuncaLlego = false;
       if (!soloPortal && !cajaSimulada && !mov.erp_movimiento_id) {
-        return json({ ok: false, error: "Ese movimiento nunca llegó a la caja, así que no hay nada que corregir ahí." }, 409);
+        const visto = await buscarEnLaCaja(cookie, String(mov.fecha), Number(mov.id));
+        if (!visto) return json({ ok: false, error: "No se pudo revisar la caja. Vuelve a intentarlo en un momento." }, 503);
+        if (visto.id) {
+          const { error: errLigar } = await supabase.from("caja_movimientos_portal")
+            .update({ erp_movimiento_id: visto.id, updated_at: new Date().toISOString() })
+            .eq("id", mov.id).is("erp_movimiento_id", null);
+          if (errLigar) throw new Error(`ligando el movimiento ${mov.id} a la caja: ${errLigar.message}`);
+          mov.erp_movimiento_id = visto.id;
+        } else if (meta.que === "ANULAR") {
+          nuncaLlego = true;
+        } else {
+          return json({ ok: false, error: "Ese movimiento nunca llegó a la caja: mándalo desde la lista del día o anúlalo." }, 409);
+        }
       }
 
       /* ── El monto tiene que ser TODAVÍA el que la solicitud dice ────────
@@ -941,7 +1083,7 @@ Deno.serve(async (req) => {
        *
        * Lo que no es efectivo nunca fue a la caja, así que corregirlo no toca
        * ningún corte: ése sí se puede arreglar al día siguiente. */
-      if (!soloPortal && !cajaSimulada && (anular || meta.que === "MONTO")
+      if (!soloPortal && !cajaSimulada && !nuncaLlego && (anular || meta.que === "MONTO")
           && String(mov.erp_apertura_id ?? "") !== String(estado.aper ?? "")) {
         return json({
           ok: false,
@@ -1099,7 +1241,7 @@ Deno.serve(async (req) => {
         if (motivoNo) return json({ ok: false, error: String(motivoNo) }, 409);
       }
 
-      const resp = soloPortal || cajaSimulada ? null : anular
+      const resp = soloPortal || cajaSimulada || nuncaLlego ? null : anular
         ? await (await fetch(BORRAR, {
             method: "POST",
             headers: {
@@ -1702,6 +1844,18 @@ Deno.serve(async (req) => {
           if (delBono && !ya.erp_movimiento_id && !cajaSimulada) {
             return json({ ok: false, sin_confirmar: true, movimiento_del_portal: ya.id,
               error: "Ese pago del bono ya se mandó a la caja y todavía no está confirmado. No lo repitas: revisa en la caja si salió." }, 409);
+          }
+          /* Y lo mismo para cualquier movimiento en efectivo (2026-10-24): vivo
+           * y sin número NO es «ya estaba» — es un envío que se cortó. Contestar
+           * ok fue lo que dejó el $1.00 de Salud 3 sólo en el portal el 23-oct.
+           * Se resuelve acá mismo: se mira la caja y, si no lo tiene, se manda. */
+          if (!ya.anulado_at && !ya.erp_movimiento_id && !cajaSimulada
+              && String(ya.forma_pago ?? "EFECTIVO") === "EFECTIVO") {
+            const r = await resolverSinNumero(ya);
+            if (!r.ok) {
+              return json({ ok: false, sin_confirmar: true, movimiento_del_portal: ya.id, error: r.error }, r.status);
+            }
+            ya.erp_movimiento_id = r.idMov;
           }
           // Y el anticipo que sí entró vuelve con su reserva o encargo, que es
           // lo que la pantalla necesita para la constancia.
@@ -2479,6 +2633,14 @@ Deno.serve(async (req) => {
           console.error(`[operar-caja] bono sin respuesta fila=${fila.id}: ${(e as Error)?.message ?? e}`);
           return json({ ok: false, sin_confirmar: true, movimiento_del_portal: fila.id,
             error: "La caja no contestó y no se sabe si el bono salió. No lo repitas: revisa en la caja y resuélvelo desde «Sin confirmar»." }, 504);
+        }
+        /* Un ingreso: volver a apretar es SEGURO (2026-10-24). El reintento
+         * viaja con la misma clave, cae en `resolverSinNumero` y mira la caja
+         * antes de mandarlo. Antes era el `throw` crudo — un 500 sin explicación. */
+        if (esEntrada) {
+          console.error(`[operar-caja] ${accion} sin respuesta fila=${fila.id}: ${(e as Error)?.message ?? e}`);
+          return json({ ok: false, sin_confirmar: true, movimiento_del_portal: fila.id,
+            error: "La caja no contestó. Vuelve a apretar «Guardar»: el portal revisa si entró antes de mandarlo otra vez." }, 504);
         }
         throw e;
       }

@@ -103,3 +103,24 @@ describe('laMasVieja', () => {
         expect(laMasVieja([], '2026-10-06')).toEqual({ bolsa: null, dias: 0 });
     });
 });
+
+describe('lineasDelDia · lo que no llegó a la caja (Salud 3, 23-oct)', () => {
+    const movs = [
+        { id: 5287, tipo: 'ENTRADA', monto: 1, registrado_at: '2026-10-23T20:10:00Z', concepto: 'Aplicacion', erp_movimiento_id: null },
+        { id: 5317, tipo: 'ENTRADA', monto: 1, registrado_at: '2026-10-23T23:26:00Z', concepto: 'Aplicacion', erp_movimiento_id: 49410 },
+        { id: 1, tipo: 'ENTRADA', monto: 5, registrado_at: '2026-10-23T12:00:00Z', concepto: 'Con tarjeta', forma_pago: 'TARJETA' },
+        { id: 2, tipo: 'ENTRADA', monto: 3, registrado_at: '2026-10-23T13:00:00Z', concepto: 'Anulado', anulado_at: '2026-10-23T14:00:00Z' },
+    ];
+    const porId = Object.fromEntries(lineasDelDia({ movimientos: movs, deBolsas: [], cobros: [] })
+        .map((l) => [l.movimiento?.id, l]));
+    it('marca el efectivo vivo sin número, y sólo ése', () => {
+        expect(porId[5287].sinCaja).toBe(true);
+        expect(porId[5317].sinCaja).toBe(false);
+    });
+    it('lo que no es efectivo no va a la caja a propósito: no es «no llegó»', () => {
+        expect(porId[1].sinCaja).toBe(false);
+    });
+    it('lo anulado ya no cuenta', () => {
+        expect(porId[2].sinCaja).toBe(false);
+    });
+});

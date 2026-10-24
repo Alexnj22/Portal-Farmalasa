@@ -99,6 +99,9 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
         // Lo que no es efectivo no está en el cajón: fuera de la suma del tramo
         // (`netoDelTramo`) y con la misma marca que un cobro con tarjeta.
         sinEfectivo: !!otraVia,
+        // En efectivo, vivo y sin número de la caja: un envío que se cortó. El
+        // portal lo cuenta y la caja puede no tenerlo (Salud 3, 23-oct).
+        sinCaja: !otraVia && !m.anulado_at && !m.erp_movimiento_id,
         autorizacion: m.autorizacion || null,
         datos: otraVia ? [
             ['Comprobante', m.numero_boleta || null],

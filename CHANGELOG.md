@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1354.3 — Un ingreso que no llegó a la caja se puede reintentar sin cobrarlo dos veces
+
+Salud 3, 23-oct: la conexión con la caja se cortó al anotar una inyección de
+$1.00; el reintento contestó «ya estaba» sin mirar y la fila quedó sólo en el
+portal. Al anotarla otra vez y anular «el duplicado», se anuló el que estaba en
+la caja, y el dólar fantasma frenó el cierre automático.
+
+- `operar-caja` · `buscarEnLaCaja`: pregunta a la caja EN VIVO si tiene el
+  `P{id}` del portal. `null` = no se pudo leer, nunca «no está».
+- Reintento con la misma clave sobre un movimiento en efectivo vivo y sin
+  número: ya no contesta «ya estaba». Mira la caja; si lo tiene, liga el
+  número; si no, lo manda. Sólo ingresos comunes del día abierto.
+- Conexión cortada al anotar un ingreso: 504 con «vuelve a apretar Guardar» en
+  vez del 500 crudo.
+- Nueva acción `reenviar_a_caja` y botón «Mandarlo a la caja» en Mi caja.
+- Corrección ANULAR sobre uno sin número: si la caja no lo tiene, se anula sólo
+  en el portal (antes era imposible: «nunca llegó, no hay nada que corregir»).
+- La fila marca «No llegó a la caja» a la vista, y el diálogo de corrección
+  dice si ése está en la caja o no.
+
 ## v2.1354.2 — Base: índices de FK que faltaban, duplicados fuera y políticas dobles unidas
 
 - Catorce índices nuevos sobre relaciones entre tablas que no tenían (cola de impresión, eventos de cortes, comentarios de marketing, conteos, entre otras) y dos índices duplicados fuera (historial de conteos, abonos de crédito).

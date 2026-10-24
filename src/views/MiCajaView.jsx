@@ -35,7 +35,7 @@ import {
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja,
-    fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion,
+    fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion, mandarALaCaja,
     subirComprobante, boletaYaEnCaja, fetchFacturasMapfre,
 } from '@nucleo/data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
@@ -1197,6 +1197,8 @@ export default function MiCajaView({ comoPestana = false }) {
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
                             puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
                             onReenviar={setReenviando}
+                            ocupado={ocupado}
+                            onMandar={(mov) => correr(() => mandarALaCaja({ sala, movimiento: mov.id }), 'Quedó en la caja.')}
                             anotaron={anotaron} cortes={cortesDelDia}
                             correcciones={correcciones} />
 
@@ -1996,7 +1998,7 @@ const CLASE_DE_MOVIMIENTO = {
  * corrección y el reparto entre bolsas. «Corregir» vive adentro: es una acción
  * sobre UN movimiento que ya se está mirando, no un botón repetido en cada fila.
  */
-function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorregir, onReenviar,
+function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorregir, onReenviar, onMandar, ocupado,
     foto, firmando, onVerComprobante, onAmpliar }) {
     const { Icono, tono } = l.anulado
         ? { Icono: Ban, tono: 'bg-content-3/10 text-content-3' }
@@ -2051,9 +2053,13 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
                             </span>
                         )}
                     </span>
-                    {(l.anulado || pendiente || corregido || l.sinEfectivo || l.autorizacion || ROTULO_DE_ORIGEN[l.montoOrigen]) && (
+                    {(l.anulado || pendiente || corregido || l.sinEfectivo || l.sinCaja || l.autorizacion || ROTULO_DE_ORIGEN[l.montoOrigen]) && (
                         <span className="flex flex-wrap gap-1 mt-1">
                             {l.anulado && <Marca tono="apagada">Anulado</Marca>}
+                            {/* A la vista y no sólo en el detalle: entre dos
+                                anotados iguales, es lo que dice cuál es el que
+                                está en la caja (Salud 3, 23-oct). */}
+                            {l.sinCaja && <Marca tono="aviso">No llegó a la caja</Marca>}
                             {pendiente && <Marca tono="aviso">Corrección pendiente</Marca>}
                             {!pendiente && corregido && <Marca tono="apagada">Corregido</Marca>}
                             {l.sinEfectivo && <Marca tono="apagada">No entra al cajón</Marca>}
@@ -2172,6 +2178,15 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
                                     Reenviar con más pruebas
                                 </Button>
                             )}
+                            {/* Mira la caja antes de mandarlo: si ya lo tiene,
+                                sólo lo liga. Una salida sin número no se manda
+                                desde acá — se revisa en la caja. */}
+                            {puedeOperar && l.sinCaja && l.movimiento?.tipo === 'ENTRADA' && onMandar && (
+                                <Button variant="secondary" size="sm" icon={RefreshCw}
+                                    disabled={ocupado} onClick={() => onMandar(l.movimiento)}>
+                                    Mandarlo a la caja
+                                </Button>
+                            )}
                             {puedeOperar && l.movimiento && !l.anulado && (
                                 <Button variant="ghost" size="sm" icon={PencilLine}
                                     onClick={() => onCorregir(l.movimiento)}>
@@ -2197,7 +2212,7 @@ function Marca({ tono, children }) {
 }
 
 function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
-    onCorregir, onReenviar, anotaron, cortes, correcciones }) {
+    onCorregir, onReenviar, onMandar, ocupado, anotaron, cortes, correcciones }) {
     const etiquetaDe = useCallback((codigo) =>
         tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo), [tipos]);
 
@@ -2355,6 +2370,7 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
                                 onAlternar={() => setAbierto((c) => (c === l.clave ? null : l.clave))}
                                 quien={anotaron?.get(l.quien)}
                                 puedeOperar={puedeOperar} onCorregir={onCorregir} onReenviar={onReenviar}
+                                onMandar={onMandar} ocupado={ocupado}
                                 foto={foto?.clave === l.clave ? foto : null}
                                 firmando={firmando === l.clave}
                                 onVerComprobante={() => verComprobante(l.clave, l.foto)}
@@ -3543,6 +3559,15 @@ function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
                 </Button>
             </>}
         >
+            {/* Cuál de dos anotados iguales es el que está en la caja: el 23-oct
+                se anuló el que estaba y quedó vivo el que nunca llegó. */}
+            {formaActual === 'EFECTIVO' && (
+                <p className={`text-caption ${movimiento.erp_movimiento_id ? 'text-content-2' : 'text-warning-text font-semibold'}`}>
+                    {movimiento.erp_movimiento_id
+                        ? `Este está en la caja (n.º ${movimiento.erp_movimiento_id}).`
+                        : 'Este no llegó a la caja: anularlo sólo lo quita del portal.'}
+                </p>
+            )}
             <div className="flex gap-2">
                 <Button size="sm" variant={que === 'ANULAR' ? 'primary' : 'secondary'}
                     onClick={() => setQue('ANULAR')}>Anularlo</Button>

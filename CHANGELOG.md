@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1352.0 — Puntos Salud: el Reglamento v2 arranca solo el 15 de noviembre
+
+- Todo el Reglamento v2 cuelga de UNA fecha, `puntos_config.reglas_v2_desde` (15-nov-2026): niveles, factores, cumpleaños por nivel, mayoreo, canje y raspable se encienden solos. Los interruptores a mano quedan deprecados; la emergencia es mover la fecha.
+- Canje (cl. 3.3/3.4): desde la fecha sólo deja de acumular lo pagado con puntos; el resto acumula con el factor del nivel. Antes de la fecha, igual que el v1.
+- Raspable: sólo Oro y Platino que compraron el mes anterior. Tope del mes en dólares (arranca en $150): puntos a $0.01, producto a su costo, promocional a su costo o $0. Cupo por premio, general (al repartir) o por sucursal (en la sala donde se retira).
+- Desde ya: los puntos sirven hasta el día en que vencen inclusive; los de quien salió del programa no vencen; un canje de quien salió o de menos de 100 puntos queda anotado en Avisos.
+- Las reservas y las ofertas ya no cambian por nivel. Los referidos siguen en la app.
+- `/reglamento-puntos` publica la v2 con su fecha de vigencia y enlaza la v1 (`/reglamento-puntos-v1`).
+- Seis fichas de clínicas y una diócesis pasan a persona jurídica.
+
 ## v2.1351.13 — Marketing en el teléfono: el camino de la pieza se lee y Quitar se alcanza
 
 Barrido en el navegador (entorno de pruebas, iPhone 13 de pie y acostado, y escritorio) de Marketing, Pedidos, Efectivo, Bitácoras y Torogoz › Clientes. El instrumento salió en cero; abriendo la pieza a mano aparecieron tres defectos en el teléfono, los tres en la ficha de una pieza de Marketing:

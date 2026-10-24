@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1354.0 — Mayorista, datos personales y reclamos: el v2 arranca solo el 15 de noviembre
+
+- Cliente Mayorista (Condiciones v2), por `reglas_v2_desde()`: rangos 200/500/1000 sobre compras elegibles —lo que acumula puntos y no se vendió bajo el precio asignado—; requisito de §2.3 al pedirlo desde la app; la persona jurídica necesita correo; cinco días hábiles para responder, con aviso; retiro automático a los seis meses sin compras con quince días de aviso, que se cancela solo si vuelve a comprar; recordatorio de la revisión trimestral. Antes de la fecha, 300/800/2000 sobre el total, como hoy.
+- Datos personales (Ley de Protección de Datos): prórroga con su causa (Art. 20), prevención con diez días hábiles y archivo (Art. 18), negativa motivada por causal (Art. 22) y aviso a terceros en cinco días hábiles (Art. 21), con su vigilante. Registro de incidentes de seguridad con el plazo de 72 horas (Art. 25). El registro de facturas enviadas por correo se guarda un año.
+- Reclamos de clientes en sala (puntos, reservas, mayorista): se registran en la sala donde se presentan y se responden en diez días hábiles, con aviso a quien aprueba. Pantalla en el portal y en la app del personal.
+- El consentimiento de Mis puntos pasa al aviso del 2026-10-17.
+
 ## v2.1353.5 — El aviso del cierre del día lee la venta en vivo
 
 - El aviso «El viernes 23 cerró en 0%» decía $0.00 sobre $6,976.12 vendidos.

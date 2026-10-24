@@ -37,6 +37,7 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import TramiteDeLey from './TramiteDeLey';
 
 const paraInput = (iso) => {
     if (!iso) return '';
@@ -461,7 +462,17 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                         </div>
                     </Seccion>
 
+                    {!resuelta && solicitud.recibida_at && (
+                        <Seccion titulo="Trámite"
+                            nota="Prórroga, prevención, negativa y aviso a terceros: cada paso queda registrado con lo que se le comunicó.">
+                            <TramiteDeLey solicitud={solicitud} onCambio={(fila) => { clearDraft(claveBorrador); onGuardada?.(fila); onClose?.(); }} />
+                        </Seccion>
+                    )}
+
                     <Seccion titulo="Resolución">
+                        {solicitud.negada && solicitud.motivo_negativa && (
+                            <Notice variant="warning" compact>Negada — {solicitud.motivo_negativa}</Notice>
+                        )}
                         <PortalTextarea label="Qué se resolvió y con qué fundamento" name="resolucion" rows={4}
                             value={f.resolucion ?? ''} readOnly={resuelta}
                             onChange={(e) => set('resolucion', e.target.value)} />
@@ -487,7 +498,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                             <>
                                 <Button variant="secondary" disabled={guardando || faltaParaRecibir.length > 0}
                                     icon={guardando ? Loader2 : undefined}
-                                    onClick={() => guardar('RECIBIDA')}>Guardar</Button>
+                                    onClick={() => guardar(solicitud.estado === 'PREVENIDA' ? 'PREVENIDA' : 'RECIBIDA')}>Guardar</Button>
                                 <Button variant="primary" icon={ShieldCheck}
                                     disabled={guardando || faltaParaRecibir.length > 0 || !f.resolucion?.trim()}
                                     onClick={() => guardar('RESUELTA')}>Dar por resuelta</Button>

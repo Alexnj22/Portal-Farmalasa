@@ -190,6 +190,112 @@ export async function guardarSolicitud(id, campos) {
     return data;
 }
 
+// ── Los pasos del trámite que pone la ley (2026-10-24) ────────────────────
+// Prórroga (Art. 20: una sola vez, con causa), prevención (Art. 18: una sola
+// vez, diez días hábiles para completar; si no, se archiva), negativa motivada
+// (Art. 22, con su causal) y el aviso a quien había recibido los datos (cinco
+// días hábiles). Van por `solicitud_datos_accion` / `solicitud_datos_tercero`
+// y NO por un `update` de la tabla: la base valida que cada paso se dé una
+// sola vez y anota la bitácora con el texto que se comunicó.
+
+/** Las causales del Art. 22, con la letra que se cita en la resolución. */
+export const CAUSALES_DE_NEGATIVA = [
+    { value: 'a', label: 'a) Quien pide no es el titular, o el representante no está acreditado' },
+    { value: 'b', label: 'b) No hay datos de esa persona en los registros' },
+    { value: 'c', label: 'c) Se perjudicarían derechos e intereses legítimos de un tercero' },
+    { value: 'd', label: 'd) Error notorio en la identificación de los datos o falsedad en los hechos' },
+    { value: 'e', label: 'e) Impedimento legal o resolución de una autoridad competente' },
+    { value: 'f', label: 'f) La cancelación o la oposición ya se había realizado' },
+    { value: 'g', label: 'g) La Empresa no es la competente' },
+    { value: 'h', label: 'h) Otro caso que establece la ley' },
+];
+
+/** Los diez días hábiles de la prevención (Art. 18), o `null` si no está prevenida. */
+export function plazoDePrevencion(solicitud, ahora = new Date()) {
+    if (solicitud?.estado !== 'PREVENIDA' || !solicitud.prevenida_at) return null;
+    const vence = sumarDiasHabiles(solicitud.prevenida_at, 10);
+    const restan = 10 - diasHabilesEntre(solicitud.prevenida_at, ahora);
+    return { vence, restan, vencida: restan < 0 };
+}
+
+/** `accion`: 'prorrogar' | 'prevenir' | 'subsanar' | 'archivar' | 'negar'. Devuelve la fila. */
+export async function accionSolicitud(id, accion, texto = null, causal = null) {
+    const { data, error } = await supabase.rpc('solicitud_datos_accion', {
+        p_id: id, p_accion: accion, p_texto: texto, p_causal: causal,
+    });
+    if (error) throw error;
+    return data;
+}
+
+/** A quién hay que avisarle una corrección o una eliminación, y si ya se hizo. */
+export async function fetchTercerosDeSolicitud(solicitudId) {
+    const { data, error } = await supabase.from('solicitudes_datos_terceros')
+        .select('id, tercero, que, vence, avisado_at, medio, created_at')
+        .eq('solicitud_id', solicitudId).order('created_at');
+    if (error) throw error;
+    return data ?? [];
+}
+
+export async function agregarTercero(solicitudId, tercero, que) {
+    const { data, error } = await supabase.rpc('solicitud_datos_tercero', {
+        p_accion: 'agregar', p_solicitud: solicitudId, p_tercero: tercero, p_que: que,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function anotarTerceroAvisado(id, medio) {
+    const { data, error } = await supabase.rpc('solicitud_datos_tercero', { p_accion: 'avisado', p_id: id, p_medio: medio });
+    if (error) throw error;
+    return data;
+}
+
+// ── Incidentes de seguridad (Art. 25) ──────────────────────────────────────
+// Setenta y dos horas desde que se DETECTA para notificar a la Agencia de
+// Ciberseguridad del Estado, a la Fiscalía y a las personas afectadas. Las
+// avisa también `avisar_incidentes_datos` (cron cada hora); esto es la lista.
+
+export const NOTIFICACIONES_DE_INCIDENTE = [
+    { campo: 'notificado_agencia_at', rotulo: 'Agencia de Ciberseguridad del Estado' },
+    { campo: 'notificado_fiscalia_at', rotulo: 'Fiscalía General de la República' },
+    { campo: 'notificado_titulares_at', rotulo: 'Personas afectadas' },
+];
+
+/** En qué anda el plazo de 72 horas de un incidente. */
+export function plazoDeIncidente(inc, ahora = new Date()) {
+    if (!inc?.detectado_at) return null;
+    const faltan = NOTIFICACIONES_DE_INCIDENTE.filter((n) => !inc[n.campo]);
+    const vence = new Date(new Date(inc.detectado_at).getTime() + 72 * 3600000);
+    const horas = Math.floor((vence.getTime() - ahora.getTime()) / 3600000);
+    return { vence, horas, faltan, completo: faltan.length === 0, vencido: faltan.length > 0 && horas < 0 };
+}
+
+export async function fetchIncidentes() {
+    const { data, error } = await supabase.from('incidentes_datos')
+        .select('*, registrado:employees!incidentes_datos_registrado_por_fkey(id, name)')
+        .order('detectado_at', { ascending: false }).range(0, 499);
+    if (error) throw error;
+    return data ?? [];
+}
+
+const CAMPOS_DE_INCIDENTE = ['detectado_at', 'ocurrido_at', 'naturaleza', 'datos_comprometidos', 'afectados',
+    'medidas_inmediatas', 'recomendaciones', 'notificado_agencia_at', 'notificado_fiscalia_at',
+    'notificado_titulares_at', 'medidas_definitivas', 'cerrado_at', 'notas'];
+
+/** Crea (sin `id`) o actualiza. Quién lo registró lo pone la base. */
+export async function guardarIncidente(id, campos) {
+    const fila = Object.fromEntries(CAMPOS_DE_INCIDENTE.filter((k) => k in campos)
+        .map((k) => [k, typeof campos[k] === 'string' ? (campos[k].trim() || null) : campos[k] ?? null]));
+    const q = id
+        ? supabase.from('incidentes_datos').update(fila).eq('id', id)
+        : supabase.from('incidentes_datos').insert(fila);
+    const { data, error } = await q.select('*, registrado:employees!incidentes_datos_registrado_por_fkey(id, name)').single();
+    if (error) throw error;
+    anotar(id ? 'ACTUALIZAR_INCIDENTE_DATOS' : 'REGISTRAR_INCIDENTE_DATOS', String(data.id),
+        { detectado_at: data.detectado_at, cerrado: !!data.cerrado_at });
+    return data;
+}
+
 // ── Encontrar a la persona que pide ────────────────────────────────────────
 // Sin esto, resolver un acceso significa que alguien busque a mano en Clientes,
 // en Personal y en Puntos, y arme la respuesta copiando. Tres pantallas y una

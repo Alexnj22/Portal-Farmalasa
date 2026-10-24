@@ -98,6 +98,11 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // para el incumplimiento; ganaba ésta, que es la que se ve desde entonces.
     CHAT_INCUMPLIMIENTO: 'MessageCircle',
     MAYORISTA_SOLICITUD: 'Contact',
+    // 2026-10-24: la revisión trimestral de mayoristas, los reclamos de
+    // clientes (diez días hábiles) y los incidentes de datos (72 horas).
+    MAYORISTA_REVISION: 'Contact',
+    RECLAMO_CLIENTE:    'MessageCircle',
+    DATOS_INCIDENTE:    'ShieldAlert',
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.

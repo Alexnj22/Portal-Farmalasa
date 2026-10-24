@@ -104,6 +104,7 @@ export const IMPORTADORES = {
     NotFoundView: () => import("./views/NotFoundView"),
     BitacorasView: () => import("./views/BitacorasView"),
     SolicitudesDatosView: () => import("./views/SolicitudesDatosView"),
+    ReclamosClientesView: () => import("./views/ReclamosClientesView"),
     PuntosView: () => import("./views/PuntosView"),
     InyeccionesView: () => import("./views/InyeccionesView"),
 };
@@ -129,6 +130,7 @@ export const IMPORTADOR_POR_RUTA = {
     'solicitudes-datos': IMPORTADORES.SolicitudesDatosView,
     'clientes': IMPORTADORES.ClientesView,
     'mayoristas': IMPORTADORES.MayoristasView,
+    'reclamos-clientes': IMPORTADORES.ReclamosClientesView,
     'mis-puntos': IMPORTADORES.MisPuntosView,
     'puntos': IMPORTADORES.PuntosView,
     'inyecciones': IMPORTADORES.InyeccionesView,

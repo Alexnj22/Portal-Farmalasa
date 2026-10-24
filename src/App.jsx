@@ -106,6 +106,7 @@ const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
 const BitacorasView = lazy(IMPORTADORES.BitacorasView);
 const SolicitudesDatosView = lazy(IMPORTADORES.SolicitudesDatosView);
+const ReclamosClientesView = lazy(IMPORTADORES.ReclamosClientesView);
 const PuntosView = lazy(IMPORTADORES.PuntosView);
 const InyeccionesView = lazy(IMPORTADORES.InyeccionesView);
 const ConteoDetailView = lazy(IMPORTADORES.ConteoDetailView);
@@ -951,6 +952,7 @@ function MainApp() {
                                     <Route path="distribucion/venta/:pedidoId" element={<IrATorogoz />} />
                                     <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="mayoristas" element={<PermissionGuard moduleKey="mayoristas"><MayoristasView /></PermissionGuard>} />
+                                    <Route path="reclamos-clientes" element={<PermissionGuard moduleKey="reclamos_clientes"><ReclamosClientesView /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
                                     <Route path="pedidos" element={<PermissionGuard moduleKey="pedidos"><PedidosView /></PermissionGuard>} />
@@ -1178,6 +1180,7 @@ const ROUTE_TITLES = {
     '/torogoz/emisor':    'Empresa',
     '/clientes':          'Clientes',
     '/mayoristas':        'Clientes Mayoristas',
+    '/reclamos-clientes': 'Reclamos de clientes',
     '/chat-clientes':     'Chat con clientes',
     '/reservas':          'Reservas',
     '/metas':             'Metas',

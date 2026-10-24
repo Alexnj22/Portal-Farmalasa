@@ -73,6 +73,8 @@ export const ACTION_LABEL = {
     RECETA_APP:      'Revisar receta',
     RECETA_SIN_REVISAR: 'Revisar receta',
     MAYORISTA_SOLICITUD: 'Revisar solicitud',
+    RECLAMO_CLIENTE: 'Responder el reclamo',
+    DATOS_INCIDENTE: 'Ver el incidente',
     CHAT_INCUMPLIMIENTO: 'Ver el chat',
 };
 

@@ -5511,6 +5511,7 @@ export type Database = {
           precio_programado_el: string | null
           resuelto_at: string | null
           resuelto_por: string | null
+          retiro_por_inactividad: boolean
           retiro_programado: string | null
           solicitado_at: string
           solicitado_por: string | null
@@ -5529,6 +5530,7 @@ export type Database = {
           precio_programado_el?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
+          retiro_por_inactividad?: boolean
           retiro_programado?: string | null
           solicitado_at?: string
           solicitado_por?: string | null
@@ -5547,6 +5549,7 @@ export type Database = {
           precio_programado_el?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
+          retiro_por_inactividad?: boolean
           retiro_programado?: string | null
           solicitado_at?: string
           solicitado_por?: string | null
@@ -14541,6 +14544,81 @@ export type Database = {
           },
         ]
       }
+      incidentes_datos: {
+        Row: {
+          afectados: string | null
+          cerrado_at: string | null
+          created_at: string
+          datos_comprometidos: string
+          detectado_at: string
+          id: string
+          medidas_definitivas: string | null
+          medidas_inmediatas: string | null
+          naturaleza: string
+          notas: string | null
+          notificado_agencia_at: string | null
+          notificado_fiscalia_at: string | null
+          notificado_titulares_at: string | null
+          ocurrido_at: string | null
+          recomendaciones: string | null
+          registrado_por: string
+          updated_at: string
+        }
+        Insert: {
+          afectados?: string | null
+          cerrado_at?: string | null
+          created_at?: string
+          datos_comprometidos: string
+          detectado_at: string
+          id?: string
+          medidas_definitivas?: string | null
+          medidas_inmediatas?: string | null
+          naturaleza: string
+          notas?: string | null
+          notificado_agencia_at?: string | null
+          notificado_fiscalia_at?: string | null
+          notificado_titulares_at?: string | null
+          ocurrido_at?: string | null
+          recomendaciones?: string | null
+          registrado_por?: string
+          updated_at?: string
+        }
+        Update: {
+          afectados?: string | null
+          cerrado_at?: string | null
+          created_at?: string
+          datos_comprometidos?: string
+          detectado_at?: string
+          id?: string
+          medidas_definitivas?: string | null
+          medidas_inmediatas?: string | null
+          naturaleza?: string
+          notas?: string | null
+          notificado_agencia_at?: string | null
+          notificado_fiscalia_at?: string | null
+          notificado_titulares_at?: string | null
+          ocurrido_at?: string | null
+          recomendaciones?: string | null
+          registrado_por?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidentes_datos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidentes_datos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intentos_identidad: {
         Row: {
           branch_id: number | null
@@ -16723,6 +16801,7 @@ export type Database = {
           costo: number
           created_at: string
           customer_id: number
+          elegible: number
           facturas: number
           facturas_mayoreo: number
           mayor_factura: number
@@ -16736,6 +16815,7 @@ export type Database = {
           costo?: number
           created_at?: string
           customer_id: number
+          elegible?: number
           facturas?: number
           facturas_mayoreo?: number
           mayor_factura?: number
@@ -16749,6 +16829,7 @@ export type Database = {
           costo?: number
           created_at?: string
           customer_id?: number
+          elegible?: number
           facturas?: number
           facturas_mayoreo?: number
           mayor_factura?: number
@@ -22159,6 +22240,8 @@ export type Database = {
           niveles_activos: boolean
           nota: string | null
           puntos_cumpleanos: number
+          raspable_presupuesto_usd: number | null
+          reglas_v2_desde: string
           solo_personas_naturales_desde: string | null
           updated_at: string
           updated_by: string | null
@@ -22177,6 +22260,8 @@ export type Database = {
           niveles_activos?: boolean
           nota?: string | null
           puntos_cumpleanos?: number
+          raspable_presupuesto_usd?: number | null
+          reglas_v2_desde?: string
           solo_personas_naturales_desde?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -22195,6 +22280,8 @@ export type Database = {
           niveles_activos?: boolean
           nota?: string | null
           puntos_cumpleanos?: number
+          raspable_presupuesto_usd?: number | null
+          reglas_v2_desde?: string
           solo_personas_naturales_desde?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -22912,7 +22999,9 @@ export type Database = {
           branch_id: number | null
           cantidad: number
           codigo: string | null
+          costo: number | null
           created_at: string
+          cupo_sala: number | null
           customer_id: number
           entregado_at: string | null
           entregado_branch: number | null
@@ -22939,7 +23028,9 @@ export type Database = {
           branch_id?: number | null
           cantidad?: number
           codigo?: string | null
+          costo?: number | null
           created_at?: string
+          cupo_sala?: number | null
           customer_id: number
           entregado_at?: string | null
           entregado_branch?: number | null
@@ -22966,7 +23057,9 @@ export type Database = {
           branch_id?: number | null
           cantidad?: number
           codigo?: string | null
+          costo?: number | null
           created_at?: string
+          cupo_sala?: number | null
           customer_id?: number
           entregado_at?: string | null
           entregado_branch?: number | null
@@ -24157,6 +24250,116 @@ export type Database = {
           },
         ]
       }
+      reclamos_clientes: {
+        Row: {
+          branch_id: number
+          cliente_nombre: string
+          cliente_telefono: string | null
+          created_at: string
+          customer_id: number | null
+          folio: number
+          id: string
+          programa: string
+          recibido_at: string
+          recibido_por: string
+          respondido_at: string | null
+          respondido_por: string | null
+          respuesta: string | null
+          respuesta_via: string | null
+          tema: string
+          updated_at: string
+          vence: string
+        }
+        Insert: {
+          branch_id: number
+          cliente_nombre: string
+          cliente_telefono?: string | null
+          created_at?: string
+          customer_id?: number | null
+          folio?: never
+          id?: string
+          programa: string
+          recibido_at?: string
+          recibido_por: string
+          respondido_at?: string | null
+          respondido_por?: string | null
+          respuesta?: string | null
+          respuesta_via?: string | null
+          tema: string
+          updated_at?: string
+          vence: string
+        }
+        Update: {
+          branch_id?: number
+          cliente_nombre?: string
+          cliente_telefono?: string | null
+          created_at?: string
+          customer_id?: number | null
+          folio?: never
+          id?: string
+          programa?: string
+          recibido_at?: string
+          recibido_por?: string
+          respondido_at?: string | null
+          respondido_por?: string | null
+          respuesta?: string | null
+          respuesta_via?: string | null
+          tema?: string
+          updated_at?: string
+          vence?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reclamos_clientes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reclamos_clientes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reclamos_clientes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "reclamos_clientes_recibido_por_fkey"
+            columns: ["recibido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reclamos_clientes_recibido_por_fkey"
+            columns: ["recibido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reclamos_clientes_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reclamos_clientes_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reinicios_de_la_base: {
         Row: {
           arranco_at: string
@@ -24177,6 +24380,78 @@ export type Database = {
           detectado_at?: string
         }
         Relationships: []
+      }
+      reserva_avisos_log: {
+        Row: {
+          branch_id: number
+          canal: string
+          contesto: boolean | null
+          created_at: string
+          employee_id: string | null
+          encargo_id: number | null
+          id: number
+          reserva_id: number | null
+          respuesta: string | null
+        }
+        Insert: {
+          branch_id: number
+          canal: string
+          contesto?: boolean | null
+          created_at?: string
+          employee_id?: string | null
+          encargo_id?: number | null
+          id?: never
+          reserva_id?: number | null
+          respuesta?: string | null
+        }
+        Update: {
+          branch_id?: number
+          canal?: string
+          contesto?: boolean | null
+          created_at?: string
+          employee_id?: string | null
+          encargo_id?: number | null
+          id?: never
+          reserva_id?: number | null
+          respuesta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reserva_avisos_log_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reserva_avisos_log_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reserva_avisos_log_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reserva_avisos_log_encargo_id_fkey"
+            columns: ["encargo_id"]
+            isOneToOne: false
+            referencedRelation: "app_encargos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reserva_avisos_log_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       retiro_bultos: {
         Row: {
@@ -25671,6 +25946,7 @@ export type Database = {
           impresa_at: string
           impresa_por: string | null
           motivo_negativa: string | null
+          motivo_prorroga: string | null
           negada: boolean
           notas: string | null
           por_representacion: boolean
@@ -25708,6 +25984,7 @@ export type Database = {
           impresa_at?: string
           impresa_por?: string | null
           motivo_negativa?: string | null
+          motivo_prorroga?: string | null
           negada?: boolean
           notas?: string | null
           por_representacion?: boolean
@@ -25745,6 +26022,7 @@ export type Database = {
           impresa_at?: string
           impresa_por?: string | null
           motivo_negativa?: string | null
+          motivo_prorroga?: string | null
           negada?: boolean
           notas?: string | null
           por_representacion?: boolean
@@ -25878,6 +26156,81 @@ export type Database = {
           ultimo?: number
         }
         Relationships: []
+      }
+      solicitudes_datos_terceros: {
+        Row: {
+          avisado_at: string | null
+          avisado_por: string | null
+          creado_por: string | null
+          created_at: string
+          id: string
+          medio: string | null
+          que: string
+          solicitud_id: string
+          tercero: string
+          vence: string
+        }
+        Insert: {
+          avisado_at?: string | null
+          avisado_por?: string | null
+          creado_por?: string | null
+          created_at?: string
+          id?: string
+          medio?: string | null
+          que: string
+          solicitud_id: string
+          tercero: string
+          vence: string
+        }
+        Update: {
+          avisado_at?: string | null
+          avisado_por?: string | null
+          creado_por?: string | null
+          created_at?: string
+          id?: string
+          medio?: string | null
+          que?: string
+          solicitud_id?: string
+          tercero?: string
+          vence?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_datos_terceros_avisado_por_fkey"
+            columns: ["avisado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_datos_terceros_avisado_por_fkey"
+            columns: ["avisado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_datos_terceros_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_datos_terceros_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_datos_terceros_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_datos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_config: {
         Row: {
@@ -28398,6 +28751,7 @@ export type Database = {
       }
       app_cliente_buscar_productos: { Args: { p_q: string }; Returns: Json }
       app_cliente_compras: { Args: { p_customer_id: number }; Returns: Json }
+      app_cliente_correo_envios_purgar: { Args: never; Returns: number }
       app_cliente_existencias: {
         Args: { p_producto_id: number }
         Returns: Json
@@ -28640,6 +28994,7 @@ export type Database = {
         Args: { p_dias?: number }
         Returns: number
       }
+      avisar_incidentes_datos: { Args: never; Returns: number }
       avisar_pago_seguro_vida: { Args: never; Returns: Json }
       avisar_pedidos_sin_recibir: { Args: never; Returns: number }
       avisar_productos_sin_venta: {
@@ -28647,6 +29002,7 @@ export type Database = {
         Returns: number
       }
       avisar_rechazos_sin_arreglo: { Args: never; Returns: number }
+      avisar_reclamos_por_vencer: { Args: never; Returns: number }
       avisar_solicitudes_datos_por_vencer: { Args: never; Returns: number }
       avisar_traslados_por_respaldo: { Args: never; Returns: number }
       aviso_de_pedido_fallo: {
@@ -29528,6 +29884,7 @@ export type Database = {
           impresa_at: string
           impresa_por: string | null
           motivo_negativa: string | null
+          motivo_prorroga: string | null
           negada: boolean
           notas: string | null
           por_representacion: boolean
@@ -30273,6 +30630,10 @@ export type Database = {
         Returns: string[]
       }
       employee_esta_bloqueado: { Args: { p_user_id: string }; Returns: boolean }
+      encargo_cambiar_fecha: {
+        Args: { p_fecha: string; p_id: number; p_motivo?: string }
+        Returns: Json
+      }
       encargo_en_sucursal_crear: {
         Args: {
           p_branch_id: number
@@ -30301,9 +30662,17 @@ export type Database = {
         Args: { p_id: number; p_motivo: string }
         Returns: Json
       }
+      encargo_prorrogable: {
+        Args: { e: Database["public"]["Tables"]["app_encargos"]["Row"] }
+        Returns: boolean
+      }
       encargo_prorrogar: { Args: { p_id: number }; Returns: Json }
       encargo_prorrogar_por_cliente: {
         Args: { p_customer: number; p_id: number }
+        Returns: Json
+      }
+      encargo_proveedor_no_entrego: {
+        Args: { p_eleccion: string; p_id: number; p_motivo?: string }
         Returns: Json
       }
       encargo_puede_manejar: { Args: { p_branch_id: number }; Returns: boolean }
@@ -32457,6 +32826,7 @@ export type Database = {
         Args: { p_deshacer?: boolean; p_id: number; p_motivo: string }
         Returns: undefined
       }
+      incidentes_datos_destinatarios: { Args: never; Returns: string[] }
       incrementar_reanudacion_traslado: {
         Args: { p_run_id: string }
         Returns: undefined
@@ -32991,6 +33361,10 @@ export type Database = {
         Returns: Json
       }
       mayorista_rango: { Args: { p_customer: number }; Returns: string }
+      mayorista_rango_de: {
+        Args: { p_dia?: string; p_prom: number }
+        Returns: string
+      }
       mayorista_resolver: {
         Args: {
           p_accion: string
@@ -33004,8 +33378,11 @@ export type Database = {
         Args: { p_customer: number; p_nota: string }
         Returns: Json
       }
+      mayorista_umbrales: { Args: { p_dia?: string }; Returns: Json }
+      mayorista_v2: { Args: { p_dia?: string }; Returns: boolean }
       mayoristas_listado: { Args: never; Returns: Json }
       mayoristas_rehacer_resumen: { Args: never; Returns: number }
+      mayoristas_vigilar_plazos: { Args: never; Returns: number }
       merge_purchase_dte_documents: {
         Args: { p_source_id: number; p_target_id: number }
         Returns: undefined
@@ -33676,29 +34053,53 @@ export type Database = {
         }
         Returns: Json
       }
-      puntos_nivel_de: {
-        Args: { p_compra: number }
-        Returns: {
-          clave: string
-          created_at: string
-          cupon_mensual: number
-          cupon_premios: Json | null
-          desde: number
-          dias_anticipo_ofertas: number
-          factor: number
-          horas_reserva: number
-          nombre: string
-          orden: number
-          puntos_cumpleanos: number
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "puntos_niveles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      puntos_nivel_de:
+        | {
+            Args: { p_compra: number }
+            Returns: {
+              clave: string
+              created_at: string
+              cupon_mensual: number
+              cupon_premios: Json | null
+              desde: number
+              dias_anticipo_ofertas: number
+              factor: number
+              horas_reserva: number
+              nombre: string
+              orden: number
+              puntos_cumpleanos: number
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "puntos_niveles"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { p_compra: number; p_fecha: string }
+            Returns: {
+              clave: string
+              created_at: string
+              cupon_mensual: number
+              cupon_premios: Json | null
+              desde: number
+              dias_anticipo_ofertas: number
+              factor: number
+              horas_reserva: number
+              nombre: string
+              orden: number
+              puntos_cumpleanos: number
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "puntos_niveles"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       puntos_nivel_guardar: {
         Args: { p_cambios: Json; p_clave: string; p_nota?: string }
         Returns: Json
@@ -33750,6 +34151,19 @@ export type Database = {
         Args: { p_employee: string; p_erp: Json; p_id: number }
         Returns: undefined
       }
+      puntos_premio_costo: { Args: { p_premio: Json }; Returns: number }
+      puntos_premio_cupo_sala_libre: {
+        Args: { p_branch: number; p_id: number }
+        Returns: number
+      }
+      puntos_premio_exigir_cupo_sala: {
+        Args: { p_branch: number; p_id: number }
+        Returns: undefined
+      }
+      puntos_premio_existencia: {
+        Args: { p_dia: string; p_premio: Json }
+        Returns: number
+      }
       puntos_premio_pedir: {
         Args: { p_branch: number; p_id: number }
         Returns: Json
@@ -33763,6 +34177,10 @@ export type Database = {
         Args: { p_branch: number; p_id: number }
         Returns: Json
       }
+      puntos_premio_usos: {
+        Args: { p_mes: string; p_premio: Json }
+        Returns: number
+      }
       puntos_premios_lista: {
         Args: {
           p_branch: number
@@ -33772,6 +34190,7 @@ export type Database = {
         Returns: Json
       }
       puntos_premios_validos: { Args: { p_premios: Json }; Returns: string }
+      puntos_raspable_usado: { Args: { p_mes: string }; Returns: number }
       puntos_registrar_canje: {
         Args: { p_invoice_id: number; p_simular?: boolean }
         Returns: Json
@@ -33994,6 +34413,70 @@ export type Database = {
         Args: { p_lease_seconds?: number; p_request_id: string }
         Returns: boolean
       }
+      reclamo_registrar: {
+        Args: {
+          p_branch_id: number
+          p_customer_id?: number
+          p_nombre?: string
+          p_programa: string
+          p_telefono?: string
+          p_tema: string
+        }
+        Returns: {
+          branch_id: number
+          cliente_nombre: string
+          cliente_telefono: string | null
+          created_at: string
+          customer_id: number | null
+          folio: number
+          id: string
+          programa: string
+          recibido_at: string
+          recibido_por: string
+          respondido_at: string | null
+          respondido_por: string | null
+          respuesta: string | null
+          respuesta_via: string | null
+          tema: string
+          updated_at: string
+          vence: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reclamos_clientes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reclamo_responder: {
+        Args: { p_id: string; p_respuesta: string; p_via: string }
+        Returns: {
+          branch_id: number
+          cliente_nombre: string
+          cliente_telefono: string | null
+          created_at: string
+          customer_id: number | null
+          folio: number
+          id: string
+          programa: string
+          recibido_at: string
+          recibido_por: string
+          respondido_at: string | null
+          respondido_por: string | null
+          respuesta: string | null
+          respuesta_via: string | null
+          tema: string
+          updated_at: string
+          vence: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reclamos_clientes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reclamos_destinatarios: { Args: never; Returns: string[] }
       reconstruir_costo_de_venta: {
         Args: { p_desde: string; p_hasta: string; p_limite?: number }
         Returns: number
@@ -34222,6 +34705,7 @@ export type Database = {
         Returns: string
       }
       registrar_traslados_erp: { Args: { p_lineas: Json }; Returns: number }
+      reglas_v2_desde: { Args: never; Returns: string }
       regrant_employees_columns: { Args: never; Returns: string }
       reject_minmax_request: {
         Args: { p_decided_by?: string; p_note?: string; p_request_id: number }
@@ -34278,6 +34762,10 @@ export type Database = {
         Args: { p_id: number; p_movimiento: number }
         Returns: Json
       }
+      reserva_dias_retiro: {
+        Args: { p_anticipo: number; p_pago_estado: string }
+        Returns: number
+      }
       reserva_encargar_a_bodega: {
         Args: { p_id: number; p_nota?: string }
         Returns: Json
@@ -34296,6 +34784,11 @@ export type Database = {
         Args: { p_acepta: boolean; p_id: number }
         Returns: Json
       }
+      reserva_prioridad: { Args: { p_customer: number }; Returns: Json }
+      reserva_prorrogable: {
+        Args: { r: Database["public"]["Tables"]["app_reservas"]["Row"] }
+        Returns: boolean
+      }
       reserva_prorrogar: { Args: { p_id: number }; Returns: Json }
       reserva_prorrogar_por_cliente: {
         Args: { p_customer: number; p_id: number }
@@ -34310,6 +34803,17 @@ export type Database = {
         Args: { p_decision: string; p_id: number; p_motivo?: string }
         Returns: Json
       }
+      reserva_registrar_aviso: {
+        Args: {
+          p_canal: string
+          p_contesto?: boolean
+          p_encargo: number
+          p_reserva: number
+          p_respuesta?: string
+        }
+        Returns: Json
+      }
+      reserva_reglas: { Args: never; Returns: Json }
       reserva_saldo_devolver: {
         Args: { p_id: number; p_motivo: string }
         Returns: Json
@@ -34335,6 +34839,7 @@ export type Database = {
         Args: { p_abiertas?: boolean; p_branch_id: number }
         Returns: Json
       }
+      reservas_v2_rige: { Args: { p_en?: string }; Returns: boolean }
       reservas_vencer: { Args: never; Returns: number }
       reservas_vigilar: { Args: never; Returns: Json }
       resolve_pedido_item: {
@@ -34757,6 +35262,86 @@ export type Database = {
         }
         Returns: Json
       }
+      solicitud_datos_accion: {
+        Args: {
+          p_accion: string
+          p_causal?: string
+          p_id: string
+          p_texto?: string
+        }
+        Returns: {
+          anio: number
+          branch_id: number | null
+          created_at: string
+          derechos: string[]
+          descripcion: string | null
+          estado: string
+          folio: number
+          folio_txt: string | null
+          id: string
+          identidad_cotejada_por: string | null
+          identidad_documento: string | null
+          identidad_numero: string | null
+          impresa_at: string
+          impresa_por: string | null
+          motivo_negativa: string | null
+          motivo_prorroga: string | null
+          negada: boolean
+          notas: string | null
+          por_representacion: boolean
+          prevencion: string | null
+          prevenida_at: string | null
+          prorrogada_at: string | null
+          recibida_at: string | null
+          recibida_por: string | null
+          representacion_doc: string | null
+          resolucion: string | null
+          resuelta_at: string | null
+          resuelta_por: string | null
+          solicitante_correo: string | null
+          solicitante_direccion: string | null
+          solicitante_documento: string | null
+          solicitante_nombre: string | null
+          solicitante_numero: string | null
+          solicitante_telefono: string | null
+          updated_at: string
+          via_respuesta: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "solicitudes_datos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      solicitud_datos_tercero: {
+        Args: {
+          p_accion: string
+          p_id?: string
+          p_medio?: string
+          p_que?: string
+          p_solicitud?: string
+          p_tercero?: string
+        }
+        Returns: {
+          avisado_at: string | null
+          avisado_por: string | null
+          creado_por: string | null
+          created_at: string
+          id: string
+          medio: string | null
+          que: string
+          solicitud_id: string
+          tercero: string
+          vence: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "solicitudes_datos_terceros"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       solicitud_datos_tomar_folio: { Args: { p_anio: number }; Returns: number }
       soltar_dispositivo_push: { Args: { p_token: string }; Returns: undefined }
       soltar_factura_compra: {
@@ -34779,6 +35364,10 @@ export type Database = {
       suggest_proveedor_categoria_id: {
         Args: { p_desc_actividad: string }
         Returns: number
+      }
+      sumar_dias_habiles: {
+        Args: { p_desde: string; p_n: number }
+        Returns: string
       }
       suspendidos_en: { Args: { p_fecha?: string }; Returns: Json }
       sync_creditos_batch: {

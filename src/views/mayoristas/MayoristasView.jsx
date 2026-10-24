@@ -302,7 +302,11 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
             <LiquidModal.Body>
                 <div className="space-y-4">
                     {!cliente.ficha_completa && cliente.ficha_completa !== undefined && (
-                        <Notice variant="warning">La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar.</Notice>
+                        <Notice variant="warning">
+                            {cliente.falta_correo
+                                ? 'A una empresa o institución le falta el correo electrónico en su ficha (Condiciones §2.4). Hay que completarlo antes de aprobar.'
+                                : 'La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar.'}
+                        </Notice>
                     )}
                     {cliente.resuelto_por && est && est !== 'solicitado' && (
                         <div className="flex flex-wrap items-center gap-2 text-body-sm text-content-2">
@@ -317,20 +321,29 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                             {cliente.retiro_programado
                                 ? `Retiro avisado: deja de ser Cliente Mayorista el ${fechaTexto(cliente.retiro_programado, { day: 'numeric', month: 'long' })}.`
                                 : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`}
-                            {' '}Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.
+                            {' '}{cliente.retiro_por_inactividad
+                                ? 'Es por seis meses sin compras (Condiciones §2.5): si vuelve a comprar antes, se cancela solo.'
+                                : 'Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.'}
                         </Notice>
                     )}
                     {est === 'solicitado' && (
                         <Notice variant="info">
                             {ORIGENES[cliente.origen]} el {fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}
-                            {cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}. {esSolicitante ? 'Tú la hiciste: la tiene que resolver otra persona.' : ''}
+                            {cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}.
+                            {cliente.vence_respuesta ? ` Hay que responderle a más tardar el ${fechaTexto(cliente.vence_respuesta, { day: 'numeric', month: 'long' })} (cinco días hábiles, Condiciones §2.4).` : ''}
+                            {' '}{esSolicitante ? 'Tú la hiciste: la tiene que resolver otra persona.' : ''}
                             {cliente.solicitado_por ? (
                                 <span className="mt-1.5 flex"><PersonaConFoto id={cliente.solicitado_por_id} nombre={cliente.solicitado_por} px={20} detalle="Lo propuso" /></span>
                             ) : null}
                         </Notice>
                     )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <Dato titulo="Promedio 3 meses" valor={formatMoney(cliente.prom_3m ?? 0)} nota={cliente.cumple ? 'Cumple $100/mes o $500' : 'Aún no cumple'} />
+                        <Dato titulo="Promedio 3 meses" valor={formatMoney(cliente.prom_3m ?? 0)}
+                            nota={cliente.cumple ? 'Cumple el requisito: $100/mes o una factura de $500' : 'No cumple: $100/mes o una factura de $500'} />
+                        {d?.umbrales?.elegibles && (
+                            <Dato titulo="Elegible para el rango" valor={formatMoney(cliente.prom_3m_elegible ?? 0)}
+                                nota={`Sin telefonía, bebidas ni lo vendido bajo su precio · ${RANGOS[cliente.rango_sugerido]?.nombre ?? 'Jade'}`} />
+                        )}
                         <Dato titulo="A mayoreo (6 meses)" valor={formatMoney(cliente.a_mayoreo ?? 0)} nota={`${cliente.facturas_mayoreo ?? 0} facturas`} />
                         <Dato titulo="Mayor factura" valor={formatMoney(cliente.mayor_factura ?? 0)} />
                         <Dato titulo="Margen (interno)" valor={cliente.margen != null ? `${cliente.margen} %` : '—'} nota="No se le menciona al cliente" />
@@ -346,7 +359,9 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                                     <div key={m.mes} className="flex items-center justify-between gap-3 px-3 py-2 text-body-sm">
                                         <span className="text-content-2 w-24">{fechaTexto(m.mes, { month: 'long', year: 'numeric' })}</span>
                                         <span className="text-content flex-1 text-right">{formatMoney(m.total)}</span>
-                                        <span className="text-content-3 flex-1 text-right">a mayoreo {formatMoney(m.a_mayoreo)}</span>
+                                        <span className="text-content-3 flex-1 text-right">
+                                            {d?.umbrales?.elegibles ? `elegible ${formatMoney(m.elegible ?? 0)}` : `a mayoreo ${formatMoney(m.a_mayoreo)}`}
+                                        </span>
                                         <span className="text-content-3 w-24 text-right">{m.facturas} fact.</span>
                                     </div>
                                 ))}

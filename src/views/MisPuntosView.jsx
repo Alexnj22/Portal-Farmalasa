@@ -95,6 +95,10 @@ const MINIMO_DE_CANJE = 100;
  */
 function faltaResponder(c) {
     if (!c) return false;          // una respuesta vieja del servidor: no se bloquea
+    // Aceptó con un aviso de privacidad anterior al vigente (v2, 17-oct-2026):
+    // el consentimiento informado se da sobre el texto que tenía delante, así
+    // que se le vuelve a preguntar con el aviso nuevo.
+    if (c.aviso_nuevo === true) return true;
     return c.programa !== true || c.promociones === null || c.promociones === undefined;
 }
 
@@ -615,6 +619,13 @@ function Permisos({ datos, onResponder, guardando, error, onCancelar }) {
                         ? 'Cambia lo que quieras y guarda. Lo que decidas aquí manda sobre lo que hayas dicho antes.'
                         : 'Antes de mostrarte tus puntos necesitamos tu permiso para dos cosas. Puedes cambiarlo cuando quieras.'}
                 </p>
+                {!onCancelar && c.aviso_nuevo && (
+                    <Notice variant="info" bloque>
+                        Actualizamos el{' '}
+                        <a href="/privacidad" className="underline">aviso de privacidad</a>{' '}
+                        (versión 2, vigente desde el 17 de octubre de 2026). Léelo y confirma tus respuestas.
+                    </Notice>
+                )}
             </div>
 
             <Pregunta texto={c.textos?.programa} valor={programa} onElegir={setPrograma} />

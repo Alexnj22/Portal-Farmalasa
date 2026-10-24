@@ -134,7 +134,9 @@ export default function Mayorista() {
                 <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{nombre}</Text>
                 {sub ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{sub}</Text> : null}
               </View>
-              {cliente.ficha_completa === false ? <Aviso tono="freno" texto="La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar." /> : null}
+              {cliente.ficha_completa === false ? <Aviso tono="freno" texto={cliente.falta_correo
+                ? 'A una empresa o institución le falta el correo electrónico en su ficha (Condiciones §2.4). Hay que completarlo antes de aprobar.'
+                : 'La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar.'} /> : null}
               {cliente.resuelto_por && est && est !== 'solicitado' ? (
                 <View style={{ gap: 4 }}>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${est === 'aprobado' ? 'Última decisión' : ESTADOS[est]?.label}:${cliente.motivo && est !== 'aprobado' ? ` «${cliente.motivo}»` : ''}`}</Text>
@@ -145,17 +147,17 @@ export default function Mayorista() {
               {est === 'aprobado' && (cliente.retiro_programado || cliente.precio_programado_el) ? (
                 <Aviso tono="cuidado" texto={`${cliente.retiro_programado
                   ? `Retiro avisado: deja de ser Cliente Mayorista el ${fechaTexto(cliente.retiro_programado, { day: 'numeric', month: 'long' })}.`
-                  : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`} Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.`} />
+                  : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`} ${cliente.retiro_por_inactividad ? 'Es por seis meses sin compras (Condiciones §2.5): si vuelve a comprar antes, se cancela solo.' : 'Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.'}`} />
               ) : null}
               {est === 'solicitado' ? (
                 <View style={{ gap: 4 }}>
-                  <Aviso texto={`${ORIGENES[cliente.origen] ?? 'Solicitado'}${cliente.solicitado_at ? ` el ${fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}` : ''}${cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}.${acciones.esSolicitante ? ' Tú la hiciste: la tiene que resolver otra persona.' : ''}`} />
+                  <Aviso texto={`${ORIGENES[cliente.origen] ?? 'Solicitado'}${cliente.solicitado_at ? ` el ${fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}` : ''}${cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}.${cliente.vence_respuesta ? ` Hay que responderle a más tardar el ${fechaTexto(cliente.vence_respuesta, { day: 'numeric', month: 'long' })} (cinco días hábiles).` : ''}${acciones.esSolicitante ? ' Tú la hiciste: la tiene que resolver otra persona.' : ''}`} />
                   <Persona id={cliente.solicitado_por_id} nombre={cliente.solicitado_por} detalle="Lo propuso" />
                 </View>
               ) : null}
 
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 }}>
-                <Numero titulo="Promedio 3 meses" valor={formatMoney(cliente.prom_3m ?? 0)} nota={cliente.cumple ? 'Cumple $100/mes o $500' : 'Aún no cumple'} />
+                <Numero titulo="Promedio 3 meses" valor={formatMoney(cliente.prom_3m ?? 0)} nota={cliente.cumple ? 'Cumple el requisito: $100/mes o una factura de $500' : 'No cumple: $100/mes o una factura de $500'} />
                 <Numero titulo="A mayoreo (6 meses)" valor={formatMoney(cliente.a_mayoreo ?? 0)} nota={`${cliente.facturas_mayoreo ?? 0} facturas`} />
                 <Numero titulo="Mayor factura" valor={formatMoney(cliente.mayor_factura ?? 0)} />
                 <Numero titulo="Margen (interno)" valor={cliente.margen != null ? `${cliente.margen} %` : '—'} nota="No se le menciona al cliente" />

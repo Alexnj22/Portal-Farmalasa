@@ -28,6 +28,15 @@ export const RANGOS = [
   { clave: 'diamante', nombre: 'Diamante', desde: 2000, puntos: 1, cumpleanos: 100, raspable: 'Platino' },
 ];
 export const PRECIOS = { mayoreo: 'Mayoreo', mayoreo_plus: 'Mayoreo Plus' };
+
+// Desde el 15-nov-2026 (`reglas_v2_desde()`) los umbrales son 200/500/1000 sobre
+// las compras ELEGIBLES (Condiciones §4). No se escriben dos veces: la base los
+// manda en `mayorista_de().umbrales` según la fecha, y lo de arriba queda como
+// respaldo para una versión vieja de la función.
+export function rangosSegun(umbrales) {
+  if (!umbrales) return RANGOS;
+  return RANGOS.map((r) => (r.clave === 'jade' ? r : { ...r, desde: Number(umbrales[r.clave] ?? r.desde) }));
+}
 const PRECIO_MUESTRA = { jade: 'mayoreo', zafiro: 'mayoreo', rubi: 'mayoreo_plus', diamante: 'mayoreo_plus' };
 
 // El cumpleaños y el raspable de cada rango (2026-10-19) los da el programa de
@@ -55,11 +64,12 @@ export function rangoDePrueba(clave, programa = null) {
 }
 export function rangoReal(m, programa = null) {
   if (!m || m.estado !== 'aprobado') return null;
-  const i = Math.max(0, RANGOS.findIndex((r) => r.clave === (m.rango ?? 'jade')));
-  const r = conProgramaMayoreo(RANGOS[i], programa); const s = RANGOS[i + 1]; const compra = Number(m.prom_3m ?? 0);
+  const lista = rangosSegun(m.umbrales);
+  const i = Math.max(0, lista.findIndex((r) => r.clave === (m.rango ?? 'jade')));
+  const r = conProgramaMayoreo(lista[i], programa); const s = lista[i + 1]; const compra = Number(m.prom_3m ?? 0);
   // precioClave y aprobadoDesde: para las pantallas de SubisteDeNivel (subir a Plus, bienvenida).
   return { ...r, precio: PRECIOS[m.precio] ?? 'Mayoreo', precioClave: PRECIOS[m.precio] ? m.precio : 'mayoreo', aprobadoDesde: m.aprobado_desde ?? null,
-    compra, retiro: m.retiro_programado ?? null,
+    compra, retiro: m.retiro_programado ?? null, escalera: lista, elegibles: !!m.umbrales?.elegibles,
     // Bajada de Mayoreo Plus a Mayoreo avisada (2026-10-19, Condiciones §6).
     bajaEl: m.precio_programado_el ?? null,
     siguiente: s ? { ...s, falta: Math.max(0, s.desde - compra) } : null };
@@ -122,7 +132,7 @@ export default function Mayorista({ rango, pie = null }) {
       {rango.retiro ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Tu precio de mayoreo termina el {rango.retiro}</Texto>
         : rango.bajaEl ? <Texto nivel={2} estilo={{ fontSize: 13 }}>Desde el {rango.bajaEl}: precio Mayoreo</Texto> : null}
       <View style={{ flexDirection: 'row', gap: 6 }}>
-        {RANGOS.map((r) => {
+        {(rango.escalera ?? RANGOS).map((r) => {
           const p = COLORES_NIVEL[r.clave];
           const es = r.clave === rango.clave;
           return (
@@ -136,7 +146,7 @@ export default function Mayorista({ rango, pie = null }) {
         })}
       </View>
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
-        Tu rango sale del promedio de compra de los últimos 3 meses y se recalcula cada día 1. Promedio actual: {dolares(rango.compra)} al mes.
+        Tu rango sale del promedio de {rango.elegibles ? 'compras elegibles' : 'compra'} de los últimos 3 meses y se recalcula cada día 1. Promedio actual: {dolares(rango.compra)} al mes.
       </Texto>
       {pie}
       </Animated.View>

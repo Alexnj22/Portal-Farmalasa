@@ -805,8 +805,10 @@ export const AREAS = [
         id: 'app-clientes',
         nombre: 'App de clientes (Puntos Salud)',
         resumen: 'La app del cliente: entra con documento + teléfono una sola vez (sesión por token, sólo su huella en la base), ve su saldo y movimientos de puntos, las ofertas publicadas (las exclusivas sólo para socios), las inyecciones que pagó y le faltan aplicar, sus permisos y avisos, y puede borrar su cuenta. Quien no tiene ficha deja un pre-registro que se vincula solo cuando la sala lo registra con el mismo documento y teléfono.',
-        modulos: ['ofertas_clientes', 'mayoristas', 'chat_clientes', 'reservas'],
-        rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes', '/reservas'],
+        // `reclamos_clientes` (2026-10-24): los reclamos de los tres programas
+        // del cliente (puntos, reservas, mayorista) viven con ellos.
+        modulos: ['ofertas_clientes', 'mayoristas', 'chat_clientes', 'reservas', 'reclamos_clientes'],
+        rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes', '/reservas', '/reclamos-clientes'],
         archivos: [
             'apps/clientes/',
             'src/views/ofertas-clientes/',
@@ -820,6 +822,8 @@ export const AREAS = [
             'src/utils/horarioDelChat.js',
             'src/views/mayoristas/',
             'src/data/mayoristas.js',
+            'src/views/ReclamosClientesView.jsx',
+            'src/data/reclamos.js',
             // Las reglas que comparten portal y app (2026-10-12).
             'src/utils/mayoristas.js',
             'src/utils/chatClientes.js',
@@ -881,7 +885,9 @@ export const AREAS = [
                  'saldo_favor_movimientos',
                  // Reglamento de reservas v2 (2026-11-15): cada aviso hecho a mano
                  // (WhatsApp, llamada) con quién, cuándo y qué respondió el cliente.
-                 'reserva_avisos_log'],
+                 'reserva_avisos_log',
+                 // Reclamos de clientes en sala, diez días hábiles (2026-10-24).
+                 'reclamos_clientes'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
@@ -892,7 +898,10 @@ export const AREAS = [
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.
                 'chat-vigilar-espera-1min',
                 // La factura de una preventa llegó: cierra la reserva (2026-10-21).
-                'preventas-cerrar-facturadas'],
+                'preventas-cerrar-facturadas',
+                // Retención de un año de los envíos de facturas por correo, y el
+                // vigilante de los diez días de los reclamos (2026-10-24).
+                'purge-app-cliente-correo-envios', 'avisar-reclamos-clientes'],
         docs: ['docs/APP-CLIENTES-2026-10-05.md'],
     },
 
@@ -1232,13 +1241,17 @@ export const AREAS = [
                  // La marca de «ya avisé» del plazo legal (2026-09-22). Vive
                  // acá y no en `plataforma` porque lo que prueba es que el
                  // plazo del Art. 20 se vigiló, no que el aviso se envió.
-                 'solicitudes_datos_avisos'],
+                 'solicitudes_datos_avisos',
+                 // A quién se avisó una corrección (5 días hábiles) y el
+                 // registro de incidentes del Art. 25 (2026-10-24).
+                 'solicitudes_datos_terceros', 'incidentes_datos'],
         // La pagina publica no tiene edge function ni cron: es HTML plano
         // servido por una reescritura de `vercel.json`. Que no dependa de nada
         // es justo lo que la hace confiable — un documento que promete estar
         // disponible no puede caerse con el portal.
         edge: [],
-        crons: [],
+        // Las 72 horas del Art. 25 (2026-10-24).
+        crons: ['avisar-incidentes-datos'],
         docs: ['docs/legal/procedimientos/BORRADOR-D-solicitudes-de-datos-personales.md'],
     },
 ];

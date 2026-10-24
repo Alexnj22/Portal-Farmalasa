@@ -20,7 +20,7 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { ShieldCheck, Printer, Clock, Inbox, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
+import { ShieldCheck, Printer, Clock, Inbox, AlertTriangle, Loader2, RotateCcw, ShieldAlert } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -39,12 +39,16 @@ import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '.
 import { papelDeSolicitudDeDatos } from '../generated/formularioDatos';
 import { fetchSolicitudes, crearSolicitud, plazoDe, DERECHOS, ESTADOS, filtrarSolicitudes, alarmasDePlazo } from '@nucleo/data/solicitudesDatos';
 import SolicitudModal from './datos/SolicitudModal';
+import IncidentesDatos from './datos/IncidentesDatos';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 const PESTANAS = [
     { key: 'tramite',   label: 'En trámite', icon: Clock },
     { key: 'resueltas', label: 'Resueltas',  icon: ShieldCheck },
     { key: 'todas',     label: 'Todas',      icon: Inbox },
+    // Art. 25: el registro de vulneraciones vive con las solicitudes porque lo
+    // lleva la misma persona (el delegado) y lo pide la misma ley.
+    { key: 'incidentes', label: 'Incidentes', icon: ShieldAlert },
 ];
 
 const COLUMNAS = [
@@ -143,11 +147,13 @@ export default function SolicitudesDatosView() {
 
     const limpiar = () => { setEstado('TODOS'); setPeriodo(''); };
 
+    const enIncidentes = pestana === 'incidentes';
     const filtersContent = (
         <ViewTabBar
             tabs={PESTANAS}
             activeTab={pestana}
             onTabChange={setPestana}
+            showSearch={!enIncidentes}
             searchValue={busqueda}
             onSearchChange={setBusqueda}
             placeholder="Buscar por formulario, nombre o documento…"
@@ -156,6 +162,9 @@ export default function SolicitudesDatosView() {
 
     return (
         <GlassViewLayout icon={ShieldCheck} title="Solicitudes sobre datos" filtersContent={filtersContent}>
+            {enIncidentes ? (
+                <div className="p-4 md:p-6"><IncidentesDatos /></div>
+            ) : (
             <div className="p-4 md:p-6 space-y-6">
 
                 {(vencidas > 0 || apremian > 0) && (
@@ -246,6 +255,7 @@ export default function SolicitudesDatosView() {
                     })}
                 </DataTable>
             </div>
+            )}
 
             <SolicitudModal open={!!abierta} solicitud={abierta}
                 onClose={() => setAbierta(null)}

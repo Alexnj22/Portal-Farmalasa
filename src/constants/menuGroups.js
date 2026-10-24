@@ -43,7 +43,7 @@ export const MENU_GROUPS = [
     //     niveles incluidos. Los niveles son del programa, no de la app: valen
     //     también para quien compra con su DUI y nunca la instaló.
     //   · App de clientes — lo que pasa EN la app: vitrina y chat.
-    { key: 'clientes',     label: 'Clientes',      icono: 'Contact',       modules: ['clientes', 'mayoristas', 'puntos'] },
+    { key: 'clientes',     label: 'Clientes',      icono: 'Contact',       modules: ['clientes', 'mayoristas', 'puntos', 'reclamos_clientes'] },
     // La app de clientes Puntos Salud (2026-10-05): su vitrina de ofertas y los
     // pre-registros. Sección propia: lo que se edita acá lo ve el CLIENTE.
     { key: 'app_clientes', label: 'App de clientes', icono: 'Smartphone', modules: ['ofertas_clientes', 'chat_clientes'] },

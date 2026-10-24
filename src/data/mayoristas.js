@@ -19,6 +19,16 @@ export const RANGOS = {
     rubi: { nombre: 'Rubí', desde: 800, puntos: 0.75 },
     diamante: { nombre: 'Diamante', desde: 2000, puntos: 1 },
 };
+/**
+ * Los `desde` de arriba son los umbrales de antes del 15-nov-2026. Desde
+ * `reglas_v2_desde()` son 200/500/1000 sobre compras elegibles (Condiciones
+ * §4), y el rango —`rango`, `rango_sugerido`— ya lo calcula la base con la
+ * regla del día. Para mostrar umbrales: `rangosSegun(umbrales)` con lo que
+ * manda `mayorista_detalle().umbrales`; nunca comparar contra `desde` a mano.
+ */
+export const rangosSegun = (umbrales) => (umbrales
+    ? Object.fromEntries(Object.entries(RANGOS).map(([k, r]) => [k, k === 'jade' ? r : { ...r, desde: Number(umbrales[k] ?? r.desde) }]))
+    : RANGOS);
 export const ESTADOS = {
     solicitado: { label: 'En revisión', variant: 'warning' },
     aprobado: { label: 'Mayorista', variant: 'success' },

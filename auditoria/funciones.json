@@ -5179,6 +5179,81 @@
   "tipo_persona_sugerido": {
    "area": "ventas",
    "por": "quien la llama"
+  },
+  "sumar_dias_habiles": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "solicitud_datos_accion": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "solicitud_datos_tercero": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "incidentes_datos_destinatarios": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "incidentes_datos_al_registrar": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "avisar_incidentes_datos": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "mayorista_v2": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "mayorista_umbrales": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "mayorista_rango_de": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "mayoristas_vigilar_plazos": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "app_cliente_correo_envios_purgar": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "reclamos_destinatarios": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "reclamo_registrar": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "reclamo_responder": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "avisar_reclamos_por_vencer": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
   }
  }
 }

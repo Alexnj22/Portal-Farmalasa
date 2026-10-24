@@ -191,6 +191,9 @@ Deno.serve(async (req) => {
     // el orden ES la protección.
     let permisos: { programa: boolean | null; promociones: boolean | null } =
       { programa: null, promociones: null };
+    // Aceptó el programa con un aviso de privacidad anterior al vigente: se le
+    // vuelve a preguntar (la pantalla lo trata como «falta responder»).
+    let avisoNuevo = false;
 
     const resp = body?.consentimiento;
     if (resp && (typeof resp.programa === "boolean" || typeof resp.promociones === "boolean")) {
@@ -233,6 +236,17 @@ Deno.serve(async (req) => {
         programa:    fila?.acepta_programa_puntos ?? null,
         promociones: fila?.acepta_promociones ?? null,
       };
+      if (permisos.programa === true) {
+        const { data: ult, error: eUlt } = await admin
+          .from("consentimientos_cliente")
+          .select("version_aviso")
+          .eq("customer_id", cli.id).eq("finalidad", "programa_puntos").eq("otorgado", true)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        // Si no se pudo leer, no se le bloquea la pantalla por esto: el saldo
+        // es suyo y el aviso se le pedirá la próxima vez que se lea bien.
+        if (eUlt) console.error("no se pudo leer la versión del aviso aceptado:", eUlt.message);
+        else avisoNuevo = !String(ult?.version_aviso ?? "").includes(TEXTOS.aviso);
+      }
     }
 
     // Lo mismo en las tres salidas de abajo, que son tres porque el saldo puede
@@ -240,6 +254,7 @@ Deno.serve(async (req) => {
     const consentimiento = {
       programa: permisos.programa,
       promociones: permisos.promociones,
+      aviso_nuevo: avisoNuevo,
       textos: {
         programa: TEXTOS.programa,
         promociones: TEXTOS.promociones,

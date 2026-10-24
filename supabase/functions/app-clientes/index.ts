@@ -136,6 +136,32 @@ const TERMINOS_RESERVA = {
   ],
 };
 
+// Reglamento de reservas y encargos especiales v2 (rige desde
+// `reglas_v2_desde()`, 2026-11-15). Las condiciones de arriba quedan para las
+// reservas de antes: la app pide aceptar ESTA versión desde la fecha, y cada
+// reserva guarda la que aceptó. Cuál rige lo dice la base (`reserva_reglas()`),
+// nunca una fecha escrita acá.
+const TERMINOS_RESERVA_V2 = {
+  version: "2026-11-15",
+  titulo: "Así funciona tu reserva",
+  puntos: [
+    "Puedes reservar productos en oferta y también a precio normal, en la cantidad que necesites.",
+    "La sucursal tiene 24 horas para preparar tu reserva y te avisamos cuando está lista. Desde ese aviso tienes 7 días para retirarla si no pagaste nada, 30 días si dejaste un anticipo y 60 días si la pagaste completa.",
+    "Si pagas después, el plazo pasa al que corresponde a lo pagado, contado desde ese pago.",
+    "Los plazos para retirar no se prorrogan.",
+    "Si la sucursal no tiene el producto, lo trae de otra sucursal o de la bodega: mientras viene en camino, el plazo de preparación se detiene, y te avisamos cuando esté lista. Si no quieres esperar, cancélala desde la app.",
+    "Si la sucursal no alcanza a revisar tu receta o a preparar tu reserva a tiempo, la reserva se cierra y no cuenta en tu contra.",
+    "Con un anticipo o el pago total, el precio queda fijo. Sin pago, el precio de oferta vale si la retiras dentro de las fechas de la oferta.",
+    "Puedes tener hasta 3 reservas sin pagar al mismo tiempo; las que tienen un pago no tienen límite. Si en 30 días dejas vencer 3 reservas sin retirarlas, no podrás reservar sin pago durante los 30 días siguientes.",
+    "Los productos bajo receta se reservan con una foto de tu receta: tienes 24 horas para subirla y la sucursal otras 24 horas para revisarla. Mientras está en revisión no se puede pagar, y si el pedido lleva algún producto bajo receta, todo el pedido espera esa revisión.",
+    "Puedes pagarla en línea desde la app o en la sucursal.",
+    "Si no la retiras a tiempo, el producto vuelve a la venta y lo que pagaste queda como saldo a favor por un año, para usarlo en cualquier sucursal. Te avisamos 7 días antes de que venza y el día en que vence.",
+    "Puedes cancelar tu reserva desde la app mientras no la hayas retirado. Si pagaste algo, queda como saldo a favor.",
+    "Si no puedes ir tú, comparte el código de tu reserva (desde Mis reservas) con alguien de confianza: quien lo presente en la sucursal puede retirarla, y pagarla si falta. Como el código basta para retirarla, no lo publiques.",
+    "El reglamento completo de reservas y encargos especiales está en todas las sucursales.",
+  ],
+};
+
 // Cómo se llama cada sucursal PARA EL CLIENTE (decisión del usuario,
 // 2026-10-06): el barrio, no el número interno. Lo demás pasa tal cual.
 const NOMBRE_SUCURSAL: Record<string, string> = {
@@ -1460,7 +1486,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // ── Reservas de productos en oferta (2026-10-06) ──────────────────────
     // Reglas en TERMINOS_RESERVA (se muestran antes de la primera reserva y se
     // guardan con su versión). La sucursal las maneja desde el portal.
-    if (accion === "reserva_terminos") return json({ ok: true, ...TERMINOS_RESERVA });
+    // Desde `reglas_v2_desde()` rigen las condiciones del reglamento v2.
+    // deno-lint-ignore no-explicit-any
+    const reglasVigentes = async (): Promise<any> => {
+      const { data, error } = await admin.rpc("reserva_reglas");
+      if (error) throw error;
+      return data;
+    };
+    const terminosVigentes = async () => ((await reglasVigentes())?.v2 ? TERMINOS_RESERVA_V2 : TERMINOS_RESERVA);
+    if (accion === "reserva_terminos") {
+      const reglas = await reglasVigentes();
+      return json({ ok: true, ...(reglas?.v2 ? TERMINOS_RESERVA_V2 : TERMINOS_RESERVA), reglas });
+    }
 
     if (accion === "reserva_existencias") {
       const productoId = Number(body?.producto_id);
@@ -2292,7 +2329,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       };
     };
     if (accion === "mis_reservas") {
-      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, saldo_favor_inicial, prorrogada_at, plazo_hasta:reserva_plazo_hasta";
+      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, saldo_favor_inicial, prorrogada_at, plazo_hasta:reserva_plazo_hasta, prorrogable:reserva_prorrogable";
       // `plazo_hasta` (2026-10-21) lo calcula la base (`reserva_plazo_hasta`):
       // hasta cuándo vale el estado actual, para no escribir «24 horas» en la app.
       // `en_revision` (2026-10-12): esperando que la sucursal revise la receta.
@@ -2354,8 +2391,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       }
       // La foto de la receta, para que el cliente vea la que mandó (1 h).
       const recetas = await firmarRutas(admin, BUCKET_ARCHIVOS, data.map((r: any) => r.receta_ruta).filter(Boolean));
+      // Los plazos que rigen hoy (reglamento v1 o v2, por fecha): la pantalla
+      // los escribe tal cual en vez de tenerlos a mano.
+      const reglas = await reglasVigentes();
       return json({
         ok: true,
+        reglas,
         estado: filtro,
         siguiente,
         // El saldo a favor vigente (2026-10-19), aunque sus renglones estén en
@@ -2388,7 +2429,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const productoId = Number(body?.producto_id);
       const branchId = Number(body?.branch_id);
       const cantidad = Math.trunc(Number(body?.cantidad));
-      if (body?.acepta_terminos !== TERMINOS_RESERVA.version) {
+      const terminos = await terminosVigentes();
+      if (body?.acepta_terminos !== terminos.version) {
         return json({ ok: false, motivo: "terminos", mensaje: "Acepta las condiciones de la reserva para continuar." });
       }
       // Cantidad libre (2026-10-19): lo «no habitual» lo pregunta la app.
@@ -2456,20 +2498,29 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           : "Esa sucursal ya no tiene para apartar. Elige otra sucursal." });
       }
       // Tope de activas y bloqueo por vencidas.
-      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado")
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado, anticipo")
         .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
       if (eR) throw eR;
       // Un pedido del carrito cuenta como UNA reserva (2026-10-07).
       // Sólo las SIN PAGAR cuentan para el tope de 3 (2026-10-19, decisión del
       // usuario): una pagada no aparta nada que el cliente no haya pagado.
-      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && r.pago_estado !== "pagado").map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      // Reglamento v2 (3.7): las que tienen CUALQUIER pago —también un
+      // anticipo— no tienen límite; antes sólo las pagadas completas.
+      const v2 = terminos === TERMINOS_RESERVA_V2;
+      const conPago = (r: any) => r.pago_estado === "pagado" || (v2 && (r.pago_estado === "anticipo" || Number(r.anticipo ?? 0) > 0.004));
+      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && !conPago(r)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
       const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
-      if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
+      // v2 (3.7): el bloqueo es sólo para reservar SIN pago. Toda reserva de
+      // la app nace sin pago (el cobro en línea llega después: H5), así que
+      // acá sigue frenando, y el mensaje dice cómo reservar igual.
+      if (vencidas >= 3) return json({ ok: false, mensaje: v2
+        ? "Tienes 3 reservas que no se retiraron en los últimos 30 días: por 30 días no puedes reservar sin pago. Puedes reservar en la sucursal dejando un anticipo."
+        : "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
       if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas sin pagar. Págalas, retíralas o cancela una para reservar otra." });
       const { data: nueva, error: eI } = await admin.from("app_reservas").insert({
         customer_id: customerId, branch_id: branchId, oferta_id: o.id, oferta_titulo: o.titulo, oferta_fin: o.fin,
         producto_id: productoId, producto_nombre: String(p.nombre), cantidad,
-        precio_unitario: p.precio_descuento ?? null, precio_normal: p.precio ?? null, terminos_version: TERMINOS_RESERVA.version,
+        precio_unitario: p.precio_descuento ?? null, precio_normal: p.precio ?? null, terminos_version: terminos.version,
         factor: factorMenor,
         ...(conReceta ? { estado: "en_revision" } : {}),
       }).select("id").single();
@@ -2613,7 +2664,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
 
     if (accion === "mis_encargos") {
       const { data, error } = await admin.from("app_encargos")
-        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at, listo_at, prorrogado_at")
+        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at, listo_at, prorrogado_at, prorrogable:encargo_prorrogable, retirar_hasta:encargo_retirar_hasta")
         .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 90 * 86400_000).toISOString())
         .order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
@@ -3341,7 +3392,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     }
 
     if (accion === "reservar_carrito") {
-      if (body?.acepta_terminos !== TERMINOS_RESERVA.version) {
+      const terminos = await terminosVigentes();
+      if (body?.acepta_terminos !== terminos.version) {
         return json({ ok: false, motivo: "terminos", mensaje: "Acepta las condiciones de la reserva para continuar." });
       }
       const branchId = Number(body?.branch_id);
@@ -3423,7 +3475,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         filas.push({
           customer_id: customerId, branch_id: branchId, producto_id: x.id,
           producto_nombre: `${p.nombre}${pr.tipo ? ` · ${pr.tipo}` : ""}`.slice(0, 200),
-          cantidad: x.cantidad, factor: Math.max(1, x.factor), precio_unitario: lp.precio ?? vip ?? vineta, precio_normal: vineta, terminos_version: TERMINOS_RESERVA.version,
+          cantidad: x.cantidad, factor: Math.max(1, x.factor), precio_unitario: lp.precio ?? vip ?? vineta, precio_normal: vineta, terminos_version: terminos.version,
           // Para que la sala facture con la misma lista que se cobró (2026-10-19).
           lista_precio: lp.lista,
           documento, datos_fiscales: datosFiscales,
@@ -3431,14 +3483,23 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           ...(conReceta ? { estado: "en_revision" } : {}),
         });
       }
-      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado")
+      const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado, anticipo")
         .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
       if (eR) throw eR;
       // Sólo las SIN PAGAR cuentan para el tope de 3 (2026-10-19, decisión del
       // usuario): una pagada no aparta nada que el cliente no haya pagado.
-      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && r.pago_estado !== "pagado").map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      // Reglamento v2 (3.7): las que tienen CUALQUIER pago —también un
+      // anticipo— no tienen límite; antes sólo las pagadas completas.
+      const v2 = terminos === TERMINOS_RESERVA_V2;
+      const conPago = (r: any) => r.pago_estado === "pagado" || (v2 && (r.pago_estado === "anticipo" || Number(r.anticipo ?? 0) > 0.004));
+      const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && !conPago(r)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
       const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
-      if (vencidas >= 3) return json({ ok: false, mensaje: "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
+      // v2 (3.7): el bloqueo es sólo para reservar SIN pago. Toda reserva de
+      // la app nace sin pago (el cobro en línea llega después: H5), así que
+      // acá sigue frenando, y el mensaje dice cómo reservar igual.
+      if (vencidas >= 3) return json({ ok: false, mensaje: v2
+        ? "Tienes 3 reservas que no se retiraron en los últimos 30 días: por 30 días no puedes reservar sin pago. Puedes reservar en la sucursal dejando un anticipo."
+        : "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
       // H5 (auditoría 2026-10-21): el tope cuenta igual cuando el cliente PIDE
       // pagar en línea. Las filas se insertan antes del cobro y apartan
       // existencia aunque nunca se pague; «sin pagar» es el estado, no la intención.

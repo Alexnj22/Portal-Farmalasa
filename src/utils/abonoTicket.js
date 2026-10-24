@@ -83,6 +83,50 @@ export const CONDICIONES_DEL_PAPEL = [
 /** Cuántos días vale la reserva. Sale de la cláusula 1 y se usa para `vence_el`. */
 export const DIAS_DE_RESERVA = 7;
 
+// ── Reglamento de reservas v2 (rige desde `reglas_v2_desde()`, 2026-11-15) ──
+//
+// Un abono es un ANTICIPO: desde el reglamento v2 se retira en 30 días, sin
+// prórroga, y lo pagado queda a favor por un año (cláusulas 3.3, 6.4 y 8.2).
+// Cuál de las dos rige lo dice la base (`reserva_reglas()`, por la fecha de
+// HOY); estas funciones reciben esas reglas y, sin ellas, escriben las de v1.
+// Los papeles ya entregados siguen diciendo lo que decían: el texto se elige
+// al imprimir, no se guarda en una tabla.
+
+/** «60 días» / «un año»: cuánto vale el saldo a favor según las reglas vigentes. */
+export function vigenciaDelSaldo(reglas) {
+    const dias = Number(reglas?.dias_saldo_favor ?? 60);
+    return dias >= 365 ? 'un año' : `${dias} días`;
+}
+
+export const POLITICA_DE_RESERVA_V2 = [
+    'El producto queda apartado 30 dias desde la fecha del comprobante. Los plazos para retirar no se prorrogan. Vencido sin retirarlo, la farmacia puede volver a venderlo.',
+    'Si el cliente desiste o no retira a tiempo, el abono queda como saldo a favor por 12 meses, aplicable a cualquier compra en cualquier sucursal. No se devuelve en efectivo salvo que la administracion lo autorice.',
+    'El retiro se hace presentando el comprobante. Sin el, se entrega solo al titular con documento de identidad.',
+    'Con el abono, el precio queda fijo: es el del comprobante, aunque cambie durante el plazo.',
+    'Si el producto no llega por causa del proveedor, se devuelve el abono completo o se aplica a otro producto, a eleccion del cliente.',
+    'Un producto "por definir" no tiene precio pactado: se acuerda al confirmarlo, y el cliente puede desistir con devolucion completa del abono.',
+    'Los medicamentos que requieren receta se entregan solo contra receta vigente.',
+];
+
+export const CONDICIONES_DEL_PAPEL_V2 = [
+    'Apartado 30 dias desde esta fecha.',
+    'Si no retiras, queda a tu favor 12 meses.',
+    'Trae este comprobante para retirar.',
+    'El precio no cambia dentro del plazo.',
+];
+
+/**
+ * Las condiciones del abono que rigen con estas reglas (`reserva_reglas()`);
+ * sin reglas, las de v1. Con `fecha` (la del abono), un abono anterior a
+ * `reglas.desde` conserva las suyas aunque se reimprima después.
+ */
+export function reglasDelAbono(reglas, fecha = null) {
+    const v2 = !!reglas?.v2 && (!fecha || !reglas.desde || String(fecha).slice(0, 10) >= String(reglas.desde));
+    return v2
+        ? { dias: Number(reglas.dias_anticipo ?? 30), politica: POLITICA_DE_RESERVA_V2, condiciones: CONDICIONES_DEL_PAPEL_V2 }
+        : { dias: DIAS_DE_RESERVA, politica: POLITICA_DE_RESERVA, condiciones: CONDICIONES_DEL_PAPEL };
+}
+
 /**
  * `2026-09-01` + 7 → `2026-09-08`, en fecha pura y sin husos.
  *
@@ -135,7 +179,7 @@ function filaDeRenglon(r) {
  * @param {string}  hechoPor           quién lo recibió
  * @param {string}  hechoAt            ISO del momento
  */
-export function construirComprobanteDeAbono({ abono, sala, hechoPor, hechoAt }) {
+export function construirComprobanteDeAbono({ abono, sala, hechoPor, hechoAt, reglas = null }) {
     const renglones = Array.isArray(abono?.renglones) ? abono.renglones : [];
     const total = abono?.total == null ? null : Number(abono.total);
     const abonado = Number(abono?.abonado) || 0;
@@ -196,7 +240,7 @@ export function construirComprobanteDeAbono({ abono, sala, hechoPor, hechoAt }) 
          * primera mirada. Abajo es donde van las condiciones de cualquier
          * comprobante, y es donde nadie las busca hasta que las necesita. */
         pie: [
-            ...CONDICIONES_DEL_PAPEL,
+            ...reglasDelAbono(reglas, abono?.created_at ?? hechoAt).condiciones,
             juntarSiEntra(`Te atendio: ${recortar(soloAscii(hechoPor || 'sin identificar'), 28)}`,
                           selloCorto(hechoAt)),
         ],

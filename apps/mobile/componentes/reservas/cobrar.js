@@ -8,6 +8,7 @@ import { anotarIngreso } from '@nucleo/data/bolsas';
 import { datosDeFormaDePago, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { construirConstanciaDeEncargo, construirConstanciaDeReserva } from '@nucleo/utils/reservaConstancia';
+import { fetchReglasDeReserva } from '@nucleo/data/reservas';
 import { subirFotos } from '../formulario/Fotos';
 import { imprimirEnLaSala } from '../imprimir';
 
@@ -30,11 +31,13 @@ export async function cobrarAnticipoEnLaApp({ sala, nombreSala, user, clave, mon
   if (r?.error) return { ok: false, error: r.error };
   const a = r?.apartado;
   if (!a) return { ok: false, error: new Error('El cobro no quedó ligado a la reserva. Revisa la lista del día.') };
+  // El pie del papel dice cuánto vale el saldo a favor según el reglamento vigente.
+  const reglas = await fetchReglasDeReserva().catch(() => null);
   const hoja = await imprimirEnLaSala(construirConstanciaDeReserva({
     codigo: a.codigo, cliente: shortEmployeeName(papel?.cliente ?? ''), telefono: papel?.telefono ?? null,
     enCamino: a.traslado_desde ?? papel?.enCamino ?? null, producto: papel?.producto, cantidad: papel?.cantidad, precio: papel?.precio,
     renglones: papel?.renglones, anticipo: Number(a.anticipo), metodo: FORMAS_DE_PAGO.find((f) => f.value === pago?.forma)?.label ?? 'Efectivo',
-    venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(user?.name ?? ''),
+    venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(user?.name ?? ''), reglas,
   }), sala, `Reserva ${a.codigo}`);
   return { ok: true, apartado: a, aviso: r.aviso ?? null, papel: hoja };
 }

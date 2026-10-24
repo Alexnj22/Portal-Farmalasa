@@ -71,6 +71,8 @@ export default function TarjetaDeReserva({ r, verTodas, marcas = null, acciones 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '900', fontVariant: ['tabular-nums'] }}>{codigo}</Text>
               <View style={{ flexShrink: 1 }}><Pildora texto={estado.label} color={colorDeTono(estado.variant)} /></View>
+              {/* Reglamento v2: el nivel que da prioridad (lo manda la base desde la fecha). */}
+              {r.nivel?.prioridad ? <View style={{ flexShrink: 1 }}><Pildora texto={`Cliente ${r.nivel.nombre}`} color={MARCA.azulClaro} /></View> : null}
               {verTodas && r.sala ? <Text style={{ flexShrink: 1, color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{r.sala}</Text> : null}
               <View style={{ flex: 1 }} />
               <Text style={{ color: colorSistema.texto2, fontSize: 20, fontWeight: '600' }} accessibilityElementsHidden>›</Text>

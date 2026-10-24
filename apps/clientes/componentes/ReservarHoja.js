@@ -253,7 +253,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             <Text style={{ fontSize: 16, lineHeight: 22, color: colorSistema.texto2, textAlign: 'center' }}>
               {hecha.receta
                 ? `${elegida?.sala ?? 'La sucursal'} va a revisar tu receta. Te avisamos cuando la apruebe y tu reserva quede confirmada.`
-                : `Te avisamos cuando ${elegida?.sala ?? 'la sucursal'} la tenga lista. Desde ese aviso tienes 3 días para retirarla.`}
+                : `Te avisamos cuando ${elegida?.sala ?? 'la sucursal'} la tenga lista. Desde ese aviso tienes ${terminos?.reglas?.dias_sin_pago ?? 3} días para retirarla.`}
             </Text>
             {hecha.recetaPendiente ? (
               <Text style={{ fontSize: 14, lineHeight: 20, color: t.color.avisoTexto, textAlign: 'center' }}>

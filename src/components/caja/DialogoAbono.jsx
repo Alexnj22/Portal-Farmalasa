@@ -9,7 +9,8 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hastaElTope } from '@nucleo/utils/hastaElTope';
-import { DIAS_DE_RESERVA, estadoDelApartado, POLITICA_DE_RESERVA, renglonesDelApartado, vencimientoDeReserva } from '@nucleo/utils/abonoTicket';
+import { estadoDelApartado, reglasDelAbono, renglonesDelApartado, vencimientoDeReserva } from '@nucleo/utils/abonoTicket';
+import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -102,9 +103,12 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
      *
      * Y es la hora de EL SALVADOR (−6), no la del equipo: el plazo lo cuenta el
      * día de la sala. */
-    const [vence] = useState(() => vencimientoDeReserva(
-        hoySV(),
-    ));
+    const [hoy] = useState(() => hoySV());
+    // Cuántos días vale lo dice el reglamento vigente (v2: 30 días con
+    // anticipo), que decide la base por la fecha; sin respuesta, v1.
+    const reglasDeReserva = useReglasDeReserva();
+    const { dias: diasDelAbono, politica } = reglasDelAbono(reglasDeReserva);
+    const vence = vencimientoDeReserva(hoy, diasDelAbono);
 
     /* Se guarda con cada tecla, no al cerrar: la sesión no se cierra por un
      * botón, se cierra sola — y un guardado «al salir» nunca corre cuando lo
@@ -207,7 +211,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                     <h3 className="text-h3 font-bold text-content">Abono para apartar producto</h3>
                     <p className="text-body-sm text-content-2 mt-1">
                         El dinero entra a la caja y sale un comprobante para el cliente.
-                        Vale hasta el <b className="text-content">{vence}</b> ({DIAS_DE_RESERVA} días).
+                        Vale hasta el <b className="text-content">{vence}</b> ({diasDelAbono} días).
                     </p>
                 </div>
 
@@ -327,7 +331,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                         tenga que contestarle al cliente en el mostrador. */}
                     {verPolitica && (
                         <ol className="mt-2 space-y-1.5 list-decimal pl-5 text-caption text-content-2">
-                            {POLITICA_DE_RESERVA.map((c) => <li key={c}>{c}</li>)}
+                            {politica.map((c) => <li key={c}>{c}</li>)}
                         </ol>
                     )}
                 </div>

@@ -386,3 +386,43 @@ export async function marcarDevolucionEntregada(id, movimientoId) {
 /** Las devoluciones ya autorizadas que la sala todavía tiene que entregar. */
 export const devolucionesPorEntregar = (filas) => (filas || []).filter((r) => r.devolucion_pedida_at
     && r.saldo_favor_devuelto_at && !r.devolucion_entregada_at);
+
+// ── Reglamento v2 (rige desde `reglas_v2_desde()`, 2026-11-15) ─────────────
+
+/**
+ * Los plazos que rigen HOY (v1 o v2, por fecha). Los decide la base: el papel
+ * y los textos los escriben de acá, nunca de una constante.
+ * `{ v2, desde, dias_sin_pago, dias_anticipo, dias_pagada, dias_encargo, dias_saldo_favor, prorroga_dias }`
+ */
+export async function fetchReglasDeReserva() {
+    return sinError(await supabase.rpc('reserva_reglas'));
+}
+
+/**
+ * Anota un aviso hecho a mano (cláusula 9): por WhatsApp o por llamada. En la
+ * llamada se dice si contestó y, si contestó, qué respondió.
+ */
+export async function registrarAvisoDeReserva({ reserva = null, encargo = null, canal, contesto = null, respuesta = null }) {
+    return sinError(await supabase.rpc('reserva_registrar_aviso', {
+        p_reserva: reserva == null ? null : Number(reserva), p_encargo: encargo == null ? null : Number(encargo),
+        p_canal: canal, p_contesto: contesto, p_respuesta: respuesta ? String(respuesta).trim() : null,
+    }));
+}
+
+/** Compras cambia la fecha estimada de un encargo; la base le avisa al cliente (cláusula 4.4). */
+export async function cambiarFechaDeEncargo(id, fecha, motivo) {
+    return sinError(await supabase.rpc('encargo_cambiar_fecha', {
+        p_id: Number(id), p_fecha: fecha, p_motivo: motivo ? String(motivo).trim() : null,
+    }));
+}
+
+/**
+ * El proveedor no entregó un encargo pagado (cláusula 4.6): el cliente elige
+ * `devolucion` (devolución completa, ya autorizada: sale como vale de caja) o
+ * `saldo` (queda a su favor para otro producto).
+ */
+export async function proveedorNoEntregoEncargo(id, eleccion, motivo) {
+    return sinError(await supabase.rpc('encargo_proveedor_no_entrego', {
+        p_id: Number(id), p_eleccion: eleccion, p_motivo: motivo ? String(motivo).trim() : null,
+    }));
+}

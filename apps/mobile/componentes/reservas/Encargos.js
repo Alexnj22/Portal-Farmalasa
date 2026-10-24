@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchEncargos, mensajeDeEncargo, prorrogarEncargo, responderEncargo, whatsappDe } from '@nucleo/data/reservas';
+import { fetchEncargos, mensajeDeEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { encargoSinVincular, encargoVencido, estadoDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -57,7 +57,13 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
     ]);
   };
   const abrir = (e, modo) => router.push({ pathname: '/encargo-accion', params: { id: String(e.id), modo, sala: branchId == null ? '' : String(branchId) } });
-  const whatsapp = (e) => Linking.openURL(`https://wa.me/${whatsappDe(e.telefono)}?text=${encodeURIComponent(mensajeDeEncargo(e))}`).catch(() => {});
+  // Desde el reglamento v2 el aviso por WhatsApp queda anotado (cláusula 9).
+  const whatsapp = (e) => {
+    Linking.openURL(`https://wa.me/${whatsappDe(e.telefono)}?text=${encodeURIComponent(mensajeDeEncargo(e))}`).catch(() => {});
+    if (e.registrar_llamada) registrarAvisoDeReserva({ encargo: e.id, canal: 'whatsapp' }).then(cargar).catch(() => {});
+  };
+  const llamar = (e) => router.push({ pathname: '/reserva-llamada', params: {
+    encargo: String(e.id), codigo: e.codigo, cliente: pilaDelCliente(e), telefono: String(e.telefono ?? '') } });
 
   if (!filas?.length) return null;
   const hoy = hoySV();
@@ -78,8 +84,9 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
               {`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${pilaDelCliente(e)} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${corta(e.fecha_estimada)}` : ''}${e.anticipo ? ` · ${formatMoney(Number(e.anticipo))}` : ''}${e.retirar_hasta ? ` · retira hasta ${corta(e.retirar_hasta)}${e.prorrogado_at ? ' (prorrogado)' : ''}` : ''}`}
             </Text>
-            {(sinVincular && e.sugerido) || vencido ? (
+            {(sinVincular && e.sugerido) || vencido || e.nivel?.prioridad ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {e.nivel?.prioridad ? <Pildora texto={`Cliente ${e.nivel.nombre}`} color={MARCA.azulClaro} /> : null}
                 {sinVincular && e.sugerido ? <Pildora texto={`¿Ya está en el catálogo? «${e.sugerido}»`} color={MARCA.azulClaro} /> : null}
                 {vencido ? <Pildora texto="Sin retirar · llamar" color={MARCA.ambar} /> : null}
               </View>
@@ -103,7 +110,10 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
                 ? <Text style={{ color: colorSistema.texto2, fontSize: 12, alignSelf: 'center' }}>Primero vincula el producto ya creado en el catálogo.</Text> : null}
               {!soloLectura && e.estado === 'listo' ? <Accion texto="Entregar" color={MARCA.verde}
                 onPress={() => router.push({ pathname: '/reserva-retirar', params: { id: String(e.id), tipo: 'encargo', sala: String(e.branch_id ?? branchId) } })} /> : null}
-              {!soloLectura && e.estado === 'listo' && !e.prorrogado_at ? <Accion texto="Prorrogar" deshabilitado={!!ocupado}
+              {!soloLectura && e.registrar_llamada ? <Accion texto="Registrar llamada" onPress={() => llamar(e)} /> : null}
+              {!soloLectura && e.puede_cambiar_fecha ? <Accion texto="Cambiar fecha" onPress={() => abrir(e, 'fecha')} /> : null}
+              {!soloLectura && e.puede_no_entrego ? <Accion texto="No entregó" color={MARCA.rojo} onPress={() => abrir(e, 'no_entrego')} /> : null}
+              {!soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) ? <Accion texto="Prorrogar" deshabilitado={!!ocupado}
                 onPress={() => mover(e, 'prorrogar', 'Prorrogar el plazo', 'Una sola prórroga de 7 días para retirarlo. No admite otra.')} /> : null}
               {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado)
                 ? <Accion texto="A saldo a favor" onPress={() => abrir(e, 'saldo')} /> : null}

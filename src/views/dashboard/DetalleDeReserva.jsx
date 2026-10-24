@@ -8,6 +8,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { codigoDeReserva, whatsappDe } from '@nucleo/data/reservas';
 import { TRASLADO, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, renglonesDe, telefonoLegible } from './reservaVista';
+import { HistorialDeAvisos, InsigniaDeNivel } from './AvisosDeReserva';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El detalle de una reserva (2026-10-22): lo que la tarjeta resume, entero.
@@ -45,6 +46,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                 <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-body-xl font-semibold text-content tabular-nums">{codigo}</h2>
                     <Badge variant={estado.variant} uppercase={false}>{estado.label}</Badge>
+                    <InsigniaDeNivel nivel={r.nivel} />
                 </div>
                 <p className="text-body-sm text-content-2">
                     {r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sala'}{r.sala ? ` · ${r.sala}` : ''}
@@ -137,6 +139,12 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                     </Bloque>
 
                     {fechas.length > 0 && <Bloque titulo="Fechas"><Datos filas={fechas} /></Bloque>}
+
+                    {/* Reglamento v2, cláusula 9: los avisos con quién los hizo. La base
+                        los manda sólo desde la fecha (`avisos`, `aviso_app`). */}
+                    {(r.avisos || r.aviso_app || r.registrar_llamada) && (
+                        <Bloque titulo="Avisos al cliente"><HistorialDeAvisos avisos={r.avisos} avisoApp={r.aviso_app} /></Bloque>
+                    )}
 
                     {r.bajo_receta && (
                         <Bloque titulo="Receta">

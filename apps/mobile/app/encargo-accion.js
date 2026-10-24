@@ -8,13 +8,21 @@
 //   · `saldo`: el cliente no lo retira o desiste: lo pagado queda a su favor
 //     60 días y el producto queda para la venta. No se deshace;
 //   · `vincular`: Bodega ya creó el producto nuevo y llegó al catálogo; sin
-//     amarrarlo no se puede marcar «Llegó». La base sugiere uno si lo encontró.
+//     amarrarlo no se puede marcar «Llegó». La base sugiere uno si lo encontró;
+//   · `fecha` (reglamento v2, 4.4): Compras cambia la fecha estimada y la base
+//     le avisa al cliente;
+//   · `no_entrego` (reglamento v2, 4.6): el proveedor no entregó y el CLIENTE
+//     elige devolución completa (sale ya autorizada, se entrega con un vale de
+//     caja desde Reservas) o saldo a favor. Los dos los habilita la base
+//     (`puede_cambiar_fecha`, `puede_no_entrego`) sólo desde la fecha.
 // El encargo se relee con `fetchEncargos` (la misma lista de la sala).
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchEncargos, pasarEncargoASaldo, responderEncargo, vincularProductoDeEncargo } from '@nucleo/data/reservas';
+import { cambiarFechaDeEncargo, fetchEncargos, pasarEncargoASaldo, proveedorNoEntregoEncargo, responderEncargo, vincularProductoDeEncargo } from '@nucleo/data/reservas';
+import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
+import { vigenciaDelSaldo } from '@nucleo/utils/abonoTicket';
 import { encargoConRiesgo, fichaDeProductoNuevo } from '@nucleo/utils/reservasDeSala';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -22,7 +30,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
@@ -30,7 +38,7 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { Enlace } from '../componentes/reservas/piezas';
 
 const dinero = (v) => v.replace(/[^\d.,]/g, '').replace(',', '.');
-const TITULO = { confirmar: 'Confirmar', rechazar: 'No se consigue', saldo: 'A saldo a favor', vincular: 'Vincular producto' };
+const TITULO = { confirmar: 'Confirmar', rechazar: 'No se consigue', saldo: 'A saldo a favor', vincular: 'Vincular producto', fecha: 'Nueva fecha', no_entrego: 'No entregó' };
 
 export default function EncargoAccion() {
   const { id, modo = 'confirmar', sala } = useLocalSearchParams();
@@ -40,6 +48,8 @@ export default function EncargoAccion() {
   const [fecha, setFecha] = useState(() => sumarDias(hoySV(), 3));
   const [nota, setNota] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [eleccion, setEleccion] = useState('devolucion');
+  const reglas = useReglasDeReserva();
 
   useEffect(() => {
     let vivo = true;
@@ -122,13 +132,49 @@ export default function EncargoAccion() {
 
           {modo === 'saldo' ? (
             <>
-              <Aviso texto={`Lo pagado (${formatMoney(Number(e.anticipo ?? 0))}) queda a favor del cliente por 60 días, para cualquier compra en cualquier sala. El producto queda para la venta. No se deshace.`} />
+              <Aviso texto={`Lo pagado (${formatMoney(Number(e.anticipo ?? 0))}) queda a favor del cliente por ${vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sala. El producto queda para la venta. No se deshace.`} />
               <Seccion titulo="Motivo">
                 <Campo value={nota} onChangeText={setNota} maxLength={300} placeholder="Ej. Se le llamó dos veces y no contestó / dijo que ya no lo necesita" />
               </Seccion>
               <BotonGrande texto={ocupado ? 'Guardando…' : 'Pasar a saldo a favor'} color={MARCA.azulClaro} deshabilitado={ocupado || nota.trim().length < 3}
                 onPress={() => hacer(() => pasarEncargoASaldo(e.id, nota.trim()), 'Quedó como saldo a favor',
                   (r) => `${formatMoney(r?.saldo)} a favor del cliente (${r?.reserva ?? ''}). El producto queda para la venta.`)} />
+            </>
+          ) : null}
+
+          {modo === 'fecha' ? (
+            <>
+              <Seccion titulo="Llega aproximadamente" pie={e.fecha_estimada ? `Hoy dice ${e.fecha_estimada}. El cliente recibe el aviso en la app.` : 'El cliente recibe el aviso en la app.'}>
+                <Fecha valor={fecha} onCambiar={setFecha} desde={hoySV()} />
+              </Seccion>
+              <Seccion titulo="Motivo para el cliente (opcional)">
+                <Campo value={nota} onChangeText={setNota} maxLength={200} placeholder="Ej. El proveedor atrasó el envío" />
+              </Seccion>
+              <BotonGrande texto={ocupado ? 'Guardando…' : 'Cambiar y avisar'} color={MARCA.azulClaro}
+                deshabilitado={ocupado || !fecha || fecha < hoySV() || fecha === e.fecha_estimada}
+                onPress={() => hacer(() => cambiarFechaDeEncargo(e.id, fecha, nota.trim() || null), 'Fecha cambiada', 'El cliente recibe el aviso en la app.')} />
+            </>
+          ) : null}
+
+          {modo === 'no_entrego' ? (
+            <>
+              <Seccion titulo="Qué eligió el cliente">
+                <Opciones valor={eleccion} onCambiar={setEleccion} opciones={[
+                  { id: 'devolucion', label: 'Devolución completa', detalle: `Se le entregan ${formatMoney(Number(e.anticipo ?? 0))} en efectivo con un vale de caja` },
+                  { id: 'saldo', label: 'Saldo a favor', detalle: `Por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal` },
+                ]} />
+              </Seccion>
+              <Seccion titulo="Nota (opcional)">
+                <Campo value={nota} onChangeText={setNota} maxLength={200} placeholder="Ej. El proveedor lo descontinuó" />
+              </Seccion>
+              <Aviso tono="cuidado" texto="No se deshace." />
+              <BotonGrande texto={ocupado ? 'Guardando…' : eleccion === 'devolucion' ? 'Devolver todo' : 'Dejar a su favor'}
+                color={eleccion === 'devolucion' ? MARCA.rojo : MARCA.verde} deshabilitado={ocupado}
+                onPress={() => hacer(() => proveedorNoEntregoEncargo(e.id, eleccion, nota.trim() || null),
+                  eleccion === 'devolucion' ? 'Devolución lista para entregar' : 'Quedó como saldo a favor',
+                  (r) => (eleccion === 'devolucion'
+                    ? `${formatMoney(r?.monto)}: entrégalo en efectivo desde Reservas (${r?.reserva ?? ''}).`
+                    : `${formatMoney(r?.monto)} a favor del cliente (${r?.reserva ?? ''}).`))} />
             </>
           ) : null}
 

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -129,6 +130,8 @@ export default function MiCajaView({ comoPestana = false }) {
     // `VACIO` estable y no `|| []`: un arreglo nuevo en cada render invalida
     // los `useMemo` que dependen de él.
     const branches = useStaff((s) => s.branches) ?? VACIO;
+    // Las condiciones del papel del abono (reglamento v1 o v2, por fecha: la base).
+    const reglasDeReserva = useReglasDeReserva();
     const { user, hasPermission, getScope } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const puedeOperar = hasPermission('caja_vales', 'can_edit');
@@ -375,14 +378,14 @@ export default function MiCajaView({ comoPestana = false }) {
     const imprimirAbono = useCallback(async (abono) => {
         const ticket = construirComprobanteDeAbono({
             abono, sala: nombreSala, hechoPor: user?.name || '',
-            hechoAt: new Date().toISOString(),
+            hechoAt: new Date().toISOString(), reglas: reglasDeReserva,
         });
         const salida = await imprimirDocumento(ticket, { sala });
         if (!salida.ok) {
             showToast('No se pudo imprimir el comprobante', salida.detalle, 'error');
         }
         return salida.ok;
-    }, [nombreSala, sala, showToast, user]);
+    }, [nombreSala, sala, showToast, user, reglasDeReserva]);
 
     /* El papel de un ingreso o un vale del cajón.
      *

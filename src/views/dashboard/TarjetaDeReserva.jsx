@@ -6,6 +6,7 @@ import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { codigoDeReserva } from '@nucleo/data/reservas';
 import { cuentasDeReserva, estadoDeReserva, renglonesDe, telefonoLegible } from './reservaVista';
+import { InsigniaDeNivel } from './AvisosDeReserva';
 import {
     PRODUCTOS_EN_TARJETA, detalleDelRenglonDeReserva, plazoDeReserva, productosOcultos,
 } from '@nucleo/utils/reservasDeSala';
@@ -56,6 +57,7 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                     <span className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
                         <span className="text-label font-black tracking-wide text-content tabular-nums">{codigo}</span>
                         <Badge variant={estado.variant} uppercase={false}>{estado.label}</Badge>
+                        <InsigniaDeNivel nivel={r.nivel} />
                         {todas && r.sala && (
                             <span className="inline-flex items-center gap-1 text-caption text-content-3"><Store size={12} aria-hidden /> {r.sala}</span>
                         )}

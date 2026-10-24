@@ -7,6 +7,7 @@ import { anotarIngreso, subirComprobante } from '@nucleo/data/bolsas';
 import { datosDeFormaDePago, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { imprimirConstanciaDeReserva } from '@nucleo/utils/reservaConstancia';
+import { fetchReglasDeReserva } from '@nucleo/data/reservas';
 
 /**
  * Devuelve `{ ok: true, apartado, aviso?, papel? }` o `{ ok: false, error }`.
@@ -26,12 +27,14 @@ export async function cobrarAnticipo({ sala, nombreSala, userId, quienAtiende, c
     const a = r?.apartado;
     if (!a) return { ok: false, error: new Error('El cobro no quedó ligado a la reserva. Revisa la lista del día.') };
     try {
+        // El pie del papel dice cuánto vale el saldo a favor según el reglamento vigente.
+        const reglas = await fetchReglasDeReserva().catch(() => null);
         await imprimirConstanciaDeReserva({
             codigo: a.codigo, cliente: shortEmployeeName(papel?.cliente ?? ''), telefono: papel?.telefono ?? null,
             enCamino: a.traslado_desde ?? papel?.enCamino ?? null, producto: papel?.producto,
             cantidad: papel?.cantidad, precio: papel?.precio, renglones: papel?.renglones, anticipo: Number(a.anticipo),
             metodo: FORMAS_DE_PAGO.find((f) => f.value === pago?.forma)?.label ?? 'Efectivo',
-            venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(quienAtiende ?? ''),
+            venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(quienAtiende ?? ''), reglas,
         }, { sala });
     } catch (e) {
         return { ok: true, apartado: a, aviso: r.aviso, papel: e };

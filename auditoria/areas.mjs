@@ -878,7 +878,10 @@ export const AREAS = [
                  // La preventa de una reserva enviada a caja (2026-10-21).
                  'preventas',
                  // El libro del saldo a favor: usos (pasados a puntos), devoluciones y vencimientos (2026-10-21).
-                 'saldo_favor_movimientos'],
+                 'saldo_favor_movimientos',
+                 // Reglamento de reservas v2 (2026-11-15): cada aviso hecho a mano
+                 // (WhatsApp, llamada) con quién, cuándo y qué respondió el cliente.
+                 'reserva_avisos_log'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
+import { ArrowLeftRight, Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, PhoneCall, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -9,6 +9,7 @@ import Encabezado from './EncabezadoDeLista';
 import TarjetaDeReserva from './TarjetaDeReserva';
 import TarjetaCompacta from './TarjetaCompacta';
 import { TRASLADO } from './reservaVista';
+import { RegistrarLlamada } from './AvisosDeReserva';
 const DetalleDeReserva = lazy(() => import('./DetalleDeReserva'));
 import { useResumenWidget } from './tamanoWidget';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -32,7 +33,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import {
     accionesDeReservaNucleo, agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
-    origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas,
+    origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
 } from '@nucleo/utils/reservasDeSala';
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
@@ -110,6 +111,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const [cargando, setCargando] = useState(true);
     const [ocupada, setOcupada] = useState(null);
     const [whatsapp, setWhatsapp] = useState(null);
+    // Reglamento v2, cláusula 9: la llamada al cliente queda anotada.
+    const [llamando, setLlamando] = useState(null);
     // El código que el cliente muestra en la app (R-000123 o el pedido del
     // carrito P-XXXXXX): el lector de la caja lo escribe como un teclado.
     const [codigoPropio, setCodigo] = useState('');
@@ -194,7 +197,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const prorrogar = async (r) => {
         setOcupada(r.id);
         try {
-            const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && !x.prorrogada_at).map((x) => x.id);
+            const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)).map((x) => x.id);
             let vence = null;
             for (const id of ids) vence = (await prorrogarReserva(id))?.vence_at ?? vence;
             showToast('Plazo prorrogado', vence ? `Puede retirarla hasta el ${fechaTexto(vence, { weekday: 'long', day: 'numeric', month: 'long' })}. No admite otra prórroga.` : '', 'success');
@@ -273,6 +276,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             traer: { icon: ArrowLeftRight, onClick: (a) => setResolviendo(a.renglon) },
             whatsapp: { icon: MessageCircle, onClick: () => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) }) },
             prorrogar: { icon: CalendarPlus, onClick: () => prorrogar(r) },
+            llamada: { icon: PhoneCall, onClick: () => setLlamando(r) },
             cancelar: { icon: XCircle, onClick: () => mover(r, 'cancelada') },
         };
         return accionesDeReservaNucleo(r, { soloLectura, puedeRecetas, puedePreventa })
@@ -508,7 +512,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                                     <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
                                                         onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) })} />
                                                 )}
-                                                {(r.renglones ?? [r]).some((x) => x.estado === 'lista' && !x.prorrogada_at) && (
+                                                {(r.renglones ?? [r]).some((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)) && (
                                                     <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupada === r.id}
                                                         title="Una sola prórroga de 7 días" onClick={() => prorrogar(r)}>Prorrogar</Button>
                                                 )}
@@ -518,6 +522,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                             </>
                                         )}
                                         </>
+                                    )}
+                                    {!soloLectura && filasDe.some((x) => x.registrar_llamada) && (
+                                        <Button variant="ghost" size="xs" iconOnly icon={PhoneCall} title="Registrar llamada"
+                                            onClick={() => setLlamando(r)} />
                                     )}
                                     {!soloLectura && (
                                         <Button variant="ghost" size="xs" iconOnly icon={XCircle} title="Cancelar reserva"
@@ -543,6 +551,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                 r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
                                 r.estado === 'pendiente' && r.traslado_nota ? ` · ${r.traslado_nota}` : ''}${
                                 r.avisado_via === 'whatsapp' ? ' · avisado por WhatsApp' : ''}${
+                                textoDeNivel(r.nivel) ? ` · ${textoDeNivel(r.nivel)}` : ''}${
                                 textoDePreventa(r) ? ` · ${textoDePreventa(r)}` : ''}`}
                             acciones={acciones}
                         />
@@ -703,6 +712,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 <DevolverSaldo saldo={devolver} onCerrar={() => setDevolver(null)}
                     onDevuelto={() => { setSaldosDeFuera((l) => l.filter((x) => x.id !== devolver.id)); setDevolver(null); cargar(); }}
                     devolverSaldoAFavor={devolverSaldoAFavor} appendAuditLog={appendAuditLog} showToast={showToast} />
+            )}
+            {llamando && (
+                <RegistrarLlamada reserva={llamando.id} telefono={llamando.telefono}
+                    titulo={`${llamando.pedido ?? codigoDeReserva(llamando.id)} · ${String(llamando.cliente ?? '').split(/\s+/)[0]}`}
+                    onClose={() => setLlamando(null)} onListo={() => { setLlamando(null); cargar(); }} />
             )}
             {whatsapp && (
                 <AvisoWhatsapp reserva={whatsapp} onCerrar={() => setWhatsapp(null)}

@@ -23,6 +23,7 @@ import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import { mensajeDeError, motivoSinAplicar, pushClienteAlErp, updateCustomerFiscal } from '@nucleo/data/customers';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { imprimirConstanciaDeEncargo } from '@nucleo/utils/reservaConstancia';
+import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import DeOtraSala from './DeOtraSala';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
@@ -31,7 +32,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { apartadoDelPedido, clavePresentacion, origenesDelPedido, planDeApartar, redondear, telefonoDeFicha, tomaDeCadaTraslado } from '@nucleo/utils/apartar';
-import { apartadoPorCobrar, porCobrarDeSala } from '@nucleo/utils/reservasDeSala';
+import { apartadoPorCobrar, plazoAlApartar, porCobrarDeSala } from '@nucleo/utils/reservasDeSala';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 
 /**
@@ -101,6 +102,7 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
 
 // ── Nuevo ───────────────────────────────────────────────────────────────────
 function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
+    const reglasDeReserva = useReglasDeReserva();
     const showToast = useToastStore((s) => s.showToast);
     // El borrador sobrevive al cierre de sesión por inactividad (gate:borradores).
     const guardado = loadDraft(llave(sala));
@@ -387,7 +389,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                         </Notice>
                     ) : modo === 'reserva' ? (
                         <Notice variant="success" compact icon={PackageSearch}>
-                            Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta 7 días</b> con el precio de hoy.
+                            Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta {plazoAlApartar(reglasDeReserva)}</b> con el precio de hoy.
                         </Notice>
                     ) : modo === 'traslado' ? (
                         <Notice variant="info" compact icon={ArrowLeftRight}>

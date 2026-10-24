@@ -18,8 +18,9 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { anotarAbono } from '@nucleo/data/bolsas';
 import {
-  construirComprobanteDeAbono, DIAS_DE_RESERVA, estadoDelApartado, POLITICA_DE_RESERVA, renglonesDelApartado, vencimientoDeReserva,
+  construirComprobanteDeAbono, estadoDelApartado, reglasDelAbono, renglonesDelApartado, vencimientoDeReserva,
 } from '@nucleo/utils/abonoTicket';
+import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -51,7 +52,11 @@ export default function AbonoApartado() {
   const [verPolitica, setVerPolitica] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [clave] = useState(() => `app-abono-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-  const [vence] = useState(() => vencimientoDeReserva(hoySV()));
+  const [hoy] = useState(() => hoySV());
+  // Reglamento v1 o v2 (lo decide la base por la fecha): v2 aparta 30 días con anticipo.
+  const reglasDeReserva = useReglasDeReserva();
+  const { dias: diasDelAbono, politica } = reglasDelAbono(reglasDeReserva);
+  const vence = vencimientoDeReserva(hoy, diasDelAbono);
 
   useEffect(() => { saveDraft(BORRADOR, { cliente, telefono, renglones, abonado }); }, [BORRADOR, cliente, telefono, renglones, abonado]);
 
@@ -72,7 +77,7 @@ export default function AbonoApartado() {
         if (r?.error) { fallo('No se pudo anotar el abono', mensajeAmigable(r.error)); return; }
         clearDraft(BORRADOR);
         const papel = r.abono ? await imprimirEnLaSala(construirComprobanteDeAbono({
-          abono: r.abono, sala: nombreSala, hechoPor: user?.name || '', hechoAt: new Date().toISOString(),
+          abono: r.abono, sala: nombreSala, hechoPor: user?.name || '', hechoAt: new Date().toISOString(), reglas: reglasDeReserva,
         }), sala, 'Abono de apartado') : { ok: true };
         if (papel.ok) listo(`Abono anotado · ${r.abono?.folio || ''}`, 'El comprobante va a la impresora.');
         else fallo('Abono anotado, pero el comprobante no salió', papel.detalle);
@@ -87,7 +92,7 @@ export default function AbonoApartado() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>
-            {`El dinero entra a la caja de ${nombreSala} y sale un comprobante para el cliente. Vale hasta el ${vence} (${DIAS_DE_RESERVA} días).`}
+            {`El dinero entra a la caja de ${nombreSala} y sale un comprobante para el cliente. Vale hasta el ${vence} (${diasDelAbono} días).`}
           </Text>
           {!puedeOperar ? <Aviso tono="freno" texto="Anotar abonos es de quien opera la caja." /> : (
             <>
@@ -135,7 +140,7 @@ export default function AbonoApartado() {
               <Pressable onPress={() => setVerPolitica((v) => !v)} style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', marginHorizontal: 4, opacity: pressed ? 0.55 : 1 })}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{verPolitica ? 'Ocultar la política de reserva' : 'Ver la política de reserva'}</Text>
               </Pressable>
-              {verPolitica ? POLITICA_DE_RESERVA.map((t, i) => <Aviso key={i} texto={`${i + 1}. ${t}`} />) : null}
+              {verPolitica ? politica.map((t, i) => <Aviso key={i} texto={`${i + 1}. ${t}`} />) : null}
 
               <BotonGrande texto={guardando ? 'Anotando…' : 'Anotar e imprimir'} color={MARCA.verde} deshabilitado={guardando || !valido} onPress={guardar} />
             </>

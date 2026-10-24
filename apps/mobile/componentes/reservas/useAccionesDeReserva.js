@@ -85,7 +85,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
       { text: 'Prorrogar', onPress: async () => {
         setOcupada(r.id);
         try {
-          const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && !x.prorrogada_at).map((x) => x.id);
+          const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)).map((x) => x.id);
           let vence = null;
           for (const id of ids) vence = (await prorrogarReserva(id))?.vence_at ?? vence;
           listo('Plazo prorrogado', vence ? `Puede retirarla hasta el ${fechaTexto(vence, { weekday: 'long', day: 'numeric', month: 'long' })}. No admite otra prórroga.` : '');
@@ -146,6 +146,9 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
       case 'caja': enviarACaja(r); break;
       case 'whatsapp': avisarPorWhatsapp(r); break;
       case 'prorrogar': prorrogar(r); break;
+      // Reglamento v2, cláusula 9 (lo habilita la base con `registrar_llamada`).
+      case 'llamada': router.push({ pathname: '/reserva-llamada', params: {
+        reserva: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id), cliente: String(r.cliente ?? ''), telefono: String(r.telefono ?? '') } }); break;
       case 'cancelar': mover(r, 'cancelada'); break;
       default: break;
     }

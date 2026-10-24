@@ -244,7 +244,12 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
     if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sala', renglon: porTraerDe,
         title: `Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega` });
     if (hayLista && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp' });
-    if (filas.some((x) => x.estado === 'lista' && !x.prorrogada_at)) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', title: 'Una sola prórroga' });
+    // La prórroga la decide la base (`prorrogable`): el reglamento v2 la quita
+    // desde `reglas_v2_desde()`. Sin el campo (respuesta vieja), la regla v1.
+    if (filas.some((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at))) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', title: 'Una sola prórroga' });
+    // Reglamento v2, cláusula 9: el aviso por llamada queda registrado (quién,
+    // cuándo y qué respondió el cliente). Lo habilita la base (`registrar_llamada`).
+    if (filas.some((x) => x.registrar_llamada)) lista.push({ k: 'llamada', label: 'Registrar llamada', title: 'Anota que llamaste al cliente y qué respondió' });
     lista.push({ k: 'cancelar', label: 'Cancelar reserva', menor: true });
     return lista;
 }
@@ -276,7 +281,7 @@ export function cuentasDelGrupo(r) {
         total: filas.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0),
         todoPagado: filas.every((x) => x.pago_estado === 'pagado'),
         // Algún renglón listo que todavía no usó su única prórroga.
-        prorrogable: filas.some((x) => x.estado === 'lista' && !x.prorrogada_at),
+        prorrogable: filas.some((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)),
         // «Ya llegó: apartar» cuando lo pendiente venía por traslado.
         vieneDeTraslado: filas.some((x) => x.estado === 'pendiente' && x.traslado_estado),
     };
@@ -389,3 +394,21 @@ export function porCobrarDeSala(encargos, reservas) {
 
 /** El `apartado` de `operar-caja` para cobrar algo de «Por cobrar». */
 export const apartadoPorCobrar = (f) => (f.tipo === 'encargo' ? { modo: 'encargo', encargo_id: f.id } : { modo: 'reserva', reserva_id: f.id });
+
+/**
+ * Cuánto dura lo que se aparta en la sala, dicho para quien atiende. Las
+ * reglas son las de `reserva_reglas()` (v1 o v2 por fecha); sin ellas, v1.
+ * v2: con anticipo 30 días y pagado completo 60 (cláusula 3.3).
+ */
+export function plazoAlApartar(reglas) {
+    return reglas?.v2 ? `${reglas.dias_anticipo} días (${reglas.dias_pagada} si lo paga completo)` : '7 días';
+}
+
+/**
+ * «Cliente Oro · con prioridad»: el nivel del cliente que lo pone primero en
+ * la lista (`nivel` de `reservas_de_sucursal` / `encargos_de_sucursal`, que la
+ * base manda sólo desde `reglas_v2_desde()`).
+ */
+export function textoDeNivel(nivel) {
+    return nivel?.prioridad ? `Cliente ${nivel.nombre} · con prioridad` : null;
+}

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1353.0 — Reservas: el reglamento v2 arranca solo el 15 de noviembre
+
+- Todo cuelga de `reglas_v2_desde()` (15-nov-2026). Antes de la fecha, reservas y encargos funcionan exactamente igual que hoy; lo que empezó antes conserva su regla.
+- Plazo para retirar según lo pagado (cl. 3.4): sin pago 7 días, con anticipo 30, pagada 60; si paga después, corre desde ese pago. Encargo recibido: 60 días (4.5). Sin prórrogas (6.4). Saldo a favor: 1 año (8.2).
+- Oferta terminada (3.5): una reserva lista y sin pago sigue apartada a precio normal, con aviso al cliente.
+- Registro de cada aviso al cliente (WhatsApp y llamada con su respuesta) en `reserva_avisos_log`, y prioridad en la lista para Oro, Platino, Rubí y Diamante.
+- Encargos: Compras cambia la fecha estimada con aviso (4.4); si el proveedor no entrega, el cliente elige devolución —que autoriza administración (8.3)— o saldo a favor (4.6).
+- Portal, app del personal, app de clientes y `app-clientes` leen las reglas vigentes de `reserva_reglas()`, nunca de una fecha escrita en el cliente.
+
 ## v2.1352.0 — Puntos Salud: el Reglamento v2 arranca solo el 15 de noviembre
 
 - Todo el Reglamento v2 cuelga de UNA fecha, `puntos_config.reglas_v2_desde` (15-nov-2026): niveles, factores, cumpleaños por nivel, mayoreo, canje y raspable se encienden solos. Los interruptores a mano quedan deprecados; la emergencia es mover la fecha.

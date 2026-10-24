@@ -31,7 +31,7 @@
  * parece roto en un teléfono y funciona perfecto en el escritorio — que es la
  * peor combinación posible para darse cuenta.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 const distancia = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const angulo = (a, b) => Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
@@ -52,8 +52,14 @@ export default function useGestos(ref, { alMover, alEmpezar, alTerminar, activo 
     // cada `setState` sería un render que llega tarde para el siguiente evento.
     const punteros = useRef(new Map());
     const previo = useRef(null);
+    /* Los manejadores más recientes, sin re-suscribir los eventos en cada
+     * render. Se copian en un efecto de layout y no durante el render (React
+     * no garantiza que un render se confirme): corre al confirmar, antes de
+     * que el navegador pueda entregar el siguiente evento de puntero. */
     const cb = useRef({ alMover, alEmpezar, alTerminar });
-    cb.current = { alMover, alEmpezar, alTerminar };
+    useLayoutEffect(() => {
+        cb.current = { alMover, alEmpezar, alTerminar };
+    });
 
     useEffect(() => {
         const el = ref.current;
@@ -138,7 +144,7 @@ export default function useGestos(ref, { alMover, alEmpezar, alTerminar, activo 
  */
 export function useRueda(ref, alAcercar, activo = true) {
     const cb = useRef(alAcercar);
-    cb.current = alAcercar;
+    useLayoutEffect(() => { cb.current = alAcercar; });   // ver useGestos
     useEffect(() => {
         const el = ref.current;
         if (!el || !activo) return undefined;

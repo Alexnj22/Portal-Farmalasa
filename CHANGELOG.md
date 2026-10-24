@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.11 — Lint en cero: los efectos que encendían estado pasan a derivarse
+
+- **Horarios: elegir un turno trae sus horas en el mismo clic.** Antes un efecto las corregía un render después, y el editor pintaba un instante el turno nuevo con las horas viejas. Además el editor flotante se vuelve a colocar cuando cambia de tamaño (al marcar la pausa, la lactancia o aparecer un aviso), en vez de depender de una lista de causas escrita a mano.
+- **Promociones:** la lista, los descuentos, el seguimiento y la matriz de laboratorio calculan «cargando» y el error a partir de qué se pidió, en vez de encenderlos y apagarlos en cada pedido. Mismo comportamiento: los números viejos se atenúan mientras llega el mes nuevo, y al volver a la pestaña de descuentos después de un error se reintenta.
+- **Distribución:** el menú del teléfono se cierra al navegar sin un efecto que lo apague un render tarde.
+- Interno: `esImagen` del visor de documentos pasa a `src/utils/tipoDeDocumento.js` (el refresco en caliente exige que un archivo de componente sólo exporte componentes); `useGestos` copia sus manejadores en un efecto de layout en vez de durante el render; la prueba del chat escribe el espacio fino como `\u00a0`. `npx eslint .` queda sin errores fuera de Mi caja.
+
+## v2.1351.9 — Cortes: la franja y la base del tramo usan el juez del corte · Compras: el sello exige número y proveedor
+
 ## v2.1351.10 — Cortes: la franja y la base del tramo usan el juez del corte · Compras: el sello exige número y proveedor
 
 - **La franja del corte en «Movimientos» ya no muestra faltantes que no existen.** Pintaba la cifra del comprobante sin la corrección de los cobros de crédito: el corte de las 21:00 de Salud 3 del 17-ago aparecía con **−$970.39** cuando cuadró (+$0.01), y el del 20-ago con −$499.50 cuando sobraron $1.30. Ahora dice lo mismo que la tarjeta del corte, y un corte que no contó el efectivo se rotula «sin contar» en vez de «cuadró».

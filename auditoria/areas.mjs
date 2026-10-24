@@ -247,7 +247,7 @@ export const AREAS = [
             'src/utils/formatosDePapel.js',
             'src/plataforma/perspectiva.js',
             'src/utils/leerQrDeImagen.js',
-            'src/components/common/VisorDeDocumento.jsx',
+            'src/components/common/VisorDeDocumento.jsx', 'src/utils/tipoDeDocumento.js',
             'src/utils/contrato.js', 'src/utils/acreditaciones.js',
             'src/utils/seguroDeVida.js', 'src/data/seguroDeVida.js',
             'src/utils/ordenDeDescuento.js', 'src/data/ordenesDeDescuento.js',

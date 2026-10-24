@@ -10,7 +10,7 @@ import { escribeAhora, VENTANA_ESCRIBIENDO_MS } from '@nucleo/hooks/escrituraDel
 // sobrevive a cerrar el panel y el «está escribiendo…». Todo es lo que el
 // cliente o el dependiente LEEN, así que se prueba la frase final.
 
-const llano = (s) => String(s).replace(/ /g, ' ');
+const llano = (s) => String(s).replace(/\u00a0/g, ' ');
 const HOY = '2026-10-21';   // miércoles
 
 describe('el horario en palabras', () => {

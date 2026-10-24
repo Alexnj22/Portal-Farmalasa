@@ -47,9 +47,6 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const [isExiting, setIsExiting] = useState(false);
     const popoverRef = useRef(null);
 
-    // 🚨 NUEVO: Referencia para rastrear cuando el usuario cambia el select manualmente
-    const prevShiftIdRef = useRef(shiftId);
-
     const showTimePickers = shiftId !== 'OFF' && shiftId !== 'NO_SHIFTS';
 
     // ── El día, resuelto ────────────────────────────────────────────────────
@@ -111,54 +108,70 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         });
     }, [shifts, filterBranch, branchLimits]);
 
-    // 🚨 CORRECCIÓN: Actualización de horas vinculada al cambio manual del select
+    /* Elegir un turno del catálogo trae sus horas. Va en el MANEJADOR del
+     * desplegable y no en un efecto que mira `shiftId`: es la respuesta a lo
+     * que la persona hizo, no una sincronización — y como efecto pintaba un
+     * render con el turno nuevo y las horas viejas antes de corregirse. */
+    const elegirTurno = (nuevo) => {
+        if (nuevo === shiftId) return;
+        setShiftId(nuevo);
+        if (!nuevo || nuevo === 'OFF' || nuevo === 'NO_SHIFTS') return;
+        const template = filteredShifts.find(s => String(s.id) === String(nuevo));
+        if (!template) return;
+        setCustomStart(template.start_time?.substring(0, 5) || template.start);
+        setCustomEnd(template.end_time?.substring(0, 5) || template.end);
+        // Y su PAUSA. Desde el 2026-08-27 el turno del catálogo la
+        // trae, así que asignarlo la deja puesta en vez de obligar a
+        // marcarla a mano en cada una de las 329 celdas de la semana.
+        if (template.lunch_start) {
+            setHasLunch(true);
+            setLunchStart(String(template.lunch_start).substring(0, 5));
+        }
+    };
+
+    /* Colocar el popover junto a la celda, y volver a colocarlo cuando cambia
+     * de TAMAÑO (elegir un turno, marcar la pausa o la lactancia, aparecer un
+     * reparo: todo eso lo alarga). Antes un efecto lo medía con esos estados
+     * como dependencias —una lista de causas que había que mantener a mano— y
+     * hacía `setPos` sincrónico. Ahora se suscribe al tamaño real con un
+     * `ResizeObserver`, que avisa la primera vez al observar y antes de pintar. */
     useEffect(() => {
-        if (shiftId !== prevShiftIdRef.current) {
-            if (shiftId && shiftId !== 'OFF' && shiftId !== 'NO_SHIFTS') {
-                const template = filteredShifts.find(s => String(s.id) === String(shiftId));
-                if (template) {
-                     
-                    setCustomStart(template.start_time?.substring(0, 5) || template.start);
-                    setCustomEnd(template.end_time?.substring(0, 5) || template.end);
-                    // Y su PAUSA. Desde el 2026-08-27 el turno del catálogo la
-                    // trae, así que asignarlo la deja puesta en vez de obligar a
-                    // marcarla a mano en cada una de las 329 celdas de la semana.
-                    if (template.lunch_start) {
-                        setHasLunch(true);
-                        setLunchStart(String(template.lunch_start).substring(0, 5));
-                    }
-                     
-                }
+        const el = popoverRef.current;
+        if (enTelefono || !el || !anchorRect) return undefined;
+
+        const colocar = () => {
+            const popRect = el.getBoundingClientRect();
+
+            let left = anchorRect.left + 10;
+            let top;
+
+            if (anchorRect.top > window.innerHeight / 2) {
+                top = anchorRect.top - popRect.height - 10;
+            } else {
+                top = anchorRect.bottom + 10;
             }
-            prevShiftIdRef.current = shiftId;
+
+            if (top < 10) top = 10;
+            if (top + popRect.height > window.innerHeight) {
+                top = window.innerHeight - popRect.height - 10;
+            }
+            if (left + popRect.width > window.innerWidth) {
+                left = window.innerWidth - popRect.width - 10;
+            }
+
+            setPos({ top, left });
+            // Give browser one frame to paint at scale(0.96) before animating in
+            requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
+        };
+
+        if (typeof ResizeObserver === 'undefined') {
+            const id = requestAnimationFrame(colocar);
+            return () => cancelAnimationFrame(id);
         }
-    }, [shiftId, filteredShifts]);
-
-    useEffect(() => {
-        if (enTelefono || !popoverRef.current || !anchorRect) return;
-        const popRect = popoverRef.current.getBoundingClientRect();
-
-        let left = anchorRect.left + 10;
-        let top;
-
-        if (anchorRect.top > window.innerHeight / 2) {
-            top = anchorRect.top - popRect.height - 10;
-        } else {
-            top = anchorRect.bottom + 10;
-        }
-
-        if (top < 10) top = 10;
-        if (top + popRect.height > window.innerHeight) {
-            top = window.innerHeight - popRect.height - 10;
-        }
-        if (left + popRect.width > window.innerWidth) {
-            left = window.innerWidth - popRect.width - 10;
-        }
-
-        setPos({ top, left });  
-        // Give browser one frame to paint at scale(0.96) before animating in
-        requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
-    }, [anchorRect, shiftId, hasLunch, hasLactation, reparos.length, enTelefono]);
+        const observador = new ResizeObserver(colocar);
+        observador.observe(el);
+        return () => observador.disconnect();
+    }, [anchorRect, enTelefono]);
 
     /* Se cierra si la TABLA se desplaza, porque el popover queda anclado a una
      * celda que se movió. Ya NO se cierra con el scroll de la ventana:
@@ -252,7 +265,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     <div className={`group/select hover:shadow-md transition-shadow duration-[var(--dur-slow)] rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger/45 shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
                         <LiquidSelect 
                             value={shiftId} 
-                            onChange={setShiftId} 
+                            onChange={elegirTurno} 
                             options={shiftOptions} 
                             placeholder="Seleccionar turno…" 
                             clearable={false} 

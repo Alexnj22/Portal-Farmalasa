@@ -15,7 +15,7 @@
 // respaldo para cuando el servidor no dice nada útil, que también pasa.
 
 import { describe, it, expect } from 'vitest';
-import { esImagen } from '../../src/components/common/VisorDeDocumento';
+import { esImagen } from '@nucleo/utils/tipoDeDocumento';
 
 describe('esImagen', () => {
     it('EL CASO QUE FALLÓ: contenido de imagen y nombre vacío', () => {

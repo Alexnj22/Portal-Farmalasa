@@ -34,8 +34,14 @@ import Campo from './Campo';
 export default function MatrizLaboratorio({ promocionId, onCabecera }) {
     const [mes, setMes] = useState('');
     const [datos, setDatos] = useState(null);
-    const [cargando, setCargando] = useState(true);
-    const [error, setError] = useState(null);
+    /* De QUÉ pedido es la última respuesta. «Cargando» y el error se DERIVAN
+       de eso en vez de encenderse y apagarse con `setState` al empezar cada
+       pedido: cargando = la respuesta que hay no es la del mes elegido. Los
+       números viejos se quedan (atenuados) hasta que llega la nueva. */
+    const clave = `${promocionId}|${mes}`;
+    const [respuesta, setRespuesta] = useState({ clave: null, error: null });
+    const cargando = respuesta.clave !== clave;
+    const error = respuesta.clave === clave ? respuesta.error : null;
 
     // ⚠️ Quien lo use pasa `key={promocionId}`: el mes elegido es de ESTA
     // promoción, y sin remontar, la siguiente abriría simulando un mes que
@@ -45,12 +51,15 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
     useEffect(() => {
         if (!promocionId) return undefined;
         let vivo = true;
-        setCargando(true);
-        setError(null);
+        const pedido = `${promocionId}|${mes}`;
         fetchPromocionLaboratorio(promocionId, mes || null)
-            .then((d) => { if (vivo) { setDatos(d); onCabecera?.(d); } })
-            .catch((e) => { if (vivo) setError(e); })
-            .finally(() => { if (vivo) setCargando(false); });
+            .then((d) => {
+                if (!vivo) return;
+                setDatos(d);
+                setRespuesta({ clave: pedido, error: null });
+                onCabecera?.(d);
+            })
+            .catch((e) => { if (vivo) setRespuesta({ clave: pedido, error: e }); });
         return () => { vivo = false; };
     }, [promocionId, mes, onCabecera]);
 

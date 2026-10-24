@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
@@ -136,10 +136,11 @@ export default function PromocionesView() {
     const [pagosPendientes, setPagosPendientes] = useState('pendientes'); // 'pendientes' | 'todas'
 
     const [promos, setPromos] = useState([]);
-    const [cargando, setCargando] = useState(true);
-    // El error se guarda entero, no sólo su texto: hace falta el `code` para
-    // distinguir «tu cargo no tiene el módulo» de «falló la consulta».
-    const [error, setError] = useState(null);
+    /* De qué `recarga` es la última respuesta de la lista. El cargador y el
+       error se DERIVAN de eso: cargando = todavía no llegó la de la recarga en
+       curso. El error se guarda entero, no sólo su texto: hace falta el `code`
+       para distinguir «tu cargo no tiene el módulo» de «falló la consulta». */
+    const [cargaLista, setCargaLista] = useState({ recarga: null, error: null });
     const [modal, setModal] = useState(false);
     const [modalLab, setModalLab] = useState(false);
     const [editando, setEditando] = useState(null);   // {id, tipo} de la que se corrige
@@ -147,6 +148,8 @@ export default function PromocionesView() {
     const [duplicando, setDuplicando] = useState(null);  // la promoción que se copia
     const [reactivando, setReactivando] = useState(null); // la terminada que se reabre
     const [recarga, setRecarga] = useState(0);
+    const cargando = cargaLista.recarga !== recarga;
+    const error = cargaLista.recarga === recarga ? cargaLista.error : null;
 
     // ── Los descuentos, aparte: viven en el sistema de la caja ─────────────
     /* El resumen que va en las tarjetas. Las pestañas que leen de la MISMA
@@ -169,8 +172,6 @@ export default function PromocionesView() {
 
     const [descuentos, setDescuentos] = useState([]);
     const [alcanceTodo, setAlcanceTodo] = useState(false);
-    const [cargandoDesc, setCargandoDesc] = useState(false);
-    const [errorDesc, setErrorDesc] = useState(null);
     /* `null` = cerrado · `>0` = el descuento que se CORRIGE. No hay «nuevo»:
        los descuentos nacen con su promoción. */
     const [modalDesc, setModalDesc] = useState(null);
@@ -198,12 +199,9 @@ export default function PromocionesView() {
         // El cargador tapa la vista sólo en la PRIMERA carga. Después de
         // activar, duplicar o reactivar, la lista se refresca detrás: antes
         // cada acción parpadeaba la pantalla entera y perdía el scroll.
-        setCargando(true);
-        setError(null);
         fetchPromociones()
-            .then((filas) => { if (vivo) setPromos(filas); })
-            .catch((e) => { if (vivo) setError(e); })
-            .finally(() => { if (vivo) setCargando(false); });
+            .then((filas) => { if (vivo) { setPromos(filas); setCargaLista({ recarga, error: null }); } })
+            .catch((e) => { if (vivo) setCargaLista({ recarga, error: e }); });
         return () => { vivo = false; };
     }, [recarga]);
 
@@ -215,27 +213,34 @@ export default function PromocionesView() {
     /* Qué recarga de descuentos ya está en pantalla. Entrar y salir de la
        pestaña volvía a pedir todo al sistema de la caja —varias peticiones en
        cada visita— sin que nada hubiera cambiado. */
-    const descCargados = useRef(null);
+    const [descOk, setDescOk] = useState(null);
+    /* El último pedido que falló, con su recarga. Salir de la pestaña lo
+       olvida —se ajusta en el render al cambiar `tab`, sin efecto—, así que
+       volver a entrar reintenta, que es lo que promete «vuelve a intentar». */
+    const [descFallo, setDescFallo] = useState(null);
+    const [tabVisto, setTabVisto] = useState(tab);
+    if (tabVisto !== tab) {
+        setTabVisto(tab);
+        if (descFallo) setDescFallo(null);
+    }
+    const errorDesc = descFallo && descFallo.recarga === recargaDesc ? descFallo.error : null;
+    // Los descuentos viven en un sistema ajeno: no hay forma de tenerlos
+    // antes de pedirlos, así que «cargando» es «en la pestaña y sin ellos».
+    const cargandoDesc = tab === 'descuentos' && descOk !== recargaDesc && !errorDesc;
 
     useEffect(() => {
-        if (tab !== 'descuentos') return undefined;
-        if (descCargados.current === recargaDesc) return undefined;
+        if (!cargandoDesc) return undefined;
         let vivo = true;
-        // Los descuentos viven en un sistema ajeno: no hay forma de tenerlos
-        // antes de pedirlos, así que el cargador se enciende acá.
-        setCargandoDesc(true);
-        setErrorDesc(null);
         fetchDescuentos()
             .then(({ descuentos: filas, alcanceTodo: todo }) => {
                 if (!vivo) return;
                 setDescuentos(filas);
                 setAlcanceTodo(todo);
-                descCargados.current = recargaDesc;
+                setDescOk(recargaDesc);
             })
-            .catch((e) => { if (vivo) setErrorDesc(e); })
-            .finally(() => { if (vivo) setCargandoDesc(false); });
+            .catch((e) => { if (vivo) setDescFallo({ recarga: recargaDesc, error: e }); });
         return () => { vivo = false; };
-    }, [tab, recargaDesc]);
+    }, [cargandoDesc, recargaDesc]);
 
     /* Los laboratorios que de verdad aparecen, sacados de las promociones —no de
        una lista escrita a mano ni del catálogo entero—: ofrecer un laboratorio

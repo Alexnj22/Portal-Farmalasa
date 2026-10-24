@@ -98,7 +98,12 @@ export default function TorogozLayout({ children, handleLogout }) {
     const { user, hasPermission } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const [abierto, setAbierto] = useState(false);
+    // El menú del teléfono se cierra al navegar: se recuerda EN QUÉ dirección
+    // se abrió, y en cualquier otra está cerrado. Derivado en el render, sin un
+    // efecto que lo apague un render tarde.
+    const [abiertoEn, setAbiertoEn] = useState(null);
+    const abierto = abiertoEn !== null && abiertoEn === location.pathname;
+    const setAbierto = (si) => setAbiertoEn(si ? location.pathname : null);
     const puedeVender = hasPermission('distribucion', 'can_edit');
     const puedeConfigurar = hasPermission('distribucion_config', 'can_edit');
     const pendientes = usePendientes(true);
@@ -121,9 +126,6 @@ export default function TorogozLayout({ children, handleLogout }) {
         },
     });
     const nombre = shortEmployeeName(user?.name) || user?.username || '';
-
-    // El menú del teléfono se cierra al navegar.
-    useEffect(() => { setAbierto(false); }, [location.pathname]);
 
     const salir = async () => {
         await handleLogout?.();

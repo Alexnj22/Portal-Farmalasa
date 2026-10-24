@@ -37,9 +37,6 @@ export default function TabSeguimiento({
     promos, todas = promos, busqueda, filtrando = false, elegida, onResumen, cache,
     puedeEditar = false, onEditar, onDuplicar, onReactivar,
 }) {
-    const [detalle, setDetalle] = useState(null);
-    const [cargando, setCargando] = useState(false);
-    const [error, setError] = useState(null);
 
     // Una promoción de laboratorio no tiene renglones: pedirle `get_promocion`
     // devolvería un detalle vacío que se leería como «no vendió nada». Su
@@ -50,22 +47,32 @@ export default function TabSeguimiento({
     );
     const esLab = esLaboratorio(elegidaObj);
 
+    /* El detalle, el cargador y el error se DERIVAN de qué se pidió, en vez de
+       vaciarse y encenderse con `setState` al empezar cada pedido. La
+       respuesta se guarda con la promoción y la caché a las que pertenece:
+       si cualquiera de las dos cambió, ya no es de lo elegido y no se
+       muestra —se suelta el anterior, como antes: sus tarjetas seguían arriba
+       mientras cargaba otra, con números que ya no eran de lo elegido—. */
+    const clave = (!elegida || esLab) ? null : String(elegida);
+    const [respuesta, setRespuesta] = useState({ clave: null, cache: null, detalle: null, error: null });
+    const guardado = clave ? cache?.get(clave) : undefined;
+    const propia = clave && respuesta.clave === clave && respuesta.cache === cache ? respuesta : null;
+    const detalle = clave ? (guardado ?? propia?.detalle ?? null) : null;
+    const error = guardado ? null : (propia?.error ?? null);
+    const cargando = !!clave && !guardado && !propia;
+
     useEffect(() => {
-        if (!elegida || esLab) { setDetalle(null); return undefined; }
-        setError(null);
-        const guardado = cache?.get(String(elegida));
-        if (guardado) { setDetalle(guardado); setCargando(false); return undefined; }
+        if (!clave || cache?.get(clave)) return undefined;
         let vivo = true;
-        // Se suelta el anterior: sus tarjetas seguían arriba mientras cargaba
-        // otra promoción, con números que ya no eran de lo elegido.
-        setDetalle(null);
-        setCargando(true);
         fetchPromocion(elegida)
-            .then((d) => { if (vivo) { cache?.set(String(elegida), d); setDetalle(d); } })
-            .catch((e) => { if (vivo) setError(e); })
-            .finally(() => { if (vivo) setCargando(false); });
+            .then((d) => {
+                if (!vivo) return;
+                cache?.set(clave, d);
+                setRespuesta({ clave, cache, detalle: d, error: null });
+            })
+            .catch((e) => { if (vivo) setRespuesta({ clave, cache, detalle: null, error: e }); });
         return () => { vivo = false; };
-    }, [elegida, esLab, cache]);
+    }, [clave, elegida, cache]);
 
 
     /* `useMemo` y no `?? []` suelto: el arreglo nuevo de cada render haría que

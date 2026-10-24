@@ -284,8 +284,9 @@ const CAMPOS_DE_INCIDENTE = ['detectado_at', 'ocurrido_at', 'naturaleza', 'datos
 
 /** Crea (sin `id`) o actualiza. Quién lo registró lo pone la base. */
 export async function guardarIncidente(id, campos) {
-    const fila = Object.fromEntries(CAMPOS_DE_INCIDENTE.filter((k) => k in campos)
-        .map((k) => [k, typeof campos[k] === 'string' ? (campos[k].trim() || null) : campos[k] ?? null]));
+    // Armada por nombre de campo: tsc no puede saber que trae las obligatorias.
+    const fila = /** @type {any} */ (Object.fromEntries(CAMPOS_DE_INCIDENTE.filter((k) => k in campos)
+        .map((k) => [k, typeof campos[k] === 'string' ? (campos[k].trim() || null) : campos[k] ?? null])));
     const q = id
         ? supabase.from('incidentes_datos').update(fila).eq('id', id)
         : supabase.from('incidentes_datos').insert(fila);

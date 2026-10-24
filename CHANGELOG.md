@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1354.1 — Datos personales: tipos del registro de incidentes y áreas de las funciones nuevas
+
+- `guardarIncidente` arma la fila por nombre de campo; se tipa explícita para que `gate:tipos` no sume un aviso.
+- `auditoria/funciones.json` asigna área a las funciones nuevas de reservas, mayorista, datos y reclamos.
+
 ## v2.1354.0 — Mayorista, datos personales y reclamos: el v2 arranca solo el 15 de noviembre
 
 - Cliente Mayorista (Condiciones v2), por `reglas_v2_desde()`: rangos 200/500/1000 sobre compras elegibles —lo que acumula puntos y no se vendió bajo el precio asignado—; requisito de §2.3 al pedirlo desde la app; la persona jurídica necesita correo; cinco días hábiles para responder, con aviso; retiro automático a los seis meses sin compras con quince días de aviso, que se cancela solo si vuelve a comprar; recordatorio de la revisión trimestral. Antes de la fecha, 300/800/2000 sobre el total, como hoy.

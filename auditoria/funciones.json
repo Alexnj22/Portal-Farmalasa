@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-22T20:48:12.308Z",
+ "generado": "2026-10-24T16:25:16.148Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -135,7 +135,7 @@
    "por": "tablas"
   },
   "apartado_cotizar": {
-   "area": "cortes-efectivo",
+   "area": "app-clientes",
    "por": "código"
   },
   "apartado_crear_reserva": {
@@ -245,6 +245,11 @@
   "app_cliente_compras": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "app_cliente_correo_envios_purgar": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
   },
   "app_cliente_existencias": {
    "area": "app-clientes",
@@ -581,6 +586,11 @@
    "area": "traslados",
    "por": "cron"
   },
+  "avisar_incidentes_datos": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
   "avisar_llegada_del_conductor": {
    "area": "pedidos",
    "por": "trigger"
@@ -600,6 +610,11 @@
   "avisar_rechazos_sin_arreglo": {
    "area": "facturacion-dte",
    "por": "cron"
+  },
+  "avisar_reclamos_por_vencer": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
   },
   "avisar_sala_lista_para_salir": {
    "area": "pedidos",
@@ -1073,6 +1088,10 @@
    "area": "ventas",
    "por": "código"
   },
+  "cliente_tipo_persona_guardar": {
+   "area": "ventas",
+   "por": "código"
+  },
   "cliente_vigente": {
    "area": "facturacion-dte",
    "por": "tablas"
@@ -1340,6 +1359,10 @@
   "customer_ficha_estado": {
    "area": "facturacion-dte",
    "por": "llamada"
+  },
+  "customers_tipo_persona": {
+   "area": "facturacion-dte",
+   "por": "trigger"
   },
   "dar_todo_a_las_cuentas_de_pruebas": {
    "area": "permisos",
@@ -1898,6 +1921,10 @@
    "area": "personal",
    "por": "tablas"
   },
+  "encargo_cambiar_fecha": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "encargo_en_sucursal_crear": {
    "area": "app-clientes",
    "por": "código"
@@ -1910,11 +1937,19 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "encargo_prorrogable": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
   "encargo_prorrogar": {
    "area": "app-clientes",
    "por": "código"
   },
   "encargo_prorrogar_por_cliente": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "encargo_proveedor_no_entrego": {
    "area": "app-clientes",
    "por": "código"
   },
@@ -2633,16 +2668,16 @@
    "por": "código"
   },
   "get_libro_compras_completo": {
-   "area": "fiscal",
-   "por": "código"
+   "area": "compras",
+   "por": "tablas"
   },
   "get_libro_compras_completo_json": {
    "area": "fiscal",
    "por": "código"
   },
   "get_libro_compras_declarable": {
-   "area": "fiscal",
-   "por": "código"
+   "area": "compras",
+   "por": "tablas"
   },
   "get_libro_compras_declarable_json": {
    "area": "fiscal",
@@ -3094,6 +3129,16 @@
    "area": "compras",
    "por": "código"
   },
+  "incidentes_datos_al_registrar": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "incidentes_datos_destinatarios": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
   "incrementar_reanudacion_traslado": {
    "area": "pedidos",
    "por": "código"
@@ -3456,7 +3501,7 @@
   },
   "marketing_objeto_es_borrador_ajeno": {
    "area": "marketing",
-   "por": "policy"
+   "por": "tablas"
   },
   "marketing_pieza_en_su_mes": {
    "area": "marketing",
@@ -3476,7 +3521,7 @@
   },
   "marketing_publicar_borradores": {
    "area": "marketing",
-   "por": "llamada"
+   "por": "tablas"
   },
   "marketing_publicar_mes": {
    "area": "marketing",
@@ -3514,6 +3559,11 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "mayorista_rango_de": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
   "mayorista_resolver": {
    "area": "app-clientes",
    "por": "código"
@@ -3522,6 +3572,16 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "mayorista_umbrales": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "mayorista_v2": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
   "mayoristas_listado": {
    "area": "app-clientes",
    "por": "código"
@@ -3529,6 +3589,11 @@
   "mayoristas_rehacer_resumen": {
    "area": "app-clientes",
    "por": "cron"
+  },
+  "mayoristas_vigilar_plazos": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
   },
   "merge_purchase_dte_documents": {
    "area": "compras",
@@ -4119,6 +4184,14 @@
    "area": "ventas",
    "por": "código"
   },
+  "puntos_observacion_abrir": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "puntos_observacion_cerrar": {
+   "area": "ventas",
+   "por": "código"
+  },
   "puntos_panel_asignar": {
    "area": "ventas",
    "por": "código"
@@ -4172,6 +4245,22 @@
    "area": "ventas",
    "por": "código"
   },
+  "puntos_premio_costo": {
+   "area": "productos",
+   "por": "tablas"
+  },
+  "puntos_premio_cupo_sala_libre": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_premio_exigir_cupo_sala": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_premio_existencia": {
+   "area": "ventas",
+   "por": "tablas"
+  },
   "puntos_premio_pedir": {
    "area": "ventas",
    "por": "código"
@@ -4188,6 +4277,10 @@
    "area": "ventas",
    "por": "código"
   },
+  "puntos_premio_usos": {
+   "area": "ventas",
+   "por": "tablas"
+  },
   "puntos_premios_lista": {
    "area": "ventas",
    "por": "código"
@@ -4195,6 +4288,10 @@
   "puntos_premios_validos": {
    "area": "ventas",
    "por": "código"
+  },
+  "puntos_raspable_usado": {
+   "area": "ventas",
+   "por": "tablas"
   },
   "puntos_redirigir_cuenta": {
    "area": "ventas",
@@ -4372,6 +4469,21 @@
    "area": "inventario",
    "por": "código"
   },
+  "reclamo_registrar": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "reclamo_responder": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "reclamos_destinatarios": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
   "reconstruir_costo_de_venta": {
    "area": "ventas",
    "por": "tablas"
@@ -4480,6 +4592,10 @@
    "area": "inventario",
    "por": "código"
   },
+  "reglas_v2_desde": {
+   "area": "ventas",
+   "por": "tablas"
+  },
   "regrant_al_cambiar_employees_safe": {
    "area": "permisos",
    "por": "a mano",
@@ -4533,6 +4649,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "reserva_dias_retiro": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
   "reserva_encargar_a_bodega": {
    "area": "app-clientes",
    "por": "código"
@@ -4557,6 +4677,14 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "reserva_prioridad": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "reserva_prorrogable": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
   "reserva_prorrogar": {
    "area": "app-clientes",
    "por": "código"
@@ -4574,6 +4702,14 @@
    "por": "tablas"
   },
   "reserva_receta_decidir": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_registrar_aviso": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "reserva_reglas": {
    "area": "app-clientes",
    "por": "código"
   },
@@ -4602,12 +4738,16 @@
    "por": "código"
   },
   "reservar_pago_bono": {
-   "area": "promociones",
+   "area": "cortes-efectivo",
    "por": "código"
   },
   "reservas_de_sucursal": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "reservas_v2_rige": {
+   "area": "app-clientes",
+   "por": "llamada"
   },
   "reservas_vencer": {
    "area": "app-clientes",
@@ -4878,6 +5018,16 @@
    "area": "pedidos",
    "por": "código"
   },
+  "solicitud_datos_accion": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "solicitud_datos_tercero": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
   "solicitud_datos_tomar_folio": {
    "area": "datos-personales",
    "por": "tablas"
@@ -4909,6 +5059,11 @@
   "suggest_proveedor_categoria_id": {
    "area": "compras",
    "por": "tablas"
+  },
+  "sumar_dias_habiles": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
   },
   "suspendidos_en": {
    "area": "asistencia",
@@ -4953,6 +5108,10 @@
   "tipo_de_presentacion_de_extra": {
    "area": "productos",
    "por": "tablas"
+  },
+  "tipo_persona_sugerido": {
+   "area": "facturacion-dte",
+   "por": "llamada"
   },
   "tocar_ultimo_abono": {
    "area": "cortes-efectivo",
@@ -5113,7 +5272,7 @@
    "por": "código"
   },
   "ventas_elegibles_puntos": {
-   "area": "ventas",
+   "area": "productos",
    "por": "tablas"
   },
   "ventas_para_puntos": {
@@ -5159,101 +5318,6 @@
   "zero_out_product_all_branches": {
    "area": "minmax",
    "por": "código"
-  },
-  "puntos_observacion_abrir": {
-   "area": "ventas",
-   "por": "trigger"
-  },
-  "puntos_observacion_cerrar": {
-   "area": "ventas",
-   "por": "código"
-  },
-  "cliente_tipo_persona_guardar": {
-   "area": "ventas",
-   "por": "código"
-  },
-  "customers_tipo_persona": {
-   "area": "ventas",
-   "por": "trigger"
-  },
-  "tipo_persona_sugerido": {
-   "area": "ventas",
-   "por": "quien la llama"
-  },
-  "sumar_dias_habiles": {
-   "area": "datos-personales",
-   "por": "manual",
-   "manual": true
-  },
-  "solicitud_datos_accion": {
-   "area": "datos-personales",
-   "por": "manual",
-   "manual": true
-  },
-  "solicitud_datos_tercero": {
-   "area": "datos-personales",
-   "por": "manual",
-   "manual": true
-  },
-  "incidentes_datos_destinatarios": {
-   "area": "datos-personales",
-   "por": "manual",
-   "manual": true
-  },
-  "incidentes_datos_al_registrar": {
-   "area": "datos-personales",
-   "por": "manual",
-   "manual": true
-  },
-  "avisar_incidentes_datos": {
-   "area": "datos-personales",
-   "por": "manual",
-   "manual": true
-  },
-  "mayorista_v2": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "mayorista_umbrales": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "mayorista_rango_de": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "mayoristas_vigilar_plazos": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "app_cliente_correo_envios_purgar": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "reclamos_destinatarios": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "reclamo_registrar": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "reclamo_responder": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "avisar_reclamos_por_vencer": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
   }
  }
 }

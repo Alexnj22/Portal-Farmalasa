@@ -10,6 +10,10 @@
       "destination": "/reglamento-puntos.html"
     },
     {
+      "source": "/reglamento-puntos-v1",
+      "destination": "/reglamento-puntos-v1.html"
+    },
+    {
       "source": "/privacidad",
       "destination": "/privacidad.html"
     },

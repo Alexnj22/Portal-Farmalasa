@@ -15,7 +15,7 @@
     "build:staging": "vite build --mode staging --outDir ${OUT_DIR:-dist-staging}",
     "lint": "eslint .",
     "preview": "vite preview --outDir ${OUT_DIR:-dist} --strictPort --port ${QA_PORT:-4173}",
-    "legal:web": "node scripts/documento-legal-web.mjs docs/legal/reglamento-programa-de-puntos.html public/reglamento-puntos.html && node scripts/documento-legal-web.mjs docs/legal/aviso-de-privacidad.html public/privacidad.html",
+    "legal:web": "node scripts/documento-legal-web.mjs docs/legal/reglamento-programa-de-puntos-v2.html public/reglamento-puntos.html --rige-desde=\"15 de noviembre de 2026\" --anterior=/reglamento-puntos-v1 && node scripts/documento-legal-web.mjs docs/legal/reglamento-programa-de-puntos.html public/reglamento-puntos-v1.html && node scripts/documento-legal-web.mjs docs/legal/aviso-de-privacidad.html public/privacidad.html",
     "legal:js": "node scripts/formulario-datos-js.mjs",
     "legal:pdf": "npm run reglamento:puntos:pdf && npm run privacidad:pdf && npm run nombramiento:pdf && npm run formulario:pdf",
     "reglamento:puntos": "npm run reglamento:puntos:pdf && npm run legal:web",

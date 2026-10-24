@@ -29,12 +29,27 @@
  * el día que alguien reescriba la fuente sin mirar el generador.
  *
  *   node scripts/documento-legal-web.mjs <fuente.html> [salida.html]
+ *        [--rige-desde="15 de noviembre de 2026" --anterior=/reglamento-puntos-v1]
+ *
+ * Con `--rige-desde` y `--anterior` (2026-10-24), la página lleva arriba un
+ * aviso que dice desde cuándo rige ESTA versión y enlaza la que rige hasta
+ * entonces. Es para publicar una versión nueva ANTES de que entre en vigor —el
+ * reglamento manda avisar con anticipación— sin dejar sin respaldo a quien
+ * reclama por algo de hoy. Es texto fijo, sin JavaScript, igual que el resto.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const fuente = process.argv[2];
-const salida = process.argv[3];
+const posicionales = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const opcion = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3) ?? null;
+const fuente = posicionales[0];
+const salida = posicionales[1];
+const rigeDesde = opcion('rige-desde');
+const anterior = opcion('anterior');
+if ((rigeDesde == null) !== (anterior == null)) {
+  console.error('--rige-desde y --anterior van juntos');
+  process.exit(1);
+}
 if (!fuente || !salida) {
   console.error('uso: node scripts/documento-legal-web.mjs <fuente.html> <salida.html>');
   process.exit(1);
@@ -96,6 +111,13 @@ const fuentes = [
   cara('Source Serif 4', 'source-serif-4-latin-ext.woff2', LATIN_EXT, '200 900'),
 ].join('\n');
 
+const escapar = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const aviso = rigeDesde ? `
+<aside class="aviso-de-vigencia" role="note">
+  Esta versión rige desde el <strong>${escapar(rigeDesde)}</strong>. Hasta el día anterior rige la
+  <a href="${escapar(anterior)}">versión anterior del reglamento</a>.
+</aside>` : '';
+
 const html = `<!doctype html>
 <html lang="es">
 <head>
@@ -109,10 +131,17 @@ const html = `<!doctype html>
 ${fuentes}
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; }
+  body { margin: 0; }${rigeDesde ? `
+  .aviso-de-vigencia {
+    max-width: 46rem; margin: 16px auto 0; padding: 12px 16px;
+    border: 1px solid currentColor; border-radius: 10px;
+    font: 15px/1.5 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  .aviso-de-vigencia a { color: inherit; font-weight: 600; }
+  @media (max-width: 47rem) { .aviso-de-vigencia { margin: 16px 16px 0; } }` : ''}
 </style>
 </head>
-<body>
+<body>${aviso}
 ${cuerpo}
 </body>
 </html>

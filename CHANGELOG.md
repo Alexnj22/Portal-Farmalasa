@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.12 — Mi caja: lint en cero
+
+- **Mi caja, al anotar un movimiento con boleta:** la advertencia «este número ya está anotado» ya no se queda en pantalla un instante con el número anterior mientras se escribe otro.
+- El portal entero queda sin errores de lint. En Mi caja, la lista de movimientos se recalcula cuando debe y la clave anti-duplicado del envío se crea una sola vez por diálogo, sin leer el reloj en cada render.
+
+## v2.1351.10 — Lint en cero: los efectos que encendían estado pasan a derivarse
+
 ## v2.1351.11 — Lint en cero: los efectos que encendían estado pasan a derivarse
 
 - **Horarios: elegir un turno trae sus horas en el mismo clic.** Antes un efecto las corregía un render después, y el editor pintaba un instante el turno nuevo con las horas viejas. Además el editor flotante se vuelve a colocar cuando cambia de tamaño (al marcar la pausa, la lactancia o aparecer un aviso), en vez de depender de una lista de causas escrita a mano.

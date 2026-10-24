@@ -1637,6 +1637,9 @@ const horaLegible = (cuando) => (cuando ? hora12(cuando) : '');
 
 /** Un renglón de la cuenta del efectivo: rótulo a la izquierda, monto a la
  *  derecha. Existe porque son seis y escritos a mano se desalinean solos. */
+// Una sola lista vacía: así un `useMemo` que depende de ella no recalcula en cada render.
+const SIN_FILAS = [];
+
 function Renglon({ rotulo, monto, fuerte = false, apagado = false }) {
     return (
         <div className="flex items-baseline justify-between gap-3">
@@ -2192,8 +2195,8 @@ function Marca({ tono, children }) {
 
 function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
     onCorregir, onReenviar, anotaron, cortes, correcciones }) {
-    const etiquetaDe = (codigo) =>
-        tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo);
+    const etiquetaDe = useCallback((codigo) =>
+        tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo), [tipos]);
 
     /* ── El comprobante se ve ACÁ, y se firma al apretar ────────────────────
      *
@@ -2223,7 +2226,7 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
     // La lista sale del núcleo (`lineasDelDia`): la app nativa arma la MISMA.
     const lineas = useMemo(() => lineasDelDia({
         movimientos, deBolsas, cobros, etiquetaDe, correcciones,
-    }), [movimientos, deBolsas, cobros, tipos, correcciones]); // eslint-disable-line react-hooks/exhaustive-deps -- `etiquetaDe` sale de `tipos`
+    }), [movimientos, deBolsas, cobros, etiquetaDe, correcciones]);
 
     /* ── El buscador ───────────────────────────────────────────────────────
      *
@@ -2513,11 +2516,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      *
      * Vive en un ref y NO se regenera por render: el diálogo se monta con
      * `key={dialogo}`, así que cada apertura ya trae la suya. */
-    const claveDeEnvio = useRef(null);
-    if (claveDeEnvio.current === null) {
-        claveDeEnvio.current = globalThis.crypto?.randomUUID?.()
-            ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    }
+    // Inicializador perezoso de `useState`: corre una sola vez por montaje, que
+    // es lo que hacía el `if (ref === null)` sin leer el reloj en cada render.
+    const [claveInicial] = useState(() => globalThis.crypto?.randomUUID?.()
+        ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    const claveDeEnvio = useRef(claveInicial);
     const [aviso, setAviso] = useState(null);
     /* Cuando el papel dice que el dinero va para el OTRO lado.
      *
@@ -2530,7 +2533,10 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * El número de una boleta de POS es el ID de la transacción: el aparato no
      * lo repite nunca. Así que si aparece, es la misma operación — un duplicado
      * o la corrección de uno anotado al revés. Ver `utils/boletaRepetida`. */
-    const [repetidaEnCaja, setRepetidaEnCaja] = useState([]);
+    // La respuesta se guarda con la boleta y la sala a las que pertenece: así la
+    // advertencia de un número viejo no queda en pantalla mientras se escribe
+    // otro, y el efecto no tiene que vaciar estado a mano.
+    const [repetidaPara, setRepetidaPara] = useState({ clave: null, filas: [] });
     // Qué llenó la foto. Esos campos quedan cerrados: el papel manda.
     const [deLaFoto, setDeLaFoto] = useState({});
     /* Lo que el lector contestó, entero, para guardarlo con el movimiento.
@@ -2629,11 +2635,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * mismo patrón que la salida de una bolsa. */
     useEffect(() => {
         const num = boleta.trim();
-        if (!num || !sala) { setRepetidaEnCaja([]); return undefined; }
+        if (!num || !sala) return undefined;
         let vivo = true;
         const id = setTimeout(() => {
             boletaYaEnCaja(sala, num).then((filas) => {
-                if (vivo) setRepetidaEnCaja(filas);
+                if (vivo) setRepetidaPara({ clave: `${sala}|${num}`, filas });
             });
         }, 400);
         return () => { vivo = false; clearTimeout(id); };
@@ -2651,6 +2657,8 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * Eso se avisa y quien registra decide. Frenarlo dejaría sin salida a quien
      * ya se equivocó, que es la peor forma de castigar un error honesto.
      */
+    const claveDeBoleta = boleta.trim() && sala ? `${sala}|${boleta.trim()}` : null;
+    const repetidaEnCaja = claveDeBoleta && repetidaPara.clave === claveDeBoleta ? repetidaPara.filas : SIN_FILAS;
     const problemaDeLaBoleta = useMemo(() => problemaDeBoleta(repetidaEnCaja, entra, boleta), [repetidaEnCaja, entra, boleta]);
     // Sólo el efectivo: tarjeta y transferencia tienen su propio comprobante.
     const frenoMonto = foto && !noEfectivo

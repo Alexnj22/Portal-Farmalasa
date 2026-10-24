@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.9 — auditoría: --escribir conserva lo escrito y el lint se mide
+
+- **`node auditoria/puntuar.mjs --escribir` ya no borra la historia del registro.** Reescribía `registro.json` entero y se llevaba las verificaciones, el sello y todo lo escrito a mano; por eso nadie lo corría y cada sesión trasladaba ejes a mano. Ahora actualiza sólo lo que la regla calcula (por eje: `pct`, `evidencia`, `hallazgos`; por área: `pct`, `estado` y la lista de hallazgos) y deja el resto tal cual, incluidos campos y ejes que la regla no conoce. `pct`/`estado` salen con la misma regla que el gate (sello y desbloqueos incluidos). La fusión vive en `auditoria/fusionar-registro.mjs` y la fija `tests/unit/auditoriaFusionarRegistro.test.js`.
+- **El lint de cada área se mide, no se escribe.** La lista `LINT` a mano tenía dos entradas que ya no se reproducían (`LibrosIvaView.jsx:823`, `tests/unit/ticketPrint.test.js:140`) y no nombraba nueve archivos con errores reales. Ahora `puntuar.mjs` corre `eslint .` con caché (~28 s en frío, segundos después) y reparte los errores por área. Sólo agrega hallazgos: ningún porcentaje cambia.
+- Registro recalculado: ningún eje ni área cambia de porcentaje; se actualizan evidencias (conteos de la batería y de módulos cubiertos, documentos citados), líneas movidas y hallazgos de lint.
+
 ## v2.1351.8 — Expediente: segundo contrato del regente de enfermería y certificado de acreditación JVPQF
 
 - El regente de enfermería tiene doble contrato: en Documentos ahora se suben los dos — «Contrato de Trabajo Firmado — como dependiente» y «Contrato de Regencia de Enfermería». Antes el de regencia sólo aparecía para el regente químico.

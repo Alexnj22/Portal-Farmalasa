@@ -24,12 +24,14 @@
 // el sello, y por eso ninguna área nace con él.
 //
 //   node auditoria/puntuar.mjs           ver el cálculo
-//   node auditoria/puntuar.mjs --escribir   volcarlo a registro.json
+//   node auditoria/puntuar.mjs --escribir   volcarlo a registro.json (sólo lo que
+//                                           la regla deriva: fusionar-registro.mjs)
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
+import { fusionarRegistro } from './fusionar-registro.mjs';
 import { AREAS, EJES, areaDeArchivo } from './areas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -220,14 +222,41 @@ const GATES = {
 // aparecen cuando alguien las pide. El baseline NO se tocó.
 const BUNDLE_ROTO = {};
 
-// Errores de lint que sobreviven. No son míos ni nuevos: estaban.
-// Es una lista ESCRITA, y por eso se queda vieja sola: la de Pedidos
-// (`prueba-traslado.spec.js:40`, la variable `desde`) se había ido con
-// 18b947d1f el 2026-08-24 y siguió restando dos meses. Al cerrar una, borrarla.
-const LINT = {
-    fiscal:    ['LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente'],
-    impresion: ['tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular'],
-};
+// ── Errores de lint que sobreviven: se MIDEN, no se escriben ────────────────
+// Era una lista escrita a mano, y se quedó vieja sola tres veces: la de Pedidos
+// (`prueba-traslado.spec.js:40`) se había ido con 18b947d1f el 2026-08-24 y
+// siguió restando dos meses; las de `LibrosIvaView.jsx:823` y
+// `tests/unit/ticketPrint.test.js:140` ya no se reproducían el 2026-10-24
+// (`npx eslint --no-ignore <archivo>` en 0) — y a la vez había NUEVE archivos
+// con errores reales que la lista no nombraba.
+//
+// Ahora corre `eslint .` (la misma configuración que `npm run lint`) con caché:
+// ~28 s en frío y un par de segundos después. Un archivo de `src/` va a su área
+// por `areaDeArchivo`; uno de `tests/` va a las áreas cuyos módulos importa
+// (ver `pruebasPorArea` más abajo). Si eslint no se pudo correr, NO se inventa
+// una lista vacía: se anota que no se midió.
+const LINT_CACHE = path.join(RAIZ, 'node_modules', '.cache', 'eslint-auditoria');
+const LINT_MEDIDO = (() => {
+    const salida = path.join(LINT_CACHE, `informe-${process.pid}.json`);
+    try {
+        fs.mkdirSync(LINT_CACHE, { recursive: true });
+        // eslint sale con 1 cuando HAY errores: eso no es un fallo de la medición.
+        spawnSync('npx', ['eslint', '.', '--format', 'json', '-o', salida,
+                          '--cache', '--cache-location', path.join(LINT_CACHE, 'cache')],
+                  { cwd: RAIZ, stdio: 'ignore', timeout: 180_000 });
+        const j = JSON.parse(fs.readFileSync(salida, 'utf8'));
+        return j.filter(f => f.errorCount > 0).flatMap(f => f.messages.filter(m => m.severity === 2).map(m => ({
+            archivo: path.relative(RAIZ, f.filePath), linea: m.line,
+            // Sólo la primera línea: las reglas de react-hooks traen un
+            // párrafo de explicación que no cabe en un hallazgo.
+            texto: `${m.ruleId || 'error'}: ${m.message.split('\n')[0].slice(0, 140)}`,
+        })));
+    } catch {
+        return null;
+    } finally {
+        fs.rmSync(salida, { force: true });
+    }
+})();
 
 // ── Pendientes que la memoria del proyecto declara ABIERTOS ─────────────────
 // Ésta es la fuente del eje `flujo`. Cada línea es una cita: si el repo dice
@@ -667,45 +696,56 @@ function puntuar(area) {
                 ? ['tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo'] : []),
         ] };
 
-    // Lint que sobrevive
-    for (const [id, ls] of Object.entries(LINT)) if (id === area.id) ev.vista.hallazgos.push(...ls);
+    // Lint que sobrevive (medido arriba). Un archivo de prueba no tiene área
+    // propia: cuenta para las áreas cuyos módulos nombra.
+    if (LINT_MEDIDO === null) ev.vista.hallazgos.push('eslint no se pudo correr: el lint de esta área no se midió');
+    else for (const l of LINT_MEDIDO) {
+        const enArea = areaDeArchivo(l.archivo) === area.id
+            || (/^tests\//.test(l.archivo) && pruebasPorArea[area.id]?.has(l.archivo));
+        if (enArea) ev.vista.hallazgos.push(`${l.archivo}:${l.linea} — ${l.texto}`);
+    }
 
     return ev;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-const PESO = EJES.reduce((s, e) => s + e.peso, 0);
-const registro = { nota: 'Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.',
-    iniciado: FECHA, recalculado: FECHA, areas: {} };
+const RUTA_REGISTRO = path.join(RAIZ, 'auditoria', 'registro.json');
+const leerJson = (p, def) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return def; } };
+const anterior = leerJson(RUTA_REGISTRO, {
+    nota: 'Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.',
+    iniciado: FECHA, areas: {},
+});
+const desbloqueadas = (leerJson(path.join(RAIZ, 'auditoria', 'desbloqueos.json'), { abiertos: [] }).abiertos || []).map(d => d.area);
 
-const filas = [];
-for (const area of AREAS) {
-    const ejes = puntuar(area);
-    const bruto = Math.round(EJES.reduce((s, e) => s + ejes[e.id].pct * e.peso, 0) / PESO);
-    const pct = Math.min(bruto, 95);   // ninguna área nace con sello
-    registro.areas[area.id] = {
-        ejes, pct, estado: pct >= 95 ? 'completo' : 'en-curso',
-        sello_sala: null,
-        hallazgos: EJES.flatMap(e => (ejes[e.id].hallazgos || []).map(x => `[${e.id}] ${x}`)),
-        verificaciones: [{ fecha: FECHA, evidencia: 'Auditoría completa del portal: 11 gates + barrido propio + consultas a producción.' }],
-    };
-    filas.push({ id: area.id, nombre: area.nombre, pct, ejes });
-}
+const calculado = {};
+for (const area of AREAS) calculado[area.id] = puntuar(area);
+// Sólo lo que la regla deriva; verificaciones, sello y lo demás pasan tal cual
+// (ver fusionar-registro.mjs, y por qué escribirlo entero costaba la historia).
+const registro = fusionarRegistro(anterior, calculado, {
+    desbloqueadas, hoy: new Date().toISOString().slice(0, 10),
+    verificacionInicial: { fecha: new Date().toISOString().slice(0, 10), evidencia: 'Primera puntuación: derivada por auditoria/puntuar.mjs.' },
+});
+
+const filas = AREAS.map(area => ({ id: area.id, nombre: area.nombre, pct: registro.areas[area.id].pct, ejes: calculado[area.id] }));
 
 filas.sort((a, b) => b.pct - a.pct);
 const g = s => `\x1b[90m${s}\x1b[0m`;
 console.log('\n  área                 %   ' + EJES.map(e => e.id.slice(0, 4).padStart(5)).join(''));
 console.log(g('  ' + '─'.repeat(24 + EJES.length * 5)));
 for (const f of filas) {
+    const antes = anterior.areas?.[f.id]?.pct;
     const col = f.pct >= 85 ? 32 : f.pct >= 70 ? 33 : 31;
     console.log(`  ${f.nombre.slice(0, 20).padEnd(20)} \x1b[${col}m${String(f.pct).padStart(3)}\x1b[0m  `
-        + EJES.map(e => { const v = f.ejes[e.id].pct; return `\x1b[${v >= 90 ? 32 : v >= 70 ? 33 : 31}m${String(v).padStart(5)}\x1b[0m`; }).join(''));
+        + EJES.map(e => { const v = f.ejes[e.id].pct; return `\x1b[${v >= 90 ? 32 : v >= 70 ? 33 : 31}m${String(v).padStart(5)}\x1b[0m`; }).join('')
+        + (typeof antes === 'number' && antes !== f.pct ? g(`   (registro: ${antes})`) : ''));
 }
 console.log(g('\n  ' + EJES.map(e => `${e.id.slice(0, 4)}=${e.nombre}`).join(' · ')));
 console.log(`\n  Promedio del portal: ${Math.round(filas.reduce((s, f) => s + f.pct, 0) / filas.length)}%`);
-console.log(`  Hallazgos registrados: ${Object.values(registro.areas).reduce((s, a) => s + a.hallazgos.length, 0)}\n`);
+console.log(`  Hallazgos registrados: ${AREAS.reduce((s, a) => s + registro.areas[a.id].hallazgos.length, 0)}`);
+if (LINT_MEDIDO === null) console.log('  ⚠ eslint no se pudo correr: el lint no se midió');
+console.log('');
 
 if (ESCRIBIR) {
-    fs.writeFileSync(path.join(RAIZ, 'auditoria', 'registro.json'), JSON.stringify(registro, null, 2) + '\n');
-    console.log('  ✓ auditoria/registro.json escrito\n');
+    fs.writeFileSync(RUTA_REGISTRO, JSON.stringify(registro, null, 2) + '\n');
+    console.log('  ✓ auditoria/registro.json actualizado (sólo ejes, pct, estado y hallazgos; lo demás quedó como estaba)\n');
 }

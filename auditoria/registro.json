@@ -41,7 +41,9 @@
           "pct": 95,
           "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+            "src/hooks/useGestos.js:56 — react-hooks/refs: Error: Cannot access refs during render",
+            "src/hooks/useGestos.js:141 — react-hooks/refs: Error: Cannot access refs during render"
           ]
         },
         "movil": {
@@ -63,7 +65,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "153 de 211 módulo(s) de lógica (.js) del área nombrados por alguna prueba (73%) · 4099 pruebas en 340 archivos, todas verdes",
+          "evidencia": "153 de 211 módulo(s) de lógica (.js) del área nombrados por alguna prueba (73%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -78,6 +80,8 @@
       "hallazgos": [
         "[flujo] el trabón al girar el teléfono está EN PAUSA",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] src/hooks/useGestos.js:56 — react-hooks/refs: Error: Cannot access refs during render",
+        "[vista] src/hooks/useGestos.js:141 — react-hooks/refs: Error: Cannot access refs during render",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -156,12 +160,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "13 de 18 módulo(s) de lógica (.js) del área nombrados por alguna prueba (72%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "15 de 20 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
           "hallazgos": []
         }
       },
@@ -173,12 +177,6 @@
         "[flujo] falta que el papel conteste qué simbología lee el lector",
         "[flujo] falta prueba en vivo del candado doble",
         "[flujo] carné: turno y sala definido y sin implementar",
-        "[seguridad] kiosco_marcar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-        "[seguridad] kiosco_identificar(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-        "[seguridad] kiosco_bitacora(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-        "[seguridad] kiosco_declarar_turno(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-        "[seguridad] kiosco_aviso_leido(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
-        "[seguridad] kiosco_marcajes_recientes(): GRANT a anon de más. Valida device_token adentro, así que no expone nada — pero contradice la regla escrita y nadie lo vigila",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -250,7 +248,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -341,7 +339,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "4 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -382,7 +380,7 @@
           "pct": 90,
           "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
           "hallazgos": [
-            "src/components/forms/EmployeeFormModal.jsx:3328"
+            "src/components/forms/EmployeeFormModal.jsx:3381"
           ]
         },
         "bd": {
@@ -409,7 +407,8 @@
           "pct": 95,
           "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+            "src/components/common/VisorDeDocumento.jsx:56 — react-refresh/only-export-components: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
           ]
         },
         "movil": {
@@ -431,7 +430,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "27 de 34 módulo(s) de lógica (.js) del área nombrados por alguna prueba (79%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "39 de 48 módulo(s) de lógica (.js) del área nombrados por alguna prueba (81%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -445,8 +444,9 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta el APK nuevo de la cámara en Android y probarlo en sala",
-        "[datos] src/components/forms/EmployeeFormModal.jsx:3328",
+        "[datos] src/components/forms/EmployeeFormModal.jsx:3381",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] src/components/common/VisorDeDocumento.jsx:56 — react-refresh/only-export-components: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -516,7 +516,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -584,7 +584,9 @@
           "pct": 92,
           "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+            "src/views/schedule-tabs/components/InlineDayEditor.jsx:121 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+            "src/views/schedule-tabs/components/InlineDayEditor.jsx:158 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders"
           ]
         },
         "movil": {
@@ -606,7 +608,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -621,6 +623,8 @@
       "hallazgos": [
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
         "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] src/views/schedule-tabs/components/InlineDayEditor.jsx:121 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+        "[vista] src/views/schedule-tabs/components/InlineDayEditor.jsx:158 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -690,12 +694,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "3 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
           "hallazgos": []
         }
       },
@@ -772,7 +776,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "9 de 12 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -862,12 +866,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "9 de 12 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "12 de 17 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md",
+          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md, docs/PLAN-AVISOS-NATIVOS-2026-09-30.md",
           "hallazgos": []
         }
       },
@@ -954,7 +958,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1044,7 +1048,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4236 pruebas en 347 archivos, todas verdes",
+          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1134,12 +1138,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md",
+          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md, docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md",
           "hallazgos": []
         }
       },
@@ -1199,7 +1203,12 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "src/views/promociones/MatrizLaboratorio.jsx:48 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+            "src/views/promociones/PromocionesView.jsx:201 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+            "src/views/promociones/PromocionesView.jsx:226 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+            "src/views/promociones/TabSeguimiento.jsx:54 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders"
+          ]
         },
         "movil": {
           "pct": 95,
@@ -1220,12 +1229,12 @@
         },
         "pruebas": {
           "pct": 85,
-          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4236 pruebas en 347 archivos, todas verdes",
+          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md, docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md, docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md",
           "hallazgos": []
         }
       },
@@ -1233,6 +1242,10 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
+        "[vista] src/views/promociones/MatrizLaboratorio.jsx:48 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+        "[vista] src/views/promociones/PromocionesView.jsx:201 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+        "[vista] src/views/promociones/PromocionesView.jsx:226 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+        "[vista] src/views/promociones/TabSeguimiento.jsx:54 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1290,7 +1303,11 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "src/views/MiCajaView.jsx:2223 — react-hooks/preserve-manual-memoization: Compilation Skipped: Existing memoization could not be preserved",
+            "src/views/MiCajaView.jsx:2518 — react-hooks/purity: Error: Cannot call impure function during render",
+            "src/views/MiCajaView.jsx:2518 — react-hooks/purity: Error: Cannot call impure function during render"
+          ]
         },
         "movil": {
           "pct": 95,
@@ -1311,12 +1328,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "10 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "16 de 23 módulo(s) de lógica (.js) del área nombrados por alguna prueba (70%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
           "hallazgos": []
         }
       },
@@ -1328,6 +1345,9 @@
         "[flujo] dos diferencias confirmadas y grandes en Salud 3 (−$970.39 y −$499.50) sin revisar con la sala",
         "[flujo] falta probar las bolsas en sala",
         "[flujo] falta el PRIMER cobro de crédito real con el código nuevo (reclamo atómico y firma del servidor, b596827ce)",
+        "[vista] src/views/MiCajaView.jsx:2223 — react-hooks/preserve-manual-memoization: Compilation Skipped: Existing memoization could not be preserved",
+        "[vista] src/views/MiCajaView.jsx:2518 — react-hooks/purity: Error: Cannot call impure function during render",
+        "[vista] src/views/MiCajaView.jsx:2518 — react-hooks/purity: Error: Cannot call impure function during render",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1405,7 +1425,7 @@
         },
         "pruebas": {
           "pct": 94,
-          "evidencia": "9 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4236 pruebas en 347 archivos, todas verdes",
+          "evidencia": "9 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1418,7 +1438,6 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[flujo] get_pending_mh_invoices lee 363 MB por llamada: declarada como deuda en bloques-por-llamada.json, sin auditar el plan",
         "[bd] índice sin lecturas en la ventana de 4 días: idx_customers_erp_id (968 kB)",
         "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
@@ -1500,7 +1519,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1595,12 +1614,12 @@
         },
         "pruebas": {
           "pct": 93,
-          "evidencia": "7 de 11 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4236 pruebas en 347 archivos, todas verdes",
+          "evidencia": "7 de 11 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
           "hallazgos": []
         }
       },
@@ -1688,12 +1707,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "4 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (80%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "7 de 9 módulo(s) de lógica (.js) del área nombrados por alguna prueba (78%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
           "hallazgos": []
         }
       },
@@ -1781,7 +1800,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "10 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "20 de 30 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -1798,8 +1817,6 @@
         "[flujo] falta que alguien confirme el lote que llegó — que es lo legal",
         "[flujo] falta una ruta real (conductor = creador)",
         "[flujo] faltan el aviso a bodega y el camino del sobrante en la devolución",
-        "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-        "[vista] tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1879,12 +1896,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (86%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "7 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (88%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md, docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md, docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md",
           "hallazgos": []
         }
       },
@@ -1975,7 +1992,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "5 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2048,9 +2065,7 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente"
-          ]
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -2071,7 +2086,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 de 9 módulo(s) de lógica (.js) del área nombrados por alguna prueba (78%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "10 de 10 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2087,7 +2102,6 @@
         "[flujo] art.162 retención IVA $48.95 sin resolver",
         "[flujo] art.156 retención renta $262.52 sin marcar",
         "[flujo] libros de compras: quedan hallazgos abiertos",
-        "[vista] LibrosIvaView.jsx:823 — el archivo exporta algo que no es un componente",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -2167,7 +2181,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2240,9 +2254,7 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular"
-          ]
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -2265,7 +2277,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "3 de 3 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "3 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2281,10 +2293,6 @@
         "[flujo] el camino directo NO saca papel en la caja de Salud 4 (probado 19-ago)",
         "[flujo] falta medir el ancho del rollo",
         "[flujo] sigue sin probarse en otra sala",
-        "[seguridad] canjear_codigo_de_vinculacion(): GRANT a anon de más; valida el token del equipo adentro",
-        "[seguridad] confirmar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
-        "[seguridad] reclamar_impresion(): GRANT a anon de más; valida el token del equipo adentro",
-        "[vista] tests/unit/ticketPrint.test.js:140 — carácter de control en una expresión regular",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos — es el latido de las 6 cajas, y es 100% HOT (no rehace índices): 152 kB en total, nada que ver con el churn de inventory"
       ],
@@ -2358,7 +2366,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 9 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "6 de 9 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2442,7 +2450,7 @@
         },
         "pruebas": {
           "pct": 85,
-          "evidencia": "1 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 2718 pruebas en 169 archivos, todas verdes",
+          "evidencia": "1 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2527,7 +2535,7 @@
         },
         "pruebas": {
           "pct": 85,
-          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 3221 pruebas en 212 archivos, todas verdes",
+          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2594,7 +2602,9 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "src/views/distribucion/TorogozLayout.jsx:126 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders"
+          ]
         },
         "movil": {
           "pct": 95,
@@ -2615,7 +2625,7 @@
         },
         "pruebas": {
           "pct": 93,
-          "evidencia": "28 de 44 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4099 pruebas en 340 archivos, todas verdes",
+          "evidencia": "28 de 44 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2629,10 +2639,8 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] faltan las credenciales reales de Hacienda: el emisor propio no ha transmitido un DTE real",
-        "[observabilidad] src/data/distribucion.js: guardarCliente() — la llaman 1, ninguna audita: views/distribucion/ClienteModal.jsx",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/",
-        "[doc] tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
+        "[vista] src/views/distribucion/TorogozLayout.jsx:126 — react-hooks/set-state-in-effect: Error: Calling setState synchronously within an effect can trigger cascading renders",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -2679,7 +2687,9 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "tests/unit/horarioDelChat.test.js:13 — no-irregular-whitespace: Irregular whitespace not allowed."
+          ]
         },
         "movil": {
           "pct": 95,
@@ -2700,7 +2710,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "17 de 24 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 4368 pruebas en 356 archivos, todas verdes",
+          "evidencia": "17 de 24 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2715,10 +2725,8 @@
       "hallazgos": [
         "[flujo] faltan confirmar niveles, mayoreo y reservas de medicamentos antes de enviarla a las tiendas",
         "[flujo] el escáner de sala no lee el código desde la pantalla: falta probar con otro teléfono",
-        "[observabilidad] src/data/chatHilo.js: precargarHilo() — la llaman 1, ninguna audita: views/chat-clientes/FilaDeConversacion.jsx",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/",
-        "[doc] tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
+        "[vista] tests/unit/horarioDelChat.test.js:13 — no-irregular-whitespace: Irregular whitespace not allowed.",
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {
@@ -2786,7 +2794,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4368 pruebas en 356 archivos, todas verdes",
+          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4375 pruebas en 357 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
@@ -2801,8 +2809,7 @@
       "hallazgos": [
         "[flujo] falta el barrido en el navegador (escritorio y teléfono)",
         "[flujo] el control del servicio del diseñador está anotado y sin construir",
-        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
-        "[doc] el área no tiene un documento propio con cuerpo en docs/"
+        "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
         {

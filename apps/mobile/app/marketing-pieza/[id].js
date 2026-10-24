@@ -141,7 +141,7 @@ export default function PiezaDeMarketing() {
   // ── Lo demás de la pieza (como `PiezaModal`) ──
   const yoId = user?.id;
   const esCreador = !pieza?.created_by || pieza.created_by === yoId;
-  const puedeQuitar = puedeEditar && esCreador && pieza?.estado !== 'publicado';
+  const puedeQuitar = puedeEditar && esCreador && !['aprobado', 'programado', 'publicado'].includes(pieza?.estado);
   const sePuedeLiberar = ['aprobado', 'programado', 'publicado'].includes(pieza?.estado) && (puedeEditar || puedeAprobar);
   const quitar = () => Alert.alert('Quitar la pieza', `«${pieza.titulo || 'Pieza'}» se borra con sus diseños. Sólo se puede mientras está pendiente o en proceso.`, [
     { text: 'Cancelar', style: 'cancel' },

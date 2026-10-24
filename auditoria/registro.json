@@ -1758,12 +1758,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 89,
-          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
-            "tests/e2e/prueba-traslado.spec.js:40 — variable asignada y nunca usada"
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -1793,7 +1790,7 @@
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 93,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -2590,11 +2587,9 @@
           "hallazgos": []
         },
         "observabilidad": {
-          "pct": 87,
-          "evidencia": "barrido: 1 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
-          "hallazgos": [
-            "src/data/distribucion.js: guardarCliente() — la llaman 1, ninguna audita: views/distribucion/ClienteModal.jsx"
-          ]
+          "pct": 96,
+          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": []
         },
         "vista": {
           "pct": 98,
@@ -2624,16 +2619,13 @@
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "1 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/",
-            "tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
-          ]
+          "pct": 95,
+          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md, docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md",
+          "hallazgos": []
         }
       },
-      "pct": 93,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] faltan las credenciales reales de Hacienda: el emisor propio no ha transmitido un DTE real",
@@ -2680,11 +2672,9 @@
           "hallazgos": []
         },
         "observabilidad": {
-          "pct": 87,
-          "evidencia": "barrido: 1 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
-          "hallazgos": [
-            "src/data/chatHilo.js: precargarHilo() — la llaman 1, ninguna audita: views/chat-clientes/FilaDeConversacion.jsx"
-          ]
+          "pct": 96,
+          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": []
         },
         "vista": {
           "pct": 98,
@@ -2709,21 +2699,18 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 75,
-          "evidencia": "8 de 24 módulo(s) de lógica (.js) del área nombrados por alguna prueba (33%) · 4099 pruebas en 340 archivos, todas verdes",
+          "pct": 95,
+          "evidencia": "17 de 24 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 4368 pruebas en 356 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "1 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: docs/APP-CLIENTES-2026-10-05.md",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/",
-            "tiene documento pero ningún archivo del código lo nombra: nadie va a encontrarlo"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/APP-CLIENTES-2026-10-05.md",
+          "hallazgos": []
         }
       },
-      "pct": 91,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] faltan confirmar niveles, mayoreo y reservas de medicamentos antes de enviarla a las tiendas",
@@ -2798,20 +2785,18 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 67,
-          "evidencia": "1 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (20%) · 4099 pruebas en 340 archivos, todas verdes",
+          "pct": 95,
+          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4368 pruebas en 356 archivos, todas verdes",
           "hallazgos": []
         },
         "doc": {
-          "pct": 55,
-          "evidencia": "0 documento(s) vivos, 0 con cuerpo (≥120 líneas), 0 citado(s) desde el código: (ninguno)",
-          "hallazgos": [
-            "el área no tiene un documento propio con cuerpo en docs/"
-          ]
+          "pct": 95,
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/MARKETING-COMO-FUNCIONA-2026-10-24.md",
+          "hallazgos": []
         }
       },
-      "pct": 91,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta el barrido en el navegador (escritorio y teléfono)",

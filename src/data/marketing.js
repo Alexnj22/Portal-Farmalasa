@@ -142,9 +142,10 @@ export async function borrarPieza(id, titulo, archivos = []) {
     if (error) throw error;
     // Sin policy que lo permita el DELETE «funciona» y borra cero filas. Eso es
     // un error, no un éxito. La policy `marketing_piezas_delete` deja quitarla
-    // a quien la creó (o al superusuario) mientras no esté publicada: el
-    // mensaje decía «pendiente o en proceso», que no es la regla (2026-10-24).
-    if (!count) throw new Error('Sólo quien creó la pieza puede quitarla, y no si ya se publicó.');
+    // a quien la creó (o al superusuario) mientras no esté aprobada: desde el
+    // 2026-10-24 excluye también 'aprobado' y 'programado', igual que la policy
+    // de sus archivos (H31) — antes la fila se iba y los diseños quedaban sueltos.
+    if (!count) throw new Error('Sólo quien creó la pieza puede quitarla, y no si ya se aprobó.');
     // Las filas de sus archivos se van en cascada; los objetos del bucket no.
     // Se borran después: un archivo huérfano es el error barato.
     const rutas = archivos.map(rutaEnBucket).filter(Boolean);

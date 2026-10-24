@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.7 — Marketing: un diseño aprobado no se quita, y la auditoría al día
+
+- **Una pieza de marketing aprobada o programada ya no se puede quitar.** Antes la pieza desaparecía, pero sus diseños quedaban sueltos en el almacenamiento, porque los archivos de una pieza aprobada sí estaban protegidos. Ahora las dos reglas coinciden: el botón «Quitar» sólo aparece, en el portal y en la app, mientras la pieza no está aprobada, y la base lo frena igual.
+- Registro de auditoría al día con el trabajo del 24-oct: Distribución, Marketing y App de clientes pasan a 95%; Pedidos, Acceso e Impresión, a 93%.
+
 ## v2.1351.6 — Marketing y app de clientes: pruebas y documentación de cómo funcionan
 
 - **Marketing tiene su manual.** `docs/MARKETING-COMO-FUNCIONA-2026-10-24.md` explica el camino de una pieza (se sube, se envía a revisión, se piden cambios, se aprueba, se publica el mes), quién ve qué, la regla nueva del 23 de octubre —lo que el diseñador sube después de enviar no lo ve nadie hasta que lo vuelve a enviar—, los candados que impiden saltarse la aprobación y dónde se guardan los diseños.

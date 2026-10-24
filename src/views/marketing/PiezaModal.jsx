@@ -644,7 +644,7 @@ export default function PiezaModal({
                         </div>
                     </div>
                 </LiquidModal.Body>
-                <PieDeModal izquierda={(!esNueva && puedeMover && pieza.estado !== 'publicado' && (
+                <PieDeModal izquierda={(!esNueva && puedeMover && !despuesDeAprobar && (
                     <Button variant="ghost" icon={Trash2} onClick={() => setBorrando(true)}>Quitar</Button>
                 )) || (!esNueva && pieza.estado === 'cambios' && !puedeMover && (
                     <span className="text-caption text-warning flex items-center gap-1">

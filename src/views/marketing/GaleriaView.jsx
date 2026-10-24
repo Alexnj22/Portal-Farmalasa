@@ -20,7 +20,7 @@ const MESES_ATRAS = 6;
  * Lo que Marketing libera (y ya está aprobado) aparece acá para descargarlo,
  * copiar su texto y publicarlo en el estado de WhatsApp de la sala. Quien sólo
  * tiene este módulo no ve borradores, ni versiones viejas, ni comentarios: lo
- * recorta el RLS (`marketing_piezas_galeria`), no esta pantalla.
+ * recorta el RLS (la rama galería de `marketing_piezas_select`), no esta pantalla.
  */
 export default function GaleriaView() {
     const [piezas, setPiezas] = useState([]);

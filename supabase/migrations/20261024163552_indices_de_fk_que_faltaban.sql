@@ -1,0 +1,17 @@
+SET lock_timeout = '5s';
+CREATE INDEX IF NOT EXISTS idx_bolsas_tipos_salida_caja_tipo ON public.bolsas_tipos_salida (caja_tipo);
+CREATE INDEX IF NOT EXISTS idx_bono_semestre_historial_actor ON public.bono_semestre_historial (actor);
+CREATE INDEX IF NOT EXISTS idx_caja_cierres_con_diferencia_employee_id ON public.caja_cierres_con_diferencia (employee_id);
+CREATE INDEX IF NOT EXISTS idx_caja_vales_portal_corte_id_al_abrir ON public.caja_vales_portal (corte_id_al_abrir);
+CREATE INDEX IF NOT EXISTS idx_cola_impresion_dispositivo ON public.cola_impresion (dispositivo);
+CREATE INDEX IF NOT EXISTS idx_cortes_caja_eventos_employee_id ON public.cortes_caja_eventos (employee_id);
+CREATE INDEX IF NOT EXISTS idx_encuesta_cliente_eventos_autor_id ON public.encuesta_cliente_eventos (autor_id);
+CREATE INDEX IF NOT EXISTS idx_intentos_identidad_branch_id ON public.intentos_identidad (branch_id);
+CREATE INDEX IF NOT EXISTS idx_marketing_comentarios_autor_id ON public.marketing_comentarios (autor_id);
+CREATE INDEX IF NOT EXISTS idx_marketing_historial_actor ON public.marketing_historial (actor);
+CREATE INDEX IF NOT EXISTS idx_puntos_config_avisar_fallas_a ON public.puntos_config (avisar_fallas_a);
+CREATE INDEX IF NOT EXISTS idx_conteo_inventario_item_history_contado_por ON public.conteo_inventario_item_history (contado_por);
+CREATE INDEX IF NOT EXISTS idx_conteo_inventario_items_contado_por ON public.conteo_inventario_items (contado_por);
+CREATE INDEX IF NOT EXISTS idx_conteo_inventario_items_recontado_por ON public.conteo_inventario_items (recontado_por) WHERE recontado_por IS NOT NULL;
+DROP INDEX IF EXISTS public.idx_conteo_item_history_item_id;
+DROP INDEX IF EXISTS public.creditos_abonos_portal_sala_dia_idx;

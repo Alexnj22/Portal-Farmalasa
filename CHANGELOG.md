@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1354.2 — Base: índices de FK que faltaban, duplicados fuera y políticas dobles unidas
+
+- Catorce índices nuevos sobre relaciones entre tablas que no tenían (cola de impresión, eventos de cortes, comentarios de marketing, conteos, entre otras) y dos índices duplicados fuera (historial de conteos, abonos de crédito).
+- Ocho tablas tenían dos reglas de lectura que la base evaluaba juntas en cada consulta; quedaron en una sola. El acceso es idéntico: medido en el entorno de pruebas con los 26 cargos, 972 comparaciones, 0 diferencias (incluida la regla de borradores de Marketing).
+- Migraciones 20261024163552 y 20261024163647.
+
+_(pendiente de redactar)_
+
 ## v2.1354.1 — Datos personales: tipos del registro de incidentes y áreas de las funciones nuevas
 
 - `guardarIncidente` arma la fila por nombre de campo; se tipa explícita para que `gate:tipos` no sume un aviso.

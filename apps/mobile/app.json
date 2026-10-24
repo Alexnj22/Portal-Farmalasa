@@ -15,6 +15,11 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
+        "CFBundleDevelopmentRegion": "es",
+        "CFBundleLocalizations": [
+          "es"
+        ],
+        "CFBundleAllowMixedLocalizations": true,
         "NSUserActivityTypes": [
           "INSendMessageIntent"
         ],

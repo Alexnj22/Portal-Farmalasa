@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.3 — App del portal: idioma español declarado para la App Store
+
+- La ficha de la App Store mostraba «Idiomas: Inglés» en la app del portal: el binario nunca declaró su idioma y Xcode pone inglés por defecto. Ahora `apps/mobile/app.json` declara español (`CFBundleDevelopmentRegion`, `CFBundleLocalizations`), igual que la app de clientes. Se ve en la tienda con la próxima versión que se suba; una actualización por aire no lo cambia.
+
 ## v2.1351.2 — Pendiente MH abre en milisegundos
 
 - **La cola de Pendiente MH ya no tarda.** Cada vez que alguien la abría, la base recorría unas 197,000 facturas (363 MB) para encontrar las pocas sin sello, y tardaba de 300 a 4,000 ms. Ahora tarda de 2 a 18 ms y devuelve exactamente las mismas facturas.

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1353.5 — El aviso del cierre del día lee la venta en vivo
+
+- El aviso «El viernes 23 cerró en 0%» decía $0.00 sobre $6,976.12 vendidos.
+  Desde HC2 (v2.1350.19) `refresh_sales_daily_stats` agrega sólo días
+  anteriores al hoy de El Salvador, y `avisar_cierre_del_dia` corre el mismo
+  día que reporta: leía cero filas TODAS las noches. Ahora la venta del día sale
+  en vivo de `sales_invoices` (`venta_valida` − `ventas_sin_producto`, la misma
+  cuenta del refresco; verificado al centavo contra el agregado del 23).
+- La marca de `avisos_emitidos` salía del `RETURNING`, que viene vacío cuando
+  `avisos_horario` aparta el aviso fuera de horario: de noche no había candado
+  contra repetidos. Sale ahora de los destinatarios, y el aviso apartado lleva
+  `con_push` para sonar al entregarse.
+- Reenviado el del 23 con los números buenos (90%, 4% menos que el viernes
+  pasado); los dos avisos con $0.00 se borraron.
+
 ## v2.1353.4 — Mín·Máx abre más liviano: sus diálogos por fila se cargan al abrirse
 
 - Productos → Mín·Máx pesa 2.3 kB menos al entrar (94.5 → 92.2 kB comprimidos): anotar el motivo de un ajuste, poner un producto en cero en todas las salas y la regla de despacho se cargan la primera vez que se abren. Nada cambia en pantalla.

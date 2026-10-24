@@ -21,11 +21,10 @@ import { formatDate, formatTime12h, getEffectiveStatus } from '@nucleo/utils/hel
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { descuentoDeSuspension } from '@nucleo/utils/planilla';
-import { decidirDescuentoDeSuspension } from '@nucleo/data/disciplina';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchEmployeeApprovalRequestsDetail } from '@nucleo/data/requests';
 import { fetchEmployeeTimeline, fetchCredenciales } from '@nucleo/data/employees';
+import { descuentoDeSuspension } from '@nucleo/utils/quincena';
 import { historialDeFicha, ausenciasFiltradas, diasDeAusencia, varianteDeEvento, eventoVigente, datosParaCorregir, soporteDe, esSancion } from '@nucleo/utils/historialDeFicha';
 // `lazy`: el carné del día arrastra el selector de sala y su diálogo, y esta
 // vista la abre TODO el personal para mirar su propio expediente. Sólo lo baja
@@ -39,11 +38,14 @@ const CarneDelDia = lazy(() => import('../components/personal/CarneDelDia'));
 const SancionModal = lazy(() => import('../components/personal/SancionModal'));
 // El respaldo de un evento se ve DENTRO del portal, no en otra pestaña.
 const VisorDeDocumento = lazy(() => import('../components/common/VisorDeDocumento'));
+// `lazy`: la lista del expediente (con las reglas de vigencia de cada
+// documento) sólo se pinta en la pestaña Archivo, y la ficha abre en
+// Historial. Viajaba en la carga de todos (~5 kB gzip, 2026-10-24).
+const EmployeeDocumentsList = lazy(() => import('../components/common/EmployeeDocumentsList'));
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import useMediaQuery from '../plataforma/useMediaQuery';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
-import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SearchInput from '../components/common/SearchInput';
 import { clickable } from '@nucleo/utils/clickable';
@@ -748,6 +750,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                                 <Button key={String(con)} tone={con ? 'danger' : 'success'} soft size="xs"
                                                                                     onClick={async () => {
                                                                                         try {
+                                                                                            // Por `import()`: sólo al decidir (2026-10-24).
+                                                                                            const { decidirDescuentoDeSuspension } = await import('@nucleo/data/disciplina');
                                                                                             await decidirDescuentoDeSuspension(ev.eventoId, con);
                                                                                             window.dispatchEvent(new CustomEvent('force-history-refresh'));
                                                                                             useStaffStore.getState().traerEventoAlHistorial(emp.id, ev.eventoId);
@@ -818,7 +822,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <FileText size={18} className="text-brand-text"/> Expediente Digital
                                             </h3>
                                         </div>
-                                        <EmployeeDocumentsList documents={emp.employee_documents} emptyLabel="Expediente vacío" />
+                                        <Suspense fallback={null}>
+                                            <EmployeeDocumentsList documents={emp.employee_documents} emptyLabel="Expediente vacío" />
+                                        </Suspense>
                                     </div>
                                 )}
 

@@ -34,13 +34,16 @@ const NotificationBell = React.lazy(() => import('../common/NotificationBell'));
  * no la baja nunca—. Ver `views/chat-clientes/BurbujaChat.jsx`. */
 const BurbujaChat = React.lazy(() => import('../../views/chat-clientes/BurbujaChat'));
 
+/* El diálogo de «avisos apagados»: decide él solo si aparece (una vez al día,
+ * y sólo si los avisos están apagados), así que nada de la pantalla espera
+ * por él. `lazy` para que no viaje en el arranque (2026-10-24). */
+const AvisosApagadosDialog = React.lazy(() => import('../common/AvisosApagadosDialog'));
+
 /** El sitio que la campana va a ocupar, para que nada se corra al llegar. */
 const HuecoDeCampana = () => <div className="w-11 h-11 shrink-0" aria-hidden="true" />;
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
-import { MODULE_SEARCH_KEYWORDS } from '@nucleo/constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
-import AvisosApagadosDialog from '../common/AvisosApagadosDialog';
 import OfflineBanner from '../common/OfflineBanner';
 import BannerPortal from '../common/BannerPortal';
 import Contador from '../common/Contador';
@@ -337,14 +340,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     );
 
     // Índice del buscador de menú (Cmd/Ctrl+K) — mismos módulos ya filtrados
-    // por permiso arriba, con el label del grupo como breadcrumb y sinónimos
-    // de menuSearchKeywords.js para encontrar por lo que el usuario quiere
-    // hacer, no solo por el nombre exacto del módulo.
+    // por permiso arriba, con el label del grupo como breadcrumb. Los
+    // sinónimos de menuSearchKeywords.js los trae el propio buscador al
+    // abrirse: no viajan en el arranque.
     const searchableItems = useMemo(() => {
         return visibleGroups.flatMap(g =>
             g.visibleModules
                 .filter(m => !m.comingSoon)
-                .map(m => ({ ...m, groupLabel: g.label, keywords: MODULE_SEARCH_KEYWORDS[m.key] }))
+                .map(m => ({ ...m, groupLabel: g.label }))
         );
     }, [visibleGroups]);
 
@@ -1550,7 +1553,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             </div>
 
-            <AvisosApagadosDialog />
+            <React.Suspense fallback={null}>
+                <AvisosApagadosDialog />
+            </React.Suspense>
             <OfflineBanner />
 
             {hasPermission('chat_clientes', 'can_view') && (

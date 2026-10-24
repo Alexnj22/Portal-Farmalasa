@@ -63,6 +63,17 @@ export const unidadesDe = (row) => (Number(row?.cantidad) || 0) * factorDeFila(r
 export const sumaUnidades = (lots) => (lots || []).reduce((s, r) => s + unidadesDe(r), 0);
 
 /**
+ * Las unidades que la sala tiene de un producto, sumando todas sus filas del
+ * inventario. Cada fila es un lote EN UNA PRESENTACIÓN (2 cajas ×30), así que
+ * su `cantidad` sola no se puede comparar con una línea armada en otra.
+ */
+export function unidadesEnSala(filas, erpProductId) {
+    const propias = (filas ?? []).filter(f => f.erp_product_id === erpProductId);
+    if (propias.some(f => f.cantidad == null)) return null;
+    return sumaUnidades(propias);
+}
+
+/**
  * Los lotes de una sala, sumados en unidades y ordenados por vencimiento.
  *
  * Un «lote» acá es la pareja número + fecha, no la fila: la misma pareja llega

@@ -3,7 +3,8 @@
  * cómo se nombra la quincena y el monto en letras de la boleta. Vivía en
  * `PayrollView`; se mudó el 2026-10-05 para que la app diga lo mismo.
  */
-import { diaDe, diasEntre, fechaNumerica, fechaTexto, sumarDias, ultimoDiaDelMes } from './fecha';
+import { diaDe, diasEntre, fechaNumerica, fechaTexto, sumarDias } from './fecha';
+import { descuentoDeSuspension, quincenaPorDefecto } from './quincena';
 
 export const JERARQUIA_DE_CARGOS = [2,3,11,12,13,22,19,20,8,23,24,9,14,16,17,18,15,26,30,27];
 export const ordenDeCargo = (emp) => {
@@ -119,17 +120,10 @@ export function partidasDeBoleta(entry, baseSalary) {
     };
 }
 
-/**
- * La quincena que se propone al abrir un período nuevo: la que corre hoy.
- * Del 1 al 15, o del 16 al último día del mes. `hoy` es 'AAAA-MM-DD' (hora de
- * El Salvador); el último día se calcula sin `toISOString`, que en UTC puede
- * caer en el mes siguiente.
- */
-export function quincenaPorDefecto(hoy) {
-    const mes = String(hoy).slice(0, 7);
-    if (Number(String(hoy).slice(8, 10)) <= 15) return { start_date: `${mes}-01`, end_date: `${mes}-15` };
-    return { start_date: `${mes}-16`, end_date: ultimoDiaDelMes(mes) };
-}
+// `quincenaPorDefecto` vive en `./quincena` y se re-exporta acá (2026-10-24):
+// el portal la usa al ABRIR el formulario de período nuevo, o sea en el
+// arranque, y por ella el arranque cargaba este archivo entero.
+export { quincenaPorDefecto };
 
 // ─── Las quincenas: 1–15 y 16–fin de mes (decisión del dueño, 2026-10-22) ────
 //
@@ -310,14 +304,10 @@ export function mensajeDePendientesDeTH(renglones) {
     return `Falta que Talento Humano decida: ${que}. Después vuelve a generar la planilla.`;
 }
 
-/**
- * ¿La suspensión lleva descuento de sueldo? `true` / `false` según lo decidió
- * Talento Humano, `null` si nadie lo decidió todavía.
- */
-export function descuentoDeSuspension(ev) {
-    const v = metaDe(ev).descuento_de_sueldo;
-    return v === true || v === false ? v : null;
-}
+// `descuentoDeSuspension` vive en `./quincena` y se re-exporta acá
+// (2026-10-24): la ficha de la persona la pinta en su historial, y por ella
+// cargaba este archivo de nómina entero.
+export { descuentoDeSuspension };
 
 /**
  * Las suspensiones de cada persona con su decisión de descuento. Una revocada

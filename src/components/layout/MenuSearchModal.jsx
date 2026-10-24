@@ -12,7 +12,30 @@ import { Link } from 'react-router-dom';
  * "venta de productos" encuentra Ventas y "fichas de empleados" encuentra
  * Listado de Personal, sin que el usuario sepa el nombre exacto del módulo.
  */
+/* Los sinónimos (1.7 kB gzip) llegan por `import()` la primera vez que se abre
+ * el buscador: viajaban en el ARRANQUE, que baja todo el mundo tras cada
+ * despliegue, para un diálogo que se abre con la lupa o ⌘K (2026-10-24). El
+ * foco llega al campo 50 ms después de abrir, así que cuando se escribe la
+ * primera letra ya están. */
+let sinonimosPromise = null;
+function cargarSinonimos() {
+    if (!sinonimosPromise) {
+        sinonimosPromise = import('@nucleo/constants/menuSearchKeywords')
+            .then(m => m.MODULE_SEARCH_KEYWORDS)
+            .catch(err => { sinonimosPromise = null; throw err; });
+    }
+    return sinonimosPromise;
+}
+
 export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) {
+    const [sinonimos, setSinonimos] = useState(null);
+    useEffect(() => {
+        if (!isOpen || sinonimos) return undefined;
+        let vivo = true;
+        // Sin sinónimos el buscador sigue andando por nombre y por grupo.
+        cargarSinonimos().then(k => { if (vivo) setSinonimos(k); }).catch(() => {});
+        return () => { vivo = false; };
+    }, [isOpen, sinonimos]);
     const [query, setQuery] = useState('');
     const [selected, setSelected] = useState(0);
     const inputRef = useRef(null);
@@ -32,9 +55,9 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
 
     const results = useMemo(() => {
         if (!query.trim()) return items;
-        const { results } = smartFilter(query, items, (m) => [m.label, m.groupLabel, ...(m.keywords || [])], { orden: 'relevancia' });
+        const { results } = smartFilter(query, items, (m) => [m.label, m.groupLabel, ...(sinonimos?.[m.key] || [])], { orden: 'relevancia' });
         return results;
-    }, [query, items]);
+    }, [query, items, sinonimos]);
 
     // La selección vuelve al primer resultado cuando cambia el filtro. Con la
     // lista vacía la clave se congela en 0: seguir tecleando sobre "sin

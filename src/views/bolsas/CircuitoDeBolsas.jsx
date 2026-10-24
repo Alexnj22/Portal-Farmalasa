@@ -12,7 +12,6 @@ import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import FileField from '../../components/common/FileField';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
     confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia,
@@ -63,6 +62,10 @@ const ConteosDeBolsas = lazy(() => import('../../components/bolsas/ConteosDeBols
  * la enorme mayoría de los conteos no adjunta nada. Es el mismo canónico y el
  * mismo motivo que en `SalidaDeBolsa`. */
 const EditorDeDocumento = lazy(() => import('../../components/common/EditorDeDocumento'));
+
+/* Y la foto ampliada del respaldo: sólo al apretar «Ver el respaldo», que de
+ * todos modos espera a firmar la dirección (2026-10-24). */
+const PhotoLightbox = lazy(() => import('../../components/common/PhotoLightbox'));
 
 /**
  * El proceso entero de una bolsa de efectivo, una etapa por vez.
@@ -703,8 +706,12 @@ function VerRespaldo({ url, etiqueta = 'Ver el respaldo' }) {
             <Button variant="ghost" size="sm" icon={ImageIcon} loading={firmando} onClick={abrir}>
                 {fallo ? 'No se pudo abrir' : etiqueta}
             </Button>
-            <PhotoLightbox src={ampliada} alt="Respaldo de la diferencia"
-                onClose={() => setAmpliada(null)} />
+            {ampliada && (
+                <Suspense fallback={null}>
+                    <PhotoLightbox src={ampliada} alt="Respaldo de la diferencia"
+                        onClose={() => setAmpliada(null)} />
+                </Suspense>
+            )}
         </>
     );
 }

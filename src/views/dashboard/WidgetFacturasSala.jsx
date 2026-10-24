@@ -12,7 +12,6 @@ import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import {
     fetchFacturasSala, reclamarFactura, soltarFactura, resumenRenglones,
 } from '@nucleo/data/facturasSala';
-import { downloadPurchaseDtePackage } from '@nucleo/data/facturasCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
@@ -101,6 +100,9 @@ function FilaFactura({ fila, branchId, onCambio, onAviso }) {
     const descargar = async () => {
         setError(''); setOcupado(true);
         try {
+            // Por `import()`: el módulo de facturas de compra (2.2 kB gzip)
+            // sólo hace falta al apretar «descargar», y viajaba en el Inicio.
+            const { downloadPurchaseDtePackage } = await import('@nucleo/data/facturasCompra');
             await downloadPurchaseDtePackage(fila);
         } catch (e) {
             setError(e?.message ?? 'No se pudo descargar el archivo.');

@@ -5,7 +5,7 @@
  * veces, la primera que cambiara dejaría a una pidiendo lo que la otra no.
  * Puras: no conocen ni React ni el navegador. Los íconos van por NOMBRE.
  */
-import { sumaUnidades } from './unidadesInventario';
+import { unidadesEnSala } from './unidadesInventario';
 
 export const OPERACIONES_AJUSTE = [
     { key: 'VENCIMIENTO',     movimiento: 'DESCARTE', icono: 'CalendarX2',    tono: 'peligro',
@@ -66,16 +66,11 @@ export function problemasDeLinea(l, { llevaLote, esCarga, esPerecedero }) {
     return problemas;
 }
 
-/**
- * Las unidades que la sala tiene de un producto, sumando todas sus filas del
- * inventario. Cada fila es un lote EN UNA PRESENTACIÓN (2 cajas ×30), así que
- * su `cantidad` sola no se puede comparar con una línea armada en otra.
- */
-export function unidadesEnSala(filas, erpProductId) {
-    const propias = (filas ?? []).filter(f => f.erp_product_id === erpProductId);
-    if (propias.some(f => f.cantidad == null)) return null;
-    return sumaUnidades(propias);
-}
+// `unidadesEnSala` vive en `unidadesInventario` desde el 2026-10-24 y se
+// re-exporta acá: la lee `data/inventoryMovements`, y por ella el Inicio
+// arrastraba entero este archivo de reglas de ajuste (1.2 kB gzip) para una
+// baldosa que sólo cuenta lotes por vencer.
+export { unidadesEnSala };
 
 /**
  * ¿La línea pide más de lo que hay? Con `unidadesEnSala` se compara en unidades

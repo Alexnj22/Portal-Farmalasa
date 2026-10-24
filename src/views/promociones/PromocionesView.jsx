@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
-    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download,
+    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download, Loader2,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -21,19 +21,35 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { conteoDePromociones, csvListaDePromociones, estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import TabActivas from './TabActivas';
-import TabSeguimiento from './TabSeguimiento';
-import TabHistorico from './TabHistorico';
-import TabExcedentes from './TabExcedentes';
-import TabDescuentos from './TabDescuentos';
-import TabPagos from './TabPagos';
-import DescuentoModal from './DescuentoModal';
-import PromocionModal from './PromocionModal';
-import DuplicarPromocionModal from './DuplicarPromocionModal';
-import EditarPromocionModal from './EditarPromocionModal';
-import PromocionLaboratorioModal from './PromocionLaboratorioModal';
-import MatrizLaboratorioModal from './MatrizLaboratorioModal';
-import ReactivarPromocionModal from './ReactivarPromocionModal';
+import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
+
+// Cada pestaña llega por `lazy()` (2026-10-24): se ve UNA a la vez, y las seis
+// viajaban juntas en el trozo de la vista con los siete diálogos de alta y
+// edición. Mismo patrón que PedidosView: sin precarga, React se queda con el
+// trozo después de la primera visita.
+const TabActivas = lazy(() => import('./TabActivas'));
+const TabSeguimiento = lazy(() => import('./TabSeguimiento'));
+const TabHistorico = lazy(() => import('./TabHistorico'));
+const TabExcedentes = lazy(() => import('./TabExcedentes'));
+const TabDescuentos = lazy(() => import('./TabDescuentos'));
+const TabPagos = lazy(() => import('./TabPagos'));
+
+// Los diálogos se bajan al abrirse (`dialogoDiferido`), no al entrar.
+const DescuentoModal = dialogoDiferido(() => import('./DescuentoModal'));
+const PromocionModal = dialogoDiferido(() => import('./PromocionModal'));
+const DuplicarPromocionModal = dialogoDiferido(() => import('./DuplicarPromocionModal'));
+const EditarPromocionModal = dialogoDiferido(() => import('./EditarPromocionModal'));
+const PromocionLaboratorioModal = dialogoDiferido(() => import('./PromocionLaboratorioModal'));
+const MatrizLaboratorioModal = dialogoDiferido(() => import('./MatrizLaboratorioModal'));
+const ReactivarPromocionModal = dialogoDiferido(() => import('./ReactivarPromocionModal'));
+
+// El área en blanco se lee como que algo se rompió: un giro del alto de una
+// pestaña ya dibujada, para que nada salte al llegar.
+const Cargando = () => (
+    <div className="flex-1 min-h-[320px] grid place-items-center">
+        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
+    </div>
+);
 
 /**
  * Promociones — `docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md`.
@@ -745,7 +761,7 @@ export default function PromocionesView() {
                     debe llevar el control». La suspensión es del bono de META; el
                     de producto se paga en sala y su control vive en Pagos. */}
 
-                {cuerpo()}
+                <Suspense fallback={<Cargando />}>{cuerpo()}</Suspense>
             </div>
 
             {/* Cada tipo se corrige con su propio modal: el de producto edita

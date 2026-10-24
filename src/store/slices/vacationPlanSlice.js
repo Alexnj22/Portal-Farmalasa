@@ -9,7 +9,6 @@ import {
 import { resolverApprovalRequest, updateApprovalRequest } from '../../data/requests';
 import { SUPABASE_URL } from '@plataforma/config';
 import { fechaTexto, fechaNumerica } from '../../utils/fecha';
-import { ventanaDeVacaciones } from '../../utils/planDeVacaciones';
 
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
@@ -232,7 +231,10 @@ export const createVacationPlanSlice = (set, get) => ({
                 const activeHeadcount = employees.filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE').length;
                 const windowMonths = activeHeadcount > 100 ? 6 : 4;
                 // El aniversario que cuenta es el último ya llegado, no el del
-                // año de inicio: ver `ventanaDeVacaciones`.
+                // año de inicio: ver `ventanaDeVacaciones`. Por `import()`: sólo
+                // hace falta al asignar, y la pantalla de vacaciones ya la trae;
+                // en el arranque la bajaba todo el mundo (2026-10-24).
+                const { ventanaDeVacaciones } = await import('../../utils/planDeVacaciones');
                 const ventana = ventanaDeVacaciones(emp.hire_date, planData.start_date, windowMonths);
                 if (ventana && !ventana.dentro) {
                     throw new Error(`WINDOW_ERROR: Las vacaciones deben asignarse dentro de los ${windowMonths} meses posteriores al aniversario (${fechaNumerica(ventana.desde)} — ${fechaNumerica(ventana.hasta)}).`);

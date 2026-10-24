@@ -27,12 +27,17 @@ import React from 'react';
  *
  * El sitio donde se usa NO cambia: `const X = dialogoDiferido(() =>
  * import('./X'))` y el JSX queda igual.
+ *
+ * Mira `open` y, si no viene, `isOpen` (2026-10-24): es como se llama la
+ * misma prop en `PromptModal` y `ConfirmModal`. Sin eso, un diálogo con
+ * `isOpen` se montaba apenas cargaba la pantalla y no se ahorraba nada.
  */
 export function dialogoDiferido(carga) {
     const Lazy = React.lazy(carga);
     return function Diferido(props) {
-        const [montado, setMontado] = React.useState(props.open !== false);
-        React.useEffect(() => { if (props.open) setMontado(true); }, [props.open]);
+        const abierto = props.open ?? props.isOpen;
+        const [montado, setMontado] = React.useState(abierto !== false);
+        React.useEffect(() => { if (abierto) setMontado(true); }, [abierto]);
         if (!montado) return null;
         return <React.Suspense fallback={null}><Lazy {...props} /></React.Suspense>;
     };

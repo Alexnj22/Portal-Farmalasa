@@ -32,9 +32,16 @@ const mensajeDeFallo = (err) => mensajeAmigable(err, err?.message || 'sin motivo
  * justo el historial que se pidió. Va DESPUÉS de guardar —lo que no se guardó
  * no cambió— y no puede tumbar el guardado: la ficha ya está escrita. */
 async function anotarCambiosDelDui(get, id, nombre, branchId, form) {
-    const asiento = asientoDeCambiosDelDui(form?._cambiosDelDui, form);
-    if (!asiento) return;
+    // Sólo hay asiento si se leyó un DUI. La lectura (`duiLeido`, con el
+    // catálogo de distritos y el de profesiones adentro) llega por `import()`:
+    // viajaba en el ARRANQUE —4.4 kB gzip que bajaba todo el mundo tras cada
+    // despliegue— para algo que sólo pasa al guardar una ficha leída de un DUI,
+    // y el formulario que la lee ya la trae cargada (2026-10-24).
+    if (!form?._cambiosDelDui?.length) return;
     try {
+        const { asientoDeCambiosDelDui } = await import('../../utils/duiLeido');
+        const asiento = asientoDeCambiosDelDui(form._cambiosDelDui, form);
+        if (!asiento) return;
         await get().appendAuditLog('DATOS_DEL_DUI_ACTUALIZADOS', id, {
             timeline_title: `Datos del DUI actualizados: ${nombre}`,
             dimension: 'HR',
@@ -47,7 +54,6 @@ async function anotarCambiosDelDui(get, id, nombre, branchId, form) {
 }
 import { revisarNup } from '../../utils/nupAfp';
 import { contratoConPlazo } from '../../utils/contrato';
-import { asientoDeCambiosDelDui } from '../../utils/duiLeido';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se

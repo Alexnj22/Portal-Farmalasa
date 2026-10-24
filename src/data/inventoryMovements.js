@@ -2,8 +2,7 @@ import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
 import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { hoySV, relojSV, sumarDias } from '../utils/fecha';
-import { unidadesDe } from '../utils/unidadesInventario';
-import { unidadesEnSala } from '../utils/ajusteInventario';
+import { unidadesDe, unidadesEnSala } from '../utils/unidadesInventario';
 
 // Datos del widget de cargas y descartes de inventario.
 //

@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy, LayoutGrid, Lightbulb,
+    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy, LayoutGrid, Lightbulb, Loader2,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -31,20 +31,35 @@ import {
 } from '@nucleo/data/marketing';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import TabCalendario from './TabCalendario';
-import TabFeed from './TabFeed';
-import TabIdeas from './TabIdeas';
-import TabTablero from './TabTablero';
-import TabSolicitudes from './TabSolicitudes';
-import TabPauta from './TabPauta';
-import TabBiblioteca from './TabBiblioteca';
-import Galeria from './Galeria';
-import DuplicarModal from './DuplicarModal';
-import PiezaModal from './PiezaModal';
-import PautaModal from './PautaModal';
-import SolicitudModal from './SolicitudModal';
-import AjustesModal from './AjustesModal';
 import Conversacion from './Conversacion';
 import { DecisionMesModal, DatosDelMesModal } from './MesModales';
+import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
+
+// Las pestañas que no son la de entrada llegan por `lazy()` (2026-10-24): se
+// ve UNA a la vez y viajaban todas en el trozo de la vista. El calendario y la
+// conversación del mes se quedan estáticos: son lo que se ve al entrar.
+const TabFeed = lazy(() => import('./TabFeed'));
+const TabIdeas = lazy(() => import('./TabIdeas'));
+const TabTablero = lazy(() => import('./TabTablero'));
+const TabSolicitudes = lazy(() => import('./TabSolicitudes'));
+const TabPauta = lazy(() => import('./TabPauta'));
+const TabBiblioteca = lazy(() => import('./TabBiblioteca'));
+const Galeria = lazy(() => import('./Galeria'));
+
+// Los diálogos se bajan al abrirse (`dialogoDiferido`), no al entrar.
+const DuplicarModal = dialogoDiferido(() => import('./DuplicarModal'));
+const PiezaModal = dialogoDiferido(() => import('./PiezaModal'));
+const PautaModal = dialogoDiferido(() => import('./PautaModal'));
+const SolicitudModal = dialogoDiferido(() => import('./SolicitudModal'));
+const AjustesModal = dialogoDiferido(() => import('./AjustesModal'));
+
+// El área en blanco se lee como que algo se rompió: un giro del alto de una
+// pestaña ya dibujada, para que nada salte al llegar.
+const Cargando = () => (
+    <div className="flex-1 min-h-[320px] grid place-items-center">
+        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
+    </div>
+);
 
 /**
  * Marketing — el planificador de contenido para redes.
@@ -619,7 +634,7 @@ export default function MarketingView() {
                     </Notice>
                 )}
 
-                {cuerpo()}
+                <Suspense fallback={<Cargando />}>{cuerpo()}</Suspense>
             </div>
 
             {(piezaAbierta || nueva) && mesFila && (

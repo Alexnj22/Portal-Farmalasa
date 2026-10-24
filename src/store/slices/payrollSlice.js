@@ -9,7 +9,11 @@ import {
 } from '../../data/payroll';
 import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 import { diasEntre } from '../../utils/fecha';
-import { anticiposDeLaQuincena, bajasEnQuincena, contratoEnQuincena, diasPagadosDeQuincena, incapacidadesPorPersona, mensajeDePendientesDeTH, problemaDeQuincena, rotuloDePeriodo, suspensionesPorPersona } from '../../utils/planilla';
+// Las reglas de la quincena (`utils/planilla`) llegan por `import()` dentro de
+// cada acción: sólo hacen falta al crear, aprobar o generar una planilla, y
+// como import estático viajaban en el ARRANQUE que baja todo el mundo tras cada
+// despliegue (2.6 kB gzip, medido el 2026-10-24 con sourcemaps).
+const reglasDePlanilla = () => import('../../utils/planilla');
 
 // Lo escrito sobre este módulo:
 // `docs/NOMINA-COMO-SE-ARMA-UNA-QUINCENA-2026-08-24.md` — por qué las secciones
@@ -155,6 +159,7 @@ export const createPayrollSlice = (set, get) => ({
         // Una quincena es 1–15 o 16–fin de mes (decisión del dueño, 2026-10-22).
         // La base tiene el mismo CHECK; esto es para decirlo en palabras.
         const tipo = periodData.period_type || 'QUINCENA';
+        const { problemaDeQuincena, rotuloDePeriodo } = await reglasDePlanilla();
         const problema = tipo === 'QUINCENA' ? problemaDeQuincena(periodData.start_date, periodData.end_date) : null;
         if (problema) {
             const e = new Error(problema);
@@ -194,6 +199,7 @@ export const createPayrollSlice = (set, get) => ({
         if (status === 'APPROVED') {
             const { data: conPendiente, error: pendErr } = await fetchRenglonesPendientesDeTH(periodId);
             if (pendErr) throw new Error(`No se pudo revisar si quedan decisiones de Talento Humano: ${pendErr.message}`);
+            const { mensajeDePendientesDeTH } = await reglasDePlanilla();
             const msg = mensajeDePendientesDeTH(conPendiente);
             if (msg) {
                 const e = new Error(msg);
@@ -251,6 +257,10 @@ export const createPayrollSlice = (set, get) => ({
         try {
             const period = get().payrollPeriods.find(p => p.id === periodId);
             if (!period) throw new Error('Período no encontrado');
+            const {
+                anticiposDeLaQuincena, bajasEnQuincena, contratoEnQuincena, diasPagadosDeQuincena,
+                incapacidadesPorPersona, problemaDeQuincena, suspensionesPorPersona,
+            } = await reglasDePlanilla();
 
             // Sólo se genera sobre un BORRADOR. La pantalla ofrecía «Regenerar»
             // también con el período aprobado, y esto no miraba el estado: los

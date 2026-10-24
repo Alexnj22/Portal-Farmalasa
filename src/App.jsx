@@ -36,7 +36,7 @@ import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { quincenaPorDefecto } from '@nucleo/utils/planilla';
+import { quincenaPorDefecto } from '@nucleo/utils/quincena';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
@@ -16,7 +16,6 @@ import { fetchOwnApprovalRequests } from '@nucleo/data/employeeSelfService';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
-import VisorDeDocumento from '../../components/common/VisorDeDocumento';
 import { getExpiryBadge } from '@nucleo/utils/documentExpiry';
 import {
     grupoDeCategoria, iconoDeCategoria,
@@ -24,6 +23,10 @@ import {
 } from '../../components/common/catalogos/documentos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { datosDelDocumento, documentosDelExpediente, filtrarDocumentos, PESTANAS_DOCS as TABS, pestanasDeDocumentos, solicitudesConDocumento } from '@nucleo/utils/misDocumentos';
+
+// El visor se baja al ABRIR un documento, no al entrar (2026-10-24): la lista
+// se mira entera sin él. Es lo mismo que ya hace la ficha de la persona.
+const VisorDeDocumento = lazy(() => import('../../components/common/VisorDeDocumento'));
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 //
@@ -443,13 +446,15 @@ const EmployeeDocumentsView = () => {
                 persona MIRA su expediente, no lo corrige; recortar y volver a
                 subir es trabajo de Talento Humano y vive en la ficha. */}
             {viendo && (
-                <VisorDeDocumento
-                    url={viendo.meta.docUrl}
-                    nombre={viendo.type === 'EXPEDIENTE'
-                        ? viendo.meta.nombre
-                        : (viendo.meta.docName || 'Documento adjunto')}
-                    alCerrar={() => setViendo(null)}
-                />
+                <Suspense fallback={null}>
+                    <VisorDeDocumento
+                        url={viendo.meta.docUrl}
+                        nombre={viendo.type === 'EXPEDIENTE'
+                            ? viendo.meta.nombre
+                            : (viendo.meta.docName || 'Documento adjunto')}
+                        alCerrar={() => setViendo(null)}
+                    />
+                </Suspense>
             )}
         </GlassViewLayout>
     );

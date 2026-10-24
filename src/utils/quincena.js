@@ -1,5 +1,5 @@
 import { hora12 } from './hora';
-import { relojSV } from './fecha';
+import { relojSV, ultimoDiaDelMes } from './fecha';
 // ── La quincena y las horas de la auditoría de asistencia ────────────────────
 //
 // Extraídas de `AttendanceAuditView.jsx` (1,497 líneas) por el mismo motivo que
@@ -85,4 +85,36 @@ export function nextQuincena(start) {
     if (d.getUTCDate() === 1) return `${start.slice(0, 7)}-16`;
     const nxt = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
     return nxt.toISOString().slice(0, 10);
+}
+
+/**
+ * La quincena que se propone al abrir un período nuevo: la que corre hoy.
+ * Del 1 al 15, o del 16 al último día del mes. `hoy` es 'AAAA-MM-DD' (hora de
+ * El Salvador); el último día se calcula sin `toISOString`, que en UTC puede
+ * caer en el mes siguiente.
+ *
+ * Vivía en `planilla.js`, que la re-exporta. Se mudó acá el 2026-10-24 sin
+ * cambiar una línea: el portal la usa al abrir el formulario de período nuevo
+ * —en `App.jsx`, o sea en el arranque— y por ella el arranque bajaba las reglas
+ * de la nómina enteras (2.6 kB gzip) para todo el mundo tras cada despliegue.
+ */
+export function quincenaPorDefecto(hoy) {
+    const mes = String(hoy).slice(0, 7);
+    if (Number(String(hoy).slice(8, 10)) <= 15) return { start_date: `${mes}-01`, end_date: `${mes}-15` };
+    return { start_date: `${mes}-16`, end_date: ultimoDiaDelMes(mes) };
+}
+
+/**
+ * ¿La suspensión lleva descuento de sueldo? `true` / `false` según lo decidió
+ * Talento Humano, `null` si nadie lo decidió todavía.
+ *
+ * Vivía en `planilla.js`, que la re-exporta y la usa al generar la quincena.
+ * Se mudó acá el 2026-10-24 por el mismo motivo que `quincenaPorDefecto`: la
+ * ficha de la persona la pinta en su historial, y desde allá cargaba las
+ * reglas de la nómina enteras. Acá viaja en el arranque, y son tres líneas.
+ */
+export function descuentoDeSuspension(ev) {
+    const m = (ev?.metadata && typeof ev.metadata === 'object') ? ev.metadata : {};
+    const v = m.descuento_de_sueldo;
+    return v === true || v === false ? v : null;
 }

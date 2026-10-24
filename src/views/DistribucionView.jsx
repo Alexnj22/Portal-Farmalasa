@@ -1,34 +1,51 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock, Route, MapPin, Truck } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock, Route, MapPin, Truck, Loader2 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
 import { useMarca } from '../plataforma/useMarca';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor } from '@nucleo/data/distribucion';
-import TabPedidos from './distribucion/TabPedidos';
-import TabDocumentos from './distribucion/TabDocumentos';
-import TabClientes from './distribucion/TabClientes';
-import TabCatalogo from './distribucion/TabCatalogo';
-import TabInventario from './distribucion/TabInventario';
-import TabEmisor from './distribucion/TabEmisor';
-import SolicitudesDescuento from './distribucion/SolicitudesDescuento';
-import TabVentasPerdidas from './distribucion/TabVentasPerdidas';
-import TabTablero from './distribucion/TabTablero';
-import TabCobros from './distribucion/TabCobros';
-import TabCompras from './distribucion/TabCompras';
 import { VISTAS_COMPRAS } from './distribucion/compras';
-import TabReportes from './distribucion/TabReportes';
-import TabLiquidacion from './distribucion/TabLiquidacion';
-import TabCierreDia from './distribucion/TabCierreDia';
-import TabReposicion from './distribucion/TabReposicion';
-import TabConteo from './distribucion/TabConteo';
-import TabCamiones from './distribucion/TabCamiones';
-import TabRutas from './distribucion/TabRutas';
 import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
+
+// Cada sección llega por `lazy()` (2026-10-24). Se ve UNA a la vez —es una
+// dirección por sección desde el 2026-09-28— y las dieciocho viajaban juntas
+// en el trozo de la vista: entrar al Inicio de la distribuidora bajaba también
+// la facturación, las compras, la caja y los reportes (203 kB gzip). Mismo
+// patrón que PedidosView: sin precarga, React se queda con el trozo después
+// de la primera visita.
+const TabPedidos = lazy(() => import('./distribucion/TabPedidos'));
+const TabDocumentos = lazy(() => import('./distribucion/TabDocumentos'));
+const TabClientes = lazy(() => import('./distribucion/TabClientes'));
+const TabCatalogo = lazy(() => import('./distribucion/TabCatalogo'));
+const TabInventario = lazy(() => import('./distribucion/TabInventario'));
+const TabEmisor = lazy(() => import('./distribucion/TabEmisor'));
+const SolicitudesDescuento = lazy(() => import('./distribucion/SolicitudesDescuento'));
+const TabVentasPerdidas = lazy(() => import('./distribucion/TabVentasPerdidas'));
+const TabTablero = lazy(() => import('./distribucion/TabTablero'));
+const TabCobros = lazy(() => import('./distribucion/TabCobros'));
+const TabCompras = lazy(() => import('./distribucion/TabCompras'));
+const TabReportes = lazy(() => import('./distribucion/TabReportes'));
+const TabLiquidacion = lazy(() => import('./distribucion/TabLiquidacion'));
+const TabCierreDia = lazy(() => import('./distribucion/TabCierreDia'));
+const TabReposicion = lazy(() => import('./distribucion/TabReposicion'));
+const TabConteo = lazy(() => import('./distribucion/TabConteo'));
+const TabCamiones = lazy(() => import('./distribucion/TabCamiones'));
+const TabRutas = lazy(() => import('./distribucion/TabRutas'));
+
+// El área en blanco se lee como que algo se rompió: un giro del alto de una
+// sección ya dibujada, para que nada salte al llegar.
+const Cargando = () => (
+    <div className="flex-1 min-h-[320px] grid place-items-center">
+        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
+    </div>
+);
+/** Una sección: su propio `Suspense`, así la que llega no oculta a las ya vistas. */
+const Seccion = ({ children }) => <Suspense fallback={<Cargando />}>{children}</Suspense>;
 
 // Distribución — la venta en ruta de la S.A.S. a tiendas, supermercados y
 // farmacias. Es otra empresa (otro NIT) con su propio emisor de documentos
@@ -178,53 +195,57 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             )}
 
             {visitadas.has('inicio') && (
-                <div className={tab === 'inicio' ? '' : 'hidden'}><TabTablero periodo={periodo} /></div>
+                <div className={tab === 'inicio' ? '' : 'hidden'}><Seccion><TabTablero periodo={periodo} /></Seccion></div>
             )}
             {visitadas.has('rutas') && (
-                <div className={tab === 'rutas' ? '' : 'hidden'}><TabRutas {...comunes} vista={vistaRutas} /></div>
+                <div className={tab === 'rutas' ? '' : 'hidden'}><Seccion><TabRutas {...comunes} vista={vistaRutas} /></Seccion></div>
             )}
             {visitadas.has('pedidos') && (
-                <div className={tab === 'pedidos' ? '' : 'hidden'}><TabPedidos {...comunes} vista={vista} onVista={setVista} /></div>
+                <div className={tab === 'pedidos' ? '' : 'hidden'}><Seccion><TabPedidos {...comunes} vista={vista} onVista={setVista} /></Seccion></div>
             )}
             {visitadas.has('documentos') && (
-                <div className={tab === 'documentos' ? '' : 'hidden'}><TabDocumentos {...comunes} /></div>
+                <div className={tab === 'documentos' ? '' : 'hidden'}><Seccion><TabDocumentos {...comunes} /></Seccion></div>
             )}
             {visitadas.has('clientes') && (
-                <div className={tab === 'clientes' ? '' : 'hidden'}><TabClientes {...comunes} /></div>
+                <div className={tab === 'clientes' ? '' : 'hidden'}><Seccion><TabClientes {...comunes} /></Seccion></div>
             )}
             {visitadas.has('catalogo') && (
-                <div className={tab === 'catalogo' ? '' : 'hidden'}><TabCatalogo {...comunes} /></div>
+                <div className={tab === 'catalogo' ? '' : 'hidden'}><Seccion><TabCatalogo {...comunes} /></Seccion></div>
             )}
             {visitadas.has('inventario') && (
                 <div className={tab === 'inventario' ? '' : 'hidden'}>
-                    {vistaInventario === 'reposicion' ? <TabReposicion {...comunes} />
-                        : vistaInventario === 'conteo' ? <TabConteo {...comunes} />
-                        : vistaInventario === 'camiones' ? <TabCamiones {...comunes} /> : <TabInventario {...comunes} />}
+                    <Seccion>
+                        {vistaInventario === 'reposicion' ? <TabReposicion {...comunes} />
+                            : vistaInventario === 'conteo' ? <TabConteo {...comunes} />
+                            : vistaInventario === 'camiones' ? <TabCamiones {...comunes} /> : <TabInventario {...comunes} />}
+                    </Seccion>
                 </div>
             )}
             {visitadas.has('cobros') && (
-                <div className={tab === 'cobros' ? '' : 'hidden'}><TabCobros {...comunes} vista={vistaCartera} /></div>
+                <div className={tab === 'cobros' ? '' : 'hidden'}><Seccion><TabCobros {...comunes} vista={vistaCartera} /></Seccion></div>
             )}
             {visitadas.has('compras') && (
-                <div className={tab === 'compras' ? '' : 'hidden'}><TabCompras {...comunes} vista={vistaCompras} /></div>
+                <div className={tab === 'compras' ? '' : 'hidden'}><Seccion><TabCompras {...comunes} vista={vistaCompras} /></Seccion></div>
             )}
             {visitadas.has('liquidacion') && (
                 <div className={tab === 'liquidacion' ? '' : 'hidden'}>
-                    {vistaCaja === 'dia' && puedeConfigurar ? <TabCierreDia {...comunes} /> : <TabLiquidacion {...comunes} />}
+                    <Seccion>
+                        {vistaCaja === 'dia' && puedeConfigurar ? <TabCierreDia {...comunes} /> : <TabLiquidacion {...comunes} />}
+                    </Seccion>
                 </div>
             )}
             {visitadas.has('reportes') && (
-                <div className={tab === 'reportes' ? '' : 'hidden'}><TabReportes {...comunes} vista={vistaReporte} /></div>
+                <div className={tab === 'reportes' ? '' : 'hidden'}><Seccion><TabReportes {...comunes} vista={vistaReporte} /></Seccion></div>
             )}
             {visitadas.has('perdidas') && (
-                <div className={tab === 'perdidas' ? '' : 'hidden'}><TabVentasPerdidas {...comunes} vista={estadoPerdida} /></div>
+                <div className={tab === 'perdidas' ? '' : 'hidden'}><Seccion><TabVentasPerdidas {...comunes} vista={estadoPerdida} /></Seccion></div>
             )}
             {visitadas.has('solicitudes') && (
-                <div className={tab === 'solicitudes' ? '' : 'hidden'}><SolicitudesDescuento /></div>
+                <div className={tab === 'solicitudes' ? '' : 'hidden'}><Seccion><SolicitudesDescuento /></Seccion></div>
             )}
             {visitadas.has('emisor') && (
                 <div className={tab === 'emisor' ? '' : 'hidden'}>
-                    <TabEmisor {...comunes} onGuardado={cargarEmisor} />
+                    <Seccion><TabEmisor {...comunes} onGuardado={cargarEmisor} /></Seccion>
                 </div>
             )}
         </GlassViewLayout>

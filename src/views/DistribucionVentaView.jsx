@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     ShoppingCart, Plus, Minus, Trash2, ShieldAlert, Loader2, Receipt, Save, Search, Printer, PackageX, ArrowLeft, AlertTriangle,
     Send, Clock, Store, Package, Tag, ListChecks, ChevronRight, Wallet, Warehouse, Eraser, UserPlus, Split, Timer, Truck,
 } from 'lucide-react';
 import LiquidModal from '../components/common/LiquidModal';
-import ExistenciasSucursales from './distribucion/ExistenciasSucursales';
-import ClienteModal from './distribucion/ClienteModal';
-import VentaPerdidaModal from './distribucion/VentaPerdidaModal';
 import { guardarVentaSinSenal, esFallaDeRed } from './distribucion/sinSenal';
 import { ticketProvisional } from '@nucleo/utils/distribucionDocumento';
 import { imprimirDocumento } from '@nucleo/utils/ticketPrint';
@@ -48,6 +45,13 @@ import { leerMonto, rotuloTipoCliente, soloVentaLibre, TIPO_DOCUMENTO, FORMA_PAG
 import { indexarPrecios, presentacionesDe, listasDe, precioDe, descuentoDelCatalogo } from './distribucion/precios';
 import { totalDePedido } from './distribucion/motor';
 import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
+
+// Los tres diálogos se bajan al abrirse, no al entrar a vender (2026-10-24):
+// anotar una venta perdida, dar de alta un cliente y mirar existencias en las
+// salas son excepciones del día, y viajaban en el trozo de la pantalla.
+const ExistenciasSucursales = lazy(() => import('./distribucion/ExistenciasSucursales'));
+const ClienteModal = lazy(() => import('./distribucion/ClienteModal'));
+const VentaPerdidaModal = lazy(() => import('./distribucion/VentaPerdidaModal'));
 
 // La venta de Distribución, en su propia vista.
 //
@@ -1480,7 +1484,7 @@ export default function DistribucionVentaView() {
                 </LiquidModal>
             )}
             {perdida && emisor && (
-                <VentaPerdidaModal emisorId={emisor.id} cliente={cliente} pedidoId={pedido?.pedido.id ?? null}
+                <Suspense fallback={null}><VentaPerdidaModal emisorId={emisor.id} cliente={cliente} pedidoId={pedido?.pedido.id ?? null}
                     producto={perdida.producto ?? null} cantidad={perdida.cantidad} buscado={perdida.buscado ?? ''}
                     onClose={() => setPerdida(null)}
                     onGuardado={({ producto, cantidad }) => {
@@ -1496,14 +1500,18 @@ export default function DistribucionVentaView() {
                         setPerdida(null);
                         showToast('Venta perdida anotada', `${producto} · ${conCantidad(cantidad)}`);
                         buscador.current?.focus();
-                    }} />
+                    }} /></Suspense>
             )}
             {nuevoCliente && (
-                <ClienteModal cliente={{}} emisorId={emisor?.id} puedeEditar={puedeVender}
-                    onClose={() => setNuevoCliente(false)} onGuardado={alCrearCliente} />
+                <Suspense fallback={null}>
+                    <ClienteModal cliente={{}} emisorId={emisor?.id} puedeEditar={puedeVender}
+                        onClose={() => setNuevoCliente(false)} onGuardado={alCrearCliente} />
+                </Suspense>
             )}
             {verExistencias != null && (
-                <ExistenciasSucursales terminoInicial={verExistencias} onClose={() => setVerExistencias(null)} />
+                <Suspense fallback={null}>
+                    <ExistenciasSucursales terminoInicial={verExistencias} onClose={() => setVerExistencias(null)} />
+                </Suspense>
             )}
             {verPendientes && (
                 <LiquidModal open onClose={() => setVerPendientes(false)} maxWidth="max-w-xl" ariaLabel="Pendientes de finalizar">

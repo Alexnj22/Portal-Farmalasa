@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Notice from '../components/common/Notice';
-import PromptModal from '../components/common/PromptModal';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
@@ -29,6 +28,10 @@ import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { diasDeVacacion, diasUsadosPorPersona, elegibilidadDeVacaciones, planesVisibles } from '@nucleo/utils/planDeVacaciones';
+import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
+
+// El motivo del rechazo se baja al rechazar, no al entrar (2026-10-24).
+const PromptModal = dialogoDiferido(() => import('../components/common/PromptModal'));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' }) : '—';

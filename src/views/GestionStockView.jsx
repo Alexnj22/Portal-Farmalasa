@@ -1,14 +1,27 @@
-import React, { useCallback } from 'react';
+import React, { lazy, Suspense, useCallback } from 'react';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
-import { Activity, Archive, ListPlus } from 'lucide-react';
+import { Activity, Archive, ListPlus, Loader2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
-import TabParados   from './inventario/TabParados';
-import TabSinMinMax from './inventario/TabSinMinMax';
 import { ERP_NAMES, ERP_BODEGA, MI_ERP_POR_BRANCH } from './inventario/salasDeStock';
+
+// Cada pestaña llega por `lazy()` (2026-10-24), con el patrón de PedidosView:
+// se ve UNA a la vez, y las dos viajaban juntas en el trozo de la vista.
+// React se queda con el trozo después de la primera visita, así que sólo el
+// primer clic de cada pestaña espera.
+const TabParados   = lazy(() => import('./inventario/TabParados'));
+const TabSinMinMax = lazy(() => import('./inventario/TabSinMinMax'));
+
+// El área en blanco se lee como que algo se rompió: un giro del alto de una
+// pestaña ya dibujada, para que nada salte al llegar.
+const Cargando = () => (
+    <div className="flex-1 min-h-[320px] grid place-items-center">
+        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
+    </div>
+);
 
 /**
  * Gestión de stock — dos preguntas sobre la existencia de una sala:
@@ -59,9 +72,11 @@ export default function GestionStockView() {
 
     return (
         <GlassViewLayout icon={Activity} title="Gestión de stock" filtersContent={filtersContent}>
-            {pestana === 'parados'
-                ? <TabParados key={sala} sala={sala} onSala={setSala} searchTerm={debouncedSearch} />
-                : <TabSinMinMax key={sala} sala={sala} onSala={setSala} searchTerm={debouncedSearch} />}
+            <Suspense fallback={<Cargando />}>
+                {pestana === 'parados'
+                    ? <TabParados key={sala} sala={sala} onSala={setSala} searchTerm={debouncedSearch} />
+                    : <TabSinMinMax key={sala} sala={sala} onSala={setSala} searchTerm={debouncedSearch} />}
+            </Suspense>
         </GlassViewLayout>
     );
 }

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1353.3 — El portal abre más rápido: el arranque vuelve a 289 kB y Distribución, Promociones y Marketing bajan a la mitad
+
+- **Entrar al portal pesa 12 kB menos** (301 → 289 kB comprimidos), y eso lo baja todo el mundo después de cada actualización. Lo que salió sólo hace falta al apretar algo: leer los datos del DUI al guardar una ficha, las reglas de la quincena al crear o generar una planilla, la regla de la ventana de vacaciones al asignarlas, los sinónimos del buscador del menú al abrirlo, y el aviso de notificaciones apagadas.
+- **Distribución abre con 45 kB en vez de 203**: cada sección se baja la primera vez que se visita, no todas juntas. **Promociones** pasa de 110 a 48 kB y **Marketing** de 108 a 63 kB por lo mismo (pestañas y diálogos al abrirse). **La venta de Distribución** baja de 104 a 84 kB: venta perdida, cliente nuevo y existencias en salas se cargan al abrirlos.
+- **Ficha de la persona**: 37 → 30 kB; la lista del expediente se carga al abrir la pestaña Archivo. **Mis documentos**: 44 → 41 kB; el visor llega al abrir un documento. **Gestión de stock**: cada pestaña se carga al abrirse (58 → 20 kB al entrar). **Inicio**: 110 → 106 kB; la descarga de la factura de la sala se carga al apretar «descargar». **Bolsas** y **Vacaciones**: la foto ampliada del respaldo y el diálogo de rechazo se cargan al abrirse.
+- La primera vez que se abre una sección o pestaña que ahora se carga aparte aparece un indicador de carga un instante; después queda en memoria. Nada más cambia en pantalla.
+- Interno: `gate:bundle` vuelve a verde y 33 rutas que corrían sin techo propio lo tienen ahora, cada una con su motivo en `scripts/bundle-gate-baseline.json`. No se subió ningún techo existente; el de Gestión de stock se bajó de 57 a 30. `dialogoDiferido` acepta también `isOpen`.
+
 ## v2.1353.2 — El borrador del alta sobrevive al cierre por inactividad
 
 - Personal → nuevo empleado: si la sesión se cierra sola mientras se llena el alta, al volver a entrar aparece «Tienes un borrador sin guardar» con todo lo escrito. Antes el cierre por inactividad borraba los borradores de todo el portal, que es justo el caso para el que existen.

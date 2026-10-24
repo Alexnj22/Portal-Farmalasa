@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1353.4 — Mín·Máx abre más liviano: sus diálogos por fila se cargan al abrirse
+
+- Productos → Mín·Máx pesa 2.3 kB menos al entrar (94.5 → 92.2 kB comprimidos): anotar el motivo de un ajuste, poner un producto en cero en todas las salas y la regla de despacho se cargan la primera vez que se abren. Nada cambia en pantalla.
+- Interno: con v2.1353.3 la vista había quedado 60 bytes por encima de su techo de 94 (94.44 → 94.50). No creció nada propio: los trozos que comparte con el arranque pagaban unos bytes más en sus importaciones al cambiar lo que vive en el arranque. Se resolvió difiriendo, sin subir el techo.
+
 ## v2.1353.3 — El portal abre más rápido: el arranque vuelve a 289 kB y Distribución, Promociones y Marketing bajan a la mitad
 
 - **Entrar al portal pesa 12 kB menos** (301 → 289 kB comprimidos), y eso lo baja todo el mundo después de cada actualización. Lo que salió sólo hace falta al apretar algo: leer los datos del DUI al guardar una ficha, las reglas de la quincena al crear o generar una planilla, la regla de la ventana de vacaciones al asignarlas, los sinónimos del buscador del menú al abrirlo, y el aviso de notificaciones apagadas.

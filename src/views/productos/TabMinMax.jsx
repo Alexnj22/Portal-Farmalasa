@@ -14,9 +14,13 @@ import {
     TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, XCircle, Eye, BarChart2, FlaskConical, Search, MoreHorizontal, Filter,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import MotivoAjusteModal from './tabminmax/MotivoAjusteModal';
-import CeroEnTodasModal from './tabminmax/CeroEnTodasModal';
-import ReglaDeDespachoModal from './tabminmax/ReglaDeDespachoModal';
+import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
+// Los tres diálogos por fila se bajan la primera vez que se abren, no al
+// entrar a Mín·Máx (2026-10-24): anotar el motivo, poner en cero en todas y la
+// regla de despacho son acciones sobre UNA fila, y viajaban en el trozo.
+const MotivoAjusteModal = dialogoDiferido(() => import('./tabminmax/MotivoAjusteModal'));
+const CeroEnTodasModal = dialogoDiferido(() => import('./tabminmax/CeroEnTodasModal'));
+const ReglaDeDespachoModal = dialogoDiferido(() => import('./tabminmax/ReglaDeDespachoModal'));
 import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';

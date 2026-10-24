@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1353.2 — El borrador del alta sobrevive al cierre por inactividad
+
+- Personal → nuevo empleado: si la sesión se cierra sola mientras se llena el alta, al volver a entrar aparece «Tienes un borrador sin guardar» con todo lo escrito. Antes el cierre por inactividad borraba los borradores de todo el portal, que es justo el caso para el que existen.
+- El borrador del alta se guarda con cualquier dato escrito (teléfono, correo, documentos subidos…). Antes sólo con nombre, apellido o DUI, y un alta empezada por la foto del DUI y los contactos no dejaba nada que restaurar.
+- Cada borrador lleva a su autor: quien entra después en esa computadora no lo ve y se borra al entrar. El botón «Salir» sigue borrándolos todos.
+
 ## v2.1353.1 — Las edge functions ya se revisan: deno check en cero y lint bloqueante en CI
 
 Dos huecos de verificación cerrados. Ningún cambio de comportamiento salvo el

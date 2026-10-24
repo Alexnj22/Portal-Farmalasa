@@ -26,6 +26,21 @@ import { LUGAR_PAGO_OPTIONS, REGLAMENTO_LUGAR_PAGO,
 // pestañas dando de alta a dos personas a la vez no es un caso real, y una
 // clave por sesión dejaría borradores que nadie vuelve a ver.
 const CLAVE_BORRADOR = 'alta_empleado';
+
+// ¿Hay algo que perder? Exigía nombre, apellido o DUI, y un alta se empieza
+// por cualquier lado: Celina subió la foto del DUI y escribió teléfono y correo
+// (2026-10-24), la sesión venció y no había borrador — ninguno de los tres
+// campos estaba escrito todavía. Cuenta cualquier campo que alguien llenó; los
+// que nacen con valor (código, fechas de ingreso, nacionalidad, tipo de
+// contrato, horas, tipo de cuenta, sucursal) no, porque no los escribió nadie.
+const NACEN_LLENOS = new Set(['code', 'hire_date', 'contract_start_date', 'nationality',
+    'contract_type', 'weekly_contracted_hours', 'account_type', 'branch_id', 'branchId', 'hireDate']);
+const hayAlgoEscrito = (fd) => !!fd && Object.entries(fd).some(([k, v]) => {
+    if (NACEN_LLENOS.has(k) || k.startsWith('_') || k === 'file' || k === 'photoPreview') return false;
+    if (Array.isArray(v)) return v.length > 0;
+    if (v && typeof v === 'object') return Object.keys(v).length > 0;
+    return v != null && v !== '' && v !== false;
+});
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
@@ -422,7 +437,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     && emp.last_names?.trim().toLowerCase() === parsed.last_names?.trim().toLowerCase());
 
                 if (isAlreadySaved) { clearDraft(CLAVE_BORRADOR); setHasDraft(false); }
-                else if (parsed.first_names || parsed.last_names) setHasDraft(true);
+                else if (hayAlgoEscrito(parsed)) setHasDraft(true);
             }
         };
 
@@ -506,7 +521,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      * restaurado tiene que volver a pedir la ficha. */
     const borradorSeguro = useMemo(() => {
         if (isEditMode || formData?.id) return null;
-        if (!(formData?.first_names || formData?.last_names || formData?.dui)) return null;
+        if (!hayAlgoEscrito(formData)) return null;
         const limpio = { ...formData };
         delete limpio.file;
         delete limpio.photoPreview;

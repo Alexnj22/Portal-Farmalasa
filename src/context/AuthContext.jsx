@@ -12,7 +12,7 @@ import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHe
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername, motivoDeLoginFallido, cambiarMiContrasenaInicial, leerCargoYSalaPropios } from "../data/auth";
 import { cambioDeCargoOSala, debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos } from "../utils/sesionDelNavegador";
-import { borrarTodosLosBorradores } from "../utils/draftUtils";
+import { borrarTodosLosBorradores, fijarDuenoDeBorradores } from "../utils/draftUtils";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "@plataforma/pushEquipo";
 import { programarEn } from "../utils/temporizadorLargo";
 
@@ -675,9 +675,11 @@ export const AuthProvider = ({ children }) => {
     almacen.borrar(LS_SU);
     almacen.borrar(LS_DEVICE);
     clearSignedUrlCache();
-    // Los borradores son de quien los escribió, y su clave no dice de quién:
-    // cerrar la sesión se los lleva (ver `borrarTodosLosBorradores`).
-    borrarTodosLosBorradores();
+    // Los borradores NO se van acá: este embudo es también el del cierre por
+    // inactividad, que es justo cuando hacen falta. Llevan dueño y los ajenos
+    // se borran al entrar (`fijarDuenoDeBorradores`); el botón «salir» los
+    // borra en `doLogout`.
+    fijarDuenoDeBorradores(null);
   };
 
   // ── El cambio de contraseña obligatorio, mientras está en pantalla ────────
@@ -769,7 +771,10 @@ export const AuthProvider = ({ children }) => {
     useStaffStore.getState().resetBootState();
   };
 
-  const doLogout = () => {
+  const doLogout = ({ aMano = false } = {}) => {
+    // Sólo el botón se lleva los borradores: quien aprieta «salir» se va; a
+    // quien se le venció la sesión vuelve y tiene que encontrar lo que escribió.
+    if (aMano) borrarTodosLosBorradores();
 
     // El aviso del sistema es del EQUIPO, no de la cuenta —lo emite el
     // navegador de esa computadora—, así que en una máquina compartida cerrar
@@ -970,6 +975,7 @@ export const AuthProvider = ({ children }) => {
             const su = almacen.leer(LS_SU);
             if (su != null) parsed.isSU = JSON.parse(su);
           } catch { /* caché corrupto — manda el del usuario */ }
+          fijarDuenoDeBorradores(parsed?.id);
           setUser(parsed);
           startIdleWatcher(parsed);
           // Re-firmar la foto (la firmada cacheada puede haber expirado)
@@ -1371,6 +1377,7 @@ export const AuthProvider = ({ children }) => {
     almacen.guardar(LS_USER, JSON.stringify(u));
     writeLastActivity(true);
     setPermsLoading(true);
+    fijarDuenoDeBorradores(u?.id);
     setUser(u);
     startIdleWatcher(u);
   }
@@ -1486,7 +1493,7 @@ export const AuthProvider = ({ children }) => {
     return { ok: true };
   };
 
-  const logout = async () => doLogout();
+  const logout = async () => doLogout({ aMano: true });
 
   // -------------------------
   // 📦 Contexto expuesto

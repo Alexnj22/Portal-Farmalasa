@@ -636,7 +636,7 @@ export const AREAS = [
                  'marketing_visitas', 'marketing_cierres', 'marketing_ideas'],
         edge: [],
         crons: ['marketing-recordatorios-8am-sv'],
-        docs: [],
+        docs: ['docs/MARKETING-COMO-FUNCIONA-2026-10-24.md'],
     },
     {
         id: 'encuestas-clientes',

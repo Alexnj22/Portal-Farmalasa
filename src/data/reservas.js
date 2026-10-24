@@ -13,6 +13,9 @@ import { subirArchivo } from '../utils/storageFiles';
  * quien no tiene la app se le avisa por WhatsApp desde el portal.
  *
  * Una sucursal tiene decenas de reservas abiertas a lo sumo: sin paginar.
+ *
+ * Cómo funciona la app de clientes entera —sesión, niveles, reservas, chat,
+ * mayoristas, avisos—: docs/APP-CLIENTES-2026-10-05.md
  */
 
 const sinError = ({ data, error }) => {

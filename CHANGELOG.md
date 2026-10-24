@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.6 — Marketing y app de clientes: pruebas y documentación de cómo funcionan
+
+- **Marketing tiene su manual.** `docs/MARKETING-COMO-FUNCIONA-2026-10-24.md` explica el camino de una pieza (se sube, se envía a revisión, se piden cambios, se aprueba, se publica el mes), quién ve qué, la regla nueva del 23 de octubre —lo que el diseñador sube después de enviar no lo ve nadie hasta que lo vuelve a enviar—, los candados que impiden saltarse la aprobación y dónde se guardan los diseños.
+- **El documento de la app de clientes se puso al día** con lo que hace hoy: niveles y ofertas exclusivas, reservas con sus plazos, apartar y encargar en el mostrador, enviar a caja, el chat con la farmacia, clientes mayoristas y los avisos al teléfono.
+- **Pruebas nuevas** que vigilan lo que el cliente y la sala leen: los mensajes de WhatsApp de una reserva o un encargo, el reparto del dinero al ajustar una reserva, el horario y los mensajes automáticos del chat, el informe de marketing del mes y lo que se guarda al subir un diseño. Las dos áreas pasan de 91% a 95% en la auditoría.
+- Al quitar una pieza de marketing sin poder hacerlo, el aviso decía «sólo se puede quitar una pieza pendiente o en proceso», que no es la regla: ahora dice que sólo quien la creó la puede quitar, y no si ya se publicó.
+
 ## v2.1351.5 — Distribución anota los clientes en la bitácora y Pedidos usa la tarjeta canónica
 
 - **Distribución: dar de alta o editar un cliente queda en la bitácora.** Hasta hoy guardar la ficha de un cliente de ruta no dejaba rastro de quién lo hizo. Ahora queda anotado si fue un alta o una edición, con el cliente y la persona; el NIT, el DUI y el NRC no se copian a la bitácora. Si la anotación falla, el cliente se guarda igual.

@@ -14,6 +14,10 @@ import { conVersionesAlDia, primerDia } from '../utils/marketing';
  *
  * Ninguna lista pasa de 1000 filas: un mes trae decenas de piezas. La única
  * que crece sin techo son las solicitudes, y se cortan en 300 a propósito.
+ *
+ * Cómo funciona el módulo entero —el ciclo de una pieza, quién ve qué, los
+ * diseños «sin enviar» (H32), los candados y el bucket—:
+ * docs/MARKETING-COMO-FUNCIONA-2026-10-24.md
  */
 
 export const BUCKET_MARKETING = 'marketing';
@@ -136,9 +140,11 @@ export async function moverPieza(id, cambios) {
 export async function borrarPieza(id, titulo, archivos = []) {
     const { error, count } = await supabase.from('marketing_piezas').delete({ count: 'exact' }).eq('id', id);
     if (error) throw error;
-    // Sin policy que lo permita (la pieza ya no está pendiente ni en proceso)
-    // el DELETE «funciona» y borra cero filas. Eso es un error, no un éxito.
-    if (!count) throw new Error('Sólo se puede quitar una pieza pendiente o en proceso.');
+    // Sin policy que lo permita el DELETE «funciona» y borra cero filas. Eso es
+    // un error, no un éxito. La policy `marketing_piezas_delete` deja quitarla
+    // a quien la creó (o al superusuario) mientras no esté publicada: el
+    // mensaje decía «pendiente o en proceso», que no es la regla (2026-10-24).
+    if (!count) throw new Error('Sólo quien creó la pieza puede quitarla, y no si ya se publicó.');
     // Las filas de sus archivos se van en cascada; los objetos del bucket no.
     // Se borran después: un archivo huérfano es el error barato.
     const rutas = archivos.map(rutaEnBucket).filter(Boolean);

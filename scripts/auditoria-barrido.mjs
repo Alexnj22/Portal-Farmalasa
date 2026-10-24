@@ -132,6 +132,12 @@ const CATEGORIAS = [
                 // llenaría la bitácora de ruido. Lo que se audita es el ciclo
                 // (creada, enviada, aprobada, publicada…), que firma la base.
                 'src/data/encuestasClientes.js:guardarDiseno': 'autoguardado del borrador',
+                // No escribe en la base: sólo LEE el hilo a memoria al pasar
+                // por la bandeja. El `.delete(` que el detector ve es el del
+                // `Map` de precargas en curso (`EN_CURSO.delete`), no un
+                // DELETE de PostgREST. Ni toma la conversación ni la marca
+                // leída: eso lo hace `Conversacion` al abrirse (2026-10-24).
+                'src/data/chatHilo.js:precargarHilo': 'sólo lee: el .delete es de un Map en memoria',
             };
             const salida = [];
             const consumidores = [...indice.entries()]

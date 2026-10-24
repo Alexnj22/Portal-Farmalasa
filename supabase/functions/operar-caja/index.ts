@@ -409,7 +409,7 @@ Deno.serve(async (req) => {
      *    (`requests_caja` `can_approve`). Cobrarla con `caja_vales` dejaría que
      *    quien se equivocó se aprobara a sí mismo, que es exactamente lo que la
      *    solicitud existe para impedir. */
-    const [modulo, accionDelPermiso] = ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
+    const [modulo, accionDelPermiso]: [string, "can_view" | "can_edit" | "can_approve"] = ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
       ? ["requests_caja", "can_approve"]
       : ["caja_vales", accion === "estado" ? "can_view" : "can_edit"];   // `abono` incluido: es un ingreso
     const permiso = await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
@@ -666,8 +666,9 @@ Deno.serve(async (req) => {
       // del tramo para quien no ve el módulo de cortes, y sin ellas el juez cae
       // a `diferencia_erp`, la cifra cruda del origen. Mismo cambio que
       // `caja_estado` — las dos contestan la misma lista.
-      .select("id, tipo, hora, total_declarado, esperado, diferencia_erp, estado, "
-        + "tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo")
+      // En UN literal y no concatenado: con `+` el tipo es `string` y supabase-js
+      // no puede leer las columnas (las filas salen `GenericStringError`).
+      .select("id, tipo, hora, total_declarado, esperado, diferencia_erp, estado, tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo")
       .eq("branch_id", sala).eq("fecha", diaAbierto)
       .order("hora", { ascending: true });
     // Un error acá NO se puede leer como «no hay cortes»: sería ofrecer el
@@ -1962,7 +1963,7 @@ Deno.serve(async (req) => {
         if (!apartado) return json({ ok: false, error: "Falta qué se aparta." }, 400);
         const { data: cot, error: errCot } = await supabase.rpc("apartado_cotizar", { p_branch_id: sala, p_apartado: apartado });
         if (errCot || !cot) return json({ ok: false, error: errCot?.message || "No se pudo leer lo que se aparta." }, 409);
-        apartadoCot = cot as typeof apartadoCot;
+        apartadoCot = cot as { cliente?: string; detalle?: string; codigo?: string; minimo: number; maximo: number };
         if (monto < Number(apartadoCot!.minimo) - 0.004 || monto > Number(apartadoCot!.maximo) + 0.004) {
           return json({ ok: false, error: `El cobro va de $${Number(apartadoCot!.minimo).toFixed(2)} a $${Number(apartadoCot!.maximo).toFixed(2)}.` }, 409);
         }
@@ -2108,7 +2109,7 @@ Deno.serve(async (req) => {
         if (Date.now() - new Date(op.registrado_at).getTime() > 15 * 60_000) {
           return json({ ok: false, error: "La parte de la bolsa se registró hace demasiado: anúlala y vuelve a registrar la salida entera." }, 409);
         }
-        operacionBolsa = op as typeof operacionBolsa;
+        operacionBolsa = op as { id: number; recibido_por: string | null; recibido_metodo: string | null };
       }
 
       let recibidoPor: string | null = null;

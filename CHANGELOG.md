@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1353.1 — Las edge functions ya se revisan: deno check en cero y lint bloqueante en CI
+
+Dos huecos de verificación cerrados. Ningún cambio de comportamiento salvo el
+punto marcado como defecto.
+
+- **`npm run lint` bloquea en CI.** Era `continue-on-error` por una deuda
+  vieja que ya está en cero errores; mientras tanto se había colado uno
+  (`no-control-regex` en `tests/unit/reservasReglasV2.test.js`, corregido: la
+  comprobación «sólo ASCII» del papel ahora pide ASCII imprimible). Los warnings
+  siguen sin bloquear.
+- **Las edge functions ya las revisa algo.** `npm run gate:edge`
+  (`scripts/edge-gate.mjs`) corre `deno check` (en CERO, bloqueante) y
+  `deno lint` (baseline por función que sólo baja,
+  `scripts/edge-lint-baseline.json`) con Deno 2.5.6 pineado. Nuevo job
+  `edge-functions` en CI con `denoland/setup-deno@v2`. No va en el pre-commit:
+  necesita red para los módulos remotos.
+- **365 errores de tipos → 0.** 289 salían de una sola expresión:
+  `ReturnType<typeof createClient>` tipa al cliente con `Database = unknown` y
+  todas las filas quedan `never`. Se reemplazó por `ClienteAdmin` en
+  `_shared/security.ts` — una forma (`from`/`rpc`/`auth`), no la clase, porque
+  las clases de supabase-js son nominales y hay funciones que la importan por
+  `jsr:`/`esm.sh`. El resto, uno por uno: `catch` con `unknown`, `Uint8Array`
+  como cuerpo de `Response` (lib de TS 5.9), selects concatenados con `+` que
+  supabase-js no puede leer, narrowing de `let … = null`, `any` implícitos.
+  Todos con cambios SÓLO de tipos (se borran al compilar).
+- **Defecto real (uno):** `app-clientes`, acción `prueba_aviso` — sin ficha
+  (`customerId` nulo) llamaba `esDePrueba(null)`, que filtra
+  `customer_id=eq.null` y la base lo rechaza: contestaba 500 en vez de «Sólo en
+  la cuenta de prueba». Ahora corta antes.
+- **`deno lint`**: apagadas las reglas de estilo que dan cientos de avisos sin
+  defecto (`no-explicit-any` 506, `no-import-prefix` 105, `require-await`,
+  `no-inner-declarations`, `ban-unused-ignore`). Quedan 18 en baseline, con la
+  deuda escrita; la que importa es `_shared/claude.ts`, que importa
+  `npm:@anthropic-ai/sdk` SIN versión.
+
 ## v2.1353.0 — Reservas: el reglamento v2 arranca solo el 15 de noviembre
 
 - Todo cuelga de `reglas_v2_desde()` (15-nov-2026). Antes de la fecha, reservas y encargos funcionan exactamente igual que hoy; lo que empezó antes conserva su regla.

@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Error de IA Historial:', error.message)
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Error de IA Historial:', (error as Error).message)
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

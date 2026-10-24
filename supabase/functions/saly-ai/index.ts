@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
         // modelo en vez de un dato que no llegó.
         if (salesErr) throw new Error(`branch_hourly_sales(${branchId}): ${salesErr.message}`);
 
-        let trafficSummary = [];
+        let trafficSummary: { hora: string; promedio_clientes: number }[] = [];
         if (salesData && salesData.length > 0) {
             const hourlyTraffic: Record<string, {total: number, count: number}> = {};
             salesData.forEach(row => {

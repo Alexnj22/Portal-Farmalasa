@@ -31,6 +31,27 @@ export function requireInvokeSecret(req: Request): boolean {
 // ── JWT user validation (for calls from authenticated frontend users) ─────────
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+// El cliente de la llave del servidor, como lo reciben las funciones. NO es
+// `ReturnType<typeof createClient>`: `createClient` es genérica y su
+// `ReturnType` la instancia con `Database = unknown`, o sea un cliente cuyo
+// `.from()` devuelve filas `never` y que no acepta el `createClient(url, key)`
+// sin tipos que arma cada función (`deno check`, 2026-10-24: 289 de los 365
+// avisos de las edge functions salían de esa sola expresión).
+//
+// Y es una FORMA, no la clase `SupabaseClient`: las clases de supabase-js
+// tienen miembros privados, o sea que son nominales, y hay funciones que la
+// importan por `jsr:` o `esm.sh` —otra versión, otra copia de la clase— que no
+// se podrían pasar acá aunque en runtime sean el mismo objeto. Del cliente se
+// usan estas tres cosas; las filas son `any` igual que con un cliente sin tipos.
+export type ClienteAdmin = {
+  // deno-lint-ignore no-explicit-any
+  from: (relacion: string) => any;
+  // deno-lint-ignore no-explicit-any
+  rpc: (fn: string, ...resto: any[]) => any;
+  // deno-lint-ignore no-explicit-any
+  auth: { getUser: (jwt?: string) => Promise<any> };
+};
+
 export async function requireAuthUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return null;
@@ -71,7 +92,7 @@ export interface ActiveEmployee {
 
 export async function requireActiveEmployeeUser(
   req: Request,
-  admin: ReturnType<typeof createClient>,
+  admin: ClienteAdmin,
 ): Promise<ActiveEmployee | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return null;
@@ -106,7 +127,7 @@ export async function requireActiveEmployeeUser(
 // gana la ficha cuyo id ES el de la cuenta, y sólo si no hay se resuelve por la
 // liga. Ver la regla «el portal tiene dos identidades por persona».
 async function resolverEmpleadoPorCuenta(
-  admin: ReturnType<typeof createClient>,
+  admin: ClienteAdmin,
   authUserId: string,
 ): Promise<ActiveEmployee | null> {
   const directo = await admin

@@ -189,8 +189,8 @@ FORMATO DE RESPUESTA:
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("ERROR generate-vacation-plan:", err.message);
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("ERROR generate-vacation-plan:", (err as Error).message);
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

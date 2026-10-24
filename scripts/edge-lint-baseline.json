@@ -1,0 +1,23 @@
+{
+  "_que_es": "Avisos de `deno lint` por edge function el 2026-10-24 (scripts/edge-gate.mjs). SÓLO BAJA: `npm run gate:edge -- --update-baseline` después de arreglar; nunca se sube para tapar un aviso nuevo.",
+  "_deuda": {
+    "_shared": "claude.ts:17 importa `npm:@anthropic-ai/sdk` SIN versión: cada despliegue de una función que lo use toma la última del registro, incluida una mayor nueva. Pinearla exige saber cuál corre hoy en producción — no se adivina.",
+    "hacer-corte-caja": "`montosDeAbono` se asigna y nadie lo lee: el comentario dice que lo usa «la comprobación del esperado, más abajo», que ya no existe. Diagnóstico muerto, sin efecto en el dinero.",
+    "resto": "Variables sin usar y `let` que es `const` (saly-ai, backfill-dte-sales, consolidate-timesheets, sync-purchase-emails, sync-erp-purchases, wfm-ai-scheduler, leer-pago-de-credito, disable-employee-auth, heal-dte-sync, no-reenviar-pedido-erp). Revisadas una por una: ninguna es un chequeo que falte. Dos `no-control-regex` en saly-ai son el saneo de caracteres de control, a propósito."
+  },
+  "total": 18,
+  "porFuncion": {
+    "_shared": 1,
+    "backfill-dte-sales": 3,
+    "consolidate-timesheets": 2,
+    "disable-employee-auth": 1,
+    "hacer-corte-caja": 1,
+    "heal-dte-sync": 1,
+    "leer-pago-de-credito": 1,
+    "no-reenviar-pedido-erp": 1,
+    "saly-ai": 3,
+    "sync-erp-purchases": 1,
+    "sync-purchase-emails": 2,
+    "wfm-ai-scheduler": 1
+  }
+}

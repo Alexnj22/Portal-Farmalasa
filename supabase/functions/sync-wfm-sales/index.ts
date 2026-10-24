@@ -74,8 +74,9 @@ Deno.serve(async (req) => {
     }
 
     // 3. PROCESAMIENTO
-    const hourlyBuckets = {};
-    payload.datos.forEach(item => {
+    const hourlyBuckets: Record<string, { branch_id: unknown; sale_date: string; sale_hour: number; total_sales: number; transaction_count: number }> = {};
+    // deno-lint-ignore no-explicit-any
+    payload.datos.forEach((item: any) => {
       const [day, month, year] = item.fecha.split('-');
       const sale_date = `${year}-${month}-${day}`;
 
@@ -125,7 +126,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });

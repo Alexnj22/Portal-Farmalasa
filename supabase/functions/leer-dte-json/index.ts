@@ -294,7 +294,7 @@ Deno.serve(async (req: Request) => {
         const { data: reng } = await admin.from("purchase_receipt_items")
           .select("fecha_vencimiento, lote").eq("receipt_id", recibo.id);
 
-        const mias = leidos.map((x) => x.vence).filter(Boolean).sort();
+        const mias = leidos.map((x) => x.vence).filter((v): v is string => Boolean(v)).sort();
         const suyas = (reng ?? []).map((x: any) => x.fecha_vencimiento).filter(Boolean).sort();
         const cuenta = (a: string[]) => a.reduce((m: any, v) => (m[v] = (m[v] ?? 0) + 1, m), {});
         const ca = cuenta(mias), cb = cuenta(suyas);

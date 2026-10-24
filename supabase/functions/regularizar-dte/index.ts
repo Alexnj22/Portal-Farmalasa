@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
+import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 // `anular_factura.php` NO se usa acá a propósito: estas facturas ya están
 // anuladas en el ERP —eso es lo que las puso en la bolsa— y lo único que
 // falta es el trámite ante Hacienda.
@@ -144,7 +144,7 @@ interface Pendiente {
  * malo, pero abortar el barrido por eso es peor.
  */
 async function registrarIntento(
-  admin: ReturnType<typeof createClient>,
+  admin: ClienteAdmin,
   f: Pendiente,
   r: {
     ok: boolean;

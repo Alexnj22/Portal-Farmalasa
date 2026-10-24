@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
          lo descontado con lo bonificado. */
       const promocionId = Number(body.promocion_id) || 0;
 
-      const productos = [...new Set(
+      const productos = [...new Set<number>(
         (Array.isArray(body.productos) ? body.productos : [])
           .map((n: unknown) => Number(n))
           .filter((n: number) => Number.isInteger(n) && n > 0),

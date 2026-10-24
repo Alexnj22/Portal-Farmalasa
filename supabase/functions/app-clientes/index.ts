@@ -692,7 +692,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const [nivelQ, extraQ] = (new URL(req.url).searchParams.get("nivel") ?? "").split("+");
       const nivelPrueba = NOMBRE_NIVEL[nivelQ] && await esDePrueba(id) ? NOMBRE_NIVEL[nivelQ] : undefined;
       const pkpass = await paseDe(id, nivelPrueba, !!nivelPrueba && extraQ === "equipo");
-      return new Response(pkpass, { headers: {
+      return new Response(pkpass as Uint8Array<ArrayBuffer>, { headers: {
         "Content-Type": "application/vnd.apple.pkpass",
         "Content-Disposition": "attachment; filename=PuntosSalud.pkpass",
         "Cache-Control": "no-store",
@@ -1027,7 +1027,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // (`firmarOfertas`): una URL nueva cada vez hacía que el teléfono
       // volviera a bajar la misma foto.
       const firmadas = await firmarOfertas(admin, [...filas, ...muestras].map((o: any) => o.imagen_path));
-      const ofertas = (filas ?? []).map((o: any) => {
+      // deno-lint-ignore no-explicit-any
+      const ofertas: Record<string, any>[] = (filas ?? []).map((o: any) => {
         const imagen = o.imagen_path ? firmadas.get(o.imagen_path) ?? null : null;
         const disponible = !o.exclusiva || socio;
         return {
@@ -2198,7 +2199,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!texto && !fotoRuta && !adjuntoArchivo) return json({ ok: false, mensaje: "Escribe un mensaje." });
       if (fotoRuta && !new RegExp(`^chat/${customerId}/\\d+\\.jpg$`).test(fotoRuta)) return json({ ok: false, mensaje: "La foto no es válida. Vuelve a elegirla." });
       if (fotoRuta && !(await archivoExiste(admin, fotoRuta))) return json({ ok: false, mensaje: "La foto no terminó de subirse. Intenta de nuevo." });
-      let cv = await convDe();
+      // deno-lint-ignore no-explicit-any
+      let cv: Record<string, any> | null = await convDe();
       if (!cv) {
         const { data, error } = await admin.from("app_chat_conversaciones").insert({ customer_id: customerId }).select("id, sin_leer_cliente").single();
         // Dos mensajes a la vez: el segundo choca con la UNIQUE y lee la que ganó.
@@ -3346,7 +3348,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // Sólo la cuenta de prueba. Manda el aviso de verdad (bandeja + push) para
     // ver la notificación y la pantalla que abre.
     if (accion === "prueba_aviso") {
-      if (!(await esDePrueba(customerId))) return json({ ok: false, mensaje: "Sólo en la cuenta de prueba." });
+      // Sin ficha no hay cuenta de prueba: `esDePrueba(null)` filtraba `customer_id=eq.null`,
+      // que la base rechaza, y la acción contestaba 500 en vez de este mensaje.
+      if (!customerId || !(await esDePrueba(customerId))) return json({ ok: false, mensaje: "Sólo en la cuenta de prueba." });
       const TIPOS: Record<string, { tipo: string; titulo: string; cuerpo: string; url: string; cuerpoPublico?: string }> = {
         cumpleanos: { tipo: "cumpleanos", titulo: "¡Feliz cumpleaños! 🎂", cuerpo: "Te regalamos puntos para celebrar. Ábrela y míralos.", url: "/puntos?cumple=1" },
         puntos: { tipo: "ganado", titulo: "Ganaste 25 puntos", cuerpo: "Gracias por tu compra. Mira tu saldo en la app.", url: "/puntos" },
@@ -3423,7 +3427,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // reservas—, en unidades, y alcanzando para lo que se pide (antes bastaba
       // con que hubiera una).
       if (pagoEnLinea) {
-        const idsP = [...new Set(items.map((x: any) => x.id))];
+        const idsP = [...new Set<number>(items.map((x: any) => x.id))];
         const disp = await unidadesPorSala(admin, idsP);
         const pide = new Map<number, number>();
         for (const x of items) pide.set(x.id, (pide.get(x.id) ?? 0) + Math.max(1, x.cantidad) * Math.max(1, x.factor));
@@ -3435,7 +3439,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { data: sala, error: eSala } = await admin.from("branches").select("id").eq("id", branchId).eq("type", "FARMACIA").maybeSingle();
       if (eSala) throw eSala;
       if (!sala) return json({ ok: false, mensaje: "Elige la sucursal donde vas a retirar." });
-      const ids = [...new Set(items.map((x: any) => x.id))];
+      const ids = [...new Set<number>(items.map((x: any) => x.id))];
       const [{ data: prods, error: eP }, { data: precios, error: ePr }, { data: ocultos, error: eO }, condPrecio, rxC] = await Promise.all([
         admin.from("products").select("id, nombre, activo, oculto_en_ventas").in("id", ids),
         // Los precios por la MISMA función que el catálogo (2026-10-19): antes
@@ -4021,7 +4025,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           // deno-lint-ignore no-explicit-any
           const m = mayorista as any;
           if (programa?.mayoreo.activos && m?.estado === "aprobado" && m?.rango) {
-            const r = programa.mayoreo.rangos.find((x) => x.clave === m.rango);
+            const r = programa.mayoreo.rangos.find((x: { clave: string }) => x.clave === m.rango);
             if (r) return r.cumpleanos;
           }
           return Number(nivel.cumpleanos ?? cfgP?.puntos_cumpleanos ?? 0);

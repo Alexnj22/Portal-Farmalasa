@@ -1468,7 +1468,7 @@ Deno.serve(async (req) => {
      * nunca el navegador; y el crédito tiene que ser de ESE cliente: abonar
      * el anticipo de una persona al crédito de otra no da error en el origen
      * y no se deshace. Después cae al abono de siempre. */
-    let anticipoAplicado: { apartado: Record<string, number>; codigo: string; monto: number; reclamo: number } | null = null;
+    let anticipoAplicado: { apartado: { reserva_id?: number; encargo_id?: number }; codigo: string; monto: number; reclamo: number } | null = null;
     if (accion === "aplicar_anticipo") {
       const sala = Number(body.sala);
       const credito = String(body.credito ?? "").trim();

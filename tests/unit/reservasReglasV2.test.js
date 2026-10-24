@@ -28,7 +28,7 @@ describe('reglamento de reservas v2 — textos que dependen de la fecha', () => 
         const v2 = JSON.stringify(construirConstanciaDeReserva({ ...base, reglas: V2 }));
         expect(v1).toContain('por 60 dias');
         expect(v2).toContain('por 12 meses');
-        expect(/[^\x00-\x7F]/.test(construirConstanciaDeReserva({ ...base, reglas: V2 }).pie.join(''))).toBe(false);
+        expect(/[^\x20-\x7E]/.test(construirConstanciaDeReserva({ ...base, reglas: V2 }).pie.join(''))).toBe(false);
     });
     it('el plazo al apartar y el nivel', () => {
         expect(plazoAlApartar(null)).toBe('7 días');

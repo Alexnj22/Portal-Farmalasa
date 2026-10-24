@@ -50,7 +50,7 @@ import { boletaSinReferencia } from "../_shared/boletaReferencia.ts"
 // El cambio es esta línea. Va como constante y no como «si hay key usá Claude,
 // si no Gemini» a propósito: un camino que se elige solo hace que nadie sepa
 // cuál corrió, y el día que la lectura falle no se puede saber quién falló.
-const LECTOR: 'gemini' | 'claude' = 'gemini'
+const LECTOR = 'gemini' as 'gemini' | 'claude'
 
 // ── El veredicto lo arma esta función, no el modelo ─────────────────────────
 // El modelo sólo LEE. Comparar es aritmética y comparación de cadenas, y eso se

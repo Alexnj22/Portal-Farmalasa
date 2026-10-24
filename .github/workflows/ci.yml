@@ -29,13 +29,14 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      # No bloqueante: el proyecto arrastra ~186 problemas de lint preexistentes
-      # (no-unused-vars, no-empty, etc. — ver Bloque 1.6 en PLAN-EJECUCION-2026-07.md,
-      # deuda cosmética documentada, fuera de ese barrido). Corre igual para que el
-      # resumen de CI muestre la cuenta, pero no puede tumbar el job hasta que se
-      # limpie esa deuda (Bloque 5) o se adopte un baseline de lint.
+      # BLOQUEANTE desde el 2026-10-24 (v2.1353.1). Fue `continue-on-error`
+      # mientras se arrastraban ~186 problemas viejos (Bloque 1.6 de
+      # PLAN-EJECUCION-2026-07.md); esa deuda ya está en CERO errores, y un
+      # paso que no puede fallar no vigila nada: el día que se coló un error
+      # nuevo (`no-control-regex` en un test de reservas) el CI siguió verde.
+      # Los WARNINGS no bloquean —ESLint sale con 0 si sólo hay avisos—; los
+      # errores sí.
       - run: npm run lint
-        continue-on-error: true
       - run: npm run test
 
       # ── Los gates de diseño, BLOQUEANTES ───────────────────────────────────
@@ -62,6 +63,27 @@ jobs:
       - run: npx playwright install --with-deps webkit
       - name: el instrumento puede fallar
         run: E2E_BASE_URL=http://localhost:9 npx playwright test --project=webkit-movil -g "instrumento"
+
+  # ── Las edge functions (Deno), que hasta el 2026-10-24 no revisaba nadie ──
+  # `deno check` en CERO y bloqueante; `deno lint` contra un baseline por
+  # función que sólo baja. La versión de Deno es la MISMA que pinea
+  # `scripts/edge-gate.mjs` (VERSION_DENO): si difieren, el script ignora este
+  # `deno` y baja el suyo por npx. Necesita red para los módulos `npm:`/`jsr:`
+  # remotos, por eso vive acá y no en el pre-commit.
+  edge-functions:
+    name: Edge functions (deno check + lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.5.6
+          cache: true
+      - name: gate:edge
+        run: node scripts/edge-gate.mjs
 
   e2e-smoke:
     name: Playwright smoke

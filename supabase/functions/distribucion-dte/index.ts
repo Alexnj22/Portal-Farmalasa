@@ -59,7 +59,7 @@
 // da por emitido si Hacienda no lo selló.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { type ClienteAdmin, getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import {
   armarCreditoFiscal, armarFactura, armarNotaCredito, armarNotaRemision, totalAPagar,
   type DatosVenta, type Emisor, type Receptor, type Renglon,
@@ -73,7 +73,7 @@ import {
   type RespuestaRecepcion, type Token,
 } from "../_shared/dte/hacienda.ts";
 
-type Admin = ReturnType<typeof createClient>;
+type Admin = ClienteAdmin;
 
 const json = (req: Request, status: number, body: unknown) =>
   new Response(JSON.stringify(body), {
@@ -446,7 +446,7 @@ async function resolverPagos(
   { soloValidar = false } = {},
 ) {
   const totalC = Math.round(Number(total) * 100);
-  let lineas = filas.map((f) => ({ ...f, montoC: f.monto == null ? null : Math.round(Number(f.monto) * 100) }));
+  let lineas: Record<string, any>[] = filas.map((f) => ({ ...f, montoC: f.monto == null ? null : Math.round(Number(f.monto) * 100) }));
   if (!lineas.length) {
     // Pedido sin pagos detallados: la forma y la condición del pedido, por el total.
     lineas = [{ id: null, orden: 1, forma: p.condicion === 2 ? CREDITO : (p.forma_pago ?? "01"), referencia: null, monto: null, montoC: null }];

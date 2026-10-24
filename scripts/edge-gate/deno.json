@@ -1,0 +1,16 @@
+{
+  "nodeModulesDir": "none",
+  "lock": false,
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": [
+        "no-explicit-any",
+        "no-import-prefix",
+        "ban-unused-ignore",
+        "require-await",
+        "no-inner-declarations"
+      ]
+    }
+  }
+}

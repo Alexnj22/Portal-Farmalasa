@@ -289,7 +289,7 @@ Deno.serve(async (req) => {
             + "sentido")
       .in("id", ids);
     if (devErr) throw devErr;
-    const devs = (devsRaw ?? []) as (Devolucion & { detalle: Record<string, unknown> | null; updated_at: string })[];
+    const devs = (devsRaw ?? []) as unknown as (Devolucion & { detalle: Record<string, unknown> | null; updated_at: string })[];
     if (devs.length === 0)
       return json({ ok: false, codigo: "NO_EXISTE", error: "Esas devoluciones no existen." }, 404);
 
@@ -666,7 +666,7 @@ Deno.serve(async (req) => {
             + "products ( nombre ), presentaciones!erp_presentacion_id ( tipo )")
       .in("id", aEnviar.map((d) => d.pedido_item_id));
     if (itemsErr) throw itemsErr;
-    const porItem = new Map((items ?? []).map((r: Record<string, unknown>) => [Number(r.id), {
+    const porItem = new Map(((items ?? []) as unknown as Record<string, unknown>[]).map((r: Record<string, unknown>) => [Number(r.id), {
       factor: r.factor == null ? 0 : Number(r.factor),
       nombre: String((r.products as { nombre?: string } | null)?.nombre ?? r.id),
       // Un renglón que el pedido despachó tiene su `erp_presentacion_id`. Uno

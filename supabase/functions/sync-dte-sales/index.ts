@@ -633,7 +633,7 @@ async function syncInventoryBranch(
   ubicacionId: number,
   isVencidos: boolean,
   cookieCache: Map<string, string>,
-): Promise<{ items: number; rows: number }> {
+): Promise<{ items: number; rows: number; sinCambios?: boolean }> {
   const cookie = await getCachedCookie(cookieCache, username, password);
 
   const url = `${INV_BASE}?id_ubicacion=${ubicacionId}&id_sucursal=${erpId}`;

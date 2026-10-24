@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
+import { type ClienteAdmin, getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   anotar,
@@ -121,7 +121,7 @@ interface Hallazgo {
 
 /** Trae TODOS los ítems despachables del pedido para esa sucursal, paginando. */
 async function leerItems(
-  admin: ReturnType<typeof createClient>, pedidoId: string, sucId: number,
+  admin: ClienteAdmin, pedidoId: string, sucId: number,
 ): Promise<ItemPedido[]> {
   const CHUNK = 1000;
   const todos: ItemPedido[] = [];
@@ -629,7 +629,7 @@ Deno.serve(async (req) => {
           if (antesDeRecibir === "recibido") {
             await anotar(
               admin.from("pedido_traslado_linea").update({
-                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien!.id,
                 // Quién lo recibió no lo dice el sistema, así que no se inventa.
                 // Lo que sí hay que poder leer después es que la carga NO la hizo
                 // esta llamada: acá no se escribió inventario.
@@ -660,7 +660,7 @@ Deno.serve(async (req) => {
             // pedido no quede colgado esperándolo.
             await anotar(
               admin.from("pedido_traslado_linea").update({
-                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien!.id,
                 aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
                 updated_at: new Date().toISOString(),
               }).eq("id", ln.id),
@@ -733,7 +733,7 @@ Deno.serve(async (req) => {
               // adentro.
               await anotar(
                 admin.from("pedido_traslado_linea").update({
-                  estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+                  estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien!.id,
                   aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
                   updated_at: new Date().toISOString(),
                 }).eq("id", ln.id),
@@ -766,7 +766,7 @@ Deno.serve(async (req) => {
             admin.from("pedido_traslado_linea").update({
               estado: "recibida",
               recibido_at: new Date().toISOString(),
-              recibido_por: quien.id,
+              recibido_por: quien!.id,
               updated_at: new Date().toISOString(),
             }).eq("id", ln.id),
             `la recepción de ${ln.clave} (el producto YA entró a la sala)`,
@@ -866,7 +866,7 @@ Deno.serve(async (req) => {
         paso: "enviar",
         estado: "en_curso",
         productos: items.length,
-        creado_por: quien.id,
+        creado_por: quien!.id,
       })
       .select("id")
       .maybeSingle();

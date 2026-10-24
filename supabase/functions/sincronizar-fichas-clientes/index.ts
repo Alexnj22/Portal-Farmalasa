@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
       espejo_rechazado: 0,
       frenadas: 0, fallidas: 0, cortada_por_tiempo: false,
     };
-    const aRevisar: unknown[] = [];
+    const aRevisar: Record<string, unknown>[] = [];
     // El ERP tiene su propio control de duplicados y rechaza el guardado
     // completo —`escribirCampo` reenvía los 21 campos, así que cualquier
     // edición lo dispara—. No es un fallo técnico ni se arregla reintentando:

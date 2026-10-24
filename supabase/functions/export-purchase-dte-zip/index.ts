@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
     // supabase-js solo devuelve Blob para octet-stream/pdf/json — cualquier
     // otro tipo cae a response.text() y corrompe el binario. El nombre del
     // archivo en Content-Disposition ya le dice al navegador que es un .zip.
-    return new Response(zipBytes, {
+    return new Response(zipBytes as Uint8Array<ArrayBuffer>, {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/octet-stream",

@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
       const id = clienteDelSerial(serial);
       if (!id) return vacio(404);
       const { pase, cambio } = await paseDeCliente(admin, id);
-      return new Response(pase, { headers: {
+      return new Response(pase as Uint8Array<ArrayBuffer>, { headers: {
         "Content-Type": "application/vnd.apple.pkpass",
         "Last-Modified": new Date(cambio ?? Date.now()).toUTCString(),
         "Cache-Control": "no-store",

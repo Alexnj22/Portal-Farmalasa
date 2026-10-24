@@ -16,6 +16,7 @@ import { filtrarMovimientos, nombreDeForma, fueEditado as fueEditadoMov, histori
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diaSV, fechaTexto, relojSV } from '@nucleo/utils/fecha';
+import { cifraDeLaFranja } from '@nucleo/utils/cortesDiagnostico';
 
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.
@@ -670,9 +671,18 @@ function datosDelCobro(cb) {
  * detalle de un corte vive en su pestaña.
  */
 function LineaDeCorte({ corte }) {
-    const dif = Number(corte.diferencia_erp);
-    const cuadra = !Number.isFinite(dif) || Math.abs(dif) < 0.005;
-    const tono = cuadra ? 'text-brand-text' : dif > 0 ? 'text-warning-text' : 'text-danger-text';
+    /* La cifra sale del juez canónico (`diferenciaDelCorte`), NUNCA de
+     * `diferencia_erp`. Esa columna es lo que dijo el origen, y entre el 14-ago
+     * y el 2-sep el origen le sumaba al esperado múltiplos de los cobros de
+     * crédito: el corte 161 de Salud 3 (17-ago) pintaba −$970.39 sobre un
+     * corte que cuadró (+$0.01), y el 270 (20-ago) −$499.50 sobre +$1.30. Ver
+     * `cifraDeLaFranja`. */
+    const { valor: dif, estado } = cifraDeLaFranja(corte);
+    const tono = estado === 'cuadra' || estado === 'sin-conteo' ? 'text-brand-text'
+        : estado === 'sobra' ? 'text-warning-text' : 'text-danger-text';
+    const texto = estado === 'sin-conteo' ? 'sin contar'
+        : estado === 'cuadra' ? 'cuadró'
+            : `${dif > 0 ? '+' : '−'}${formatMoney(Math.abs(dif))}`;
     return (
         <div className="flex items-center gap-3 px-4 py-2 bg-brand/5" role="separator"
             aria-label={`Corte de las ${horaReloj(corte.hora)}`}>
@@ -682,9 +692,7 @@ function LineaDeCorte({ corte }) {
             </span>
             <span className="h-px flex-1 bg-brand/20" aria-hidden="true" />
             <span className="text-caption tabular-nums text-content-2">{formatMoney(corte.total_declarado)}</span>
-            <span className={`text-caption font-bold tabular-nums ${tono}`}>
-                {cuadra ? 'cuadró' : `${dif > 0 ? '+' : '−'}${formatMoney(Math.abs(dif))}`}
-            </span>
+            <span className={`text-caption font-bold tabular-nums ${tono}`}>{texto}</span>
         </div>
     );
 }

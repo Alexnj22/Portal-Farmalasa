@@ -48,6 +48,8 @@
  *      creencia: si mañana entra un duplicado por un camino que nadie previó,
  *      esto lo dice.
  *
+ *   G. Nadie fuera del juez lee `diferencia_erp` (local, ver el bloque G).
+ *
  *   F. Los dos jueces dicen lo mismo. `diferenciaDelCorte` (JavaScript, lo que
  *      se VE) contra `corte_diferencia` (la base, lo que se COBRA), sobre todos
  *      los cortes. Lo hacía `scripts/comparar-diferencia-de-corte.mjs`, pero a
@@ -77,7 +79,49 @@
  * cero no es un cero de instrumento apagado: es el número que hay.
  */
 import { execFileSync } from 'node:child_process';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { abrirCanal } from './lib/canal-supabase.mjs';
+
+/* G. Nadie pinta ni decide con `diferencia_erp` (2026-10-24).
+ *
+ * Esa columna es lo que dijo el ORIGEN, no el faltante: entre el 14-ago y el
+ * 2-sep el origen le sumaba al esperado múltiplos de los cobros de crédito. La
+ * franja de Movimientos la pintaba cruda —corte 161 de Salud 3: −$970.39 sobre
+ * un corte que cuadró (+$0.01)— mientras la tarjeta del mismo corte decía lo
+ * correcto. Se lee SÓLO adentro del juez (`cortesDiagnostico.js`: la firma de
+ * «no contó» y la rama sin tiquete) y en las listas de columnas que se le pasan
+ * (`data/cortes.js`). Cualquier otro archivo del portal o de la app que la
+ * nombre es un lector nuevo con el juez equivocado. Es local: no necesita red. */
+const LECTORES_PERMITIDOS = new Set([
+  'src/utils/cortesDiagnostico.js',
+  'src/data/cortes.js',
+  'src/types/database.ts',
+]);
+function lectoresDeLaCifraCruda() {
+  const hallados = [];
+  const recorrer = (dir) => {
+    let entradas;
+    try { entradas = readdirSync(dir); } catch { return; }
+    for (const e of entradas) {
+      if (e === 'node_modules' || e.startsWith('.')) continue;
+      const ruta = join(dir, e);
+      const st = statSync(ruta);
+      if (st.isDirectory()) { recorrer(ruta); continue; }
+      if (!/\.(jsx?|tsx?|mjs)$/.test(e) || LECTORES_PERMITIDOS.has(ruta)) continue;
+      const texto = readFileSync(ruta, 'utf8');
+      texto.split('\n').forEach((linea, i) => {
+        // Los comentarios sí la nombran: ahí es trazabilidad, no un lector.
+        const t = linea.trim();
+        if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return;
+        if (linea.includes('diferencia_erp')) hallados.push(`${ruta}:${i + 1}`);
+      });
+    }
+  };
+  recorrer('src');
+  recorrer('apps/mobile');
+  return hallados;
+}
 
 const CENTAVO = 0.005;
 const money = (n) => `$${Number(n).toFixed(2)}`;
@@ -418,6 +462,17 @@ function main() {
             + '`npx vite-node scripts/comparar-diferencia-de-corte.mjs` para ver cuáles.',
     });
   }
+
+  const crudos = lectoresDeLaCifraCruda();
+  for (const r of crudos) {
+    fallas.push({
+      clave: `cifra-cruda:${r}`,
+      detalle: 'lee `diferencia_erp` fuera del juez',
+      porque: 'Es lo que dijo el origen, no el faltante (corte 161: −$970.39 sobre +$0.01). '
+            + 'Usar `diferenciaDelCorte` de src/utils/cortesDiagnostico.js.',
+    });
+  }
+  console.log(`  cifra cruda: ${crudos.length === 0 ? 'nadie fuera del juez lee diferencia_erp' : `${crudos.length} lector(es) nuevo(s)`}`);
 
   if (fallas.length === 0) {
     console.log('\n✓ El efectivo del cajón y el esperado de los cortes dicen lo mismo.\n');

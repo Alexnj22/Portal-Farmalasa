@@ -662,7 +662,12 @@ Deno.serve(async (req) => {
     // condición que ya se conocía al pintar.
     const { data: cortesDelDia, error: errCortes } = await supabase
       .from("cortes_caja")
-      .select("id, tipo, hora, total_declarado, esperado, diferencia_erp, estado")
+      // Con las piezas del juez (`diferenciaDelCorte`): esta lista es la base
+      // del tramo para quien no ve el módulo de cortes, y sin ellas el juez cae
+      // a `diferencia_erp`, la cifra cruda del origen. Mismo cambio que
+      // `caja_estado` — las dos contestan la misma lista.
+      .select("id, tipo, hora, total_declarado, esperado, diferencia_erp, estado, "
+        + "tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo")
       .eq("branch_id", sala).eq("fecha", diaAbierto)
       .order("hora", { ascending: true });
     // Un error acá NO se puede leer como «no hay cortes»: sería ofrecer el

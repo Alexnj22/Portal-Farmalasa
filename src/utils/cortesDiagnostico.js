@@ -661,6 +661,25 @@ export function contraste(corte) {
 }
 
 /**
+ * La cifra que lleva la franja de un corte en la serie de movimientos.
+ *
+ * Sale de `diferenciaDelCorte` y de nada más. La franja leía `diferencia_erp`
+ * —lo que dijo el origen— y entre el 14-ago y el 2-sep el origen le sumaba al
+ * esperado múltiplos de los cobros de crédito. Medido: el corte 161 de Salud 3
+ * (17-ago) pintaba **−$970.39** —cuatro veces los $242.60 de cobros— sobre un
+ * corte que cuadró (+$0.01); el 270 (20-ago), −$499.50 sobre +$1.30.
+ *
+ * `sin-conteo` no es `cuadra`: un corte que no contó el efectivo no cuadró, no
+ * se midió.
+ */
+export function cifraDeLaFranja(corte) {
+    const { valor } = diferenciaDelCorte(corte);
+    if (valor == null) return { valor: null, estado: 'sin-conteo' };
+    if (Math.abs(valor) < 0.005) return { valor: 0, estado: 'cuadra' };
+    return { valor, estado: valor > 0 ? 'sobra' : 'falta' };
+}
+
+/**
  * La diferencia que MANDA: la del corte.
  *
  * Regla del usuario (2026-08-14): «el corte de caja trae toda la info; para lo

@@ -264,7 +264,10 @@ export default function CorteDetalleModal({
     const cifra = descartado ? (propia?.valor ?? null) : (visible?.tramo ?? null);
     const esperadoDeLaCifra = descartado
         ? propia?.esperado
-        : (visible?.esperadoUsado ?? visible?.esperado);
+        // Sin `esperadoUsado` (un corte que no es tramo) se cae al esperado del
+        // juez, nunca a la columna `esperado`: ésa es `declarado − diferencia_erp`,
+        // o sea la cifra cruda del origen con su defecto de los cobros de crédito.
+        : (visible?.esperadoUsado ?? propia?.esperado);
 
     const sev = severidad(cifra);
     const esZ = visible?.tipo === 'Z';

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.10 — Cortes: la franja y la base del tramo usan el juez del corte · Compras: el sello exige número y proveedor
+
+- **La franja del corte en «Movimientos» ya no muestra faltantes que no existen.** Pintaba la cifra del comprobante sin la corrección de los cobros de crédito: el corte de las 21:00 de Salud 3 del 17-ago aparecía con **−$970.39** cuando cuadró (+$0.01), y el del 20-ago con −$499.50 cuando sobraron $1.30. Ahora dice lo mismo que la tarjeta del corte, y un corte que no contó el efectivo se rotula «sin contar» en vez de «cuadró».
+- **«Debía haber en caja»** del detalle de un corte (portal y app) ya no cae nunca a la cifra cruda: cuando el corte no es un tramo usa el esperado corregido.
+- **Hacer un corte desde Mi caja o la app, sin acceso al módulo de cortes**, medía el tramo contra la cifra cruda del corte anterior. La lista de cortes del estado de la caja ahora trae las piezas del comprobante (requiere aplicar la función de la base y desplegar `operar-caja`).
+- **`npm run gate:cortes` vigila que ningún archivo del portal o de la app vuelva a leer esa cifra cruda** fuera del cálculo del corte.
+- **Compras: el sello de Hacienda de una compra exige que coincidan el número del documento Y el proveedor.** Dos compras de proveedores distintos con el mismo número (ANA FRANCISCA CEDILLOS y C. IMBERTON, 5-oct) recibían el mismo sello. Ahora, si el renglón del libro no es de ese proveedor, el sello no se asigna y la compra queda anotada para revisión con su motivo. Hace falta desplegar `sync-erp-purchases` y correr de nuevo el completado del libro sobre esas fechas para limpiar los sellos ya pegados.
+
+## v2.1351.8 — auditoría: --escribir conserva lo escrito y el lint se mide
+
 ## v2.1351.9 — auditoría: --escribir conserva lo escrito y el lint se mide
 
 - **`node auditoria/puntuar.mjs --escribir` ya no borra la historia del registro.** Reescribía `registro.json` entero y se llevaba las verificaciones, el sello y todo lo escrito a mano; por eso nadie lo corría y cada sesión trasladaba ejes a mano. Ahora actualiza sólo lo que la regla calcula (por eje: `pct`, `evidencia`, `hallazgos`; por área: `pct`, `estado` y la lista de hallazgos) y deja el resto tal cual, incluidos campos y ejes que la regla no conoce. `pct`/`estado` salen con la misma regla que el gate (sello y desbloqueos incluidos). La fusión vive en `auditoria/fusionar-registro.mjs` y la fija `tests/unit/auditoriaFusionarRegistro.test.js`.

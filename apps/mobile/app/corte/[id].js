@@ -124,7 +124,9 @@ export default function Corte() {
   const descartado = corte?.estado === 'DESCARTADO';
   const propia = useMemo(() => (corte ? diferenciaDelCorte(corte) : null), [corte]);
   const dif = corte ? (descartado ? propia?.valor ?? null : corte.tramo) : null;
-  const esperado = descartado ? propia?.esperado : (corte?.esperadoUsado ?? corte?.esperado);
+  // Sin `esperadoUsado`, el del juez — nunca la columna `esperado`, que es
+  // `declarado − diferencia_erp`, la cifra cruda del origen.
+  const esperado = descartado ? propia?.esperado : (corte?.esperadoUsado ?? propia?.esperado);
   const sev = severidad(dif);
   const noEsConteo = esZ || esX || sinConteo;
   const invisibles = useMemo(() => formasFueraDelComprobante(ventas), [ventas]);

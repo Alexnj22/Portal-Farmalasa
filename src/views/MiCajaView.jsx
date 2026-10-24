@@ -1521,9 +1521,10 @@ export default function MiCajaView({ comoPestana = false }) {
                     /* La diferencia que importa es la del TRAMO: lo que se
                      * movió desde el último corte confirmado del día (usuario,
                      * 2026-10-05). La base sale de la fila completa cuando se
-                     * puede ver el módulo de cortes, y si no de `estado.cortes`
-                     * —que no trae las piezas del tiquete y usa la diferencia
-                     * guardada, igual que `diferenciaDelCorte` sin tiquete—. */
+                     * puede ver el módulo de cortes, y si no de `estado.cortes`,
+                     * que desde 2026-10-24 trae las piezas del tiquete: sin
+                     * ellas el juez caía a `diferencia_erp`, la cifra cruda del
+                     * origen (corte 161: −$970.39 donde cuadró +$0.01). */
                     const base = cortesDelDia.length ? cortesDelDia : (estado?.cortes || []);
                     const r = conTramoDelCorte(conLaCuentaBuena(bruto), acumuladoAntesDe(base));
                     setResultado(r);

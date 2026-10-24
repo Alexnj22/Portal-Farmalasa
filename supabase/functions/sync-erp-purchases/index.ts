@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, getErpBranchMap, requireInvokeSecret } from "../_shared/security.ts";
 import { selectAllByIn } from "../_shared/db.ts";
+import { lineasDelLibro, sellosDeLasCompras, type CompraParaSellar } from "../_shared/selloDeCompra.ts";
 
 function getPurchaseCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_PURCHASES_CREDS");
@@ -394,17 +395,8 @@ async function traer(url: string, cookie: string, ms = 60_000): Promise<string> 
   return await res.text();
 }
 
-// El sello de recepción de Hacienda son exactamente 40 caracteres alfanuméricos.
-//
-// H19: la columna del origen viene CONTAMINADA — de 331 sellos, 6 no miden 40:
-// un código de generación (36), uno con un espacio adentro (41) y tres con texto
-// pegado a mano (`…FFEFGbenicar`, `…RVBD C-2274298`). Un sello con `benicar`
-// atrás no es un sello, y guardarlo sería peor que no tenerlo: el día que se use
-// para cruzar documentos, cruzaría mal en silencio.
-function selloValido(v: unknown): string | null {
-  const s = typeof v === 'string' ? v.trim() : '';
-  return /^[0-9A-Za-z]{40}$/.test(s) ? s : null;
-}
+// El sello de recepción (40 caracteres, H19) y la guarda número + proveedor
+// viven en `_shared/selloDeCompra.ts`.
 
 // Devuelve numeroNormalizado → conjunto de valores distintos de la columna. El
 // conjunto y no el valor: si trae más de uno, ese número es ambiguo.
@@ -424,7 +416,7 @@ function columnaPorNumero(csv: string, colNumero: number, colValor: number): Map
 async function fastBackfill(
   supabase: any, branchId: number, erpId: number,
   username: string, password: string, startDate: string, endDate: string,
-): Promise<{ documentos: number; actualizados: number; ambiguos: number }> {
+): Promise<{ documentos: number; actualizados: number; ambiguos: number; sellos_en_revision: number }> {
 
   const cookie = await withRetry(() => getSessionCookie(username, password));
 
@@ -440,7 +432,7 @@ async function fastBackfill(
   const qs   = `fechai=${startDate}&fechaf=${endDate}&draw=1&start=0&length=5000`;
   const dt   = JSON.parse(await traer(`${ADMIN_DT_URL}?${qs}`, cookie));
   const filas: any[][] = dt?.data ?? [];
-  if (filas.length === 0) return { documentos: 0, actualizados: 0, ambiguos: 0 };
+  if (filas.length === 0) return { documentos: 0, actualizados: 0, ambiguos: 0, sellos_en_revision: 0 };
 
   const rango   = `fechaInicio=${startDate}&fechaFin=${endDate}`;
   // C1 (H13): el archivo se baja UNA vez y se leen las dos columnas. El sello
@@ -448,32 +440,13 @@ async function fastBackfill(
   // donde el libro del portal perdía contra su origen.
   const libroCsv = await traer(`${LIBRO_CSV}?${rango}`, cookie);
   const percMap  = columnaPorNumero(libroCsv, 3, 21);
-  const selloMap = columnaPorNumero(libroCsv, 3, 22);
-  // ── Y el sello también tiene que ser de UNA sola compra ──────────────────
-  // La guarda de abajo pregunta «¿este número trae un solo sello?». Faltaba la
-  // pregunta al revés: «¿este sello es de un solo número?». Sin ella, un sello
-  // que el libro repite bajo dos documentos distintos se le pega a los dos.
-  //
-  // Medido el 2026-08-24 en producción: **siete pares de compras comparten
-  // sello, y en DOS los proveedores son distintos** — COFARSAL $465.96 con
-  // FARMA VALUE $38.33 (12-jun), y COFARSAL $663.94 con LETERAGO $125.82
-  // (21-jul). Un sello de Hacienda identifica UN documento, así que en cada par
-  // uno de los dos lo tiene mal. Los montos son distintos, o sea que no es la
-  // misma compra cargada dos veces: son dos compras reales con un sello
-  // prestado.
-  //
-  // Se descarta por el mismo criterio que ya usa la guarda de al lado: **un
-  // sello equivocado es peor que ninguno**. No se sabe de cuál de las dos es,
-  // así que no va en ninguna.
-  const numerosPorSello = new Map<string, Set<string>>();
-  for (const [numero, sellos] of selloMap) {
-    for (const sello of sellos) {
-      if (!numerosPorSello.has(sello)) numerosPorSello.set(sello, new Set());
-      numerosPorSello.get(sello)!.add(numero);
-    }
-  }
-  const selloAmbiguo = (sello: string | null | undefined) =>
-    !!sello && (numerosPorSello.get(sello)?.size ?? 0) > 1;
+  // El sello se decide por número Y emisor: ver `_shared/selloDeCompra.ts`.
+  // Las dos guardas de antes —«¿el número trae un solo sello?» y «¿el sello es
+  // de un solo número?» (2026-08-24: COFARSAL/FARMA VALUE 12-jun,
+  // COFARSAL/LETERAGO 21-jul)— siguen adentro, ahora sobre el documento
+  // (número + NIT) y no sobre el número a secas, que el origen repite entre
+  // proveedores distintos (6186/6188, 5-oct).
+  const libro = lineasDelLibro(libroCsv, 3, 4, 22);
   // C1b (H22): la columna 4 es el NIT del emisor y la 5 su nombre. Mismo
   // archivo, dos índices más — sirven para completar la ficha del proveedor
   // cuando no lo tiene, o crearla cuando ni existe (C8).
@@ -505,10 +478,40 @@ async function fastBackfill(
   // Solo se tocan filas que YA existen: este modo completa columnas, no crea
   // compras. Un id sin fila acá significa que falta correr el sync normal.
   const existentes = await selectAllByIn<any>(
-    supabase, 'purchase_receipts', 'erp_purchase_id, branch_id',
+    supabase, 'purchase_receipts', 'erp_purchase_id, branch_id, supplier_id',
     'erp_purchase_id', ids, (q) => q.eq('erp_sucursal_id', erpId),
   );
   const vivos = new Map<number, number>((existentes ?? []).map((r: any) => [r.erp_purchase_id, r.branch_id]));
+  const proveedorDe = new Map<number, number | null>((existentes ?? []).map((r: any) => [r.erp_purchase_id, r.supplier_id ?? null]));
+
+  // NIT y NRC de cada proveedor: el emisor del renglón del libro tiene que ser
+  // uno de los dos para que el sello sea de esta compra.
+  const proveedores = [...new Set([...proveedorDe.values()].filter((v): v is number => v != null))];
+  const identDe = new Map<number, string[]>();
+  if (proveedores.length) {
+    const fichas = await selectAllByIn<any>(supabase, 'proveedores_maestro', 'supplier_id, nit, nrc', 'supplier_id', proveedores);
+    const sups = await selectAllByIn<any>(supabase, 'suppliers', 'id, nrc', 'id', proveedores);
+    for (const f of fichas ?? []) {
+      if (!identDe.has(f.supplier_id)) identDe.set(f.supplier_id, []);
+      identDe.get(f.supplier_id)!.push(f.nit, f.nrc);
+    }
+    for (const sp of sups ?? []) {
+      if (!identDe.has(sp.id)) identDe.set(sp.id, []);
+      identDe.get(sp.id)!.push(sp.nrc);
+    }
+  }
+  const paraSellar: CompraParaSellar[] = filas
+    .filter((f) => vivos.has(Number(f[0])))
+    .map((f) => {
+      const prov = proveedorDe.get(Number(f[0])) ?? null;
+      return { id: Number(f[0]), numero: String(f[2] ?? ''), proveedor: prov,
+               identificaciones: prov != null ? (identDe.get(prov) ?? []) : [] };
+    });
+  const sellos = sellosDeLasCompras(paraSellar, libro);
+  // Para revisión: se deja escrito con su motivo, no se elige un sello.
+  const enRevision = [...sellos.entries()].filter(([, d]) => d.revisar)
+    .map(([id, d]) => ({ compra: id, motivo: d.revisar }));
+  if (enRevision.length) console.log(`sellos para revisión (sucursal ${erpId}):`, JSON.stringify(enRevision));
 
   const rows: any[] = [];
   for (const f of filas) {
@@ -532,13 +535,9 @@ async function fastBackfill(
       documento_numero: numero || null,
       percepcion_iva:   fino ? fino.p : Number([...(percMap.get(n)  ?? ['0'])][0] || 0),
       retencion_iva:    fino ? fino.r : Number([...(retenMap.get(n) ?? ['0'])][0] || 0),
-      // Ambiguo en los DOS sentidos: ese número trae más de un sello, o ese
-      // sello aparece bajo más de un número. Cualquiera de las dos deja sin
-      // saber de quién es, y un sello equivocado es peor que ninguno.
-      sello_recibido:   (selloMap.get(n)?.size ?? 0) === 1
-                          && !selloAmbiguo([...(selloMap.get(n) ?? [])][0])
-                          ? selloValido([...(selloMap.get(n) ?? [])][0])
-                          : null,
+      // Número Y emisor: sin los dos, null — un sello equivocado es peor que
+      // ninguno, y escribir null limpia el que se había pegado por número.
+      sello_recibido:   sellos.get(cid)?.sello ?? null,
       updated_at:       new Date().toISOString(),
     });
   }
@@ -552,7 +551,8 @@ async function fastBackfill(
 
   await completarFichasDeProveedor(supabase, rows, nitMap, nombreMap);
 
-  return { documentos: filas.length, actualizados: rows.length, ambiguos: diasTurbios.length };
+  return { documentos: filas.length, actualizados: rows.length, ambiguos: diasTurbios.length,
+           sellos_en_revision: enRevision.length };
 }
 
 // ── C1b + C8 (H22): el NIT del libro completa —o crea— la ficha del proveedor ──

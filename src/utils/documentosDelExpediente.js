@@ -82,6 +82,9 @@ export const ROTULOS = {
     // Acreditaciones (se suben en su propia sección: ahí el archivo trae el
     // número y el vencimiento)
     SRS: 'Carné JVPQF — Regente / Químico Farmacéutico',
+    // El certificado de acreditación que entrega la junta: es otro papel que
+    // el carné y va en el mismo apartado (pedido del usuario, 2026-10-24).
+    CERTIFICADO_JVPQF: 'Certificado de acreditación — JVPQF',
     ENFERMERIA: 'Carné de Enfermería — JVPE',
     MEDICO: 'Carné médico — JVPM',
     CONTADURIA: 'Acreditación de Contaduría — CVPCPA',
@@ -112,7 +115,7 @@ export const GRUPOS = {
     CERTIFICADO_SEGURO_VIDA: 'Seguro de vida',
 
     CONTRATO_REGENCIA: 'Para ejercer',
-    SRS: 'Para ejercer', ENFERMERIA: 'Para ejercer', MEDICO: 'Para ejercer',
+    SRS: 'Para ejercer', CERTIFICADO_JVPQF: 'Para ejercer', ENFERMERIA: 'Para ejercer', MEDICO: 'Para ejercer',
     CONTADURIA: 'Para ejercer', DEPENDIENTE_FARMACIA: 'Para ejercer',
 
     LICENCIA_MOTO: 'Sólo si aplica', LICENCIA_CARRO: 'Sólo si aplica',
@@ -225,7 +228,7 @@ const ICONOS = {
     DUI_COMPLETO: 'CreditCard', DUI_FRENTE: 'CreditCard', DUI_REVERSO: 'CreditCard',
     DOCUMENTO_IDENTIDAD: 'CreditCard',
 
-    SRS: 'Award', ENFERMERIA: 'Award', MEDICO: 'Award', CONTADURIA: 'Award',
+    SRS: 'Award', CERTIFICADO_JVPQF: 'Award', ENFERMERIA: 'Award', MEDICO: 'Award', CONTADURIA: 'Award',
     DEPENDIENTE_FARMACIA: 'Award',
 
     ANUALIDAD_JVPQF: 'Receipt', ANUALIDAD_JVPE: 'Receipt',
@@ -585,4 +588,7 @@ export const SIN_VENCIMIENTO = new Set([
     // cambia» (usuario) — lo que vence cada año es el PAGO de la póliza, que
     // es de la empresa y se vigila aparte.
     'OFERTA_EMPLEO', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION', 'CERTIFICADO_SEGURO_VIDA',
+    // La inscripción en la junta no caduca: lo que se renueva cada año es la
+    // anualidad, que tiene su propio documento.
+    'CERTIFICADO_JVPQF',
 ]);

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1351.8 — Expediente: segundo contrato del regente de enfermería y certificado de acreditación JVPQF
+
+- El regente de enfermería tiene doble contrato: en Documentos ahora se suben los dos — «Contrato de Trabajo Firmado — como dependiente» y «Contrato de Regencia de Enfermería». Antes el de regencia sólo aparecía para el regente químico.
+- Regente químico: en Acreditaciones, la tarjeta de la JVPQF pide el carné y además el **certificado de acreditación de la junta** (`CERTIFICADO_JVPQF`, sin vencimiento: lo que se renueva cada año es la anualidad). Del certificado también se lee el número de junta si la casilla está vacía.
+
 ## v2.1351.7 — Marketing: un diseño aprobado no se quita, y la auditoría al día
 
 - **Una pieza de marketing aprobada o programada ya no se puede quitar.** Antes la pieza desaparecía, pero sus diseños quedaban sueltos en el almacenamiento, porque los archivos de una pieza aprobada sí estaban protegidos. Ahora las dos reglas coinciden: el botón «Quitar» sólo aparece, en el portal y en la app, mientras la pieza no está aprobada, y la base lo frena igual.

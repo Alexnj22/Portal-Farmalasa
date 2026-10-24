@@ -977,6 +977,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const isPharmacistRegentRole = /regente/i.test(selectedRoleName) && !/enfermer/i.test(selectedRoleName);
     const isPharmacistProfession = /qu[ií]mic.*farmac|farmac.*qu[ií]mic/i.test(formData.profession || '');
     const isPharmacistRegent = isPharmacistRegentRole || isPharmacistProfession || !!formData.has_srs_accreditation;
+    // El regente de enfermería tiene DOS contratos: el de trabajo, como
+    // dependiente, y el de regencia (usuario, 2026-10-24). Se suben los dos.
+    const isNursingRegent = /regente/i.test(selectedRoleName) && /enfermer/i.test(selectedRoleName);
     // Las juntas que le corresponden por cargo y profesión, y qué queda
     // pendiente con el ISSS y la AFP. Los dos salen de `utils/acreditaciones.js`
     // para que la pantalla y el banner de pendientes no puedan discrepar.
@@ -993,14 +996,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     })();
     // Se suben en la sección Acreditaciones, no en Documentación: ahí el
     // archivo es el que trae el número y el vencimiento.
-    const EN_ACREDITACIONES = ['SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA', 'DEPENDIENTE_FARMACIA'];
+    const EN_ACREDITACIONES = ['SRS', 'CERTIFICADO_JVPQF', 'ENFERMERIA', 'MEDICO', 'CONTADURIA', 'DEPENDIENTE_FARMACIA'];
     const documentCategories = useMemo(() => [
-        ...FIXED_DOCUMENT_CATEGORIES,
+        ...FIXED_DOCUMENT_CATEGORIES.map(c => (isNursingRegent && c.key === 'CONTRATO'
+            ? { ...c, label: `${ROTULOS.CONTRATO} — como dependiente` } : c)),
         ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: ROTULOS.LICENCIA_MOTO }] : []),
         ...(formData.has_car_license ? [{ key: 'LICENCIA_CARRO', label: ROTULOS.LICENCIA_CARRO }] : []),
         ...(isPharmacistRegent ? [{ key: 'SRS', label: ROTULOS.SRS }] : []),
+        ...(isPharmacistRegent ? [{ key: 'CERTIFICADO_JVPQF', label: ROTULOS.CERTIFICADO_JVPQF }] : []),
         ...(isPharmacistRegent ? [{ key: 'ANUALIDAD_JVPQF', label: ROTULOS.ANUALIDAD_JVPQF }] : []),
-        ...(isPharmacistRegent ? [{ key: 'CONTRATO_REGENCIA', label: ROTULOS.CONTRATO_REGENCIA }] : []),
+        ...(isPharmacistRegent || isNursingRegent ? [{ key: 'CONTRATO_REGENCIA',
+            label: isPharmacistRegent ? ROTULOS.CONTRATO_REGENCIA : `${ROTULOS.CONTRATO_REGENCIA} de Enfermería` }] : []),
         ...(isNursing ? [{ key: 'ENFERMERIA', label: ROTULOS.ENFERMERIA }] : []),
         ...(acreditacionesQueAplican.some(a => a.id === 'MEDICO') ? [{ key: 'MEDICO', label: ROTULOS.MEDICO }] : []),
         ...(acreditacionesQueAplican.some(a => a.id === 'CONTADURIA') ? [{ key: 'CONTADURIA', label: ROTULOS.CONTADURIA }] : []),
@@ -1083,7 +1089,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         { key: 'DECLARACION_ETICA',    label: ROTULOS.DECLARACION_ETICA },
         { key: 'CONSTANCIA_INDUCCION', label: ROTULOS.CONSTANCIA_INDUCCION },
         { key: 'CERTIFICADO_SEGURO_VIDA', label: ROTULOS.CERTIFICADO_SEGURO_VIDA },
-    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
+    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursingRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
@@ -1374,7 +1380,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
              * con esto son 3. */
             const hayQueLeer = !SIN_VENCIMIENTO.has(category)
                 || COMPARTIBLES.has(category)
-                || ACREDITACIONES.some(a => a.doc === category);
+                || ACREDITACIONES.some(a => a.doc === category || a.certificado === category);
             if (stored && hayQueLeer) {
                 ({ data: aiResponse, error: aiError } = await analizarDocumento({
                     // Los nombres SÓLO en los papeles colectivos: pedirlos en
@@ -1406,7 +1412,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 // manda a verificarlo al organismo equivocado.
                 const numeroLeido = aiResponse?.aiData?.numeroDeRegistro;
                 if (!aiError && numeroLeido) {
-                    const laDeEsteDoc = ACREDITACIONES.find(a => a.doc === category);
+                    const laDeEsteDoc = ACREDITACIONES.find(a => a.doc === category || a.certificado === category);
                     if (laDeEsteDoc && !formData?.[laDeEsteDoc.campo]) {
                         handleSelectChange(laDeEsteDoc.campo, String(numeroLeido).trim());
                     }
@@ -3542,7 +3548,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                 )}
                                             </div>
-                                            {renderDocUploadArea(a.doc)}
+                                            {a.certificado ? (
+                                                <div className="flex min-w-0 flex-col gap-3">
+                                                    <div>
+                                                        <label className={rotuloCampo('text-content-2', { denso: true })}><span>Carné</span></label>
+                                                        {renderDocUploadArea(a.doc)}
+                                                    </div>
+                                                    <div>
+                                                        <label className={rotuloCampo('text-content-2', { denso: true })}><span>Certificado de acreditación de la junta</span></label>
+                                                        {renderDocUploadArea(a.certificado)}
+                                                    </div>
+                                                </div>
+                                            ) : renderDocUploadArea(a.doc)}
                                         </div>
 
                                         {/* El número provisional queda guardado, no se pierde:

@@ -40,6 +40,9 @@ export const ACREDITACIONES = [
         label: 'Químico Farmacéutico — JVPQF',
         campo: 'pharmacist_license_number',
         doc: 'SRS',
+        // El certificado de acreditación de la junta, aparte del carné. Se
+        // sube en el mismo apartado y trae el mismo número.
+        certificado: 'CERTIFICADO_JVPQF',
         detecta: ({ cargo, profesion }) =>
             (/regente/.test(cargo) && !/enfermer/.test(cargo)) ||
             /quimic.*farmac|farmac.*quimic/.test(profesion),

@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1355.0 — Personal: listón de antigüedad en la foto del directorio
+
+El aviso «6 años en la empresa» salía sólo el mes del aniversario, así que en
+el directorio parecía que unos tenían antigüedad y otros no. Ahora cada foto
+lleva un listón metálico compacto con los años cumplidos, todo el año: bronce
+(1–5), plata (6–10), oro (11–15), platino (16+). Sin fecha de ingreso o con
+menos de un año, no hay listón. El aviso del aniversario se queda como estaba.
+
+- `antiguedadDePersona` en `utils/alertasDePersona.js` (núcleo), con prueba.
+- `AvatarConEstado` acepta `antiguedad`: si está el chip de estado, el listón
+  se corre a la izquierda para no taparlo, y la frase va en el mismo `title`.
+- Estilos en `.liston-antiguedad` de `index.css`.
+
 ## v2.1354.4 — Pendientes de la auditoría al día; librería de IA con versión fija
 
 - La lista de pendientes de la auditoría dice lo que es cierto hoy: las diferencias grandes de Salud 3 eran la cifra cruda del origen (el portal da +$0.01 y +$1.30); los sellos de las compras 5249 y 6188 ya están corregidos; quedan 2 compras duplicadas y el número de documento de la 6188 para contabilidad; en lo fiscal, $45.35 de los $48.95 retenidos no tienen comprobante y la renta sin retener es $530.09 (alquiler $520 + $10.09).

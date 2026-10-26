@@ -94,6 +94,27 @@ export function alertasDePersona(emp, hoy = hoySV()) {
     return salida;
 }
 
+/**
+ * Cuántos años CUMPLIDOS lleva la persona en la empresa, y su tramo. Lo pinta
+ * el listón del avatar en el directorio (2026-10-26). Es otra cosa que el
+ * aviso de aniversario de arriba: aquél sale sólo el mes del aniversario para
+ * felicitar; éste está todo el año. Sin fecha de ingreso, o con menos de un
+ * año, devuelve null: no se inventa un tramo.
+ *
+ *   1–5 bronce · 6–10 plata · 11–15 oro · 16+ platino
+ */
+export function antiguedadDePersona(emp, hoy = hoySV()) {
+    const ingreso = emp?.hire_date || emp?.hireDate;
+    if (!ingreso) return null;
+    const [ty, tm, td] = partes(diaDe(hoy));
+    const [hy, hm, hd] = partes(ingreso);
+    if (!hy) return null;
+    const anios = ty - hy - ((tm < hm || (tm === hm && td < hd)) ? 1 : 0);
+    if (anios < 1) return null;
+    const tramo = anios >= 16 ? 'platino' : anios >= 11 ? 'oro' : anios >= 6 ? 'plata' : 'bronce';
+    return { anios, tramo, desde: String(ingreso).slice(0, 10) };
+}
+
 /** El orden de los grupos del directorio: La Popular, las Salud, Bodega, el resto, Administración, externos. */
 export const pesoDeSucursal = (nombre) => {
     const b = (nombre || '').toUpperCase();

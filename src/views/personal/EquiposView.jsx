@@ -33,7 +33,7 @@ import { estadoResuelto, hayQuePreguntar, pedirEstado, suscribirse, versionDeEst
 import { getRoleTheme } from '@nucleo/utils/scheduleHelpers';
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { repartirSala } from '@nucleo/utils/mandoDeSala';
-import { alertasDePersona, pesoDeSucursal } from '@nucleo/utils/alertasDePersona';
+import { alertasDePersona, antiguedadDePersona, pesoDeSucursal } from '@nucleo/utils/alertasDePersona';
 import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
 import { exportarDirectorio } from '@nucleo/utils/directorioCsv';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -157,6 +157,7 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
   // persona está en la sala. Ver `estaAusenteHoy`.
   const ausente = !!estado && !estado.faltan;
   const alertas = useMemo(() => alertasDe(emp), [emp]);
+  const antiguedad = useMemo(() => antiguedadDePersona(emp), [emp]);
   const cargos = cargosDe(emp);
   const tel = soloDigitos(emp.phone);
   const inactiva = esDeBaja(emp);
@@ -213,7 +214,7 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
       {/* La foto y su aro. La marca vive en `AvatarConEstado` —y no acá— porque
           el usuario pidió que valga «en todos lados que salga la foto», y son
           48 pantallas: repetirla sería garantizar que once se queden atrás. */}
-      <AvatarConEstado emp={emp} px={destacada ? 64 : 48} className="rounded-xl" />
+      <AvatarConEstado emp={emp} px={destacada ? 64 : 48} className="rounded-xl" antiguedad={antiguedad} />
 
       <div className="min-w-0 flex-1 space-y-1.5">
         {/* Dos renglones y no `truncate`: en Personal el nombre completo ES el

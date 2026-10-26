@@ -7,6 +7,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { leerEstado, pedirEstado, suscribirse, hayQuePreguntar as hayQuePreguntarPor, estadoDesdeRemoto } from '@nucleo/data/estadosDePersonas';
 import { fetchFotoDeEmpleado } from '@nucleo/data/notifications';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { etiquetaMes } from '@nucleo/utils/fecha';
 
 /* La foto firmada de alguien que NO está en el store, por id. Un pedido por
  * persona y por sesión: `fetchFotoDeEmpleado` ya guarda la cruda, y acá se
@@ -118,7 +119,8 @@ const ICONO = {
 };
 
 export default function AvatarConEstado({ emp: crudo, px, className = '', mostrarChip = true,
-                                          radio = 'rounded-xl', marco = 'border border-border-card' }) {
+                                          radio = 'rounded-xl', marco = 'border border-border-card',
+                                          antiguedad = null }) {
   // El portal muestra a la misma gente con seis formas de objeto distintas
   // según de qué consulta salga. `normalizarPersona` las acepta todas — ver su
   // nota en `utils/estadoDePersona.js`.
@@ -245,9 +247,15 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
      en 3 días»), así que «vuelve el 21» al lado sería una segunda fecha sobre
      algo que todavía no pasó: la frase quedaría con dos números y ninguno
      sería el que importa. Cuando ya empezó, la vuelta es justo lo que se busca. */
-  const titulo = estado
+  const tituloEstado = estado
     ? `${estado.texto}${estado.hasta && !estado.faltan ? ` · vuelve el ${estado.hasta}` : ''}`
-    : undefined;
+    : '';
+  // El listón no lleva `title` propio: un segundo globo sobre la misma foto
+  // taparía al del estado. Va en la MISMA frase, después del estado.
+  const tituloAntiguedad = antiguedad
+    ? `${antiguedad.anios} ${antiguedad.anios === 1 ? 'año' : 'años'} en la empresa · desde ${etiquetaMes(antiguedad.desde).toLowerCase()}`
+    : '';
+  const titulo = [tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
 
   return (
     <span
@@ -260,7 +268,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
          significa algo es el conjunto; el chip solo es un pedazo. Cuando la
          persona está presente no hay nada que anunciar y el rol no se pone: la
          foto ya se describe sola desde `LiquidAvatar`. */
-      {...(estado ? { role: 'img', 'aria-label': titulo, title: titulo } : {})}
+      {...(titulo ? { role: 'img', 'aria-label': titulo, title: titulo } : {})}
       /* Que la marca EXISTA es la pregunta que una prueba tiene que poder
          hacer, y desde afuera se contestaría por el color del aro — que es
          CSS, y jsdom no calcula ninguno. */
@@ -324,6 +332,19 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           ) : (
             <Icono size={Math.round(px * 0.19)} strokeWidth={2.5} className="text-white" />
           )}
+        </span>
+      )}
+
+      {/* ── El listón de antigüedad ─────────────────────────────────────────
+          Opcional: lo pasa quien lo quiere (hoy, el directorio de Personal) ya
+          resuelto con `antiguedadDePersona`. Vive acá y no en la tarjeta porque
+          tiene que saber si el chip de estado está, para no taparlo. Su
+          significado va en el `title`, que es de la tarjeta entera. */}
+      {antiguedad && px >= 40 && (
+        <span className="liston-antiguedad" data-tramo={antiguedad.tramo}
+          data-con-chip={conChip && estado && (estado.faltan > 0 || Icono) ? '' : undefined}
+          aria-hidden="true">
+          {antiguedad.anios} {antiguedad.anios === 1 ? 'AÑO' : 'AÑOS'}
         </span>
       )}
     </span>

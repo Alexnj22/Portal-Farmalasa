@@ -4223,6 +4223,30 @@ html[data-en-pestana] #main-scroll {
 }
 .aro-cliente[data-tam="lg"] .aro-cliente-team { width: 17px; height: 17px; }
 
+/* ── Listón de antigüedad (2026-10-26) ─────────────────────────────────
+   La píldora metálica sobre el borde de abajo de la foto, en el directorio de
+   Personal: cuántos años lleva la persona en la empresa. El metal es el tramo
+   (`antiguedadDePersona`, utils/alertasDePersona.js). Mismos tonos que el aro
+   del cliente, salvo el platino: el del cliente es negro y acá tiene que
+   leerse sobre la tarjeta oscura, así que es lila. Son IDENTIDAD, no tema. */
+.liston-antiguedad {
+  position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); z-index: 1;
+  height: 13px; padding: 0 5px; border-radius: 4px; display: flex; align-items: center;
+  font-size: 8px; font-weight: 900; letter-spacing: 0.06em; line-height: 1; white-space: nowrap;
+  font-variant-numeric: tabular-nums; color: var(--lis-tinta);
+  background: linear-gradient(180deg, var(--lis-brillo), var(--lis-tono) 60%, var(--lis-hondo));
+  box-shadow: 0 0 0 1.5px var(--color-surface-card, #fff), 0 1px 2px rgb(0 0 0 / 0.35),
+              inset 0 1px 0 rgb(255 255 255 / 0.5);
+  pointer-events: none;
+}
+/* Con el chip de estado en la esquina derecha, el listón se corre a la
+   izquierda para no taparlo. */
+.liston-antiguedad[data-con-chip] { left: -3px; transform: none; }
+.liston-antiguedad[data-tramo="bronce"]  { --lis-hondo: #7a4521; --lis-tono: #c08050; --lis-brillo: #f2c196; --lis-tinta: #341703; }
+.liston-antiguedad[data-tramo="plata"]   { --lis-hondo: #8a95a4; --lis-tono: #c9d1dc; --lis-brillo: #ffffff; --lis-tinta: #232b38; }
+.liston-antiguedad[data-tramo="oro"]     { --lis-hondo: #b0820a; --lis-tono: #ecbd34; --lis-brillo: #fff1b0; --lis-tinta: #3f2a00; }
+.liston-antiguedad[data-tramo="platino"] { --lis-hondo: #8f7ade; --lis-tono: #d6caff; --lis-brillo: #ffffff; --lis-tinta: #241858; }
+
 .aro-cliente[data-nivel="bronce"]   { --aro-hondo: #3a1a08; --aro-tono: #9a5a2c; --aro-brillo: #f2b07a; }
 .aro-cliente[data-nivel="plata"]    { --aro-hondo: #4a525e; --aro-tono: #a9b2be; --aro-brillo: #f4f7fb; }
 .aro-cliente[data-nivel="oro"]      { --aro-hondo: #7a4a00; --aro-tono: #e0a93a; --aro-brillo: #ffe7a3; }

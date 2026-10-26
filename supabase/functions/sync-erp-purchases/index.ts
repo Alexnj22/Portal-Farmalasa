@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, getErpBranchMap, requireInvokeSecret } from "../_shared/security.ts";
 import { selectAllByIn } from "../_shared/db.ts";
 import { lineasDelLibro, sellosDeLasCompras, type CompraParaSellar } from "../_shared/selloDeCompra.ts";
+import { lineasDeMonto, montosDeLasCompras } from "../_shared/montoDeCompra.ts";
 
 function getPurchaseCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_PURCHASES_CREDS");
@@ -378,7 +379,10 @@ async function syncBranch(
 // 3. **El número truncado a 20 no siempre es único**: dos casos en junio-julio
 //    con percepciones distintas. Para esos —y solo para esos— se cae al JSON
 //    pesado del día, que es la fuente autoritativa. Un cruce ambiguo en un libro
-//    fiscal no se resuelve eligiendo uno.
+//    fiscal no se resuelve eligiendo uno. Y «ambiguo» no es sólo «el número trae
+//    dos valores»: `DTE-03-M001P001-0000` lo comparten seis proveedores en una
+//    sucursal, así que el cruce es por número Y emisor (2026-10-26,
+//    `_shared/montoDeCompra.ts`).
 
 const ADMIN_DT_URL = "https://clientesdte3.oss.com.sv/farma_salud/admin_compras_fecha_dt.php";
 const LIBRO_CSV    = "https://clientesdte3.oss.com.sv/farma_salud/libro_compras_iva_csv.php";
@@ -416,7 +420,7 @@ function columnaPorNumero(csv: string, colNumero: number, colValor: number): Map
 async function fastBackfill(
   supabase: any, branchId: number, erpId: number,
   username: string, password: string, startDate: string, endDate: string,
-): Promise<{ documentos: number; actualizados: number; ambiguos: number; sellos_en_revision: number }> {
+): Promise<{ documentos: number; actualizados: number; ambiguos: number; sellos_en_revision: number; montos_sin_resolver?: number }> {
 
   const cookie = await withRetry(() => getSessionCookie(username, password));
 
@@ -439,7 +443,9 @@ async function fastBackfill(
   // estaba a un índice de la percepción y nadie lo miraba — es la única columna
   // donde el libro del portal perdía contra su origen.
   const libroCsv = await traer(`${LIBRO_CSV}?${rango}`, cookie);
-  const percMap  = columnaPorNumero(libroCsv, 3, 21);
+  // La percepción también se decide por número Y emisor (`_shared/montoDeCompra.ts`):
+  // el mapa por número a secas le pegaba la de un proveedor a otro que numera igual.
+  const percLineas = lineasDeMonto(libroCsv, 3, 4, 21);
   // El sello se decide por número Y emisor: ver `_shared/selloDeCompra.ts`.
   // Las dos guardas de antes —«¿el número trae un solo sello?» y «¿el sello es
   // de un solo número?» (2026-08-24: COFARSAL/FARMA VALUE 12-jun,
@@ -457,28 +463,14 @@ async function fastBackfill(
   // costumbre es exactamente cómo un dato real pasa desapercibido el día que
   // aparece.
   const retenCsv = await traer(`${RETEN_CSV}?${rango}`, cookie);
-  const retenMap = columnaPorNumero(retenCsv, 5, 8);
-
-  // Solo los días con un número ambiguo pagan el JSON pesado.
-  const ambiguo = (n: string) => (percMap.get(n)?.size ?? 0) > 1 || (retenMap.get(n)?.size ?? 0) > 1;
-  const diasTurbios = [...new Set(filas.filter(f => ambiguo(normNum(f[2]))).map(f => String(f[6])))];
-  const oro = new Map<string, { p: number; r: number }>();
-  for (const dia of diasTurbios) {
-    const url = `${COMPRAS_BASE}?fini=${dia}&ffin=${dia}&id_sucursal=${erpId}`;
-    const j   = JSON.parse(await traer(url, cookie, 120_000));
-    for (const c of (j?.compras ?? [])) {
-      oro.set(String(c.compra_id), {
-        p: Number(c.totales?.percepcion_iva ?? 0),
-        r: Number(c.totales?.retencion_iva  ?? 0),
-      });
-    }
-  }
+  // Anexo de retención, mismo formato que el de percepción: NIT 3, número 5, monto 8.
+  const retenLineas = lineasDeMonto(retenCsv, 5, 3, 8);
 
   const ids = filas.map(f => Number(f[0])).filter(Boolean);
   // Solo se tocan filas que YA existen: este modo completa columnas, no crea
   // compras. Un id sin fila acá significa que falta correr el sync normal.
   const existentes = await selectAllByIn<any>(
-    supabase, 'purchase_receipts', 'erp_purchase_id, branch_id, supplier_id',
+    supabase, 'purchase_receipts', 'erp_purchase_id, branch_id, supplier_id, percepcion_iva, retencion_iva',
     'erp_purchase_id', ids, (q) => q.eq('erp_sucursal_id', erpId),
   );
   const vivos = new Map<number, number>((existentes ?? []).map((r: any) => [r.erp_purchase_id, r.branch_id]));
@@ -508,6 +500,35 @@ async function fastBackfill(
                identificaciones: prov != null ? (identDe.get(prov) ?? []) : [] };
     });
   const sellos = sellosDeLasCompras(paraSellar, libro);
+
+  // Percepción y retención: número Y emisor. Lo que no se puede decidir así
+  // (número compartido sin emisor que lo resuelva, emisor que no coincide, dos
+  // valores) lo resuelve el detalle del día, que trae el monto por compra.
+  const percs  = montosDeLasCompras(paraSellar, percLineas);
+  const retens = montosDeLasCompras(paraSellar, retenLineas);
+  const indecisas = new Set(paraSellar
+    .filter((c) => percs.get(c.id)?.valor == null || retens.get(c.id)?.valor == null)
+    .map((c) => c.id));
+  // Solo los días con una compra indecisa pagan el JSON pesado.
+  const diasTurbios = [...new Set(filas.filter(f => indecisas.has(Number(f[0]))).map(f => String(f[6])))];
+  const oro = new Map<string, { p: number; r: number }>();
+  for (const dia of diasTurbios) {
+    const url = `${COMPRAS_BASE}?fini=${dia}&ffin=${dia}&id_sucursal=${erpId}`;
+    const j   = JSON.parse(await traer(url, cookie, 120_000));
+    for (const c of (j?.compras ?? [])) {
+      oro.set(String(c.compra_id), {
+        p: Number(c.totales?.percepcion_iva ?? 0),
+        r: Number(c.totales?.retencion_iva  ?? 0),
+      });
+    }
+  }
+  // Si ni el detalle la trae, se deja el monto que ya tenía: escribir el de
+  // otro proveedor —o un cero inventado— sería peor que no tocarlo.
+  const previoDe = new Map<number, { p: number; r: number }>((existentes ?? []).map((r: any) =>
+    [r.erp_purchase_id, { p: Number(r.percepcion_iva ?? 0), r: Number(r.retencion_iva ?? 0) }]));
+  const sinResolver = [...indecisas].filter((id) => !oro.has(String(id)))
+    .map((id) => ({ compra: id, percepcion: percs.get(id)?.motivo, retencion: retens.get(id)?.motivo }));
+  if (sinResolver.length) console.log(`montos sin resolver, se conserva el guardado (sucursal ${erpId}):`, JSON.stringify(sinResolver));
   // Para revisión: se deja escrito con su motivo, no se elige un sello.
   const enRevision = [...sellos.entries()].filter(([, d]) => d.revisar)
     .map(([id, d]) => ({ compra: id, motivo: d.revisar }));
@@ -518,8 +539,10 @@ async function fastBackfill(
     const cid = Number(f[0]);
     if (!vivos.has(cid)) continue;
     const numero = String(f[2] ?? '').trim();
-    const n      = normNum(numero);
     const fino   = oro.get(String(f[0]));
+    const previo = previoDe.get(cid) ?? { p: 0, r: 0 };
+    const perc   = percs.get(cid)?.valor ?? null;
+    const reten  = retens.get(cid)?.valor ?? null;
     rows.push({
       erp_purchase_id:  cid,
       erp_sucursal_id:  erpId,
@@ -533,8 +556,10 @@ async function fastBackfill(
       fecha:            String(f[6] ?? '').trim() || null,
       documento_tipo:   String(f[1] ?? '').trim() || null,
       documento_numero: numero || null,
-      percepcion_iva:   fino ? fino.p : Number([...(percMap.get(n)  ?? ['0'])][0] || 0),
-      retencion_iva:    fino ? fino.r : Number([...(retenMap.get(n) ?? ['0'])][0] || 0),
+      // El detalle del día, cuando se bajó, manda; si no, el renglón de ESTE
+      // emisor; si ninguno decide, lo que ya estaba.
+      percepcion_iva:   fino ? fino.p : (perc  ?? previo.p),
+      retencion_iva:    fino ? fino.r : (reten ?? previo.r),
       // Número Y emisor: sin los dos, null — un sello equivocado es peor que
       // ninguno, y escribir null limpia el que se había pegado por número.
       sello_recibido:   sellos.get(cid)?.sello ?? null,
@@ -552,7 +577,7 @@ async function fastBackfill(
   await completarFichasDeProveedor(supabase, rows, nitMap, nombreMap);
 
   return { documentos: filas.length, actualizados: rows.length, ambiguos: diasTurbios.length,
-           sellos_en_revision: enRevision.length };
+           sellos_en_revision: enRevision.length, montos_sin_resolver: sinResolver.length };
 }
 
 // ── C1b + C8 (H22): el NIT del libro completa —o crea— la ficha del proveedor ──

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1355.1 — La percepción y la retención de una compra se cruzan por número y proveedor
+
+El completado rápido de compras leía la percepción (libro de compras) y la
+retención (su anexo) del sistema de origen cruzando sólo por NÚMERO de
+documento. El origen trunca el número a 20 caracteres y varios proveedores
+numeran igual —`DTE-03-M001P001-0000` lo comparten seis proveedores en una
+misma sucursal—, así que si el archivo traía ese número una sola vez, de otro
+emisor, el monto se le pegaba a la compra equivocada y salía en el libro de
+compras y en el anexo de percepción de quien no era.
+
+Ahora es el mismo cruce que ya usa el sello: número **y** emisor (NIT o NRC del
+proveedor de la compra). Si el proveedor no tiene NIT ni NRC y el número es
+único, se mantiene el cruce de siempre; si el número es compartido, el emisor no
+coincide o el documento trae dos montos, no se asigna a ciegas: se resuelve con
+el detalle del día, y si tampoco lo trae, se conserva el monto guardado. Lógica
+pura en `_shared/montoDeCompra.ts` con sus pruebas.
+
+Medido en producción el 26-oct (SELECT): 10 números repetidos entre proveedores
+distintos dentro de una misma sucursal (2,603 compras, may-2025 → oct-2026), y
+**ninguna percepción mal asignada hoy**: las 1,194 compras con percepción la
+tienen igual al 1% de su propia base, y ninguna compra de un proveedor que
+percibe quedó en cero. Retención: cero filas en toda la historia. Se despliega
+con `--no-verify-jwt` (la llama un cron).
+
 ## v2.1355.0 — Personal: listón de antigüedad en la foto del directorio
 
 El aviso «6 años en la empresa» salía sólo el mes del aniversario, así que en

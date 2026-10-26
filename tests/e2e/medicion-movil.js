@@ -395,3 +395,71 @@ export const MEDIR = () => {
                         sinAcuse: sinAcuse.length, encadenan: encadenan.length,
                         tocarPerdido: document.querySelectorAll('[data-destino="perdido"]').length } };
 };
+
+// ── ¿Cuánto CUERPO le queda al diálogo? (2026-10-26) ─────────────────────────
+// `MEDIR` mira blancos de dedo, desbordes y zoom: nada de eso ve que un diálogo
+// acostado (844×390) gaste el alto en cabecera y pie y deje ~40px para leer. No
+// hay nada roto en el sentido de `MEDIR` —todo entra, todo se toca—, pero el
+// formulario se recorre por una rendija.
+//
+// Se mide el diálogo de ARRIBA (el último `role="dialog"`). El cuerpo es lo que
+// `LiquidModal` declara con `data-parte="cuerpo"`; si el diálogo no es de ese
+// canónico, el elemento con scroll vertical más grande adentro. `altoUtil` es
+// la parte del panel que cae dentro de la pantalla —lo que se puede mirar sin
+// mover nada— y `cuerpo` la parte del cuerpo que cae dentro de él.
+export const MEDIR_CUERPO = () => {
+    const dialogos = [...document.querySelectorAll('[role="dialog"]')];
+    const d = dialogos[dialogos.length - 1];
+    if (!d) return null;
+    const vh = window.innerHeight;
+    const panel = d.querySelector('[data-surface="modal"]') || d;
+    const visibleEn = (r, top, bottom) => Math.max(0, Math.min(r.bottom, bottom) - Math.max(r.top, top));
+    const rp = panel.getBoundingClientRect();
+    const top = Math.max(0, rp.top), bottom = Math.min(vh, rp.bottom);
+    const altoUtil = Math.max(0, bottom - top);
+    const desplaza = el => ['auto', 'scroll'].includes(getComputedStyle(el).overflowY);
+    let cuerpo = panel.querySelector('[data-parte="cuerpo"]');
+    const canonico = !!cuerpo;
+    // Acostado `LiquidModal` desplaza TODO junto (`data-parte="desplazable"`):
+    // ahí el cuerpo es el hijo más alto que no sea cabecera ni pie — el
+    // envoltorio entero no, que mediría el 100% y no diría nada.
+    const envoltorio = panel.querySelector('[data-parte="desplazable"]');
+    if (!cuerpo && envoltorio && desplaza(envoltorio)) {
+        let alto = 0;
+        [...envoltorio.children].forEach(el => {
+            if (el.matches('[data-parte="cabecera"], [data-parte="pie"]')) return;
+            const h = el.getBoundingClientRect().height;
+            if (h > alto) { alto = h; cuerpo = el; }
+        });
+    }
+    if (!cuerpo) {
+        let mejor = null, area = 0;
+        panel.querySelectorAll('*').forEach(el => {
+            const oy = getComputedStyle(el).overflowY;
+            if (oy !== 'auto' && oy !== 'scroll') return;
+            const r = el.getBoundingClientRect();
+            const a = r.width * r.height;
+            if (a > area) { area = a; mejor = el; }
+        });
+        cuerpo = mejor;
+    }
+    if (!cuerpo) return { canonico, altoUtil: Math.round(altoUtil), cuerpo: null, pie: null, cabecera: null, pct: null };
+    const vis = el => (el ? Math.round(visibleEn(el.getBoundingClientRect(), top, bottom)) : null);
+    // El pie y la cabecera se cuentan sólo si están FIJOS: si viajan con el
+    // scroll —dentro del cuerpo o dentro del envoltorio que desplaza todo—, no
+    // le quitan alto a nadie.
+    const fijo = el => {
+        if (!el || cuerpo.contains(el)) return null;
+        for (let p = el.parentElement; p && p !== panel; p = p.parentElement) if (desplaza(p)) return null;
+        return el;
+    };
+    const px = vis(cuerpo);
+    return {
+        canonico,
+        altoUtil: Math.round(altoUtil),
+        cuerpo: px,
+        pie: vis(fijo(panel.querySelector('[data-parte="pie"]'))),
+        cabecera: vis(fijo(panel.querySelector('[data-parte="cabecera"]'))),
+        pct: altoUtil ? Math.round(100 * px / altoUtil) : null,
+    };
+};

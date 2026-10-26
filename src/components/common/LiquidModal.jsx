@@ -174,7 +174,34 @@ export default function LiquidModal({
                     precede a la superficie canónica y que nadie retiró al llegar
                     ésta. Su propio comentario ya contaba que en oscuro ese blanco
                     al 50% lavaba la tarjeta a lavanda. */}
-                {children}
+                {/* ── Acostado, el pie se DESPLAZA con el cuerpo (2026-10-26) ──
+                    Con el teléfono acostado el panel mide lo que mide la pantalla
+                    (390px en un iPhone 13, 342 de viewport en WebKit), y cabecera
+                    + pie fijos se llevaban casi todo: en «Agregar meta» quedaban
+                    102px de formulario —30% del alto— y en diálogos de tres
+                    acciones ~40px. Compactar el pie no alcanza cuando la cabecera
+                    es propia del llamador (la mayoría no usa `Header`).
+
+                    Así que acostado TODO el contenido scrollea como una página:
+                    este envoltorio es el que desplaza, cada hijo toma su alto de
+                    contenido (`shrink-0`) y deja de scrollear por su cuenta
+                    (`overflow-visible!`, que hace falta porque un `flex-1
+                    overflow-y-auto` con `shrink-0` tiene `min-height: 0` y
+                    colapsaría a cero). El pie queda al final del recorrido, que
+                    es donde se llega después de llenar el formulario.
+
+                    De pie y en escritorio es `display: contents`: no genera caja,
+                    los hijos siguen siendo ítems flex de la hoja y nada cambia.
+                    Es el MISMO elemento en las dos formas a propósito: si se
+                    envolviera sólo acostado, girar el teléfono cambiaría la forma
+                    del árbol y React remontaría el formulario con lo escrito.
+                    El asa queda AFUERA, así que no se va con el scroll. */}
+                <div data-parte="desplazable"
+                    className={lateral
+                        ? 'flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col [&>*]:shrink-0 [&>*]:overflow-visible!'
+                        : 'contents'}>
+                    {children}
+                </div>
             </div>
         </ModalShell>
     );
@@ -185,8 +212,11 @@ export default function LiquidModal({
  * className merges onto the section div (e.g. for padding overrides).
  */
 LiquidModal.Header = function LiquidModalHeader({ children, className = '' }) {
+    // Acostado el alto es lo escaso (ver el pie): la cabecera pierde relleno
+    // vertical, no contenido. 20px → 12px arriba y abajo.
+    const lateral = usePanelLateral();
     return (
-        <div className={`flex-none bg-transparent px-6 py-5 border-b border-divider shrink-0 relative z-base ${className}`}>
+        <div data-parte="cabecera" className={`flex-none bg-transparent px-6 ${lateral ? 'py-3' : 'py-5'} border-b border-divider shrink-0 relative z-base ${className}`}>
             {children}
         </div>
     );
@@ -197,7 +227,7 @@ LiquidModal.Header = function LiquidModalHeader({ children, className = '' }) {
  */
 LiquidModal.Body = function LiquidModalBody({ children, className = '' }) {
     return (
-        <div className={`relative z-base px-6 py-5 flex-1 overflow-y-auto ${className}`}>
+        <div data-parte="cuerpo" className={`relative z-base px-6 py-5 flex-1 overflow-y-auto ${className}`}>
             {children}
         </div>
     );
@@ -222,12 +252,31 @@ LiquidModal.Footer = function LiquidModalFooter({ children, className = '' }) {
     // abajo del todo —el peor sitio, contra el filo— y "Cancelar" arriba. Al
     // invertir, "la de más a la derecha" se convierte en "la de más arriba", que
     // es la misma jerarquía leída de otra manera.
+    //
+    // ── ACOSTADO el pie va en FILA (2026-10-26) ─────────────────────────────
+    // Apilar es la respuesta para la pantalla angosta, y acostado la pantalla
+    // no es angosta: es BAJA. Un iPhone 13 acostado mide 390px de alto y el
+    // panel lateral los usa todos; dos botones apilados más su relleno y el
+    // área segura se comían ~130px, la cabecera otros ~90, y al cuerpo —el
+    // formulario— le quedaba una rendija (medido: ~40px en los diálogos de tres
+    // acciones). En fila el pie es UNA altura de dedo y el panel lateral tiene
+    // ancho de sobra para dos o tres botones (47% de 844, tope 420px); si no
+    // caben, `flex-wrap` los baja a una segunda fila en vez de cortarlos.
+    // `--tap-min` sigue valiendo 44px (es `pointer: coarse`), así que el blanco
+    // de dedo no se achica: lo que se recorta es el relleno.
+    //
+    // Se decide con `usePanelLateral` y no con otra consulta: es la misma
+    // condición que pone el panel de costado, así que pie y panel no pueden
+    // discrepar.
     const enTactil = useMediaQuery('(hover: none)');
+    const lateral = usePanelLateral();
     return (
-        <div className={`flex-none border-t border-divider relative z-base shrink-0
-            ${enTactil
-                ? 'flex flex-col-reverse gap-2 px-4 pt-3 pb-[max(16px,var(--sa-bottom))] [&>*]:w-full [&_button]:w-full'
-                : 'bg-transparent px-6 md:px-10 py-5 flex justify-between items-center'}
+        <div data-parte="pie" className={`flex-none border-t border-divider relative z-base shrink-0
+            ${lateral
+                ? 'flex flex-wrap justify-between items-center gap-2 px-4 pt-2 pb-[max(8px,var(--sa-bottom))] [&_button]:min-h-[var(--tap-min)]'
+                : enTactil
+                    ? 'flex flex-col-reverse gap-2 px-4 pt-3 pb-[max(16px,var(--sa-bottom))] [&>*]:w-full [&_button]:w-full'
+                    : 'bg-transparent px-6 md:px-10 py-5 flex justify-between items-center'}
             ${className}`}>
             {children}
         </div>

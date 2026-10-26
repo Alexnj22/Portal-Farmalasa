@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1355.3 — Diálogos acostados: el pie se desplaza con el cuerpo, y el barrido abre una pieza de Marketing
+
+Con el teléfono acostado (iPhone 13: 844×390, 342px de viewport en WebKit) el
+panel lateral de `LiquidModal` mantenía cabecera y pie FIJOS, con los botones
+del pie apilados: el pie solo se llevaba 141px y al formulario le quedaba una
+rendija. Medido contra el entorno de pruebas:
+
+| diálogo | cuerpo antes | después |
+|---|---:|---:|
+| Metas › Agregar meta | 102px (30%) | 247px (72%) |
+| Conteo › Nuevo conteo | 82px (24%) | ~265px arriba (77%), 342px al bajar |
+
+- `LiquidModal`: acostado (`usePanelLateral`) todo el contenido scrollea como
+  una página dentro de un envoltorio `data-parte="desplazable"`; el pie queda
+  al final del recorrido. De pie y en escritorio el envoltorio es `display:
+  contents` — mismo elemento en las dos formas para que girar el teléfono no
+  remonte el formulario. El asa queda afuera. Medido: de pie y en escritorio
+  (1366×768) los números no cambian.
+- `LiquidModal.Footer` / `PieDeModal`: acostado van en FILA (una altura de
+  dedo, `flex-wrap` si no caben), no apilados. `LiquidModal.Header` pierde
+  relleno vertical acostado (py-5 → py-3).
+- `data-parte` = `cabecera` / `cuerpo` / `pie` en las piezas canónicas, para
+  medir.
+- `medicion-movil.js` · `MEDIR_CUERPO`: px de cuerpo visible por diálogo, con
+  cabecera y pie sólo si están fijos. `dialogos-movil` lo lista y marca bajo
+  el 60%; además espera a que el login termine de montarse antes de escribir
+  (al reciclar contexto la contraseña caía en el campo de usuario).
+- Nuevo `pieza-marketing-movil.spec.js`: abre una pieza de Marketing (la ficha
+  «Abrir <título>», que el barrido de diálogos nunca tocaba) y la mide con el
+  mismo instrumento, sin apretar nada adentro. Si el entorno no tiene piezas en
+  los últimos 7 meses, se SALTA con el motivo — hoy el entorno de pruebas no
+  tiene ninguna.
+
 ## v2.1355.2 — El NIT de la ficha del proveedor se toma del libro sólo con número y emisor
 
 El completado rápido de compras también usa el libro del sistema de origen para

@@ -1,6 +1,7 @@
 import React from 'react';
 import LiquidModal from './LiquidModal';
 import useMediaQuery from '../../plataforma/useMediaQuery';
+import { usePanelLateral } from '@nucleo/hooks/useLayoutCompacto';
 
 /**
  * El pie de un `LiquidModal` con MÁS de dos acciones, o con un texto a la
@@ -19,11 +20,15 @@ import useMediaQuery from '../../plataforma/useMediaQuery';
  * dos formas dan el mismo resultado; ésta no hay que reescribirla en cada uso.
  */
 export default function PieDeModal({ izquierda = null, children }) {
+    // Acostado el pie canónico va en fila (el alto es lo escaso): el grupo
+    // también, o volvería a apilar por dentro lo que el pie dejó de apilar.
     const enTactil = useMediaQuery('(hover: none)');
+    const lateral = usePanelLateral();
     return (
         <LiquidModal.Footer>
             {izquierda || <span aria-hidden />}
-            <div className={enTactil ? 'flex flex-col-reverse gap-2' : 'flex items-center gap-2'}>
+            <div className={lateral ? 'flex flex-wrap items-center justify-end gap-2'
+                : enTactil ? 'flex flex-col-reverse gap-2' : 'flex items-center gap-2'}>
                 {children}
             </div>
         </LiquidModal.Footer>

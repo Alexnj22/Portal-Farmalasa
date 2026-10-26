@@ -1,6 +1,6 @@
 import { test, expect, devices } from '@playwright/test';
 import fs from 'node:fs';
-import { MEDIR } from './medicion-movil.js';
+import { MEDIR, MEDIR_CUERPO } from './medicion-movil.js';
 
 /**
  * Barrido de DIÁLOGOS en el teléfono — F3 de `docs/PLAN-MOVIL-2026-08-20.md`.
@@ -97,6 +97,11 @@ test.describe('Diálogos · WebKit iPhone 13', () => {
         const errores = [];
         const ingresar = async (p) => {
             await p.goto('/login');
+            // El formulario se re-monta mientras termina de cargar: escribir
+            // enseguida dejó «pruebaspruebas2026» en el usuario y la contraseña
+            // vacía (medido contra el entorno de pruebas al reciclar contexto).
+            await p.waitForLoadState('networkidle').catch(() => {});
+            await p.waitForTimeout(1500);
             await p.locator('#username').fill(E2E_USER);
             await p.locator('#password').fill(E2E_PASSWORD);
             await p.locator('button[type="submit"]').first().click();
@@ -317,9 +322,11 @@ test.describe('Diálogos · WebKit iPhone 13', () => {
                 console.log(`   ✓ «${c.nombre}» abrió (${dialogo ? 'diálogo' : `modo de vista, ${camposAhora} campos`})`);
 
                 const m = await pg.evaluate(MEDIR).catch(() => null);
+                const alto = await pg.evaluate(MEDIR_CUERPO).catch(() => null);
                 if (m) {
                     informe.push({
                         ruta: `${ruta}»${c.nombre}`, ...m.totales,
+                        alto: alto || undefined,
                         desbordePagina: m.desbordePagina,
                         grupos: m.grupos, imposibles: m.imposibles,
                         error: errores.length ? [...errores] : undefined,
@@ -358,6 +365,22 @@ test.describe('Diálogos · WebKit iPhone 13', () => {
                 + String(v.imposibles).padStart(8));
         });
         console.log(`╚═══════════════════════════════════════════════════════════╝`);
+
+        // ── El alto que le queda al cuerpo (2026-10-26) ─────────────────────
+        // Acostado el alto es lo escaso: un pie fijo con dos botones apilados
+        // dejaba ~40px de cuerpo. Se lista aparte porque no es un defecto de
+        // `MEDIR` —todo entra y todo se toca— y se marca bajo el 60%.
+        const conAlto = informe.filter(v => v.alto && v.alto.pct != null);
+        const rendija = conAlto.filter(v => v.alto.pct < 60);
+        console.log(`\n── alto del cuerpo · ${conAlto.length} medidos · bajo 60%: ${rendija.length}`);
+        console.log('  diálogo'.padEnd(46) + ' útil cabec  pie cuerpo   %');
+        conAlto.forEach(v => {
+            const a = v.alto;
+            console.log(`  ${a.pct < 60 ? '✗' : '·'} ${v.ruta.slice(0, 42).padEnd(43)}`
+                + String(a.altoUtil).padStart(5) + String(a.cabecera ?? '–').padStart(6)
+                + String(a.pie ?? '–').padStart(5) + String(a.cuerpo).padStart(7)
+                + String(a.pct).padStart(4) + (a.canonico ? '' : '  (cuerpo no canónico)'));
+        });
 
         // Que se hayan abierto CERO diálogos no es «todo bien»: es que el
         // instrumento no encontró nada que abrir. Mismo agujero que el login.

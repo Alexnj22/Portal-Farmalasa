@@ -19,8 +19,10 @@ import { MEDIR, MEDIR_CUERPO } from './medicion-movil.js';
  * «Enviar», «Marcar publicada», «Liberar» y «Eliminar».
  *
  * ── Si no hay piezas ────────────────────────────────────────────────────────
- * El entorno de pruebas se siembra sin Marketing, y desde acá no se puede
- * sembrar (la escritura sería justamente lo que el freno prohíbe). Se recorren
+ * Desde acá no se siembra (la escritura sería justamente lo que el freno
+ * prohíbe): el mes y sus tres piezas los pone
+ * `scripts/entorno-pruebas/siembra_marketing.sql`, que corre el mantenimiento
+ * diario del entorno de pruebas para el mes en curso. Se recorren
  * los últimos `MESES_ATRAS` meses en la pestaña Flujo; si en ninguno hay una
  * ficha, la prueba se SALTA con el motivo escrito — no pasa en verde, porque
  * «no medí nada» no es «está bien».
@@ -83,7 +85,7 @@ test.describe('Marketing · la pieza en el teléfono', () => {
         }
         test.skip(!nombres.length,
             `El entorno no tiene piezas de Marketing en los últimos ${MESES_ATRAS + 1} meses: no hay nada que abrir. `
-            + 'Sembrar una pieza en el entorno de pruebas (no desde este spec: abrir no puede escribir).');
+            + 'Correr scripts/entorno-pruebas/siembra_marketing.sql en el entorno de pruebas (no desde este spec: abrir no puede escribir).');
 
         const informe = [];
         for (const nombre of nombres.slice(0, TOPE_PIEZAS)) {

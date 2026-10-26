@@ -451,8 +451,26 @@ export default function ModalShell({
       // usuario lo pidió al revés y con las mismas palabras que la primera vez:
       // «que el foco en móvil también sea el input, en todos». Manda eso — la
       // hoja sube con el teclado y el campo queda listo, que es el punto.
-      const campo = [...panel.querySelectorAll(CAMPOS_DE_TEXTO)].filter(visible)[0];
-      (campo || f[0] || panel).focus();
+      //
+      // ── Salvo el campo que se declara AL MARGEN (2026-10-26) ──
+      // En un diálogo que primero se LEE, el único campo puede vivir al final:
+      // en la pieza de Marketing es «Nuevo comentario», debajo del flujo, los
+      // archivos, la pauta y la conversación. Enfocarlo desplazaba el cuerpo
+      // hasta el fondo al abrir (medido en el teléfono: 546 a 1,508 px) y, en
+      // táctil, subía el teclado sobre una pieza que nadie había visto todavía.
+      //
+      // Es una MARCA en el campo y no una regla de posición a propósito: se
+      // probó «sólo si está a la vista» y le quitaba el foco a «Nuevo
+      // empleado», cuyo primer campo quedó bajo el pliegue al llegar la foto —
+      // y ahí el usuario sí quiere el campo listo. Quién es un formulario y
+      // quién una ficha que se lee no se deduce de la geometría; lo sabe el
+      // diálogo.
+      const campo = [...panel.querySelectorAll(CAMPOS_DE_TEXTO)]
+        .filter(el => visible(el) && !el.closest('[data-sin-foco-inicial]'))[0];
+      // Sin campo, el foco no debe desplazar nada: el primer enfocable puede
+      // ser justamente el campo marcado.
+      const primero = f.find(el => !el.closest('[data-sin-foco-inicial]'));
+      (campo || primero || panel).focus({ preventScroll: !campo });
     }); });
 
     return () => {

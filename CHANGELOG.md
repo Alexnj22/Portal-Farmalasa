@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.4 — Pieza de Marketing en el teléfono: siembra en pruebas y el foco no salta a «Nuevo comentario»
+
+Cierra lo que v2.1355.3 dejó sin medir porque el entorno de pruebas estaba roto.
+
+- **Al abrir una pieza de Marketing el foco ya no salta a «Nuevo comentario».** `ModalShell` enfoca el primer campo de texto al abrir, y en la pieza el único es el de la conversación, al final: el cuerpo se desplazaba hasta el fondo (medido: 546 a 1,508 px) y en el teléfono subía el teclado sobre una pieza sin leer. Ahora un campo dentro de `[data-sin-foco-inicial]` no recibe el foco inicial y, sin campo, el foco no desplaza (`preventScroll`). Se probó antes «sólo el campo a la vista» y le quitaba el foco a «Nuevo empleado», cuyo primer campo quedó bajo el pliegue con la foto: por eso es una marca y no una regla de posición.
+- **El entorno de pruebas trae Marketing.** `scripts/entorno-pruebas/siembra_marketing.sql` siembra el mes en curso con tres piezas (pendiente, con cambios y aprobada) y una conversación corta; lo corre el mantenimiento diario sólo si el mes no tiene piezas. `pieza-marketing-movil.spec.js` ya no se salta: de pie 59–62% de cuerpo, acostado 72–73%, sin blancos chicos ni desbordes.
+- **`MEDIR_CUERPO` ya no acusa a las hojas de Filtros.** Sin `data-surface="modal"` tomaba el overlay entero como panel y daba 25% a un cuerpo que mostraba todo su contenido. Un cuerpo que entra entero cuenta 100%.
+- Barrido de diálogos acostado en el entorno de pruebas: 15 diálogos, ninguno bajo 60% de cuerpo; ninguno con `sticky` ni hijos colapsados por el envoltorio que desplaza (no hay listas virtualizadas en `src/`).
+
 ## v2.1357.3 — Reservas: la sala ajusta también las reservas de la app y las pagadas en línea
 
 Reglamento de reservas, cláusula 3.6: si llega sólo una parte, el cliente elige quedarse con lo que llegó, cambiar por otro producto o cancelar, y lo pagado cubre primero lo que se lleva. Hasta hoy eso sólo funcionaba con reservas hechas en la sala y pagadas en caja: a una de la app, o pagada en línea, la sala sólo podía cancelarla entera.

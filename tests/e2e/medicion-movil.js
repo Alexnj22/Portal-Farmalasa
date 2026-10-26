@@ -454,12 +454,21 @@ export const MEDIR_CUERPO = () => {
         return el;
     };
     const px = vis(cuerpo);
+    // ── Un cuerpo que ENTRA ENTERO no es una rendija (2026-10-26) ──────────
+    // Las hojas de «Filtros» no llevan `data-surface="modal"`, así que el panel
+    // cae al `role="dialog"`, que es el overlay de toda la pantalla: medían
+    // 168px de cuerpo sobre 664 (25%) cuando su cuerpo mostraba 168 de 168.
+    // El porcentaje pregunta cuánto se ve de lo que hay que desplazar; si no
+    // hay nada que desplazar, se ve todo.
+    const entero = cuerpo.scrollHeight <= cuerpo.clientHeight + 1
+        && px >= Math.round(cuerpo.getBoundingClientRect().height) - 1;
     return {
         canonico,
         altoUtil: Math.round(altoUtil),
         cuerpo: px,
         pie: vis(fijo(panel.querySelector('[data-parte="pie"]'))),
         cabecera: vis(fijo(panel.querySelector('[data-parte="cabecera"]'))),
-        pct: altoUtil ? Math.round(100 * px / altoUtil) : null,
+        entero,
+        pct: entero ? 100 : (altoUtil ? Math.round(100 * px / altoUtil) : null),
     };
 };

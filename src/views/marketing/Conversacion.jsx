@@ -123,7 +123,11 @@ export default function Conversacion({
                 </ul>
             )}
 
-            <div className="flex items-end gap-2 pt-1">
+            {/* `data-sin-foco-inicial`: la conversación va al final de la
+                pieza, y sin la marca `ModalShell` enfocaba este campo al abrir
+                —el cuerpo saltaba hasta el fondo y en el teléfono subía el
+                teclado sobre una pieza que todavía nadie había leído—. */}
+            <div className="flex items-end gap-2 pt-1" data-sin-foco-inicial>
                 <div className="flex-1 min-w-0">
                     <PortalTextarea label="Nuevo comentario" name="comentario" value={texto}
                         onChange={(e) => setTexto(e.target.value)} onKeyDown={alEnviar(enviar)}

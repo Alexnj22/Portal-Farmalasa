@@ -179,6 +179,10 @@ async function herramientas(ref) {
     await sql(ref, 'select * from public.correr_fechas_del_branch_de_pruebas()', { escribe: true });
     await sql(ref, leer('recalcular_resumenes.sql'), { escribe: true });
     await sql(ref, leer('permisos_de_la_cuenta_de_pruebas.sql'), { escribe: true });
+    // Un mes de Marketing con tres piezas: sin él `PiezaModal` no se puede
+    // abrir en el barrido del teléfono. Sólo siembra si el mes en curso no
+    // tiene piezas, así que cada mes nuevo trae su muestra.
+    await sql(ref, leer('siembra_marketing.sql'), { escribe: true });
     // La bóveda nace vacía: sin la clave del kiosco el portal da 400 al entrar.
     await sql(ref, leer('secretos_de_pruebas.sql'), { escribe: true });
     await igualarPermisosDeTablas(ref);

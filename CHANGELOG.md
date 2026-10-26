@@ -25,7 +25,6 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 - `src/types/database.ts` regenerado con las tablas y funciones de la anonimización (v2.1357.0).
 
-_(pendiente de redactar)_
 
 ## v2.1357.0 — Clientes: anonimizar los datos a pedido del titular, con resguardo y reactivación
 

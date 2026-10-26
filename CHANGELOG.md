@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.3 — Reservas: la sala ajusta también las reservas de la app y las pagadas en línea
+
+Reglamento de reservas, cláusula 3.6: si llega sólo una parte, el cliente elige quedarse con lo que llegó, cambiar por otro producto o cancelar, y lo pagado cubre primero lo que se lleva. Hasta hoy eso sólo funcionaba con reservas hechas en la sala y pagadas en caja: a una de la app, o pagada en línea, la sala sólo podía cancelarla entera.
+
+- «Resolver» ofrece «Lo decide el cliente» también para las reservas de la app (portal y app del personal), con el aviso de llamarle antes.
+- Lo pagado en línea se reparte igual que un anticipo: cubre lo que se queda, después la alternativa, y lo que sobra queda a su favor.
+- En un pedido a domicilio el envío sigue con lo que se queda; la alternativa no viaja en el pedido (se aparta en la sala).
+- Al cliente de la app le llega el aviso con lo que quedó y cuánto tiene a favor.
+- Base: migración `20261026165955`, probada antes en producción en una transacción que se deshizo sola (5 casos).
+
 ## v2.1357.2 — Personal: el globo de lo que falta, agrupado
 
 El «!» del avatar decía todo lo que faltaba en un solo renglón de comas (~20

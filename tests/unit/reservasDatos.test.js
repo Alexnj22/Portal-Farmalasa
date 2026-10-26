@@ -95,6 +95,10 @@ describe('el reparto del dinero al ajustar una reserva (la misma cuenta que la b
     });
     it('sin quedarse nada, todo lo pagado sin alternativa queda a favor, al centavo', () => {
         expect(r.repartoDelAjuste({ pagado: 10.1, precio: 3.37, cantidad: 0 })).toEqual({ queda: 0, alternativa: 0, aFavor: 10.1 });
+        // Pagada entera (en línea el anticipo queda en 0): cuenta el total; un cobro de prueba no.
+        expect(r.pagadoDeReserva({ precio: 10, cantidad: 3, anticipo: 0, pago_estado: 'pagado' })).toBe(30);
+        expect(r.pagadoDeReserva({ precio: 10, cantidad: 3, anticipo: 0, pago_estado: 'pagado', pago_prueba: true })).toBe(0);
+        expect(r.pagadoDeReserva({ precio: 10, cantidad: 3, anticipo: 15, pago_estado: 'anticipo' })).toBe(15);
         const x = r.repartoDelAjuste({ pagado: 0.3, precio: 0.1, cantidad: 1, totalAlternativa: 0.1 });
         expect(x).toEqual({ queda: 0.1, alternativa: 0.1, aFavor: 0.1 });
     });

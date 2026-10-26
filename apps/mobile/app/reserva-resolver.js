@@ -14,9 +14,9 @@
 // sala no tiene lo que el cliente reservó («Traer de otra sala»,
 // `reservaPorTraer`) o la otra sala no lo mandó (`reservaPorResolver`), se
 // pide a otra sala o a Bodega, y mientras viene en camino su plazo de 24 h
-// para preparar está detenido. Una reserva de la app NO se ajusta acá
-// (`reserva_ajustar` es de sala): si el cliente no la quiere así, se cancela
-// y lo pagado queda a su favor.
+// para preparar está detenido. Desde el 2026-10-26 también se ajusta como una
+// de sala (reglamento, cláusula 3.6), pagada en caja o en línea: se le llama
+// al cliente antes y la app le avisa lo que quedó.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -24,7 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import {
-  ajustarReserva, codigoDeReserva, decidirPrecioDeBodega, encargarRestoABodega, faltaDeReserva, fetchReservasDeSucursal, preciosDeProducto, repartoDelAjuste,
+  ajustarReserva, codigoDeReserva, decidirPrecioDeBodega, encargarRestoABodega, faltaDeReserva, fetchReservasDeSucursal, pagadoDeReserva, preciosDeProducto, repartoDelAjuste,
   reservaPorTraer,
 } from '@nucleo/data/reservas';
 import { pilaDelCliente, textoAlNoAceptarElPrecio, textoDeResolverDeLaApp } from '@nucleo/utils/reservasDeSala';
@@ -83,11 +83,10 @@ export default function ResolverReservaNativo() {
 
   const falta = faltaDeReserva(r);
   const precioDistinto = r.traslado_estado === 'precio' && r.encargo?.estado === 'confirmado';
-  const deLaApp = r.origen === 'app';
   const opciones = [
     ...(precioDistinto ? [{ id: 'precio', label: 'Precio' }] : []),
     ...(falta > 0 && !precioDistinto ? [{ id: 'pedir', label: 'Otra sala' }, { id: 'bodega', label: 'Bodega' }] : []),
-    ...(deLaApp ? [] : [{ id: 'cliente', label: 'El cliente' }]),
+    { id: 'cliente', label: 'El cliente' },
   ];
 
   return (
@@ -113,8 +112,8 @@ export default function ResolverReservaNativo() {
                 onPress={() => hacer(() => encargarRestoABodega(r.id), 'Encargado a Bodega', (res) => `${res?.codigo ?? ''} · ${falta} × ${r.producto}`)} />
             </>
           ) : null}
-          {vista === 'cliente' && !deLaApp ? <LoDecideElCliente r={r} ocupado={ocupado} hacer={hacer} /> : null}
-          {deLaApp ? <Aviso texto={textoDeResolverDeLaApp(r, { hayOpciones: opciones.length > 0, precioDistinto })} /> : null}
+          {vista === 'cliente' ? <LoDecideElCliente r={r} ocupado={ocupado} hacer={hacer} /> : null}
+          {textoDeResolverDeLaApp(r) ? <Aviso texto={textoDeResolverDeLaApp(r)} /> : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </>
@@ -126,7 +125,7 @@ function PrecioDeBodega({ r, ocupado, hacer }) {
   const decidir = (acepta) => hacer(() => decidirPrecioDeBodega(r.id, acepta),
     acepta ? 'Precio aceptado' : 'Precio no aceptado',
     (res) => (acepta ? (res?.codigo_nueva ? `El resto quedó en ${res.codigo_nueva}, a su precio.` : 'Bodega sigue con el pedido.')
-      : textoAlNoAceptarElPrecio(r)));
+      : textoAlNoAceptarElPrecio()));
   return (
     <>
       <Seccion titulo="Bodega lo consigue a otro precio" pie="Pregúntale al cliente.">
@@ -204,7 +203,7 @@ function LoDecideElCliente({ r, ocupado, hacer }) {
   const nAlt = Number.parseInt(cantAlt, 10);
   const [factorAlt, precioAlt] = pres ? pres.split('|').map(Number) : [null, null];
   const usaAlt = conAlternativa && alt && pres && nAlt >= 1;
-  const pagado = Number(r.anticipo ?? 0);
+  const pagado = pagadoDeReserva(r);
   const reparto = repartoDelAjuste({ pagado, precio: Number(r.precio ?? 0), cantidad: Number.isFinite(n) ? n : 0,
     totalAlternativa: usaAlt ? precioAlt * nAlt : 0 });
   const falta = !Number.isFinite(n) || n < 0 || n > Number(r.cantidad) ? `Del original se queda de 0 a ${r.cantidad}.`

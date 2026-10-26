@@ -259,16 +259,14 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
 }
 
 /**
- * El texto de «Resolver» para una reserva de la APP (2026-10-26): ahí no se
- * ajusta (`reserva_ajustar` es de sala), así que se dice sólo lo que de verdad
- * se ofrece. `hayOpciones`: si el diálogo muestra alguna (precio, otra sala o
- * Bodega). Sin ninguna, no hay nada que decidir. Vacío para una de sala.
+ * El texto de «Resolver» para una reserva de la APP. Desde el 2026-10-26 se
+ * ajusta igual que una de sala (cláusula 3.6): lo que cambia es que el cliente
+ * no está enfrente, así que se le llama antes y la app le avisa lo que quedó.
+ * Vacío para una de sala.
  */
-export function textoDeResolverDeLaApp(r, { hayOpciones = false, precioDistinto = false } = {}) {
+export function textoDeResolverDeLaApp(r) {
     if (r?.origen !== 'app') return '';
-    if (!hayOpciones) return 'Todo lo que falta ya viene en camino: no hay nada que decidir. Mientras viene en camino, la reserva no vence.';
-    return `Reserva de la app: aquí sólo se ${precioDistinto ? 'decide el precio que da Bodega' : 'consigue lo que falta (de otra sala o de Bodega)'}. `
-        + 'Si el cliente no la quiere así, cancélala desde la lista (o él desde la app); lo pagado queda a su favor.';
+    return 'Reserva de la app: llama al cliente antes de decidir. Le llega el aviso con lo que quedó y, si sobra dinero, queda a su favor.';
 }
 
 /**
@@ -280,9 +278,7 @@ export function textoDeResolverDeLaApp(r, { hayOpciones = false, precioDistinto 
 export const SI_EL_TRASLADO_NO_SALIO = 'Pide el traslado desde Inventario y, cuando llegue, márcala como lista en Reservas.';
 
 /** Lo que sigue cuando el cliente no acepta el precio de Bodega. */
-export const textoAlNoAceptarElPrecio = (r) => (r?.origen === 'app'
-    ? 'Si el cliente no la quiere así, cancélala desde la lista; lo pagado queda a su favor.'
-    : 'Ahora decide con el cliente: lo que llegó, una alternativa o cancelar.');
+export const textoAlNoAceptarElPrecio = () => 'Ahora decide con el cliente: lo que llegó, una alternativa o cancelar.';
 
 /**
  * Lo que dice la tarjeta de una reserva que espera receta cuando quien la mira

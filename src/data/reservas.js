@@ -333,8 +333,10 @@ export async function decidirPrecioDeBodega(id, acepta) {
 }
 
 /**
- * Lo que decidió el cliente: cuánto se queda del original (0 = nada) y, si
- * quiere, una alternativa de ESTA sala `{ producto_id, producto_nombre, factor,
+ * Lo que decidió el cliente (reglamento, cláusula 3.6): cuánto se queda del
+ * original (0 = nada) y, si quiere, una alternativa de ESTA sala. Vale para
+ * reservas de la sala y de la app, pagadas en caja o en línea; al cliente de la
+ * app le llega el aviso de lo que quedó `{ producto_id, producto_nombre, factor,
  * cantidad, precio }`. Lo pagado cubre primero lo que se queda, después la
  * alternativa; lo que sobre queda a su favor.
  */
@@ -353,6 +355,18 @@ export function repartoDelAjuste({ pagado, precio, cantidad, totalAlternativa = 
     const queda = r2(Math.min(pagado, r2(precio * cantidad)));
     const alt = r2(Math.min(r2(pagado - queda), totalAlternativa));
     return { queda, alternativa: alt, aFavor: r2(pagado - queda - alt) };
+}
+
+/**
+ * Lo pagado de una reserva para repartirlo al ajustarla: el anticipo, o el
+ * total si se pagó entera (en línea, por ejemplo, el anticipo queda en 0). Un
+ * cobro de prueba no cuenta, igual que en `reserva_cuenta`. Sin el envío: si
+ * hay, la cuenta de la base lo deja con lo que se queda.
+ */
+export function pagadoDeReserva(r) {
+    const total = Math.round(Number(r?.precio ?? 0) * Number(r?.cantidad ?? 0) * 100) / 100;
+    const entera = r?.pago_estado === 'pagado' && !r?.pago_prueba ? total : 0;
+    return Math.max(Number(r?.anticipo ?? 0), entera);
 }
 
 /** Una sola prórroga de 7 días para retirar (reglamento v2, cláusula 7). La base la limita a una. */

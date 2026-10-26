@@ -94,13 +94,11 @@ describe('accionesDeReservaNucleo', () => {
 describe('textos de la sala que dicen sólo lo que se ofrece (2026-10-26)', () => {
     it('Resolver una reserva de la app', () => {
         const app = { id: 1, origen: 'app' };
-        expect(textoDeResolverDeLaApp({ id: 2, origen: 'sucursal' }, { hayOpciones: true })).toBe('');
-        expect(textoDeResolverDeLaApp(app, { hayOpciones: false })).toMatch(/no hay nada que decidir/);
-        expect(textoDeResolverDeLaApp(app, { hayOpciones: true })).toMatch(/consigue lo que falta/);
-        expect(textoDeResolverDeLaApp(app, { hayOpciones: true, precioDistinto: true })).toMatch(/precio que da Bodega/);
-        expect(textoDeResolverDeLaApp(app, { hayOpciones: true })).not.toMatch(/alternativa/);
-        expect(textoAlNoAceptarElPrecio(app)).not.toMatch(/alternativa/);
-        expect(textoAlNoAceptarElPrecio({ origen: 'sucursal' })).toMatch(/alternativa/);
+        // Cláusula 3.6 (2026-10-26): la de la app también se ajusta; sólo se avisa que hay que llamar.
+        expect(textoDeResolverDeLaApp({ id: 2, origen: 'sucursal' })).toBe('');
+        expect(textoDeResolverDeLaApp(app)).toMatch(/llama al cliente/);
+        expect(textoDeResolverDeLaApp(app)).toMatch(/a su favor/);
+        expect(textoAlNoAceptarElPrecio()).toMatch(/alternativa/);
     });
     it('encargos: rótulos únicos y la nota de «Esperando pago»', () => {
         expect(ROTULOS_DE_ENCARGO.pedido).toBe('Ya se pidió');

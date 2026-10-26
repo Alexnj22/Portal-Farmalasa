@@ -15,11 +15,12 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { textoAlNoAceptarElPrecio, textoDeResolverDeLaApp } from '@nucleo/utils/reservasDeSala';
 import {
-    ajustarReserva, codigoDeReserva, decidirPrecioDeBodega, encargarRestoABodega, faltaDeReserva, preciosDeProducto, repartoDelAjuste,
+    ajustarReserva, codigoDeReserva, decidirPrecioDeBodega, encargarRestoABodega, faltaDeReserva, pagadoDeReserva, preciosDeProducto, repartoDelAjuste,
 } from '@nucleo/data/reservas';
 
 /**
- * Una reserva de sala que no llegó entera (2026-10-22, decisiones del usuario).
+ * Una reserva que no llegó entera (2026-10-22, decisiones del usuario; desde el
+ * 2026-10-26 también las de la app y las pagadas en línea, cláusula 3.6).
  *
  * La otra sala no la mandó, mandó menos, o Bodega no la consigue. Lo que se
  * puede hacer, en este orden:
@@ -53,18 +54,14 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
         }
     };
 
-    // Una reserva de la app no se ajusta acá (`reserva_ajustar` es de sala): si
-    // el cliente no la quiere así, se cancela y lo pagado queda a su favor.
-    const deLaApp = r.origen === 'app';
+    // Una reserva de la app se ajusta igual (cláusula 3.6); sólo se avisa que
+    // hay que llamar al cliente, que no está enfrente.
     const opciones = [
         ...(precioDistinto ? [{ value: 'precio', label: 'Precio de Bodega' }] : []),
         ...(falta > 0 && !precioDistinto ? [{ value: 'pedir', label: 'Pedir a otra sala' }, { value: 'bodega', label: 'A Bodega' }] : []),
-        ...(deLaApp ? [] : [{ value: 'cliente', label: 'Lo decide el cliente' }]),
+        { value: 'cliente', label: 'Lo decide el cliente' },
     ];
-    // Lo que se le dice a quien resuelve una reserva de la app: sólo lo que de
-    // verdad se le ofrece. Sin ninguna opción (no falta nada por pedir), no hay
-    // nada que decidir: lo que falta ya viene en camino.
-    const textoDeLaApp = textoDeResolverDeLaApp(r, { hayOpciones: opciones.length > 0, precioDistinto });
+    const textoDeLaApp = textoDeResolverDeLaApp(r);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Resolver reserva">
@@ -87,7 +84,7 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
                             onDecidir={(acepta) => hacer(() => decidirPrecioDeBodega(r.id, acepta),
                                 acepta ? 'Precio aceptado' : 'Precio no aceptado',
                                 (res) => (acepta ? (res?.codigo_nueva ? `El resto quedó en ${res.codigo_nueva}, a su precio.` : 'Bodega sigue con el pedido.')
-                                    : textoAlNoAceptarElPrecio(r)))} />
+                                    : textoAlNoAceptarElPrecio()))} />
                     )}
                     {vista === 'pedir' && <PedirAOtraSala reserva={r} falta={falta} ocupado={ocupado} hacer={hacer} />}
                     {vista === 'bodega' && (
@@ -103,7 +100,7 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
                             </Button>
                         </div>
                     )}
-                    {vista === 'cliente' && !deLaApp && <LoDecideElCliente reserva={r} ocupado={ocupado} hacer={hacer} />}
+                    {vista === 'cliente' && <LoDecideElCliente reserva={r} ocupado={ocupado} hacer={hacer} />}
                     {textoDeLaApp && <p className="text-caption text-content-3">{textoDeLaApp}</p>}
                 </div>
             </LiquidModal.Body>
@@ -173,7 +170,7 @@ function LoDecideElCliente({ reserva: r, ocupado, hacer }) {
     const nAlt = Number.parseInt(cantAlt, 10);
     const [factorAlt, precioAlt] = pres ? pres.split('|').map(Number) : [null, null];
     const usaAlt = conAlternativa && alt && pres && nAlt >= 1;
-    const pagado = Number(r.anticipo ?? 0);
+    const pagado = pagadoDeReserva(r);
     const reparto = repartoDelAjuste({ pagado, precio: Number(r.precio ?? 0), cantidad: Number.isFinite(n) ? n : 0,
         totalAlternativa: usaAlt ? precioAlt * nAlt : 0 });
     const falta = !Number.isFinite(n) || n < 0 || n > Number(r.cantidad) ? `Del original se queda de 0 a ${r.cantidad}.`

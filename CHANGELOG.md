@@ -21,9 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1357.0 — Clientes: anonimizar los datos a pedido del titular, con resguardo y reactivación
+## v2.1357.1 — Tipos de la base con la anonimización
+
+- `src/types/database.ts` regenerado con las tablas y funciones de la anonimización (v2.1357.0).
 
 _(pendiente de redactar)_
+
+## v2.1357.0 — Clientes: anonimizar los datos a pedido del titular, con resguardo y reactivación
+
+Base: `20261026162246`, `20261026163000`, `20261026163600`. Nada se borra solo: los
+datos de un cliente se conservan siempre y sólo se anonimizan si él lo pide.
+
+- Desde una solicitud de cancelación **resuelta**: «Anonimizar los datos del
+  cliente», con vista previa (qué se borra, qué va al resguardo, qué se conserva
+  por ley y cuántos puntos se pierden) y confirmación escribiendo ANONIMIZAR.
+- La ficha queda «CLIENTE ANÓNIMO #id», también en la caja. Facturas, libro de
+  receta, créditos y cotizaciones quedan intactos. Los puntos se pierden.
+- Se bloquea con créditos con saldo, reservas, encargos o preventas abiertas,
+  saldo a favor, o si es persona jurídica.
+- Lo quitado va a un **resguardo cerrado**: sólo se lee con el permiso de datos
+  personales y un motivo, y cada lectura queda registrada.
+- **Si vuelve**, reactiva su misma ficha con su documento (historial y nivel
+  vuelven; los puntos no). Pestaña «Anonimizados» en Solicitudes sobre datos.
+- La copia nocturna de fichas y el alta desde facturas no vuelven a llenar una
+  ficha anónima. La app de clientes contesta con el aviso genérico de soporte.
 
 ## v2.1356.0 — Personal: la foto, los pendientes y el listón en todas partes
 

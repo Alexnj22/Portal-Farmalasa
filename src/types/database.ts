@@ -5497,6 +5497,144 @@ export type Database = {
           },
         ]
       }
+      clientes_anonimizados: {
+        Row: {
+          anonimizada_at: string
+          anonimizada_por: string | null
+          archivos_borrados_at: string | null
+          archivos_pendientes: string[]
+          changelog_ids: number[]
+          created_at: string
+          customer_id: number
+          fichas: number[]
+          id: number
+          puntos_perdidos: number
+          reactivacion_changelog_ids: number[]
+          reactivacion_motivo: string | null
+          reactivacion_solicitud: string | null
+          reactivada_at: string | null
+          reactivada_por: string | null
+          resumen: Json
+          sin_documento_motivo: string | null
+          solicitud_id: string
+        }
+        Insert: {
+          anonimizada_at?: string
+          anonimizada_por?: string | null
+          archivos_borrados_at?: string | null
+          archivos_pendientes?: string[]
+          changelog_ids?: number[]
+          created_at?: string
+          customer_id: number
+          fichas: number[]
+          id?: never
+          puntos_perdidos?: number
+          reactivacion_changelog_ids?: number[]
+          reactivacion_motivo?: string | null
+          reactivacion_solicitud?: string | null
+          reactivada_at?: string | null
+          reactivada_por?: string | null
+          resumen?: Json
+          sin_documento_motivo?: string | null
+          solicitud_id: string
+        }
+        Update: {
+          anonimizada_at?: string
+          anonimizada_por?: string | null
+          archivos_borrados_at?: string | null
+          archivos_pendientes?: string[]
+          changelog_ids?: number[]
+          created_at?: string
+          customer_id?: number
+          fichas?: number[]
+          id?: never
+          puntos_perdidos?: number
+          reactivacion_changelog_ids?: number[]
+          reactivacion_motivo?: string | null
+          reactivacion_solicitud?: string | null
+          reactivada_at?: string | null
+          reactivada_por?: string | null
+          resumen?: Json
+          sin_documento_motivo?: string | null
+          solicitud_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_anonimizados_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_anonimizados_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "clientes_anonimizados_reactivacion_solicitud_fkey"
+            columns: ["reactivacion_solicitud"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_datos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_anonimizados_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_datos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clientes_anonimizados_huellas: {
+        Row: {
+          anonimizacion_id: number
+          created_at: string
+          customer_id: number
+          huella: string
+          tipo: string
+        }
+        Insert: {
+          anonimizacion_id: number
+          created_at?: string
+          customer_id: number
+          huella: string
+          tipo: string
+        }
+        Update: {
+          anonimizacion_id?: number
+          created_at?: string
+          customer_id?: number
+          huella?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_anonimizados_huellas_anonimizacion_id_fkey"
+            columns: ["anonimizacion_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_anonimizados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_anonimizados_huellas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_anonimizados_huellas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       clientes_mayoristas: {
         Row: {
           aprobado_desde: string | null
@@ -5719,6 +5857,85 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "dte_rechazos_vigentes"
             referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      clientes_resguardo: {
+        Row: {
+          accion: string
+          anonimizacion_id: number
+          created_at: string
+          customer_id: number
+          datos: Json
+          fila_id: string | null
+          id: number
+          tabla: string
+        }
+        Insert: {
+          accion: string
+          anonimizacion_id: number
+          created_at?: string
+          customer_id: number
+          datos: Json
+          fila_id?: string | null
+          id?: never
+          tabla: string
+        }
+        Update: {
+          accion?: string
+          anonimizacion_id?: number
+          created_at?: string
+          customer_id?: number
+          datos?: Json
+          fila_id?: string | null
+          id?: never
+          tabla?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_resguardo_anonimizacion_id_fkey"
+            columns: ["anonimizacion_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_anonimizados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clientes_resguardo_lecturas: {
+        Row: {
+          anonimizacion_id: number
+          created_at: string
+          customer_id: number
+          employee_id: string | null
+          employee_nombre: string | null
+          id: number
+          motivo: string
+        }
+        Insert: {
+          anonimizacion_id: number
+          created_at?: string
+          customer_id: number
+          employee_id?: string | null
+          employee_nombre?: string | null
+          id?: never
+          motivo: string
+        }
+        Update: {
+          anonimizacion_id?: number
+          created_at?: string
+          customer_id?: number
+          employee_id?: string | null
+          employee_nombre?: string | null
+          id?: never
+          motivo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_resguardo_lecturas_anonimizacion_id_fkey"
+            columns: ["anonimizacion_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_anonimizados"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8167,6 +8384,7 @@ export type Database = {
           acepta_programa_puntos: boolean | null
           acepta_promociones: boolean | null
           acumula_puntos: boolean
+          anonimizada_at: string | null
           categoria: string | null
           created_at: string | null
           departamento: string | null
@@ -8204,6 +8422,7 @@ export type Database = {
           acepta_programa_puntos?: boolean | null
           acepta_promociones?: boolean | null
           acumula_puntos?: boolean
+          anonimizada_at?: string | null
           categoria?: string | null
           created_at?: string | null
           departamento?: string | null
@@ -8241,6 +8460,7 @@ export type Database = {
           acepta_programa_puntos?: boolean | null
           acepta_promociones?: boolean | null
           acumula_puntos?: boolean
+          anonimizada_at?: string | null
           categoria?: string | null
           created_at?: string | null
           departamento?: string | null
@@ -30018,7 +30238,46 @@ export type Database = {
         }
         Returns: string
       }
+      datos_anonimizacion: {
+        Args: { p_customer?: number; p_solicitud: string }
+        Returns: Json
+      }
+      datos_anonimizacion_archivos: { Args: { p_id: number }; Returns: Json }
+      datos_anonimizacion_archivos_hechos: {
+        Args: { p_fallidos: string[]; p_id: number }
+        Returns: undefined
+      }
+      datos_anonimizacion_evaluar: {
+        Args: { p_customer: number; p_solicitud: string }
+        Returns: Json
+      }
+      datos_anonimizar_cliente: {
+        Args: {
+          p_confirmacion: string
+          p_customer: number
+          p_sin_documento_motivo?: string
+          p_solicitud: string
+        }
+        Returns: Json
+      }
+      datos_doc_norm: { Args: { p: string }; Returns: string }
+      datos_documento_anonimizado: {
+        Args: { p_documento: string }
+        Returns: Json
+      }
+      datos_huella: {
+        Args: { p_texto: string; p_tipo: string }
+        Returns: string
+      }
       datos_pedidos_de_mi_sala: { Args: never; Returns: Json }
+      datos_reactivar_cliente: {
+        Args: { p_documento: string; p_motivo: string; p_solicitud?: string }
+        Returns: Json
+      }
+      datos_resguardo_leer: {
+        Args: { p_anonimizacion: number; p_motivo: string }
+        Returns: Json
+      }
       decidir_bono_semestral: {
         Args: {
           p_employee_id: string

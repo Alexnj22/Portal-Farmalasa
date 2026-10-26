@@ -9,6 +9,12 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { vigenciaDelSaldo } from '@nucleo/utils/abonoTicket';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { useToastStore } from '@nucleo/store/toastStore';
+
+// Quien llama avisa sus propios errores; esto cubre el que se le escape, para
+// que el botón no quede trabado ni el fallo pase en silencio.
+const avisarFallo = (showToast, err) => showToast('No se pudo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Las dos acciones de un encargo que trae el reglamento de reservas v2 (rige
@@ -24,6 +30,7 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
     const [fecha, setFecha] = useState(encargo.fecha_estimada && encargo.fecha_estimada >= hoySV() ? encargo.fecha_estimada : sumarDias(hoySV(), 3));
     const [motivo, setMotivo] = useState('');
     const [enviando, setEnviando] = useState(false);
+    const showToast = useToastStore((s) => s.showToast);
     const valida = fecha && fecha >= hoySV() && fecha !== encargo.fecha_estimada;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Cambiar la fecha del encargo">
@@ -44,7 +51,7 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button icon={CalendarClock} loading={enviando} disabled={!valida}
-                    onClick={async () => { setEnviando(true); await onGuardar(fecha, motivo.trim() || null); setEnviando(false); }}>Cambiar y avisar</Button>
+                    onClick={async () => { setEnviando(true); try { await onGuardar(fecha, motivo.trim() || null); } catch (err) { avisarFallo(showToast, err); } finally { setEnviando(false); } }}>Cambiar y avisar</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );
@@ -58,6 +65,7 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
     const [eleccion, setEleccion] = useState('devolucion');
     const [nota, setNota] = useState('');
     const [enviando, setEnviando] = useState(false);
+    const showToast = useToastStore((s) => s.showToast);
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="El proveedor no entregó">
             <LiquidModal.Header>
@@ -80,7 +88,7 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button icon={eleccion === 'devolucion' ? PackageX : Wallet} loading={enviando}
-                    onClick={async () => { setEnviando(true); await onResolver(eleccion, nota.trim() || null); setEnviando(false); }}>
+                    onClick={async () => { setEnviando(true); try { await onResolver(eleccion, nota.trim() || null); } catch (err) { avisarFallo(showToast, err); } finally { setEnviando(false); } }}>
                     {eleccion === 'devolucion' ? 'Pedir la devolución' : 'Dejar a su favor'}
                 </Button>
             </LiquidModal.Footer>

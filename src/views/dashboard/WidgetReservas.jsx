@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, PhoneCall, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, PhoneCall, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -33,7 +33,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import {
     accionesDeReservaNucleo, agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
-    origenDelSaldo, plazoDeRetiro, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
+    origenDelSaldo, plazoDeRetiro, quienRevisaLaReceta, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
 } from '@nucleo/utils/reservasDeSala';
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
@@ -109,6 +109,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
 
     const [filas, setFilas] = useState([]);
     const [cargando, setCargando] = useState(true);
+    // Un error de lectura NO es «Sin reservas»: se dice y se ofrece reintentar.
+    const [errorCarga, setErrorCarga] = useState(null);
+    // La reserva (o el pedido) que se está por cancelar: pide confirmación y motivo.
+    const [cancelando, setCancelando] = useState(null);
     const [ocupada, setOcupada] = useState(null);
     const [whatsapp, setWhatsapp] = useState(null);
     // Reglamento v2, cláusula 9: la llamada al cliente queda anotada.
@@ -148,8 +152,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         try {
             setFilas(await fetchReservasDeSucursal(miSala, true));
             setAhora(Date.now());
+            setErrorCarga(null);
         } catch (err) {
             console.error('WidgetReservas: no se pudieron cargar', err);
+            setErrorCarga(err);
         } finally {
             setCargando(false);
         }
@@ -215,18 +221,36 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         try {
             // Un pedido de caja (2026-10-22) mezcla renglones listos y en camino:
             // «ya llegó» mueve sólo los que esperaban.
-            const ids = r.renglones ? r.renglones.filter((x) => estado === 'cancelada'
-                || (estado === 'lista' ? x.estado === 'pendiente' : x.estado === r.estado)).map((x) => x.id) : [r.id];
+            const ids = r.renglones ? r.renglones.filter((x) => (estado === 'lista' ? x.estado === 'pendiente' : x.estado === r.estado)).map((x) => x.id) : [r.id];
             for (const id of ids) await cambiarEstadoReserva(id, estado);
             if (estado === 'lista') {
                 if (r.tiene_app) showToast('Reserva lista', 'Le avisamos al cliente en la app.', 'success');
                 else setWhatsapp({ ...r, estado: 'lista', mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) });
             } else {
-                showToast(estado === 'retirada' ? 'Reserva retirada' : 'Reserva cancelada', '', 'success');
+                showToast('Reserva retirada', '', 'success');
             }
             cargar();
         } catch (err) {
             showToast('No se pudo cambiar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setOcupada(null);
+        }
+    };
+
+    // Cancelar (reglamento, cláusula 3.10) se confirma con un motivo y NO se
+    // deshace. Un pedido se cancela entero. Si falla, el diálogo sigue abierto
+    // para reintentar; si un pedido quedó a medias, la lista releída lo dice.
+    const cancelar = async (r, motivo) => {
+        setOcupada(r.id);
+        try {
+            const ids = (r.renglones ?? [r]).map((x) => x.id);
+            for (const id of ids) await cambiarEstadoReserva(id, 'cancelada', motivo);
+            showToast('Reserva cancelada', 'Lo que el cliente ya pagó queda como saldo a favor.', 'success');
+            setCancelando(null);
+            cargar();
+        } catch (err) {
+            showToast('No se pudo cancelar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+            cargar();
         } finally {
             setOcupada(null);
         }
@@ -277,12 +301,12 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             whatsapp: { icon: MessageCircle, onClick: () => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) }) },
             prorrogar: { icon: CalendarPlus, onClick: () => prorrogar(r) },
             llamada: { icon: PhoneCall, onClick: () => setLlamando(r) },
-            cancelar: { icon: XCircle, onClick: () => mover(r, 'cancelada') },
+            cancelar: { icon: XCircle, onClick: () => setCancelando(r) },
         };
         return accionesDeReservaNucleo(r, { soloLectura, puedeRecetas, puedePreventa })
             .filter((a) => hacer[a.k])
             .map((a) => ({ ...a, icon: hacer[a.k].icon, onClick: () => hacer[a.k].onClick(a),
-                loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar'].includes(a.k) }));
+                loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar', 'cancelar'].includes(a.k) }));
     };
 
     const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && !esBodega ? (
@@ -327,7 +351,13 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         return (
             <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
                 <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-2'}>
-                    {!esBodega && <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />}
+                    {!esBodega && (errorCarga ? (
+                        <EmptyState icon={AlertTriangle} compact title="No se pudieron leer las reservas"
+                            subtitle={mensajeAmigable(errorCarga, 'Revisa la conexión e intenta de nuevo.')}
+                            action={<Button variant="secondary" size="sm" onClick={() => { setCargando(true); cargar(); }}>Reintentar</Button>} />
+                    ) : (
+                        <EmptyState icon={CheckCircle2} compact title="Sin reservas" subtitle="Cuando un cliente aparte algo desde la app, aparece aquí." />
+                    ))}
                     {/* El saldo a favor de un cliente vale en cualquier sala: su código se busca aunque aquí no haya reservas. */}
                     {!esBodega && codigoDeAfuera === undefined && (
                         <SearchInput value={codigo} onChange={setCodigo} placeholder="¿Saldo a favor? Escanea el código (R-… o P-…)"
@@ -492,7 +522,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                                 onClick={() => setReceta(r)}>Ver receta</Button>
                                         ) : (
                                             <Badge variant="neutral" uppercase={false}
-                                                title="Revisar recetas de la app pide su propio permiso">Receta por revisar · sin permiso para revisarla</Badge>
+                                                title="Revisar recetas de la app pide su propio permiso">{quienRevisaLaReceta(r, { puedeRecetas })}</Badge>
                                         ))
                                     ) : soloLectura ? null : (
                                         <>
@@ -529,13 +559,14 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                     )}
                                     {!soloLectura && (
                                         <Button variant="ghost" size="xs" iconOnly icon={XCircle} title="Cancelar reserva"
-                                            onClick={() => mover(r, 'cancelada')} />
+                                            loading={ocupada === r.id} onClick={() => setCancelando(r)} />
                                     )}
                                 </>
                     );
                     return completa ? (
                     <li key={`${r.pedido ?? ''}-${r.id}`} className="min-w-0">
-                        <TarjetaDeReserva r={r} todas={todas} acciones={accionesDeReserva(r)} onAbrir={setViendo} />
+                        <TarjetaDeReserva r={r} todas={todas} acciones={accionesDeReserva(r)} onAbrir={setViendo}
+                            aviso={quienRevisaLaReceta(r, { puedeRecetas })} />
                     </li>
                     ) : (
                     <li key={`${r.pedido ?? ''}-${r.id}`}>
@@ -713,6 +744,12 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     onDevuelto={() => { setSaldosDeFuera((l) => l.filter((x) => x.id !== devolver.id)); setDevolver(null); cargar(); }}
                     devolverSaldoAFavor={devolverSaldoAFavor} appendAuditLog={appendAuditLog} showToast={showToast} />
             )}
+            {cancelando && (
+                <ConMotivo titulo={`Cancelar ${cancelando.pedido ?? codigoDeReserva(cancelando.id)}`}
+                    texto={`${cancelando.renglones?.length > 1 ? `Se cancela el pedido entero (${cancelando.renglones.length} productos)` : `Se cancela ${cancelando.cantidad} × ${cancelando.producto}`}. No se deshace. Lo que el cliente ya pagó queda como saldo a favor suyo.`}
+                    etiqueta="Motivo (queda en la bitácora)" boton="Cancelar reserva" onCerrar={() => setCancelando(null)}
+                    onConfirmar={(motivo) => cancelar(cancelando, motivo)} />
+            )}
             {llamando && (
                 <RegistrarLlamada reserva={llamando.id} telefono={llamando.telefono}
                     titulo={`${llamando.pedido ?? codigoDeReserva(llamando.id)} · ${String(llamando.cliente ?? '').split(/\s+/)[0]}`}
@@ -721,7 +758,9 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             {whatsapp && (
                 <AvisoWhatsapp reserva={whatsapp} onCerrar={() => setWhatsapp(null)}
                     onEnviado={async () => {
-                        try { await marcarAvisadaPorWhatsapp(whatsapp.id); } catch (err) { console.error(err); }
+                        try { await marcarAvisadaPorWhatsapp(whatsapp.id); } catch (err) {
+                            console.warn(`WidgetReservas: no se anotó el aviso por WhatsApp de la reserva ${whatsapp.id}`, err);
+                        }
                         setWhatsapp(null);
                         cargar();
                     }} />

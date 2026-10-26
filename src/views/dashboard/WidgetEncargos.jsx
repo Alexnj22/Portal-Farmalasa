@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX } from 'lucide-react';
+import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -21,7 +21,8 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { cambiarFechaDeEncargo, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
+import { EmptyState } from '../../components/common/StateViews';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
 const DialogoRetirar = lazy(() => import('../../components/caja/DialogoRetirar'));
@@ -68,6 +69,8 @@ const estadoDe = (e) => { const x = estadoDeEncargo(e); return { label: x.texto,
 export default function WidgetEncargos({ branchId = null, soloLectura = false, completa = false }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
+    // Un error de lectura no es «no hay encargos»: se dice y se ofrece reintentar.
+    const [errorCarga, setErrorCarga] = useState(null);
     const [ocupado, setOcupado] = useState(null);
     const [confirmando, setConfirmando] = useState(null);
     const [rechazando, setRechazando] = useState(null);
@@ -80,7 +83,11 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
     const reglas = useReglasDeReserva();
 
     const cargar = useCallback(async () => {
-        try { setFilas(await fetchEncargos(branchId, true)); } catch (err) { console.error('WidgetEncargos: no se pudieron cargar', err); setFilas([]); }
+        try { setFilas(await fetchEncargos(branchId, true)); setErrorCarga(null); } catch (err) {
+            console.error('WidgetEncargos: no se pudieron cargar', err);
+            setErrorCarga(err);
+            setFilas((f) => f ?? []);
+        }
     }, [branchId]);
     useEffect(() => { cargar(); const t = setInterval(cargar, 120_000); return () => clearInterval(t); }, [cargar]);
 
@@ -157,6 +164,13 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
         }
     };
 
+    if (errorCarga && !filas?.length) {
+        return (
+            <EmptyState icon={AlertTriangle} compact title="No se pudieron leer los encargos"
+                subtitle={mensajeAmigable(errorCarga, 'Revisa la conexión e intenta de nuevo.')}
+                action={<Button variant="secondary" size="sm" onClick={cargar}>Reintentar</Button>} />
+        );
+    }
     if (!filas?.length) return null;
     return (
         <div className="space-y-1.5">
@@ -168,26 +182,26 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                     const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
                     // En orden: lo que destraba al encargo primero.
                     const acc = [
-                        !soloLectura && e.estado === 'solicitado' && { k: 'confirmar', label: 'Confirmar', icon: Check, onClick: () => setConfirmando(e) },
-                        !soloLectura && e.estado === 'aceptado' && { k: 'pedido', label: 'Ya se pidió', icon: Truck, loading: ocupado === e.id, onClick: () => mover(e, 'pedido') },
-                        !soloLectura && sinVincular(e) && { k: 'vincular', label: 'Vincular producto', icon: Link2, onClick: () => setVinculando(e) },
-                        !soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && { k: 'llego', label: 'Llegó', icon: PackageCheck,
+                        !soloLectura && e.estado === 'solicitado' && { k: 'confirmar', label: ROT.confirmar, icon: Check, onClick: () => setConfirmando(e) },
+                        !soloLectura && e.estado === 'aceptado' && { k: 'pedido', label: ROT.pedido, icon: Truck, loading: ocupado === e.id, onClick: () => mover(e, 'pedido') },
+                        !soloLectura && sinVincular(e) && { k: 'vincular', label: ROT.vincular, icon: Link2, onClick: () => setVinculando(e) },
+                        !soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && { k: 'llego', label: ROT.llego, icon: PackageCheck,
                             loading: ocupado === e.id, disabled: sinVincular(e),
                             title: sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined, onClick: () => mover(e, 'listo') },
-                        !soloLectura && e.estado === 'listo' && { k: 'entregar', label: 'Entregar', icon: CheckCircle2, onClick: () => setRetirando(e) },
-                        !soloLectura && wa && { k: 'whatsapp', label: 'Avisar por WhatsApp', icon: MessageCircle,
+                        !soloLectura && e.estado === 'listo' && { k: 'entregar', label: ROT.entregar, icon: CheckCircle2, onClick: () => setRetirando(e) },
+                        !soloLectura && wa && { k: 'whatsapp', label: ROT.whatsapp, icon: MessageCircle,
                             onClick: () => avisarPorWhatsapp(e, wa) },
-                        !soloLectura && e.registrar_llamada && { k: 'llamada', label: 'Registrar llamada', icon: PhoneCall, onClick: () => setLlamando(e) },
-                        !soloLectura && e.puede_cambiar_fecha && { k: 'fecha', label: 'Cambiar fecha', icon: CalendarClock,
+                        !soloLectura && e.registrar_llamada && { k: 'llamada', label: ROT.llamada, icon: PhoneCall, onClick: () => setLlamando(e) },
+                        !soloLectura && e.puede_cambiar_fecha && { k: 'fecha', label: ROT.fecha, icon: CalendarClock,
                             title: 'El proveedor cambió la fecha: el cliente recibe el aviso', onClick: () => setCambiandoFecha(e) },
-                        !soloLectura && e.puede_no_entrego && { k: 'no_entrego', label: 'El proveedor no entregó', icon: PackageX,
+                        !soloLectura && e.puede_no_entrego && { k: 'no_entrego', label: ROT.no_entrego, icon: PackageX,
                             title: 'El cliente elige la devolución completa o aplicarlo a otro producto', onClick: () => setNoEntrego(e) },
-                        e.foto_url && { k: 'foto', label: 'Ver la foto', icon: ImageIcon, onClick: () => openStoredFile(e.foto_url) },
-                        !soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) && { k: 'prorrogar', label: 'Prorrogar 7 días', icon: CalendarPlus,
+                        e.foto_url && { k: 'foto', label: ROT.foto, icon: ImageIcon, onClick: () => openStoredFile(e.foto_url) },
+                        !soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) && { k: 'prorrogar', label: ROT.prorrogar, icon: CalendarPlus,
                             loading: ocupado === e.id, title: 'Una sola prórroga', onClick: () => prorrogar(e) },
-                        !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: 'Pasar a saldo a favor',
+                        !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: ROT.saldo,
                             icon: Wallet, title: 'El cliente no lo retira o desiste: lo pagado queda a su favor', onClick: () => setASaldo(e) },
-                        !soloLectura && e.estado === 'solicitado' && { k: 'rechazar', label: 'No se puede conseguir', icon: X, onClick: () => setRechazando(e) },
+                        !soloLectura && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
                     ].filter(Boolean);
                     const estado = estadoDe(e);
                     return (
@@ -200,6 +214,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                     `${e.cantidad} × ${e.producto}`,
                                     e.producto_nuevo ? (e.product_id ? `Producto nuevo → ${e.producto_catalogo ?? 'vinculado'}` : sinVincular(e) && e.sugerido ? `Producto nuevo · ¿ya está como «${e.sugerido}»?` : 'Producto nuevo') : null,
                                     e.reserva ? `Resto de la reserva ${e.reserva}` : null,
+                                    notaDeEncargo(e) || null,
                                     textoDeNivel(e.nivel),
                                     ultimoAviso(e),
                                 ]}
@@ -225,27 +240,28 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                             acciones={(
                                 <>
                                     <Badge variant={estadoDe(e)?.variant ?? 'neutral'} uppercase={false}>{estadoDe(e)?.label ?? e.estado}</Badge>
+                                    {notaDeEncargo(e) && <span className="text-caption text-content-2">{notaDeEncargo(e)}</span>}
                                     {sinVincular(e) && e.sugerido && <Badge variant="info" uppercase={false} title={`Parece que ya entró como «${e.sugerido}»`}>¿Ya está en el catálogo?</Badge>}
                                     {!soloLectura && !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono) && (
-                                        <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
+                                        <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title={ROT.whatsapp}
                                             onClick={() => avisarPorWhatsapp(e, whatsappDe(e.telefono))} />
                                     )}
                                     {!soloLectura && e.estado === 'solicitado' && (<>
-                                        <Button variant="primary" size="xs" icon={Check} onClick={() => setConfirmando(e)}>Confirmar</Button>
-                                        <Button variant="ghost" size="xs" iconOnly icon={X} title="No se puede conseguir" onClick={() => setRechazando(e)} />
+                                        <Button variant="primary" size="xs" icon={Check} onClick={() => setConfirmando(e)}>{ROT.confirmar}</Button>
+                                        <Button variant="ghost" size="xs" iconOnly icon={X} title={ROT.rechazar} onClick={() => setRechazando(e)} />
                                     </>)}
-                                    {!soloLectura && e.estado === 'aceptado' && <Button variant="secondary" size="xs" icon={Truck} loading={ocupado === e.id} onClick={() => mover(e, 'pedido')}>Pedido</Button>}
-                                    {e.foto_url && <Button variant="ghost" size="xs" iconOnly icon={ImageIcon} title="Ver la foto" onClick={() => openStoredFile(e.foto_url)} />}
-                                    {!soloLectura && sinVincular(e) && <Button variant="secondary" size="xs" icon={Link2} onClick={() => setVinculando(e)}>Vincular producto</Button>}
+                                    {!soloLectura && e.estado === 'aceptado' && <Button variant="secondary" size="xs" icon={Truck} loading={ocupado === e.id} onClick={() => mover(e, 'pedido')}>{ROT.pedido}</Button>}
+                                    {e.foto_url && <Button variant="ghost" size="xs" iconOnly icon={ImageIcon} title={ROT.foto} onClick={() => openStoredFile(e.foto_url)} />}
+                                    {!soloLectura && sinVincular(e) && <Button variant="secondary" size="xs" icon={Link2} onClick={() => setVinculando(e)}>{ROT.vincular}</Button>}
                                     {!soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && <Button variant="secondary" size="xs" icon={PackageCheck} loading={ocupado === e.id}
-                                        disabled={sinVincular(e)} title={sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined} onClick={() => mover(e, 'listo')}>Llegó</Button>}
+                                        disabled={sinVincular(e)} title={sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined} onClick={() => mover(e, 'listo')}>{ROT.llego}</Button>}
                                     {vencido(e) && <Badge variant="warning" uppercase={false}>Sin retirar · llamar</Badge>}
-                                    {!soloLectura && e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setRetirando(e)}>Entregar</Button>}
-                                    {!soloLectura && e.registrar_llamada && <Button variant="ghost" size="xs" iconOnly icon={PhoneCall} title="Registrar llamada" onClick={() => setLlamando(e)} />}
+                                    {!soloLectura && e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setRetirando(e)}>{ROT.entregar}</Button>}
+                                    {!soloLectura && e.registrar_llamada && <Button variant="ghost" size="xs" iconOnly icon={PhoneCall} title={ROT.llamada} onClick={() => setLlamando(e)} />}
                                     {!soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) && <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupado === e.id}
-                                        title="Una sola prórroga de 7 días" onClick={() => prorrogar(e)}>Prorrogar</Button>}
+                                        title="Una sola prórroga" onClick={() => prorrogar(e)}>{ROT.prorrogar}</Button>}
                                     {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && (
-                                        <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste: lo pagado queda a su favor" onClick={() => setASaldo(e)}>A saldo a favor</Button>
+                                        <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste: lo pagado queda a su favor" onClick={() => setASaldo(e)}>{ROT.saldo}</Button>
                                     )}
                                 </>
                             )} />
@@ -253,7 +269,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                 ))}
             </ul>
             )}
-            {confirmando && <Confirmar encargo={confirmando} onClose={() => setConfirmando(null)}
+            {confirmando && <Confirmar encargo={confirmando} enviando={ocupado === confirmando.id} onClose={() => setConfirmando(null)}
                 onConfirmar={async (datos) => { if (await mover(confirmando, 'confirmar', datos)) setConfirmando(null); }} />}
             {retirando && (
                 <Suspense fallback={null}>
@@ -269,13 +285,13 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                 onClose={() => setLlamando(null)} onListo={() => { setLlamando(null); cargar(); }} />}
             {cambiandoFecha && <CambiarFecha encargo={cambiandoFecha} onClose={() => setCambiandoFecha(null)} onGuardar={guardarFecha} />}
             {noEntrego && <NoEntrego encargo={noEntrego} reglas={reglas} onClose={() => setNoEntrego(null)} onResolver={resolverNoEntrego} />}
-            {rechazando && <Rechazar encargo={rechazando} onClose={() => setRechazando(null)}
+            {rechazando && <Rechazar encargo={rechazando} enviando={ocupado === rechazando.id} onClose={() => setRechazando(null)}
                 onRechazar={async (nota) => { if (await mover(rechazando, 'rechazar', { nota })) setRechazando(null); }} />}
         </div>
     );
 }
 
-function Confirmar({ encargo, onClose, onConfirmar }) {
+function Confirmar({ encargo, enviando = false, onClose, onConfirmar }) {
     const [precio, setPrecio] = useState('');
     const [fecha, setFecha] = useState(sumarDias(hoySV(), 3));
     const [nota, setNota] = useState('');
@@ -307,19 +323,19 @@ function Confirmar({ encargo, onClose, onConfirmar }) {
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                <Button icon={Check} disabled={!valido} onClick={() => onConfirmar({ precio: p, fecha, nota: nota.trim() || null })}>Confirmar y avisar</Button>
+                <Button icon={Check} loading={enviando} disabled={!valido || enviando} onClick={() => onConfirmar({ precio: p, fecha, nota: nota.trim() || null })}>Confirmar y avisar</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );
 }
 
-function Rechazar({ encargo, onClose, onRechazar }) {
-    const titulo = `No se puede conseguir ${encargo.codigo}`;
+function Rechazar({ encargo, enviando = false, onClose, onRechazar }) {
+    const titulo = `${ROT.rechazar} ${encargo.codigo}`;
     const [nota, setNota] = useState('');
     // Un producto que no tenemos se rechaza con motivo: es lo que se le dice al cliente.
     const exigeMotivo = !!encargo.producto_nuevo;
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="No se puede conseguir">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel={ROT.rechazar}>
             <LiquidModal.Header><h2 className="text-body-xl font-semibold text-content">{titulo}</h2></LiquidModal.Header>
             <LiquidModal.Body>
                 <PortalTextarea label="Motivo para el cliente" rows={3} value={nota} maxLength={300} onChange={(e) => setNota(e.target.value)}
@@ -327,13 +343,14 @@ function Rechazar({ encargo, onClose, onRechazar }) {
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
-                <Button variant="danger" icon={X} disabled={exigeMotivo && !nota.trim()} onClick={() => onRechazar(nota.trim() || null)}>Avisar al cliente</Button>
+                <Button variant="danger" icon={X} loading={enviando} disabled={(exigeMotivo && !nota.trim()) || enviando} onClick={() => onRechazar(nota.trim() || null)}>Avisar al cliente</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );
 }
 
 function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
+    const showToast = useToastStore((s) => s.showToast);
     const [motivo, setMotivo] = useState('');
     const [enviando, setEnviando] = useState(false);
     return (
@@ -350,7 +367,9 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button variant="primary" icon={Wallet} loading={enviando} disabled={motivo.trim().length < 3}
-                    onClick={async () => { setEnviando(true); await onConfirmar(motivo.trim()); setEnviando(false); }}>Pasar a saldo a favor</Button>
+                    onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } catch (err) {
+                        showToast('No se pudo pasar a saldo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+                    } finally { setEnviando(false); } }}>{ROT.saldo}</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

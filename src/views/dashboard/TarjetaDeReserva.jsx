@@ -37,7 +37,9 @@ import {
 //      (avisar, prorrogar, cancelar) en «Más», que abre el detalle. Nunca un
 //      ícono suelto que haya que adivinar.
 // ═══════════════════════════════════════════════════════════════════════════
-export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAbrir }) {
+// `aviso`: una línea para cuando la tarjeta no tiene lo que esa persona puede
+// hacer (p. ej. quién revisa la receta).
+export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAbrir, aviso = '' }) {
     const filas = renglonesDe(r);
     const estado = estadoDeReserva(r);
     const { total, pagado, falta, pagadoTodo } = cuentasDeReserva(r);
@@ -124,8 +126,11 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                 </span>
             </button>
 
+            {aviso && (
+                <p className="px-4 pt-3 border-t border-divider text-caption text-content-2 break-words">{aviso}</p>
+            )}
             {acciones.length > 0 && (
-                <div className="flex items-center gap-2 px-4 py-3 border-t border-divider">
+                <div className={`flex items-center gap-2 px-4 py-3 ${aviso ? '' : 'border-t border-divider'}`}>
                     {hayMas && (
                         <Button variant="ghost" size="sm" icon={MoreHorizontal} onClick={() => onAbrir?.(r)}
                             title={acciones.slice(2).map((a) => a.label).join(' · ')}>Más</Button>

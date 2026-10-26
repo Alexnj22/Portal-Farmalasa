@@ -13,6 +13,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { textoAlNoAceptarElPrecio, textoDeResolverDeLaApp } from '@nucleo/utils/reservasDeSala';
 import {
     ajustarReserva, codigoDeReserva, decidirPrecioDeBodega, encargarRestoABodega, faltaDeReserva, preciosDeProducto, repartoDelAjuste,
 } from '@nucleo/data/reservas';
@@ -60,6 +61,10 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
         ...(falta > 0 && !precioDistinto ? [{ value: 'pedir', label: 'Pedir a otra sala' }, { value: 'bodega', label: 'A Bodega' }] : []),
         ...(deLaApp ? [] : [{ value: 'cliente', label: 'Lo decide el cliente' }]),
     ];
+    // Lo que se le dice a quien resuelve una reserva de la app: sólo lo que de
+    // verdad se le ofrece. Sin ninguna opción (no falta nada por pedir), no hay
+    // nada que decidir: lo que falta ya viene en camino.
+    const textoDeLaApp = textoDeResolverDeLaApp(r, { hayOpciones: opciones.length > 0, precioDistinto });
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Resolver reserva">
@@ -82,7 +87,7 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
                             onDecidir={(acepta) => hacer(() => decidirPrecioDeBodega(r.id, acepta),
                                 acepta ? 'Precio aceptado' : 'Precio no aceptado',
                                 (res) => (acepta ? (res?.codigo_nueva ? `El resto quedó en ${res.codigo_nueva}, a su precio.` : 'Bodega sigue con el pedido.')
-                                    : 'Ahora decide con el cliente: lo que llegó, una alternativa o cancelar.'))} />
+                                    : textoAlNoAceptarElPrecio(r)))} />
                     )}
                     {vista === 'pedir' && <PedirAOtraSala reserva={r} falta={falta} ocupado={ocupado} hacer={hacer} />}
                     {vista === 'bodega' && (
@@ -99,12 +104,7 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
                         </div>
                     )}
                     {vista === 'cliente' && !deLaApp && <LoDecideElCliente reserva={r} ocupado={ocupado} hacer={hacer} />}
-                    {deLaApp && (
-                        <p className="text-caption text-content-3">
-                            Reserva de la app: mientras viene en camino no vence. Si el cliente no la quiere así, cancélala desde la
-                            lista (o él desde la app); lo pagado queda a su favor.
-                        </p>
-                    )}
+                    {textoDeLaApp && <p className="text-caption text-content-3">{textoDeLaApp}</p>}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>

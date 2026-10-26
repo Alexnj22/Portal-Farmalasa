@@ -2331,7 +2331,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       };
     };
     if (accion === "mis_reservas") {
-      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, saldo_favor_inicial, prorrogada_at, plazo_hasta:reserva_plazo_hasta, prorrogable:reserva_prorrogable";
+      const COLS = "id, estado, origen, pedido, documento, producto_nombre, cantidad, precio_unitario, precio_normal, oferta_titulo, oferta_fin, branch_id, lista_at, vence_at, created_at, cerrada_at, anticipo, pago_estado, pago_metodo, pagado_at, entrega, direccion_entrega, costo_envio, saldo_favor, saldo_favor_vence, saldo_favor_usado_at, receta_ruta, receta_estado, receta_motivo, receta_subida_at, receta_fotos, bajo_receta, pago_prueba, vencida_motivo, saldo_favor_origen, saldo_favor_devuelto_at, saldo_favor_inicial, prorrogada_at, traslado_estado, traslado_por_llegar, plazo_hasta:reserva_plazo_hasta, prorrogable:reserva_prorrogable";
       // `plazo_hasta` (2026-10-21) lo calcula la base (`reserva_plazo_hasta`):
       // hasta cuándo vale el estado actual, para no escribir «24 horas» en la app.
       // `en_revision` (2026-10-12): esperando que la sucursal revise la receta.
@@ -2420,12 +2420,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       });
     }
 
-    // El tope de «3 vencidas en 30 días» (2026-10-19) cuenta sólo lo que fue
-    // del cliente: no retirarla o no mandar la foto de la receta. Si venció
-    // porque la sala no revisó la receta o no la preparó a tiempo, o porque la
-    // oferta terminó, no le cuenta en contra (el aviso se lo dice así).
-    const vencidaDelCliente = (r: any) => r.estado === "vencida"
-      && !["receta_sin_revisar", "sin_preparar", "oferta_terminada"].includes(String(r.vencida_motivo ?? ""));
+    // El tope de «3 vencidas en 30 días» cuenta SÓLO las que el cliente dejó
+    // vencer lista sin retirarlas. Lo decide el reglamento de reservas (3.7,
+    // rige el 2026-11-15): «si en 30 días deja vencer tres reservas sin
+    // retirarlas». Una que venció sin la foto de la receta (`sin_receta`) no
+    // es «sin retirar» y ya no cuenta — antes sí. Tampoco cuentan las que
+    // fueron de la sala (`receta_sin_revisar`, `sin_preparar`) ni la oferta
+    // terminada. Por lista blanca a propósito: un motivo nuevo no cuenta en
+    // contra del cliente hasta que alguien lo decida.
+    const vencidaDelCliente = (r: any) => r.estado === "vencida" && r.vencida_motivo === "sin_retirar";
     if (accion === "reservar") {
       const ofertaId = String(body?.oferta_id ?? "");
       const productoId = Number(body?.producto_id);
@@ -2665,11 +2668,25 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     }
 
     if (accion === "mis_encargos") {
-      const { data, error } = await admin.from("app_encargos")
-        .select("id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at, listo_at, prorrogado_at, prorrogable:encargo_prorrogable, retirar_hasta:encargo_retirar_hasta")
-        .eq("customer_id", customerId).gte("created_at", new Date(Date.now() - 90 * 86400_000).toISOString())
-        .order("created_at", { ascending: false }).limit(20);
-      if (error) throw error;
+      // Un encargo ABIERTO sale siempre, sin importar cuándo se pidió (uno
+      // pedido al proveedor hace 4 meses sigue siendo del cliente); los
+      // cerrados, sólo los de los últimos 90 días. Topes deliberados muy por
+      // debajo de las 1000 filas de PostgREST: un cliente tiene a lo sumo 3
+      // abiertos (lo frena `encargar`), así que 50 sobra.
+      const SEL_ENC = "id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at, listo_at, prorrogado_at, prorrogable:encargo_prorrogable, retirar_hasta:encargo_retirar_hasta";
+      const ABIERTOS = ["solicitado", "confirmado", "aceptado", "pedido", "listo"];
+      const [abiertos, cerrados] = await Promise.all([
+        admin.from("app_encargos").select(SEL_ENC).eq("customer_id", customerId).in("estado", ABIERTOS)
+          .order("created_at", { ascending: false }).limit(50),
+        admin.from("app_encargos").select(SEL_ENC).eq("customer_id", customerId)
+          .not("estado", "in", `(${ABIERTOS.join(",")})`)
+          .gte("created_at", new Date(Date.now() - 90 * 86400_000).toISOString())
+          .order("created_at", { ascending: false }).limit(20),
+      ]);
+      if (abiertos.error) throw abiertos.error;
+      if (cerrados.error) throw cerrados.error;
+      const data = [...(abiertos.data ?? []), ...(cerrados.data ?? [])]
+        .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at)));
       const { data: salas, error: eS } = await admin.from("branches").select("id, name");
       if (eS) throw eS;
       const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));

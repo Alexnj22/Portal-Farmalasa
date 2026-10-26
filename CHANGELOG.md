@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1355.5 — Reservas: cancelar con motivo, receta en revisión cancelable y reglas del reglamento
+
+Revisión completa del flujo de reservas contra el reglamento de reservas y encargos especiales (rige el 15-nov-2026).
+
+- Portal: cancelar una reserva pide confirmación y motivo (antes era un clic y no se deshace); el motivo le llega al cliente. La app del personal también lo pide.
+- Una reserva que espera la receta se puede cancelar desde la sala (cláusula 3.10). Quien no revisa recetas ve quién la revisa.
+- Si la lista de reservas o encargos no carga, se dice y se puede reintentar (antes decía «Sin reservas»).
+- Confirmar/Rechazar encargo, cambiar fecha, «no entregó» y revisar receta ya no se envían dos veces.
+- Rótulos de encargo iguales en web y app, salen del núcleo; «Esperando pago» dice dónde se cobra.
+- App de clientes: las «3 vencidas» cuentan sólo las que se dejaron vencer sin retirar (cláusula 3.7); un encargo abierto ya no desaparece a los 90 días; el encargo listo muestra hasta cuándo retirarlo; si la conexión se corta al reservar avisa que se revise antes de reintentar (no duplica); los términos nuevos se recargan; la reserva que viene en camino lo dice.
+
 ## v2.1355.4 — El branch de pruebas vuelve a construirse: guarda de replay en la migración de las seis fichas jurídicas
 
 El workflow diario del entorno de pruebas falló el 2026-10-25: el push al

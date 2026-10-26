@@ -33,6 +33,9 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
     setEnviando(true); setError(null);
     const r = await pedir('encargar', { product_id: producto.id, factor: presentacion?.factor ?? 1, cantidad: cant, branch_id: sala, nota: nota.trim() || null });
     setEnviando(false);
+    // Cortada por tiempo (lib/api): pudo haber entrado, así que no se ofrece
+    // repetirla a ciegas — un segundo encargo igual sería un duplicado.
+    if (r?.sinConfirmar) { setError('No sabemos si se guardó. Revisa Mis reservas antes de intentar de nuevo.'); return; }
     if (!r?.ok) { setError(r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setHecho(r.codigo);

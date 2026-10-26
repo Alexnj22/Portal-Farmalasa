@@ -27,7 +27,7 @@ import {
   ajustarReserva, codigoDeReserva, decidirPrecioDeBodega, encargarRestoABodega, faltaDeReserva, fetchReservasDeSucursal, preciosDeProducto, repartoDelAjuste,
   reservaPorTraer,
 } from '@nucleo/data/reservas';
-import { pilaDelCliente } from '@nucleo/utils/reservasDeSala';
+import { pilaDelCliente, textoAlNoAceptarElPrecio, textoDeResolverDeLaApp } from '@nucleo/utils/reservasDeSala';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -114,9 +114,7 @@ export default function ResolverReservaNativo() {
             </>
           ) : null}
           {vista === 'cliente' && !deLaApp ? <LoDecideElCliente r={r} ocupado={ocupado} hacer={hacer} /> : null}
-          {deLaApp ? (
-            <Aviso texto="Reserva de la app: mientras viene en camino no vence. Si el cliente no la quiere así, cancélala desde la lista (o él desde la app); lo pagado queda a su favor." />
-          ) : null}
+          {deLaApp ? <Aviso texto={textoDeResolverDeLaApp(r, { hayOpciones: opciones.length > 0, precioDistinto })} /> : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </>
@@ -128,7 +126,7 @@ function PrecioDeBodega({ r, ocupado, hacer }) {
   const decidir = (acepta) => hacer(() => decidirPrecioDeBodega(r.id, acepta),
     acepta ? 'Precio aceptado' : 'Precio no aceptado',
     (res) => (acepta ? (res?.codigo_nueva ? `El resto quedó en ${res.codigo_nueva}, a su precio.` : 'Bodega sigue con el pedido.')
-      : 'Ahora decide con el cliente: lo que llegó, una alternativa o cancelar.'));
+      : textoAlNoAceptarElPrecio(r)));
   return (
     <>
       <Seccion titulo="Bodega lo consigue a otro precio" pie="Pregúntale al cliente.">

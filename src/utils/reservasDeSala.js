@@ -227,6 +227,10 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
         if (r.receta_ruta && (r.puede_revisar_receta ?? puedeRecetas)) {
             lista.push({ k: 'receta', label: r.receta_estado === 'pendiente' ? 'Revisar receta' : 'Ver receta' });
         }
+        // Reglamento, cláusula 3.10: se cancela cualquier reserva no retirada,
+        // también la que espera receta (la base lo permite). Quien no revisa
+        // recetas no la aparta, pero sí la cancela si el cliente lo pide.
+        if (!soloLectura) lista.push({ k: 'cancelar', label: 'Cancelar reserva', menor: true });
         return lista;
     }
     const hayPendiente = filas.some((x) => x.estado === 'pendiente');
@@ -252,6 +256,42 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
     if (filas.some((x) => x.registrar_llamada)) lista.push({ k: 'llamada', label: 'Registrar llamada', title: 'Anota que llamaste al cliente y qué respondió' });
     lista.push({ k: 'cancelar', label: 'Cancelar reserva', menor: true });
     return lista;
+}
+
+/**
+ * El texto de «Resolver» para una reserva de la APP (2026-10-26): ahí no se
+ * ajusta (`reserva_ajustar` es de sala), así que se dice sólo lo que de verdad
+ * se ofrece. `hayOpciones`: si el diálogo muestra alguna (precio, otra sala o
+ * Bodega). Sin ninguna, no hay nada que decidir. Vacío para una de sala.
+ */
+export function textoDeResolverDeLaApp(r, { hayOpciones = false, precioDistinto = false } = {}) {
+    if (r?.origen !== 'app') return '';
+    if (!hayOpciones) return 'Todo lo que falta ya viene en camino: no hay nada que decidir. Mientras viene en camino, la reserva no vence.';
+    return `Reserva de la app: aquí sólo se ${precioDistinto ? 'decide el precio que da Bodega' : 'consigue lo que falta (de otra sala o de Bodega)'}. `
+        + 'Si el cliente no la quiere así, cancélala desde la lista (o él desde la app); lo pagado queda a su favor.';
+}
+
+/**
+ * Si la reserva quedó pero el traslado no se pidió (2026-10-26). Un traslado
+ * pedido después desde Inventario NO queda amarrado a la reserva —y para una
+ * reserva de sala no hay «Traer de otra sala» en la lista—, así que no se
+ * completa sola: hay que marcarla lista a mano cuando llegue.
+ */
+export const SI_EL_TRASLADO_NO_SALIO = 'Pide el traslado desde Inventario y, cuando llegue, márcala como lista en Reservas.';
+
+/** Lo que sigue cuando el cliente no acepta el precio de Bodega. */
+export const textoAlNoAceptarElPrecio = (r) => (r?.origen === 'app'
+    ? 'Si el cliente no la quiere así, cancélala desde la lista; lo pagado queda a su favor.'
+    : 'Ahora decide con el cliente: lo que llegó, una alternativa o cancelar.');
+
+/**
+ * Lo que dice la tarjeta de una reserva que espera receta cuando quien la mira
+ * no la puede revisar (2026-10-26): sin esto quedaba sin texto ni botón y no
+ * se sabía quién la tenía que mover. Vacío si no aplica.
+ */
+export function quienRevisaLaReceta(r, { puedeRecetas = false } = {}) {
+    if (!r || r.estado !== 'en_revision' || !r.receta_ruta) return '';
+    return (r.puede_revisar_receta ?? puedeRecetas) ? '' : 'La revisa quien tiene permiso de recetas';
 }
 
 /**
@@ -356,6 +396,37 @@ const ESTADO_DE_ENCARGO_DE_RESERVA = {
     aceptado: { texto: 'Reservado · pedir', tono: 'success' },
 };
 export const estadoDeEncargo = (e) => (e?.reserva && ESTADO_DE_ENCARGO_DE_RESERVA[e.estado]) || ESTADO_DE_ENCARGO[e?.estado] || { texto: e?.estado ?? '', tono: 'neutral' };
+
+/**
+ * Los rótulos de las acciones de un encargo (2026-10-26): los mismos en el
+ * portal y en la app del personal. Escritos dos veces se habían separado
+ * («Pedido» / «Ya se pidió», «No se consigue» / «No se puede conseguir»…).
+ */
+export const ROTULOS_DE_ENCARGO = {
+    confirmar: 'Confirmar',
+    rechazar: 'No se puede conseguir',
+    pedido: 'Ya se pidió',
+    vincular: 'Vincular producto',
+    llego: 'Llegó',
+    entregar: 'Entregar',
+    whatsapp: 'Avisar por WhatsApp',
+    llamada: 'Registrar llamada',
+    fecha: 'Cambiar fecha',
+    no_entrego: 'El proveedor no entregó',
+    foto: 'Ver la foto',
+    prorrogar: 'Prorrogar 7 días',
+    saldo: 'Pasar a saldo a favor',
+};
+
+/**
+ * Lo que dice la tarjeta de un encargo que no tiene botón en la sala. Hoy: el
+ * confirmado que espera el pago del cliente («Esperando pago»), que se cobra
+ * desde otra pantalla. Vacío si no aplica.
+ */
+export function notaDeEncargo(e) {
+    if (e?.estado === 'confirmado' && !e?.reserva) return 'Se cobra en Reservar con anticipo → Por cobrar';
+    return '';
+}
 
 /** Un producto que no tenemos y Bodega todavía no amarró al catálogo: sin eso no se marca «Llegó». */
 export const encargoSinVincular = (e) => !!e?.producto_nuevo && !e?.product_id;

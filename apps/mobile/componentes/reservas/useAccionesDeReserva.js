@@ -45,8 +45,10 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
     Alert.alert('Avisar por WhatsApp', `Al +${numero}:\n\n${texto}`, [
       { text: 'Ahora no', style: 'cancel' },
       { text: 'Abrir WhatsApp', onPress: async () => {
-        await Linking.openURL(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`).catch(() => {});
-        await Promise.resolve(marcarAvisadaPorWhatsapp(r.id)).catch(() => {});
+        await Linking.openURL(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`)
+          .catch((e) => console.warn(`useAccionesDeReserva: no se abrió WhatsApp para la reserva ${r.id}`, e));
+        await Promise.resolve(marcarAvisadaPorWhatsapp(r.id))
+          .catch((e) => console.warn(`useAccionesDeReserva: no se anotó el aviso por WhatsApp de la reserva ${r.id}`, e));
         releer();
       } },
     ]);
@@ -55,15 +57,14 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
   // Un pedido se mueve ENTERO: «ya llegó» mueve sólo los renglones que esperaban.
   const mover = (r, estado) => {
     const filasDe = r.renglones ?? [r];
-    const ids = filasDe.filter((x) => estado === 'cancelada' || (estado === 'lista' ? x.estado === 'pendiente' : x.estado === r.estado)).map((x) => x.id);
+    const ids = filasDe.filter((x) => (estado === 'lista' ? x.estado === 'pendiente' : x.estado === r.estado)).map((x) => x.id);
     const que = r.renglones?.length > 1 ? `el pedido ${r.pedido} (${ids.length} ${ids.length === 1 ? 'producto' : 'productos'})` : `${r.cantidad} × ${r.producto}`;
     const textos = {
       lista: ['Apartar y avisar', `Se aparta ${que}${r.tiene_app ? ' y se le avisa al cliente en la app.' : '. El cliente no tiene la app: después se le avisa por WhatsApp.'}`, 'Apartar'],
-      cancelada: ['Cancelar la reserva', `${r.pedido ?? codigoDeReserva(r.id)} · ${que} se cancela.`, 'Cancelar reserva'],
     }[estado];
     Alert.alert(textos[0], textos[1], [
       { text: 'Volver', style: 'cancel' },
-      { text: textos[2], style: estado === 'cancelada' ? 'destructive' : 'default', onPress: async () => {
+      { text: textos[2], onPress: async () => {
         setOcupada(r.id);
         try {
           for (const id of ids) await cambiarEstadoReserva(id, estado);
@@ -71,11 +72,34 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
           if (estado === 'lista') {
             if (r.tiene_app) listo('Reserva lista', 'Le avisamos al cliente en la app.');
             else avisarPorWhatsapp({ ...r, estado: 'lista' });
-          } else listo('Reserva cancelada', '');
+          }
           releer();
         } catch (e) { fallo('No se pudo cambiar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
       } },
     ]);
+  };
+
+  // Cancelar (reglamento, cláusula 3.10): no se deshace y pide el motivo (≥3
+  // caracteres), como el portal. Un pedido se cancela entero. `Alert.prompt`
+  // es de iOS; en Android lo pone `componentes/HojasAndroid`.
+  const cancelar = (r) => {
+    const filasDe = r.renglones ?? [r];
+    const que = filasDe.length > 1 ? `el pedido entero (${filasDe.length} productos)` : `${r.cantidad} × ${r.producto}`;
+    Alert.prompt(`Cancelar ${r.pedido ?? codigoDeReserva(r.id)}`,
+      `Se cancela ${que}. No se deshace. Lo que el cliente ya pagó queda como saldo a favor suyo.\n\nMotivo (queda en la bitácora):`, [
+        { text: 'Volver', style: 'cancel' },
+        { text: 'Cancelar reserva', style: 'destructive', onPress: async (texto) => {
+          const motivo = String(texto ?? '').trim();
+          if (motivo.length < 3) { fallo('Falta el motivo', 'Escribe por qué se cancela (al menos 3 letras).'); return; }
+          setOcupada(r.id);
+          try {
+            for (const x of filasDe) await cambiarEstadoReserva(x.id, 'cancelada', motivo);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            listo('Reserva cancelada', 'Lo que el cliente ya pagó queda como saldo a favor.');
+            releer();
+          } catch (e) { fallo('No se pudo cancelar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
+        } },
+      ], 'plain-text', '', 'default');
   };
 
   // Una sola prórroga de 7 días (reglamento v2); un pedido se prorroga entero.
@@ -149,7 +173,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
       // Reglamento v2, cláusula 9 (lo habilita la base con `registrar_llamada`).
       case 'llamada': router.push({ pathname: '/reserva-llamada', params: {
         reserva: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id), cliente: String(r.cliente ?? ''), telefono: String(r.telefono ?? '') } }); break;
-      case 'cancelar': mover(r, 'cancelada'); break;
+      case 'cancelar': cancelar(r); break;
       default: break;
     }
   };

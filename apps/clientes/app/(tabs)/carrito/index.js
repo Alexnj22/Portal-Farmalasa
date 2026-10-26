@@ -196,6 +196,24 @@ function Carrito() {
         datos_fiscales: documento === 'credito_fiscal' ? f : null,
         items: items.map((x) => ({ producto_id: x.id, factor: x.factor, cantidad: x.cantidad })),
       });
+      if (r?.sinConfirmar) {
+        // Se cortó por tiempo y PUDO haber entrado (lib/api). El carrito NO se
+        // vacía ni se reintenta: repetirlo a ciegas duplica el pedido. Se relee
+        // el resumen para que Mis reservas lo muestre si entró.
+        setEnviando(false);
+        useCuenta.getState().cargar({ forzar: true }).catch(() => {});
+        Alert.alert('No pudimos confirmarlo', 'No sabemos si se guardó. Revisa Mis reservas antes de intentar de nuevo.');
+        return;
+      }
+      if (!r?.ok && r?.motivo === 'terminos') {
+        // Las condiciones cambiaron entre que se leyeron y se envió: se piden
+        // otra vez al servidor y se muestran las nuevas para aceptarlas.
+        setEnviando(false);
+        const term = await pedir('reserva_terminos');
+        if (term?.ok) setTerminos(term);
+        else Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+        return;
+      }
       if (!r?.ok) { setEnviando(false); Alert.alert('No se pudo reservar', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
       // La receta se sube ya creado el pedido (contra su primer renglón).
       let recetaPendiente = null;

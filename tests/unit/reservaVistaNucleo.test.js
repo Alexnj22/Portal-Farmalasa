@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-    TRASLADO, accionesDeReservaNucleo, cuentasDeReserva, detalleDelRenglonDeReserva, estadoDeReserva, productosOcultos, telefonoLegible,
+    TRASLADO, accionesDeReservaNucleo, cuentasDeReserva, detalleDelRenglonDeReserva, estadoDeReserva, productosOcultos, quienRevisaLaReceta, telefonoLegible,
+    ROTULOS_DE_ENCARGO, notaDeEncargo, textoAlNoAceptarElPrecio, textoDeResolverDeLaApp,
 } from '@nucleo/utils/reservasDeSala';
 import * as vista from '../../src/views/dashboard/reservaVista';
 
@@ -70,11 +71,44 @@ describe('accionesDeReservaNucleo', () => {
         expect(soloTraer[0].label).toBe('Apartar y avisar');
     });
 
-    it('receta: sólo la receta, también en sólo lectura; sin permiso, nada', () => {
+    it('receta: la receta y cancelar (cláusula 3.10); en sólo lectura sólo la receta; sin permiso, sólo cancelar', () => {
         const r = { id: 4, estado: 'en_revision', receta_ruta: 'x', receta_estado: 'pendiente' };
         expect(accionesDeReservaNucleo(r, { soloLectura: true, puedeRecetas: true })).toEqual([{ k: 'receta', label: 'Revisar receta' }]);
-        expect(ks({ ...r, receta_estado: 'otra_foto' }, { puedeRecetas: true })).toEqual(['receta']);
-        expect(ks(r, {})).toEqual([]);
+        expect(ks({ ...r, receta_estado: 'otra_foto' }, { puedeRecetas: true })).toEqual(['receta', 'cancelar']);
+        expect(ks(r, {})).toEqual(['cancelar']);
+        expect(ks(r, { soloLectura: true })).toEqual([]);
+        expect(accionesDeReservaNucleo(r, {}).at(-1)).toMatchObject({ k: 'cancelar', menor: true });
         expect(ks({ id: 5, estado: 'lista' }, { soloLectura: true })).toEqual([]);
+    });
+
+    it('quién revisa la receta: el texto sólo cuando quien mira no puede', () => {
+        const r = { id: 4, estado: 'en_revision', receta_ruta: 'x', receta_estado: 'pendiente' };
+        expect(quienRevisaLaReceta(r, {})).toBe('La revisa quien tiene permiso de recetas');
+        expect(quienRevisaLaReceta(r, { puedeRecetas: true })).toBe('');
+        expect(quienRevisaLaReceta({ ...r, puede_revisar_receta: true }, {})).toBe('');
+        expect(quienRevisaLaReceta({ ...r, puede_revisar_receta: false }, { puedeRecetas: true })).toBe('La revisa quien tiene permiso de recetas');
+        expect(quienRevisaLaReceta({ id: 5, estado: 'pendiente' }, {})).toBe('');
+    });
+});
+
+describe('textos de la sala que dicen sólo lo que se ofrece (2026-10-26)', () => {
+    it('Resolver una reserva de la app', () => {
+        const app = { id: 1, origen: 'app' };
+        expect(textoDeResolverDeLaApp({ id: 2, origen: 'sucursal' }, { hayOpciones: true })).toBe('');
+        expect(textoDeResolverDeLaApp(app, { hayOpciones: false })).toMatch(/no hay nada que decidir/);
+        expect(textoDeResolverDeLaApp(app, { hayOpciones: true })).toMatch(/consigue lo que falta/);
+        expect(textoDeResolverDeLaApp(app, { hayOpciones: true, precioDistinto: true })).toMatch(/precio que da Bodega/);
+        expect(textoDeResolverDeLaApp(app, { hayOpciones: true })).not.toMatch(/alternativa/);
+        expect(textoAlNoAceptarElPrecio(app)).not.toMatch(/alternativa/);
+        expect(textoAlNoAceptarElPrecio({ origen: 'sucursal' })).toMatch(/alternativa/);
+    });
+    it('encargos: rótulos únicos y la nota de «Esperando pago»', () => {
+        expect(ROTULOS_DE_ENCARGO.pedido).toBe('Ya se pidió');
+        expect(ROTULOS_DE_ENCARGO.rechazar).toBe('No se puede conseguir');
+        expect(ROTULOS_DE_ENCARGO.saldo).toBe('Pasar a saldo a favor');
+        expect(ROTULOS_DE_ENCARGO.no_entrego).toBe('El proveedor no entregó');
+        expect(notaDeEncargo({ estado: 'confirmado' })).toMatch(/Por cobrar/);
+        expect(notaDeEncargo({ estado: 'confirmado', reserva: 'R-000001' })).toBe('');
+        expect(notaDeEncargo({ estado: 'aceptado' })).toBe('');
     });
 });

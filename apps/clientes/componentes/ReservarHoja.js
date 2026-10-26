@@ -130,8 +130,18 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
       useCuenta.getState().cargar({ forzar: true }).catch(() => {});
       setHecha(r);
       setPaso('hecha');
+    } else if (r?.sinConfirmar) {
+      // Se cortó por tiempo y PUDO haber entrado (lib/api): reintentar a
+      // ciegas duplica la reserva. Se relee el resumen y se manda a revisar.
+      useCuenta.getState().cargar({ forzar: true }).catch(() => {});
+      setError('No sabemos si se guardó. Revisa Mis reservas antes de intentar de nuevo.');
+    } else if (r?.motivo === 'terminos') {
+      // Las condiciones cambiaron con la hoja abierta: se piden de nuevo al
+      // servidor; las cargadas al abrir son justo las que ya no valen.
+      const term = await pedir('reserva_terminos');
+      if (term?.ok) { setTerminos(term); setError(null); setPaso('terminos'); }
+      else setError(r?.mensaje ?? 'Acepta las condiciones de la reserva para continuar.');
     } else {
-      if (r?.motivo === 'terminos' && terminos) setPaso('terminos');
       setError(r?.mensaje ?? 'No se pudo reservar. Intenta de nuevo.');
     }
   };

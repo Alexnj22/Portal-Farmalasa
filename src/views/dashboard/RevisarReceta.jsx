@@ -130,18 +130,18 @@ export default function RevisarReceta({ reserva, onClose, onDecidida }) {
                     <Button variant="secondary" onClick={onClose}>Cerrar</Button>
                 ) : modo ? (
                     <>
-                        <Button variant="secondary" onClick={() => { setModo(null); setMotivo(''); }}>Volver</Button>
+                        <Button variant="secondary" disabled={!!enviando} onClick={() => { setModo(null); setMotivo(''); }}>Volver</Button>
                         <Button variant={modo === 'rechazada' ? 'destructive' : 'primary'}
                             icon={modo === 'rechazada' ? XCircle : Camera} loading={enviando === modo}
-                            disabled={!motivo.trim()} onClick={() => decidir(modo)}>
+                            disabled={!motivo.trim() || !!enviando} onClick={() => decidir(modo)}>
                             {modo === 'rechazada' ? 'Rechazar receta' : 'Pedir otra foto'}
                         </Button>
                     </>
                 ) : (
                     <>
-                        <Button variant="ghost" icon={XCircle} onClick={() => { setModo('rechazada'); setMotivo(''); }}>Rechazar</Button>
-                        <Button variant="secondary" icon={Camera} onClick={() => { setModo('otra_foto'); setMotivo(''); }}>Pedir otra foto</Button>
-                        <Button icon={CheckCircle2} loading={enviando === 'aprobada'} disabled={!url}
+                        <Button variant="ghost" icon={XCircle} disabled={!!enviando} onClick={() => { setModo('rechazada'); setMotivo(''); }}>Rechazar</Button>
+                        <Button variant="secondary" icon={Camera} disabled={!!enviando} onClick={() => { setModo('otra_foto'); setMotivo(''); }}>Pedir otra foto</Button>
+                        <Button icon={CheckCircle2} loading={enviando === 'aprobada'} disabled={!url || !!enviando}
                             onClick={() => decidir('aprobada')}>Aprobar</Button>
                     </>
                 )}

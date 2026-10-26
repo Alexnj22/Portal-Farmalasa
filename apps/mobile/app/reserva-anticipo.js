@@ -31,7 +31,7 @@ import {
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
 import { apartadoDelPedido, clavePresentacion, origenesDelPedido, planDeApartar, redondear } from '@nucleo/utils/apartar';
-import { plazoAlApartar } from '@nucleo/utils/reservasDeSala';
+import { plazoAlApartar, SI_EL_TRASLADO_NO_SALIO } from '@nucleo/utils/reservasDeSala';
 import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -200,7 +200,7 @@ function Nuevo({ sala, nombreSala, user }) {
         if (desde) {
           try {
             await trasladoApi.current.enviar(`Reserva ${r.codigo} para ${shortEmployeeName(cliente.name)}`, { reserva_id: r.reserva_id });
-          } catch (e) { fallo('El apartado quedó, pero el traslado no se pidió', `${mensajeAmigable(e, '')} Pídelo desde Inventario.`); }
+          } catch (e) { fallo('El apartado quedó, pero el traslado no se pidió', `${mensajeAmigable(e, '')} ${SI_EL_TRASLADO_NO_SALIO}`); }
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         listo('Enlace creado', `${r.codigo} · ${r.prueba ? 'enlace de PRUEBA: no cobra dinero' : 'queda separado 3 días mientras paga; al pagar, el plazo pasa a 7'}`);
@@ -230,7 +230,7 @@ function Nuevo({ sala, nombreSala, user }) {
           try {
             await trasladoApi.current.enviar(`Reserva ${a.codigo ?? ''} para ${shortEmployeeName(cliente.name)}`.trim(), a.id ? { reserva_id: a.id } : null);
           } catch (e) {
-            fallo('La reserva quedó, pero el traslado no se pidió', `${mensajeAmigable(e, '')} Pídelo desde Inventario.`);
+            fallo('La reserva quedó, pero el traslado no se pidió', `${mensajeAmigable(e, '')} ${SI_EL_TRASLADO_NO_SALIO}`);
             terminar();
             return;
           }

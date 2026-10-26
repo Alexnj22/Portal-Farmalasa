@@ -11,7 +11,7 @@ import { Alert, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchEncargos, mensajeDeEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, whatsappDe } from '@nucleo/data/reservas';
-import { encargoSinVincular, encargoVencido, estadoDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, encargoSinVincular, encargoVencido, estadoDeEncargo, notaDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -59,8 +59,12 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
   const abrir = (e, modo) => router.push({ pathname: '/encargo-accion', params: { id: String(e.id), modo, sala: branchId == null ? '' : String(branchId) } });
   // Desde el reglamento v2 el aviso por WhatsApp queda anotado (cláusula 9).
   const whatsapp = (e) => {
-    Linking.openURL(`https://wa.me/${whatsappDe(e.telefono)}?text=${encodeURIComponent(mensajeDeEncargo(e))}`).catch(() => {});
-    if (e.registrar_llamada) registrarAvisoDeReserva({ encargo: e.id, canal: 'whatsapp' }).then(cargar).catch(() => {});
+    Linking.openURL(`https://wa.me/${whatsappDe(e.telefono)}?text=${encodeURIComponent(mensajeDeEncargo(e))}`)
+      .catch((err) => console.warn(`Encargos: no se abrió WhatsApp para el encargo ${e.codigo}`, err));
+    if (e.registrar_llamada) {
+      registrarAvisoDeReserva({ encargo: e.id, canal: 'whatsapp' }).then(cargar)
+        .catch((err) => console.warn(`Encargos: no se anotó el aviso por WhatsApp del encargo ${e.codigo}`, err));
+    }
   };
   const llamar = (e) => router.push({ pathname: '/reserva-llamada', params: {
     encargo: String(e.id), codigo: e.codigo, cliente: pilaDelCliente(e), telefono: String(e.telefono ?? '') } });
@@ -91,32 +95,33 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
                 {vencido ? <Pildora texto="Sin retirar · llamar" color={MARCA.ambar} /> : null}
               </View>
             ) : null}
+            {notaDeEncargo(e) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{notaDeEncargo(e)}</Text> : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {!soloLectura && !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono)
-                ? <Accion texto="WhatsApp" onPress={() => whatsapp(e)} /> : null}
-              {e.foto_url ? <Accion texto="Ver la foto" onPress={() => openStoredFile(e.foto_url).catch((err) => fallo('No se pudo abrir la foto', err?.message ?? ''))} /> : null}
+                ? <Accion texto={ROT.whatsapp} onPress={() => whatsapp(e)} /> : null}
+              {e.foto_url ? <Accion texto={ROT.foto} onPress={() => openStoredFile(e.foto_url).catch((err) => fallo('No se pudo abrir la foto', err?.message ?? ''))} /> : null}
               {!soloLectura && e.estado === 'solicitado' ? (
                 <>
-                  <Accion texto="Confirmar" color={MARCA.verde} onPress={() => abrir(e, 'confirmar')} />
-                  <Accion texto="No se consigue" color={MARCA.rojo} onPress={() => abrir(e, 'rechazar')} />
+                  <Accion texto={ROT.confirmar} color={MARCA.verde} onPress={() => abrir(e, 'confirmar')} />
+                  <Accion texto={ROT.rechazar} color={MARCA.rojo} onPress={() => abrir(e, 'rechazar')} />
                 </>
               ) : null}
-              {!soloLectura && sinVincular ? <Accion texto="Vincular producto" onPress={() => abrir(e, 'vincular')} /> : null}
-              {!soloLectura && e.estado === 'aceptado' ? <Accion texto="Pedido" deshabilitado={!!ocupado}
+              {!soloLectura && sinVincular ? <Accion texto={ROT.vincular} onPress={() => abrir(e, 'vincular')} /> : null}
+              {!soloLectura && e.estado === 'aceptado' ? <Accion texto={ROT.pedido} deshabilitado={!!ocupado}
                 onPress={() => mover(e, 'pedido', 'Marcar como pedido', `${e.codigo} · ${e.cantidad} × ${e.producto} ya se pidió.`)} /> : null}
-              {!soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') ? <Accion texto="Llegó" color={MARCA.verde} deshabilitado={!!ocupado || sinVincular}
+              {!soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') ? <Accion texto={ROT.llego} color={MARCA.verde} deshabilitado={!!ocupado || sinVincular}
                 onPress={() => mover(e, 'listo', 'Marcar que llegó', `${e.codigo} · ${e.cantidad} × ${e.producto} ya está en la sala.`)} /> : null}
               {!soloLectura && sinVincular && (e.estado === 'aceptado' || e.estado === 'pedido')
                 ? <Text style={{ color: colorSistema.texto2, fontSize: 12, alignSelf: 'center' }}>Primero vincula el producto ya creado en el catálogo.</Text> : null}
-              {!soloLectura && e.estado === 'listo' ? <Accion texto="Entregar" color={MARCA.verde}
+              {!soloLectura && e.estado === 'listo' ? <Accion texto={ROT.entregar} color={MARCA.verde}
                 onPress={() => router.push({ pathname: '/reserva-retirar', params: { id: String(e.id), tipo: 'encargo', sala: String(e.branch_id ?? branchId) } })} /> : null}
-              {!soloLectura && e.registrar_llamada ? <Accion texto="Registrar llamada" onPress={() => llamar(e)} /> : null}
-              {!soloLectura && e.puede_cambiar_fecha ? <Accion texto="Cambiar fecha" onPress={() => abrir(e, 'fecha')} /> : null}
-              {!soloLectura && e.puede_no_entrego ? <Accion texto="No entregó" color={MARCA.rojo} onPress={() => abrir(e, 'no_entrego')} /> : null}
-              {!soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) ? <Accion texto="Prorrogar" deshabilitado={!!ocupado}
+              {!soloLectura && e.registrar_llamada ? <Accion texto={ROT.llamada} onPress={() => llamar(e)} /> : null}
+              {!soloLectura && e.puede_cambiar_fecha ? <Accion texto={ROT.fecha} onPress={() => abrir(e, 'fecha')} /> : null}
+              {!soloLectura && e.puede_no_entrego ? <Accion texto={ROT.no_entrego} color={MARCA.rojo} onPress={() => abrir(e, 'no_entrego')} /> : null}
+              {!soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) ? <Accion texto={ROT.prorrogar} deshabilitado={!!ocupado}
                 onPress={() => mover(e, 'prorrogar', 'Prorrogar el plazo', 'Una sola prórroga de 7 días para retirarlo. No admite otra.')} /> : null}
               {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado)
-                ? <Accion texto="A saldo a favor" onPress={() => abrir(e, 'saldo')} /> : null}
+                ? <Accion texto={ROT.saldo} onPress={() => abrir(e, 'saldo')} /> : null}
             </View>
           </View>
         );

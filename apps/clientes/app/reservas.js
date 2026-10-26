@@ -115,6 +115,14 @@ const avisoDeSaldo = (filas, reglas) => {
   const p = pagadoDe(filas);
   return p > 0 ? `\n\nLo que pagaste (${dolares(p)}) queda como saldo a favor por ${vigenciaSaldo(reglas)}, para otra compra en cualquier sucursal.` : '';
 };
+// Una escritura que se cortó por tiempo (`sinConfirmar`, lib/api) PUDO haber
+// entrado: se avisa así y se relee la lista; nunca se repite sola, porque
+// repetir a ciegas duplica la reserva o el cobro.
+const SIN_CONFIRMAR = 'No sabemos si se guardó. Revisa Mis reservas antes de intentar de nuevo.';
+const avisoSinConfirmar = () => Alert.alert('No pudimos confirmarlo', SIN_CONFIRMAR);
+// Reglamento 3.10 y cláusula 8: un enlace de pago abierto sigue vivo después
+// de cancelar; lo que entre por ahí ya no compra nada, queda a favor.
+const AVISO_ENLACE_ABIERTO = '\n\nSi abriste un enlace de pago, ya no lo completes: lo que pagues después queda como saldo a favor.';
 const quedoAFavor = (res, reglas) => {
   const saldo = res.reduce((n, x) => n + Number(x?.saldo_favor ?? 0), 0);
   if (saldo > 0) Alert.alert('Quedó a tu favor', `Tienes ${dolares(saldo)} de saldo a favor por ${vigenciaSaldo(reglas)}. Lo ves en Mis reservas.`);
@@ -353,7 +361,7 @@ export default function Reservas() {
 
   // Un pedido se cancela entero: cada renglón por su cuenta (la misma acción
   // del servidor, que sólo cancela los suyos, abiertos y sin pagar en línea).
-  const cancelarPedido = (g) => Alert.alert('Cancelar pedido', `¿Cancelar el pedido ${g.pedido} completo (${g.filas.length} productos)?${avisoDeSaldo(g.filas, reglas)}`, [
+  const cancelarPedido = (g) => Alert.alert('Cancelar pedido', `¿Cancelar el pedido ${g.pedido} completo (${g.filas.length} productos)?${avisoDeSaldo(g.filas, reglas)}${AVISO_ENLACE_ABIERTO}`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar pedido', style: 'destructive', onPress: async () => {
       if (esDeMuestra(g.filas[0])) {
@@ -363,7 +371,8 @@ export default function Reservas() {
       }
       const res = await Promise.all(g.filas.map((r) => pedir('cancelar_reserva', { id: r.id })));
       const fallidas = res.filter((x) => !x?.ok);
-      if (!fallidas.length) {
+      if (fallidas.some((x) => x?.sinConfirmar)) avisoSinConfirmar();
+      else if (!fallidas.length) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         quedoAFavor(res, reglas);
       }
@@ -373,7 +382,7 @@ export default function Reservas() {
       useCuenta.getState().cargar({ forzar: true }).catch(() => {});
     } },
   ]);
-  const cancelar = (r) => Alert.alert('Cancelar reserva', `¿Cancelar ${r.producto_nombre}?${avisoDeSaldo([r], reglas)}`, [
+  const cancelar = (r) => Alert.alert('Cancelar reserva', `¿Cancelar ${r.producto_nombre}?${avisoDeSaldo([r], reglas)}${AVISO_ENLACE_ABIERTO}`, [
     { text: 'No', style: 'cancel' },
     { text: 'Cancelar reserva', style: 'destructive', onPress: async () => {
       if (esDeMuestra(r)) {
@@ -385,7 +394,8 @@ export default function Reservas() {
       if (res?.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         quedoAFavor([res], reglas);
-      } else Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      } else if (res?.sinConfirmar) avisoSinConfirmar();
+      else Alert.alert('No se pudo cancelar', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
       cargar();
       // El carrito y el aviso de duplicado leen las reservas del resumen.
       useCuenta.getState().cargar({ forzar: true }).catch(() => {});
@@ -405,6 +415,7 @@ export default function Reservas() {
     setPagando(r.id);
     try {
       const res = await pedir('pagar_reserva', { id: r.id });
+      if (res?.sinConfirmar) { avisoSinConfirmar(); await cargar(); return; }
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
       try {
         await sinBloquear(() => WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas'));
@@ -567,6 +578,24 @@ const fechaHora = (iso) => {
   const dia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   return `${fecha(dia)}, ${h % 12 || 12}:${m} ${h < 12 ? 'a. m.' : 'p. m.'}`;
 };
+// Mientras se prepara (2026-10-26): si lo que falta viene de otra sala, el
+// plazo está detenido (`reserva_plazo_hasta` da null) y se dice eso; si no,
+// hasta cuándo tiene la sala para dejarla lista. Mismo criterio de «en
+// camino» que la base: traslado pedido, Bodega, o unidades por llegar.
+const enCamino = (r) => r.estado === 'pendiente'
+  && (['pedido', 'bodega'].includes(r.traslado_estado) || Number(r.traslado_por_llegar ?? 0) > 0);
+const diaYHora = (iso) => {
+  const d = new Date(iso);
+  const h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0');
+  const dia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `el ${fecha(dia)} a las ${h % 12 || 12}:${m} ${h < 12 ? 'a. m.' : 'p. m.'}`;
+};
+const textoPreparando = (r) => {
+  if (enCamino(r)) return 'Viene en camino desde otra sucursal. Te avisamos cuando esté lista.';
+  const base = 'La sucursal la está preparando. Te avisamos cuando esté lista.';
+  return r.estado === 'pendiente' && r.plazo_hasta && Number.isFinite(Date.parse(r.plazo_hasta))
+    ? `${base} Estará lista a más tardar ${diaYHora(r.plazo_hasta)}.` : base;
+};
 const mapa = (r) => {
   const q = encodeURIComponent(`Farmacia ${r.sala}, ${r.sala_direccion ?? ''}, El Salvador`);
   return Platform.OS === 'ios' ? `maps://?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`;
@@ -662,7 +691,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
         <CuentaRegresiva vence={r.vence_at} ahora={ahora} domicilio={domicilio} />
       ) : (
         <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
-          La sucursal la está preparando. Te avisamos cuando esté lista{r.oferta_fin ? `; la oferta vale hasta el ${fecha(r.oferta_fin)}` : ''}.
+          {textoPreparando(r)}{r.oferta_fin ? ` La oferta vale hasta el ${fecha(r.oferta_fin)}.` : ''}
         </Text>
       )}
 
@@ -875,7 +904,9 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
         <CuentaRegresiva vence={venceLista} ahora={ahora} domicilio={domicilio} />
       ) : (
         <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
-          La sucursal está preparando tu pedido. Te avisamos cuando esté listo.
+          {g.filas.some(enCamino)
+            ? 'Una parte viene en camino desde otra sucursal. Te avisamos cuando tu pedido esté listo.'
+            : 'La sucursal está preparando tu pedido. Te avisamos cuando esté listo.'}
         </Text>
       )}
 
@@ -1206,7 +1237,7 @@ function ResumenSaldo({ s }) {
 }
 // Por qué venció (2026-10-19): si fue de la sucursal, no cuenta en contra.
 const MOTIVO_VENCIDA = {
-  sin_receta: 'No llegó la foto de la receta a tiempo.',
+  sin_receta: 'No llegó la foto de la receta a tiempo. No cuenta en tu contra.',
   receta_sin_revisar: 'La sucursal no alcanzó a revisar tu receta a tiempo. No cuenta en tu contra.',
   sin_preparar: 'La sucursal no alcanzó a prepararla a tiempo. No cuenta en tu contra.',
   oferta_terminada: 'La oferta terminó antes de que se preparara. No cuenta en tu contra.',
@@ -1264,6 +1295,9 @@ function Encargo({ e, alPagar, alCancelar, alProrrogar, pagando = false }) {
           {dolares(e.anticipo)} en total{e.fecha_estimada ? ` · llega aprox. el ${fecha(e.fecha_estimada)}` : ''} · retiro en {e.sala}
         </Text>
       ) : <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Retiro en {e.sala}</Text>}
+      {e.estado === 'listo' && e.retirar_hasta ? (
+        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>Retíralo hasta el {fecha(e.retirar_hasta)}</Text>
+      ) : null}
       {e.nota_sucursal ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>«{e.nota_sucursal}»</Text> : null}
       {e.estado === 'confirmado' && e.pago_estado !== 'pagado' ? (
         <Boton alTocar={alPagar} cargando={pagando}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>

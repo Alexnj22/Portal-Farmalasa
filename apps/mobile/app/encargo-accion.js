@@ -23,7 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { cambiarFechaDeEncargo, fetchEncargos, pasarEncargoASaldo, proveedorNoEntregoEncargo, responderEncargo, vincularProductoDeEncargo } from '@nucleo/data/reservas';
 import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { vigenciaDelSaldo } from '@nucleo/utils/abonoTicket';
-import { encargoConRiesgo, fichaDeProductoNuevo } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, encargoConRiesgo, fichaDeProductoNuevo } from '@nucleo/utils/reservasDeSala';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -38,7 +38,8 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { Enlace } from '../componentes/reservas/piezas';
 
 const dinero = (v) => v.replace(/[^\d.,]/g, '').replace(',', '.');
-const TITULO = { confirmar: 'Confirmar', rechazar: 'No se consigue', saldo: 'A saldo a favor', vincular: 'Vincular producto', fecha: 'Nueva fecha', no_entrego: 'No entregó' };
+// Los mismos rótulos que el botón que abre la pantalla (y que el portal).
+const TITULO = { confirmar: ROT.confirmar, rechazar: ROT.rechazar, saldo: ROT.saldo, vincular: ROT.vincular, fecha: 'Nueva fecha', no_entrego: ROT.no_entrego };
 
 export default function EncargoAccion() {
   const { id, modo = 'confirmar', sala } = useLocalSearchParams();

@@ -132,8 +132,8 @@ export default function DetalleDeReserva() {
           ]} />
           {tel || wa ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {tel ? <Accion texto="Llamar" onPress={() => Linking.openURL(`tel:${String(r.telefono).replace(/\D/g, '')}`).catch(() => {})} /> : null}
-              {wa ? <Accion texto="WhatsApp" color={MARCA.verde} onPress={() => Linking.openURL(`https://wa.me/${wa}`).catch(() => {})} /> : null}
+              {tel ? <Accion texto="Llamar" onPress={() => Linking.openURL(`tel:${String(r.telefono).replace(/\D/g, '')}`).catch((e) => console.warn(`reserva/[id]: no se abrió la llamada de la reserva ${r.id}`, e))} /> : null}
+              {wa ? <Accion texto="WhatsApp" color={MARCA.verde} onPress={() => Linking.openURL(`https://wa.me/${wa}`).catch((e) => console.warn(`reserva/[id]: no se abrió WhatsApp de la reserva ${r.id}`, e))} /> : null}
             </View>
           ) : null}
         </Seccion>

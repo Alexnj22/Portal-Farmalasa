@@ -31,7 +31,7 @@ import {
   buscarSaldoAFavor, codigoDeReserva, fetchReservasDeSucursal, HORAS_RECETA_URGENTE, devolucionesPorEntregar,
 } from '@nucleo/data/reservas';
 import {
-  accionesDeReservaNucleo, agruparPorPedido, codigoCompleto, conteoDeReservas, listaDePrecioDelGrupo, origenDelSaldo, pilaDelCliente,
+  accionesDeReservaNucleo, agruparPorPedido, quienRevisaLaReceta, codigoCompleto, conteoDeReservas, listaDePrecioDelGrupo, origenDelSaldo, pilaDelCliente,
   reservasAbiertas, reservasPorCodigo, resumenDelPedido, saldosAFavor, seccionesDeReservas,
 } from '@nucleo/utils/reservasDeSala';
 import { textoDePreventa } from '@nucleo/utils/preventa';
@@ -157,12 +157,12 @@ export default function ReservasDeSala() {
       r.avisado_via === 'whatsapp' ? 'Avisado por WhatsApp' : '',
       preventa,
     ].filter(Boolean).join(' · ');
-    const sinPermisoDeReceta = enRevision && r.receta_ruta && !(r.puede_revisar_receta ?? puedeRecetas);
+    const quienRevisa = quienRevisaLaReceta(r, { puedeRecetas });
     // Lo que se dice aparte de los cuatro bloques: cada cosa en UNA línea.
     const marcas = (
       <>
         {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}${urgente ? ' · ya se avisó a supervisión' : ''}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
-        {sinPermisoDeReceta ? <Pildora texto="Sin permiso para revisar la receta" color={colorSistema.texto2} /> : null}
+        {quienRevisa ? <Pildora texto={quienRevisa} color={colorSistema.texto2} /> : null}
         {/* Mayoreo: se cobró a precio de mayoreo en la app; en caja se factura con ESA lista. */}
         {listaDePrecio ? <Pildora texto={listaDePrecio} color={MARCA.azulClaro} /> : null}
         {enRevision && r.receta_estado === 'otra_foto' && r.receta_motivo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{`Se pidió otra foto: ${r.receta_motivo}`}</Text> : null}

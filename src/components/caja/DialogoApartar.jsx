@@ -32,7 +32,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { apartadoDelPedido, clavePresentacion, origenesDelPedido, planDeApartar, redondear, telefonoDeFicha, tomaDeCadaTraslado } from '@nucleo/utils/apartar';
-import { apartadoPorCobrar, plazoAlApartar, porCobrarDeSala } from '@nucleo/utils/reservasDeSala';
+import { apartadoPorCobrar, plazoAlApartar, porCobrarDeSala, SI_EL_TRASLADO_NO_SALIO } from '@nucleo/utils/reservasDeSala';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 
 /**
@@ -244,7 +244,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     try {
                         await trasladoApi.current.enviar(`Reserva ${r.codigo} para ${shortEmployeeName(cliente.name)}`, { reserva_id: r.reserva_id });
                     } catch (e) {
-                        showToast('El apartado quedó, pero el traslado no se pidió', `${mensajeAmigable(e)} Pídelo desde Inventario.`, 'warning');
+                        showToast('El apartado quedó, pero el traslado no se pidió', `${mensajeAmigable(e)} ${SI_EL_TRASLADO_NO_SALIO}`, 'warning');
                     }
                 }
                 clearDraft(llave(sala));
@@ -269,7 +269,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                             ap.id ? { reserva_id: ap.id } : null);
                         showToast('Traslado pedido', `${desde.sala} lo manda para la reserva ${ap.codigo ?? ''}. Cuando llegue, queda lista sola.`, 'success');
                     } catch (e) {
-                        showToast('La reserva quedó, pero el traslado no se pidió', `${mensajeAmigable(e)} Pídelo desde Inventario.`, 'warning');
+                        showToast('La reserva quedó, pero el traslado no se pidió', `${mensajeAmigable(e)} ${SI_EL_TRASLADO_NO_SALIO}`, 'warning');
                     }
                 }
                 clearDraft(llave(sala)); onClose();

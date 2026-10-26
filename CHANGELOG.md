@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.9 — Reservas: cancelar con el producto ya facturado pregunta por el anticipo
+
+R-000114 (La Popular) mostraba **$40 a favor** de una clienta que ya los había usado: dejó el anticipo el 22-oct, el 24-oct la caja le facturó los 2 frascos directo (factura 398582, sin «Retirar»), el corte de esa noche dio −$40 y se recontó exacto, y el 25-oct la preventa falló —«en la caja hay 0», porque ya se habían vendido— y la sala canceló. Cancelar convierte el anticipo en saldo a favor, y la única guarda miraba el anticipo aplicado por «Retirar».
+
+Ahora `reserva_cambiar_estado`, antes de dejar un saldo, busca una factura válida del mismo cliente con el mismo producto desde que reservó (`reserva_ventas_del_producto`, por índice, ~18 ms). Si la hay, no decide sola: la pantalla muestra la factura y pregunta **«¿se le descontó el anticipo?»** — *sí* cancela sin saldo, *pagó completo* lo deja como antes. Las dos respuestas quedan en la bitácora con las facturas. Probado en el entorno de pruebas: frena, cancela sin saldo, cancela con saldo, y no frena si la factura es anterior a la reserva.
+
+El saldo de R-000114 se anuló (movimiento `anulacion` con el motivo y bitácora `RESERVA_SALDO_ANULADO`). Base: migración `20261026174932`.
+
+Pendiente: `reservas_vencer` todavía convierte el anticipo en saldo sin mirar facturas — una reserva vendida por fuera y que vence sola cae en el mismo hueco.
+
 ## v2.1357.8 — employees_safe oculta los datos personales del personal a quien no administra Personal
 
 Una auditoría de seguridad encontró que **cualquier empleado con sesión podía leer datos personales de todo el personal** a través de `employees_safe`: domicilio, teléfono, fecha de nacimiento, contactos de emergencia, tipo de discapacidad y condiciones crónicas (datos de salud), más estudios, licencias, AFP/ISSS y detalles de contrato. El salario, el DUI, la cuenta bancaria, el código y el PIN ya estaban protegidos; esto era el resto de la ficha. No era alcanzable sin credenciales (RLS y la PII de clientes resistieron el ataque), pero sí por cualquiera de los ~50 trabajadores.

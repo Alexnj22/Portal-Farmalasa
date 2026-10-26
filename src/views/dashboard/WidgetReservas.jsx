@@ -24,7 +24,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import {
-    buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor,
+    buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor, ventasDelError,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
     devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver, reservaPorTraer, prorrogarReserva,
 } from '@nucleo/data/reservas';
@@ -113,6 +113,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const [errorCarga, setErrorCarga] = useState(null);
     // La reserva (o el pedido) que se está por cancelar: pide confirmación y motivo.
     const [cancelando, setCancelando] = useState(null);
+    const [ventaFacturada, setVentaFacturada] = useState(null);
     const [ocupada, setOcupada] = useState(null);
     const [whatsapp, setWhatsapp] = useState(null);
     // Reglamento v2, cláusula 9: la llamada al cliente queda anotada.
@@ -240,13 +241,36 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // Cancelar (reglamento, cláusula 3.10) se confirma con un motivo y NO se
     // deshace. Un pedido se cancela entero. Si falla, el diálogo sigue abierto
     // para reintentar; si un pedido quedó a medias, la lista releída lo dice.
-    const cancelar = async (r, motivo) => {
+    //
+    // (2026-10-26) Si el producto ya se le facturó al cliente por fuera de
+    // «Retirar», la base no cancela a ciegas: pregunta si el anticipo se
+    // descontó en esa venta (`VentaYaFacturada`). Pasó con R-000114: cancelar
+    // dejó a favor $40 que la clienta ya había usado. Los renglones sin esa
+    // duda se cancelan igual; los que la tienen esperan la respuesta.
+    const cancelar = async (r, motivo, anticipoEnVenta = null, soloIds = null) => {
         setOcupada(r.id);
         try {
-            const ids = (r.renglones ?? [r]).map((x) => x.id);
-            for (const id of ids) await cambiarEstadoReserva(id, 'cancelada', motivo);
-            showToast('Reserva cancelada', 'Lo que el cliente ya pagó queda como saldo a favor.', 'success');
+            const ids = soloIds ?? (r.renglones ?? [r]).map((x) => x.id);
+            const conVenta = [];
+            for (const id of ids) {
+                try {
+                    await cambiarEstadoReserva(id, 'cancelada', motivo, anticipoEnVenta);
+                } catch (err) {
+                    const ventas = ventasDelError(err);
+                    if (!ventas) throw err;
+                    conVenta.push({ id, ventas });
+                }
+            }
             setCancelando(null);
+            if (conVenta.length) {
+                setVentaFacturada({ r, motivo, conVenta });
+                cargar();
+                return;
+            }
+            setVentaFacturada(null);
+            showToast('Reserva cancelada', anticipoEnVenta
+                ? 'El anticipo ya se había usado en la factura: no queda saldo a favor.'
+                : 'Lo que el cliente ya pagó queda como saldo a favor.', 'success');
             cargar();
         } catch (err) {
             showToast('No se pudo cancelar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
@@ -750,6 +774,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     etiqueta="Motivo (queda en la bitácora)" boton="Cancelar reserva" onCerrar={() => setCancelando(null)}
                     onConfirmar={(motivo) => cancelar(cancelando, motivo)} />
             )}
+            {ventaFacturada && (
+                <VentaYaFacturada caso={ventaFacturada} ocupada={ocupada === ventaFacturada.r.id}
+                    onCerrar={() => setVentaFacturada(null)}
+                    onDecidir={(seDesconto) => cancelar(ventaFacturada.r, ventaFacturada.motivo, seDesconto, ventaFacturada.conVenta.map((x) => x.id))} />
+            )}
             {llamando && (
                 <RegistrarLlamada reserva={llamando.id} telefono={llamando.telefono}
                     titulo={`${llamando.pedido ?? codigoDeReserva(llamando.id)} · ${String(llamando.cliente ?? '').split(/\s+/)[0]}`}
@@ -925,6 +954,50 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
                 <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
                 <Button variant="destructive" icon={Banknote} loading={enviando} disabled={motivo.trim().length < 3}
                     onClick={confirmar}>Autorizar devolución</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+// Cancelar una reserva cuyo producto ya se le facturó al cliente (2026-10-26).
+// La base encontró la factura pero no puede saber si en la caja le
+// descontaron el anticipo: eso lo sabe quien atendió. Las dos respuestas son
+// dinero —un saldo de más se le entrega al cliente dos veces; uno de menos se
+// le queda a la farmacia—, por eso no hay respuesta por defecto.
+function VentaYaFacturada({ caso, ocupada, onCerrar, onDecidir }) {
+    const { r, conVenta } = caso;
+    const ids = new Set(conVenta.map((x) => x.id));
+    const anticipo = (r.renglones ?? [r]).filter((x) => ids.has(x.id)).reduce((t, x) => t + Number(x.anticipo ?? 0), 0);
+    const facturas = [...new Map(conVenta.flatMap((x) => x.ventas).map((v) => [v.invoice_id, v])).values()];
+    const codigo = r.pedido ?? codigoDeReserva(r.id);
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel={`Cancelar ${codigo}`}>
+            <LiquidModal.Header>
+                <h2 className="text-body-xl font-semibold text-content">Este producto ya se le facturó</h2>
+            </LiquidModal.Header>
+            <LiquidModal.Body>
+                <div className="space-y-3">
+                    <p className="text-body-sm text-content-2">
+                        Después de reservar, al mismo cliente se le facturó lo que tenía apartado en {codigo}:
+                    </p>
+                    <ul className="space-y-1">
+                        {facturas.map((v) => (
+                            <li key={v.invoice_id} className="text-body-sm text-content">
+                                Factura {v.factura} · {fechaTexto(v.fecha, { weekday: 'short', day: 'numeric', month: 'short' })} · {v.sala}
+                                <span className="text-content-3"> · {Number(v.cantidad)} u.</span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="text-body-sm text-content-2">
+                        ¿En esa venta se le descontó el anticipo de <b className="text-content">{formatMoney(anticipo)}</b>?
+                        Si se descontó, cancelar no deja saldo a favor. Si pagó la factura completa, el anticipo queda a su favor.
+                    </p>
+                </div>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onCerrar} disabled={ocupada}>Ahora no</Button>
+                <Button variant="secondary" loading={ocupada} onClick={() => onDecidir(false)}>Pagó completo</Button>
+                <Button loading={ocupada} onClick={() => onDecidir(true)}>Sí, se descontó</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

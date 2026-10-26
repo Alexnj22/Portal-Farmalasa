@@ -28,9 +28,24 @@ export async function fetchReservasDeSucursal(branchId, abiertas = true) {
     return sinError(await supabase.rpc('reservas_de_sucursal', { p_branch_id: branchId == null ? null : Number(branchId), p_abiertas: abiertas })) ?? [];
 }
 
-/** `estado`: 'lista' (apartada y avisada), 'retirada' o 'cancelada'. */
-export async function cambiarEstadoReserva(id, estado, motivo = null) {
-    return sinError(await supabase.rpc('reserva_cambiar_estado', { p_id: id, p_estado: estado, p_motivo: motivo }));
+/**
+ * `estado`: 'lista' (apartada y avisada), 'retirada' o 'cancelada'.
+ *
+ * Al cancelar con anticipo, si el producto ya se le facturó al cliente por
+ * fuera de «Retirar», la base lanza `VENTA_YA_FACTURADA` con las facturas en
+ * `details` (2026-10-26) y hay que volver a llamar diciendo si el anticipo se
+ * descontó en esa venta (`anticipoEnVenta`): true cancela sin saldo a favor.
+ */
+export async function cambiarEstadoReserva(id, estado, motivo = null, anticipoEnVenta = null) {
+    const args = { p_id: id, p_estado: estado, p_motivo: motivo };
+    if (anticipoEnVenta != null) args.p_anticipo_en_venta = anticipoEnVenta;
+    return sinError(await supabase.rpc('reserva_cambiar_estado', args));
+}
+
+/** Las facturas que trae un `VENTA_YA_FACTURADA`, o null si el error es otro. */
+export function ventasDelError(err) {
+    if (err?.message !== 'VENTA_YA_FACTURADA') return null;
+    try { return JSON.parse(err.details) ?? []; } catch { return []; }
 }
 
 /**

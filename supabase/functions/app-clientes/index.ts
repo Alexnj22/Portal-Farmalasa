@@ -544,10 +544,12 @@ function fechaDeNacimiento(v: unknown): string | null | false {
 // `motivo: "soporte"` es el que la app ya sabe mostrar: no hace falta compilarla.
 // El aviso sólo sale DESPUÉS del freno por IP, igual que el resto de respuestas
 // que dependen del documento.
+// Genérico a propósito (decisión del usuario 26-oct): quien escriba un DUI ajeno
+// no debe enterarse de que esa persona pidió retirar sus datos.
 const DATOS_RETIRADOS = {
   ok: false,
   motivo: "soporte",
-  mensaje: "Los datos de este documento se retiraron a pedido de su titular. Si quieres volver, acércate a una sala con tu DUI o escríbenos a soporte: ahí se reactivan.",
+  mensaje: "No pudimos abrir tu cuenta desde aquí. Acércate a una sala con tu DUI o escríbenos a soporte y te ayudamos.",
 };
 
 // deno-lint-ignore no-explicit-any

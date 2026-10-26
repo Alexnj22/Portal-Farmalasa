@@ -8,7 +8,9 @@ import { leerEstado, pedirEstado, suscribirse, hayQuePreguntar as hayQuePregunta
 import { fetchFotoDeEmpleado } from '@nucleo/data/notifications';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { etiquetaMes } from '@nucleo/utils/fecha';
-import { antiguedadDePersona, datosPendientesDePersona } from '@nucleo/utils/alertasDePersona';
+import { antiguedadDePersona, pendientesDePersona } from '@nucleo/utils/alertasDePersona';
+import { agruparFaltantes } from '@nucleo/utils/expediente';
+import LiquidTooltip from './LiquidTooltip';
 import { esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
 import { useAuthSiHay } from '@nucleo/context/AuthContext';
 
@@ -120,6 +122,28 @@ const ICONO = {
   // «ahora no» sin insinuar por qué.
   AUSENTE:    Clock,
 };
+
+/* El globo del «!»: cuántos datos faltan y cuáles, por tramo del expediente.
+ * Sale de `agruparFaltantes`, que es donde vive el orden y el rótulo corto. */
+function GloboDePendientes({ pendientes }) {
+  const grupos = agruparFaltantes(pendientes);
+  return (
+    <div className="flex flex-col gap-2 text-left">
+      <p className="flex items-baseline justify-between gap-4">
+        <span className="font-black">Expediente incompleto</span>
+        <span className="text-micro font-bold opacity-75 tabular-nums whitespace-nowrap">
+          {pendientes.length} {pendientes.length === 1 ? 'dato' : 'datos'}
+        </span>
+      </p>
+      {grupos.map(g => (
+        <div key={g.clave}>
+          <p className="text-micro font-black uppercase tracking-widest opacity-70">{g.rotulo}</p>
+          <p className="font-medium leading-snug">{g.items.join(' · ')}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AvatarConEstado({ emp: crudo, px, className = '', mostrarChip = true,
                                           radio = 'rounded-xl', marco = 'border border-border-card',
@@ -269,7 +293,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   const puedeCorregir = !!auth?.hasPermission
     && (auth.hasPermission('staff_list', 'can_edit') || auth.hasPermission('staff_detail', 'can_edit'));
   const pendientes = useMemo(
-    () => (conPendientes && puedeCorregir && fila && empleado && !deBaja ? datosPendientesDePersona(fila) : []),
+    () => (conPendientes && puedeCorregir && fila && empleado && !deBaja ? pendientesDePersona(fila) : []),
     [conPendientes, puedeCorregir, fila, empleado, deBaja]);
 
   const marca = estado ? MARCA[estado.variante] : null;
@@ -292,10 +316,15 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   const tituloAntiguedad = antiguedad
     ? `${antiguedad.anios} ${antiguedad.anios === 1 ? 'año' : 'años'} en la empresa · desde ${etiquetaMes(antiguedad.desde).toLowerCase()}`
     : '';
+  // Lo que falta NO va en el `title`: con una ficha casi vacía eran ~20 datos
+  // en un solo renglón de comas, y el globo nativo no admite estructura
+  // (2026-10-26, *«dale mejor estructura»*). Va en su propio globo, agrupado,
+  // sobre el «!». Al lector de pantalla le basta la cuenta.
   const tituloPendientes = pendientes.length
-    ? `Expediente incompleto: ${pendientes.join(', ')}`
+    ? `Expediente incompleto: ${pendientes.length} ${pendientes.length === 1 ? 'dato' : 'datos'}`
     : '';
-  const titulo = [tituloEstado, tituloAntiguedad, tituloPendientes].filter(Boolean).join(' · ') || undefined;
+  const titulo = [tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
+  const etiqueta = [titulo, tituloPendientes].filter(Boolean).join(' · ') || undefined;
   const marcaPendiente = pendientes.length > 0;
   const tamPendiente = px >= 28 ? Math.max(12, Math.round(px * 0.28)) : 8;
 
@@ -310,7 +339,8 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
          significa algo es el conjunto; el chip solo es un pedazo. Cuando la
          persona está presente no hay nada que anunciar y el rol no se pone: la
          foto ya se describe sola desde `LiquidAvatar`. */
-      {...(titulo ? { role: 'img', 'aria-label': titulo, title: titulo } : {})}
+      {...(etiqueta ? { role: 'img', 'aria-label': etiqueta } : {})}
+      {...(titulo ? { title: titulo } : {})}
       /* Que la marca EXISTA es la pregunta que una prueba tiene que poder
          hacer, y desde afuera se contestaría por el color del aro — que es
          CSS, y jsdom no calcula ninguno. */
@@ -385,16 +415,23 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           el `title` del conjunto y el banner del formulario. Debajo de 28 px
           es un punto sin texto. */}
       {marcaPendiente && (
-        <span
-          className="absolute -top-1 -right-1 flex items-center justify-center rounded-full
-            border-2 border-surface-card bg-warning-solid shadow-sm"
-          style={{ width: tamPendiente, height: tamPendiente }}
-          aria-hidden="true" data-marca-pendiente=""
-        >
-          {px >= 28 && (
-            <span className="font-black leading-none text-white" style={{ fontSize: Math.round(tamPendiente * 0.62) }}>!</span>
-          )}
-        </span>
+        <LiquidTooltip variant="rich" side="bottom" className="absolute -top-1 -right-1 z-base"
+          content={<GloboDePendientes pendientes={pendientes} />}>
+          {/* `title=""` corta el globo nativo de la foto: sin él, sobre el «!»
+              salían los dos globos a la vez, uno encima del otro. */}
+          <span
+            role="img" aria-label={tituloPendientes} title=""
+            className="flex items-center justify-center rounded-full border-2 border-surface-card
+              bg-warning-solid shadow-sm cursor-help"
+            style={{ width: tamPendiente, height: tamPendiente }}
+            data-marca-pendiente=""
+          >
+            {px >= 28 && (
+              <span aria-hidden="true" className="font-black leading-none text-white"
+                style={{ fontSize: Math.round(tamPendiente * 0.62) }}>!</span>
+            )}
+          </span>
+        </LiquidTooltip>
       )}
 
       {/* ── El listón de antigüedad ─────────────────────────────────────────

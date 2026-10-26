@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.2 — Personal: el globo de lo que falta, agrupado
+
+El «!» del avatar decía todo lo que faltaba en un solo renglón de comas (~20
+datos en una ficha casi vacía), dentro del globo nativo del navegador, que no
+admite estructura. Ahora tiene su propio globo: «Expediente incompleto · N
+datos» y debajo los datos agrupados por tramo (Datos personales, Domicilio,
+Identidad, Puesto y contrato, ISSS y AFP, Documentos), con rótulos cortos. El
+globo de la foto (estado y antigüedad) ya no se superpone. La agrupación vive en
+`agruparFaltantes` (`utils/expediente.js`).
+
 ## v2.1357.1 — Tipos de la base con la anonimización
 
 - `src/types/database.ts` regenerado con las tablas y funciones de la anonimización (v2.1357.0).

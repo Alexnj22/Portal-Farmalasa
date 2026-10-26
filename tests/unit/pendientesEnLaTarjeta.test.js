@@ -22,3 +22,23 @@ describe('la tarjeta y el formulario cuentan lo mismo', () => {
         expect(campos).toEqual(expect.arrayContaining(['dui', 'contrato_lugar_celebracion']));
     });
 });
+
+import { agruparFaltantes } from '@nucleo/utils/expediente';
+
+describe('el globo del avatar agrupa lo que falta', () => {
+    it('ordena por tramo del expediente, sin grupos vacíos y con el rótulo corto', () => {
+        const grupos = agruparFaltantes([
+            { campo: 'afp_estado', label: 'Si tiene AFP' },
+            { campo: 'gender', label: 'Género' },
+            { campo: 'dui_lugar_expedicion', label: 'Lugar de expedición del documento' },
+        ]);
+        expect(grupos.map(g => g.rotulo)).toEqual(['Datos personales', 'Identidad', 'ISSS y AFP']);
+        expect(grupos[1].items).toEqual(['Lugar de expedición']);
+    });
+
+    it('un campo sin grupo no se pierde', () => {
+        expect(agruparFaltantes([{ campo: 'nuevo', label: 'Algo nuevo' }])).toEqual([
+            { clave: 'otros', rotulo: 'Otros', items: ['Algo nuevo'] },
+        ]);
+    });
+});

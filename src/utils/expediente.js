@@ -142,5 +142,69 @@ export function faltantesDelExpediente(datos, { soloLoConocido = false } = {}) {
     return faltan;
 }
 
+/* ── Los grupos, para mostrar la lista sin que sea un párrafo ────────────
+ *
+ * Con una ficha casi vacía son ~20 datos, y en una sola línea separada por
+ * comas el globo de la foto era un bloque que nadie leía (2026-10-26:
+ * *«dale mejor estructura»*). Agrupados por la parte del expediente donde se
+ * llenan, se lee de un vistazo QUÉ tramo está vacío. El `corto` es el rótulo
+ * dentro de su grupo: «Lugar de expedición» bajo «Identidad» ya no necesita
+ * repetir «del documento». */
+export const GRUPOS_DEL_EXPEDIENTE = [
+    { clave: 'persona',   rotulo: 'Datos personales' },
+    { clave: 'domicilio', rotulo: 'Domicilio' },
+    { clave: 'identidad', rotulo: 'Identidad' },
+    { clave: 'contrato',  rotulo: 'Puesto y contrato' },
+    { clave: 'prevision', rotulo: 'ISSS y AFP' },
+    { clave: 'documentos', rotulo: 'Documentos' },
+];
+
+const GRUPO_DE_CAMPO = {
+    first_names: 'persona', last_names: 'persona', gender: 'persona',
+    marital_status: 'persona', birth_date: 'persona', nationality: 'persona',
+    profession: 'persona',
+    address: 'domicilio', department: 'domicilio', municipality: 'domicilio', distrito: 'domicilio',
+    dui: 'identidad', alt_identity_document: 'identidad',
+    dui_lugar_expedicion: 'identidad', dui_fecha_expedicion: 'identidad',
+    role_id: 'contrato', contract_type: 'contrato', hire_date: 'contrato',
+    branch_id: 'contrato', base_salary: 'contrato', periodo_pago: 'contrato',
+    contrato_lugar_celebracion: 'contrato', contrato_fecha_celebracion: 'contrato',
+    contract_end_date: 'contrato', code: 'contrato',
+    isss_estado: 'prevision', afp_estado: 'prevision',
+    isss_number: 'prevision', afp_number: 'prevision',
+    doc_dui: 'documentos', doc_identidad: 'documentos', examen_medico: 'documentos',
+};
+
+const CORTO = {
+    dui_lugar_expedicion: 'Lugar de expedición',
+    dui_fecha_expedicion: 'Fecha de expedición',
+    hire_date: 'Inicio de labores',
+    contrato_lugar_celebracion: 'Lugar de la firma',
+    contrato_fecha_celebracion: 'Fecha de la firma',
+    doc_dui: 'DUI (las dos caras)',
+    doc_identidad: 'Documento (imagen)',
+    isss_estado: '¿Tiene ISSS?',
+    afp_estado: '¿Tiene AFP?',
+};
+
+/**
+ * `[{ clave, rotulo, items: [rótulo corto] }]`, en el orden de
+ * `GRUPOS_DEL_EXPEDIENTE` y sin grupos vacíos. Acepta lo que devuelve
+ * `faltantesDelExpediente` (o cualquier `{ campo, label }`).
+ */
+export function agruparFaltantes(faltantes) {
+    const porGrupo = new Map(GRUPOS_DEL_EXPEDIENTE.map(g => [g.clave, []]));
+    const otros = [];
+    for (const f of faltantes || []) {
+        const lista = porGrupo.get(GRUPO_DE_CAMPO[f.campo]) || otros;
+        lista.push(CORTO[f.campo] || f.label);
+    }
+    const grupos = GRUPOS_DEL_EXPEDIENTE
+        .map(g => ({ ...g, items: porGrupo.get(g.clave) }))
+        .filter(g => g.items.length);
+    if (otros.length) grupos.push({ clave: 'otros', rotulo: 'Otros', items: otros });
+    return grupos;
+}
+
 /** ¿El expediente está a medias? Atajo legible para las pantallas. */
 export const expedienteIncompleto = (datos) => faltantesDelExpediente(datos).length > 0;

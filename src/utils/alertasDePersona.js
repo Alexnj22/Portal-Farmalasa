@@ -19,29 +19,31 @@ const diaDe = (hoy) => (hoy instanceof Date ? diaSV(hoy.getTime()) : String(hoy)
 const partes = (dia) => String(dia).slice(0, 10).split('-').map(Number);
 
 /**
- * Los rótulos de lo que le falta al expediente de una persona, leídos de su
- * fila del store. Lo usan la píldora «Faltan N datos» de la tarjeta y la marca
- * del avatar (`AvatarConEstado`): una sola cuenta para las dos.
+ * Lo que le falta al expediente de una persona, leído de su fila del store,
+ * como `[{ campo, label }]`. Lo usan la píldora «Faltan N datos» de la tarjeta
+ * y la marca del avatar (`AvatarConEstado`): una sola cuenta para las dos.
  */
-export function datosPendientesDePersona(emp) {
+export function pendientesDePersona(emp) {
     if (!emp) return [];
-    const faltan = [];
     // La lista sale de `faltantesDelExpediente`, la MISMA que el banner del
     // formulario. Esta tarjeta tenía la suya —fecha de nacimiento, DUI, ISSS y
     // el documento— y el 2026-10-26 la ficha de un dependiente decía «1 dato
     // por completar: Profesión u oficio» mientras su tarjeta no decía nada.
     // Dos listas de lo mismo terminan diciendo cosas distintas de la misma
     // persona, que es exactamente lo que `utils/expediente.js` vino a evitar.
-    for (const f of faltantesDelExpediente(emp, { soloLoConocido: true })) faltan.push(f.label);
+    const faltan = faltantesDelExpediente(emp, { soloLoConocido: true });
     // Lo que el expediente no mira y la tarjeta sí: los NÚMEROS previsionales.
     // El expediente pregunta si TIENE ISSS/AFP; acá se acusa al que dice que
     // tiene y no trae el número (así pasaron 7 fichas con AFP sin NUP, 2026-10-14).
     if (emp.identidad_conocida) {
-        if (emp.isss_estado === 'TIENE' && !emp.isss_number) faltan.push('Número de ISSS');
-        if (emp.afp_estado === 'TIENE' && !emp.afp_number) faltan.push('NUP de la AFP');
+        if (emp.isss_estado === 'TIENE' && !emp.isss_number) faltan.push({ campo: 'isss_number', label: 'Número de ISSS' });
+        if (emp.afp_estado === 'TIENE' && !emp.afp_number) faltan.push({ campo: 'afp_number', label: 'NUP de la AFP' });
     }
     return faltan;
 }
+
+/** Sólo los rótulos — para el `title` de la píldora. */
+export const datosPendientesDePersona = (emp) => pendientesDePersona(emp).map(f => f.label);
 
 export function alertasDePersona(emp, hoy = hoySV()) {
     const salida = [];

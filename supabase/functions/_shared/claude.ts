@@ -14,7 +14,10 @@
 // documentados (puede escribir la llamada a una herramienta en el texto
 // visible) y bajar el esfuerzo es la alternativa recomendada.
 
-import Anthropic from "npm:@anthropic-ai/sdk";
+// Fijada a la versión que corre en producción (leer-boleta, desplegada el
+// 2026-10-22 22:37 UTC, tomó 1.1.0). Sin versión, cada despliegue se llevaba
+// la última publicada, mayores nuevas incluidas.
+import Anthropic from "npm:@anthropic-ai/sdk@1.1.0";
 
 const DEFAULT_MODEL = "claude-opus-5";
 

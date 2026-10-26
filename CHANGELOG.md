@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1354.4 — Pendientes de la auditoría al día; librería de IA con versión fija
+
+- La lista de pendientes de la auditoría dice lo que es cierto hoy: las diferencias grandes de Salud 3 eran la cifra cruda del origen (el portal da +$0.01 y +$1.30); los sellos de las compras 5249 y 6188 ya están corregidos; quedan 2 compras duplicadas y el número de documento de la 6188 para contabilidad; en lo fiscal, $45.35 de los $48.95 retenidos no tienen comprobante y la renta sin retener es $530.09 (alquiler $520 + $10.09).
+- La lectura de boletas con IA usa una versión fija de la librería (1.1.0, la que corre hoy). Antes cada despliegue tomaba la última publicada, incluida una versión mayor nueva.
+- El cierre de caja dejó de guardar una lista de abonos que nadie leía.
+
+_(pendiente de redactar)_
+
 ## v2.1354.3 — Un ingreso que no llegó a la caja se puede reintentar sin cobrarlo dos veces
 
 Salud 3, 23-oct: la conexión con la caja se cortó al anotar una inyección de

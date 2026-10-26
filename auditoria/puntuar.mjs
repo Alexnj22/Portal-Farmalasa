@@ -275,7 +275,10 @@ const PENDIENTES = {
     impresion: ['el camino directo NO saca papel en la caja de Salud 4 (probado 19-ago)',
                 'falta medir el ancho del rollo',
                 'sigue sin probarse en otra sala'],
-    'cortes-efectivo': ['falta probar en sala', 'dos diferencias confirmadas y grandes en Salud 3 (−$970.39 y −$499.50) sin revisar con la sala',
+    'cortes-efectivo': ['falta probar en sala',
+                        // Las de Salud 3 (−$970.39/−$499.50) eran la cifra cruda del
+                        // origen: el juez del portal da +$0.01 y +$1.30 (2026-10-24).
+
                         'falta probar las bolsas en sala',
                         // Segunda revisión 2026-10-23 (HA1–HA5, b596827ce): el cobro
                         // de crédito se reescribió entero —reclamo atómico, clave por
@@ -286,9 +289,13 @@ const PENDIENTES = {
     // de los dos lo tiene mal asignado. Ver §8.20 del informe.
     compras:   ['falta correr el barrido contra los documentos reales',
                 'falta el plazo de los 163 proveedores y el insert al sistema',
-                '7 pares de compras comparten sello; en DOS los proveedores son distintos, así que un sello está en la compra equivocada',
+                // Los dos sellos en compra equivocada (5249, 6188) se corrigieron el
+                // 2026-10-24 y `selloDeCompra.ts` ya exige número + emisor.
+                '2 compras duplicadas (LUO 5184/5830, COFARSAL 4986/5059) esperando al contador',
+                'la compra 6188 tiene mal el número de documento en el sistema de origen',
                 'las recetas están medidas (5 reales) y sin construir'],
-    fiscal:    ['art.162 retención IVA $48.95 sin resolver', 'art.156 retención renta $262.52 sin marcar',
+    fiscal:    ['art.162 retención IVA $48.95, de la que $45.35 no tiene comprobante (el ISSS no ha entregado ninguno)',
+                'art.156 retención renta $530.09 sin marcar (alquiler Serrano $520 + Lemus $10.09)',
                 'libros de compras: quedan hallazgos abiertos'],
     // La brecha de mayo/2025 se CERRÓ el 2026-08-24: `refresh_sales_daily_stats(500)`
     // escribió las 85 filas que faltaban ($117,509.80). Sale de la lista porque
@@ -312,7 +319,7 @@ const PENDIENTES = {
     distribucion: ['faltan las credenciales reales de Hacienda: el emisor propio no ha transmitido un DTE real'],
     'app-clientes': ['faltan confirmar niveles, mayoreo y reservas de medicamentos antes de enviarla a las tiendas',
                      'el escáner de sala no lee el código desde la pantalla: falta probar con otro teléfono'],
-    marketing: ['falta el barrido en el navegador (escritorio y teléfono)',
+    marketing: ['falta el barrido en el navegador de escritorio',
                 'el control del servicio del diseñador está anotado y sin construir'],
     // `staff_salary` salió de acá en v2.720.0. `gate:permisos` quedó sin un solo
     // hallazgo abierto — era el último.

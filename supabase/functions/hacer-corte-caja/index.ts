@@ -1012,10 +1012,6 @@ Deno.serve(async (req) => {
        * esperado no viaja antes del conteo. */
       let cajon: string | null = null;
       let cuantosAbonosEnLaCaja: number | null = null;
-      // Los montos de los «POR ABONO A CREDITO» del día. Se declara afuera
-      // porque también los usa la comprobación del esperado, más abajo: son la
-      // misma lista y pedirla dos veces sería consultar dos veces al origen.
-      let montosDeAbono: number[][] = [];
       try {
         const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
         const dt = await (await fetch(
@@ -1028,7 +1024,6 @@ Deno.serve(async (req) => {
             .map((f) => f.map((c) => Number(String(c).replace(/[^0-9.-]/g, "")))
               .filter((n) => Number.isFinite(n) && n > 0));
           cuantosAbonosEnLaCaja = montos.length;
-          montosDeAbono = montos;
           /* El `error` NO se descarta, y acá menos que en otros lados: si el
            * select falla, `abonos` llega vacío y el veredicto diría «hoy no
            * hubo cobros que no fueran efectivo» sobre un día que sí los tuvo.

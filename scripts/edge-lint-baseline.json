@@ -5,13 +5,11 @@
     "hacer-corte-caja": "`montosDeAbono` se asigna y nadie lo lee: el comentario dice que lo usa «la comprobación del esperado, más abajo», que ya no existe. Diagnóstico muerto, sin efecto en el dinero.",
     "resto": "Variables sin usar y `let` que es `const` (saly-ai, backfill-dte-sales, consolidate-timesheets, sync-purchase-emails, sync-erp-purchases, wfm-ai-scheduler, leer-pago-de-credito, disable-employee-auth, heal-dte-sync, no-reenviar-pedido-erp). Revisadas una por una: ninguna es un chequeo que falte. Dos `no-control-regex` en saly-ai son el saneo de caracteres de control, a propósito."
   },
-  "total": 18,
+  "total": 16,
   "porFuncion": {
-    "_shared": 1,
     "backfill-dte-sales": 3,
     "consolidate-timesheets": 2,
     "disable-employee-auth": 1,
-    "hacer-corte-caja": 1,
     "heal-dte-sync": 1,
     "leer-pago-de-credito": 1,
     "no-reenviar-pedido-erp": 1,

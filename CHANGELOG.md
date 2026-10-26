@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1355.4 — El branch de pruebas vuelve a construirse: guarda de replay en la migración de las seis fichas jurídicas
+
+El workflow diario del entorno de pruebas falló el 2026-10-25: el push al
+branch viejo y el branch rehecho desde cero se quedaron los dos en
+`20261024153023` (1,515 de 1,530). La siguiente,
+`20261024153028_clientes_seis_fichas_pasan_a_juridica`, pasa seis fichas de
+`customers` a jurídica con un freno «si una no coincide, aborta todo» — y un
+branch no tiene clientes reales, así que el freno lanzaba en la primera.
+
+Se le agrega una guarda de replay: si no existe NINGUNA de las seis, no hay
+nada que cambiar y el bloque sale; si existe alguna, el freno sigue igual (en
+producción existen las seis). Reproducido en el branch roto: el bloque viejo
+lanza «La ficha 21092 ya no es…», el corregido pasa.
+
+Queda pendiente aplicar la misma guarda en
+`supabase_migrations.schema_migrations` de producción (con OK del usuario) y
+rehacer el branch con «Run workflow».
+
+La lección: una migración de DATOS con freno por fila también rompe el
+replay, no sólo un `cron.unschedule` sin guarda. Su freno tiene que distinguir
+«la fila cambió» de «esta base no tiene esas filas».
+
 ## v2.1355.3 — Diálogos acostados: el pie se desplaza con el cuerpo, y el barrido abre una pieza de Marketing
 
 Con el teléfono acostado (iPhone 13: 844×390, 342px de viewport en WebKit) el

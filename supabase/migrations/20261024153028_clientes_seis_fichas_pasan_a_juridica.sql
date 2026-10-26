@@ -30,6 +30,11 @@
 --   fabricaron con los mismos id y nombre: el bloque las pasó a jurídica,
 --   siguieron jurídicas después de tocarles el nombre, y con un nombre que no
 --   coincide el freno aborta. Las fabricadas se borraron.
+-- GUARDA DE REPLAY (2026-10-26): sin ella, el branch de pruebas —que se arma
+--   desde el registro de prod y no tiene estas fichas— moría aquí con
+--   MIGRATIONS_FAILED (workflow entorno-pruebas del 2026-10-25). La misma
+--   guarda va en `supabase_migrations.schema_migrations` de prod (con OK del
+--   usuario), igual que las guardas de cron: el branch se replica de ahí.
 -- ═══════════════════════════════════════════════════════════════════════════
 SET lock_timeout = '5s';
 
@@ -45,6 +50,15 @@ DECLARE
   ]';
   f jsonb; n integer;
 BEGIN
+  -- Guarda de replay (2026-10-26): un branch construido desde este registro
+  -- no tiene estas fichas (cero PII). Si no existe NINGUNA, no hay nada que
+  -- pasar a jurídica; si existe alguna, el freno de abajo sigue igual.
+  IF NOT EXISTS (SELECT 1 FROM public.customers c
+                  WHERE c.id IN (SELECT (e->>'id')::bigint FROM jsonb_array_elements(v_fichas) e)) THEN
+    RAISE NOTICE 'Ninguna de las seis fichas existe en esta base: nada que cambiar.';
+    RETURN;
+  END IF;
+
   FOR f IN SELECT * FROM jsonb_array_elements(v_fichas) LOOP
     UPDATE public.customers
        SET tipo_persona = 'juridica', tipo_persona_revisar = false, tipo_persona_manual_at = now()

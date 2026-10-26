@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.8 — employees_safe oculta los datos personales del personal a quien no administra Personal
+
+Una auditoría de seguridad encontró que **cualquier empleado con sesión podía leer datos personales de todo el personal** a través de `employees_safe`: domicilio, teléfono, fecha de nacimiento, contactos de emergencia, tipo de discapacidad y condiciones crónicas (datos de salud), más estudios, licencias, AFP/ISSS y detalles de contrato. El salario, el DUI, la cuenta bancaria, el código y el PIN ya estaban protegidos; esto era el resto de la ficha. No era alcanzable sin credenciales (RLS y la PII de clientes resistieron el ataque), pero sí por cualquiera de los ~50 trabajadores.
+
+Ahora esos campos salen `NULL` salvo que quien consulta tenga permiso de Personal (`staff_list`, `staff_detail` o `datos_personales` con `can_view`) o esté mirando su **propia** ficha. El directorio (nombre, foto, sala, cargo, estado) y lo operativo del horario (`weekly_schedule`, `exceptions`, `shift_id`, `hours_owed`) siguen visibles para todos, así que las pantallas de sala no cambian. La vista conserva nombre, columnas, orden y tipos, por lo que el frontend y los tipos quedan igual. Verificado en el entorno de pruebas con sesiones reales de un cargo de sala y del Gerente General. Base: migración `20261026174153`.
+
+Acompañan dos cambios de postura que no son código: se encendió la protección de contraseñas filtradas en Auth (frena la fuerza bruta real al login), y se confirmó que las cinco funciones que el advisor marca con `search_path` mutable **no se tocan** —son `SECURITY INVOKER` y ya califican con `public.`; agregarles `SET search_path` sería la regresión de la regla 4 sin ganar seguridad—, igual que la excepción ya documentada de `venta_valida`/`venta_fiscal`.
+
 ## v2.1357.7 — Reservas: la sala recibe el aviso seis horas antes de que una reserva de la app se cierre sola
 
 El reglamento cierra sola una reserva de la app si la sucursal no la prepara (o no revisa la receta) en sus 24 h, y el aviso a la sala llegaba recién después. Ahora `reservas_vigilar` avisa seis horas antes, con lo que hay que hacer: llamar al cliente para que elija cuando llegó sólo una parte, decidir el precio de Bodega, conseguir lo que no salió, preparar o revisar la receta. Como la vigilancia no corre de noche, desde las 21:00 avisa también lo que vence antes de las 13:00 del día siguiente. Un aviso por reserva y plazo. Base: migración `20261026173027`, probada antes en producción en una transacción que se deshizo sola.

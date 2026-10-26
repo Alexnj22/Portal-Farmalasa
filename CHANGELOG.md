@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.7 — Reservas: la sala recibe el aviso seis horas antes de que una reserva de la app se cierre sola
+
+El reglamento cierra sola una reserva de la app si la sucursal no la prepara (o no revisa la receta) en sus 24 h, y el aviso a la sala llegaba recién después. Ahora `reservas_vigilar` avisa seis horas antes, con lo que hay que hacer: llamar al cliente para que elija cuando llegó sólo una parte, decidir el precio de Bodega, conseguir lo que no salió, preparar o revisar la receta. Como la vigilancia no corre de noche, desde las 21:00 avisa también lo que vence antes de las 13:00 del día siguiente. Un aviso por reserva y plazo. Base: migración `20261026173027`, probada antes en producción en una transacción que se deshizo sola.
+
 ## v2.1357.6 — Claude Code pone main al día al abrir cada sesión
 
 - Hook `SessionStart` en `.claude/settings.json`: al abrir una sesión corre `npm run main:al-dia -- --aplicar`. El `main` del árbol compartido se quedaba atrás solo (13 commits hoy) porque las sesiones publican desde worktrees y nadie lo adelantaba. El script se niega si hay trabajo local sin publicar, respalda en `.git/respaldos-main/` y no hace nada fuera de `main`; si falla, la sesión arranca igual.

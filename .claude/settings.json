@@ -2,5 +2,20 @@
   "enabledPlugins": {
     "claude-code-setup@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && npm run -s main:al-dia -- --aplicar 2>&1 | tail -n 5 || true",
+            "timeout": 60,
+            "statusMessage": "Poniendo main al día con origin/main…"
+          }
+        ]
+      }
+    ]
   }
 }

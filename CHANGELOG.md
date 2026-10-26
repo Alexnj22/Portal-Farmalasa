@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.6 — Claude Code pone main al día al abrir cada sesión
+
+- Hook `SessionStart` en `.claude/settings.json`: al abrir una sesión corre `npm run main:al-dia -- --aplicar`. El `main` del árbol compartido se quedaba atrás solo (13 commits hoy) porque las sesiones publican desde worktrees y nadie lo adelantaba. El script se niega si hay trabajo local sin publicar, respalda en `.git/respaldos-main/` y no hace nada fuera de `main`; si falla, la sesión arranca igual.
+
 ## v2.1357.5 — Base: los 3 índices de FK en pedidos y puntos
 
 - Los tres índices que faltaban sobre relaciones de los renglones de pedidos (quién confirmó, quién rechazó) y de los lotes de puntos (nivel). Parciales: sólo las filas con valor. Migración 20261026172301_indices_de_fk_en_tablas_con_cron.sql.

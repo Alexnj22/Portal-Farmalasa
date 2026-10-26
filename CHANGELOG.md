@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.5 — Base: los 3 índices de FK en pedidos y puntos
+
+- Los tres índices que faltaban sobre relaciones de los renglones de pedidos (quién confirmó, quién rechazó) y de los lotes de puntos (nivel). Parciales: sólo las filas con valor. Migración 20261026172301_indices_de_fk_en_tablas_con_cron.sql.
+
+_(pendiente de redactar)_
+
 ## v2.1357.4 — Pieza de Marketing en el teléfono: siembra en pruebas y el foco no salta a «Nuevo comentario»
 
 Cierra lo que v2.1355.3 dejó sin medir porque el entorno de pruebas estaba roto.

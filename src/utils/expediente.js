@@ -86,9 +86,18 @@ export function edadDe(fechaNacimiento) {
  * nombres de campo son los mismos a propósito, para que las dos pantallas no
  * puedan discrepar.
  */
-export function faltantesDelExpediente(datos) {
+export function faltantesDelExpediente(datos, { soloLoConocido = false } = {}) {
     if (!datos) return [];
-    const faltan = EXIGIDOS.filter(e => vacio(datos[e.campo]));
+    // `soloLoConocido`: para la fila del STORE, no del formulario. Ahí un campo
+    // AUSENTE (`undefined`) no es un dato vacío sino uno que a quien mira no le
+    // llegó —el DUI sin la llave del expediente, el salario sin la de salarios,
+    // el código si `get_vendedores` no contestó—. Contarlo como faltante acusaba
+    // a las 48 fichas de lo mismo (ver `identidad_conocida` en `fetchBoot`).
+    // `null` y `''` sí cuentan: son la base diciendo «no hay».
+    const vacioDeVerdad = soloLoConocido
+        ? (v) => v !== undefined && vacio(v)
+        : vacio;
+    const faltan = EXIGIDOS.filter(e => vacioDeVerdad(datos[e.campo]));
 
     const edad = edadDe(datos.birth_date);
     const menor = edad !== null && edad < MINOR_AGE;
@@ -97,14 +106,16 @@ export function faltantesDelExpediente(datos) {
     // menor no se le pide DUI —en El Salvador no se tramita hasta los 18— sino
     // el documento alterno del Art. 23 nº2.
     if (menor) {
-        if (vacio(datos.alt_identity_document)) faltan.push({ campo: 'alt_identity_document', label: 'Documento de identidad', art: '23 nº2' });
-    } else if (vacio(datos.dui)) {
+        if (vacioDeVerdad(datos.alt_identity_document)) faltan.push({ campo: 'alt_identity_document', label: 'Documento de identidad', art: '23 nº2' });
+    } else if (vacioDeVerdad(datos.dui)) {
         faltan.push({ campo: 'dui', label: 'DUI', art: '23 nº2' });
     }
 
     const docs = datos.employee_documents || [];
     const tiene = (cat) => docs.some(d => d.category === cat && d.url);
-    if (menor) {
+    const docsConocidos = !(soloLoConocido && datos.employee_documents === undefined);
+    if (!docsConocidos) { /* no llegaron: no se acusa de nada */ }
+    else if (menor) {
         if (!tiene('DOCUMENTO_IDENTIDAD')) faltan.push({ campo: 'doc_identidad', label: 'Documento de identidad (imagen)' });
         // Art. 117: el examen médico previo de un menor no es una buena
         // práctica, es requisito para admitirlo, y se repite cada año.
@@ -125,8 +136,8 @@ export function faltantesDelExpediente(datos) {
     // Identidad previsional. `null` es «nadie preguntó» y por eso falta; un
     // «NO_TIENE» declarado NO falta — es una respuesta, y lo que sigue después
     // es el trámite, no el dato.
-    if (vacio(datos.isss_estado)) faltan.push({ campo: 'isss_estado', label: 'Si tiene ISSS' });
-    if (vacio(datos.afp_estado))  faltan.push({ campo: 'afp_estado',  label: 'Si tiene AFP' });
+    if (vacioDeVerdad(datos.isss_estado)) faltan.push({ campo: 'isss_estado', label: 'Si tiene ISSS' });
+    if (vacioDeVerdad(datos.afp_estado))  faltan.push({ campo: 'afp_estado',  label: 'Si tiene AFP' });
 
     return faltan;
 }

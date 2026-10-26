@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidModal from "./common/LiquidModal";
+import AvatarConEstado from './common/AvatarConEstado';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { LoadingState } from './common/StateViews';
 import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
@@ -921,6 +922,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const hidesHeader = HIDES_HEADER.has(type);
     const esFichaDeEmpleado = type === 'newEmployee' || type === 'editEmployee';
     const hidesFooter = HIDES_FOOTER.has(type);
+    // La foto que se acaba de elegir en el alta/edición de un empleado, para
+    // el avatar del encabezado (la guardada la resuelve `AvatarConEstado`).
+    const fotoRecienElegida = formData?.photoPreview || null;
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-sm bg-surface-card-hover";
 
     return (
@@ -941,7 +945,22 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {(() => {
                                     if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-success`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-brand-text`}><Building2 size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-brand-text`}><UserPlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newEmployee" || type === "editEmployee") {
+                                        /* La cara de la persona, si ya la tiene (2026-10-26): un
+                                           ícono de «agregar persona» sobre la ficha de alguien que
+                                           ya existe decía menos de lo que se sabía. La recién
+                                           elegida (`photoPreview`) gana; si no, `AvatarConEstado`
+                                           la resuelve del store por id, firmada. La marca de
+                                           pendientes se apaga: el banner de abajo ya la dice. */
+                                        // La ficha que ya existe lleva SIEMPRE su avatar (foto, o la
+                                        // inicial si no tiene); el alta, sólo cuando ya eligió foto.
+                                        if (type === "editEmployee" || fotoRecienElegida) return (
+                                            <AvatarConEstado emp={{ id: formData.id, name: formData.name, status: formData.status,
+                                                    hire_date: formData.hire_date, photo: fotoRecienElegida || null, photo_url: null }}
+                                                px={48} radio="rounded-2xl" pendientes={false} />
+                                        );
+                                        return <div className={`${squircleClass} text-brand-text`}><UserPlus size={22} strokeWidth={2.5} /></div>;
+                                    }
                                     if (type === "rehireEmployee") return <div className={`${squircleClass} text-success`}><RefreshCw size={22} strokeWidth={2.5} /></div>;
                                     if (type === "vacationRecall") return <div className={`${squircleClass} text-warning`}><Palmtree size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLegal") return <div className={`${squircleClass} text-success`}><Scale size={22} strokeWidth={2.5} /></div>;

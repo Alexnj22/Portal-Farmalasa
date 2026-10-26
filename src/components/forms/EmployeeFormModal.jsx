@@ -1,4 +1,5 @@
-import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useRef } from 'react';
+import LiquidAvatar from '../common/LiquidAvatar';
 import useBorrador from '@nucleo/hooks/useBorrador';
 
 /* Diferido: repartir un documento colectivo pasa una vez cada tanto, y su
@@ -45,7 +46,7 @@ import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
 import Notice from '../common/Notice';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2, Banknote, Smartphone } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2, Banknote, Smartphone, ArrowRight } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
@@ -330,9 +331,29 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
     </div>
 );
 
+/* En qué pestaña vive cada dato que `faltantesDelExpediente` puede pedir. Un
+ * campo que no esté acá igual se busca, pero sólo en la pestaña abierta. */
+const PESTANA_DE_CAMPO = {
+    first_names: 'personal', last_names: 'personal', gender: 'personal',
+    marital_status: 'personal', birth_date: 'personal', nationality: 'personal',
+    address: 'personal', department: 'personal', municipality: 'personal',
+    distrito: 'personal', profession: 'personal', dui: 'personal',
+    alt_identity_document: 'personal', dui_lugar_expedicion: 'personal',
+    dui_fecha_expedicion: 'personal', isss_estado: 'personal', afp_estado: 'personal',
+    role_id: 'laboral', contract_type: 'laboral', hire_date: 'laboral',
+    branch_id: 'laboral', base_salary: 'laboral', periodo_pago: 'laboral',
+    contrato_lugar_celebracion: 'laboral', contrato_fecha_celebracion: 'laboral',
+    contract_end_date: 'laboral',
+    code: 'nomina',
+    doc_dui: 'documentos', doc_identidad: 'documentos', examen_medico: 'documentos',
+};
+// Los pendientes cuyo nombre no es el del contenedor en pantalla.
+const CAMPO_EN_EL_DOM = { examen_medico: 'doc_EXAMEN_MEDICO' };
+
 const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, setActiveTab: irAPestana, onValidationChange }) => {
 
     const employees = useStaffStore(state => state.employees);
+    const raizDelFormulario = useRef(null);
     // Se maneja con el dedo: decide si se ofrece la cámara para la foto oficial.
     const esTactil = useCoarsePointer();
     // Fallback sin uso real hoy: el único caller (UnifiedModal) siempre pasa
@@ -610,6 +631,43 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      */
     const pendientes = useMemo(() => faltantesDelExpediente(formData), [formData]);
 
+    /* ── Tocar un pendiente lleva al campo (2026-10-26) ──────────────────────
+     *
+     * Pedido del usuario: *«en datos por completar, que al dar click en el
+     * dato me lleve a ese input, para corregirlo»*. La lista decía QUÉ falta y
+     * dejaba buscar DÓNDE en cuatro pestañas.
+     *
+     * El destino se busca en el DOM por `data-campo` (el contenedor del
+     * campo), después por `name` (los `PortalInput`) y por último por
+     * `data-campo-grupo` (un bloque que tiene el dato pero no un control
+     * propio: los campos con Acción RRHH en edición, o una tarjeta de
+     * documento). Se reintenta unos cuadros porque al cambiar de pestaña el
+     * campo todavía no existe en el primer cuadro. */
+    const irAlCampo = (campo) => {
+        const pestana = PESTANA_DE_CAMPO[campo];
+        if (pestana && pestana !== activeTab && irAPestana) irAPestana(pestana);
+        const objetivo = CAMPO_EN_EL_DOM[campo] || campo;
+        let intentos = 0;
+        const buscar = () => {
+            const raiz = raizDelFormulario.current;
+            const el = raiz?.querySelector(`[data-campo="${objetivo}"]`)
+                || raiz?.querySelector(`[name="${objetivo}"]`)?.closest('[data-campo], div')
+                || raiz?.querySelector(`[data-campo-grupo~="${objetivo}"]`);
+            if (!el) {
+                if (++intentos < 30) requestAnimationFrame(buscar);
+                return;
+            }
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const control = el.matches('input, textarea, button')
+                ? el
+                : el.querySelector('input:not([type="hidden"]):not([type="file"]):not([disabled]), textarea, button:not([disabled])');
+            control?.focus({ preventScroll: true });
+            el.setAttribute('data-resaltado', '');
+            setTimeout(() => el.removeAttribute('data-resaltado'), 1800);
+        };
+        requestAnimationFrame(buscar);
+    };
+
     /* El DUI vencido se avisa con la MISMA escala que los documentos del
      * expediente (`getExpiryBadge`): 60 días avisa, 30 alarma, y vencido es
      * vencido. Reusar el canónico y no escribir umbrales propios es lo que
@@ -655,6 +713,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // Antes del nombre no hay ficha que esté «incompleta»: hay una ficha que no
     // empezó.
     const fichaEmpezada = !!formData?.first_names?.trim() || !!formData?.last_names?.trim();
+
+    /* La foto que ya está guardada. La del STORE manda sobre la del formulario:
+     * ahí `photo` es la URL firmada que pone el arranque, y `formData` es una
+     * copia tomada al abrir que puede traer la cruda (`photo_url`), que en un
+     * bucket privado no se puede mostrar — salía el ícono de persona sobre una
+     * ficha con foto. Una foto recién elegida (`photoPreview`) gana a las dos. */
+    const fotoDelStore = useMemo(() => (formData?.id
+        ? (employees || []).find(e => String(e.id) === String(formData.id))?.photo
+        : null), [employees, formData?.id]);
+    const fotoDeLaFicha = formData?.photoPreview || fotoDelStore || formData?.photo || formData?.photo_url || null;
 
     // Distritos del municipio elegido. Si el municipio cambia, el distrito que
     // había deja de pertenecerle — se limpia en `handleSelectChange`, no acá:
@@ -2374,7 +2442,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     })();
 
     return (
-        <div className="flex flex-col w-full h-full relative z-base" onKeyDown={handleKeyDown}>
+        <div ref={raizDelFormulario} className="flex flex-col w-full h-full relative z-base" onKeyDown={handleKeyDown}>
 
             {/* ALERTA DE BORRADOR (solo en creación) */}
             {!isEditMode && hasDraft && (
@@ -2432,7 +2500,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <ul className="flex flex-wrap gap-1.5">
                                         {pendientes.map(f => (
                                             <li key={f.campo}>
-                                                <Badge variant="neutral" size="sm" uppercase={false}>{f.label}</Badge>
+                                                {/* Un botón y no una píldora: lleva al campo. */}
+                                                <button type="button" onClick={() => irAlCampo(f.campo)}
+                                                    className="rounded-full transition-transform hover:scale-[1.03] active:scale-[0.97]
+                                                        min-h-[var(--tap-min)] inline-flex items-center"
+                                                    aria-label={`Ir a ${f.label}`}>
+                                                    <Badge variant="neutral" size="sm" uppercase={false} icon={ArrowRight}>{f.label}</Badge>
+                                                </button>
                                             </li>
                                         ))}
                                     </ul>
@@ -2739,8 +2813,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="flex flex-col sm:flex-row items-center gap-6 mb-6 pb-6 border-b border-divider">
                                 <div className="relative group cursor-pointer shrink-0">
                                     <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-4 border-border-card shadow-[var(--shadow-elevation-md)] overflow-hidden bg-surface-card-hover flex items-center justify-center transition-transform group-hover:scale-105 duration-[var(--dur-slow)]">
-                                        {formData.photoPreview || formData.photo || formData.photo_url ? (
-                                            <img src={formData.photoPreview || formData.photo || formData.photo_url} alt="Perfil" className="w-full h-full object-cover" />
+                                        {fotoDeLaFicha ? (
+                                            <LiquidAvatar src={fotoDeLaFicha} alt="Perfil" className="w-full h-full" />
                                         ) : (
                                             <User size={36} className="text-content-3" strokeWidth={2} />
                                         )}
@@ -2848,12 +2922,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Nombres" name="first_names" value={formData.first_names} onChange={handleChange} required hasError={firstNamesInvalid} errorMessage="Solo letras" />
                                 <PortalInput label="Apellidos" name="last_names" value={formData.last_names} onChange={handleChange} required hasError={lastNamesInvalid} errorMessage="Solo letras" />
 
-                                <div className="relative z-content">
+                                <div data-campo="nationality" className="relative z-content">
                                     <label className={rotuloCampo('text-content-3')}>Nacionalidad</label>
                                     <LiquidSelect value={formData.nationality} onChange={(val) => handleSelectChange('nationality', val)} options={NATIONALITY_OPTIONS} placeholder="Nacionalidad..." icon={Globe} clearable={false} {...portalSelectProps} />
                                 </div>
 
-                                <div className="relative z-tabs">
+                                <div data-campo="birth_date" className="relative z-tabs">
                                     <label className={rotuloCampo('text-content-3')}>
                                         <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                         {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1 leading-none">{birthDateErrorMsg}</span>}
@@ -2962,7 +3036,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         value={formData.dui_lugar_expedicion} onChange={handleChange}
                                         icon={MapPin} placeholder="Ej. Chalatenango" />
 
-                                    <div className="relative z-content">
+                                    <div data-campo="dui_fecha_expedicion" className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Fecha de expedición</label>
                                         <LiquidDatePicker value={formData.dui_fecha_expedicion} onChange={(date) => handleDateChange('dui_fecha_expedicion', date)} />
                                     </div>
@@ -3049,14 +3123,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 </div>
 
-                                <div className="relative z-content">
+                                <div data-campo="gender" className="relative z-content">
                                     <label className={rotuloCampo('text-content-3')}>
                                         <span>Género</span>
                                         {!formData.gender && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
                                     <LiquidSelect invalid={!formData.gender} value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
-                                <div className="relative z-content">
+                                <div data-campo="marital_status" className="relative z-content">
                                     <label className={rotuloCampo('text-content-3')}>
                                         <span>Estado Civil</span>
                                         {!formData.marital_status && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
@@ -3074,11 +3148,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
 
-                                <div className="relative z-content">
+                                <div data-campo="department" className="relative z-content">
                                     <label className={rotuloCampo('text-content-3')}>Departamento</label>
                                     <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                 </div>
-                                <div className="relative z-base">
+                                <div data-campo="municipality" className="relative z-base">
                                     <label className={rotuloCampo('text-content-3')}>
                                         <span>Municipio</span>
                                         {formData.department && !formData.municipality && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
@@ -3092,7 +3166,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     los distritos son los municipios de antes. El catálogo
                                     ya existía: se construyó para la ficha fiscal del
                                     cliente, que es lo que pide el ERP. */}
-                                <div className="relative z-base">
+                                <div data-campo="distrito" className="relative z-base">
                                     <label className={rotuloCampo('text-content-3')}>
                                         <span>Distrito</span>
                                         {formData.municipality && !formData.distrito && <Badge size="sm" variant="warning" uppercase={false}>Pendiente</Badge>}
@@ -3222,7 +3296,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     const isOtherProfession = isCatalogOther(formData.profession, profesionesUniversitariasOptions);
                                     return (
                                         <>
-                                            <div className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
+                                            <div data-campo="profession" className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                 <label className={rotuloCampo('text-content-3')}>
                                                     <span>Profesión / Título</span>
                                                     {!formData.profession && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
@@ -3663,7 +3737,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                     {/* ── ISSS ─────────────────────────────────────────── */}
                                     <div className="flex flex-col gap-4">
-                                        <div className="relative z-content">
+                                        <div data-campo="isss_estado" className="relative z-content">
                                             <label className={rotuloCampo('text-content-3')}>¿Ya tiene ISSS?</label>
                                             <LiquidSelect value={formData.isss_estado} onChange={(val) => handleSelectChange('isss_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
@@ -3674,7 +3748,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                     {/* ── AFP ──────────────────────────────────────────── */}
                                     <div className="flex flex-col gap-4">
-                                        <div className="relative z-tabs">
+                                        <div data-campo="afp_estado" className="relative z-tabs">
                                             <label className={rotuloCampo('text-content-3')}>¿Ya tiene AFP?</label>
                                             <LiquidSelect value={formData.afp_estado} onChange={(val) => handleSelectChange('afp_estado', val)} options={ESTADO_PREVISIONAL_OPTIONS} placeholder="Preguntar…" icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
@@ -4120,7 +4194,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">El puesto</h4>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div data-campo-grupo="branch_id role_id hire_date" className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {isEditMode ? (
                                     <>
                                         <LockedField label="Área de Trabajo" value={selectedBranch?.name || formData.branch_id} />
@@ -4130,7 +4204,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </>
                                 ) : (
                                     <>
-                                        <div className={`relative z-tabs ${cubreVariasAreas ? 'md:col-span-2' : ''}`}>
+                                        <div data-campo="branch_id" className={`relative z-tabs ${cubreVariasAreas ? 'md:col-span-2' : ''}`}>
                                             {/* «Pendiente», no «Requerido» — y el control no se pinta
                                                 en rojo. Desde el 2026-08-28 el área de trabajo NO
                                                 bloquea el guardado: sigue siendo el Art. 23 nº6 y sigue
@@ -4195,11 +4269,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 {(formData.assigned_branch_ids || []).length === 0 && <p className="text-micro text-chart-9-text font-bold mt-1.5 ml-1">Sin áreas elegidas — sólo trabaja en su área de trabajo.</p>}
                                             </div>
                                         )}
-                                        <div className="relative z-tabs">
+                                        <div data-campo="hire_date" className="relative z-tabs">
                                             <label className={rotuloCampo('text-content-3')}>Fecha de inicio de labores</label>
                                             <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} />
                                         </div>
-                                        <div className="relative z-content">
+                                        <div data-campo="role_id" className="relative z-content">
                                             {/* Igual que el Área de Trabajo: pendiente, no requerido. */}
                                             <label className={rotuloCampo('text-content-3')}>
                                                 <span>Cargo Principal</span>
@@ -4257,7 +4331,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">El contrato</h4>
                             </div>
-                            <div className={`grid grid-cols-1 gap-4 ${contractHasEndDate ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                            <div data-campo-grupo="contract_type contract_end_date" className={`grid grid-cols-1 gap-4 ${contractHasEndDate ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 {isEditMode ? (
                                     <>
                                         <LockedField label="Tipo de contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
@@ -4265,7 +4339,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </>
                                 ) : (
                                     <>
-                                        <div className="relative z-tabs">
+                                        <div data-campo="contract_type" className="relative z-tabs">
                                             <label className={rotuloCampo('text-content-3')}>Tipo de contrato</label>
                                             <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
                                         </div>
@@ -4277,7 +4351,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
 
                                 {contractHasEndDate && (
-                                    <div className="relative z-tabs animate-in fade-in zoom-in-95">
+                                    <div data-campo="contract_end_date" className="relative z-tabs animate-in fade-in zoom-in-95">
                                         <label className={rotuloCampo('text-warning')}>
                                             <span>Fecha fin {contractDatesInvalid && <Badge size="sm" variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
                                             {!formData.contract_end_date && <Badge size="sm" variant="danger" uppercase={false}>Obligatorio</Badge>}
@@ -4377,7 +4451,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
                                 {isEditMode
-                                    ? <LockedField label={esContratoCivil(formData.contract_type) ? "Honorario" : "Salario Base"} value={formData.base_salary ? formatMoney(formData.base_salary) : '—'} />
+                                    ? <div data-campo="base_salary"><LockedField label={esContratoCivil(formData.contract_type) ? "Honorario" : "Salario Base"} value={formData.base_salary ? formatMoney(formData.base_salary) : '—'} /></div>
                                     : <PortalInput label={esContratoCivil(formData.contract_type) ? "Honorario" : "Salario Base"} name="base_salary" value={formData.base_salary} onChange={handleChange} inputMode="decimal" maskType="DECIMAL" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
                                 }
                             </div>
@@ -4397,7 +4471,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         label="Lugar de la firma" name="contrato_lugar_celebracion"
                                         value={formData.contrato_lugar_celebracion} onChange={handleChange}
                                         icon={MapPin} placeholder="Ej. Chalatenango" />
-                                    <div className="relative z-content">
+                                    <div data-campo="contrato_fecha_celebracion" className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Fecha de la firma</label>
                                         <LiquidDatePicker value={formData.contrato_fecha_celebracion} onChange={(date) => handleDateChange('contrato_fecha_celebracion', date)} />
                                     </div>
@@ -4467,7 +4541,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     {/* Art. 23 nº9 — «forma, PERÍODO y lugar de pago». No es un
                                         dato bancario: es la cláusula que decide cuándo el pago
                                         se vuelve exigible (Art. 130). */}
-                                    <div className="relative z-content">
+                                    <div data-campo="periodo_pago" className="relative z-content">
                                         <label className={rotuloCampo('text-content-3')}>Cada cuánto se le paga</label>
                                         <LiquidSelect value={formData.periodo_pago} onChange={(val) => handleSelectChange('periodo_pago', val)} options={PERIODO_PAGO_OPTIONS} placeholder="Seleccionar período…" icon={CalendarClock} {...portalSelectProps} />
                                     </div>
@@ -4987,7 +5061,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 media ficha— pero el expediente sin el DUI a la vista
                                 parecía incompleto. Es el MISMO bloque de subida, así
                                 que cambiarlo aquí o allá es lo mismo. */}
-                            <div className="mb-5">
+                            <div data-campo-grupo="doc_dui doc_identidad" className="mb-5">
                                 <div className="mb-2">
                                     <p className="text-caption font-black uppercase tracking-widest text-content-2">Identidad</p>
                                     <p className="text-micro text-content-3 font-medium leading-snug">De él salen el número, la fecha de nacimiento y la dirección de la ficha.</p>
@@ -5039,7 +5113,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             return <Badge variant={est.variant} size="sm" className="mt-1.5">{est.label}</Badge>;
                                         })()}
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div data-campo-grupo={sec.docs.map(d => `doc_${d.key}`).join(' ')} className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {sec.docs.map(cat => (
                                             <TarjetaDeDocumento key={cat.key}
                                                 categoria={cat.key}

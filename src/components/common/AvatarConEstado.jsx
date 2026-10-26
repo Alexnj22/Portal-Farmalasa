@@ -8,6 +8,9 @@ import { leerEstado, pedirEstado, suscribirse, hayQuePreguntar as hayQuePregunta
 import { fetchFotoDeEmpleado } from '@nucleo/data/notifications';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { etiquetaMes } from '@nucleo/utils/fecha';
+import { antiguedadDePersona, datosPendientesDePersona } from '@nucleo/utils/alertasDePersona';
+import { esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
+import { useAuthSiHay } from '@nucleo/context/AuthContext';
 
 /* La foto firmada de alguien que NO está en el store, por id. Un pedido por
  * persona y por sesión: `fetchFotoDeEmpleado` ya guarda la cruda, y acá se
@@ -120,7 +123,7 @@ const ICONO = {
 
 export default function AvatarConEstado({ emp: crudo, px, className = '', mostrarChip = true,
                                           radio = 'rounded-xl', marco = 'border border-border-card',
-                                          antiguedad = null }) {
+                                          antiguedad: antiguedadDada, pendientes: conPendientes = true }) {
   // El portal muestra a la misma gente con seis formas de objeto distintas
   // según de qué consulta salga. `normalizarPersona` las acepta todas — ver su
   // nota en `utils/estadoDePersona.js`.
@@ -235,6 +238,40 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   // tabla de rótulos.
   const estado = local || estadoDesdeRemoto(remoto);
 
+  // ── El listón y la marca de expediente, en TODAS las fotos (2026-10-26) ──
+  //
+  // El listón nació sólo en el directorio y la marca de «falta un dato» sólo
+  // como píldora en su tarjeta. El usuario lo pidió así: *«el badge de tiempo,
+  // […] de estado, etc. deben salir en todos los avatar de todos lados»*. Con
+  // 92 archivos que pintan esta foto, la única forma de cumplirlo es que el
+  // componente lo resuelva solo, igual que ya resuelve el estado y la foto.
+  //
+  // Por eso se busca la fila del store SIEMPRE (no sólo cuando falta historial
+  // o foto): la fecha de ingreso y el expediente casi nunca viajan con el
+  // objeto que pasa el llamador.
+  const fila = useStaffStore(s => (emp?.id
+    ? (s.employees || []).find(e => String(e.id) === String(emp.id)) || null
+    : null));
+  const persona = fila || emp;
+  const deBaja = !!persona?.status && persona.status !== 'ACTIVO';
+  const empleado = !!persona && !esFichaQueNoEsEmpleado(persona);
+
+  const antiguedad = useMemo(() => {
+    if (antiguedadDada !== undefined) return antiguedadDada || null;
+    return empleado && !deBaja ? antiguedadDePersona(persona) : null;
+  }, [antiguedadDada, persona, empleado, deBaja]);
+
+  // La marca de expediente la ve sólo quien lo puede CORREGIR: a una cajera le
+  // diría que algo está mal sin darle cómo arreglarlo, y además nombra datos
+  // de otra persona. `useAuthSiHay` y no `useAuth`: el kiosco pinta esta foto
+  // fuera del proveedor, `useAuth` lanza ahí, y la respuesta es «no puede».
+  const auth = useAuthSiHay();
+  const puedeCorregir = !!auth?.hasPermission
+    && (auth.hasPermission('staff_list', 'can_edit') || auth.hasPermission('staff_detail', 'can_edit'));
+  const pendientes = useMemo(
+    () => (conPendientes && puedeCorregir && fila && empleado && !deBaja ? datosPendientesDePersona(fila) : []),
+    [conPendientes, puedeCorregir, fila, empleado, deBaja]);
+
   const marca = estado ? MARCA[estado.variante] : null;
   const Icono = estado ? ICONO[estado.clave] : null;
 
@@ -255,7 +292,12 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   const tituloAntiguedad = antiguedad
     ? `${antiguedad.anios} ${antiguedad.anios === 1 ? 'año' : 'años'} en la empresa · desde ${etiquetaMes(antiguedad.desde).toLowerCase()}`
     : '';
-  const titulo = [tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
+  const tituloPendientes = pendientes.length
+    ? `Expediente incompleto: ${pendientes.join(', ')}`
+    : '';
+  const titulo = [tituloEstado, tituloAntiguedad, tituloPendientes].filter(Boolean).join(' · ') || undefined;
+  const marcaPendiente = pendientes.length > 0;
+  const tamPendiente = px >= 28 ? Math.max(12, Math.round(px * 0.28)) : 8;
 
   return (
     <span
@@ -273,6 +315,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
          hacer, y desde afuera se contestaría por el color del aro — que es
          CSS, y jsdom no calcula ninguno. */
       data-estado={estado ? estado.clave : undefined}
+      data-pendientes={marcaPendiente ? pendientes.length : undefined}
     >
       {/* ⚠️ El aro va POR FUERA, sin `ring-inset`, y eso no es una preferencia.
           Una sombra interior se pinta encima del fondo del elemento pero DEBAJO
@@ -335,9 +378,28 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
         </span>
       )}
 
+      {/* ── La marca de expediente incompleto ───────────────────────────────
+          Arriba a la derecha, donde no la tapa ni el chip de estado (abajo a
+          la derecha) ni el listón (abajo al centro). Un «!» y no un número: lo
+          que importa a este tamaño es QUE falta algo; cuántos y cuáles los dice
+          el `title` del conjunto y el banner del formulario. Debajo de 28 px
+          es un punto sin texto. */}
+      {marcaPendiente && (
+        <span
+          className="absolute -top-1 -right-1 flex items-center justify-center rounded-full
+            border-2 border-surface-card bg-warning-solid shadow-sm"
+          style={{ width: tamPendiente, height: tamPendiente }}
+          aria-hidden="true" data-marca-pendiente=""
+        >
+          {px >= 28 && (
+            <span className="font-black leading-none text-white" style={{ fontSize: Math.round(tamPendiente * 0.62) }}>!</span>
+          )}
+        </span>
+      )}
+
       {/* ── El listón de antigüedad ─────────────────────────────────────────
-          Opcional: lo pasa quien lo quiere (hoy, el directorio de Personal) ya
-          resuelto con `antiguedadDePersona`. Vive acá y no en la tarjeta porque
+          Sale solo de la fila del store (`antiguedadDePersona`); quien lo quiera
+          apagar pasa `antiguedad={null}`. Vive acá y no en la tarjeta porque
           tiene que saber si el chip de estado está, para no taparlo. Su
           significado va en el `title`, que es de la tarjeta entera. */}
       {antiguedad && px >= 40 && (

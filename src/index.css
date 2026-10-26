@@ -4229,6 +4229,21 @@ html[data-en-pestana] #main-scroll {
    (`antiguedadDePersona`, utils/alertasDePersona.js). Mismos tonos que el aro
    del cliente, salvo el platino: el del cliente es negro y acá tiene que
    leerse sobre la tarjeta oscura, así que es lila. Son IDENTIDAD, no tema. */
+/* El campo al que se llegó tocando un «dato por completar» (EmployeeFormModal,
+   `irAlCampo`): un destello ámbar que se apaga solo, para que el ojo sepa dónde
+   aterrizó después del desplazamiento. */
+[data-resaltado] {
+  border-radius: 1rem;
+  animation: campo-resaltado 1.8s var(--ease-spring, ease-out) both;
+}
+@keyframes campo-resaltado {
+  0%, 35% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning) 70%, transparent); }
+  100%    { box-shadow: 0 0 0 3px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-resaltado] { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning) 70%, transparent); }
+}
+
 .liston-antiguedad {
   position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); z-index: 1;
   height: 13px; padding: 0 5px; border-radius: 4px; display: flex; align-items: center;

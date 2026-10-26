@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1356.0 — Personal: la foto, los pendientes y el listón en todas partes
+
+- **La foto en el formulario.** «Actualizar información» muestra la cara de la
+  persona en el encabezado (antes, un ícono de «agregar persona») y en la
+  sección Personal la toma del padrón, ya firmada: la copia del formulario
+  podía traer la URL cruda, que en el bucket privado no se ve.
+- **Tocar un «dato por completar» lleva al campo.** Cambia de pestaña si hace
+  falta, baja hasta el campo, lo enfoca y lo resalta un momento.
+- **La tarjeta y el formulario cuentan lo mismo.** La píldora «Faltan N
+  datos» del directorio tenía su propia lista y no veía, por ejemplo, la
+  profesión u oficio. Ahora sale de `faltantesDelExpediente`, con un modo que
+  no acusa lo que a quien mira no le llegó (DUI sin la llave del expediente).
+- **Todas las fotos de una persona llevan su listón de antigüedad** (desde 40
+  px) y, para quien puede editar el personal, **un «!» ámbar si su expediente
+  está incompleto**, con la lista en el globo. `AvatarConEstado` lo resuelve
+  solo desde el padrón, igual que el estado.
+
 ## v2.1355.6 — Reservas: pagos tardíos a favor, plazos por fecha de la reserva y avisos de lo detenido
 
 Base (migración `20261026161838`), probada antes en producción dentro de una transacción que se deshizo sola (9 casos).

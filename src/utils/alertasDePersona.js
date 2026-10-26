@@ -7,7 +7,7 @@
  * Devuelve datos: el ícono va por NOMBRE (regla del núcleo portable) y cada
  * pantalla le pega el suyo. `variante`: warning | danger | chart-6 | success.
  */
-import { calcAge, MINOR_AGE } from './ageUtils';
+import { faltantesDelExpediente } from './expediente';
 import { getExpiringDocuments } from './documentExpiry';
 import { hoySV, diaSV } from './fecha';
 
@@ -18,34 +18,38 @@ import { hoySV, diaSV } from './fecha';
 const diaDe = (hoy) => (hoy instanceof Date ? diaSV(hoy.getTime()) : String(hoy).slice(0, 10));
 const partes = (dia) => String(dia).slice(0, 10).split('-').map(Number);
 
+/**
+ * Los rótulos de lo que le falta al expediente de una persona, leídos de su
+ * fila del store. Lo usan la píldora «Faltan N datos» de la tarjeta y la marca
+ * del avatar (`AvatarConEstado`): una sola cuenta para las dos.
+ */
+export function datosPendientesDePersona(emp) {
+    if (!emp) return [];
+    const faltan = [];
+    // La lista sale de `faltantesDelExpediente`, la MISMA que el banner del
+    // formulario. Esta tarjeta tenía la suya —fecha de nacimiento, DUI, ISSS y
+    // el documento— y el 2026-10-26 la ficha de un dependiente decía «1 dato
+    // por completar: Profesión u oficio» mientras su tarjeta no decía nada.
+    // Dos listas de lo mismo terminan diciendo cosas distintas de la misma
+    // persona, que es exactamente lo que `utils/expediente.js` vino a evitar.
+    for (const f of faltantesDelExpediente(emp, { soloLoConocido: true })) faltan.push(f.label);
+    // Lo que el expediente no mira y la tarjeta sí: los NÚMEROS previsionales.
+    // El expediente pregunta si TIENE ISSS/AFP; acá se acusa al que dice que
+    // tiene y no trae el número (así pasaron 7 fichas con AFP sin NUP, 2026-10-14).
+    if (emp.identidad_conocida) {
+        if (emp.isss_estado === 'TIENE' && !emp.isss_number) faltan.push('Número de ISSS');
+        if (emp.afp_estado === 'TIENE' && !emp.afp_number) faltan.push('NUP de la AFP');
+    }
+    return faltan;
+}
+
 export function alertasDePersona(emp, hoy = hoySV()) {
     const salida = [];
     const faltan = [];
     const dia = diaDe(hoy);
     const [ty, tm, td] = partes(dia);
-    const menor = (calcAge(emp.birth_date, dia) ?? 99) < MINOR_AGE;
-    if (!emp.birth_date) faltan.push('fecha de nacimiento');
-    if (emp.identidad_conocida) {
-        if (menor) {
-            if (!emp.alt_identity_document) faltan.push('número de documento de identidad');
-        } else if (!emp.dui) {
-            faltan.push('DUI');
-        }
-        if (!emp.isss_number && !emp.afp_number) faltan.push('ISSS / AFP');
-        // Con ISSS cargado la línea de arriba calla, y así pasaron 7 fichas que
-        // dicen «tiene AFP» sin el NUP (2026-10-14).
-        else if (emp.afp_estado === 'TIENE' && !emp.afp_number) faltan.push('NUP de la AFP');
-    }
+    faltan.push(...datosPendientesDePersona(emp));
     const docs = emp.employee_documents || [];
-    const tiene = (cat) => docs.some(d => d.category === cat && d.url);
-    // La misma regla que `faltantesDelExpediente` (utils/expediente.js): el
-    // DUI vale como las dos caras sueltas O como un solo archivo que las trae.
-    // Exigiendo siempre dos, la tarjeta decía «Falta 1 dato» sobre un
-    // expediente que la ficha daba por completo.
-    const tieneIdentidad = menor
-        ? tiene('DOCUMENTO_IDENTIDAD')
-        : tiene('DUI_COMPLETO') || (tiene('DUI_FRENTE') && tiene('DUI_REVERSO'));
-    if (!tieneIdentidad) faltan.push('documento de identidad');
     if (faltan.length) {
         salida.push({
             key: 'pendiente', icono: 'AlertCircle', variante: 'warning',

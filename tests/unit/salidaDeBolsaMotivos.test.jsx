@@ -89,7 +89,10 @@ vi.mock('../../src/components/common/EditorDeDocumento', () => ({
         <button type="button" onClick={() => onConfirm(file)}>preparar la foto</button>
     ),
 }));
-vi.mock('@nucleo/context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
+vi.mock('@nucleo/context/AuthContext', () => {
+    const useAuth = () => ({ user: { id: 'u1' } });
+    return { useAuth, useAuthSiHay: useAuth };
+});
 vi.mock('@nucleo/store/toastStore', () => ({ useToastStore: () => vi.fn() }));
 
 const SalidaDeBolsa = (await import('../../src/components/bolsas/SalidaDeBolsa')).default;

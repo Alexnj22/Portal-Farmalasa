@@ -33,6 +33,12 @@ export const useAuth = () => {
   return ctx;
 };
 
+// La sesión si la hay, `null` si no — para un componente que se pinta también
+// fuera del proveedor (la foto de `AvatarConEstado` sale en el kiosco antes de
+// que nadie entre) y que sólo quiere saber si quien mira PUEDE algo.
+// eslint-disable-next-line react-refresh/only-export-components -- mismo patrón que useAuth
+export const useAuthSiHay = () => useContext(AuthContext);
+
 const withTimeout = (promise, ms, label = "timeout") =>
   Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error(label)), ms))]);
 

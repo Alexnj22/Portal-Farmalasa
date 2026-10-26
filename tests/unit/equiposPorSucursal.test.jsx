@@ -110,9 +110,10 @@ vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (selector) => selector(estado),
 }));
 
-vi.mock('@nucleo/context/AuthContext', () => ({
-    useAuth: () => ({ user: { branchId: 44 }, getScope: () => 'ALL', hasPermission: () => true }),
-}));
+vi.mock('@nucleo/context/AuthContext', () => {
+    const useAuth = () => ({ user: { branchId: 44 }, getScope: () => 'ALL', hasPermission: () => true });
+    return { useAuth, useAuthSiHay: useAuth };
+});
 
 // El alta de practicante y el diálogo de borrado no participan del reparto, y
 // el primero trae su propio formulario con red y estado.
@@ -370,10 +371,14 @@ describe('Equipos por sucursal — sólo se acusa de faltar lo que se pudo mirar
         } finally { restaurar(); }
     });
 
-    it('sin ISSS ni AFP, con la marca puesta, también', () => {
-        const { restaurar } = conFicha({ identidad_conocida: true, dui: '00000000-0', isss_number: null, afp_number: null });
+    it('sin decir si tiene ISSS, con la marca puesta, también', () => {
+        // Desde el 2026-10-26 la tarjeta usa la lista del expediente, que
+        // pregunta si TIENE ISSS/AFP; el número se acusa sólo si dice que sí.
+        const { restaurar } = conFicha({ identidad_conocida: true, dui: '00000000-0', isss_estado: null, afp_estado: 'TIENE', afp_number: null });
         try {
-            expect(pendientesDe(montar().container)).toContain('ISSS / AFP');
+            const t = pendientesDe(montar().container);
+            expect(t).toContain('Si tiene ISSS');
+            expect(t).toContain('NUP de la AFP');
         } finally { restaurar(); }
     });
 
@@ -386,7 +391,8 @@ describe('Equipos por sucursal — sólo se acusa de faltar lo que se pudo mirar
         const { restaurar } = conFicha({
             identidad_conocida: true, birth_date: nacio, dui: null,
             alt_identity_document: 'CARNE-MINORIDAD-1', isss_number: '123456',
-            employee_documents: [{ category: 'DOCUMENTO_IDENTIDAD', url: 'x' }],
+            // El examen médico previo es requisito del Art. 117 para un menor.
+            employee_documents: [{ category: 'DOCUMENTO_IDENTIDAD', url: 'x' }, { category: 'EXAMEN_MEDICO', url: 'x' }],
         });
         try {
             expect(pendientesDe(montar().container)).toBeNull();

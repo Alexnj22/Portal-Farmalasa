@@ -25,9 +25,10 @@ let estado = {};
 vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (selector) => selector(estado),
 }));
-vi.mock('@nucleo/context/AuthContext', () => ({
-    useAuth: () => ({ user: { branchId: 44 }, getScope: () => 'ALL', hasPermission: () => true }),
-}));
+vi.mock('@nucleo/context/AuthContext', () => {
+    const useAuth = () => ({ user: { branchId: 44 }, getScope: () => 'ALL', hasPermission: () => true });
+    return { useAuth, useAuthSiHay: useAuth };
+});
 vi.mock('../../src/components/practicantes/PracticanteModal', () => ({ default: () => null }));
 vi.mock('../../src/components/GlassViewLayout', () => ({
     default: ({ children }) => <div>{children}</div>,
@@ -135,7 +136,7 @@ describe('L4 — el DUI en un solo archivo cuenta', () => {
     });
     it('las dos caras sueltas siguen valiendo, y una sola no', () => {
         expect(pendiente([{ category: 'DUI_FRENTE', url: 'x' }, { category: 'DUI_REVERSO', url: 'y' }])).toBeUndefined();
-        expect(pendiente([{ category: 'DUI_FRENTE', url: 'x' }])?.title).toContain('documento de identidad');
+        expect(pendiente([{ category: 'DUI_FRENTE', url: 'x' }])?.title).toContain('DUI (las dos caras)');
     });
 });
 

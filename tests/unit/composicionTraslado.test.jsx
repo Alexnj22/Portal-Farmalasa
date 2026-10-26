@@ -68,9 +68,10 @@ vi.mock('@nucleo/data/inventoryMovements', () => ({
         porProducto: new Map(ids.map(id => [id, PRESENTACIONES[id] ?? []])),
     })),
 }));
-vi.mock('@nucleo/context/AuthContext', () => ({
-    useAuth: () => ({ user: { id: 'u1', branchId: 27, branchName: 'Salud 3' } }),
-}));
+vi.mock('@nucleo/context/AuthContext', () => {
+    const useAuth = () => ({ user: { id: 'u1', branchId: 27, branchName: 'Salud 3' } });
+    return { useAuth, useAuthSiHay: useAuth };
+});
 vi.mock('@nucleo/store/staffStore', () => ({
     useStaffStore: (sel) => sel({ appendAuditLog: vi.fn(async () => {}) }),
 }));

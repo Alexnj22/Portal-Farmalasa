@@ -44,9 +44,10 @@ vi.mock('@nucleo/data/traslados', () => ({
 // (para decir quién pidió). Se simulan acá y no se agregan como props: si fueran
 // props, las tres pantallas que montan esta tarjeta tendrían que acordarse de
 // pasarlas, y la que se olvide imprime en la caja equivocada sin que falle nada.
-vi.mock('@nucleo/context/AuthContext', () => ({
-    useAuth: () => ({ user: { branchId: 25 } }),
-}));
+vi.mock('@nucleo/context/AuthContext', () => {
+    const useAuth = () => ({ user: { branchId: 25 } });
+    return { useAuth, useAuthSiHay: useAuth };
+});
 
 const imprimirTicketDeTraslado = vi.fn(async () => ({ ok: true, via: 'cola' }));
 vi.mock('@nucleo/utils/imprimirTraslado', async (original) => ({

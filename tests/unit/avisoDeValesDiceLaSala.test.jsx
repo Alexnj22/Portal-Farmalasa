@@ -31,9 +31,10 @@ vi.mock('@nucleo/data/bolsas', () => ({
     fetchValesPendientes: async () => ({ filas: filas.valor, pude: true }),
     anotarValesEnCaja: async () => ({ ok: true, resultados: [] }),
 }));
-vi.mock('@nucleo/context/AuthContext', () => ({
-    useAuth: () => ({ hasPermission: () => true }),
-}));
+vi.mock('@nucleo/context/AuthContext', () => {
+    const useAuth = () => ({ hasPermission: () => true });
+    return { useAuth, useAuthSiHay: useAuth };
+});
 vi.mock('@nucleo/store/toastStore', () => ({
     useToastStore: (sel) => sel({ showToast: () => {} }),
 }));

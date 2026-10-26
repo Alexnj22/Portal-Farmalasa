@@ -119,6 +119,8 @@ CREATE POLICY clientes_anonimizados_select ON public.clientes_anonimizados
   USING ((SELECT public.auth_has_module_permission('datos_personales', 'can_view')));
 REVOKE ALL ON public.clientes_anonimizados FROM anon;
 REVOKE INSERT, UPDATE, DELETE ON public.clientes_anonimizados FROM authenticated;
+-- Este proyecto no da GRANT por defecto a tablas nuevas: sin él, la policy no alcanza.
+GRANT SELECT ON public.clientes_anonimizados TO authenticated;
 
 -- ── Las huellas ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.clientes_anonimizados_huellas (
@@ -134,6 +136,10 @@ CREATE INDEX IF NOT EXISTS clientes_anonimizados_huellas_anon_idx ON public.clie
 ALTER TABLE public.clientes_anonimizados_huellas ENABLE ROW LEVEL SECURITY;
 -- SIN policies a propósito: sólo las funciones DEFINER la consultan.
 REVOKE ALL ON public.clientes_anonimizados_huellas FROM anon, authenticated;
+-- `upsert_customers_v2` es INVOKER y la llama `sync-dte-sales` con la llave
+-- del servidor: necesita LEER las huellas de nombre. Medido en el entorno de
+-- pruebas: sin este GRANT el sync de ventas falla con «permission denied».
+GRANT SELECT ON public.clientes_anonimizados_huellas TO service_role;
 
 -- ── El resguardo ────────────────────────────────────────────────────────────
 -- «Por temas legales se debe poder saber» (decisión del usuario): lo quitado no
@@ -181,3 +187,4 @@ CREATE POLICY clientes_resguardo_lecturas_select ON public.clientes_resguardo_le
   USING ((SELECT public.auth_has_module_permission('datos_personales', 'can_view')));
 REVOKE ALL ON public.clientes_resguardo_lecturas FROM anon;
 REVOKE INSERT, UPDATE, DELETE ON public.clientes_resguardo_lecturas FROM authenticated;
+GRANT SELECT ON public.clientes_resguardo_lecturas TO authenticated;

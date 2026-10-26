@@ -34779,7 +34779,9 @@ export type Database = {
         Args: { r: Database["public"]["Tables"]["app_reservas"]["Row"] }
         Returns: string
       }
-      reserva_plazos: { Args: never; Returns: Record<string, unknown> }
+      reserva_plazos:
+        | { Args: never; Returns: Record<string, unknown> }
+        | { Args: { p_en: string }; Returns: Record<string, unknown> }
       reserva_precio_de_bodega: {
         Args: { p_acepta: boolean; p_id: number }
         Returns: Json

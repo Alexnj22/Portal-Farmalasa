@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1355.6 — Reservas: pagos tardíos a favor, plazos por fecha de la reserva y avisos de lo detenido
+
+Base (migración `20261026161838`), probada antes en producción dentro de una transacción que se deshizo sola (9 casos).
+
+- Un pago en línea que llega a un encargo cancelado, rechazado o ya pagado queda como saldo a favor del cliente, con aviso a él y a la sala (cláusulas 7 y 8). Antes se marcaba «pagado» y el dinero no quedaba en ninguna parte.
+- Un cobro de prueba ya no deja un encargo «aceptado» (que es lo que hace que se pida al proveedor).
+- Pagar en línea una reserva prorrogada ya no le acorta el plazo.
+- La prórroga y los plazos de una reserva se deciden por su fecha de «lista», no por la de hoy (cláusula 1: lo emitido antes del 15-nov se rige por sus condiciones).
+- La reserva lista vale todo el día de su vencimiento, en pantalla y en el cron (cláusula 3.4): un solo juez.
+- Avisos nuevos a la sala: reserva detenida más de 7 días esperando lo que falta, y encargo con la fecha estimada vencida (cláusula 4.4).
+- Un pago repetido se anota una sola vez como «por devolver».
+- No se devuelve en dinero un saldo mientras una parte espera su factura.
+- `reserva_prioridad` y `puntos_horas_reserva` ya no las ejecuta una sesión del portal.
+
+## v2.1354.5 — Reservas: cancelar con motivo, receta en revisión cancelable y reglas del reglamento
+
 ## v2.1355.5 — Reservas: cancelar con motivo, receta en revisión cancelable y reglas del reglamento
 
 Revisión completa del flujo de reservas contra el reglamento de reservas y encargos especiales (rige el 15-nov-2026).

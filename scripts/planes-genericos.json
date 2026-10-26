@@ -1,7 +1,7 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
- "actualizado": "2026-10-21",
- "medidas": 47,
+ "actualizado": "2026-10-26",
+ "medidas": 49,
  "sin_medir": 24,
  "funciones": {
   "auth_module_scope": {
@@ -351,6 +351,18 @@
    "casos": "100 reservas sintéticas · 1 bloque por llamada",
    "divergencia": null,
    "nota": "medida el 2026-10-21: 5.9 ms por 100 llamadas. El plan NO puede depender de los argumentos: recibe una fila ya leída y une contra reserva_plazos(), que devuelve una sola fila de configuración, así que el genérico es el mismo plan y forzar el personalizado sólo agregaría replanificar"
+  },
+  "reserva_plazos": {
+   "ms": "2.72",
+   "casos": "reserva_plazos(now()) junto con reservas_v2_rige(now()), primera llamada · 282 bloques",
+   "divergencia": null,
+   "nota": "medida el 2026-10-26: 2.72 ms en total, los bloques son de la primera llamada de la sesión (catálogo y `saldo_favor_dias`). Sin CTE ni tablas propias: elige entre los plazos v1 y v2 según la fecha. El plan NO puede depender del argumento —sólo entra en una comparación de fechas—, así que forzar el personalizado sólo agregaría replanificar."
+  },
+  "reservas_v2_rige": {
+   "ms": "0.01",
+   "casos": "una fecha · 1 bloque",
+   "divergencia": null,
+   "nota": "medida el 2026-10-26 (estaba sin declarar desde el reglamento v2): compara una fecha contra `reglas_v2_desde()`, 1 bloque. No lee tablas que dependan del argumento; el genérico es el mismo plan."
   },
   "resumen_ingreso_pedidos": {
    "ms": "26",

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1355.2 — El NIT de la ficha del proveedor se toma del libro sólo con número y emisor
+
+El completado rápido de compras también usa el libro del sistema de origen para
+completar —o crear— la ficha del proveedor con su NIT y nombre. Ese cruce
+también era sólo por NÚMERO de documento: con números truncados que comparten
+varios proveedores, el NIT de un emisor podía ir a parar a la ficha de otro, y
+una ficha con NIT ajeno después cruza sellos y percepciones con el proveedor
+equivocado.
+
+Ahora (`_shared/nitDeProveedor.ts`, con pruebas): a una ficha que ya tiene NIT
+o NRC no se le ofrece nada; a una sin identificación sólo se le ofrece el NIT
+si el número es único —un solo emisor en el archivo y un solo proveedor con ese
+número en el lote—; y si el lote le ofrece dos NIT distintos, ninguno. Se retira
+el mapa por número a secas del sync de compras.
+
+Medido en producción el 26-oct (SELECT): ningún NIT en dos fichas, ninguna
+ficha con más de un NIT, y en las 69 fichas con DTE de compra el emisor de cada
+DTE coincide con el NIT o NRC de su ficha. De las 51 fichas creadas desde el
+libro, 3 tienen DTE (coinciden) y 19 tienen compras con nombre parecido al de la
+ficha; 32 no tienen nada contra qué comparar. Se despliega con
+`--no-verify-jwt` (la llama un cron).
+
+## v2.1354.4 — La percepción y la retención de una compra se cruzan por número y proveedor
+
 ## v2.1355.1 — La percepción y la retención de una compra se cruzan por número y proveedor
 
 El completado rápido de compras leía la percepción (libro de compras) y la

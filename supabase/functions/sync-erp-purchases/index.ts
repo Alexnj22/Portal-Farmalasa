@@ -3,6 +3,7 @@ import { getCorsHeaders, getErpBranchMap, requireInvokeSecret } from "../_shared
 import { selectAllByIn } from "../_shared/db.ts";
 import { lineasDelLibro, sellosDeLasCompras, type CompraParaSellar } from "../_shared/selloDeCompra.ts";
 import { lineasDeMonto, montosDeLasCompras } from "../_shared/montoDeCompra.ts";
+import { emisoresDelLibro, nitsParaLasFichas, type LineaDeEmisor } from "../_shared/nitDeProveedor.ts";
 
 function getPurchaseCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_PURCHASES_CREDS");
@@ -389,8 +390,6 @@ const LIBRO_CSV    = "https://clientesdte3.oss.com.sv/farma_salud/libro_compras_
 const RETEN_CSV    = "https://clientesdte3.oss.com.sv/farma_salud/libro_retencion_iva_csv.php";
 const SESION_URL   = "https://clientesdte3.oss.com.sv/farma_salud/cambio_sesion.php";
 
-const normNum = (s: string) => (s ?? '').replace(/\s+/g, '').toUpperCase();
-
 async function traer(url: string, cookie: string, ms = 60_000): Promise<string> {
   const res = await withRetry(() => fetch(url, {
     headers: { Cookie: cookie, 'X-Requested-With': 'XMLHttpRequest' },
@@ -399,23 +398,10 @@ async function traer(url: string, cookie: string, ms = 60_000): Promise<string> 
   return await res.text();
 }
 
-// El sello de recepción (40 caracteres, H19) y la guarda número + proveedor
-// viven en `_shared/selloDeCompra.ts`.
-
-// Devuelve numeroNormalizado → conjunto de valores distintos de la columna. El
-// conjunto y no el valor: si trae más de uno, ese número es ambiguo.
-function columnaPorNumero(csv: string, colNumero: number, colValor: number): Map<string, Set<string>> {
-  const m = new Map<string, Set<string>>();
-  for (const linea of csv.split('\n')) {
-    if (!linea.trim()) continue;
-    const c = linea.split(';');
-    if (c.length <= Math.max(colNumero, colValor)) continue;
-    const k = normNum(c[colNumero]);
-    if (!m.has(k)) m.set(k, new Set());
-    m.get(k)!.add((c[colValor] ?? '0').trim() || '0');
-  }
-  return m;
-}
+// Todo cruce de un renglón del libro con una compra es por número Y emisor:
+// el sello en `_shared/selloDeCompra.ts`, percepción y retención en
+// `_shared/montoDeCompra.ts`, el NIT de la ficha en `_shared/nitDeProveedor.ts`.
+// El mapa por número a secas que vivía acá se retiró el 2026-10-26.
 
 async function fastBackfill(
   supabase: any, branchId: number, erpId: number,
@@ -456,8 +442,7 @@ async function fastBackfill(
   // C1b (H22): la columna 4 es el NIT del emisor y la 5 su nombre. Mismo
   // archivo, dos índices más — sirven para completar la ficha del proveedor
   // cuando no lo tiene, o crearla cuando ni existe (C8).
-  const nitMap    = columnaPorNumero(libroCsv, 3, 4);
-  const nombreMap = columnaPorNumero(libroCsv, 3, 5);
+  const emisores = emisoresDelLibro(libroCsv, 3, 4, 5);
   // La retención NO tiene columna en el libro: sale de su propio anexo. Se pide
   // igual aunque hoy salga vacío en toda la historia — asumir cero por
   // costumbre es exactamente cómo un dato real pasa desapercibido el día que
@@ -574,7 +559,7 @@ async function fastBackfill(
     if (error) throw new Error(`fastBackfill upsert ${i}: ${error.message}`);
   }
 
-  await completarFichasDeProveedor(supabase, rows, nitMap, nombreMap);
+  await completarFichasDeProveedor(supabase, paraSellar, emisores);
 
   return { documentos: filas.length, actualizados: rows.length, ambiguos: diasTurbios.length,
            sellos_en_revision: enRevision.length, montos_sin_resolver: sinResolver.length };
@@ -582,55 +567,24 @@ async function fastBackfill(
 
 // ── C1b + C8 (H22): el NIT del libro completa —o crea— la ficha del proveedor ──
 //
-// Va DESPUÉS del upsert porque el `supplier_id` no está en el archivo: lo
-// resuelve el sync principal y queda en la fila. Acá se lee de vuelta.
+// Va DESPUÉS del upsert: las compras son el trabajo, esto es el extra. El
+// `supplier_id` de cada compra es el que se leyó de la fila antes del upsert
+// (el backfill no lo cambia), con sus NIT/NRC.
+//
+// El renglón del libro se cruza por número Y emisor (`_shared/nitDeProveedor.ts`):
+// por número a secas, el NIT de un proveedor podía ir a la ficha de otro que
+// numera igual (2026-10-26).
 //
 // Nunca tumba el sync. Si esto falla, las compras ya se guardaron y lo único
-// que se pierde es una ficha completada — el sync es el trabajo, esto es el
-// extra. Un throw acá haría fallar un backfill entero por un NIT.
+// que se pierde es una ficha completada. Un throw acá haría fallar un backfill
+// entero por un NIT.
 async function completarFichasDeProveedor(
   supabase: any,
-  rows: any[],
-  nitMap: Map<string, Set<string>>,
-  nombreMap: Map<string, Set<string>>,
+  compras: CompraParaSellar[],
+  lineas: LineaDeEmisor[],
 ): Promise<void> {
   try {
-    const ids = rows.map(r => r.erp_purchase_id).filter(Boolean);
-    if (ids.length === 0) return;
-
-    // El cap de 1000 de PostgREST aplica al INPUT del `.in()` igual que al
-    // output, así que se chunkea (regla del proyecto, patrón A).
-    const CHUNK = 1000;
-    const compras: any[] = [];
-    for (let i = 0; i < ids.length; i += CHUNK) {
-      const { data, error } = await supabase.from('purchase_receipts')
-        .select('supplier_id, documento_numero')
-        .in('erp_purchase_id', ids.slice(i, i + CHUNK))
-        .not('supplier_id', 'is', null);
-      if (error) throw new Error(error.message);
-      compras.push(...(data ?? []));
-    }
-
-    // Un valor por proveedor. Si el archivo le da DOS NIT distintos al mismo
-    // proveedor, no se manda ninguno: no sabríamos cuál, y la función de abajo
-    // no puede desempatar lo que acá ya llega mezclado.
-    const porProveedor = new Map<number, { nit: string; nombre: string | null } | null>();
-    for (const c of compras) {
-      const n = normNum(c.documento_numero ?? '');
-      if ((nitMap.get(n)?.size ?? 0) !== 1) continue;
-      const nit = [...(nitMap.get(n) ?? [])][0].replace(/[^0-9]/g, '');
-      if (!nit) continue;
-      const nombre = (nombreMap.get(n)?.size ?? 0) === 1
-        ? ([...(nombreMap.get(n) ?? [])][0] || '').trim() || null
-        : null;
-      const previo = porProveedor.get(c.supplier_id);
-      if (previo === undefined)          porProveedor.set(c.supplier_id, { nit, nombre });
-      else if (previo && previo.nit !== nit) porProveedor.set(c.supplier_id, null);
-    }
-
-    const pares = [...porProveedor.entries()]
-      .filter(([, v]) => v !== null)
-      .map(([supplier_id, v]) => ({ supplier_id, nit: v!.nit, nombre: v!.nombre }));
+    const pares = nitsParaLasFichas(compras, lineas);
     if (pares.length === 0) return;
 
     const { data: res, error } = await supabase.rpc('completar_nit_proveedores', { p_pares: pares });

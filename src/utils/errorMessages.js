@@ -150,6 +150,10 @@ const REGLAS = [
     // sola palabra en mayúsculas, sin `:` detrás): lo lanzan, entre otras,
     // `identificar_por_carne` y `get_kiosk_auth_code`.
     [/PERMISSION_DENIED|FORBIDDEN/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+    // La ficha de quien pidió anonimizar sus datos no se edita: se reactiva
+    // primero (Solicitudes sobre datos → Anonimizados). Lo lanza
+    // `update_customer_fiscal` desde el 2026-10-26.
+    [/CLIENTE_ANONIMIZADO/, 'Esta persona pidió anonimizar sus datos: la ficha no se edita. Si volvió, reactívala en Solicitudes sobre datos.'],
     // `BRANCH_SCOPE_DENIED` = tiene el permiso, pero de UNA sala, y lo pedido es
     // de otra o es de Bodega. Lo lanzan MIN·MAX y, desde el 2026-10-02, los
     // pedidos (sólo Bodega crea y despacha; la sala recibe lo suyo). Con la

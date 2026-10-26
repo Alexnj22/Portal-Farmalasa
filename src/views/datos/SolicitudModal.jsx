@@ -38,6 +38,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import TramiteDeLey from './TramiteDeLey';
+import AnonimizarCliente from './AnonimizarCliente';
 
 const paraInput = (iso) => {
     if (!iso) return '';
@@ -466,6 +467,13 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                         <Seccion titulo="Trámite"
                             nota="Prórroga, prevención, negativa y aviso a terceros: cada paso queda registrado con lo que se le comunicó.">
                             <TramiteDeLey solicitud={solicitud} onCambio={(fila) => { clearDraft(claveBorrador); onGuardada?.(fila); onClose?.(); }} />
+                        </Seccion>
+                    )}
+
+                    {resuelta && !solicitud.negada && (solicitud.derechos ?? []).includes('cancelacion') && (
+                        <Seccion titulo="Anonimizar los datos del cliente"
+                            nota="Ejecuta la cancelación resuelta: la ficha queda sin datos que identifiquen a la persona, en el portal y en la caja. Lo que exige otra ley se conserva.">
+                            <AnonimizarCliente solicitud={solicitud} />
                         </Seccion>
                     )}
 

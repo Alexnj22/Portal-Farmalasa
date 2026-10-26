@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.0 — Clientes: anonimizar los datos a pedido del titular, con resguardo y reactivación
+
+_(pendiente de redactar)_
+
 ## v2.1356.0 — Personal: la foto, los pendientes y el listón en todas partes
 
 - **La foto en el formulario.** «Actualizar información» muestra la cara de la

@@ -22,6 +22,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fetchCustomersPage, fetchCustomersStats } from '@nucleo/data/customers';
+import { documentoAnonimizado } from '@nucleo/data/solicitudesDatos';
 import { EL_SALVADOR_GEO, municipiosDe } from '@nucleo/data/elSalvadorGeo';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
@@ -200,6 +201,11 @@ export default function ClientesView({ openModal }) {
     // de filtro mientras viajaba). Sin esto, dos cargas que se cruzan dejan en
     // pantalla la que tardó más, no la que se pidió última.
     const pedidoRef = useRef(0);
+    // Buscar un documento que no aparece puede ser de alguien que pidió
+    // anonimizar sus datos (2026-10-26): su ficha ya no tiene el documento, así
+    // que la búsqueda no la encuentra. Se pregunta a la huella para decirlo, en
+    // vez de dejar que se le abra una ficha nueva en la caja.
+    const [docAnonimizado, setDocAnonimizado] = useState(false);
 
     const cargar = useCallback(async () => {
         const mio = ++pedidoRef.current;
@@ -218,6 +224,12 @@ export default function ClientesView({ openModal }) {
             setRows(r);
             setTotal(n);
             setSonParecidos(aproximado);
+            setDocAnonimizado(false);
+            if (n === 0 && String(searchAplicado ?? '').replace(/[^0-9]/g, '').length >= 8) {
+                documentoAnonimizado(searchAplicado)
+                    .then((d) => { if (mio === pedidoRef.current) setDocAnonimizado(!!d?.anonimizado); })
+                    .catch(() => { /* sin la consulta, queda el vacío de siempre */ });
+            }
         } catch (e) {
             if (mio !== pedidoRef.current) return;
             console.error('ClientesView.jsx: ', e);
@@ -501,7 +513,9 @@ export default function ClientesView({ openModal }) {
                         ? {
                             icon: Search,
                             message: 'Sin resultados',
-                            subtext: searchAplicado
+                            subtext: docAnonimizado
+                                ? 'Esta persona pidió anonimizar sus datos. Si vuelve, se reactivan en Solicitudes sobre datos → Anonimizados presentando su documento.'
+                                : searchAplicado
                                 ? `Ningún cliente coincide con "${searchAplicado}".`
                                 : 'Ningún cliente coincide con los filtros aplicados.',
                         }

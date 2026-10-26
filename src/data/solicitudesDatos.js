@@ -607,3 +607,122 @@ export function llenarConPersona(f, c) {
         identidad_numero:      f.identidad_numero || (c.documento === 'DUI' ? c.numero : ''),
     };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Anonimización a pedido del titular (derecho de cancelación, 2026-10-26).
+//
+// Sólo desde una solicitud RESUELTA, no negada, que pide cancelación. Quién
+// puede, qué ficha y qué bloquea lo decide UNA función de la base
+// (`datos_anonimizacion_evaluar`); la pantalla sólo muestra su respuesta. Las
+// facturas, el libro de recetas y los créditos NO se tocan: los exige otra ley.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Lo que pasaría (o lo que ya pasó) con la ficha de esta solicitud. */
+export async function fetchAnonimizacion(solicitudId, customerId = null) {
+    const { data, error } = await supabase.rpc('datos_anonimizacion', {
+        p_solicitud: solicitudId, p_customer: customerId,
+    });
+    if (error) throw error;
+    return data || { hecha: [], candidatos: [] };
+}
+
+async function errorDeFuncion(error) {
+    try {
+        const cuerpo = await error?.context?.json?.();
+        if (cuerpo?.error) return new Error(cuerpo.error);
+    } catch { /* sin cuerpo legible */ }
+    return error;
+}
+
+/**
+ * Anonimiza. Va por la función `anonimizar-cliente` y no por la RPC directa
+ * porque además hay que borrar archivos del almacenamiento, que la base no
+ * puede tocar. El permiso lo sigue decidiendo la base: la función llama la RPC
+ * con la sesión de quien aprieta el botón.
+ */
+export async function anonimizarCliente({ solicitudId, customerId, confirmacion, sinDocumentoMotivo = null }) {
+    const { data, error } = await supabase.functions.invoke('anonimizar-cliente', {
+        body: {
+            accion: 'anonimizar', solicitud: solicitudId, customer: customerId,
+            confirmacion, sin_documento_motivo: sinDocumentoMotivo,
+        },
+    });
+    if (error) throw await errorDeFuncion(error);
+    if (!data?.ok) throw new Error(data?.error || 'No se pudo anonimizar');
+    return data;
+}
+
+/** Reintenta borrar los archivos que quedaron pendientes. */
+export async function reintentarArchivosAnonimizacion(anonimizacionId) {
+    const { data, error } = await supabase.functions.invoke('anonimizar-cliente', {
+        body: { accion: 'archivos', id: anonimizacionId },
+    });
+    if (error) throw await errorDeFuncion(error);
+    if (!data?.ok) throw new Error(data?.error || 'No se pudo');
+    return data;
+}
+
+/**
+ * Lee lo que se guardó al anonimizar. Exige motivo y queda anotado quién,
+ * cuándo y por qué: lo anota la misma función de la base ANTES de devolver
+ * nada, así que no hay lectura sin rastro.
+ */
+export async function leerResguardo(anonimizacionId, motivo) {
+    const { data, error } = await supabase.rpc('datos_resguardo_leer', {
+        p_anonimizacion: anonimizacionId, p_motivo: motivo,
+    });
+    if (error) throw error;
+    return data;
+}
+
+/** ¿Este documento es de alguien que pidió anonimizar sus datos? */
+export async function documentoAnonimizado(documento) {
+    if (!documento || String(documento).replace(/[^0-9a-z]/gi, '').length < 7) return { anonimizado: false };
+    const { data, error } = await supabase.rpc('datos_documento_anonimizado', { p_documento: documento });
+    if (error) throw error;
+    return data || { anonimizado: false };
+}
+
+/** Devuelve sus datos a la misma ficha. Los puntos NO vuelven. */
+export async function reactivarCliente({ documento, motivo, solicitudId = null }) {
+    const { data, error } = await supabase.rpc('datos_reactivar_cliente', {
+        p_documento: documento, p_motivo: motivo, p_solicitud: solicitudId,
+    });
+    if (error) throw error;
+    return data;
+}
+
+/** Los rótulos de lo que cuenta la vista previa, en el orden en que se leen. */
+export const RUBROS_ANONIMIZACION = {
+    borra: {
+        sesiones_app: 'Sesiones de la app', mensajes_chat: 'Mensajes del chat', conversaciones: 'Conversaciones',
+        fotos: 'Fotos', preregistros: 'Pre-registros', avisos: 'Avisos', correos: 'Correos',
+        tratamientos: 'Tratamientos', tarjeta_wallet: 'Tarjeta en la billetera del teléfono',
+    },
+    resguarda: {
+        consentimientos: 'Consentimientos', solicitudes: 'Solicitudes de datos', reclamos: 'Reclamos',
+        encuestas: 'Encuestas', cambios_de_ficha: 'Historial de cambios de la ficha',
+    },
+    conserva: {
+        facturas: 'Facturas', dispensaciones: 'Libro de recetas', creditos: 'Créditos',
+        cotizaciones: 'Cotizaciones', reservas: 'Reservas', movimientos_puntos: 'Movimientos de puntos',
+    },
+};
+
+/**
+ * Las anonimizaciones hechas, para la pestaña que permite reactivar y consultar
+ * el resguardo. Son pocas por naturaleza (una por persona que lo pide), pero el
+ * techo se vigila igual.
+ */
+export async function fetchAnonimizaciones() {
+    const { data, error } = await supabase
+        .from('clientes_anonimizados')
+        .select('id, customer_id, fichas, anonimizada_at, puntos_perdidos, reactivada_at, reactivacion_motivo, archivos_pendientes, archivos_borrados_at, solicitud:solicitudes_datos!solicitud_id(id, folio_txt)')
+        .order('anonimizada_at', { ascending: false })
+        .range(0, 999);
+    if (error) throw error;
+    if ((data?.length ?? 0) === 1000) {
+        console.warn('[anonimizaciones] llegaron exactamente 1000 filas: ya hay que paginar esta consulta.');
+    }
+    return data ?? [];
+}

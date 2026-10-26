@@ -16,6 +16,10 @@
     "dte-para-cliente": {
       "guarda": "alcance"
     },
+    "anonimizar-cliente": {
+      "guarda": "sin-sala",
+      "motivo": "Llama a datos_anonimizar_cliente con la SESIÓN de quien pide: el permiso datos_personales lo decide la base. La llave del servidor sólo borra los archivos que la propia función de la base devolvió; nunca rutas del navegador."
+    },
     "anotar-vales-caja": {
       "guarda": "alcance"
     },

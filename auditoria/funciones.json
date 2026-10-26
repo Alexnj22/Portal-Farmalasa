@@ -1372,9 +1372,59 @@
    "area": "tablero",
    "por": "trigger"
   },
+  "datos_anonimizacion": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_anonimizacion_archivos": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_anonimizacion_archivos_hechos": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_anonimizacion_evaluar": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_anonimizar_cliente": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_doc_norm": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_documento_anonimizado": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_huella": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
   "datos_pedidos_de_mi_sala": {
    "area": "facturacion-dte",
    "por": "código"
+  },
+  "datos_reactivar_cliente": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
+  },
+  "datos_resguardo_leer": {
+   "area": "datos-personales",
+   "por": "manual",
+   "manual": true
   },
   "decidir_bono_semestral": {
    "area": "metas",

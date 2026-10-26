@@ -536,6 +536,27 @@ function fechaDeNacimiento(v: unknown): string | null | false {
   return t;
 }
 
+// Anonimización a pedido del titular (derecho de cancelación, 2026-10-26).
+// Su ficha quedó sin documento, así que `buscarCliente` ya no la encuentra y
+// el registro abriría una ficha NUEVA — o sea, otra persona con el mismo DUI y
+// sin historia. En vez de eso se la manda a reactivar la suya: eso lo hace el
+// portal (Solicitudes de datos), comprobando su DUI contra la huella guardada.
+// `motivo: "soporte"` es el que la app ya sabe mostrar: no hace falta compilarla.
+// El aviso sólo sale DESPUÉS del freno por IP, igual que el resto de respuestas
+// que dependen del documento.
+const DATOS_RETIRADOS = {
+  ok: false,
+  motivo: "soporte",
+  mensaje: "Los datos de este documento se retiraron a pedido de su titular. Si quieres volver, acércate a una sala con tu DUI o escríbenos a soporte: ahí se reactivan.",
+};
+
+// deno-lint-ignore no-explicit-any
+async function documentoAnonimizado(admin: any, doc: string): Promise<boolean> {
+  const { data, error } = await admin.rpc("datos_documento_anonimizado", { p_documento: doc });
+  if (error) { console.error("datos_documento_anonimizado:", error.message); return false; }
+  return data?.anonimizado === true;
+}
+
 const NO_ENCONTRADO = {
   ok: false,
   motivo: "no_encontrado",
@@ -860,6 +881,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           await anotarAcierto(doc);
           return json({ ok: true, token: await abrirSesion({ preregistro_id: pre.id }) });
         }
+        if (await documentoAnonimizado(admin, doc)) return json(DATOS_RETIRADOS);
       }
       return json(NO_ENCONTRADO);
     }
@@ -899,6 +921,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         await guardarPermisos(cli.id, true, aceptaPromos);
         return json({ ok: true, token: await abrirSesion({ customer_id: cli.id }), ya_era_cliente: true });
       }
+
+      if (await documentoAnonimizado(admin, doc)) return json(DATOS_RETIRADOS);
 
       // ¿Ya hay un pre-registro pendiente con ese documento?
       const { data: previo, error: ePrev } = await admin.from("app_cliente_preregistros")

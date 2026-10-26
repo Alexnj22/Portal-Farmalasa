@@ -1244,12 +1244,19 @@ export const AREAS = [
                  'solicitudes_datos_avisos',
                  // A quién se avisó una corrección (5 días hábiles) y el
                  // registro de incidentes del Art. 25 (2026-10-24).
-                 'solicitudes_datos_terceros', 'incidentes_datos'],
+                 'solicitudes_datos_terceros', 'incidentes_datos',
+                 // Anonimización a pedido del titular (2026-10-26): el registro
+                 // de cada una, las huellas para reconocer a quien vuelve, el
+                 // resguardo cerrado y la bitácora de quién lo leyó.
+                 'clientes_anonimizados', 'clientes_anonimizados_huellas',
+                 'clientes_resguardo', 'clientes_resguardo_lecturas'],
         // La pagina publica no tiene edge function ni cron: es HTML plano
         // servido por una reescritura de `vercel.json`. Que no dependa de nada
         // es justo lo que la hace confiable — un documento que promete estar
         // disponible no puede caerse con el portal.
-        edge: [],
+        // `anonimizar-cliente` (2026-10-26) borra los archivos de una ficha
+        // anonimizada: el efecto es el derecho de cancelación, no la app.
+        edge: ['anonimizar-cliente'],
         // Las 72 horas del Art. 25 (2026-10-24).
         crons: ['avisar-incidentes-datos'],
         docs: ['docs/legal/procedimientos/BORRADOR-D-solicitudes-de-datos-personales.md'],

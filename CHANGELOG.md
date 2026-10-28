@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.29 — Antibióticos: listado editable, vía y regla de venta
+
+- **El listado se puede editar.** En Bitácoras → Antibióticos cada producto
+  tiene su lápiz: se le fija la molécula, la vía (oral, inyectable, uso local)
+  o se lo saca («No es antibiótico»). Lo fijado a mano manda sobre lo que
+  propone el nombre, y se puede «Volver a lo automático». Una molécula que
+  falte se agrega ahí mismo y queda sin confirmar. Permiso nuevo
+  `bitacoras_editar_antibioticos` (Gerencia, Administración, Regente, Talento
+  Humano, Supervisión).
+- **«Por revisar» responde «¿están todos?».** Lista los productos marcados para
+  el libro bajo receta que el listado no ve: hoy **52** (ELEQUINE, KLARICID,
+  ROCEFORT, UNICIL…), porque el listado cruzaba por nombre y 3,826 productos no
+  tienen principio activo. «Sacados» guarda lo que alguien quitó, para
+  devolverlo.
+- **Cómo se vende cada uno, una sola regla en la base** (`antibiotico_venta`):
+  Libro = cefixima, azitromicina, claritromicina, levofloxacina, moxifloxacina,
+  norfloxacina en cualquier vía + todo inyectable; Venta libre = neomicina y
+  sulfadiazina de uso local; el resto pide receta y no va al libro. Los de uso
+  local se muestran «sin grupo» AWaRe. Hoy: 32 al libro, 72 con receta.
+- Tabla `antibioticos_producto`, funciones `antibiotico_asignar`,
+  `antibiotico_automatico`, `antibiotico_agregar_molecula`,
+  `get_antibioticos_por_revisar`, `antibiotico_via_por_nombre` (un envase de
+  ≤3 ml que no es de uso local se propone inyectable).
+
 ## v2.1357.28 — Cierre automático: frena por preventas y avisa a supervisión
 
 - El freno de preventas sin finalizar (v2.1357.26) ahora vale también para el

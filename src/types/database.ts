@@ -247,6 +247,55 @@ export type Database = {
           },
         ]
       }
+      antibioticos_producto: {
+        Row: {
+          created_at: string
+          editado_at: string
+          editado_por: string | null
+          molecula: string | null
+          product_id: number
+          via: string
+        }
+        Insert: {
+          created_at?: string
+          editado_at?: string
+          editado_por?: string | null
+          molecula?: string | null
+          product_id: number
+          via: string
+        }
+        Update: {
+          created_at?: string
+          editado_at?: string
+          editado_por?: string | null
+          molecula?: string | null
+          product_id?: number
+          via?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antibioticos_producto_editado_por_fkey"
+            columns: ["editado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antibioticos_producto_editado_por_fkey"
+            columns: ["editado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antibioticos_producto_molecula_fkey"
+            columns: ["molecula"]
+            isOneToOne: false
+            referencedRelation: "antibioticos_aware"
+            referencedColumns: ["molecula"]
+          },
+        ]
+      }
       anticipos_en_planilla: {
         Row: {
           created_at: string
@@ -28448,6 +28497,26 @@ export type Database = {
         Returns: string
       }
       alertar_barrido_dte: { Args: never; Returns: undefined }
+      antibiotico_agregar_molecula: {
+        Args: { p_atc?: string; p_grupo: string; p_molecula: string }
+        Returns: string
+      }
+      antibiotico_asignar: {
+        Args: { p_molecula: string; p_product_id: number; p_via: string }
+        Returns: undefined
+      }
+      antibiotico_automatico: {
+        Args: { p_product_id: number }
+        Returns: undefined
+      }
+      antibiotico_venta: {
+        Args: { p_molecula: string; p_via: string }
+        Returns: string
+      }
+      antibiotico_via_por_nombre: {
+        Args: { p_nombre: string }
+        Returns: string
+      }
       anular_abono_diferencia: {
         Args: { p_id: number; p_motivo: string }
         Returns: {
@@ -29162,7 +29231,13 @@ export type Database = {
         Returns: number
       }
       boleta_ya_en_caja: {
-        Args: { p_branch_id: number; p_numero_boleta: string }
+        Args: {
+          p_branch_id: number
+          p_forma_pago?: string
+          p_monto?: number
+          p_numero_boleta: string
+          p_tipo_codigo?: string
+        }
         Returns: Json
       }
       boleta_ya_registrada: {
@@ -29406,6 +29481,10 @@ export type Database = {
         Args: { p_branch_id: number; p_dia: string; p_piezas?: Json }
         Returns: Json
       }
+      caja_familia_de_boleta: {
+        Args: { p_forma_pago: string; p_tipo_codigo: string }
+        Returns: string
+      }
       caja_ingreso_pedir_autorizacion: {
         Args: { p_movimiento: number; p_nota?: string; p_pide: string }
         Returns: string
@@ -29417,6 +29496,17 @@ export type Database = {
       caja_ingreso_resolver: {
         Args: { p_aprobar: boolean; p_nota?: string; p_solicitud: string }
         Returns: Json
+      }
+      caja_misma_operacion_de_boleta: {
+        Args: {
+          a_forma_pago: string
+          a_monto: number
+          a_tipo_codigo: string
+          b_forma_pago: string
+          b_monto: number
+          b_tipo_codigo: string
+        }
+        Returns: boolean
       }
       caja_movimiento_regla: {
         Args: {
@@ -31221,6 +31311,7 @@ export type Database = {
           tipo_documento: string
         }[]
       }
+      get_antibioticos_por_revisar: { Args: never; Returns: Json }
       get_bitacora_dia: {
         Args: { p_branch_id: number; p_fecha: string }
         Returns: Json

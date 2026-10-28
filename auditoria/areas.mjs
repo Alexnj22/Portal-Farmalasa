@@ -1162,7 +1162,7 @@ export const AREAS = [
         ],
         tablas: ['bitacora_areas', 'bitacora_cierres', 'bitacora_correcciones', 'bitacora_dispensaciones',
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas',
-                 'bitacora_limpiezas_historial', 'antibioticos_aware',
+                 'bitacora_limpiezas_historial', 'antibioticos_aware', 'antibioticos_producto',
                  'recetas', 'receta_items', 'medicos', 'dispensacion_clases'],
         edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
         crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario',

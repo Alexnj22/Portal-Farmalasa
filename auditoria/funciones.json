@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-28T20:07:55.349Z",
+ "generado": "2026-10-28T21:00:07.725Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -57,6 +57,26 @@
   "alertar_barrido_dte": {
    "area": "facturacion-dte",
    "por": "cron"
+  },
+  "antibiotico_agregar_molecula": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "antibiotico_asignar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "antibiotico_automatico": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "antibiotico_venta": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "antibiotico_via_por_nombre": {
+   "area": "bitacoras",
+   "por": "llamada"
   },
   "anular_abono_diferencia": {
    "area": "cortes-efectivo",
@@ -903,6 +923,10 @@
    "area": "cortes-efectivo",
    "por": "código"
   },
+  "caja_familia_de_boleta": {
+   "area": "plataforma",
+   "por": "llamada"
+  },
   "caja_ingreso_pedir_autorizacion": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -913,6 +937,10 @@
   },
   "caja_ingreso_resolver": {
    "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_misma_operacion_de_boleta": {
+   "area": "plataforma",
    "por": "código"
   },
   "caja_movimiento_regla": {
@@ -2427,6 +2455,10 @@
   },
   "get_anexo_retencion_renta": {
    "area": "fiscal",
+   "por": "código"
+  },
+  "get_antibioticos_por_revisar": {
+   "area": "bitacoras",
    "por": "código"
   },
   "get_bitacora_dia": {

@@ -417,6 +417,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'bitacoras_tab_antibioticos', label: 'Antibióticos', tipo: 'tab' },
                 { key: 'bitacoras_tab_cierre',    label: 'Cierre de mes', tipo: 'tab' },
                 { key: 'bitacoras_confirmar_aware', label: 'Confirmar el grupo AWaRe del listado (regente)', tipo: 'cap' },
+                { key: 'bitacoras_editar_antibioticos', label: 'Editar el listado de antibióticos: qué producto es de qué molécula, su vía, o sacarlo', tipo: 'cap' },
                 // Firmar el mes es del regente, no de quien anota. Con un solo
                 // permiso, darle a la sala lo suyo le daría además el poder de
                 // dar por buena su propia bitácora — el mismo motivo por el que

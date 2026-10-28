@@ -1055,6 +1055,64 @@ export async function fetchListadoAntibioticos() {
     return { filas: Array.isArray(data) ? data : [], error: null };
 }
 
+/**
+ * Cómo se vende cada antibiótico (2026-10-28). La regla vive en la base
+ * (`antibiotico_venta`); esto es sólo cómo se dice en pantalla.
+ */
+export const VENTA_ANTIBIOTICO = {
+    LIBRO:  { label: 'Libro · receta retenida', corto: 'Libro', variant: 'danger' },
+    RECETA: { label: 'Con receta, no va al libro', corto: 'Receta', variant: 'warning' },
+    LIBRE:  { label: 'Venta libre', corto: 'Libre', variant: 'success' },
+};
+export const VIAS_ANTIBIOTICO = [
+    { value: 'oral',       label: 'Oral' },
+    { value: 'inyectable', label: 'Inyectable' },
+    { value: 'local',      label: 'Uso local' },
+];
+
+/** Todas las moléculas, tengan o no producto hoy (tabla chica: ~35 filas). */
+export async function fetchMoleculasAware() {
+    const { data, error } = await supabase.from('antibioticos_aware').select('molecula, grupo').order('molecula');
+    if (error) return { moleculas: [], error: error.message ?? 'No se pudo cargar.' };
+    return { moleculas: data ?? [], error: null };
+}
+
+/** Los productos del libro que no están en el listado, y los que alguien sacó. */
+export async function fetchAntibioticosPorRevisar() {
+    const { data, error } = await supabase.rpc('get_antibioticos_por_revisar');
+    if (error) return { fuera: [], excluidos: [], error: error.message ?? 'No se pudo cargar.' };
+    const d = /** @type {{ fuera?: any[], excluidos?: any[] } | null} */ (data);
+    return { fuera: d?.fuera ?? [], excluidos: d?.excluidos ?? [], error: null };
+}
+
+/**
+ * Fijar a mano la molécula y la vía de un producto. `molecula: null` = no es
+ * antibiótico (sale del listado). Manda sobre lo que proponga el nombre.
+ */
+export async function asignarAntibiotico({ productId, molecula, via }) {
+    const { error } = await supabase.rpc('antibiotico_asignar', {
+        p_product_id: Number(productId), p_molecula: molecula, p_via: via,
+    });
+    if (!error) anotar('ANTIBIOTICO_ASIGNADO', String(productId), { molecula, via });
+    return { error: error?.message ?? null };
+}
+
+/** Quitar la decisión manual: el producto vuelve a lo que proponga su nombre. */
+export async function antibioticoAutomatico(productId) {
+    const { error } = await supabase.rpc('antibiotico_automatico', { p_product_id: Number(productId) });
+    if (!error) anotar('ANTIBIOTICO_AUTOMATICO', String(productId), {});
+    return { error: error?.message ?? null };
+}
+
+/** Una molécula que falta. Entra sin confirmar: el grupo lo confirma el regente. */
+export async function agregarMoleculaAntibiotico({ molecula, grupo, atc }) {
+    const { data, error } = await supabase.rpc('antibiotico_agregar_molecula', {
+        p_molecula: molecula, p_grupo: grupo || null, p_atc: atc || null,
+    });
+    if (!error) anotar('ANTIBIOTICO_MOLECULA_AGREGADA', String(data), { grupo, atc });
+    return { molecula: /** @type {string|null} */ (data), error: error?.message ?? null };
+}
+
 // La confirmación la firma la base con la ficha de quien la hace: el navegador
 // conoce la cuenta, no la ficha.
 export async function confirmarMoleculaAware(molecula, grupo) {

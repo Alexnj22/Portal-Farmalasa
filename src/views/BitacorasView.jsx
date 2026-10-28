@@ -69,6 +69,7 @@ export default function BitacorasView() {
     const verCierre     = hasPermission('bitacoras_tab_cierre', 'can_view');
     const verAntibioticos = hasPermission('bitacoras_tab_antibioticos', 'can_view');
     const puedeConfirmarAware = hasPermission('bitacoras_confirmar_aware', 'can_edit');
+    const puedeEditarAntibioticos = hasPermission('bitacoras_editar_antibioticos', 'can_edit');
     const puedeConfigurar = hasPermission('bitacoras_configurar', 'can_edit');
     // Quien ve una sola sala no elige sala: la guarda del servidor ya se lo
     // resolvió, y ofrecer el selector prometería un alcance que no existe.
@@ -293,7 +294,7 @@ export default function BitacorasView() {
                 </div>
 
                 {enAntibioticos ? (
-                    <TabAntibioticos busqueda={busqueda} puedeConfirmar={puedeConfirmarAware} />
+                    <TabAntibioticos busqueda={busqueda} puedeConfirmar={puedeConfirmarAware} puedeEditar={puedeEditarAntibioticos} />
                 ) : !salaValida ? (
                     <Notice variant="info" icon={Search}>
                         {!sala

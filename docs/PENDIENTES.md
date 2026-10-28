@@ -64,7 +64,8 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 12. Segundo humano y dispositivo conocido: los interruptores existen y nada los
     consulta. — SEGURIDAD:156-226
 13. Vigilancia continua (cron) y `gate:seguridad`. — SEGURIDAD:228-246
-14. Carné sólo en su turno y su sala; ciclo de vida del carné. — SEGURIDAD:176-260
+14. ⏸ Carné sólo en su turno y su sala — **en espera de que Talento Humano termine
+    de cargar los horarios** (usuario, 2026-10-28). Ciclo de vida del carné. — SEGURIDAD:176-260
 15. Un solo camino para armar el perfil (login vs recarga). — AUDITORIA-COMPLETA:371
 16. La interfaz deja de leer `user_metadata` (`AuthContext.jsx:1142,1323`).
 

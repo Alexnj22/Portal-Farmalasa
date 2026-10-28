@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { BookOpen, CalendarCheck, Search, Settings2, Thermometer } from 'lucide-react';
+import { BookOpen, CalendarCheck, Pill, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -13,6 +13,7 @@ import TabHoy from './bitacoras/TabHoy';
 import TabBajoReceta from './bitacoras/TabBajoReceta';
 import TabCierre from './bitacoras/TabCierre';
 import TabConfiguracion from './bitacoras/TabConfiguracion';
+import TabAntibioticos from './bitacoras/TabAntibioticos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
@@ -66,6 +67,8 @@ export default function BitacorasView() {
     const puedeCompletarLibro = puedeAnotar && hasPermission('bitacoras_tab_libro', 'can_edit');
     const verLibro      = hasPermission('bitacoras_tab_libro', 'can_view');
     const verCierre     = hasPermission('bitacoras_tab_cierre', 'can_view');
+    const verAntibioticos = hasPermission('bitacoras_tab_antibioticos', 'can_view');
+    const puedeConfirmarAware = hasPermission('bitacoras_confirmar_aware', 'can_edit');
     const puedeConfigurar = hasPermission('bitacoras_configurar', 'can_edit');
     // Quien ve una sola sala no elige sala: la guarda del servidor ya se lo
     // resolvió, y ofrecer el selector prometería un alcance que no existe.
@@ -77,9 +80,10 @@ export default function BitacorasView() {
     const tabs = useMemo(() => ([
         { key: 'hoy', label: 'Registro diario', icon: Thermometer },
         ...(verLibro ? [{ key: 'libro', label: 'Bajo receta', icon: BookOpen }] : []),
+        ...(verAntibioticos ? [{ key: 'antibioticos', label: 'Antibióticos', icon: Pill }] : []),
         ...(verCierre ? [{ key: 'cierre', label: 'Cierre de mes', icon: CalendarCheck }] : []),
         ...(puedeConfigurar ? [{ key: 'config', label: 'Configuración', icon: Settings2 }] : []),
-    ]), [verLibro, verCierre, puedeConfigurar]);
+    ]), [verLibro, verAntibioticos, verCierre, puedeConfigurar]);
 
     const [tab, setTab] = usePestanaEnUrl(tabs, 'hoy');
     const [busqueda, setBusqueda] = useState('');
@@ -88,6 +92,8 @@ export default function BitacorasView() {
     const [claseLibro, setClaseLibro] = useState(CLASE_ANTIBIOTICO);
 
     const enLibro = tab === 'libro';
+    // El listado es de toda la red: ni sala ni fecha lo recortan.
+    const enAntibioticos = tab === 'antibioticos';
 
     const [dia, setDia] = useState(null);
     const [cargandoDia, setCargandoDia] = useState(true);
@@ -195,8 +201,8 @@ export default function BitacorasView() {
             onTabChange={setTab}
             searchValue={busqueda}
             onSearchChange={setBusqueda}
-            placeholder="Buscar por folio, medicamento, lote, paciente o médico…"
-            showSearch={enLibro}
+            placeholder={enAntibioticos ? 'Buscar molécula o producto…' : 'Buscar por folio, medicamento, lote, paciente o médico…'}
+            showSearch={enLibro || enAntibioticos}
         />
     );
 
@@ -228,7 +234,7 @@ export default function BitacorasView() {
 
                     {/* Orden canónico de las ranuras: ámbito → entidad → tiempo
                         → estado (§17). Acá son dos: la sala y la fecha. */}
-                    <div className="flex justify-end min-w-0">
+                    {!enAntibioticos && <div className="flex justify-end min-w-0">
                         <FilterBar
                             onClear={() => { setFecha(hoySV()); if (alcanceTodas) setSala(miSala ?? ''); }}
                             activeCount={[!esHoy, alcanceTodas && String(sala) !== String(miSala ?? '')].filter(Boolean).length}
@@ -283,10 +289,12 @@ export default function BitacorasView() {
                                 </PeriodStepper>
                             </FilterBar.Section>
                         </FilterBar>
-                    </div>
+                    </div>}
                 </div>
 
-                {!salaValida ? (
+                {enAntibioticos ? (
+                    <TabAntibioticos busqueda={busqueda} puedeConfirmar={puedeConfirmarAware} />
+                ) : !salaValida ? (
                     <Notice variant="info" icon={Search}>
                         {!sala
                             ? 'Elige una sucursal para ver su bitácora.'

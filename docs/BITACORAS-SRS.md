@@ -162,9 +162,10 @@ farmacéutico que firma; «portal» es trabajo de código.
     **LOM 2026** cap. J01 donde lo marca (`*(1)` Acceso, `*(2)` Precaución) y de
     la **OMS AWaRe 2023** donde no; cada fila dice de cuál salió. Secnidazol
     queda «sin clasificar». `get_listado_antibioticos()` la cruza con el
-    catálogo: **104 productos activos** (29 de ellos en el libro). Falta: (a) que
-    el regente revise y confirme cada molécula (`confirmado_por`), (b) una
-    pantalla para verlo y exportarlo, y (c) sacar del listado lo tópico u
+    catálogo: **104 productos activos** (29 de ellos en el libro). Se ve en
+    **Bitácoras → Antibióticos** (una fila por molécula, con sus productos y
+    botón Exportar). Falta: (a) que el regente confirme cada molécula —el botón
+    «Confirmar» sólo lo tiene su cargo (`bitacoras_confirmar_aware`)— y (b) sacar del listado lo tópico u
     oftálmico que entró por el nombre (colirios de cloranfenicol, cremas de
     clindamicina) — el catálogo no tiene la vía. *Destraba: regente, después
     portal.*
@@ -178,16 +179,17 @@ farmacéutico que firma; «portal» es trabajo de código.
     mostraban lote vencido al vender (ROCEFORT, RTS 6.6.6). Con datos reales desde
     noviembre, ese caso necesita dueño: quién lo mira y qué hace. *Destraba:
     portal + regente.*
-14. **Inyecciones: quién puede marcar «aplicada».** En conversación con el
-    usuario: pidió una solución favorable para la empresa. Lo medido en octubre:
-    de 950 aplicaciones, **328** las marcó enfermería, **475** dependientes y
-    **147** jefes de sala; de esas 622, **322** fueron a menos de 3 h de una
-    aplicación de enfermería en la misma sala, **146** fuera de 8–17 h y **89**
-    en domingo. O sea que la mitad pasó con enfermería presente y la otra mitad
-    es el horario sin ella. Lo de octubre **no se oculta** (el inspector cruza
-    ventas de inyectables contra el registro). La regla no viene del RTS sino
-    del ejercicio de enfermería (CSSP / JVPE). *Destraba: usuario + regente,
-    después portal (`inyeccion_aplicar`).*
+14. **Inyecciones: la bitácora cuenta sólo lo que aplicó enfermería.**
+    Decisión del usuario (2026-10-28): una aplicación marcada por alguien que
+    no es Regente de Enfermería sigue `aplicada`, pero no aparece en la
+    bitácora ni en el historial de Pendientes; sólo la ven los cuatro cargos de
+    administración (`inyecciones_ver_todas`). Migración `20261028180147`. Lo
+    medido en octubre: de 950 aplicaciones, 328 las marcó enfermería, 475
+    dependientes y 147 jefes de sala. **Riesgo aceptado:** la bitácora que se
+    muestre a la SRS tendrá menos aplicaciones que ventas de inyectables con
+    aplicación cobrada, y ese cruce es el que hace el inspector. Lo que deja de
+    agrandar esa diferencia es que, cuando hay enfermería en turno, sea ella
+    quien marque. *Pendiente de decidir: usuario.*
 15. **Inyecciones: lote y vencimiento de lo aplicado.** Hoy no se guardan, y la
     dosis sólo en 22 de 993. *Destraba: portal.*
 16. ~~**Inyecciones en el respaldo.**~~ **Hecho el 2026-10-28**:

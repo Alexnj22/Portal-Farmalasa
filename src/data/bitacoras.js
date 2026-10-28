@@ -1035,3 +1035,26 @@ export function rangoDeLaSucursal(branch) {
     const cierra = dias.map(d => String(d.end).slice(0, 5)).sort().at(-1);
     return { abre, cierra };
 }
+
+// ── Listado de antibióticos con su grupo AWaRe (Guía BPAD 1.13) ────────────
+// El grupo es de la MOLÉCULA (`antibioticos_aware`); el listado lo arma la base
+// cruzándola con el catálogo, así que un producto nuevo entra solo.
+export const GRUPOS_AWARE = {
+    acceso:     { label: 'Acceso',     variant: 'success' },
+    precaucion: { label: 'Precaución', variant: 'warning' },
+    reserva:    { label: 'Reserva',    variant: 'danger' },
+};
+
+export async function fetchListadoAntibioticos() {
+    const { data, error } = await supabase.rpc('get_listado_antibioticos');
+    if (error) return { filas: [], error: error.message ?? 'No se pudo cargar el listado.' };
+    return { filas: Array.isArray(data) ? data : [], error: null };
+}
+
+// La confirmación la firma la base con la ficha de quien la hace: el navegador
+// conoce la cuenta, no la ficha.
+export async function confirmarMoleculaAware(molecula, grupo) {
+    const { error } = await supabase.rpc('aware_confirmar', { p_molecula: molecula, p_grupo: grupo });
+    if (!error) anotar('CONFIRMAR_AWARE', molecula, { grupo });
+    return { error: error?.message ?? null };
+}

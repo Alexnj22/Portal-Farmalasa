@@ -59,6 +59,7 @@ const soloIndexado = process.argv.includes('--hook');
 const GATEADAS_EN_LA_BASE = {
   conteo_ver_sistema: 'la función conteo_puede_ver_sistema() de Postgres — tapa la existencia en origen, el conteo es ciego',
   ventas_no_producto: 'lo chequea get_ventas_sin_producto() antes de leer un monto: sin el permiso devuelve NULL y el aviso no existe. Gatearlo también en el frontend sería traer las cifras al navegador para esconderlas, que no es esconderlas',
+  inyecciones_ver_todas: 'lo chequean inyecciones_bitacora, inyecciones_bitacora_buscar e inyecciones_pendientes: sin el permiso, las aplicaciones que no marcó enfermería no salen de la base. Filtrarlas en el navegador sería mandarlas igual',
 };
 
 // Hallazgos REALES que el usuario decidió no resolver todavía. No se silencian:

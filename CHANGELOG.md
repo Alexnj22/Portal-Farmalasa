@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.22 — Bitácoras: pestaña Antibióticos; inyecciones sólo de enfermería en la bitácora
+
+- **Bitácoras → Antibióticos.** El listado con su grupo AWaRe, una fila por molécula con los productos del catálogo que la contienen, y botón Exportar. Lo ve quien ve el libro bajo receta; «Confirmar» sólo el cargo Regente (`aware_confirmar` firma con su ficha).
+- **Inyecciones: la bitácora cuenta sólo lo que aplicó enfermería.** Lo que marcó otro cargo sigue aplicado pero no aparece en la bitácora ni en el historial de Pendientes; lo ven sólo los cuatro cargos de administración (`inyecciones_ver_todas`). Decisión del usuario. Migración 20261028180147.
+
 ## v2.1357.21 — Bitácoras: listado AWaRe, el libro lo decide su pestaña, inyecciones al respaldo
 
 - **Listado de antibióticos con su grupo AWaRe** (Guía BPAD 1.13, RTS 6.1.15). Tabla `antibioticos_aware` con el grupo por molécula, tomado del Listado Oficial de Medicamentos 2026 (cap. J01) y, donde no lo marca, de la OMS AWaRe 2023; `get_listado_antibioticos()` lo cruza con el catálogo: 104 productos. Queda para que el regente lo confirme.

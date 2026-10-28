@@ -202,6 +202,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'inyecciones_tab_bitacora',   label: 'Bitácora',   tipo: 'tab' },
                 { key: 'inyecciones_dosis',   label: 'Confirmar aplicaciones por producto y asignar cobros', tipo: 'cap' },
                 { key: 'inyecciones_precios', label: 'Cambiar el precio de la aplicación', tipo: 'cap' },
+                { key: 'inyecciones_ver_todas', label: 'Ver también las aplicaciones que no hizo enfermería', tipo: 'cap' },
             ]},
             { key: 'cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Quién debe, desde cuándo y cuánto, en las seis salas. Ver es mirar la cartera y el plazo del mes; editar es abonar — el efectivo entra al cajón, cuenta para el corte del día y no se puede deshacer', icono: 'HandCoins', hasApprove: false, hasScope: true },
             { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icono: 'Package', hasApprove: false, hasScope: true, sub: [
@@ -412,7 +413,9 @@ const GRUPOS_CRUDOS = [
                 // pantalla con otra fecha, o sea un filtro (§16.9). La pestaña
                 // que existe de verdad es el libro — otras filas, otro trabajo.
                 { key: 'bitacoras_tab_libro',     label: 'Bajo receta',   tipo: 'tab' },
+                { key: 'bitacoras_tab_antibioticos', label: 'Antibióticos', tipo: 'tab' },
                 { key: 'bitacoras_tab_cierre',    label: 'Cierre de mes', tipo: 'tab' },
+                { key: 'bitacoras_confirmar_aware', label: 'Confirmar el grupo AWaRe del listado (regente)', tipo: 'cap' },
                 // Firmar el mes es del regente, no de quien anota. Con un solo
                 // permiso, darle a la sala lo suyo le daría además el poder de
                 // dar por buena su propia bitácora — el mismo motivo por el que

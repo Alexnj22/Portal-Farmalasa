@@ -845,11 +845,15 @@ export const PLANTILLA_AREA = {
     servicio_sanitario: { nombre: 'Servicio sanitario',  temp_min: null, temp_max: null, mide_humedad: false, conFranjas: false, limpiezas: 2 },
 };
 
-/** Las franjas por defecto de una sala que abre a las 07:00. */
+/**
+ * Las franjas por defecto de una sala: media mañana, mediodía y media tarde,
+ * que es cuando el RTS 6.2.16 pide medir (2026-10-28; eran 07–09 y 17–19, la
+ * hora más fresca y el final de la tarde).
+ */
 export const FRANJAS_POR_DEFECTO = [
-    { clave: 'm', label: 'Mañana',   desde: '07:00', hasta: '09:00' },
+    { clave: 'm', label: 'Mañana',   desde: '09:30', hasta: '11:00' },
     { clave: 'd', label: 'Mediodía', desde: '12:00', hasta: '14:00' },
-    { clave: 't', label: 'Tarde',    desde: '17:00', hasta: '19:00' },
+    { clave: 't', label: 'Tarde',    desde: '14:30', hasta: '16:00' },
 ];
 
 // Los turnos de limpieza se llaman como los momentos del día —«Mañana» y

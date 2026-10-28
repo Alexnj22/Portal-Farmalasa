@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.27 — Bitácoras: franjas de temperatura de las salas a media mañana y media tarde
+
+Las lecturas de temperatura de las seis salas (sala de ventas y bodega) pasan de 07–09 / 12–14 / 17–19 a **09:30–11:00 / 12:00–14:00 / 14:30–16:00**: el RTS 6.2.16 (Guía 2.27) pide media mañana y media tarde, y la de las 7 era la hora más fresca del día. Las claves de franja no cambian, así que las lecturas viejas siguen atadas a la suya. La Bodega central queda como estaba (08–10 / 15–17). Las áreas nuevas nacen con el horario nuevo. Migración `20261028203653`.
+
 ## v2.1357.26 — Cortes: una preventa sin finalizar frena el corte y el cierre
 
 - La pantalla de corte del sistema de la caja pinta «Hay facturas pendientes de

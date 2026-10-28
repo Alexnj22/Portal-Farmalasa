@@ -26,7 +26,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 - La matemática de `consolidate-timesheets` —descansos, reparto diurno/nocturno,
   tramos trabajados, tardanza— pasó a `_shared/tiempoTrabajado.ts`, sin cambiar
   una línea de cálculo. Es lo que llena `timesheets` (lo que se paga) y no
-  tenía ninguna prueba: hoy `tests/unit/tiempoTrabajado.test.js` (19 pruebas)
+  tenía ninguna prueba: hoy `tests/unit/tiempoTrabajado.test.js` (18 pruebas)
   cubre turnos de día, de tarde, nocturnos que cruzan la medianoche, las
   fronteras exactas de las 19:00 y las 06:00, fin de año, almuerzo y lactancia,
   y el reparto ordinaria / extra nocturna de un turno de noche.

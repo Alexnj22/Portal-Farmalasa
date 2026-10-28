@@ -1442,6 +1442,29 @@ export async function revisarVentasDeLaCaja(sala) {
     }
 }
 
+/**
+ * Las preventas guardadas y sin finalizar de la sala, leídas de la caja.
+ *
+ * Una preventa puede ser dinero que ya está en el cajón y todavía no es venta,
+ * así que el corte y el cierre del día no salen mientras haya alguna
+ * (2026-10-28). El servidor frena igual; esto es para decirlo ANTES de contar.
+ * `{ preventas: [{ referencia, cliente, total }] }` o `{ error }`.
+ */
+export async function preventasDeLaCaja(sala) {
+    try {
+        const { data, error } = await supabase.functions.invoke('hacer-corte-caja', {
+            body: { sala, preventas: true },
+        });
+        if (error) return { error: await motivoDelServidor(error) };
+        if (!data || data.ok !== true || !Array.isArray(data.preventas)) {
+            return { error: new Error(data?.error || 'NO_SE_PUDO') };
+        }
+        return { preventas: data.preventas };
+    } catch (err) {
+        return { error: err };
+    }
+}
+
 /** Los motivos fijos para cerrar con diferencia. Tabla chica (3 filas). */
 export async function fetchMotivosCierreConDiferencia() {
     return supabase.from('caja_motivos_cierre_con_diferencia')

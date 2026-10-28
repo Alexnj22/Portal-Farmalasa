@@ -711,6 +711,27 @@ redeploy, leer el valor VIVO en vez de confiar en la lista — `list_edge_functi
 lo trae en `verify_jwt`, y ahí se vio que cuatro de las cinco coincidían y una
 no.
 
+## REGLA: un número de boleta sólo es único DENTRO de quien lo numera (2026-10-28)
+
+El freno de boleta repetida del cajón comparaba número y sentido, nada más. Pero
+cada banco numera por su lado y una factura trae el número de su emisor: en
+Salud 2, la **000956** del POS Promerica ($3.99, ANDA) y la **000956** de la
+terminal de tarjeta Atlántida ($48.00) son dos operaciones reales. Con la regla
+vieja, la segunda —si hubiera sido en efectivo— **no se habría podido
+registrar**, y `gate:cortes` la acusaba de duplicado.
+
+Quién es la MISMA operación lo decide **la base, una sola vez**:
+`caja_misma_operacion_de_boleta` sobre `caja_familia_de_boleta`. POS Promerica
+(entrada o salida) → basta el número; cualquier otro tipo (proveedor, compra,
+otro) → además el mismo monto; voucher (tarjeta/transferencia) → no se juzga,
+ya tiene su tope de partes en `operar-caja`. `boleta_ya_en_caja` devuelve
+`misma_operacion` por coincidencia, y lo leen el freno de `operar-caja`,
+`choqueDeBoleta` en la pantalla y la sección E de `gate:cortes`. Sin decir qué
+se anota devuelve `null` y frena como antes. Las correcciones de sentido
+contrario cruzan tipos (una entrada del POS contra-anotada como «Otro»), así que
+ese AVISO no mira la familia. Bolsas ya lo hacía bien: su índice único lleva la
+entidad.
+
 ## Cuentas por cobrar: la lista se mira acá, el cobro se decide allá (2026-09-02)
 
 Los créditos de los clientes viven en el sistema de la caja y el portal tiene un
@@ -851,17 +872,31 @@ el corte de esa hora cerró exacto), y la referencia es el corte que **más lleg
 contar** en el día y no el último (hay cortes de apertura de turno que declaran
 $0.00).
 
-### El cierre del día tiene TRES frenos, y ninguno cubre a los otros (2026-09-06)
+### El cierre del día tiene CUATRO frenos, y ninguno cubre a los otros (2026-09-06 · 2026-10-28)
 
 Cerrar el día emite el Z y **no se deshace**: esa caja no vuelve a abrir. Los
-tres frenos viven en `hacer-corte-caja` —nunca en `operar-caja`, que llegaría
-con el Z ya emitido— y los tres se repiten en la pantalla para avisar ANTES:
+frenos viven en `hacer-corte-caja` —nunca en `operar-caja`, que llegaría
+con el Z ya emitido— y se repiten en la pantalla para avisar ANTES:
 
 | freno | pregunta | qué costó no tenerlo |
 |---|---|---|
 | corte sin resolver | ¿quedó alguno ni confirmado ni descartado? | Salud 1, 5-sep |
 | sin corte confirmado | ¿hay AL MENOS UNO confirmado hoy? | — |
 | **efectivo sin contar** | **¿entró plata desde el último confirmado?** | **Salud 2, 6-sep** |
+| **preventa sin finalizar** | **¿queda alguna preventa guardada en la caja?** | — (lo hacía la caja, ver abajo) |
+
+**El cuarto vale también para el corte C, no sólo para el Z.** La pantalla de
+corte de la caja pinta «Hay facturas pendientes de cobro» y **deshabilita
+Guardar** cuando la sala tiene preventas guardadas —medido el 2026-10-28 en las
+seis salas: aviso en las 4 con preventas, en ninguna de las 2 sin—. El freno
+vivía sólo en ESE botón: el POST a `corte_caja_diario.php` lo acepta igual, y el
+portal, que nunca aprieta el botón, se lo saltaba desde que corta él. Una
+preventa puede ser dinero que ya entró al cajón y todavía no es venta.
+`hacer-corte-caja` lee la lista (`get_referencias`, `preventasVivas`) **antes
+del vale y de cualquier escritura**; si no la puede leer, frena. Y relee el
+aviso de la pantalla justo antes de enviar, por si entró una en el medio.
+Mi caja la pide al abrir el diálogo (`body.preventas`, sólo lectura, una por
+apertura) para decirlo antes de que alguien cuente el cajón en vano.
 
 Los dos primeros estaban **en verde** cuando Salud 2 cerró el 6-sep a las 17:58
 con su único conteo firmado a las **11:59**: $152.65 de ventas, $5.74 de CAESS y
@@ -908,8 +943,17 @@ lo único automático es un corte **C** a las 21:00:00 sobre la caja abierta.
 Ese C nace PENDIENTE y nadie lo firma, y por eso en el modo automático **no
 frena «corte sin resolver»**: frenaría justo el día que hace falta cerrar.
 «Efectivo sin contar» sí frena, medido contra ese corte cercano al cierre
-(`caja_falta_contra_corte`) aunque no esté confirmado. Al tocar cualquiera de
-los tres frenos de arriba, mirar también la rama `automatico`.
+(`caja_falta_contra_corte`) aunque no esté confirmado. **«Preventa sin
+finalizar» también frena** (usuario, 2026-10-28: «que frene y notifique
+supervisor»): el día queda abierto, `cierre-automatico-caja` anota el motivo
+`preventas_sin_finalizar` y avisa a Gerente General y Supervisor/a de Ventas
+con la lista — una sola vez por noche, aunque el cron corra cada 10 min. Al
+tocar cualquiera de los frenos de arriba, mirar también la rama `automatico`.
+
+**Sólo cierra si la sala no cerró, y eso se mira tres veces**: el juez exige
+caja abierta y ningún Z en el espejo, `hacer-corte-caja` le vuelve a preguntar
+justo antes de emitir, y además lee los cortes del día EN VIVO en la caja
+(`ya_estaba`) — el espejo puede ir minutos atrás de un Z recién hecho.
 
 ---
 

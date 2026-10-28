@@ -644,6 +644,15 @@ Deno.serve(async (req) => {
     const cookie = await getSessionCookie(username, password);
     await abrirSala(cookie, entrada.erpId);
 
+    /* ── LAS PREVENTAS, SIN CORTAR NADA (2026-10-28) ───────────────────────
+     *
+     * Lo pide la pantalla al abrir el corte o el cierre: el freno de abajo
+     * rechaza igual, pero enterarse al apretar es haber contado el cajón en
+     * vano. Una lectura por apertura del diálogo, no un sondeo. Sólo lee. */
+    if (body.preventas === true) {
+      return json({ ok: true, preventas: await preventasVivas(cookie) });
+    }
+
     /* ── REVISAR, SIN CORTAR NADA ──────────────────────────────────────────
      *
      * Lo pide la pantalla del cierre cuando va a mostrar «falta contar»: antes

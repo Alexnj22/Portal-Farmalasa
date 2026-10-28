@@ -34,7 +34,7 @@ import {
     estadoDeCajaEnElOrigen, fetchBolsas,
     fetchMovimientosDelPortal, fetchSaldos, fetchSalasConCaja, fetchSalidasDeSalaDelDia,
     anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
-    fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja,
+    fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja, preventasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion, mandarALaCaja,
     subirComprobante, boletaYaEnCaja, fetchFacturasMapfre,
 } from '@nucleo/data/bolsas';
@@ -1414,7 +1414,7 @@ export default function MiCajaView({ comoPestana = false }) {
                     }
                 }} />
 
-            <DialogoCorte abierto={dialogo === 'corte'} ocupado={ocupado} resultado={resultado}
+            <DialogoCorte sala={sala} abierto={dialogo === 'corte'} ocupado={ocupado} resultado={resultado}
                 pendientes={pendientes.length} onImprimir={imprimirCorte}
                 yaEmbolsado={yaEmbolsado} bolsasDeHoy={bolsasDeHoy.length}
                 resolviendo={ocupadoId != null}
@@ -3015,10 +3015,59 @@ const PASOS_DEL_CIERRE = [
     { desde: 10, texto: 'Cerrando el turno…' },
 ];
 
-function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0, bolsasDeHoy = 0,
+/**
+ * Las preventas guardadas y sin finalizar de la sala, leídas al abrir el
+ * diálogo (2026-10-28). El corte y el cierre no salen mientras haya alguna
+ * —puede ser dinero que ya está en el cajón y no es venta— y el servidor lo
+ * frena igual; leerlas acá es para decirlo ANTES de que alguien cuente el
+ * cajón en vano. Una lectura por apertura, no un sondeo. Si no se pudo leer
+ * no se frena acá: el freno de verdad es el del servidor.
+ */
+function usePreventasDeLaCaja(sala, activo) {
+    const [leidas, setLeidas] = useState({ sala: null, lista: VACIO });
+    useEffect(() => {
+        if (!activo || !sala) return undefined;
+        let vivo = true;
+        preventasDeLaCaja(sala).then((r) => {
+            if (!vivo) return;
+            if (r.error) console.error('preventas de la caja:', r.error?.message || r.error);
+            setLeidas({ sala, lista: r.preventas || VACIO });
+        });
+        return () => { vivo = false; };
+    }, [sala, activo]);
+    return leidas.sala === sala ? leidas.lista : VACIO;
+}
+
+/** El aviso de las preventas, con cada una nombrada para poder ir a buscarla. */
+function AvisoDePreventas({ preventas, que }) {
+    return (
+        <Notice variant="danger" icon={AlertTriangle}>
+            <span className="font-bold">
+                {preventas.length === 1
+                    ? 'Hay una preventa guardada sin finalizar'
+                    : `Hay ${preventas.length} preventas guardadas sin finalizar`}
+            </span>
+            <span className="block mt-0.5 font-normal text-content-2">
+                Puede ser dinero que ya está en el cajón y todavía no es venta. Finalízala o
+                elimínala en la caja antes de {que}.
+            </span>
+            <span className="block mt-1 font-normal">
+                {preventas.map((p) => (
+                    <span key={`${p.referencia}|${p.cliente}`} className="flex justify-between gap-3">
+                        <span className="truncate">#{p.referencia} · {p.cliente}</span>
+                        <span className="tabular-nums">{formatMoney(Number(p.total) || 0)}</span>
+                    </span>
+                ))}
+            </span>
+        </Notice>
+    );
+}
+
+function DialogoCorte({ sala, abierto, ocupado, resultado, pendientes, yaEmbolsado = 0, bolsasDeHoy = 0,
     resolviendo = false, sinResolver = VACIO, sinResolverFilas = VACIO,
     onResolver, onResolverPendiente, onClose, onCortar, onImprimir }) {
     const [efectivo, setEfectivo] = useState('');
+    const preventas = usePreventasDeLaCaja(sala, abierto && !resultado);
     const valido = efectivo !== '' && Number(efectivo) >= 0;
     /* Lo que se declara es el ACUMULADO del día; lo que se cuenta, sólo el
      * cajón. La suma la hace el portal — ver `yaEmbolsado` en la vista. */
@@ -3241,10 +3290,11 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
             bajada="Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal."
             pie={<>
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button variant="primary" disabled={ocupado || !valido}
+                <Button variant="primary" disabled={ocupado || !valido || preventas.length > 0}
                     onClick={() => onCortar(declarado)}>Hacer el corte</Button>
             </>}
         >
+            {preventas.length > 0 && <AvisoDePreventas preventas={preventas} que="hacer el corte" />}
             {pendientes > 0 && (
                 <Notice variant="info" icon={Landmark}>
                     Antes del corte se anota un <b>vale de caja</b> con {pendientes} salida{pendientes === 1 ? '' : 's'} del día.
@@ -3295,6 +3345,8 @@ function DialogoCorte({ abierto, ocupado, resultado, pendientes, yaEmbolsado = 0
  */
 function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VACIO, falta,
     onClose, onCortar, onCerrar, onRevisado, onReconocer }) {
+    // Antes de cualquier `return`: es un hook. Lo monta el llamador sólo abierto.
+    const preventas = usePreventasDeLaCaja(sala, !ocupado);
     /* ── NINGUNO PUEDE QUEDAR A MEDIAS (regla del usuario, 6-sep) ───────────
      *
      * Va ANTES del freno de abajo, que sólo pregunta si hay UNO confirmado.
@@ -3396,6 +3448,21 @@ function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VA
             <FrenoDeEfectivoSinContar sala={sala} falta={falta} pendiente={pendiente}
                 ocupado={ocupado} onClose={onClose} onCortar={onCortar}
                 onRevisado={onRevisado} onReconocer={onReconocer} />
+        );
+    }
+
+    /* ── NI CON UNA PREVENTA SIN FINALIZAR (usuario, 2026-10-28) ─────────────
+     * La pantalla de la caja deshabilitaba su botón con preventas vivas y el
+     * portal se lo saltaba. El servidor frena; esto lo dice antes. */
+    if (!ocupado && preventas.length > 0) {
+        return (
+            <Marco abierto onClose={onClose} titulo="Hay preventas sin finalizar"
+                bajada="El día no se cierra mientras quede alguna en la caja.">
+                <AvisoDePreventas preventas={preventas} que="cerrar el día" />
+                <div className="flex justify-end">
+                    <Button variant="primary" onClick={onClose}>Entendido</Button>
+                </div>
+            </Marco>
         );
     }
 

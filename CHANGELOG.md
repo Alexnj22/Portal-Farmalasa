@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.32 — Mi caja avisa de las preventas antes de contar
+
+- Al abrir «Hacer el corte» o «Cerrar el día», Mi caja lee las preventas
+  guardadas de la sala (`hacer-corte-caja` con `preventas: true`, sólo lectura,
+  una por apertura) y, si hay alguna, la nombra con número, cliente y total y no
+  deja seguir. Antes el rechazo llegaba después de contar el cajón.
+- Si la lectura falla la pantalla no frena: el freno de verdad sigue en el
+  servidor.
+- `CLAUDE.md`: el cierre del día tiene CUATRO frenos (se suma «preventa sin
+  finalizar», que vale también para el corte C y para el cierre automático) y
+  la regla nueva del número de boleta por familia de numeración.
+
 ## v2.1357.31 — Antibióticos: el listado muestra también los que no tienen molécula
 
 - Los 52 productos marcados para el libro que ninguna molécula reclamaba ya

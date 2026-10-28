@@ -4747,6 +4747,10 @@
    "area": "personal",
    "por": "tablas"
   },
+  "reimprimir_impresion": {
+   "area": "impresion",
+   "por": "código"
+  },
   "reject_minmax_request": {
    "area": "minmax",
    "por": "código"
@@ -5408,6 +5412,10 @@
   "validate_role_headcount": {
    "area": "permisos",
    "por": "tablas"
+  },
+  "vencer_impresiones_atrasadas": {
+   "area": "impresion",
+   "por": "cron"
   },
   "venta_fiscal": {
    "area": "fiscal",

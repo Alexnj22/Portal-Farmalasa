@@ -649,6 +649,21 @@ pidió, con el motivo «esperó más de 10 minutos a que la caja respondiera». 
 versión de dos parámetros delega en la de cuatro, así que vale para todas las
 cajas.
 
+✅ **Y quien lo mandó se entera** (migración `20261028225821`). Antes el
+vencimiento sólo pasaba cuando la caja volvía a pedir trabajo —con la caja
+apagada, a la mañana siguiente— y nadie avisaba: la pantalla había dicho «sale
+en unos segundos». Ahora:
+
+- `vencer_impresiones_atrasadas` es el **único juez**: lo llama el cron
+  `impresion-vencer-2min` (vence aunque la caja siga apagada) y lo llama
+  `reclamar_impresion` para su sala.
+- En el mismo paso le manda a `creado_por` el aviso `IMPRESION_VENCIDA` —«Tu
+  ticket no se imprimió»—, también al teléfono.
+- El aviso trae **Reimprimir**: `reimprimir_impresion` lo vuelve a encolar
+  pasando por `encolar_impresion` (sala propia, caja registrada, cola llena),
+  sólo para quien lo mandó o quien edita la impresión, y **una vez por ticket**
+  (`cola_impresion.reimpreso_como`): dos toques no sacan dos papeles.
+
 ## 6. Lo que queda abierto
 
 1. ~~**El ancho del rollo para el camino del navegador.**~~ Medido el 2026-08-14

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowRight, ArrowLeftRight, Ban, Check, ChevronDown, Eye, X } from 'lucide-react';
+import { ArrowRight, ArrowLeftRight, Ban, Check, ChevronDown, Eye, Printer, X } from 'lucide-react';
 import Button from './Button';
 import AvatarConEstado from './AvatarConEstado';
 import NotificacionDetalle from './NotificacionDetalle';
@@ -237,6 +237,8 @@ const TarjetaDeAviso = ({
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
     const traslado  = Boolean(acciones?.trasladoPorResolver?.(n));
     const ocupadoId = acciones?.decidiendoId ?? null;
+    const reimprimir = Boolean(acciones?.reimprimible?.(n));
+    const reimpreso  = Boolean(acciones?.reimpresos?.has?.(n.id));
 
     return (
         <div
@@ -611,6 +613,22 @@ const TarjetaDeAviso = ({
                         onClick={(e) => { e.stopPropagation(); acciones.onResolverTraslado(n); }}
                     >
                         Revisar el traslado
+                    </Button>
+                </div>
+            )}
+
+            {/* El ticket que no salió se vuelve a mandar desde acá. Una vez:
+                después el botón dice que ya se mandó (y la base tampoco deja
+                sacar dos papeles del mismo ticket). */}
+            {reimprimir && (
+                <div className={`relative px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
+                    <Button
+                        size="xs" soft icon={reimpreso ? Check : Printer} className="w-full"
+                        loading={acciones.reimprimiendoId === n.id}
+                        disabled={reimpreso || !!acciones.reimprimiendoId}
+                        onClick={(e) => { e.stopPropagation(); acciones.onReimprimir(n); }}
+                    >
+                        {reimpreso ? 'Se mandó otra vez' : 'Reimprimir'}
                     </Button>
                 </div>
             )}

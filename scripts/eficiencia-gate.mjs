@@ -128,6 +128,13 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'impresion-vencer-2min', slug: null, cadencia: '*/2 * * * *',
+    corridasDia: 720, sistema: 0,
+    motivo: 'Vence el ticket que esperó más de 10 min en la cola aunque la caja siga apagada, y le avisa '
+          + 'a quien lo mandó con «Reimprimir» (2026-10-28). Un UPDATE sobre `cola_impresion`, que se '
+          + 'purga a diario (cientos de filas). Sólo la base propia.',
+  },
+  {
     job: 'puntos-cupones-diario', slug: null, cadencia: '15 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Da el cupón mensual del nivel Platino (puntos que vencen a fin de mes). El día 1 a todos; '

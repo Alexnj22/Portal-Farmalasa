@@ -103,6 +103,8 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     MAYORISTA_REVISION: 'Contact',
     RECLAMO_CLIENTE:    'MessageCircle',
     DATOS_INCIDENTE:    'ShieldAlert',
+    // 2026-10-28: el ticket que esperó más de 10 minutos y no salió.
+    IMPRESION_VENCIDA:  'Printer',
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.

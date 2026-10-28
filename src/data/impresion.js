@@ -38,6 +38,15 @@ export function encolarImpresion({ branchId, titulo, contenidoB64 }) {
 }
 
 /**
+ * Vuelve a mandar un ticket que no salió (el aviso «Tu ticket no se imprimió»).
+ * Pasa por los mismos frenos que uno nuevo, y una sola vez por ticket: un
+ * segundo toque devuelve el mismo, no saca dos papeles.
+ */
+export function reimprimirImpresion(id) {
+    return supabase.rpc('reimprimir_impresion', { p_id: id });
+}
+
+/**
  * Las cajas registradas y cuándo dieron señales de vida por última vez.
  *
  * El token NO viene: la policy no lo publica. Se ve una sola vez, al registrar

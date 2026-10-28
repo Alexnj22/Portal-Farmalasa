@@ -1187,7 +1187,7 @@ export const AREAS = [
         ],
         tablas: ['cola_impresion', 'impresion_dispositivos'],
         edge: [],
-        crons: ['purgar-cola-impresion-diario'],
+        crons: ['purgar-cola-impresion-diario', 'impresion-vencer-2min'],
         docs: ['docs/IMPRESION-EN-TICKETERA-2026-08-13.md'],
     },
     {

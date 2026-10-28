@@ -36,6 +36,7 @@ import {
     Archive,
     MessageCircle,
     ShieldAlert,
+    Printer,
 } from 'lucide-react';
 import { NOMBRE_DE_ICONO_POR_TIPO, nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 
@@ -62,6 +63,7 @@ const ICONOS = {
     Package,
     PackagePlus,
     Palmtree,
+    Printer,
     RefreshCw,
     ShieldAlert,
     Stethoscope,

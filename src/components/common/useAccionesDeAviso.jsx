@@ -9,6 +9,7 @@ import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCort
 import useResolverCorte from '../cortes/useResolverCorte';
 import { seConfirmaDeUnClic } from '@nucleo/utils/cortesDiagnostico';
 import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '@nucleo/data/solicitudDeAviso';
+import { reimprimirImpresion } from '@nucleo/data/impresion';
 
 /* Decidir DESDE el aviso — la campana y el historial, con las mismas reglas.
  *
@@ -192,12 +193,37 @@ export function useAccionesDeAviso({ avisos = [], activo = true, alAbrirDialogo 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [decidiendoId, markNotificationRead, cerrarLoQueEsteAbierto]);
 
+    /* El ticket que no salió (`IMPRESION_VENCIDA`): se vuelve a mandar desde el
+       aviso. La base lo deja salir UNA vez por ticket; acá sólo se recuerda
+       cuáles ya se mandaron para que el botón lo diga en vez de ofrecerlo. */
+    const [reimpresos, setReimpresos] = useState(() => new Set());
+    const [reimprimiendoId, setReimprimiendoId] = useState(null);
+    const reimprimible = useCallback((n) => n?.type === 'IMPRESION_VENCIDA'
+        && Number.isFinite(Number(n?.metadata?.impresion_id)), []);
+    const onReimprimir = useCallback(async (n) => {
+        if (reimprimiendoId || !reimprimible(n)) return;
+        if (!n.read_at) markNotificationRead(n.id, { quitar: false });
+        setReimprimiendoId(n.id);
+        const { error } = await reimprimirImpresion(Number(n.metadata.impresion_id));
+        setReimprimiendoId(null);
+        if (error) {
+            useToastStore.getState().showToast('No se pudo reimprimir',
+                mensajeAmigable(error, 'No se pudo volver a mandar el ticket.'), 'error');
+            return;
+        }
+        setReimpresos(prev => new Set(prev).add(n.id));
+        useToastStore.getState().showToast('Se mandó otra vez',
+            'Sale en la caja en unos segundos.', 'success');
+    }, [reimprimiendoId, reimprimible, markNotificationRead]);
+
     const acciones = useMemo(() => ({
         puedeDecidir, trasladoPorResolver, corteDe,
         decidiendoId, decidiendo, corteOcupado,
         onAprobar, onRechazar, onResolverTraslado, onConfirmarCorte, onDescartarCorte,
+        reimprimible, reimpresos, reimprimiendoId, onReimprimir,
     }), [puedeDecidir, trasladoPorResolver, corteDe, decidiendoId, decidiendo, corteOcupado,
-        onAprobar, onRechazar, onResolverTraslado, onConfirmarCorte, onDescartarCorte]);
+        onAprobar, onRechazar, onResolverTraslado, onConfirmarCorte, onDescartarCorte,
+        reimprimible, reimpresos, reimprimiendoId, onReimprimir]);
 
     /* Los diálogos van FUERA de la lista, y no es un detalle de estilo: el de
        rechazo cierra el panel al abrirse, y montado dentro de él se desmontaría

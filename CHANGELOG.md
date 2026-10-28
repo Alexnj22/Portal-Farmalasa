@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.49 — impresión: el ticket que no salió avisa y se reimprime desde el aviso
+
+- Un ticket que espera más de 10 minutos en la cola ahora se vence **aunque la
+  caja siga apagada** (cron `impresion-vencer-2min`) y le llega a quien lo
+  mandó el aviso «Tu ticket no se imprimió», también al teléfono.
+- El aviso trae **Reimprimir**: lo vuelve a mandar con los mismos frenos de un
+  ticket nuevo y una sola vez (dos toques no sacan dos papeles). Sólo quien lo
+  mandó, o quien edita la impresión.
+- `vencer_impresiones_atrasadas` es el único juez del vencimiento: lo usan el
+  cron y la caja.
+
 ## v2.1357.48 — asistencia: la lactancia es tiempo pagado (RIT Art. 61)
 
 - `consolidate-timesheets` restaba la lactancia de las horas trabajadas y de las

@@ -82,7 +82,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 ### Operación
 23. **«Quién responde» en las diferencias de conteo de inventario** (como
     `cortes_caja_diferencia_personas`). — FALTANTES:414-417
-24. ~~Vencer los trabajos de impresión encolados~~ — **hecho** (migración `20261028223512`, 10 min).
+24. ~~Vencer los trabajos de impresión encolados~~ — **hecho** (migración `20261028223512`, 10 min). Y avisa a quien lo mandó con «Reimprimir» (`20261028225821`).
 25. ~~Pruebas del reparto nocturno de `consolidate-timesheets`~~ — **hecho v2.1357.47**.
 26. ~~Unificar la fórmula de la tardanza; `late_minutes ||`~~ — **hecho v2.1357.47**.
 27. `inventoryMovements.js:88`: traer `factor` de la base, y revisar el

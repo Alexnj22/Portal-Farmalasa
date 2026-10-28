@@ -6082,6 +6082,7 @@ export type Database = {
           impreso_at: string | null
           intentos: number
           reclamado_at: string | null
+          reimpreso_como: number | null
           titulo: string
         }
         Insert: {
@@ -6096,6 +6097,7 @@ export type Database = {
           impreso_at?: string | null
           intentos?: number
           reclamado_at?: string | null
+          reimpreso_como?: number | null
           titulo: string
         }
         Update: {
@@ -6110,6 +6112,7 @@ export type Database = {
           impreso_at?: string | null
           intentos?: number
           reclamado_at?: string | null
+          reimpreso_como?: number | null
           titulo?: string
         }
         Relationships: [
@@ -6139,6 +6142,13 @@ export type Database = {
             columns: ["dispositivo"]
             isOneToOne: false
             referencedRelation: "impresion_dispositivos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cola_impresion_reimpreso_como_fkey"
+            columns: ["reimpreso_como"]
+            isOneToOne: false
+            referencedRelation: "cola_impresion"
             referencedColumns: ["id"]
           },
         ]
@@ -34972,6 +34982,7 @@ export type Database = {
       registrar_traslados_erp: { Args: { p_lineas: Json }; Returns: number }
       reglas_v2_desde: { Args: never; Returns: string }
       regrant_employees_columns: { Args: never; Returns: string }
+      reimprimir_impresion: { Args: { p_id: number }; Returns: number }
       reject_minmax_request: {
         Args: { p_decided_by?: string; p_note?: string; p_request_id: number }
         Returns: Json
@@ -35818,6 +35829,10 @@ export type Database = {
       validate_role_headcount: {
         Args: { p_branch_id: number; p_role_id: number }
         Returns: boolean
+      }
+      vencer_impresiones_atrasadas: {
+        Args: { p_branch_id?: number }
+        Returns: number
       }
       venta_fiscal: {
         Args: { p_estado: string; p_recibido_mh: string }

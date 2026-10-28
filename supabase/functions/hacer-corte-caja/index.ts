@@ -3,6 +3,7 @@ import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
 import { hora12 } from "../_shared/hora.ts";
+import { leerReferencias } from "../_shared/preventaCaja.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El corte de caja, hecho desde el portal — con el conteo A CIEGAS.
@@ -108,6 +109,32 @@ async function abrirSala(cookie: string, erpId: number): Promise<void> {
   // turno de esta sigue abierto. Si no se pudo fijar, no se sigue.
   if (!ok) throw new Error(`no se pudo abrir la sala ${erpId}`);
 }
+
+/**
+ * Las preventas guardadas y sin finalizar de la sala que tiene la sesión.
+ *
+ * Es la misma lista que la caja ofrece para facturar (`get_referencias`). Una
+ * respuesta que no se entiende LANZA: leerla como «no hay ninguna» dejaría
+ * pasar el corte justo cuando no se pudo comprobar.
+ */
+async function preventasVivas(cookie: string) {
+  const r = await fetch(`${BASE}venta.php`, {
+    method: "POST",
+    headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ process: "get_referencias" }).toString(),
+    signal: AbortSignal.timeout(20_000),
+  });
+  const texto = await r.text();
+  let j: { success?: unknown; options?: unknown } = {};
+  try { j = JSON.parse(texto); } catch { j = {}; }
+  if (j.success !== true || typeof j.options !== "string") {
+    throw new Error("no se pudo leer la lista de preventas de la caja");
+  }
+  return leerReferencias(texto);
+}
+
+/** La pantalla del corte del origen avisa así cuando hay preventas vivas. */
+const AVISO_PREVENTAS = /pendientes de cobro/i;
 
 const DTE_LISTADO_URL = `${BASE}descarga_dte_emitidos_json.php`;
 
@@ -778,6 +805,43 @@ Deno.serve(async (req) => {
         }, 409);
       }
     }
+
+    /* ── UNA PREVENTA SIN FINALIZAR FRENA EL CORTE Y EL CIERRE (2026-10-28) ──
+     *
+     * Reporte del usuario: «antes cuando se hacían cortes desde el ERP sí
+     * validaba … si hay una preventa guardada puede ser dinero que ya está en
+     * caja y no se ha finalizado esa venta».
+     *
+     * Medido ese día en las seis salas: la pantalla del corte del origen pinta
+     * «Hay facturas pendientes de cobro» y DESHABILITA el botón Guardar
+     * exactamente en las salas con preventas vivas (1, 2, 4 y 5 en ese
+     * momento; 3 y 6 sin ninguna, botón activo). El freno vivía sólo en ESA
+     * pantalla: el POST a `corte_caja_diario.php` lo acepta igual, y el portal
+     * —que nunca aprieta el botón— lo saltaba.
+     *
+     * Va acá, antes del vale y de cualquier escritura: un corte no se deshace,
+     * y el conteo no se gasta. Vale para el C y para el Z, igual que en la
+     * pantalla del origen (el Z sale por el mismo formulario).
+     *
+     * El cierre AUTOMÁTICO no lo mira (todavía): a esa hora no hay nadie que
+     * finalice la preventa, y frenarlo dejaría el día abierto. `simular` es una
+     * sonda y tampoco. */
+    if (!simular && !automatico) {
+      const vivas = await preventasVivas(cookie);
+      if (vivas.length) {
+        const lista = vivas.map((p) => `#${p.referencia} ${p.cliente} $${p.total.toFixed(2)}`).join("; ");
+        const cuantas = vivas.length === 1
+          ? "Hay una preventa guardada sin finalizar"
+          : `Hay ${vivas.length} preventas guardadas sin finalizar`;
+        return json({
+          ok: false, preventas_pendientes: true, preventas: vivas,
+          error: `${cuantas} (${lista}). Finalízala o elimínala en la caja antes de `
+            + (esZ ? "cerrar el día" : "hacer el corte")
+            + ": puede ser dinero que ya está en el cajón y todavía no es venta.",
+        }, 409);
+      }
+    }
+
     if (!simular && !automatico) {
       const { data: apViva, error: errAp } = await supabase
         .from("cortes_caja_aperturas")
@@ -1279,6 +1343,15 @@ Deno.serve(async (req) => {
     const html = await (await fetch(`${PANTALLA}?aper_id=${viva.aper}`, {
       headers: { Cookie: cookie }, signal: AbortSignal.timeout(45_000),
     })).text();
+    // Red del freno de preventas: una que entró entre la lista y este punto.
+    // Es la misma señal con que la pantalla del origen deshabilita Guardar.
+    if (!simular && !automatico && AVISO_PREVENTAS.test(html)) {
+      return json({
+        ok: false, preventas_pendientes: true,
+        error: "Acaba de quedar una preventa guardada sin finalizar. Finalízala o elimínala "
+          + "en la caja y vuelve a intentarlo.",
+      }, 409);
+    }
     const campos = camposDelFormulario(html);
     /* ── `total_corte` NO es un esperado del origen: es SU fórmula ───────────
      *

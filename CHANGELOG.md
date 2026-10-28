@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.26 — Cortes: una preventa sin finalizar frena el corte y el cierre
+
+- La pantalla de corte del sistema de la caja pinta «Hay facturas pendientes de
+  cobro» y deshabilita Guardar cuando la sala tiene preventas guardadas; el
+  portal hace el POST directo y se lo saltaba. Medido el 2026-10-28 en las seis
+  salas: aviso y botón deshabilitado en las 4 con preventas, en ninguna de las 2 sin.
+- `hacer-corte-caja` lee la lista de preventas vivas (`get_referencias`) antes
+  del vale y de cualquier escritura, y rechaza el corte C y el Z con la lista
+  (número, cliente, total). Una lista que no se puede leer frena, no deja pasar.
+- Red en el paso 2: si la pantalla del corte trae el aviso, tampoco se corta.
+- El cierre automático no lo mira (a esa hora nadie puede finalizar la preventa).
+
 ## v2.1357.25 — Inyecciones: confirmar en la bitácora y la traída siempre con cliente
 
 - **Enfermería confirma en la Bitácora.** Quien tiene `inyecciones_confirmar` ve ahí lo aplicado en su sala que todavía puede confirmar, con «La apliqué yo» por fila, «Confirmar las N» arriba y una tarjeta «Por confirmar». La pestaña aparte desaparece; el permiso deja de ser pestaña (`inyecciones_tab_confirmar` → `inyecciones_confirmar`, con sus filas y las tres funciones que lo leen). El CSV no lleva lo que falta confirmar.

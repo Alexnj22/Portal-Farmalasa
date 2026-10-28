@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.14 — Procedimiento de limpieza y mantenimiento (borrador) y el RTS publicado
+
+- **Borrador del procedimiento de limpieza y mantenimiento** (`docs/legal/procedimientos/BORRADOR-E-limpieza-y-mantenimiento.md` + PDF), que exige el RTS 6.1.13 y verifica la Guía 1.11. Está armado con las áreas, los turnos y los muebles que las salas tienen hoy en Bitácoras, y trae un anexo en papel para la limpieza profunda y el mantenimiento. Lo firma y sella el regente.
+- **El RTS publicado en el Diario Oficial (8-oct-2025) entra a `docs/legal/`.** La copia de 2024 que teníamos tiene la §6.1 numerada distinto (la limpieza era 6.1.11 y ahora es 6.1.13); la §6.2 es idéntica. Rige desde el 8-abr-2026, con un 70 % de cumplimiento exigido el primer año.
+
 ## v2.1357.13 — Bitácoras: lectura imposible no entra y el libro arranca el 1-nov
 
 Revisión de las bitácoras contra el RTS 11.02.04:24 §6 y la Guía BPAD, midiendo octubre en producción (informe: `docs/AUDITORIA-BITACORAS-PRODUCCION-2026-10-28.md`).

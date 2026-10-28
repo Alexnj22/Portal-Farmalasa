@@ -82,8 +82,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 ### Operación
 23. **«Quién responde» en las diferencias de conteo de inventario** (como
     `cortes_caja_diferencia_personas`). — FALTANTES:414-417
-24. **Vencer los trabajos de impresión encolados** (~10 min): hoy una caja
-    apagada imprime mañana los tickets de ayer. — IMPRESION:636-638
+24. ~~Vencer los trabajos de impresión encolados~~ — **hecho** (migración `20261028223512`, 10 min).
 25. Pruebas del reparto nocturno de `consolidate-timesheets` (`splitNocturnal`,
     cruce de medianoche): es lo que se paga y no tiene ninguna prueba. — ASISTENCIA:175
 26. Unificar la fórmula de la tardanza (Deno y navegador); de paso,

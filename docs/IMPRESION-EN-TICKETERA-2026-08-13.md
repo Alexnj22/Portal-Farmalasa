@@ -643,6 +643,12 @@ Y una que hay que decidir antes de escribirlo: **un trabajo encolado con la caja
 apagada tiene que vencerse** (diez minutos, digamos). Si no, a la mañana siguiente
 sale un ticket de ayer que nadie está esperando.
 
+✅ **Hecho el 2026-10-28** (migración `20261028223512`): `reclamar_impresion`
+pasa a `ERROR` lo que lleva más de 10 minutos en la cola, contado desde que se
+pidió, con el motivo «esperó más de 10 minutos a que la caja respondiera». La
+versión de dos parámetros delega en la de cuatro, así que vale para todas las
+cajas.
+
 ## 6. Lo que queda abierto
 
 1. ~~**El ancho del rollo para el camino del navegador.**~~ Medido el 2026-08-14

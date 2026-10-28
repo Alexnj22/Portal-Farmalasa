@@ -8,10 +8,10 @@ todos los faltantes de caja, o faltantes de productos que pasan en la sucursal?
 > hace que les suba $150, de esos $150 ¿sí podríamos descontar ante un faltante
 > / diferencia de inventario?»
 
-Las fuentes son el **Código de Trabajo** (`docs/legal/codigo_de_trabajo.txt`), el
+Las fuentes son el **Código de Trabajo** (`docs/legal/normativa/laboral/codigo_de_trabajo_2025-08.txt`), el
 **Reglamento Interno de Trabajo aprobado por la Dirección General de Trabajo**
-(`docs/legal/reglamento_interno_de_trabajo.txt`) y el **RTS 11.02.04:24 de BPAD**
-(`docs/legal/rts_11020424_bpadyt.txt`). Todos los números de la parte del portal
+(`docs/legal/empresa/reglamento_interno_de_trabajo.txt`) y el **RTS 11.02.04:24 de BPAD**
+(`docs/legal/normativa/sanitaria/rts_11020424_consulta_2024.txt`). Todos los números de la parte del portal
 son reales, medidos contra producción el 2026-08-27.
 
 ---

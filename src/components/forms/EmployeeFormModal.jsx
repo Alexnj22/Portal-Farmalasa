@@ -1130,7 +1130,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // Trabajo y es el que se lee en una inspección; si la empresa dejó de
         // pedir tres de sus requisitos, lo que corresponde es reformarlo, no que
         // esta lista finja que dice otra cosa. El texto completo está en
-        // `docs/legal/reglamento_interno_de_trabajo.txt` para cuando se decida.
+        // `docs/legal/empresa/reglamento_interno_de_trabajo.txt` para cuando se decida.
         //
         // La solicitud de empleo SÍ se queda: es requisito del Art. 8 letra b) y
         // el usuario lo confirmó — «si es así, se debe adjuntar».

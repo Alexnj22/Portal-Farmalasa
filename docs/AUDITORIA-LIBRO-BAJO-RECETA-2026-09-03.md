@@ -528,8 +528,8 @@ estos productos están en su listado, antes de escribir una línea de código.
 
 ---
 
-**Fuentes** · `docs/legal/rts_11020424_bpadyt.txt` (RTS 11.02.04:24 §6) ·
-`docs/legal/srs_guia_verificacion_bpad.txt` (Guía de Verificación BPAD — se
+**Fuentes** · `docs/legal/normativa/sanitaria/rts_11020424_consulta_2024.txt` (RTS 11.02.04:24 §6) ·
+`docs/legal/normativa/sanitaria/srs_guia_verificacion_bpad.txt` (Guía de Verificación BPAD — se
 volvió a bajar de srs.gob.sv el 3-sep y es **byte por byte idéntica** a la copia
 del repo, md5 `8e10db10…`) · Listado Oficial de Medicamentos 2025 (SRS) ·
 OPS, «El Salvador's experience controlling the sale of antimicrobials» ·

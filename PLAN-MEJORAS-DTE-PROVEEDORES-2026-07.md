@@ -515,7 +515,7 @@ Verificado en BD el 2026-07-29: `proveedores_maestro` **no tiene** columnas de
 gran contribuyente, datos bancarios ni plazo de crédito, y **no existe ninguna
 tabla** de pagos, cuentas por pagar ni retenciones. Todo lo de abajo sigue
 entero. Los artículos se verificaron contra el texto real de
-`docs/legal/codigo_tributario.pdf`.
+`docs/legal/normativa/fiscal/codigo_tributario_2026-04.pdf`.
 
 | # | Qué | Fundamento |
 |---|---|---|

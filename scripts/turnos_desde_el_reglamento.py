@@ -72,7 +72,7 @@ reglamento también la apruebe la Dirección General de Trabajo.
     python3 scripts/turnos_desde_el_reglamento.py
 """
 import io,re,json
-s=io.open('docs/legal/reglamento_interno_de_trabajo.txt',encoding='utf-8').read()
+s=io.open('docs/legal/empresa/reglamento_interno_de_trabajo.txt',encoding='utf-8').read()
 i=s.find('Art. 18.-'); j=s.find('Art. 19.-')
 txt=' '.join(s[i:j].split())
 

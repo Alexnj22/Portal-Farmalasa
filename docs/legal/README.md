@@ -1,102 +1,103 @@
-# Referencia legal y técnica (El Salvador)
+# Documentación legal
 
-Textos oficiales guardados en el repo para consultarlos al trabajar los módulos
-que dependen de ellos. Son **dos materias distintas** y conviene no mezclarlas:
+Ordenada el **2026-10-28**. Dos tipos de documento, en carpetas separadas:
 
-- **§1 Fiscal y tributario** — facturación, proveedores, ventas, contabilidad.
-  Descargados el 2026-07-18 (el Código de Comercio el 2026-08-01).
-- **§2 Regulación sanitaria** — bitácoras, dispensación bajo receta,
-  almacenamiento. Descargados el **2026-08-16**.
-- **§3 Laboral** — el Código de Trabajo y el Reglamento Interno, más
-  `oit_convenios_el_salvador.md`: qué convenios de la OIT obligan además del
-  Código. Ese último **no es la lista completa y lo dice**: NORMLEX bloquea el
-  acceso automático, así que la lista autoritativa se refresca a mano.
+| carpeta | qué es | quién lo cambia |
+|---|---|---|
+| `normativa/` | leyes, reglamentos y listados **oficiales** de El Salvador | el Estado — acá sólo se reemplazan por la versión nueva |
+| `procedimientos/` | procedimientos escritos que firma y sella el regente (borradores) | la empresa — el `.md` es el original; el PDF lo genera `npm run procedimientos:pdf` |
+| `empresa/` | el reglamento interno de trabajo (aprobado por la Dirección General de Trabajo) | la empresa |
+| raíz | documentos propios publicados al cliente: privacidad, programa de puntos, reservas, mayoristas, afiches | la empresa — cada `.html` es el original y su PDF sale de los scripts de `package.json` (`*:pdf`, `afiche:*`) |
 
-Complementa (no reemplaza) las referencias puntuales ya usadas en el código —
-ver `docs/resumen-dte-el-salvador.md` para el resumen de negocio del DTE
-aplicado a esta farmacia, y `docs/PLAN-BITACORAS-SRS-2026-08-16.md` para el de
-las bitácoras.
+Los documentos de la raíz **no se movieron** a propósito: los scripts de
+`package.json` y `scripts/` los generan en esa ruta.
 
-## 1 · Fiscal y tributario
+**Los `.txt` al lado de un PDF son a propósito**: los PDF traen el texto
+comprimido y hay que pasarlos por `pdftotext`. Con el `.txt` ya generado se cita
+el número de artículo exacto sin repetir la conversión ni citar de memoria.
 
-| Archivo | Contenido | Fuente | Vigencia conocida |
-|---|---|---|---|
-| `codigo_tributario.pdf` | Código Tributario, Decreto Legislativo N.º 230 (texto base + reformas incorporadas hasta ~2014) | Asamblea Legislativa, vía eregulations.org | **No incluye las reformas de 2022 en adelante** — ver `decreto_487_reforma_dte.pdf` aparte |
-| `decreto_487_reforma_dte.pdf` | Decreto Legislativo N.º 487 (30/ago/2022) — las reformas específicas que introdujeron los Documentos Tributarios Electrónicos (DTE) al Código Tributario: 14 artículos modificados, emisión/transmisión/recepción/invalidación de DTE, contingencias | Asamblea Legislativa (asamblea.gob.sv) | Texto original del decreto — no incorpora reformas posteriores a este mismo decreto (ej. Decreto 960/2024, que tocó Arts. 114 y 119-G, no incluido aquí) |
-| `reglamento_codigo_tributario.pdf` | Reglamento de Aplicación del Código Tributario | Ministerio de Hacienda (transparenciafiscal.gob.sv) | Portal oficial de transparencia fiscal |
-| `ley_iva.pdf` | Ley de Impuesto a la Transferencia de Bienes Muebles y a la Prestación de Servicios (Ley de IVA) | Ministerio de Hacienda (transparenciafiscal.gob.sv) | Portal oficial de transparencia fiscal |
-| `ley_renta.pdf` | Ley de Impuesto Sobre la Renta | Ministerio de Hacienda (transparenciafiscal.gob.sv) | Portal oficial de transparencia fiscal |
-| `dte_guia_tecnica.pdf` | "Documento Técnico de Lineamientos de Integración — Facturación Electrónica" (estructura JSON de los DTE, catálogos, firma electrónica) | factura.gob.sv (Ministerio de Hacienda / DGII) | Guía técnica oficial — la normativa DTE 2.0 (2026) puede traer cambios de campos no reflejados aquí; para el esquema JSON exacto en producción, la fuente de verdad sigue siendo el JSON real que llega por correo (ver `purchase_dte_documents`) |
-| `codigo_comercio.pdf` | Código de Comercio, Decreto Legislativo N.º 671. **Título II "Contabilidad", Arts. 435-455** — la obligación de llevar contabilidad formal, los registros obligatorios (Estados Financieros, Diario y Mayor), la legalización de libros y el balance anual | Asamblea Legislativa (asamblea.gob.sv) | Agregado el **2026-08-01**. Texto con reformas incorporadas hasta la fecha de publicación del archivo; verificado que contiene los Arts. 435-455 |
+---
 
-**Por qué se agregó el Código de Comercio (2026-08-01).** Faltaba el documento
-que en realidad **manda** en materia contable. El Código Tributario define la
-contabilidad formal (Art. 139) pero *remite* la obligación: «están obligados a
-llevar contabilidad formal los sujetos pasivos que **de conformidad a lo
-establecido en el Código de Comercio** o en las leyes especiales están obligados
-a ello». Sin este PDF, la cadena de la obligación quedaba cortada.
+## 1 · Normativa vigente — verificada el 2026-10-28
 
-Ver `docs/CONTABILIDAD-ALCANCE-2026-08-01.md` para qué cubre el portal hoy y qué
-no, con los artículos citados.
+Cada archivo lleva en el nombre **hasta qué fecha llegan sus reformas**. Se
+eligió, entre todas las copias públicas, la que incorporaba la reforma más
+reciente publicada en el Diario Oficial.
 
-## 2 · Regulación sanitaria — SRS / DNM
+### `normativa/sanitaria/` — SRS (ex DNM)
 
-Agregados el **2026-08-16** al definir el módulo de bitácoras. Son los dos
-documentos que mandan sobre una farmacia que dispensa: **la guía dice qué se
-revisa y con qué gravedad, el reglamento dice los números.**
+| archivo | qué es | vigencia |
+|---|---|---|
+| `rts_11020424_diario_oficial_2025-10-08.pdf` | **RTS 11.02.04:24 publicado** — Buenas Prácticas de Almacenamiento, Dispensación, Distribución y Transporte. D.O. Tomo 449, N.º 189. **Es el que rige.** Escaneado, sin texto | ✅ entró en vigencia el **8-abr-2026**. Transición de 4 años: el primer año exige el **70 %** de la guía y el **85 %** en cadena de frío (§11.2) |
+| `rts_11020424_consulta_2024.pdf` / `.txt` | La versión de **consulta** (dic-2024). Se conserva sólo porque tiene texto para buscar | ⚠️ **la §6.1 está numerada distinto** — ver abajo. La §6.2 es idéntica a la publicada |
+| `srs_guia_verificacion_bpad.pdf` / `.txt` | Guía de Verificación de BPAD: la lista con la que el inspector recorre la sala, ítem por ítem con su peso CRÍTICO / MAYOR / MENOR | ✅ idéntica byte por byte a la que publica hoy srs.gob.sv (oct-2025) |
+| `ley_de_medicamentos_actualizada_2025-06.pdf` / `.txt` | Ley de Medicamentos (DL 1008/2012) con sus reformas | ✅ consolidada por la SRS a junio 2025 |
+| `ley_srs_actualizada_2025-06.pdf` | Ley de la Superintendencia de Regulación Sanitaria (DL 891): la SRS absorbió a la DNM | ✅ junio 2025 |
+| `srs_listado_oficial_medicamentos_2026.pdf` / `.txt` | Listado Oficial de Medicamentos 2026 (acuerdo SI.2026.02.06-02). El cap. **J01** trae el grupo AWaRe dentro del código: `*(1)` Acceso, `*(2)` Precaución → fuente del ítem **1.13** | ✅ se reemplaza cada primer trimestre |
+| `srs_venta_sin_receta_2026.pdf` / `.txt` | Listado de medicamentos de venta **sin** receta 2026 (acuerdo SI.2026.02.06-01) | ✅ se reemplaza cada primer trimestre |
 
-| Archivo | Contenido | Fuente | Vigencia conocida |
-|---|---|---|---|
-| `srs_guia_verificacion_bpad.pdf` | «Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de Establecimientos que Dispensan Medicamentos». **Es literalmente la lista con la que el inspector camina la sala**: 8 secciones, cada ítem numerado y clasificado CRÍTICO / MAYOR / MENOR. La sección 2 es almacenamiento y dispensación (temperatura, refrigerador, limpieza); la **sección 3 es antibióticos** (3.1 a 3.22) | Superintendencia de Regulación Sanitaria (srs.gob.sv), carpeta `2025/10` | Publicada octubre 2025 |
-| `rts_11020424_bpadyt.pdf` | Reglamento Técnico Salvadoreño **RTS 11.02.04:24** — Productos Farmacéuticos, Buenas Prácticas de Almacenamiento, Distribución y Transporte. 30 páginas. Es donde están **las frecuencias, los rangos y los años de resguardo**: §5.5-5.6 almacenamiento, §6.2 establecimiento (temperatura, humedad, refrigerador), §6.3 personal y regente, **§6.4 dispensación de antibióticos** | OSARTEC (osartec.gob.sv) | Versión del 18/dic/2024 |
-| `rts_11020424_diario_oficial_2025-10-08.pdf` | **El RTS 11.02.04:24 PUBLICADO** — Diario Oficial Tomo 449, N.º 189, 8/oct/2025 (escaneado, sin capa de texto). **Es el texto que rige**: entra en vigencia 6 meses después (8/abr/2026) con transición de 4 años — primer año 70 % de la guía, 85 % en cadena de frío (§11.2). **La §6.1 está RENUMERADA respecto de la versión de 2024**: limpieza 6.1.11→**6.1.13**, firma del regente 6.1.12→**6.1.14**, listado de antibióticos 6.1.13→**6.1.15**, documentación digital 6.1.14→**6.1.16**, supervisión del sistema electrónico 6.1.15→**6.1.4**, y el registro de visitas del regente pasó a **6.1.3**. La §6.2 (temperatura, refrigerador, limpieza del local) se comparó página por página y **es idéntica**. Al citar un numeral de la §6.1, usar ESTE | Diario Oficial vía OSARTEC | Agregado el **2026-10-28** |
+**La §6.1 del RTS publicado se renumeró.** Al citar, usar la columna de la derecha:
 
-**Los `.txt` están al lado a propósito.** Los dos PDFs traen el texto comprimido
-y un `WebFetch` sobre ellos devuelve basura binaria — hay que pasarlos por
-`pdftotext -layout`. Como al implementar hay que citar números de ítem todo el
-tiempo, el `.txt` ya generado evita repetir la conversión y evita la tentación
-de citar de memoria.
+| tema | consulta 2024 | **publicado 2025** |
+|---|---|---|
+| registro de visitas del regente | 6.3.7 | **6.1.3** |
+| supervisión del sistema electrónico | 6.1.15 | **6.1.4** |
+| archivo de inspecciones (3 años) | 6.1.3 | **6.1.5** |
+| procedimiento de limpieza y mantenimiento | 6.1.11 | **6.1.13** |
+| procedimientos firmados por el regente | 6.1.12 | **6.1.14** |
+| listado de antibióticos | 6.1.13 | **6.1.15** |
+| documentación digital (ALCOA) | 6.1.14 | **6.1.16** |
 
-Los cuatro ítems que más se consultan, para no tener que buscarlos:
+Los que más se consultan:
 
 | tema | guía | RTS |
 |---|---|---|
-| temperatura y humedad: 2×/día, ≤30 °C, fecha+hora+persona, 2 años | 2.26, 2.27, 2.34 | 6.2.11, 6.2.15, 6.2.16, 6.2.21 |
-| refrigerador: 2×/día, 2-8 °C, termómetro calibrado, uso exclusivo | 2.29 a 2.33 | 6.2.18 a 6.2.20 |
-| antibióticos: registro trazable, campos exigidos, parcial/total, copia de receta | 3.3, 3.5, 3.16 a 3.21 | 6.4.1 a 6.4.5 |
-| bitácora de visitas del regente | 2.23 | 6.3.7 |
+| temperatura y humedad: 2×/día (media mañana y media tarde), ≤30 °C, fecha + hora + persona, 2 años | 2.26, 2.27, 2.34 | 6.2.11, 6.2.15, 6.2.16, 6.2.21 |
+| refrigerador: 2×/día, 2–8 °C, termómetro calibrado, uso exclusivo | 2.29 a 2.33 | 6.2.18 a 6.2.20 |
+| limpieza: procedimiento escrito de áreas y mobiliario, firmado | 1.11, 1.12, 2.11 | 6.1.13, 6.1.14 |
+| antibióticos: registro trazable, campos, parcial/total, copia de receta | 3.3, 3.5, 3.16 a 3.21 | 6.4 |
 
-**Ojo con quién regula.** Los textos y la propia guía nombran indistintamente a
-la **DNM** (Dirección Nacional de Medicamentos) y a la **SRS**
-(Superintendencia de Regulación Sanitaria), que la absorbió. Es el mismo
-regulador; al buscar en internet aparecen bajo los dos nombres.
+**Ningún antibiótico sistémico es de venta libre.** La lista 2026 de venta sin
+receta sólo trae neomicina y sulfadiazina tópicas, y la Ley de Medicamentos
+llama venta libre únicamente a lo publicado ahí. Las seis moléculas (cefixima,
+azitromicina, claritromicina, levofloxacina, moxifloxacina, norfloxacina) y todo
+antibiótico inyectable llevan además **receta retenida y libro**; el resto es
+«con receta» sin retención. El registro trazable de la Guía 3.3 (CRÍTICO)
+abarca **todos** los antibióticos que se manejan. Confirmarlo con el regente.
 
-## 3 · Laboral — Código de Trabajo
+### `normativa/fiscal/`
 
-Descargado el **2026-08-27**, al preguntarse cómo espera la ley ver el «lugar de
-pago» en el contrato. Hasta ese día el expediente de personal se construyó
-citando artículos **de memoria**, sin el texto en el repo para contrastarlos.
+| archivo | qué es | vigencia |
+|---|---|---|
+| `codigo_tributario_2026-04.pdf` / `.txt` | Código Tributario (DL 230), texto de la Asamblea Legislativa | ✅ reformas hasta el D.O. del **13-abr-2026**; incluye las de DTE (DL 487/2022) y consumidor final (DL 94/2024) |
+| `ley_renta_2026-01.pdf` | Ley de Impuesto sobre la Renta (DL 134) | ✅ reformas hasta el D.O. del **14-ene-2026** |
+| `ley_iva_2024-07.pdf` | Ley de IVA (DL 296), texto de la Asamblea | ✅ última reforma encontrada: D.O. del 11-jul-2024 |
+| `codigo_comercio_2022-04.pdf` | Código de Comercio (DL 671). Título II «Contabilidad», Arts. 435-455 | ✅ última reforma encontrada: D.O. del 26-abr-2022 |
+| `reglamento_codigo_tributario.pdf` | Reglamento de Aplicación del Código Tributario | ⚠️ PDF de 2008; no se encontró versión más nueva |
+| `dte_guia_tecnica.pdf` | Lineamientos técnicos de los DTE (2021). Se conserva porque Compras **lee** los DTE de los proveedores (código QR, pág. 7). La facturación la emite el ERP | ⚠️ desactualizada (existe la versión 2.0), pero es del ERP |
 
-| Archivo | Contenido | Fuente | Vigencia conocida |
-|---|---|---|---|
-| `codigo_de_trabajo.pdf` | Código de Trabajo, edición rubricada y concordada con las Normas Internacionales del Trabajo (OIT) | colsiba.org (copia de la edición OIT) | Versión actualizada; sin fecha de corte impresa |
-| `codigo_de_trabajo.txt` | El mismo, en texto plano | `pdftotext -layout` | — |
+### `normativa/laboral/`
 
-⚠️ **Es una copia de una edición, no el diario oficial.** Sirve para leer el
-texto y citarlo con precisión; para una actuación con consecuencias —una
-inspección, un juicio— la fuente es la Asamblea Legislativa.
+| archivo | qué es | vigencia |
+|---|---|---|
+| `codigo_de_trabajo_2025-08.pdf` / `.txt` | Código de Trabajo, texto de la Asamblea Legislativa | ✅ reformas hasta el D.O. del **22-ago-2025** |
+| `decreto_432_aguinaldo_exento_renta_2025-10.pdf` | DL 432 (oct-2025): el aguinaldo no paga renta hasta el monto que fija | ✅ |
+| `oit_convenios_el_salvador.md` | qué convenios de la OIT obligan además del Código | ⚠️ no es la lista completa y lo dice (NORMLEX bloquea el acceso automático) |
 
-⚠️ **Y el `-layout` engaña en ESTE documento.** Va a dos columnas con notas al
-margen, así que un artículo se corta a mitad de frase y sigue veinte líneas más
-abajo, intercalado con otro. El Art. 129 termina en «…a no ser que» y su
-excepción aparece después del Art. 133. Para leer un artículo COMPLETO conviene
-extraerlo **sin** `-layout`, que respeta el orden de lectura:
+⚠️ **Falta el DL 433 (15-oct-2025, «Refórmase el Código de Trabajo»)**, el que
+corre el pago del aguinaldo al período **20-oct a 20-dic**. Es posterior al
+consolidado y la Asamblea no publica su PDF en la ficha del decreto (el enlace
+lleva al DL 432). Pedirlo al Diario Oficial cuando haga falta citarlo.
 
-```bash
-pdftotext docs/legal/codigo_de_trabajo.pdf - | less
-```
+### `normativa/datos-personales/`
 
-Los que ya se usaron, con su ubicación:
+| archivo | qué es | vigencia |
+|---|---|---|
+| `ley_proteccion_datos_personales_2024.pdf` | Ley para la Protección de Datos Personales (DL 144, D.O. 15-nov-2024) | ✅ sin reformas ni reglamento publicados |
+
+---
+
+## 2 · Notas de lectura del Código de Trabajo
 
 | Artículo | Qué dice | Dónde se aplica |
 |---|---|---|
@@ -112,7 +113,7 @@ Los que ya se usaron, con su ubicación:
 
 ### El reglamento interno de la empresa manda tanto como el Código
 
-`REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf` está **aprobado por la Dirección
+`empresa/REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf` está **aprobado por la Dirección
 General de Trabajo**, y el Art. 128 del Código le entrega expresamente la
 definición del lugar de pago. Su **Art. 40** ya lo resolvió:
 
@@ -126,81 +127,20 @@ De ahí sale que el lugar de pago sea un catálogo de dos y no un texto libre.
 portal ofrece «Efectivo». Uno de los dos tiene que cambiar, y es decisión de la
 empresa, no del portal.
 
-Se lee con `textutil -convert txt -stdout "docs/legal/REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf"`.
+Se lee con `textutil -convert txt -stdout "docs/legal/empresa/REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf"`.
 
-## 4 · Verificación de vigencia — 2026-10-28
+---
 
-Se buscó la última versión de cada documento externo. **Al citar, mirar esta
-tabla antes que la fecha de descarga de arriba.**
+## 3 · Cómo se mantiene al día
 
-| documento | ¿es la última? | qué hay más nuevo |
-|---|---|---|
-| Guía de Verificación BPAD | ✅ **sí** — md5 idéntico a la que publica hoy srs.gob.sv (oct-2025) | — |
-| RTS 11.02.04:24 | ⚠️ la copia de 2024 era la de **consulta** | **agregado** `rts_11020424_diario_oficial_2025-10-08.pdf`: es el que rige, §6.1 renumerada (ver §2) |
-| Ley de Medicamentos | ❌ **no estaba en el repo** | **agregada** `ley_de_medicamentos_actualizada_2025-06.pdf` (+ `.txt`): DL 1008/2012 con reformas a junio 2025 (SRS) |
-| Ley de la SRS | ❌ no estaba | **agregada** `ley_srs_actualizada_2025-06.pdf`: DL 891, reemplaza a la DNM |
-| Listado Oficial de Medicamentos | ❌ el repo citaba el **LOM 2025** | **agregado** `srs_listado_oficial_medicamentos_2026.pdf` (+ `.txt`): acuerdo SI.2026.02.06-02. Cap. J01 con AWaRe `*(1)`/`*(2)` — la fuente del ítem 1.13 es ÉSTE |
-| Listado de venta **sin** receta | ❌ no estaba | **agregado** `srs_venta_sin_receta_2026.pdf` (+ `.txt`): acuerdo SI.2026.02.06-01. **No trae ningún antibiótico sistémico** — ver abajo |
-| Código Tributario | ❌ texto de **2014** + DL 487/2022 | faltan DL 960 y 969 (feb–mar 2024) y DL 94 (sep 2024, Arts. 114 y 119-G: consumidor final) |
-| Reglamento del Código Tributario | ⚠️ PDF de 2008 | no se encontró reforma posterior; verificar en transparenciafiscal.gob.sv |
-| Ley de IVA | ⚠️ PDF de 2016 | no se encontró reforma posterior en la búsqueda; no confirmado |
-| Ley de Renta | ❌ PDF de **2013** | reformas 2024 (DL 969) y 2025 (Art. 37, tablas de retención) |
-| Guía técnica DTE | ❌ **2021** | **Normativa de Cumplimiento DTE v2.0** (Hacienda, 25-may-2026): **obligatoria el 1-dic-2026** para quien transmite con sistema propio — eventos de Retorno y Operaciones Especiales, transmisión diferida, código de generación UUID v4, CAT-013 de municipios cambiado. Bajarla de factura.gob.sv → documentos técnicos |
-| Código de Comercio | ⚠️ PDF de 2017 | no se buscaron reformas a los Arts. 435-455 |
-| Código de Trabajo | ⚠️ edición OIT sin fecha | reforma del **aguinaldo** (DL 433, oct-2025: se paga del 20-oct al 20-dic); Art. 113-A (embarazada, 6 meses después del parto); Arts. 378 y 425 |
-| Ley de Protección de Datos Personales | ✅ DL 144, D.O. 15-nov-2024 | no se encontró reforma ni reglamento |
+**Ningún texto legal de El Salvador tiene un consolidado oficial que se
+actualice solo.** La forma de saber si uno sigue vigente es buscar la reforma
+más reciente en el Diario Oficial y compararla con la última que trae el
+archivo. Por eso cada nombre lleva su fecha de corte.
 
-### Los antibióticos: la regla de «sólo seis» era a medias
-
-La memoria y `AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md` dicen que fuera de
-seis moléculas e inyectables «el resto es venta libre». **La lista oficial 2026
-de venta sin receta dice otra cosa:** no tiene ni un antibiótico sistémico (sólo
-neomicina y sulfadiazina tópicas). Y la Ley de Medicamentos define venta libre
-como lo «autorizado y **publicado**» para venderse sin prescripción (Art. 2) y
-sanciona «dispensar sin receta cuando requieran receta médica».
-
-O sea: **ningún antibiótico oral es de venta libre.** Lo que separa a las seis
-moléculas y los inyectables es que llevan **receta retenida y libro**; los
-demás son *con receta* aunque la receta no se retenga. Para el libro foliado no
-cambia el alcance, pero sí para la **Guía 3.3 (CRÍTICO)**: el registro
-trazable es de **todos** los antibióticos que se manejan. Confirmarlo con el
-regente antes de construir.
-
-## ⚠️ Limitación importante
-
-**Ninguno de estos documentos es garantizadamente la versión 100% vigente hoy.**
-Los textos legales de El Salvador no tienen una única fuente oficial que
-mantenga un "consolidado" público y descargable con TODAS las reformas al
-día — eso solo lo ofrecen bases de datos legales pagas (vLex, etc.). Estos
-PDFs son los mejores textos oficiales/casi-oficiales disponibles públicamente
-al momento de la descarga, con reformas incorporadas hasta las fechas
-indicadas arriba.
-
-**Para trabajo de código (nombres de campos DTE, tipos de documento, reglas
-de cálculo IVA/retención) esto es suficiente.** Para preguntas legales
-sensibles, con implicancia de cumplimiento real (ej. una auditoría, una
-disputa con el Ministerio de Hacienda), verificar contra el Diario Oficial
-más reciente o un asesor legal/contable — no asumir que estos PDFs son la
-última palabra.
-
-## Cómo usarlos
-
-**Los dos de §2 ya tienen su `.txt` al lado** — se grepean directo:
-
-```bash
-grep -n "antibiótic" docs/legal/rts_11020424_bpadyt.txt
-grep -n -A3 "^3\.17" docs/legal/srs_guia_verificacion_bpad.txt
-```
-
-Los de §1 no están indexados como texto plano (a diferencia del Código de
-Trabajo, que vive en la memoria de Claude como `.txt` — ver
-`reference_el_salvador_codigo_trabajo` en las memorias del proyecto). Para
-buscar un artículo específico:
-
-```bash
-pdftotext -layout docs/legal/codigo_tributario.pdf - | grep -n "Art. 114"
-```
-
-o abrir el PDF directamente. El `-layout` importa: sin él, las tablas de la
-guía de la SRS pierden la columna de gravedad y un ítem CRÍTICO se lee igual
-que uno MENOR.
+- Los dos **listados de la SRS** se publican cada primer trimestre: reemplazar
+  el del año anterior.
+- Al bajar una versión nueva: borrar la vieja, renombrar con la fecha de la
+  última reforma que incluye y actualizar esta tabla.
+- Para una actuación con consecuencias (una inspección, un juicio) la fuente es
+  el Diario Oficial, no una copia.

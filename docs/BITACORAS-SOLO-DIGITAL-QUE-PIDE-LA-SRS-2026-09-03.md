@@ -3,8 +3,8 @@
 **2026-09-03.** Pregunta del usuario: *«si es sólo digital, cómo debería ser o
 qué pide la SRS para que funcione de esa forma?»*
 
-Fuentes leídas, las dos en el repo: `docs/legal/rts_11020424_bpadyt.txt`
-(RTS 11.02.04:24) y `docs/legal/srs_guia_verificacion_bpad.txt` (Guía de
+Fuentes leídas, las dos en el repo: `docs/legal/normativa/sanitaria/rts_11020424_consulta_2024.txt`
+(RTS 11.02.04:24) y `docs/legal/normativa/sanitaria/srs_guia_verificacion_bpad.txt` (Guía de
 Verificación de BPAD).
 
 > ⚠️ **El RTS tiene dos capítulos y sólo uno es nuestro.** §5 aplica a

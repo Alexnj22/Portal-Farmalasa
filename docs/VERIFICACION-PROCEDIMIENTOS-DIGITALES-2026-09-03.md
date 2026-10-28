@@ -24,8 +24,8 @@ afirmaciones sobre el sistema también**.
 
 | fuente | de dónde | verificación |
 |---|---|---|
-| RTS 11.02.04:24 | `docs/legal/rts_11020424_bpadyt.pdf` | **md5 idéntico** al de OSARTEC (`osartec.gob.sv/…/RTS-BPADyT_-18122024-1.pdf`) — es el oficial |
-| Guía de Verificación BPAD | `docs/legal/srs_guia_verificacion_bpad.txt` | leída completa |
+| RTS 11.02.04:24 | `docs/legal/normativa/sanitaria/rts_11020424_consulta_2024.pdf` | **md5 idéntico** al de OSARTEC (`osartec.gob.sv/…/RTS-BPADyT_-18122024-1.pdf`) — es el oficial |
+| Guía de Verificación BPAD | `docs/legal/normativa/sanitaria/srs_guia_verificacion_bpad.txt` | leída completa |
 | Ley de Firma Electrónica | D.L. 133/2015, `factura.gob.sv` | descargada y leída — **no está citada en ninguno de los dos borradores** |
 | EU GMP Anexo 11 | Comisión Europea, rev. 1 (2011) | leído completo, 17 cláusulas |
 | 21 CFR Part 11 | FDA, §11.10 (a)–(k), §11.50, §11.70 | leído |

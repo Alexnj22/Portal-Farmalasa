@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.16 — docs/legal ordenado y con la normativa vigente
+
+`docs/legal/` quedó ordenado: `normativa/` (sanitaria, fiscal, laboral, datos personales), `procedimientos/`, `empresa/`, y en la raíz los documentos propios que generan los scripts. Cada texto legal lleva en el nombre la fecha de su última reforma.
+
+- **Reemplazados por el texto vigente de la Asamblea:** el Código Tributario (de 2014 a abr-2026, ya incluye el DL 487 que estaba aparte), la Ley de Renta (de 2013 a ene-2026), la Ley de IVA (a jul-2024), el Código de Comercio (a abr-2022) y el Código de Trabajo (de una edición OIT sin fecha a ago-2025). Se agregó el DL 432 (aguinaldo exento de renta).
+- **Pendiente:** el DL 433 (aguinaldo del 20-oct al 20-dic); la Asamblea no publica su PDF.
+- Se actualizaron las rutas que citan esos archivos en `docs/`, `scripts/turnos_desde_el_reglamento.py` y un comentario de `EmployeeFormModal`. El README trae la tabla de numeración vieja → nueva de la §6.1 del RTS.
+
 ## v2.1357.15 — docs/legal: vigencia verificada y normas sanitarias vigentes
 
 Se verificó si cada documento de `docs/legal/` es la última versión; la tabla está en su README §4.

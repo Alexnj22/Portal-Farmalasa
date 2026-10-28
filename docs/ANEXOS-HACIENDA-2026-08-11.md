@@ -6,7 +6,7 @@ Fuente principal: **Manual de usuario para carga de archivo de los anexos de la
 declaración F-07 v14, Ministerio de Hacienda, ENERO 2025** (75 páginas,
 `700-DGII-MN-2021-26031.pdf` en transparenciafiscal.gob.sv). Todas las tablas de
 campos de abajo están transcritas de ahí, no deducidas. El Código Tributario
-citado es el PDF de `docs/legal/codigo_tributario.pdf`.
+citado es el PDF de `docs/legal/normativa/fiscal/codigo_tributario_2026-04.pdf`.
 
 ---
 
@@ -637,6 +637,6 @@ borrarlos al terminar.
   (F07) y pago a cuenta (F14) a partir del período tributario de enero 2025*:
   https://www.mh.gob.sv/modificacion-a-los-anexos-de-los-formularios-de-iva-f07-y-pago-a-cuenta-f14-a-partir-del-periodo-tributario-de-enero-2025/
 - Código Tributario, Arts. 91, 123, 124, 125, 141, 142 y 142-A —
-  `docs/legal/codigo_tributario.pdf`
+  `docs/legal/normativa/fiscal/codigo_tributario_2026-04.pdf`
 - `generar_csv_libro` (catálogo de producción, leído el 2026-08-11) y
   `docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md`

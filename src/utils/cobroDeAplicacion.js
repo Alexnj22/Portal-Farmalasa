@@ -46,7 +46,12 @@ export function itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis
  * La cuenta del cobro: origen, precio, cuántas aplicaciones, monto, cuántas
  * quedan pendientes a nombre del cliente y si se puede cobrar.
  */
-export function cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala }) {
+/**
+ * La traída exige FICHA (2026-10-28, «unas están sin nombre, eso no puede
+ * pasar»): sin ella la aplicación no tiene a quién pertenecer. Si el cliente
+ * no tiene, se le crea en el mismo diálogo.
+ */
+export function cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha }) {
     const origen = modo === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA';
     const precio = precios ? (origen === 'TRAIDA' ? precios.TRAIDA : precios.COMPRADA) : null;
     const faltaDosis = (items || []).some((i) => 'dosis_ml' in i && i.dosis_ml == null);
@@ -57,9 +62,11 @@ export function cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, 
     const ahora = Math.min(aplicarAhora, total);
     const quedan = total - ahora;
     const valido = precio != null && total > 0 && !!sala && (
-        origen === 'COMPRADA' ? !!venta && (items || []).length > 0 && !faltaDosis : String(producto || '').trim().length > 2
+        origen === 'COMPRADA' ? !!venta && (items || []).length > 0 && !faltaDosis
+            : String(producto || '').trim().length > 2 && !!ficha?.id
     ) && (quedan === 0 || String(aNombreDe || '').trim().length >= 3);
-    return { origen, precio, faltaDosis, total, monto, ahora, quedan, valido };
+    const faltaFicha = origen === 'TRAIDA' && !ficha?.id;
+    return { origen, precio, faltaDosis, faltaFicha, total, monto, ahora, quedan, valido };
 }
 
 /** Lo que se manda a `anotarIngreso` como `aplicacion`. */

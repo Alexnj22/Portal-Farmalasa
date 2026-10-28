@@ -182,8 +182,10 @@ farmacéutico que firma; «portal» es trabajo de código.
 14. **Inyecciones — hecho el 2026-10-28.** Definición del usuario:
     1. **Cualquiera registra** la aplicación (cobra y marca «aplicada»), sin
        bloqueos.
-    2. **Enfermería confirma** cuáles aplicó, en Inyecciones → **Por
-       confirmar**. Las que marca ella misma entran confirmadas solas. Plazo:
+    2. **Enfermería confirma** cuáles aplicó, en la misma **Bitácora** de
+       Inyecciones: «La apliqué yo» por fila o «Confirmar las N» de una vez
+       (permiso `inyecciones_confirmar`; hasta `20261028200428` fue una pestaña
+       aparte). Las que marca ella misma entran confirmadas solas. Plazo:
        hasta el final del día siguiente; lo que no confirma queda «no aplicada
        por enfermería» sin que nadie haga nada (el estado lo deriva
        `inyeccion_enfermeria_estado`, no un cron).
@@ -191,7 +193,13 @@ farmacéutico que firma; «portal» es trabajo de código.
        Lo no confirmado sigue `aplicada` y sólo lo ve administración
        (`inyecciones_ver_todas`). Cuenta desde el **1-nov-2026**.
 
-    Migración `20261028184212`. Reemplaza la regla de `20261028181138` («con
+    4. **Toda traída lleva la ficha del cliente.** Si no tiene, se le crea en
+       el mismo cobro (`cliente_crear_de_mostrador`: nombre y apellido más
+       teléfono o DUI; si ya existe la devuelve). `operar-caja` rechaza la
+       traída sin ficha. Las 45 traídas viejas sin nombre se arreglan con
+       «Asignar a un cliente» en la bitácora.
+
+    Migraciones `20261028184212` y `20261028200428`. Reemplaza la regla de `20261028181138` («con
     enfermería conectada, sólo ella marca»), que se deshizo el mismo día.
 
     **Qué dice la norma (verificado el 2026-10-28):** ni el RTS 11.02.04:24 ni la

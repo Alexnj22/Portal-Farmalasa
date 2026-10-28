@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.25 — Inyecciones: confirmar en la bitácora y la traída siempre con cliente
+
+- **Enfermería confirma en la Bitácora.** Quien tiene `inyecciones_confirmar` ve ahí lo aplicado en su sala que todavía puede confirmar, con «La apliqué yo» por fila, «Confirmar las N» arriba y una tarjeta «Por confirmar». La pestaña aparte desaparece; el permiso deja de ser pestaña (`inyecciones_tab_confirmar` → `inyecciones_confirmar`, con sus filas y las tres funciones que lo leen). El CSV no lleva lo que falta confirmar.
+- **La traída siempre con cliente.** En Mi caja y en la app, cobrar una inyección traída exige la ficha; si no aparece, se crea ahí (`cliente_crear_de_mostrador`: nombre y apellido más teléfono o DUI, devuelve la existente si coincide el DUI o el nombre). `operar-caja` la rechaza sin ficha (pendiente de desplegar). «Asignar a un cliente» también puede crearla, para las 45 viejas sin nombre, que ahora dicen «Falta el cliente».
+- Migración `20261028200428`.
+
 ## v2.1357.24 — Inyecciones: cualquiera registra, enfermería confirma, la bitácora es lo confirmado
 
 Nueva pestaña **Por confirmar** en Inyecciones: la Regente de Enfermería confirma cuáles aplicó ella («La apliqué yo», o todas). Cualquiera sigue registrando la aplicación sin bloqueos (se deshace la regla de v2.1357.23). Las que marca enfermería entran confirmadas solas; las que no confirma hasta el final del día siguiente quedan «no aplicada por enfermería». La bitácora muestra sólo lo confirmado, con la enfermera como quien aplicó; administración ve el resto con su estado. Cuenta desde el 1-nov. Migración `20261028184212`.

@@ -75,6 +75,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
  * cobrar, frena en vez de cobrar otro número del que se le dijo al cliente.
  */
 
+const AYUDA_FICHA_TRAIDA = 'Obligatorio: la aplicación queda en su historial y la ve en su app. Si no tiene ficha, créala aquí.';
 const MODOS = [
     { value: 'COMPRADA', label: 'Compró aquí' },
     // Arriba, a la par de «Compró aquí» (usuario, 2026-10-03): antes era un enlace
@@ -218,8 +219,8 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     // La cuenta (origen, precio, total —mezcladas: una por vez—, monto, cuántas
     // quedan pagadas sin aplicar y si se puede cobrar) es la del núcleo. Lo que
     // queda sin aplicar necesita a nombre de quién: «que haya un control».
-    const { origen, precio, faltaDosis, total, monto, ahora, quedan, valido } = cuentaDelCobro({
-        modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala,
+    const { origen, precio, faltaDosis, faltaFicha, total, monto, ahora, quedan, valido } = cuentaDelCobro({
+        modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha,
     });
 
     const estadoPago = estadoDeFormaDePago(pago, monto);
@@ -544,7 +545,11 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                             <span className="text-body-sm text-content-2">Cuántas aplicaciones se pagan</span>
                             <Contador etiqueta="aplicaciones" valor={cantidad} min={1} max={10} onChange={setCantidad} />
                         </div>
-                        <BuscarFicha ficha={ficha} onElegir={(c) => { setFicha(c); if (c) setANombreDe(c.name); }} />
+                        {/* Obligatoria (2026-10-28): una traída sin ficha quedaba «sin
+                            nombre» en la bitácora. Si no tiene, se crea acá. */}
+                        <BuscarFicha ficha={ficha} onElegir={(c) => { setFicha(c); if (c) setANombreDe(c.name); }}
+                            crear ayuda={AYUDA_FICHA_TRAIDA} />
+                        {faltaFicha && <p className="text-caption text-warning">Falta el cliente.</p>}
                     </div>
                 )}
 

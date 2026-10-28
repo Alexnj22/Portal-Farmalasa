@@ -23,9 +23,11 @@ describe('cobro de aplicación', () => {
         expect(items.map((i) => i.linea_num)).toEqual([1, 2]);
         expect(cuentaDelCobro({ modo: 'COMPRADA', precios, items, mezcla: true, veces: 2, cantidad: 1, aplicarAhora: 2, aNombreDe: '', venta: {}, producto: '', sala: 1 }).total).toBe(2);
     });
-    it('traída: vale distinto y lleva la ficha si se eligió', () => {
-        const c = cuentaDelCobro({ modo: 'TRAIDA', precios, items: [], mezcla: false, veces: 0, cantidad: 2, aplicarAhora: 2, aNombreDe: '', venta: null, producto: 'Neurobion', sala: 1 });
-        expect(c).toMatchObject({ origen: 'TRAIDA', monto: 4, valido: true });
+    it('traída: vale distinto, exige la ficha y la lleva', () => {
+        const base = { modo: 'TRAIDA', precios, items: [], mezcla: false, veces: 0, cantidad: 2, aplicarAhora: 2, aNombreDe: '', venta: null, producto: 'Neurobion', sala: 1 };
+        expect(cuentaDelCobro(base)).toMatchObject({ valido: false, faltaFicha: true });
+        const c = cuentaDelCobro({ ...base, ficha: { id: 7, name: 'Ana' } });
+        expect(c).toMatchObject({ origen: 'TRAIDA', monto: 4, valido: true, faltaFicha: false });
         expect(aplicacionDelCobro({ ...c, items: [], producto: ' Neurobion ', cantidad: 2, aNombreDe: '', ficha: { id: 7, name: 'Ana' } }))
             .toEqual({ origen: 'TRAIDA', producto: 'Neurobion', cantidad: 2, aplicar_ahora: 2, cliente: 'Ana', customer_id: 7 });
     });

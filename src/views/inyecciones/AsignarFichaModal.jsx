@@ -14,7 +14,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
  * que una traída cobrada sólo con el nombre escrito no la veía nadie.
  *
  * La ficha la elige una persona —nunca se adivina por el nombre escrito, que
- * sale de cómo se tecleó—. Se asignan también las demás aplicaciones del mismo
+ * sale de cómo se tecleó—; si no tiene, se le crea ahí (2026-10-28). Se asignan también las demás aplicaciones del mismo
  * cobro sin ficha: un cobro es un cliente.
  */
 export default function AsignarFichaModal({ fila, onClose, onHecho }) {
@@ -48,7 +48,7 @@ export default function AsignarFichaModal({ fila, onClose, onHecho }) {
                         {fila.producto} · cobrada a nombre de «{fila.cliente || 'sin nombre'}»
                     </p>
                 </div>
-                <BuscarFicha ficha={ficha} onElegir={setFicha} />
+                <BuscarFicha ficha={ficha} onElegir={setFicha} crear ayuda={null} />
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
                     <Button variant="primary" loading={enviando} disabled={!ficha} onClick={asignar}>Asignar</Button>

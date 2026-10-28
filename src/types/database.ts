@@ -29653,6 +29653,10 @@ export type Database = {
         Args: { p_customer_id: number; p_prueba: string }
         Returns: string
       }
+      cliente_crear_de_mostrador: {
+        Args: { p_dui?: string; p_nombre: string; p_telefono?: string }
+        Returns: Json
+      }
       cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
       cliente_expediente: { Args: { p_customer_id: number }; Returns: Json }
       cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }

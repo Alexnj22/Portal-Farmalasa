@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, CheckCircle2, Download, Hourglass, Pin, Syringe, X } from 'lucide-react';
+import { BookOpen, CheckCircle2, ClipboardCheck, Download, Hourglass, Pin, Syringe, X } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import PersonaConFoto from '../../components/caja/PersonaConFoto';
@@ -13,7 +13,10 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import AsignarFichaModal from './AsignarFichaModal';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { buscarBitacoraDeAplicaciones } from '@nucleo/data/inyecciones';
+import { buscarBitacoraDeAplicaciones, confirmarAplicaciones, fetchPorConfirmar } from '@nucleo/data/inyecciones';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -49,6 +52,12 @@ import { fechaHora12 } from '@nucleo/utils/hora';
  * Sin ficha (2026-10-17): la app del cliente muestra sus inyecciones por
  * ficha, así que una cobrada sólo con el nombre escrito no sale en ninguna. La
  * fila lo dice y, a quien puede asignar cobros, le ofrece ponérsela.
+ *
+ * Enfermería confirma AQUÍ (2026-10-28, «¿no podría confirmar de un solo en
+ * la bitácora?»; antes era una pestaña aparte). Quien tiene
+ * `inyecciones_confirmar` ve también lo aplicado en su sala que todavía puede
+ * confirmar —hasta el final del día siguiente—, con «La apliqué yo» por fila y
+ * «Confirmar las N» arriba. Lo que no confirma queda fuera de la bitácora.
  */
 
 const ESTADOS = ESTADOS_BITACORA;
@@ -73,6 +82,8 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
     const [asignando, setAsignando] = useState(null);
     const { hasPermission } = useAuth();
     const puedeAsignar = hasPermission('inyecciones_dosis');
+    const puedeConfirmar = hasPermission('inyecciones_confirmar', 'can_edit');
+    const showToast = useToastStore((s) => s.showToast);
     const genRef = useRef(0);
     const dateDirty = monthRange !== defaultRange;
     const filtros = useMemo(() => filtrosEfectivosDeBitacora(fijados, searchTerm), [fijados, searchTerm]);
@@ -102,6 +113,35 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
     }, [pedir, page, pageSize]);
     useEffect(() => { cargar(); }, [cargar]);
 
+    // Lo que espera su confirmación, sin importar el período ni la página:
+    // «Confirmar las N» confirma esas N, no sólo las que se ven.
+    const [porConfirmar, setPorConfirmar] = useState(null);
+    const cargarPorConfirmar = useCallback(() => {
+        if (!puedeConfirmar) return;
+        fetchPorConfirmar({ sala: filterBranch || null })
+            .then(setPorConfirmar)
+            .catch((e) => { setPorConfirmar([]); setError(mensajeAmigable(e, 'No se pudo cargar lo que falta confirmar')); });
+    }, [puedeConfirmar, filterBranch]);
+    useEffect(() => { cargarPorConfirmar(); }, [cargarPorConfirmar]);
+
+    const [confirmando, setConfirmando] = useState(false);
+    const refrescar = useRef(null);
+    refrescar.current = () => { cargar(); cargarPorConfirmar(); };
+    const confirmar = useMemo(() => unaSolaVez(async (ids) => {
+        setConfirmando(true);
+        try {
+            const n = await confirmarAplicaciones(ids);
+            useStaffStore.getState().appendAuditLog('INYECCION_CONFIRMADA_ENFERMERIA', ids.join(','), { aplicaciones: n });
+            showToast(n === 1 ? 'Aplicación confirmada' : `${n} aplicaciones confirmadas`, 'Quedan en la bitácora a tu nombre.', 'success');
+        } catch (e) {
+            showToast('No se pudo confirmar', mensajeAmigable(e), 'error');
+        } finally {
+            setConfirmando(false);
+            refrescar.current();
+        }
+    }), [showToast]);
+    const nPorConfirmar = porConfirmar?.length ?? 0;
+
     const pagina = res?.filas || [];
     const cargando = res == null;
     const aplicadas = res?.aplicadas ?? 0;
@@ -114,7 +154,8 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
         setBajando(true);
         try {
             const d = await pedir({ limite: 5000, offset: 0 });
-            exportCsv(CABECERA_CSV_BITACORA, filasCsvBitacora(d.filas), `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}.csv`, 'inyecciones');
+            // Lo que enfermería todavía no confirmó no es bitácora.
+            exportCsv(CABECERA_CSV_BITACORA, filasCsvBitacora(d.filas.filter((f) => f.enfermeria !== 'POR_CONFIRMAR')), `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}.csv`, 'inyecciones');
         } catch (e) {
             setError(mensajeAmigable(e, 'No se pudo descargar'));
         } finally { setBajando(false); }
@@ -136,6 +177,13 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                         value={cargando ? '—' : (res.total - aplicadas).toLocaleString()}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text" loading={cargando}
                         active={estado === 'PENDIENTE'} onClick={() => setEstado((e) => (e === 'PENDIENTE' ? 'todas' : 'PENDIENTE'))} />
+                    {puedeConfirmar && (
+                        <StatCard icon={ClipboardCheck} label="Por confirmar" tono="warning"
+                            value={porConfirmar == null ? '—' : nPorConfirmar.toLocaleString()}
+                            sub="Aplicadas que marcó otra persona" loading={porConfirmar == null}
+                            iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text"
+                            active={estado === 'POR_CONFIRMAR'} onClick={() => setEstado((e) => (e === 'POR_CONFIRMAR' ? 'todas' : 'POR_CONFIRMAR'))} />
+                    )}
                 </CarrilCards>
                 <div className="flex justify-end min-w-0">
                     <FilterBar
@@ -190,6 +238,21 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
 
             {error && <Notice variant="danger">{error}</Notice>}
 
+            {puedeConfirmar && nPorConfirmar > 0 && (
+                <Notice variant="warning">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                        <span>
+                            {nPorConfirmar === 1 ? 'Una aplicación espera' : `${nPorConfirmar} aplicaciones esperan`} tu confirmación.
+                            Confirma sólo las que <b>aplicaste tú</b>: lo que no confirmes hasta el final del día siguiente no entra a la bitácora.
+                        </span>
+                        <Button variant="primary" size="sm" icon={CheckCircle2} loading={confirmando} className="shrink-0"
+                            onClick={() => confirmar(porConfirmar.map((f) => f.id))}>
+                            {nPorConfirmar === 1 ? 'Confirmar' : `Confirmar las ${nPorConfirmar}`}
+                        </Button>
+                    </div>
+                </Notice>
+            )}
+
             <DataTable
                 columns={[
                     { key: 'cobro',    label: 'Cobró' },
@@ -211,7 +274,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                 detalle={`${horaDe(f.cobrada_at)}${!filterBranch ? ` · ${f.sala}` : ''}`} />
                         </DataCell>
                         <DataCell className="text-body-sm">
-                            <p className="font-semibold text-content">{f.cliente || 'Sin nombre'}</p>
+                            <p className={`font-semibold ${f.cliente ? 'text-content' : 'text-warning-text'}`}>{f.cliente || 'Falta el cliente'}</p>
                             <p className="text-caption text-content-3 flex flex-wrap items-center gap-1.5 mt-0.5">
                                 {f.origen === 'TRAIDA'
                                     ? <Badge variant="neutral" size="sm">Traída por el cliente</Badge>
@@ -244,6 +307,12 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                     {/* Sólo administración ve las que enfermería no confirmó
                                         (2026-10-28): la bitácora de la sala son las confirmadas. */}
                                     {f.enfermeria === 'POR_CONFIRMAR' && <Badge variant="warning" size="sm">Falta que la confirme enfermería</Badge>}
+                                    {f.enfermeria === 'POR_CONFIRMAR' && puedeConfirmar && (
+                                        <Button variant="primary" size="xs" icon={CheckCircle2} disabled={confirmando}
+                                            onClick={() => confirmar([f.id])}>
+                                            La apliqué yo
+                                        </Button>
+                                    )}
                                     {f.enfermeria === 'NO' && <Badge variant="neutral" size="sm">Sin enfermería · no va en la bitácora</Badge>}
                                     <PersonaConFoto id={f.aplicada_por_id} nombre={f.aplicada_por} px={22}
                                         detalle={`${horaDe(f.aplicada_at)}${f.aplicada_en && f.aplicada_en !== f.sala ? ` · en ${f.aplicada_en}` : ''}`} />
@@ -264,7 +333,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
             )}
             {asignando && (
                 <AsignarFichaModal fila={asignando} onClose={() => setAsignando(null)}
-                    onHecho={() => { setAsignando(null); cargar(); }} />
+                    onHecho={() => { setAsignando(null); refrescar.current(); }} />
             )}
         </div>
     );

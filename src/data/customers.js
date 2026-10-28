@@ -153,6 +153,21 @@ export function motivoSinAplicar(r) {
     return 'Quedó guardado en el portal y se aplica solo en unos minutos.';
 }
 
+/**
+ * La ficha que nace en la caja (2026-10-28): para cobrar una inyección traída
+ * el cliente tiene que tener ficha, y si no la tiene se crea ahí mismo. Pide
+ * nombre y apellido más teléfono o DUI. Si ya existía —mismo DUI, o mismo
+ * nombre— devuelve ésa con `existente: true` en vez de duplicarla.
+ * @returns {Promise<{ id: number, name: string, dui: string|null, phone: string|null, existente: boolean }>}
+ */
+export async function crearClienteDeMostrador({ nombre, dui = '', telefono = '' }) {
+    const { data, error } = await supabase.rpc('cliente_crear_de_mostrador', {
+        p_nombre: nombre, p_dui: dui || null, p_telefono: telefono || null,
+    });
+    if (error) throw error;
+    return /** @type {any} */ (data);
+}
+
 export async function pushClienteAlErp(id) {
     try {
         const { data, error } = await supabase.functions.invoke('push-cliente-erp', {

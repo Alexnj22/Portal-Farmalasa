@@ -2042,6 +2042,21 @@ Deno.serve(async (req) => {
         if (!["COMPRADA", "TRAIDA"].includes(origen)) {
           return json({ ok: false, error: "Falta decir si la inyección se compró aquí o la trajo el cliente." }, 400);
         }
+        /* La traída exige la FICHA del cliente (2026-10-28, «unas están sin
+         * nombre, eso no puede pasar»): sin ella la aplicación quedaba en la
+         * bitácora sin a quién pertenecer. Si no tiene, la pantalla la crea
+         * (`cliente_crear_de_mostrador`) antes de cobrar. Va antes de cotizar:
+         * nada se mueve sin el cliente. */
+        if (origen === "TRAIDA") {
+          const fichaId = Number(aplicacion.customer_id);
+          const { data: ficha, error: errF } = Number.isInteger(fichaId) && fichaId > 0
+            ? await supabase.from("customers").select("id").eq("id", fichaId).maybeSingle()
+            : { data: null, error: null };
+          if (errF) console.error(`[operar-caja] aplicacion: ficha ${fichaId}: ${errF.message}`);
+          if (!ficha) {
+            return json({ ok: false, error: "Falta el cliente: búscalo o créale la ficha antes de cobrar." }, 400);
+          }
+        }
         const { data: cot, error: errCot } = await supabase.rpc("inyeccion_cotizar", {
           p_branch_id: sala,
           p_origen: origen,

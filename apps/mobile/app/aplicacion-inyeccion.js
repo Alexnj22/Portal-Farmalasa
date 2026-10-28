@@ -18,7 +18,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { anotarIngreso, fetchTiposDeMovimiento } from '@nucleo/data/bolsas';
 import { aplicarPendientes, buscarVentaPorComprobante, fetchAplicacionesPendientes, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion } from '@nucleo/data/inyecciones';
-import { buscarClientes } from '@nucleo/data/customers';
+import { buscarClientes, crearClienteDeMostrador } from '@nucleo/data/customers';
 import { aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, seleccionDeVenta, topeDeMezcla } from '@nucleo/utils/cobroDeAplicacion';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -106,6 +106,8 @@ export default function AplicacionInyeccion() {
   const [ficha, setFicha] = useState(null);
   const [buscaFicha, setBuscaFicha] = useState('');
   const [fichas, setFichas] = useState([]);
+  // La traída exige ficha (2026-10-28); si no aparece, se crea acá.
+  const [nueva, setNueva] = useState(null);
   const [pendientes, setPendientes] = useState(null);
   const [textoPend, setTextoPend] = useState('');
   const [cuantasCanje, setCuantasCanje] = useState({});
@@ -150,7 +152,15 @@ export default function AplicacionInyeccion() {
   const renglonDe = useCallback((l) => (venta?.renglones || []).find((r) => r.linea_num === Number(l)), [venta]);
   const veces = Math.min(vecesMezcla, topeDeMezcla(enMezcla, renglonDe, dosis));
   const items = useMemo(() => itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe }), [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe]);
-  const c = cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala });
+  const c = cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha });
+  const crearFicha = async () => {
+    trabajando('Creando la ficha…');
+    try {
+      const f = await crearClienteDeMostrador(nueva);
+      setFicha(f); setNueva(null);
+      listo(f.existente ? 'Ya tenía ficha: se usa ésa' : 'Ficha creada');
+    } catch (e) { fallo('No se pudo crear la ficha', mensajeAmigable(e)); }
+  };
   const estadoPago = estadoDeFormaDePago(pago, c.monto);
   const grupos = useMemo(() => gruposDePendientes(pendientes), [pendientes]);
   const idsACanjear = grupos.flatMap((g) => g.ids.slice(0, cuantasCanje[g.clave] || 0));
@@ -312,12 +322,24 @@ export default function AplicacionInyeccion() {
                   </View>
                 ) : (
                   <>
-                    <Campo multiline={false} value={buscaFicha} onChangeText={setBuscaFicha} placeholder="Ficha del cliente (opcional): nombre, DUI o teléfono" />
+                    <Campo multiline={false} value={buscaFicha} onChangeText={setBuscaFicha} placeholder="Cliente (obligatorio): nombre, DUI o teléfono" />
                     {buscaFicha.trim().length >= 3 ? fichas.map((f) => (
                       <Pressable key={f.id} onPress={() => setFicha(f)} style={({ pressed }) => ({ minHeight: 40, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
                         <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${f.name}${f.dui ? ` · ${f.dui}` : ''}`}</Text>
                       </Pressable>
                     )) : null}
+                    {nueva ? (
+                      <>
+                        <Campo multiline={false} value={nueva.nombre} maxLength={80} onChangeText={(v) => setNueva((n) => ({ ...n, nombre: v }))} placeholder="Nombre y apellido" />
+                        <Campo multiline={false} value={nueva.telefono} maxLength={9} keyboardType="number-pad" onChangeText={(v) => setNueva((n) => ({ ...n, telefono: v }))} placeholder="Teléfono" />
+                        <Campo multiline={false} value={nueva.dui} maxLength={10} keyboardType="number-pad" onChangeText={(v) => setNueva((n) => ({ ...n, dui: v }))} placeholder="DUI (o el teléfono)" />
+                        <Pressable onPress={crearFicha} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}><Text style={{ color: MARCA.rojo, fontWeight: '700', fontSize: 15 }}>Crear y usar</Text></Pressable>
+                      </>
+                    ) : buscaFicha.trim().length >= 3 ? (
+                      <Pressable onPress={() => setNueva({ nombre: /[a-z]/i.test(buscaFicha) ? buscaFicha.trim() : '', telefono: '', dui: '' })} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}>
+                        <Text style={{ color: MARCA.rojo, fontWeight: '700', fontSize: 15 }}>No aparece: crear cliente nuevo</Text>
+                      </Pressable>
+                    ) : null}
                   </>
                 )}
               </Seccion>

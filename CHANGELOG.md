@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.36 — compras: el sync no escribe con un libro que no es el libro
+
+- **`sync-erp-purchases` (fastBackfill, cron semanal de los domingos)** ya no
+  escribe con un archivo contaminado del origen. El origen arma sus CSV en un
+  temporal de ruta fija; dos pedidos a la vez chocan y uno recibe —con HTTP
+  200— los avisos de PHP en vez del libro (1 de 21 sondas). Leído así daba cero
+  renglones, y cero renglones ponía `sello_recibido: null` en TODAS las compras
+  de la ventana: sellos fiscales borrados sin un error.
+- Guarda `motivoParaRechazarElLibro` (`_shared/selloDeCompra.ts`): rechaza el
+  archivo si trae un aviso del servidor, o si el libro vino vacío habiendo
+  compras. Tres intentos con pausa; si sigue mal, la sucursal se anota con el
+  motivo y **no se escribe ni una fila**. El anexo de retención sólo se mira por
+  el aviso (hoy sale vacío en toda la historia).
+- 6 pruebas en `tests/unit/selloDeCompra.test.js`, incluida la que demuestra el
+  borrado sin la guarda.
+
 ## v2.1357.35 — Bitácoras: dos lecturas al día, como pide la SRS
 
 - Temperatura y humedad: **dos lecturas al día**, a media mañana (9:30–11:00)

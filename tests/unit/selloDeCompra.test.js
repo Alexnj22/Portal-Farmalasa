@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lineasDelLibro, sellosDeLasCompras } from '../../supabase/functions/_shared/selloDeCompra.ts';
+import { lineasDelLibro, sellosDeLasCompras, motivoParaRechazarElLibro } from '../../supabase/functions/_shared/selloDeCompra.ts';
 
 /* Casos reales de Bodega (erp_sucursal_id 6). NIT y NRC de `proveedores_maestro`
  * y sellos tal como están hoy en `purchase_receipts`. */
@@ -99,5 +99,49 @@ describe('el sello de una compra exige número Y emisor', () => {
         ], lineasDelLibro(csv));
         expect(r.get(1)).toEqual({ sello: null, revisar: null });
         expect(r.get(2)).toEqual({ sello: null, revisar: null });
+    });
+});
+
+/* El archivo contaminado del origen (LIBROS-IVA §TRAMPA): HTTP 200 con los
+ * avisos de PHP en vez del libro. Con cero renglones, `sellosDeLasCompras`
+ * borraría el sello de toda la ventana — la guarda tiene que frenarlo antes. */
+describe('¿el archivo que bajó es el libro?', () => {
+    const CONTAMINADO = [
+        'Warning: fopen(csv/libro_compras.csv): failed to open stream: File exists in /var/www/farma_salud/libro_compras_iva_csv.php on line 88',
+        'Warning: fwrite() expects parameter 1 to be resource, bool given in /var/www/farma_salud/libro_compras_iva_csv.php on line 90',
+        'Warning: readfile(csv/libro_compras.csv): failed to open stream: No such file or directory in /var/www/farma_salud/libro_compras_iva_csv.php on line 95',
+    ].join('\n');
+    const BUENO = renglon('32CBC8C1-E72B-4EE5-', '1217-140670-103-9', SELLO_ANA);
+
+    it('el contaminado no da renglones — por eso borraría los sellos sin la guarda', () => {
+        expect(lineasDelLibro(CONTAMINADO)).toEqual([]);
+        const r = sellosDeLasCompras([{ id: 6186, numero: '32CBC8C1-E72B-4EE5-', ...ANA }], lineasDelLibro(CONTAMINADO));
+        expect(r.get(6186).sello).toBeNull();
+    });
+
+    it('rechaza el aviso del servidor, aunque se espere el archivo vacío', () => {
+        expect(motivoParaRechazarElLibro(CONTAMINADO, 30, 0)).toMatch(/aviso del servidor/);
+        expect(motivoParaRechazarElLibro(CONTAMINADO, 30, 0, false)).toMatch(/aviso del servidor/);
+        expect(motivoParaRechazarElLibro('<br />\n<b>Warning</b>:  fopen(x): failed', 30, 0)).toMatch(/aviso/);
+    });
+
+    it('rechaza el aviso aunque venga pegado a renglones buenos', () => {
+        const mezcla = `${CONTAMINADO}\n${BUENO}`;
+        expect(motivoParaRechazarElLibro(mezcla, 1, lineasDelLibro(mezcla).length)).toMatch(/aviso/);
+    });
+
+    it('rechaza un libro vacío con compras en la ventana', () => {
+        expect(motivoParaRechazarElLibro('', 12, 0)).toMatch(/sin renglones para 12/);
+    });
+
+    it('acepta el libro de verdad, la ventana sin compras y el anexo de retención vacío', () => {
+        expect(motivoParaRechazarElLibro(BUENO, 1, lineasDelLibro(BUENO).length)).toBeNull();
+        expect(motivoParaRechazarElLibro('', 0, 0)).toBeNull();
+        expect(motivoParaRechazarElLibro('', 12, 0, false)).toBeNull();
+    });
+
+    it('no confunde un proveedor que se llama «Warning» con un aviso', () => {
+        const c = Array(23).fill(''); c[3] = 'X1'; c[4] = '0614'; c[5] = 'WARNING: DISTRIBUIDORA'; c[22] = SELLO_ANA;
+        expect(motivoParaRechazarElLibro(c.join(';'), 1, 1)).toBeNull();
     });
 });

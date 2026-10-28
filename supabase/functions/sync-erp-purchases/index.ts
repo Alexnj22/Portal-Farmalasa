@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, getErpBranchMap, requireInvokeSecret } from "../_shared/security.ts";
 import { selectAllByIn } from "../_shared/db.ts";
-import { lineasDelLibro, sellosDeLasCompras, type CompraParaSellar } from "../_shared/selloDeCompra.ts";
+import { lineasDelLibro, sellosDeLasCompras, motivoParaRechazarElLibro, type CompraParaSellar } from "../_shared/selloDeCompra.ts";
 import { lineasDeMonto, montosDeLasCompras } from "../_shared/montoDeCompra.ts";
 import { emisoresDelLibro, nitsParaLasFichas, type LineaDeEmisor } from "../_shared/nitDeProveedor.ts";
 
@@ -398,6 +398,27 @@ async function traer(url: string, cookie: string, ms = 60_000): Promise<string> 
   return await res.text();
 }
 
+// Baja un CSV del libro y comprueba que ES el libro antes de devolverlo (ver
+// `motivoParaRechazarElLibro`). Si no, reintenta con pausa —el choque es de un
+// instante—, y si sigue mal LANZA: el `catch` de la sucursal la anota con su
+// motivo y no se escribe ni una fila. Conservar lo guardado es siempre mejor
+// que pisarlo con la lectura de un archivo que no era.
+async function traerLibro(
+  url: string, cookie: string, documentos: number, cuantos: (csv: string) => number,
+  esperaRenglones = true,
+): Promise<string> {
+  let motivo = '';
+  for (let intento = 1; intento <= 3; intento++) {
+    const csv = await traer(url, cookie);
+    const m = motivoParaRechazarElLibro(csv, documentos, cuantos(csv), esperaRenglones);
+    if (!m) return csv;
+    motivo = m;
+    console.warn(`libro rechazado (intento ${intento}/3): ${m} — ${url}`);
+    if (intento < 3) await new Promise(r => setTimeout(r, 3000 * intento));
+  }
+  throw new Error(`no se escribió nada: ${motivo}`);
+}
+
 // Todo cruce de un renglón del libro con una compra es por número Y emisor:
 // el sello en `_shared/selloDeCompra.ts`, percepción y retención en
 // `_shared/montoDeCompra.ts`, el NIT de la ficha en `_shared/nitDeProveedor.ts`.
@@ -428,7 +449,8 @@ async function fastBackfill(
   // C1 (H13): el archivo se baja UNA vez y se leen las dos columnas. El sello
   // estaba a un índice de la percepción y nadie lo miraba — es la única columna
   // donde el libro del portal perdía contra su origen.
-  const libroCsv = await traer(`${LIBRO_CSV}?${rango}`, cookie);
+  const libroCsv = await traerLibro(`${LIBRO_CSV}?${rango}`, cookie, filas.length,
+    (csv) => lineasDelLibro(csv, 3, 4, 22).length);
   // La percepción también se decide por número Y emisor (`_shared/montoDeCompra.ts`):
   // el mapa por número a secas le pegaba la de un proveedor a otro que numera igual.
   const percLineas = lineasDeMonto(libroCsv, 3, 4, 21);
@@ -447,7 +469,8 @@ async function fastBackfill(
   // igual aunque hoy salga vacío en toda la historia — asumir cero por
   // costumbre es exactamente cómo un dato real pasa desapercibido el día que
   // aparece.
-  const retenCsv = await traer(`${RETEN_CSV}?${rango}`, cookie);
+  const retenCsv = await traerLibro(`${RETEN_CSV}?${rango}`, cookie, filas.length,
+    (csv) => lineasDeMonto(csv, 5, 3, 8).length, false);
   // Anexo de retención, mismo formato que el de percepción: NIT 3, número 5, monto 8.
   const retenLineas = lineasDeMonto(retenCsv, 5, 3, 8);
 

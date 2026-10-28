@@ -49,6 +49,39 @@ export function selloValido(v: unknown): string | null {
   return /^[0-9A-Za-z]{40}$/.test(s) ? s : null;
 }
 
+// ── ¿El archivo que bajó ES el libro? (2026-10-28) ───────────────────────────
+//
+// El origen escribe todos sus CSV en UN archivo temporal de ruta fija
+// (`csv/libro_compras.csv`). Dos pedidos a la vez chocan, y uno recibe —con
+// HTTP 200— los avisos de PHP en vez del archivo:
+//
+//   Warning: fopen(csv/libro_compras.csv): failed to open stream: File exists …
+//
+// Medido: 1 de 21 sondas en paralelo (LIBROS-IVA-FORMATO-Y-HALLAZGOS §TRAMPA).
+// Ni el `r.ok` ni el parseo lo atrapan: el parser descarta esas líneas y
+// devuelve CERO renglones, y con cero renglones `sellosDeLasCompras` contesta
+// «no está en el libro» → `sello_recibido: null` en TODAS las compras de la
+// ventana. O sea que el backfill semanal borraría sellos fiscales buenos sin
+// un solo error.
+//
+// Dos preguntas, y alcanza con que una falle para no escribir:
+//   1. ¿Trae un aviso del servidor? Un libro de verdad nunca lo trae.
+//   2. ¿Vino vacío habiendo compras en la ventana? No hay ventana con compras
+//      cuyo libro esté vacío: el libro las lista con o sin sello.
+// La segunda NO se aplica al anexo de retención, que hoy sale vacío en toda
+// la historia (`esperaRenglones: false`).
+const AVISO_DEL_SERVIDOR = /failed to open stream|^\s*(?:<br\s*\/?>\s*)?(?:<b>)?\s*(?:Warning|Fatal error|Parse error|Notice)(?:<\/b>)?\s*:/im;
+
+/** null si el archivo sirve; si no, el motivo para no escribir nada con él. */
+export function motivoParaRechazarElLibro(
+  csv: string, documentosEnLaVentana: number, renglones: number, esperaRenglones = true,
+): string | null {
+  if (AVISO_DEL_SERVIDOR.test(csv)) return 'el archivo trae un aviso del servidor en vez del libro';
+  if (esperaRenglones && documentosEnLaVentana > 0 && renglones === 0)
+    return `el libro vino sin renglones para ${documentosEnLaVentana} compra(s) de la ventana`;
+  return null;
+}
+
 /** Los renglones del CSV del libro, con número normalizado y emisor en dígitos. */
 export function lineasDelLibro(csv: string, colNumero = 3, colEmisor = 4, colSello = 22): LineaDelLibro[] {
   const out: LineaDelLibro[] = [];

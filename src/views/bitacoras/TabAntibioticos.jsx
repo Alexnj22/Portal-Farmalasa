@@ -68,10 +68,17 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
         return [...m.values()];
     }, [filas]);
 
+    // Lo marcado para el libro que ninguna molécula reclama va también en el
+    // listado, arriba y como «sin molécula»: el listado tiene que mostrar
+    // TODO lo que se maneja, no sólo lo que ya se pudo clasificar.
+    const conSinAsignar = useMemo(() => (revisar.fuera.length
+        ? [{ molecula: null, productos: revisar.fuera.map(p => ({ ...p, origen: 'nuevo' })) }, ...todas]
+        : todas), [todas, revisar.fuera]);
+
     const moleculas = useMemo(() => {
-        if (!busqueda.trim()) return todas;
-        return todas.filter(x => tokenMatch(busqueda, x.molecula, x.atc, ...x.productos.map(p => p.producto)));
-    }, [todas, busqueda]);
+        if (!busqueda.trim()) return conSinAsignar;
+        return conSinAsignar.filter(x => tokenMatch(busqueda, x.molecula, x.atc, ...x.productos.map(p => p.producto)));
+    }, [conSinAsignar, busqueda]);
 
     const filtrarProductos = useCallback((lista) => (busqueda.trim()
         ? lista.filter(p => tokenMatch(busqueda, p.producto, p.principio_activo))
@@ -116,7 +123,7 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
     const alGuardar = () => { setEditando(null); cargar(); };
 
     const VISTAS = [
-        { value: 'listado', label: `Listado · ${(filas || []).length}` },
+        { value: 'listado', label: `Listado · ${(filas || []).length + revisar.fuera.length}` },
         { value: 'revisar', label: `Por revisar · ${revisar.fuera.length}` },
         { value: 'sacados', label: `Sacados · ${revisar.excluidos.length}` },
     ];
@@ -176,6 +183,30 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
                     movil={MOVIL}
                 >
                     {moleculas.map((m, i) => {
+                        if (!m.molecula) return (
+                            <DataRow key="sin-molecula" index={i}>
+                                <DataCell className="text-body-sm">
+                                    <p className="font-semibold">Sin molécula asignada</p>
+                                    <p className="text-caption text-content-3">Van al libro; falta decir de qué molécula son</p>
+                                </DataCell>
+                                <DataCell><Badge variant="danger">Por asignar · {m.productos.length}</Badge></DataCell>
+                                <DataCell className="text-body-sm">
+                                    <ul className="space-y-1">
+                                        {m.productos.map(p => (
+                                            <li key={p.product_id} className="flex flex-wrap items-center gap-1.5">
+                                                <span className="text-content">{p.producto}</span>
+                                                <Badge variant="neutral" size="sm">{VIA[p.via]}</Badge>
+                                                {puedeEditar && (
+                                                    <Button variant="ghost" size="xs" icon={Pencil} iconOnly
+                                                        title={`Asignar ${p.producto}`} onClick={() => setEditando(p)} />
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </DataCell>
+                                <DataCell />
+                            </DataRow>
+                        );
                         const g = GRUPOS_AWARE[m.grupo];
                         const soloLocal = m.productos.every(p => p.via === 'local');
                         return (

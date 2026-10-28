@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.31 — Antibióticos: el listado muestra también los que no tienen molécula
+
+- Los 52 productos marcados para el libro que ninguna molécula reclamaba ya
+  no quedan sólo en «Por revisar»: el listado los muestra arriba, en «Sin
+  molécula asignada», con el lápiz para asignarlos. Así el listado lleva los
+  85 productos del libro (33 clasificados + 52 por asignar) además de los que
+  se reconocen por el nombre.
+
 ## v2.1357.30 — Caja: el mismo número de boleta de otro banco u emisor ya no frena
 
 - El freno de boleta repetida comparaba sólo el número y el sentido. Cada banco

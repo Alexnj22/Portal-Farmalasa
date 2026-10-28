@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, Download, Pencil, Pill, Plus, Undo2 } from 'lucide-react';
+import { BookX, Check, Download, Pencil, Pill, Plus, Undo2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PromptModal from '../../components/common/PromptModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { exportCsv } from '@nucleo/utils/csvExport';
@@ -12,7 +13,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
     GRUPOS_AWARE, VENTA_ANTIBIOTICO, VIAS_ANTIBIOTICO, antibioticoAutomatico, confirmarMoleculaAware,
-    fetchAntibioticosPorRevisar, fetchListadoAntibioticos,
+    devolverAlLibro, fetchAntibioticosPorRevisar, fetchListadoAntibioticos, sacarDelLibro,
 } from '@nucleo/data/bitacoras';
 import EditarAntibioticoModal from './EditarAntibioticoModal';
 
@@ -45,6 +46,8 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
     const [confirmando, setConfirmando] = useState(null);
     const [vista, setVista] = useState('listado');
     const [editando, setEditando] = useState(null);
+    const [sacandoDelLibro, setSacandoDelLibro] = useState(null);
+    const [ocupado, setOcupado] = useState(false);
 
     const cargar = useCallback(async () => {
         const [r, rv] = await Promise.all([fetchListadoAntibioticos(), fetchAntibioticosPorRevisar()]);
@@ -106,6 +109,23 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
         const { error: e } = await antibioticoAutomatico(p.product_id);
         if (e) { showToast('No se pudo devolver', mensajeAmigable(e), 'error'); return; }
         showToast('Devuelto al listado', p.producto, 'success');
+        cargar();
+    };
+
+    // «No va al libro»: pide receta pero no se anota (2026-10-28, la ranitidina).
+    const confirmarSinLibro = async (motivo) => {
+        setOcupado(true);
+        const { error: e } = await sacarDelLibro(sacandoDelLibro.product_id, motivo);
+        setOcupado(false);
+        if (e) { showToast('No se pudo', mensajeAmigable(e), 'error'); return; }
+        showToast('Ya no va al libro', sacandoDelLibro.producto, 'success');
+        setSacandoDelLibro(null);
+        cargar();
+    };
+    const volverAlLibro = async (p) => {
+        const { error: e } = await devolverAlLibro(p.product_id);
+        if (e) { showToast('No se pudo', mensajeAmigable(e), 'error'); return; }
+        showToast('Vuelve al libro', p.producto, 'success');
         cargar();
     };
 
@@ -305,20 +325,46 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
                             <DataCell className="text-body-sm">
                                 <p className="font-semibold">{p.producto}</p>
                                 <p className="text-caption text-content-3">
-                                    {p.en_el_libro ? 'Marcado para el libro bajo receta' : 'No es antibiótico'}
+                                    {p.sin_libro ? 'No es antibiótico · pide receta, no va al libro'
+                                        : p.en_el_libro ? 'No es antibiótico, pero hoy entra al libro bajo receta'
+                                            : 'No es antibiótico'}
                                 </p>
                             </DataCell>
                             <DataCell align="right">
                                 {puedeEditar && (
-                                    <Button variant="secondary" size="sm" icon={Undo2} onClick={() => devolver(p)}>
-                                        Devolver
-                                    </Button>
+                                    <div className="flex flex-wrap justify-end gap-2">
+                                        {p.en_el_libro && (
+                                            <Button variant="secondary" size="sm" icon={BookX} onClick={() => setSacandoDelLibro(p)}>
+                                                No va al libro
+                                            </Button>
+                                        )}
+                                        {p.sin_libro && (
+                                            <Button variant="ghost" size="sm" onClick={() => volverAlLibro(p)}>
+                                                Vuelve al libro
+                                            </Button>
+                                        )}
+                                        <Button variant="ghost" size="sm" icon={Undo2} onClick={() => devolver(p)}>
+                                            Devolver al listado
+                                        </Button>
+                                    </div>
                                 )}
                             </DataCell>
                         </DataRow>
                     ))}
                 </DataTable>
             )}
+
+            <PromptModal
+                isOpen={Boolean(sacandoDelLibro)}
+                onClose={() => setSacandoDelLibro(null)}
+                onConfirm={confirmarSinLibro}
+                title="No va al libro"
+                message={sacandoDelLibro ? `${sacandoDelLibro.producto}: se sigue vendiendo con receta, pero no se anota en el libro.` : ''}
+                placeholder="Por qué no va al libro…"
+                confirmText="Sacar del libro"
+                isProcessing={ocupado}
+                required
+            />
 
             {editando && (
                 <EditarAntibioticoModal

@@ -68,7 +68,8 @@ const ABX_INYECTABLE = 'ceftriax|cefotax|ceftazidim|cefazol|gentamic|amikacin|cl
 const FORMA_INYECTABLE = 'ampoll|amp\\.|ampula|inyect|\\bi\\.?v\\b|\\bi\\.?m\\b|/2 ?ml|x 2 ml|'
                        + 'hospitalaria|tripack|1 ?gr?\\b|0\\.5 ?gr\\b|liofiliz';
 
-const clasificado = `coalesce(dc.clase, CASE WHEN p.es_antibiotico THEN 'antibiotico' END) IS NOT NULL`;
+// `sin_libro` (2026-10-28) pide receta pero NO va al libro: no cuenta como clasificado.
+const clasificado = `public.va_al_libro(dc.clase, p.es_antibiotico)`;
 
 const SQL_MOLECULAS = MOLECULAS.map(m => `
   SELECT '${m.generico}' AS molecula, p.nombre, p.activo,

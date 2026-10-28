@@ -33364,6 +33364,14 @@ export type Database = {
         Returns: undefined
       }
       liberar_solicitud: { Args: { p_request_id: string }; Returns: undefined }
+      libro_devolver_producto: {
+        Args: { p_product_id: number }
+        Returns: undefined
+      }
+      libro_sacar_producto: {
+        Args: { p_motivo: string; p_product_id: number }
+        Returns: undefined
+      }
       ligar_abono_a_ingreso: {
         Args: { p_abono_id: number; p_movimiento_id: number }
         Returns: {
@@ -35787,6 +35795,10 @@ export type Database = {
       upsert_product_precios_batch: { Args: { p_rows: Json }; Returns: number }
       upsert_products_minimal: { Args: { p_rows: Json }; Returns: number }
       upsert_proveedor_from_dte: { Args: { p_data: Json }; Returns: Json }
+      va_al_libro: {
+        Args: { p_clase: string; p_es_antibiotico: boolean }
+        Returns: boolean
+      }
       validate_role_headcount: {
         Args: { p_branch_id: number; p_role_id: number }
         Returns: boolean

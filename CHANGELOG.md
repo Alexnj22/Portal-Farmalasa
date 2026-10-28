@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.33 — Libro: opción «no va al libro»
+
+- **Nueva opción «No va al libro»** en Bitácoras → Antibióticos → Sacados:
+  un producto que pide receta pero no se anota en el libro, aunque el sistema
+  de la caja lo marque como antibiótico. Se escribe el motivo; «Vuelve al
+  libro» lo deshace. La base lo rechaza si la regla manda el producto al libro
+  (las seis moléculas o un antibiótico inyectable).
+- Es la clase `sin_libro` de `dispensacion_clases`. El libro entra por
+  `va_al_libro()` (clases `antibiotico` y `bajo_receta`), y la app de clientes
+  la sigue tratando como «con receta».
+- **RANITIDINA 50 mg ampolla** pasa a `sin_libro`: antes tenía serie propia
+  «bajo receta» dentro del libro. No es antibiótico ni controlado (LOM 2026
+  A02BA02; no está en el listado de venta sin receta).
+- Los kits de H. pylori quedaron asignados: ESOPRASEK PLUS y METIOM H. PYLORI
+  → levofloxacina; LANZOPRAL HELIPACK → claritromicina. Los tres van al libro.
+
 ## v2.1357.32 — Mi caja avisa de las preventas antes de contar
 
 - Al abrir «Hacer el corte» o «Cerrar el día», Mi caja lee las preventas

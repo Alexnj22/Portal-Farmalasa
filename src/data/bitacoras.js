@@ -1104,6 +1104,23 @@ export async function antibioticoAutomatico(productId) {
     return { error: error?.message ?? null };
 }
 
+/**
+ * «No va al libro»: pide receta pero no se anota, aunque el catálogo de origen
+ * lo marque como antibiótico (clase `sin_libro`). La base lo rechaza si la
+ * regla de venta lo manda al libro.
+ */
+export async function sacarDelLibro(productId, motivo) {
+    const { error } = await supabase.rpc('libro_sacar_producto', { p_product_id: Number(productId), p_motivo: motivo });
+    if (!error) anotar('LIBRO_SACAR_PRODUCTO', String(productId), { motivo });
+    return { error: error?.message ?? null };
+}
+
+export async function devolverAlLibro(productId) {
+    const { error } = await supabase.rpc('libro_devolver_producto', { p_product_id: Number(productId) });
+    if (!error) anotar('LIBRO_DEVOLVER_PRODUCTO', String(productId), {});
+    return { error: error?.message ?? null };
+}
+
 /** Una molécula que falta. Entra sin confirmar: el grupo lo confirma el regente. */
 export async function agregarMoleculaAntibiotico({ molecula, grupo, atc }) {
     const { data, error } = await supabase.rpc('antibiotico_agregar_molecula', {

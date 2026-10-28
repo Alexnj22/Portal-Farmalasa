@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.15 — docs/legal: vigencia verificada y normas sanitarias vigentes
+
+Se verificó si cada documento de `docs/legal/` es la última versión; la tabla está en su README §4.
+
+- **Agregados**, todos oficiales de la SRS: la Ley de Medicamentos consolidada a junio 2025, la Ley de la SRS, el Listado Oficial de Medicamentos 2026 (reemplaza al 2025 como fuente del AWaRe) y el listado de venta sin receta 2026.
+- **La lista de venta sin receta 2026 no trae ningún antibiótico sistémico.** La regla «fuera de seis moléculas e inyectables, venta libre» era a medias: esos van con receta retenida y libro, y el resto también es con receta, sólo que sin retención.
+- **Desactualizados, y quedan anotados:** Código Tributario (2014), Ley de Renta (2013), la guía técnica DTE (2021; la DTE v2.0 es obligatoria el 1-dic-2026) y el Código de Trabajo (falta la reforma del aguinaldo de oct-2025).
+
 ## v2.1357.14 — Procedimiento de limpieza y mantenimiento (borrador) y el RTS publicado
 
 - **Borrador del procedimiento de limpieza y mantenimiento** (`docs/legal/procedimientos/BORRADOR-E-limpieza-y-mantenimiento.md` + PDF), que exige el RTS 6.1.13 y verifica la Guía 1.11. Está armado con las áreas, los turnos y los muebles que las salas tienen hoy en Bitácoras, y trae un anexo en papel para la limpieza profunda y el mantenimiento. Lo firma y sella el regente.

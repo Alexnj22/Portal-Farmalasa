@@ -128,6 +128,44 @@ empresa, no del portal.
 
 Se lee con `textutil -convert txt -stdout "docs/legal/REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf"`.
 
+## 4 · Verificación de vigencia — 2026-10-28
+
+Se buscó la última versión de cada documento externo. **Al citar, mirar esta
+tabla antes que la fecha de descarga de arriba.**
+
+| documento | ¿es la última? | qué hay más nuevo |
+|---|---|---|
+| Guía de Verificación BPAD | ✅ **sí** — md5 idéntico a la que publica hoy srs.gob.sv (oct-2025) | — |
+| RTS 11.02.04:24 | ⚠️ la copia de 2024 era la de **consulta** | **agregado** `rts_11020424_diario_oficial_2025-10-08.pdf`: es el que rige, §6.1 renumerada (ver §2) |
+| Ley de Medicamentos | ❌ **no estaba en el repo** | **agregada** `ley_de_medicamentos_actualizada_2025-06.pdf` (+ `.txt`): DL 1008/2012 con reformas a junio 2025 (SRS) |
+| Ley de la SRS | ❌ no estaba | **agregada** `ley_srs_actualizada_2025-06.pdf`: DL 891, reemplaza a la DNM |
+| Listado Oficial de Medicamentos | ❌ el repo citaba el **LOM 2025** | **agregado** `srs_listado_oficial_medicamentos_2026.pdf` (+ `.txt`): acuerdo SI.2026.02.06-02. Cap. J01 con AWaRe `*(1)`/`*(2)` — la fuente del ítem 1.13 es ÉSTE |
+| Listado de venta **sin** receta | ❌ no estaba | **agregado** `srs_venta_sin_receta_2026.pdf` (+ `.txt`): acuerdo SI.2026.02.06-01. **No trae ningún antibiótico sistémico** — ver abajo |
+| Código Tributario | ❌ texto de **2014** + DL 487/2022 | faltan DL 960 y 969 (feb–mar 2024) y DL 94 (sep 2024, Arts. 114 y 119-G: consumidor final) |
+| Reglamento del Código Tributario | ⚠️ PDF de 2008 | no se encontró reforma posterior; verificar en transparenciafiscal.gob.sv |
+| Ley de IVA | ⚠️ PDF de 2016 | no se encontró reforma posterior en la búsqueda; no confirmado |
+| Ley de Renta | ❌ PDF de **2013** | reformas 2024 (DL 969) y 2025 (Art. 37, tablas de retención) |
+| Guía técnica DTE | ❌ **2021** | **Normativa de Cumplimiento DTE v2.0** (Hacienda, 25-may-2026): **obligatoria el 1-dic-2026** para quien transmite con sistema propio — eventos de Retorno y Operaciones Especiales, transmisión diferida, código de generación UUID v4, CAT-013 de municipios cambiado. Bajarla de factura.gob.sv → documentos técnicos |
+| Código de Comercio | ⚠️ PDF de 2017 | no se buscaron reformas a los Arts. 435-455 |
+| Código de Trabajo | ⚠️ edición OIT sin fecha | reforma del **aguinaldo** (DL 433, oct-2025: se paga del 20-oct al 20-dic); Art. 113-A (embarazada, 6 meses después del parto); Arts. 378 y 425 |
+| Ley de Protección de Datos Personales | ✅ DL 144, D.O. 15-nov-2024 | no se encontró reforma ni reglamento |
+
+### Los antibióticos: la regla de «sólo seis» era a medias
+
+La memoria y `AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md` dicen que fuera de
+seis moléculas e inyectables «el resto es venta libre». **La lista oficial 2026
+de venta sin receta dice otra cosa:** no tiene ni un antibiótico sistémico (sólo
+neomicina y sulfadiazina tópicas). Y la Ley de Medicamentos define venta libre
+como lo «autorizado y **publicado**» para venderse sin prescripción (Art. 2) y
+sanciona «dispensar sin receta cuando requieran receta médica».
+
+O sea: **ningún antibiótico oral es de venta libre.** Lo que separa a las seis
+moléculas y los inyectables es que llevan **receta retenida y libro**; los
+demás son *con receta* aunque la receta no se retenga. Para el libro foliado no
+cambia el alcance, pero sí para la **Guía 3.3 (CRÍTICO)**: el registro
+trazable es de **todos** los antibióticos que se manejan. Confirmarlo con el
+regente antes de construir.
+
 ## ⚠️ Limitación importante
 
 **Ninguno de estos documentos es garantizadamente la versión 100% vigente hoy.**

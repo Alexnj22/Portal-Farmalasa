@@ -1,0 +1,1171 @@
+                              Listado Oficial de Medicamentos (LOM) 2026
+
+
+
+
+  Mediante acuerdo No. SI.2026.02.06-02 de fecha 6 de febrero de 2026 se aprobó el Listado Oficial de
+  Medicamentos 2026 y en cumplimiento con lo dispuesto en el artículo 4, numeral 17 de la Ley de la
+  Superintendencia de Regulación Sanitaria y el artículo 6 literal r) de la Ley de Medicamentos, se ordena la
+  publicación del presente listado:
+
+
+
+                                        NOMBRE                                       FORMA
+  CÓDIGO        CORRELATIVO                              CONCENTRACIÓN                                    VÍA
+                                       GENÉRICO                                   FARMACÉUTICA
+A.- TRACTO ALIMENTARIO Y METABOLISMO
+A02           MEDICAMENTOS PARA EL TRATAMIENTO DE TRASTORNOS CAUSADOS POR ÁCIDOS
+A02BA02                 1            Ranitidina                 50 mg             Líquidos parenterales   IM/IV
+A02BA03                 2            Famotidina                 40 mg                Sólidos orales        VO
+A02BC01                 3            Omeprazol                  20 mg                Sólidos orales        VO
+A02BC01                 4            Omeprazol                  40 mg             Sólidos parenterales     IV
+A03           MEDICAMENTOS CONTRA TRASTORNOS FUNCIONALES GASTROINTESTINALES
+                             Atropina                                            SC/IM/I
+A03BA01             1                        0.5 – 1 mg/mL Líquidos parenterales
+                             (Sulfato)                                              V
+                             Hyoscinamina
+A03BA03             2        (bromuro de n-      10 mg        Sólidos orales       VO
+                             butil hioscina)
+                             Hyoscinamina
+A03BA03             3        (bromuro de n-    20 mg/mL    Líquidos parenterales  IM/IV
+                             butil hioscina)
+                             Metoclopramida
+A03FA01             4                           5 mg/ml    Líquidos parenterales IM/IV
+                             (clorhidrato)
+                             Metoclopramida
+A03FA01             5                            10 mg        Sólidos orales       VO
+                             (clorhidrato)
+
+
+A04           MEDICAMENTOS ANTIEMETICOS Y ANTINAUSEOSOS
+A04AA01             1        Ondansetron        8 mg                                 Sólidos orales        VO
+A04AA01                 2            Ondansetron               2 mg/mL            Líquidos parenterales    IV
+A04AA02                 3            Granisetron                 1 mg                Sólidos orales        VO
+A04AA02                 4            Granisetron               1 mg/mL            Líquidos parenterales    IV
+R06AA11                 5            Dimenhidrinato             50 mg                Sólidos orales        VO
+R06AA11                    6             Dimenhidrinato             50 mg/mL             Líquidos parenterales   IM, IV
+A06              MEDICAMENTOS PARA EL ESTREÑIMIENTO
+                                Ispaghula
+                                (Psyllium
+A06AC01                1                          31-50%                                    Sólidos orales        VO
+                                muciloide
+                                hidrofílico)
+A06AD11                2        Lactulosa        10 g/15 mL                                Líquidos orales        VO
+A06AB05                 3       Aceite de ricino                  Líquidos orales VO
+                 MEDICAMENTOS ANTIDIARREICOS, ANTIINFLAMATORIOS Y ANTIINFECCIOSOS
+A07
+                 INTESTINALES
+
+A07BA01                    1             Carbón activado                                    Sólidos orales        VO
+
+
+                                                                Glucosa 13.5g/L
+                                                            Cloruro de Potasio 1.5 g/L
+                                         Sales de            Cloruro de sodio 2.6 g/L     Sólidos y Líquidos
+A07CA                      2                                                                                      VO
+                                         rehidratación oral   Bicarbonato de Sodio              orales
+                                                                     2.9g /L
+                                                            Osmolaridad 245mOsm/L
+
+                                         Loperamida
+A07DA03                    3                                           2 mg                 Sólidos orales        VO
+                                         clorhidrato
+A07AA02                    4             Nistatina                100,000 UI/mL            Líquidos orales        VO
+A07EC01                    5             Sulfasalazina               500 mg                 Sólidos orales        VO
+
+A10              MEDICAMENTOS USADOS EN DIABETES
+                                Insulina humana
+A10AB01                1                                            100 UI/mL            Solución inyectable*    SC/IV
+                                cristalina ADNr
+                                Insulina humana
+                                                                                             Suspensión
+A10AE01                2        isofana NPH                         100 UI/mL                                     SC
+                                                                                             inyectable*
+                                ADNr
+A10BA02                3        Metformina                           850 mg                 Sólidos orales        VO
+A10BB12                    4             Glimepirida                 2 y 4 mg               Sólidos orales        VO
+*Se mantiene forma farmaceutica definida debido a la naturaleza del producto.
+A11              VITAMINAS
+                                         Multivitaminas
+A11BA                      1                                                             Sólidos parenterales     IV
+                                         pediátricas
+                                         Multivitaminas
+A11BA                      2                                                             Sólidos parenterales     IV
+                                         adulto
+A11CA01                    3             Vitamina A                 50000 UI                Sólidos orales        VO
+                                         Vitamina D3
+A11CC05                    4                                         0.25 mcg               Sólidos orales        VO
+                                         (Colecalciferol)
+                                Vitamina B1
+A11DA01                    5                                       100 mg/mL            Líquidos parenterales   IM/IV
+                                (Tiamina)
+                                Vitamina B6
+A11HA02                6                                             300mg                  Sólidos orales        VO
+                                (Piridoxina)
+                                Vitamina C
+A11GA01                7        (Ácido                               500 mg                 Sólidos orales        VO
+                                ascórbico)
+A12              SUPLEMENTOS MINERALES
+A12CB01                    1             Zinc (sulfato)            10 mg/5mL               Líquidos orales        VO
+A12CB                      2             Zinc                        50 mg                  Sólidos orales        VO
+A12AA04                                  Calcio
+                           3                                         600 mg                 Sólidos orales        VO
+                                         (carbonato)
+A12BA01                    4             Potasio (cloruro)        20 mEq/15mL              Líquidos orales        VO
+                                         Magnesio
+A12CC02                    5                                          50%               Líquidos parenterales   IM/IV
+                                         (sulfato)
+                                         Calcio
+A12AA03                    6                                          10%               Líquidos parenterales     IV
+                                         (gluconato)
+
+B.- SANGRE Y ORGANOS FORMADORES DE SANGRE
+Código ATC            Correlativo          Medicamento           Concentración           Forma farmacéutica       Vía
+B01              MEDICAMENTOS ANTITROMBOTICOS
+B01AA03                    1             Warfarina Sódica            5mg                Sólidos orales            VO
+                                         Heparina
+B01AB01                    2                                     5000 UI/mL         Solución inyectable**       SC/IV
+                                         (sódica)
+                                         Enoxaparina       20 mg (2,000 UI) - 60 mg
+B01AB05                    3                                                        Solución inyectable**         SC
+                                         Sódica                   (6,000 UI)
+                                         Clopidogrel
+B01AC04                    4                                        75 mg               Sólidos orales            VO
+                                         (bisulfato)
+                                         Ácido
+B01AC06                    5                                     80 -100 mg             Sólidos orales            VO
+                                         Acetilsalicilico*
+B01AD01                    6             Estreptoquinasa        1,500,000 UI         Sólidos parenterales         IV
+* Indicado en prevención secundaria en pacientes con enfermedad coronaria y/o cerebrovascular, en ausencia de
+contraindicaciones absolutas.
+**Se mantiene forma farmacéutica definida debido a la naturaleza del producto.
+B02              MEDICAMENTOS ANTIHEMORRAGICOS
+                                Fitomenadiona                                                                   SC/IM/I
+B02BA01                1                             10 mg/mL                           Líquidos parenterales
+                                (Vitamina K1)                                                                     V
+                                Ácido
+                       2                                                                Líquidos parenterales
+B02AA02                         tranexamico          100 mg/mL                                                    IV
+                                Factor de
+B02BD02                3                         500 UI +/- 20%/vial                     Sólidos parenterales     IV
+                                coagulación VIII
+                                Factor de
+B02BD04                4                         500 UI +/- 20%/vial                     Sólidos parenterales     IV
+                                coagulación IX
+B03              PREPARACIONES ANTI-ANÉMICAS
+B03AA07                1        Sulfato Ferroso                     125mg/mL         Líquidos orales         VO
+B03AA07                    2             Sulfato Ferroso              300mg           Sólidos orales         VO
+B03BA01                    3             Cianocobalamina          1000 mcg/mL      Líquidos parenterales     IM
+B03BB01                    4             Ácido Fólico                  5 mg           Sólidos orales         VO
+B05              SUSTITUTOS DE LA SANGRE Y SOLUCIONES PARA PERFUSIÓN
+                                  Albúmina
+B05AA01                 1                                     20-25 %       Solución inyectable*             IV
+                                  Humana
+                                  Solución
+                                  electrolítica
+B05BB01                 2                                                   Solución inyectable*             IV
+                                  Hartman o
+                                  Ringer
+                                  Dextrosa +
+B05BB02                 3                                   (5 + 0.9) %     Solución inyectable*             IV
+                                  cloruro de sodio
+                                  Dextrosa +
+B05BB02                 4                                   (5 + 03) %      Solución inyectable*             IV
+                                  cloruro de sodio
+B05BC01                 5         Manitol                       20%         Solución inyectable*             IV
+                                  Cloruro de Sodio
+B05CB01                 6                                      0.90%        Solución inyectable*             IV
+                                  en agua destilada
+                                  Bicarbonato de
+B05CB04                 7                             (44.6 - 50) mEq/50 mL Solución inyectable*             IV
+                                  Sodio
+                                  Dextrosa en agua
+B05CX01                 8                                 5%, 10%, 50%      Solución inyectable*             IV
+                                  destilada
+                                  Solución para
+                                                                                                           Peritone
+B05D                    9         diálisis peritoneal  1.5%, 2.50%, 4.25%   Solución inyectable*
+                                                                                                              al
+                                  continua
+                                  Cloruro de
+B05XA01                 10                                  2 mEq/mL        Solución inyectable*             IV
+                                  Potasio
+B05XA03                 11        Cloruro de Sodio              20%         Solución inyectable*             IV
+*Se mantiene forma farmacéutica definida debido a la naturaleza del producto.
+C.- SISTEMA CARDIOVASCULAR
+Código ATC            Correlativo          Medicamento            Concentración    Forma farmacéutica        Vía
+C01              MEDICAMENTOS PARA TERAPIA CARDIACA
+C01AA05                    1             Digoxina                    0.25 mg          Sólidos orales         VO
+C01AA05                    2             Digoxina                  0.25 mg/mL      Líquidos parenterales     IV
+C01BD01                    3             Amiodarona                  200 mg           Sólidos orales         VO
+C01BD01                    4             Amiodarona                 50 mg/mL       Líquidos parenterales     IV
+C01CA03                    5             Norepinefrina          1 mg/mL (1:1000)   Líquidos parenterales     IV
+C01CA04                    6             Dopamina                   40 mg/mL       Líquidos parenterales     IV
+                                                                                                           SC/IM/I
+C01CA06                    7             Fenilefrina                10 mg/mL       Líquidos parenterales
+                                                                                                              V
+C01CA07         8        Dobutamina            12.5 mg/mL       Líquidos parenterales     IV
+                                                                                        SC/IM/I
+C01CA24         9        Epinefrina          1 mg/mL (1:1000)   Líquidos parenterales
+                                                                                           V
+                                                                                        SC/IM/I
+C01CA26         10       Efedrina               25mg/mL         Líquidos parenterales
+                                                                                           V
+                         Trinitrato de
+C01DA02         11       glicerilo             (18 – 25 mg)            Parche             TD
+                         (Nitroglicerina)
+                         Trinitrato de
+C01DA02         12       glicerilo               5 mg/mL        Líquidos parenterales     IV
+                         (Nitroglicerina)
+                         Dinitrato de
+C01DA08         13                                5 mg             Sólidos orales         SL
+                         isosorbide
+                         Mononitrato de
+C01DA14         14                                40 mg            Sólidos orales         VO
+                         isosorbide
+
+
+C02       MEDICAMENTOS ANTIHIPERTENSIVOS
+                         Metildopa
+C02AB01         1                                500 mg            Sólidos orales         VO
+                         (levorotatoria)
+C02DB02         2        Hidralazina              50 mg            Sólidos orales         VO
+                                                                Sólidos y/o Líquidos
+C02DB02         3        Hidralazina              20 mg                                   IV
+                                                                    parenterales
+C03       MEDICAMENTOS DIURETICOS
+C03AA03         1        Hidroclorotiazida        25 mg            Sólidos orales         VO
+C03CA01         2        Furosemida               40 mg            Sólidos orales         VO
+C03CA01         3        Furosemida             10 mg/mL          Líquidos orales         VO
+C03CA01         4        Furosemida             10 mg/mL        Líquidos parenterales     IV
+C03DA01         5        Espironolactona      25 mg,100 mg         Sólidos orales         VO
+C05       MEDICAMENTOS VASOPROTECTORES
+                         Preparados
+C05AD           1        Antihemorroidal                            Semisólidos           R
+                         es
+C07       MEDICAMENTOS BETA BLOQUEADORES
+C07AA05         1        Propranolol           10 mg, 40 mg        Sólidos orales         VO
+C07AB03         2        Atenolol                100 mg            Sólidos orales         VO
+C07AG02         3        Carvedilol           6.25 mg, 25 mg       Sólidos orales         VO
+C08       MEDICAMENTOS BLOQUEADORES DE CANALES DE CALCIO
+C08CA01         1        Amlodipino               5 mg             Sólidos orales         VO
+C08CA01         2        Amlodipino               10 mg            Sólidos orales         VO
+C08CA06         3        Nimodipino               30 mg            Sólidos orales         VO
+C08CA05         4        Nifedipino*              10 mg            Sólidos orales         VO
+C08DA01         5        Verapamilo           80 mg, 240 mg        Sólidos orales         VO
+C08DA01              6         Verapamilo        2.5 mg/mL      Líquidos parenterales     IV
+* USO EXCLUSIVO COMO TOCOLITICO
+             MEDICAMENTOS QUE ACTUAN SOBRE EL SISTEMA
+C09
+             RENINA- ANGIOTENSINA
+C09AA02             1        Enalapril          20 mg              Sólidos orales        VO
+C09AA01              2         Captopril           25 mg           Sólidos orales        VO
+C09CA04              3     Irbesartan       150 mg, 300 mg         Sólidos orales        VO
+C10          MEDICAMENTOS MODIFICADORES DE LOS LIPIDOS
+                           Atorvastatina
+C10AA05            1                         10 mg, 40 mg          Sólidos orales        VO
+                           cálcica
+C10AB08            2       Ciprofibrato         100 mg             Sólidos orales        VO
+
+
+D.- MEDICAMENTOS DE USO DERMATOLÓGICO
+Código ATC       Correlativo    Medicamento     Concentración   Forma farmacéutica       Vía
+D01          ANTIFUNGICOS PARA USO DERMATOLÓGICO
+D01AC01              1         Clotrimazol           1%             Semisólidos         Tópica
+D01AC08             2        Ketoconazol          1%, 2 %           Semisólidos         Tópica
+D05          ANTIPSORIATICOS
+D05AD02              1         Metoxaleno           0.4%            Semisólidos         Tópica
+D05BA02              2         Metoxaleno          10 mg           Sólidos orales        VO
+D06          ANTIBIOTICOS Y QUIMIOTERAPEÚTICOS DE USO DERMATOLOGICOS
+D06AX01              1       Ácido fusídico    2%            Semisólidos                Tópica
+                             Sulfadiazina de
+D06BA01            2                           1%            Semisólidos                Tópica
+                             plata
+D07          PREPARACIONES DERMATOLOGICAS CON CORTICOSTEROIDES
+D07AA02              1         Hidrocortisona        1%             Semisólidos         Tópica
+D07AC01              2         Betametasona         0.1%            Semisólidos         Tópica
+D08          ANTISEPTICOS Y DESINFECTANTES
+                              Sulfato de
+                              Aluminio +
+D08AB               1                                                 Sólidos           Tópica
+                              Acetato de
+                              Calcio
+
+G.- SISTEMA GENITORURINARIO Y HORMONAS SEXUALES
+Código ATC       Correlativo    Medicamento     Concentración   Forma farmacéutica       Vía
+
+
+G01          ANTISEPTICOS Y ANTIINFECCIOSOS DE USO GINECOLOGICO
+G01AF02             1         Clotrimazol          1%           Semisólidos             Vaginal
+  G01AA10                   Clindamicina
+                                                                          Semisólidos         Vaginal
+    *(1)            2       Fosfato             2%
+G02          OTROS MEDICAMENTOS DE USO GINECOLOGICO
+G02AD06              1          Misoprostol           200 mcg            Sólidos orales        VO
+G03          HORMONAS SEXUALES Y MODULADORES DEL SISTEMA GENITAL
+                            Levonorgestrel +
+G03AA07            1                         0.15 mg/ 0.03 mg    Sólidos orales                VO
+                            Etinilestradiol
+                            Medroxiprogeste
+G03DA02            2                            150 mg/mL     Líquidos parenterales             IM
+                            rona
+G04          MEDICAMENTOS UROLOGICOS
+G04CA03              1          Terazosina          2 mg, 5 mg           Sólidos orales        VO
+
+H.- PREPARACIONES HORMONALES DE USO SISTEMICO, EXCLUYENDO LAS HORMONAS SEXUALES
+E INSULINAS
+Código ATC      Correlativo Medicamento  Concentración      Forma farmacéutica Vía
+H01          HORMONAS HIPOTALAMICAS, PITUITARIA Y ANALOGOS
+H01BA02              1          Desmopresina        10 mcg/dosis            Aerosol           Nasal
+H01BB02              2          Oxitocina             5 UI/mL         Líquidos parenterales   IM, IV
+H01CB02              3          Octreotide           0.1 mg/mL        Líquidos parenterales     SC
+H02          CORTICOSTEROIDES PARA USO SISTEMICO
+                            Dexametasona
+H02AB02            1                                 4 mg/mL          Líquidos parenterales   IV/IM
+                            (fosfato)
+                            Metilprednisolon
+H02AB04            2                         40 mg, 500 mg ,1000 mg   Sólidos parenterales    IM, IV
+                            a
+H02AB07            3        Prednisona         5 mg, 20mg, 50 mg         Sólidos orales         VO
+                            Triamcinolona                                                     IM, IA,
+H02AB08            4                                10 mg/mL          Suspensión inyectable
+                            (acetónido)                                                         IL
+                            Hidrocortisona
+H02AB09            5        (succinato                500 mg          Sólidos parenterales    IM, IV
+                            sódico)
+H03          MEDICAMENTOS PARA TERAPIA TIROIDEA
+                            Levotiroxina
+H03AA01            1                            50 mcg, 100 mcg          Sólidos orales        VO
+                            sódica
+H03BA02            2        Propiltiouracilo           50 mg             Sólidos orales        VO
+H03BB01              3          Metimazol              5 mg              Sólidos orales        VO
+
+
+J.- ANTINFECCIOSOS
+Código ATC       Correlativo     Medicamento       Concentración       Forma farmacéutica      Vía
+J01          ANTIBACTERIANOS PARA USO SISTEMICO
+   J01AA02
+                     1          Doxiciclina           100 mg             Sólidos orales        VO
+     *(1)
+                    Cloranfenicol
+J01BA01 *(1)   2    (succinato                  1g           Sólidos parenterales    IV
+                    sódico)
+  J01CA01           Ampicilina
+               3                                1g           Sólidos parenterales   IM, IV
+    *(1)            (sódica)
+                    Ampicilina
+  J01CR01           (sódica) +
+               4                         1000 mg + 500 mg    Sólidos parenterales   IM, IV
+    *(1)            Sulbactam
+                    (sódico)
+  J01CA04
+               5    Amoxicilina              500 mg             Sólidos orales       VO
+    *(1)
+  J01CA04                                                     Polvo o gránulos
+               6    Amoxicilina            250 mg/5mL                                VO
+    *(1)                                                       suspensión oral
+  J01CE01           Penicilina
+               7                           5 millones UI     Sólidos parenterales   IV, IM
+    *(1)            (sódica)
+  J01CE08           Penicilina G
+               8                          1.2 millones UI    Sólidos parenterales    IM
+    *(1)            (benzatínica)
+                    Oxacilina
+J01CF04        9                                1g           Sólidos parenterales   IV, IM
+                    (sódica)
+  J01CR02           Amoxicilina +
+               10                        500 mg + 125 mg        Sólidos orales       VO
+    *(1)            ácido clavulánico
+  J01CR02           Amoxicilina +                            Polvo p/suspensión
+               11                       250mg + 62.5mg/5mL                           VO
+    *(1)            ácido clavulánico                               oral
+  J01CR05           Piperacilina +
+               12                           4 g + 0.5 g      Sólidos parenterales    IV
+    *(2)            tazobactam
+  J01DB04           Cefazolina
+               13                               1g           Sólidos parenterales   IM, IV
+    *(1)            (sódica)
+                    Cefadroxilo
+J01DB05        14                            500 mg             Sólidos orales       VO
+                    (monohidrato)
+                    Cefadroxilo                               Polvo o gránulos
+J01DB05        15                          250 mg/5mL                                VO
+                    (monohidrato)                              suspensión oral
+  J01DD01           Levofloxacina
+               16                               1g           Sólidos parenterales   IM, IV
+                    (sódica)
+  J01DD01           Levofloxacina
+               17                            500 mg          Sólidos parenterales   IM, IV
+                    (sódica)
+  J01DD04           Ceftriaxona
+               18                               1g           Sólidos parenterales   IM, IV
+    *(2)            (sódica)
+                    Imipenem +
+J01DH51        19                        500 mg + 500 mg     Sólidos parenterales    IV
+                    Cilastatina
+J01EC02        20   Sulfadiazina*            500 mg             Sólidos orales       VO
+   J01EE01          Trimetoprim +
+               21                         160 mg/800 mg         Sólidos orales       VO
+     *(1)           Sulfametoxazole
+   J01EE01          Trimetoprim +
+               22                       40 mg + 200 mg/5mL     Líquidos orales       VO
+     *(1)           sulfametoxazole
+   J01FA09
+               23   Claritromicina           500 mg             Sólidos orales       VO
+     *(2)
+   J01FA09                                                    Polvo o gránulos
+               24   Claritromicina         250 mg/5mL                                VO
+     *(2)                                                      suspensión oral
+    J01FF01                             Clindamicina
+                          25                                   150 mg/mL      Líquidos parenterales   IV, IM
+      *(1)                              (fosfato)
+    J01FF01                             Clindamicina
+                          26                                     300 mg          Sólidos orales        VO
+      *(1)                              (clorhidrato)
+   J01GB03                              Gentamicina
+                          27                                   40 mg/mL       Líquidos parenterales   IM, IV
+      *(1)                              (sulfato)
+   J01GB03                              Gentamicina
+                          28                                   80 mg/mL       Líquidos parenterales   IM, IV
+      *(1)                              (sulfato)
+   J01GB06                              Amikacina
+                          29                                   250 mg/mL      Líquidos parenterales   IM, IV
+      *(1)                              (sulfato)
+   J01MA02                              Ciprofloxacino
+                          30                                     500 mg          Sólidos orales        VO
+      *(2)                              (clorhidrato)
+   J01MA02
+                          31            Ciprofloxacino           200 mg       Líquidos parenterales    IV
+      *(2)
+J01MA12                   32            Levofloxacina**          500 mg          Sólidos orales        VO
+J01MA12                    33           Levofloxacina**            750 mg        Sólidos orales        VO
+   J01XA01
+                           34           Vancomicina                500 mg     Sólidos parenterales     IV
+      *(2)
+   J01XD01
+                           35           Metronidazol              5 mg/mL     Líquidos parenterales    IV
+      *(1)
+   J01XE01
+                           36           Nitrofurantoína            100 mg        Sólidos orales        VO
+      *(1)
+   J01XE01
+                           37           Nitrofurantoína          50 mg/5mL      Líquidos orales        VO
+      *(1)
+   J01XX01
+                           38           Fosfomicina                 1 gr      Líquidos parenterales   IV/IM
+      *(1)
+   J01XX01
+                           39           Fosfomicina                500 mg        Solidos orales        VO
+      *(1)
+   J01XX01
+                           40           Fosfomicina                 3 gr        Líquidos orales        VO
+      *(1)
+* Para uso exclusivo en combinación con Pirimetamina para Toxoplasmosis
+** Tratamiento de Tuberculosis multidrogoresistente
+
+J02              ANTIMICOTICOS PARA USO SISTEMICO
+J02AA01                 1        Amfotericina B                  50 mg        Sólidos parenterales     IV
+J02AC01                    2            Fluconazol           150 mg, 200 mg      Sólidos orales        VO
+J02AC01                    3            Fluconazol              2 mg/mL       Líquidos parenterales    IV
+J02AC02                    4            Itraconazol              100 mg          Sólidos orales        VO
+J04              ANTIMICOBACTERIANOS
+                                Acido 4- amino
+J04AA01                 1                                        500 mg          Sólidos orales        VO
+                                salicílico
+                                Acido 4- amino                                   Gránulos para
+J04AA01                 2                                          4g                                  VO
+                                salicílico                                      suspensión oral
+J04AB01                 3       Cicloserina                      250 mg          Sólidos orales        VO
+J04AB02                    4            Rifampicina              300 mg          Sólidos orales        VO
+J04AB02          5        Rifampicina         100 mg/5mL         Líquidos orales       VO
+J04AC01          6        Isoniazida        100 mg, 300 mg        Sólidos orales       VO
+J04AD03          7        Etionamida        250 mg, 500 mg        Sólidos orales       VO
+J04AK01          8        Pirazinamida          500 mg            Sólidos orales       VO
+J04AK02          9        Etambutol             400 mg            Sólidos orales       VO
+                          Rifampicina +
+J04AM02         10                          150 mg + 150 mg       Sólidos orales       VO
+                          Isoniacida
+                          Rifampicina +
+                          Pirazinamida +   150 mg/400 mg/275
+J04AM06         11                                                Sólidos orales       VO
+                          Etambutol +          mg/75 mg
+                          Isoniacida
+J04BA01         12        Clofazimina        50 mg, 100 mg        Sólidos orales       VO
+J04BA02         13        Dapsona               100 mg            Sólidos orales       VO
+
+
+J05       ANTIVIRALES PARA USO SISTEMICO
+J05AB01          1        Aciclovir             400 mg            Sólidos orales       VO
+J05AB01          2        Aciclovir           200 mg/5mL         Líquidos orales       VO
+J05AB01          3        Aciclovir             250 mg         Sólidos parenterales    IV
+J05AB06          4        Ganciclovir           500 mg         Sólidos parenterales    IV
+J05AE03          5        Ritonavir             100 mg            Sólidos orales       VO
+J05AE03          6        Ritonavir           400 mg/5mL         Líquidos orales       VO
+                          Zidovudina
+J05AF01          7                            50 mg/5 mL         Líquidos orales       VO
+                          (AZT)
+                          Zidovudina
+J05AF01          8                             10 mg/mL        Líquidos parenterales   IV
+                          (AZT)
+                          Lamivudina
+J05AF05          9                              150 mg            Sólidos orales       VO
+                          (3TC)
+                          Lamivudina
+J05AF05         10                             10 mg/mL          Líquidos orales       VO
+                          (3TC)
+J05AF06         11        Abacavir              300 mg            Sólidos orales       VO
+                          Tenofovir
+J05AF07         12                              300 mg            Sólidos orales       VO
+                          disoproxil
+J05AG01         13        Nevirapina           10mg/mL           Líquidos orales       VO
+J05AG01         14        Nevirapina            200 mg            Sólidos orales       VO
+J05AG03         15        Efavirenz         200 mg, 600 mg        Sólidos orales       VO
+J05AG04         16        Etravirina            100 mg            Sólidos orales       VO
+                          Zidovudina +
+J05AR01         17                          300 mg + 150 mg       Sólidos orales       VO
+                          Lamivudina
+                          Tenofovir
+J05AR03         18        disoproxil +      300 mg + 200 mg       Sólidos orales       VO
+                          Emtricitabina
+                                Emtricitabina +
+                                Tenofovir         200 mg + 300 mg + 600
+J05AR06              19                                                       Sólidos orales        VO
+                                disoproxil +               mg
+                                Efavirenz
+                                Lopinavir +
+J05AR10              20                              200 mg + 50 mg           Sólidos orales        VO
+                                Ritonavir
+                            Dolutegravir +
+                            Lamivudina +      50 mg + 300 mg + 300
+J05AR27            21                                                         Sólidos orales        VO
+                            Tenofovir                  mg
+                            disoproxil
+                            Raltegravir
+J05AJ01            22                                400 mg                   Sólidos orales        VO
+                            (potásico)
+                            Dolutegravir
+J05AJ03            23                                50 mg                    Sólidos orales        VO
+                            (sódico)
+J06         SUEROS INMUNES E INMUNOGLOBULINAS
+                            Suero antiofídico                              Sólidos y Líquidos
+J06AA03             1                                                                               IV
+                            polivalente                                       parenterales
+                            Inmunoglobulina                                Sólidos y Líquidos
+J06BA02             2                              1g, 5g - 6 g                                     IV
+                            humana normal                                     parenterales
+                            Inmunoglobulina
+J06BB01             3                           300 mcg (1500 UI)         Líquidos parenterales     IM
+                            Anti-D (Rh)
+                            Inmunoglobulina
+J06BB02             4       antitetánica             250 UI               Líquidos parenterales     IM
+                            humana
+                            Inmunoglobulina
+J06BB05             5       humana                 150 UI/mL.             Líquidos parenterales    IL, IM
+                            antirrábica
+L.- ANTINEOPLASICOS E INMUNOMODULADORES
+Código ATC       Correlativo     Medicamento          Concentración        Forma farmacéutica       Vía
+L01          MEDICAMENTOS ANTINEOPLASICOS
+                            Ciclofosfamida,
+L01AA01            1                                     500 mg           Sólidos parenterales      IV
+                            anhidra
+                            Ciclofosfamida,
+L01AA01            2                                     50 mg                Sólidos orales        VO
+                            anhidra
+L01AA02            3        Clorambucil                   2 mg                Sólidos orales        VO
+L01AA03              4          Melfalan                  2 mg                Sólidos orales        VO
+L01AA06              5          Ifosfamida                 1g             Sólidos parenterales      IV
+L01AX04              6          Dacarbazina              200 mg           Sólidos parenterales      IV
+                                                                          Sólidos parenterales o
+L01BA01              7          Metotrexato            25 mg/mL                                    IM, IV
+                                                                          Líquidos parenterales
+L01BA01              8          Metotrexato              2.5 mg               Sólidos orales        VO
+L01BB02              9          Mercaptopurina           50 mg                Sólidos orales        VO
+L01BB05              10         Fludarabina              50 mg            Sólidos parenterales      IV
+                                                                     Sólidos parenterales o
+L01BC01         11        Citarabina            100 mg, 500 mg                                 IV
+                                                                     Líquidos parenterales
+L01BC02         12        5-Fluorouracilo           500 mg           Líquidos parenterales     IV
+L01BC05         13        Gemcitabina                  1g            Sólidos parenterales      IV
+L01BC06         14        Capecitabina              500 mg               Sólidos orales        VO
+                          Vincristina
+L01CA02         15                                  1 mg/mL          Líquidos parenterales     IV
+                          (sulfato)
+                          Vinblastina
+L01CA01         16                                   10 mg           Sólidos parenterales      IV
+                          (sulfato)
+L01CB01         17        Etopósido                20 mg/mL          Líquidos parenterales     IV
+L01CD01         18        Paclitaxel                6 mg/mL          Líquidos parenterales     IV
+L01DB01         19        Doxorrubicina               50mg           Sólidos parenterales      IV
+                          Mitoxantrona
+L01DB07         20                                  2 mg/mL          Líquidos parenterales     IV
+                          (clorhidrato)
+                          Bleomicina
+L01DC01         21                                15 Unidades        Sólidos parenterales     IM, IV
+                          (sulfato)
+                          Mitomicina
+L01DC03         22                                    5 mg           Sólidos parenterales      IV
+                          (5mg – 20mg)
+                                                                       Concentrado para
+L01FA01         23        Rituximab                10 mg/mL                                    IV
+                                                                           infusión
+                                                                     Sólidos parenterales o
+L01XA01         24        Cisplatino                 50 mg                                     IV
+                                                                     Líquidos parenterales
+                                                                     Sólidos parenterales o
+L01XA02         25        Carboplatino          150 mg, 450 mg                                 IV
+                                                                     Líquidos parenterales
+                                                                     Sólidos parenterales o
+L01XA03         26        Oxaliplatino              100 mg                                     IV
+                                                                     Líquidos parenterales
+
+L01EA01         27        Imatinib              100 mg, 400 mg           Sólidos orales        VO
+
+L01XX02         28       L-Asparaginasa   10,000 UI                  Sólidos parenterales     IV/IM
+                         Hidroxiurea
+L01XX05         29       (Hidroxicarbami   500 mg                        Sólidos orales        VO
+                         da)
+L02       MEDICAMENTOS PARA TERAPIA ENDOCRINA
+                         Tamoxifeno
+L02BA01         1                           20 mg                        Sólidos orales        VO
+                         (citrato)
+L03       MEDICAMENTOS INMUNOESTIMULANTES
+L03AA02          1        Filgrastim                300 mcg          Líquidos parenterales    IV, SC
+                          Interferon alfa 2b
+L03AB05          2                             5 millones Unidades   Sólidos parenterales     IV, SC
+                          recombinante
+
+
+L04       MEDICAMENTOS INMUNOSUPRESORES
+                               Micofenolato
+L04AA06              1                             250 mg          Sólidos orales        VO
+                               Mofetil
+                               Micofenolato
+L04AA06              2                             500 mg          Sólidos orales        VO
+                               Mofetil
+L04AA13              3         Leflunomida         20 mg           Sólidos orales        VO
+L04AC02              4         Basiliximab         20 mg        Sólidos parenterales     IV
+L04AD01              5         Ciclosporina A    100 mg/mL        Líquidos orales        VO
+L04AD01              6         Ciclosporina A   25 mg, 100 mg      Sólidos orales        VO
+L04AD02              7         Tacrolimus           1 mg           Sólidos orales        VO
+L04AX01              8         Azatioprina         50 mg           Sólidos orales        VO
+L04AX02              9         Talidomida          100 mg          Sólidos orales        VO
+
+L04AX03              10        Metotrexato         2.5 mg          Sólidos orales        VO
+
+
+
+M.- SISTEMA MUSCULOESQUELETICO
+Código ATC       Correlativo    Medicamento     Concentración   Forma farmacéutica       Vía
+M01          MEDICAMENTOS ANTIINFLAMATORIOS Y ANTIRREUMATICOS
+M01AB01              1         Indometacina        25 mg           Sólidos orales        VO
+                               Diclofenaco
+M01AB05              2                             50 mg           Sólidos orales        VO
+                               sódico
+                               Diclofenaco
+M01AB05              3                           25 mg/mL       Líquidos parenterales    IM
+                               sódico
+                               Ketorolaco
+M01AB15              4                           30 mg/mL       Líquidos parenterales   IM, IV
+                               (Trometamina)
+M01AE01              5         Ibuprofeno          400 mg          Comprimidos           VO
+M01AE01              6         Ibuprofeno       100 mg/5 mL       Suspensión oral        VO
+             MEDICAMENTOS RELAJANTES MUSCULARES
+M03
+                               Succinilcolina
+M03AB01              1         (Suxametonium)      500 mg       Sólidos parenterales     IV
+                               cloruro
+M03AC11              2         Cisatracurio       2 mg/mL       Líquidos parenterales    IV
+M03BA03              3         Metocarbamol        500 mg          Sólidos orales        VO
+M03BX01              4      Baclofeno           10 mg, 25 mg       Sólidos orales        VO
+                            Toxina
+                   5        Botulínica Tipo     100 Unidades    Sólidos parenterales    IM, ID
+M03AX01                     A
+                            Orfenadrina
+M03BC01            6                             30 mg/mL       Líquidos parenterales   IM, IV
+                            citrato
+                            Tizanidina
+M03BX02            7                                4 mg           Sólidos orales        VO
+                            (clorhidrato)
+M04          MEDICAMENTOS ANTIGOTOSOS
+M04AA01                    1              Alopurinol                 300 mg             Sólidos orales         VO
+M04AC01                    2              Colchicina                 0.5 mg             Sólidos orales         VO
+M05          MEDICAMENTOS PARA TRATAR ENFERMEDADES OSEAS
+                            Alendronato
+M05BA04             1                         70 mg                                     Sólidos orales         VO
+                            sódico
+N.- SISTEMA NERVIOSO
+Código ATC            Correlativo           Medicamento           Concentración      Forma farmacéutica        Vía
+N01              MEDICAMENTOS ANESTESICOS
+N01AB08                    1              Sevoflurano                                Solución p/inhalación    INH
+N01AH01                    2              Fentanil (citrato)       0.05 mg/mL        Líquidos parenterales   IM, IV
+                                          Remifentanil
+                           3
+N01AH06                                   (clorhidrato)*           2 mg, 5 mg        Sólidos parenterales      IV
+N01AX03                    4              Ketamina                 50 mg/mL          Líquidos parenterales     IV
+N01AX07                    5              Etomidato                 2 mg/mL          Líquidos parenterales     IV
+N01AX10                    6              Propofol             10 mg/mL, 20 mg/mL    Líquidos parenterales     IV
+
+
+
+                                                                                                             SC, ID,
+                                          Bupivacaína                                                        IM, IA,
+N01BB01                    7                                         0.50%           Líquidos parenterales
+                                          clorhidrato                                                        EPI, IT,
+                                                                                                             PN, PO
+                                          Bupivacaína
+N01BB51                    8              clorhidrato +         0.5 % + (7.5 – 8%)   Líquidos parenterales     SA
+                                          Dextrosa anhidra
+                                          Lidocaína                                                          IM, IV,
+N01BB02                    9                                           2%            Líquidos parenterales
+                                          clorhidrato                                                          SC
+N01BB02                   10              Lidocaína                   10%              Líquidos tópicos      Tópica
+                                          Mepivacaína
+N01BB03                   11                                           3%            Líquidos parenterales     PN
+                                          clorhidrato
+                                          Lidocaína +           2% + (1:50,000 –
+N01BB52                   12                                                         Líquidos parenterales   SC, IM
+                                          Epinefrina              1:100,000)
+*Uso exclusivo para sala de operaciones
+N02              MEDICAMENTOS ANALGESICOS
+                                                                                                             IM, IV,
+N02AA01                    1              Morfina sulfato           10 mg/mL         Líquidos parenterales
+                                                                                                               SC
+N02AA01                    2              Morfina sulfato             30 mg             Sólidos orales         VO
+N02AA05                    3              Oxicodona                   10 mg             Sólidos orales         VO
+                                          Petidina                                                           SC, IM,
+N02AB02                    4                                        50 mg/mL         Líquidos parenterales
+                                          clorhidrato                                                          IV
+                                          Tramadol                                                           IM, IV,
+N02AX02                    5                                        50 mg/mL         Líquidos parenterales
+                                          clorhidrato                                                          SC
+                         Tramadol
+N02AX02           6                               100 mg/mL          Líquidos orales        VO
+                         clorhidrato
+                         Tramadol
+N02AX02         7                                   50 mg             Sólidos orales        VO
+                         clorhidrato
+                         Acetaminofén
+N02BE01         8                                   500 mg            Sólidos orales        VO
+                         (paracetamol)
+                         Acetaminofén
+N02BE01         9                              120 – 160 mg/ 5mL     Líquidos orales        VO
+                         (paracetamol)
+                         Acetaminofén
+N02BE01         10                               125 – 300 mg          Supositorio           R
+                         (paracetamol)
+                         Acetaminofén
+N02BE01         11
+                         (paracetamol)             1000 mg         Líquidos parenterales    IV
+                         Acetaminofén +
+N02BE71         12                              325 mg + 5 mg         Sólidos orales        VO
+                         Oxicodona
+                         Ergotamina +
+N02CA72         13                              1 mg + 100 mg         Sólidos orales        VO
+                         Cafeína
+N03       MEDICAMENTOS ANTIEPILEPTICOS
+N03AA02           1         Fenobarbital            100 mg            Sólidos orales        VO
+N03AA02           2         Fenobarbital          20 mg/5mL          Líquidos orales        VO
+                            Fenobarbital
+N03AA02           3                                65 mg/mL        Líquidos parenterales   IV/IM
+                            sódico
+N03AB02           4         Fenitoína sódica        100 mg            Sólidos orales        VO
+N03AB02           5         Fenitoína sódica       50 mg/mL        Líquidos parenterales    IV
+N03AB02           6         Fenitoína sódica     125 mg/5 mL         Líquidos orales        VO
+N03AE01           7         Clonazepam               2 mg             Sólidos orales        VO
+N03AF01           8         Carbamazepina           200 mg            Sólidos orales        VO
+N03AG01           9      Ácido valproico         500 mg               Sólidos orales        VO
+                         Ácido valproico / 250 mg/5 mL / 200
+N03AG01         10                                                   Líquidos orales        VO
+                         Valproato sódico        mg/mL
+N04       MEDICAMENTOS ANTIPARKINSONIANOS
+                         Biperideno
+N04AA02         1                                 2 mg                Sólidos orales        VO
+                         clorhidrato
+                         Biperideno
+N04AA02         2                               5 mg/mL            Líquidos parenterales   IV, IM
+                         lactato
+                         Levodopa +
+N04BA02         3                           250 mg + 25 mg            Sólidos orales        VO
+                         carbidopa
+                         Amantadina
+N04BB01         4        (clorhidrato o          100 mg               Sólidos orales        VO
+                         sulfato)
+N05       MEDICAMENTOS PSICOLEPTICOS
+                         Clorpromazina
+N05AA01         1                                100 mg               Sólidos orales        VO
+                         (clorhidrato)
+                         Clorpromazina
+N05AA01         2                              25 mg/mL            Líquidos parenterales   IM, IV
+                         (clorhidrato)
+N05AD01              3         Haloperidol            5 mg             Sólidos orales        VO
+N05AD01              4         Haloperidol           5 mg/mL        Líquidos parenterales   IM, IV
+N05AH02              5         Clozapina             100 mg            Sólidos orales        VO
+N05AN01              6         Litio carbonato       300 mg            Sólidos orales        VO
+N05AX08              7         Risperidona           1 mg/mL           Líquidos orales       VO
+N05AX08              8         Risperidona            2 mg             Sólidos orales        VO
+N05BA01              9         Diazepam              5 mg/mL        Líquidos parenterales   IM, IV
+N05BA06              10     Lorazepam            2 mg          Sólidos orales                VO
+                            Midazolam
+N05CD08            11                          5 mg/mL      Líquidos parenterales           IM, IV
+                            (clorhidrato)
+                            Midazolam
+N05CD08            12                          1 mg/mL      Líquidos parenterales           IM, IV
+                            (clorhidrato)
+N06          MEDICAMENTOS PSICOANALEPTICOS
+                            Amitriptilina
+N06AA09             1                           25 mg          Sólidos orales                VO
+                            clorhidrato
+                            Imipramina
+N06AA02             2                        10 mg, 25 mg      Sólidos orales                VO
+                            clorhidrato
+N06AB03             3       Fluoxetina          20 mg          Sólidos orales                VO
+                            Sertralina
+N06AB06             4                           50 mg          Sólidos orales                VO
+                            (clorhidrato)
+N07          OTROS MEDICAMENTOS QUE AFECTEN EL SISTEMA NERVIOSO CENTRAL
+                            Neostigmina                                                     SC, IM,
+N07AA01             1                         0.5 mg/mL     Líquidos parenterales
+                            metilsulfato                                                      IV
+                            Piridostigmina
+N07AA02             2
+                            bromuro             60 mg          Sólidos orales                VO
+                            Metadona
+                    3
+N07BC02                     clorhidrato         10 mg          Sólidos orales                VO
+
+P.- ANTIPARASITARIOS, INSECTICIDAS Y REPELENTES
+Código ATC       Correlativo    Medicamento       Concentración      Forma farmacéutica      Vía
+P01          MEDICAMENTOS ANTIPROTOZOARIOS
+  P01AB01
+                     1         Metronidazol          500 mg            Sólidos orales        VO
+    *(1)
+  P01AB01                      Metronidazol
+                     2                             250 mg/5mL          Líquidos orales       VO
+    *(1)                       (benzoilo)
+                               Diloxanida,
+P01AC01              3                               500 mg            Sólidos orales        VO
+                               furoato
+                               Diloxanida,                          Polvo para suspensión
+P01AC01              4                           200 – 250 mg/5mL                            VO
+                               furoato                                o Suspensión oral
+                               Cloroquina
+P01BA01              5                               150 mg            Sólidos orales        VO
+                               (base)
+                               Primaquina
+P01BA03              6                                15 mg            Sólidos orales        VO
+                               (fosfato)
+P01BD01                    7             Pirimetamina                25 mg            Sólidos orales       VO
+P01CC01                    8             Nifurtimox                  120 mg           Sólidos orales       VO
+P02              MEDICAMENTOS ANTIHELMINTICOS
+P02CA01                    1             Mebendazol                  100 mg           Sólidos orales       VO
+P02CA01                    2             Mebendazol               100 mg/5mL         Líquidos orales       VO
+P02CA03                    3             Albendazol                  200 mg           Sólidos orales       VO
+P03              MEDICAMENTOS ECTOPARASITICIDAS
+P03AC04                    1             Permetrina                       1%        Líquidos tópicos      Tópica
+                                                                                       Líquidos o
+P03AC04                    2             Permetrina                       5%                              Tópica
+                                                                                   Semisólidos tópicos
+
+R.- SISTEMA RESPIRATORIO
+Código ATC            Correlativo         Medicamento            Concentración     Forma farmacéutica      Vía
+R03              MEDICAMENTOS PARA ENFERMEDADES OBSTRUCTIVAS DE LAS VIAS AEREAS
+                                Salbutamol
+R03AC02                1                       100 mcg/dosis       Aerosol      INH
+                                (sulfato)
+                                         Salbutamol                                   Solución para
+R03AC02                    2                                         0.50%                                 INH
+                                         (sulfato)                                    nebulización
+                                         Formoterol                               Polvo para inhalación
+R03AC13                    3                                      12 mcg/dosis                             INH
+                                         fumarato *                                    en capsula
+                                         Beclometasona
+R03BA01                    4                                      50 mcg/dosis           Aerosol           INH
+                                         dipropionato
+                                         Beclometasona
+R03BA01                    5                                     250 mcg/dosis           Aerosol           INH
+                                         dipropionato
+                                         Ipratropio                                   Solución para
+R03BB01                    6                                      250 mcg/mL                               INH
+                                         bromuro                                      Nebulización
+                                         Ipratropio
+R03BB01                    7                                      20 mcg/dosis           Aerosol           INH
+                                         bromuro
+                                                                                  Suspensión para
+                           8                                                                               INH
+R03BA02                                  Budesonida            0.5mg - 1 mg /mL   nebulización
+R03DA05                    9             Aminofilina              25 mg/mL         Solución inyectable     IV
+*Deberá utilizarse únicamente en combinación con corticoides inhalados.
+R06              MEDICAMENTOS ANTIHISTAMINICOS PARA USO SISTEMICO
+                                Difenhidramina
+R06AA02                1                          50 mg/mL      Líquidos parenterales                     IM, IV
+                                clorhidrato
+                                Clorfeniramina
+R06AB04                2                            4 mg           Sólidos orales                          VO
+                                maleato
+                                Clorfeniramina
+R06AB04                3                          2 mg/5mL         Líquidos orales                         VO
+                                maleato
+                                Clorfeniramina
+R06AB04                4                          10 mg/mL      Líquidos parenterales                     IM, IV
+                                maleato
+R06AX13                5        Loratadina         1mg/mL          Líquidos orales                         VO
+R06AX13             6         Loratadina              10 mg            Sólidos orales         VO
+R07          OTROS PRODUCTOS DEL SISTEMA RESPIRATORIO
+                            Surfactante                                  Suspensión
+R07AA               1                                                                         IT
+                            pulmonar                                    intratraqueal
+
+S.- ORGANOS SENSORIALES
+Código ATC      Correlativo     Medicamento       Concentración     Forma farmacéutica        Vía
+S01          MEDICAMENTOS OFTALMOLOGICOS
+                                                                                            Oftálmic
+S01AA01             1         Cloranfenicol           0.50%          Solución oftálmica
+                                                                                               a
+                                                                                            Oftálmic
+S01AA01             2         Cloranfenicol             1%               Ungüento
+                                                                                               a
+                                                                                            Oftálmic
+S01AA12             3         Tobramicina             0.30%          Solución oftálmica
+                                                                                               a
+                              Prednisolona                                                  Oftálmic
+S01BA04             4                                   1%          Suspensión oftálmica
+                              acetato                                                          a
+                              Diclofenaco                                                   Oftálmic
+S01BC03             5                                 0.10%          Solución oftálmica
+                              sódico                                                           a
+S01EC01             6         Acetazolamida           250 mg           Sólidos orales         VO
+                              Dorzolamida                                                   Oftálmic
+S01EC03             7                                   2%           Solución oftálmica
+                              (clorhidrato)                                                    a
+                              Timolol                                                       Oftálmic
+S01ED01             8                                 0.50%          Solución oftálmica
+                              (maleato)                                                        a
+                                                                                            Oftálmic
+S01EE01             9         Latanoprost             0.005%         Solución oftálmica
+                                                                                               a
+                                                                                            Oftálmic
+S01FA01             10        Atropina sulfato       0.5 – 1%        Solución oftálmica
+                                                                                               a
+                              Tropicamida +
+                                                                                            Oftálmic
+                    11        Fenilefrina
+                                                                                               a
+S01FA56                       Clorhidrato         (0.5-0.8)% + 5%    Solución oftálmica
+                              Tetracaína                                                    Oftálmic
+S01HA03             12                                0.50%          Solución oftálmica
+                              clorhidrato                                                      a
+                              Solución Salina
+                              Balanceada
+                                                                    Solución p/irrigación   Oftálmic
+S01XA03             13        Estéril para         305 mOsm/L
+                                                                         oftálmica             a
+                              Irrigación
+                              Intraocular
+S01AD03             14        Aciclovir                 3%          Ungüento oftálmico      Tópico
+                              Ácido
+                    15
+S01XA20                       Poliacrilico            0.20%            Gel oftálmico         Tópico
+                                                                                            Oftálmic
+                    16
+S01XA20                       Carbacol                0.01%         Solución intraocular       a
+                              Lagrimas
+                              artificiales                                                  Oftálmic
+S01XA20             17                                               Solución oftálmica
+                              (Polividona 0.5%                                                 a
+                              + electrolitos) o
+                                   Derivados de la
+                                   celulosa
+S02            MEDICAMENTOS OTOLOGICOS
+S02DC                    1         Glicerina                                          Solución ótica       Ótica
+                                   Ciprofloxacina +
+                         2                                                                                 Ótica
+S02CA03                            Hidrocortisona            0.2 % + 1%              Suspensión ótica
+
+V.- VARIOS
+Código ATC           Correlativa     Medicamento           Concentración           Forma farmacéutica       Vía
+V03            OTROS PRODUCTOS TERAPEUTICOS
+V03AB14                  1         Protamina sulfato         10 mg/mL              Líquidos parenterales    IV
+                                   Naloxona
+V03AB15                  2                                   0.4 mg/mL             Líquidos parenterales   IM, IV
+                                   clorhidrato
+
+V03AB25                  3         Flumazenil                0.1 mg/mL             Líquidos parenterales    IV
+
+V03AF01                  4         Mesna                     100 mg/mL             Líquidos parenterales    IV
+                                   Folinato cálcico                                Polvo para solución o
+V03AF03                  5                                 10 – 50 mg/mL                                   IV, IM
+                                   (leucovorina)                                    solución inyectable
+V07AB                    6         Agua Estéril                                          Líquidos          IM/IV
+
+
+                                                                                   VÍA DE ADMINISTRACIÓN
+        TIPO DE VACUNA                         PRINCIPIO ACTIVO
+                                   Cada 0.1 ml contiene entre: 2 x 10⁵ y 8 x 10⁵
+                                   C.F.U de la Cepa Viva Atenuada
+                                   Mycobacterium bovis (Cepa Bacilo Calmette-
+BCG                                                                                      INTRADERMICA
+                                   Guerin, BCG). Nota aclaratoria: La unidad de
+                                   volumen puede variar dependiendo del
+                                   laboratorio productor.
+                                   Cada 0.5 ml contiene 10 mcg de antígeno de
+Vacuna Hepatitis B Pediatrica      superficie purificado de la Hepatitis B. Su                   IM
+                                   dosis varía según la edad.
+                                   Cada 0.5 ml (1 dosis) contiene: Toxoide
+                                   diftérico no menos de 30 Unidades
+                                   Internacionales (UI), Toxoide tetánico no
+                                   menos de 60 Unidades Internacionales (UI),
+                                   Bordetella Pertusis (de celula entera) no
+Pentavalente                                                                                     IM
+                                   menos de 4 Unidades Internacionales,
+                                   antígeno de superficie de la Hepatitis B no
+                                   menos de 12.5 mcg, Polisacárido capsular
+                                   purificado de Haemophilus influenzae tipo b
+                                   (PRP) conjugado con el toxoide tetánico
+                (proteina transportadora) 11 mcg. Fosfato de
+                aluminio (adyuvante) 0.3 mg Al.
+                Cada 2 gotas contiene una suspensión de
+                virus vivo atenuado (Cepa Sabin) de la
+OPV bivalente   Poliomielitis tipo 1, no menos de 10^6.0           Oral
+                DICC50 y Polio virus vivo atenuado Tipo 3,
+                no menos de 10^5.8 DICC50.
+                Cada 1.5 ml (1 Dosis) contiene: Rotavirus
+Rotavirus       vivos atenuados humanos, Cepa G1, P[8]             Oral
+                RIX4414 no menos de 10^6.0 DICC50.
+                Cada 0.5 ml (1 dosis) contiene: Virus de la
+                Poliomielitis Inactivada Tipo 1 (Mahoney) 40
+                Unidades de antígeno D, Virus de la
+IPV             Poliomielitis Inactivada Tipo 2 (MEF-1) 8          IM
+                Unidades de antígeno D, Virus de la
+                Poliomielitis Inactivada Tipo 3 (Saukett) 32
+                Unidades de antígeno D.
+                Cada 0.5 ml (1 dosis) contiene: 1 mcg de
+                Polisacárido del serotipo neumocócico 1, 5,
+PCV10                                                              IM
+                6B, 7F, 9V, 14 y 23F + 3 mcg de Polisacárido
+                del serotipo neumocócico 4, 18C y 19F.
+                Cada 0.5 ml (1 Dosis) contiene: 2.2 mcg
+                Polisacárido neumocócico serotipo 1, 3, 4, 5,
+                6A, 7F, 9V, 14, 18C, 19A, 19F, 23F + 4.4
+PCV13           mcg de Polisacárido neumocócico serotipo           IM
+                6B. Proteína diftérica CRM 197, fosfato de
+                aluminio como adyuvante, cloruro de sodio y
+                agua
+                Cada 0.5 ml (1 dosis) contiene cepas vivas
+                atenuadas No menos de 1000 DICC50 del
+SPR             Virus del Sarampión, 5000 DICC50 del Virus      Subcutánea
+                de la Parotiditis y 1000 DICC50 del Virus de
+                la Rubeola.
+                Cada 0.5 ml (1 dosis) contiene: Toxoide
+                diftérico ≤ 25 Lf (≥30 UI), B. Pertusis ≤ 16
+DPT                                                                IM
+                OU (≥ 4 UI), Toxoide Tetánico ≤ 5 Lf (≥40
+                UI).
+                Cada 0.5 ml (1 dosis) contiene: Toxoide
+                Diftérico 6 Lf/ml (no menos de 8 UI/ml),
+                Toxoide Tetánico 20 Lf/ml (no menos de 80
+Td                                                                 IM
+                UI). Nota aclaratoria: La concentración del
+                contenido de antígenos puede variar
+                dependiendo del laboratorio productor.
+                       Cada 0.5 ml contien toxoide diftérico 30
+TD                     Lf/ml (no menos de 60 UI/ML), toxoide                  IM
+                       tetánico 20 Lf/ml (no menos de 80 UI/ml)
+                       Cada 0.5 ml (1 dosis) contiene: Toxoide
+                       diftérico no menos de 2 unidades
+                       internacionales (UI) (2.5 Lf), Toxoide
+                       tetánico no menos de 20 unidades
+Tdap                                                                          IM
+                       internacionales (UI) (5 Lf), Antígenos de
+                       Bordetella pertussis (Toxoide de la tos ferina
+                       8 mcg + Hemaglutinina filamentosa 8 mcg +
+                       Pertactina 2.5 mcg).
+                       Su composición depende de las cepas
+                       circulantes identificadas a nivel mundial
+                       anualmente y pueden variar en cepas tipo Sur
+                       o Norte. Cada 0.5 ml (1 dosis) contiene: 15
+                       mcg de Antígeno de virus purificado Tipo A
+                       (virus fraccionados, inactivado) Cepa tipo
+Influenza trivalente   A/Singapore/GP1908/2015 IVR-180(H1N1);                 IM
+                       15 mcg de Antígeno de virus purificado Tipo
+                       A (virus fraccionados, inactivado) Cepa
+                       A/Switzerland/8060/2017 NIB-112(H3N2);
+                       15 mcg de Antígeno de virus purificado Tipo
+                       B (virus fraccionados, inactivado) Cepa
+                       B/Maryland/15/2016 NYMC BX-69A.
+                       Cada 0.5 ml (1 dosis) contiene: 2.5 UI Virus
+Vacuna antirrábica     de la rabia, cepa Wistar Rabies PM/W138-               IM
+                       1503-3M (Inactivada).
+                       Cada 0.5 ml (1 dosis) contiene: No menos de
+Fiebre Amarilla        1000 UI de Virus de Fiebre Amarilla, cepa        Subcutánea o IM
+                       170 - 204 (vivos, atenuados).
+                       Cada 0.5 ml (1 dosis) contiene: 25 mcg
+                       Polisacárido Capsular Pneumocóccico Tipo
+PPSV23                 1, 2, 3, 4, 5, 6B, 7F, 8, 9N, 9V, 10A, 11A,            IM
+                       12F, 14, 15B, 17F, 18C, 19F, 19A, 20, 22F,
+                       23F, 33F.
+                       Vacuna recombinante tetravalente contra el
+                       virus del Papiloma Humano (tipos 6,11, 16 y
+                       18). 1 dosis (0,5 ml) contiene
+                       aproximadamente: Proteína L1 Virus del
+                       Papiloma Humano Tipo 6, 20 microgramos;
+VPH                                                                           IM
+                       Proteína L1 Virus del Papiloma Humano
+                       Tipo 11, 40 microgramos; Proteína L1 Virus
+                       del Papiloma Humano Tipo 16, 40
+                       microgramos; Proteína L1 Virus del
+                       Papiloma Humano Tipo 18, 20 microgramos.
+                                     Adsorbida en hidroxifosfato sulfato de
+                                     aluminio amorfo como adyuvante (0,225
+                                     miligramos de Al).
+                                     Cada 0.5 ml (1 dosis) contiene: Vacuna del
+Varicela                             virus de la Varicela (virus atenuado, cepa                       IM, SC
+                                     OKA) 1350 UFP
+                                     Cada 0.5 ml (1 dosis) contiene Virus de la
+Hepatitis A                          hepatitis A de la cepa GBM (inactivados) 80                        IM
+                                     u (pediátrica)
+
+
+
+
+   La clasificación LME AWaRe de la OMS, que separa los grupos comúnmente usados de antibióticos en
+   tres grupos – ACCESS (Acceso), WATCH (Vigilancia) y RESERVE (Último recurso)– constituye un
+   medio de apoyo para las actividades de monitorización de estos medicamentos y las actividades de
+   optimización de los antimicrobianos; en ella se ofrecen recomendaciones sobre cómo y cuándo emplear los
+   antibióticos de cada categoría. Algunos antibióticos de la clasificación AWaRe se incluyen en la Listado
+   Oficial de Medicamentos como opciones recomendadas para tratar enfermedades infecciosas específicos.
+
+
+
+
+     *Código                          CLASIFICACIÓN AWARE DE LOS ANTIBIÓTICOS
+           1              GRUPO ACCESO (ACCESS)         Incluye los antibióticos y clases de antibióticos con actividad frente a
+                                                        una amplia gama de microbios patógenos que por lo común son
+                                                        susceptibles y poseen un potencial de resistencia menor que el de los
+                                                        antibióticos de los grupos Precaución (Watch) y Último recurso
+                                                        (Reserve).
+
+           2              GRUPO PRECAUCIÓN              Incluye los antibióticos y clases de antibióticos que presentan un
+                                                        potencial más alto de resistencia, entre ellos la mayor parte de los
+                          (WATCH)
+                                                        medicamentos de máxima prioridad entre los antimicrobianos de
+                                                        importancia decisiva para la salud humana y los antibióticos que
+                                                        plantean un riesgo elevado de selección de bacterias resistentes. Se les
+                                                        debería conceder prioridad como blancos clave de los programas
+                                                        nacionales y locales de optimización y vigilancia.
+
+           3              GRUPO ÚLTIMO                  Incluye los antibióticos y clases de antibióticos que deberían reservarse
+                                                        para el tratamiento de infecciones confirmadas o presuntas causadas por
+                          RECURSO (R ESERVE)
+                                                        microrganismo multirresistentes y considerarse como opciones de
+                                                        «último recurso». Su uso se ajustará a enfermos y circunstancias muy
+                 específicas, cuando todas las alternativas han fracasado o no son
+                 adecuadas. Pueden ser protegidos y priorizados como blancos clave de
+                 los programas nacionales e internacionales de optimización, aunados a
+                 la vigilancia y notificación de su uso, para preservar su eficacia.
+
+
+
+
+MSc. NOE GEOVANNI GARCÍA IRAHETA
+         SUPERINTENDENTE
+

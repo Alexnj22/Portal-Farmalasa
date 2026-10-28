@@ -1165,7 +1165,7 @@ export const AREAS = [
                  'bitacora_limpiezas_historial', 'antibioticos_aware', 'antibioticos_producto',
                  'recetas', 'receta_items', 'medicos', 'dispensacion_clases'],
         edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
-        crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario',
+        crons: ['bitacora-dispensaciones-1min', 'cuadre-antibioticos-0700-sv', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min'],
         docs: ['docs/BITACORAS-SRS.md',
                'docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md',

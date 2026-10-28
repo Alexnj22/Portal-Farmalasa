@@ -593,6 +593,13 @@ const CRONS = [
           + 'es invisible al barrido de `functions/v1/`.',
   },
   {
+    job: 'cuadre-antibioticos-0700-sv', slug: null, cadencia: '5 13 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: `avisar_cuadre_antibioticos` recuerda desde el día 20 el conteo mensual de '
+          + 'antibióticos a la sala y al regente, y el día 1 avisa a supervisión del mes que quedó sin '
+          + 'conteo. Una vez por sala y mes (avisos_emitidos). No toca el sistema de origen.',
+  },
+  {
     job: 'cierre-del-dia-hora-tope', slug: null, cadencia: '50 5 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: no llama a ninguna función ni toca el sistema de origen. Es la RED del '

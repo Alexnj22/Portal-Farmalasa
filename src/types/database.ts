@@ -28517,6 +28517,7 @@ export type Database = {
         Args: { p_nombre: string }
         Returns: string
       }
+      antibioticos_del_cuadre: { Args: never; Returns: number[] }
       anular_abono_diferencia: {
         Args: { p_id: number; p_motivo: string }
         Returns: {
@@ -29124,6 +29125,7 @@ export type Database = {
         Returns: number
       }
       avisar_cortes_pendientes: { Args: never; Returns: number }
+      avisar_cuadre_antibioticos: { Args: { p_hoy: string }; Returns: number }
       avisar_dias_sin_cierre: { Args: { p_fecha: string }; Returns: number }
       avisar_diferencia_de_ayer: { Args: { p_fecha?: string }; Returns: number }
       avisar_diferencias_pendientes_a_jefes: {
@@ -29159,6 +29161,10 @@ export type Database = {
       avisar_reclamos_por_vencer: { Args: never; Returns: number }
       avisar_solicitudes_datos_por_vencer: { Args: never; Returns: number }
       avisar_traslados_por_respaldo: { Args: never; Returns: number }
+      avisar_ventas_sin_sello: {
+        Args: { p_dias_sello_tardio?: number; p_probar?: boolean }
+        Returns: Json
+      }
       aviso_de_pedido_fallo: {
         Args: { p_err: string; p_pedido: string; p_que: string }
         Returns: undefined
@@ -31710,6 +31716,10 @@ export type Database = {
           z_factura: number
           z_total: number
         }[]
+      }
+      get_cuadre_antibioticos_mes: {
+        Args: { p_branch_id: number; p_periodo: string }
+        Returns: Json
       }
       get_cuentas_por_pagar: {
         Args: { p_desde?: string }

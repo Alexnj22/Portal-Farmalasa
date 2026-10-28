@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-28T21:53:36.068Z",
+ "generado": "2026-10-28T22:10:28.246Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -77,6 +77,10 @@
   "antibiotico_via_por_nombre": {
    "area": "bitacoras",
    "por": "llamada"
+  },
+  "antibioticos_del_cuadre": {
+   "area": "bitacoras",
+   "por": "tablas"
   },
   "anular_abono_diferencia": {
    "area": "cortes-efectivo",
@@ -553,6 +557,10 @@
   "avisar_cortes_pendientes": {
    "area": "cortes-efectivo",
    "por": "cron"
+  },
+  "avisar_cuadre_antibioticos": {
+   "area": "comunicacion",
+   "por": "tablas"
   },
   "avisar_descarga_grande": {
    "area": "sistema",
@@ -2624,6 +2632,10 @@
   "get_cortes_z": {
    "area": "fiscal",
    "por": "código"
+  },
+  "get_cuadre_antibioticos_mes": {
+   "area": "inventario",
+   "por": "tablas"
   },
   "get_cuentas_por_pagar": {
    "area": "compras",

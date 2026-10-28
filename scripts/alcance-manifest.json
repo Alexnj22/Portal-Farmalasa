@@ -563,6 +563,9 @@
     "get_bitacora_resumen_mes": {
       "guarda": "alcance"
     },
+    "get_cuadre_antibioticos_mes": {
+      "guarda": "alcance"
+    },
     "get_bono_meta_sala": {
       "guarda": "alcance"
     },

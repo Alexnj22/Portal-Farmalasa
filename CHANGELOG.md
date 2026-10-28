@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.42 — Cuadre mensual de antibióticos: el conteo cubre todo el listado, hoja de movimientos y aviso
+
+Pedido del usuario: cuadrar los antibióticos cada mes en cada sala y en la
+Bodega (RTS 6.4.2, Guía de BPAD 3.3 y 3.4). La pantalla viene en la versión
+siguiente; esto es la base.
+
+- **El conteo «Bajo receta» cuenta todos los antibióticos**: los del listado
+  de Bitácoras más los que van al libro (`antibioticos_del_cuadre()`, 159
+  productos). Antes contaba sólo los 85 que marca el catálogo.
+- **`get_cuadre_antibioticos_mes(sala, 'YYYY-MM')`**: por producto, saldo
+  inicial, compras, traslados recibidos, ventas, «otros» y saldo final, más el
+  conteo del mes. Los saldos salen de la foto diaria de existencias; «otros» se
+  despeja (traslados enviados, ajustes, bajas). Medido en Salud 3, octubre: 98
+  productos, 2 con diferencia sin explicar.
+- **Aviso `cuadre-antibioticos-0700-sv`**: desde el día 20, recordatorio a la
+  sala y al regente si falta el conteo del mes; el día 1, aviso a supervisión y
+  al regente si el mes anterior quedó sin conteo. Una vez por sala y mes.
+  Octubre no se reclama: empieza en noviembre.
+
 ## v2.1357.41 — libros: generar_csv_libro falla en vez de devolver un libro vacío
 
 - `generar_csv_libro` (migración `20261028220356`): sin sucursal, o con un

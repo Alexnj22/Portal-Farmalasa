@@ -367,7 +367,8 @@ numeración de hoja**.
 - **Registro trazable (Guía 3.3 CRÍTICO):** **todos** los antibióticos que se
   manejan, con o sin retención. Es el ítem 10.
 - **Listado AWaRe (Guía 1.13):** también todos. Es el ítem 11.
-- Confirmar las tres lecturas con el regente.
+- Dos lecturas al día, 9:30–11:00 y 14:30–16:00 (la de mediodía se quitó el
+  2026-10-28: la norma no la pide).
 
 ---
 
@@ -419,8 +420,8 @@ del 25-ago):
   6.2.11 pide uno independiente por área. Si Bodega central se licenciara como
   centro de almacenamiento, le aplicaría el §5 y su termohigrómetro sí
   necesitaría certificado.
-- **Los rótulos de franja son fijos** (Mañana, Mediodía, Tarde; Mañana y Tarde
-  en limpieza); lo que cambia por sucursal es el **horario**
+- **Los rótulos de franja son fijos** (Mañana y Tarde, en temperatura y en
+  limpieza); lo que cambia por sucursal es el **horario**
   (`20260825185748`).
 - **Limpieza mueble por mueble, opcional.** El registro tiene que poder mostrar
   lo que el procedimiento E promete; «11 de 26» va en neutro, no en rojo, y lo no

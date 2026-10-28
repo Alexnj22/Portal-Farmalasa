@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.35 — Bitácoras: dos lecturas al día, como pide la SRS
+
+- Temperatura y humedad: **dos lecturas al día**, a media mañana (9:30–11:00)
+  y a media tarde (14:30–16:00), que es lo que pide el RTS 6.2.16 y la Guía
+  2.27. Se quitó la de mediodía en todas las salas y bodegas. La Bodega central
+  conserva su horario (8:00–10:00 y 15:00–17:00).
+- Las 897 lecturas de mediodía de octubre (mes de prueba) quedan guardadas; la
+  hoja impresa ya no tiene esa columna.
+
 ## v2.1357.34 — docs: lista única de pendientes y entrada de docs/
 
 - **`docs/PENDIENTES.md`**: la lista única de lo que falta, armada leyendo

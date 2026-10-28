@@ -846,13 +846,12 @@ export const PLANTILLA_AREA = {
 };
 
 /**
- * Las franjas por defecto de una sala: media mañana, mediodía y media tarde,
- * que es cuando el RTS 6.2.16 pide medir (2026-10-28; eran 07–09 y 17–19, la
- * hora más fresca y el final de la tarde).
+ * Las franjas por defecto de una sala: media mañana y media tarde, que es
+ * cuando el RTS 6.2.16 pide medir (2026-10-28; eran 07–09 y 17–19, la hora más
+ * fresca y el final de la tarde). La de mediodía se quitó: la norma no la pide.
  */
 export const FRANJAS_POR_DEFECTO = [
     { clave: 'm', label: 'Mañana',   desde: '09:30', hasta: '11:00' },
-    { clave: 'd', label: 'Mediodía', desde: '12:00', hasta: '14:00' },
     { clave: 't', label: 'Tarde',    desde: '14:30', hasta: '16:00' },
 ];
 

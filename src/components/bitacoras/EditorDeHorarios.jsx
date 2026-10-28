@@ -9,7 +9,7 @@ import { conHorarioCambiado, hhmm, horasParaElegir, mediasHoras } from '@nucleo/
 //
 // ── Lo único que se cambia es la HORA (2026-08-25) ─────────────────────────
 // Pedido del usuario: «los nombres son fijos, no se pueden eliminar ni
-// agregar». Y es correcto: Mañana, Mediodía y Tarde no son una preferencia de
+// agregar». Y es correcto: Mañana y Tarde no son una preferencia de
 // cada sala, son los momentos del día que nombra el reglamento (RTS 6.2.16:
 // «al menos dos veces al día, una a mediados de la mañana y otra a mediados de
 // la tarde»). La limpieza usa los mismos dos: Mañana y Tarde.

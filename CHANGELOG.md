@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.38 — Listado de antibióticos con receta retenida (documento)
+
+- Borrador `docs/legal/procedimientos/BORRADOR-F-listado-de-antibioticos-con-receta-retenida.md`
+  (`[FLS-LIS-01]`): la regla del libro (las seis moléculas en cualquier vía y
+  todo inyectable), sus fuentes (RTS 6.4.3, DNM 2015 y 2018, OPS, listado de
+  venta sin receta 2026) y el anexo con los productos de hoy. La SRS no publica
+  una resolución con el listado, así que la empresa lo emite y el regente lo
+  firma.
+- BACLOSEF (sultamicilina) y BACTIVANZ (cefdinir) pasan a «No va al libro»:
+  piden receta pero no son de las seis moléculas ni inyectables.
+
 ## v2.1357.37 — Antibióticos: principio activo de 43 productos del libro desde el registro de la SRS
 
 - **43 productos del libro con su principio activo**, verificados uno por uno

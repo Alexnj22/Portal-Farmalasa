@@ -514,12 +514,14 @@ async function leerTiquete(
   /* Se devuelven las PIEZAS, no un veredicto.
    *
    * Quién gana entre la cuenta del formulario y la del tiquete ya lo decide
-   * `diferenciaDelCorte` en el portal, con una regla que se contrastó contra un
-   * testigo independiente (el aviso de la sala del 13-ago) y que tiene un caso
-   * en el que la buena es la del FORMULARIO: cuando el tiquete suma un cobro de
-   * crédito que a esa hora todavía no había entrado. Resolverlo también acá
-   * sería la misma pregunta contestada dos veces, y la segunda respuesta no
-   * conoce ese caso. */
+   * `diferenciaDelCorte` en el portal, y desde v2.931.1 (2-sep) gana SIEMPRE
+   * el tiquete: su propia suma (`subtotal − vales + cobros = total_caja`)
+   * cierra en 485 de 485 cortes, y el formulario se aparta en uno de cada
+   * cuatro. La excepción que daba por buena la cifra del FORMULARIO «cuando el
+   * tiquete suma un cobro que todavía no había entrado» se quitó: su testigo
+   * era circular y le inventó +$66.01 al corte 14378, que tenía −$0.09. La
+   * cifra guardada sólo se usa cuando no hay tiquete con qué contrastar.
+   * Resolverlo también acá sería la misma pregunta contestada dos veces. */
   return {
     texto, ...cabecera, contado: efectivo, formas, lineas,
     total_caja: totalCaja,

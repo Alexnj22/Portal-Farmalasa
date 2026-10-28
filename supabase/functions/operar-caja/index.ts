@@ -49,11 +49,19 @@ import { crearEnlace } from "../_shared/wompi.ts";
 // Lo único que sigue afuera es registrar un COBRO de una venta al crédito, que
 // es otro acto —la línea propia del tiquete— y no se hace desde acá.
 //
-// ── CERRAR: el Z sale de cerrar el turno, no del formulario del corte ──────
-// Medido el 29-ago: `cierre_turno.php` devuelve `tipo_corte=C` con cualquier
-// parámetro. El Z aparece al cerrar el turno (`apertura_caja.php
-// process=cerrar_turno`), que es lo que hace la sala hoy — en los datos, el Z
-// entra segundos después del último C.
+// ── CERRAR: acá NO se emite el Z ───────────────────────────────────────────
+// La acción `cerrar` de esta función manda `apertura_caja.php
+// process=cerrar_turno`, y eso cierra el TURNO y nada más. El 29-ago se creyó
+// que el Z salía de ahí; el 1-sep, cerrando de verdad por primera vez, se vio
+// que no: el día quedó sin Z y hubo que hacerlo a mano en la caja.
+//
+// El Z es un TIPO de corte y lo emite `hacer-corte-caja` con `tipo: 'Z'`, por
+// el mismo formulario del corte (`tipo_corte = Z`). «Cerrar el día» en el
+// portal es `cerrarElDia` (`src/data/bolsas.js`): inicia el turno si estaba
+// parado (un Z sin turno sale en $0.00), pide el Z a `hacer-corte-caja`,
+// comprueba que salió un Z, y recién entonces llama a esta acción. Como el Z ya
+// cierra la apertura en el origen, `cerrar` suele encontrar la caja cerrada y
+// lo contesta como éxito (ver «CERRAR UNA CAJA QUE EL Z YA CERRÓ»).
 // ═══════════════════════════════════════════════════════════════════════════
 
 const BASE       = "https://clientesdte3.oss.com.sv/farma_salud/";

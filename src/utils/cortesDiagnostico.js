@@ -891,16 +891,13 @@ export function notaDeCifra(corte) {
     }
 
     if (!c.enDisputa) return null;
-    const { fuente, valor } = diferenciaDelCorte(corte);
+    /* Acá `contraste` existe (sin él se salió arriba), y con contraste
+     * `diferenciaDelCorte` siempre contesta con la cifra del tiquete: la
+     * excepción que devolvía la del formulario se quitó en v2.931.1. Por eso no
+     * hay rama «se cortó antes de los cobros de crédito» — describía esa regla
+     * y ya no se podía alcanzar. */
+    const { valor } = diferenciaDelCorte(corte);
     const cobros = formatMoney(Math.abs(c.cobros ?? 0));
-
-    if (c.porCobrosCredito && fuente === 'guardada') {
-        return {
-            alerta: false,
-            titulo: 'Se cortó antes de los cobros de crédito',
-            detalle: `La cuenta del día trae ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSigno(c.difErp)} y no ${conSigno(c.difTicket)}.`,
-        };
-    }
 
     // Ojo con lo que se nombra: `valor` es el ACUMULADO del día hasta este
     // corte, y el título del modal muestra el TRAMO. Llamar «la diferencia de

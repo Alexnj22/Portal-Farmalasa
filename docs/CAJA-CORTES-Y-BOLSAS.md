@@ -59,22 +59,18 @@ miles de dólares. Esos números eran la foto de agosto.
 
 Una sola lista, sin repetir. Ninguno bloquea el uso diario.
 
-1. **Comentario viejo en `operar-caja`.** `supabase/functions/operar-caja/index.ts`
-   l. 52-56 sigue diciendo *«el Z sale de cerrar el turno, no del formulario del
-   corte»*, desmentido el 1-sep y corregido más abajo en el mismo archivo. Es el
-   primero que se lee. — Lo destraba: cualquier sesión, sin decisión. Evidencia:
-   leído hoy.
-2. **Comentario viejo en `hacer-corte-caja`.** El bloque de l. 514-522 todavía
-   dice que `diferenciaDelCorte` *«tiene un caso en el que la buena es la del
-   FORMULARIO»*. El segundo de los dos comentarios que denunció la auditoría
-   (l. ~1728) ya se corrigió; éste no. — Cualquier sesión. Evidencia: leído hoy.
-3. **Rama muerta en `notaDeCifra`.** `src/utils/cortesDiagnostico.js` l. ~897:
-   `if (c.porCobrosCredito && fuente === 'guardada')`. Con `contraste` presente
-   `diferenciaDelCorte` nunca devuelve `fuente: 'guardada'` (sólo la devuelve
-   cuando no hay contraste, y `notaDeCifra` sale antes), así que el texto «Se
-   cortó antes de los cobros de crédito» es inalcanzable y describe la regla
-   que se quitó en v2.931.1. — Cualquier sesión; tocar también su prueba.
-   Evidencia: leído hoy.
+1. ~~**Comentario viejo en `operar-caja`.**~~ **Hecho en v2.1357.20.** El
+   encabezado de CERRAR ahora dice que `cerrar_turno` no emite el Z y que lo
+   emite `hacer-corte-caja` con `tipo: 'Z'` dentro de `cerrarElDia`. Quedan
+   dos frases con la misma idea vieja más abajo en el mismo archivo, en la
+   rama de cerrar el día (l. ~2753 «El cierre emite el Z» y l. ~2834 «El
+   cierre del turno es lo que emite el Z»): sin tocar todavía.
+2. ~~**Comentario viejo en `hacer-corte-caja`.**~~ **Hecho en v2.1357.20.** Dice
+   que desde v2.931.1 gana siempre el tiquete.
+3. ~~**Rama muerta en `notaDeCifra`.**~~ **Hecho en v2.1357.20.** Se quitó la
+   rama `fuente === 'guardada'`. El `'guardada'` que produce
+   `diferenciaDelCorte` sin contraste se queda: es el respaldo de un corte sin
+   tiquete, y viaja como `fuente` en los resúmenes de `cortesDiagnostico.js`.
 4. **`caja_vales` · `can_edit` con alcance ALL para Jefe/a de Talento Humano.**
    Es poder cortar o cerrar la caja de cualquiera de las siete salas, y un Z no se
    deshace. Se heredó, no se pidió. — Lo destraba: **el usuario**. Evidencia: no

@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.20 — Caja: dos comentarios viejos y una rama muerta
+
+Cierra los puntos 1 a 3 de «Lo que falta» en `docs/CAJA-CORTES-Y-BOLSAS.md`.
+Sin cambio de comportamiento: dos comentarios y una rama que no se alcanzaba.
+
+- **`operar-caja`**: el encabezado de CERRAR decía que el Z sale de cerrar el
+  turno. Desde el 1-sep se sabe que no: `process=cerrar_turno` sólo cierra el
+  turno, y el Z lo emite `hacer-corte-caja` con `tipo: 'Z'`. Ahora lo dice, con
+  el orden real de `cerrarElDia`.
+- **`hacer-corte-caja`**: el comentario de las piezas del tiquete seguía
+  diciendo que a veces gana la cifra del FORMULARIO. Desde v2.931.1 gana
+  siempre el tiquete; ahora lo dice, con la medición.
+- **`notaDeCifra`**: se quitó la rama `fuente === 'guardada'` («Se cortó antes
+  de los cobros de crédito»). `diferenciaDelCorte` sólo devuelve `'guardada'`
+  cuando no hay contraste, y en ese caso `notaDeCifra` ya salió antes. La rama
+  que produce `'guardada'` en `diferenciaDelCorte` se QUEDA: es el respaldo de
+  un corte sin tiquete.
+
+Las funciones no necesitan redespliegue: en ellas sólo cambiaron comentarios.
+
 ## v2.1357.19 — docs unificados por tema: un documento por frente
 
 Varios documentos de `docs/` hablaban de lo mismo, escritos en fechas distintas, y se contradecían. Ahora hay un documento por frente: arriba el estado, después una sola lista de pendientes que dice quién destraba cada uno, y al final cómo funciona.

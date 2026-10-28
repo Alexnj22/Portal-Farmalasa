@@ -83,6 +83,25 @@ export async function fetchResumenMes(branchId, periodo) {
 }
 
 /**
+ * El cuadre de antibióticos del mes: el conteo «Bajo receta» de la sala y la
+ * hoja de movimientos por producto (saldo inicial, compras, recibidos, ventas,
+ * otros, saldo final). Lo arma `get_cuadre_antibioticos_mes` en UNA llamada y
+ * devuelve un solo JSON, así que el techo de las 1000 filas no aplica.
+ *
+ * El permiso lo decide la base (`bitacora_exigir_acceso`): un rechazo vuelve
+ * como `error` y la pantalla lo dice, no como una hoja vacía.
+ */
+export async function fetchCuadreAntibioticos(branchId, periodo) {
+    if (!branchId) return { cuadre: null, error: null };
+    const { data, error } = await supabase.rpc('get_cuadre_antibioticos_mes', {
+        p_branch_id: Number(branchId),
+        p_periodo: periodo,
+    });
+    if (error) return { cuadre: null, error };
+    return { cuadre: data ?? null, error: null };
+}
+
+/**
  * Todo el mes de una sala, en UN objeto, para imprimirlo.
  *
  * El RTS 6.1.14 prefiere el papel («preferiblemente debe estar de manera

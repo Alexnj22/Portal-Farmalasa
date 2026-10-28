@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.44 — Bitácoras: cuadre de antibióticos en el cierre de mes y hoja de movimientos
+
+Bitácoras → Cierre de mes muestra el cuadre de antibióticos del mes
+(`get_cuadre_antibioticos_mes`): si hay conteo «Bajo receta» (ninguno → enlace
+a Conteo de inventario; en curso → cuántos van contados y enlace al conteo;
+terminado → fecha y productos con diferencia), cuántos productos se movieron y
+cuántos tienen «otros» movimientos. «Ver hoja de movimientos» abre la tabla por
+producto (inicial, compras, recibidos, ventas, otros, final, y contado y
+diferencia si hay conteo), con filtro «Con diferencia» y descarga CSV
+(módulo `bitacoras`). La consulta va aparte del resumen: si falla, no tumba
+el resto del cierre.
+
 ## v2.1357.43 — planilla: «Otros descuentos» exige su motivo
 
 - «Otros descuentos» de la planilla era un monto sin nombre: por ahí podía

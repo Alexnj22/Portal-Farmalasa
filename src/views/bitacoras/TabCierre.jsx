@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarCheck, CheckCircle2, Clock, LockOpen, Printer, Thermometer } from 'lucide-react';
+import { AlertTriangle, CalendarCheck, CheckCircle2, ClipboardCheck, Clock, LockOpen, Printer, Table2, Thermometer } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -7,12 +8,14 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { cerrarMes, correrPeriodo, fetchCierres, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '@nucleo/data/bitacoras';
-import { hoySV } from '@nucleo/utils/fecha';
+import { cerrarMes, correrPeriodo, fetchCierres, fetchCuadreAntibioticos, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '@nucleo/data/bitacoras';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { cumplimiento, nombreDelPeriodo, puedeFirmarElCierre, rotularCumplimiento, tonoDelCumplimiento } from '@nucleo/utils/cierreDeBitacoras';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { abrirVentanaDeImpresion, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
 import { logoComoDataUrl, LOGO_DE_LA_EMPRESA } from '@nucleo/utils/marcaDeLaSala';
+import HojaCuadreAntibioticos from './HojaCuadreAntibioticos';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El cierre de mes del regente.
@@ -49,6 +52,87 @@ function Cifra({ valor, label, tono }) {
     );
 }
 
+const distinto = (v) => v !== null && v !== undefined && Number(v) !== 0;
+
+/**
+ * El cuadre de antibióticos del mes: si se contó, cómo quedó, y la hoja que
+ * explica las diferencias. Va en el cierre porque es lo que el regente revisa
+ * al dar el mes por terminado (RTS 6.4.2; Guía de BPAD 3.3 y 3.4).
+ */
+function CuadreAntibioticos({ cuadre, cargando, error, onVerHoja }) {
+    const navigate = useNavigate();
+    if (cargando) return <LoadingState label="Calculando el cuadre de antibióticos…" />;
+    if (error) {
+        return (
+            <Notice variant="danger" icon={AlertTriangle}>
+                <span className="font-bold">No se pudo calcular el cuadre de antibióticos.</span>
+                <span className="block mt-0.5 font-normal text-content-2">{error}</span>
+            </Notice>
+        );
+    }
+    if (!cuadre) return null;
+
+    const c = cuadre.conteo;
+    const filas = cuadre.filas || [];
+    const conOtros = filas.filter(f => distinto(f.otros)).length;
+    const terminado = c && (c.status === 'FINALIZADO' || c.status === 'CERRADO');
+
+    return (
+        <section className="space-y-3">
+            <h4 className="text-body-sm font-black uppercase tracking-widest text-content-3">Cuadre de antibióticos</h4>
+            <div data-surface="card" className="p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        {!c ? (
+                            <Badge variant="warning" size="md" uppercase={false} icon={AlertTriangle}>Sin conteo este mes</Badge>
+                        ) : terminado ? (
+                            <Badge variant={c.diferencias > 0 ? 'warning' : 'success'} size="md" uppercase={false} icon={CheckCircle2}>
+                                Conteo terminado el {fechaTexto(c.finalizado || c.creado, { day: 'numeric', month: 'long' })}
+                            </Badge>
+                        ) : (
+                            <Badge variant="info" size="md" uppercase={false} icon={Clock}>
+                                Conteo en curso ({c.contados ?? 0} de {c.productos ?? 0} contados)
+                            </Badge>
+                        )}
+                        <p className="text-caption text-content-3 mt-1.5">
+                            {!c
+                                ? 'El conteo se hace en Conteo de inventario: «Nuevo conteo» → «Bajo receta».'
+                                : terminado
+                                    ? (c.diferencias > 0
+                                        ? `${c.diferencias} ${c.diferencias === 1 ? 'producto quedó' : 'productos quedaron'} con diferencia entre lo contado y lo registrado.`
+                                        : 'Lo contado coincide con lo registrado en todos los productos.')
+                                    : 'Hay que terminarlo para que el cuadre del mes quede completo.'}
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {!c && (
+                            <Button variant="secondary" size="sm" icon={ClipboardCheck} onClick={() => navigate('/conteo-inventario')}>
+                                Ir a Conteo de inventario
+                            </Button>
+                        )}
+                        {c && !terminado && (
+                            <Button variant="secondary" size="sm" icon={ClipboardCheck} onClick={() => navigate(`/conteo-inventario/${c.id}`)}>
+                                Abrir el conteo
+                            </Button>
+                        )}
+                        <Button variant="secondary" size="sm" icon={Table2} onClick={onVerHoja}>
+                            Ver hoja de movimientos
+                        </Button>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    <Cifra valor={filas.length} label="Productos con movimiento" />
+                    <Cifra valor={cuadre.sin_saldo_inicial ? '—' : conOtros} label="Con «otros» movimientos"
+                        tono={!cuadre.sin_saldo_inicial && conOtros > 0 ? 'warning' : undefined} />
+                </div>
+                <p className="text-caption text-content-3">
+                    La norma no fija cada cuánto se cuadra; la empresa lo hace cada mes.
+                </p>
+            </div>
+        </section>
+    );
+}
+
 export default function TabCierre({ branchId, fechaVista }) {
     const { hasPermission } = useAuth();
     const puedeFirmar = hasPermission('bitacoras_cerrar_mes', 'can_edit');
@@ -70,6 +154,12 @@ export default function TabCierre({ branchId, fechaVista }) {
     const [guardando, setGuardando] = useState(false);
     const [imprimiendo, setImprimiendo] = useState(false);
     const [error, setError] = useState(null);
+    // El cuadre va APARTE del resumen: es una consulta más pesada y no tiene
+    // por qué demorar las lecturas, ni tumbarlas si falla.
+    const [cuadre, setCuadre] = useState(null);
+    const [cuadreCargando, setCuadreCargando] = useState(true);
+    const [cuadreError, setCuadreError] = useState(null);
+    const [hojaAbierta, setHojaAbierta] = useState(false);
 
     const cargar = useCallback(async () => {
         if (!branchId) return;
@@ -91,6 +181,19 @@ export default function TabCierre({ branchId, fechaVista }) {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial y al cambiar el período
     useEffect(() => { cargar(); }, [cargar]);
+
+    useEffect(() => {
+        if (!branchId) return undefined;
+        let vigente = true;
+        setCuadreCargando(true);
+        fetchCuadreAntibioticos(branchId, periodo).then(({ cuadre: q, error: e }) => {
+            if (!vigente) return;
+            setCuadre(q);
+            setCuadreError(e ? mensajeAmigable(e) : null);
+            setCuadreCargando(false);
+        });
+        return () => { vigente = false; };
+    }, [branchId, periodo]);
 
     const enCurso = periodo >= periodoDe(hoySV());
     const cerrado = Boolean(resumen?.cerrado);
@@ -306,6 +409,9 @@ export default function TabCierre({ branchId, fechaVista }) {
                         </section>
                     )}
 
+                    <CuadreAntibioticos cuadre={cuadre} cargando={cuadreCargando} error={cuadreError}
+                        onVerHoja={() => setHojaAbierta(true)} />
+
                     {/* La firma. El botón NO se deshabilita por tener faltantes
                         —ver el encabezado del archivo—; sólo por no tener el
                         permiso, por estar el mes en curso o por estar ya cerrado. */}
@@ -419,6 +525,10 @@ export default function TabCierre({ branchId, fechaVista }) {
                         </section>
                     )}
                 </>
+            )}
+
+            {hojaAbierta && cuadre && (
+                <HojaCuadreAntibioticos cuadre={cuadre} onClose={() => setHojaAbierta(false)} />
             )}
         </div>
     );

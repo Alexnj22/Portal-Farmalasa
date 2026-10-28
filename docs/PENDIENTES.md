@@ -47,7 +47,8 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
    y el mes más cargado (7 salas) no llega a 400 filas contra el techo de 1000.
    Se hace el día que se pida exportar el año.
 7. ~~Motivo obligatorio en «Otros descuentos» de la planilla~~ — **hecho v2.1357.43**.
-8. Escribir la compra en el origen (`compras.php`). — AUDITORIA-MATCH-DTE:130
+8. ⏸ Cargar la compra confirmada en el sistema de la caja (`compras.php`) — **en espera
+   por decisión del usuario** (2026-10-28). — AUDITORIA-MATCH-DTE:130
 9. Notas de crédito → puntos (`docs/propuestas/notas-credito-puntos-2026-10-09/`):
    esperar la primera NC real.
 

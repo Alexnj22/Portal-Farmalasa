@@ -48,6 +48,11 @@ const TABLES = [
   // estaba en un libro y no en el otro, y ese motivo es la respuesta escrita a
   // la pregunta del inspector.
   "recetas", "receta_items", "medicos", "dispensacion_clases",
+  // ── Inyecciones: quién aplicó qué, a quién y cuándo ─────────────────────
+  // Es la bitácora de la sala que el inspector cruza contra las ventas de
+  // inyectables, y se anota a mano: no se reconstruye de ningún otro sistema.
+  // Faltaba acá desde que existe (auditoría del 2026-10-28).
+  "inyeccion_aplicaciones",
 ];
 
 const RETENTION_DAYS = 60;

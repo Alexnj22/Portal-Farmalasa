@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.21 — Bitácoras: listado AWaRe, el libro lo decide su pestaña, inyecciones al respaldo
+
+- **Listado de antibióticos con su grupo AWaRe** (Guía BPAD 1.13, RTS 6.1.15). Tabla `antibioticos_aware` con el grupo por molécula, tomado del Listado Oficial de Medicamentos 2026 (cap. J01) y, donde no lo marca, de la OMS AWaRe 2023; `get_listado_antibioticos()` lo cruza con el catálogo: 104 productos. Queda para que el regente lo confirme.
+- **El libro bajo receta lo decide su pestaña.** Completar y anular renglones o recetas exige `bitacoras_tab_libro.can_edit`, en el servidor y en la pantalla. Se encendió para los cargos de sala que ya completaban; Auxiliar de Bodega y Servicios Generales quedaron sin él.
+- **La bitácora de inyecciones entra al respaldo semanal** (`backup-critical-tables` v20 y la lista de `backup_dump_table`).
+- `docs/BITACORAS-SRS.md` al día: refrigeradores por sala (se compran) y la medición de quién marca las inyecciones.
+
 ## v2.1357.20 — Caja: dos comentarios viejos y una rama muerta
 
 Cierra los puntos 1 a 3 de «Lo que falta» en `docs/CAJA-CORTES-Y-BOLSAS.md`.

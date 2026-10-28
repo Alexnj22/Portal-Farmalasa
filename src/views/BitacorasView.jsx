@@ -61,6 +61,9 @@ export default function BitacorasView() {
     const branches = useStaff((s) => s.branches) || VACIO;
 
     const puedeAnotar   = hasPermission('bitacoras', 'can_edit');
+    // El libro lo decide su pestaña, no el módulo: se puede dar Bitácoras sin
+    // dar el libro. El servidor exige las dos (`bitacora_exigir_libro`).
+    const puedeCompletarLibro = puedeAnotar && hasPermission('bitacoras_tab_libro', 'can_edit');
     const verLibro      = hasPermission('bitacoras_tab_libro', 'can_view');
     const verCierre     = hasPermission('bitacoras_tab_cierre', 'can_view');
     const puedeConfigurar = hasPermission('bitacoras_configurar', 'can_edit');
@@ -297,7 +300,7 @@ export default function BitacorasView() {
                 ) : tab === 'libro' ? (
                     <TabBajoReceta renglones={libroFiltrado} cargando={cargandoLibro} error={errorLibro}
                         branchId={sala} sucursalNombre={nombreSala} onRecargar={cargarLibro}
-                        puedeCompletar={puedeAnotar} clase={claseLibro} periodo={periodoDe(fecha)} />
+                        puedeCompletar={puedeCompletarLibro} clase={claseLibro} periodo={periodoDe(fecha)} />
                 ) : tab === 'cierre' ? (
                     <TabCierre branchId={sala} fechaVista={fecha} />
                 ) : (

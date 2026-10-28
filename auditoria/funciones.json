@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-28T17:27:10.701Z",
+ "generado": "2026-10-28T17:51:36.535Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -684,6 +684,10 @@
   "bitacora_exigir_acceso": {
    "area": "bitacoras",
    "por": "llamada"
+  },
+  "bitacora_exigir_libro": {
+   "area": "bitacoras",
+   "por": "código"
   },
   "bitacora_hoy_sv": {
    "area": "bitacoras",
@@ -2756,6 +2760,10 @@
   "get_libro_ventas_contribuyente": {
    "area": "fiscal",
    "por": "código"
+  },
+  "get_listado_antibioticos": {
+   "area": "productos",
+   "por": "tablas"
   },
   "get_lockable_modules": {
    "area": "permisos",

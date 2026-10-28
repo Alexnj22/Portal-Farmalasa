@@ -117,14 +117,14 @@ farmacéutico que firma; «portal» es trabajo de código.
 3. **Cerrar septiembre y octubre** en las 6 salas, en cuanto exista el regente.
    El cierre acepta un mes imperfecto pero exige motivo escrito si quedan
    renglones del libro sin completar (§5.4). *Destraba: regente.*
-4. **Refrigerador en cada sala que venda producto de frío, o sacar ese producto
-   de las salas** y despacharlo sólo desde donde haya refrigerador. Hay que
-   elegir una. Si se compran, se activan en Bitácoras → Configuración con su
-   fecha de calibración. RTS 6.2.18 (uso exclusivo), 6.2.19 (termómetro
-   calibrado), 6.2.20 (2×/día, 2–8 °C); Guía 2.29–2.33, los de calibración y
-   registro **CRÍTICOS**. Un inspector que encuentre eritropoyetina a temperatura
-   ambiente lo marca CRÍTICO, y eso pesa más que cualquier registro. *Destraba:
-   usuario.*
+4. **Refrigerador en cada sala que venda producto de frío.** Decidido el
+   2026-10-28: **se compran** (uno de uso exclusivo por sala). Cuando llegue
+   cada uno, se activa en Bitácoras → Configuración con su fecha de
+   calibración, y desde ese día la sala anota 2×/día entre 2 y 8 °C. RTS 6.2.18
+   (uso exclusivo), 6.2.19 (termómetro calibrado), 6.2.20; Guía 2.29–2.33, los
+   de calibración y registro **CRÍTICOS**. Mientras no esté, el producto de frío
+   de esa sala sigue siendo el hallazgo más pesado de una inspección.
+   *Destraba: usuario (compra y certificado de calibración).*
 5. **Calibración y revisión del refrigerador de Bodega.** Cargar la fecha de
    calibración (Configuración → Refrigerador); sin certificado, la Guía 2.32
    falla. Y revisar el termómetro: 42 lecturas en 8.0 °C significan aparato
@@ -156,13 +156,18 @@ farmacéutico que firma; «portal» es trabajo de código.
     registro que se le pone enfrente al inspector. **Alcance: TODOS los
     antibióticos que se manejan**, no sólo los del libro — ver §4.4. *Destraba:
     portal.*
-11. **Listado de antibióticos con su grupo AWaRe.** Guía 1.13 MAYOR, RTS
-    **6.1.15**. Hoy no existe (nada en `products` ni en `src/`). La fuente es el
-    **Listado Oficial de Medicamentos 2026** de la SRS, cap. J01
-    (`docs/legal/normativa/sanitaria/srs_listado_oficial_medicamentos_2026.txt`):
-    `*(1)` = Acceso, `*(2)` = Precaución. La propuesta del diseño sigue en pie:
-    una columna `products.clasificacion_aware` que llena el regente una vez, y
-    la lista pasa a ser una consulta exportable. *Destraba: portal + regente.*
+11. **Listado de antibióticos con su grupo AWaRe — construido el 2026-10-28,
+    falta que el regente lo confirme.** Guía 1.13 MAYOR, RTS **6.1.15**. La
+    tabla `antibioticos_aware` tiene el grupo por **molécula** (33 filas): del
+    **LOM 2026** cap. J01 donde lo marca (`*(1)` Acceso, `*(2)` Precaución) y de
+    la **OMS AWaRe 2023** donde no; cada fila dice de cuál salió. Secnidazol
+    queda «sin clasificar». `get_listado_antibioticos()` la cruza con el
+    catálogo: **104 productos activos** (29 de ellos en el libro). Falta: (a) que
+    el regente revise y confirme cada molécula (`confirmado_por`), (b) una
+    pantalla para verlo y exportarlo, y (c) sacar del listado lo tópico u
+    oftálmico que entró por el nombre (colirios de cloranfenicol, cremas de
+    clindamicina) — el catálogo no tiene la vía. *Destraba: regente, después
+    portal.*
 12. **Disposición final** de antibióticos vencidos o no conformes: fecha,
     cantidad, nombre genérico y comercial, forma, lote, vencimiento. Guía 3.8.
     Va junto con las **devoluciones** por antibiótico (Guía 3.2). Puede
@@ -173,19 +178,21 @@ farmacéutico que firma; «portal» es trabajo de código.
     mostraban lote vencido al vender (ROCEFORT, RTS 6.6.6). Con datos reales desde
     noviembre, ese caso necesita dueño: quién lo mira y qué hace. *Destraba:
     portal + regente.*
-14. **Inyecciones: sólo enfermería marca «aplicada».** Hacia adelante; lo de
-    octubre **no se oculta** (se descartó a propósito: el inspector cruza ventas
-    de inyectables contra el registro y un hueco se lee como ocultamiento). La
-    regla no viene del RTS ni de la Guía sino del ejercicio profesional de
-    enfermería (CSSP / Junta de Vigilancia de la Profesión de Enfermería).
-    *Destraba: visto bueno del usuario, confirmación del regente; después portal
-    (`inyeccion_aplicar`).*
+14. **Inyecciones: quién puede marcar «aplicada».** En conversación con el
+    usuario: pidió una solución favorable para la empresa. Lo medido en octubre:
+    de 950 aplicaciones, **328** las marcó enfermería, **475** dependientes y
+    **147** jefes de sala; de esas 622, **322** fueron a menos de 3 h de una
+    aplicación de enfermería en la misma sala, **146** fuera de 8–17 h y **89**
+    en domingo. O sea que la mitad pasó con enfermería presente y la otra mitad
+    es el horario sin ella. Lo de octubre **no se oculta** (el inspector cruza
+    ventas de inyectables contra el registro). La regla no viene del RTS sino
+    del ejercicio de enfermería (CSSP / JVPE). *Destraba: usuario + regente,
+    después portal (`inyeccion_aplicar`).*
 15. **Inyecciones: lote y vencimiento de lo aplicado.** Hoy no se guardan, y la
     dosis sólo en 22 de 993. *Destraba: portal.*
-16. **Inyecciones en el respaldo.** `inyeccion_aplicaciones` no está en
-    `backup-critical-tables` (verificado en el repo el 28-oct). Recordar que la
-    lista vive dos veces: el cron **y** la lista blanca de `backup_dump_table`.
-    *Destraba: portal.*
+16. ~~**Inyecciones en el respaldo.**~~ **Hecho el 2026-10-28**:
+    `inyeccion_aplicaciones` entró en `backup-critical-tables` (v20) y en la
+    lista blanca de `backup_dump_table` (migración `20261028174947`).
 17. **Evaluación periódica del sistema.** Es la quinta sección obligatoria del
     protocolo B (RTS **6.1.4**, Guía 3.6) y no existe como práctica: definir quién
     la hace, cada cuánto, y dónde queda la constancia. *Destraba: regente define,
@@ -195,10 +202,12 @@ farmacéutico que firma; «portal» es trabajo de código.
     leer `docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md`, y decidir si una
     foto con dato de salud sale del portal hacia un servicio externo. El libro
     funciona sin él. *Destraba: usuario (decisión de datos), después portal.*
-19. **Permiso del libro que no cierra nada.** `bitacoras_tab_libro.can_edit` se
-    otorga en la grilla y nadie lo lee: «Completar» y el RPC miran
-    `bitacoras.can_edit` (Dependientes, Jefes de Sala, Regentes de Enfermería).
-    Decidir cuál de las dos manda. *Destraba: usuario, después portal.*
+19. ~~**Permiso del libro que no cierra nada.**~~ **Hecho el 2026-10-28**:
+    manda `bitacoras_tab_libro.can_edit` (decisión del usuario). Completar y
+    anular renglones o recetas lo exigen en el servidor (`bitacora_exigir_libro`,
+    migración `20261028175023`) y en la pantalla. Se encendió para los cargos de
+    sala que ya completaban; Auxiliar de Bodega y Servicios Generales quedaron
+    sin él (no venden con receta).
 
 ### Se quedan en papel — decisión ya tomada
 

@@ -12,7 +12,7 @@
  * mano, `normSearch` que convertía «2.5» en «25», patrones que exigían el orden
  * de las palabras. Se unificaron en una sola regla con dos gemelos
  * (`src/utils/busqueda.js` y las funciones `busqueda_*` de la base, enfrentados
- * por `npm run busqueda:gemelos`). Plan: docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ * por `npm run busqueda:gemelos`). Plan: docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
  *
  * Ninguno de esos defectos daba error: una búsqueda que no encuentra se lee
  * como «no hay». Por eso lo tiene que mirar una máquina.
@@ -127,5 +127,5 @@ for (const h of hallazgos) {
 for (const s of sobrantes) console.log(`  ✗ excepción sobrante: ${s} — bajarla`);
 console.log(`\n  Buscar va por la regla del portal: tokenMatch/smartFilter en memoria,`);
 console.log(`  las funciones de búsqueda de la base en el servidor, patronSinTildes para`);
-console.log(`  una columna sin normalizar. docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md`);
+console.log(`  una columna sin normalizar. docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md`);
 process.exit(HOOK || hallazgos.length || sobrantes.length ? 1 : 0);

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { MEDIR, MEDIR_CUERPO } from './medicion-movil.js';
 
 /**
- * Barrido de DIÁLOGOS en el teléfono — F3 de `docs/PLAN-MOVIL-2026-08-20.md`.
+ * Barrido de DIÁLOGOS en el teléfono — F3 de `docs/planes-cerrados/PLAN-MOVIL-2026-08-20.md`.
  *
  * ── Por qué hace falta otro barrido ──────────────────────────────────────────
  * `barrido-total-movil` mide las VISTAS y, con `MODALES=1`, exactamente dos

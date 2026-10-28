@@ -137,7 +137,7 @@ export const AREAS = [
                'renombrar-usuario-empleado'],
         crons: ['purgar-carnes-temporales', 'purge-sesiones-vencidas', 'purge-session-activity-daily'],
         docs: ['docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md', 'docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md',
-               'docs/SEGURIDAD-AUTORIZACION-2026-08-04.md', 'docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md'],
+               'docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md', 'docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md'],
     },
     {
         id: 'permisos',
@@ -284,7 +284,7 @@ export const AREAS = [
                 // El 1 de noviembre: toca pagar el seguro de vida colectivo.
                 'avisar-pago-seguro-vida'],
         docs: ['docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md',
-               'docs/AUDITORIA-PERSONAL-2026-09-03.md'],
+               'docs/planes-cerrados/AUDITORIA-PERSONAL-2026-09-03.md'],
     },
     {
         id: 'asistencia',
@@ -413,7 +413,7 @@ export const AREAS = [
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],
         crons: ['purge-notifications-daily', 'avisos-diferidos-5min'],
-        docs: ['docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md', 'docs/PLAN-AVISOS-NATIVOS-2026-09-30.md'],
+        docs: ['docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md', 'docs/planes-cerrados/PLAN-AVISOS-NATIVOS-2026-09-30.md'],
     },
     {
         id: 'sucursales',
@@ -509,7 +509,7 @@ export const AREAS = [
                  // Hoy están VACÍAS y nada las escribe: encender el programa son
                  // dos actos aparte —migrar los saldos y crear el cron— que
                  // todavía no se hicieron. Ver
-                 // docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md
+                 // docs/planes-cerrados/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md
                  'puntos_cuenta', 'puntos_lote', 'puntos_niveles', 'puntos_salida', 'puntos_salida_lote',
                  'puntos_vencimiento_log', 'puntos_config',
                  // Lo que el Cliente Mayorista recibe por rango (cumpleaños y
@@ -565,7 +565,7 @@ export const AREAS = [
                 // aparece un estado de factura que nadie conoce.
                 'estados-de-venta-desconocidos'],
         docs: ['docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md',
-               'docs/PUNTOS-EL-CIRCUITO-Y-LO-QUE-FALTA-2026-08-29.md'],
+               'docs/planes-cerrados/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md'],
     },
     {
         id: 'metas',
@@ -587,7 +587,7 @@ export const AREAS = [
                  'metas_bono_interruptor'],
         edge: [],
         crons: ['metas-ciclo-diario'],
-        docs: ['docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md',
+        docs: ['docs/planes-cerrados/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md',
                'docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md'],
     },
     {
@@ -653,7 +653,7 @@ export const AREAS = [
                  'encuesta_cliente_respuestas', 'encuesta_cliente_incentivos', 'encuesta_cliente_resumenes'],
         edge: [],
         crons: ['encuestas-cerrar-vencidas'],
-        docs: ['docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md'],
+        docs: ['docs/planes-cerrados/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md'],
     },
     {
         id: 'cortes-efectivo',
@@ -752,8 +752,8 @@ export const AREAS = [
         crons: ['regularizar-dte-2230-sv', 'reenviar-ccf-10min', 'sincronizar-fichas-clientes-2130-sv', 'drain-cliente-erp-queue',
                 'ccf-repaso-22h-sv', 'alerta-barrido-dte-8am-sv', 'sync-numero-control-daily',
                 'refresh-customer-activity-daily', 'avisar-rechazos-mh-8am-sv'],
-        docs: ['docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md', 'docs/resumen-dte-el-salvador.md',
-               'docs/RETOMAR-CLIENTES-2026-08-01.md'],
+        docs: ['docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md',
+               'docs/planes-cerrados/RETOMAR-CLIENTES-2026-08-01.md'],
     },
     {
         // Área aparte y no dentro de `facturacion-dte` a propósito: aquélla
@@ -795,7 +795,7 @@ export const AREAS = [
         tablas: ['dist_asuetos', 'dist_bajas', 'dist_caja_movimientos', 'dist_cajas', 'dist_carga_items', 'dist_cargas', 'dist_catalogo', 'dist_cierres_dia', 'dist_clientes', 'dist_compra_items', 'dist_compras', 'dist_conteo_items', 'dist_conteos', 'dist_contingencias', 'dist_correlativos', 'dist_correos', 'dist_cuarentena', 'dist_cxc', 'dist_cxc_abonos', 'dist_depositos', 'dist_devolucion_items', 'dist_devoluciones', 'dist_dte', 'dist_dte_intentos', 'dist_emisores', 'dist_liquidaciones', 'dist_listas', 'dist_lote_asignaciones', 'dist_lote_movimientos', 'dist_lotes', 'dist_mh_token', 'dist_pagos', 'dist_pedido_items', 'dist_pedidos', 'dist_precios', 'dist_proveedor_productos', 'dist_proveedores', 'dist_puntos_venta', 'dist_rastreo', 'dist_recibos', 'dist_reintegros', 'dist_reservas', 'dist_rutas', 'dist_saldo_aplicaciones', 'dist_ventas_perdidas', 'dist_visitas'],
         edge: ['distribucion-dte', 'distribucion-comprobante', 'distribucion-correo'],
         crons: ['dist-vencer-reservas', 'dist-aviso-cartera-atrasada'],
-        docs: ['docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md', 'docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
+        docs: ['docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md', 'docs/planes-cerrados/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
     },
     {
         // Área aparte y no dentro de `facturacion-dte` (donde vive /mis-puntos):
@@ -970,7 +970,7 @@ export const AREAS = [
         edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp'],
         crons: ['refresh-inv-mv-2min', 'crear-conteos-ciclicos-mensual', 'vacuum-inventory-hourly',
                 'leer-traslados-erp'],
-        docs: ['docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md',
+        docs: ['docs/planes-cerrados/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],
     },
     {
@@ -1004,7 +1004,7 @@ export const AREAS = [
         edge: ['auto-calculate-minmax'],
         crons: ['auto-calculate-minmax-monthly', 'procesar-cambios-de-factor',
                 'inventory-daily-snapshot', 'inventory-daily-particiones'],
-        docs: ['docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md', 'docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
+        docs: ['docs/planes-cerrados/PLAN-FACTOR-Y-MINMAX-2026-08-13.md', 'docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
                'docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md'],
     },
 
@@ -1041,7 +1041,7 @@ export const AREAS = [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'avisar-pedidos-sin-recibir',
                 'continuar-traslados-pedido', 'reintentar-ingreso-pedido'],
-        docs: ['docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md', 'docs/INCIDENTE-RECEPCION-2026-08-14.md',
+        docs: ['docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md', 'docs/planes-cerrados/INCIDENTE-RECEPCION-2026-08-14.md',
                'docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md'],
     },
     {
@@ -1157,10 +1157,11 @@ export const AREAS = [
         crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min'],
         docs: ['docs/PLAN-BITACORAS-SRS-2026-08-16.md',
-               'docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md',
+               'docs/AUDITORIA-BITACORAS-PRODUCCION-2026-10-28.md',
+               'docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md',
                'docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md',
                'docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md',
-               'docs/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md',
+               'docs/planes-cerrados/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md',
                'docs/legal/procedimientos/'],
     },
     {

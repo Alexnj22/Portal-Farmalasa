@@ -535,5 +535,5 @@ del repo, md5 `8e10db10…`) · Listado Oficial de Medicamentos 2025 (SRS) ·
 OPS, «El Salvador's experience controlling the sale of antimicrobials» ·
 Boletín Fármacos, ago-2015 (resolución DNM sobre inyectables) ·
 Ley de Medicamentos Art. 19.
-**Ver también** · `docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md` (ambiente y
+**Ver también** · `docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md` (ambiente y
 limpieza) · `docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.

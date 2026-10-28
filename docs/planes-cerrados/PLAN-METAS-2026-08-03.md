@@ -1,7 +1,7 @@
 # Plan — Módulo de Metas y Bonificaciones de Ventas
 
 > **Este documento es el DISEÑO del módulo (Fases 1-3, hechas). Lo que sigue
-> vive en `docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md`**: los 9 hallazgos de
+> vive en `docs/planes-cerrados/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md`**: los 9 hallazgos de
 > la auditoría del 2026-08-05 y la funcionalidad de **gastos por recuperar**
 > (cargar un gasto a una o varias salas, que se suma a su meta convertido a
 > venta por un margen de 25%). Ese es el plan vigente.

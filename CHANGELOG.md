@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.18 — docs revisados uno por uno: cerrados archivados, vigentes corregidos
+
+Se leyeron los 74 documentos de `docs/` y se compararon contra el changelog, las migraciones y el código, sin fiarse del estado que cada uno declaraba de sí mismo.
+
+- **23 archivados** en `docs/planes-cerrados/` porque todo lo que planeaban está hecho; el índice dice por qué se cerró cada uno. Las rutas que los citaban (código, gates, CLAUDE.md, `auditoria/areas.mjs`) se actualizaron.
+- **2 borrados:** el circuito de puntos del 29-ago (todo lo que faltaba se hizo) y el resumen general del DTE (la emisión es del ERP).
+- **Corregidos** los que se quedan y decían algo que ya no es cierto: la policy de `audit_logs` ya está cerrada (Sistema), el control del servicio de marketing está en pausa, en los cortes ya no hay excepción a favor de la guardada, la ticketera ya imprime en cinco vistas, la ruta de `quincena.js` y el estado del plan del núcleo.
+- El GPS de Rutas y la llave de correo pasaron al documento de Distribución, para que no se pierdan con el plan archivado.
+- `auditoria/funciones.json`: dos funciones nuevas con su área.
+
 ## v2.1357.17 — docs depurado: fuera lo cerrado que nadie cita
 
 Se revisó cada documento de `docs/` contra quién lo cita (CLAUDE.md, DESIGN.md, el código, la auditoría por áreas y la memoria) y su estado.

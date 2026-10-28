@@ -227,6 +227,11 @@ llegan a la campana sin sonar.
 
 ## 10. Control del servicio y cierre
 
+> **En pausa desde v2.1144.1.** La pestaña se quitó de la pantalla por decisión
+> del usuario; las tablas y funciones siguen en la base sin uso. Lo de abajo
+> describe cómo funcionaba. Detalle en
+> `MARKETING-CONTROL-DEL-SERVICIO-EN-PAUSA-2026-10-01.md`.
+
 El servicio del diseñador tiene metas mensuales, 10 días de anticipación por
 pieza (exento en octubre de 2026), visitas y entregables. El cumplimiento lo
 calcula `marketing_cumplimiento`: cuenta como entregado lo aprobado,

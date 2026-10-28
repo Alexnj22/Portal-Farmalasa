@@ -1,6 +1,6 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
-**Estado:** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho (paso 2 pospuesto) · **F8 en curso**: la app entra y abre las 58 pantallas (mixta); Bitácoras y Pedir a otra sala ya son nativas; siguen efectivo y pedidos.
+**Estado (2026-10-28):** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho; **paso 2 (mudar el núcleo a `packages/core`) pospuesto por el usuario** · **F8 cerrada**: la paridad de la app quedó completa (`docs/planes-cerrados/AUDITORIA-PARIDAD-APP-2026-10-15.md`). Lo único abierto de este plan es el paso 2 de F7.
 
 ### Bitácora
 

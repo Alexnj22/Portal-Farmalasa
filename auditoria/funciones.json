@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-24T16:25:16.148Z",
+ "generado": "2026-10-28T17:27:10.701Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -704,6 +704,10 @@
   "bitacora_tomar_folio": {
    "area": "bitacoras",
    "por": "tablas"
+  },
+  "bitacora_validar_lectura": {
+   "area": "bitacoras",
+   "por": "llamada"
   },
   "block_employee": {
    "area": "acceso",
@@ -4786,6 +4790,10 @@
   "reserva_usar_saldo_favor": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "reserva_ventas_del_producto": {
+   "area": "ventas",
+   "por": "tablas"
   },
   "reservar_pago_bono": {
    "area": "cortes-efectivo",

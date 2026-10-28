@@ -36,7 +36,7 @@ import EncuestaDetalle from './EncuestaDetalle';
  *
  * Fase 1 (esta): diseño, plantillas y el ciclo de aprobación. La captura de
  * respuestas, los incentivos y los resultados son las fases 2 a 4 de
- * `docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md`.
+ * `docs/planes-cerrados/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md`.
  *
  * Permisos del módulo `encuestas_clientes`: ver, editar (diseñar y publicar) y
  * aprobar (gerencia).

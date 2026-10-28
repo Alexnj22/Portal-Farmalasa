@@ -183,7 +183,7 @@ manera física», así que la respuesta a «muéstreme la bitácora» no puede s
 tiene forma de formulario y no de reporte.
 
 **La bitácora de visitas del regente sigue siendo libro físico** (Guía 2.23), y
-ésa es una decisión ya tomada — ver `docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md`.
+ésa es una decisión ya tomada — ver `docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md`.
 
 **Y la Guía de Verificación es un subconjunto del RTS, no su resumen.** Su ítem
 2.34 sólo pregunta por «la fecha y persona» de la lectura, y el RTS 6.2.21 exige

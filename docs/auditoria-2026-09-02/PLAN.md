@@ -167,7 +167,7 @@ Selector de sala que se esconde con una sola opción. `diferencia_erp` (inventa
 operaciones de dinero (botón sin `disabled` durante el `await`). `appendAuditLog` con la
 ficha correcta (una persona tiene dos ids). Pantalla compartida que no se refresca sola.
 Teléfono. Contexto: `docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md`,
-`docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`, `docs/PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md`.
+`docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`, `docs/planes-cerrados/PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md`.
 `bolsas.js`, `MiCajaView.jsx`, `DialogoAbono.jsx` tienen cambios sin commitear de otra sesión.
 
 ### L05 · facturacion-fiscal  (`lotes/facturacion-dte.txt` + `lotes/fiscal.txt`, 24 archivos)
@@ -193,7 +193,7 @@ requiere paginación. Edge: `trasladar-pedido-erp`, `devolver-pedido-erp`,
 ¿un pedido puede despacharse dos veces? `pedidoPrint.js`: pdfmake por `await import()`.
 Lotes al confirmar. `tests/unit/decisionDiferencia.test.js` falla hoy: test viejo o
 código roto. Recepción con el celular: `usarAccionDeFila`, `apilada`, hoja de acciones.
-Contexto: `docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md`, `docs/INCIDENTE-RECEPCION-2026-08-14.md`,
+Contexto: `docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md`, `docs/planes-cerrados/INCIDENTE-RECEPCION-2026-08-14.md`,
 `docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
 
 ### L07 · acceso-permisos  (`lotes/acceso.txt` + `lotes/permisos.txt`, 34 archivos)
@@ -320,7 +320,7 @@ huecos, firma, no editable tras firmar, rondas, aviso por vencer, impresión par
 inspección — qué falta para pasar una inspección. Temperatura 2–8 °C, alarma, acción
 correctiva. Dispensaciones controladas: correlativo, receta retenida, médico con JVPM
 (`consultar-profesional-cssp`). Teléfono en la sala. Contexto:
-`docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md`, `docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md`.
+`docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md`, `docs/planes-cerrados/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md`.
 
 ### L18 · traslados-compras  (`lotes/traslados.txt` + `compras.txt`, 33 archivos)
 Traslados: `get_traslados_por_recibir` es el modelo — buscar lecturas que bajen la

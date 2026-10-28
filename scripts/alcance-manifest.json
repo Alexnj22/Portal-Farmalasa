@@ -1,5 +1,5 @@
 {
-  "_nota": "Cómo se protege por sucursal cada edge function y cada función SECURITY DEFINER que recibe una sucursal. Lo vigila `npm run gate:alcance` (scripts/alcance-gate.mjs). Plan: docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md.",
+  "_nota": "Cómo se protege por sucursal cada edge function y cada función SECURITY DEFINER que recibe una sucursal. Lo vigila `npm run gate:alcance` (scripts/alcance-gate.mjs). Plan: docs/planes-cerrados/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md.",
   "edge": {
     "analyze-branch": {
       "guarda": "sin-sala",

@@ -5,7 +5,7 @@ import { coincide, filtrar } from './busqueda';
  * a las columnas `*_norm` (`likePattern`, `filtroProductoOCodigo`, los RPC de
  * inventario). NO usarlo para comparar en memoria — para eso está
  * `utils/busqueda.js`. Se retira cuando las columnas del servidor pasen a la
- * regla nueva (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md, F3/F4).
+ * regla nueva (docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md, F3/F4).
  *
  * Normaliza un string para búsqueda: elimina tildes, puntuación y pasa a minúsculas.
  * "S.S.N" → "ssn"  |  "Ácido" → "acido"  |  "CO-TRIMOXAZOL" → "cotrimoxazol"

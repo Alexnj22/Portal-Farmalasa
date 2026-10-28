@@ -658,8 +658,9 @@ sale un ticket de ayer que nadie está esperando.
    llegan vacías. Es lo único del contrato que no salió de leer su código — y el
    ticket del 14-08 salió bien con las tres vacías, así que **omitirlas no rompe
    nada**; falta sólo saber si las dibuja cuando llegan.
-3. **Qué documento va al rollo.** El motor está listo y no está enganchado a
-   ninguna vista todavía. Los candidatos, en orden de uso probable: una
+3. **Qué documento va al rollo.** *(Resuelto: hoy imprimen Cortes, Bolsas, Mi
+   caja, traslados y Distribución.)* Al escribirse, el motor no estaba enganchado
+   a ninguna vista. Los candidatos, en orden de uso probable: una
    cotización (hoy sale en hoja carta), el resumen de un pedido recibido, el
    corte de un conteo. Falta la decisión del usuario.
 4. **Reimprimir un documento fiscal es otra cosa** y no está acá. Una factura ya

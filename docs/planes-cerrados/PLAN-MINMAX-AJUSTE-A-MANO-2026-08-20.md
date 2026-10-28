@@ -372,7 +372,7 @@ no es «quién publica» sino «quién escribe `min_units`».
 empaque, y el factor tiene un problema abierto y medido:
 `calculate_stock_params` **no lee el catálogo** — saca el factor de un regex
 sobre el texto de la presentación, hay 21 renglones donde no concuerda y 3 con
-factor 0 (`docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md`). `mv_product_factor` cubre
+factor 0 (`docs/planes-cerrados/PLAN-FACTOR-Y-MINMAX-2026-08-13.md`). `mv_product_factor` cubre
 5,680 productos de los ~19,000 con parámetros. Redondear al múltiplo encima de
 un factor que en 21 casos está mal multiplicaría el error en vez de corregirlo.
 **Entra después de cerrar el plan del factor, no antes.**

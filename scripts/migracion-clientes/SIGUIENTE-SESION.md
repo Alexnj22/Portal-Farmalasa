@@ -272,7 +272,7 @@ espejó al portal. Si volvés a verla, ya coincide.
 - Los 35 DUI borrados, con su número original, están en `revision_manual.json`.
   **Ese archivo acumula entre bloques** — si alguna vez vuelve a tener menos
   entradas que antes, algo se rompió.
-- `docs/RETOMAR-CLIENTES-2026-08-01.md` es el estado del MÓDULO de clientes que
+- `docs/planes-cerrados/RETOMAR-CLIENTES-2026-08-01.md` es el estado del MÓDULO de clientes que
   dejó otra sesión (vista, filtros, permisos), que es trabajo distinto de esta
   migración.
 - Hay varias sesiones de Claude sobre este mismo árbol. `git status --short`

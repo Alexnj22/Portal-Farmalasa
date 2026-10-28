@@ -1,5 +1,5 @@
 {
-  "nota": "Casos de la regla de búsqueda (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md). Valen para los DOS gemelos: src/utils/busqueda.js y, cuando exista, su gemelo SQL. Los nombres son productos reales del catálogo medidos el 2026-09-25. Agregar acá cada búsqueda que salga mal en sala, tal cual se escribió.",
+  "nota": "Casos de la regla de búsqueda (docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md). Valen para los DOS gemelos: src/utils/busqueda.js y, cuando exista, su gemelo SQL. Los nombres son productos reales del catálogo medidos el 2026-09-25. Agregar acá cada búsqueda que salga mal en sala, tal cual se escribió.",
   "normalizar": [
     {
       "entrada": "TEMISAR PLUS 80/12.5MG X 30 COMPRIMIDOS",

@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
  * La búsqueda de producto del portal, una sola: `buscar_productos_ids` aplica
  * en la base la misma regla que `utils/busqueda.js` en el navegador (gemelos
  * probados contra `tests/casos-busqueda.json` y contra 33,808 nombres reales).
- * Plan: docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md, F3.
+ * Plan: docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md, F3.
  *
  * Devuelve los ids YA ordenados por relevancia. Cada pantalla trae con ellos
  * sus propias columnas y filtros y los vuelve a poner en ese orden con

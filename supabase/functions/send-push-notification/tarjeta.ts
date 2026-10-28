@@ -1,4 +1,4 @@
-// La tarjeta del aviso en el TELÉFONO (plan: docs/PLAN-AVISOS-NATIVOS-2026-09-30.md).
+// La tarjeta del aviso en el TELÉFONO (plan: docs/planes-cerrados/PLAN-AVISOS-NATIVOS-2026-09-30.md).
 //
 // El aviso que llega hasta acá es texto: título, mensaje y la dirección que
 // abre. Para el teléfono se arma además una tarjeta ESTRUCTURADA leyendo la

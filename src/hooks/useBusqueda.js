@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
  *
  * Existe porque estaba escrito a mano en doce vistas, con esperas de 250 a
  * 380 ms, y una —Compras— no esperaba nada: cada tecla era una consulta, y
- * «amoxicilina» eran once. Plan: docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md (F5).
+ * «amoxicilina» eran once. Plan: docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md (F5).
  *
  * `aplicado` va sin espacios en los extremos: «amox » y «amox» son la misma
  * búsqueda y no merecen dos consultas. Vaciar el buscador se aplica al

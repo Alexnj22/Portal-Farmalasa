@@ -4,7 +4,7 @@ import { render, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Fase 4 de `docs/PLAN-PERSONAL-AUDITORIA-2026-10-14.md` — el listado de
+// Fase 4 de `docs/planes-cerrados/PLAN-PERSONAL-AUDITORIA-2026-10-14.md` — el listado de
 // personal (`/personal`, EquiposView) y las piezas del núcleo que lo alimentan.
 //
 // Cada `describe` ancla un hallazgo (L1…L8) con el caso que lo delataba: en

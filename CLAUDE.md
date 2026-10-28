@@ -952,7 +952,7 @@ Nació de un reporte de una línea —*«en facturas de compra cuando abro una c
 da información, pero muy reducida, no puedo ver los productos, no puedo ver el
 pdf»*— que resultó ser **16 de las 59 tablas del portal, el 27%**. El canon
 completo vive en **DESIGN.md §32.8 y §32.9**; el plan y lo que queda abierto, en
-`docs/PLAN-MOVIL-2026-08-20.md`. Acá va lo que hay que saber ANTES de tocar una
+`docs/planes-cerrados/PLAN-MOVIL-2026-08-20.md`. Acá va lo que hay que saber ANTES de tocar una
 vista.
 
 **El modo de falla es el SILENCIO.** No hay error, no falta ninguna fila, y en
@@ -1611,7 +1611,7 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   2,035 comprobantes de caja de `payment-proofs`— y tiene que estar en
   `buckets_abiertos` con su motivo. En el pre-commit corre la parte local cuando
   el commit toca `supabase/functions/`. Plan:
-  `docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
+  `docs/planes-cerrados/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
 - **`npm run gate:app-nativa` — un módulo nuevo del portal nace también nativo
   en la app.** Al agregar un módulo o vista al portal (`MODULE_MAP`), en el mismo
   trabajo se crea su pantalla nativa en `apps/mobile` (iOS con SwiftUI/`@expo/ui`,

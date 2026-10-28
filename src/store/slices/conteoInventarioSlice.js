@@ -176,7 +176,7 @@ export const createConteoInventarioSlice = (set, get) => ({
         const from = (page - 1) * pageSize;
         // La tercera pregunta es si lo que salió es APROXIMADO: la regla del
         // portal cae a lo parecido cuando nada coincide tal cual, y la pantalla
-        // lo tiene que decir (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md).
+        // lo tiene que decir (docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md).
         const [{ data: count, error: countErr }, { data: rows, error: rowsErr }, parecidos] = await Promise.all([
             supabase.rpc('get_conteo_products_count', {
                 p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,

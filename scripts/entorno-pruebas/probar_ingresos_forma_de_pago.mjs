@@ -4,7 +4,7 @@
 // nadie puede autorizar ni corregir lo propio, y eso también se prueba.
 //
 // Antes: una venta con tarjeta de $13.37 en la sala 28 ese día (la crea la
-// sesión que lo corre; ver `docs/PLAN-INGRESOS-Y-RESERVAS-2026-10-17.md`).
+// sesión que lo corre; ver `docs/planes-cerrados/PLAN-INGRESOS-Y-RESERVAS-2026-10-17.md`).
 // Los movimientos llevan la clave `prueba-ingresos-…` para borrarlos después.
 //
 //   node scripts/entorno-pruebas/probar_ingresos_forma_de_pago.mjs

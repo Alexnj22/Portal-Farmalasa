@@ -3,7 +3,7 @@
 Documento del área `distribucion` de la auditoría. Sale de leer el código y las
 33 migraciones `distribucion_00NN_*` de `supabase/migrations/`, no de la
 memoria de quien lo construyó. El plan de pase a producción
-(`docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`) dice QUÉ faltaba hacer; éste
+(`docs/planes-cerrados/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`) dice QUÉ faltaba hacer; éste
 dice CÓMO funciona lo que ya está.
 
 Lo cita el encabezado de `src/data/distribucion.js`, que es la puerta de
@@ -242,6 +242,15 @@ credenciales reales de la S.A.S.**:
 
 Hasta entonces, cualquier venta queda «sin firmar» o «firmada sin enviar», a la
 vista y sin darse por emitida.
+
+Y dos cosas que no son del DTE pero también faltan (venían del plan de pase a
+producción, hoy en `docs/planes-cerrados/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`):
+
+- **GPS en Rutas.** `vercel.json` manda `Permissions-Policy: geolocation=()`, que
+  apaga la ubicación en todo el sitio: las visitas se guardan sin coordenadas y
+  sin error. Hay que cambiarlo a `geolocation=(self)`.
+- **Correo al cliente:** una `RESEND_API_KEY` nueva (la anterior quedó expuesta) y
+  `CORREO_REMITENTE`. `CORREO_MODO` no se pone en producción.
 
 ## 8. Dónde mirar
 

@@ -3,7 +3,7 @@ import { Search } from 'lucide-react';
 import Notice from './Notice';
 
 /**
- * El aviso de la búsqueda aproximada (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md):
+ * El aviso de la búsqueda aproximada (docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md):
  * cuando nada coincide tal cual, la regla del portal muestra lo PARECIDO, y la
  * pantalla lo tiene que decir. Sin el aviso, «amoxisilina» mostrando
  * AMOXICILINA se lee como una coincidencia, y un resultado parecido pero

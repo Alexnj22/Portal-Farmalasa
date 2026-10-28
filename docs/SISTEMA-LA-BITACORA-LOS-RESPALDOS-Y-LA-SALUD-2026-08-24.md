@@ -23,13 +23,13 @@ se rechaza y `appendAuditLog` se traga el error**. Bitácora muda.
 `getSession()` lee del almacenamiento local, no viaja a la red: se puede llamar
 en cualquier camino sin costo.
 
-### Lo que sigue abierto
+### Lo que estaba abierto, y ya se cerró
 
-La policy de INSERT de `audit_logs` acepta cualquier fila de cualquier usuario
-autenticado (`WITH CHECK (true)`). Una tabla append-only no necesita policy de
-DELETE, **pero sí necesita que su INSERT diga quién puede escribir qué**: hoy se
-puede fabricar una entrada. Está registrado en la auditoría del 2026-07-30 junto
-con el mismo defecto en `attendance`.
+La policy de INSERT de `audit_logs` aceptaba cualquier fila de cualquier usuario
+autenticado (`WITH CHECK (true)`), igual que `attendance`. **Cerrado** por
+`20260809174644_cerrar_audit_logs_y_employee_events`: hoy `audit_logs_insert`
+exige `user_id = auth_employee_id()`, o sea que nadie firma con el nombre de
+otro (remedido el 2026-08-31, ver CLAUDE.md regla 3).
 
 **Toda acción de usuario va a la bitácora.** No es una convención de estilo: es
 la única forma de reconstruir qué pasó cuando alguien pregunta.

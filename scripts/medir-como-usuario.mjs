@@ -115,7 +115,7 @@ const LLAMADAS = [
   { clave: 'solicitudes-pendientes',   nota: 'Solicitudes · bandeja (lectura directa)',
     sql: `SELECT id, type, status, created_at FROM public.approval_requests WHERE status = 'PENDING' ORDER BY created_at DESC LIMIT 50` },
 
-  // ── Búsqueda (docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md) ──
+  // ── Búsqueda (docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md) ──
   // Cada buscador con varios casos: una palabra que existe, la misma mal
   // escrita (la aproximada), un número, y una que no existe en ningún lado
   // — ésa es la cara: lo exacto no trae nada y corre la aproximada entera.

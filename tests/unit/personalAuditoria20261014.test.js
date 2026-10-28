@@ -1,4 +1,4 @@
-// Auditoría de Personal 2026-10-14 — docs/PLAN-PERSONAL-AUDITORIA-2026-10-14.md
+// Auditoría de Personal 2026-10-14 — docs/planes-cerrados/PLAN-PERSONAL-AUDITORIA-2026-10-14.md
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { eventoVigente, esSancion, soporteDe } from '@nucleo/utils/historialDeFicha';

@@ -38,7 +38,7 @@ Tres reglas, las tres escritas en el código:
 - **`getCSTDateStr`** resta seis horas y recién ahí corta el `YYYY-MM-DD`. Un
   turno que termina a las 22:00 de El Salvador son las 04:00 UTC del día
   siguiente: sin la resta, esa salida se contaría al día siguiente.
-- **La quincena se decide con la misma resta** (`src/views/asistencia/quincena.js`).
+- **La quincena se decide con la misma resta** (`src/utils/quincena.js`, importado como `@nucleo/utils/quincena`).
   El 16 a la medianoche de El Salvador todavía es la primera quincena, y un turno
   de las 20:00 del día 15 no puede saltar al período que viene.
 - **Un horario `HH:MM` NO lleva huso.** «08:00» son las ocho de la mañana en la

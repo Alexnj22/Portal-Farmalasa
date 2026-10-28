@@ -161,7 +161,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
           "hallazgos": []
         }
       },
@@ -430,7 +430,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md, docs/AUDITORIA-PERSONAL-2026-09-03.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/PERSONAL-EL-EXPEDIENTE-Y-LO-QUE-NO-SE-PUBLICA-2026-08-24.md, docs/planes-cerrados/AUDITORIA-PERSONAL-2026-09-03.md",
           "hallazgos": []
         }
       },
@@ -861,7 +861,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md, docs/PLAN-AVISOS-NATIVOS-2026-09-30.md",
+          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md, docs/planes-cerrados/PLAN-AVISOS-NATIVOS-2026-09-30.md",
           "hallazgos": []
         }
       },
@@ -1133,7 +1133,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md, docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md",
+          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md, docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md",
           "hallazgos": []
         }
       },
@@ -1402,7 +1402,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md, docs/resumen-dte-el-salvador.md, docs/RETOMAR-CLIENTES-2026-08-01.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md, docs/resumen-dte-el-salvador.md, docs/planes-cerrados/RETOMAR-CLIENTES-2026-08-01.md",
           "hallazgos": []
         }
       },
@@ -1591,7 +1591,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
           "hallazgos": []
         }
       },
@@ -1684,7 +1684,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/planes-cerrados/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
           "hallazgos": []
         }
       },
@@ -1777,7 +1777,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md, docs/INCIDENTE-RECEPCION-2026-08-14.md, docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md, docs/planes-cerrados/INCIDENTE-RECEPCION-2026-08-14.md, docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md",
           "hallazgos": []
         }
       },
@@ -2160,7 +2160,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "6 documento(s) vivos, 6 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/PLAN-BITACORAS-SRS-2026-08-16.md, docs/AUDITORIA-BITACORAS-SRS-2026-08-25.md, docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md, docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md, docs/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md, docs/legal/procedimientos/",
+          "evidencia": "6 documento(s) vivos, 6 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/PLAN-BITACORAS-SRS-2026-08-16.md, docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md, docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md, docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md, docs/planes-cerrados/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md, docs/legal/procedimientos/",
           "hallazgos": []
         }
       },
@@ -2514,7 +2514,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md",
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/planes-cerrados/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md",
           "hallazgos": []
         }
       },
@@ -2602,7 +2602,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md, docs/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md",
+          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md, docs/planes-cerrados/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md",
           "hallazgos": []
         }
       },

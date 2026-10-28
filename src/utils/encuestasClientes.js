@@ -1,6 +1,6 @@
 // ── Encuestas a clientes — la lógica que no conoce al navegador ─────────────
 //
-// Plan: docs/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md. Las reglas que importan
+// Plan: docs/planes-cerrados/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md. Las reglas que importan
 // (quién aprueba, que lo aprobado no se edite, si una encuesta está lista para
 // revisarse) viven en la base —migración `encuestas_clientes_base`—. Esto es lo
 // que la pantalla necesita para construir y pintar.

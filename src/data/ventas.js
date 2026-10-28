@@ -116,7 +116,7 @@ export async function fetchInyeccionesAplicadas({ fini, ffin, branchId = null })
  * ¿La búsqueda de facturas cayó en la aproximada? La lista se arma con
  * `get_ventas_con_receta`, que no lo dice; esto lo pregunta aparte y barato
  * (dos `EXISTS`), con la misma decisión que `search_ventas_ids`.
- * docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ * docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
  */
 export async function ventasBusquedaEsAproximada({ searchTerm, fini, ffin }) {
     const { data, error } = await supabase.rpc('ventas_busqueda_aproximada', {

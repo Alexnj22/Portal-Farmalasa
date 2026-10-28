@@ -2,7 +2,7 @@
 /**
  * Enfrenta los dos gemelos de la regla de búsqueda: `src/utils/busqueda.js`
  * (navegador) y las funciones `busqueda_*` / `norm_busqueda` de la base.
- * Plan: docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ * Plan: docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
  *
  *   npm run busqueda:gemelos
  *

@@ -9,7 +9,7 @@ import { anotar } from './audit';
  * Buscar clientes con la regla del portal (`busqueda_clientes` en la base:
  * nombre, NIT, DUI, NRC, teléfonos, correo y código, con respaldo aproximado).
  * Devuelve `{ data, error, aproximado }` con las filas en orden de relevancia.
- * docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ * docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
  *
  * Reemplaza a `searchCustomersByTokens` (un `.or()` de `ilike` por palabra) y a
  * `searchCustomersByName` de cotizaciones (la frase entera, sin quitar tildes).

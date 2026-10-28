@@ -10,7 +10,7 @@
  * aparecieron otros: recibir pedidos de otra sala, anotar vales en la caja de
  * otra sala, despachar desde Bodega sin ser de Bodega, cobrar un crédito con
  * permiso de sólo lectura, y dos funciones que cualquiera en internet podía
- * disparar. Plan: `docs/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
+ * disparar. Plan: `docs/planes-cerrados/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
  *
  * Ninguno daba error. Las pantallas no los ofrecían; bastaba con mandar la
  * petición a mano. Por eso no lo ve ninguna prueba que pase por la interfaz.

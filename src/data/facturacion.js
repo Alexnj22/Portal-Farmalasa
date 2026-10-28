@@ -456,7 +456,7 @@ export function countBranchInvoices(branchId, ambito) {
 /**
  * Búsqueda server-side sobre TODO el ámbito, con la regla del portal
  * (`buscar_facturas_sala_ids`: cliente, correlativo, total y código de
- * vendedor, sin tildes de los dos lados). docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ * vendedor, sin tildes de los dos lados). docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
  *
  * Antes era un `.or()` de `ilike` por palabra con el texto sin tildes contra la
  * columna con tildes: «jose» no encontraba «JOSÉ».

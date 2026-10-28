@@ -42,8 +42,8 @@ descartadas por decisión del usuario, o absorbidas por un plan posterior.
 | `AUDITORIA-PERMISOS-2026-08-03.md` | 2026-08-03 | Cabecera: "auditoría **cerrada y EJECUTADA**" (v2.356.1, v2.360.0, v2.361.0). Desde v2.361.0 la vigila `npm run gate:permisos` en el pre-commit. Su único abierto —`staff_salary`, §8— es **decisión explícita del usuario** y el gate lo imprime como aviso en cada corrida. |
 | `HALLAZGO-VENTA-PERDIDA-SALUD1-2026-07-14.md` | 2026-08-04 | "✅ **RESUELTO** — el origen recuperó el registro", verificado por tres vías: `dteqr_pdf.php` genera el documento, el Corte Z reprocesado cuadra al centavo en las 6 sucursales, y el cuadre diario recorrió julio completo con 0 diferencias. |
 | `PLAN-METAS-2026-08-03.md` | 2026-08-05 | Diseño del módulo, Fases 1–3 hechas. Su propia cabecera dice que **lo que sigue vive en `PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md`**, que es el plan vigente. ⚠️ Las Fases 4–5 siguen abiertas y se rastrean allá, no acá. |
-| `RETENCION-IVA-VENTAS-2026-08-04.md` | 2026-08-04 | Documento de cierre: la retención sobre factura de consumidor **no es un error** (Art. 162 inciso 3.º) y el libro no lleva columna de retención (Art. 83/85 RCT). Su único abierto —¿el total del libro es lo cobrado o el valor de la venta? ($48.95)— es una **pregunta al contador** y vive en `docs/PREGUNTAS-CONTADOR-2026-08-03.md`. |
-| `PROMPT-MODULO-CLIENTES.md` | 2026-08-05 | Prompt **consumido**: `src/views/ClientesView.jsx` existe y la Fase 1 está en prod (v2.317.0). La Fase 2 —propagar la edición al ERP— se rastrea en `docs/RETOMAR-CLIENTES-2026-08-01.md`. |
+| `RETENCION-IVA-VENTAS-2026-08-04.md` | 2026-08-04 | Documento de cierre: la retención sobre factura de consumidor **no es un error** (Art. 162 inciso 3.º) y el libro no lleva columna de retención (Art. 83/85 RCT). Su único abierto —¿el total del libro es lo cobrado o el valor de la venta? ($48.95)— es una **pregunta al contador** y vive en `docs/planes-cerrados/PREGUNTAS-CONTADOR-2026-08-03.md`. |
+| `PROMPT-MODULO-CLIENTES.md` | 2026-08-05 | Prompt **consumido**: `src/views/ClientesView.jsx` existe y la Fase 1 está en prod (v2.317.0). La Fase 2 —propagar la edición al ERP— se rastrea en `docs/planes-cerrados/RETOMAR-CLIENTES-2026-08-01.md`. |
 
 ### Cerrados en la auditoría de planes del 2026-08-24
 
@@ -81,3 +81,35 @@ migración es el registro de lo que se aplicó, y su comentario decía la verdad
 día que se escribió. Tres migraciones de Metas citan `docs/PLAN-METAS-2026-08-03.md`
 y una de permisos cita `docs/AUDITORIA-PERMISOS-2026-08-03.md`; los dos archivos
 viven ahora en esta carpeta.
+
+## Archivados el 2026-10-28
+
+Revisión de los 74 documentos de `docs/` contra el changelog, las migraciones y
+el código. Todo lo que planeaban está hecho; lo poco que quedaba se pasó al
+documento vivo que lo sigue.
+
+| documento | por qué se cerró |
+|---|---|
+| `PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md` | F1–F4 aplicadas; `alcance-baseline.json` en cero |
+| `PLAN-AVISOS-NATIVOS-2026-09-30.md` | N1–N5 en v2.1093.0–v2.1094.1 |
+| `PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md` | F0–F5 en v2.1064.0–v2.1074.2; vigila `gate:busqueda` |
+| `PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md` | vales, ingresos, apertura y corte desde Mi caja |
+| `PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md` | fases 1–4 en v2.1139.0–v2.1154.1 |
+| `PLAN-FACTOR-Y-MINMAX-2026-08-13.md` | el cambio de factor se reprocesa solo (v2.1295.0) |
+| `PLAN-INGRESOS-Y-RESERVAS-2026-10-17.md` | las tres partes en v2.1304.0–v2.1321.x |
+| `PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md` | seis bloques en v2.372.2–v2.378.0 |
+| `PLAN-MOVIL-2026-08-20.md` | F0–F5 y F7; la parte del aparato es `docs/PRUEBA-EN-TELEFONO-REAL.md` |
+| `PLAN-PERSONAL-AUDITORIA-2026-10-14.md` | 31 de 31 ítems |
+| `PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` | libro mayor de puntos en producción; `puntos-motor` activo |
+| `PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md` | esquema en producción; GPS y correo pasaron a `DISTRIBUCION-COMO-FUNCIONA` §7 |
+| `PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md` | fases A–C hechas, D fuera de alcance (estaba en la raíz del repo) |
+| `AUDITORIA-PARIDAD-APP-2026-10-15.md` | 0 pendientes, 236 hechos |
+| `AUDITORIA-PERSONAL-2026-09-03.md` | 11 de 12 cerrados, G7 falso positivo |
+| `AUDITORIA-BITACORAS-SRS-2026-08-25.md` | la reemplaza `AUDITORIA-BITACORAS-PRODUCCION-2026-10-28.md` |
+| `AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md` | el libro se reinició el 1-nov; lo abierto vive en la auditoría del 28-oct |
+| `INCIDENTE-RECEPCION-2026-08-14.md` | corregido en v2.605.7 y v2.606.1 |
+| `PENDIENTE-PESO-DE-LAS-PANTALLAS-2026-09-26.md` | `gate:bundle` en verde desde v2.1268.6 |
+| `RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md` | el widget está construido y en uso |
+| `RETOMAR-CLIENTES-2026-08-01.md` | el último punto se cerró con `aplicar_espejo_erp` |
+| `SEGURIDAD-AUTORIZACION-2026-08-04.md` | barrido limpio; lo sigue `PLAN-CERRAR-AUTORIZACION` |
+| `PREGUNTAS-CONTADOR-2026-08-03.md` | las preguntas vivas las retoma `RETOMAR-CONTADOR-INTERNO-2026-08-13.md` |

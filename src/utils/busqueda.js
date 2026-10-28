@@ -1,6 +1,6 @@
 /**
  * La regla de búsqueda del portal — una sola, para toda lista que se filtra
- * escribiendo. Plan y mediciones: docs/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
+ * escribiendo. Plan y mediciones: docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md.
  *
  * Existía repartida en cinco mecanismos con reglas distintas, y los defectos
  * que el usuario reportaba («deja cosas sueltas y muestra resultados

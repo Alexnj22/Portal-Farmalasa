@@ -675,7 +675,7 @@ Está escrito para que la sesión no tenga que adivinar nada: le dice dónde est
 la verdad, en qué orden va, y **dónde se para a mostrar antes de escribir**.
 
 > Vamos a encender el programa de puntos en el portal. Leé primero
-> `docs/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` §10 —ahí está el estado real— y
+> `docs/planes-cerrados/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md` §10 —ahí está el estado real— y
 > verificá contra producción antes de creerle, que el doc puede haber quedado
 > viejo.
 >

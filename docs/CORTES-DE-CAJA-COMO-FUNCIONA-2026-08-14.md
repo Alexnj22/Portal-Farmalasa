@@ -89,9 +89,9 @@ sala, y las salas sin cobros coinciden al centavo en los 10 cortes. O sea que el
 `esperado` del origen cuenta mal los cobros de crédito, un número entero de veces
 de más o de menos.
 
-**La única excepción**: cuando la brecha es de exactamente `+1×` el cobro, manda
-la guardada — significa que el tiquete sumó cobros del día que al momento del
-corte todavía no habían entrado.
+**Ya no hay excepción** (v2.931.1): antes, cuando la brecha era de exactamente
+`+1×` el cobro, mandaba la guardada. Hoy gana siempre el tiquete. El corte que se
+hace desde el portal (Mi caja, v2.851.0) usa el mismo juez.
 
 Cuando las dos discrepan y **no** es por los cobros de crédito, el portal **no
 elige**: muestra las dos y avisa que no conviene dar por bueno un faltante así.

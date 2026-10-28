@@ -18,7 +18,7 @@ citado es el PDF de `docs/legal/normativa/fiscal/codigo_tributario_2026-04.pdf`.
 | **Forma** | Archivos **CSV** que se suben a la declaración en línea | Formulario en línea con las cifras de los estados financieros |
 | **De dónde sale** | De los documentos: DTE emitidos y recibidos | De la **contabilidad formal** (Libro Diario, Mayor, Estados Financieros) |
 | **Base legal** | Art. 141 CT (libros) + la declaración misma | **Art. 91 CT**, inciso 2 |
-| **¿El portal lo puede producir?** | Casi — ver §3 | **No.** Ver `docs/CONTABILIDAD-ALCANCE-2026-08-01.md`: el portal cubre documentos y libros fiscales, no contabilidad |
+| **¿El portal lo puede producir?** | Casi — ver §3 | **No.** Ver `docs/planes-cerrados/CONTABILIDAD-ALCANCE-2026-08-01.md`: el portal cubre documentos y libros fiscales, no contabilidad |
 
 Y aparte están los **informes periódicos** (F-910, F-915, F-983, F-987…), §5.
 
@@ -321,7 +321,7 @@ contra estas tablas es media hora y despeja los 7 puntos de arriba.
 **Esto el portal no lo puede producir y no está cerca**: exige contabilidad
 formal (catálogo de cuentas, Diario, Mayor) y **costo de ventas**, que hoy no
 existe — `sales_invoice_items` guarda precio pero no costo. Ver
-`docs/CONTABILIDAD-ALCANCE-2026-08-01.md` §4.
+`docs/planes-cerrados/CONTABILIDAD-ALCANCE-2026-08-01.md` §4.
 
 ### Informes que dependen del tamaño — y esta farmacia los cruza
 

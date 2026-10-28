@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.19 — docs unificados por tema: un documento por frente
+
+Varios documentos de `docs/` hablaban de lo mismo, escritos en fechas distintas, y se contradecían. Ahora hay un documento por frente: arriba el estado, después una sola lista de pendientes que dice quién destraba cada uno, y al final cómo funciona.
+
+| documento | junta | pendientes |
+|---|---|---|
+| `docs/CONTABILIDAD.md` | 7 | 16, más 14 preguntas para la contadora |
+| `docs/BITACORAS-SRS.md` | 4 | 25, con la numeración del RTS publicado |
+| `docs/CAJA-CORTES-Y-BOLSAS.md` | 3 | 6 |
+| `docs/SEGURIDAD-Y-ACCESO.md` | 3 | 9, ordenados por riesgo |
+
+- Los 17 originales pasaron a `docs/planes-cerrados/`; el detalle y las mediciones siguen ahí.
+- `docs/APP-CLIENTES.md` junta los tres documentos de la app de clientes.
+- La pausa del control de marketing y la rotación del teléfono entraron enteras en sus documentos padre.
+- Las referencias en `auditoria/areas.mjs` y en CLAUDE.md apuntan a los documentos nuevos; los comentarios del código, a la ruta archivada.
+- El procedimiento E (limpieza) tenía el mismo código que el D: ahora es `FLS-PRO-04`.
+
 ## v2.1357.18 — docs revisados uno por uno: cerrados archivados, vigentes corregidos
 
 Se leyeron los 74 documentos de `docs/` y se compararon contra el changelog, las migraciones y el código, sin fiarse del estado que cada uno declaraba de sí mismo.

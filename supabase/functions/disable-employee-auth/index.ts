@@ -57,7 +57,7 @@ Deno.serve(async (req: Request) => {
     // cuenta activa podía declararse `SUPERADMIN` y desactivarle la cuenta a
     // quien quisiera. El JWT dice QUIÉN sos —eso lo firma Supabase—; el permiso
     // lo resuelve la base. Fase 0 de
-    // docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md.
+    // docs/planes-cerrados/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md.
     const adminSecret = Deno.env.get("ADMIN_INVOKE_SECRET");
     let allowed = !!adminSecret && token === adminSecret;
     // La FICHA de quien llama (`employees.id`), no su cuenta de `auth.users`.

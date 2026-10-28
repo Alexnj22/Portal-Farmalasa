@@ -4,7 +4,7 @@
 > sólo la empresa puede poner.
 >
 > ⚠️ **Revisado contra la norma y contra producción el 2026-09-03** — el informe
-> está en `docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`. Las dos
+> está en `docs/planes-cerrados/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`. Las dos
 > correcciones de sistema que faltaban **ya están hechas y probadas**: anular una
 > limpieza deja la foto de lo anulado, y corregirla conserva el valor anterior.
 > Lo que queda es lo que sólo puede decidir la empresa — los `[corchetes]`.

@@ -16,7 +16,7 @@
 >
 > Lo único que queda del trabajo móvil es la prueba en el **teléfono real**
 > (F6 de `docs/planes-cerrados/PLAN-CIERRE-MOVIL-2026-08-08.md`) y, aparte, el trabón al girar,
-> en pausa (`docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`).
+> en pausa (`docs/PRUEBA-EN-TELEFONO-REAL.md`).
 
 ## 0. Qué resuelve y qué no
 

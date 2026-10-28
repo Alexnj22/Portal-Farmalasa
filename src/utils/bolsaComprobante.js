@@ -13,7 +13,7 @@
 //                                    aparte, y es UNO por operacion aunque el
 //                                    dinero haya salido de cuatro bolsas.
 //
-// El diseño completo, en `docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`.
+// El diseño completo, en `docs/planes-cerrados/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`.
 //
 // ── Lo que se rompe solo (§5 de docs/IMPRESION-EN-TICKETERA-2026-08-13.md) ───
 // Sólo ASCII —por eso los rótulos de acá van SIN TILDE a propósito, no es un

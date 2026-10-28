@@ -103,7 +103,9 @@ export const AREAS = [
         // El aviso del plazo (Art. 20), 08:10 SV. SQL puro: no llama a ninguna
         // función, así que no gasta peticiones del sistema de origen.
         crons: ['avisar-plazo-datos-8am-sv'],
-        docs: ['DESIGN.md', 'CLAUDE.md', 'docs/CHECKLIST-VISTA-NUEVA.md'],
+        docs: ['DESIGN.md',
+               'CLAUDE.md',
+               'docs/CHECKLIST-VISTA-NUEVA.md'],
     },
 
     // ═══ QUIÉN ENTRA Y QUÉ PUEDE ════════════════════════════════════════════
@@ -136,8 +138,10 @@ export const AREAS = [
                'bulk-create-employee-users', 'emitir-carne-temporal',
                'renombrar-usuario-empleado'],
         crons: ['purgar-carnes-temporales', 'purge-sesiones-vencidas', 'purge-session-activity-daily'],
-        docs: ['docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md', 'docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md',
-               'docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md', 'docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md'],
+        docs: ['docs/SEGURIDAD-Y-ACCESO.md',
+               'docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md',
+               'docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md',
+               'docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md'],
     },
     {
         id: 'permisos',
@@ -413,7 +417,8 @@ export const AREAS = [
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],
         crons: ['purge-notifications-daily', 'avisos-diferidos-5min'],
-        docs: ['docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md', 'docs/planes-cerrados/PLAN-AVISOS-NATIVOS-2026-09-30.md'],
+        docs: ['docs/AVISOS-Y-PUSH-CUANDO-EL-CANAL-SE-ROMPE-2026-08-24.md',
+               'docs/planes-cerrados/PLAN-AVISOS-NATIVOS-2026-09-30.md'],
     },
     {
         id: 'sucursales',
@@ -710,7 +715,7 @@ export const AREAS = [
                 'aperturas-manana-hasta-la-hora-tope',
                 'cierre-automatico-caja', 'dias-sin-cierre-0700-sv',
                 'creditos-cada-10min', 'creditos-barrido-completo', 'creditos-vencidos-0800-sv'],
-        docs: ['docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md', 'docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md',
+        docs: ['docs/CAJA-CORTES-Y-BOLSAS.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],
     },
     {
@@ -795,7 +800,8 @@ export const AREAS = [
         tablas: ['dist_asuetos', 'dist_bajas', 'dist_caja_movimientos', 'dist_cajas', 'dist_carga_items', 'dist_cargas', 'dist_catalogo', 'dist_cierres_dia', 'dist_clientes', 'dist_compra_items', 'dist_compras', 'dist_conteo_items', 'dist_conteos', 'dist_contingencias', 'dist_correlativos', 'dist_correos', 'dist_cuarentena', 'dist_cxc', 'dist_cxc_abonos', 'dist_depositos', 'dist_devolucion_items', 'dist_devoluciones', 'dist_dte', 'dist_dte_intentos', 'dist_emisores', 'dist_liquidaciones', 'dist_listas', 'dist_lote_asignaciones', 'dist_lote_movimientos', 'dist_lotes', 'dist_mh_token', 'dist_pagos', 'dist_pedido_items', 'dist_pedidos', 'dist_precios', 'dist_proveedor_productos', 'dist_proveedores', 'dist_puntos_venta', 'dist_rastreo', 'dist_recibos', 'dist_reintegros', 'dist_reservas', 'dist_rutas', 'dist_saldo_aplicaciones', 'dist_ventas_perdidas', 'dist_visitas'],
         edge: ['distribucion-dte', 'distribucion-comprobante', 'distribucion-correo'],
         crons: ['dist-vencer-reservas', 'dist-aviso-cartera-atrasada'],
-        docs: ['docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md', 'docs/planes-cerrados/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
+        docs: ['docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md',
+               'docs/planes-cerrados/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md'],
     },
     {
         // Área aparte y no dentro de `facturacion-dte` (donde vive /mis-puntos):
@@ -902,7 +908,7 @@ export const AREAS = [
                 // Retención de un año de los envíos de facturas por correo, y el
                 // vigilante de los diez días de los reclamos (2026-10-24).
                 'purge-app-cliente-correo-envios', 'avisar-reclamos-clientes'],
-        docs: ['docs/APP-CLIENTES-2026-10-05.md'],
+        docs: ['docs/APP-CLIENTES.md'],
     },
 
     // ═══ PRODUCTO Y EXISTENCIA ══════════════════════════════════════════════
@@ -1004,7 +1010,8 @@ export const AREAS = [
         edge: ['auto-calculate-minmax'],
         crons: ['auto-calculate-minmax-monthly', 'procesar-cambios-de-factor',
                 'inventory-daily-snapshot', 'inventory-daily-particiones'],
-        docs: ['docs/planes-cerrados/PLAN-FACTOR-Y-MINMAX-2026-08-13.md', 'docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
+        docs: ['docs/planes-cerrados/PLAN-FACTOR-Y-MINMAX-2026-08-13.md',
+               'docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md',
                'docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md'],
     },
 
@@ -1041,7 +1048,8 @@ export const AREAS = [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'avisar-pedidos-sin-recibir',
                 'continuar-traslados-pedido', 'reintentar-ingreso-pedido'],
-        docs: ['docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md', 'docs/planes-cerrados/INCIDENTE-RECEPCION-2026-08-14.md',
+        docs: ['docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md',
+               'docs/planes-cerrados/INCIDENTE-RECEPCION-2026-08-14.md',
                'docs/planes-cerrados/PRUEBA-TRASLADO-2026-08-11.md'],
     },
     {
@@ -1068,7 +1076,8 @@ export const AREAS = [
                 'avisar-faltantes-sin-resolver',
                 'barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
                 'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily'],
-        docs: ['docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md', 'docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
+        docs: ['docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md',
+               'docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
     },
 
     // ═══ COMPRAS Y CONTABILIDAD ═════════════════════════════════════════════
@@ -1103,7 +1112,8 @@ export const AREAS = [
         crons: ['sync-purchases-10min', 'sync-purchase-emails-daily', 'check-purchases-reconciliation-daily',
                 'purchases-fastbackfill-semanal', 'verificar-facturas-reclamadas-2h',
                 'avisar-facturas-de-sala-0830-sv'],
-        docs: ['docs/CONTABILIDAD-ALCANCE-2026-08-01.md', 'docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md'],
+        docs: ['docs/CONTABILIDAD.md',
+               'docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md'],
     },
     {
         id: 'fiscal',
@@ -1127,9 +1137,10 @@ export const AREAS = [
         tablas: ['corte_z', 'periodos_fiscales', 'contabilidad_config'],
         edge: ['sync-corte-z', 'verificar-csv-libros'],
         crons: ['corte-z-mensual'],
-        docs: ['docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md', 'docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md',
-               'docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md', 'docs/ANEXOS-HACIENDA-2026-08-11.md',
-               'docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md'],
+        docs: ['docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md',
+               'docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md',
+               'docs/CONTABILIDAD.md',
+               'docs/ANEXOS-HACIENDA-2026-08-11.md'],
     },
 
     // ═══ REGULATORIO Y OPERACIÓN ════════════════════════════════════════════
@@ -1156,11 +1167,8 @@ export const AREAS = [
         edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
         crons: ['bitacora-dispensaciones-1min', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min'],
-        docs: ['docs/PLAN-BITACORAS-SRS-2026-08-16.md',
-               'docs/AUDITORIA-BITACORAS-PRODUCCION-2026-10-28.md',
+        docs: ['docs/BITACORAS-SRS.md',
                'docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md',
-               'docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md',
-               'docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md',
                'docs/planes-cerrados/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md',
                'docs/legal/procedimientos/'],
     },
@@ -1208,7 +1216,7 @@ export const AREAS = [
                 'check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
                 'purge-cron-history-daily', 'vigilar-reinicio-de-la-base'],
         docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md',
-               'docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md',
+               'docs/SEGURIDAD-Y-ACCESO.md',
                'docs/INCIDENTE-CAIDA-2026-09-14.md'],
     },
     {

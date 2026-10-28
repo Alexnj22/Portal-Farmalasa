@@ -1,6 +1,6 @@
 # Puntos Salud — la app del cliente
 
-Detalle y decisiones: `docs/APP-CLIENTES-2026-10-05.md`.
+Detalle y decisiones: `docs/APP-CLIENTES.md`.
 
 - Habla con UNA sola puerta: la edge function `app-clientes` (`lib/api.js`). No
   hay cliente de Supabase ni cuenta de Auth: la sesión es un token en el

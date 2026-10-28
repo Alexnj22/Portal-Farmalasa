@@ -200,7 +200,7 @@ async function muestrasDe(admin: any, customerId: number | null, tipo: string): 
 const BUCKET_ARCHIVOS = "app-clientes-archivos";
 // El documento de EJEMPLO de las facturas de muestra (2026-10-19). Las
 // muestras de la cuenta de revisión de las tiendas se copiaron de otra ficha
-// (docs/APP-CLIENTES-CUENTA-DE-REVISION-2026-10-17.md) y su `documento_de`
+// (docs/APP-CLIENTES.md) y su `documento_de`
 // apunta a facturas que NO son suyas: el control de pertenencia —que se queda
 // como está— no las dejaba abrir, y el revisor veía «no tiene documento».
 // Una muestra cuya factura prestada no es de la ficha abre ESTE par: un PDF y

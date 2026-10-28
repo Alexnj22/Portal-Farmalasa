@@ -14,7 +14,7 @@
 > plan de cierre, con guion en `docs/PRUEBA-EN-TELEFONO-REAL.md`.
 >
 > Aparte —y no es de este plan— sigue vivo el trabón al girar el teléfono, en
-> pausa y con handoff en `docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`.
+> pausa y con handoff en `docs/PRUEBA-EN-TELEFONO-REAL.md`.
 
 > **Cómo usar este documento**: es un prompt ejecutable. Pégalo (o referéncialo) en una
 > sesión de Claude Code y dile "ejecuta la Fase N de PLAN-MOBILE-2026-07.md". Cada fase

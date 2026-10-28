@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
     // El JWT sigue sirviendo para lo único que no se puede falsificar —QUIÉN
     // sos, que lo firma Supabase—; el permiso lo resuelve la base.
     // Ver [[feedback_user_metadata_lo_escribe_el_navegador]] y la Fase 0 de
-    // docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md.
+    // docs/planes-cerrados/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md.
     const caller = await requireActiveEmployeeUser(req, admin);
     if (!caller) return json({ ok: false, error: "INVALID_TOKEN", details: "El token expiró, es inválido, o el empleado no está activo." });
 

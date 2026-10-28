@@ -160,6 +160,6 @@ Los demás son documentos que se adjuntan más que módulos que se construyen.
 
 ---
 
-**Ver también:** `docs/PLAN-BITACORAS-SRS-2026-08-16.md` (la definición
+**Ver también:** `docs/planes-cerrados/PLAN-BITACORAS-SRS-2026-08-16.md` (la definición
 original del módulo) y el `CHANGELOG.md` desde v2.758.0, donde está el detalle
 de cada decisión de esta tanda con su medición al lado.

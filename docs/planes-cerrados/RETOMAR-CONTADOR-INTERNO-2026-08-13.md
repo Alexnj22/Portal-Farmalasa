@@ -9,7 +9,7 @@ Estado al cierre del **2026-08-13**. **Empezar por acá.** El plan completo est�
 ## Prompt para arrancar
 
 ```
-Seguimos con el contador interno. Leé docs/RETOMAR-CONTADOR-INTERNO-2026-08-13.md.
+Seguimos con el contador interno. Leé docs/planes-cerrados/RETOMAR-CONTADOR-INTERNO-2026-08-13.md.
 
 Los pasos 1, 2 y 3 del plan están construidos y desplegados. Lo que falta se
 divide en dos: decisiones de la contadora (método de costeo, 26 clasificaciones,

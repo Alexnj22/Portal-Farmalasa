@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 /**
  * Anota que algo SALIÓ del portal: un CSV, un ZIP, una impresión masiva.
  *
- * Fase 1.2 de `docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`. Hoy no bloquea
+ * Fase 1.2 de `docs/planes-cerrados/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`. Hoy no bloquea
  * nada — es la línea base con la que la Fase 3 va a elegir un techo. Sin estos
  * datos, cualquier umbral sería inventado, y este portal tiene una trampa
  * específica: `fetchAllRows` pagina 20,000+ filas como comportamiento NORMAL,

@@ -1466,7 +1466,7 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
   2026-07-08, así que **la marcha atrás nunca puede ser una migración**. Su
   default es `false`: si la fila no existe, NO exige — un control mal escrito
   nunca deja a nadie afuera por accidente. Detalle en
-  `docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`.
+  `docs/SEGURIDAD-Y-ACCESO.md`.
 - **Antes de cerrar trabajo que toque cortes de caja, cobros de crédito o
   movimientos de caja: `npm run gate:cortes`.** Mide contra producción y
   pregunta una sola cosa: ¿el efectivo que entró al cajón está en el esperado

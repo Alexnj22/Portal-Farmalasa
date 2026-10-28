@@ -692,7 +692,7 @@ Dos límites que conviene tener escritos:
 - **Hay cuentas donde la contraseña ES el código del carné** (las
   `@staff.local`, creadas por el login por escaneo). Para esas personas, las
   formas 1 y 2 prueban lo mismo. No lo empeora, pero tampoco lo arregla: lo
-  arregla `docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md`, que sigue abierto.
+  arregla `docs/planes-cerrados/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md`, que sigue abierto.
 - **El número del carné no se guarda ni se muestra.** Es la contraseña de esa
   persona; el escaneo lo resuelve a `employee_id` en el servidor y lo descarta.
 

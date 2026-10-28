@@ -415,7 +415,7 @@ que esté:
 
 Los dos los firma y sella el regente. Están en borrador en
 `docs/legal/procedimientos/` y el detalle de qué debe decir cada uno está en
-`docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
+`docs/planes-cerrados/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
 
 Falta además el del **RTS 6.4.1 / Guía 3.1 (MAYOR)**: procedimiento de
 adquisición, suministro, dispensación, devolución y disposición final de
@@ -536,4 +536,4 @@ OPS, «El Salvador's experience controlling the sale of antimicrobials» ·
 Boletín Fármacos, ago-2015 (resolución DNM sobre inyectables) ·
 Ley de Medicamentos Art. 19.
 **Ver también** · `docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md` (ambiente y
-limpieza) · `docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.
+limpieza) · `docs/planes-cerrados/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md`.

@@ -15,7 +15,7 @@ import { subirArchivo } from '../utils/storageFiles';
  * Una sucursal tiene decenas de reservas abiertas a lo sumo: sin paginar.
  *
  * Cómo funciona la app de clientes entera —sesión, niveles, reservas, chat,
- * mayoristas, avisos—: docs/APP-CLIENTES-2026-10-05.md
+ * mayoristas, avisos—: docs/APP-CLIENTES.md
  */
 
 const sinError = ({ data, error }) => {

@@ -2,7 +2,7 @@
 
 **Estado:** F1–F5, F7, F8 ✅ · **F6 parcial** (dos hallazgos cerrados, falta
 standalone) · **F9 EN PAUSA** (la rotación —
-`docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`) · **Abierto el** 2026-08-08 ·
+`docs/PRUEBA-EN-TELEFONO-REAL.md`) · **Abierto el** 2026-08-08 ·
 **Cierra:** `PLAN-MOBILE-2026-07.md`
 (fase 4 y criterio 4 de aceptación) y `PLAN-CANON-MOVIL-2026-08-07.md` (fases 2 y 4).
 
@@ -101,7 +101,7 @@ standalone) · **F9 EN PAUSA** (la rotación —
 >
 > ## F9 — la rotación, EN PAUSA (2026-08-08)
 >
-> **Handoff completo: `docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`.** Ahí está
+> **Handoff completo: `docs/PRUEBA-EN-TELEFONO-REAL.md`.** Ahí está
 > todo: el aparato, las cuatro explicaciones descartadas con su número, las tres
 > que quedan vivas, el siguiente paso en orden, y las tres trampas del
 > instrumento que ya se pagaron. Lo de abajo es el registro de cómo se llegó.

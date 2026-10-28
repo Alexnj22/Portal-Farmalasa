@@ -15,7 +15,7 @@ import { anotar } from './audit';
 // el corte siguiente sigue cuadrando**. Un descuadre de bolsa es invisible para
 // todas las cuentas que el portal ya hace.
 //
-// El diseño completo: `docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`.
+// El diseño completo: `docs/planes-cerrados/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`.
 
 const CAMPOS = `
     id, folio, branch_id, corte_id, origen, motivo_origen,

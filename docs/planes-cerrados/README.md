@@ -54,8 +54,8 @@ contrario de lo que había pasado.
 | Documento | Cerrado | Evidencia del cierre |
 |---|---|---|
 | `PLAN-SESIONES-SEGURAS-2026-08-08.md` | 2026-08-09 | Su propia §ESTADO: **CERRADO**, F0–F4 ✅ con versión y verificación medida (el hook devolvió 200 con la actividad fresca y 401 `session idle timeout` envejecida — sin la primera mitad el 401 no probaba nada). F5 no es trabajo pendiente: es «lo que queda anotado y no entra ahora», MFA y la contraseña del carné, las dos con decisión escrita. |
-| `PLAN-CANON-MOVIL-2026-08-07.md` | 2026-08-09 | Cabecera «**las cinco fases cerradas**» con la tabla F0–F4. Lo que dejaba vivo lo nombra él mismo y vive en otros dos documentos: la prueba en el aparato (`PRUEBA-EN-TELEFONO-REAL.md`) y el trabón al girar (`RETOMAR-ROTACION-MOVIL-2026-08-08.md`). |
-| `PLAN-CIERRE-MOVIL-2026-08-08.md` | 2026-08-24 | F1–F5, F7 y F8 ✅. Sus dos abiertos están **absorbidos**: F6 lo remidió y cerró en su mitad medible `PLAN-MOVIL-2026-08-20.md` §F6 —la cañería del notch, con los insets de un iPhone 13 pisados sobre los tokens `--sa-*`— y lo que sólo puede decir el aparato quedó en `PRUEBA-EN-TELEFONO-REAL.md`; F9 sigue **en pausa por decisión** en `RETOMAR-ROTACION-MOVIL-2026-08-08.md`. |
+| `PLAN-CANON-MOVIL-2026-08-07.md` | 2026-08-09 | Cabecera «**las cinco fases cerradas**» con la tabla F0–F4. Lo que dejaba vivo lo nombra él mismo y vive en otros dos documentos: la prueba en el aparato (`PRUEBA-EN-TELEFONO-REAL.md`) y el trabón al girar (`PRUEBA-EN-TELEFONO-REAL.md`). |
+| `PLAN-CIERRE-MOVIL-2026-08-08.md` | 2026-08-24 | F1–F5, F7 y F8 ✅. Sus dos abiertos están **absorbidos**: F6 lo remidió y cerró en su mitad medible `PLAN-MOVIL-2026-08-20.md` §F6 —la cañería del notch, con los insets de un iPhone 13 pisados sobre los tokens `--sa-*`— y lo que sólo puede decir el aparato quedó en `PRUEBA-EN-TELEFONO-REAL.md`; F9 sigue **en pausa por decisión** en `PRUEBA-EN-TELEFONO-REAL.md`. |
 | `PLAN-MOBILE-2026-07.md` | 2026-07-24 | **Ya figuraba como cerrado en este índice desde el 2026-08-05 y el archivo se había quedado en la raíz.** Su cabecera lo confirma: fases 1–5 ✅ y «los siete criterios de aceptación están cumplidos». |
 | `PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md` | 2026-08-21 | Las cinco fases APLICADAS **y el §10 también** — el único pendiente que la cabecera daba por abierto contra el 1-sep. La migración `20260821161901` marcó 1,129 filas; medido hoy contra producción: **1,137 con `manual_at`** de 19,045, y `product_stock_params_history` sin una sola fila en el barrido, o sea que no se movió ningún MIN ni ningún MAX. |
 | `PRUEBA-TRASLADO-2026-08-11.md` | 2026-08-24 | El guion decía «falta únicamente ejecutar esta prueba». **Se ejecutó**: `pedido_traslado_erp` tiene **26 despachos en modo real** entre el 12 y el 24-ago (más 42 simulacros y 3 errores del 11/12-ago, ya resueltos). |
@@ -113,3 +113,21 @@ documento vivo que lo sigue.
 | `RETOMAR-CLIENTES-2026-08-01.md` | el último punto se cerró con `aplicar_espejo_erp` |
 | `SEGURIDAD-AUTORIZACION-2026-08-04.md` | barrido limpio; lo sigue `PLAN-CERRAR-AUTORIZACION` |
 | `PREGUNTAS-CONTADOR-2026-08-03.md` | las preguntas vivas las retoma `RETOMAR-CONTADOR-INTERNO-2026-08-13.md` |
+
+## Unificados el 2026-10-28
+
+Diecisiete documentos que trataban del mismo tema se juntaron en cuatro. El
+documento nuevo tiene el estado, una sola lista de pendientes y cómo funciona;
+el detalle, las mediciones y la historia siguen en estos originales.
+
+| documento nuevo | originales archivados acá |
+|---|---|
+| `docs/CONTABILIDAD.md` | `CONTABILIDAD-ALCANCE-2026-08-01`, `AUDITORIA-CONTABLE-COMPLETA-2026-08-12`, `PLAN-CONTABILIDAD-2026-08-02`, `PLAN-CONTADOR-INTERNO-2026-08-12`, `RETOMAR-CONTABILIDAD-2026-08-06`, `RETOMAR-CONTADOR-INTERNO-2026-08-13`, `RETENCION-EN-LOS-LIBROS-2026-08-12` |
+| `docs/BITACORAS-SRS.md` | `PLAN-BITACORAS-SRS-2026-08-16`, `BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03`, `VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03`, `AUDITORIA-BITACORAS-PRODUCCION-2026-10-28` |
+| `docs/CAJA-CORTES-Y-BOLSAS.md` | `CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14`, `AUDITORIA-CORTE-DESDE-EL-PORTAL-2026-09-02`, `PLAN-BOLSAS-DE-EFECTIVO-2026-08-15` |
+| `docs/SEGURIDAD-Y-ACCESO.md` | `PLAN-CREDENCIAL-DE-CARNE-2026-08-12`, `PLAN-CARNE-TURNO-Y-SALA`, `PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13` |
+
+Y tres grupos chicos se juntaron sin archivar nada, porque entraban enteros:
+`docs/APP-CLIENTES.md` (las tres de la app de clientes), la pausa del control
+del servicio dentro de `MARKETING-COMO-FUNCIONA` §10, y la rotación del teléfono
+dentro de `PRUEBA-EN-TELEFONO-REAL.md`.

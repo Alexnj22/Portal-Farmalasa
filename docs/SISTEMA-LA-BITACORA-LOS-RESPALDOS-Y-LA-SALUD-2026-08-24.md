@@ -139,7 +139,7 @@ lo que es historia de la empresa, no.
 ## 6 bis. Lo que SALE del portal, y el interruptor de los frenos
 
 Agregado el **2026-08-24** (Fases 0 y 1 de
-`docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`). Dos tablas nuevas de esta
+`docs/planes-cerrados/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md`). Dos tablas nuevas de esta
 área, y las dos existen para poder decidir con datos más adelante.
 
 ### `export_log` — qué salió, quién se lo llevó

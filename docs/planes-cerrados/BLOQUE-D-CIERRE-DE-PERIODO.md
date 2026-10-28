@@ -1,7 +1,7 @@
 # Bloque D — El cierre de período
 
 **Estado: DOCUMENTADO, no ejecutado. Pendiente de que Alex lo confirme.**
-Fecha: 2026-08-03 · Contexto: `docs/PLAN-CONTABILIDAD-2026-08-02.md` Parte 3 §1
+Fecha: 2026-08-03 · Contexto: `docs/planes-cerrados/PLAN-CONTABILIDAD-2026-08-02.md` Parte 3 §1
 
 ---
 

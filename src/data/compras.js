@@ -1,5 +1,5 @@
 // Lo escrito sobre este módulo:
-//   · `docs/CONTABILIDAD-ALCANCE-2026-08-01.md` — qué cubre el portal en materia
+//   · `docs/planes-cerrados/CONTABILIDAD-ALCANCE-2026-08-01.md` — qué cubre el portal en materia
 //     contable y qué no. Contesta antes de que alguien lo pregunte de nuevo.
 //   · `docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md` — leer una foto de
 //     papel: la boleta está construida, la receta está medida y no.

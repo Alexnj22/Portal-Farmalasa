@@ -161,7 +161,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
           "hallazgos": []
         }
       },
@@ -1309,7 +1309,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/planes-cerrados/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
           "hallazgos": []
         }
       },
@@ -1970,7 +1970,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/CONTABILIDAD-ALCANCE-2026-08-01.md, docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/CONTABILIDAD-ALCANCE-2026-08-01.md, docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md",
           "hallazgos": []
         }
       },
@@ -2065,7 +2065,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "5 documento(s) vivos, 5 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
+          "evidencia": "5 documento(s) vivos, 5 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/planes-cerrados/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/planes-cerrados/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
           "hallazgos": []
         }
       },
@@ -2160,7 +2160,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "6 documento(s) vivos, 6 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/PLAN-BITACORAS-SRS-2026-08-16.md, docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md, docs/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md, docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md, docs/planes-cerrados/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md, docs/legal/procedimientos/",
+          "evidencia": "6 documento(s) vivos, 6 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/planes-cerrados/PLAN-BITACORAS-SRS-2026-08-16.md, docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md, docs/planes-cerrados/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md, docs/planes-cerrados/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md, docs/planes-cerrados/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md, docs/legal/procedimientos/",
           "hallazgos": []
         }
       },
@@ -2345,7 +2345,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md, docs/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md, docs/INCIDENTE-CAIDA-2026-09-14.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md, docs/planes-cerrados/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md, docs/INCIDENTE-CAIDA-2026-09-14.md",
           "hallazgos": []
         }
       },
@@ -2684,7 +2684,7 @@
         },
         "doc": {
           "pct": 95,
-          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/APP-CLIENTES-2026-10-05.md",
+          "evidencia": "1 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/APP-CLIENTES.md",
           "hallazgos": []
         }
       },

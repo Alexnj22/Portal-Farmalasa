@@ -311,7 +311,7 @@ Dos decisiones que valen más que el resto de la tabla:
 conocen de antemano, así que lo que se pinta es la grilla completa y el hueco es
 un hueco. Una bitácora que sólo muestra lo que se llenó no puede responder «¿nos
 falta alguna?», que es justo lo que el inspector pregunta. Es lo mismo que
-`docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md` resolvió para los cortes.
+`docs/planes-cerrados/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md` resolvió para los cortes.
 
 **Fuera de rango exige escribir qué se hizo.** Sin la acción correctiva, la
 lectura no se guarda. La norma no pide una lectura bonita, pide una lectura

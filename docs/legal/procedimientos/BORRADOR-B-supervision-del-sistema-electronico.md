@@ -4,7 +4,7 @@
 > sólo la empresa puede poner.
 >
 > ⚠️ **Revisado contra la norma y contra producción el 2026-09-03** — el informe
-> está en `docs/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`.
+> está en `docs/planes-cerrados/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md`.
 >
 > **El punto 2.3 quedó resuelto el 2026-09-03**: el cierre del mes es ahora del
 > **Regente**. Falta **correr el respaldo una vez** para poder llenar la

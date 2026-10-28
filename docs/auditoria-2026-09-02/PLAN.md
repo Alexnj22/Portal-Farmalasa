@@ -166,8 +166,8 @@ Selector de sala que se esconde con una sola opción. `diferencia_erp` (inventa
 −$10,770) ¿sigue en pantalla? Impresión sólo por `imprimirDocumento`. Doble clic en
 operaciones de dinero (botón sin `disabled` durante el `await`). `appendAuditLog` con la
 ficha correcta (una persona tiene dos ids). Pantalla compartida que no se refresca sola.
-Teléfono. Contexto: `docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md`,
-`docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`, `docs/planes-cerrados/PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md`.
+Teléfono. Contexto: `docs/planes-cerrados/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md`,
+`docs/planes-cerrados/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`, `docs/planes-cerrados/PLAN-CAJA-EN-EL-PORTAL-2026-08-28.md`.
 `bolsas.js`, `MiCajaView.jsx`, `DialogoAbono.jsx` tienen cambios sin commitear de otra sesión.
 
 ### L05 · facturacion-fiscal  (`lotes/facturacion-dte.txt` + `lotes/fiscal.txt`, 24 archivos)
@@ -182,7 +182,7 @@ verificar leyendo. Cierre de período: qué congela, quién reabre, rastro. Coti
 ¿se convierten, vencen? Filtros sobre `sales_invoices`: 1000 filas, `.in()` repetido,
 tope antes del filtro. Fechas UTC vs SV. Contexto:
 `docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`, `docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md`,
-`docs/RETENCION-EN-LOS-LIBROS-2026-08-12.md`, `docs/resumen-dte-el-salvador.md`.
+`docs/planes-cerrados/RETENCION-EN-LOS-LIBROS-2026-08-12.md`, `docs/resumen-dte-el-salvador.md`.
 
 ### L06 · pedidos  (`lotes/pedidos.txt`, 38 archivos, ~14,500 líneas)
 Dibujar la máquina de estados del pedido Y la de cada sala destino a partir del código;

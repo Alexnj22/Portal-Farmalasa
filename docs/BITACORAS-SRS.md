@@ -179,17 +179,28 @@ farmacéutico que firma; «portal» es trabajo de código.
     mostraban lote vencido al vender (ROCEFORT, RTS 6.6.6). Con datos reales desde
     noviembre, ese caso necesita dueño: quién lo mira y qué hace. *Destraba:
     portal + regente.*
-14. **Inyecciones: la bitácora cuenta sólo lo que aplicó enfermería.**
-    Decisión del usuario (2026-10-28): una aplicación marcada por alguien que
-    no es Regente de Enfermería sigue `aplicada`, pero no aparece en la
-    bitácora ni en el historial de Pendientes; sólo la ven los cuatro cargos de
-    administración (`inyecciones_ver_todas`). Migración `20261028180147`. Lo
-    medido en octubre: de 950 aplicaciones, 328 las marcó enfermería, 475
-    dependientes y 147 jefes de sala. **Riesgo aceptado:** la bitácora que se
-    muestre a la SRS tendrá menos aplicaciones que ventas de inyectables con
-    aplicación cobrada, y ese cruce es el que hace el inspector. Lo que deja de
-    agrandar esa diferencia es que, cuando hay enfermería en turno, sea ella
-    quien marque. *Pendiente de decidir: usuario.*
+14. **Inyecciones — hecho el 2026-10-28.** Dos reglas, decisión del usuario:
+    - **La bitácora cuenta sólo lo que aplicó enfermería.** Lo que marcó otro
+      cargo sigue `aplicada` pero no aparece en la bitácora ni en el historial
+      de Pendientes; lo ven sólo los cuatro cargos de administración
+      (`inyecciones_ver_todas`, migración `20261028180147`).
+    - **Con enfermería en la sala, la marca ella.** Si una Regente de
+      Enfermería de esa sala tiene sesión del portal abierta (renovada en los
+      últimos 70 min), nadie más puede marcar «aplicada»: canjear una pendiente
+      se rechaza, y cobrar con «aplicar ahora» cobra igual y la deja pendiente
+      para ella (migración `20261028181138`). Se mide por sesión porque
+      `employee_rosters` y `attendance` están vacías en producción.
+
+    **Qué dice la norma (verificado el 2026-10-28):** ni el RTS 11.02.04:24 ni la
+    Guía de Verificación BPAD mencionan la aplicación de inyecciones ni piden un
+    registro de aplicaciones; tampoco las Directrices de Atención Farmacéutica de
+    la JVPQF (oct-2023, `docs/legal/normativa/sanitaria/`). La Ley de
+    Medicamentos prohibía en su Art. 79 b) los servicios de enfermería dentro de
+    las farmacias, pero ese literal fue **declarado inconstitucional**. O sea: la
+    bitácora de inyecciones es un **control interno** de la empresa, no un
+    registro que exija la SRS, y el inspector de BPAD no la cruza contra las
+    ventas. Lo que sí rige es el ejercicio profesional de enfermería (CSSP /
+    JVPE), que queda fuera de esta auditoría.
 15. **Inyecciones: lote y vencimiento de lo aplicado.** Hoy no se guardan, y la
     dosis sólo en 22 de 993. *Destraba: portal.*
 16. ~~**Inyecciones en el respaldo.**~~ **Hecho el 2026-10-28**:

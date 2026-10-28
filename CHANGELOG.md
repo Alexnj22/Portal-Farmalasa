@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.23 — Inyecciones: con enfermería en la sala, la aplicación la marca ella
+
+Si una Regente de Enfermería de la sala tiene el portal abierto, sólo ella marca «aplicada». Canjear una pendiente desde otro cargo se rechaza con el motivo; cobrar con «aplicar ahora» cobra igual y la deja pendiente para enfermería, con aviso en Mi caja. La presencia se mide por sesión (horarios y marcaciones están vacíos en producción). Verificada la norma: ni el RTS, ni la Guía BPAD, ni las Directrices de Atención Farmacéutica de la JVPQF piden un registro de inyecciones — la bitácora es control interno. Migración `20261028181138`.
+
 ## v2.1357.22 — Bitácoras: pestaña Antibióticos; inyecciones sólo de enfermería en la bitácora
 
 - **Bitácoras → Antibióticos.** El listado con su grupo AWaRe, una fila por molécula con los productos del catálogo que la contienen, y botón Exportar. Lo ve quien ve el libro bajo receta; «Confirmar» sólo el cargo Regente (`aware_confirmar` firma con su ficha).

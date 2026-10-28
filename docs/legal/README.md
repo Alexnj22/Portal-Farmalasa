@@ -35,6 +35,7 @@ reciente publicada en el Diario Oficial.
 | `ley_srs_actualizada_2025-06.pdf` | Ley de la Superintendencia de Regulación Sanitaria (DL 891): la SRS absorbió a la DNM | ✅ junio 2025 |
 | `srs_listado_oficial_medicamentos_2026.pdf` / `.txt` | Listado Oficial de Medicamentos 2026 (acuerdo SI.2026.02.06-02). El cap. **J01** trae el grupo AWaRe dentro del código: `*(1)` Acceso, `*(2)` Precaución → fuente del ítem **1.13** | ✅ se reemplaza cada primer trimestre |
 | `srs_venta_sin_receta_2026.pdf` / `.txt` | Listado de medicamentos de venta **sin** receta 2026 (acuerdo SI.2026.02.06-01) | ✅ se reemplaza cada primer trimestre |
+| `cssp_directrices_atencion_farmaceutica_2023-11.pdf` / `.txt` | Directrices sobre Buenas Prácticas del Ejercicio Profesional Químico Farmacéutico en la Atención Farmacéutica (JVPQF / CSSP). No trata la aplicación de inyecciones | ✅ octubre 2023 (publicada nov-2023) |
 
 **La §6.1 del RTS publicado se renumeró.** Al citar, usar la columna de la derecha:
 

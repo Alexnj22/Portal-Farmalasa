@@ -1364,6 +1364,13 @@ export default function MiCajaView({ comoPestana = false }) {
                                     ? 'Aplicación cobrada.'
                                     : 'Aplicación cobrada. Queda pendiente a nombre del cliente.',
                             );
+                            /* Con enfermería conectada en la sala, la aplicación
+                             * la marca ella: el servidor cobra igual y la deja
+                             * pendiente (`inyeccion_registrar` → para_enfermeria). */
+                            if (r?.aplicaciones?.para_enfermeria) {
+                                showToast('La aplicación la marca enfermería',
+                                    'Hay enfermería en la sala: quedó pendiente para que ella la marque al aplicarla.', 'warning', 9000);
+                            }
                             if (r?.movimiento) {
                                 await imprimirMovimiento(r.movimiento, tipo, {
                                     detalle: String(r.movimiento.detalle || r.movimiento.concepto || '')

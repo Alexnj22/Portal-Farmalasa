@@ -1,0 +1,1780 @@
+          JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                         FARMACÉUTICA
+
+
+
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO
+    PROFESIONAL QUÍMICO FARMACÉUTICO EN LA
+             ATENCIÓN FARMACÉUTICA
+
+
+
+                           Octubre 2023
+
+
+
+
+ DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+              FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+             JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                            FARMACÉUTICA
+
+
+
+
+JUNTA DIRECTIVA PERIODO MAYO 2022- MAYO 2024
+
+MIEMBROS PROPIETARIOS                     MIEMBROS SUPLENTES
+Licda. Silvia Jeanette Pineda de Anaya    Lic. Francisco Arturo Meléndez
+Presidente                                Aguirre
+Licda. Jacqueline Ivette Rosa Murillo     Licda. María Beatriz Flores Luna
+Secretaria
+Lic. Carlos Felipe Álvarez Castillo       Licda. Gloria Elizabeth Orellana
+Vocal                                     Merino
+Lic. Milton Ernesto Romero Chávez         Lic. Hjalmar Alirio Martínez Ortiz
+Vocal
+Lic. Carlos Roberto Castañeda Rodríguez   Licda. Lidia Margarita Mónchez Anaya
+Vocal
+
+
+
+
+EQUIPO TÉCNICO
+
+                   Licda. Nancy Esmeralda Gutiérrez de Flores
+                            Jefa de Inspectores JVPQF
+                        Licda. Damaris Saraí Vega de Peña
+                                 Inspectora JVPQF
+                     Lic. Eduardo Alexander Parra Barrientos
+                                  Inspector JVPQF
+
+
+
+
+  DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+               FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                           JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                                          FARMACÉUTICA
+
+
+
+
+Contenido
+ABREVIATURAS ..................................................................................................................................... 4
+I)         INTRODUCCION ........................................................................................................................ 5
+II)        BASE LEGAL................................................................................................................................ 5
+III)        OBJETIVOS ................................................................................................................................. 7
+IV)         AMBITO DE APLICACIÓN....................................................................................................... 7
+V)         MARCO CONCEPTUAL ............................................................................................................. 7
+VI)         DIRECTRICES TÉCNICAS ........................................................................................................ 9
+VII)        DIRECTRICES PARA LA ELABORACION DE PROCEDIMIENTOS ............................. 27
+VIII) LISTADO DE FORMATOS DE REGISTRO RECOMENDADOS ......................................31
+IX)         REFERENCIAS .......................................................................................................................... 32
+X)         DISPOSICIONES FINALES .....................................................................................................33
+ANEXOS .................................................................................................................................................. 34
+
+
+
+
+       DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                    FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                               FARMACÉUTICA
+
+
+
+ABREVIATURAS
+AF: Atención Farmacéutica.
+Art: Artículo.
+BPA: Buenas Prácticas de Almacenamiento.
+BPDyT: Buenas Prácticas de Distribución y Transporte.
+CM: Conciliación de la Medicación.
+CNFV: Centro Nacional de Farmacovigilancia.
+CSSP: Consejo Superior de Salud Pública.
+DNM: Dirección Nacional de Medicamentos.
+ETM: Efectos Tóxicos por Medicamentos.
+ESAVI: Eventos Supuestamente Atribuible a la Vacunación e Inmunización.
+FIP: Federación Internacional Farmacéutica.
+HM: Historial de Medicación.
+IF: Indicación Farmacéutica.
+MINSAL: Ministerio de Salud.
+JVPQF: Junta de Vigilancia de la Profesión Químico Farmacéutica.
+JVPS: Juntas de Vigilancia de las Profesiones de la Salud.
+OMS: Organización Mundial de la Salud.
+PRM: Problemas Relacionados a Medicamentos.
+PVMP: Precio de Venta Máximo al Público.
+RAM: Reacción Adversa a Medicamentos.
+RNM: Resultados Negativos asociados a la Medicación.
+RTCA: Reglamento Técnico Centroamericano.
+SFT: Seguimiento Farmacoterapéutico.
+SPFA: Servicios Profesionales Farmacéuticos Asistenciales
+
+
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                 JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                                FARMACÉUTICA
+
+
+
+   I)       INTRODUCCION
+
+Dado que cada día las exigencias para los profesionales Químicos Farmacéuticos,
+que se desempeñan en la Atención Farmacéutica son mayores, la Junta de Vigilancia
+de la Profesión Químico Farmacéutica (JVPQF), como ente regulador del ejercicio
+profesional, considera importante emitir directrices que fortalezcan la función de
+supervisión en los diferentes ámbitos en que se desempeña el profesional Químico
+Farmacéutico, y así propiciar el cumplimiento de sus deberes y obligaciones
+establecidas por Ley, como profesionales sanitarios en los establecimientos de
+salud, con el fin de incidir positivamente en los procesos y procedimientos técnico-
+administrativos que faciliten la mejora continua, en la vigilancia del ejercicio
+profesional.
+
+   II)      BASE LEGAL
+
+   1. Constitución de la República
+      El Art. 68 inciso segundo, establece lo siguiente: “Art. 68.- … El ejercicio de las
+      profesiones que se relacionan de un modo inmediato con la salud del pueblo, será
+      vigilado por organismos legales formados por académicos pertenecientes a cada
+      profesión. Estos organismos tendrán facultad para suspender en el ejercicio
+      profesional a los miembros del gremio bajo su control, cuando ejerzan su profesión con
+      manifiesta inmoralidad o incapacidad. La suspensión de profesionales podrá
+      resolverse por los organismos competentes de conformidad al debido proceso...”
+
+   2. Código de Salud
+      Art. 1 “...tiene por objeto desarrollar los principios constitucionales relacionados con
+      la salud pública y asistencia social de los habitantes de la República y las normas para
+      la organización funcionamiento y facultades del Consejo Superior de Salud Pública, del
+      Ministerio de Salud Pública y Asistencia Social y demás organismos del Estado,
+      servicios de salud privados y las relaciones de éstos entre sí en el ejercicio de las
+      profesiones relativas a la salud del pueblo”.
+
+         Art. 17. Atribuciones de las Juntas, literal “c) Vigilar el ejercicio de la profesión
+         correspondiente y sus respectivas actividades auxiliares a que se refiere el inciso
+         segundo del Art. 5 del mismo Código; así como velar porque estas profesiones no se
+         ejerciten por personas que carezcan del título correspondiente, exigiendo el estricto
+         cumplimiento de las disposiciones penales relativas al ejercicio ilegal de las
+         profesiones”.
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 5 de 43
+             JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                            FARMACÉUTICA
+
+
+
+    Art. 23.- Las Juntas a que se refiere el artículo cinco del presente Código, regulan el
+    ejercicio de las profesiones correspondientes y sus actividades técnicas y auxiliares. La
+    autorización para ejercer el control de ese ejercicio estará a cargo y bajo la
+    responsabilidad de la respectiva Junta. El ejercicio de cada profesión comprende la
+    prescripción, elaboración, administración, indicación o aplicación de cualquier
+    procedimiento directo o indirecto destinado al diagnóstico, pronóstico y tratamiento
+    de las enfermedades, con el propósito de realizar acciones de prevención, promoción,
+    protección y recuperación de la salud de las personas, así como también de
+    asesoramiento público, privado y pericial relacionado con cada profesión.
+
+    Art. 39.- Los profesionales, técnicos, auxiliares, higienistas y asistentes relacionados
+    con la salud, son responsables legalmente de sus actos en el ejercicio profesional,
+    cuando por negligencia, impericia, ignorancia, abandono inexcusable, cause daño o la
+    muerte del paciente.
+
+3. Ley de Deberes y Derechos de los pacientes y prestadores de servicios de salud
+   Art. 1.- El objeto de la presente Ley es regular y garantizar los derechos y deberes de
+   los pacientes que soliciten o reciban servicios de salud, así como de los prestadores de
+   servicios en el ámbito público, privado y autónomo, incluyendo el Instituto
+   Salvadoreño del Seguro Social.
+
+    Art. 6.- Para la aplicación de las sanciones referidas en esta Ley, serán las Juntas de
+    Vigilancia de las Profesiones, en adelante “Las Juntas” o “La Junta” y el Consejo
+    Superior de Salud Pública, en adelante “El Consejo”.
+
+   Art. 9.- Para el objeto y finalidad de la presente Ley, se utilizarán las siguientes
+   definiciones: a) Prestadores de servicios salud: se entenderán como tales, toda persona
+   natural o jurídica, pública o privada, autónomas, institucional, individual o colectiva,
+   debidamente acreditados, certificados y autorizados conforme a lo establecido por la
+   Ley, cuya actividad sea proporcionar servicios de salud ya sean hospitalarios o
+   ambulatorios de manera pública o privada;
+
+   Art. 12.- El paciente tiene derecho a una atención en salud con calidad y calidez, con
+   profesionales y trabajadores de salud debidamente acreditados, certificados y
+   autorizados por las autoridades competentes para el ejercicio de sus tareas o
+   funciones, en el ámbito público y privado.
+
+   Art. 28.- Todo paciente, familiares o representante legal deberá asumir y cumplir con
+   las prescripciones generales y específicas emanadas del prestador de servicios de
+   salud, a fin de cumplir su tratamiento y restablecer su estado de salud; esto incluye
+   aceptar el alta médica hospitalaria cuando haya finalizado su proceso asistencial.
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+             FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                           Página 6 de 43
+                JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                               FARMACÉUTICA
+
+
+
+   III)     OBJETIVOS
+         Objetivo General
+
+Establecer directrices sobre Buenas Prácticas del Ejercicio Profesional Químico
+Farmacéutico en la Atención Farmacéutica, así como los mecanismos
+administrativos que permitan la supervisión en el desempeño del profesional
+Químico Farmacéutico, con el fin de incidir positivamente en los procesos y
+procedimientos técnico-administrativos que faciliten la mejora continua, en la
+vigilancia del ejercicio profesional.
+
+         Objetivos Específicos
+
+ 1. Fortalecer las competencias técnico administrativas de los profesionales
+    Químicos Farmacéuticos, en la Atención Farmacéutica.
+ 2. Establecer controles y procesos que mejoren la calidad del ejercicio profesional
+    de los Químicos Farmacéuticos, en la Atención Farmacéutica.
+ 3. Estandarizar directrices a utilizar por el profesional Químico Farmacéutico que
+    ejerce su profesión en la prestación de servicios de salud y Atención
+    Farmacéutica.
+
+   IV)      AMBITO DE APLICACIÓN
+
+Quedan sujetos al cumplimiento de las presentes directrices, todos los profesionales
+Químicos Farmacéuticos que deseen implementar, dentro su ejercicio profesional,
+los diferentes Servicios Profesionales Farmacéuticos Asistenciales comprendidos
+dentro de la Atención Farmacéutica, desde las farmacias privadas y los botiquines
+y/o farmacias hospitalarias, públicas y privadas.
+
+   V)       MARCO CONCEPTUAL
+
+Desde la farmacia privada y los botiquines y/o farmacias hospitalarias, la
+participación de los profesionales Químico Farmacéuticos, no se limita a la
+verificación y supervisión del cumplimiento de las Buenas Prácticas de
+Almacenamiento (BPA) y Buenas Prácticas de Distribución y Transporte (BPDyT),
+sino que también corresponde a su ejercicio profesional desarrollar actividades de
+Atención Farmacéutica.
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 7 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+La Organización Mundial de la Salud (OMS) con el apoyo de la Federación
+Internacional Farmacéutica (FIP), revisaron en conjunto, las Directrices para las
+Buenas Prácticas en Farmacia, en las cuales se establece que, la Atención
+Farmacéutica (AF) es una filosofía de práctica profesional que implica una
+interacción directa del Químico Farmacéutico con el paciente o la comunidad, en la
+que se controlan las consecuencias del uso de medicamentos basados en las
+evidencias del conocimiento actual y en el compromiso con la obtención de
+resultados concretos.
+
+La misión de la profesión Químico Farmacéutica es contribuir a la mejora de la salud
+y ayudar a los pacientes con problemas de salud, para que hagan el mejor uso de los
+productos farmacéuticos.
+
+Esta misión tiene, principalmente, seis componentes:
+1. Estar siempre disponibles para los pacientes;
+2. Identificar, gestionar o detectar problemas de salud;
+3. Promover la salud y el uso racional de los medicamentos y productos sanitarios;
+4. Asegurar la calidad y efectividad de los medicamentos;
+5. Prevenir el daño causado por medicamentos, y
+6. Realizar un uso responsable de los recursos de la atención sanitaria.
+
+Las actividades asistenciales del profesional Químico Farmacéutico se desglosan,
+principalmente, en 2 grandes grupos:
+
+   a) Actividades orientadas al medicamento.
+      (Adquisición, Custodia, Conservación, Buenas Prácticas de Almacenamiento
+      (BPA), Buenas Prácticas de Distribución y Transporte (BPDyT), entre otros).
+
+   b) Actividades orientadas al paciente.
+      (Atención Farmacéutica).
+
+Los profesionales Químicos Farmacéuticos, desde las farmacias privadas, los
+botiquines y/o las farmacias hospitalarias, participan en el proceso de prestación de
+servicios de salud, por medio de la Atención Farmacéutica (AF), tanto en el sector
+público como privado, debiendo ejercer su profesión respetando los derechos de los
+pacientes, prestando sus servicios profesionales de manera oportuna, eficiente y de
+calidad, dando un trato igualitario, una atención calificada, con la información
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 8 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+necesaria, respetando la privacidad y confidencialidad, actuando con moralidad y
+ética, y libre de cualquier tipo de discriminación.
+
+La Atención Farmacéutica (AF) es la participación activa del profesional Químico
+Farmacéutico en la mejora de la calidad de vida del paciente a través de los Servicios
+Profesionales Farmacéuticos Asistenciales. Esta participación implica la
+cooperación con el médico y otros profesionales sanitarios, para conseguir
+resultados que mejoren la calidad de vida del paciente, así como su intervención en
+actividades que proporcionen buena salud y prevengan las enfermedades. Se trata
+de una práctica profesional en la que el Químico Farmacéutico se responsabiliza de
+las necesidades del paciente relacionadas con los medicamentos.
+
+Para los fines de estas Directrices, se entenderá como profesional Químico
+Farmacéutico aquellos profesionales que, cuenten con el grado Universitario de
+“Doctor en Química y Farmacia”, “Licenciado en Química y Farmacia” o “Licenciado
+en Química y Farmacia-Biología”, debidamente autorizados para el ejercicio de su
+profesión por la JVPQF.
+
+Se establecen como parte de los diferentes Servicios Profesionales Farmacéuticos
+Asistenciales comprendidos dentro de la Atención Farmacéutica (AF), que los
+profesionales Químicos Farmacéuticos pueden desarrollar, los siguientes:
+ a) Dispensación.
+ b) Conciliación de la Medicación.
+ c) Farmacovigilancia.
+ d) Indicación Farmacéutica.
+ e) Preparación de Medicamentos.
+ f) Seguimiento de la Adherencia Terapéutica.
+ g) Seguimiento Farmacoterapéutico.
+
+   VI)    DIRECTRICES TÉCNICAS
+
+Las Buenas Prácticas del Ejercicio Profesional Químico Farmacéutico en la Atención
+Farmacéutica (AF) se alcanzan cuando se cumple la normativa legal y técnica
+relacionada a las actividades que se deben realizar en la prestación de servicios de
+salud, en la farmacia privada, en los botiquines y/o farmacias hospitalarias. Es
+necesario que los profesionales Químicos Farmacéuticos, que participan y
+desarrollan la AF se mantengan actualizados sobre los cambios o nuevas
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 9 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+disposiciones técnicas, éticas y legales, así como poner en práctica sus
+conocimientos técnicos especializados para que dichas actividades se desarrollen de
+tal manera, que se pueda asegurar la calidad, seguridad y efectividad de los
+productos farmacéuticos y la prestación de servicios de salud, con la finalidad de
+mejorar la calidad de vida de los pacientes y la prevención de los Problemas
+Relacionados a los Medicamentos (PRM) y Resultados Negativos asociados a la
+Medicación (RNM).
+
+Servicios Profesionales Farmacéuticos Asistenciales comprendidos en la
+Atención Farmacéutica.
+
+La prestación de Servicios Profesionales Farmacéuticos Asistenciales (SPFA),
+comprendidos dentro de la Atención Farmacéutica (AF), son parte del ejercicio
+profesional de los Químicos Farmacéuticos, quienes deberán cumplir con los
+requisitos establecidos para la legalidad de su ejercicio profesional:
+
+   -   Estar autorizado e inscrito para el ejercicio de su profesión ante la JVPQF.
+   -   Solventes con su anualidad profesional.
+   -   Contar con carnet profesional vigente.
+   -   Contar con sello profesional autorizado, inscrito y actualizado ante la JVPQF.
+
+Todo profesional Químico Farmacéutico que, en el ejercicio de su profesión preste
+SPFA, comprendidos dentro de la AF, debe garantizar los derechos de los pacientes
+establecidos en la Ley de Deberes y Derechos de los Pacientes y Prestadores de
+Servicios de Salud y demás marco legal vigente.
+
+Los Doctores en Medicina y Doctores en Cirugía Dental (Facultativos) que detecten
+que es necesaria la prestación de Servicios Profesionales Farmacéuticos
+Asistenciales (SPFA), comprendidos dentro de la Atención Farmacéutica (AF),
+deberán remitir el paciente al profesional Químico Farmacéutico, que preste este
+servicio de salud, con la finalidad de mejorar la calidad de vida de los pacientes y la
+prevención de los Problemas Relacionados a los Medicamentos (PRM) y Resultados
+Negativos asociados a la Medicación (RNM), buscando garantizar la seguridad del
+paciente y el uso racional de los medicamentos.
+
+
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 10 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+ a) DISPENSACIÓN:
+
+La Dispensación es el acto profesional Químico Farmacéutico de proporcionar o
+expender uno o más productos farmacéuticos a un paciente, de acuerdo a la
+verificación de una receta elaborada por un profesional autorizado (Facultativo). En
+este acto el profesional Químico Farmacéutico, informa y orienta al paciente o su
+representante, sobre el uso racional y adecuado del medicamento.
+
+La Dispensación es un Servicio Profesional Farmacéutico Asistencial (SPFA)
+encaminado a garantizar que los destinatarios de los medicamentos y productos
+sanitarios, tras una evaluación individual, reciban y utilicen los medicamentos de
+forma adecuada a sus necesidades clínicas, en las dosis precisas según sus
+requerimientos individuales, durante el periodo de tiempo adecuado, con la
+información para su correcto proceso de uso y de acuerdo con la legislación vigente.
+
+Los profesionales Químicos Farmacéuticos, que prestan el servicio de Dispensación,
+deben informar y orientar al paciente o su representante, sobre el uso racional y
+adecuado de los medicamentos y productos sanitarios, explicándole sobre las
+condiciones adecuadas de almacenamiento del producto, las posibles interacciones,
+efectos secundarios, reacciones adversas conocidas o posibles Problemas
+Relacionados a los Medicamentos.
+
+Los Dependientes, debidamente acreditados por la Junta de Vigilancia de la
+Profesión Químico Farmacéutica (JVPQF), que realizan el despacho de los productos
+farmacéuticos prescritos por un Facultativo, deberán asegurarse que los mismos
+sean entregados en la concentración, forma farmacéutica y cantidad especificada,
+sin modificar el principio activo prescrito, bajo la capacitación y supervisión del
+Regente y Director Técnico del establecimiento farmacéutico.
+
+El profesional Químico Farmacéutico o Dependiente de farmacia privada o del
+botiquín y/o farmacia hospitalaria, que realice la dispensación o despacho según
+corresponda, de productos farmacéuticos, debe garantizar al paciente una atención
+de calidad, propiciando un trato igualitario y el respeto al derecho a la información
+y confidencialidad de cada paciente, establecidos en la Ley de Deberes y Derechos
+de los Pacientes y Prestadores de Servicios de Salud.
+
+
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 11 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+Para que el proceso de Dispensación sea efectivo, el profesional Químico
+Farmacéutico, que ejerce como Regente y Director Técnico de la farmacia privada o
+del botiquín y/o farmacia hospitalaria, debe asegurar la trazabilidad, control,
+custodia y transporte de los productos farmacéuticos, por lo que se debe dar
+cumplimiento a las disposiciones establecidas por la Dirección Nacional de
+Medicamentos (DNM), relacionadas a las Buenas Prácticas de Almacenamiento,
+Distribución y/o Transporte, y a las Directrices sobre Buenas Prácticas del Ejercicio
+Profesional Químico Farmacéutico como Regente en Farmacias y Botiquines,
+emitidas por esta Junta de Vigilancia, y demás legislación aplicable y vigente.
+
+De conformidad al Art. 19 de la Ley de Medicamentos, los profesionales facultados
+(Facultativos) para prescribir productos farmacéuticos son: Los Médicos (Doctor en
+Medicina), Odontólogos (Doctor en Cirugía Dental) y Médicos Veterinarios,
+habilitados para el ejercicio de su profesión debidamente registrados por la Junta de
+Vigilancia respectiva.
+
+En las farmacias privadas y en los botiquines y/o farmacias hospitalarias, cuando la
+Dispensación o despacho, según corresponda, de medicamentos sea en
+cumplimiento a una receta médica (Prescripción), se debe garantizar que la receta
+cumpla con los criterios establecidos en el Art. 21 de la Ley de Medicamentos, y que
+la entrega de los mismos sea en la especie, concentración, forma farmacéutica,
+cantidad especificada y correspondiente a la receta médica, sin modificar el
+principio activo prescrito. Además, se deben cumplir los requerimientos
+establecidos por la DNM para esta actividad.
+
+En el caso de las farmacias privadas, al Dispensar o despachar, según corresponda,
+medicamentos a solicitud del paciente (sin receta médica), se debe verificar si el
+producto farmacéutico solicitado es de venta libre o bajo prescripción médica. Si el
+producto farmacéutico solicitado por el paciente o su representante es de venta
+libre, se realiza la Dispensación o despacho, según corresponda. El profesional
+Químico Farmacéutico, podrá ofrecer al paciente o su representante el servicio de
+Indicación Farmacéutica, de ser requerido.
+
+Si el producto farmacéutico es bajo prescripción médica, se deben considerar las
+disposiciones y requerimientos regulatorios establecidos por la DNM y la legislación
+aplicable. Será necesaria una receta médica, para el caso de medicamentos
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 12 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+biológicos, psicotrópicos, estupefacientes, citostáticos, antibióticos y otros que así
+establezca la DNM.
+
+En los casos particulares en los cuales las recetas médicas sean o estén:
+    a) Ilegibles,
+    b) Deterioradas o en mal estado,
+    c) No se logre comprender la prescripción,
+    d) No cuenten con la información mínima necesaria,
+    e) La prescripción no se encuentra vigente,
+    f) No cumpla con lo establecido en los Art. 19 y 21 de la Ley de Medicamentos,
+    g) O su cumplimiento pueda poner en riesgo la salud y/o seguridad del
+       paciente;
+El profesional Químico Farmacéutico, o los Dependientes bajo la supervisión del
+Regente del establecimiento farmacéutico, informaran de lo anterior al paciente o
+su representante, refiriéndolo nuevamente al profesional Facultativo.
+
+Cuando el producto farmacéutico requiera condiciones especiales de conservación
+para su transporte, el profesional Químico Farmacéutico, o los Dependientes bajo la
+supervisión del Regente del establecimiento farmacéutico, deben informar al
+paciente o su representante, sobre las características necesarias para el
+mantenimiento de la estabilidad y calidad del producto, y en todo caso deben
+cerciorarse que se cuente con las condiciones necesarias para el transporte de los
+mismos (productos farmacéuticos termolábiles, fotosensibles, entre otros).
+
+El profesional Químico Farmacéutico o los Dependientes, que realicen dichas
+actividades, deben informar al paciente o su representante que, de sospechar que el
+medicamento le ha generado una reacción adversa o que haya presentado
+inefectividad terapéutica u otros Problemas Relacionados a los Medicamentos,
+pueden informarlo al Referente de Farmacovigilancia del establecimiento o
+notificarlo directamente al Centro Nacional de Farmacovigilancia del Ministerio de
+Salud, en cumplimiento a la Norma Técnica de Farmacovigilancia.
+
+Al momento de realizar la Dispensación o despacho de medicamentos, según
+corresponda, de productos farmacéuticos se recomienda el uso del formato del
+Anexo No. 01 Etiqueta Informativa para la Dispensación y Anexo No. 02 Ejemplo
+Etiqueta Informativa para la Dispensación.
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 13 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+El profesional Químico Farmacéutico que ejerce como Regente de la farmacia
+privada o del botiquín y/o farmacia hospitalaria, debe asegurar que, en el
+establecimiento se cuente con un manual o procedimiento en el cual se describa el
+proceso de Dispensación, expendio o despacho de productos farmacéuticos, para lo
+cual se recomienda que estos cumplan con las disposiciones establecidas en el
+apartado de directrices para la elaboración de procedimientos descritos en este
+documento.
+
+ b) DE LA CONCILIACIÓN DE LA MEDICACIÓN:
+
+La Conciliación de la Medicación (CM) es un servicio de salud que consiste en
+comparar y confrontar la medicación habitual del paciente, con la nueva medicación
+prescrita por un Facultativo, posterior a una nueva consulta médica o transición
+entre niveles asistenciales, ya sea por un padecimiento diferente, especialidad
+médica diferente, el alta hospitalaria o por cambios en los estilos de vida de los
+pacientes con la finalidad de detectar las discrepancias, márgenes terapéuticos,
+duplicidad, divergencias y/o interacciones no intencionadas entre medicamentos,
+alimentos, productos naturales y otros; y comunicarlas al prescriptor para que
+pueda resolverlas si procede.
+
+Los profesionales Químicos Farmacéuticos que presten el servicio de Conciliación
+de la Medicación (CM) deben garantizar al paciente o su representante una atención
+de calidad, propiciando un trato igualitario y el respeto al derecho a la información
+y confidencialidad de cada paciente establecidos en la Ley de Deberes y Derechos de
+los Pacientes y Prestadores de Servicios de Salud.
+
+Para el desarrollo del proceso de CM, se requieren al menos, los siguientes
+elementos:
+
+   1. Previo a la prestación del servicio de CM, en la farmacia privada o en el
+      botiquín y/o farmacia hospitalaria, se debe contar con procedimientos
+      operativos estandarizados y estructurados para la prestación de estos
+      servicios, los cuales deben estar debidamente autorizados (firmado y
+      sellado) por el Regente Químico Farmacéutico del establecimiento. (Se
+      recomienda que los manuales, protocolos y procedimientos cumplan con las
+      disposiciones establecidas en el apartado de directrices para la elaboración
+      de procedimientos descrito en este documento). Este servicio se debe prestar
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 14 de 43
+           JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                          FARMACÉUTICA
+
+
+
+   en un área en la cual se pueda asegurar la privacidad y confidencialidad con
+   usuarios y pacientes.
+
+2. El profesional Químico Farmacéutico que presta el servicio de CM, debe
+   informar de manera adecuada, suficiente y continua, al paciente o su
+   representante, sobre las características del servicio de CM, y que se pretende
+   lograr con este servicio. Dicha información debe ser entregada al paciente o
+   su representante de manera verbal y por escrito.
+
+3. Si el paciente o su representante estuviese de acuerdo con la prestación del
+   servicio de CM, deben suscribir con el profesional Químico Farmacéutico, el
+   consentimiento informado para la prestación de este servicio de salud y debe
+   facilitar una copia de este al paciente o su representante.
+
+4. Una vez autorizado el servicio, el profesional Químico Farmacéutico debe
+   entrevistar al paciente o su representante, con la finalidad de construir el
+   Historial de Medicación (HM) del paciente, debidamente actualizado, preciso
+   y completo. (Esto incluye una lista completa de medicamentos, incluyendo
+   medicamentos recetados, medicamentos sin receta, plantas medicinales,
+   suplementos, vitaminas y otras terapias alternativas o complementarias). Así
+   como recabar otra información relacionada sobre medicamentos y alergias.
+   (Incluye hábitos de estilos de vida como el consumo de tabaco y alcohol, entre
+   otros.).
+
+5. Una vez estructurado el HM, el profesional Químico Farmacéutico debe
+   compararlo con los medicamentos prescritos al ingreso, en el traslado del
+   paciente hospitalizado, en el domicilio del paciente o al solicitar el servicio,
+   buscando detectar e identificar posibles discrepancias.
+
+6. Reconciliar discrepancias clasificándolas como justificadas o no justificadas.
+
+7. Con el proceso de reconciliación de discrepancias el profesional Químico
+   Farmacéutico debe realizar las siguientes acciones:
+- Recomendar medidas conservadoras, nutricionales, dietéticas o físicas
+   (Hábitos de vida saludable).
+- Remitir al paciente con un Facultativo o el profesional de la salud idóneo.
+   (Doctor en Medicina, Doctor en Cirugía Dental, Fisioterapeuta, Nutricionista,
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+             FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                           Página 15 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+       Especialista, entre otros.). Al remitir al paciente con un Facultativo o el
+       profesional de la salud idóneo, el profesional Químico Farmacéutico debe
+       entregar copia de la documentación recolectada en el servicio de salud.
+   -   Otras que se consideren necesarias para el mantenimiento de la buena salud.
+
+El HM se utiliza como guía para informar la prescripción de nuevos medicamentos
+por parte de los Facultativos o para comparar nuevos medicamentos prescritos al
+ingreso, durante los traslados, al alta o a través de varios prescriptores en el ajuste
+ambulatorio.
+
+Las discrepancias incluyen:
+   1. Omisión de medicamentos.
+   2. Adición de medicamentos.
+   3. Duplicación de medicamentos.
+   4. Sustitución de clase terapéutica (cambio de medicamento).
+   5. Interacciones y contraindicaciones.
+   6. Alergia o intolerancia.
+   7. Poco claro/incorrecto/omisión de fuerza.
+   8. Poco claro/incorrecto/omisión de frecuencia.
+   9. Poco claro/incorrecto/omisión de unidades.
+   10. Poco claro/incorrecto/omisión de la forma de dosificación.
+   11. Poco claro/incorrecto/omisión de la vía de administración.
+   12. Hora de administración poco clara/errónea/diferente.
+   13. Duración incierta/incorrecta de la terapia.
+
+Para el proceso de CM se recomienda el uso del Anexo No. 03 “PLANTILLA DE
+CONCILIACIÓN DE LA MEDICACIÓN”, y el Anexo No. 04 “HERRAMIENTA DE
+CONCILIACIÓN DE LA MEDICACIÓN”. (Los cuales son de carácter recomendatorio).
+Lo ideal es el uso de instrumentos o la metodología comprobada y aprobada,
+establecida por el Regente del establecimiento, por profesionales calificados y las
+instituciones prestadoras de servicios de salud.
+
+El profesional Químico Farmacéutico debe adjuntar o remitir toda la documentación
+generada en la CM, al expediente clínico del paciente, de no contarse con un
+expediente clínico debe elaborar uno en cumplimiento a las disposiciones
+establecidas en la Norma Técnica para la Conformación, Custodia y Consulta de
+Expediente Clínico, y demás legislación aplicable. En el caso de los botiquines y/o
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 16 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+farmacias hospitalarias, de no poder incorporarse esta documentación en el
+expediente clínico, deberá ser resguardada en un subexpediente de Atención
+Farmacéutica que se archivará en el servicio de farmacia.
+
+ c) FARMACOVIGILANCIA:
+
+Se refiere a las actividades de salud pública relacionadas con la detección,
+evaluación, comprensión y prevención de reacciones adversas o cualquier otro
+problema de salud relacionado con medicamentos o vacunas.
+
+Siendo uno de sus objetivos mejorar la atención y la seguridad del paciente en
+relación con el uso de productos farmacéuticos, productos naturales, suplementos
+vitamínicos, vacunas, homeopáticos y donativos de los antes mencionados y todas
+las intervenciones médicas.
+
+El profesional Químico Farmacéutico que realice actividades de Farmacovigilancia
+en establecimientos prestadores de servicios de salud, a nivel público o privado,
+debe garantizar al paciente una atención de calidad, propiciando un trato igualitario
+y el respeto al derecho a la información y confidencialidad de cada paciente,
+establecidos en la Ley de Deberes y Derechos de los Pacientes y Prestadores de
+Servicios de Salud y la Norma Técnica de Farmacovigilancia.
+
+Es obligación de los profesionales Químicos Farmacéuticos, notificar las sospechas
+de Reacciones Adversas a Medicamentos (RAM), los Eventos Supuestamente
+Atribuibles a la Vacunación e Inmunización (ESAVI), los Problemas Relacionados a
+los Medicamentos (PRM), los Resultados Negativos asociados a la Medicación
+(RNM), falla terapéutica, errores de medicación, intoxicaciones y otros, al Centro
+Nacional de Farmacovigilancia del Ministerio de Salud, en cumplimiento a la Norma
+Técnica de Farmacovigilancia.
+
+Es obligación de todo Dependiente de farmacia privada o del botiquín y/o farmacia
+hospitalaria, colaborar con los profesionales Químicos Farmacéuticos y los demás
+Profesionales de la Salud, cuando en el ejercicio de sus actividades, conozcan sobre
+la sospechas de Reacciones Adversas a Medicamentos (RAM), los Eventos
+Supuestamente Atribuibles a la Vacunación e Inmunización (ESAVI), los Problemas
+Relacionados a los Medicamentos (PRM), los Resultados Negativos asociados a la
+Medicación (RNM), falla terapéutica, errores de medicación, intoxicaciones y otros,
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 17 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+dando cumplimiento a la Norma Técnica de Farmacovigilancia y a la legislación
+aplicable, en lo que corresponda.
+
+La regulación relativa al Ejercicio Profesional de los profesionales Químicos
+Farmacéuticos que laboran como Referentes de Farmacovigilancia en los
+establecimientos farmacéuticos y establecimientos prestadores de servicios de
+salud, se realizará por medio de Directrices específicas para cada tipo de actividad.
+
+Los profesionales Químicos Farmacéuticos que ejercen como Referentes de
+Farmacovigilancia, deberán dar cumplimiento a las disposiciones técnicas
+establecidas en la Norma Técnica de Farmacovigilancia, relacionadas con su labor
+profesional. Deben elaborar procedimientos o protocolos estandarizados de trabajo,
+para realizar las actividades de Farmacovigilancia, de conformidad a lo establecido
+en la Norma Técnica de Farmacovigilancia, las Directrices que para tal fin elabore
+esta Junta de Vigilancia, y demás legislación aplicable, para lo cual se recomienda
+que estos procedimientos, cumplan con las disposiciones establecidas en el
+apartado de directrices para la elaboración de procedimientos, descrito en este
+documento.
+
+ d) INDICACIÓN FARMACÉUTICA:
+
+La Indicación Farmacéutica (IF) es el Servicio Profesional Farmacéutico Asistencial
+(SPFA) prestado por un profesional Químico Farmacéutico, ante la consulta de un
+problema de salud concreto, para un paciente o su cuidador que llega a la farmacia
+privada, solicitando el remedio más adecuado para dicho problema. Se simboliza
+con la frase: “¿Qué me da para…?”. Si la actuación como resultado del servicio
+requiere la Dispensación de un medicamento o producto sanitario, esta se realizará
+de acuerdo al procedimiento del servicio de Dispensación.
+
+El profesional Químico Farmacéutico que preste el servicio de Indicación
+Farmacéutica (IF) debe garantizar al paciente una atención de calidad, propiciando
+un trato igualitario y el respeto al derecho a la información y confidencialidad de
+cada paciente, establecidos en la Ley de Deberes y Derechos de los Pacientes y
+Prestadores de Servicios de Salud.
+
+La IF es el acto profesional, en el cual el profesional Químico Farmacéutico, desde la
+farmacia privada, recomienda a un paciente o a su cuidador, uno o más productos
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 18 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+farmacéuticos, que no requieren prescripción médica, es decir medicamentos de
+venta libre, lo anterior con la finalidad de lograr el autocuidado de la salud de los
+pacientes.
+
+En la IF el profesional Químico Farmacéutico informa, aconseja e instruye sobre la
+correcta utilización de los productos farmacéuticos, utilizando sus conocimientos
+técnicos especializados, como experto en medicamentos, documentación oficial
+emitida por las autoridades regulatorias y de referencia, farmacologías, diccionario
+de especialidades farmacéuticas y su gestión en el ciclo de vida del producto (PLM),
+y demás documentación basada en evidencia, si el problema de salud no
+corresponde a síntomas menores, debe referir al paciente a un Facultativo.
+
+Para los fines de las presentes Directrices se entenderá como síntomas menores a
+los problemas de salud de carácter no grave, autolimitados, de corta duración, que
+no tienen relación alguna con las manifestaciones clínicas de los otros problemas de
+salud que sufra el paciente, ni con los efectos deseados o no, de los medicamentos
+que toma, que no precisa diagnóstico médico y que responde o se alivia con un
+tratamiento sintomático.
+
+Al prestar el servicio de IF, el profesional Químico Farmacéutico debe realizar
+sistemáticamente lo siguiente:
+
+   1. Previo a la prestación del servicio de IF, en la farmacia privada, se debe
+      contar con procedimientos operativos estandarizados y estructurados para
+      la prestación de este servicio, los cuales deben estar debidamente
+      autorizados (firmado y sellado) por el Regente Químico Farmacéutico de la
+      farmacia. (Se recomienda que los manuales, protocolos y procedimientos
+      cumplan con las disposiciones establecidas en el apartado de directrices para
+      la elaboración de procedimientos, descrito en este documento). Dicho
+      servicio se debe prestar en un área, en la cual se pueda asegurar la privacidad
+      y confidencialidad con usuarios y pacientes.
+
+   2. El profesional Químico Farmacéutico que presta el servicio de IF, debe
+      informar de manera adecuada, suficiente y continua, al paciente o su
+      representante, sobre las características y lo que se pretende lograr del
+      mismo. La información debe ser entregada al paciente o su representante de
+      manera verbal y por escrito.
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 19 de 43
+              JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                             FARMACÉUTICA
+
+
+
+
+   3. Si el paciente o su representante estuviese de acuerdo con la prestación del
+      servicio de IF, deben suscribir con el profesional Químico Farmacéutico, el
+      consentimiento informado para la prestación de este servicio de salud y debe
+      facilitar una copia de este al paciente o su representante.
+
+   4. Una vez autorizado el servicio el profesional Químico Farmacéutico debe
+      entrevistar al paciente o su representante para recoger la información
+      imprescindible, como: signo, síntoma y su duración, motivo de consulta,
+      acciones llevadas a cabo por el paciente, medicación, otros problemas de
+      salud, tales como alergias entre otros.
+
+   5. El profesional Químico Farmacéutico debe realizar una evaluación del
+      problema planteado y la toma de decisión correspondiente, que puede
+      consistir en:
+      5.1 Si el problema de salud corresponde a síntomas menores:
+   - Recomendar medidas conservadoras, nutricionales, dietéticas o físicas
+      (Hábitos de vida Saludables).
+   - Recomendar o indicar una especialidad farmacéutica que no requiera
+      prescripción médica y seleccionada de acuerdo con la situación concreta.
+   - Ofrecer al paciente la posibilidad de recibir otro tipo de servicio de atención
+      farmacéutica (Conciliación de la Medicación, Farmacovigilancia, Seguimiento
+      Farmacoterapéutico, entre otros).
+
+       5.2 Si el problema de salud no corresponde a síntomas menores:
+   -   Remitir al paciente con un Facultativo o el profesional de la salud idóneo.
+       (Doctor en Medicina, Doctor en Cirugía Dental, Fisioterapeuta, Nutricionista,
+       entre otros). Al remitir al paciente con un Facultativo o al profesional de la
+       salud idóneo, el profesional Químico Farmacéutico debe entregar copia de la
+       documentación recolectada en el servicio de salud.
+
+Para el proceso de IF se recomienda el uso del Anexo No. 05 “PLANTILLA DE
+SERVICIO DE INDICACIÓN FARMACÉUTICA”. Lo ideal es el uso de instrumentos o la
+metodología comprobada y aprobada, establecida por el Regente del
+establecimiento, por profesionales calificados y las instituciones prestadoras de
+servicios de salud.
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 20 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+Si el resultado de la IF es la recomendación de medidas conservadoras,
+nutricionales, dietéticas o físicas, como mejorar alimentación, desarrollo de estilos
+de vida saludables, entre otros, el profesional Químico Farmacéutico que realiza la
+IF, debe entregar las recomendaciones por escrito al paciente o su representante, se
+recomienda entregar copia de la PLANTILLA DE SERVICIO DE INDICACIÓN
+FARMACÉUTICA, con los datos consignados en la misma.
+
+Si el resultado de la IF es indicar una especialidad farmacéutica que no requiera
+prescripción médica y seleccionada de acuerdo con la situación concreta, el
+profesional Químico Farmacéutico debe informar de esto al paciente o su
+representante, se recomienda entregar copia de la PLANTILLA DE SERVICIO DE
+INDICACIÓN FARMACÉUTICA, con los datos consignados en la misma. Además,
+junto con la Dispensación, se recomienda utilizar el Anexo No. 01 Etiqueta
+Informativa para la Dispensación, entregándole dicha información al paciente o su
+representante.
+
+Si el resultado de la IF es remitir al paciente con un Facultativo o el profesional de la
+salud idóneo, el profesional Químico Farmacéutico debe informar de esto al paciente
+o su representante; se recomienda entregar copia de la PLANTILLA DE SERVICIO DE
+INDICACIÓN FARMACÉUTICA, con los datos consignados en la misma.
+
+El profesional Químico Farmacéutico debe adjuntar o remitir toda la documentación
+generada con el servicio de IF, al expediente clínico del paciente, de no contarse con
+un expediente clínico debe elaborar uno en cumplimiento a las disposiciones
+establecidas en la Norma Técnica para la Conformación, Custodia y Consulta de
+Expediente Clínico y demás legislación aplicable.
+
+ e) PREPARACIÓN DE MEDICAMENTOS:
+
+La Preparación de Medicamentos es el acto profesional mediante el cual, un
+profesional Químico Farmacéutico elabora, diluye y/o transforma productos
+farmacéuticos, tales como preparaciones magistrales y oficinales, citostáticos,
+nutrición parenteral y enteral, dermatológicos, unidosis, radiofármacos, entre otros;
+que por tratarse de tratamientos individualizados deben ser preparados en áreas
+especializadas debidamente autorizadas por la Dirección Nacional de
+Medicamentos (DNM), según el tipo de establecimiento.
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 21 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+El profesional Químico Farmacéutico que presta el servicio de Preparación de
+Medicamentos, debe garantizar al paciente una atención de calidad, propiciando un
+trato igualitario y el respeto al derecho a la información y confidencialidad de cada
+paciente, establecidos en la Ley de Deberes y Derechos de los Pacientes y
+Prestadores de Servicios de Salud, así como el cumplimiento de las disposiciones
+establecidas en la Ley de Medicamentos.
+
+Los profesionales Químicos Farmacéuticos que prestan el servicio de Preparación
+de Medicamentos, deben establecer procedimientos o protocolos operativos
+estandarizados de trabajo, para realizar las actividades de Preparación de
+Medicamentos, los cuales deben estar debidamente autorizado por el Regente
+Químico Farmacéutico de la farmacia privada, del botiquín y/o farmacia hospitalaria
+o por el director del servicio hospitalario respectivo, para lo cual se recomienda que
+estos procedimientos, cumplan con las disposiciones establecidas en el apartado de
+directrices para la elaboración de procedimientos, descrito en este documento.
+
+Los procedimientos deben cumplir con las disposiciones establecidas en la
+legislación farmacéutica y normas vigentes, y los requerimientos establecidos por la
+Dirección Nacional de Medicamentos (DNM).
+
+Al momento de la Dispensación de los medicamentos preparados, el profesional
+Químico Farmacéutico que realiza dicha preparación debe asegurar que, en las
+etiquetas, de los envases primarios y secundarios de dichos preparados, se cuente
+con al menos la siguiente información:
+
+   a) Denominación del preparado (Preparaciones magistrales y oficinales,
+      citostáticos, nutrición parenteral y enteral, dermatológicos, unidosis,
+      radiofármacos, entre otros). En el caso de una fórmula magistral tipificada
+      (fórmula descrita en un formulario) debe coincidir con la establecida en
+      Farmacopeas u otros formularios de reconocido prestigio internacional.
+   b) Composición cualitativa y cuantitativa completa de los principios activos y de
+      los excipientes.
+   c) Forma farmacéutica, vía de administración y cantidad dispensada.
+   d) Número de registro interno de la preparación o en el libro recetario.
+   e) Número de lote.
+   f) Fecha de elaboración y plazo de validez (Fecha de Vencimiento).
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 22 de 43
+              JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                             FARMACÉUTICA
+
+
+
+   g) Condiciones de conservación y condiciones especiales de uso, como: “Agítese
+      antes de usar”, “Uso externo”, entre otros.
+   h) Nombre del paciente, excepto fórmulas oficinales.
+   i) Nombre del servicio farmacéutico o farmacia: colocar el nombre de la
+      farmacia, dirección, número de teléfono, nombre y número de JVPQF del
+      profesional Químico Farmacéutico responsable.
+   j) Advertencia: “Manténgase fuera del alcance de los niños” u otras leyendas
+      precautorias, cuando aplique, tales como: “Uso externo”, “Tóxico”, “No
+      consuma alcohol”, “No usar durante el embarazo”, entre otros.
+   k) Observaciones y recomendaciones.
+   l) Información relacionada a farmacovigilancia, y donde notificar en caso de la
+      sospecha de una RAM, PRM o RNM.
+
+Para lo anterior, se recomienda el uso del formato descrito en el Anexo Nº 06
+ETIQUETA PARA LA DISPENSACIÓN DE MEDICAMENTOS PREPARADOS. Lo ideal es
+el uso de instrumentos o la metodología comprobada y aprobada, establecida por el
+Regente del establecimiento, por profesionales calificados y las instituciones
+prestadoras de servicios de salud.
+
+Cuando la dimensión del envase no permita la inclusión de todos los datos
+mencionados, aquellos que no se hayan podido incluir en el etiquetado, se deben
+entregar junto con la información escrita o prospecto dirigido al paciente o
+profesional de la salud, según el caso, que deberá acompañar a la Dispensación del
+preparado.
+
+La Dispensación de un preparado de medicamento deberá ir acompañada de
+información personalizada y suficiente que garantice una correcta identificación,
+conservación y utilización del tratamiento.
+
+Además de la información establecida en la etiqueta del producto, y cuando esto sea
+procedente, el profesional Químico Farmacéutico debe informar al paciente o su
+representante sobre la siguiente información:
+a) Efecto terapéutico esperado.
+b) Dosis a administrar.
+c) Vía de administración.
+d) Frecuencia, horario, duración y forma de administración.
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 23 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+e) En caso de pacientes con prescripción múltiple se debe orientar en la elaboración
+de un horario que evite su administración simultánea con medicamentos que
+puedan ocasionar interacciones indeseables.
+f) Precauciones durante su utilización, especialmente en grupos especiales de
+población (niños, mujeres embarazadas o en período de lactancia, ancianos,
+deportistas, patologías específicas, entre otras).
+g) Reacciones adversas más frecuentes.
+h) Posibles efectos sobre la capacidad de conducción de vehículos o de manipulación
+de determinadas máquinas.
+i) Conservación adecuada del medicamento.
+j) Interacciones con alimentos, otros medicamentos y/o plantas medicinales.
+k) Otra información relevante, que asegure el uso racional y seguro del producto
+farmacéutico.
+
+Para lo anterior, se recomienda el uso del formato descrito en el Anexo Nº 07 HOJA
+INFORMATIVA SOBRE EL MEDICAMENTO PREPARADO. Lo ideal es el uso de
+instrumentos o la metodología comprobada y aprobada, establecida por el Regente
+del establecimiento, por profesionales calificados y las instituciones prestadoras de
+servicios de salud.
+
+El profesional Químico Farmacéutico que realiza la Dispensación del medicamento
+preparado, debe confirmar que el paciente, su representante o el profesional de la
+salud que recibe, ha comprendido la información proporcionada. También instruirlo
+para que, ante la sospecha de una RAM, PRM o RNM, retorne a la farmacia privada,
+al botiquín y/o farmacia hospitalaria o al servicio respectivo, para la realización de
+la notificación al Centro Nacional de Farmacovigilancia del Ministerio de Salud, en
+cumplimiento a la Norma Técnica de Farmacovigilancia.
+
+ f) SEGUIMIENTO DE LA ADHERENCIA TERAPÉUTICA:
+
+El Seguimiento de la Adherencia Terapéutica es el Servicio Profesional Farmacéutico
+Asistencial (SPFA) en el que el profesional Químico Farmacéutico, ante las
+potenciales dificultades que pueda presentar un paciente en el uso de su terapia,
+identifica las causas y mediante su intervención, en su caso en coordinación con
+otros agentes sanitarios, colabora con el paciente para que siga las recomendaciones
+sobre el adecuado proceso de uso de los medicamentos y productos de salud, con
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 24 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+los hábitos higiénico-dietéticos y/o con el estilo de vida, para conseguir los
+resultados esperados de su tratamiento.
+
+El profesional Químico Farmacéutico que preste el servicio de Seguimiento de la
+Adherencia Terapéutica, debe garantizar al paciente una atención de calidad,
+propiciando un trato igualitario y el respeto al derecho a la información y
+confidencialidad de cada paciente, establecidos en la Ley de Deberes y Derechos de
+los Pacientes y Prestadores de Servicios de Salud.
+
+La Organización Mundial de la Salud (OMS) considera la falta de cumplimiento de
+los tratamientos crónicos (falta de adherencia terapéutica) y sus consecuencias
+clínicas y económicas negativas, un tema prioritario de la salud pública.
+
+Al prestar el Seguimiento de la Adherencia Terapéutica, el profesional Químico
+Farmacéutico debe realizar sistemáticamente lo siguiente:
+   1. Previo a la prestación del servicio de Seguimiento de la Adherencia
+       Terapéutica, en la farmacia privada o en el botiquín y/o farmacia
+       hospitalaria, se debe contar con procedimientos operativos estandarizados y
+       estructurados para la prestación de este servicio, los cuales deben estar
+       debidamente autorizado (firmado y sellado) por el Regente Químico
+       Farmacéutico del establecimiento (Se recomienda que los manuales,
+       protocolos y procedimientos cumplan con las disposiciones establecidas en
+       el apartado de directrices para la elaboración de procedimientos descrito en
+       este documento). Este servicio se debe prestar en un área, en la cual se pueda
+       asegurar la privacidad y confidencialidad con usuarios y pacientes.
+
+   2. Cuando el profesional Químico Farmacéutico, considere necesario prestar el
+      servicio de Seguimiento a la Adherencia Terapéutica, debe entrevistar al
+      paciente o su representante, para recoger la información relacionada al uso
+      y utilización de los productos farmacéuticos. Para esto se recomienda el uso
+      de diferentes herramientas como:
+   a) Test de cumplimiento autocomunicado o test de Haynes-Sackett.
+   b) Test de Morisky-Green.
+   c) Otras pruebas, instrumentos o metodologías comprobadas y aprobadas,
+      establecida por el Regente del establecimiento, para el servicio de
+      Seguimiento de la Adherencia Terapéutica.
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 25 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+Para el proceso de Seguimiento de la Adherencia Terapéutica se recomienda el uso
+del Anexo No. 08 PLANTILLA DE TEST DE HAYNES-SACKETT (adaptado) y/o Anexo
+Nº 09 PLANTILLA DE TEST DE MORISKY-GREEN (adaptado). Lo ideal es el uso de
+instrumentos o la metodología comprobada y aprobada, establecida por el Regente
+del establecimiento, por profesionales calificados y las instituciones de salud.
+
+ g) SEGUIMIENTO FARMACOTERAPÉUTICO:
+
+El Seguimiento Farmacoterapéutico (SFT) es el Servicio Profesional Farmacéutico
+Asistencial (SPFA) que tiene como objetivo la detección de Problemas Relacionados
+a los Medicamentos (PRM), para la prevención y resolución de Resultados Negativos
+asociados a la Medicación (RNM). Este Servicio implica un compromiso, y debe
+proveerse de forma continuada, sistematizada y documentada, en colaboración con
+el propio paciente y con los demás profesionales del sistema de salud, con el fin de
+alcanzar resultados concretos que mejoren la calidad de vida del paciente.
+
+El profesional Químico Farmacéutico que preste el servicio de SFT, debe garantizar
+al paciente una atención de calidad, propiciando un trato igualitario y el respeto al
+derecho a la información y confidencialidad de cada paciente, establecidos en la Ley
+de Deberes y Derechos de los Pacientes y Prestadores de Servicios de Salud.
+
+Se recomienda utilizar la metodología Dáder para la prestación del servicio de SFT
+El profesional Químico Farmacéutico debe realizar sistemáticamente lo siguiente:
+
+   1. Previo a la prestación del servicio de SFT, en la farmacia privada o en el
+      botiquín y/o farmacia hospitalaria, se debe contar con procedimientos
+      operativos estandarizados y estructurados para la prestación de este
+      servicio, los cuales deben estar debidamente autorizado (firmado y sellado)
+      por el Regente Químico Farmacéutico de la farmacia (Se recomienda que los
+      manuales, protocolos y procedimientos cumplan con las disposiciones
+      establecidas en el apartado de directrices para la elaboración de
+      procedimientos, descrito en este documento). Dicho servicio se debe prestar
+      en un área, en la cual se pueda asegurar la privacidad y confidencialidad con
+      usuarios y pacientes.
+
+   2. El profesional Químico Farmacéutico que presta el servicio de SFT, debe
+      informar de manera adecuada, suficiente y continua, al paciente o su
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 26 de 43
+               JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                              FARMACÉUTICA
+
+
+
+       representante, sobre las características y lo que se pretende lograr del
+       servicio de SFT. La información debe ser entregada al paciente o su
+       representante, de manera verbal y por escrito.
+
+   3. Si el paciente o su representante, estuviese de acuerdo con la prestación del
+      servicio de SFT, deben suscribir con el profesional Químico Farmacéutico, el
+      consentimiento informado para la prestación de este servicio de salud y debe
+      facilitar una copia de este al paciente o su representante.
+
+   4. Una vez autorizado el servicio, el profesional Químico Farmacéutico debe
+      realizar las actividades según el método Dáder o metodologías comprobadas
+      y aprobadas, establecidas por el Regente del establecimiento.
+
+El profesional Químico Farmacéutico debe adjuntar o remitir toda la documentación
+generada en el servicio de SFT, al expediente clínico del paciente, de no contarse con
+un expediente clínico debe elaborar uno en cumplimiento a las disposiciones
+establecidas en la Norma Técnica para la Conformación, Custodia y Consulta de
+Expediente Clínico, y demás legislación aplicable. En el caso de los botiquines y/o
+farmacias hospitalarias, de no poder incorporarse esta documentación en el
+expediente clínico, deberá ser resguardada en un subexpediente de Atención
+Farmacéutica que se archivará en el servicio de farmacia.
+
+   VII) DIRECTRICES   PARA                     LA        ELABORACION              DE
+        PROCEDIMIENTOS
+
+Como se describe en la sección anterior, para la prestación de los Servicios
+Profesionales Farmacéuticos Asistenciales (SPFA) incluidos en la Atención
+Farmacéutica (AF), en las farmacias privadas, botiquines y/o farmacias
+hospitalarias, se deben contar con ciertos procedimientos operativos
+estandarizados, formatos y documentos, los cuales podrían ser elaborados por el
+Regente, o gestionados para que otro profesional Químico Farmacéutico
+debidamente autorizado los elabore, pero todos estos procedimientos, formatos y
+documentos, deben ser siempre Autorizados por el Regente de los establecimientos
+farmacéuticos.
+
+El fin de los procedimientos es estandarizar y estructurar los mecanismos de los
+Servicios Profesionales Farmacéuticos Asistenciales (SPFA) incluidos en la Atención
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 27 de 43
+              JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                             FARMACÉUTICA
+
+
+
+Farmacéutica (AF), así como facilitar el trabajo dentro de las farmacias privadas,
+botiquines y/o farmacias hospitalarias, estableciendo procesos claros y confiables,
+con la finalidad que el personal que labora en estas cumpla con la legislación
+farmacéutica aplicable.
+Por esa razón se recomienda al profesional Químico Farmacéutico, que los
+manuales, protocolos o procedimientos tengan al menos, los siguientes
+componentes:
+
+   1. Nombre del procedimiento: Colocado como membrete, presenta el título que
+      mejor describa el contenido del procedimiento, podría o no estar
+      acompañada del logo e información del establecimiento.
+
+   2. Código del procedimiento: Código correlativo que pueda ser utilizado para
+      identificar y trazar un procedimiento.
+
+   3. Versión del procedimiento: Número correlativo que describe las veces que
+      ha sido actualizado un procedimiento.
+
+   4. Fecha de aprobación: Fecha en la cual el Propietario/Representante
+      Legal/Apoderado/Director del establecimiento, reviso y aprobó el contenido
+      total de un procedimiento.
+
+   5. Número de páginas: cantidad de páginas que componen un procedimiento.
+      Esto permite verificar que no será incluida más información en el
+      procedimiento, que la que fue aprobada por el Propietario/Representante
+      Legal/Apoderado/Director.
+
+   6. Nombre y Firma de quien elaboró: Persona que elaboró el procedimiento,
+      quien deberá tener la experticia técnica.
+
+   7. Nombre y Firma de quien revisa: Persona delegada por el
+      Propietario/Representante Legal/Apoderado/Director quien se encargará
+      de revisar el contenido del procedimiento y quien dará fe de su correcto
+      contenido y orden.
+
+   8. Nombre y Firma del Propietario/Representante Legal/Apoderado/Director
+      que Aprueba      el procedimiento: el        Propietario/Representante
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 28 de 43
+           JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                          FARMACÉUTICA
+
+
+
+   Legal/Apoderado/Director es el responsable de la aprobación de los
+   procedimientos, además este deberá garantizar su cumplimiento.
+
+9. Nombre, Firma y Sello del Regente, quien Autoriza el procedimiento: En caso
+   que no sea el Regente quien elabore los procedimientos, estos deberán ser
+   verificados y autorizados por el Regente del establecimiento y el mismo
+   deberá estar de acuerdo con todo su contenido técnico.
+
+10. Objetivo: Definir el propósito final que se persigue con la implementación del
+    procedimiento. La formulación del objetivo debe ser breve, clara, entendible
+    y precisa, atendiendo a las siguientes indicaciones: iniciar con un verbo en
+    infinitivo; señalar el qué y para qué servirá el manual o procedimiento; evitar
+    el uso de adjetivos calificativos, así como subrayar conceptos.
+
+11. Alcance: En este apartado se describe el área de aplicación del
+    procedimiento, es decir, a quiénes afecta o qué límites e influencia tiene.
+
+12. Conceptos y Definiciones: En este apartado se incluyen significados de las
+    palabras claves, principalmente aquellas relacionadas por la regulación y que
+    son colocadas para una mejor comprensión del contenido del procedimiento.
+
+13. Siglas: Se escriben todas las siglas que en el desarrollo del procedimiento se
+    utilicen.
+
+14. Responsabilidades: Se describen los cargos y principales responsabilidades
+    de cada uno de los miembros: Regente, profesionales de la salud, etc.
+
+15. Se entiende que todo aquello que queda escrito en un procedimiento, y está
+    debidamente aprobado y autorizado, es de estricto cumplimiento.
+
+16. Descripción y desarrollo de las actividades: Se describen los pormenores de
+    las actividades, incluyendo la frecuencia de su realización.
+
+17. Formatos: Cuadros o tablas preelaboradas, que son utilizados para facilitar
+    el acceso a la información en un documento.
+
+
+
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+             FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                           Página 29 de 43
+           JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                          FARMACÉUTICA
+
+
+
+18. Bibliografía: Se cita la fuente documental de la cual se ha tomado la
+    información. En este caso se cita la legislación que rige o norma el
+    procedimiento, así como aquellos recursos documentales que se hayan
+    tomado para sustentar los procesos. Se deberán respetar los derechos de
+    autor y demás legislación aplicable. Se recomienda realizar las citaciones
+    según Vancouver.
+
+19. Control de Cambios: Cuadros en los cuales se describen los cambios
+    realizados a los procedimientos, cada vez que los mismos son actualizados.
+
+20. Control de Lectura: Parte del procedimiento donde se documenta quien ha
+    leído el procedimiento y quien a su vez firma de entendido, y se compromete
+    a cumplirlo en todas y cada una de sus partes.
+
+21. Anexos: Apartados que, por motivos de espacio o distribución, se incluyen al
+    final del procedimiento, pero que han sido mencionados o referidos en el
+    contenido del procedimiento.
+
+22. Otros: Aquellos ítems que el Regente considere a bien deba contener el
+    procedimiento, en búsqueda de su mejor comprensión o aplicación.
+
+
+
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+             FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                           Página 30 de 43
+          JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                         FARMACÉUTICA
+
+
+
+VIII) LISTADO DE FORMATOS DE REGISTRO RECOMENDADOS
+
+ANEXO No. 01   ETIQUETA INFORMATIVA PARA LA DISPENSACIÓN.
+
+ANEXO No. 02   EJEMPLO ETIQUETA INFORMATIVA PARA LA DISPENSACIÓN.
+
+ANEXO No. 03   PLANTILLA DE CONCILIACIÓN DE LA MEDICACIÓN.
+
+ANEXO No. 04   HERRAMIENTA DE CONCILIACIÓN DE LA MEDICACIÓN.
+
+ANEXO No. 05   PLANTILLA DE SERVICIO DE INDICACIÓN FARMACÉUTICA.
+
+ANEXO No. 06 ETIQUETA PARA LA DISPENSACIÓN DE MEDICAMENTOS
+             PREPARADOS.
+
+ANEXO No. 07   HOJA INFORMATIVA SOBRE EL MEDICAMENTO PREPARADO.
+
+ANEXO No. 08 PLANTILLA DE TEST DE HAYNES-SACKETT (adaptado).
+
+ANEXO No. 09 PLANTILLA DE TEST DE MORISKY-GREEN (adaptado).
+
+
+
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+             FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                           Página 31 de 43
+           JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                          FARMACÉUTICA
+
+
+
+IX)   REFERENCIAS
+1. Decreto Nº 138. Constitución de la República de El Salvador. Asamblea
+    Legislativa de la República de El Salvador. Diario Oficial Nº 1234, TOMO Nº
+    1281 (1983).
+2. Decreto N° 955. Código de Salud. Asamblea Legislativa de la República de El
+    Salvador. Diario Oficial Nº 86. Tomo Nº 299 (1988).
+3. Decreto Nº 307. Ley de Deberes y Derechos de los pacientes y prestadores de
+    servicios de salud. Asamblea Legislativa de la República de El Salvador.
+    Diario Oficial Nº 64. Tomo Nº 411 (2016).
+4. Decreto Nº 1008. Ley de Medicamentos. Asamblea Legislativa de la República
+    de El Salvador. Diario Oficial Nº 43, Tomo Nº 394 (2012).
+5. Decreto Nº 1013. Ley de Vacunas. Asamblea Legislativa de la República de El
+    Salvador. Diario Oficial Nº 58. Tomo Nº 394 (2012).
+6. Decreto Nº 245. Reglamento General de la Ley de Medicamentos. Presidencia
+    de la República de El Salvador. Diario Oficial Nº 239, Tomo Nº 397 (2012).
+7. Código de Ética para la Profesión Químico Farmacéutica y sus actividades
+    técnicas y auxiliares. Junta de Vigilancia de la Profesión Químico
+    Farmacéutica. PUNTO DIEZ. ACUERDOS VARIOS, numeral Uno, Sesión
+    Ordinaria 102/2021, El Salvador (2021).
+8. Norma Técnica de Farmacovigilancia. Ministerio de Salud (MINSAL). Diario
+    Oficial Nº 138, tomo 436. Acuerdo No. 1690 (2022).
+9. Norma Técnica para la Conformación, Custodia y Consulta de Expediente
+    Clínico. Ministerio de Salud (MINSAL). Diario Oficial Nº 138, tomo 436.
+    Acuerdo No. 941 (2019).
+10. Organización Mundial de la Salud (OMS) - Federación Internacional
+    Farmacéutica (FIP). Buenas Prácticas de Farmacia. Directrices conjuntas
+    FIP/OMS sobre Buenas Prácticas en Farmacia: Estándares para la calidad de
+    los servicios farmacéuticos (2011).
+11. Organización Mundial de la Salud (OMS). Servicios farmacéuticos basados en
+    la atención primaria de salud. Documento de posición de la OPS/OMS.
+    Washington, DC: OPS (2013).
+12. Red de Autoridades en Medicamentos en Iberoamérica (RED EAMI). Guía de
+    Buenas Prácticas de elaboración y control de calidad de preparaciones
+    magistrales y oficinales (2016).
+13. Gómez E. Proyecto Revisa. Estudio del Impacto del Servicio de Revisión del
+    Uso de los Medicamentos (RUM) en España. Universidad de Málaga (2017).
+14. Grupo de Investigación en Atención Farmacéutica. Programa Dáder.
+    Metodología Dáder. Universidad de Granada (2007).
+15. Foro de Atención Farmacéutica-Farmacia Comunitaria (Foro AF-FC). Guía
+    práctica para los Servicios Profesionales Farmacéuticos Asistenciales en la
+    Farmacia Comunitaria. Madrid: Consejo General de Colegios Oficiales de
+    Farmacéuticos (2019).
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+             FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                           Página 32 de 43
+              JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                             FARMACÉUTICA
+
+
+
+   X)     DISPOSICIONES FINALES
+
+Las presentes DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO
+PROFESIONAL QUÍMICO FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA,
+versión 01, entrarán en vigencia una vez emitido el Acuerdo de Junta Directiva en
+Sesión Ordinaria 64/2023, de fecha 12 de octubre del 2023, PUNTO ONCE.
+ACUERDOS VARIOS, numeral 1.
+
+
+
+
+   DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+                FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                              Página 33 de 43
+          JUNTA DE VIGILANCIA DE LA PROFESIÓN QUÍMICO
+                         FARMACÉUTICA
+
+
+
+
+                           ANEXOS
+
+
+
+
+DIRECTRICES SOBRE BUENAS PRÁCTICAS DEL EJERCICIO PROFESIONAL QUÍMICO
+             FARMACÉUTICO EN LA ATENCIÓN FARMACEÚTICA
+                                                           Página 34 de 43
+ANEXO Nº 01                       ETIQUETA INFORMATIVA PARA LA DISPENSACIÓN
+
+                                                                    Forma                                             Cantidad
+Nombre del medicamento:
+                                                                    Farmacéutica:                                     dispensada:
+
+Principio(s) activo(s):                                                               Concentración:
+
+Lote:                                                                                 Vence:
+
+                                                                                      Dosis/Frecuencia/Vía de
+Duración del tratamiento:
+                                                                                      Administración:
+Almacenamiento:
+Recomendaciones:
+Modo de Uso:
+    Si sospecha que el medicamento ha generado una Reacción Adversa a Medicamento (RAM) o sospecha que ha presentado un Problema Relacionado a los
+  Medicamentos (PRM), puede comunicarse con el Centro Nacional de Farmacovigilancia (Ministerio de Salud) al teléfono: 131 o 2591-7554 o al correo electrónico:
+                                                             farmacovigilancia@salud.gob.sv.
+ANEXO Nº 02                       EJEMPLO ETIQUETA INFORMATIVA PARA LA DISPENSACIÓN
+
+                                                                    Forma                                             Cantidad
+Nombre del medicamento:        ACETAMINOFEN XYZ                     Farmacéutica:     TABLETA                         dispensada:     15 TABLETAS
+Principio(s) activo(s):        ACETAMINOFEN                                           Concentración:                  500 mg/Tableta
+Lote:                          0123456                                                Vence:                          10/2025
+                                                                                     1 TABLETA C/ 8 HORAS /
+                                                                                      Dosis/Frecuencia/Vía de
+Duración del tratamiento:      5 días                                                 Administración:
+                                                                                     ORAL
+Almacenamiento:                Mantener en lugar fresco y seco, a temperatura no mayor a 30°C.
+Recomendaciones:               No tomar más de 8 tabletas/día. (Tomando en cuenta dosis máxima recomendada).
+Modo de Uso:                   Tomar con las comidas, con un vaso con agua.
+    Si sospecha que el medicamento ha generado una Reacción Adversa a Medicamento (RAM) o sospecha que ha presentado un Problema Relacionado a los
+  Medicamentos (PRM), puede comunicarse con el Centro Nacional de Farmacovigilancia (Ministerio de Salud) al teléfono: 131 o 2591-7554 o al correo electrónico:
+                                                             farmacovigilancia@salud.gob.sv.
+ANEXO Nº 03 PLANTILLA DE CONCILIACIÓN DE LA MEDICACIÓN
+
+                                      NOMBRE DEL ESTABLECIMIENTO
+                         (Número de inscripción ante CSSP/DNM del establecimiento)
+         Nombre del Químico Farmacéutico que presta el servicio de Conciliación de la Medicación.
+                             Nº de JVPQF, Datos de contacto del establecimiento.
+            INFORMACIÓN SOLICITADA                           DATOS PERSONALES (CONFIDENCIAL)
+ Fecha de entrevista con el Químico Farmacéutico
+ Nombre del paciente
+ Número de DUI del paciente
+ Fecha de nacimiento (dd/mm/aaaa)
+ Género
+ Altura (metros) y peso (Kg)
+ El paciente cuenta con Seguro Social (Si/No)
+                                                    Teléfono:
+ Datos de contacto del paciente
+                                                    e-mail:
+ Alergias del paciente
+ Intolerancias del paciente
+ Información brindada por
+ paciente o por representante
+ Hábitos de estilo de vida
+ (tabaquismo, drogas, alcohol)
+
+
+ Cambios recientes de medicamentos
+ (dentro de los 1 a 6 meses anteriores)
+
+
+
+
+ El paciente ha aceptado el servicio por
+ medio de un consentimiento informado.
+
+Nota: Toda la información establecida en el presente registro corresponde exclusivamente a lo declarado por el paciente o su representante.
+
+
+Observaciones:
+
+
+
+            FIRMA DEL PACIENTE                                            FIRMA Y SELLO DEL PROFESIONAL
+            (o su Representante)                                              QUÍMICO FARMACÉUTICO
+        ANEXO Nº 04                      HERRAMIENTA DE CONCILIACIÓN DE LA MEDICACIÓN
+
+        Nombre del Paciente:                                                                                              Nº de DUI:                                     Fecha de Servicio:
+                                                                   Dosis, Frecuencia
+ Nombre genérico/Comercial                           Forma                                     Indicación              Estatus de prescripción                                                                Acción a tomar
+                                Concentración                          y Vía de                                                                         Datos del Facultativo         Discrepancias
+    del Medicamento                               Farmacéutica                                terapéutica                  / Dispensación                                                                    (Recomendación)
+                                                                    administración
+                                                                                                         □ Continúa
+                                                                                                                                                                                    □ Justificadas
+                                                                                                         □ Modificada
+                                                                                                                                                                                    □ No justificadas
+                                                                                                         □ Suspendida/descontinuada
+                                                                                                         □ Continúa
+                                                                                                                                                                                    □ Justificadas
+                                                                                                         □ Modificada
+                                                                                                                                                                                    □ No justificadas
+                                                                                                         □ Suspendida/descontinuada
+                                                                                                         □ Continúa
+                                                                                                                                                                                    □ Justificadas
+                                                                                                         □ Modificada
+                                                                                                                                                                                    □ No justificadas
+                                                                                                         □ Suspendida/descontinuada
+                                                                                                         □ Continúa
+                                                                                                                                                                                    □ Justificadas
+                                                                                                         □ Modificada
+                                                                                                                                                                                    □ No justificadas
+                                                                                                         □ Suspendida/descontinuada
+                                                                                                         □ Continúa
+                                                                                                                                                                                    □ Justificadas
+                                                                                                         □ Modificada
+                                                                                                                                                                                    □ No justificadas
+                                                                                                         □ Suspendida/descontinuada
+                                                                                                         □ Continúa
+                                                                                                                                                                                    □ Justificadas
+                                                                                                         □ Modificada
+                                                                                                                                                                                    □ No justificadas
+                                                                                                         □ Suspendida/descontinuada
+                                                                                                         □ Continúa
+                                                                                                                                                                                    □ Justificadas
+                                                                                                         □ Modificada
+                                                                                                                                                                                    □ No justificadas
+                                                                                                         □ Suspendida/descontinuada
+Nota: Toda la información establecida en el presente registro es confidencial y corresponde exclusivamente a lo declarado por el paciente o su representante.
+
+
+ Recomendaciones:
+
+
+
+
+                               FIRMA DEL PACIENTE                                                                                     FIRMA Y SELLO DEL PROFESIONAL
+                                (o su Representante)                                                                                     QUÍMICO FARMACÉUTICO
+
+
+
+                   Ejemplo tomado de International Pharmaceutical Federation (FIP). Medicines reconciliation: A toolkit for pharmacists. The Hague: International Pharmaceutical Federation; 2021 (Modificado)
+ANEXO Nº 05                        PLANTILLA DE SERVICIO DE INDICACIÓN FARMACÉUTICA
+
+                                 NOMBRE DEL ESTABLECIMIENTO
+                    (Número de inscripción ante CSSP/DNM del establecimiento)
+         Nombre del Químico Farmacéutico que presta el servicio de Indicación Farmacéutica.
+                       Nº de JVPQF, Datos de contacto del establecimiento.
+ INFORMACIÓN SOLICITADA (CONFIDENCIAL)            Número de registro interno:
+                                                                                                         Fecha de entrevista con el
+ Nombre del paciente
+                                                                                                         Químico Farmacéutico
+                                                                                                         Fecha de nacimiento
+ Nº de DUI:
+                                                                                                         (dd/mm/aaaa)
+ Altura (metros)                                                                                         El paciente cuenta con         □ Si
+ Peso (Kg)                                                                                               Seguro Social                  □ No
+ Datos de contacto del       Teléfono:
+                                                                                                                                        □ Masculino
+                                                                                                         Género
+ paciente                    e-mail:                                                                                                    □ Femenino
+ Motivo de la consulta
+
+
+ Descripción del
+ problema de salud
+ (Signos y Síntomas)
+
+ Medicación de uso concomitante
+ (recetados y sin receta, plantas
+ medicinales, vitaminas y otros)
+ Según la evaluación realizada por el      □ Recomendación de medidas conservadoras, nutricionales, dietéticas o físicas.
+ profesional Sanitario, el paciente        □ Indicación de especialidad farmacéutica, que no requiera prescripción médica.
+ requiere
+                                           □ Remitir al paciente con un Facultativo o el profesional de la salud idóneo.
+ Recomendaciones
+ (conservadoras, dietéticas o físicas)
+
+
+ Indicación Farmacéutica
+
+
+
+ Información para el Facultativo
+
+ Si sospecha que el medicamento ha generado una Reacción Adversa a Medicamento
+                                                                                                El paciente ha aceptado
+ (RAM) o sospecha que ha presentado un Problema Relacionado a los Medicamentos
+                                                                                                el servicio por medio de       □ Si
+ (PRM), puede comunicarse con el Centro Nacional de Farmacovigilancia (Ministerio
+                                                                                                un consentimiento              □ No
+ de Salud) al teléfono: 131 o 2591-7554 o al correo electrónico:
+                                                                                                informado.
+ farmacovigilancia@salud.gob.sv.
+Nota: Toda la información establecida en el presente registro es confidencial y corresponde exclusivamente a lo declarado por el paciente o su representante.
+
+
+Observaciones:
+
+
+
+
+              FIRMA DEL PACIENTE                                                      FIRMA Y SELLO DEL PROFESIONAL
+              (o su Representante)                                                        QUÍMICO FARMACÉUTICO
+Anexo Nº 06                        ETIQUETA PARA LA DISPENSACIÓN DE MEDICAMENTOS PREPARADOS.
+
+                                                        NOMBRE DEL ESTABLECIMIENTO
+                                           (Número de inscripción ante CSSP/DNM del establecimiento)
+                              Nombre del Químico Farmacéutico que presta el servicio de Preparación de Medicamentos.
+                                               Nº de JVPQF, Datos de contacto del establecimiento.
+                                      “ETIQUETA PARA LA DISPENSACIÓN DE MEDICAMENTOS PREPARADOS”
+Nombre e información
+del paciente:
+Denominación
+del preparado:
+Composición
+cualitativa:
+Composición
+cuantitativa:
+                                                          Vía de                                                  Cantidad
+Forma Farmacéutica:
+                                                          administración:                                         dispensada:
+Número de registro                                        Fecha de
+                                                                                                                  Vence:
+interno:                                                  elaboración:
+                                                          Condiciones de
+Lote
+                                                          conservación:
+Observaciones,
+advertencias y
+recomendaciones
+Si sospecha que el medicamento ha generado una Reacción Adversa (RAM) o sospecha que ha presentado un Problema Relacionado a los Medicamentos (PRM), puede
+ comunicarse con el Centro Nacional de Farmacovigilancia (Ministerio de Salud) al teléfono: 131 o 2591-7554 o al correo electrónico: farmacovigilancia@salud.gob.sv.
+Anexo Nº 07                       HOJA INFORMATIVA SOBRE EL MEDICAMENTO PREPARADO.
+
+                                                        NOMBRE DEL ESTABLECIMIENTO
+                                           (Número de inscripción ante CSSP/DNM del establecimiento)
+                              Nombre del Químico Farmacéutico que presta el servicio de Preparación de Medicamentos.
+                                               Nº de JVPQF, Datos de contacto del establecimiento.
+                                           “HOJA INFORMATIVA SOBRE EL MEDICAMENTO PREPARADO”
+Nombre e información del
+paciente:
+Denominación
+del preparado:
+Efecto terapéutico
+                                                                               Dosis a administrar:
+esperado:
+Frecuencia de la                                                               Horario recomendado de
+administración:                                                                administración:
+                                                                               Duración de la
+Forma de administración:
+                                                                               administración:
+Observaciones y
+advertencias:
+Si sospecha que el medicamento ha generado una Reacción Adversa a Medicamento (RAM) o sospecha que ha presentado un Problema Relacionado a los
+Medicamentos (PRM), puede comunicarse con el Centro Nacional de Farmacovigilancia (Ministerio de Salud) al teléfono: 131 o 2591-7554 o al correo electrónico:
+farmacovigilancia@salud.gob.sv.
+Anexo Nº 8                        PLANTILLA DE TEST DE HAYNES-SACKETT (adaptado)
+
+                          NOMBRE DEL ESTABLECIMIENTO FARMACÉUTICO
+                      (Número de inscripción ante CSSP/DNM del establecimiento)
+   Nombre del Químico Farmacéutico que presta el servicio de Seguimiento de la Adherencia Terapéutica.
+                         Nº de JVPQF, Datos de contacto del establecimiento.
+ INFORMACIÓN SOLICITADA (CONFIDENCIAL)              Número de registro interno:
+                                                                                                   Fecha de entrevista con el
+ Nombre del paciente
+                                                                                                   Químico Farmacéutico
+                                                                                                   Fecha de nacimiento
+ Nº de DUI:
+                                                                                                   (dd/mm/aaaa)
+ Altura (metros)                                                                                   El paciente cuenta con       □ Si
+ Peso (Kg)                                                                                         Seguro Social                □ No
+ Datos de contacto del       Teléfono:
+                                                                                                                                □ Masculino
+                                                                                                   Género
+ paciente                    e-mail:                                                                                            □ Femenino
+                                                         Seguimiento a la Adherencia Terapéutica
+                                                          TEST DE HAYNES-SACKETT (adaptado)
+      1.      La mayoría de pacientes, por una u otra razón, tienen dificultad al tomar comprimidos.
+              ¿Tiene usted dificultad al tomar sus comprimidos?                                                                     □ Si □ No
+      2.      Para los que respondan que no tienen dificultad, se insiste:
+              ¿Usted toma todos sus comprimidos?
+                                                                                                                                    □ Si □ No
+
+
+      3.      Muchas personas tienen dificultad en seguir sus tratamientos.
+              ¿Coménteme cómo le va a usted?
+
+
+ Recomendaciones del profesional Químico Farmacéutico: (Higiénico-dietéticas, la adopción de cambios de estilos de vida en los pacientes u otras
+ que prevengan Resultados Negativos asociados a la Medicación):
+
+
+
+
+ Si sospecha que el medicamento ha generado una Reacción Adversa a Medicamento (RAM) o sospecha que ha      El paciente ha aceptado el
+ presentado un Problema Relacionado a los Medicamentos (PRM), puede comunicarse con el Centro Nacional de                                     □ Si
+ Farmacovigilancia (Ministerio de Salud) al teléfono: 131 o 2591-7554 o al correo electrónico:
+                                                                                                            servicio por medio de un
+ farmacovigilancia@salud.gob.sv.                                                                            consentimiento informado.         □ No
+Nota: Toda la información establecida en el presente registro corresponde exclusivamente a lo declarado por el paciente o su representante.
+Observaciones:
+
+
+               FIRMA DEL PACIENTE                                               FIRMA Y SELLO DEL PROFESIONAL
+                (o su Representante)                                                QUÍMICO FARMACÉUTICO
+Anexo Nº 09                       PLANTILLA DE TEST DE MORISKY-GREEN (adaptado)
+
+                          NOMBRE DEL ESTABLECIMIENTO FARMACÉUTICO
+                      (Número de inscripción ante CSSP/DNM del establecimiento)
+   Nombre del Químico Farmacéutico que presta el servicio de Seguimiento de la Adherencia Terapéutica.
+                         Nº de JVPQF, Datos de contacto del establecimiento.
+                                                                                         Número de
+ INFORMACIÓN SOLICITADA (CONFIDENCIAL)                                                   registro
+                                                                                         interno:
+                                                                                                      Fecha de entrevista con el
+ Nombre del paciente
+                                                                                                      Químico Farmacéutico
+                                                                                                      Fecha de nacimiento
+ Nº de DUI:
+                                                                                                      (dd/mm/aaaa)
+ Altura (metros)                                                                                      El paciente cuenta con       □ Si
+ Peso (Kg)                                                                                            Seguro Social                □ No
+ Datos de contacto del       Teléfono:
+                                                                                                                                   □ Masculino
+                                                                                                      Género
+ paciente                    e-mail:                                                                                               □ Femenino
+                                                         Seguimiento a la Adherencia Terapéutica
+                                                              MORISKY-GREEN (adaptado)
+
+      1.      ¿Olvida alguna vez tomar los medicamentos para tratar su enfermedad?                                                     □ Si □ No
+
+      2.      ¿Toma los medicamentos a las horas indicadas?                                                                            □ Si □ No
+
+      3.      Cuando se encuentra bien, ¿deja de tomar la medicación?                                                                  □ Si □ No
+
+      4.      Si alguna vez le sienta mal, ¿deja usted de tomarla?                                                                     □ Si □ No
+
+                                                Paciente es cumplidor si las respuestas son No/Sí/No/No.
+
+            Se le informó al paciente, sobre su enfermedad y la necesidad del tratamiento                                              □ Si □ No
+            Se le explica al paciente el uso correcto y seguro del producto farmacéutico                                               □ Si □ No
+            Se recomienda el Seguimiento Farmacoterapéutico del paciente                                                               □ Si □ No
+ Recomendaciones del profesional Químico Farmacéutico: (Higiénico-dietéticas, la adopción de cambios de estilos de vida en los pacientes u otras
+ que prevengan Resultados Negativos asociados a la Medicación):
+
+
+
+
+                                                                                                    El paciente ha aceptado el
+ Si sospecha que el medicamento ha generado una Reacción Adversa (RAM) o sospecha que ha presentado un                               □ Si
+                                                                                                    servicio por medio de un
+ Problema Relacionado a los Medicamentos (PRM), puede comunicarse con el Centro Nacional de Farmacovigilancia
+ (Ministerio de Salud) al teléfono: 131 o 2591-7554 o al correo electrónico: farmacovigilancia@salud.gob.sv.
+                                                                                                    consentimiento informado.        □ No
+Nota: Toda la información establecida en el presente registro corresponde exclusivamente a lo declarado por el paciente o su representante.
+Observaciones:
+
+
+
+
+               FIRMA DEL PACIENTE                                                  FIRMA Y SELLO DEL PROFESIONAL
+               (o su Representante)                                                   QUÍMICO FARMACÉUTICO
+

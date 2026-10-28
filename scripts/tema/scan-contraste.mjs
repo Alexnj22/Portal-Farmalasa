@@ -1,7 +1,8 @@
 import { chromium } from '/Users/alexnunez/Documents/Portal-Farmalasa/node_modules/playwright/index.mjs';
 import fs from 'fs';
 
-const OUT = '/Users/alexnunez/Documents/Portal-Farmalasa/docs/audits/diseno-2026-07-26/post-D1b';
+const OUT = process.env.OUT_DIR || 'reports/contraste';
+fs.mkdirSync(OUT, { recursive: true });
 const EXE = '/Users/alexnunez/Library/Caches/ms-playwright/chromium-1228/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
 fs.mkdirSync(OUT, { recursive: true });
 

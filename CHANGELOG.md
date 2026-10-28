@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.17 — docs depurado: fuera lo cerrado que nadie cita
+
+Se revisó cada documento de `docs/` contra quién lo cita (CLAUDE.md, DESIGN.md, el código, la auditoría por áreas y la memoria) y su estado.
+
+- **Borrados** (siguen en la historia de git): las capturas de las auditorías de diseño y tema de julio (`docs/audits/`, 184 MB); dos planes de la app nativa reemplazados por `AUDITORIA-PARIDAD-APP-2026-10-15.md`; la auditoría del libro de contribuyentes (corregida en v2.569.5); el flujograma viejo de ventas; y seis cerrados que ya nadie citaba.
+- Los dos scripts de contraste que DESIGN.md manda reusar pasaron a `scripts/tema/`.
+- **Procedimientos A y B:** se actualizaron sus numerales al RTS publicado en el Diario Oficial (la §6.1 se renumeró). Los cinco procedimientos siguen vigentes como borradores para que los firme el regente.
+
 ## v2.1357.16 — docs/legal ordenado y con la normativa vigente
 
 `docs/legal/` quedó ordenado: `normativa/` (sanitaria, fiscal, laboral, datos personales), `procedimientos/`, `empresa/`, y en la raíz los documentos propios que generan los scripts. Cada texto legal lleva en el nombre la fecha de su última reforma.

@@ -9,6 +9,11 @@
 > limpieza deja la foto de lo anulado, y corregirla conserva el valor anterior.
 > Lo que queda es lo que sólo puede decidir la empresa — los `[corchetes]`.
 
+>
+> Los numerales son los del RTS **publicado en el Diario Oficial del 8 de
+> octubre de 2025** (Tomo 449, N.º 189), que renumeró la sección 6.1 respecto
+> de la versión de consulta de 2024. Actualizados el 2026-10-28.
+
 ---
 
 # Procedimiento para el manejo de documentación digital
@@ -29,7 +34,7 @@
 
 Establecer cómo se generan, conservan, consultan e imprimen los registros que
 este establecimiento lleva en forma digital, de manera que cumplan lo exigido
-por el **RTS 11.02.04:24, numeral 6.1.14**: que sean **atribuibles, legibles,
+por el **RTS 11.02.04:24, numeral 6.1.16**: que sean **atribuibles, legibles,
 contemporáneos, originales y precisos**.
 
 Y de manera que el archivo electrónico cumpla los mínimos que la
@@ -74,7 +79,7 @@ farmacias**. Se deja escrito porque la confusión entre los dos capítulos es f�
 y cambia la respuesta.
 
 **No aplica** a la bitácora de visitas del regente, que este establecimiento
-lleva en **libro físico** por decisión propia (Guía 2.23 · RTS 6.3.7), ni a la
+lleva en **libro físico** por decisión propia (Guía 2.23 · RTS 6.1.3), ni a la
 documentación que por su naturaleza es un original en papel (licencias,
 facturas, certificados, contratos).
 
@@ -82,7 +87,7 @@ facturas, certificados, contratos).
 
 | término | qué significa acá |
 |---|---|
-| **ALCOA** | Las cinco propiedades que el numeral 6.1.14 le exige a un registro digital: **a**tribuible, **l**egible, **c**ontemporáneo, **o**riginal y preciso (*accurate*). Es la vara con la que se mide si un registro electrónico sirve |
+| **ALCOA** | Las cinco propiedades que el numeral 6.1.16 le exige a un registro digital: **a**tribuible, **l**egible, **c**ontemporáneo, **o**riginal y preciso (*accurate*). Es la vara con la que se mide si un registro electrónico sirve |
 | **Franja** | La ventana horaria en la que toca una lectura (por ejemplo, media mañana). La define la configuración del área y la resuelve el servidor, no el reloj del equipo |
 | **Turno** | Lo mismo para una limpieza: el momento del día en que corresponde hacerla |
 | **Anotación tardía** | La que se hizo fuera de su franja. El sistema la marca; no se puede presentar como hecha a tiempo |
@@ -195,7 +200,7 @@ hoja del mes.
 auditoría del sistema, escrita automáticamente y aparte del registro mismo. Es
 lo que permite comprobar qué pasó aunque alguien tuviera acceso a la primera.
 
-Esto es lo que el numeral 6.1.14 llama «originales y precisos», y lo que el
+Esto es lo que el numeral 6.1.16 llama «originales y precisos», y lo que el
 **Art. 13-A de la Ley de Firma Electrónica** exige del archivo: que se mantenga
 «íntegro, legible, completo y sin alteraciones». Su **Art. 14**, último inciso,
 dice que una alteración que afecte la integridad **hace perder el valor legal**
@@ -208,7 +213,7 @@ anotar, desviaciones y su acción correctiva— y **autoriza el cierre en el
 sistema**. El cierre queda registrado con el nombre de quien lo hizo, la fecha y
 la hora.
 
-**Qué vale como firma, y qué no.** Lo que cumple el numeral **6.1.12** —«revisado
+**Qué vale como firma, y qué no.** Lo que cumple el numeral **6.1.14** —«revisado
 o autorizado por el regente, con su **firma y sello profesional**»— es **la hoja
 impresa del mes, firmada y sellada por el regente**. El cierre en el sistema es
 un control interno y, ante la ley, una **firma electrónica simple**: tiene la
@@ -225,7 +230,7 @@ un motivo escrito, sólo lo puede hacer quien tenga esa facultad según el
 
 ### 5.5 · Impresión
 
-El numeral 6.1.14 **prefiere la documentación física**. Por eso el mes se
+El numeral 6.1.16 **prefiere la documentación física**. Por eso el mes se
 imprime en formulario controlado, en tamaño carta, **una hoja por área**, con:
 
 - el código y la versión del formulario,
@@ -238,7 +243,7 @@ imprime en formulario controlado, en tamaño carta, **una hoja por área**, con:
 
 **Se imprime y se archiva el mes cerrado**, y se conserva por el plazo del
 punto 2. **El archivo queda físicamente en cada establecimiento** —`[definir el
-lugar]`— porque el numeral 6.1.14 exige que la documentación esté disponible
+lugar]`— porque el numeral 6.1.16 exige que la documentación esté disponible
 **dentro del establecimiento**, y los datos del sistema no residen en el país.
 La copia impresa se entrega a la autoridad cuando la requiera, sin necesidad de
 acceder al sistema.
@@ -319,7 +324,7 @@ copia vieja circulando es indistinguible de la buena.
 | 6 |  |  |  |  |
 | 7 |  |  |  |  |
 
-## 8 · Cómo se cumple el numeral 6.1.14
+## 8 · Cómo se cumple el numeral 6.1.16
 
 | lo que exige | cómo se cumple |
 |---|---|
@@ -361,7 +366,7 @@ mes depende de cuántas áreas tenga la sala. Por eso la banda dice «Hoja *n* d
 
 ## 10 · Documentos relacionados
 
-- `[FLS-PRO-02]` — Protocolo de supervisión del sistema electrónico (RTS 6.1.15)
+- `[FLS-PRO-02]` — Protocolo de supervisión del sistema electrónico (RTS 6.1.4)
 - Formularios `FLS-BIT-00` a `FLS-BIT-03` — hojas impresas del mes `[adjuntar
   como anexos de este procedimiento]`
 - Formulario `[FLS-BIT-99]` — **Hoja de contingencia de lecturas** (punto 5.7).
@@ -372,7 +377,7 @@ mes depende de cuántas áreas tenga la sala. Por eso la banda dice «Hoja *n* d
 ## 11 · Referencias
 
 - RTS 11.02.04:24 — **capítulo 6** (farmacias, botiquines y otros
-  establecimientos que dispensan), numerales 6.1.12, 6.1.14, 6.1.15, 6.2.11,
+  establecimientos que dispensan), numerales 6.1.14, 6.1.16, 6.1.4, 6.2.11,
   6.2.15, 6.2.16, 6.2.18, 6.2.19, 6.2.20, 6.2.21, 6.3.2, 6.3.4
 - Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de
   Establecimientos que Dispensan Medicamentos, ítems 1.12, 2.27, 2.29, 2.32,

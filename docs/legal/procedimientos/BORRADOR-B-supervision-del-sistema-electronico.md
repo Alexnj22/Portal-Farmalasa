@@ -11,6 +11,11 @@
 > constancia del punto 5 — las 8 tablas de bitácoras entraron ese mismo día y
 > **todavía no ha corrido ni una vez con ellas adentro**.
 
+>
+> Los numerales son los del RTS **publicado en el Diario Oficial del 8 de
+> octubre de 2025** (Tomo 449, N.º 189), que renumeró la sección 6.1 respecto
+> de la versión de consulta de 2024. Actualizados el 2026-10-28.
+
 ---
 
 # Protocolo de supervisión del sistema electrónico
@@ -29,7 +34,7 @@
 
 ## 1 · Objeto y alcance
 
-Dar cumplimiento al **RTS 11.02.04:24, numeral 6.1.15**, que exige, para la
+Dar cumplimiento al **RTS 11.02.04:24, numeral 6.1.4**, que exige, para la
 documentación digital, un procedimiento de supervisión del sistema electrónico
 que incluya **nivel de acceso, resguardo de datos, forma de registro de datos,
 respaldo y evaluación periódica**. Es el documento que verifica el ítem **3.6**
@@ -38,7 +43,7 @@ de la Guía de Verificación.
 Aplica al sistema informático donde este establecimiento lleva los registros
 descritos en el `[FLS-PRO-01]`.
 
-Las **cinco secciones que exige el 6.1.15** son los puntos 2, 3, 4, 5 y 8, y
+Las **cinco secciones que exige el 6.1.4** son los puntos 2, 3, 4, 5 y 8, y
 llevan a propósito el nombre que les da la norma. Los puntos **6 (control de
 cambios)** y **7 (incidentes)** van de más: no los pide el RTS, pero sí los piden
 los marcos con los que se mide un sistema de registros farmacéuticos —el
@@ -72,7 +77,7 @@ plazo.]`
 
 **Como el archivo electrónico vive fuera del país**, la copia impresa mensual del
 `[FLS-PRO-01]` se archiva **dentro de cada establecimiento**, que es lo que exige
-el numeral 6.1.14.
+el numeral 6.1.16.
 
 ---
 
@@ -127,7 +132,7 @@ no puede omitir a nadie que pueda:
 
 ### 2.3 · Qué vale como firma del regente, y quién puede cerrar el mes
 
-**Lo que cumple el numeral 6.1.12** —«revisado o autorizado por el regente, con
+**Lo que cumple el numeral 6.1.14** —«revisado o autorizado por el regente, con
 su **firma y sello profesional**»— **es la hoja impresa del mes, firmada y
 sellada por el regente.** El cierre en el sistema es un control interno.
 
@@ -186,7 +191,7 @@ periódica del punto 8.
   de sincronización y carnés temporales.
 - **Conservación**: temperatura y humedad **2 años** (RTS 6.2.16); dispensación
   bajo receta **1 año** (Guía 3.12); archivo de inspecciones **3 años**
-  (RTS 6.1.3).
+  (RTS 6.1.5).
 
 **El medio de conservación es la base de datos viva, no el respaldo.** El
 respaldo del punto 5 guarda 60 días y sirve para **recuperar ante una pérdida**;
@@ -339,7 +344,7 @@ lo encontrado y las acciones tomadas.
 ## 9 · Referencias
 
 - RTS 11.02.04:24 — **capítulo 6** (farmacias, botiquines y otros
-  establecimientos que dispensan), numerales 6.1.3, 6.1.12, 6.1.14, **6.1.15**,
+  establecimientos que dispensan), numerales 6.1.5, 6.1.14, 6.1.16, **6.1.4**,
   6.2.16, 6.2.20, 6.2.21, 6.3.2, 6.3.4
 - Guía de Verificación de Buenas Prácticas de Almacenamiento y Dispensación de
   Establecimientos que Dispensan Medicamentos, ítem **3.6** (y su espejo físico,

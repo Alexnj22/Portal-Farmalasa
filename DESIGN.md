@@ -493,7 +493,7 @@ Todos los tokens de arriba se alían a namespaces de Tailwind v4 en un bloque `@
   genuinamente nueva (no derivada) — revisar en el gate.
 - **Escala de elevación** `--elevation-0..3`: nombra `--card-shadow`/`--modal-
   shadow` existentes como niveles 1/2, agrega nivel 3 (flyouts sobre modales).
-- **Script de contraste AA** (`docs/audits/tema-2026-07/contrast-check.mjs`,
+- **Script de contraste AA** (`scripts/tema/contrast-check.mjs`,
   JS puro sin dependencias): corrigió un fallo real encontrado en Fase T2 —
   `--text-tertiary` en `solid` (`#94a3b8`, 2.56:1) y `solid-dark`
   (`rgba(100,116,139,.9)`, 2.76:1) no cumplían AA contra `surface-card`

@@ -37,8 +37,8 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
    (desplegada, versión 45 de `sync-erp-purchases`).
 2. ~~Alerta de sello pendiente y de sello sobre un mes declarado~~ — **hecho
    v2.1357.39** (`avisar_ventas_sin_sello`, cron 8:10 SV).
-3. **`generar_csv_libro(p_branch_id NULL)` devuelve 0 filas**: que traiga todas
-   las salas o que falle. — CONTABILIDAD:188-195
+3. ~~`generar_csv_libro` sin sucursal devolvía 0 filas~~ — **hecho v2.1357.41**
+   (ahora falla con el motivo).
 4. **Anexo 3 de compras con la forma F-07**: 21 columnas, tipo en C, Q-T desde
    `f07_*`, sello (hoy `''`). — CONTABILIDAD:156-166, LIBROS-IVA:190-195
 5. **Anexo 8 de percepción** rehecho (sello, 2 decimales, DUI, número de anexo);

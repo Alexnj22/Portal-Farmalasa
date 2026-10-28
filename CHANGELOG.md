@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.39 — ventas: aviso de sello pendiente y de sello sobre un mes declarado
+
+- **`avisar_ventas_sin_sello()`** (cron 8:10 SV, migración `20261028215238`).
+  Dos avisos que faltaban (CONTABILIDAD §2 ítem 7):
+  1. **Venta sin sello de más de 2 días** que Hacienda no rechazó (de las
+     rechazadas ya avisa `avisar_rechazos_sin_arreglo`): nunca llegó, quedó con
+     basura en `recibido_mh`, o el envío no la ve. Es el incidente de mayo/2025,
+     87 días invisible. Los COF de las 6 pm en adelante NO cuentan (no se mandan
+     por decisión del 19-oct). A quien edita Facturación y ve Pendiente MH.
+  2. **Sello que llega después del día 10 del mes siguiente** a la venta: la
+     declaración de ese mes ya salió sin ella. A quien ve Libros IVA (incluye
+     al contador). Sobre la historia habría avisado 26 ventas ($339.43) que
+     nadie supo; no avisa las 47 normales de la noche del 30 que sellan el 1.º.
+  - Una vez por documento (`sync_alert_log`). `p_probar` devuelve lo que
+    avisaría sin avisar. Hoy: 0 y 0.
+- `check-sales-reconciliation` ya no dice «se corrige solo» de una venta sin
+  sello: dice que si pasa de 2 días sale el aviso.
+
 ## v2.1357.38 — Listado de antibióticos con receta retenida (documento)
 
 - Borrador `docs/legal/procedimientos/BORRADOR-F-listado-de-antibioticos-con-receta-retenida.md`

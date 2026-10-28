@@ -56,7 +56,7 @@ const TOLERANCIA = 0.011;
 //
 //   · está en el origen y no en el portal  → el sync lo perdió: resincronizar
 //   · está en los dos, el portal sin sello → el sello todavía no llegó; se
-//     corrige solo (medido: cero pendientes de más de 3 días en el período)
+//     corrige solo casi siempre; si no, lo vigila `avisar_ventas_sin_sello` (2026-10-28)
 //   · solo en el portal, y su estado es anulado → correcto, el libro lo excluye
 //   · solo en el portal, `dteqr_json` vuelve VACÍO → el DTE no existe
 //   · solo en el portal, el DTE existe pero `dteqr_pdf` NO devuelve un PDF →
@@ -133,7 +133,7 @@ const MAX_DTE = 25;
 // hacer lo decide el de $60.
 const QUE_HACER: Record<string, string> = {
   falta_en_portal:    'Falta en el portal: se recupera resincronizando ese día.',
-  sin_sello:          'Es el sello de Hacienda, que todavía no llega. Se corrige solo.',
+  sin_sello:          'Es el sello de Hacienda, que todavía no llega. Si pasa de 2 días, sale el aviso de ventas sin sello.',
   origen_perdio_fila: 'El origen perdió el registro de una venta que sí existe y está sellada. Resincronizar NO la recupera: hay que reportarlo.',
   anulado:            'Es un documento anulado; el libro lo excluye con razón.',
   anulado_sin_invalidar: 'Hay una venta con sello de Hacienda que se anuló en el sistema pero NUNCA se invalidó ante Hacienda: sigue vigente y el libro debería llevarla.',
@@ -214,7 +214,7 @@ async function diagnosticarDia(
     } else if (inA && !inB) {
       if (!selloOk(B.recibido_mh)) {
         causa = 'sin_sello';
-        detalle = 'El portal lo tiene, pero todavía sin el sello de Hacienda, así que no entra al libro. Se corrige solo cuando el sello llega.';
+        detalle = 'El portal lo tiene, pero todavía sin el sello de Hacienda, así que no entra al libro. Normalmente llega en horas; si pasa de 2 días, sale el aviso de ventas sin sello.';
       } else if (B.estado === 'NULA') {
         // Sellado y NO invalidado ante Hacienda: para Hacienda la venta sigue
         // vigente. El origen lo cuenta en su libro y el portal no, porque el

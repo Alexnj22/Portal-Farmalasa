@@ -33,12 +33,10 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 ## A. Construir — ordenado por importancia
 
 ### Fiscal y contabilidad
-1. **Guarda contra el archivo contaminado del origen** en `sync-erp-purchases`
-   (`Warning: fopen` / `failed to open stream`): sin ella un backfill puede
-   borrar sellos fiscales en silencio. — LIBROS-IVA:256-279
-2. **Alerta de sello pendiente** en ventas, y de sello que llega sobre un mes
-   ya declarado. `check-sales-reconciliation` sigue diciendo «se corrige solo».
-   Excluir los COF de 6 pm. — CONTABILIDAD:134-148
+1. ~~Guarda contra el archivo contaminado del origen~~ — **hecho v2.1357.36**
+   (desplegada, versión 45 de `sync-erp-purchases`).
+2. ~~Alerta de sello pendiente y de sello sobre un mes declarado~~ — **hecho
+   v2.1357.39** (`avisar_ventas_sin_sello`, cron 8:10 SV).
 3. **`generar_csv_libro(p_branch_id NULL)` devuelve 0 filas**: que traiga todas
    las salas o que falle. — CONTABILIDAD:188-195
 4. **Anexo 3 de compras con la forma F-07**: 21 columnas, tipo en C, Q-T desde

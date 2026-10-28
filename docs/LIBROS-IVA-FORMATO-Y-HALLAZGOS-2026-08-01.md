@@ -274,9 +274,9 @@ de esa ventana reciben `sello_recibido: null` — o sea que borraría sellos bue
 en silencio, en una columna fiscal. En la corrida del 2026-08-03 no pasó
 (verificado ventana por ventana: 94.9%–100%, ninguna en cero), pero fue suerte.
 
-**Mientras no haya guarda, las llamadas al origen van de a una.** La guarda
-natural es rechazar el archivo si trae `Warning:` / `failed to open stream`, o
-—más robusto— si el número de filas no se parece al que informa el DataTable.
+**Guarda puesta el 2026-10-28 (v2.1357.36):** `motivoParaRechazarElLibro` en
+`_shared/selloDeCompra.ts` rechaza el archivo con un aviso del servidor o vacío
+habiendo compras; tres intentos y, si sigue mal, no se escribe nada.
 
 <details><summary>Texto original del hallazgo (incorrecto)</summary>
 

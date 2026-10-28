@@ -756,7 +756,7 @@ export const AREAS = [
                'responder-dato-pedido'],
         crons: ['regularizar-dte-2230-sv', 'reenviar-ccf-10min', 'sincronizar-fichas-clientes-2130-sv', 'drain-cliente-erp-queue',
                 'ccf-repaso-22h-sv', 'alerta-barrido-dte-8am-sv', 'sync-numero-control-daily',
-                'refresh-customer-activity-daily', 'avisar-rechazos-mh-8am-sv'],
+                'refresh-customer-activity-daily', 'avisar-rechazos-mh-8am-sv', 'avisar-ventas-sin-sello-8am-sv'],
         docs: ['docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md',
                'docs/planes-cerrados/RETOMAR-CLIENTES-2026-08-01.md'],
     },

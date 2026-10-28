@@ -89,7 +89,8 @@
         "expo-audio",
         {
           "microphonePermission": "FarmaSalud usa el micrófono sólo para grabar las notas de voz que mandas en el chat con clientes.",
-          "recordAudioAndroid": true
+          "recordAudioAndroid": true,
+          "enableBackgroundPlayback": false
         }
       ],
       "./plugins/ciclo-por-escenas",

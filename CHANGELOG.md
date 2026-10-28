@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.11 — App iOS: sin audio en segundo plano (rechazo 2.5.4)
+
+Apple rechazó la 1.0.0 (57) por declarar `audio` en `UIBackgroundModes` sin función que lo use. No lo pedía el código: lo agregaba el plugin `expo-audio`, que trae `enableBackgroundPlayback: true` por defecto. Las notas de voz del chat se graban y se escuchan con la app abierta, así que se apaga en `apps/mobile/app.json`. La ubicación de fondo se queda (es el rastreo de la ruta, `plataforma/rastreoDeFondo.js`) y se justifica ante Apple con un video.
+
 ## v2.1357.10 — Reservas: una reserva ya facturada con anticipo no vence sola
 
 Cierra el pendiente de v2.1357.9. `reservas_vencer` convertía el anticipo en saldo a favor sin mirar facturas, así que una reserva vendida por fuera de «Retirar» que nadie cancelaba terminaba en el mismo hueco que R-000114. El cron no tiene a quién preguntarle si el anticipo se descontó, y las dos respuestas mueven dinero, así que no decide: **la reserva sigue abierta** y la sala recibe un aviso («No venció: ya se facturó», con la factura y el monto) para cancelarla desde Reservas, donde el portal hace la pregunta. Un solo aviso por reserva (marca `RESERVA_NO_VENCE_YA_FACTURADA` en la bitácora). Las reglas de vencimiento no cambian para nada más.

@@ -2652,17 +2652,25 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     /* Se pregunta mientras se escribe, con un respiro de 400 ms: sin él, una
      * boleta de seis dígitos son seis consultas —`0`, `00`, `000`…—. Es el
      * mismo patrón que la salida de una bolsa. */
+    /* Con QUÉ se anota —tipo, forma de pago, monto—, porque el mismo número de
+     * otro banco o de otro emisor es otra operación y no puede frenar
+     * (2026-10-28, la 000956 de Salud 2). Lo decide la base. */
+    const tipoCodigo = tipo?.codigo || null;
+    const formaDeBoleta = conFormaDePago ? (pago?.forma || 'EFECTIVO') : 'EFECTIVO';
+    const montoDeBoleta = Number(monto) > 0 ? Number(monto) : null;
+    const claveDeBoleta = boleta.trim() && sala
+        ? `${sala}|${boleta.trim()}|${tipoCodigo}|${formaDeBoleta}|${montoDeBoleta}` : null;
     useEffect(() => {
         const num = boleta.trim();
         if (!num || !sala) return undefined;
         let vivo = true;
         const id = setTimeout(() => {
-            boletaYaEnCaja(sala, num).then((filas) => {
-                if (vivo) setRepetidaPara({ clave: `${sala}|${num}`, filas });
+            boletaYaEnCaja(sala, num, { tipoCodigo, formaPago: formaDeBoleta, monto: montoDeBoleta }).then((filas) => {
+                if (vivo) setRepetidaPara({ clave: `${sala}|${num}|${tipoCodigo}|${formaDeBoleta}|${montoDeBoleta}`, filas });
             });
         }, 400);
         return () => { vivo = false; clearTimeout(id); };
-    }, [boleta, sala]);
+    }, [boleta, sala, tipoCodigo, formaDeBoleta, montoDeBoleta]);
 
     /**
      * Qué pasa si ese número ya está anotado. Dos desenlaces, y no son el mismo.
@@ -2676,7 +2684,6 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * Eso se avisa y quien registra decide. Frenarlo dejaría sin salida a quien
      * ya se equivocó, que es la peor forma de castigar un error honesto.
      */
-    const claveDeBoleta = boleta.trim() && sala ? `${sala}|${boleta.trim()}` : null;
     const repetidaEnCaja = claveDeBoleta && repetidaPara.clave === claveDeBoleta ? repetidaPara.filas : SIN_FILAS;
     const problemaDeLaBoleta = useMemo(() => problemaDeBoleta(repetidaEnCaja, entra, boleta), [repetidaEnCaja, entra, boleta]);
     // Sólo el efectivo: tarjeta y transferencia tienen su propio comprobante.

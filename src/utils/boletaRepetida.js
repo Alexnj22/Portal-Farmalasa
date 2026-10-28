@@ -4,8 +4,11 @@
  * ── Por qué el número basta ─────────────────────────────────────────────────
  *
  * El número de una boleta de POS es el ID de la transacción: el aparato no lo
- * repite nunca. Así que dos movimientos con el mismo número en la misma sala
- * hablan SIEMPRE de la misma operación. No hay coincidencia posible.
+ * repite nunca. Pero sólo DENTRO de ese aparato (2026-10-28): cada banco
+ * numera por su lado y una factura trae el número de su emisor. Salud 2 tiene
+ * la 000956 del POS Promerica y la 000956 de la terminal de tarjeta, dos
+ * operaciones reales. Por eso la base marca cada coincidencia con
+ * `misma_operacion`, y sólo ésa cuenta como duplicado.
  *
  * ── Pero hay DOS desenlaces, y no son el mismo ──────────────────────────────
  *
@@ -40,13 +43,21 @@ export function choqueDeBoleta(repetidas, entra) {
     if (!lista.length) return null;
 
     const sentido = entra ? 'ENTRADA' : 'SALIDA';
-    const mismoSentido = lista.find((m) => String(m?.tipo || '').toUpperCase() === sentido);
+    const delSentido = (m) => String(m?.tipo || '').toUpperCase() === sentido;
+    // `misma_operacion: false` = mismo número, OTRA operación: otro banco u
+    // otro emisor (lo decide `caja_misma_operacion_de_boleta`, en la base).
+    // `null`/ausente = quien preguntó no dijo qué anota: se frena como antes.
+    const mismoSentido = lista.find((m) => delSentido(m) && m?.misma_operacion !== false);
 
     // El duplicado gana sobre la corrección: si entre los repetidos hay uno del
     // mismo sentido, eso es lo que hay que decir aunque además haya otro del
     // contrario. Al revés se avisaría «es una corrección» sobre un duplicado.
     if (mismoSentido) return { bloquea: true, movimiento: mismoSentido };
-    return { bloquea: false, movimiento: lista[0] };
+    // Las correcciones reales cruzan tipos (una entrada del POS contra-anotada
+    // como «Otro»), así que el sentido contrario avisa sin mirar la familia.
+    const contrario = lista.find((m) => !delSentido(m));
+    if (contrario) return { bloquea: false, movimiento: contrario };
+    return null;
 }
 
 export default choqueDeBoleta;

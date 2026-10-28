@@ -239,8 +239,13 @@ SELECT b.name AS sala, z.fecha::text AS fecha, z.hora::text AS hora,
  *
  *   · **Boleta repetida.** El número de una boleta de POS es el ID de la
  *     transacción: el aparato no lo repite nunca. Así que el mismo número, en
- *     la misma sala y con el MISMO sentido, es la misma operación anotada dos
- *     veces. El sentido CONTRARIO no cuenta: ésa es la corrección de un
+ *     la misma sala, con el MISMO sentido y de la MISMA familia de numeración
+ *     (`caja_familia_de_boleta`: el POS Promerica basta con el número; otro
+ *     emisor exige además el mismo monto; un voucher no se juzga), es la misma
+ *     operación anotada dos veces. La familia faltaba hasta el 2026-10-28: la
+ *     000956 del POS Promerica y la 000956 de la terminal de tarjeta de Salud 2
+ *     salían como duplicado siendo dos operaciones reales. Es el mismo juez que
+ *     usa el freno de `operar-caja` (`caja_misma_operacion_de_boleta`). El sentido CONTRARIO no cuenta: ésa es la corrección de un
  *     movimiento anotado al revés —una remesa entra al cajón cuando en realidad
  *     sale— y es legítima; las tres reales lo dicen en el concepto.
  *
@@ -272,7 +277,7 @@ SELECT c.id, b.name AS sala, c.fecha, c.hora
 const SQL_DUPLICADOS = `
 WITH vivos AS (
   SELECT m.id, m.branch_id, m.fecha, m.tipo, m.tipo_codigo, m.monto, m.concepto,
-         m.registrado_at,
+         m.registrado_at, public.caja_familia_de_boleta(m.tipo_codigo, m.forma_pago) AS familia,
          ltrim(regexp_replace(coalesce(m.numero_boleta, ''), '\\D', '', 'g'), '0') AS num
     FROM public.caja_movimientos_portal m
    WHERE m.anulado_at IS NULL
@@ -281,8 +286,9 @@ por_boleta AS (
   SELECT branch_id, min(fecha) AS fecha, 'boleta repetida'::text AS regla,
          ('boleta ' || num || ' anotada ' || count(*) || ' veces como ' || lower(tipo))::text AS detalle,
          array_agg(id ORDER BY id) AS ids
-    FROM vivos WHERE num <> ''
-   GROUP BY branch_id, num, tipo
+    FROM vivos WHERE num <> '' AND familia NOT LIKE 'VOUCHER:%'
+   GROUP BY branch_id, num, tipo, familia,
+            CASE WHEN familia = 'POS_PROMERICA' THEN NULL ELSE round(monto, 2) END
   HAVING count(*) > 1
 ),
 por_rafaga AS (

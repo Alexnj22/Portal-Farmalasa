@@ -1977,13 +1977,24 @@ Deno.serve(async (req) => {
       }
       if (!noEfectivo && String(body.boleta ?? "").trim()) {
         const { data: repetidas, error: errBoleta } = await supabase
-          .rpc("boleta_ya_en_caja", { p_branch_id: sala, p_numero_boleta: String(body.boleta) });
+          .rpc("boleta_ya_en_caja", {
+            p_branch_id: sala, p_numero_boleta: String(body.boleta),
+            p_tipo_codigo: body.tipo ? String(body.tipo).slice(0, 40) : null,
+            p_forma_pago: formaPago, p_monto: monto,
+          });
         // Un fallo de lectura no frena el movimiento: es una comprobación, no
         // un permiso, y la sala tiene el papel en la mano.
         if (errBoleta) console.error(`[operar-caja] ${accion} boleta sala=${sala}: ${errBoleta.message}`);
+        /* El mismo NÚMERO no basta (2026-10-28): cada banco numera por su lado
+         * y una factura trae el número de su emisor. Salud 2 tiene la 000956
+         * del POS Promerica ($3.99, ANDA) y la 000956 de la terminal de tarjeta
+         * ($48.00, una báscula): dos operaciones reales. Quién es la MISMA
+         * operación lo decide la base (`caja_misma_operacion_de_boleta`), que
+         * es el mismo juez que lee la pantalla y el gate de cortes. */
         const sentido = esEntrada ? "ENTRADA" : "SALIDA";
         const choque = (Array.isArray(repetidas) ? repetidas : [])
-          .find((m: { tipo?: string }) => String(m?.tipo ?? "").toUpperCase() === sentido);
+          .find((m: { tipo?: string; misma_operacion?: boolean | null }) =>
+            String(m?.tipo ?? "").toUpperCase() === sentido && m?.misma_operacion !== false);
         if (choque) {
           const c = choque as { numero_boleta?: string; fecha?: string; monto?: number; concepto?: string };
           return json({

@@ -68,4 +68,28 @@ describe('choqueDeBoleta', () => {
         const r = choqueDeBoleta([{ id: 9, tipo: null }], true);
         expect(r.bloquea).toBe(false);
     });
+
+    // 2026-10-28, Salud 2: la 000956 del POS Promerica ($3.99, ANDA) y la
+    // 000956 de la terminal de tarjeta ($48.00, una báscula). Mismo número,
+    // dos operaciones reales: cada banco numera por su lado.
+    it('mismo número de OTRA operación (otro banco u emisor): no frena ni avisa', () => {
+        const otro = { id: 4643, tipo: 'ENTRADA', monto: 3.99, misma_operacion: false };
+        expect(choqueDeBoleta([otro], true)).toBeNull();
+    });
+
+    it('la MISMA operación sigue frenando', () => {
+        const mismo = { ...ENTRADA, misma_operacion: true };
+        expect(choqueDeBoleta([mismo], true)).toEqual({ bloquea: true, movimiento: mismo });
+    });
+
+    it('sin decir qué se anota (misma_operacion null) frena como antes', () => {
+        expect(choqueDeBoleta([{ ...ENTRADA, misma_operacion: null }], true).bloquea).toBe(true);
+    });
+
+    it('otra operación del mismo sentido no tapa una corrección', () => {
+        // Las correcciones reales cruzan tipos: el aviso del contrario se queda.
+        const otro = { id: 1, tipo: 'ENTRADA', misma_operacion: false };
+        const r = choqueDeBoleta([otro, SALIDA], true);
+        expect(r).toEqual({ bloquea: false, movimiento: SALIDA });
+    });
 });

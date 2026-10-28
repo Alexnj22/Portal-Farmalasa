@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.30 — Caja: el mismo número de boleta de otro banco u emisor ya no frena
+
+- El freno de boleta repetida comparaba sólo el número y el sentido. Cada banco
+  numera por su lado y una factura trae el número de su emisor: en Salud 2, la
+  000956 del POS Promerica ($3.99, ANDA, 17-oct) y la 000956 de la terminal de
+  tarjeta ($48.00, 27-oct) son dos operaciones reales. Con la regla vieja la
+  sala podía quedarse sin poder registrar un movimiento, y `gate:cortes` lo
+  acusaba de duplicado.
+- Juez único en la base: `caja_familia_de_boleta` y
+  `caja_misma_operacion_de_boleta` (migración `20261028205725`). POS Promerica
+  → basta el número; otro emisor → además el mismo monto; voucher → no se juzga
+  (ya tiene su tope de partes). `boleta_ya_en_caja` devuelve `misma_operacion`
+  por coincidencia; sin decir qué se anota responde `null` y frena como antes.
+- Lo leen el freno de `operar-caja`, la pantalla de Mi caja (`choqueDeBoleta`)
+  y la sección E de `gate:cortes`. Medido sobre los 7 pares reales: el
+  duplicado de CAESS (214/215) sigue frenando y detectándose; la 000956 no; las
+  correcciones de sentido contrario siguen avisando.
+
 ## v2.1357.29 — Antibióticos: listado editable, vía y regla de venta
 
 - **El listado se puede editar.** En Bitácoras → Antibióticos cada producto

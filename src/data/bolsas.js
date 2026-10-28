@@ -804,11 +804,16 @@ export async function boletaYaRegistrada(branchId, numeroBoleta) {
  * puede impedir registrar un movimiento que ya ocurrió. El freno de verdad lo
  * pone el servidor.
  */
-export async function boletaYaEnCaja(branchId, numeroBoleta) {
+export async function boletaYaEnCaja(branchId, numeroBoleta, { tipoCodigo = null, formaPago = null, monto = null } = {}) {
     if (!branchId || !String(numeroBoleta || '').trim()) return [];
+    // Con qué se anota: la base marca cada coincidencia con `misma_operacion`
+    // (el mismo número de otro banco u otro emisor NO es la misma operación).
     const { data, error } = await supabase.rpc('boleta_ya_en_caja', {
         p_branch_id: branchId,
         p_numero_boleta: String(numeroBoleta).trim(),
+        p_tipo_codigo: tipoCodigo,
+        p_forma_pago: formaPago,
+        p_monto: monto,
     });
     if (error) {
         console.error('caja: no se pudo comprobar la boleta:', error.message);

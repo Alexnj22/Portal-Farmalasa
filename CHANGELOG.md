@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.13 — Bitácoras: lectura imposible no entra y el libro arranca el 1-nov
+
+Revisión de las bitácoras contra el RTS 11.02.04:24 §6 y la Guía BPAD, midiendo octubre en producción (informe: `docs/AUDITORIA-BITACORAS-PRODUCCION-2026-10-28.md`).
+
+- **Una lectura imposible ya no entra.** `bitacora_validar_lectura` rechaza una temperatura fuera de −20…50 °C o una humedad fuera de 10…100 %, al anotar y al corregir. En octubre entraron humedades de 0 % y 3 %.
+- **El libro bajo receta arranca limpio el 1-nov** (dato, no código): apertura `2026-11-01` en las 6 salas, se borraron los 537 renglones de práctica (ninguno completado) y los folios quedaron en 0.
+- Lo que falta para que sea legal, y que no es software: regente nombrado (hoy 0), procedimientos A/B/C firmados, refrigerador en las salas que venden producto de frío, calibración del refrigerador de Bodega y capacitar a la sala en el libro (0 renglones completados en tres meses).
+
 ## v2.1357.12 — App Puntos Salud: sin audio en segundo plano
 
 Lo mismo que v2.1357.11 en la app del personal, antes de que Apple lo rechace: el plugin `expo-audio` declara `audio` en `UIBackgroundModes` por defecto (`enableBackgroundPlayback: true`) y las notas de voz del chat no lo necesitan. Apple rechaza por la guía 2.5.4 un modo de fondo sin función que lo use.

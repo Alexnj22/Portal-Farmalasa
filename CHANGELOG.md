@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.34 — docs: lista única de pendientes y entrada de docs/
+
+- **`docs/PENDIENTES.md`**: la lista única de lo que falta, armada leyendo
+  todos los documentos de `docs/` y comprobando cada punto contra el código y
+  producción. Cuatro estados: construir (36), decidir, probar en sala, planes
+  largos. Lo que los documentos daban por pendiente y ya estaba hecho no entra.
+- **`docs/README.md`**: dónde está cada cosa (pendientes, planes abiertos,
+  cerrados, propuestas, documentos por módulo).
+- Anotado arriba de todo: desde el 19-oct las facturas de consumidor de las
+  6 pm en adelante no se mandan a Hacienda (1,174, ~$9,700) y no entran al
+  libro de IVA.
+
 ## v2.1357.33 — Libro: opción «no va al libro»
 
 - **Nueva opción «No va al libro»** en Bitácoras → Antibióticos → Sacados:

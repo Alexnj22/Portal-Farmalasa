@@ -1281,9 +1281,24 @@ export const AuthProvider = ({ children }) => {
       if (isNetworkError(fnErr)) return { ok: false, error: NETWORK_ERROR_MSG };
       if (fnErr || !ensured?.ok || !ensured?.user?.email) return { ok: false };
 
-      const { data: authData, error: authErr } = await withNetworkRetry(() =>
-        supabase.auth.signInWithPassword({ email: ensured.user.email, password: cleanId })
-      );
+      // Se entra con el pase de un solo uso que emite el servidor, no con el PIN
+      // como contraseña (SEGURIDAD-Y-ACCESO §3.1). Sin `withNetworkRetry` a
+      // propósito: el pase vale una vez, y un reintento tras una respuesta
+      // perdida fallaría siempre. Si el pase no vino o no entró, se usa la
+      // contraseña — mientras dure la etapa 1, en que conviven las dos.
+      let authData = null;
+      let authErr = null;
+      if (ensured.user.token_hash) {
+        ({ data: authData, error: authErr } = await supabase.auth.verifyOtp({
+          token_hash: ensured.user.token_hash, type: 'magiclink',
+        }));
+        if (!authData?.session) anotar('carne-pase-fallo', { mensaje: String(authErr?.message || 'sin sesión').slice(0, 140) });
+      }
+      if (!authData?.session) {
+        ({ data: authData, error: authErr } = await withNetworkRetry(() =>
+          supabase.auth.signInWithPassword({ email: ensured.user.email, password: cleanId })
+        ));
+      }
       if (authData?.session) sesionAbierta = true;
       if (isNetworkError(authErr)) return await fallar({ ok: false, error: NETWORK_ERROR_MSG });
       if (authErr || !authData?.session) return await fallar({ ok: false });

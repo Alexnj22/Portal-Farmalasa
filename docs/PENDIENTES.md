@@ -53,8 +53,12 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
    esperar la primera NC real.
 
 ### Seguridad y acceso (cada uno pide además una decisión; ver SEGURIDAD-Y-ACCESO)
-10. **El PIN deja de ser la contraseña de la cuenta del carné** (token de un
-    solo uso + rotación). — SEGURIDAD:59-110
+10. **El PIN deja de ser la contraseña de la cuenta del carné** — etapa 1 (pase
+    de un solo uso) **hecha y probada en pruebas, v2.1357.46**. Falta: subir función
+    + web el domingo 01:00–04:00 SV; días después, la etapa 2 (contraseñas al
+    azar), con OK del usuario. — SEGURIDAD:59-110
+    Después: **carné sólo en su horario** (ítem 14), sobre esta misma puerta,
+    primero en modo aviso.
 11. **Carné sólo desde terminal registrada + tope de intentos**. Hoy hay 1
     terminal en 1 de 7 salas. — SEGURIDAD:112-134
 12. Segundo humano y dispositivo conocido: los interruptores existen y nada los

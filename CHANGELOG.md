@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.46 — seguridad: el carné entra con un pase de un solo uso (etapa 1)
+
+- SEGURIDAD-Y-ACCESO §3.1. La contraseña de la cuenta del carné es el PIN, y
+  el PIN sale del número con una fórmula sin secreto: con el número de alguien
+  se podía entrar directo al servicio de cuentas, sin pasar por el portal.
+- `ensure_user_by_code` ahora emite además un **pase de un solo uso**
+  (`generateLink` → `hashed_token`), y el navegador entra con `verifyOtp`. Si
+  el pase no llega o no entra, usa la contraseña como antes: en esta etapa
+  conviven los dos. La etapa 2 —cambiar las contraseñas de esas cuentas a un
+  valor al azar— va días después, con el OK del usuario.
+- Medido en el entorno de pruebas (8 corridas, mediana): pasar el carné
+  **1,410 ms con el pase contra 1,482 ms con contraseña**; el paso de entrar
+  baja de 317 a 99 ms. El pase reusado se rechaza; la sesión se renueva y el
+  perfil responde después de renovar.
+- Sin cambios para quien usa el carné: el mismo carné, el mismo gesto.
+- **No está en producción**: la función y la web se suben juntas, en la
+  ventana del domingo de madrugada.
+
 ## v2.1357.45 — Conteo cíclico: 200 productos más todos los antibióticos
 
 - **El conteo cíclico del día 15 lleva todos los antibióticos más 200

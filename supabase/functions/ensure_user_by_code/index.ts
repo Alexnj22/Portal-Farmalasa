@@ -395,7 +395,24 @@ Deno.serve(async (req: Request) => {
       if (linkErr) return json({ ok: false, error: "LINK_ERROR", details: linkErr.message });
     }
 
-    return json({ ok: true, isNewUser, user: { email, isKiosk: true } });
+    // ── El pase de un solo uso (2026-10-28, SEGURIDAD-Y-ACCESO §3.1) ──
+    //
+    // La contraseña de esta cuenta ES el PIN, y el PIN sale del número con una
+    // fórmula sin secreto: con el número de alguien se podía ir directo a Auth
+    // —sin pasar por esta función, su tope ni su registro— y abrir su sesión.
+    // El navegador entra ahora con este pase (`verifyOtp({ token_hash })`), que
+    // sólo esta función puede emitir y que vale una vez. Así la única puerta
+    // del carné es ésta, que es la que se puede vigilar (horario, sala, tope).
+    //
+    // Etapa 1: el pase CONVIVE con la contraseña. Si no se pudo emitir, el
+    // navegador entra como antes. Cuando los registros muestren que nadie usa
+    // el camino viejo, las contraseñas de estas cuentas se cambian a un valor
+    // al azar (etapa 2) y la puerta de atrás queda cerrada.
+    const { data: pase, error: errPase } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+    if (errPase) console.error("[ensure_user_by_code] generateLink:", errPase.message);
+    const tokenHash = (pase?.properties as { hashed_token?: string } | undefined)?.hashed_token ?? null;
+
+    return json({ ok: true, isNewUser, user: { email, isKiosk: true, token_hash: tokenHash } });
 
   } catch (e) {
     return json({ ok: false, error: "UNHANDLED", details: String((e as Error)?.message ?? e) });

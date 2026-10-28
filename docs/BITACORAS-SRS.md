@@ -179,17 +179,20 @@ farmacéutico que firma; «portal» es trabajo de código.
     mostraban lote vencido al vender (ROCEFORT, RTS 6.6.6). Con datos reales desde
     noviembre, ese caso necesita dueño: quién lo mira y qué hace. *Destraba:
     portal + regente.*
-14. **Inyecciones — hecho el 2026-10-28.** Dos reglas, decisión del usuario:
-    - **La bitácora cuenta sólo lo que aplicó enfermería.** Lo que marcó otro
-      cargo sigue `aplicada` pero no aparece en la bitácora ni en el historial
-      de Pendientes; lo ven sólo los cuatro cargos de administración
-      (`inyecciones_ver_todas`, migración `20261028180147`).
-    - **Con enfermería en la sala, la marca ella.** Si una Regente de
-      Enfermería de esa sala tiene sesión del portal abierta (renovada en los
-      últimos 70 min), nadie más puede marcar «aplicada»: canjear una pendiente
-      se rechaza, y cobrar con «aplicar ahora» cobra igual y la deja pendiente
-      para ella (migración `20261028181138`). Se mide por sesión porque
-      `employee_rosters` y `attendance` están vacías en producción.
+14. **Inyecciones — hecho el 2026-10-28.** Definición del usuario:
+    1. **Cualquiera registra** la aplicación (cobra y marca «aplicada»), sin
+       bloqueos.
+    2. **Enfermería confirma** cuáles aplicó, en Inyecciones → **Por
+       confirmar**. Las que marca ella misma entran confirmadas solas. Plazo:
+       hasta el final del día siguiente; lo que no confirma queda «no aplicada
+       por enfermería» sin que nadie haga nada (el estado lo deriva
+       `inyeccion_enfermeria_estado`, no un cron).
+    3. **La bitácora son las confirmadas**, con la enfermera como quien aplicó.
+       Lo no confirmado sigue `aplicada` y sólo lo ve administración
+       (`inyecciones_ver_todas`). Cuenta desde el **1-nov-2026**.
+
+    Migración `20261028184212`. Reemplaza la regla de `20261028181138` («con
+    enfermería conectada, sólo ella marca»), que se deshizo el mismo día.
 
     **Qué dice la norma (verificado el 2026-10-28):** ni el RTS 11.02.04:24 ni la
     Guía de Verificación BPAD mencionan la aplicación de inyecciones ni piden un

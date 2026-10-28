@@ -177,3 +177,24 @@ export async function clasificarProducto({ erpProductId, esInyeccion }) {
     });
     if (error) throw error;
 }
+
+/**
+ * Enfermería (2026-10-28): lo aplicado en su sala que todavía puede confirmar
+ * —hasta el final del día siguiente—. Lo que confirma es la bitácora; lo que
+ * no, queda «no aplicada por enfermería» solo. Ver la migración
+ * `inyecciones_enfermeria_confirma_y_la_bitacora_es_lo_confirmado`.
+ */
+export async function fetchPorConfirmar({ sala = null } = {}) {
+    const { data, error } = await supabase.rpc('inyecciones_por_confirmar', {
+        p_branch_id: sala ? Number(sala) : null,
+    });
+    if (error) throw error;
+    return data ?? [];
+}
+
+/** Confirma que las aplicó quien llama. Falla entera si alguna ya no se puede. */
+export async function confirmarAplicaciones(ids) {
+    const { data, error } = await supabase.rpc('inyeccion_confirmar_enfermeria', { p_ids: ids });
+    if (error) throw error;
+    return data;
+}

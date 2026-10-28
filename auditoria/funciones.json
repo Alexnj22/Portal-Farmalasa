@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-28T18:13:21.353Z",
+ "generado": "2026-10-28T18:42:52.995Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -3261,6 +3261,14 @@
    "area": "ventas",
    "por": "código"
   },
+  "inyeccion_confirma_enfermeria_sola": {
+   "area": "ventas",
+   "por": "trigger"
+  },
+  "inyeccion_confirmar_enfermeria": {
+   "area": "ventas",
+   "por": "código"
+  },
   "inyeccion_cotizar": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -3269,9 +3277,9 @@
    "area": "ventas",
    "por": "código"
   },
-  "inyeccion_enfermeria_presente": {
-   "area": "personal",
-   "por": "tablas"
+  "inyeccion_enfermeria_estado": {
+   "area": "ventas",
+   "por": "llamada"
   },
   "inyeccion_es_aplicable": {
    "area": "ventas",
@@ -3318,6 +3326,10 @@
    "por": "código"
   },
   "inyecciones_pendientes": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyecciones_por_confirmar": {
    "area": "ventas",
    "por": "código"
   },

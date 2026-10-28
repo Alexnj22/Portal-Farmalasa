@@ -202,6 +202,51 @@ export type Database = {
           },
         ]
       }
+      antibioticos_aware: {
+        Row: {
+          atc: string | null
+          confirmado_at: string | null
+          confirmado_por: string | null
+          created_at: string
+          fuente: string
+          grupo: string | null
+          molecula: string
+        }
+        Insert: {
+          atc?: string | null
+          confirmado_at?: string | null
+          confirmado_por?: string | null
+          created_at?: string
+          fuente: string
+          grupo?: string | null
+          molecula: string
+        }
+        Update: {
+          atc?: string | null
+          confirmado_at?: string | null
+          confirmado_por?: string | null
+          created_at?: string
+          fuente?: string
+          grupo?: string | null
+          molecula?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "antibioticos_aware_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "antibioticos_aware_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anticipos_en_planilla: {
         Row: {
           created_at: string
@@ -15449,6 +15494,8 @@ export type Database = {
           created_at: string
           customer_id: number | null
           dosis_ml: number | null
+          enfermeria_at: string | null
+          enfermeria_por: string | null
           id: number
           invoice_id: number | null
           linea_num: number | null
@@ -15470,6 +15517,8 @@ export type Database = {
           created_at?: string
           customer_id?: number | null
           dosis_ml?: number | null
+          enfermeria_at?: string | null
+          enfermeria_por?: string | null
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
@@ -15491,6 +15540,8 @@ export type Database = {
           created_at?: string
           customer_id?: number | null
           dosis_ml?: number | null
+          enfermeria_at?: string | null
+          enfermeria_por?: string | null
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
@@ -15546,6 +15597,20 @@ export type Database = {
           {
             foreignKeyName: "inyeccion_aplicaciones_creada_por_fkey"
             columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_enfermeria_por_fkey"
+            columns: ["enfermeria_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_aplicaciones_enfermeria_por_fkey"
+            columns: ["enfermeria_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -27832,206 +27897,6 @@ export type Database = {
           weekly_contracted_hours: number | null
           weekly_schedule: Json | null
         }
-        Insert: {
-          account_type?: string | null
-          acreditaciones?: Json | null
-          additional_skills?: Json | null
-          address?: string | null
-          afp_estado?: string | null
-          afp_institution?: string | null
-          alt_identity_document_type?: string | null
-          birth_date?: string | null
-          blocked_at?: string | null
-          blocked_by?: string | null
-          blocked_reason?: string | null
-          blocked_until?: string | null
-          blood_type?: string | null
-          branch_id?: number | null
-          carne_dependiente_url?: string | null
-          carne_pendiente?: boolean | null
-          chronic_conditions?: Json | null
-          contador_license_number?: string | null
-          contract_end_date?: string | null
-          contract_start_date?: string | null
-          contract_temporal_legal_basis?: string | null
-          contract_temporal_reason?: string | null
-          contract_type?: string | null
-          contrato_fecha_celebracion?: string | null
-          contrato_lugar_celebracion?: string | null
-          contrato_prorrogas?: Json | null
-          created_at?: string | null
-          department?: string | null
-          disability_grade?: string | null
-          disability_has_certification?: boolean | null
-          disability_type?: string | null
-          distrito?: string | null
-          economic_dependents?: Json | null
-          education_grade_completed?: string | null
-          education_level?: string | null
-          education_specialty?: string | null
-          email?: string | null
-          emergency_contact_extra_phones?: string[] | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          emergency_contacts?: Json | null
-          employee_documents?: Json | null
-          exceptions?: Json | null
-          extra_addresses?: Json | null
-          extra_emails?: string[] | null
-          extra_phones?: string[] | null
-          first_names?: string | null
-          forma_estipulacion_salario?: string | null
-          gender?: string | null
-          has_car?: boolean | null
-          has_car_license?: boolean | null
-          has_disability?: boolean | null
-          has_maestria?: boolean | null
-          has_motorcycle?: boolean | null
-          has_motorcycle_license?: boolean | null
-          has_srs_accreditation?: boolean | null
-          herramientas_entregadas?: Json | null
-          hire_date?: string | null
-          hours_owed?: number | null
-          id?: string | null
-          is_studying?: boolean | null
-          isss_estado?: string | null
-          last_names?: string | null
-          lugar_nacimiento?: string | null
-          lugar_pago?: string | null
-          maestria_is_studying?: boolean | null
-          maestria_study_duration_years?: number | null
-          maestria_study_start_date?: string | null
-          maestria_title?: string | null
-          marital_status?: string | null
-          medico_license_number?: string | null
-          medio_pago?: string | null
-          mtps_remitido_fecha?: string | null
-          municipality?: string | null
-          name?: string | null
-          nationality?: string | null
-          nursing_license_number?: string | null
-          periodo_pago?: string | null
-          pharmacist_license_number?: string | null
-          phone?: string | null
-          photo_url?: string | null
-          profession?: string | null
-          rango?: never
-          role_id?: number | null
-          secondary_role_id?: number | null
-          shift_id?: number | null
-          srs_accreditation_expiry?: string | null
-          status?: string | null
-          study_duration_years?: number | null
-          study_start_date?: string | null
-          suplente_id?: string | null
-          system_role?: never
-          tiene_acreditacion_dependiente?: boolean | null
-          tipo_ficha?: string | null
-          username?: string | null
-          weekly_contracted_hours?: number | null
-          weekly_schedule?: Json | null
-        }
-        Update: {
-          account_type?: string | null
-          acreditaciones?: Json | null
-          additional_skills?: Json | null
-          address?: string | null
-          afp_estado?: string | null
-          afp_institution?: string | null
-          alt_identity_document_type?: string | null
-          birth_date?: string | null
-          blocked_at?: string | null
-          blocked_by?: string | null
-          blocked_reason?: string | null
-          blocked_until?: string | null
-          blood_type?: string | null
-          branch_id?: number | null
-          carne_dependiente_url?: string | null
-          carne_pendiente?: boolean | null
-          chronic_conditions?: Json | null
-          contador_license_number?: string | null
-          contract_end_date?: string | null
-          contract_start_date?: string | null
-          contract_temporal_legal_basis?: string | null
-          contract_temporal_reason?: string | null
-          contract_type?: string | null
-          contrato_fecha_celebracion?: string | null
-          contrato_lugar_celebracion?: string | null
-          contrato_prorrogas?: Json | null
-          created_at?: string | null
-          department?: string | null
-          disability_grade?: string | null
-          disability_has_certification?: boolean | null
-          disability_type?: string | null
-          distrito?: string | null
-          economic_dependents?: Json | null
-          education_grade_completed?: string | null
-          education_level?: string | null
-          education_specialty?: string | null
-          email?: string | null
-          emergency_contact_extra_phones?: string[] | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          emergency_contacts?: Json | null
-          employee_documents?: Json | null
-          exceptions?: Json | null
-          extra_addresses?: Json | null
-          extra_emails?: string[] | null
-          extra_phones?: string[] | null
-          first_names?: string | null
-          forma_estipulacion_salario?: string | null
-          gender?: string | null
-          has_car?: boolean | null
-          has_car_license?: boolean | null
-          has_disability?: boolean | null
-          has_maestria?: boolean | null
-          has_motorcycle?: boolean | null
-          has_motorcycle_license?: boolean | null
-          has_srs_accreditation?: boolean | null
-          herramientas_entregadas?: Json | null
-          hire_date?: string | null
-          hours_owed?: number | null
-          id?: string | null
-          is_studying?: boolean | null
-          isss_estado?: string | null
-          last_names?: string | null
-          lugar_nacimiento?: string | null
-          lugar_pago?: string | null
-          maestria_is_studying?: boolean | null
-          maestria_study_duration_years?: number | null
-          maestria_study_start_date?: string | null
-          maestria_title?: string | null
-          marital_status?: string | null
-          medico_license_number?: string | null
-          medio_pago?: string | null
-          mtps_remitido_fecha?: string | null
-          municipality?: string | null
-          name?: string | null
-          nationality?: string | null
-          nursing_license_number?: string | null
-          periodo_pago?: string | null
-          pharmacist_license_number?: string | null
-          phone?: string | null
-          photo_url?: string | null
-          profession?: string | null
-          rango?: never
-          role_id?: number | null
-          secondary_role_id?: number | null
-          shift_id?: number | null
-          srs_accreditation_expiry?: string | null
-          status?: string | null
-          study_duration_years?: number | null
-          study_start_date?: string | null
-          suplente_id?: string | null
-          system_role?: never
-          tiene_acreditacion_dependiente?: boolean | null
-          tipo_ficha?: string | null
-          username?: string | null
-          weekly_contracted_hours?: number | null
-          weekly_schedule?: Json | null
-        }
         Relationships: [
           {
             foreignKeyName: "employees_branch_id_fkey"
@@ -29239,6 +29104,10 @@ export type Database = {
         Returns: string[]
       }
       avisos_programados_enviar_push: { Args: never; Returns: number }
+      aware_confirmar: {
+        Args: { p_grupo: string; p_molecula: string }
+        Returns: undefined
+      }
       backfill_daily_stats_chunk: { Args: never; Returns: string }
       backup_dump_table: { Args: { p_table: string }; Returns: Json }
       bitacora_ahora_sv: { Args: never; Returns: string }
@@ -29255,6 +29124,7 @@ export type Database = {
         Args: { p_accion?: string; p_branch_id: number }
         Returns: undefined
       }
+      bitacora_exigir_libro: { Args: never; Returns: undefined }
       bitacora_hoy_sv: { Args: never; Returns: string }
       bitacora_libro_pendientes: {
         Args: { p_branch_id: number; p_periodo: string }
@@ -29282,6 +29152,10 @@ export type Database = {
       bitacora_tomar_folio: {
         Args: { p_anio: number; p_branch_id: number; p_serie?: string }
         Returns: number
+      }
+      bitacora_validar_lectura: {
+        Args: { p_humedad: number; p_temperatura: number }
+        Returns: undefined
       }
       block_employee: {
         Args: { p_employee_id: string; p_reason?: string; p_until?: string }
@@ -32187,6 +32061,7 @@ export type Database = {
           ventas_gravadas: number
         }[]
       }
+      get_listado_antibioticos: { Args: never; Returns: Json }
       get_lockable_modules: {
         Args: never
         Returns: {
@@ -33164,6 +33039,10 @@ export type Database = {
         Args: { p_erp_product_id: number; p_es_inyeccion: boolean }
         Returns: undefined
       }
+      inyeccion_confirmar_enfermeria: {
+        Args: { p_ids: number[] }
+        Returns: number
+      }
       inyeccion_cotizar: {
         Args: {
           p_branch_id: number
@@ -33177,6 +33056,10 @@ export type Database = {
       inyeccion_desvincular_cobro: {
         Args: { p_cobro_id: number }
         Returns: number
+      }
+      inyeccion_enfermeria_estado: {
+        Args: { p_aplicada_at: string; p_enfermeria_at: string }
+        Returns: string
       }
       inyeccion_es_aplicable: {
         Args: { p_descripcion: string; p_erp_product_id: number }
@@ -33267,6 +33150,10 @@ export type Database = {
       }
       inyecciones_pendientes: {
         Args: { p_branch_id?: number; p_buscar?: string }
+        Returns: Json
+      }
+      inyecciones_por_confirmar: {
+        Args: { p_branch_id?: number }
         Returns: Json
       }
       items_sin_ingresar: {
@@ -35002,7 +34889,12 @@ export type Database = {
         Returns: undefined
       }
       reserva_cambiar_estado: {
-        Args: { p_estado: string; p_id: number; p_motivo?: string }
+        Args: {
+          p_anticipo_en_venta?: boolean
+          p_estado: string
+          p_id: number
+          p_motivo?: string
+        }
         Returns: Json
       }
       reserva_cancelar_por_cliente: {
@@ -35093,6 +34985,10 @@ export type Database = {
       }
       reserva_usar_saldo_favor: {
         Args: { p_id: number; p_monto: number; p_prueba: string }
+        Returns: Json
+      }
+      reserva_ventas_del_producto: {
+        Args: { p_reserva: Database["public"]["Tables"]["app_reservas"]["Row"] }
         Returns: Json
       }
       reservar_pago_bono: { Args: { p_item: string }; Returns: Json }

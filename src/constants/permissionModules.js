@@ -199,10 +199,11 @@ const GRUPOS_CRUDOS = [
             { key: 'inyecciones', label: 'Inyecciones', desc: 'Las aplicaciones de inyección pagadas: qué venta no cobró su aplicación, qué tiene cada cliente pagado y sin aplicar, y la bitácora de quién cobró y quién aplicó', icono: 'Syringe', hasApprove: false, hasScope: true, sub: [
                 { key: 'inyecciones_tab_por_cobrar', label: 'Por cobrar', tipo: 'tab' },
                 { key: 'inyecciones_tab_pendientes', label: 'Pendientes', tipo: 'tab' },
+                { key: 'inyecciones_tab_confirmar',  label: 'Por confirmar (enfermería confirma las que aplicó)', tipo: 'tab' },
                 { key: 'inyecciones_tab_bitacora',   label: 'Bitácora',   tipo: 'tab' },
                 { key: 'inyecciones_dosis',   label: 'Confirmar aplicaciones por producto y asignar cobros', tipo: 'cap' },
                 { key: 'inyecciones_precios', label: 'Cambiar el precio de la aplicación', tipo: 'cap' },
-                { key: 'inyecciones_ver_todas', label: 'Ver también las aplicaciones que no hizo enfermería', tipo: 'cap' },
+                { key: 'inyecciones_ver_todas', label: 'Ver también las aplicaciones que enfermería no confirmó', tipo: 'cap' },
             ]},
             { key: 'cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Quién debe, desde cuándo y cuánto, en las seis salas. Ver es mirar la cartera y el plazo del mes; editar es abonar — el efectivo entra al cajón, cuenta para el corte del día y no se puede deshacer', icono: 'HandCoins', hasApprove: false, hasScope: true },
             { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icono: 'Package', hasApprove: false, hasScope: true, sub: [

@@ -687,6 +687,9 @@
     "inyecciones_bitacora": {
       "guarda": "alcance"
     },
+    "inyecciones_por_confirmar": {
+      "guarda": "alcance"
+    },
     "inyecciones_bitacora_buscar": {
       "guarda": "alcance"
     },

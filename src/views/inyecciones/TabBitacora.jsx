@@ -241,6 +241,10 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                             {f.estado === 'APLICADA' ? (
                                 <div className="space-y-1.5">
                                     <Badge variant="success" size="sm" dot>Aplicada</Badge>
+                                    {/* Sólo administración ve las que enfermería no confirmó
+                                        (2026-10-28): la bitácora de la sala son las confirmadas. */}
+                                    {f.enfermeria === 'POR_CONFIRMAR' && <Badge variant="warning" size="sm">Falta que la confirme enfermería</Badge>}
+                                    {f.enfermeria === 'NO' && <Badge variant="neutral" size="sm">Sin enfermería · no va en la bitácora</Badge>}
                                     <PersonaConFoto id={f.aplicada_por_id} nombre={f.aplicada_por} px={22}
                                         detalle={`${horaDe(f.aplicada_at)}${f.aplicada_en && f.aplicada_en !== f.sala ? ` · en ${f.aplicada_en}` : ''}`} />
                                 </div>

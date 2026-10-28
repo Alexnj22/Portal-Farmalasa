@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.24 — Inyecciones: cualquiera registra, enfermería confirma, la bitácora es lo confirmado
+
+Nueva pestaña **Por confirmar** en Inyecciones: la Regente de Enfermería confirma cuáles aplicó ella («La apliqué yo», o todas). Cualquiera sigue registrando la aplicación sin bloqueos (se deshace la regla de v2.1357.23). Las que marca enfermería entran confirmadas solas; las que no confirma hasta el final del día siguiente quedan «no aplicada por enfermería». La bitácora muestra sólo lo confirmado, con la enfermera como quien aplicó; administración ve el resto con su estado. Cuenta desde el 1-nov. Migración `20261028184212`.
+
 ## v2.1357.23 — Inyecciones: con enfermería en la sala, la aplicación la marca ella
 
 Si una Regente de Enfermería de la sala tiene el portal abierto, sólo ella marca «aplicada». Canjear una pendiente desde otro cargo se rechaza con el motivo; cobrar con «aplicar ahora» cobra igual y la deja pendiente para enfermería, con aviso en Mi caja. La presencia se mide por sesión (horarios y marcaciones están vacíos en producción). Verificada la norma: ni el RTS, ni la Guía BPAD, ni las Directrices de Atención Farmacéutica de la JVPQF piden un registro de inyecciones — la bitácora es control interno. Migración `20261028181138`.

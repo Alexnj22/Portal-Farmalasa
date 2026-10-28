@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { BookOpen, Hourglass, Settings2, Syringe, HandCoins } from 'lucide-react';
+import { BookOpen, ClipboardCheck, Hourglass, Settings2, Syringe, HandCoins } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -9,6 +9,7 @@ import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import TabPorCobrar from './inyecciones/TabPorCobrar';
 import TabPendientes from './inyecciones/TabPendientes';
 import TabBitacora from './inyecciones/TabBitacora';
+import TabConfirmar from './inyecciones/TabConfirmar';
 import TabAjustes from './inyecciones/TabAjustes';
 
 /*
@@ -22,6 +23,8 @@ import TabAjustes from './inyecciones/TabAjustes';
  *   · Por cobrar   ventas con inyección y si su aplicación se cobró (supervisión:
  *                  nombra al vendedor, la sala no la ve — decisión 2026-09-23).
  *   · Pendientes   lo pagado y sin aplicar, por cliente.
+ *   · Por confirmar enfermería confirma cuáles aplicó (2026-10-28): cualquiera
+ *                  registra, la bitácora es lo que ella confirma.
  *   · Bitácora     cada aplicación: quién cobró, quién aplicó, cuándo y dónde.
  *   · Ajustes      precios y aplicaciones por producto.
  *
@@ -35,6 +38,7 @@ const SALAS_QUE_VENDEN = [4, 25, 27, 28, 29, 2];
 const TODAS = [
     { key: 'por-cobrar', label: 'Por cobrar', icon: HandCoins },
     { key: 'pendientes', label: 'Pendientes', icon: Hourglass },
+    { key: 'confirmar',  label: 'Por confirmar', icon: ClipboardCheck },
     { key: 'bitacora',   label: 'Bitácora',   icon: BookOpen },
     { key: 'ajustes',    label: 'Ajustes',    icon: Settings2 },
 ];
@@ -42,6 +46,7 @@ const TODAS = [
 const PISTAS = {
     'por-cobrar': 'Buscar cliente, factura o inyección...',
     pendientes:   'Buscar cliente, factura o inyección...',
+    confirmar:    'Buscar cliente, factura o inyección...',
     bitacora:     'Buscar cliente, vendedor, factura o inyección...',
 };
 
@@ -53,6 +58,7 @@ export default function InyeccionesView() {
     const puede = {
         'por-cobrar': hasPermission('inyecciones_tab_por_cobrar'),
         pendientes:   hasPermission('inyecciones_tab_pendientes'),
+        confirmar:    hasPermission('inyecciones_tab_confirmar'),
         bitacora:     hasPermission('inyecciones_tab_bitacora'),
         ajustes:      hasPermission('inyecciones_dosis') || hasPermission('inyecciones_precios'),
     };
@@ -85,6 +91,7 @@ export default function InyeccionesView() {
         <GlassViewLayout icon={Syringe} title="Inyecciones" filtersContent={filtersContent}>
             {pestana === 'por-cobrar' && <TabPorCobrar {...comunes} />}
             {pestana === 'pendientes' && <TabPendientes {...comunes} />}
+            {pestana === 'confirmar' && <TabConfirmar {...comunes} />}
             {pestana === 'bitacora' && <TabBitacora {...comunes} limpiarBusqueda={() => setRawSearch('')} />}
             {pestana === 'ajustes' && <TabAjustes />}
         </GlassViewLayout>

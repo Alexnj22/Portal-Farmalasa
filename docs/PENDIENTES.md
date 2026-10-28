@@ -39,11 +39,13 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
    v2.1357.39** (`avisar_ventas_sin_sello`, cron 8:10 SV).
 3. ~~`generar_csv_libro` sin sucursal devolvía 0 filas~~ — **hecho v2.1357.41**
    (ahora falla con el motivo).
-4. **Anexo 3 de compras con la forma F-07**: 21 columnas, tipo en C, Q-T desde
-   `f07_*`, sello (hoy `''`). — CONTABILIDAD:156-166, LIBROS-IVA:190-195
-5. **Anexo 8 de percepción** rehecho (sello, 2 decimales, DUI, número de anexo);
-   **anexo 1 columna G** vacía; **anulados con el código de 36**. — CONTABILIDAD:168-172
-6. **Exportar el año entero** con `fetchAllRows` (`src/data/librosIva.js:10`). — CONTABILIDAD:183-186
+4. ⏸ **Anexos de compras, percepción, ventas y anulados con la forma oficial**
+   (anexo 3 F-07, anexo 8, anexo 1 col. G, anulados con 36) — **en espera: se arma
+   con la contadora** (decisión del usuario, 2026-10-28). Ver «De la contadora».
+5. (unido al 4)
+6. ~~Exportar el año entero~~ — **no hace falta hoy**: la pantalla sólo pide un mes,
+   y el mes más cargado (7 salas) no llega a 400 filas contra el techo de 1000.
+   Se hace el día que se pida exportar el año.
 7. **Concepto obligatorio en `payroll_entries.other_discounts`**, sólo los del
    Art. 136. La planilla tiene 0 filas: es el momento. — FALTANTES:426-431
 8. Escribir la compra en el origen (`compras.php`). — AUDITORIA-MATCH-DTE:130
@@ -115,6 +117,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 - Clientes: 18 fichas `sin_numero_erp`; 8 anulaciones en lista negra.
 
 **De la contadora**
+- **Armar los anexos de Hacienda** (ítem A4): traer un anexo que ella haya subido de verdad y ajustar el formato contra ese.
 - Método de costeo (destraba costo histórico → registro Art. 142-A → contabilidad formal → F-971).
 - Primer período fiscal y con qué libro; 2 o 4 decimales; 26 clasificaciones condicionadas; quién retiene renta (0/175); F-983/F-987; anulados tipo `1` vs `01`; las 14 preguntas de CONTABILIDAD:225-276.
 

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.37 — Antibióticos: principio activo de 43 productos del libro desde el registro de la SRS
+
+- **43 productos del libro con su principio activo**, verificados uno por uno
+  contra el registro sanitario de la SRS (`apiconsulta.srs.gob.sv`). ESOPRASEK
+  PLUS no está en el registro con ese nombre: su composición sale de la ficha
+  de farmacia (levofloxacino + amoxicilina + esomeprazol). Quedan 8 sin dato
+  porque el registro no lo trae: BACTERIOTAL, FIXIM granulados ×2, FLOXA PACK
+  ×2, PEN DI BEN, QUINOEFEX URO y ANDIGENT.
+- La búsqueda automática de «Enriquecer SRS» no encontraba ninguno: arma la
+  consulta con el laboratorio del catálogo, que no coincide con el titular del
+  registro.
+- Moléculas nuevas en el listado: sultamicilina (Acceso) y cefepima
+  (Precaución), sin confirmar. Arreglo: `antibiotico_agregar_molecula` fallaba
+  siempre por el CHECK de `fuente`.
+- `gate:receta` vuelve a verde; su tope de productos sin principio activo baja
+  de 47 a 8.
+
 ## v2.1357.36 — compras: el sync no escribe con un libro que no es el libro
 
 - **`sync-erp-purchases` (fastBackfill, cron semanal de los domingos)** ya no

@@ -51,6 +51,41 @@ const SIN_NOVEDAD = new Set(["todavia_no", "ya_tiene_z", "sin_caja_abierta", "si
 
 const horaSV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(11, 16);
 
+/** Supervisión: los mismos cargos que avisa `avisar_dias_sin_cierre`, por cargo y no por lista. */
+const SUPERVISION = ["Gerente General", "Supervisor/a de Ventas"];
+
+// deno-lint-ignore no-explicit-any
+async function avisarSupervision(supabase: any, sala: number, fecha: string,
+  preventas: { referencia: string; cliente: string; total: number }[]) {
+  const { data: roles, error: eRoles } = await supabase.from("roles").select("id").in("name", SUPERVISION);
+  if (eRoles || !roles?.length) {
+    console.error(`[cierre-automatico-caja] sala=${sala} cargos de supervisión: ${eRoles?.message ?? "ninguno"}`);
+    return;
+  }
+  const ids = roles.map((r: { id: number }) => r.id).join(",");
+  const { data: gente, error: eGente } = await supabase.from("employees").select("id")
+    .eq("status", "ACTIVO").or(`role_id.in.(${ids}),secondary_role_id.in.(${ids})`)
+    .or("tipo_ficha.is.null,tipo_ficha.eq.empleado");
+  if (eGente || !gente?.length) {
+    console.error(`[cierre-automatico-caja] sala=${sala} supervisión: ${eGente?.message ?? "nadie activo"}`);
+    return;
+  }
+  // Sin el nombre el aviso sale igual, con «Una sala»: no se pierde por un rótulo.
+  const { data: suc, error: eSuc } = await supabase.from("branches").select("name").eq("id", sala).maybeSingle();
+  if (eSuc) console.error(`[cierre-automatico-caja] sala=${sala} nombre: ${eSuc.message}`);
+  const lista = preventas.map((p) => `#${p.referencia} ${p.cliente} $${Number(p.total).toFixed(2)}`).join("; ");
+  const { error } = await supabase.rpc("notify_employees", {
+    p_recipients: gente.map((e: { id: string }) => e.id), p_type: "DIA_SIN_CIERRE",
+    p_title: `${suc?.name ?? "Una sala"}: el día no se cerró por preventas sin finalizar`,
+    p_body: (preventas.length === 1 ? "Quedó una preventa guardada" : `Quedaron ${preventas.length} preventas guardadas`)
+      + (lista ? ` (${lista})` : "") + ". Puede ser dinero que ya está en el cajón y todavía no es venta: "
+      + "hay que finalizarla o eliminarla y cerrar el día.",
+    p_link: "/cortes", p_metadata: { origen: "cierre-automatico", motivo: "preventas_sin_finalizar", fecha, preventas },
+    p_push: true, p_branch_id: sala,
+  });
+  if (error) console.error(`[cierre-automatico-caja] sala=${sala} aviso a supervisión: ${error.message}`);
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -145,6 +180,27 @@ Deno.serve(async (req) => {
       // Lo mismo si el juez, preguntado otra vez, ya ve el Z o una caja cerrada.
       if (z?.ya_estaba === true || (z?.no_procede === true && SIN_NOVEDAD.has(String(z.motivo)))) {
         resultados.push({ sala: d.branch_id, motivo: "ya_tiene_z" });
+        continue;
+      }
+
+      /* ── UNA PREVENTA SIN FINALIZAR (2026-10-28) ───────────────────────
+       * «sí, que frene y notifique a supervisor» (usuario). Puede ser dinero
+       * que ya está en el cajón y todavía no es venta: el día queda abierto y
+       * supervisión se entera AHORA, no a las 7:00. El cron corre cada 10
+       * minutos, así que se avisa sólo la primera vez de la noche. */
+      if (z?.preventas_pendientes === true) {
+        const preventas = Array.isArray(z.preventas) ? z.preventas as
+          { referencia: string; cliente: string; total: number }[] : [];
+        const { data: previo, error: errPrevio } = await supabase.from("caja_cierres_automaticos")
+          .select("motivo").eq("branch_id", d.branch_id).eq("fecha", d.fecha).maybeSingle();
+        if (errPrevio) console.error(`[cierre-automatico-caja] sala=${d.branch_id} leyendo lo anotado: ${errPrevio.message}`);
+        await anotar(d, "no_cerrado", {
+          motivo: "preventas_sin_finalizar", detalle: { preventas, error: z.error ?? null },
+        });
+        if (!errPrevio && previo?.motivo !== "preventas_sin_finalizar") {
+          await avisarSupervision(supabase, d.branch_id, d.fecha, preventas);
+        }
+        resultados.push({ sala: d.branch_id, cerrado: false, motivo: "preventas_sin_finalizar", preventas });
         continue;
       }
 

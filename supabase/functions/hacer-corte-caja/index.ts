@@ -823,10 +823,11 @@ Deno.serve(async (req) => {
      * y el conteo no se gasta. Vale para el C y para el Z, igual que en la
      * pantalla del origen (el Z sale por el mismo formulario).
      *
-     * El cierre AUTOMÁTICO no lo mira (todavía): a esa hora no hay nadie que
-     * finalice la preventa, y frenarlo dejaría el día abierto. `simular` es una
-     * sonda y tampoco. */
-    if (!simular && !automatico) {
+     * El cierre AUTOMÁTICO también frena (decisión del usuario, mismo día):
+     * «sí, que frene y notifique a supervisor». El día queda abierto y
+     * `cierre-automatico-caja` avisa a supervisión con la lista. `simular` es
+     * una sonda y no frena. */
+    if (!simular) {
       const vivas = await preventasVivas(cookie);
       if (vivas.length) {
         const lista = vivas.map((p) => `#${p.referencia} ${p.cliente} $${p.total.toFixed(2)}`).join("; ");
@@ -1345,7 +1346,7 @@ Deno.serve(async (req) => {
     })).text();
     // Red del freno de preventas: una que entró entre la lista y este punto.
     // Es la misma señal con que la pantalla del origen deshabilita Guardar.
-    if (!simular && !automatico && AVISO_PREVENTAS.test(html)) {
+    if (!simular && AVISO_PREVENTAS.test(html)) {
       return json({
         ok: false, preventas_pendientes: true,
         error: "Acaba de quedar una preventa guardada sin finalizar. Finalízala o elimínala "

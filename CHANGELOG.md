@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.41 — libros: generar_csv_libro falla en vez de devolver un libro vacío
+
+- `generar_csv_libro` (migración `20261028220356`): sin sucursal, o con un
+  nombre de reporte mal escrito, devolvía **cero filas sin error** — un archivo
+  fiscal vacío que parece correcto (CONTABILIDAD §2 ítem 13). Ahora falla con
+  el motivo. Partida de la definición viva; sólo se agregó la guarda.
+- Verificado: los cinco libros de Salud 2, sep-2026, salen **idénticos** antes
+  y después (md5). Con `NULL` y con `'consumido'` falla. Permisos sin cambio
+  (sólo `service_role`).
+
 ## v2.1357.40 — Sucursales: categoría e inscripción SRS, vencimiento de libros, una sola lista de enfermería y bitácora completa
 
 - **Categoría e inscripción SRS.** Dos datos nuevos en `settings.legal`:

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.43 — planilla: «Otros descuentos» exige su motivo
+
+- «Otros descuentos» de la planilla era un monto sin nombre: por ahí podía
+  entrar un faltante de caja, que el Código de Trabajo no deja descontar. Ahora
+  lleva su motivo, de la lista del usuario: préstamo de banco, cooperativa,
+  aseguradora, embargo judicial, pensión alimenticia, cuota sindical u **otro**
+  con detalle escrito obligatorio.
+- Base (migración `20261028221125`): columnas `other_discounts_concepto` y
+  `other_discounts_detalle` + CHECK. La planilla tenía 0 filas.
+- Formulario de edición: el motivo aparece cuando hay monto. Guardar frena con
+  el motivo en palabras (`problemaDeOtrosDescuentos`). La boleta (pantalla y
+  papel) muestra el motivo junto al monto.
+- El aviso «No se guardó» muestra el motivo real; antes daba por hecho que el
+  único error posible era el sueldo que no llegó.
+
 ## v2.1357.42 — Cuadre mensual de antibióticos: el conteo cubre todo el listado, hoja de movimientos y aviso
 
 Pedido del usuario: cuadrar los antibióticos cada mes en cada sala y en la

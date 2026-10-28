@@ -18320,6 +18320,8 @@ export type Database = {
           order_discount: number | null
           ordinary_salary: number | null
           other_discounts: number | null
+          other_discounts_concepto: string | null
+          other_discounts_detalle: string | null
           period_id: string
           renta_deduction: number | null
           salary_advance: number | null
@@ -18353,6 +18355,8 @@ export type Database = {
           order_discount?: number | null
           ordinary_salary?: number | null
           other_discounts?: number | null
+          other_discounts_concepto?: string | null
+          other_discounts_detalle?: string | null
           period_id: string
           renta_deduction?: number | null
           salary_advance?: number | null
@@ -18386,6 +18390,8 @@ export type Database = {
           order_discount?: number | null
           ordinary_salary?: number | null
           other_discounts?: number | null
+          other_discounts_concepto?: string | null
+          other_discounts_detalle?: string | null
           period_id?: string
           renta_deduction?: number | null
           salary_advance?: number | null

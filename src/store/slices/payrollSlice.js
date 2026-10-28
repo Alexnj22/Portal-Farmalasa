@@ -619,6 +619,14 @@ export const createPayrollSlice = (set, get) => ({
             throw e;
         }
         const newCalc  = calcPayrollEntry(emp, updates.days_worked ?? existing.days_worked, updates);
+        // «Otros descuentos» lleva su motivo (la base lo exige igual; acá se
+        // dice en palabras antes de que el CHECK lo rechace).
+        const conDescuento = newCalc.other_discounts > 0;
+        const concepto = conDescuento ? (updates.other_discounts_concepto ?? existing.other_discounts_concepto ?? null) : null;
+        const detalle  = conDescuento ? (String(updates.other_discounts_detalle ?? existing.other_discounts_detalle ?? '').trim() || null) : null;
+        const { problemaDeOtrosDescuentos } = await reglasDePlanilla();
+        const problema = problemaDeOtrosDescuentos(newCalc.other_discounts, concepto, detalle);
+        if (problema) throw Object.assign(new Error(problema), { userFacing: true });
         const editSnap = {
             at:     new Date().toISOString(),
             by:     editedBy,
@@ -635,6 +643,8 @@ export const createPayrollSlice = (set, get) => ({
         const payload = {
             ...newCalc,
             viaticos_detail: updates.viaticos_detail ?? existing.viaticos_detail,
+            other_discounts_concepto: concepto,
+            other_discounts_detalle:  concepto === 'otro' ? detalle : null,
             status:       'EDITED',
             edit_history: editHistory,
             updated_at:   new Date().toISOString(),

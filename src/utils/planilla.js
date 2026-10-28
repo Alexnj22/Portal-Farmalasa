@@ -112,7 +112,7 @@ export function partidasDeBoleta(entry, baseSalary) {
         ]),
         otrosDescuentos: sinCero([
             { rotulo: 'Orden de descuento', monto: r2(e.order_discount) },
-            { rotulo: 'Otros descuentos',   monto: r2(e.other_discounts) },
+            { rotulo: `Otros descuentos · ${rotuloDeOtrosDescuentos(e.other_discounts_concepto, e.other_discounts_detalle)}`, monto: r2(e.other_discounts) },
             { rotulo: 'Adelanto salarial',  monto: r2(e.salary_advance) },
         ]),
         totalDescuentos: r2(e.total_deductions),
@@ -448,6 +448,42 @@ export function anticiposDeLaQuincena(solicitudes, { periodId, start, end }, yaD
         porPersona.set(key, acc);
     }
     return porPersona;
+}
+
+/**
+ * Por qué se puede descontar en «Otros descuentos» (2026-10-28). Antes era un
+ * monto sin nombre, y por ahí podía entrar un faltante de caja, que el Código
+ * de Trabajo no deja descontar del salario. La lista es la del usuario; «otro»
+ * existe para lo que no está, pero exige el detalle escrito. La base tiene el
+ * mismo freno (CHECK `payroll_entries_otros_descuentos_con_concepto`): si se
+ * cambia uno, se cambia el otro.
+ */
+export const CONCEPTOS_DE_OTROS_DESCUENTOS = [
+    { value: 'prestamo_banco',      label: 'Préstamo de banco' },
+    { value: 'cooperativa',         label: 'Cooperativa' },
+    { value: 'aseguradora',         label: 'Aseguradora' },
+    { value: 'embargo_judicial',    label: 'Embargo judicial' },
+    { value: 'pension_alimenticia', label: 'Pensión alimenticia' },
+    { value: 'cuota_sindical',      label: 'Cuota sindical' },
+    { value: 'otro',                label: 'Otro' },
+];
+
+/** El rótulo de un descuento: «Préstamo de banco», o el detalle si es «otro». */
+export function rotuloDeOtrosDescuentos(concepto, detalle) {
+    if (concepto === 'otro') return String(detalle || '').trim() || 'Otro';
+    return CONCEPTOS_DE_OTROS_DESCUENTOS.find((c) => c.value === concepto)?.label || 'Otros descuentos';
+}
+
+/** Lo que falta para poder guardar el descuento, o `null` si está completo. */
+export function problemaDeOtrosDescuentos(monto, concepto, detalle) {
+    if (!(Number(monto) > 0)) return null;
+    if (!CONCEPTOS_DE_OTROS_DESCUENTOS.some((c) => c.value === concepto)) {
+        return 'Elige el motivo de «Otros descuentos».';
+    }
+    if (concepto === 'otro' && String(detalle || '').trim().length < 3) {
+        return 'Escribe de qué es el descuento.';
+    }
+    return null;
 }
 
 /** Los campos de una fila que se editan a mano, en el orden del formulario. */

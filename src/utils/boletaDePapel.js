@@ -4,7 +4,7 @@
 // horas extra como si fueran dólares).
 import { formatMoney } from './formatNumber';
 import { fechaTexto } from './fecha';
-import { montoEnLetras, partidasDeBoleta, rotuloDePeriodo } from './planilla';
+import { montoEnLetras, partidasDeBoleta, rotuloDeOtrosDescuentos, rotuloDePeriodo } from './planilla';
 
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
@@ -88,7 +88,7 @@ export function buildBoletaHTML(entry, period, branches) {
     <div class="sec">OTROS DESCUENTOS</div>
     <table>
       <tr><td>ORDEN DE DESCUENTO:</td><td class="right">${formatMoney(round2(entry.order_discount))} -</td></tr>
-      <tr><td>OTROS DESCUENTOS:</td><td class="right">${formatMoney(round2(entry.other_discounts))} -</td></tr>
+      <tr><td>OTROS DESCUENTOS${Number(entry.other_discounts) > 0 ? ` (${esc(rotuloDeOtrosDescuentos(entry.other_discounts_concepto, entry.other_discounts_detalle).toUpperCase())})` : ''}:</td><td class="right">${formatMoney(round2(entry.other_discounts))} -</td></tr>
       <tr><td>ADELANTO SALARIAL:</td><td class="right">${formatMoney(round2(entry.salary_advance))} -</td></tr>
       <tr style="height:12px"><td></td><td></td></tr>
       <tr class="tot"><td>TOTAL RETENCIONES Y DESCUENTOS:</td><td class="right">C ${formatMoney(round2(entry.total_deductions))} -</td></tr>

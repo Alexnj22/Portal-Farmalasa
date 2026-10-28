@@ -508,6 +508,8 @@ function MainApp() {
                 viaticos_detail:       entry.viaticos_detail || '',
                 order_discount:        entry.order_discount,
                 other_discounts:       entry.other_discounts,
+                other_discounts_concepto: entry.other_discounts_concepto || '',
+                other_discounts_detalle:  entry.other_discounts_detalle || '',
                 salary_advance:        entry.salary_advance,
                 _reason:               '',
             });
@@ -578,11 +580,9 @@ function MainApp() {
                     try {
                         ok = await updatePayrollEntry(entryId, dataToSave, by, dataToSave._reason);
                     } catch (err) {
-                        // Texto fijo y no el del error: el único que llega
-                        // marcado es el del sueldo que no llegó.
-                        showToast('No se guardó', err?.userFacing
-                            ? 'No llegó el sueldo de esta persona y el renglón se habría guardado en cero. Suele ser el permiso de «Salarios e ingresos».'
-                            : 'No se pudo guardar.', 'error');
+                        // Los marcados `userFacing` están escritos para quien edita
+                        // (sueldo que no llegó, descuento sin motivo); el resto no.
+                        showToast('No se guardó', err?.userFacing ? mensajeAmigable(err) : 'No se pudo guardar.', 'error');
                         return;
                     }
                     if (ok) {

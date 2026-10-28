@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anticiposDeLaQuincena, bajasEnQuincena, contratoEnQuincena, descuentoDeSuspension, incapacidadesPorPersona, mensajeDePendientesDeTH, pendienteDeTH, suspensionesPorPersona, diaDeAprobacion, diasPagadosDeQuincena, esAusenciaDescontable, esQuincena, montoEnLetras, numeroEnLetras, ordenDeCargo, partidasDeBoleta, problemaDeQuincena, quincenaPorDefecto, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
+import { CONCEPTOS_DE_OTROS_DESCUENTOS, problemaDeOtrosDescuentos, rotuloDeOtrosDescuentos, anticiposDeLaQuincena, bajasEnQuincena, contratoEnQuincena, descuentoDeSuspension, incapacidadesPorPersona, mensajeDePendientesDeTH, pendienteDeTH, suspensionesPorPersona, diaDeAprobacion, diasPagadosDeQuincena, esAusenciaDescontable, esQuincena, montoEnLetras, numeroEnLetras, ordenDeCargo, partidasDeBoleta, problemaDeQuincena, quincenaPorDefecto, rotuloDePeriodo, totalesDePlanilla } from '@nucleo/utils/planilla';
 import { calcPayrollEntry } from '@nucleo/store/slices/payrollSlice';
 import { esTextoTecnico, mensajeAmigable } from '@nucleo/utils/errorMessages';
 
@@ -272,5 +272,20 @@ describe('anticipo aprobado en una quincena ya cerrada: pasa a la siguiente abie
         const abierta = periodos.map(p => (p.id === 'p1' ? { ...p, status: 'DRAFT' } : p));
         expect(anticiposDeLaQuincena([a], { periodId: 'p2', start: '2026-10-16', end: '2026-10-31' }, new Map(), abierta).size).toBe(0);
         expect(anticiposDeLaQuincena([a], { periodId: 'p2', start: '2026-10-16', end: '2026-10-31' }, new Map(), []).size).toBe(0);
+    });
+
+    it('«Otros descuentos» exige su motivo, y «otro» su detalle', () => {
+        expect(problemaDeOtrosDescuentos(0, null, null)).toBeNull();
+        expect(problemaDeOtrosDescuentos(25, null, null)).toMatch(/motivo/);
+        expect(problemaDeOtrosDescuentos(25, 'faltante_de_caja', null)).toMatch(/motivo/);
+        expect(problemaDeOtrosDescuentos(25, 'cooperativa', null)).toBeNull();
+        expect(problemaDeOtrosDescuentos(25, 'otro', '  ')).toMatch(/Escribe/);
+        expect(problemaDeOtrosDescuentos(25, 'otro', 'Uniforme')).toBeNull();
+        expect(rotuloDeOtrosDescuentos('pension_alimenticia')).toBe('Pensión alimenticia');
+        expect(rotuloDeOtrosDescuentos('otro', 'Uniforme')).toBe('Uniforme');
+        // La lista es la misma que acepta el CHECK de la base.
+        expect(CONCEPTOS_DE_OTROS_DESCUENTOS.map(c => c.value)).toEqual([
+            'prestamo_banco', 'cooperativa', 'aseguradora', 'embargo_judicial',
+            'pension_alimenticia', 'cuota_sindical', 'otro']);
     });
 });

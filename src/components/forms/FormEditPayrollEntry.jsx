@@ -7,7 +7,9 @@ import { fetchOvertimeBankRows } from '@nucleo/data/payroll';
 import NocturnalLegalInfo from '../common/NocturnalLegalInfo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { saldoDeBancoDeHoras } from '@nucleo/utils/planilla';
+import { CONCEPTOS_DE_OTROS_DESCUENTOS, saldoDeBancoDeHoras } from '@nucleo/utils/planilla';
+import LiquidSelect from '../common/LiquidSelect';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -263,6 +265,33 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             {numField('order_discount',  'Orden de Descuento ($)')}
             {numField('other_discounts', 'Otros Descuentos ($)')}
             {numField('salary_advance',  'Adelanto Salarial ($)')}
+            {/* «Otros descuentos» lleva su motivo: sin él, por ahí podía entrar
+                un faltante de caja, que el Código de Trabajo no deja descontar.
+                «Otro» exige escribir de qué es. Guardar lo frena igual
+                (`problemaDeOtrosDescuentos` y el CHECK de la base). */}
+            {Number(formData.other_discounts ?? entry.other_discounts) > 0 && (
+                <div className="col-span-2">
+                    <label className={rotuloCampo('text-content-3')}>Motivo de otros descuentos</label>
+                    <LiquidSelect
+                        value={formData.other_discounts_concepto || ''}
+                        onChange={(val) => setFormData(f => ({ ...f, other_discounts_concepto: val || '' }))}
+                        options={CONCEPTOS_DE_OTROS_DESCUENTOS}
+                        placeholder="¿De qué es el descuento?"
+                        clearable={false}
+                    />
+                </div>
+            )}
+            {Number(formData.other_discounts ?? entry.other_discounts) > 0 && formData.other_discounts_concepto === 'otro' && (
+                <PortalInput
+                    colSpan={2}
+                    name="other_discounts_detalle"
+                    label="Detalle del descuento"
+                    required
+                    value={formData.other_discounts_detalle || ''}
+                    onChange={e => setFormData(f => ({ ...f, other_discounts_detalle: e.target.value }))}
+                    placeholder="Ej: Cuota de uniforme acordada por escrito"
+                />
+            )}
 
             {/* Live preview */}
             <div data-surface="card" className="col-span-2 p-4 mt-2">

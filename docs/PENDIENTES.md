@@ -46,8 +46,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 6. ~~Exportar el año entero~~ — **no hace falta hoy**: la pantalla sólo pide un mes,
    y el mes más cargado (7 salas) no llega a 400 filas contra el techo de 1000.
    Se hace el día que se pida exportar el año.
-7. **Concepto obligatorio en `payroll_entries.other_discounts`**, sólo los del
-   Art. 136. La planilla tiene 0 filas: es el momento. — FALTANTES:426-431
+7. ~~Motivo obligatorio en «Otros descuentos» de la planilla~~ — **hecho v2.1357.43**.
 8. Escribir la compra en el origen (`compras.php`). — AUDITORIA-MATCH-DTE:130
 9. Notas de crédito → puntos (`docs/propuestas/notas-credito-puntos-2026-10-09/`):
    esperar la primera NC real.

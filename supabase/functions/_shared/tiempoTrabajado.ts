@@ -85,7 +85,17 @@ export function splitNocturnal(startUTC: Date, endUTC: Date): { diurnalMins: num
   return { diurnalMins: Math.max(0, totalMins - nocturnalMins), nocturnalMins };
 }
 
-/** Los tramos efectivamente trabajados: la jornada menos almuerzo y lactancia. */
+/**
+ * Los tramos efectivamente trabajados: la jornada menos el ALMUERZO.
+ *
+ * La lactancia NO parte la jornada (2026-10-28): el RIT, Art. 61, dice que esas
+ * interrupciones «serán contadas como hora efectiva de trabajo y remunerada como
+ * tal». Hasta hoy se restaban igual que el almuerzo —también de las horas
+ * nocturnas—, o sea que se le descontaba a la madre el tiempo que la ley le
+ * paga. Nunca se marcó una lactancia (0 marcaciones), así que no hubo nadie
+ * mal pagado; el almuerzo sí se descuenta porque el horario del RIT lo pone
+ * fuera de la jornada («pausa alimenticia» entre dos tramos, Art. 18).
+ */
 export function getWorkSegments(punches: Marcacion[], actualStart: Date, actualEnd: Date): { start: Date; end: Date }[] {
   const segments: { start: Date; end: Date }[] = [];
   let segStart = new Date(actualStart);
@@ -94,10 +104,10 @@ export function getWorkSegments(punches: Marcacion[], actualStart: Date, actualE
     const t = new Date(p.timestamp);
     if (t.getTime() <= actualStart.getTime() || t.getTime() >= actualEnd.getTime()) continue;
 
-    if (LUNCH_OUT.has(p.type) || LACTAT_OUT.has(p.type)) {
+    if (LUNCH_OUT.has(p.type)) {
       if (segStart < t) segments.push({ start: new Date(segStart), end: t });
       segStart = t; // se reemplaza con el regreso
-    } else if (LUNCH_IN.has(p.type) || LACTAT_IN.has(p.type)) {
+    } else if (LUNCH_IN.has(p.type)) {
       segStart = t;
     }
   }

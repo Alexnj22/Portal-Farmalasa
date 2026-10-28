@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 import {
-  CST_OFFSET_MS, LUNCH_OUT, LUNCH_IN, LACTAT_OUT, LACTAT_IN,
+  CST_OFFSET_MS, LUNCH_OUT, LUNCH_IN,
   toMinutes, calcBreakMinutes, splitNocturnal, getWorkSegments, cstTimeToUTC, mondayOfWeek, minutosDeTardanza,
 } from "../_shared/tiempoTrabajado.ts";
 
@@ -345,8 +345,8 @@ Deno.serve(async (req) => {
       if (actualStart && actualEnd) {
         const grossMins  = (actualEnd.getTime() - actualStart.getTime()) / 60000;
         const lunchMins  = calcBreakMinutes(empPunches, LUNCH_OUT,  LUNCH_IN);
-        const lactatMins = calcBreakMinutes(empPunches, LACTAT_OUT, LACTAT_IN);
-        const netMins    = Math.max(0, grossMins - lunchMins - lactatMins);
+        // La lactancia NO se resta: es tiempo trabajado y pagado (RIT Art. 61).
+        const netMins    = Math.max(0, grossMins - lunchMins);
 
         // Un turno que cruza la medianoche (22:00→06:00) daba −960 minutos, y
         // con eso `regularHours` salía NEGATIVA y todo lo trabajado se

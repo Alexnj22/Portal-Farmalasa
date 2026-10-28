@@ -180,6 +180,25 @@ tardanza es UNA función, la misma para el cron y la pantalla.
 
 ---
 
+## 7-bis. Contra el Código de Trabajo y el Reglamento Interno (2026-10-28)
+
+Revisado contra el RIT aprobado por la Dirección General de Trabajo
+(`docs/legal/empresa/REGLAMENTO INTERNO DE TRABAJO FP Y FS.rtf`) y el Código.
+
+| regla | qué dice | el portal | estado |
+|---|---|---|---|
+| Horas nocturnas | 19:00 a 06:00 (RIT Art. 16) | `splitNocturnal` corta en 19:00 y 06:00 | ✅ |
+| Recargo nocturno | ≥25% sobre la hora diurna (CT Art. 168) | ×0.25 sobre la hora | ✅ |
+| Hora extra diurna | 100% de recargo (CT Art. 169) | ×2 | ✅ |
+| Hora extra nocturna | 100% + 25% | ×2.25 | ✅ coincide con las fuentes consultadas; **confirmar con la contadora** |
+| Almuerzo | «pausa alimenticia» fuera de los tramos del horario (RIT Art. 18) | se descuenta | ✅ |
+| **Lactancia** | **tiempo efectivo y pagado (RIT Art. 61)** | **se descontaba** | **corregido** — 0 marcaciones de lactancia en la historia, nadie mal pagado |
+| Llegada tarde | después de la hora de inicio (RIT Art. 23) | minutos enteros después del inicio | ✅ |
+| Tolerancia | 10 min **por semana**; pasarlos pierde el pago del día de descanso (RIT Art. 26) | **no se aplica**: la tardanza sólo se anota, la planilla no la usa | ⏸ decisión de TH |
+| Extra sin autorización | no se reconoce (RIT Art. 22) | toda hora extra va al banco y TH decide pagar o compensar | ✅ el banco es la autorización |
+| Compensar extra con tiempo | el CT habla de pago con recargo | el banco permite «tiempo compensado» | ⏸ **confirmar legalidad** |
+| Jornada nocturna | máximo 7 h; >4 h nocturnas la vuelve nocturna (RIT Art. 16) | la extra se mide contra el turno cargado | ⏸ hoy ningún turno pasa de las 22:00; vigilar al crear uno |
+
 ## 8. Lo que hay que saber antes de tocar algo acá
 
 1. **Cualquier cambio en la fórmula de la tardanza hay que hacerlo en los dos

@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.48 — asistencia: la lactancia es tiempo pagado (RIT Art. 61)
+
+- `consolidate-timesheets` restaba la lactancia de las horas trabajadas y de las
+  nocturnas, igual que el almuerzo. El RIT, Art. 61, la cuenta como «hora
+  efectiva de trabajo y remunerada como tal». Ya no se resta. Nunca se marcó
+  una lactancia, así que nadie quedó mal pagado.
+- Revisión completa contra el Código de Trabajo y el RIT en
+  ASISTENCIA §7-bis: nocturnidad, recargos, almuerzo y tardanza coinciden;
+  quedan tres puntos para Talento Humano y la contadora (tolerancia semanal
+  del Art. 26, tiempo compensado, hora extra nocturna ×2.25).
+
 ## v2.1357.47 — asistencia: el reparto nocturno con pruebas y una sola regla de tardanza
 
 - La matemática de `consolidate-timesheets` —descansos, reparto diurno/nocturno,

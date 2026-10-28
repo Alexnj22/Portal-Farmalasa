@@ -105,6 +105,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 ## B. Decidir
 
 **Del usuario**
+- Asistencia: aplicar la tolerancia de 10 min por semana del RIT Art. 26 (pasarla pierde el pago del descanso) — hoy la tardanza sólo se anota. Decide Talento Humano.
 - Seguridad: ventana para el cambio del PIN; qué acciones llevan segundo humano y quiénes; borrar las 8 cuentas huérfanas (ya baneadas); fila `lectura_masiva`.
 - Caja: alcance ALL de Talento Humano en `caja_vales`; enlazar el aporte del depósito a su vale; más de una caja por sala; reembolso del banco por remesas.
 - Impresión: igualar el HTML a 54 columnas; reimprimir un documento fiscal.
@@ -119,6 +120,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 - Clientes: 18 fichas `sin_numero_erp`; 8 anulaciones en lista negra.
 
 **De la contadora**
+- Asistencia (ASISTENCIA §7-bis): confirmar hora extra nocturna ×2.25; si «tiempo compensado» por horas extra es legal.
 - **Armar los anexos de Hacienda** (ítem A4): traer un anexo que ella haya subido de verdad y ajustar el formato contra ese.
 - Método de costeo (destraba costo histórico → registro Art. 142-A → contabilidad formal → F-971).
 - Primer período fiscal y con qué libro; 2 o 4 decimales; 26 clasificaciones condicionadas; quién retiene renta (0/175); F-983/F-987; anulados tipo `1` vs `01`; las 14 preguntas de CONTABILIDAD:225-276.

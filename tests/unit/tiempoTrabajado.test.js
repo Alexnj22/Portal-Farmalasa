@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     splitNocturnal, getWorkSegments, calcBreakMinutes, cstTimeToUTC, mondayOfWeek,
-    minutosDeTardanza, toMinutes, LUNCH_OUT, LUNCH_IN, LACTAT_OUT, LACTAT_IN,
+    minutosDeTardanza, toMinutes, LUNCH_OUT, LUNCH_IN,
 } from '../../supabase/functions/_shared/tiempoTrabajado.ts';
 import { minutosDeTardanza as tardanzaDeLaPantalla } from '@nucleo/data/attendanceAudit';
 
@@ -81,13 +81,20 @@ describe('tramos trabajados y descansos', () => {
         expect(nocturno).toBe(420);
     });
 
-    it('la lactancia también se descuenta, y una salida sin regreso no suma', () => {
+    it('la lactancia NO parte la jornada: es tiempo trabajado y pagado (RIT Art. 61)', () => {
         const p = [
             { type: 'LACTATION_START', timestamp: sv('2026-10-28T10:00').toISOString() },
             { type: 'LACTATION_END', timestamp: sv('2026-10-28T11:00').toISOString() },
-            { type: 'LACTATION_START', timestamp: sv('2026-10-28T15:00').toISOString() },
         ];
-        expect(calcBreakMinutes(p, LACTAT_OUT, LACTAT_IN)).toBe(60);
+        const tramos = getWorkSegments(p, sv('2026-10-28T08:00'), sv('2026-10-28T17:00'));
+        expect(tramos).toHaveLength(1);
+        // Un almuerzo sí se cuenta como descanso; una salida sin regreso, no.
+        const a = [
+            { type: 'LUNCH_START', timestamp: sv('2026-10-28T12:00').toISOString() },
+            { type: 'LUNCH_END', timestamp: sv('2026-10-28T13:00').toISOString() },
+            { type: 'LUNCH_START', timestamp: sv('2026-10-28T15:00').toISOString() },
+        ];
+        expect(calcBreakMinutes(a, LUNCH_OUT, LUNCH_IN)).toBe(60);
     });
 
     it('lo que cae fuera de la jornada se ignora', () => {

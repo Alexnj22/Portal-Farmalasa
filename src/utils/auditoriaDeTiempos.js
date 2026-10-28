@@ -82,9 +82,12 @@ export function auditarDia({ dateStr, emp, shiftById, timesheets = [], homeBranc
     const crossBranchName = crossBranchPunch
         ? (branchNameById.get(String(crossBranchPunch.details?.audit_info?.branchId ?? crossBranchPunch.branch_id)) || 'otra sucursal')
         : null;
-    // El `||` y no `??` es deliberado (ver la auditoría del 2026-08-23): con
-    // `late_minutes` en 0 se recalcula, y las dos fórmulas dan lo mismo.
-    const lateMin = ts?.late_minutes || minutosDeTardanza(entryPunch?.timestamp, shiftStart ? buildCSTDate(dateStr, shiftStart) : null);
+    // `??` y no `||` (2026-10-28): el número guardado es el que se paga, y un 0
+    // guardado —puntual, o una tardanza que Talento Humano corrigió a cero— es
+    // un dato, no un hueco. Con `||` la pantalla lo recalculaba y mostraba una
+    // tardanza que la planilla no iba a descontar. Sólo se calcula cuando el
+    // día todavía no tiene fila; y la fórmula es la misma del cron.
+    const lateMin = ts?.late_minutes ?? minutosDeTardanza(entryPunch?.timestamp, shiftStart ? buildCSTDate(dateStr, shiftStart) : null);
 
     return {
         dayD, dow, isFuture, isToday, dayConfig, isNoSchedule, isExplicitOff, isOff, shift, shiftStart, shiftEnd,

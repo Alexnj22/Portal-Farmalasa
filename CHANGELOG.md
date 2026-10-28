@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.47 — asistencia: el reparto nocturno con pruebas y una sola regla de tardanza
+
+- La matemática de `consolidate-timesheets` —descansos, reparto diurno/nocturno,
+  tramos trabajados, tardanza— pasó a `_shared/tiempoTrabajado.ts`, sin cambiar
+  una línea de cálculo. Es lo que llena `timesheets` (lo que se paga) y no
+  tenía ninguna prueba: hoy `tests/unit/tiempoTrabajado.test.js` (19 pruebas)
+  cubre turnos de día, de tarde, nocturnos que cruzan la medianoche, las
+  fronteras exactas de las 19:00 y las 06:00, fin de año, almuerzo y lactancia,
+  y el reparto ordinaria / extra nocturna de un turno de noche.
+- **La tardanza es una sola regla**: el cron y la pantalla de auditoría usan la
+  misma `minutosDeTardanza` (antes eran dos copias que coincidían por suerte).
+- **La pantalla ya no recalcula un 0 guardado** (`??` en vez de `||` en
+  `auditoriaDeTiempos.js`): un día puntual o una tardanza que Talento Humano
+  corrigió a cero se mostraba como tardanza aunque la planilla no la iba a
+  descontar.
+
 ## v2.1357.46 — seguridad: el carné entra con un pase de un solo uso (etapa 1)
 
 - SEGURIDAD-Y-ACCESO §3.1. La contraseña de la cuenta del carné es el PIN, y

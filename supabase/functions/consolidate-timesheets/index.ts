@@ -1,17 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
+import {
+  CST_OFFSET_MS, LUNCH_OUT, LUNCH_IN, LACTAT_OUT, LACTAT_IN,
+  toMinutes, calcBreakMinutes, splitNocturnal, getWorkSegments, cstTimeToUTC, mondayOfWeek, minutosDeTardanza,
+} from "../_shared/tiempoTrabajado.ts";
 
 // Punch types stored in the attendance table
 const ENTRY_TYPES = new Set(['PUNCH_IN', 'IN', 'IN_EARLY', 'IN_EXTRA']);
 const EXIT_TYPES  = new Set(['PUNCH_OUT', 'OUT', 'OUT_LATE', 'OUT_EARLY', 'OUT_BUSINESS', 'OUT_EXTRA']);
-const LUNCH_OUT   = new Set(['LUNCH_START', 'OUT_LUNCH']);
-const LUNCH_IN    = new Set(['LUNCH_END',   'IN_LUNCH']);
-const LACTAT_OUT  = new Set(['LACTATION_START', 'OUT_LACTATION']);
-const LACTAT_IN   = new Set(['LACTATION_END',   'IN_LACTATION']);
 
-// El Salvador nocturnal boundary: 19:00-06:00 CST (UTC-6)
-// In UTC: nocturnal = 01:00 UTC – 12:00 UTC (19:00 CST = 01:00 UTC next UTC-day, 06:00 CST = 12:00 UTC)
-const CST_OFFSET_MS = 6 * 60 * 60 * 1000; // 6 hours in ms
+// La matemática pura (descansos, reparto nocturno, tramos, tardanza) vive en
+// `_shared/tiempoTrabajado.ts`, con pruebas, y la pantalla de auditoría usa la
+// MISMA tardanza. Acá queda sólo lo que habla con la base.
 
 interface DayException {
   date: string;
@@ -22,119 +22,12 @@ interface DayException {
   note?: string;
 }
 
-function toMinutes(timeStr: string): number {
-  const [h, m] = timeStr.split(':').map(Number);
-  return h * 60 + m;
-}
-
-// Sum up paired break intervals (out → in). Returns minutes.
-function calcBreakMinutes(
-  punches: { type: string; timestamp: string }[],
-  outSet: Set<string>,
-  inSet: Set<string>,
-): number {
-  let total = 0;
-  let outAt: Date | null = null;
-  for (const p of punches) {
-    if (outSet.has(p.type)) {
-      outAt = new Date(p.timestamp);
-    } else if (inSet.has(p.type) && outAt) {
-      total += (new Date(p.timestamp).getTime() - outAt.getTime()) / 60000;
-      outAt = null;
-    }
-  }
-  return Math.max(0, total);
-}
-
-// Split a work interval into nocturnal (19:00-06:00 CST) and diurnal (06:00-19:00 CST) minutes.
-// Uses UTC boundary times: 06:00 CST = 12:00 UTC, 19:00 CST = 01:00 UTC (next UTC-day).
-// Works for shifts crossing midnight.
-function splitNocturnal(startUTC: Date, endUTC: Date): { diurnalMins: number; nocturnalMins: number } {
-  const totalMs = endUTC.getTime() - startUTC.getTime();
-  if (totalMs <= 0) return { diurnalMins: 0, nocturnalMins: 0 };
-
-  // Build boundary set: all 12:00 UTC and 01:00 UTC timestamps that fall strictly inside [start, end]
-  const boundaries: number[] = [startUTC.getTime(), endUTC.getTime()];
-
-  // Iterate UTC days overlapping the range
-  const iterStart = new Date(startUTC); iterStart.setUTCHours(0, 0, 0, 0);
-  const iterEnd   = new Date(endUTC);   iterEnd.setUTCDate(iterEnd.getUTCDate() + 1); iterEnd.setUTCHours(0, 0, 0, 0);
-
-  for (let d = new Date(iterStart); d.getTime() < iterEnd.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
-    // 12:00 UTC = 06:00 CST — start of diurnal window
-    const twelveUTC = d.getTime() + 12 * 3600000;
-    // 01:00 UTC = 19:00 CST (previous CST-calendar-day) — start of nocturnal window
-    const oneUTC    = d.getTime() +  1 * 3600000;
-
-    if (twelveUTC > startUTC.getTime() && twelveUTC < endUTC.getTime()) boundaries.push(twelveUTC);
-    if (oneUTC    > startUTC.getTime() && oneUTC    < endUTC.getTime()) boundaries.push(oneUTC);
-  }
-
-  boundaries.sort((a, b) => a - b);
-
-  let nocturnalMs = 0;
-  for (let i = 0; i < boundaries.length - 1; i++) {
-    const segStart = boundaries[i];
-    const segEnd   = boundaries[i + 1];
-    if (segStart >= segEnd) continue;
-
-    // Classify segment by its midpoint CST hour
-    const midCST  = new Date(((segStart + segEnd) / 2) - CST_OFFSET_MS);
-    const hourCST = midCST.getUTCHours();
-    // Nocturnal: 19:00 <= hour < 24 OR 0 <= hour < 6
-    if (hourCST >= 19 || hourCST < 6) nocturnalMs += segEnd - segStart;
-  }
-
-  const totalMins     = totalMs / 60000;
-  const nocturnalMins = Math.max(0, nocturnalMs / 60000);
-  return { diurnalMins: Math.max(0, totalMins - nocturnalMins), nocturnalMins };
-}
-
-// Build actual work segments from punches (break periods are excluded).
-// Returns [{start, end}] covering only time-at-work.
-function getWorkSegments(
-  punches: { type: string; timestamp: string }[],
-  actualStart: Date,
-  actualEnd: Date,
-): { start: Date; end: Date }[] {
-  const segments: { start: Date; end: Date }[] = [];
-  let segStart = new Date(actualStart);
-
-  for (const p of punches) {
-    const t = new Date(p.timestamp);
-    if (t.getTime() <= actualStart.getTime() || t.getTime() >= actualEnd.getTime()) continue;
-
-    if (LUNCH_OUT.has(p.type) || LACTAT_OUT.has(p.type)) {
-      if (segStart < t) segments.push({ start: new Date(segStart), end: t });
-      segStart = t; // placeholder — will be replaced by the matching IN
-    } else if (LUNCH_IN.has(p.type) || LACTAT_IN.has(p.type)) {
-      segStart = t; // resume work after break
-    }
-  }
-
-  if (segStart < actualEnd) segments.push({ start: segStart, end: new Date(actualEnd) });
-  return segments;
-}
-
 // Yesterday in El Salvador (UTC-6)
 function yesterdayCST(): string {
   const now = new Date();
   const cst = new Date(now.getTime() - CST_OFFSET_MS);
   cst.setUTCDate(cst.getUTCDate() - 1);
   return cst.toISOString().split('T')[0];
-}
-
-// Build a UTC Date from a workDate string and a "HH:MM" time in CST (UTC-6)
-function cstTimeToUTC(workDate: string, timeStr: string): Date {
-  return new Date(`${workDate}T${timeStr}:00-06:00`);
-}
-
-// ISO date of the Monday of the week containing workDate
-function mondayOfWeek(workDate: string): string {
-  const d = new Date(workDate + 'T12:00:00Z');
-  const dow = d.getUTCDay(); // 0=Sun, 1=Mon … 6=Sat
-  d.setUTCDate(d.getUTCDate() - (dow + 6) % 7);
-  return d.toISOString().split('T')[0];
 }
 
 Deno.serve(async (req) => {
@@ -474,8 +367,7 @@ Deno.serve(async (req) => {
         overtimeHours = Math.max(0, netMins - shiftMins) / 60;
 
         if (scheduledStart) {
-          const expectedUTC = cstTimeToUTC(workDate, scheduledStart);
-          lateMinutes = Math.max(0, Math.floor((actualStart.getTime() - expectedUTC.getTime()) / 60000));
+          lateMinutes = minutosDeTardanza(actualStart, cstTimeToUTC(workDate, scheduledStart));
         }
 
         // ── Nocturnal split (Art. 168 & 169, Código de Trabajo SV) ──────────

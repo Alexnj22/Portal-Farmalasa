@@ -83,10 +83,8 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 23. **«Quién responde» en las diferencias de conteo de inventario** (como
     `cortes_caja_diferencia_personas`). — FALTANTES:414-417
 24. ~~Vencer los trabajos de impresión encolados~~ — **hecho** (migración `20261028223512`, 10 min).
-25. Pruebas del reparto nocturno de `consolidate-timesheets` (`splitNocturnal`,
-    cruce de medianoche): es lo que se paga y no tiene ninguna prueba. — ASISTENCIA:175
-26. Unificar la fórmula de la tardanza (Deno y navegador); de paso,
-    `late_minutes ||` trata el 0 como ausente (`auditoriaDeTiempos.js:87`). — ASISTENCIA:21
+25. ~~Pruebas del reparto nocturno de `consolidate-timesheets`~~ — **hecho v2.1357.47**.
+26. ~~Unificar la fórmula de la tardanza; `late_minutes ||`~~ — **hecho v2.1357.47**.
 27. `inventoryMovements.js:88`: traer `factor` de la base, y revisar el
     `.in('erp_product_id')` sobre `inventory` (columna repetida: puede truncar). — PRODUCTOS:50
 28. GPS en Rutas: `vercel.json:99` `geolocation=()` → `(self)`. — DISTRIBUCION:249

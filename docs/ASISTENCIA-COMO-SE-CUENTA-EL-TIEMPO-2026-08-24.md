@@ -172,10 +172,11 @@ escribirse «00», y de dónde vino cada marcación.
 `src/data/attendanceAudit.js` tiene su matemática expuesta y probada desde el
 2026-08-23.
 
-**Sin cobertura automática:** el reparto nocturno del cron. Es la parte con más
-aristas de toda el área (segmentos, fronteras, cruce de medianoche) y corre en
-Deno, así que la suite del navegador no la alcanza. Hoy se verifica leyendo los
-`console.log` de la corrida. Es la deuda más grande del área.
+**El reparto nocturno del cron ya tiene pruebas** (v2.1357.47): su matemática vive en
+`supabase/functions/_shared/tiempoTrabajado.ts` y `tests/unit/tiempoTrabajado.test.js`
+la prueba desde vitest — segmentos, fronteras de las 19:00 y las 06:00, cruce de
+medianoche y de año, almuerzo y lactancia, nocturna ordinaria contra extra. Y la
+tardanza es UNA función, la misma para el cron y la pantalla.
 
 ---
 

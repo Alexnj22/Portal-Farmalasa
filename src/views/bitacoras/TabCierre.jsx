@@ -96,7 +96,7 @@ function CuadreAntibioticos({ cuadre, cargando, error, onVerHoja }) {
                         )}
                         <p className="text-caption text-content-3 mt-1.5">
                             {!c
-                                ? 'El conteo se hace en Conteo de inventario: «Nuevo conteo» → «Bajo receta».'
+                                ? 'En las salas, los antibióticos van dentro del conteo cíclico del día 15. En la Bodega: Conteo de inventario → «Nuevo conteo» → «Bajo receta».'
                                 : terminado
                                     ? (c.diferencias > 0
                                         ? `${c.diferencias} ${c.diferencias === 1 ? 'producto quedó' : 'productos quedaron'} con diferencia entre lo contado y lo registrado.`

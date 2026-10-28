@@ -102,7 +102,7 @@ export const FUENTES_DE_CONTEO = [
 ];
 export const TAMANO_CICLICO_DEFAULT = 200;
 export const SEGMENTO_DE_MUESTRA_LABEL = {
-    BAJO_RECETA: 'Bajo Receta', A: 'Clase A', B: 'Clase B', C: 'Clase C / sin clasificar',
+    BAJO_RECETA: 'Antibióticos', A: 'Clase A', B: 'Clase B', C: 'Clase C / sin clasificar',
 };
 export const SEGMENTO_DE_MUESTRA_ORDEN = ['BAJO_RECETA', 'A', 'B', 'C'];
 

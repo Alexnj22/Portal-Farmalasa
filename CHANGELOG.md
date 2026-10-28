@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.45 — Conteo cíclico: 200 productos más todos los antibióticos
+
+- **El conteo cíclico del día 15 lleva todos los antibióticos más 200
+  productos que no lo son.** Antes los antibióticos entraban dentro de los 200
+  (y sólo los 85 que marca el catálogo); ahora van todos los del listado con
+  existencia (55 a 89 por sala) y los 200 se reparten entre A/B/C sin ningún
+  antibiótico: no se repiten (verificado en las seis salas).
+- Ese cíclico cuenta como el cuadre mensual de antibióticos de la sala: la hoja
+  del cierre de mes y el aviso lo aceptan igual que un conteo «Bajo receta». La
+  Bodega no tiene cíclico y sigue con el suyo.
+- El segmento de la muestra se llama «Antibióticos».
+- Categoría SRS 3 cargada en La Popular y Salud 1 a 5 (a pedido del usuario).
+
 ## v2.1357.44 — Bitácoras: cuadre de antibióticos en el cierre de mes y hoja de movimientos
 
 Bitácoras → Cierre de mes muestra el cuadre de antibióticos del mes

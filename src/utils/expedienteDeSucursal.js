@@ -10,6 +10,13 @@
  * decidirlo.
  */
 import { categoriaDeDocumento } from '../data/constants';
+import { rotuloCategoriaSrs } from './edicionDeSucursal';
+
+/** Un dato de texto del registro, o null si está vacío. */
+const texto = (v) => (v === undefined || v === null || String(v).trim() === '' ? null : String(v).trim());
+
+/** Lo que se muestra de un dato vacío. */
+export const SIN_DATO = 'Sin dato';
 
 /** Faltan 45 días o menos: se avisa. */
 export const DIAS_DE_AVISO_DOCUMENTO = 45;
@@ -41,12 +48,23 @@ export function documentosDeSucursal(b) {
     const hasInjections = !!legal.injections;
     const hasControlledBooks = !!legal.controlledBooks;
 
-    /** @type {Array<{ id: string, title: string, url: any, expDate: any, hasExpiration?: boolean, modal: string }>} */
+    // `datos`: los datos del registro que acompañan al documento (vacío = «Sin dato»).
+    /** @type {Array<{ id: string, title: string, url: any, expDate: any, hasExpiration?: boolean, modal: string, datos?: Array<{ rotulo: string, valor: string | null }> }>} */
     const permisos = [
-        { id: 'srs', title: 'Licencia CSSP / DNM', url: legal.srsPermitUrl, expDate: legal.srsExpiration, hasExpiration: true, modal: 'editSrsPermit' },
+        {
+            id: 'srs', title: 'Licencia CSSP / DNM', url: legal.srsPermitUrl, expDate: legal.srsExpiration, hasExpiration: true, modal: 'editSrsPermit',
+            datos: [
+                { rotulo: 'Resolución', valor: texto(legal.srsPermit) },
+                { rotulo: 'Categoría SRS', valor: rotuloCategoriaSrs(legal.srsCategoria) },
+                { rotulo: 'Inscripción SRS', valor: texto(legal.srsInscripcion) },
+            ],
+        },
         { id: 'alcaldia', title: 'Solvencia Municipal', url: legal.municipalUrl, expDate: legal.municipalExpiration, hasExpiration: true, modal: 'editBranchLegal' },
     ];
-    if (hasControlledBooks) permisos.push({ id: 'libros', title: 'Resolución Libros Controlados', url: legal.controlledBooksUrl, expDate: null, modal: 'editBranchLegal' });
+    if (hasControlledBooks) permisos.push({
+        id: 'libros', title: 'Resolución Libros Controlados', url: legal.controlledBooksUrl, expDate: legal.controlledBooksExp || null, hasExpiration: true, modal: 'editBranchLegal',
+        datos: [{ rotulo: 'Resolución', valor: texto(legal.controlledBooksRes) }],
+    });
     if (hasInjections) permisos.push({ id: 'inyecciones', title: 'Permiso Área Inyecciones', url: legal.nursingServicePermitUrl, expDate: legal.nursingServicePermitExp, hasExpiration: true, modal: 'editNursingRegents' });
 
     const personal = [

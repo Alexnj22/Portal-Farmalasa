@@ -2,7 +2,7 @@ import React, { useMemo, useCallback, Suspense } from 'react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { WEEK_DAYS } from '@nucleo/data/constants';
 import { EL_SALVADOR_GEO } from './BranchHelpers';
-import { candidatosLegales, finDeContrato, limpiarAjustes, limpiarHorario } from '@nucleo/utils/edicionDeSucursal';
+import { alternarEnfermera, candidatosLegales, finDeContrato, limpiarAjustes, limpiarHorario } from '@nucleo/utils/edicionDeSucursal';
 
 const BranchTabGeneral = React.lazy(() => import('./BranchTabGeneral'));
 const BranchTabLegal = React.lazy(() => import('./BranchTabLegal'));
@@ -89,10 +89,11 @@ const FormSucursal = ({ formData, setFormData, section = "general" }) => {
     const availablePharmacovigilance = candidatos.farmacovigilancia;
     const availableNurses = candidatos.enfermeria;
 
+    // Enfermería: se escribe en `nursingRegents`, la MISMA lista que el
+    // formulario de enfermería, la app y el expediente. Antes esta pestaña
+    // escribía `legal.nurses` (sólo ids) y las dos listas divergían.
     const toggleNurse = (empId) => {
-        const currentNurses = legal.nurses || [];
-        const newNurses = currentNurses.includes(empId) ? currentNurses.filter(id => id !== empId) : [...currentNurses, empId];
-        updateNestedSetting('legal', 'nurses', newNurses);
+        updateNestedSetting('legal', 'nursingRegents', alternarEnfermera(legal, empId));
     };
 
     const handleContractChange = (field, value) => {

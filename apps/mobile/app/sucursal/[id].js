@@ -25,7 +25,7 @@ import { fetchBranchExpensesHistory, fetchBranchKiosks } from '@nucleo/data/bran
 import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
 import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, datosParaElDiagnostico, horarioDeHoy, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
 import { analizarSucursal } from '@nucleo/data/ia';
-import { documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
+import { SIN_DATO, documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
 import { gastosPorMes, serviciosDeSucursal, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 import { DIMENSIONES_DEL_HISTORIAL, dimensionDelRegistro, historialConApertura, lecturaDelRegistro, rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
 import { CATEGORIAS_DOCUMENTO } from '@nucleo/data/constants';
@@ -224,6 +224,9 @@ function Documento({ b, d, primero, puedeEditar, propio }) {
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{d.title}</Text>
           {fecha ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{fecha}</Text> : null}
+          {Array.isArray(d.datos) ? d.datos.map((x) => (
+            <Text key={x.rotulo} style={{ color: colorSistema.texto2, fontSize: 13 }}>{x.rotulo}: {x.valor || SIN_DATO}</Text>
+          )) : null}
         </View>
         <Pildora texto={e.label} color={color} />
         {d.url ? <Boton texto="Ver" onPress={() => Promise.resolve(openStoredFile(d.url)).catch(() => {})} /> : null}

@@ -5,6 +5,7 @@ import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle,
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '@nucleo/utils/clickable';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { idsDeEnfermeria } from '@nucleo/utils/edicionDeSucursal';
 import { SIN_ASIGNAR } from '../common/catalogos/constantes';
 
 const safeParse = (obj) => {
@@ -52,7 +53,8 @@ const hasInjections = legal.injections === true;
         let jefe = null, subJefe = null;
         let regenteFarmacia = employees.find(e => e.id === legal.regentEmployeeId) || null;
         let referenteFarma = employees.find(e => e.id === legal.pharmacovigilanceEmployeeId) || null;
-        let enfermeros = employees.filter(e => (legal.nurses || []).includes(e.id));
+        const idsEnfermeria = idsDeEnfermeria(legal).map(String);
+        let enfermeros = employees.filter(e => idsEnfermeria.includes(String(e.id)));
         let dependientes = [], globals = [];
 
         employees.forEach(e => {

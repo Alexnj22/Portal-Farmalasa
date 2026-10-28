@@ -12,6 +12,7 @@ import { buscarCargo } from '../../utils/roles';
 import { yaEstabaPagado } from '../../utils/pagoDeSucursal';
 import { SIN_ASIGNAR } from '../../data/constants';
 import { useToastStore } from '../toastStore';
+import { cambiosDeSucursal, resumenDeCambios } from '../../utils/edicionDeSucursal';
 
 const persistBranches = (branches) => {
     almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -326,7 +327,6 @@ export const createBranchSlice = (set, get) => ({
             }
 
             // Auditoría Inteligente: Detectamos exactamente qué cambió
-            let auditLogFired = false;
 
             if (oldLegal.regentEmployeeId !== legalNow.regentEmployeeId) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
@@ -335,7 +335,6 @@ export const createBranchSlice = (set, get) => ({
                     branch_id: id,
                     new_value: legalNow.regentEmployeeId ? 'Regente Actualizado' : 'Regente Removido'
                 });
-                auditLogFired = true;
             }
 
             // Las dos claves del mismo referente (la vieja la escribía un solo
@@ -347,7 +346,6 @@ export const createBranchSlice = (set, get) => ({
                     branch_id: id,
                     new_value: referenteNow ? 'Referente Actualizado' : 'Referente Removido'
                 });
-                auditLogFired = true;
             }
 
             const oldNurses = Array.isArray(oldLegal.nursingRegents) ? oldLegal.nursingRegents.length : 0;
@@ -360,15 +358,22 @@ export const createBranchSlice = (set, get) => ({
                     branch_id: id,
                     new_value: `${newNurses} Profesional(es) Asignado(s)`
                 });
-                auditLogFired = true;
             }
 
-            if (!auditLogFired && oldBranch.name !== (payload.name || payload.branchName)) {
+            // Todo lo demás —general, legal (SRS, libros, enfermería…), horario,
+            // inmueble y servicios— en UNA entrada por guardado con las
+            // secciones y los campos que cambiaron. Antes sólo quedaba rastro de
+            // un cambio de nombre, y sólo si no había cambiado el regente.
+            const cambios = cambiosDeSucursal(oldBranch, updated);
+            if (cambios.length > 0) {
+                const soloLegal = cambios.every(c => c.seccion === 'legal');
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
-                    timeline_title: `Actualización de Datos: ${payload.name || payload.branchName || 'Sucursal'}`,
-                    dimension: 'OPERATIVE',
+                    timeline_title: `Actualización de datos: ${updated.name || payload.name || payload.branchName || 'Sucursal'}`,
+                    dimension: soloLegal ? 'LEGAL' : 'OPERATIVE',
                     branch_id: id,
-                    new_value: 'Se modificaron datos generales'
+                    secciones: cambios.map(c => c.seccion),
+                    campos: cambios,
+                    new_value: resumenDeCambios(cambios)
                 });
             }
 

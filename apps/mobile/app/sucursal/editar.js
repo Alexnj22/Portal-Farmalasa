@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { WEEK_DAYS } from '@nucleo/data/constants';
 import {
-  OPCIONES_DE_EXTINTOR, SERVICIOS_BASICOS, candidatosLegales, cambiarDiaDelHorario, copiarDiaAnterior,
+  OPCIONES_CATEGORIA_SRS, OPCIONES_DE_EXTINTOR, SERVICIOS_BASICOS, rotuloCategoriaSrs, candidatosLegales, cambiarDiaDelHorario, copiarDiaAnterior,
   diaDePago, diaDelHorario, esAlquilada, finDeContrato, horarioIncompleto, limpiarAjustes, limpiarHorario,
   sucursalConCambios, generalDeSucursal, problemaDeLoGeneral, conEnfermeraNueva, sinEnfermera, conEnfermeraCambiada,
 } from '@nucleo/utils/edicionDeSucursal';
@@ -276,6 +276,10 @@ export default function EditarSucursal() {
                 <Rotulo texto="Número de licencia (CSSP / DNM)" />
                 <Campo multiline={false} value={legal.srsPermit || ''} onChangeText={(v) => cambiar('legal', 'srsPermit', v)} placeholder="Ej. 1234" />
                 <FechaFila rotulo="Vence" valor={legal.srsExpiration} onCambiar={(v) => cambiar('legal', 'srsExpiration', v)} />
+                <Elegir rotulo="Categoría SRS" valor={rotuloCategoriaSrs(legal.srsCategoria) ?? 'Elegir'}
+                  onPress={() => hojaDeOpciones('Categoría SRS', [{ value: '', label: 'Sin categoría' }, ...OPCIONES_CATEGORIA_SRS], (v) => cambiar('legal', 'srsCategoria', v))} />
+                <Rotulo texto="Inscripción SRS" />
+                <Campo multiline={false} value={legal.srsInscripcion || ''} onChangeText={(v) => cambiar('legal', 'srsInscripcion', v)} placeholder="Ej. 0123" />
               </Seccion>
               <Seccion titulo="Regencia" pie="Asignar a alguien la mueve a esta sucursal, igual que en el portal.">
                 <Elegir primero rotulo="Regente" valor={legal.regentEmployeeId ? nombre(legal.regentEmployeeId) : 'Elegir'}
@@ -295,6 +299,7 @@ export default function EditarSucursal() {
                   <>
                     <Rotulo texto="Resolución de los libros" />
                     <Campo multiline={false} value={legal.controlledBooksRes || ''} onChangeText={(v) => cambiar('legal', 'controlledBooksRes', v)} />
+                    <FechaFila rotulo="Vence la autorización" valor={legal.controlledBooksExp} onCambiar={(v) => cambiar('legal', 'controlledBooksExp', v)} />
                   </>
                 ) : null}
               </Seccion>

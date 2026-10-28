@@ -6,6 +6,7 @@
  */
 import { formatTime12h } from './helpers';
 import { relojSV } from './fecha';
+import { idsDeEnfermeria } from './edicionDeSucursal';
 
 export const TIPOS_DE_SUCURSAL = {
     FARMACIA:       { label: 'Farmacia',       variante: 'chart-1', sectionLabel: 'Farmacias' },
@@ -146,7 +147,8 @@ export const alertasDeSucursal = (branch, currentTimestamp, branchEmployees = []
         if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta jefe de sucursal', icono: 'Users' });
         if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta regente', icono: 'Briefcase' });
         if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta referente', icono: 'Shield' });
-        if (hasInjections && (!legalData.nurses || legalData.nurses.length === 0)) alerts.push({ level: 'critical', message: 'Falta enfermero/a', icono: 'Stethoscope' });
+        // Enfermería sale de `nursingRegents` (con `nurses` sólo para filas viejas).
+        if (hasInjections && idsDeEnfermeria(legalData).length === 0) alerts.push({ level: 'critical', message: 'Falta enfermero/a', icono: 'Stethoscope' });
         evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
         evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
         evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");

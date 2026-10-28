@@ -20,6 +20,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { idsDeEnfermeria } from '@nucleo/utils/edicionDeSucursal';
 import { kioscosActivos, sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
 
 // ============================================================================
@@ -144,7 +145,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
             const hasRegente = !!legalData.regentEmployeeId;
             const hasReferente = !!legalData.pharmacovigilanceEmployeeId;
             const hasInjections = legalData.injections === true;
-            const hasNurse = (legalData.nurses || []).length > 0;
+            const hasNurse = idsDeEnfermeria(legalData).length > 0;
             if (!hasJefe || !hasRegente || !hasReferente || (hasInjections && !hasNurse)) return 'critical';
             if (!hasSubjefe) return 'warning';
             return null;

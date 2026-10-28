@@ -6,6 +6,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import Button from '../common/Button';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { OPCIONES_CATEGORIA_SRS, idsDeEnfermeria } from '@nucleo/utils/edicionDeSucursal';
 
 const BranchTabLegal = ({
     legal, updateNestedSetting, availableRegents,
@@ -28,6 +29,9 @@ const BranchTabLegal = ({
     const regentOptions = useMemo(() =>
         availableRegents.map(e => ({ value: e.id, label: e.name }))
         , [availableRegents]);
+
+    // Quién está en enfermería: de `nursingRegents` (núcleo), no de `legal.nurses`.
+    const enfermeriaIds = useMemo(() => idsDeEnfermeria(legal).map(String), [legal]);
 
     const pharmaOptions = useMemo(() =>
         availablePharmacovigilance.map(e => ({ value: e.id, label: e.name }))
@@ -54,6 +58,26 @@ const BranchTabLegal = ({
                                 onChange={(val) => updateNestedSetting('legal', 'srsPermit', val)}
                                 className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
                             />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="relative focus-within:z-sidebar">
+                                <label className={rotuloCampo('text-content-3')}>Categoría SRS</label>
+                                <LiquidSelect
+                                    value={legal.srsCategoria || ""}
+                                    onChange={(val) => updateNestedSetting('legal', 'srsCategoria', val || '')}
+                                    options={OPCIONES_CATEGORIA_SRS}
+                                    placeholder="Sin categoría"
+                                />
+                            </div>
+                            <div>
+                                <label className={rotuloCampo('text-content-3')}>Nº de Inscripción SRS</label>
+                                <LazyInput
+                                    placeholder="Ej: 0123"
+                                    value={legal.srsInscripcion || ""}
+                                    onChange={(val) => updateNestedSetting('legal', 'srsInscripcion', val)}
+                                    className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
+                                />
+                            </div>
                         </div>
                         <div className="relative focus-within:z-sidebar">
                             <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento de Licencia</span></label>
@@ -172,7 +196,7 @@ const BranchTabLegal = ({
                                 ) : (
                                     <div data-surface="card" className="flex flex-wrap gap-2 p-3.5 max-h-[100px] overflow-y-auto custom-scrollbar">
                                         {availableNurses.map(emp => {
-                                            const isSelected = (legal.nurses || []).includes(emp.id);
+                                            const isSelected = enfermeriaIds.includes(String(emp.id));
                                             return (
                                                 <Button
                                                     size="sm"
@@ -228,7 +252,14 @@ const BranchTabLegal = ({
                                 className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
                             />
                         </div>
-                        <div className="pt-2 md:pt-0">
+                        <div className="relative focus-within:z-sidebar">
+                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento de la Autorización</span></label>
+                            <LiquidDatePicker tono="warning"
+                                value={legal.controlledBooksExp || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'controlledBooksExp', val)}
+                                />
+                        </div>
+                        <div className="pt-2 md:pt-0 md:col-span-2">
                             <FileUploader
                                 label="Resolución de Libros (PDF)"
                                 file={legal.controlledBooksFile}

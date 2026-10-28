@@ -88,6 +88,52 @@ export const OPCIONES_DE_EXTINTOR = [
     { value: 'MIXTO', label: 'Múltiples tipos' },
 ];
 
+/**
+ * Categoría del establecimiento ante la SRS (`settings.legal.srsCategoria`).
+ * Se guarda el código ('1'|'2'|'3'); el rótulo es libre de cambiar.
+ */
+export const OPCIONES_CATEGORIA_SRS = [
+    { value: '1', label: 'Categoría 1' },
+    { value: '2', label: 'Categoría 2' },
+    { value: '3', label: 'Categoría 3' },
+];
+
+/** El rótulo de la categoría SRS guardada, o null si no hay (o no se reconoce). */
+export const rotuloCategoriaSrs = (valor) =>
+    OPCIONES_CATEGORIA_SRS.find((o) => o.value === String(valor ?? ''))?.label ?? null;
+
+/**
+ * Los ids del personal de enfermería de una sala. La lista que manda es
+ * `legal.nursingRegents` (filas con `employeeId`, documentos y anualidad: la
+ * escriben el formulario de enfermería, la pestaña legal y la app). `legal.nurses`
+ * —un arreglo de ids— lo escribía sólo la pestaña legal del portal y divergía:
+ * se lee únicamente cuando la fila no tiene `nursingRegents` (filas viejas).
+ */
+export function idsDeEnfermeria(legal) {
+    const l = legal || {};
+    if (Array.isArray(l.nursingRegents)) {
+        return l.nursingRegents.map((n) => n?.employeeId).filter((v) => v !== undefined && v !== null && v !== '');
+    }
+    return Array.isArray(l.nurses) ? l.nurses.filter((v) => v !== undefined && v !== null && v !== '') : [];
+}
+
+/**
+ * Pone o quita a alguien del equipo de enfermería, sobre `nursingRegents`.
+ * Si la sala sólo tenía la lista vieja (`nurses`), se parte de ella para no
+ * perder a nadie. Quitar conserva las demás filas con sus documentos.
+ */
+export function alternarEnfermera(legal, empleadoId, ahora = Date.now()) {
+    const l = legal || {};
+    let lista = Array.isArray(l.nursingRegents)
+        ? l.nursingRegents
+        : idsDeEnfermeria(l).map((empId, i) => ({ id: ahora + i + 1, employeeId: empId, anualidadExp: '' }));
+    const ya = lista.some((n) => String(n?.employeeId) === String(empleadoId));
+    lista = ya
+        ? lista.filter((n) => String(n?.employeeId) !== String(empleadoId))
+        : [...lista, { id: ahora, employeeId: empleadoId, anualidadExp: '' }];
+    return lista;
+}
+
 /** Los servicios básicos de una sala: la clave en `settings.services` y cómo se rotula. */
 export const SERVICIOS_BASICOS = [
     { id: 'light', label: 'Energía eléctrica', placeholder: 'Ej. CAESS', accountLabel: 'Nº de NIC / NPE' },
@@ -202,4 +248,103 @@ export function jefaturaDeSucursal(gente, tipo) {
         jefe: gente.find(e => cargo(e).includes('jefe') && !cargo(e).includes('subjefe')) || null,
         subjefe: gente.find(e => cargo(e).includes('subjefe')) || null,
     };
+}
+
+// ── Qué cambió al guardar la ficha (para la bitácora) ──
+// `updateBranch` ya deja entradas propias para el regente, el referente y el
+// tamaño del equipo de enfermería. Esto cubre todo lo demás —lo general, el
+// legal, el horario, el inmueble y los servicios— para que una edición nunca
+// quede sin rastro. Devuelve las secciones con los campos que cambiaron.
+
+const ROTULO_DE_CAMPO = {
+    name: 'nombre', address: 'dirección', phone: 'teléfono', cell: 'celular', opening_date: 'fecha de apertura',
+    department: 'departamento', municipality: 'municipio', lat: 'ubicación', lng: 'ubicación', mapsUrl: 'enlace del mapa',
+    srsPermit: 'resolución de la licencia', srsExpiration: 'vencimiento de la licencia', srsPermitUrl: 'documento de la licencia',
+    srsCategoria: 'categoría SRS', srsInscripcion: 'inscripción SRS',
+    regentCredentialExp: 'vencimiento credencial regente', regentCredentialUrl: 'contrato de regencia', regentInscriptionUrl: 'inscripción del regente',
+    pharmacovigilanceExp: 'vencimiento credencial referente', farmacovigilanciaAuthUrl: 'designación de farmacovigilancia',
+    injections: 'área de inyectables', nursingServicePermitUrl: 'permiso del área de inyectables', nursingServicePermitExp: 'vencimiento permiso de inyectables',
+    nursingRegents: 'equipo de enfermería', nurses: 'equipo de enfermería',
+    controlledBooks: 'libros controlados', controlledBooksRes: 'resolución de libros', controlledBooksExp: 'vencimiento de libros', controlledBooksUrl: 'documento de libros',
+    municipalAccount: 'cuenta municipal', municipalExpiration: 'vencimiento solvencia municipal', municipalUrl: 'solvencia municipal',
+    extinguisherCount: 'extintores', extinguisherType: 'tipo de extintor', extinguisherExpiration: 'recarga de extintores',
+    pestControlCompany: 'empresa de fumigación', lastFumigationDate: 'última fumigación', fumigationUrl: 'certificado de fumigación',
+    wasteManagement: 'manejo de desechos', wasteExpiration: 'vencimiento contrato de desechos', wasteUrl: 'contrato de desechos',
+    propertyType: 'tipo de inmueble', amount: 'monto', landlordName: 'arrendante', landlordPhone: 'teléfono del arrendante', contract: 'contrato',
+    light: 'energía eléctrica', water: 'agua potable', internet: 'internet', mobile: 'telefonía móvil',
+    customDocs: 'documentos propios',
+};
+
+// Claves del legal que se editan en la pestaña de inmueble.
+const LEGAL_DEL_INMUEBLE = new Set([
+    'extinguisherCount', 'extinguisherType', 'extinguisherExpiration', 'pestControlCompany', 'lastFumigationDate',
+    'fumigationUrl', 'wasteManagement', 'wasteExpiration', 'wasteUrl', 'municipalAccount', 'municipalExpiration', 'municipalUrl',
+]);
+// Ya tienen su entrada propia en `updateBranch`.
+const LEGAL_CON_ENTRADA_PROPIA = new Set(['regentEmployeeId', 'pharmacovigilanceEmployeeId', 'farmacovigilanciaId']);
+
+const ordenado = (v) => {
+    if (Array.isArray(v)) return v.map(ordenado);
+    if (v && typeof v === 'object') {
+        return Object.keys(v).sort().reduce((o, k) => { if (v[k] !== undefined) o[k] = ordenado(v[k]); return o; }, {});
+    }
+    return v;
+};
+const vacio = (v) => v === undefined || v === null || v === ''
+    || (Array.isArray(v) && v.length === 0)
+    || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0);
+const igual = (a, b) => (vacio(a) && vacio(b)) || JSON.stringify(ordenado(a)) === JSON.stringify(ordenado(b));
+const clavesDistintas = (a, b) => {
+    const x = a && typeof a === 'object' ? a : {};
+    const y = b && typeof b === 'object' ? b : {};
+    return [...new Set([...Object.keys(x), ...Object.keys(y)])].filter((k) => !/File$/.test(k) && !igual(x[k], y[k]));
+};
+const fechaCorta = (v) => (v ? String(v).slice(0, 10) : v);
+
+/**
+ * Las secciones de la ficha que cambiaron entre `antes` y `despues` (filas con
+ * `name`, `address`, `phone`, `cell`, `opening_date`, `weekly_hours` y
+ * `settings`). Devuelve `{ seccion, campos }[]` en orden fijo; vacío si nada cambió.
+ */
+export function cambiosDeSucursal(antes, despues) {
+    const a = antes || {};
+    const d = despues || {};
+    const sa = limpiarAjustes(a.settings);
+    const sd = limpiarAjustes(d.settings);
+    const secciones = { general: new Set(), legal: new Set(), horarios: new Set(), inmueble: new Set(), servicios: new Set(), documentos: new Set() };
+
+    for (const k of ['name', 'address', 'phone', 'cell']) {
+        if (!igual(a[k], d[k])) secciones.general.add(k);
+    }
+    if (!igual(fechaCorta(a.opening_date ?? a.openingDate), fechaCorta(d.opening_date ?? d.openingDate))) secciones.general.add('opening_date');
+    clavesDistintas(sa.location, sd.location).forEach((k) => secciones.general.add(k));
+
+    for (const k of clavesDistintas(sa.legal, sd.legal)) {
+        if (LEGAL_CON_ENTRADA_PROPIA.has(k)) continue;
+        (LEGAL_DEL_INMUEBLE.has(k) ? secciones.inmueble : secciones.legal).add(k);
+    }
+
+    if (!igual(limpiarHorario(a.weekly_hours ?? a.weeklyHours), limpiarHorario(d.weekly_hours ?? d.weeklyHours))) {
+        secciones.horarios.add('weekly_hours');
+    }
+
+    if (!igual(sa.propertyType, sd.propertyType)) secciones.inmueble.add('propertyType');
+    clavesDistintas(sa.rent, sd.rent).forEach((k) => secciones.inmueble.add(k));
+    clavesDistintas(sa.services, sd.services).forEach((k) => secciones.servicios.add(k));
+    if (!igual(sa.customDocs, sd.customDocs)) secciones.documentos.add('customDocs');
+
+    return Object.entries(secciones)
+        .filter(([, s]) => s.size > 0)
+        .map(([seccion, s]) => ({ seccion, campos: [...s] }));
+}
+
+const ROTULO_DE_SECCION = { general: 'General', legal: 'Legal', horarios: 'Horarios', inmueble: 'Inmueble', servicios: 'Servicios', documentos: 'Documentos' };
+
+/** El resumen legible de `cambiosDeSucursal`: «Legal: categoría SRS, inscripción SRS · Horarios». */
+export function resumenDeCambios(cambios) {
+    return (cambios || []).map(({ seccion, campos }) => {
+        if (seccion === 'horarios') return ROTULO_DE_SECCION.horarios;
+        const rotulos = [...new Set(campos.map((c) => ROTULO_DE_CAMPO[c] || c))];
+        return `${ROTULO_DE_SECCION[seccion] || seccion}: ${rotulos.join(', ')}`;
+    }).join(' · ');
 }

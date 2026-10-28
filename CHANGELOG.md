@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.40 — Sucursales: categoría e inscripción SRS, vencimiento de libros, una sola lista de enfermería y bitácora completa
+
+- **Categoría e inscripción SRS.** Dos datos nuevos en `settings.legal`:
+  `srsCategoria` ('1'|'2'|'3', se elige con `LiquidSelect`) y
+  `srsInscripcion` (texto). Se editan en la pestaña Legal, en «Permiso SRS» y
+  en la app; el expediente los muestra junto a la licencia (vacío = «Sin
+  dato»). No se cargó ningún dato en producción.
+- **Vencimiento de libros controlados.** `alertasDeSucursal` y
+  `check-doc-expiry` leían `legal.controlledBooksExp` y ningún formulario lo
+  escribía, así que el aviso nunca podía salir. Ahora se captura en la pestaña
+  Legal y en la app, y el expediente lo usa como vencimiento del documento.
+- **Una sola lista de enfermería.** La pestaña Legal escribía `legal.nurses`
+  (ids) mientras el formulario de enfermería, la app y el expediente usaban
+  `legal.nursingRegents`. Ahora la pestaña escribe `nursingRegents` y todos
+  los lectores pasan por `idsDeEnfermeria` (núcleo); `nurses` sólo se lee en
+  filas que no tienen `nursingRegents`.
+- **Bitácora completa al editar.** `updateBranch` deja UNA entrada por
+  guardado con las secciones y campos cambiados (general, legal, horarios,
+  inmueble, servicios, documentos) vía `cambiosDeSucursal`. Antes sólo quedaba
+  el cambio de nombre, y sólo si no había cambiado el regente.
+
 ## v2.1357.39 — ventas: aviso de sello pendiente y de sello sobre un mes declarado
 
 - **`avisar_ventas_sin_sello()`** (cron 8:10 SV, migración `20261028215238`).

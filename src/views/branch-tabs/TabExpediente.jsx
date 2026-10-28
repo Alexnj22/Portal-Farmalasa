@@ -12,7 +12,7 @@ import SearchInput from '../../components/common/SearchInput';
 import { EmptyState } from '../../components/common/StateViews';
 import { CATEGORIAS_DOCUMENTO } from '../../components/common/catalogos/constantes';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { ajustesSinDocumentoPropio, documentosDeSucursal, estadoDeDocumento } from '@nucleo/utils/expedienteDeSucursal';
+import { SIN_DATO, ajustesSinDocumentoPropio, documentosDeSucursal, estadoDeDocumento } from '@nucleo/utils/expedienteDeSucursal';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
@@ -151,6 +151,12 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick, puedeEditar }
                 </h4>
 
                 <div className="flex flex-col gap-1.5 mt-2">
+                    {Array.isArray(doc.datos) && doc.datos.map(d => (
+                        <p key={d.rotulo} className="text-micro font-bold text-content-3 flex items-center gap-1 min-w-0">
+                            <span className="text-content-2 uppercase tracking-widest text-micro shrink-0">{d.rotulo}:</span>
+                            <span className={`truncate ${d.valor ? 'text-content font-mono' : 'italic'}`}>{d.valor || SIN_DATO}</span>
+                        </p>
+                    ))}
                     {effectiveIssueDate && (
                         <p className="text-micro font-bold text-content-3 flex items-center gap-1">
                             <span className="text-content-2 uppercase tracking-widest text-micro">Emisión:</span> {formatDate(effectiveIssueDate)}

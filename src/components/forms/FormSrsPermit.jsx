@@ -1,6 +1,9 @@
 import React from 'react';
 import FileField from '../common/FileField';
 import PortalInput from '../../components/common/PortalInput';
+import LiquidSelect from '../common/LiquidSelect';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { OPCIONES_CATEGORIA_SRS } from '@nucleo/utils/edicionDeSucursal';
 
 const FormSrsPermit = ({ formData, setFormData }) => {
     const legalData = formData?.settings?.legal || {};
@@ -24,7 +27,26 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 value={legalData.srsPermit || ""}
                 onChange={(e) => updateLegalField('srsPermit', e.target.value)}
             />
-            
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="relative focus-within:z-sidebar">
+                    <label className={rotuloCampo('text-content-3')}>Categoría SRS</label>
+                    <LiquidSelect
+                        value={legalData.srsCategoria || ""}
+                        onChange={(val) => updateLegalField('srsCategoria', val || '')}
+                        options={OPCIONES_CATEGORIA_SRS}
+                        placeholder="Sin categoría"
+                    />
+                </div>
+                <PortalInput
+                    label="Nº de Inscripción SRS" name="srs-inscripcion"
+                    placeholder="Ej: 0123"
+                    inputClassName="font-mono"
+                    value={legalData.srsInscripcion || ""}
+                    onChange={(e) => updateLegalField('srsInscripcion', e.target.value)}
+                />
+            </div>
+
             <FileField
                 label="Documento de Permiso Escaneado (PDF/IMG)"
                 accept="application/pdf,image/*"

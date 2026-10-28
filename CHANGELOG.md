@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.12 — App Puntos Salud: sin audio en segundo plano
+
+Lo mismo que v2.1357.11 en la app del personal, antes de que Apple lo rechace: el plugin `expo-audio` declara `audio` en `UIBackgroundModes` por defecto (`enableBackgroundPlayback: true`) y las notas de voz del chat no lo necesitan. Apple rechaza por la guía 2.5.4 un modo de fondo sin función que lo use.
+
 ## v2.1357.11 — App iOS: sin audio en segundo plano (rechazo 2.5.4)
 
 Apple rechazó la 1.0.0 (57) por declarar `audio` en `UIBackgroundModes` sin función que lo use. No lo pedía el código: lo agregaba el plugin `expo-audio`, que trae `enableBackgroundPlayback: true` por defecto. Las notas de voz del chat se graban y se escuchan con la app abierta, así que se apaga en `apps/mobile/app.json`. La ubicación de fondo se queda (es el rastreo de la ruta, `plataforma/rastreoDeFondo.js`) y se justifica ante Apple con un video.

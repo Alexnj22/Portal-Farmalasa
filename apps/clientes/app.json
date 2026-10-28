@@ -256,7 +256,8 @@
         "expo-audio",
         {
           "microphonePermission": "Puntos Salud usa el micrófono sólo para grabar las notas de voz que mandas en el chat con la farmacia.",
-          "recordAudioAndroid": true
+          "recordAudioAndroid": true,
+          "enableBackgroundPlayback": false
         }
       ]
     ],

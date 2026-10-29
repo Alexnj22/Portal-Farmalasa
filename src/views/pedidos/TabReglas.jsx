@@ -20,7 +20,7 @@ import AvisoParecidos from '../../components/common/AvisoParecidos';
 import {
     fetchProductPresentacionesForDispatch, fetchLaboratorios, fetchAllDispatchRules,
     fetchActiveProductsCount, fetchNewProductsThisMonth, fetchProductsWithLabPage,
-    guardarReglaDeDespacho,
+    guardarReglaDeDespacho, fetchReglasPendientes, resolverPendienteSinRegla, textoDePendiente,
 } from '@nucleo/data/dispatchRules';
 import {
     MULTIPLOS, NECESIDAD_EJEMPLO, SIN_REGLA, calcularDespacho, presentacionesOfrecidas, valoresDeRegla,
@@ -157,7 +157,7 @@ function TituloColumna({ children, nota }) {
 // pone el nombre del producto arriba y se cierra arrastrando, así que el
 // encabezado propio del panel sería el título repetido dos veces; y el resultado
 // va anclado al fondo, fuera del scroll, en vez de inline.
-function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel, presCache, enExpediente = false }) {
+function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel, presCache, pendiente = null, onSinRegla, enExpediente = false }) {
     const [presentations, setPresentations] = useState(() => presCache.current[product.id] ?? []);
     const [loadingPres,   setLoadingPres]   = useState(!presCache.current[product.id]);
 
@@ -265,6 +265,19 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     </div>
                     <Button variant="ghost" icon={X} iconOnly onClick={onCancel} className="flex-shrink-0" />
                 </div>
+            )}
+
+            {/* La base le quitó la regla porque su presentación cambió. Se dice
+                qué había y se pide la decisión: elegir la nueva o dejarlo así. */}
+            {pendiente && (
+                <Notice variant="warning" icon={AlertTriangle} bloque
+                    action={onSinRegla && (
+                        <Button size="sm" variant="ghost" onClick={onSinRegla} disabled={saving}>Dejar sin regla</Button>
+                    )}>
+                    <span className="block">Regla por corregir</span>
+                    <span className="block font-medium">{textoDePendiente(pendiente)} Se quitó para que el pedido no salga con un tamaño
+                    que ya no existe: elige la presentación de despacho de nuevo.</span>
+                </Notice>
             )}
 
             {/* Dos columnas: lo que decide el despacho, y lo que casi nunca se toca.
@@ -561,6 +574,8 @@ export default function TabReglas({ searchTerm = '' }) {
     const enTelefono = useMediaQuery(CORTE_TELEFONO);
 
     const [rulesMap,        setRulesMap]        = useState({});
+    // Reglas que la base quitó porque su presentación cambió (por producto).
+    const [pendientes,      setPendientes]      = useState({});
     const [loadingRules,    setLoadingRules]    = useState(true);
     const [products,        setProducts]        = useState([]);
     const [totalCount,      setTotalCount]      = useState(0);
@@ -650,10 +665,14 @@ export default function TabReglas({ searchTerm = '' }) {
             // Paginado con fetchAllRows — PostgREST cap silencioso a 1000 filas
             const allRules = await fetchAllDispatchRules() ?? [];
 
-            const [totalRes, newRes] = await Promise.all([
+            const [totalRes, newRes, pend] = await Promise.all([
                 fetchActiveProductsCount(),
                 fetchNewProductsThisMonth(startOfMonth),
+                // Si la consulta falla, la pantalla sigue: sin aviso, pero con
+                // las reglas. El error queda en consola.
+                fetchReglasPendientes().catch(err => { console.error('[pendientes]', err?.message ?? err); return []; }),
             ]);
+            setPendientes(Object.fromEntries(pend.map(p => [p.erp_product_id, p])));
 
             const map = {};
             for (const r of allRules) {
@@ -695,6 +714,7 @@ export default function TabReglas({ searchTerm = '' }) {
                 term: o.term.trim().length >= 2 ? o.term.trim() : '',
                 ruleFilter: o.ruleFilter,
                 ruleIds: o.ruleIds,
+                pendIds: o.pendIds,
                 soloNuevos: o.soloNuevos,
                 newIds: o.newIds,
             });
@@ -719,11 +739,12 @@ export default function TabReglas({ searchTerm = '' }) {
         loadProducts({
             page, pageSize, term: searchTerm,
             ruleFilter: filterRule, ruleIds: Object.keys(rulesMapRef.current).map(Number),
+            pendIds: Object.keys(pendientes).map(Number),
             hiddenLabs: hiddenLabIds, labId: filterLab,
             soloNuevos, newIds: newProductIds,
             sortKey, sortDir,
         });
-    }, [page, pageSize, searchTerm, filterRule, filterLab, soloNuevos, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]);
+    }, [page, pageSize, searchTerm, filterRule, filterLab, soloNuevos, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir, pendientes]);
 
     const handleSort = useCallback((key) => {
         setSortDir(prev => sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc');
@@ -772,6 +793,13 @@ export default function TabReglas({ searchTerm = '' }) {
                 const next = { ...rulesMapRef.current, [productId]: { ...saved, dispatch_tipo } };
                 rulesMapRef.current = next;
                 setRulesMap(next);
+                // La base cierra el pendiente al guardar una regla nueva
+                // (trigger `regla_cierra_pendiente`); acá sólo se refleja.
+                setPendientes(prev => {
+                    if (!prev[productId]) return prev;
+                    const { [productId]: _, ...resto } = prev;
+                    return resto;
+                });
             }
             setJustSaved(true);
             clearTimeout(justSavedTimer.current);
@@ -787,7 +815,27 @@ export default function TabReglas({ searchTerm = '' }) {
     // permiso viejo. Es lo único que este callback lee de fuera.
     }, [canEditReglas]);
 
+    const dejarSinRegla = useCallback(async (productId) => {
+        if (!canEditReglas) return;
+        setSaving(true); setSaveError(null);
+        try {
+            await resolverPendienteSinRegla(productId);
+            setPendientes(prev => {
+                const { [productId]: _, ...resto } = prev;
+                return resto;
+            });
+            setJustSaved(true);
+            clearTimeout(justSavedTimer.current);
+            justSavedTimer.current = setTimeout(() => setJustSaved(false), 2200);
+        } catch (e) {
+            setSaveError(mensajeAmigable(e));
+        } finally {
+            setSaving(false);
+        }
+    }, [canEditReglas]);
+
     // Computed
+    const pendCount  = Object.keys(pendientes).length;
     const rulesCount = Object.keys(rulesMap).length;
     const sinRegla   = Math.max(0, allCount - rulesCount);
     const nombreDelMes  = useMemo(() => fechaTexto(hoySV(), { month: 'long' }), []);
@@ -825,6 +873,17 @@ export default function TabReglas({ searchTerm = '' }) {
                 </Notice>
             )}
 
+            {pendCount > 0 && (
+                <Notice variant="warning" icon={AlertTriangle} bloque
+                    action={filterRule !== 'pendiente' && (
+                        <Button size="sm" variant="ghost" onClick={() => setFilterRule('pendiente')}>Ver</Button>
+                    )}>
+                    <span className="block">{pendCount === 1 ? '1 regla por corregir' : `${pendCount} reglas por corregir`}</span>
+                    <span className="block font-medium">Su presentación cambió y la regla se quitó. Hasta
+                    que la corrijas, salen en su presentación normal.</span>
+                </Notice>
+            )}
+
             {/* ── Stat cards + filtros ───────────────────────────────────────── */}
             {/* UNA fila, sin `flex-wrap` (§17.0). No es estética: `useMedidaFila`
                 de `FilterBar` busca el carril por `[role="group"]` y le descuenta
@@ -856,6 +915,16 @@ export default function TabReglas({ searchTerm = '' }) {
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
                     />
+
+                    {pendCount > 0 && (
+                        <StatCard label="Por corregir" value={pendCount}
+                            icon={AlertTriangle} iconBg={filterRule === 'pendiente' ? 'bg-surface-card' : 'bg-warning/10'} iconCls="text-warning-text"
+                            valueCls="text-warning-text"
+                            tono="warning" active={filterRule === 'pendiente'}
+                            loading={loadingRules}
+                            onClick={() => setFilterRule(f => f === 'pendiente' ? '' : 'pendiente')}
+                        />
+                    )}
 
                     <StatCard label="Nuevos" sub={`agregados en ${nombreDelMes}`} value={thisMonthCount}
                         icon={Sparkles} iconBg={soloNuevos ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
@@ -940,6 +1009,7 @@ export default function TabReglas({ searchTerm = '' }) {
                     const hasRule   = !!rule;
                     const isNew     = newProductIds.has(prod.id);
                     const typeTag   = ruleTypeLabel(rule);
+                    const pend      = pendientes[prod.id] ?? null;
 
                     return (
                         <React.Fragment key={prod.id}>
@@ -973,6 +1043,8 @@ export default function TabReglas({ searchTerm = '' }) {
                                 <DataCell align="center">
                                     {hasRule ? (
                                         <Badge variant="success" icon={Check} uppercase={false} className="whitespace-nowrap">Con regla</Badge>
+                                    ) : pend ? (
+                                        <Badge variant="warning" icon={AlertTriangle} uppercase={false} className="whitespace-nowrap" title={textoDePendiente(pend)}>Por corregir</Badge>
                                     ) : (
                                         <Badge uppercase={false} className="whitespace-nowrap">Sin regla</Badge>
                                     )}
@@ -1004,6 +1076,8 @@ export default function TabReglas({ searchTerm = '' }) {
                                             onApply={(v) => applyVals(prod.id, v)}
                                             onCancel={cancelEdit}
                                             presCache={presCache}
+                                            pendiente={pend}
+                                            onSinRegla={() => dejarSinRegla(prod.id)}
                                         />
                                     </FilaEdicion>
                                 )}
@@ -1042,6 +1116,8 @@ export default function TabReglas({ searchTerm = '' }) {
                             onApply={(v) => applyVals(prod.id, v)}
                             onCancel={cancelEdit}
                             presCache={presCache}
+                            pendiente={pendientes[prod.id] ?? null}
+                            onSinRegla={() => dejarSinRegla(prod.id)}
                             enExpediente
                         />
                     </div>

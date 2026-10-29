@@ -25158,6 +25158,74 @@ export type Database = {
           },
         ]
       }
+      reglas_despacho_pendientes: {
+        Row: {
+          created_at: string
+          erp_product_id: number
+          factor_ahora: number | null
+          factor_antes: number | null
+          id: number
+          motivo: string
+          regla_anterior: Json
+          resolucion: string | null
+          resuelto_at: string | null
+          resuelto_por: string | null
+        }
+        Insert: {
+          created_at?: string
+          erp_product_id: number
+          factor_ahora?: number | null
+          factor_antes?: number | null
+          id?: number
+          motivo: string
+          regla_anterior: Json
+          resolucion?: string | null
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+        }
+        Update: {
+          created_at?: string
+          erp_product_id?: number
+          factor_ahora?: number | null
+          factor_antes?: number | null
+          id?: number
+          motivo?: string
+          regla_anterior?: Json
+          resolucion?: string | null
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reglas_despacho_pendientes_erp_product_id_fkey"
+            columns: ["erp_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reglas_despacho_pendientes_erp_product_id_fkey"
+            columns: ["erp_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reglas_despacho_pendientes_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reglas_despacho_pendientes_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reinicios_de_la_base: {
         Row: {
           arranco_at: string
@@ -35591,6 +35659,16 @@ export type Database = {
         Returns: string
       }
       registrar_traslados_erp: { Args: { p_lineas: Json }; Returns: number }
+      regla_despacho_a_pendiente: {
+        Args: {
+          p_avisar?: boolean
+          p_factor_ahora: number
+          p_factor_antes: number
+          p_motivo: string
+          p_regla_id: number
+        }
+        Returns: boolean
+      }
       reglas_v2_desde: { Args: never; Returns: string }
       regrant_employees_columns: { Args: never; Returns: string }
       reimprimir_impresion: { Args: { p_id: number }; Returns: number }
@@ -35946,6 +36024,10 @@ export type Database = {
       }
       resolver_reclamo_sancion: {
         Args: { p_estado: string; p_evento_id: string; p_resolucion?: string }
+        Returns: undefined
+      }
+      resolver_regla_pendiente_sin_regla: {
+        Args: { p_erp_product_id: number }
         Returns: undefined
       }
       resumen_de_promocion: { Args: { p_id: number }; Returns: Json }

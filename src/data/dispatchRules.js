@@ -53,7 +53,7 @@ export function fetchNewProductsThisMonth(startOfMonthIso) {
 // `ruleFilter`, o sea excluyente con «con regla»/«sin regla» — y «los nuevos que
 // todavía no tienen regla» es justamente la pregunta para la que existe esta
 // pantalla, así que era la combinación imposible de pedir.
-export async function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey, ascending, term, ruleFilter, ruleIds, soloNuevos, newIds, labId }) {
+export async function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey, ascending, term, ruleFilter, ruleIds, pendIds, soloNuevos, newIds, labId }) {
     let q = supabase
         .from('products_with_lab')
         .select('id, nombre, es_antibiotico, laboratorio_nombre, laboratorio_id', { count: 'exact' })
@@ -81,7 +81,9 @@ export async function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, s
         aproximado = r.aproximado;
     }
 
-    if (ruleFilter === 'con') {
+    if (ruleFilter === 'pendiente') {
+        q = pendIds?.length > 0 ? q.in('id', pendIds) : q.in('id', [0]);
+    } else if (ruleFilter === 'con') {
         q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);
     } else if (ruleFilter === 'sin' && ruleIds.length > 0) {
         q = q.not('id', 'in', `(${ruleIds.join(',')})`);
@@ -132,6 +134,39 @@ export async function guardarReglaDeDespacho(productId, vals, existente = null) 
         : await insertDispatchRule(payload);
     if (error) throw error;
     return data;
+}
+
+/**
+ * Las reglas que la base QUITÓ porque su presentación se apagó o cambió de
+ * factor (`reglas_despacho_pendientes`, 2026-10-29). Abiertas y de productos
+ * activos: uno inactivo no sale en ningún pedido. Son decenas, no miles.
+ */
+export async function fetchReglasPendientes() {
+    const { data, error } = await supabase.from('reglas_despacho_pendientes')
+        .select('id, erp_product_id, motivo, regla_anterior, factor_antes, factor_ahora, created_at, products!inner(activo)')
+        .is('resuelto_at', null)
+        .eq('products.activo', true);
+    if (error) throw error;
+    return data ?? [];
+}
+
+/** «Que quede sin regla» también responde el pendiente. */
+export async function resolverPendienteSinRegla(productId) {
+    const { error } = await conBitacora(
+        supabase.rpc('resolver_regla_pendiente_sin_regla', { p_erp_product_id: productId }),
+        'RESOLVER_REGLA_PENDIENTE', String(productId), { resolucion: 'sin_regla' });
+    if (error) throw error;
+}
+
+/** Cómo se lee lo que había antes y por qué se quitó. */
+export function textoDePendiente(p) {
+    const ant = p?.regla_anterior ?? {};
+    const tipo = ant.dispatch_label || ant.tipo || 'una presentación';
+    const factor = p?.factor_antes ?? ant.factor;
+    const era = factor > 1 ? `${tipo} ×${factor}` : tipo;
+    return p?.motivo === 'factor_cambio'
+        ? `La regla era ${era} y esa presentación cambió a ×${p.factor_ahora}.`
+        : `La regla era ${era} y esa presentación ya no está en el catálogo.`;
 }
 
 /** La regla de UN producto (o `null`), con el tipo de su presentación. */

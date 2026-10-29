@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1384.2 — Reglas de despacho: si su presentación cambia, se quitan y avisan
+
+DISTEM X 50 salió en el pedido como «14 cajas» siendo 14 unidades: su regla
+apuntaba a una «CAJA» de factor 1 que el catálogo ya había apagado, y el pedido
+la seguía leyendo. Había 24 reglas así.
+
+- Base (`20261029220450_reglas_despacho_pendientes`): cuando una presentación se
+  apaga o cambia de factor, la regla que la usaba se quita y queda en
+  `reglas_despacho_pendientes` con lo que había y el motivo. Avisa al cargo
+  Jefe/a de Compras y Logística. Guardar una regla nueva cierra el pendiente.
+- Las 24 de hoy se quitaron (13 de productos activos), con un solo aviso.
+- Reglas de despacho: aviso arriba, tarjeta «Por corregir», etiqueta en la fila
+  y, en el editor, qué regla había y por qué se quitó, con «Dejar sin regla».
 ## v2.1384.1 — Compras: id_compra en 0 como el formulario de Bodega
 
 Primera carga real a Bodega (29-oct, C. Imberton, $760.06): el sistema

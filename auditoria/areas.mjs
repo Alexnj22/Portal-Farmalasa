@@ -1060,7 +1060,7 @@ export const AREAS = [
                  'pedidos', 'pedido_items', 'pedido_apoyo', 'pedido_devolucion', 'pedido_item_eventos',
                  'pedido_pausa_historial', 'pedido_recepcion_extras', 'pedido_recepcion_firmas',
                  'pedido_sucursal_status', 'pedido_traslado_erp', 'pedido_traslado_linea',
-                 'pedidos_snapshots', 'dispatch_rules', 'rutas', 'ruta_pedidos', 'ruta_locations',
+                 'pedidos_snapshots', 'dispatch_rules', 'reglas_despacho_pendientes', 'rutas', 'ruta_pedidos', 'ruta_locations',
                  'diferencia_opcion'],
         edge: ['trasladar-pedido-erp', 'devolver-pedido-erp', 'no-reenviar-pedido-erp', 'maps-proxy'],
         crons: [

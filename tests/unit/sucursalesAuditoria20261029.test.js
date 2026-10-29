@@ -117,3 +117,19 @@ describe('punto de la pestaña Expediente', () => {
         expect(alertaDelExpediente({ settings: { legal: { ...completo, municipalExpiration: '2026-11-15' } } }, hoy)).toBe('warning');
     });
 });
+
+describe('el expediente mira lo mismo que el aviso diario', () => {
+    it('la anualidad de enfermería vence', async () => {
+        const { documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } = await import('@nucleo/utils/expedienteDeSucursal');
+        const b = { settings: { legal: { injections: true, nursingRegents: [{ id: 1, employeeId: 'a', anualidadUrl: 'u', anualidadExp: '2026-01-31' }] } } };
+        const doc = documentosDeSucursal(b).personal.find(d => d.id === 'nurse_anualidad_0');
+        expect(estadoDeDocumento(doc.url, vencimientoEfectivo(doc), new Date('2026-10-29T18:00:00Z')).type).toBe('EXPIRED');
+    });
+    it('la recarga de extintores vencida enciende el punto', async () => {
+        const { alertaDelExpediente } = await import('@nucleo/utils/expedienteDeSucursal');
+        const legal = { srsPermitUrl: 'u', regentCredentialUrl: 'u', farmacovigilanciaAuthUrl: 'u', municipalUrl: 'u', regentInscriptionUrl: 'u', fumigationUrl: 'u' };
+        const hoy = new Date('2026-10-29T18:00:00Z');
+        expect(alertaDelExpediente({ settings: { legal } }, hoy)).toBe(null);
+        expect(alertaDelExpediente({ settings: { legal: { ...legal, extinguisherExpiration: '2026-10-01' } } }, hoy)).toBe('critical');
+    });
+});

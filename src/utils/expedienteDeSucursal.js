@@ -109,6 +109,14 @@ export function alertaDelExpediente(b, hoy = new Date()) {
         if (type === 'EXPIRED' || (type === 'MISSING' && DOCUMENTOS_CRITICOS.includes(doc.id))) return 'critical';
         if (type === 'MISSING' || type === 'WARNING') nivel = 'warning';
     }
+    // La recarga de extintores no es un documento —no hay archivo que subir—
+    // pero vence y la avisa `check-doc-expiry`: cuenta para el punto igual.
+    const extintores = b?.settings?.legal?.extinguisherExpiration;
+    if (extintores) {
+        const { type } = estadoDeDocumento(true, extintores, hoy);
+        if (type === 'EXPIRED') return 'critical';
+        if (type === 'WARNING') nivel = 'warning';
+    }
     return nivel;
 }
 
@@ -154,7 +162,9 @@ export function documentosDeSucursal(b) {
         nurses.forEach((nurse, i) => {
             personal.push({ id: `nurse_carne_${i}`, title: `Carné JVQE (Enfermería ${i + 1})`, url: nurse.carneUrl, expDate: null, modal: 'editNursingRegents' });
             personal.push({ id: `nurse_lic_${i}`, title: `Licencia (Enfermería ${i + 1})`, url: nurse.licenciaUrl, expDate: null, modal: 'editNursingRegents' });
-            personal.push({ id: `nurse_anualidad_${i}`, title: `Anualidad (Enfermería ${i + 1})`, url: nurse.anualidadUrl, expDate: null, modal: 'editNursingRegents' });
+            // La anualidad vence (`anualidadExp`): el aviso diario ya la miraba
+            // y la pantalla no, así que avisaba algo que acá salía «Al día».
+            personal.push({ id: `nurse_anualidad_${i}`, title: `Anualidad (Enfermería ${i + 1})`, url: nurse.anualidadUrl, expDate: nurse.anualidadExp || null, hasExpiration: true, modal: 'editNursingRegents' });
         });
     }
 

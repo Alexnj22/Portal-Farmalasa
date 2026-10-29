@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1365.2 — Sucursales: el expediente marca la anualidad de enfermería y la recarga de extintores
+
+El aviso diario de vencimientos ya miraba la anualidad de cada enfermera y la recarga de extintores; la pantalla no, así que avisaba algo que el expediente mostraba «Al día». Ahora la anualidad tiene vencimiento en el expediente y una recarga de extintores vencida o por vencer enciende el punto de la pestaña.
+
 ## v2.1365.1 — Rebajas: abría con error de permiso
 
 La pestaña Rebajas decía «Tu cargo todavía no tiene el módulo de Promociones»

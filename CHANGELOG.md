@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.51 — El correo del cliente sale puesto al mandar su documento
+
+Al abrir «Correo» en el documento electrónico para el cliente (Modificar
+facturación, Ventas y la app), el campo se llena con el correo de la ficha del
+cliente de esa venta, si tiene uno válido, y se puede cambiar. No pisa lo que
+ya se escribió. Lo lee `dte-para-cliente` (acción `correo_de_ficha`) porque la
+ficha sólo la ve quien tiene Clientes y la sala no. Hoy 301 de 28,994 fichas
+tienen correo.
+
 ## v2.1357.50 — El DTE de la noche se entrega aunque todavía no tenga código
 
 `dte-para-cliente` rechazaba con «Esta venta no tiene documento electrónico»

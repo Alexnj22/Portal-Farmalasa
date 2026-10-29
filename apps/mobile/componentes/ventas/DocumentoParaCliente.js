@@ -18,7 +18,7 @@ import { File, Paths } from 'expo-file-system';
 import { zipSync } from 'fflate';
 import * as Haptics from 'expo-haptics';
 import {
-  anotarEntregaDeDte, avisoDeEntregaDeDte, correoDelClienteValido, pedirDteParaCliente,
+  anotarEntregaDeDte, avisoDeEntregaDeDte, correoDeLaFichaDeLaVenta, correoDelClienteValido, pedirDteParaCliente,
 } from '@nucleo/data/facturacion';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { colorSistema } from '../Formulario';
@@ -56,6 +56,15 @@ export default function DocumentoParaCliente({ invoiceId }) {
   const [aviso, setAviso] = useState(null);             // { ok, texto }
   const correoOk = correoDelClienteValido(correo);
 
+  // Se propone el correo de la ficha del cliente, si tiene uno válido; sólo
+  // si el campo sigue vacío, para no pisar lo que ya se escribió.
+  const abrirCorreo = async () => {
+    setPorCorreo(true);
+    if (correo.trim()) return;
+    const deLaFicha = await correoDeLaFichaDeLaVenta(invoiceId);
+    if (deLaFicha) setCorreo((actual) => (actual.trim() ? actual : deLaFicha));
+  };
+
   const pedir = async (accion) => {
     setTrabajando(accion);
     setAviso(null);
@@ -90,7 +99,7 @@ export default function DocumentoParaCliente({ invoiceId }) {
               deshabilitado={!correoOk || !!trabajando} onPress={() => pedir('correo')} />
           </>
         ) : (
-          <BotonGrande texto="Mandarlo por correo" borde color={MARCA.azulClaro} deshabilitado={!!trabajando} onPress={() => setPorCorreo(true)} />
+          <BotonGrande texto="Mandarlo por correo" borde color={MARCA.azulClaro} deshabilitado={!!trabajando} onPress={abrirCorreo} />
         )}
         {trabajando ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

@@ -1,10 +1,14 @@
 // dte-para-cliente — el documento electrónico de una venta, para el cliente
 // que lo pide en la sala (2026-10-19).
 //
-// POST { accion: "descargar" | "correo", invoice_id, correo? } con la sesión
-// de quien atiende (verify_jwt ON). Devuelve:
-//   descargar → { ok, archivos: [{ nombre, tipo, base64 }], se_envio }
-//   correo    → { ok, correo, se_envio }
+// POST { accion: "descargar" | "correo" | "correo_de_ficha", invoice_id, correo? }
+// con la sesión de quien atiende (verify_jwt ON). Devuelve:
+//   descargar       → { ok, archivos: [{ nombre, tipo, base64 }], se_envio }
+//   correo          → { ok, correo, se_envio }
+//   correo_de_ficha → { ok, correo | null }  — sólo lee, para proponerlo en el
+//                     campo. Va por acá y no por el navegador porque la ficha
+//                     (`customers`) sólo la ve quien tiene Clientes, y la sala
+//                     no lo tiene: leída desde el frente volvería vacía, sin error.
 //
 // ── Por qué existe ──────────────────────────────────────────────────────────
 // Desde el 2026-10-19 el COF emitido de las 6:00 p. m. en adelante no se
@@ -64,7 +68,8 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const accion = body?.accion === "correo" ? "correo" : body?.accion === "descargar" ? "descargar" : null;
+    const accion = body?.accion === "correo" ? "correo" : body?.accion === "descargar" ? "descargar"
+      : body?.accion === "correo_de_ficha" ? "correo_de_ficha" : null;
     const invoiceId = Number(body?.invoice_id);
     if (!accion) throw new ErrorUsuario("Acción no válida.");
     if (!Number.isFinite(invoiceId) || invoiceId <= 0) throw new ErrorUsuario("Falta la venta.");
@@ -88,12 +93,20 @@ Deno.serve(async (req) => {
 
     // ── Qué venta ──────────────────────────────────────────────────────
     const { data: f, error: eF } = await admin.from("sales_invoices")
-      .select("id, branch_id, fecha, codigo_generacion, tipo_documento, correlativo, total, estado, recibido_mh, cliente")
+      .select("id, branch_id, customer_id, fecha, codigo_generacion, tipo_documento, correlativo, total, estado, recibido_mh, cliente")
       .eq("id", invoiceId).maybeSingle();
     if (eF) throw eF;
     if (!f) throw new ErrorUsuario("Esa venta ya no está en el portal.", 404);
     if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(f.branch_id))
       throw new ErrorUsuario("Esa venta es de otra sucursal.", 403);
+    if (accion === "correo_de_ficha") {
+      if (!f.customer_id) return json({ ok: true, correo: null });
+      const { data: c, error: eCl } = await admin.from("customers")
+        .select("email").eq("id", f.customer_id).maybeSingle();
+      if (eCl) throw eCl;
+      const deLaFicha = String(c?.email ?? "").trim().toLowerCase();
+      return json({ ok: true, correo: deLaFicha.length <= 254 && CORREO_VALIDO.test(deLaFicha) ? deLaFicha : null });
+    }
     // El código de generación NO se exige acá: un COF de la noche nunca se
     // armó como documento, así que llega sin él (medido el 2026-10-28: 124 de
     // 125). Lo asigna el envío; se exige después de mandarlo, más abajo.

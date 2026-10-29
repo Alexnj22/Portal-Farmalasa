@@ -81,6 +81,28 @@ function getZipLib() {
 export const correoDelClienteValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(correo ?? '').trim());
 
 /**
+ * El correo guardado en la ficha del cliente de esa venta, para proponerlo en
+ * el campo (2026-10-28). Lo lee `dte-para-cliente`: la ficha sólo la ve quien
+ * tiene Clientes, y la sala no. `null` si no hay uno válido. Nunca lanza: si
+ * no se puede leer, el campo queda vacío y se escribe a mano, como antes.
+ */
+export async function correoDeLaFichaDeLaVenta(invoiceId) {
+    try {
+        const { data, error } = await supabase.functions.invoke('dte-para-cliente', {
+            body: { accion: 'correo_de_ficha', invoice_id: invoiceId },
+        });
+        if (error || !data?.ok) {
+            console.warn('correoDeLaFichaDeLaVenta:', error?.message || data?.error);
+            return null;
+        }
+        return correoDelClienteValido(data.correo) ? data.correo : null;
+    } catch (e) {
+        console.warn('correoDeLaFichaDeLaVenta:', e?.message || e);
+        return null;
+    }
+}
+
+/**
  * La mitad que no depende del dispositivo: pide el documento a
  * `dte-para-cliente` y devuelve `{ ok, se_envio, archivos }` (cada archivo
  * `{ nombre, tipo, base64 }`) o `{ ok:false, error }`. Nunca lanza. Quien la

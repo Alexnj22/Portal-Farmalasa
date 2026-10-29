@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Download, Loader2, Mail, FileText } from 'lucide-react';
 import Button from '../common/Button';
 import PortalInput from '../common/PortalInput';
-import { avisoDeEntregaDeDte, correoDelClienteValido, entregarDteAlCliente } from '@nucleo/data/facturacion';
+import { avisoDeEntregaDeDte, correoDeLaFichaDeLaVenta, correoDelClienteValido, entregarDteAlCliente } from '@nucleo/data/facturacion';
 
 /* ─── El documento electrónico, para el cliente que lo pide (2026-10-19) ──────
    Directo, sin solicitud: el cliente está enfrente. Si la venta no tiene sello
@@ -20,6 +20,16 @@ export default function DocumentoParaCliente({ inv }) {
   const [trabajando, setTrabajando] = useState(null);   // 'descargar' | 'correo'
   const [aviso, setAviso] = useState(null);             // { ok, texto }
   const correoOk = correoDelClienteValido(correo);
+
+  // Al abrir el correo se propone el de la ficha del cliente, si tiene uno
+  // válido; sólo si el campo sigue vacío, para no pisar lo que ya se escribió.
+  const alternarCorreo = async () => {
+    const abrir = !porCorreo;
+    setPorCorreo(abrir);
+    if (!abrir || correo.trim()) return;
+    const deLaFicha = await correoDeLaFichaDeLaVenta(inv.id);
+    if (deLaFicha) setCorreo(actual => (actual.trim() ? actual : deLaFicha));
+  };
 
   const pedir = async (accion) => {
     setTrabajando(accion);
@@ -44,7 +54,7 @@ export default function DocumentoParaCliente({ inv }) {
           {trabajando === 'descargar' ? 'Preparando…' : 'Descargar'}
         </Button>
         <Button size="xs" variant="secondary" icon={Mail} disabled={!!trabajando}
-          aria-pressed={porCorreo} onClick={() => setPorCorreo(v => !v)}>
+          aria-pressed={porCorreo} onClick={alternarCorreo}>
           Correo
         </Button>
       </div>

@@ -6,7 +6,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
-import { fetchConsultasExistencia } from '@nucleo/data/consultasExistencia';
+import { fetchConsultasExistencia, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -153,6 +153,8 @@ function TarjetaProducto({ grupo: g, consulta, onHecho }) {
     const mismoCambio = g.filas.every(f => presDe(f) === presDe(f0) && f.de === f0.de && f.a === f0.a);
     const salas = [...new Map(g.filas.map(f => [f.erp_sucursal_id, f.sala])).entries()];
     const sinCorregir = g.filas.some(f => !f.solicitud);
+    const conCorreccion = new Set(g.filas.map(f => f.erp_sucursal_id));
+    const otras = (consulta?.salas ?? []).filter(s => !conCorreccion.has(s.erp_sucursal_id));
     const respondidas = consulta ? (consulta.salas ?? []).filter(s => !['PENDIENTE', 'RECONTAR'].includes(s.estado)).length : 0;
 
     return (
@@ -172,9 +174,21 @@ function TarjetaProducto({ grupo: g, consulta, onHecho }) {
             <ul className="divide-y divide-divider border-t border-divider">
                 {g.filas.map(f => (
                     <SalaPorCorregir key={`${f.cambio_id}-${f.sentido}-${f.erp_sucursal_id}-${f.lote}-${f.presentacion}`}
-                        fila={f} conCambio={!mismoCambio} onHecho={onHecho} />
+                        fila={f} conCambio={!mismoCambio} onHecho={onHecho}
+                        conteo={consulta?.salas?.find(s => s.erp_sucursal_id === f.erp_sucursal_id)} />
                 ))}
             </ul>
+
+            {/* Las salas a las que también se les preguntó y no tienen nada
+                que corregir: un descuadre ahí es otra cosa que revisar. */}
+            {otras.length > 0 && (
+                <div className="border-t border-divider pt-2 space-y-1">
+                    <p className="text-label font-black uppercase tracking-widest text-content-3">Las demás salas</p>
+                    <ul className="flex flex-wrap gap-1.5">
+                        {otras.map(s => <ConteoDeOtraSala key={s.id} s={s} />)}
+                    </ul>
+                </div>
+            )}
 
             {/* ¿Hay de verdad lo que el cambio supone? Un solo pedido para
                 todas las salas del producto; las salas cuentan a ciegas. */}
@@ -206,8 +220,58 @@ function CambioDeFactor({ f }) {
     );
 }
 
+const POR_CONTAR = ['PENDIENTE', 'RECONTAR'];
+
+function ConteoDeOtraSala({ s }) {
+    const contada = !POR_CONTAR.includes(s.estado);
+    const descuadre = contada && s.diferencia;
+    const variant = !contada ? 'neutral' : descuadre ? 'danger' : 'success';
+    return (
+        <li>
+            <Badge size="sm" uppercase={false} variant={variant}
+                icon={!contada ? Clock : descuadre ? AlertTriangle : CheckCircle2}>
+                {s.sala}
+                {!contada ? ' · por contar'
+                    : descuadre ? ` · contó ${enPresentaciones(s.contado_texto, s.final?.contado)}, el sistema ${enPresentaciones(s.sistema_texto, s.final?.sistema)}`
+                    : ' · cuadra'}
+            </Badge>
+        </li>
+    );
+}
+
+// Qué dijo la sala al contar, frente a lo que la corrección supone. Las dos
+// cosas en unidades: la corrección carga o descarta exactamente la diferencia
+// que el conteo debería encontrar.
+function ResultadoDelConteo({ conteo: s, fila: f }) {
+    if (!s) return null;
+    if (s.estado === 'PENDIENTE') {
+        return <p className="text-label font-bold text-content-3 flex items-center gap-1"><Clock size={12} /> Conteo pedido, la sala no ha contado</p>;
+    }
+    if (s.estado === 'RECONTAR') {
+        return <p className="text-label font-bold text-warning-text flex items-center gap-1"><Clock size={12} /> No cuadró la primera vez, la sala está recontando</p>;
+    }
+    const supone = esCarga(f) ? f.cargar * (presentacionDeCarga(f).factor || 1) : -f.descartar;
+    const confirma = (s.diferencia ?? 0) === supone;
+    return (
+        <div className={`rounded-lg border px-2.5 py-1.5 text-label font-bold ${confirma ? 'border-success/30 bg-success/[0.08] text-success-text' : 'border-warning/30 bg-warning/[0.08] text-warning-text'}`}>
+            <p className="flex items-center gap-1">
+                {confirma ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                La sala contó {enPresentaciones(s.contado_texto, s.final?.contado)}; el sistema dice {enPresentaciones(s.sistema_texto, s.final?.sistema)}
+                {s.recontada ? ' (contado dos veces)' : ''}.
+            </p>
+            <p className="text-content-2 font-bold">
+                {confirma
+                    ? 'Confirma la corrección: se puede corregir.'
+                    : s.diferencia === 0
+                        ? 'Cuadra con lo que hay hoy: no corrijas, la existencia ya está bien.'
+                        : `No coincide con la corrección (${textoDeDiferencia(s)}): revisar con la sala antes de corregir.`}
+            </p>
+        </div>
+    );
+}
+
 // ─── Una sala (un lote) con la existencia en la unidad vieja ────────────────
-function SalaPorCorregir({ fila: f, conCambio, onHecho }) {
+function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
     const { user, hasPermission } = useAuth();
     const employees = useStaffStore(s => s.employees);
     const [confirmar, setConfirmar] = useState(false);
@@ -303,6 +367,8 @@ function SalaPorCorregir({ fila: f, conCambio, onHecho }) {
                     )}
                 </p>
             )}
+
+            {!sol && <ResultadoDelConteo conteo={conteo} fila={f} />}
 
             <ConfirmModal
                 isOpen={confirmar}

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.1 — Revisión de factor muestra lo que contó cada sala
+
+- **Productos → Revisión de factor**: debajo de cada sala por corregir sale lo
+  que contó y lo que dice el sistema, y si eso **confirma la corrección** (la
+  diferencia es justo la que se carga o descarta), si ya cuadra (no corregir) o
+  si no coincide (revisar con la sala). Las salas sin nada que corregir van en
+  «Las demás salas»: por contar, cuadra, o lo que contaron si no cuadró.
+- **Consultas de existencia**: «contó 1 caja · el sistema decía 30» en vez de
+  unidades sueltas. `unidades_en_presentaciones` dice «48 cajas», no «48 caja».
+
 ## v2.1382.0 — Compras: la revisión dice si el costo subió y si el precio aguanta
 
 Al revisar una carga, cada renglón dice el **costo que trae la factura**

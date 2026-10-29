@@ -85,6 +85,12 @@ export async function resolverConsulta(id, { estado, solicitudes = [], nota = nu
 }
 
 /** «faltan 1 caja y 2 blister» / «sobran 3 blister» / «cuadra». */
+/** «1 caja», «4 blister»; sin nada en el estante, «nada». */
+export function enPresentaciones(texto, unidades) {
+    if (texto && texto !== '0') return texto;
+    return unidades ? String(unidades) : 'nada';
+}
+
 export function textoDeDiferencia(sala) {
     if (sala?.diferencia == null) return null;
     if (sala.diferencia === 0) return 'cuadra';

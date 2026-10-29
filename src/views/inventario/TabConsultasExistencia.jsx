@@ -19,7 +19,7 @@ import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import {
     crearConsultaExistencia, fetchAjusteDeConsulta, fetchConsultasExistencia,
-    pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia,
+    enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia,
 } from '@nucleo/data/consultasExistencia';
 
 /**
@@ -268,7 +268,7 @@ function FilaDeSala({ sala: s, puedeAjustar, trabajando, onAjustar, onSinAjuste 
                 <p className="text-body-sm font-bold text-content truncate">{s.sala}</p>
                 {final && (
                     <p className="text-label text-content-3 tabular-nums">
-                        Contó {formatQty(final.contado)} · sistema {formatQty(final.sistema)}
+                        Contó {enPresentaciones(s.contado_texto, final.contado)} · el sistema decía {enPresentaciones(s.sistema_texto, final.sistema)}
                         {s.diferencia ? ` · ${textoDeDiferencia(s)}` : ''}
                         {s.recontada ? ' · contado dos veces' : ''}
                     </p>

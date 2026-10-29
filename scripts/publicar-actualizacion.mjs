@@ -67,7 +67,9 @@ function llaveDelServidor() {
     const out = execFileSync('supabase', ['projects', 'api-keys', '--project-ref', PROYECTO, '-o', 'json'],
       { cwd: fuera, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     const llaves = JSON.parse(out.slice(out.indexOf('[')));
-    const k = llaves.find((x) => x.type === 'secret') ?? llaves.find((x) => x.name === 'service_role');
+    // La CLI enmascara la llave `sb_secret_…` (sale con puntos); la
+    // `service_role` sale entera.
+    const k = llaves.find((x) => x.name === 'service_role');
     if (!k?.api_key) throw new Error('sin llave secreta');
     return k.api_key;
   } finally { rmSync(fuera, { recursive: true, force: true }); }
@@ -86,7 +88,9 @@ const TIPOS = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'i
   ttf: 'font/ttf', otf: 'font/otf', json: 'application/json', mp3: 'audio/mpeg', wav: 'audio/wav', mp4: 'video/mp4', lottie: 'application/json' };
 
 const llave = ver ? null : llaveDelServidor();
-const cab = (extra = {}) => ({ Authorization: `Bearer ${llave}`, apikey: llave, ...extra });
+// Una llave `sb_secret_…` no es un JWT: viaja sólo en `apikey` (con
+// `Authorization: Bearer` la API la rechaza con «Invalid API key»).
+const cab = (extra = {}) => ({ apikey: llave, ...(String(llave).startsWith('sb_') ? {} : { Authorization: `Bearer ${llave}` }), ...extra });
 
 async function ultimaHuella(plataforma) {
   const r = await fetch(`${URL_BASE}/rest/v1/app_actualizaciones?select=runtime_version,created_at&app=eq.clientes&plataforma=eq.${plataforma}&order=created_at.desc&limit=1`, { headers: cab() });

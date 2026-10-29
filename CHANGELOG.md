@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1374.1 — app:actualizar: la llave del servidor que sí sirve
+
+- `npm run app:actualizar` usa la llave `service_role`: la CLI devuelve la
+  `sb_secret_…` enmascarada y la API la rechazaba («Invalid API key»). Con eso
+  salió la primera actualización por aire (chat vaciado), verificada: la
+  función entrega el manifiesto para la huella de los binarios iOS 80 /
+  Android 40, el paquete baja, y con el mismo id contesta 204.
+
 ## v2.1374.0 — Sucursales: los formularios sobre el canónico
 
 Los formularios de sucursal (general, horarios, inmueble, servicios, legal), el personal asignado y los kioscos, rehechos sobre los canónicos.

@@ -9,6 +9,9 @@
 // tocando su nombre.
 // Dosis (2026-10-29): «Recordarme tomarlo» manda cuánto toma al día y la fecha
 // en que se acaba sale de ahí; al cerrar la hoja se vuelve a pedir la lista.
+// «Agregar un medicamento que tomo» (2026-10-29, componentes/
+// AgregarTratamientoHoja): lo que la lista automática no ve. Los que agregó el
+// cliente se quitan con «Quitar de mi lista» en vez de «Ya no lo tomo».
 import { useCallback, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
@@ -23,6 +26,7 @@ import { fecha, nombrePropio } from '../lib/formato';
 import { navegar } from '../lib/navegar';
 import { suave, useTema } from '../tema/tema';
 import TomasHoja from '../componentes/TomasHoja';
+import AgregarTratamientoHoja from '../componentes/AgregarTratamientoHoja';
 import { DISPONIBLE as TOMAS, quitarRecordatorio, resumenRecordatorio, sincronizarConTratamientos, tomadoHoy, useTomas } from '../lib/tomas';
 import { copiaParaEmpezar } from '../lib/sinConexion';
 import { useVolverAPedir } from '../componentes/VolverAPedir';
@@ -37,6 +41,7 @@ export default function Tratamientos() {
   const [refrescando, setRefrescando] = useState(false);
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   const [tomas, setTomas] = useState(null); // el tratamiento cuya hoja de tomas está abierta
+  const [agregando, setAgregando] = useState(false);
   const { volver, ocupado } = useVolverAPedir();
   const [volviendo, setVolviendo] = useState(null); // cuál está esperando al servidor
   const volverAPedir = async (t) => { setVolviendo(t.id); await volver({ productos: [t.product_id] }); setVolviendo(null); };
@@ -59,6 +64,17 @@ export default function Tratamientos() {
     if (!activo) quitarRecordatorio(String(t.product_id));
     cargar();
   };
+  // Lo que agregó el cliente se borra: no vuelve solo con la próxima compra.
+  const quitarDeLaLista = (t) => Alert.alert('Quitar de mi lista', `Dejamos de avisarte de ${nombrePropio(t.nombre)}.`, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Quitar', style: 'destructive', onPress: async () => {
+      const r = await pedir('tratamiento_quitar', { id: t.id });
+      if (!r?.ok) { Alert.alert('No se pudo quitar', r?.mensaje ?? 'Revisa tu conexión.'); return; }
+      quitarRecordatorio(String(t.product_id));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      cargar();
+    } },
+  ]);
   const yaNo = (t) => {
     const elegir = (i) => {
       if (i == null || i >= MOTIVOS.length) return;
@@ -104,20 +120,22 @@ export default function Tratamientos() {
         Lo que compras con regularidad. Te avisamos unos días antes de que se te acabe.
       </Text>
       {!activos.length && !apagados.length ? (
-        <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí.</Vacio>
+        <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí. Si tomas uno que no aparece, agrégalo.</Vacio>
       ) : null}
+      <View style={{ flexDirection: 'row' }}><Boton texto="Agregar un medicamento que tomo" sf="plus" alTocar={() => setAgregando(true)} /></View>
       {activos.map((t) => <Fila key={t.id} t={t} alVer={() => navegar(`/producto/${t.product_id}`)} alVolver={() => volverAPedir(t)}
         volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
-        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)}
+        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} alQuitarDeLaLista={t.origen === 'cliente' ? () => quitarDeLaLista(t) : undefined}
         alQuitarDosis={t.ajusta_dosis && t.dosis != null ? () => pedir('tratamiento_dosis', { product_id: t.product_id, dosis: null }).then(cargar) : undefined} />)}
       {apagados.length ? <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, marginTop: 8, marginLeft: 4 }}>YA NO LO TOMO</Text> : null}
       {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
+      {agregando ? <AgregarTratamientoHoja alCerrar={(agrego) => { setAgregando(false); if (agrego) cargar(); }} /> : null}
       {tomas ? <TomasHoja tratamiento={tomas} actual={useTomas.getState().config[String(tomas.product_id)]} alCerrar={() => { setTomas(null); cargar(); }} /> : null}
     </Pantalla>
   );
 }
 
-function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDosis }) {
+function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDosis, alQuitarDeLaLista }) {
   const tema = useTema();
   const pid = String(t.product_id);
   const recordatorio = useTomas((s) => s.config[pid]);
@@ -140,7 +158,7 @@ function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, al
           accessibilityRole={alVer ? 'link' : undefined} accessibilityHint={alVer ? 'Abre el producto' : undefined} style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombrePropio(t.nombre)}</Text>
           <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
-            {apagado ? t.motivo : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
+            {apagado ? t.motivo : t.origen === 'cliente' ? `Agregado por ti · última compra ${fecha(t.ultima)}` : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
           </Text>
           {!apagado ? <Text style={{ fontSize: 13, fontWeight: '700', color: urgente ? tema.color.magentaTexto : colorSistema.texto2 }}>{cuando}</Text> : null}
         </Presionable>
@@ -158,7 +176,7 @@ function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, al
         {apagado ? <Boton texto="Volver a recordarme" alTocar={alEncender} /> : (
           <>
             <Boton texto={volviendo ? 'Agregando…' : 'Volver a pedir'} sf="arrow.clockwise" principal alTocar={alVolver} deshabilitado={volviendo} />
-            <Boton texto="Ya no lo tomo" alTocar={alApagar} />
+            {alQuitarDeLaLista ? <Boton texto="Quitar de mi lista" alTocar={alQuitarDeLaLista} /> : <Boton texto="Ya no lo tomo" alTocar={alApagar} />}
           </>
         )}
       </View>

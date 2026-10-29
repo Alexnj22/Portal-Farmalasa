@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1367.0 — Mis tratamientos: agregar un medicamento que tomo
+
+La lista automática sólo ve crónicos comprados con regularidad que alcanzan
+para tomarlos a diario. Se quedaban fuera quien lo toma día por medio (la
+Cardioaspirina de 30 cada ~70 días) y lo que no viene en tabletas. Ahora el
+cliente los agrega: **«Agregar un medicamento que tomo»** (migraciones
+`20261029170639`, `…170835`, `…171201`).
+
+- Se ofrece sólo lo que compró en el último año y es medicamento
+  (`app_tratamiento_candidatos`): el aviso cuenta desde su última compra.
+- Según el producto pregunta cuántas toma al día (½ a 3), cuántos días le dura
+  una compra (cuando no se puede calcular: cremas, jarabes, insulina) o nada
+  (anticonceptivos y semanales).
+- `app_tratamientos.origen` = `cliente`: no se borra al recalcular y su aviso
+  no exige la lista de crónicos ni la cobertura. Se quita con «Quitar de mi
+  lista» (`app_tratamiento_quitar`).
+- `tratamiento_dias_por_unidad` ya no devuelve NULL fuera de la lista de
+  crónicos (de «X 36 TABLETAS» sí se sabe cuánto dura); la exigencia de
+  crónico quedó escrita en la detección automática. Medido sobre 4,000
+  clientes: la lista automática no cambia (73 filas, misma huella).
+- La detección filtra con lo barato antes de calcular (`MATERIALIZED`): la
+  versión intermedia pasaba de 50 s con 1,200 clientes; hoy 4,000 en 11.7 s.
+
 ## v2.1366.1 — El portal ya no rebaja React y Supabase en cada versión
 
 PENDIENTES 33 (B2 de la auditoría del 30-jul, más `pdfjs`). Medido antes y

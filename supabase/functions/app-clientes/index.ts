@@ -1646,7 +1646,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
-    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
+    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -2933,6 +2933,31 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       });
       if (error) return json({ ok: false, mensaje: error.code === "P0001" && error.message ? error.message : "No se pudo guardar." });
       return json({ ok: true, se_acaba: (data as { se_acaba?: string } | null)?.se_acaba ?? null });
+    }
+    // «Agregar un medicamento que tomo» (2026-10-29): lo que la lista
+    // automática no ve (lo toma día por medio, o no viene en tabletas). Sólo
+    // medicamentos que compró en el último año; `pide` dice qué preguntarle.
+    if (accion === "tratamiento_candidatos") {
+      const { data, error } = await admin.rpc("app_tratamiento_candidatos", { p_customer: customerId });
+      if (error) throw error;
+      return json({ ok: true, productos: data ?? [] });
+    }
+    if (accion === "tratamiento_agregar") {
+      const dosis = body?.dosis == null ? null : Number(body.dosis);
+      const dias = body?.dias == null ? null : Number(body.dias);
+      if (dosis !== null && !(Number.isFinite(dosis) && dosis > 0 && dosis <= 24)) return json({ ok: false, mensaje: "Esa dosis no es válida." });
+      if (dias !== null && !(Number.isInteger(dias) && dias >= 1 && dias <= 365)) return json({ ok: false, mensaje: "Esos días no son válidos." });
+      const { data, error } = await admin.rpc("app_tratamiento_agregar", {
+        p_customer: customerId, p_product_id: Number(body?.product_id), p_dosis: dosis, p_dias: dias,
+      });
+      if (error) return json({ ok: false, mensaje: error.code === "P0001" && error.message ? error.message : "No se pudo agregar." });
+      return json({ ok: true, se_acaba: (data as { se_acaba?: string } | null)?.se_acaba ?? null });
+    }
+    // Quitar uno que agregó el cliente (los automáticos usan «Ya no lo tomo»).
+    if (accion === "tratamiento_quitar") {
+      const { error } = await admin.rpc("app_tratamiento_quitar", { p_customer: customerId, p_id: Number(body?.id) });
+      if (error) return json({ ok: false, mensaje: error.code === "P0001" && error.message ? error.message : "No se pudo quitar." });
+      return json({ ok: true });
     }
 
     // ── Encuestas en la app (2026-10-07): las publicadas con el canal «app»

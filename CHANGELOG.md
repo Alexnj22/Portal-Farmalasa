@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.4 — Bolsas: la pantalla se pone al día en el acto
+
+«al confirmar un efectivo, o finalizar hay que actualizar para ver el cambio»
+(usuario, 2026-10-29). La pantalla sí recargaba sola después de cada acción y
+por el aviso en vivo, pero cada recarga esperaba a `get_bolsas_con_diferencia`,
+que tardaba **3.7 s de promedio y hasta 10 s**: llamaba a `bolsa_saldo()` por
+cada una de las 855 bolsas contadas, y cada llamada volvía a leer `bolsas` con
+su RLS. Ahora suma los movimientos una vez con un join: **4,591 → 23 ms** con
+sesión real, mismo saldo en las 899 bolsas (0 distintas).
+
+Además, de las tres recargas que pueden cruzarse (la acción, el aviso en vivo y
+el reloj) gana la más nueva: una lectura vieja que volvía tarde pintaba la bolsa
+en su etapa anterior.
+
 ## v2.1359.3 — App: los documentos se suben en la ficha, también al crear un empleado
 
 Seguimiento del reporte de Talento Humano (2026-10-28): al dar de alta desde la

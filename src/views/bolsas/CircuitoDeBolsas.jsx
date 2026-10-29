@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import {
     AlertTriangle, Banknote, CalendarDays, CheckCircle2, ChevronDown, ChevronUp, HandCoins,
     Image as ImageIcon, Inbox, Landmark, Package, Printer, RefreshCw, Scale, Send, ShieldCheck,
@@ -1260,7 +1260,15 @@ export default function CircuitoDeBolsas({
      * mostrar es otra cosa—. Después de una acción es lo contrario: el
      * contenido es casi el mismo, y borrarlo devuelve el scroll al tope y hace
      * parpadear todo. Contando bolsa por bolsa, eso pasaba en CADA toque. */
+    /* Gana la lectura MÁS NUEVA, no la que termina última. Tres caminos
+     * recargan —la acción, el aviso en vivo y el reloj— y pueden cruzarse:
+     * una lectura que salió antes de confirmar y vuelve después pintaba la
+     * bolsa en su etapa vieja, y la pantalla parecía no haberse enterado
+     * («hay que actualizar para ver el cambio», usuario, 2026-10-29). */
+    const lecturaRef = useRef(0);
     const cargar = useCallback(async ({ silencioso = false } = {}) => {
+        const esta = ++lecturaRef.current;
+        const vigente = () => esta === lecturaRef.current;
         if (!silencioso) setCargando(true);
         setRefrescando(true);
         // Las pendientes se BAJAN todas y se recortan acá; las contadas ya vienen
@@ -1284,6 +1292,7 @@ export default function CircuitoDeBolsas({
             fetchPorDepositar(),
             fetchInvariante({ desde, hasta }),
         ]);
+        if (!vigente()) return;
         setTandas(lasTandas || []);
         setInvariante(invar || []);
         // Una diferencia puede estar además dentro del rango: se deduplica por
@@ -1295,6 +1304,7 @@ export default function CircuitoDeBolsas({
         // la pantalla mostraría por un instante el monto guardado como si fuera
         // el efectivo que hay adentro.
         const saldos = await fetchSaldos(todas.map((b) => b.id));
+        if (!vigente()) return;
         setBolsas(todas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setDiferencias((conDif || []).map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setPorDepositar(paraBanco || []);
@@ -1307,6 +1317,7 @@ export default function CircuitoDeBolsas({
         const firmas = todas.flatMap((b) => [b.cerrada_por, b.entregada_por, b.recibida_por,
             b.conteo_marcado_por, b.contado_por, b.dif_por]);
         const gente = await fetchPersonasDeBolsas(firmas);
+        if (!vigente()) return;
         setPersonas(new Map(gente.map((p) => [p.id, p])));
     }, [desde, hasta]);
 

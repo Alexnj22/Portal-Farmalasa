@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1373.2 — Revisión de factor: el cambio de tamaño se lee del catálogo
+
+El «antes → ahora» de un cambio de presentación salía sólo de las VENTAS: con
+qué factor se vendió antes y después. Un producto que pasó de CAJA 1x1 a 1x24
+sin haberse vendido con el tamaño viejo no tenía «antes», y su existencia no
+se ofrecía para corregir.
+
+La carga de precios ya veía el catálogo de antes al detectar el cambio y lo
+tiraba. Ahora lo guarda (`cambios_de_factor.catalogo_antes`) y el proceso lo
+compara con el de ahora: ése es el de→a para la existencia y para el aviso.
+Las ventas siguen mandando para convertir el historial y el MIN·MAX. Si la
+caja deja prendidos los dos tamaños del mismo tipo, no se adivina.
+
+Probado con una transacción deshecha: Synthroid 112 (sin ventas) pasado a
+1x24 sale «había 2 cajas, se cargan 2». Migración
+`20261029175624_cambio_de_factor_de_a_desde_el_catalogo`.
+
 ## v2.1373.1 — Plan: cargar compras en Bodega con reparto a las salas
 
 Sólo documentación. `docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md`: qué

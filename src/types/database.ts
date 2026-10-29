@@ -5533,6 +5533,7 @@ export type Database = {
       }
       cambios_de_factor: {
         Row: {
+          catalogo_antes: Json | null
           created_at: string
           detectado_at: string
           erp_product_id: number
@@ -5541,6 +5542,7 @@ export type Database = {
           resultado: Json | null
         }
         Insert: {
+          catalogo_antes?: Json | null
           created_at?: string
           detectado_at?: string
           erp_product_id: number
@@ -5549,6 +5551,7 @@ export type Database = {
           resultado?: Json | null
         }
         Update: {
+          catalogo_antes?: Json | null
           created_at?: string
           detectado_at?: string
           erp_product_id?: number
@@ -31466,6 +31469,16 @@ export type Database = {
       etiquetas_factura_sala: {
         Args: { p_emisor_nit: string; p_items_norm: string }
         Returns: string
+      }
+      existencia_por_corregir: {
+        Args: {
+          p_a: number
+          p_de: number
+          p_desde: string
+          p_producto: number
+          p_tipo: string
+        }
+        Returns: Json
       }
       explicar_meta_propuesta: {
         Args: { p_branch_id: number; p_year_month: string }

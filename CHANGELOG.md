@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1385.0 — Compras: estado de la carga en Bodega por documento
+
+La lista de facturas por cargar tiene una columna **Estado** y el modal la
+repite junto al título: **Pendiente** (nadie la mandó), **Mandándose…**,
+**Cargada en Bodega**, **Por confirmar** (se mandó y no se pudo comprobar;
+no se vuelve a mandar) o **No entró**. Sale del último envío desde el portal;
+revisar no cambia el estado. Al cerrar el modal la lista se vuelve a leer.
+
 ## v2.1384.2 — Reglas de despacho: si su presentación cambia, se quitan y avisan
 
 DISTEM X 50 salió en el pedido como «14 cajas» siendo 14 unidades: su regla

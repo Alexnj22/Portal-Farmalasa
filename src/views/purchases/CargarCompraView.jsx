@@ -21,7 +21,7 @@ import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
-    fetchDocumentosSinCargar, fetchPropuesta, confirmarProducto, buscarProductos,
+    fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPropuesta, confirmarProducto, buscarProductos,
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, enviarCarga,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -81,7 +81,20 @@ const COLS = [
     { key: 'renglones',  label: 'Renglones',  align: 'center', hideBelow: 'md' },
     { key: 'total',      label: 'Total',      align: 'right'  },
     { key: 'espera',     label: 'Esperando',  align: 'center' },
+    { key: 'estado',     label: 'Estado',     align: 'center' },
 ];
+
+// Lo que pasó con el documento en Bodega. Sin envío desde el portal, está
+// pendiente; una revisión sola no lo cambia. Una compra ya cargada sale de
+// esta lista cuando el portal la ve en Bodega (≤10 min).
+const ESTADO_CARGA = {
+    pendiente:     { label: 'Pendiente',          variant: 'neutral' },
+    enviando:      { label: 'Mandándose…',        variant: 'info'    },
+    verificada:    { label: 'Cargada en Bodega',  variant: 'success' },
+    sin_verificar: { label: 'Por confirmar',      variant: 'warning' },
+    fallida:       { label: 'No entró',           variant: 'danger'  },
+};
+const estadoDeCarga = (fila) => ESTADO_CARGA[fila?.estado] ?? ESTADO_CARGA.pendiente;
 
 // El primero es el que se abre por defecto. El último mes es lo que se está
 // cargando; lo de más atrás se busca a propósito, no se mira de entrada.
@@ -276,7 +289,7 @@ function NuevoProducto({ renglon, factor, onCerrar }) {
     );
 }
 
-function Propuesta({ doc, puedeEditar, onCerrar }) {
+function Propuesta({ doc, puedeEditar, estadoCarga, onCerrar }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
     // Lo que la persona corrigió acá: {codigo_proveedor: {product_id, nombre}}
@@ -434,6 +447,13 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                 subtitulo={<>
                     {fmtFecha(doc.fecha_emision)} · {formatMoney(doc.monto_total)}
                     {resumen && ` · ${resumen.renglones} renglones`}
+                    {(() => {
+                        // Lo que acaba de pasar en este modal manda sobre lo que trajo la lista.
+                        const e = envio?.enviada === true ? (envio.verificada ? ESTADO_CARGA.verificada : ESTADO_CARGA.sin_verificar)
+                            : envio?.enviada === null ? ESTADO_CARGA.sin_verificar
+                            : estadoDeCarga(estadoCarga);
+                        return <Badge variant={e.variant} size="sm" className="ml-2 align-middle">{e.label}</Badge>;
+                    })()}
                 </>} />
 
             <LiquidModal.Body>
@@ -1122,10 +1142,13 @@ export default function CargarCompraView() {
     const [pagina, setPagina] = useState(1);
     const [porPagina, setPorPagina] = useState(PAGE_SIZE_OPTIONS[0]);
 
+    const [estados, setEstados] = useState({});
     const cargar = useCallback(async () => {
         const { filas: f, error: e } = await fetchDocumentosSinCargar(Number(dias));
         setError(e?.message ?? '');
         setFilas(f);
+        const { estados: es } = await fetchEstadosDeCarga((f ?? []).map(x => x.document_id));
+        setEstados(es);
     }, [dias]);
 
     // **Sólo se pide si se está mirando.** Esta lista no vive en la pestaña «Por
@@ -1234,6 +1257,12 @@ export default function CargarCompraView() {
                                     ? <Badge variant="warning" size="sm">{f.dias_desde} días</Badge>
                                     : <span className="text-content-2 text-label">{f.dias_desde} d</span>}
                             </DataCell>
+                            <DataCell align="center" className="whitespace-nowrap">
+                                {(() => {
+                                    const e = estadoDeCarga(estados[f.document_id]);
+                                    return <Badge variant={e.variant} size="sm">{e.label}</Badge>;
+                                })()}
+                            </DataCell>
                         </DataRow>
                     ))}
                 </DataTable>
@@ -1246,7 +1275,8 @@ export default function CargarCompraView() {
             </>)}
             </div>
 
-            {sel && <Propuesta doc={sel} puedeEditar={puedeEditar} onCerrar={() => setSel(null)} />}
+            {sel && <Propuesta doc={sel} puedeEditar={puedeEditar} estadoCarga={estados[sel.document_id]}
+                onCerrar={() => { setSel(null); cargar(); }} />}
         </GlassViewLayout>
     );
 }

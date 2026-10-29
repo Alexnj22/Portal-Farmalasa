@@ -22,6 +22,33 @@ export async function fetchDocumentosSinCargar(dias = 60) {
 }
 
 /**
+ * Lo que pasó con cada documento al mandarlo a Bodega desde el portal:
+ * `{ document_id: { estado, erp_compra_id, updated_at } }`, con el envío MÁS
+ * RECIENTE de cada uno. Las revisiones (`simulada`) no cuentan: revisar no es
+ * procesar. Sin fila, el documento está pendiente.
+ *
+ * Por tandas de 200 ids: `document_id` se repite (un reintento deja otra fila),
+ * así que acotar la entrada no acota la salida — pero sin las revisiones son
+ * pocas filas por documento, muy lejos del techo de 1000.
+ */
+export async function fetchEstadosDeCarga(documentIds = []) {
+    const ids = [...new Set(documentIds.filter(Boolean))];
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += 200) tandas.push(ids.slice(i, i + 200));
+    const res = await Promise.all(tandas.map((t) => supabase.from('compra_carga')
+        .select('document_id, estado, erp_compra_id, updated_at')
+        .in('document_id', t).neq('estado', 'simulada')));
+    const err = res.find((r) => r.error)?.error;
+    if (err) return { estados: {}, error: err };
+    const estados = {};
+    for (const r of res.flatMap((x) => x.data ?? [])) {
+        const prev = estados[r.document_id];
+        if (!prev || r.updated_at > prev.updated_at) estados[r.document_id] = r;
+    }
+    return { estados, error: null };
+}
+
+/**
  * La compra armada de un documento: encabezado y renglones, cada uno diciendo
  * **de dónde salió** su producto (código de barras, diccionario o parecido) y
  * su lote y vencimiento (la descripción o el PDF).

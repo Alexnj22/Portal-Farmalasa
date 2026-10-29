@@ -447,6 +447,9 @@ export const AREAS = [
             // —especial > feriado con horario de domingo > semanal— vive en
             // `horario_de_sala()`; la usa `farmacia_estado()` para el chat.
             'src/components/forms/HorariosEspeciales.jsx',
+            // Ubicar la sala desde su enlace de Maps o un pin (2026-10-29).
+            'src/components/forms/SelectorDeUbicacion.jsx',
+            'src/data/ubicar.js', 'src/utils/ubicacionDeSucursal.js',
         ],
         tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map', 'sucursal_horario_especial', 'sucursal_expediente'],
         edge: ['analyze-branch', 'check-doc-expiry'],

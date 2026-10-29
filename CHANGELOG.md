@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1379.0 — Sucursales: ubicar desde el enlace o el mapa
+
+Configuración general de una sucursal: el punto se marca en un **mapa** (tocar o arrastrar el pin) o sale del **enlace de Google Maps** al pegarlo, y con él se completan departamento, municipio y dirección. Las casillas de latitud y longitud a mano —y la ayuda de «clic derecho sobre la farmacia»— desaparecen.
+
+- **Sólo se llena lo vacío** (decisión del usuario): si la sucursal ya tiene un departamento, municipio o dirección distinto, se avisa y no se pisa. Un municipio de otro departamento nunca se escribe.
+- **El enlace trae dos coordenadas y sólo una es la farmacia.** `!3d…!4d…` es el pin del lugar; `@lat,lng` es el centro de la vista de quien lo copió — en el de La Popular, a 30 km. Se toma el pin; si sólo hay vista, se usa y se avisa.
+- **`maps-proxy` estrena la acción `ubicar`**: abre el enlace corto `maps.app.goo.gl` siguiendo la redirección sólo hacia dominios de Google con `https` (la prueba cazó que `google.com.evil.io` pasaba un primer filtro), y pide la dirección a OpenStreetMap con un User-Agent propio. No a Google: la llave de Maps del portal está restringida por referer y su API de geocodificación la rechaza desde el servidor (medido: `REQUEST_DENIED`). OpenStreetMap además devuelve los nombres de la reforma de 2024 —«Chalatenango Centro», distrito «Agua Caliente»—, que son los del catálogo.
+- El mapa es Google con respaldo en OpenStreetMap, y se carga sólo al abrir el formulario.
+- `FormSucursal` usaba una copia a mano de los departamentos y municipios en `BranchHelpers`; ahora usa el catálogo único `@nucleo/data/elSalvadorGeo`.
+
 ## v2.1378.0 — Cargar compra: crear un producto copiando a uno parecido
 
 Paso 4 del plan, en SIMULACRO. En un renglón sin producto aparece «Crear

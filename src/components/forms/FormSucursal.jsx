@@ -1,7 +1,8 @@
 import React, { useMemo, useCallback, Suspense } from 'react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { WEEK_DAYS } from '@nucleo/data/constants';
-import { EL_SALVADOR_GEO } from './BranchHelpers';
+// Del catálogo único del núcleo: `BranchHelpers` tenía una copia a mano.
+import { EL_SALVADOR_GEO } from '@nucleo/data/elSalvadorGeo';
 import { SkeletonText } from '../common/StateViews';
 import { alternarEnfermera, candidatosLegales, finDeContrato, limpiarAjustes, limpiarHorario } from '@nucleo/utils/edicionDeSucursal';
 

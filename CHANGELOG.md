@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.8 — Tratamientos: sólo medicamentos de uso crónico con compra real
+
+La app de clientes mandó «¿Ya te toca otra vez?» por una metformina que el
+cliente nunca compró: tres tratamientos de muestra cargados a mano el 12-oct en
+una ficha real, sin una factura detrás. La detección sólo agregaba filas y el
+recordatorio no preguntaba si la compra existía. Se borraron las tres.
+
+Medida sobre todos los clientes, la regla vieja daba 1,169 «tratamientos»
+encabezados por acetaminofén, Alka-Seltzer, alcohol 90 y amoxicilina, más 117
+de fichas de mostrador. Definición nueva (migración `20261029151442`):
+
+- **Una persona**: nunca una ficha de mostrador (`es_cliente_mostrador`).
+- **Uso crónico**: la molécula o la marca está en `tratamiento_moleculas`
+  (140 patrones en 12 familias: presión, diabetes, colesterol, corazón,
+  tiroides, gota, neurología, salud mental, respiratorio, próstata,
+  anticonceptivos, huesos). Se lee de `familia_de_tratamiento()`. Insumos
+  (tiras, jeringas) no cuentan.
+- **Ritmo**: 3+ compras en 365 días, cada 14 a 100 días (antes 60: una caja de
+  100 tabletas dura ~100). 249 → 387 detectados.
+- **Respaldo**: `app_tratamientos_por_recordar` exige la factura válida de la
+  última compra, y `app_tratamientos_detectar` quita los activos que dejan de
+  cumplir. Los suspendidos por el cliente se quedan.
+
+## v2.1359.7 — Cargas y descartes: unidades de la base y sin corte de 1000
+
+PENDIENTES 27. El widget de cargas y descartes de inventario
+(`src/data/inventoryMovements.js`) lee de `v_inventario_lotes`, que trae el
+`factor` de cada fila resuelto por la base, en vez de deducirlo de `detalle` en
+la pantalla. Es la misma fuente que ya usa la Consulta de Inventario: las dos
+pantallas no pueden dar unidades distintas.
+
+Y las dos búsquedas que pedían la existencia de muchos productos a la vez
+(hasta 61 y 200) se paginan con `fetchAllRows`: cada producto ocupa una fila
+por lote y presentación, y pasadas las 1000 filas PostgREST cortaba sin avisar.
+Medido hoy: el peor caso real eran 976. Consulta: 3.4 ms por índice.
+
+Medido contra producción: 3 de 17,623 filas cambian de número, todas de
+RECARGA SALDO MOVISTAR, porque el catálogo le da factor 2 a su UNIDAD.
+
 ## v2.1359.6 — Bolsas en la app: se pone al día sola
 
 La pantalla de bolsas de la app sólo se actualizaba al deslizar hacia abajo o

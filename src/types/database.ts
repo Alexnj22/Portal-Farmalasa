@@ -27290,6 +27290,27 @@ export type Database = {
           },
         ]
       }
+      tratamiento_moleculas: {
+        Row: {
+          created_at: string
+          familia: string
+          id: number
+          patron: string
+        }
+        Insert: {
+          created_at?: string
+          familia: string
+          id?: never
+          patron: string
+        }
+        Update: {
+          created_at?: string
+          familia?: string
+          id?: never
+          patron?: string
+        }
+        Relationships: []
+      }
       user_dashboard_prefs: {
         Row: {
           arranged: Json
@@ -31273,6 +31294,10 @@ export type Database = {
       facturas_sala_guarda: {
         Args: { p_accion: string; p_branch_id: number }
         Returns: undefined
+      }
+      familia_de_tratamiento: {
+        Args: { p_nombre: string; p_principio_activo: string }
+        Returns: string
       }
       farmacia_estado: { Args: never; Returns: Json }
       ficha_de_persona: { Args: { p_id: string }; Returns: string }

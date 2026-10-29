@@ -893,7 +893,9 @@ export const AREAS = [
                  // (WhatsApp, llamada) con quién, cuándo y qué respondió el cliente.
                  'reserva_avisos_log',
                  // Reclamos de clientes en sala, diez días hábiles (2026-10-24).
-                 'reclamos_clientes'],
+                 'reclamos_clientes',
+                 // Qué moléculas cuentan como tratamiento crónico (2026-10-29).
+                 'tratamiento_moleculas'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.

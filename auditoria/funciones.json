@@ -2377,6 +2377,10 @@
    "area": "compras",
    "por": "llamada"
   },
+  "familia_de_tratamiento": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
   "farmacia_estado": {
    "area": "app-clientes",
    "por": "código"

@@ -3,6 +3,7 @@ import { insertApprovalRequestSilent } from './requests';
 import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { hoySV, relojSV, sumarDias } from '../utils/fecha';
 import { unidadesDe, unidadesEnSala } from '../utils/unidadesInventario';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 // Datos del widget de cargas y descartes de inventario.
 //
@@ -34,8 +35,8 @@ export async function fetchLotesPorVencer({ erpSucursalId, dias = 0 }) {
     const hasta = corte.toISOString().slice(0, 10);
 
     const { data, error } = await supabase
-        .from('inventory')
-        .select('erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad')
+        .from('v_inventario_lotes')
+        .select('erp_product_id, descripcion, presentacion, detalle, factor, lote, fecha_vencimiento, cantidad')
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .eq('is_vencidos', false)          // la bodega de vencidos ya es el destino, no el origen
         .gt('cantidad', 0)
@@ -85,14 +86,21 @@ export async function buscarEnCatalogo({ erpSucursalId, texto }) {
     // margen —en una carga no topa nada— y perderla no puede costar el listado
     // entero. Pero se mira el error igual, porque descartarlo sin leerlo deja
     // todas las existencias en cero y eso se ve idéntico a que no haya nada.
-    const { data: exis, error: exisErr } = await supabase
-        .from('inventory')
-        .select('erp_product_id, cantidad, detalle')
+    //
+    // Sale de `v_inventario_lotes`, que trae el `factor` resuelto por la base
+    // (PENDIENTES 27): la pantalla ya no lo deduce de `detalle`. Y se pagina:
+    // cada producto ocupa una fila por lote y presentación (hasta 16 medidas
+    // en una sala), así que 61 productos pueden pasar las 1000 filas — y ahí
+    // PostgREST corta sin avisar y un producto saldría «había 0» teniendo.
+    const exis = await fetchAllRows(() => supabase
+        .from('v_inventario_lotes')
+        .select('erp_product_id, cantidad, detalle, factor')
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .eq('is_vencidos', false)
         .gt('cantidad', 0)
         .in('erp_product_id', productos.map(p => p.id))
-        .range(0, 999);
+        .order('id'), { completo: true });
+    const exisErr = exis === null;
 
     // En UNIDADES: `cantidad` está en la presentación de cada fila, y el mismo
     // producto llega partido en CAJA, BLISTER y UNIDAD. Sumarlas crudas daba
@@ -131,16 +139,20 @@ export async function buscarConExistencia({ erpSucursalId, texto }) {
     const { ids, aproximado, error: errIds } = await buscarIdsDeProducto(q, { limite: 200, soloActivos: false });
     if (errIds) return { filas: [], error: errIds };
     if (!ids.length) return { filas: [], error: null };
-    const { data, error } = await supabase
-        .from('inventory')
-        .select('erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad')
+    // Hasta 200 productos con una fila por lote y presentación: paginado, por
+    // la misma razón que arriba. Una lista cortada en silencio dejaría fuera
+    // justo los productos del final del orden de búsqueda.
+    const data = await fetchAllRows(() => supabase
+        .from('v_inventario_lotes')
+        .select('erp_product_id, descripcion, presentacion, detalle, factor, lote, fecha_vencimiento, cantidad')
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .eq('is_vencidos', false)
         .gt('cantidad', 0)
         .in('erp_product_id', ids)
-        .range(0, 999);
+        .order('id'), { completo: true });
+    if (data === null) return { filas: [], error: new Error('No se pudo leer la existencia.') };
 
-    return { filas: enElOrdenDe(data, ids, 'erp_product_id').slice(0, 61), error, aproximado };
+    return { filas: enElOrdenDe(data, ids, 'erp_product_id').slice(0, 61), error: null, aproximado };
 }
 
 /**
@@ -208,8 +220,8 @@ export async function fetchPresentaciones(productIds) {
 const TOPE_FILAS_DE_PRODUCTO = 200;
 export async function fetchLotesDeProducto({ erpProductId, erpSucursalId }) {
     const { data, error } = await supabase
-        .from('inventory')
-        .select('erp_product_id, lote, fecha_vencimiento, presentacion, detalle, cantidad')
+        .from('v_inventario_lotes')
+        .select('erp_product_id, lote, fecha_vencimiento, presentacion, detalle, factor, cantidad')
         .eq('erp_product_id', Number(erpProductId))
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .eq('is_vencidos', false)

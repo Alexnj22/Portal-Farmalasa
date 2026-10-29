@@ -4,7 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -124,7 +124,12 @@ function FilaExistencia({ fila: f, onHecho }) {
     const puedeAplicar = hasPermission('requests_inventario', 'can_approve');
     const sol = f.solicitud;
     const carga = esCarga(f);
-    const pres = String(f.presentacion ?? '').toLowerCase();
+    const pres = String(f.tipo_cambio ?? f.presentacion ?? '').toLowerCase();
+    // Crece: dónde entra la carga y cómo se ve hoy lo que había. Con una
+    // presentación de 1 (el blíster que la caja creó junto con el cambio) la
+    // existencia vieja se ve en ésa; sin ella, como unidades sueltas.
+    const enCarga = String(presentacionDeCarga(f).tipo ?? '').toLowerCase();
+    const comoSeVe = presentacionDeCarga(f).factor === 1 && enCarga !== pres ? enCarga : 'unidades sueltas';
     // Aprobada no es aplicada: si la caja rechazó el ajuste, la solicitud queda
     // aprobada y la existencia sigue igual. «Corregida» sólo cuando entró.
     const estado = !sol ? null
@@ -151,7 +156,7 @@ function FilaExistencia({ fila: f, onHecho }) {
                         `No se pudo aplicar todavía: ${r?.error ?? 'sin respuesta'}. Queda en Solicitudes para reintentar.`, 'warning');
                 } else {
                     useToastStore.getState().showToast('Existencia corregida', carga
-                        ? `${f.nombre} en ${f.sala}: se cargaron ${formatQty(f.cargar)} ${pres}.`
+                        ? `${f.nombre} en ${f.sala}: se cargaron ${formatQty(f.cargar)} ${enCarga}.`
                         : `${f.nombre} en ${f.sala}: ${formatQty(f.muestra)} → ${formatQty(f.quedan)}.`, 'success');
                 }
             }
@@ -182,16 +187,16 @@ function FilaExistencia({ fila: f, onHecho }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm font-bold">
-                <span className="text-content-3">1 {f.presentacion} = {formatQty(f.de)}</span>
+                <span className="text-content-3">1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.de)}</span>
                 <ArrowRight size={13} className="text-content-3" />
-                <span className="text-content">1 {f.presentacion} = {formatQty(f.a)}</span>
+                <span className="text-content">1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.a)}</span>
             </div>
 
             {carga ? (
                 <p className="text-label font-bold text-content-2">
                     Había <span className="tabular-nums">{formatQty(f.muestra)}</span> {pres}, hoy cuenta{' '}
-                    <span className="tabular-nums">{formatQty(f.muestra)}</span> unidades sueltas
-                    {' '}· se cargan <span className="tabular-nums text-success-text">{formatQty(f.cargar)}</span> {pres}
+                    <span className="tabular-nums">{formatQty(f.muestra)}</span> {comoSeVe}
+                    {' '}· se cargan <span className="tabular-nums text-success-text">{formatQty(f.cargar)}</span> {enCarga}
                 </p>
             ) : (
                 <p className="text-label font-bold text-content-2">
@@ -223,16 +228,16 @@ function FilaExistencia({ fila: f, onHecho }) {
                 message={(
                     <span className="block space-y-2 text-left">
                         <span className="block">
-                            <b>Qué pasó:</b> la presentación cambió de tamaño: antes 1 {f.presentacion} = {formatQty(f.de)},
-                            {' '}ahora 1 {f.presentacion} = {formatQty(f.a)}. La caja no convierte la existencia,
+                            <b>Qué pasó:</b> la presentación cambió de tamaño: antes 1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.de)},
+                            {' '}ahora 1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.a)}. La caja no convierte la existencia,
                             {carga
-                                ? <> así que las {formatQty(f.muestra)} {pres} que había en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedaron contadas como {formatQty(f.muestra)} unidades sueltas.</>
+                                ? <> así que las {formatQty(f.muestra)} {pres} que había en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedaron contadas como {formatQty(f.muestra)} {comoSeVe}.</>
                                 : <> así que en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedó mostrando {formatQty(f.muestra)}.</>}
                         </span>
                         <span className="block">
                             {carga ? (
                                 <>
-                                    <b>Qué se hace:</b> se cargan {formatQty(f.cargar)} {pres} y la sala vuelve a tener {formatQty(f.quedan)}.
+                                    <b>Qué se hace:</b> se cargan {formatQty(f.cargar)} {enCarga} y la sala vuelve a tener {formatQty(f.quedan)} {pres}.
                                     {f.sobran > 0 && ` Quedan además ${formatQty(f.sobran)} unidades sueltas de más que no se pueden sacar: no forman una ${pres}.`}
                                 </>
                             ) : (
@@ -247,7 +252,7 @@ function FilaExistencia({ fila: f, onHecho }) {
                         </span>
                         <span className="block text-content-3">
                             {carga
-                                ? `Corregí sólo si en la sala hay ${formatQty(f.muestra)} ${pres} enteras. Si lo que hay son ${formatQty(f.muestra)} unidades sueltas, no corrijas: la existencia ya está bien.`
+                                ? `Corregí sólo si en la sala hay ${formatQty(f.muestra)} ${pres} enteras. Si lo que hay son ${formatQty(f.muestra)} ${comoSeVe}, no corrijas: la existencia ya está bien.`
                                 : 'Si en la sala de verdad hay más, no corrijas: avisá para revisarlo.'}
                             {' '}
                             {puedeAplicar

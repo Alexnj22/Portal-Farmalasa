@@ -31549,6 +31549,7 @@ export type Database = {
       existencia_por_corregir: {
         Args: {
           p_a: number
+          p_antes?: Json
           p_de: number
           p_desde: string
           p_producto: number

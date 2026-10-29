@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1376.1 — Revisión de factor: el cambio se mide contra el catálogo de antes
+
+_(pendiente de redactar)_
+
 ## v2.1376.0 — Cargar compra: unidades por caja, consumo y revisión de la carga
 
 Pasos 1 a 3 de `docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md`. **No escribe

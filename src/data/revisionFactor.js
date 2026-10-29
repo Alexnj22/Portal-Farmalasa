@@ -17,7 +17,14 @@ import { insertMovimientoInventario } from './inventoryMovements';
 export async function fetchRevisionDePresentaciones() {
     const { data, error } = await supabase.rpc('revision_de_presentaciones');
     if (error) return { data: null, error };
-    return { data: data ?? { cambios: [], existencias: [], sospechosos: [] }, error: null };
+    const datos = data ?? { cambios: [], existencias: [], sospechosos: [] };
+    // La presentación que CAMBIÓ vive en el cambio, no en la fila: la fila
+    // lleva la de la existencia (en X-Ray Dol, el blíster nuevo; cambió la caja).
+    const tipoDelCambio = new Map((datos.cambios ?? []).map(c => [c.id, c.resultado?.presentacion]));
+    datos.existencias = (datos.existencias ?? []).map(f => ({
+        ...f, tipo_cambio: tipoDelCambio.get(f.cambio_id) ?? f.presentacion,
+    }));
+    return { data: datos, error: null };
 }
 
 /**
@@ -32,17 +39,31 @@ export async function fetchRevisionDePresentaciones() {
 export const esCarga = (f) => f?.sentido === 'crece';
 
 /**
+ * Dónde entra la carga. Si la caja creó una presentación de 1 junto con el
+ * cambio (X-Ray Dol: CAJA 1→4 y un BLISTER 1 nuevo), la carga va ahí y
+ * cuadra exacto —1 caja que quedó como 1 blíster se arregla con 3 blísteres—;
+ * si no, se carga la presentación que cambió. Lo decide la base.
+ */
+export const presentacionDeCarga = (f) => ({
+    tipo:   f?.carga_tipo ?? f?.presentacion,
+    factor: f?.carga_factor ?? f?.a,
+});
+
+/**
  * La causa que queda escrita en el movimiento de la caja. Dice el porqué y el
  * de→a con los números de ESTE lote, para que quien lo lea en el kardex dentro
  * de un año entienda qué pasó sin abrir el portal.
  */
 export function causaDeCorreccion(f) {
-    const cambio = `Corrección por cambio de presentación: antes 1 ${f.presentacion} = ${f.de}, `
-        + `ahora 1 ${f.presentacion} = ${f.a}. La existencia quedó contada en la unidad vieja: `;
+    const tipo = f.tipo_cambio ?? f.presentacion;
+    const cambio = `Corrección por cambio de presentación: antes 1 ${tipo} = ${f.de}, `
+        + `ahora 1 ${tipo} = ${f.a}. La existencia quedó contada en la unidad vieja: `;
     const lote = f.lote ? ` del lote ${f.lote}` : '';
+    const cambiada = String(f.tipo_cambio ?? f.presentacion).toLowerCase();
     return esCarga(f)
-        ? cambio + `había ${f.muestra} ${f.presentacion.toLowerCase()} y quedaron como ${f.muestra} `
-            + `unidades sueltas. Se cargan ${f.cargar}${lote}.`
+        ? cambio + `había ${f.muestra} ${cambiada} y quedaron como ${f.muestra} `
+            + `${presentacionDeCarga(f).factor === 1 ? String(presentacionDeCarga(f).tipo).toLowerCase() : 'unidades sueltas'}. `
+            + `Se cargan ${f.cargar} ${String(presentacionDeCarga(f).tipo).toLowerCase()}${lote}.`
         : cambio + `mostraba ${f.muestra}, son ${f.quedan}. Se descartan ${f.descartar}${lote}.`;
 }
 
@@ -66,8 +87,8 @@ export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador }) 
         lineas: [{
             erp_product_id: fila.erp_product_id,
             descripcion:    fila.nombre,
-            tipo:           fila.presentacion,
-            factor:         fila.a,
+            tipo:           carga ? presentacionDeCarga(fila).tipo : fila.presentacion,
+            factor:         carga ? presentacionDeCarga(fila).factor : fila.a,
             cantidad:       carga ? fila.cargar : fila.descartar,
             lote:           fila.lote,
             vence:          fila.vence,

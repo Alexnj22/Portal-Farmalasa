@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto } from '../../supabase/functions/_shared/compraSobre.ts';
+import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -67,4 +67,16 @@ describe('totalesDelSobre', () => {
 
 it('tipoDocDe', () => {
     expect([tipoDocDe('03'), tipoDocDe('01'), tipoDocDe('14'), tipoDocDe('05')]).toEqual(['CCF', 'COF', 'FSE', null]);
+});
+
+describe('factorEnLaDescripcion', () => {
+    it.each([
+        ['Barrita Fresa Sarita|7401090800083|25.000 |Caja', 25],
+        ['Choco Cono Sarita|7401090803022|30.000 |Caja', 30],
+        ['PALETA FROZEN MIXTA CJA 25 UND', 25],
+        ['SANDWICH QUESO FRESA CJA 18 U', 18],
+        ['COPA MIA QUESO FRESA', null],
+        ['ELECTROLIT MARACUYA 625 ML', null],
+        ['BOLSA DE AGUA X 500 ML', null],
+    ])('%s → %s', (t, n) => expect(factorEnLaDescripcion(t)).toBe(n));
 });

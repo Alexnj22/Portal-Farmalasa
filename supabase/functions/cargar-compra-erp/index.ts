@@ -190,7 +190,9 @@ Deno.serve(async (req: Request) => {
     const totalDoc = totalDelDocumento(dte?.resumen);
     const diferencia = totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100;
     if (diferencia == null) problemas.push({ renglon: null, texto: "El documento no trae su total." });
-    else if (Math.abs(diferencia) > TOLERANCIA) {
+    // Sólo con TODOS los renglones armados: con uno sin producto el total
+    // sale corto por construcción, y decirlo repite el problema de arriba.
+    else if (lineas.length === items.length && Math.abs(diferencia) > TOLERANCIA) {
       problemas.push({ renglon: null, texto: `El total armado ($${tot.total}) no cuadra con el del documento ($${totalDoc.toFixed(2)}).` });
     }
 

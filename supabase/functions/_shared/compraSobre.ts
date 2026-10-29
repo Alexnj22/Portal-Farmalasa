@@ -156,6 +156,18 @@ export function totalesDelSobre(
   };
 }
 
+/**
+ * El tamaño de la caja cuando el proveedor lo escribe en la descripción:
+ * «Barrita Fresa Sarita|7401090800083|25.000 |Caja» (Sarita) o
+ * «PALETA FROZEN MIXTA CJA 25 UND» (Nevería). Sólo esas dos formas: un número
+ * suelto en el nombre suele ser gramos o mililitros.
+ */
+export function factorEnLaDescripcion(t: string): number | null {
+  const m = /\|\s*(\d+)(?:\.0+)?\s*\|\s*caja\b/i.exec(t) ?? /\bCJA\.?\s*(?:X\s*)?(\d+)\s*(?:U|UND|UNDS|UNIDADES)\b/i.exec(t);
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isInteger(n) && n >= 2 && n <= 500 ? n : null;
+}
+
 /** El tipo de documento del sistema a partir del `tipoDte` del estándar. */
 export function tipoDocDe(tipoDte: string | null | undefined): "CCF" | "COF" | "FSE" | null {
   return tipoDte === "03" ? "CCF" : tipoDte === "01" ? "COF" : tipoDte === "14" ? "FSE" : null;

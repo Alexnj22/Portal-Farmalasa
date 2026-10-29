@@ -126,6 +126,13 @@ function BuscadorProducto({ onElegir, onCancelar }) {
 }
 
 /* ─── La compra armada ─────────────────────────────────────────────────────── */
+// De dónde salió el tamaño que se propone (lo decide `leer-dte-json`).
+const ORIGEN_FACTOR = {
+    documento: 'factura',
+    aprendido: 'confirmado',
+    costo:     'por costo',
+};
+
 const USOS = [
     { value: 'venta',   label: 'Para vender' },
     { value: 'consumo', label: 'Para consumo' },
@@ -192,10 +199,12 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
         setRes(null);
     };
 
-    // El producto que se mandaría: lo elegido acá, o lo que llegó SEGURO
-    // (código de barras o diccionario). Un parecido sin confirmar no viaja: la
-    // revisión lo devuelve como «sin producto elegido», que es lo que es.
-    const productoDe = (r) => elegidos[r.codigo_proveedor]?.product_id ?? (r.seguro ? r.producto_id : null);
+    // El producto que se mandaría: lo elegido acá, o lo que llegó por código
+    // de barras o por el diccionario. Un parecido NUNCA viaja sin confirmar,
+    // por alto que sea: acierta 91.5 % y un inventario mal cargado no avisa.
+    // La revisión lo devuelve como «sin producto elegido», que es lo que es.
+    const productoDe = (r) => elegidos[r.codigo_proveedor]?.product_id
+        ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) ? r.producto_id : null);
 
     const revisar = async () => {
         setRev(true); setError(''); setRes(null);
@@ -362,7 +371,8 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                     </div>
                                     {uso === 'venta' && (
                                         <div className="mt-2 grid grid-cols-3 gap-2 max-w-xl">
-                                            <PortalInput compact labelDenso label="Unidades por cada una" type="number" min="1"
+                                            <PortalInput compact labelDenso label="Unid. por caja" type="number" min="1"
+                                                helperText={ORIGEN_FACTOR[r.factor_origen] ?? null}
                                                 value={aj.factor} onChange={e => ajustar(i, 'factor', e.target.value)}
                                                 labelAction={factorCambio && puedeEditar ? (
                                                     <Button size="xs" variant="ghost" loading={guardando === r.codigo_proveedor}

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1377.1 — Cargar compra: el tamaño de la caja sale de la factura o del costo
+
+- «Unid. por caja» se propone en este orden: lo que dice la factura
+  («…|25.000 |Caja» de Sarita, «CJA 25 UND» de Nevería), lo ya confirmado, y
+  el costo (precio ÷ costo unitario del catálogo, entero ±8 %). La factura va
+  primero porque la misma caja cambia de tamaño entre facturas (Choco Cono: 15
+  y 30). Medido: $5.81 ÷ 25 = $0.2324, el costo exacto de la barrita.
+- Un producto «por parecido» ya no viaja a la carga sin confirmar.
+- La revisión no acusa «el total no cuadra» cuando faltan renglones por
+  resolver: repetía el problema.
+- Probado en el preview con facturas reales: Sarita armó $66.53 contra $66.54.
+
 ## v2.1377.0 — Todos los encabezados de modal, canónicos
 
 Los 102 archivos que todavía dibujaban a mano el encabezado de su modal (caja, cortes, bolsas, distribución, tablero, marketing, promociones, puntos, ofertas, chat, bitácoras, datos, compras, pedidos, encuestas…) usan ahora `LiquidModal.Header` con `titulo`/`subtitulo`/`icono`/`tono`/`acciones`/`onClose`. Desaparecen los cinco tamaños de título y las baldosas de ícono escritas en cada archivo.

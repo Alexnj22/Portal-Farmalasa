@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
+import { factorEnLaDescripcion } from "../_shared/compraSobre.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
 //
@@ -389,8 +390,11 @@ Deno.serve(async (req: Request) => {
             total_linea: it?.ventaGravada ?? it?.ventaExenta ?? it?.ventaNoSuj ?? null,
             exento: Number(it?.ventaExenta ?? 0) > 0,
             producto_id: match?.product_id ?? null,
-            factor_proveedor: match?.origen === "aprendido"
-              ? (factorDe.get(String(it?.codigo ?? "").trim()) ?? factorDelProducto.get(match?.product_id) ?? 1) : 1,
+            // El factor se completa después del bucle (necesita el costo del
+            // catálogo de todos los productos a la vez).
+            factor_aprendido: match?.origen === "aprendido"
+              ? (factorDe.get(String(it?.codigo ?? "").trim()) ?? factorDelProducto.get(match?.product_id) ?? null) : null,
+            factor_proveedor: 1, factor_origen: null as string | null,
             producto: match?.nombre ?? null,
             match_origen: match?.origen ?? "sin candidato",
             match_similitud: match?.similitud ?? null,
@@ -407,6 +411,37 @@ Deno.serve(async (req: Request) => {
               !lv.vence ? "vencimiento" : null,
             ].filter(Boolean),
           });
+        }
+
+        // ── Cuántas unidades trae cada una del proveedor ──────────────────
+        //
+        // En este orden, y el documento PRIMERO: Sarita escribe la caja en la
+        // descripción («…|25.000 |Caja») y la MISMA caja cambia de tamaño entre
+        // facturas (Choco Cono: 15 en una, 30 en otra), así que lo aprendido no
+        // puede pisar lo que el papel dice. Después lo aprendido, y al final el
+        // costo: si el precio es un múltiplo entero del costo unitario del
+        // catálogo (±8 %), ése es el tamaño — medido: $5.81 ÷ 25 = $0.2324, el
+        // costo exacto de la barrita. Es una SUGERENCIA y se dice de dónde salió.
+        const ids = [...new Set(renglones.map((r) => r.producto_id).filter(Boolean))];
+        const costoUnidad = new Map<number, number>();
+        if (ids.length) {
+          const { data: pp, error: errPP } = await admin.from("product_precios")
+            .select("product_id, costo").in("product_id", ids).eq("factor", 1).eq("activo", true);
+          if (errPP) throw errPP;
+          for (const x of pp ?? []) if (Number(x.costo) > 0) costoUnidad.set(x.product_id, Number(x.costo));
+        }
+        for (const r of renglones) {
+          const del_doc = factorEnLaDescripcion(String(r.descripcion ?? ""));
+          const cu = r.producto_id ? costoUnidad.get(r.producto_id) : undefined;
+          const neto = Number(r.costo);
+          let por_costo: number | null = null;
+          if (cu && neto > 0) {
+            const n = Math.round(neto / cu);
+            if (n >= 2 && Math.abs(neto / cu - n) / n <= 0.08) por_costo = n;
+          }
+          if (del_doc) { r.factor_proveedor = del_doc; r.factor_origen = "documento"; }
+          else if (r.factor_aprendido) { r.factor_proveedor = r.factor_aprendido; r.factor_origen = "aprendido"; }
+          else if (por_costo) { r.factor_proveedor = por_costo; r.factor_origen = "costo"; }
         }
 
         salida.push({

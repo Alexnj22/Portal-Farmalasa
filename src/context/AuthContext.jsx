@@ -10,7 +10,7 @@ import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { anotar } from '@plataforma/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
-import { fetchEmployeeSafeByUsername, motivoDeLoginFallido, cambiarMiContrasenaInicial, leerCargoYSalaPropios } from "../data/auth";
+import { leerMiPerfil, motivoDeLoginFallido, cambiarMiContrasenaInicial, leerCargoYSalaPropios } from "../data/auth";
 import { cambioDeCargoOSala, debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos } from "../utils/sesionDelNavegador";
 import { borrarTodosLosBorradores, fijarDuenoDeBorradores } from "../utils/draftUtils";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "@plataforma/pushEquipo";
@@ -410,8 +410,8 @@ export const AuthProvider = ({ children }) => {
   }, [moduleLocks]);
 
   // Dispara refresh cuando cambia el usuario (id, cargo o rango)
-  // user?.role excluido a propósito: loginWithUsername pone el número, la edge function el nombre
-  // — ambos casos tienen roleId correcto, no queremos doble refresh.
+  // user?.role excluido a propósito: es el NOMBRE del cargo y lo que manda es
+  // roleId. (Hasta el 2026-10-28 un login lo ponía en número y otro en nombre.)
   useEffect(() => {
     refreshPermissions(user);
   }, [user?.id, user?.roleId, user?.secondaryRoleId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1139,13 +1139,11 @@ export const AuthProvider = ({ children }) => {
     const procesarSesion = (session) => {
       (async () => {
         try {
-          const meta = session.user?.user_metadata;
-          const code = meta?.code || (session.user.email ? session.user.email.split('@')[0] : '');
-          const cleanCode = String(code || '').trim().toUpperCase();
-          if (!cleanCode) return;
-
+          if (!session?.user) return;
+          // Sin leer `user_metadata`: lo escribe el navegador, y el servidor
+          // resuelve a la persona por la sesión (PENDIENTES 16).
           const { data: ensured, error: fnErr } = await withTimeout(
-            supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanCode } }),
+            leerMiPerfil(),
             5000,
             'ensure_user_by_code timeout',
           );
@@ -1334,15 +1332,7 @@ export const AuthProvider = ({ children }) => {
       if (authData?.session) sesionAbierta = true;
       if (authErr || !authData?.session) return await fallar();
 
-      const sessionUser = authData.session.user;
-      const code = (sessionUser.user_metadata?.code && String(sessionUser.user_metadata.code)) ||
-        (sessionUser.email ? sessionUser.email.split('@')[0] : '');
-      const cleanCode = String(code || '').trim().toUpperCase();
-      if (!cleanCode) return await fallar();
-
-      const { data: ensured, error: fnErr } = await withNetworkRetry(() =>
-        supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanCode } })
-      );
+      const { data: ensured, error: fnErr } = await withNetworkRetry(() => leerMiPerfil());
       if (fnErr || !ensured?.ok || !ensured?.user) return await fallar();
 
       const u = await withSignedPhoto(ensured.user);
@@ -1355,40 +1345,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // El usuario del portal a partir de su fila de `employees_safe`.
-  const usuarioDeLaFicha = (emp) => withSignedPhoto({
-    id:         emp.id,
-    name:       emp.name,
-    code:       emp.code,
-    username:   emp.username,
-    branchId:   emp.branch_id,
-    photo:      emp.photo_url,
-    role:       emp.role_id,
-    roleId:     emp.role_id ?? null,
-    secondaryRoleId: emp.secondary_role_id ?? null,
-    // El escalón sale del CARGO. `employees_safe` lo publica ya derivado
-    // —el propio y el secundario—, así que acá no hay ninguna regla que
-    // pueda desincronizarse de la base. Reemplaza a `systemRole`, que era un
-    // rango escrito por persona y podía contradecir al organigrama.
-    rango:      Number(emp.rango ?? 0),
-  });
-
-  // Lee la ficha de quien acaba de entrar. Devuelve `{ u }` o `{ error, motivo }`.
-  const leerFichaParaEntrar = async (cleanUsername) => {
-    const { data: emp, error: empError } = await withNetworkRetry(() =>
-      fetchEmployeeSafeByUsername(cleanUsername)
-    );
-    if (empError && empError.code !== 'PGRST116') {
-      if (isNetworkError(empError)) return { error: NETWORK_ERROR_MSG, motivo: 'red' };
-      return { error: 'Error de conexión. Intenta de nuevo.', motivo: 'otro' };
-    }
-    if (!emp) return { error: 'Usuario no encontrado en el sistema.', motivo: 'credenciales' };
+  // Lee el perfil de quien acaba de entrar. Devuelve `{ u }` o `{ error, motivo }`.
+  // Es el MISMO que arma la recarga (`procesarSesion`): una sola fuente, el
+  // servidor (ver `leerMiPerfil`).
+  const leerFichaParaEntrar = async () => {
+    const { data, error } = await withNetworkRetry(() => leerMiPerfil());
+    if (isNetworkError(error)) return { error: NETWORK_ERROR_MSG, motivo: 'red' };
     // Empleado dado de baja: la cuenta Auth queda baneada por disable-employee-auth,
-    // pero este gate cubre bajas previas al ban.
-    if (emp.status && emp.status !== 'ACTIVO') {
+    // pero esto cubre bajas previas al ban.
+    if (data?.error === 'INACTIVE') {
       return { error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.', motivo: 'bloqueado' };
     }
-    return { u: await usuarioDeLaFicha(emp) };
+    if (data?.error === 'NOT_FOUND') return { error: 'Usuario no encontrado en el sistema.', motivo: 'credenciales' };
+    if (error || !data?.ok || !data?.user?.id) return { error: 'Error de conexión. Intenta de nuevo.', motivo: 'otro' };
+    return { u: await withSignedPhoto(data.user) };
   };
 
   // Lo que hace falta para que alguien quede adentro, igual en todos los caminos.
@@ -1461,7 +1431,7 @@ export const AuthProvider = ({ children }) => {
         return { ok: true, mustChangePassword: true, user: null };
       }
 
-      const ficha = await leerFichaParaEntrar(cleanUsername);
+      const ficha = await leerFichaParaEntrar();
       if (!ficha.u) return await fallar({ ok: false, error: ficha.error, motivo: ficha.motivo });
 
       ponerAdentro(ficha.u);
@@ -1502,7 +1472,7 @@ export const AuthProvider = ({ children }) => {
 
     // Token nuevo, sin la marca: ahora sí la base contesta la ficha.
     let ficha;
-    try { ficha = await leerFichaParaEntrar(v.username); } catch { ficha = {}; }
+    try { ficha = await leerFichaParaEntrar(); } catch { ficha = {}; }
     if (!ficha.u) {
       await abandonarCambioDeClave(MSG_REENTRAR);
       return { ok: false, reentrar: true, error: MSG_REENTRAR };

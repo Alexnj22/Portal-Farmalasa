@@ -12,7 +12,10 @@ export function announcementAppliesToUser(ann, user, roles) {
     if (type === 'GLOBAL') return true;
     if (type === 'BRANCH') return String(value) === String(user.branchId);
     if (type === 'ROLE') {
-        const roleName = (roles || []).find(r => String(r.id) === String(user.role))?.name;
+        // Por `roleId`: `user.role` es el NOMBRE del cargo (antes de 2026-10-28
+        // un login lo guardaba como número y la recarga como nombre, y esta
+        // búsqueda por id sólo acertaba con el primero).
+        const roleName = (roles || []).find(r => String(r.id) === String(user.roleId ?? user.role))?.name;
         return !!roleName && roleName === value;
     }
     if (type === 'EMPLOYEE') return Array.isArray(value) && value.map(String).includes(String(user.id));

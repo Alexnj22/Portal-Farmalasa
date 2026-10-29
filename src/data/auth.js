@@ -35,8 +35,23 @@ export async function motivoDeLoginFallido(usuario) {
     }
 }
 
-export function fetchEmployeeSafeByUsername(username) {
-    return supabase.from('employees_safe').select('*').eq('username', username).single();
+/**
+ * El perfil de quien tiene la sesión abierta. UN solo camino para todos los
+ * logins y para la recarga (PENDIENTES 15, 2026-10-28).
+ *
+ * Antes el login por usuario leía `employees_safe` y la recarga llamaba a esta
+ * misma función del servidor, y daban usuarios distintos: `role` era el número
+ * del cargo en uno y el nombre en el otro, y uno traía `email` y el otro no. El
+ * menú pintaba el cargo en blanco hasta recargar, siete pedidos de Mín·Máx se
+ * guardaron sin correo, y un anuncio para un cargo sólo lo habría visto quien
+ * acababa de entrar. Además la vista traía ~100 columnas y tardaba ~0.9 s;
+ * esto, ~0.34 s (registros de producción, 2026-10-28).
+ *
+ * Sin `code` en el cuerpo a propósito: con sesión, el servidor resuelve a la
+ * persona por el id de la sesión e ignora lo que se le mande.
+ */
+export function leerMiPerfil() {
+    return supabase.functions.invoke('ensure_user_by_code', { body: {} });
 }
 
 /**

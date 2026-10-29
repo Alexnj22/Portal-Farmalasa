@@ -25,7 +25,7 @@ const { emitirCarneTemporal, fetchCarnesVigentes, fetchCarnesTemporales,
 const { agruparPorPersona, describirDispositivo, haceCuanto, diasDesde, describirLimite,
         cerrarSesion, cerrarTodasDe, bloquearPersona } = await import('@nucleo/data/sesiones');
 const { verifyKioskAuthorization, verifyKioskPin } = await import('@nucleo/data/kioskAuth');
-const { fetchEmployeeSafeByUsername } = await import('@nucleo/data/auth');
+const { leerMiPerfil } = await import('@nucleo/data/auth');
 
 const rpcReal = espia.supabase.rpc;
 beforeEach(() => {
@@ -321,11 +321,11 @@ describe('autorizar en el kiosco: «dijo que no» NO es «no pude preguntar»', 
 });
 
 describe('el login por usuario', () => {
-    it('lee la VISTA segura, no la tabla', () => {
-        // `employees` tiene columnas que no son de todos; `employees_safe` es la
-        // puerta.
-        fetchEmployeeSafeByUsername('ana');
-        expect(espia.tabla()).toBe('employees_safe');
-        expect(espia.primero('eq')).toEqual(['username', 'ana']);
+    it('pide el perfil al servidor sin mandar quién es: lo decide la sesión', () => {
+        // El mismo camino que la recarga (PENDIENTES 15). Ni la vista ni un
+        // `code` escrito por el navegador (PENDIENTES 16).
+        invoke.mockClear();
+        leerMiPerfil();
+        expect(invoke).toHaveBeenCalledWith('ensure_user_by_code', { body: {} });
     });
 });

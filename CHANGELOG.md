@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.56 — Un solo camino para el perfil al entrar
+
+PENDIENTES 15 y 16. El login por usuario leía `employees_safe` y la recarga le
+pedía el perfil a `ensure_user_by_code`, y daban usuarios distintos: `role`
+era el número del cargo en uno y el nombre en el otro, y uno no traía `email`.
+Consecuencias medidas: el cargo en blanco en el menú hasta recargar, 7 de 159
+pedidos de Mín·Máx guardados sin correo de quien pidió, y un anuncio dirigido a
+un cargo sólo lo habría visto quien acababa de entrar (hoy no hay ninguno).
+
+- Todos los caminos —usuario, correo, cambio de clave inicial y recarga— usan
+  `leerMiPerfil()` (`src/data/auth.js`). Sin `code` en el cuerpo: con sesión,
+  el servidor resuelve a la persona por la sesión.
+- La interfaz deja de leer `user_metadata` (lo escribe el navegador).
+- `announcementAudience` resuelve el cargo por `roleId`.
+- Más rápido: la vista traía ~100 columnas y tardaba ~0.9 s en el servidor; la
+  función, ~0.34 s (registros de producción).
+
+Probado con Playwright contra el entorno de pruebas: una sola llamada al
+servidor al entrar, y el usuario después de entrar es igual al de después de
+recargar.
+
 ## v2.1357.55 — Vigilancia: no avisa a Edwin de sus propios cambios
 
 Decisión del usuario: «si lo hice yo, que no llegue ya que soy quien controla

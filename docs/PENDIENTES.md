@@ -74,8 +74,9 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
     `20261029023934`; desde `20261029025157` avisa sólo a Edwin Núñez). — SEGURIDAD:228-246
 14. ⏸ Carné sólo en su turno y su sala — **en espera de que Talento Humano termine
     de cargar los horarios** (usuario, 2026-10-28). Ciclo de vida del carné. — SEGURIDAD:176-260
-15. Un solo camino para armar el perfil (login vs recarga). — AUDITORIA-COMPLETA:371
-16. La interfaz deja de leer `user_metadata` (`AuthContext.jsx:1142,1323`).
+15. ~~Un solo camino para armar el perfil (login vs recarga)~~ — **hecho v2.1357.56**:
+    todos los logins y la recarga usan `leerMiPerfil()`. — AUDITORIA-COMPLETA:371
+16. ~~La interfaz deja de leer `user_metadata`~~ — **hecho v2.1357.56**.
 
 ### Bitácoras SRS y antibióticos
 17. **Registro trazable de antibióticos por lote** (entradas, salidas,

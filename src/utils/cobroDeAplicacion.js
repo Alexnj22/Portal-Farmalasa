@@ -49,6 +49,9 @@ export function motivoDelLote({ lote, vence, parecido } = {}, hoy = hoySV()) {
     return null;
 }
 
+/** El lote como se COMPARA: sin separadores y con lo que se confunde leyendo una ampolla (O→0, I/L→1). */
+export const planoDeLote = (x) => String(x || '').toUpperCase().replace(/[\s.\-_/]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+
 /**
  * ¿El lote escrito es uno ya conocido con un error de tecleo? (usuario,
  * 2026-10-29: «que no se agreguen múltiples lotes que sean el mismo con
@@ -72,7 +75,7 @@ export function loteParecido({ lote, vence } = {}, conocidos = []) {
         const mismoMes = !/^\d{4}-\d{2}$/.test(v) || conocidos.some((c) => c.lote === l && c.vence === v);
         return mismoMes ? null : exacto;
     }
-    const plano = (x) => x.replace(/[\s.\-_/]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+    const plano = planoDeLote;
     const p = plano(l);
     return conocidos.find((c) => {
         const q = plano(c.lote);
@@ -80,6 +83,25 @@ export function loteParecido({ lote, vence } = {}, conocidos = []) {
         if (Math.min(p.length, q.length) >= 3 && (q.startsWith(p) || p.startsWith(q))) return true;
         return Math.min(p.length, q.length) >= 4 && aUnaTecla(p, q);
     }) || null;
+}
+
+/**
+ * Los lotes conocidos que la lista desplegable ofrece mientras se escribe: sin
+ * texto, todos; con texto, los que lo contienen (primero los que EMPIEZAN así)
+ * y, al final, los parecidos por tecleo — para que el error salga a la vista
+ * antes de terminar de escribir.
+ */
+export function lotesQueCoinciden(texto, conocidos = []) {
+    const p = planoDeLote(texto);
+    if (!p) return conocidos;
+    const empieza = [], contiene = [], parecidos = [];
+    for (const c of conocidos) {
+        const q = planoDeLote(c.lote);
+        if (q.startsWith(p)) empieza.push(c);
+        else if (q.includes(p)) contiene.push(c);
+        else if (loteParecido({ lote: texto }, [c])) parecidos.push(c);
+    }
+    return [...empieza, ...contiene, ...parecidos];
 }
 
 /** Distancia de edición ≤ 1 (incluye dos letras vecinas cambiadas de lugar). */

@@ -5,6 +5,7 @@ import AsaHoja from './AsaHoja';
 import Button from './Button';
 import ModalShell from './ModalShell';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
+import useCapaFlotante from '../../plataforma/capaFlotante';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 /**
@@ -90,6 +91,7 @@ export default function CampoMesAnio({ label, value, onChange, desde = null, pla
         setAbierto(true);
     };
 
+    useCapaFlotante(abierto && !esTactil);
     useEffect(() => {
         if (!abierto || esTactil) return undefined;
         const fuera = (e) => {

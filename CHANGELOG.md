@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1364.1 — Inyecciones: el lote se elige de una lista que se filtra al escribir
+
+- La fila de botones «Ya usados» no escalaba: con seis lotes era una pared.
+  Ahora el campo del lote (`CampoLote`) despliega los usados de ese producto
+  al entrar y los filtra al escribir: primero los que empiezan así, después los
+  que lo contienen y al final los parecidos por tecleo (`lotesQueCoinciden`).
+  Elegir uno llena lote y vencimiento; ↑/↓/Enter/Escape con teclado.
+- `inyeccion_lotes_conocidos` devuelve hasta 30 (era 6).
+- `CampoMesAnio` declara su capa flotante (`useCapaFlotante`).
+
 ## v2.1364.0 — Promociones: rebajas de campaña y a mano
 
 PENDIENTES 30. La factura no trae el descuento del renglón, sólo el total ya

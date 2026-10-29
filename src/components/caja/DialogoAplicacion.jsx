@@ -10,6 +10,7 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import CampoMesAnio from '../common/CampoMesAnio';
+import CampoLote from './CampoLote';
 import SearchInput from '../common/SearchInput';
 import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
@@ -24,7 +25,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import {
-    aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, LOTE_VACIO, motivoDelLote, seleccionDeVenta, topeDeMezcla, venceNormal, loteParecido,
+    aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, LOTE_VACIO, motivoDelLote, seleccionDeVenta, topeDeMezcla, loteParecido,
 } from '@nucleo/utils/cobroDeAplicacion';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -98,9 +99,10 @@ const factura = (c) => String(c || '').replace(/^0+/, '');
  * El vencimiento es el MES impreso; el motivo de lo que falta sale del núcleo
  * (`motivoDelLote`), con las mismas reglas que la base.
  *
- * Los lotes que ya se vieron de ese producto —en cualquier sala— salen como
- * opciones (2026-10-29): el par lote + vencimiento se elige junto, de un toque,
- * y escribir un lote conocido completa su vencimiento. Escribir uno nuevo sigue
+ * Los lotes que ya se vieron de ese producto —en cualquier sala— se despliegan
+ * en el campo del lote y se filtran al escribir (`CampoLote`, 2026-10-29): el
+ * par lote + vencimiento se elige junto, y escribir un lote conocido completa
+ * su vencimiento. Escribir uno nuevo sigue
  * abierto: la caja tiene la ampolla en la mano y es la que manda.
  */
 function LoteDeAmpolla({ titulo, producto, valor, onChange }) {
@@ -131,23 +133,9 @@ function LoteDeAmpolla({ titulo, producto, valor, onChange }) {
     return (
         <div className="space-y-2">
             {titulo && <p className="text-body-sm font-semibold text-content-2">{titulo}</p>}
-            {conocidos.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-caption text-content-3 mr-1">Ya usados:</span>
-                    {conocidos.map((c) => {
-                        const elegido = valor.lote === c.lote && venceNormal(valor.vence) === c.vence;
-                        return (
-                            <Button key={`${c.lote}|${c.vence}`} size="sm" variant={elegido ? 'primary' : 'secondary'}
-                                aria-pressed={elegido} onClick={() => onChange({ lote: c.lote, vence: c.vence })}>
-                                {c.lote} · {mesAnio(c.vence)}
-                            </Button>
-                        );
-                    })}
-                </div>
-            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <PortalInput label="Lote de la ampolla" value={valor.lote} maxLength={30}
-                    onChange={(e) => escribirLote(e.target.value.toUpperCase())} placeholder="Ej. 6D1514B" />
+                <CampoLote value={valor.lote} conocidos={conocidos} onChange={escribirLote}
+                    onElegir={(c) => onChange({ lote: c.lote, vence: c.vence })} />
                 <CampoMesAnio label="Vence" value={valor.vence} desde={hoySV().slice(0, 7)}
                     onChange={(vence) => onChange({ ...valor, vence, nuevo: false })} />
             </div>

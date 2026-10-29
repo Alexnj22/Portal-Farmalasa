@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aplicacionDelCobro, cuentaDelCobro, esClienteGenerico, gruposDePendientes, itemsDelCobro, motivoDelLote, seleccionDeVenta, venceNormal, loteParecido } from '@nucleo/utils/cobroDeAplicacion';
+import { aplicacionDelCobro, cuentaDelCobro, esClienteGenerico, gruposDePendientes, itemsDelCobro, motivoDelLote, seleccionDeVenta, venceNormal, loteParecido, lotesQueCoinciden } from '@nucleo/utils/cobroDeAplicacion';
 
 const precios = { COMPRADA: 1, TRAIDA: 2 };
 
@@ -97,5 +97,16 @@ describe('loteParecido', () => {
     });
     it('sin confirmar, no se cobra', () => {
         expect(motivoDelLote({ lote: 'M55', vence: '02/28', parecido: conocidos[0] }, '2026-10-28')).toMatch(/M55895/);
+    });
+});
+
+describe('lotesQueCoinciden', () => {
+    const conocidos = [{ lote: 'X55', vence: '2028-01' }, { lote: 'M55895', vence: '2028-02' }, { lote: 'AM558', vence: '2027-05' }];
+    it('sin texto, todos; con texto, primero los que empiezan así', () => {
+        expect(lotesQueCoinciden('', conocidos)).toHaveLength(3);
+        expect(lotesQueCoinciden('m55', conocidos).map((c) => c.lote)).toEqual(['M55895', 'AM558']);
+    });
+    it('el tecleado con error también aparece', () => {
+        expect(lotesQueCoinciden('M58895', conocidos).map((c) => c.lote)).toEqual(['M55895']);
     });
 });

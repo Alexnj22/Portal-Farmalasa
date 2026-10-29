@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import {
     PackagePlus, AlertTriangle, CheckCircle2, ScanBarcode, BookMarked,
     Search, HelpCircle, CalendarRange, ListChecks, RefreshCw, EyeOff, Layers,
@@ -26,6 +26,14 @@ import {
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
+
+// El mismo visor de Facturas de compra (lleva el PDF): sólo se baja al abrir
+// la pestaña «Documento».
+const VisorDte = lazy(() => import('../../components/forms/FormPurchaseDteViewer'));
+const VISTAS = [
+    { value: 'carga',     label: 'La carga' },
+    { value: 'documento', label: 'El documento' },
+];
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
@@ -160,9 +168,9 @@ const cargarAyuda = (r, aj) => {
     if (!Number.isInteger(Math.round(f * 1000) / 1000)) {
         return `No da parejo: ${cant} de la factura no se reparten en ${aj.cargar ?? cargarDe(r, f)} unidades.`;
     }
-    const como = `${cant} de la factura × ${f}`;
-    const origen = ORIGEN_FACTOR[r.factor_origen];
-    return origen && Number(aj.factor) === Number(r.factor_proveedor ?? 1) ? `${como} · ${origen}` : como;
+    // Lo normal no se dice: con el rótulo denso la ayuda va al lado del título
+    // y se cortaba («60 DE LA I»). Cómo entra lo dice la fila de abajo.
+    return null;
 };
 
 // ── Producto nuevo desde un renglón (paso 4) ──────────────────────────────
@@ -285,6 +293,7 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const [confirmando, setConf] = useState(false);
     const [enviando, setEnv]     = useState(false);
     const [envio, setEnvio]      = useState(null);   // respuesta del envío
+    const [vista, setVista]      = useState('carga');
 
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
@@ -445,6 +454,21 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                               nota={p.encabezado.dias_credito_origen} />
                     </div>
 
+                    <div className="mb-3">
+                        <SegmentedControl label="Ver" value={vista} onChange={setVista} options={VISTAS} />
+                    </div>
+
+                    {vista === 'documento' ? (
+                        <div data-surface="card" className="h-[70vh] flex flex-col overflow-hidden">
+                            <Suspense fallback={<p className="p-4 text-label text-content-3">Abriendo el documento…</p>}>
+                                <VisorDte formData={{ document: {
+                                    id: p.documento.id, json_path: p.documento.json_path, pdf_path: p.documento.pdf_path,
+                                    fecha_emision: p.documento.fecha, codigo_generacion: p.documento.codigo_generacion,
+                                    emisor_nombre: p.documento.emisor, tipo_dte: p.documento.tipo_dte,
+                                } }} />
+                            </Suspense>
+                        </div>
+                    ) : (<>
                     {/* Para qué es la compra. Consumo se registra igual en el
                         libro, pero como gasto y sin sumar existencias. */}
                     <div className="flex flex-wrap items-end gap-3 mb-3">
@@ -515,6 +539,8 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                             </ul>
                         </Notice>
                     ))}
+
+                    {revision?.totales && <TotalesLadoALado t={revision.totales} />}
 
                     {/* Lo que hay que mirar antes de nada. */}
                     {!revision && uso === 'venta' && faltan > 0 && (
@@ -625,6 +651,7 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                             );
                         })}
                     </div>
+                    </>)}
                 </>)}
                 {creando != null && p && (
                     <NuevoProducto renglon={p.renglones[creando]} factor={ajustes[creando]?.factor}
@@ -653,6 +680,49 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                 message={`Se registra la compra de ${doc.emisor_nombre} por ${formatMoney(revision?.total_armado)} en Bodega. Sólo se deshace anulándola allá.`}
                 confirmText="Sí, cargar" />
         </LiquidModal>
+    );
+}
+
+/* Los totales de la factura contra los que se cargan, renglón por renglón,
+   para confirmarlos a ojo aunque la revisión diga que cuadran. Una fila sin
+   número en la carga (descuento, retención) es algo que la carga no lleva
+   aparte: el descuento ya está dentro de cada costo. */
+const FILAS_TOTALES = [
+    ['gravada',    'Gravado (sin IVA)'],
+    ['exenta',     'Exento / no sujeto'],
+    ['descuento',  'Descuento'],
+    ['iva',        'IVA 13 %'],
+    ['percepcion', 'Percepción 1 %'],
+    ['retencion',  'Retención'],
+    ['total',      'Total'],
+];
+function TotalesLadoALado({ t }) {
+    const filas = FILAS_TOTALES.filter(([k]) => Number(t.documento?.[k]) || Number(t.carga?.[k]) || k === 'total' || k === 'iva');
+    return (
+        <div data-surface="card" className="mt-3 px-3 py-2">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 gap-y-1 items-baseline text-label tabular-nums">
+                <span className="text-caption font-black text-content-3 uppercase tracking-widest">Montos</span>
+                <span className="text-caption font-black text-content-3 uppercase tracking-widest text-right">Factura</span>
+                <span className="text-caption font-black text-content-3 uppercase tracking-widest text-right">Se carga</span>
+                <span />
+                {filas.map(([k, rotulo]) => {
+                    const d = t.documento?.[k], c = t.carga?.[k];
+                    const comparable = d != null && c != null;
+                    const igual = comparable && Math.abs(Number(d) - Number(c)) <= 0.05;
+                    const fuerte = k === 'total' ? 'font-black text-content' : 'text-content';
+                    return (
+                        <React.Fragment key={k}>
+                            <span className={`${fuerte} ${k === 'total' ? 'pt-1 border-t border-divider' : ''}`}>{rotulo}</span>
+                            <span className={`${fuerte} text-right ${k === 'total' ? 'pt-1 border-t border-divider' : ''}`}>{d != null ? formatMoney(d) : '—'}</span>
+                            <span className={`${fuerte} text-right ${k === 'total' ? 'pt-1 border-t border-divider' : ''}`}>{c != null ? formatMoney(c) : '—'}</span>
+                            <span className={`text-micro ${k === 'total' ? 'pt-1 border-t border-divider' : ''} ${!comparable ? 'text-content-3' : igual ? 'text-success-text' : 'text-danger-text'}`}>
+                                {!comparable ? (k === 'descuento' ? 'dentro del costo' : '') : igual ? 'igual' : `dif. ${formatMoney(Number(c) - Number(d))}`}
+                            </span>
+                        </React.Fragment>
+                    );
+                })}
+            </div>
+        </div>
     );
 }
 

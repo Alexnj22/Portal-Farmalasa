@@ -480,7 +480,28 @@ Deno.serve(async (req: Request) => {
       clase_documento_tributario: "4", numero_serie: "",
     };
 
-    const revision = { regalos,
+    // Los totales lado a lado, para que la persona los compare con la factura
+    // y no sólo vea «cuadra»: lo que dice el documento contra lo que se carga.
+    const res = dte?.resumen ?? {};
+    const n2 = (v: unknown) => (v == null || v === "" ? null : Math.round(Number(v) * 100) / 100);
+    const ivaDoc = Array.isArray(res.tributos)
+      ? res.tributos.filter((t: any) => String(t?.codigo) === "20").reduce((a: number, t: any) => a + Number(t?.valor ?? 0), 0)
+      : null;
+    const totales = {
+      documento: {
+        gravada: n2(res.totalGravada), exenta: n2(Number(res.totalExenta ?? 0) + Number(res.totalNoSuj ?? 0)),
+        descuento: n2(res.totalDescu), iva: n2(ivaDoc ?? res.totalIva),
+        percepcion: n2(res.ivaPerci1 ?? 0), retencion: n2(Number(res.ivaRete1 ?? 0) + Number(res.reteRenta ?? 0)),
+        total: totalDoc,
+      },
+      carga: {
+        gravada: n2(tot.sumas_sin_iva), exenta: n2(tot.venta_exenta), descuento: null,
+        iva: n2(tot.iva), percepcion: n2(tot.total_percepcion), retencion: null,
+        total: n2(tot.total),
+      },
+    };
+
+    const revision = { regalos, totales,
       problemas, listo: problemas.length === 0,
       total_documento: totalDoc, total_armado: Number(tot.total), diferencia,
       percepcion_proveedor: tasa, renglones: detalle,

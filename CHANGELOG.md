@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1383.0 — Compras: la carga muestra el documento y los montos lado a lado
+
+El modal de carga de compras tiene dos vistas: **La carga** y **El
+documento** (el mismo visor de Facturas de compra, con el PDF), para
+confirmar contra la factura antes de mandar. Después de revisar, un cuadro
+pone los montos **lado a lado** —gravado, exento, descuento, IVA, percepción,
+retención y total—, factura contra lo que se carga, con «igual» o la
+diferencia en cada fila. La ayuda del campo «Cantidad a cargar» se cortaba al
+lado del rótulo: ahora sólo aparece cuando hay algo que corregir.
+
 ## v2.1382.7 — Compras: en qué presentación entra cada renglón
 
 Después de revisar la carga, cada renglón muestra una fila con cuatro datos

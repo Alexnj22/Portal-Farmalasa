@@ -450,6 +450,9 @@ Deno.serve(async (req: Request) => {
             numero_control: dte?.identificacion?.numeroControl ?? null,
             sello: d.sello_recibido ?? dte?.selloRecibido ?? null,
             fecha: d.fecha_emision, emisor: d.emisor_nombre, emisor_nit: d.emisor_nit,
+            // Para la pestaña «Documento» de la carga: el mismo visor de Facturas
+            // de compra, que firma estas rutas al abrirlas.
+            json_path: d.json_path, pdf_path: d.pdf_path ?? null,
             tipo_dte: dte?.identificacion?.tipoDte ?? null,
             total: dte?.resumen?.montoTotalOperacion ?? dte?.resumen?.totalPagar ?? null,
           },

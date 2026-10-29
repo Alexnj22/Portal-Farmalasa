@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { BookOpen, CalendarCheck, Layers, Pill, Search, Settings2, Thermometer } from 'lucide-react';
+import { AlertTriangle, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, Pill, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -19,8 +19,12 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
     CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS,
-    fetchBitacoraDia, fetchLibro, pendientesDelDia, periodoDe,
+    correrPeriodo, fetchBitacoraDia, fetchLibro, fetchRegistroAntibioticosLote, pendientesDelDia, periodoDe,
 } from '@nucleo/data/bitacoras';
+import { nombreDelPeriodo } from '@nucleo/utils/cierreDeBitacoras';
+import { contarPorEstado, csvDelRegistro, filasDelRegistro } from '@nucleo/utils/registroAntibioticos';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV, sumarDias, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 import { rotularDia, salasDeBitacora } from '@nucleo/utils/rondaDeBitacora';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -53,6 +57,16 @@ const METRICAS = [
     { clave: 'vencidas', label: 'Se pasaron',    icon: Thermometer, iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
     { clave: 'hechas',   label: 'Anotadas hoy',  icon: Thermometer, iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
     { clave: 'desvios',  label: 'Fuera de rango', icon: Thermometer, iconBg: 'bg-danger/10', iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
+];
+
+// El carril del registro por lote ES su filtro de estado (como en la bitácora
+// de inyecciones): tocar una tarjeta muestra esos lotes, tocarla otra vez
+// vuelve a todos. «Sin saldo inicial» incluye los lotes sin lote anotado.
+const METRICAS_LOTES = [
+    { clave: 'todos',      label: 'Lotes',             icon: Layers,        iconBg: 'bg-info/10',    iconCls: 'text-info-text' },
+    { clave: 'cuadra',     label: 'Cuadran',           icon: CheckCircle2,  iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    { clave: 'diferencia', label: 'Con diferencia',    icon: AlertTriangle, iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
+    { clave: 'sin_base',   label: 'Sin saldo inicial', icon: HelpCircle,    iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
 ];
 
 const primerDiaDelMes = (fecha) => `${String(fecha).slice(0, 7)}-01`;
@@ -173,6 +187,37 @@ export default function BitacorasView() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga al entrar a la pestaña
     useEffect(() => { if (tab === 'libro') cargarLibro(); }, [tab, cargarLibro]);
 
+    // ── El registro por lote ────────────────────────────────────────────────
+    // Se pide acá y no en la pestaña porque su carril, su mes y su descarga
+    // viven en la fila de arriba, igual que los de las demás secciones.
+    const mesDeHoy = periodoDe(hoySV());
+    const [periodoLotes, setPeriodoLotes] = useState(() => periodoDe(hoySV()));
+    const [filtroLotes, setFiltroLotes] = useState('todos');
+    const [registroLotes, setRegistroLotes] = useState(null);
+    const [cargandoLotes, setCargandoLotes] = useState(false);
+    const [errorLotes, setErrorLotes] = useState(null);
+    useEffect(() => {
+        if (!enLotes || !salaValida) return undefined;
+        let vivo = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- carga al cambiar de sala o de mes
+        setCargandoLotes(true);
+        fetchRegistroAntibioticosLote(sala, periodoLotes).then(({ registro: r, error }) => {
+            if (!vivo) return;
+            setRegistroLotes(r);
+            setErrorLotes(error ? mensajeAmigable(error) : null);
+            setCargandoLotes(false);
+        });
+        return () => { vivo = false; };
+    }, [enLotes, salaValida, sala, periodoLotes]);
+    const cuentaLotes = useMemo(() => {
+        const c = contarPorEstado(filasDelRegistro(registroLotes));
+        return { ...c, sin_base: c.sin_base + c.sin_lote };
+    }, [registroLotes]);
+    const descargarLotes = () => {
+        const { headers, rows } = csvDelRegistro(registroLotes, nombreSala);
+        exportCsv(headers, rows, `registro-antibioticos-por-lote-${nombreSala || sala}-${periodoLotes}.csv`, 'bitacoras');
+    };
+
     const resumen = useMemo(() => pendientesDelDia(dia), [dia]);
 
     // La búsqueda del libro acepta el folio en cualquiera de sus formas y
@@ -235,14 +280,35 @@ export default function BitacorasView() {
                                     loading={cargandoDia} />
                             ))}
                         </CarrilCards>
+                    ) : enLotes && salaValida ? (
+                        <CarrilCards className="flex-1" ariaLabel="Resumen del registro por lote">
+                            {METRICAS_LOTES.map((m) => (
+                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                    label={m.label} value={cargandoLotes ? '—' : cuentaLotes[m.clave].toLocaleString()}
+                                    valueCls={m.valueCls} loading={cargandoLotes}
+                                    active={filtroLotes === m.clave}
+                                    onClick={() => setFiltroLotes(f => (f === m.clave || m.clave === 'todos' ? 'todos' : m.clave))} />
+                            ))}
+                        </CarrilCards>
                     ) : <div className="flex-1" />}
 
                     {/* Orden canónico de las ranuras: ámbito → entidad → tiempo
                         → estado (§17). Acá son dos: la sala y la fecha. */}
                     {!enAntibioticos && <div className="flex justify-end min-w-0">
                         <FilterBar
-                            onClear={() => { setFecha(hoySV()); if (alcanceTodas) setSala(miSala ?? ''); }}
-                            activeCount={[!esHoy, alcanceTodas && String(sala) !== String(miSala ?? '')].filter(Boolean).length}
+                            onClear={() => {
+                                setFecha(hoySV()); setPeriodoLotes(mesDeHoy); setFiltroLotes('todos');
+                                if (alcanceTodas) setSala(miSala ?? '');
+                            }}
+                            activeCount={[
+                                enLotes ? periodoLotes !== mesDeHoy : !esHoy,
+                                enLotes && filtroLotes !== 'todos',
+                                alcanceTodas && String(sala) !== String(miSala ?? ''),
+                            ].filter(Boolean).length}
+                            acciones={enLotes ? [{
+                                key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true, principal: false,
+                                onClick: descargarLotes, disabled: !cuentaLotes.todos || cargandoLotes,
+                            }] : []}
                         >
                             {alcanceTodas && (
                                 <FilterBar.Section active={String(sala) !== String(miSala ?? '')}
@@ -281,6 +347,23 @@ export default function BitacorasView() {
                                 historial. `nextDisabled` en hoy: la bitácora de
                                 mañana no existe — y ofrecerla invitaría a
                                 anotar una lectura que todavía no se tomó. */}
+                            {/* El registro por lote se lee por MES. */}
+                            {enLotes && (
+                                <FilterBar.Section active={periodoLotes !== mesDeHoy}
+                                    onClear={() => setPeriodoLotes(mesDeHoy)} label="mes">
+                                    <PeriodStepper
+                                        unit="mes"
+                                        onPrev={() => setPeriodoLotes(p => correrPeriodo(p, -1))}
+                                        onNext={() => setPeriodoLotes(p => correrPeriodo(p, 1))}
+                                        nextDisabled={periodoLotes >= mesDeHoy}
+                                        isCurrent={periodoLotes === mesDeHoy}
+                                        onReset={() => setPeriodoLotes(mesDeHoy)}
+                                        resetLabel="Este mes"
+                                        label={nombreDelPeriodo(periodoLotes)}
+                                    />
+                                </FilterBar.Section>
+                            )}
+
                             {!enLotes && <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
                                 <PeriodStepper
                                     unit="día"
@@ -317,7 +400,8 @@ export default function BitacorasView() {
                         branchId={sala} sucursalNombre={nombreSala} onRecargar={cargarLibro}
                         puedeCompletar={puedeCompletarLibro} clase={claseLibro} periodo={periodoDe(fecha)} />
                 ) : enLotes ? (
-                    <TabRegistroLote branchId={sala} sucursalNombre={nombreSala} fechaVista={fecha} busqueda={busqueda} />
+                    <TabRegistroLote registro={registroLotes} cargando={cargandoLotes} error={errorLotes}
+                        filtro={filtroLotes} busqueda={busqueda} />
                 ) : tab === 'cierre' ? (
                     <TabCierre branchId={sala} fechaVista={fecha} />
                 ) : (

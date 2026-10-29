@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.2 — Registro por lote con la estructura de las demás pestañas
+
+Bitácoras → Registro por lote, corregido a pedido del usuario:
+
+- **Las tarjetas y los filtros daban números distintos** (87 contra 94): las
+  tarjetas contaban con el resumen del servidor, que deja fuera los lotes sin
+  lote anotado. Hoy los dos salen del mismo conteo.
+- **Estructura canónica (§17.0):** las tarjetas y la píldora de filtros van en
+  una fila; la sucursal, el mes y la descarga viven en la píldora, y las
+  tarjetas son el filtro de estado (como en la bitácora de inyecciones). Se
+  quitaron el control segmentado y el paso de mes sueltos.
+- Tabla paginada; la columna Diferencia dice «Cuadra», la diferencia, «Sin
+  lote» o «Desde nov.» en vez de un guion.
+- El aviso, más corto y sin jerga.
+
 ## v2.1359.1 — Personal: el DUI de un solo archivo ya no sale pendiente, el recorte de la foto se confirma antes de subir, y la app lleva a los documentos
 
 Reporte de Talento Humano del 2026-10-28.

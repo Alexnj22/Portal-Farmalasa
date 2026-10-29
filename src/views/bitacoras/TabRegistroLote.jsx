@@ -1,23 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Download, HelpCircle, Layers, Pill } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Layers, Pill } from 'lucide-react';
 import Badge from '../../components/common/Badge';
-import Button from '../../components/common/Button';
-import CarrilCards from '../../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import LiquidModal from '../../components/common/LiquidModal';
 import Notice from '../../components/common/Notice';
-import PeriodStepper from '../../components/common/PeriodStepper';
-import SegmentedControl from '../../components/common/SegmentedControl';
-import StatCard from '../../components/common/StatCard';
-import { correrPeriodo, fetchRegistroAntibioticosLote, periodoDe } from '@nucleo/data/bitacoras';
-import { exportCsv } from '@nucleo/utils/csvExport';
-import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { nombreDelPeriodo } from '@nucleo/utils/cierreDeBitacoras';
+import TablePagination from '../../components/common/TablePagination';
+import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
-    TIPO_MOVIMIENTO, contarPorEstado, csvDelRegistro, enCajas, estadoDeFila, explicarDiferencia,
-    filasDelRegistro, saldoCorrido,
+    TIPO_MOVIMIENTO, enCajas, estadoDeFila, explicarDiferencia, filasDelRegistro, saldoCorrido,
 } from '@nucleo/utils/registroAntibioticos';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -40,13 +32,6 @@ const fmtNum = (v) => (v === null || v === undefined
 const fmtSigno = (v) => (v > 0 ? `+${fmtNum(v)}` : fmtNum(v));
 const fmtDia = (f) => fechaTexto(f, { day: 'numeric', month: 'short' }, '—');
 const fmtVence = (f) => fechaTexto(f, { month: 'short', year: 'numeric' }, '');
-
-const FILTROS = [
-    { value: 'diferencia', label: 'Con diferencia' },
-    { value: 'cuadra', label: 'Cuadran' },
-    { value: 'sin_base', label: 'Sin saldo inicial' },
-    { value: 'todos', label: 'Todos' },
-];
 
 const ESTADO = {
     cuadra: { variant: 'success', label: 'Cuadra' },
@@ -175,92 +160,52 @@ function DetalleLote({ fila, registro, onClose }) {
     );
 }
 
-export default function TabRegistroLote({ branchId, sucursalNombre, fechaVista, busqueda }) {
-    const [periodo, setPeriodo] = useState(() => periodoDe(fechaVista));
-    const [registro, setRegistro] = useState(null);
-    const [cargando, setCargando] = useState(true);
-    const [error, setError] = useState(null);
-    const [filtro, setFiltro] = useState('diferencia');
+/**
+ * La tabla del registro. La cabecera —el carril, la sala, el mes y la
+ * descarga— la pone `BitacorasView` en la fila canónica (§17.0), igual que en
+ * las demás pestañas: acá sólo vive lo que se lee debajo.
+ *
+ * Los números de las tarjetas y los de la tabla salen del MISMO conteo
+ * (`contarPorEstado`); antes las tarjetas usaban el resumen del servidor, que
+ * no cuenta los lotes «sin lote», y una pantalla decía 87 y la otra 94.
+ */
+export default function TabRegistroLote({ registro, cargando, error, filtro, busqueda }) {
     const [abierta, setAbierta] = useState(null);
 
-    useEffect(() => {
-        let vivo = true;
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- carga al cambiar de sala o de mes
-        setCargando(true);
-        setError(null);
-        fetchRegistroAntibioticosLote(branchId, periodo).then(({ registro: r, error: e }) => {
-            if (!vivo) return;
-            setRegistro(r);
-            setError(e ? mensajeAmigable(e) : null);
-            setCargando(false);
-        });
-        return () => { vivo = false; };
-    }, [branchId, periodo]);
-
     const filas = useMemo(() => filasDelRegistro(registro), [registro]);
-    const cuenta = useMemo(() => contarPorEstado(filas), [filas]);
     const visibles = useMemo(() => filas.filter(f => {
         const estado = estadoDeFila(f);
         if (filtro !== 'todos' && estado !== filtro && !(filtro === 'sin_base' && estado === 'sin_lote')) return false;
         return !busqueda || tokenMatch(`${f.producto} ${f.lote}`, busqueda);
     }), [filas, filtro, busqueda]);
 
-    const descargar = useCallback(() => {
-        const { headers, rows } = csvDelRegistro(registro, sucursalNombre);
-        exportCsv(headers, rows, `registro-antibioticos-por-lote-${sucursalNombre || branchId}-${periodo}.csv`, 'bitacoras');
-    }, [registro, sucursalNombre, branchId, periodo]);
+    const { page, pageSize, totalPages, setPage, setPageSize, resetPage } =
+        usePaginaEnUrl({ total: visibles.length, tamPorDefecto: 50 });
+    useEffect(() => { resetPage(); }, [filtro, busqueda, registro]); // eslint-disable-line react-hooks/exhaustive-deps
+    const pagina = visibles.slice((page - 1) * pageSize, page * pageSize);
 
-    const enCurso = periodo >= periodoDe(hoySV());
+    // Sin saldo inicial no se cuadra. En el primer mes es porque todavía no
+    // había inventario por lote guardado: se cuadra solo desde el siguiente.
+    const primerMes = registro?.inicial_de !== 'foto';
+    // «Desde nov.»: corto, para que la insignia no parta la columna en tres renglones.
+    const desdeCuando = useMemo(() => {
+        const [y, m] = String(registro?.desde || '').split('-').map(Number);
+        if (!y || !m) return 'Mes siguiente';
+        const sig = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+        return `Desde ${fechaTexto(sig, { month: 'short' }, '')}`;
+    }, [registro?.desde]);
     const r = registro?.resumen;
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <PeriodStepper
-                    unit="mes"
-                    onPrev={() => setPeriodo(p => correrPeriodo(p, -1))}
-                    onNext={() => setPeriodo(p => correrPeriodo(p, 1))}
-                    nextDisabled={enCurso}
-                >
-                    <span className="text-body-sm font-bold text-content-2">{nombreDelPeriodo(periodo)}</span>
-                </PeriodStepper>
-                <div className="flex flex-wrap items-center gap-2">
-                    <SegmentedControl size="sm" label="Qué lotes ver" value={filtro} onChange={setFiltro}
-                        options={FILTROS.map(o => ({
-                            ...o,
-                            label: `${o.label} (${o.value === 'sin_base' ? cuenta.sin_base + cuenta.sin_lote : cuenta[o.value]})`,
-                        }))} />
-                    {filas.length > 0 && (
-                        <Button variant="secondary" size="sm" icon={Download} onClick={descargar}>Descargar</Button>
-                    )}
-                </div>
-            </div>
-
-            <CarrilCards ariaLabel="Resumen del registro por lote">
-                <StatCard icon={Layers} iconBg="bg-info/10" iconCls="text-info-text" label="Lotes"
-                    value={r?.lotes ?? '—'} loading={cargando} />
-                <StatCard icon={CheckCircle2} iconBg="bg-success/10" iconCls="text-success-text" valueCls="text-success-text"
-                    label="Cuadran" value={r?.cuadran ?? '—'} loading={cargando} />
-                <StatCard icon={AlertTriangle} iconBg="bg-danger/10" iconCls="text-danger-text" valueCls="text-danger-text"
-                    label="Con diferencia" value={r?.con_diferencia ?? '—'} loading={cargando} />
-                <StatCard icon={HelpCircle} iconBg="bg-warning/10" iconCls="text-warning-text"
-                    label="Sin saldo inicial" value={r?.sin_base ?? '—'} loading={cargando} />
-            </CarrilCards>
-
             {error ? (
                 <Notice variant="danger">{error}</Notice>
-            ) : registro && (
+            ) : registro && (primerMes || registro.existencia_de !== 'foto' || r?.sin_lote_unidades > 0) && (
                 <Notice variant="info" compact>
-                    {registro.inicial_de === 'foto'
-                        ? 'El saldo inicial de cada lote es el del inventario al cierre del mes anterior.'
-                        : 'Todavía no hay foto del inventario por lote de antes de este mes: sólo se cuadran los lotes que entraron después del 11 de agosto. Desde noviembre se cuadran todos.'}
-                    {' '}
-                    {registro.existencia_de === 'ahora'
-                        ? 'Lo que «hay» es la existencia de este momento.'
-                        : registro.existencia_de === 'foto'
-                            ? `Lo que «hay» es el inventario al cierre del ${fmtDia(registro.hasta)}.`
-                            : 'De ese mes no quedó foto de cierre: no se puede comparar contra lo que había.'}
-                    {r?.sin_lote_unidades > 0 && ` Entraron ${fmtNum(r.sin_lote_unidades)} unidades por traslados hechos fuera del portal, que no dicen su lote.`}
+                    {primerMes && 'Este es el primer mes del registro: sólo cuadran los lotes que entraron desde el 11 de agosto. Desde el mes siguiente cuadran todos. '}
+                    {registro.existencia_de === 'ahora' && '«Hay» es la existencia de este momento. '}
+                    {!registro.existencia_de && 'De ese mes no quedó inventario al cierre, así que no se puede comparar. '}
+                    {r?.sin_lote_unidades > 0 && `${fmtNum(r.sin_lote_unidades)} unidades entraron sin lote anotado.`}
                 </Notice>
             )}
 
@@ -275,29 +220,26 @@ export default function TabRegistroLote({ branchId, sucursalNombre, fechaVista, 
                     { key: 'diferencia', label: 'Diferencia', align: 'right' },
                 ]}
                 loading={cargando}
+                skeletonRows={8}
                 minWidth="860px"
                 movil={MOVIL}
                 empty={{
                     icon: Pill,
-                    message: filtro === 'diferencia' ? 'Ningún lote con diferencia este mes' : 'Sin lotes que mostrar',
+                    message: busqueda ? 'Ningún lote coincide con la búsqueda'
+                        : filtro === 'diferencia' ? 'Ningún lote con diferencia este mes'
+                            : 'Sin lotes que mostrar',
                 }}
             >
-                {visibles.map((f, i) => {
+                {pagina.map((f, i) => {
                     const estado = estadoDeFila(f);
                     return (
                         <DataRow key={f.clave} index={i} onClick={() => setAbierta(f)}>
-                            <DataCell>
-                                <div className="flex flex-col gap-0.5 min-w-0">
-                                    <span className="text-body-sm font-bold text-content-2 leading-snug">{f.producto}</span>
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                        <span className="text-caption font-semibold text-content-2">Lote {f.lote}</span>
-                                        {f.vence && <span className="text-caption text-content-3">vence {fmtVence(f.vence)}</span>}
-                                        {estado !== 'cuadra' && estado !== 'diferencia' && (
-                                            <Badge variant={ESTADO[estado].variant} size="sm" uppercase={false}>{ESTADO[estado].label}</Badge>
-                                        )}
-                                        {f.en_el_libro && <Badge variant="info" size="sm" uppercase={false}>Libro</Badge>}
-                                    </div>
-                                </div>
+                            <DataCell className="text-body-sm">
+                                <p className="font-semibold text-content">{f.producto}</p>
+                                <p className="text-caption text-content-3 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                    <span>Lote {f.lote}{f.vence ? ` · vence ${fmtVence(f.vence)}` : ''}</span>
+                                    {f.en_el_libro && <Badge variant="info" size="sm">Libro</Badge>}
+                                </p>
                             </DataCell>
                             <DataCell align="right"><Cantidad u={f.inicial} factor={f.factor_caja} /></DataCell>
                             <DataCell align="right"><Cantidad u={f.entradas} factor={f.factor_caja} /></DataCell>
@@ -305,16 +247,27 @@ export default function TabRegistroLote({ branchId, sucursalNombre, fechaVista, 
                             <DataCell align="right"><Cantidad u={f.final_calculado} factor={f.factor_caja} /></DataCell>
                             <DataCell align="right"><Cantidad u={f.existencia} factor={f.factor_caja} fuerte /></DataCell>
                             <DataCell align="right">
-                                {f.diferencia === null
-                                    ? <span className="text-caption text-content-3">—</span>
-                                    : <span className={`tabular-nums font-bold ${f.diferencia === 0 ? 'text-success-text' : 'text-danger-text'}`}>
-                                        {f.diferencia === 0 ? '0' : fmtSigno(f.diferencia)}
-                                    </span>}
+                                {estado === 'cuadra' || estado === 'diferencia' ? (
+                                    <Badge variant={ESTADO[estado].variant} size="sm">
+                                        {estado === 'cuadra' ? 'Cuadra' : fmtSigno(f.diferencia)}
+                                    </Badge>
+                                ) : (
+                                    <Badge variant={ESTADO[estado].variant} size="sm" className="whitespace-nowrap">
+                                        {estado === 'sin_lote' ? 'Sin lote' : primerMes ? desdeCuando : 'Sin base'}
+                                    </Badge>
+                                )}
                             </DataCell>
                         </DataRow>
                     );
                 })}
             </DataTable>
+            {!cargando && visibles.length > 0 && (
+                <TablePagination
+                    page={page} totalPages={totalPages} onPageChange={setPage}
+                    pageSize={pageSize} onPageSizeChange={setPageSize}
+                    total={filas.length} filteredTotal={visibles.length} unit="lotes"
+                />
+            )}
 
             {abierta && <DetalleLote fila={abierta} registro={registro} onClose={() => setAbierta(null)} />}
         </div>

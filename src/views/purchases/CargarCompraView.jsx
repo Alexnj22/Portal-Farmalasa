@@ -446,16 +446,25 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                     <div data-surface="card" className="p-4 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <Dato titulo="Proveedor"        valor={p.encabezado.proveedor} />
                         <Dato titulo="Número"           valor={p.documento.codigo_generacion} mono />
-                        <Dato titulo="Sello"            valor={p.documento.sello ? 'sí' : 'no lo trae'} />
-                        <Dato titulo="Días de crédito"
-                              valor={p.encabezado.dias_credito != null
-                                  ? `${p.encabezado.dias_credito} días`
-                                  : 'lo pone la persona'}
-                              nota={p.encabezado.dias_credito_origen} />
+                        <Dato titulo="Fecha de la factura" valor={fmtFecha(p.documento.fecha)} nota="con ésta entra a Bodega" />
+                        <Dato titulo="Sello de Hacienda" valor={p.documento.sello ? 'Sí' : 'No lo trae'} />
                     </div>
 
-                    <div className="mb-3">
-                        <SegmentedControl label="Ver" value={vista} onChange={setVista} options={VISTAS} />
+                    {/* Una sola barra: qué se mira a la izquierda; cómo se carga a
+                        la derecha (sólo tiene sentido mirando la carga). */}
+                    <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+                        <SegmentedControl size="sm" label="Ver" value={vista} onChange={setVista} options={VISTAS} />
+                        {vista === 'carga' && (
+                            <div className="flex flex-wrap items-end gap-3">
+                                <SegmentedControl size="sm" label="La compra es" value={uso}
+                                    onChange={(v) => { setUso(v); setRes(null); }} options={USOS} />
+                                <div className="w-28">
+                                    <PortalInput compact label="Días de crédito" type="number" min="0" value={dias}
+                                        placeholder={p.encabezado.dias_credito != null ? String(p.encabezado.dias_credito) : '—'}
+                                        onChange={e => { setDias(e.target.value); setRes(null); }} />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {vista === 'documento' ? (
@@ -471,13 +480,6 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                     ) : (<>
                     {/* Para qué es la compra. Consumo se registra igual en el
                         libro, pero como gasto y sin sumar existencias. */}
-                    <div className="flex flex-wrap items-end gap-3 mb-3">
-                        <SegmentedControl label="La compra es" value={uso} onChange={(v) => { setUso(v); setRes(null); }} options={USOS} />
-                        <div className="w-32">
-                            <PortalInput compact label="Días de crédito" type="number" min="0" value={dias}
-                                onChange={e => { setDias(e.target.value); setRes(null); }} />
-                        </div>
-                    </div>
                     {uso === 'consumo' && (
                         <Notice variant="info" icon={HelpCircle}>
                             Se registra en el libro de compras como <b>gasto</b>: no suma existencias y cada renglón
@@ -698,30 +700,46 @@ const FILAS_TOTALES = [
 ];
 function TotalesLadoALado({ t }) {
     const filas = FILAS_TOTALES.filter(([k]) => Number(t.documento?.[k]) || Number(t.carga?.[k]) || k === 'total' || k === 'iva');
+    // Cada fila es su propia grilla: así la raya del total cruza de lado a lado
+    // en vez de cortarse por columna.
+    const cols = 'grid grid-cols-[minmax(0,1fr)_6.5rem_6.5rem_1.5rem] items-center gap-x-4';
     return (
-        <div data-surface="card" className="mt-3 px-3 py-2">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 gap-y-1 items-baseline text-label tabular-nums">
+        <div data-surface="card" className="mt-3 px-4 py-3">
+            <div className={`${cols} pb-1.5`}>
                 <span className="text-caption font-black text-content-3 uppercase tracking-widest">Montos</span>
                 <span className="text-caption font-black text-content-3 uppercase tracking-widest text-right">Factura</span>
                 <span className="text-caption font-black text-content-3 uppercase tracking-widest text-right">Se carga</span>
                 <span />
-                {filas.map(([k, rotulo]) => {
-                    const d = t.documento?.[k], c = t.carga?.[k];
-                    const comparable = d != null && c != null;
-                    const igual = comparable && Math.abs(Number(d) - Number(c)) <= 0.05;
-                    const fuerte = k === 'total' ? 'font-black text-content' : 'text-content';
-                    return (
-                        <React.Fragment key={k}>
-                            <span className={`${fuerte} ${k === 'total' ? 'pt-1 border-t border-divider' : ''}`}>{rotulo}</span>
-                            <span className={`${fuerte} text-right ${k === 'total' ? 'pt-1 border-t border-divider' : ''}`}>{d != null ? formatMoney(d) : '—'}</span>
-                            <span className={`${fuerte} text-right ${k === 'total' ? 'pt-1 border-t border-divider' : ''}`}>{c != null ? formatMoney(c) : '—'}</span>
-                            <span className={`text-micro ${k === 'total' ? 'pt-1 border-t border-divider' : ''} ${!comparable ? 'text-content-3' : igual ? 'text-success-text' : 'text-danger-text'}`}>
-                                {!comparable ? (k === 'descuento' ? 'dentro del costo' : '') : igual ? 'igual' : `dif. ${formatMoney(Number(c) - Number(d))}`}
-                            </span>
-                        </React.Fragment>
-                    );
-                })}
             </div>
+            {filas.map(([k, rotulo]) => {
+                const d = t.documento?.[k], c = t.carga?.[k];
+                const comparable = d != null && c != null;
+                const igual = comparable && Math.abs(Number(d) - Number(c)) <= 0.05;
+                const esTotal = k === 'total';
+                return (
+                    <div key={k} className={`${cols} tabular-nums ${esTotal ? 'mt-1.5 pt-2 border-t border-divider' : 'py-1'}`}>
+                        <span className={`min-w-0 ${esTotal ? 'text-body font-black text-content' : 'text-label text-content-2'}`}>
+                            {rotulo}
+                            {k === 'descuento' && <span className="ml-2 text-micro text-content-3">ya va dentro de cada costo</span>}
+                        </span>
+                        <span className={`text-right ${esTotal ? 'text-body font-black text-content' : 'text-label text-content'}`}>
+                            {d != null ? formatMoney(d) : '—'}
+                        </span>
+                        <span className={`text-right ${esTotal ? 'text-body font-black text-content' : 'text-label text-content'}`}>
+                            {c != null ? formatMoney(c) : <span className="text-content-3">—</span>}
+                        </span>
+                        <span className="flex justify-end">
+                            {comparable && (igual
+                                ? <CheckCircle2 size={15} className="text-success-text" aria-label="igual" />
+                                : <AlertTriangle size={15} className="text-danger-text" aria-label={`diferencia ${formatMoney(Number(c) - Number(d))}`} />)}
+                        </span>
+                    </div>
+                );
+            })}
+            {filas.some(([k]) => t.documento?.[k] != null && t.carga?.[k] != null
+                && Math.abs(Number(t.documento[k]) - Number(t.carga[k])) > 0.05) && (
+                <p className="mt-2 text-micro text-danger-text">Hay montos que no coinciden con la factura: revísalos antes de cargar.</p>
+            )}
         </div>
     );
 }

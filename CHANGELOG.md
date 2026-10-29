@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1383.1 — Compras: el modal de carga más ordenado
+
+El modal de carga de compras, ordenado (usuario: «visualmente no está tan
+bonito»): una sola barra de controles —qué se mira a la izquierda, para qué es
+la compra y los días de crédito a la derecha— en vez de dos selectores
+apilados; el encabezado muestra la fecha de la factura («con ésta entra a
+Bodega») en lugar de repetir los días de crédito; y el cuadro de montos usa
+una raya entera antes del total y una marca verde o roja por fila en vez de la
+palabra «igual».
+
 ## v2.1383.0 — Compras: la carga muestra el documento y los montos lado a lado
 
 El modal de carga de compras tiene dos vistas: **La carga** y **El

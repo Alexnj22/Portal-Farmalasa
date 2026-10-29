@@ -116,7 +116,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 30. ✅ Descuento por renglón en ventas (2026-10-29, v2.1364.0). El JSON no lo trae; se separa campaña / a mano cruzando con la copia de las campañas. Promociones → Rebajas. — DESCUENTOS §2
 
 ### Higiene y rendimiento (menor)
-31. Lista escrita de las 48 tablas sin `created_at` y por qué.
+31. ✅ Las 48 tablas sin `created_at`, con su motivo (2026-10-29): `auditoria/tablas-sin-created-at.json`, en 4 grupos. `gate:auditoria` falla si aparece una nueva sin declarar.
 32. Bajar la deuda de `gate:data` (escritura-a-ciegas 35, error-ignorado 26).
 33. Separar vendors del chunk de entrada (B2); `pdfjs-dist` a `await import()`.
 34. Dos comentarios viejos en `operar-caja/index.ts:2779,2860`; logo vacío en el ticket.

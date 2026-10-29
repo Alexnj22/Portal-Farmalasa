@@ -495,6 +495,9 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
 1. **Toda tabla nueva**: PK + `created_at timestamptz default now()` + **RLS habilitado
    con policy explícita** (mínimo `FOR SELECT TO authenticated`). NUNCA dejar una tabla
    sin RLS — `anon` no debe ver nada.
+   Las 48 que no tienen `created_at` están declaradas con su motivo en
+   `auditoria/tablas-sin-created-at.json` (2026-10-29); `gate:auditoria` falla si
+   aparece otra sin declarar. Sin motivo, se le agrega la columna.
 2. **Toda FK**: con índice que la cubra (`CREATE INDEX ... ON tabla(col_fk)`), excepto
    columnas de puro audit (`*_por`, `created_by`) en tablas pequeñas.
 3. **Policies de escritura**: `USING (true)` está prohibido para UPDATE/DELETE

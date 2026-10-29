@@ -1,0 +1,73 @@
+{
+  "_nota": "Las tablas de public SIN created_at, y por qué cada una (PENDIENTES 31, 2026-10-29). La regla 1 del hardening pide created_at en toda tabla nueva; éstas son las excepciones decididas. Lo vigila `npm run gate:auditoria` contra producción: una tabla nueva sin created_at que no esté acá FALLA el gate. Nació de que la auditoría del 2026-08-23 contó 45 y para octubre eran 48 sin que nadie lo decidiera. Total: 48.",
+  "grupos": {
+    "nacimiento-con-otro-nombre": {
+      "motivo": "La fila ya guarda cuándo nació, con un nombre del dominio. Agregar created_at sería la misma hora dos veces.",
+      "tablas": {
+        "compra_documento_leido": "leido_at",
+        "conteo_inventario_item_history": "contado_at",
+        "inventory_sync_log": "synced_at",
+        "minmax_change_requests": "requested_at",
+        "minmax_ignored": "ignored_at",
+        "pedido_apoyo": "registered_at",
+        "product_precios_changelog": "detected_at",
+        "product_precios_history": "valid_from",
+        "product_stock_params_history": "captured_at",
+        "products_changelog": "detected_at",
+        "promocion_cierre_sala": "cerrado_at",
+        "purchase_dte_processed_messages": "processed_at",
+        "purchase_sync_log": "synced_at",
+        "sales_alert_log": "sent_at",
+        "sales_gap_resolutions": "resolved_at",
+        "sales_invoice_changelog": "detected_at",
+        "sales_invoice_resolutions": "resolved_at",
+        "sales_null_resolutions": "resolved_at",
+        "sales_payment_confirmations": "confirmed_at",
+        "sync_log": "ran_at"
+      }
+    },
+    "espejo-o-calculo": {
+      "motivo": "Copia de otro sistema o resultado de un cálculo que se rehace. La fila no «nace» en el portal: lo que importa es cuándo se actualizó (updated_at/synced_at) o la fecha del documento.",
+      "tablas": {
+        "inventory": "existencias del sistema de ventas (synced_at)",
+        "product_last_sale": "última venta, recalculada",
+        "product_precios": "precios del sistema de ventas (updated_at)",
+        "product_sales_monthly_agg": "agregado mensual, recalculado (updated_at)",
+        "product_stock_params": "MIN·MAX calculado (calculated_at/published_at)",
+        "sales_daily_stats": "estadística por día (date)",
+        "ventas_monthly_stats": "estadística por mes (mes)",
+        "laboratorios": "catálogo del sistema de ventas (updated_at)",
+        "presentaciones": "catálogo del sistema de ventas (updated_at)",
+        "erp_sucursal_map": "7 filas fijas: sala del portal ↔ sala del origen",
+        "sales_invoice_items": "renglón de una factura: su fecha es la de sales_invoices",
+        "purchase_receipts": "compra del origen: fecha del documento + updated_at",
+        "purchase_receipt_items": "renglón de una compra: su fecha es la de purchase_receipts"
+      }
+    },
+    "configuracion-o-catalogo": {
+      "motivo": "Ajustes y catálogos chicos que se editan, no se acumulan. Lo que sirve es updated_at, y el cambio queda en audit_logs.",
+      "tablas": {
+        "puntos_config": "1 fila",
+        "stock_config": "1 fila",
+        "role_permissions": "updated_at",
+        "user_dashboard_prefs": "updated_at",
+        "lab_locations": "updated_at",
+        "product_locations": "updated_at",
+        "ruta_locations": "updated_at",
+        "bitacora_folios": "contador del último folio por sala, año y serie",
+        "survey_bloques": "estructura de la encuesta",
+        "survey_preguntas": "estructura de la encuesta"
+      }
+    },
+    "hija-de-un-padre-fechado": {
+      "motivo": "Cada fila pertenece a un documento que sí tiene created_at; su nacimiento es el del padre.",
+      "tablas": {
+        "conteo_inventario_items": "conteo (además contado_at)",
+        "cotizacion_items": "cotización",
+        "pedido_items": "pedido (además enviado_at, received_at…)",
+        "ruta_pedidos": "ruta (además entregado_at)",
+        "puntos_salida_lote": "reparto de una salida de puntos entre lotes (la salida tiene la fecha)"
+      }
+    }
+  }
+}

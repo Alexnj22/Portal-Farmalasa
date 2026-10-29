@@ -245,6 +245,30 @@ function verificarMapa() {
             });
         }
 
+        // -- tablas sin created_at: cada una con su motivo --
+        // La regla 1 del hardening pide created_at en toda tabla nueva. Las
+        // que no lo tienen están declaradas por grupo en
+        // auditoria/tablas-sin-created-at.json (PENDIENTES 31). La auditoría
+        // del 2026-08-23 contó 45; en octubre eran 48 y nadie lo había
+        // decidido. Sólo en vivo: la foto no las trae.
+        if (vivo?.sin_created_at) {
+            const grupos = leerJson(path.join(dir, 'tablas-sin-created-at.json'), { grupos: {} }).grupos || {};
+            const declaradas = new Set(Object.values(grupos).flatMap(g => Object.keys(g.tablas || {})));
+            const nuevas = vivo.sin_created_at.filter(t => !declaradas.has(t));
+            if (nuevas.length) fallas.push({
+                titulo: `${nuevas.length} tabla(s) sin \`created_at\` y sin motivo declarado`,
+                detalle: nuevas,
+                arreglo: 'Agregale `created_at timestamptz NOT NULL DEFAULT now()` (regla 1 del hardening), '
+                       + 'o declarala en auditoria/tablas-sin-created-at.json en el grupo que corresponda.',
+            });
+            const sobran = [...declaradas].filter(t => !vivo.sin_created_at.includes(t));
+            if (sobran.length) avisos.push({
+                titulo: `${sobran.length} tabla(s) declarada(s) sin created_at que ya lo tienen o no existen`,
+                detalle: sobran,
+                arreglo: 'Sacalas de auditoria/tablas-sin-created-at.json.',
+            });
+        }
+
         // -- la causa, no sólo el síntoma --
         // Medido el 2026-10-21: toda función nueva nacía ejecutable por `anon`
         // porque así estaban los privilegios por defecto. Revocar las que

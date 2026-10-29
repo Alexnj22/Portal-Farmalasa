@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1365.3 — Auditoría: las tablas sin created_at, con su motivo
+
+PENDIENTES 31. La regla 1 del hardening pide `created_at` en toda tabla; la
+auditoría del 23-ago contó 45 que no lo tenían, «sin escrito cuáles y por qué».
+En octubre eran 48 y nadie lo había decidido.
+
+- `auditoria/tablas-sin-created-at.json`: las 48, en cuatro grupos —ya guardan
+  su nacimiento con otro nombre (20), son espejo o cálculo (13), configuración o
+  catálogo (10), hijas de un documento con fecha (5)—, cada una con su motivo.
+- `gate:auditoria` (en vivo) falla si aparece una tabla nueva sin `created_at`
+  y sin declarar. Verificado quitando una del manifiesto.
+- Ninguna necesita la columna hoy: no hay migración.
+
 ## v2.1365.2 — Sucursales: el expediente marca la anualidad de enfermería y la recarga de extintores
 
 El aviso diario de vencimientos ya miraba la anualidad de cada enfermera y la recarga de extintores; la pantalla no, así que avisaba algo que el expediente mostraba «Al día». Ahora la anualidad tiene vencimiento en el expediente y una recarga de extintores vencida o por vencer enciende el punto de la pestaña.

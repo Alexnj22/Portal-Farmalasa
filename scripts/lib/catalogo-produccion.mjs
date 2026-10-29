@@ -46,6 +46,15 @@ SELECT json_build_object(
                      AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')),
     'tablas',    (SELECT coalesce(json_agg(DISTINCT tablename ORDER BY tablename), '[]')
                     FROM pg_policies WHERE schemaname = 'public' AND roles @> '{anon}')),
+  -- Tablas sin created_at: cada una va declarada con su motivo en
+  -- auditoria/tablas-sin-created-at.json (PENDIENTES 31). Eran 45 en agosto y
+  -- 48 en octubre, sin que nadie lo decidiera.
+  'sin_created_at', (SELECT coalesce(json_agg(c.relname ORDER BY c.relname), '[]')
+               FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public' AND c.relkind IN ('r','p') AND NOT c.relispartition
+                AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = c.oid AND d.deptype = 'e')
+                AND NOT EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid = c.oid
+                                 AND a.attname = 'created_at' AND NOT a.attisdropped)),
   -- Los permisos que recibe una función NUEVA. Las diez que aparecieron entre
   -- agosto y octubre no las abrió nadie: nacían abiertas. Desde la migración
   -- 20261021194340 nacen sólo para authenticated/service_role; si alguien

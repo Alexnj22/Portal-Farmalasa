@@ -607,6 +607,13 @@ const CRONS = [
           + 'es invisible al barrido de `functions/v1/`.',
   },
   {
+    job: 'antibioticos-lote-foto-diaria', slug: null, cadencia: '50 7 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'SQL puro: `antibioticos_lote_foto` guarda la existencia de cada lote de antibiótico '
+          + 'por sucursal (~700 filas) a la 01:50 SV, después de `inventory-daily-snapshot`. Es el '
+          + 'saldo inicial del registro por lote (Guía SRS 3.3/3.4). No toca el sistema de origen.',
+  },
+  {
     job: 'cuadre-antibioticos-0700-sv', slug: null, cadencia: '5 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: `avisar_cuadre_antibioticos` recuerda desde el día 20 el conteo mensual de '

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { BookOpen, CalendarCheck, Pill, Search, Settings2, Thermometer } from 'lucide-react';
+import { BookOpen, CalendarCheck, Layers, Pill, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -14,6 +14,7 @@ import TabBajoReceta from './bitacoras/TabBajoReceta';
 import TabCierre from './bitacoras/TabCierre';
 import TabConfiguracion from './bitacoras/TabConfiguracion';
 import TabAntibioticos from './bitacoras/TabAntibioticos';
+import TabRegistroLote from './bitacoras/TabRegistroLote';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
@@ -82,6 +83,7 @@ export default function BitacorasView() {
         { key: 'hoy', label: 'Registro diario', icon: Thermometer },
         ...(verLibro ? [{ key: 'libro', label: 'Bajo receta', icon: BookOpen }] : []),
         ...(verAntibioticos ? [{ key: 'antibioticos', label: 'Antibióticos', icon: Pill }] : []),
+        ...(verAntibioticos ? [{ key: 'lotes', label: 'Registro por lote', icon: Layers }] : []),
         ...(verCierre ? [{ key: 'cierre', label: 'Cierre de mes', icon: CalendarCheck }] : []),
         ...(puedeConfigurar ? [{ key: 'config', label: 'Configuración', icon: Settings2 }] : []),
     ]), [verLibro, verAntibioticos, verCierre, puedeConfigurar]);
@@ -95,6 +97,8 @@ export default function BitacorasView() {
     const enLibro = tab === 'libro';
     // El listado es de toda la red: ni sala ni fecha lo recortan.
     const enAntibioticos = tab === 'antibioticos';
+    // El registro por lote es de un MES: su paso de mes vive en la pestaña.
+    const enLotes = tab === 'lotes';
 
     const [dia, setDia] = useState(null);
     const [cargandoDia, setCargandoDia] = useState(true);
@@ -202,8 +206,8 @@ export default function BitacorasView() {
             onTabChange={setTab}
             searchValue={busqueda}
             onSearchChange={setBusqueda}
-            placeholder={enAntibioticos ? 'Buscar molécula o producto…' : 'Buscar por folio, medicamento, lote, paciente o médico…'}
-            showSearch={enLibro || enAntibioticos}
+            placeholder={enAntibioticos ? 'Buscar molécula o producto…' : enLotes ? 'Buscar producto o lote…' : 'Buscar por folio, medicamento, lote, paciente o médico…'}
+            showSearch={enLibro || enAntibioticos || enLotes}
         />
     );
 
@@ -277,7 +281,7 @@ export default function BitacorasView() {
                                 historial. `nextDisabled` en hoy: la bitácora de
                                 mañana no existe — y ofrecerla invitaría a
                                 anotar una lectura que todavía no se tomó. */}
-                            <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
+                            {!enLotes && <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
                                 <PeriodStepper
                                     unit="día"
                                     onPrev={() => setFecha(f => sumarDias(f, -1))}
@@ -288,7 +292,7 @@ export default function BitacorasView() {
                                         {rotularDia(fecha)}
                                     </span>
                                 </PeriodStepper>
-                            </FilterBar.Section>
+                            </FilterBar.Section>}
                         </FilterBar>
                     </div>}
                 </div>
@@ -301,7 +305,9 @@ export default function BitacorasView() {
                             ? 'Elige una sucursal para ver su bitácora.'
                             : enLibro
                                 ? `${nombreSalaCruda || 'Esa sucursal'} no dispensa: el libro bajo receta es de las salas de venta.`
-                                : `${nombreSalaCruda || 'Esa sucursal'} no almacena medicamentos, así que no lleva bitácora de ambiente.`}
+                                : enLotes
+                                    ? `${nombreSalaCruda || 'Esa sucursal'} no guarda medicamentos, así que no tiene lotes que registrar.`
+                                    : `${nombreSalaCruda || 'Esa sucursal'} no almacena medicamentos, así que no lleva bitácora de ambiente.`}
                     </Notice>
                 ) : tab === 'hoy' ? (
                     <TabHoy dia={dia} cargando={cargandoDia} error={errorDia}
@@ -310,6 +316,8 @@ export default function BitacorasView() {
                     <TabBajoReceta renglones={libroFiltrado} cargando={cargandoLibro} error={errorLibro}
                         branchId={sala} sucursalNombre={nombreSala} onRecargar={cargarLibro}
                         puedeCompletar={puedeCompletarLibro} clase={claseLibro} periodo={periodoDe(fecha)} />
+                ) : enLotes ? (
+                    <TabRegistroLote branchId={sala} sucursalNombre={nombreSala} fechaVista={fecha} busqueda={busqueda} />
                 ) : tab === 'cierre' ? (
                     <TabCierre branchId={sala} fechaVista={fecha} />
                 ) : (

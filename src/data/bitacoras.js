@@ -102,6 +102,27 @@ export async function fetchCuadreAntibioticos(branchId, periodo) {
 }
 
 /**
+ * El registro de antibióticos POR LOTE de una sucursal en un mes (Guía SRS
+ * 3.3/3.4): cada lote con su saldo inicial, sus movimientos —compra, recibido,
+ * enviado, venta— y la diferencia contra lo que hay. Todo en unidades mínimas.
+ * Lo arma `get_registro_antibioticos_lote` en UN JSON (sin techo de 1000 filas).
+ *
+ * El inicial de un lote sale de la foto diaria por lote (desde el 29-oct); antes
+ * de eso, sólo de la historia de los lotes nacidos después del 11-ago. Un lote
+ * sin ninguna de las dos viene con `diferencia: null` (`inicial_origen:
+ * 'sin_base'`): no se le inventa un saldo.
+ */
+export async function fetchRegistroAntibioticosLote(branchId, periodo) {
+    if (!branchId) return { registro: null, error: null };
+    const { data, error } = await supabase.rpc('get_registro_antibioticos_lote', {
+        p_branch_id: Number(branchId),
+        p_periodo: periodo,
+    });
+    if (error) return { registro: null, error };
+    return { registro: data ?? null, error: null };
+}
+
+/**
  * Todo el mes de una sala, en UN objeto, para imprimirlo.
  *
  * El RTS 6.1.14 prefiere el papel («preferiblemente debe estar de manera

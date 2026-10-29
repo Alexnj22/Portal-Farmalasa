@@ -82,6 +82,10 @@
    "area": "bitacoras",
    "por": "tablas"
   },
+  "antibioticos_lote_foto": {
+   "area": "bitacoras",
+   "por": "código"
+  },
   "anular_abono_diferencia": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -3075,6 +3079,10 @@
    "por": "tablas"
   },
   "get_recetas_recientes": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "get_registro_antibioticos_lote": {
    "area": "bitacoras",
    "por": "código"
   },

@@ -79,8 +79,9 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 16. ~~La interfaz deja de leer `user_metadata`~~ — **hecho v2.1357.56**.
 
 ### Bitácoras SRS y antibióticos
-17. **Registro trazable de antibióticos por lote** (entradas, salidas,
-    devoluciones, destrucción). Guía 3.3/3.4: CRÍTICO. — BITACORAS:152
+17. ~~Registro trazable de antibióticos por lote~~ — **hecho v2.1358.0**
+    (Bitácoras → Registro por lote; foto diaria por lote desde el 28-oct).
+    Devoluciones y destrucción entran con el ítem 18.
 18. **Disposición final y devoluciones de antibióticos.** — BITACORAS:172
 19. **Borradores de los procedimientos 7–9** (antibióticos, vencidos,
     farmacovigilancia) para que firme el regente. — BITACORAS:142

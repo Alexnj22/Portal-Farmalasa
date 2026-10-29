@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1358.0 — Registro trazable de antibióticos por lote
+
+PENDIENTES 17 (Guía SRS 3.3/3.4, CRÍTICOS). Nueva pestaña **Bitácoras →
+Registro por lote**: por sucursal y mes, cada lote de antibiótico con saldo
+inicial, entradas, salidas, lo que debería haber, lo que hay y la diferencia.
+Al tocar un lote se ven sus movimientos uno por uno (fecha, documento, de dónde
+o a quién, responsable) con el saldo corrido. Descarga en CSV con la forma de
+libro de control (saldo inicial, un renglón por movimiento, existencia).
+
+- Base (`20261029033625`): `get_registro_antibioticos_lote` (un JSON, sin techo
+  de 1000) y la foto diaria POR LOTE `antibioticos_lote_diario`, que llena
+  `antibioticos_lote_foto` a la 01:50 SV (cron `antibioticos-lote-foto-diaria`).
+  Primera foto: 28-oct, 670 filas, 30,280 unidades = el inventario exacto.
+- Todo en unidades mínimas, con cada conversión medida: compra ya en unidades;
+  venta × `factor_unidades`; existencia × «1xN» del detalle; despachos del
+  portal desde el renglón del traslado × «CAJA (N)» (10,059 de 10,059 iguales
+  al traslado del sistema); envíos entre salas por `unidades`.
+- Validado contra la foto diaria de octubre: 522 de 562 producto-sala cuadran
+  a la unidad; por lote, 44 de 46 lotes comprados desde septiembre.
+- Lo que no se puede saber se dice: lote sin saldo inicial (antes de la foto
+  por lote) no se cuadra; traslados hechos fuera del portal entran «sin lote».
+  Desde noviembre todos los lotes tienen base.
+
 ## v2.1357.56 — Un solo camino para el perfil al entrar
 
 PENDIENTES 15 y 16. El login por usuario leía `employees_safe` y la recarga le

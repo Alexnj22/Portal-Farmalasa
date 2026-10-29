@@ -247,6 +247,39 @@ export type Database = {
           },
         ]
       }
+      antibioticos_lote_diario: {
+        Row: {
+          created_at: string
+          erp_product_id: number
+          erp_sucursal_id: number
+          fecha: string
+          lote: string
+          unidades: number
+          vence: string | null
+          vencidos: boolean
+        }
+        Insert: {
+          created_at?: string
+          erp_product_id: number
+          erp_sucursal_id: number
+          fecha: string
+          lote: string
+          unidades: number
+          vence?: string | null
+          vencidos?: boolean
+        }
+        Update: {
+          created_at?: string
+          erp_product_id?: number
+          erp_sucursal_id?: number
+          fecha?: string
+          lote?: string
+          unidades?: number
+          vence?: string | null
+          vencidos?: boolean
+        }
+        Relationships: []
+      }
       antibioticos_producto: {
         Row: {
           created_at: string
@@ -28534,6 +28567,7 @@ export type Database = {
         Returns: string
       }
       antibioticos_del_cuadre: { Args: never; Returns: number[] }
+      antibioticos_lote_foto: { Args: { p_fecha?: string }; Returns: Json }
       anular_abono_diferencia: {
         Args: { p_id: number; p_motivo: string }
         Returns: {
@@ -32675,6 +32709,10 @@ export type Database = {
       get_recetas_abiertas: { Args: { p_branch_id: number }; Returns: Json }
       get_recetas_recientes: {
         Args: { p_branch_id: number; p_dias?: number }
+        Returns: Json
+      }
+      get_registro_antibioticos_lote: {
+        Args: { p_branch_id: number; p_periodo: string }
         Returns: Json
       }
       get_remitentes_dte_conocidos: {

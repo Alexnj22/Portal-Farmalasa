@@ -566,6 +566,9 @@
     "get_cuadre_antibioticos_mes": {
       "guarda": "alcance"
     },
+    "get_registro_antibioticos_lote": {
+      "guarda": "alcance"
+    },
     "get_bono_meta_sala": {
       "guarda": "alcance"
     },

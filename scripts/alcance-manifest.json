@@ -397,6 +397,13 @@
       "guarda": "sin-sala",
       "motivo": "Sólo contesta si el plazo de 2 días para reportar un error de la recepción sigue abierto; no lee ni escribe datos de la sala. Quien escribe (corregir/agregar/quitar) compara la sala por su cuenta."
     },
+    "rebajas_en_ventas": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "promociones"
+      ],
+      "motivo": "DEFINER para resolver al vendedor por código (employees.code no es legible por authenticated). Exige promociones, que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
     "ajustar_resumen_promocion": {
       "guarda": "modulo-de-red",
       "modulos": [

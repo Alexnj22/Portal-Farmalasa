@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1365.1 — Rebajas: abría con error de permiso
+
+La pestaña Rebajas decía «Tu cargo todavía no tiene el módulo de Promociones»
+a quien sí lo tiene. `rebajas_en_ventas` era INVOKER y busca al vendedor por
+`employees.code`, columna que la sesión normal no puede leer (de ahí sale el
+PIN del kiosco). Las pruebas corrieron con permisos de administrador.
+
+- Pasa a DEFINER con la guarda de `promociones` adentro (módulo de red,
+  declarado en `gate:alcance`).
+- El código del vendedor ya no sale en la respuesta, ni en pantalla ni en el CSV:
+  junto al nombre revelaría el código de cada persona. Sin ficha → «Sin ficha».
+
+---
+
 ## v2.1365.0 — Sucursales: auditoría completa — guardar sin pisar a otros, enfermería en una lista, alcance por sala y expediente coherente
 
 Auditoría completa del módulo (2026-10-29). Datos y base (migración `20261029163414`):

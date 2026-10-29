@@ -23,7 +23,7 @@ export function csvRebajas(vista, { porCampana, aMano }, periodo, salaDe = () =>
         nombre: `rebajas-a-mano-${periodo}`,
         headers: ['FECHA', 'SUCURSAL', 'DOCUMENTO', 'VENDEDOR', 'PRODUCTO', 'CANTIDAD', 'PRECIO', 'COBRADO', 'REBAJA', '%'],
         rows: aMano.map((r) => [r.fecha, salaDe(r.branch_id), r.correlativo,
-            r.vendedor ? shortEmployeeName({ name: r.vendedor }) : (r.cod_vendedor || ''),
+            r.vendedor ? shortEmployeeName({ name: r.vendedor }) : '',
             r.producto, Number(r.cantidad), Number(r.precio).toFixed(2), Number(r.cobrado).toFixed(2),
             Number(r.rebaja).toFixed(2), r.porcentaje]),
     };

@@ -1,6 +1,7 @@
 import { QUIEN_RESUELVE } from '../constants/solicitudModulos';
 import { hora12 } from './hora';
 import { fechaTexto } from './fecha';
+import { loQueNoSalio } from './trasladoTexto';
 
 // Cómo se lee una solicitud que MUEVE PRODUCTO: carga, descarte y traslado.
 //
@@ -29,6 +30,13 @@ export const esMovimiento = (type) => TIPOS_MOVIMIENTO.has(type);
 export const lineasDe = (meta) => (Array.isArray(meta?.items) ? meta.items : []);
 
 /**
+ * ¿La metadata trae el despacho de un traslado? Entonces las líneas se leen
+ * como lo que SALIÓ («No salió», «Salieron 2 de 5»), no como lo que entró.
+ */
+export const esDespachoDeTraslado = (meta) =>
+    Array.isArray(meta?.erp_traslado?.detalle) && meta.erp_traslado.detalle.length > 0;
+
+/**
  * Las líneas que el aprobador dejó afuera, por índice.
  *
  * Se guarda el ÍNDICE dentro de `items` y no una copia de la línea: la línea ya
@@ -37,6 +45,13 @@ export const lineasDe = (meta) => (Array.isArray(meta?.items) ? meta.items : [])
  */
 export const rechazadasDe = (meta) => {
     const lista = Array.isArray(meta?.lineas_rechazadas) ? meta.lineas_rechazadas : [];
+    // Un traslado no escribe `lineas_rechazadas`: lo que no salió se lee del
+    // despacho (`erp_traslado.detalle`). Sin esto la solicitud de un despacho
+    // incompleto listaba los cinco productos sin decir cuáles no viajaron.
+    if (lista.length === 0 && esDespachoDeTraslado(meta)) {
+        const motivo = String(meta?.erp_traslado?.parcial?.motivo ?? '').trim() || 'Sin motivo';
+        return new Map(loQueNoSalio(meta).filter(r => r.salio === 0).map(r => [r.idx, motivo]));
+    }
     return new Map(lista
         .filter(r => Number.isInteger(r?.i))
         .map(r => [r.i, String(r.motivo ?? '').trim() || 'Sin motivo']));
@@ -53,6 +68,9 @@ export const rechazadasDe = (meta) => {
  */
 export const ajustadasDe = (meta) => {
     const lista = Array.isArray(meta?.lineas_ajustadas) ? meta.lineas_ajustadas : [];
+    if (lista.length === 0 && esDespachoDeTraslado(meta)) {
+        return new Map(loQueNoSalio(meta).filter(r => r.salio > 0).map(r => [r.idx, r.salio]));
+    }
     return new Map(lista
         .filter(a => Number.isInteger(a?.i) && Number.isFinite(Number(a?.aplicada)))
         .map(a => [a.i, Number(a.aplicada)]));

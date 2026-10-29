@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { metaDelEnvio, loQueNoSalio, piezasDe, renglonesDe, lotesPedidos } from '@nucleo/utils/trasladoTexto';
-import { cuantoTardo } from '@nucleo/utils/movimientoTexto';
+import { cuantoTardo, rechazadasDe, ajustadasDe, esParcial } from '@nucleo/utils/movimientoTexto';
 
 // La solicitud real del 28-oct-2026 (Salud 2 → Salud 1): se pidieron 5
 // productos y 24 unidades, salieron 2 y 4. La bolsa por recibir decía «5
@@ -87,5 +87,31 @@ describe('cuantoTardo no se lee como una hora futura', () => {
         expect(cuantoTardo('2026-10-28T21:55:43Z', '2026-10-29T15:15:43Z')).toBe('tardó 17 h');
         expect(cuantoTardo('2026-10-28T21:55:00Z', '2026-10-28T22:05:00Z')).toBe('tardó 10 min');
         expect(cuantoTardo('2026-10-28T21:55:00Z', '2026-10-28T21:55:20Z')).toBe('al momento');
+    });
+});
+
+describe('la solicitud marca qué renglones no salieron', () => {
+    it('los que no salieron llevan el motivo; la solicitud queda parcial', () => {
+        expect([...rechazadasDe(REAL)]).toEqual([
+            [0, 'Pidieron que solo se les enviaran esos productos'],
+            [2, 'Pidieron que solo se les enviaran esos productos'],
+            [3, 'Pidieron que solo se les enviaran esos productos'],
+        ]);
+        expect(ajustadasDe(REAL).size).toBe(0);
+        expect(esParcial({ status: 'APPROVED', metadata: REAL })).toBe(true);
+    });
+
+    it('un recorte de cantidad es un ajuste, no un rechazo', () => {
+        const meta = {
+            items: [REAL.items[3]],
+            erp_traslado: { detalle: [{ cantidad: 3, numero_lote: '0047092', erp_product_id: 2548 }] },
+        };
+        expect(rechazadasDe(meta).size).toBe(0);
+        expect([...ajustadasDe(meta)]).toEqual([[0, 3]]);
+    });
+
+    it('lo que escribió quien decidió una carga manda sobre el despacho', () => {
+        const meta = { ...REAL, lineas_rechazadas: [{ i: 1, motivo: 'vencido' }] };
+        expect([...rechazadasDe(meta)]).toEqual([[1, 'vencido']]);
     });
 });

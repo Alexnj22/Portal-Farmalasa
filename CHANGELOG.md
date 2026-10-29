@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1360.2 — La solicitud y el historial marcan qué salió de un traslado incompleto
+
+Seguimiento de v2.1359.9. La bolsa en camino ya contaba lo que salió, pero el
+detalle de la solicitud y la tarjeta del historial seguían listando los 5
+productos pedidos sin decir cuáles no viajaron.
+
+- `rechazadasDe` / `ajustadasDe` leen el despacho del traslado cuando no hay
+  decisión por línea escrita: cada renglón dice «No salió — <motivo>» o «Salieron
+  2 de las 5», el total pasa a «4 de 24» y la solicitud queda «Aprobada parcial».
+  Igual en la app.
+- Historial: «Llegó incompleto: 2 de 5 productos · 4 de 24 unidades», y los
+  renglones que no salieron van primero, tachados, para que el tope de la
+  tarjeta no los esconda.
+
 ## v2.1360.1 — Vaciar el chat pide dos confirmaciones
 
 App de clientes (usuario, 2026-10-29: «que salga un aviso que no se puede

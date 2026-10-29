@@ -12,7 +12,7 @@ import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import {
-    lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
+    lineasDe, rechazadasDe, ajustadasDe, esDespachoDeTraslado, unidadesDe, contextoMovimiento, fmtFechaHora,
     motivoDeRechazo, cuantoTardo,
 } from '@nucleo/utils/movimientoTexto';
 import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
@@ -166,6 +166,8 @@ export const LineasMovimiento = memo(({
     }
 
     const decidiendo = typeof onToggle === 'function';
+    // Un traslado despachado habla de lo que SALIÓ; una carga, de lo que entró.
+    const salida = esDespachoDeTraslado(meta);
 
     return (
         /* SIN `overflow-hidden` (2026-08-28). No había nada que recortar —los
@@ -217,12 +219,12 @@ export const LineasMovimiento = memo(({
                                 )}
                                 {motivoRechazo && (
                                     <p className="text-micro font-semibold text-danger-text mt-1">
-                                        No entró — {motivoRechazo}
+                                        {salida ? 'No salió' : 'No entró'} — {motivoRechazo}
                                     </p>
                                 )}
                                 {!decidiendo && recortada && !motivoRechazo && (
                                     <p className="text-micro font-semibold text-warning-text mt-1">
-                                        Entraron {actual} de las {pedida} que se pidieron
+                                        {salida ? 'Salieron' : 'Entraron'} {actual} de las {pedida} que se pidieron
                                     </p>
                                 )}
                             </div>
@@ -632,17 +634,24 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'INVENTORY_LOAD_REQUEST' || t === 'INVENTORY_DISCARD_REQUEST' || t === 'INVENTORY_TRANSFER_REQUEST') {
         // Las unidades que de verdad van a entrar, mientras se decide.
         const deLinea = (l, i) => cantidades?.get(i) ?? (Number(l?.cantidad) || 0);
+        // Ya decidida, un despacho incompleto dice cuánto salió: «4 de 24».
+        const rech = rechazadasDe(meta), ajus = ajustadasDe(meta);
+        const yaDecidida = (rech.size > 0 || ajus.size > 0)
+            ? unidadesDe(lineasDe(meta).map((l, i) => ({
+                cantidad: rech.has(i) ? 0 : (ajus.get(i) ?? l?.cantidad),
+            })))
+            : null;
         const aplicadas = seleccion
             ? [...seleccion].reduce((s, i) => s + deLinea(lineasDe(meta)[i], i), 0)
             : (cantidades
                 ? lineasDe(meta).reduce((s, l, i) => s + deLinea(l, i), 0)
-                : null);
+                : yaDecidida);
         return (
             <div className="space-y-2">
                 <CabeceraMovimiento req={req} meta={meta} unidadesAplicadas={aplicadas} />
                 <LineasMovimiento meta={meta} seleccion={seleccion} onToggle={onToggle}
                     onCantidad={onCantidad} cantidades={cantidades}
-                    rechazadas={rechazadasDe(meta)} ajustadas={ajustadasDe(meta)}
+                    rechazadas={rech} ajustadas={ajus}
                     signo={SIGNO_POR_TIPO[t] ?? ''} />
                 <EvidenciaFotos urls={meta.evidencia_urls} />
             </div>

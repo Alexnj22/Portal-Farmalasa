@@ -24,7 +24,7 @@ import { fetchInvoiceById, fetchInvoiceItemsForInvoice } from '@nucleo/data/vent
 import { tieneSelloMh } from '@nucleo/data/facturacion';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import {
-  ajustadasDe, buscadorDePersonas, contextoMovimiento, cuantoTardo, fmtFechaHora, lineasDe, motivoDeRechazo, rechazadasDe,
+  ajustadasDe, buscadorDePersonas, contextoMovimiento, esDespachoDeTraslado, cuantoTardo, fmtFechaHora, lineasDe, motivoDeRechazo, rechazadasDe,
 } from '@nucleo/utils/movimientoTexto';
 import { ajusteSinCambio, fmtUltimaVenta } from '@nucleo/utils/minmaxSolicitud';
 import { leerDespacho, leerMeses, leerPresentaciones, maxNoAlcanzaParaDespachar } from '@nucleo/utils/avisosDeOperacion';
@@ -154,6 +154,7 @@ function LineasMovimiento({ meta, signo }) {
   const items = lineasDe(meta);
   const rechazadas = rechazadasDe(meta);
   const ajustadas = ajustadasDe(meta);
+  const salida = esDespachoDeTraslado(meta);
   if (!items.length) return <Caja><Tenue>Esta solicitud no trae detalle de productos.</Tenue></Caja>;
   return (
     <View style={{ borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12, paddingVertical: 2 }}>
@@ -172,8 +173,8 @@ function LineasMovimiento({ meta, signo }) {
               {it.lote || it.numero_lote || it.vence ? (
                 <Tenue>{[it.lote || it.numero_lote || 'sin lote', it.vence ? `vence ${fmtDate(it.vence)}` : null].filter(Boolean).join(' · ')}</Tenue>
               ) : null}
-              {motivoRechazo ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>{`No entró — ${motivoRechazo}`}</Text> : null}
-              {recortada && !motivoRechazo ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '700' }}>{`Entraron ${actual} de las ${pedida} que se pidieron`}</Text> : null}
+              {motivoRechazo ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>{`${salida ? 'No salió' : 'No entró'} — ${motivoRechazo}`}</Text> : null}
+              {recortada && !motivoRechazo ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '700' }}>{`${salida ? 'Salieron' : 'Entraron'} ${actual} de las ${pedida} que se pidieron`}</Text> : null}
             </View>
             <Pildora texto={motivoRechazo ? '—' : `${signo}${actual}`} color={signo === '+' ? MARCA.verde : GRIS} />
           </View>

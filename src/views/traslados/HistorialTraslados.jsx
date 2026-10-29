@@ -9,7 +9,7 @@ import ModalShell from '../../components/common/ModalShell';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { ChipPersona } from '../solicitudes/PersonasSolicitud';
 import { clickable } from '@nucleo/utils/clickable';
-import { fmtFechaLarga, piezasDe, renglonesDe, resumenItems } from '@nucleo/utils/trasladoTexto';
+import { fmtFechaLarga, loQueNoSalio, metaDelEnvio, piezasDe, renglonesDe, resumenItems } from '@nucleo/utils/trasladoTexto';
 
 /* El detalle de un traslado ES el detalle de una solicitud —vive en
  * `approval_requests` y su tipo es `INVENTORY_TRANSFER_REQUEST`—, así que se
@@ -72,18 +72,30 @@ const esRechazado = (f) => f.status === 'REJECTED';
 const PRODUCTOS_EN_TARJETA = 3;
 
 /** Los renglones de un traslado de varios productos, en compacto. */
-function Renglones({ renglones }) {
+function Renglones({ renglones, noSalio = new Map() }) {
     const deMas = renglones.length - PRODUCTOS_EN_TARJETA;
+    /* Los que no salieron, PRIMERO: con el tope de la tarjeta, ordenados como
+     * se pidieron quedaban escondidos detrás de «+2 productos más», que es
+     * justo lo que hay que ver de un despacho incompleto. */
+    const orden = noSalio.size
+        ? [...renglones.filter(r => noSalio.has(r.idx)), ...renglones.filter(r => !noSalio.has(r.idx))]
+        : renglones;
     return (
         <div className="flex flex-col gap-0.5">
-            {renglones.slice(0, PRODUCTOS_EN_TARJETA).map(r => (
-                <p key={r.idx} className="flex items-baseline justify-between gap-2 text-label text-content-2">
-                    <span className="min-w-0 truncate" title={r.nombre}>{r.nombre}</span>
-                    <span className="shrink-0 tabular-nums font-bold text-content-2">
-                        {r.cantidad}{r.presentacion ? ` ${r.presentacion}` : ''}
-                    </span>
-                </p>
-            ))}
+            {orden.slice(0, PRODUCTOS_EN_TARJETA).map(r => {
+                const corto = noSalio.get(r.idx);
+                return (
+                    <p key={r.idx} className="flex items-baseline justify-between gap-2 text-label text-content-2">
+                        <span className={`min-w-0 truncate ${corto?.salio === 0 ? 'line-through text-content-3' : ''}`}
+                            title={r.nombre}>{r.nombre}</span>
+                        <span className={`shrink-0 tabular-nums font-bold ${corto ? 'text-warning-text' : 'text-content-2'}`}>
+                            {corto
+                                ? (corto.salio === 0 ? 'no salió' : `${corto.salio} de ${r.cantidad}${r.presentacion ? ` ${r.presentacion}` : ''}`)
+                                : `${r.cantidad}${r.presentacion ? ` ${r.presentacion}` : ''}`}
+                        </span>
+                    </p>
+                );
+            })}
             {deMas > 0 && (
                 <p className="text-micro font-bold text-brand-text">
                     +{deMas} {deMas === 1 ? 'producto más' : 'productos más'}
@@ -122,6 +134,11 @@ export function TarjetaHistorial({ fila, personaPor, onAbrir }) {
         : (fila.note || '');
     const renglones = renglonesDe(m);
     const piezas = piezasDe(m);
+    // Lo pedido manda el título; lo que no salió se marca renglón por renglón,
+    // y la cuenta de lo que llegó va debajo. Sin esto la tarjeta de un despacho
+    // incompleto decía «5 productos · 24 unidades» sin ninguna seña.
+    const noSalio = new Map(loQueNoSalio(m).map(r => [r.idx, r]));
+    const llego = noSalio.size ? metaDelEnvio(m) : null;
     const pidio  = personaPor?.(fila.employee_id);
     const resolvio = personaPor?.(fila.approver_id);
 
@@ -178,7 +195,13 @@ export function TarjetaHistorial({ fila, personaPor, onAbrir }) {
 
             {/* Qué se movió, cuando fue más de una cosa. Sin esto la tarjeta
                 decía «3 productos» y no cuáles. */}
-            {renglones.length > 1 && <Renglones renglones={renglones} />}
+            {llego && (
+                <p className="text-label font-bold text-warning-text">
+                    Llegó incompleto: {llego.items.length} de {renglones.length} {renglones.length === 1 ? 'producto' : 'productos'}
+                    {' · '}{llego.total_unidades} de {m.total_unidades ?? 0} unidades
+                </p>
+            )}
+            {renglones.length > 1 && <Renglones renglones={renglones} noSalio={noSalio} />}
 
             {/* El motivo. Era la columna que se escondía por debajo de `lg` y la
                 que contesta la única pregunta que un historial tiene que

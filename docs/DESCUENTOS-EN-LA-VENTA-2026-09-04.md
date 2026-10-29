@@ -56,6 +56,14 @@ capturaría los cambios manuales de precio.
 `descuento_promo` del renglón, si el ERP lo expone en el JSON de la factura —
 no se verificó. Es otra tanda de trabajo y no era lo que se pidió.
 
+**Verificado el 2026-10-29 (PENDIENTES 30): el JSON NO lo trae.** Se leyó
+`descarga_dte_emitidos_json.php` en vivo (Salud 1, 28-oct, 143 ventas) con una
+función temporal ya borrada. Cada renglón trae sólo `id, descripcion, cantidad,
+presentacion, precio_unitario, total_linea, lote, fecha_vencimiento`, y
+`totales` sólo `subtotal, iva, retencion, total`. Ni `descuento_monto` ni
+`id_promo`. La diferencia derivada, en septiembre 2026: **304 de 33,353
+renglones con rebaja, $1,445.86** — campaña y precio a mano mezclados.
+
 ---
 
 ## 3 · Nueve hallazgos del origen

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.10 — El descarte «Llegó en mal estado» también pide foto
+
+Pedido del usuario: el descarte con motivo «Llegó en mal estado» exige foto,
+igual que la descarga por daño (es un daño con otro nombre, y sin foto era el
+atajo para no tomarla). La regla pasa a ser una función, `fotoDeAjuste(op,
+motivo)`, que leen el portal y la app; si se cambia a un motivo sin foto, las
+ya tomadas se descartan para que no viajen escondidas.
+
 ## v2.1381.9 — Compras: el total del documento con la percepción aparte
 
 La revisión de la carga en Bodega decía que el total no cuadraba en las

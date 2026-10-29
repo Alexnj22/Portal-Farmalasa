@@ -23,7 +23,7 @@ import {
 } from '@nucleo/data/inventoryMovements';
 import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
-import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, FOTO_DE_AJUSTE, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
+import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, fotoDeAjuste, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
@@ -238,8 +238,11 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const op = OPERACIONES.find(o => o.key === opKey) ?? null;
     const esCarga = op?.movimiento === 'CARGA';
     const motivos = MOTIVOS[opKey] ?? null;
-    const pideFoto = OPS_CON_FOTO.includes(opKey);
-    const textoFoto = FOTO_DE_AJUSTE[opKey];
+    const textoFoto = fotoDeAjuste(opKey, motivo);
+    const pideFoto = !!textoFoto;
+    // Si se cambia a un motivo que no pide foto, las ya tomadas no viajan
+    // escondidas en la solicitud.
+    useEffect(() => { if (!pideFoto && fotos.length) setFotos([]); }, [pideFoto, fotos.length]);
 
     const volver = useCallback(() => {
         setOpKey(null); setLineas([]); setCausa(''); setBusqueda(''); setError('');

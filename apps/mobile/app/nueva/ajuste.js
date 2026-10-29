@@ -8,7 +8,7 @@
 //      al cargar, se escribe con su vencimiento— y se agregan a la lista.
 //      `problemasDeLinea` decide qué le falta a cada renglón.
 //   3. Por qué: motivo de la lista (descarte y consumo interno), la causa por
-//      escrito cuando no hay lista o es «Otro», y fotos si es producto dañado o vencido.
+//      escrito cuando no hay lista o es «Otro», y fotos si es dañado, vencido o llegó en mal estado.
 //
 // Si la sala está contando inventario, no se puede ajustar (lo frena también
 // la base). A Supervisión le avisa la base. Guarda borrador: la sesión se
@@ -20,7 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buscarConExistencia, buscarEnCatalogo, fetchLotesDeProducto, fetchPerecederos, fetchPresentaciones, fetchSucursalEnConteo, insertMovimientoInventario } from '@nucleo/data/inventoryMovements';
-import { BUCKET_EVIDENCIA, causaObligatoria, llevaControlDeLote, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, OPS_CON_FOTO, FOTO_DE_AJUSTE, problemasDeLinea, solicitudDeAjuste } from '@nucleo/utils/ajusteInventario';
+import { BUCKET_EVIDENCIA, causaObligatoria, llevaControlDeLote, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, fotoDeAjuste, problemasDeLinea, solicitudDeAjuste } from '@nucleo/utils/ajusteInventario';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { BRANCH_A_ERP, ERP_ORDEN, ERP_UBICACION_POR_SUCURSAL } from '@nucleo/constants/erp';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
@@ -85,7 +85,9 @@ export default function Ajuste() {
   const op = OPERACIONES_AJUSTE.find((o) => o.key === opKey);
   const esCarga = op?.movimiento === 'CARGA';
   const motivos = opKey ? MOTIVOS_AJUSTE[opKey] : null;
-  const pideFoto = OPS_CON_FOTO.includes(opKey);
+  const textoFoto = fotoDeAjuste(opKey, motivo);
+  const pideFoto = !!textoFoto;
+  useEffect(() => { if (!pideFoto && fotos.length) setFotos([]); }, [pideFoto, fotos.length]);
 
   // El borrador de la sala: al volver, se sigue donde se dejó.
   useEffect(() => {
@@ -304,7 +306,7 @@ export default function Ajuste() {
           <Seccion titulo={causaObligatoria(opKey, motivo) ? 'Qué pasó (obligatorio)' : 'Qué pasó (opcional)'}>
             <Campo value={causa} onChangeText={setCausa} placeholder="Cuéntale a Supervisión qué pasó" />
           </Seccion>
-          {pideFoto ? <Seccion titulo={FOTO_DE_AJUSTE[opKey].app}><Fotos fotos={fotos} onCambiar={setFotos} max={MAX_FOTOS_AJUSTE} /></Seccion> : null}
+          {pideFoto ? <Seccion titulo={textoFoto.app}><Fotos fotos={fotos} onCambiar={setFotos} max={MAX_FOTOS_AJUSTE} /></Seccion> : null}
 
           {lineasEnConteo.length ? <Aviso tono="freno" texto={lineasEnConteo.length === 1 ? `${lineasEnConteo[0].descripcion} se está contando: quítalo para enviar.` : `${lineasEnConteo.length} productos se están contando: quítalos para enviar.`} /> : null}
           <BotonGrande texto={`Enviar solicitud${lineas.length ? ` · ${lineas.length}` : ''}`} color={esCarga ? MARCA.verde : MARCA.rojo}

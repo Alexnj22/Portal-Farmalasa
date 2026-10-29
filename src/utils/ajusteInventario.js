@@ -41,20 +41,30 @@ export const MOTIVOS_AJUSTE = {
 
 // Un descuadre no se fotografía, y pedirla ahí sería un trámite vacío.
 // Vencimiento entró el 2026-10-29 (usuario): quien aprueba está en otra sala y
-// la fecha impresa en el empaque es lo único que prueba que venció.
-// Cada operación dice QUÉ tiene que verse en la foto: el rótulo y el aviso de
-// que falta salen de acá para el portal y la app.
-export const FOTO_DE_AJUSTE = {
-    'PRODUCTO DAÑADO': {
-        titulo: 'Foto del daño', alt: 'Daño', app: 'Fotos del producto dañado (obligatorio)',
-        falta: 'Falta la foto: es lo único que quien aprueba puede mirar para saber que el producto está dañado.',
-    },
+// la fecha impresa en el empaque es lo único que prueba que venció. Ese mismo
+// día, el descarte «Llegó en mal estado»: es un daño con otro nombre, y sin la
+// foto era el atajo para no tomarla.
+// Cada caso dice QUÉ tiene que verse en la foto: el rótulo y el aviso de que
+// falta salen de acá para el portal y la app.
+const FOTO_DANO = {
+    titulo: 'Foto del daño', alt: 'Daño', app: 'Fotos del producto dañado (obligatorio)',
+    falta: 'Falta la foto: es lo único que quien aprueba puede mirar para saber que el producto está dañado.',
+};
+const FOTO_DE_AJUSTE = {
+    'PRODUCTO DAÑADO': FOTO_DANO,
     'VENCIMIENTO': {
         titulo: 'Foto del vencimiento', alt: 'Vencimiento', app: 'Fotos de la fecha de vencimiento (obligatorio)',
         falta: 'Falta la foto: que se vea la fecha de vencimiento impresa en el empaque.',
     },
 };
-export const OPS_CON_FOTO = Object.keys(FOTO_DE_AJUSTE);
+const FOTO_POR_MOTIVO = {
+    'DESCARTE': { 'MAL_ESTADO': FOTO_DANO },
+};
+
+/** Los textos de la foto si esta operación —y este motivo— la exigen; si no, `null`. */
+export function fotoDeAjuste(opKey, motivo) {
+    return FOTO_DE_AJUSTE[opKey] ?? FOTO_POR_MOTIVO[opKey]?.[motivo] ?? null;
+}
 export const BUCKET_EVIDENCIA = 'inventario-evidencia';
 export const MAX_FOTOS_AJUSTE = 3;
 

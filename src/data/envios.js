@@ -67,7 +67,7 @@ export const MOTIVOS_ENVIO = [
  * queda para decidir si se le reclama al proveedor, se repara o se da de baja
  * es haber visto cómo salió.
  *
- * Es la misma regla que `OPS_CON_FOTO` en el descargue por daño: la foto se
+ * Es la misma regla que `fotoDeAjuste` en el descargue por daño: la foto se
  * pide donde se puede ver algo. En un descuadre sería un trámite vacío.
  */
 export const MOTIVOS_ENVIO_CON_FOTO = ['Avería'];

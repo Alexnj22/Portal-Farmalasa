@@ -1013,7 +1013,8 @@ Deno.serve(async (req) => {
           const { data: dest, error: errDest } = await supabase.rpc("destinatarios_de_cortes", { p_branch_id: sala });
           if (errDest) console.error(`[hacer-corte-caja] destinatarios del aviso: ${errDest.message}`);
           if (Array.isArray(dest) && dest.length) {
-            const { data: suc } = await supabase.from("branches").select("name").eq("id", sala).maybeSingle();
+            const { data: suc, error: errSuc } = await supabase.from("branches").select("name").eq("id", sala).maybeSingle();
+            if (errSuc) console.error(`[hacer-corte-caja] nombre de la sala: ${errSuc.message}`);
             const { error: errAviso } = await supabase.rpc("notify_employees", {
               p_recipients: dest, p_type: "CIERRE_DEL_DIA",
               p_title: `${suc?.name ?? "Una sala"} cerró el día con $${pendiente.toFixed(2)} sin contar`,

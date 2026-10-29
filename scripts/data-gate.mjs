@@ -617,6 +617,10 @@ for (const archivo of archivos) {
     const ultimo = antes.at(-1) ?? '';
     if ('=(,[?:&|'.includes(ultimo)) continue;   // se asigna, se pasa como argumento o se compone
     if (/\breturn$/.test(antes)) continue;       // lo devuelve: el error lo mira el llamador
+    // `.then(({ error }) => …)` encadenado en la misma sentencia SÍ recoge el
+    // error (PENDIENTES 32: cuatro sitios que ya lo hacían salían acusados).
+    const sentencia = src.slice(m.index, m.index + 800).split(/;\s*\n/)[0];
+    if (/\.then\(\s*\(\s*\{[^}]*\berror\b/.test(sentencia)) continue;
     push('escritura-a-ciegas', archivo, lineaDe(src, m.index),
       'el resultado se descarta: la escritura puede fallar sin lanzar nada');
   }

@@ -105,26 +105,35 @@ Deno.serve(async (req: Request) => {
     // 2. Retención: borrar carpetas (YYYY-MM-DD) de más de RETENTION_DAYS
     try {
       const cutoff = new Date(Date.now() - RETENTION_DAYS * 86400 * 1000).toISOString().split("T")[0];
-      const { data: folders } = await admin.storage.from("backups").list("", { limit: 200 });
+      const { data: folders, error: errFolders } = await admin.storage.from("backups").list("", { limit: 200 });
+      if (errFolders) throw errFolders;
       for (const f of folders ?? []) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(f.name) || f.name >= cutoff) continue;
-        const { data: files } = await admin.storage.from("backups").list(f.name, { limit: 100 });
+        const { data: files, error: errFiles } = await admin.storage.from("backups").list(f.name, { limit: 100 });
+        if (errFiles) throw errFiles;
         const paths = (files ?? []).map((x) => `${f.name}/${x.name}`);
-        if (paths.length) await admin.storage.from("backups").remove(paths);
+        if (paths.length) {
+          const { error: errRemove } = await admin.storage.from("backups").remove(paths);
+          if (errRemove) throw errRemove;
+        }
       }
-    } catch { /* la retención no bloquea el backup */ }
+    } catch (e) {
+      // La retención no bloquea el backup, pero tampoco se calla.
+      console.error("[backup-critical-tables] retención:", (e as Error)?.message ?? e);
+    }
 
     const backupOk = failCount === 0;
     const failedTables = Object.entries(results)
       .filter(([, v]) => (v as any)?.error)
       .map(([k]) => k);
-    await admin.from("backup_sync_log").insert({
+    const { error: errEscritura } = await admin.from("backup_sync_log").insert({
       success: backupOk,
       error_msg: backupOk ? null : failedTables.join(", ").slice(0, 2000),
       tables_ok: okCount,
       tables_failed: failCount,
       total_kb: Math.round(totalBytes / 1024),
     });
+    if (errEscritura) console.error("[backup-critical-tables] backup_sync_log:", errEscritura.message);
 
     return json({
       ok: backupOk,
@@ -136,10 +145,11 @@ Deno.serve(async (req: Request) => {
     });
   } catch (e) {
     try {
-      await admin.from("backup_sync_log").insert({
+      const { error: errEscritura } = await admin.from("backup_sync_log").insert({
         success: false,
         error_msg: String((e as Error)?.message ?? e).slice(0, 2000),
       });
+      if (errEscritura) console.error("[backup-critical-tables] backup_sync_log:", errEscritura.message);
     } catch { /* logging no debe tapar el error original */ }
     return json({ ok: false, error: "UNHANDLED", details: String((e as Error)?.message ?? e) });
   }

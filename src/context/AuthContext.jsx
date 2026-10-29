@@ -446,7 +446,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const fila = await leerCargoYSalaPropios(perfil.id);
       if (!cambioDeCargoOSala(userRef.current, fila)) return;
-      const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
       if (data?.session && procesarSesionRef.current) procesarSesionRef.current(data.session);
     } catch { /* red inestable: se reintenta en la próxima vuelta */ }
   }, []);

@@ -159,11 +159,12 @@ FORMATO DE RESPUESTA:
     if (headerErr) throw headerErr;
 
     // 8. Soft-cancel any existing DRAFT plans for this year (regeneration)
-    await supabase
+    const { error: errEscritura } = await supabase
       .from("vacation_plans")
       .update({ status: "CANCELLED", updated_at: new Date().toISOString() })
       .eq("plan_header_id", header.id)
       .eq("status", "DRAFT");
+    if (errEscritura) throw new Error(`cancelar borradores: ${errEscritura.message}`);
 
     // 9. Insert new plans
     const rows = aiPlan.map((item) => {

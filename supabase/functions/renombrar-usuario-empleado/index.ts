@@ -99,7 +99,8 @@ Deno.serve(async (req: Request) => {
     // fija `set-employee-password` al crearla—, no por el correo viejo. Las de
     // carné y kiosco (`@staff.local`) NO se tocan: cuelgan del código y del PIN,
     // no del usuario.
-    const { data: cuenta } = await admin.auth.admin.getUserById(empleadoId);
+    const { data: cuenta, error: errCuenta } = await admin.auth.admin.getUserById(empleadoId);
+    if (errCuenta && errCuenta.status !== 404) throw errCuenta;
     const correoAnterior = cuenta?.user?.email ?? null;
     const metaAnterior = (cuenta?.user?.user_metadata ?? {}) as Record<string, unknown>;
 

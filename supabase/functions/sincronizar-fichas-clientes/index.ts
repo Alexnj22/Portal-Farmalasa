@@ -481,7 +481,8 @@ Deno.serve(async (req) => {
                 // El espejo no propaga borrados (`coalesce` en
                 // `aplicar_espejo_erp`), así que este lo propagamos nosotros —
                 // igual que el del DUI, y por el mismo motivo.
-                await admin.from("customers").update({ email: null }).eq("id", c.customer_id);
+                const { error: errEscritura } = await admin.from("customers").update({ email: null }).eq("id", c.customer_id);
+                if (errEscritura) console.error("[sincronizar-fichas-clientes] espejo del correo:", errEscritura.message);
                 correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "email",
                                     antes, despues: "", motivo: "correo_invalido" });
                 detalle.push({ ficha: c.name, accion: "correo borrado", antes });
@@ -556,7 +557,8 @@ Deno.serve(async (req) => {
               // portal mostrando un DUI que en el ERP ya no está — la misma
               // divergencia que causó todo esto. Como el borrado lo decidimos
               // nosotros, lo propagamos nosotros, sin aflojar la guarda global.
-              await admin.from("customers").update({ dui: null }).eq("id", c.customer_id);
+              const { error: errEscritura } = await admin.from("customers").update({ dui: null }).eq("id", c.customer_id);
+              if (errEscritura) console.error("[sincronizar-fichas-clientes] espejo del DUI:", errEscritura.message);
               correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "dui",
                                   antes, despues: "", motivo: "dui_invalido" });
               detalle.push({ ficha: c.name, accion: "dui borrado", antes });

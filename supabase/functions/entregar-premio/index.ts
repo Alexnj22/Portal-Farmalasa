@@ -73,7 +73,8 @@ Deno.serve(async (req) => {
       if (mapaErr) throw mapaErr;
       const ubic = (mapa?.inv_ubicaciones ?? []).find((u: { isVencidos?: boolean }) => !u.isVencidos);
       if (!mapa?.erp_sucursal_id || !ubic?.id) {
-        await admin.rpc("puntos_premio_soltar", { p_id: id });
+        const { error: errEscritura } = await admin.rpc("puntos_premio_soltar", { p_id: id });
+        if (errEscritura) console.error("[entregar-premio] puntos_premio_soltar:", errEscritura.message);
         tomado = null;
         return json({ ok: false, error: "Esta sucursal no tiene ubicación de inventario configurada." }, 422);
       }
@@ -84,7 +85,8 @@ Deno.serve(async (req) => {
                  factor: Number(p.factor), cantidad: Number(p.cantidad), descripcion: p.nombre },
       });
       if (!r.ok) {
-        await admin.rpc("puntos_premio_soltar", { p_id: id });
+        const { error: errEscritura } = await admin.rpc("puntos_premio_soltar", { p_id: id });
+        if (errEscritura) console.error("[entregar-premio] puntos_premio_soltar:", errEscritura.message);
         tomado = null;
         return json({ ok: false, codigo: r.codigo, error: r.error }, 409);
       }
@@ -103,7 +105,8 @@ Deno.serve(async (req) => {
     }
     if (cierreErr) {
       if (!descartado) {
-        await admin.rpc("puntos_premio_soltar", { p_id: id });
+        const { error: errEscritura } = await admin.rpc("puntos_premio_soltar", { p_id: id });
+        if (errEscritura) console.error("[entregar-premio] puntos_premio_soltar:", errEscritura.message);
         tomado = null;
         return json({ ok: false, error: cierreErr.message }, 409);
       }

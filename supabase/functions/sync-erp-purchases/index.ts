@@ -730,21 +730,23 @@ async function retryFailed(
   for (const { branchId, erpId, day } of pending) {
     try {
       const result = await syncBranch(supabase, branchId, erpId, username, password, day, day);
-      await supabase.from('purchase_sync_log').insert({
+      const { error: errEscritura } = await supabase.from('purchase_sync_log').insert({
         branch_id: branchId, erp_sucursal_id: erpId,
         fini: day, ffin: day,
         receipts_total: result.total, receipts_new: result.new,
         items_inserted: result.items, success: true,
       });
+      if (errEscritura) console.error("[sync-erp-purchases] purchase_sync_log:", errEscritura.message);
       details.push({ branchId, day, ok: true, ...result });
       ok++;
     } catch (e: any) {
-      await supabase.from('purchase_sync_log').insert({
+      const { error: errEscritura } = await supabase.from('purchase_sync_log').insert({
         branch_id: branchId, erp_sucursal_id: erpId,
         fini: day, ffin: day,
         receipts_total: 0, receipts_new: 0, items_inserted: 0,
         success: false, error_msg: e.message,
       });
+      if (errEscritura) console.error("[sync-erp-purchases] purchase_sync_log:", errEscritura.message);
       details.push({ branchId, day, ok: false, error: e.message });
       failed++;
     }
@@ -933,12 +935,13 @@ Deno.serve(async (req) => {
       EdgeRuntime.waitUntil(correr().catch(async (e: any) => {
         // Un error acá no tiene a quién contarle: la respuesta ya salió. Que
         // quede en el log o el backfill falla en silencio.
-        await supabase.from('purchase_sync_log').insert({
+        const { error: errEscritura } = await supabase.from('purchase_sync_log').insert({
           branch_id: onlyBranch ?? null, erp_sucursal_id: null,
           fini: startDate, ffin: endDate,
           receipts_total: 0, receipts_new: 0, items_inserted: 0,
           success: false, error_msg: `background: ${e?.message ?? e}`,
         });
+        if (errEscritura) console.error("[sync-erp-purchases] purchase_sync_log:", errEscritura.message);
       }));
       return new Response(
         JSON.stringify({ accepted: true, background: true, range: { startDate, endDate },

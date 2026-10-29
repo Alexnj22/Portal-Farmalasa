@@ -117,7 +117,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 
 ### Higiene y rendimiento (menor)
 31. ✅ Las 48 tablas sin `created_at`, con su motivo (2026-10-29): `auditoria/tablas-sin-created-at.json`, en 4 grupos. `gate:auditoria` falla si aparece una nueva sin declarar.
-32. Bajar la deuda de `gate:data` (escritura-a-ciegas 35, error-ignorado 26).
+32. ✅ Deuda de `gate:data` en cero (2026-10-29): escritura-a-ciegas 35→0, error-ignorado 26→0, las dos bloqueantes en cero.
 33. Separar vendors del chunk de entrada (B2); `pdfjs-dist` a `await import()`.
 34. Dos comentarios viejos en `operar-caja/index.ts:2779,2860`; logo vacío en el ticket.
 35. Dar de baja el cron `recordar-linea-base-egreso-mensual` (ya cumplió).

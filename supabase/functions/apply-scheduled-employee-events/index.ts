@@ -47,7 +47,8 @@ Deno.serve(async (req: Request) => {
       const meta = (typeof ev.metadata === "string" ? JSON.parse(ev.metadata) : (ev.metadata || {})) as Record<string, unknown>;
 
       const setEventMeta = async (patch: Record<string, unknown>) => {
-        await admin.from("employee_events").update({ metadata: { ...meta, ...patch } }).eq("id", ev.id);
+        const { error: errEscritura } = await admin.from("employee_events").update({ metadata: { ...meta, ...patch } }).eq("id", ev.id);
+        if (errEscritura) console.error("[apply-scheduled-employee-events] metadata del evento:", errEscritura.message);
       };
 
       // Cancelados/reemplazados no se aplican (defensa extra; el filtro principal es applyStatus)
@@ -146,7 +147,14 @@ Deno.serve(async (req: Request) => {
       const previousValues: Record<string, unknown> = {};
       Object.keys(updates).forEach(k => { previousValues[k] = emp[k] ?? null; });
       if (ev.type === "TERMINATION") {
-        const { data: eb } = await admin.from("employee_branches").select("branch_id").eq("employee_id", ev.employee_id);
+        const { data: eb, error: ebErr } = await admin.from("employee_branches").select("branch_id").eq("employee_id", ev.employee_id);
+        // Sin la foto de las salas, cancelar la baja no podría devolvérselas.
+        if (ebErr) {
+          failed++;
+          await setEventMeta({ applyStatus: "FAILED", applyError: ebErr.message });
+          results.push({ id: ev.id, type: ev.type, error: ebErr.message });
+          continue;
+        }
         previousValues._employee_branches = (eb || []).map((r: { branch_id: number }) => r.branch_id);
       }
 

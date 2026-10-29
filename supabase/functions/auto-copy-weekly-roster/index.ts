@@ -341,7 +341,7 @@ Deno.serve(async (req) => {
         : `Horarios de la próxima semana para revisar (${nextWeekStr})`;
       const message = partes.join('\n');
 
-      await supabase.from('announcements').insert({
+      const { error: errEscritura } = await supabase.from('announcements').insert({
         title,
         message,
         target_type:  recipientIds.length > 0 ? 'EMPLOYEE' : 'ALL',
@@ -357,6 +357,7 @@ Deno.serve(async (req) => {
           th_available:      availableTH.length,
         },
       });
+      if (errEscritura) console.error("[auto-copy-weekly-roster] aviso de horarios:", errEscritura.message);
 
       console.log(`Notified ${recipientLabel}${thUnavailableNote} about ${conflicted.length} conflicts and ${feriadosDeLaSemana.length} holidays`);
     }

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1365.4 — Errores de consultas y escrituras que se perdían en silencio
+
+PENDIENTES 32. `gate:data` tenía 61 sitios —22 funciones del servidor y una
+pantalla— que no miraban el `error` de una consulta o escritura. Hoy son 0 y
+las dos categorías bloquean en cero.
+
+Los que podían llevar a una decisión equivocada, no sólo a un log vacío:
+- **Dar de baja a un empleado**: si fallaba la lectura de su cuenta, se leía
+  «no tiene cuenta» y la baja terminaba sin bloquearle el acceso.
+- **Envío a Hacienda**: si fallaba la lista de facturas excluidas, se mandaban
+  justo ésas; y la re-lectura caída daba una anulada por «ya resuelta».
+- **Despachar un traslado**: un error al apartarlo contestaba «alguien más lo
+  está despachando». Ahora 503.
+- **Permisos** (manifiesto de compras, lectura de DTE): una lectura caída
+  contestaba «no tenés permiso». Ahora 503 / error.
+- **Mi caja**: un error al leer la apertura caía al reloj y contaba los cortes
+  de otro día.
+- Contraseña y cambio de usuario: un error se leía como «no hay cuenta» e
+  intentaba crear otra.
+
+El resto (bitácoras de sincronización, liberar candados, avisos) ahora anota el
+error en el log. El detector reconoce `.then(({ error }) => …)`: cuatro sitios
+ya lo hacían y salían acusados.
+
 ## v2.1365.3 — Auditoría: las tablas sin created_at, con su motivo
 
 PENDIENTES 31. La regla 1 del hardening pide `created_at` en toda tabla; la

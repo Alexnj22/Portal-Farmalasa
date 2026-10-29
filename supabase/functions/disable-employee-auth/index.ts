@@ -115,7 +115,11 @@ Deno.serve(async (req: Request) => {
 
     // 1. Cuenta principal (username@farmalasa.app, id = employees.id)
     let touched = 0;
-    const { data: existing } = await admin.auth.admin.getUserById(employeeId);
+    const { data: existing, error: errExisting } = await admin.auth.admin.getUserById(employeeId);
+    // «No existe» es una respuesta (404); cualquier otro error NO: leído como
+    // «no hay cuenta», la baja seguía sin bloquear a nadie.
+    if (errExisting && errExisting.status !== 404)
+      return json({ ok: false, error: "AUTH_LOOKUP_ERROR", details: errExisting.message });
     if (existing?.user) {
       const { error: updErr } = await admin.auth.admin.updateUserById(employeeId, { ban_duration: banDuration });
       if (updErr) return json({ ok: false, error: "AUTH_UPDATE_ERROR", details: updErr.message });

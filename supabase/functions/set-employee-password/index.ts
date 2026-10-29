@@ -106,7 +106,10 @@ Deno.serve(async (req: Request) => {
     const tempPassword = randomTempPassword();
 
     // 3. Actualizar o Crear en Auth
-    const { data: existingAuth } = await admin.auth.admin.getUserById(employee.id);
+    const { data: existingAuth, error: errAuth } = await admin.auth.admin.getUserById(employee.id);
+    // «No existe» es una respuesta (404); otro error leído así intentaría
+    // CREAR una cuenta que ya existe.
+    if (errAuth && errAuth.status !== 404) throw errAuth;
 
     if (existingAuth?.user) {
       const metaAnterior = (existingAuth.user.user_metadata ?? {}) as Record<string, unknown>;

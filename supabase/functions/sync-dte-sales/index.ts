@@ -571,9 +571,10 @@ async function syncBranch(
       if (insertErr) throw new Error(`items upsert chunk ${i}: ${insertErr.message}`);
     }
     if (invoicesWithPuntos.size > 0) {
-      await supabase.from('sales_invoices')
+      const { error: errEscritura } = await supabase.from('sales_invoices')
         .update({ has_puntos: true })
         .in('id', [...invoicesWithPuntos]);
+      if (errEscritura) throw new Error(`marcar has_puntos: ${errEscritura.message}`);
     }
   }
 
@@ -792,8 +793,9 @@ Deno.serve(async (req) => {
     // Dedicated MV refresh call — runs on its own cron to avoid race conditions
     if (refreshMvOnly) {
       const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
-      await supabase.rpc('refresh_inventory_grouped_mv');
-      return new Response(JSON.stringify({ ok: true, refreshed: true }), {
+      const { error: errRefresh } = await supabase.rpc('refresh_inventory_grouped_mv');
+      if (errRefresh) console.error('[sync-dte-sales] refresh_inventory_grouped_mv:', errRefresh.message);
+      return new Response(JSON.stringify({ ok: !errRefresh, refreshed: !errRefresh }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -903,16 +905,17 @@ Deno.serve(async (req) => {
           try {
             const result = await syncInventoryBranch(supabase, invErpId, username, password, ubicacionId, isVencidos, cookieCache);
             invResults.push({ erpId: invErpId, ubicacionId, isVencidos, ...result });
-            await supabase.from('inventory_sync_log').insert({
+            const { error: errEscritura } = await supabase.from('inventory_sync_log').insert({
               erp_sucursal_id: invErpId,
               is_vencidos:     isVencidos,
               items_count:     result.items,
               rows_upserted:   result.rows,
               success:         true,
             });
+            if (errEscritura) console.error("[sync-dte-sales] inventory_sync_log:", errEscritura.message);
           } catch (e: any) {
             invResults.push({ erpId: invErpId, ubicacionId, isVencidos, error: e.message });
-            await supabase.from('inventory_sync_log').insert({
+            const { error: errEscritura } = await supabase.from('inventory_sync_log').insert({
               erp_sucursal_id: invErpId,
               is_vencidos:     isVencidos,
               items_count:     0,
@@ -920,6 +923,7 @@ Deno.serve(async (req) => {
               success:         false,
               error_msg:       e.message,
             });
+            if (errEscritura) console.error("[sync-dte-sales] inventory_sync_log:", errEscritura.message);
           }
         }
       }

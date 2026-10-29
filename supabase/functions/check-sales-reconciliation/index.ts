@@ -391,12 +391,13 @@ Deno.serve(async (req) => {
               const d = await diagnosticarDia(supabase, cookie, branchId, erpId, dia, diferencia);
               h.documentos = d.documentos;
               h.sin_explicar = d.sin_explicar;
-              await supabase.from('ventas_cuadre_hallazgos').upsert({
+              const { error: errEscritura } = await supabase.from('ventas_cuadre_hallazgos').upsert({
                 branch_id: branchId, fecha: dia,
                 total_erp: totalErp, total_portal: totalPortal, diferencia,
                 sin_explicar: d.sin_explicar, documentos: d.documentos,
                 diagnosticado_at: new Date().toISOString(), resuelto_at: null,
               }, { onConflict: 'branch_id,fecha' });
+              if (errEscritura) console.error("[check-sales-reconciliation] ventas_cuadre_hallazgos:", errEscritura.message);
             } catch (e) {
               h.diagnostico_error = (e as Error)?.message ?? String(e);
             }
@@ -404,9 +405,10 @@ Deno.serve(async (req) => {
           } else {
             // El día cuadra: si tenía un hallazgo abierto, queda cerrado. Sin
             // esto un día ya resuelto se explicaría para siempre en la pantalla.
-            await supabase.from('ventas_cuadre_hallazgos')
+            const { error: errEscritura } = await supabase.from('ventas_cuadre_hallazgos')
               .update({ resuelto_at: new Date().toISOString() })
               .eq('branch_id', branchId).eq('fecha', dia).is('resuelto_at', null);
+            if (errEscritura) console.error("[check-sales-reconciliation] cerrar hallazgo:", errEscritura.message);
           }
         }
       } catch (e) {

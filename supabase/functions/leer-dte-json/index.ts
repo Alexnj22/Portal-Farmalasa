@@ -64,16 +64,19 @@ async function tienePermiso(admin: any, emp: any): Promise<boolean> {
   // `requireActiveEmployeeUser` devuelve sólo id/status/code/name — el rol NO
   // viene, así que hay que ir por él. Sin este paso `roles` quedaba vacío y la
   // función negaba el paso a todo el mundo con un 401 que parecía de sesión.
-  const { data: ficha } = await admin
+  // Una lectura caída lanza: devolver `false` sería un «no tenés permiso» falso.
+  const { data: ficha, error: errFicha } = await admin
     .from("employees").select("role_id, secondary_role_id").eq("id", emp?.id).maybeSingle();
+  if (errFicha) throw errFicha;
   const roles = [ficha?.role_id, ficha?.secondary_role_id].filter(Boolean);
   if (!roles.length) return false;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("role_permissions")
     .select("module_key, can_view")
     .in("role_id", roles)
     .in("module_key", ["compras", "facturas_compra", "cuentas_por_pagar"])
     .eq("can_view", true);
+  if (error) throw error;
   return (data ?? []).length > 0;
 }
 
@@ -142,7 +145,8 @@ Deno.serve(async (req: Request) => {
           try {
             const path = pathDeStorage(d.json_path);
             if (!path) return { ok: false };
-            const { data: blob } = await admin.storage.from("purchase-dte").download(path);
+            const { data: blob, error: errBlob } = await admin.storage.from("purchase-dte").download(path);
+            if (errBlob) console.error("[leer-dte-json] json:", errBlob.message);
             if (!blob) return { ok: false };
             const dte = desenvolver(JSON.parse(await blob.text()));
             const items: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
@@ -232,7 +236,8 @@ Deno.serve(async (req: Request) => {
       if (modo === "pdf" || modo === "lotes" || modo === "verificar" || modo === "propuesta") {
         const pPdf = pathDeStorage(d.pdf_path);
         if (pPdf) {
-          const { data: pdfBlob } = await admin.storage.from("purchase-dte").download(pPdf);
+          const { data: pdfBlob, error: errPdf } = await admin.storage.from("purchase-dte").download(pPdf);
+          if (errPdf) console.error("[leer-dte-json] pdf:", errPdf.message);
           if (pdfBlob) {
             try { txtPdf = await textoDelPdf(new Uint8Array(await pdfBlob.arrayBuffer())); }
             catch { /* PDF escaneado o sin capa de texto: se sigue sin él */ }
@@ -279,20 +284,24 @@ Deno.serve(async (req: Request) => {
         let recibo: any = null;
 
         if (d.sello_recibido) {
-          const { data } = await admin.from("purchase_receipts")
+          // Un error leído como «sin compra» mandaría a registrarla otra vez.
+          const { data, error } = await admin.from("purchase_receipts")
             .select("id").eq("sello_recibido", d.sello_recibido).limit(1);
+          if (error) throw error;
           recibo = data?.[0] ?? null;
         }
         if (!recibo) {
-          const { data } = await admin.from("purchase_receipts")
+          const { data, error } = await admin.from("purchase_receipts")
             .select("id, documento_numero")
             .in("documento_numero", variantes).limit(1);
+          if (error) throw error;
           recibo = data?.[0] ?? null;
         }
         if (!recibo) { salida.push({ id: d.id, emisor: d.emisor_nombre, sin_compra: true }); continue; }
 
-        const { data: reng } = await admin.from("purchase_receipt_items")
+        const { data: reng, error: errReng } = await admin.from("purchase_receipt_items")
           .select("fecha_vencimiento, lote").eq("receipt_id", recibo.id);
+        if (errReng) throw errReng;
 
         const mias = leidos.map((x) => x.vence).filter((v): v is string => Boolean(v)).sort();
         const suyas = (reng ?? []).map((x: any) => x.fecha_vencimiento).filter(Boolean).sort();
@@ -319,10 +328,11 @@ Deno.serve(async (req: Request) => {
       // salió cada dato, para que una persona lo mire. No toca el sistema de
       // origen ni la base — sólo lee.
       if (modo === "propuesta") {
-        const { data: prov } = await admin
+        const { data: prov, error: errProv } = await admin
           .from("proveedores_maestro")
           .select("nombre, supplier_id, f07_tipo_operacion, f07_clasificacion, f07_tipo_costo_gasto, clasificacion_estado, iva_deducible")
           .eq("nit", d.emisor_nit).maybeSingle();
+        if (errProv) throw errProv;
 
         // El plazo: el estándar lo pone en `resumen.pagos[].periodo` con
         // `plazo` del catálogo (01 días, 02 meses, 03 años). Cuando el emisor
@@ -347,12 +357,13 @@ Deno.serve(async (req: Request) => {
           // y hunden el parecido. Medido: con la cruda, 28% de los renglones
           // quedan sin ningún candidato; con el nombre limpio, 9%.
           const limpio = nombreLimpio(String(it?.descripcion ?? ""));
-          const { data: m } = await admin.rpc("emparejar_producto_dte", {
+          const { data: m, error: errM } = await admin.rpc("emparejar_producto_dte", {
             p_emisor_nit: d.emisor_nit, p_codigo_prov: it?.codigo ?? null,
             // El código de barras vive en la descripción CRUDA de algunos
             // proveedores, así que se manda entera cuando trae dígitos largos.
             p_texto: /\d{12,14}/.test(String(it?.descripcion ?? "")) ? String(it?.descripcion) : limpio,
           });
+          if (errM) throw errM;
           const match = Array.isArray(m) ? m[0] : m;
           const lv = loteYVence(txtPdf, it);
           const sim = Number(match?.similitud ?? 0);

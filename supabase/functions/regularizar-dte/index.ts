@@ -220,8 +220,10 @@ Deno.serve(async (req) => {
     // de cualquier otro filtro y también al alcance 'una', que es un botón —
     // si alguien aprieta el de una factura excluida, tiene que enterarse de
     // por qué, no ver otro fallo igual al de todas las noches.
-    const { data: exc } = await admin.from("dte_excluidas_del_barrido")
+    const { data: exc, error: errExc } = await admin.from("dte_excluidas_del_barrido")
       .select("invoice_id, motivo");
+    // Sin la lista se mandarían a Hacienda justo las que se decidió no mandar.
+    if (errExc) throw errExc;
     const excluidas = new Map<number, string>(
       (exc ?? []).map((e: { invoice_id: number; motivo: string }) => [e.invoice_id, e.motivo]));
 
@@ -253,7 +255,8 @@ Deno.serve(async (req) => {
 
     if (alcance === "una") {
       if (!invoice_id) return json({ ok: false, error: "Falta invoice_id." }, 400);
-      const { data } = await admin.from("sales_invoices").select(cols).eq("id", invoice_id).maybeSingle();
+      const { data, error: errUna } = await admin.from("sales_invoices").select(cols).eq("id", invoice_id).maybeSingle();
+      if (errUna) return json({ ok: false, error: "No se pudo leer la factura. Vuelve a intentar." }, 503);
       if (!data) return json({ ok: false, error: "Esa factura ya no está en el portal." }, 404);
       if (pausadas.has(Number(data.branch_id)))
         return json({ ok: false, pausada: true,
@@ -447,8 +450,10 @@ Deno.serve(async (req) => {
         // La lista se armó hace un rato y el re-sync horario pudo haber
         // resuelto ésta en el medio. Volver a mirar cuesta una lectura y evita
         // mandarle a Hacienda un documento que ya entró.
-        const { data: ahora } = await admin.from("sales_invoices")
+        const { data: ahora, error: errAhora } = await admin.from("sales_invoices")
           .select("estado, recibido_mh").eq("id", f.id).maybeSingle();
+        // Sin esto una anulada se daba por «ya resuelta» y no se enviaba.
+        if (errAhora) throw errAhora;
         // `!!ahora?.recibido_mh` daba por resuelta a cualquier cadena no vacía,
         // y `'undefined'` es una de ellas: el mismo defecto que el filtro de
         // arriba, un nivel más adentro. Corregir sólo la consulta habría hecho
@@ -582,8 +587,9 @@ Deno.serve(async (req) => {
       // `pendientes[0]` es esa factura: con alcance 'una' la lista tiene una.
       let clienteDeLaFactura: number | null = null;
       if (alcance === "una") {
-        const { data: inv } = await admin.from("sales_invoices")
+        const { data: inv, error: errInv } = await admin.from("sales_invoices")
           .select("customer_id").eq("id", pendientes[0].id).maybeSingle();
+        if (errInv) console.error("[regularizar-dte] cliente de la factura:", errInv.message);
         clienteDeLaFactura = inv?.customer_id ?? null;
       }
 

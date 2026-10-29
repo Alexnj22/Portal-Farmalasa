@@ -352,8 +352,9 @@ Deno.serve(async (req) => {
     // Es lo único que viaja al asiento del ERP, así que carga la trazabilidad
     // entera. La causa se recorta antes que los nombres: sin ellos el asiento
     // deja de decir quién respondió por el movimiento.
-    const { data: solicitante } = await admin
+    const { data: solicitante, error: errSolicitante } = await admin
       .from("employees").select("name").eq("id", sol.employee_id).maybeSingle();
+    if (errSolicitante) console.error("[aplicar-movimiento-inventario] solicitante:", errSolicitante.message);
     const causa = String(meta.reason ?? sol.note ?? "").trim();
     // Todo el concepto se transcribe a ASCII: el separador, los nombres y la
     // causa, que la escribe una persona y en español lleva tildes. Se recorta

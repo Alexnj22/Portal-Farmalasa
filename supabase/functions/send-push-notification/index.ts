@@ -197,7 +197,8 @@ serve(async (req) => {
           const status = (err as { statusCode?: number }).statusCode;
           // 410 Gone or 404 = expired subscription → remove it
           if (status === 410 || status === 404) {
-            await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+            const { error: errEscritura } = await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+            if (errEscritura) console.error('[send-push-notification] borrar suscripción vencida:', errEscritura.message);
           }
           throw err;
         }

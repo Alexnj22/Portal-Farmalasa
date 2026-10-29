@@ -181,9 +181,10 @@ Deno.serve(async (req) => {
       // Cuándo se leyó por última vez cada sala que mira esta pantalla —leyera
       // ésta o la de otra persona—, para que el sello de «actualizado hace…»
       // diga la verdad.
-      const { data: sellos } = await supabase.from("creditos_lectura_sala")
+      const { data: sellos, error: errSellos } = await supabase.from("creditos_lectura_sala")
         .select("leido_el").in("branch_id", salas.map((s) => s.branchId))
         .order("leido_el", { ascending: true }).limit(1);
+      if (errSellos) console.error("[creditos-erp] sello de lectura:", errSellos.message);
       return responder({
         ok: fallidas.length === 0, leidas: leidas.length, cambiadas,
         leido_el: sellos?.[0]?.leido_el ?? null,

@@ -912,7 +912,7 @@ Deno.serve(async (req) => {
     // invocación, así que una que muera a mitad se destraba sola.
     const ahora = new Date();
     const caduco = new Date(ahora.getTime() - 3 * 60_000).toISOString();
-    const { data: tomada } = await admin
+    const { data: tomada, error: errTomada } = await admin
       .from("approval_requests")
       .update({
         metadata: { ...meta, despachando_at: ahora.toISOString(), despachando_by: quien.id },
@@ -922,6 +922,9 @@ Deno.serve(async (req) => {
       .or(`metadata->>despachando_at.is.null,metadata->>despachando_at.lt.${caduco}`)
       .select("id")
       .maybeSingle();
+    // Una escritura caída no es «alguien más lo está despachando».
+    if (errTomada)
+      return json({ ok: false, error: "No se pudo apartar el traslado. Vuelve a intentar." }, 503);
     if (!tomada)
       return json({
         ok: false, codigo: "YA_EN_CURSO",
@@ -974,8 +977,9 @@ Deno.serve(async (req) => {
         // Se suelta el candado en vez de esperar a que caduque: el rechazo del
         // sistema suele ser algo que se corrige y se reintenta enseguida, y hacer
         // esperar tres minutos por un error ajeno no protege de nada.
-        await admin.from("approval_requests")
+        const { error: errEscritura } = await admin.from("approval_requests")
           .update({ metadata: meta }).eq("id", sol.id).eq("status", "PENDING");
+        if (errEscritura) console.error("[aplicar-traslado-inventario] soltar el candado:", errEscritura.message);
         return json({
           ok: false,
           error: `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`

@@ -690,11 +690,13 @@ Deno.serve(async (req) => {
 
     // El día que la caja tiene abierto. Sale de la captura y no del reloj: a las
     // once de la noche, con la caja sin cerrar, sigue siendo el de ayer.
-    const { data: aperturaViva } = await supabase
+    const { data: aperturaViva, error: errApertura } = await supabase
       .from("cortes_caja_aperturas")
       .select("abierta_el")
       .eq("branch_id", sala).is("cerrada_at", null)
       .order("abierta_el", { ascending: false }).limit(1);
+    // Caer al reloj por un error contaría los cortes de OTRO día.
+    if (errApertura) throw errApertura;
     const diaAbierto = aperturaViva?.[0]?.abierta_el
       ?? new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
@@ -2655,7 +2657,10 @@ Deno.serve(async (req) => {
         // reserva y se avisa para revisar la caja antes de repetirlo.
         if (aplicaRef) {
           await anularValeDeRetiro("La caja no contestó");
-          if (apartadoRes) await supabase.rpc("apartado_deshacer", { p_movimiento: fila.id });
+          if (apartadoRes) {
+            const { error: errDeshacer } = await supabase.rpc("apartado_deshacer", { p_movimiento: fila.id });
+            if (errDeshacer) console.error("[operar-caja] apartado_deshacer:", errDeshacer.message);
+          }
           return json({ ok: false, movimiento_del_portal: fila.id,
             error: "La caja no contestó. Revisa en la caja si el vale salió antes de repetirlo." }, 504);
         }

@@ -64,12 +64,13 @@ serve(async (req) => {
     if (error) {
       results.push({ id, name: ERP_NAMES[id], error: error.message });
       console.error(`[auto-calculate-minmax] Error en ${ERP_NAMES[id]}:`, error.message);
-      await supabase.from("minmax_sync_log").insert({
+      const { error: errEscritura } = await supabase.from("minmax_sync_log").insert({
         source: "auto-calculate-minmax",
         erp_sucursal_id: id,
         success: false,
         error_msg: error.message.slice(0, 2000),
       });
+      if (errEscritura) console.error("[auto-calculate-minmax] minmax_sync_log:", errEscritura.message);
       continue;
     }
 
@@ -82,13 +83,14 @@ serve(async (req) => {
       console.warn(`[auto-calculate-minmax] SALTADA ${ERP_NAMES[id]}: ${motivo}`);
       // success:false a propósito: desde "¿se recalculó esta sucursal?", una
       // saltada es un no. Así cualquier consulta al log la ve.
-      await supabase.from("minmax_sync_log").insert({
+      const { error: errEscritura } = await supabase.from("minmax_sync_log").insert({
         source: "auto-calculate-minmax",
         erp_sucursal_id: id,
         success: false,
         error_msg: `SALTADA: ${motivo}`.slice(0, 2000),
         items_count: 0,
       });
+      if (errEscritura) console.error("[auto-calculate-minmax] minmax_sync_log:", errEscritura.message);
       continue;
     }
 
@@ -99,12 +101,13 @@ serve(async (req) => {
     totalAutoApplied += autoApplied;
     totalDrafted += drafted;
     results.push({ id, name: ERP_NAMES[id], rows, auto_applied: autoApplied, drafted });
-    await supabase.from("minmax_sync_log").insert({
+    const { error: errEscritura } = await supabase.from("minmax_sync_log").insert({
       source: "auto-calculate-minmax",
       erp_sucursal_id: id,
       success: true,
       items_count: rows,
     });
+    if (errEscritura) console.error("[auto-calculate-minmax] minmax_sync_log:", errEscritura.message);
   }
 
   const failed = results.filter((r) => r.error).map((r) => r.name);

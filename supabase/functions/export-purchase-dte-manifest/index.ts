@@ -102,12 +102,23 @@ Deno.serve(async (req) => {
   // pantalla no obtiene ni una firma de esta función. Para el archivo suelto la
   // policy de Storage acepta cualquiera de los dos — una URL firmada sirve para
   // ver y para guardar, y ahí la separación es de la interfaz, no del byte.
-  const { data: empRole } = await admin.from("employees").select("role_id").eq("id", employee.id).single();
+  const { data: empRole, error: empErr } = await admin.from("employees").select("role_id").eq("id", employee.id).single();
+  // Una lectura caída no es «no tenés permiso»: un 403 se lee como decisión.
+  if (empErr) {
+    return new Response(JSON.stringify({ error: "No se pudo verificar el permiso. Vuelve a intentar." }), {
+      status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
   const { data: perms, error: permErr } = await admin.from("role_permissions").select("module_key, can_view")
     .eq("role_id", empRole?.role_id ?? -1)
     .in("module_key", ["facturas_compra", "facturas_compra_descargar"]);
   const puede = (key: string) => (perms ?? []).some((p) => p.module_key === key && p.can_view === true);
-  if (permErr || !puede("facturas_compra") || !puede("facturas_compra_descargar")) {
+  if (permErr) {
+    return new Response(JSON.stringify({ error: "No se pudo verificar el permiso. Vuelve a intentar." }), {
+      status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (!puede("facturas_compra") || !puede("facturas_compra_descargar")) {
     return new Response(JSON.stringify({ error: "FORBIDDEN" }), {
       status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

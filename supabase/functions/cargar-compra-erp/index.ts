@@ -164,8 +164,10 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
     undefined, { timeoutMs: 90_000 });
   const compras: any[] = JSON.parse(t)?.compras ?? [];
   const numero = String(sobre.numero_doc).toUpperCase();
-  const c = compras.find((k) => !k.anulada && Number(k.proveedor?.id) === erpProveedor
-    && String(k.documento?.numero ?? "").trim().toUpperCase() === numero);
+  const c = compras.find((k) => {
+    const n = String(k.documento?.numero ?? "").trim().toUpperCase();
+    return !k.anulada && Number(k.proveedor?.id) === erpProveedor && n.length >= 8 && numero.startsWith(n);
+  });
   if (!c) return { ok: false, compra: null, notas: ["Entró, pero no aparece en la lista de compras de hoy."] };
 
   const notas: string[] = [];
@@ -401,10 +403,11 @@ Deno.serve(async (req: Request) => {
       total: tot.total, fecha: hoyEnSalvador(),
       concepto: uso === "consumo" ? "COMPRA PARA CONSUMO" : "COMPRA DE PRODUCTO",
       destino: "3", proveedor: String(erpProveedor ?? ""),
-      // 20 caracteres: es lo que guarda el sistema (616 de 710 compras desde
-      // septiembre miden exactamente 20; ninguna más) y con lo que la lee de
-      // vuelta la verificación.
-      tipo_doc: tipoDoc, numero_doc: cod.slice(0, 20),
+      // El código COMPLETO (usuario, 2026-10-29). Ojo: el sistema hoy guarda
+      // 20 caracteres —616 de 710 compras desde septiembre miden exactamente
+      // 20, ninguna más—, o sea que probablemente lo recorte; por eso la
+      // verificación compara por el comienzo y no por igualdad.
+      tipo_doc: tipoDoc, numero_doc: cod,
       sumas_sin_iva: tot.sumas_sin_iva, subtotal: tot.subtotal, iva: tot.iva,
       venta_exenta: tot.venta_exenta, total_percepcion: tot.total_percepcion,
       dias_credito: diasCredito ?? 0, id_compra: "", total_renta_retenida: "0.00",

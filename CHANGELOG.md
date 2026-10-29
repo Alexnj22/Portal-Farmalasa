@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.2 — Cargar compra: el número del documento va completo
+
+Decisión del usuario: el código de generación se manda entero, no los primeros
+20. Como el sistema hoy guarda 20 (616 de 710 compras desde septiembre, ninguna
+más larga), la lectura de vuelta busca la compra por el comienzo del número.
+
 ## v2.1381.1 — Inventario: pedir conteo desde el detalle del producto
 
 En Inventario, al abrir un producto (la fila en escritorio, la ficha en el

@@ -64,6 +64,9 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
     terminal (La Popular) en 7 salas. — SEGURIDAD:112-134
 12. Segundo humano y dispositivo conocido: los interruptores existen y nada los
     consulta. — SEGURIDAD:156-226
+    · **Dispositivo conocido (§3.6): ⏸ en espera — el usuario dijo «por el
+      momento no» (2026-10-28).**
+    · Segundo humano (§3.4): en conversación.
 13. Vigilancia continua (cron) y `gate:seguridad`. — SEGURIDAD:228-246
 14. ⏸ Carné sólo en su turno y su sala — **en espera de que Talento Humano termine
     de cargar los horarios** (usuario, 2026-10-28). Ciclo de vida del carné. — SEGURIDAD:176-260

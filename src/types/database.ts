@@ -28696,14 +28696,17 @@ export type Database = {
       product_purchase_summary: {
         Row: {
           avg_cost: number | null
+          costo_anterior: number | null
           days_since_first_purchase: number | null
           distinct_suppliers: number | null
           erp_product_id: number | null
           first_purchase_date: string | null
           last_purchase_date: string | null
           latest_cost: number | null
+          nombre: string | null
           total_receipts: number | null
           total_units_received: number | null
+          ultimo_proveedor: string | null
         }
         Relationships: [
           {

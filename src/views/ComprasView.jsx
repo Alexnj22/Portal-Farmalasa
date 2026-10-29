@@ -48,15 +48,28 @@ const FACTURA_COLS = [
 ];
 
 const PRODUCTO_COLS = [
-    { key: 'id',        label: 'Producto ID',  align: 'center' },
-    { key: 'primera',   label: '1ª Compra',    align: 'center' },
-    { key: 'ultima',    label: 'Última',       align: 'center' },
-    { key: 'dias',      label: 'Días datos',   align: 'center', hideBelow: 'md' },
-    { key: 'facturas',  label: 'Facturas',     align: 'center' },
-    { key: 'unidades',  label: 'Unidades',     align: 'right',  hideBelow: 'md' },
-    { key: 'avg_cost',  label: 'Costo prom.',  align: 'right'  },
-    { key: 'last_cost', label: 'Costo actual', align: 'right'  },
+    { key: 'producto',  label: 'Producto',          align: 'left'   },
+    { key: 'ultima',    label: 'Última compra',     align: 'center' },
+    { key: 'facturas',  label: 'Veces comprado',    align: 'center', hideBelow: 'md' },
+    { key: 'unidades',  label: 'Unidades',          align: 'right',  hideBelow: 'md' },
+    { key: 'avg_cost',  label: 'Costo promedio',    align: 'right',  hideBelow: 'lg' },
+    { key: 'last_cost', label: 'Último costo',      align: 'right'  },
 ];
+
+// Cuánto cambió el último costo contra la compra anterior. Sube = rojo (el
+// margen se achica), baja = verde. Menos de medio punto no se marca.
+function CambioDeCosto({ actual, anterior }) {
+    const a = Number(actual), b = Number(anterior);
+    if (!(a > 0) || !(b > 0)) return null;
+    const pct = ((a - b) / b) * 100;
+    if (Math.abs(pct) < 0.5) return <span className="block text-micro text-content-3">igual que la anterior</span>;
+    const sube = pct > 0;
+    return (
+        <span className={`block text-micro font-semibold tabular-nums ${sube ? 'text-danger-text' : 'text-success-text'}`}>
+            {sube ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}% · antes {fmt$(b)}
+        </span>
+    );
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -449,25 +462,26 @@ function TabProductos({ searchTerm }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="text-label text-content-3 font-medium px-1">
-                {loading ? 'Cargando…' : `${total.toLocaleString()} producto${total !== 1 ? 's' : ''} con historial`}
+                {loading ? 'Cargando…' : `${total.toLocaleString()} producto${total !== 1 ? 's' : ''} comprados por Bodega · el más reciente primero`}
             </div>
 
-            <DataTable columns={cols} loading={loading} empty={{ icon: Package, message: 'Sin productos con historial de compras' }}>
+            <DataTable columns={cols} loading={loading}
+                movil={{ identidad: 'producto', ancla: 'last_cost' }}
+                empty={{ icon: Package, message: 'Sin productos con historial de compras' }}>
                 {rows.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
-                        <DataCell align="center">
-                            <span className="font-mono text-label text-content-2 tabular-nums">{row.erp_product_id}</span>
-                        </DataCell>
-                        <DataCell align="center">
-                            <span className="tabular-nums text-content-2 text-label">{fmtDate(row.first_purchase_date)}</span>
+                        <DataCell>
+                            <span className="block font-semibold text-content text-body-sm">{row.nombre || `Producto ${row.erp_product_id}`}</span>
+                            <span className="block text-micro text-content-3 truncate">
+                                <span className="font-mono tabular-nums">#{row.erp_product_id}</span>
+                                {row.ultimo_proveedor && <> · {row.ultimo_proveedor}</>}
+                            </span>
                         </DataCell>
                         <DataCell align="center">
                             <span className="tabular-nums text-content-2 font-medium text-label">{fmtDate(row.last_purchase_date)}</span>
+                            <span className="block text-micro text-content-3 tabular-nums">desde {fmtDate(row.first_purchase_date)}</span>
                         </DataCell>
                         <DataCell align="center" hideBelow="md">
-                            <span className="tabular-nums text-warning-text font-bold text-label">{row.days_since_first_purchase ?? '—'}d</span>
-                        </DataCell>
-                        <DataCell align="center">
                             <span className="tabular-nums text-content-2">{row.total_receipts}</span>
                         </DataCell>
                         <DataCell align="right" hideBelow="md">
@@ -475,11 +489,12 @@ function TabProductos({ searchTerm }) {
                         </DataCell>
                         {canVerMontos && (
                             <>
-                                <DataCell align="right">
-                                    <span className="tabular-nums text-content-2 text-label">{fmt$(row.avg_cost)}</span>
+                                <DataCell align="right" hideBelow="lg">
+                                    <span className="tabular-nums text-content-3 text-label">{fmt$(row.avg_cost)}</span>
                                 </DataCell>
                                 <DataCell align="right">
                                     <span className="tabular-nums font-bold text-content text-label">{fmt$(row.latest_cost)}</span>
+                                    <CambioDeCosto actual={row.latest_cost} anterior={row.costo_anterior} />
                                 </DataCell>
                             </>
                         )}

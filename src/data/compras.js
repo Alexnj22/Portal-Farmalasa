@@ -55,13 +55,18 @@ export async function fetchCargadasDesdePortal(erpIds = []) {
 export function fetchProductPurchaseSummaryPage(from, to, searchTerm) {
     let q = supabase
         .from('product_purchase_summary')
-        .select('erp_product_id, first_purchase_date, last_purchase_date, days_since_first_purchase, total_receipts, total_units_received, avg_cost, latest_cost, distinct_suppliers', { count: 'exact' })
+        .select('erp_product_id, nombre, ultimo_proveedor, first_purchase_date, last_purchase_date, total_receipts, total_units_received, avg_cost, latest_cost, costo_anterior', { count: 'exact' })
         .order('last_purchase_date', { ascending: false })
+        .order('erp_product_id', { ascending: false })
         .range(from, to);
 
-    if (searchTerm) {
-        const term = searchTerm.trim();
-        if (!isNaN(Number(term))) q = q.eq('erp_product_id', Number(term));
+    // Un número busca el producto por su código; si no, por el nombre —cada
+    // palabra por separado y sin importar tildes, como el resto del portal—.
+    const term = String(searchTerm || '').trim();
+    if (/^\d+$/.test(term)) return q.eq('erp_product_id', Number(term));
+    for (const palabra of term.split(/\s+/).filter(Boolean)) {
+        const patron = patronSinTildes(palabra);
+        if (patron) q = q.filter('nombre', 'imatch', patron);
     }
     return q;
 }

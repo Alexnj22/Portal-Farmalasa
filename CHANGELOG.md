@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1386.1 — Compras: productos con nombre y si el costo subió
+
+La pestaña **Productos** de Compras (Bodega) mostraba sólo el número de cada
+producto. Ahora sale el **nombre**, el código y el **proveedor de la última
+compra**; la última fecha con «desde» la primera; y el **último costo con
+cuánto subió (rojo) o bajó (verde) contra la compra anterior**. Se buscan por
+nombre (antes sólo por número). Se quitó «Días datos». La vista
+`product_purchase_summary` suma `nombre`, `ultimo_proveedor` y
+`costo_anterior` al final.
+
 ## v2.1386.0 — Compras: marca de lo cargado desde el portal
 
 Compras (Bodega) marca con **«Desde el portal»** las compras que entraron con

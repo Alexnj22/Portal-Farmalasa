@@ -8,6 +8,7 @@
 // los documentos se versionan en vez de pisarse, y de dónde sale el personal
 // mínimo.
 import { supabase } from '../supabaseClient';
+import { correrMes, mesSV } from '../utils/fecha';
 
 // ── Sucursal ─────────────────────────────────────────────────────────────────
 
@@ -19,8 +20,21 @@ export function updateBranch(branchId, patch) {
     return supabase.from('branches').update(patch).eq('id', branchId);
 }
 
-export function updateBranchReturning(branchId, patch) {
-    return supabase.from('branches').update(patch).eq('id', branchId).select().single();
+// La fila VIVA, para comparar contra lo que hay en la base y no contra la copia
+// en memoria (que puede tener horas): de ahí salen el documento a archivar y
+// lo que se anota en la bitácora.
+export function fetchBranchRow(branchId) {
+    return supabase.from('branches').select('*').eq('id', branchId).single();
+}
+
+/**
+ * Aplica SÓLO lo que cambió sobre la fila viva, bloqueada, en una sentencia
+ * (`editar_sucursal`). `parches` = `[{ ruta: ['legal','srsPermitUrl'], valor }]`
+ * dentro de `settings`; `columnas` = las columnas propias que cambiaron.
+ * Devuelve `{ data: { antes, despues }, error }`.
+ */
+export function editarSucursal(branchId, columnas, parches) {
+    return supabase.rpc('editar_sucursal', { p_id: Number(branchId), p_columnas: columnas || {}, p_parches: parches || [] });
 }
 
 export function deleteBranch(branchId) {
@@ -68,7 +82,7 @@ export function fetchBranchKiosks(branchId) {
 // ── Gastos de sucursal ───────────────────────────────────────────────────────
 
 export function fetchBranchExpenseRecord(branchId, expenseType, billingMonth) {
-    return supabase.from('branch_expenses').select('id')
+    return supabase.from('branch_expenses').select('id, receipt_url')
         .eq('branch_id', branchId).eq('expense_type', expenseType).eq('billing_month', billingMonth).maybeSingle();
 }
 
@@ -82,13 +96,24 @@ export function insertBranchExpense(payload) {
 
 // ── TabExpenses.jsx (gráfica de tendencia — últimos pagos) ─────────────────
 
-export function fetchBranchExpensesHistory(branchId) {
+/**
+ * Los pagos de los últimos `meses` meses (el actual incluido), por
+ * `billing_month` ('AAAA-MM', texto: compara bien como cadena).
+ *
+ * Antes era `order asc + limit(100)` sin filtro de fecha: el tope se aplicaba
+ * ANTES de quedarse con lo reciente, así que una sala con más de 100 pagos
+ * graficaba los MÁS VIEJOS y la «tendencia de los últimos 6 meses» mostraba
+ * otro año. Ahora el filtro va al servidor y no hay tope: 7 meses × 6
+ * servicios son ~42 filas, lejos del techo de 1000.
+ */
+export function fetchBranchExpensesHistory(branchId, meses = 7) {
+    const desde = correrMes(mesSV(), -(Math.max(1, meses) - 1));
     return supabase.from('branch_expenses')
         .select('billing_month, amount, expense_type')
         .eq('branch_id', branchId)
         .eq('status', 'PAGADO')
-        .order('billing_month', { ascending: true })
-        .limit(100);
+        .gte('billing_month', desde)
+        .order('billing_month', { ascending: true });
 }
 
 /** Trae las ventas de una sucursal desde el sistema de origen. `{ data, error }`. */

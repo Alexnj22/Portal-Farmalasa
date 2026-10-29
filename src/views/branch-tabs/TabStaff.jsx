@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
+import { personalNormativoDeSucursal } from '@nucleo/utils/expedienteDeSucursal';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import BotonIA from '../../components/common/BotonIA';
 import Button from '../../components/common/Button';
@@ -173,11 +177,21 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 // ============================================================================
 // ⚠️ BOTÓN SECRETO TEMPORAL: VOLCADO HISTÓRICO WFM 
 // ============================================================================
+// Reescribe el histórico de ventas de la sala: sólo para quien EDITA
+// sucursales (lo decide `TabStaff`, que no lo monta sin `branches.can_edit`),
+// queda en la bitácora al empezar y al terminar, y se corta si la pestaña se
+// desmonta — antes el bucle seguía pidiendo meses al sistema de origen con la
+// pantalla cerrada, y cada vuelta hacía `setState` sobre un componente muerto.
 const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncConfirm, setSyncConfirm] = useState(false);
     const [progress, setProgress] = useState(0);
     const [log, setLog] = useState('');
+    const montado = useRef(true);
+    useEffect(() => {
+        montado.current = true;
+        return () => { montado.current = false; };
+    }, []);
 
     // Credentials are resolved server-side from Supabase Secrets (ERP_BRANCH_MAP).
     // The client only passes branchId — never username/password.
@@ -215,8 +229,19 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         const todayStr = hoySV();
         const chunksToSync = generateChunks("2025-01-01", todayStr, 30);
         let successCount = 0;
+        let fallo = null;
+        const anotar = useStaff.getState().appendAuditLog;
+        anotar?.('RECARGA_HISTORICO_VENTAS_INICIADA', String(liveBranch.id), {
+            timeline_title: 'Recarga del histórico de ventas',
+            dimension: 'OPERATIVE',
+            branch_id: liveBranch.id,
+            desde: chunksToSync[0]?.i ?? null,
+            hasta: todayStr,
+            bloques: chunksToSync.length,
+        });
 
         for (let i = 0; i < chunksToSync.length; i++) {
+            if (!montado.current) break;
             const chunk = chunksToSync[i];
             setLog(`Trayendo ${chunk.label} (${chunk.i} al ${chunk.f})…`);
 
@@ -237,21 +262,37 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 }
 
                 successCount++;
-                setLog(`✅ ${chunk.label} listo (${data?.processed || data?.processed_hours || data?.count || 0} hrs).`);
+                if (montado.current) setLog(`✅ ${chunk.label} listo (${data?.processed || data?.processed_hours || data?.count || 0} hrs).`);
             } catch (err) {
                 console.error(`Error en bloque ${chunk.label}:`, err);
-                setLog(`❌ Falló ${chunk.label}. Se detiene aquí.`);
+                fallo = chunk.label;
+                if (montado.current) setLog(`❌ Falló ${chunk.label}. Se detiene aquí.`);
                 break;
             }
 
+            if (!montado.current) break;
             setProgress(Math.round(((i + 1) / chunksToSync.length) * 100));
             if (i < chunksToSync.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 3500));
             }
         }
 
+        const interrumpida = !montado.current && !fallo && successCount < chunksToSync.length;
+        anotar?.('RECARGA_HISTORICO_VENTAS_TERMINADA', String(liveBranch.id), {
+            timeline_title: 'Fin de la recarga del histórico de ventas',
+            dimension: 'OPERATIVE',
+            branch_id: liveBranch.id,
+            bloques: chunksToSync.length,
+            recargados: successCount,
+            resultado: fallo ? 'fallo' : interrumpida ? 'interrumpida' : 'completa',
+            ...(fallo ? { fallo_en: fallo } : {}),
+        });
+
+        if (!montado.current) return;
         setIsSyncing(false);
-        setLog(`🎉 Listo. Se recargaron ${successCount} de ${chunksToSync.length} meses.`);
+        setLog(fallo
+            ? `Se recargaron ${successCount} de ${chunksToSync.length} meses; se detuvo en ${fallo}.`
+            : `🎉 Listo. Se recargaron ${successCount} de ${chunksToSync.length} meses.`);
         if (onSyncComplete) onSyncComplete();
     };
 
@@ -281,7 +322,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <Button disabled={isSyncing} onClick={startHistoricalSync}>{isSyncing ? `Recargando ${progress}%` : 'Recargar'}</Button>
             </div>
 
-            <Notice tone="warning">
+            <Notice variant="warning">
                 Reescribe el histórico de ventas de esta sucursal desde enero de 2025. Ejecútalo solo si sabes que faltan datos.
             </Notice>
 
@@ -317,10 +358,22 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
 // 📊 COMPONENTE PRINCIPAL: TAB STAFF
 // ============================================================================
 const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal }) => {
+    // El permiso se resuelve como en el resto del módulo (`BranchDetailView`,
+    // `BranchesView`): `branches.can_edit`.
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission('branches', 'can_edit');
     const [infoAlert, setInfoAlert] = useState({ isOpen: false, title: '', message: '' });
 
     const [historicalSales, setHistoricalSales] = useState([]);
     const [isLoadingWfm, setIsLoadingWfm] = useState(true);
+    // Si no se pudieron leer las ventas por hora, el mínimo de personal sale
+    // SÓLO del horario y eso se dice: no es «la sala no vende».
+    const [wfmError, setWfmError] = useState(null);
+    const vivo = useRef(true);
+    useEffect(() => {
+        vivo.current = true;
+        return () => { vivo.current = false; };
+    }, []);
 
     // 🤖 ESTADOS DE IA (STAFF)
     const [aiMode, setAiMode] = useState(false);
@@ -334,11 +387,17 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             const { data, error } = await fetchBranchHourlySalesAll(liveBranch.id);
 
             if (error) throw error;
+            if (!vivo.current) return;
             setHistoricalSales(data || []);
+            setWfmError(null);
         } catch (err) {
             console.error('Error al descargar el historial WFM:', err);
+            if (vivo.current) {
+                setHistoricalSales([]);
+                setWfmError(mensajeAmigable(err, 'No se pudieron leer las ventas por hora de la sucursal.'));
+            }
         } finally {
-            setIsLoadingWfm(false);
+            if (vivo.current) setIsLoadingWfm(false);
         }
     }, [liveBranch?.id]);
 
@@ -355,15 +414,17 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     const { jefe: jefeEmp, subjefe: subjefeEmp } = jefaturaDeSucursal(currentStaff, branchType);
 
     const legalData = liveBranch?.settings?.legal || {};
-    const regentEmp = employees.find(e => String(e.id) === String(legalData.regentEmployeeId));
-    const referentEmp = employees.find(e => String(e.id) === String(legalData.pharmacovigilanceEmployeeId || legalData.farmacovigilanciaId));
-    const nursingRegents = legalData.nursingRegents || [];
+    // Núcleo (`personalNormativoDeSucursal`): la misma resolución que el punto
+    // de la pestaña en `BranchDetailView`. Lee `nursingRegents` y, si la sala
+    // todavía no se migró, `nurses`; y una persona dada de baja NO cuenta como
+    // asignada — su plaza sale como vacía.
+    const { regente: regentEmp, referente: referentEmp, enfermeria } = personalNormativoDeSucursal(legalData, employees);
     const hasInjections = isFarmacia && legalData.injections === true;
 
     const generalStaff = currentStaff.filter(e => {
         const isJefe = e.id === jefeEmp?.id || e.id === subjefeEmp?.id;
         const isRegent = e.id === regentEmp?.id || e.id === referentEmp?.id;
-        const isNurse = nursingRegents.some(n => String(n.employeeId) === String(e.id));
+        const isNurse = enfermeria.some(n => String(n.empleado.id) === String(e.id));
         return !isJefe && !isRegent && !isNurse;
     });
 
@@ -398,13 +459,10 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             checkItem(false, 'Farmaco.: Falta Autorización', true);
         }
         if (hasInjections) {
-            checkItem(nursingRegents.length > 0, 'Regente Enfermería');
+            checkItem(enfermeria.length > 0, 'Regente Enfermería');
             checkItem(!!legalData.nursingServicePermitUrl, 'Permiso CSSP Inyecciones', true);
-            let hasAnyCarne = false, hasAnyLicencia = false;
-            if (nursingRegents.length > 0) {
-                hasAnyCarne = nursingRegents.some(n => n.carneUrl || n.carneFile);
-                hasAnyLicencia = nursingRegents.some(n => n.licenciaUrl || n.licenciaFile);
-            }
+            const hasAnyCarne = enfermeria.some(({ fila }) => fila.carneUrl || fila.carneFile);
+            const hasAnyLicencia = enfermeria.some(({ fila }) => fila.licenciaUrl || fila.licenciaFile);
             checkItem(hasAnyCarne, 'Enfermero: Falta Carné', true);
             checkItem(hasAnyLicencia, 'Enfermero: Falta Licencia', true);
         }
@@ -421,7 +479,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     const wfmData = calculateMinimumStaff(liveBranch?.weekly_hours || liveBranch?.weeklyHours, historicalSales, MIN_CONCURRENT_STAFF, 80, 0.15, branchCreationDate);
     const { minStaff, baseStaffHours, extraVolumeHours, wfmApplied, peakHour, shrinkageHours, totalLaborHoursNeeded, isNewBranch } = wfmData;
 
-    const coverageStaffCount = (jefeEmp ? 1 : 0) + (subjefeEmp ? 1 : 0) + generalStaff.length + (hasInjections ? nursingRegents.length : 0);
+    const coverageStaffCount = (jefeEmp ? 1 : 0) + (subjefeEmp ? 1 : 0) + generalStaff.length + (hasInjections ? enfermeria.length : 0);
     const isStaffDeficit = coverageStaffCount < minStaff;
     const wfmProgress = minStaff > 0 ? Math.min(100, Math.round((coverageStaffCount / minStaff) * 100)) : 0;
 
@@ -445,7 +503,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 jefatura: jefeEmp ? 'Asignada' : 'Faltante',
                 regenteFarmacia: regentEmp ? 'Asignado' : 'Faltante',
                 referenteFarmaco: referentEmp ? 'Asignado' : 'Faltante',
-                enfermeria: hasInjections ? (nursingRegents.length > 0 ? 'Asignada' : 'Faltante') : 'No aplica',
+                enfermeria: hasInjections ? (enfermeria.length > 0 ? 'Asignada' : 'Faltante') : 'No aplica',
                 cumplimientoLegal: `${complianceScore}%`
             };
 
@@ -502,25 +560,25 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         <p className="text-caption font-bold text-content-3 mb-1.5 flex justify-between items-center">
                                             <span>Seguridad (Mín. {MIN_CONCURRENT_STAFF} por turno):</span> <span className="text-content font-black">{baseStaffHours} hrs</span>
                                         </p>
-                                        <p className="text-caption font-bold text-blue-300 mb-1.5 flex justify-between items-center">
+                                        <p className="text-caption font-bold text-chart-1-text mb-1.5 flex justify-between items-center">
                                             <span className="flex items-center gap-1"><TrendingUp size={12} /> Picos de facturación:</span>
-                                            <span className="text-blue-200 font-black">+{extraVolumeHours} hrs</span>
+                                            <span className="text-chart-1-text font-black">+{extraVolumeHours} hrs</span>
                                         </p>
-                                        <p className="text-caption font-bold text-purple-300 mb-2 flex justify-between items-center bg-purple-900/30 -mx-2 px-2 py-1 rounded">
+                                        <p className="text-caption font-bold text-chart-3-text mb-2 flex justify-between items-center bg-chart-3/10 -mx-2 px-2 py-1 rounded">
                                             <span className="flex items-center gap-1"><Briefcase size={12} /> Margen ausentismo (15%):</span>
-                                            <span className="text-purple-200 font-black">+{shrinkageHours} hrs</span>
+                                            <span className="text-chart-3-text font-black">+{shrinkageHours} hrs</span>
                                         </p>
                                         <div className="border-t border-border-card pt-2 mt-1">
-                                            <p className="text-caption font-bold text-amber-300 leading-tight">
-                                                La sucursal exige un presupuesto de <span className="text-white font-black">{totalLaborHoursNeeded} hrs</span> a la semana. Al dividir entre 44h legales, requieres <span className="font-black text-warning-text">{minStaff} operativos</span>. Tienes {coverageStaffCount}.
+                                            <p className="text-caption font-bold text-warning-text leading-tight">
+                                                La sucursal exige un presupuesto de <span className="text-content font-black">{totalLaborHoursNeeded} hrs</span> a la semana. Al dividir entre 44h legales, requieres <span className="font-black text-warning-text">{minStaff} operativos</span>. Tienes {coverageStaffCount}.
                                             </p>
                                         </div>
                                     </>
                                 ) : isNewBranch ? (
                                     <>
-                                        <p className="text-caption font-black uppercase tracking-widest text-indigo-300 mb-2 border-b border-border-card pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal en Incubación</p>
+                                        <p className="text-caption font-black uppercase tracking-widest text-chart-3-text mb-2 border-b border-border-card pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal en Incubación</p>
                                         <p className="text-caption font-bold text-content-3 leading-tight mb-2">
-                                            Esta sucursal tiene menos de 3 meses. El cálculo actual <span className="text-white font-black">({minStaff} operativos)</span> está basado únicamente en la cobertura mínima de seguridad ({MIN_CONCURRENT_STAFF} por turno).
+                                            Esta sucursal tiene menos de 3 meses. El cálculo actual <span className="text-content font-black">({minStaff} operativos)</span> está basado únicamente en la cobertura mínima de seguridad ({MIN_CONCURRENT_STAFF} por turno).
                                         </p>
                                     </>
                                 ) : (
@@ -559,7 +617,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-caption font-bold text-emerald-300 flex items-center gap-1.5">
+                                <p className="text-caption font-bold text-success-text flex items-center gap-1.5">
                                     <Check size={12} strokeWidth={3} /> Cumplimiento 100% (Roles y Docs)
                                 </p>
                             )}
@@ -676,9 +734,16 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         </div>
                     ) : (
                         <div className="pt-2">
+                            {isFarmacia && wfmError && (
+                                <div className="mb-6">
+                                    <Notice variant="danger" icon={AlertTriangle}>
+                                        {wfmError} El mínimo de personal se calcula sólo con el horario hasta que se pueda leer.
+                                    </Notice>
+                                </div>
+                            )}
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-3xl p-5 shadow-sm relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
+                                <div data-surface="card" data-tono="brand" className="p-5 relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand-text flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />
@@ -748,14 +813,12 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {hasInjections && (
-                                        nursingRegents.length > 0 ? (
-                                            nursingRegents.map((nurse, i) => {
-                                                const nEmp = employees.find(e => String(e.id) === String(nurse.employeeId));
-                                                if (!nEmp) return null;
+                                        enfermeria.length > 0 ? (
+                                            enfermeria.map(({ fila: nurse, empleado: nEmp, indice }) => {
                                                 const nurseDocs = [];
                                                 if (!nurse.carneUrl && !nurse.carneFile) nurseDocs.push('Carné');
                                                 if (!nurse.licenciaUrl && !nurse.licenciaFile) nurseDocs.push('Licencia');
-                                                return <ProfileCard key={`nurse-${i}`} employee={nEmp} roleLabel="Regencia Enfermería" colorTheme="purple" onClick={goToProfile} missingDocs={nurseDocs} onEditRole={() => openModal('editNursingRegents', liveBranch)} />
+                                                return <ProfileCard key={`nurse-${indice}`} employee={nEmp} roleLabel="Regencia Enfermería" colorTheme="purple" onClick={goToProfile} missingDocs={nurseDocs} onEditRole={() => openModal('editNursingRegents', liveBranch)} />
                                             })
                                         ) : (
                                             <ProfileCard isMissing missingText="Sin Enfermero/a" missingSub="Req. (Inyecciones)" onEditRole={() => openModal('editNursingRegents', liveBranch)} />
@@ -789,8 +852,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 </div>
                             </div>}
 
-                            {/* 🔴 INYECTAMOS EL BOTÓN SECRETO AQUÍ */}
-                            {isFarmacia && <HistoricalSyncButton liveBranch={liveBranch} onSyncComplete={fetchHistoricalSales} />}
+                            {/* Reescribe datos: sólo con `branches.can_edit`. */}
+                            {isFarmacia && canEdit && <HistoricalSyncButton liveBranch={liveBranch} onSyncComplete={fetchHistoricalSales} />}
                         </div>
                     )}
                 </div>

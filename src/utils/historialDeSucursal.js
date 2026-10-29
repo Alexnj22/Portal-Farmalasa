@@ -29,7 +29,9 @@ export function dimensionDelRegistro(item) {
     if (item?.isDoc) return 'LEGAL';
     if (item?.action === 'PAGO_REGISTRADO') return 'FINANCE';
     if (item?.action === 'EDITAR_SUCURSAL' || item?.action === 'APERTURA_OFICIAL') return 'OPERATIVE';
-    if (['PERSONAL_ASIGNADO', 'EDITAR_EMPLEADO', 'ELIMINAR_EMPLEADO', 'ACCION_RRHH'].includes(item?.action)) return 'HR';
+    if (['PERSONAL_ASIGNADO', 'EDITAR_EMPLEADO', 'ELIMINAR_EMPLEADO', 'ACCION_RRHH',
+         // Los trae el historial por `details` desde 2026-10-29 (jefatura, cascada del expediente).
+         'EMPLEADO_ASIGNADO', 'EMPLEADO_RELEVADO', 'EMPLEADO_DESVINCULADO_SUCURSAL'].includes(item?.action)) return 'HR';
     return 'OTHER';
 }
 

@@ -44,7 +44,7 @@ const FormDispositivos = ({ formData }) => {
     const executeRevoke = async (deviceId, deviceName) => {
         setIsRevoking(true);
         try {
-            const success = await revokeKioskDevice(deviceId, deviceName);
+            const success = await revokeKioskDevice(deviceId, deviceName, formData.id);
             if (success) {
                 setKiosks(prev => prev.filter(k => k.id !== deviceId));
             } else {

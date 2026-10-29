@@ -19,6 +19,41 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
 import { analizarHistorial } from '@nucleo/data/ia';
+import { exportCsv } from '@nucleo/utils/csvExport';
+import { registrarEgreso } from '@nucleo/data/egreso';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
+
+// `audit_log_de_sucursal` devuelve como mucho los 200 registros más recientes
+// de la bitácora (su `LIMIT 200`). Si llegan exactamente 200, hay más que no
+// se ven, y «Cargar historial completo» tiene que decirlo en vez de prometer
+// todo el historial.
+const TOPE_DE_LA_BITACORA = 200;
+
+const NOMBRES_DE_SISTEMA = ['SISTEMA', 'ADMIN', 'ADMINISTRADOR'];
+
+/**
+ * Quién hizo un registro. `audit_logs.user_id` es la FICHA (`employees.id`),
+ * así que se busca primero por id —lo único que no cambia—, después por
+ * correo y recién al final por nombre, que se escribe distinto según quién lo
+ * guardó. Los documentos versionados (`branch_documents`) no guardan autor.
+ */
+function actorDelRegistro(item, employees) {
+    if (item.isSynthetic) return { sistema: true, emp: null, nombre: 'Sistema' };
+    const lista = employees || [];
+    const nombreCrudo = String(item.user_name || item.actor_name || '').trim();
+    const emp = (item.user_id != null && item.user_id !== '' && lista.find(e => String(e.id) === String(item.user_id)))
+        || (item.user_email && lista.find(e => e.email && e.email === item.user_email))
+        || (nombreCrudo && lista.find(e => e.name && e.name.toLowerCase() === nombreCrudo.toLowerCase()))
+        || null;
+    if (emp) return { sistema: false, emp, nombre: emp.name };
+    if (nombreCrudo && !NOMBRES_DE_SISTEMA.includes(nombreCrudo.toUpperCase())) {
+        return { sistema: false, emp: null, nombre: nombreCrudo };
+    }
+    if (item.user_email) return { sistema: false, emp: null, nombre: item.user_email };
+    if (item.isDoc) return { sistema: false, emp: null, nombre: null };
+    return { sistema: true, emp: null, nombre: 'Sistema' };
+}
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)
@@ -170,12 +205,25 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
     const toggleMonth = (monthId) => setCollapsedMonths(prev => ({ ...prev, [monthId]: !prev[monthId] }));
 
     const isFilteringActive = dateFilter.start || dateFilter.end || searchQuery.trim() !== '' || typeFilter !== 'ALL';
+    const topeAlcanzado = useMemo(
+        () => (Array.isArray(propHistory) ? propHistory : []).filter(i => i.isLog).length >= TOPE_DE_LA_BITACORA,
+        [propHistory]
+    );
     const printHistory = isFilteringActive ? filteredHistory : syntheticHistory;
 
     // INTERACCIONES
     const handleMouseEnter = () => { if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current); setIsDownloadMenuOpen(true); };
     const handleMouseLeave = () => { hoverTimeoutRef.current = setTimeout(() => setIsDownloadMenuOpen(false), 300); };
-    const handlePrintVisualReport = () => window.print();
+    // El reporte impreso (o guardado como PDF) también es una salida de datos:
+    // se anota igual que el CSV.
+    const handlePrintVisualReport = () => {
+        registrarEgreso('branches', {
+            formato: 'pdf',
+            filas: printHistory.length,
+            detalle: { reporte: 'historial_de_sucursal', sucursal: liveBranch?.id ?? null, filtrado: !!isFilteringActive },
+        });
+        window.print();
+    };
     const handlePreviewDocument = (url, title) => { if (openModal) openModal('viewDocument', { url, title }); };
 
     // ========================================================================
@@ -217,6 +265,10 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
         }
     };
 
+    // `exportCsv` canónico: el archivo sale con BOM y separador `;` como todos
+    // los del portal, y queda anotado en `export_log` con el módulo. El autor
+    // es el de cada registro —nombre completo, como todo lo que sale del
+    // portal—, no «Administrador» fijo.
     const handleExportHistory = () => {
         if (printHistory.length === 0) return;
         const headers = ['Fecha', 'Hora', 'Acción', 'Descripción', 'Realizado por'];
@@ -229,15 +281,10 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
             const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
             if (parsedDetails.timeline_title) desc = parsedDetails.timeline_title;
             else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) desc = `Pago de ${parsedDetails.servicio} registrado (${formatMoney(parsedDetails.monto)})`;
-            let actor = item.isSynthetic || item.isDoc ? 'Administrador' : (item.user_name || item.user_email || 'Sistema');
-            return `"${dStr}","${tStr}","${action}","${desc.replace(/"/g, '""')}","${actor.replace(/"/g, '""')}"`;
+            const actor = actorDelRegistro(item, employees).nombre || 'No registrado';
+            return [dStr, tStr, action, desc, actor];
         });
-        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Historial_${liveBranch?.name}.csv`);
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        exportCsv(headers, rows, `Historial_${liveBranch?.name || 'sucursal'}.csv`, 'branches');
     };
 
     const renderPrintPortal = () => {
@@ -266,7 +313,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                                     <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-SV')}</td>
                                     <td className="py-2.5 px-2 text-micro uppercase tracking-widest">{getActionLabel(item)}</td>
                                     <td className="py-2.5 px-2 font-bold text-content">{itemTitle}</td>
-                                    <td className="py-2.5 px-2 font-bold text-content-2">{item.isDoc ? 'DOCUMENTO' : (item.user_name || 'SISTEMA')}</td>
+                                    <td className="py-2.5 px-2 font-bold text-content-2">{actorDelRegistro(item, employees).nombre || (item.isDoc ? 'DOCUMENTO' : 'SISTEMA')}</td>
                                 </tr>
                             );
                         })}
@@ -541,23 +588,13 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                                                                                 newVal = `Monto: ${formatMoney(parsedDetails.monto)}`;
                                                                             }
 
-                                                                            let actorName = item.user_name || item.actor_name || 'SISTEMA';
-                                                                            let actorPhotoUrl = null;
-                                                                            const isSystemOrAdmin = actorName.toUpperCase() === 'SISTEMA' || actorName.toUpperCase() === 'ADMIN' || actorName.toUpperCase() === 'ADMINISTRADOR' || isSynthetic;
-
-                                                                            if (isSystemOrAdmin) {
-                                                                                actorName = 'SISTEMA';
-                                                                                actorPhotoUrl = '/Logo192.png';
-                                                                            } else {
-                                                                                const matchingEmp = employees.find(e =>
-                                                                                    (e.email && item.user_email && e.email === item.user_email) ||
-                                                                                    (e.name && item.user_name && e.name.toLowerCase() === item.user_name.toLowerCase()) ||
-                                                                                    (e.id && item.user_id && String(e.id) === String(item.user_id))
-                                                                                );
-                                                                                if (matchingEmp?.photo || matchingEmp?.photo_url) {
-                                                                                    actorPhotoUrl = matchingEmp.photo || matchingEmp.photo_url;
-                                                                                }
-                                                                            }
+                                                                            // Id → correo → nombre (`actorDelRegistro`), y el
+                                                                            // nombre CORTO del canónico junto a su foto.
+                                                                            const actor = actorDelRegistro(item, employees);
+                                                                            const isSystemOrAdmin = actor.sistema;
+                                                                            const actorName = isSystemOrAdmin
+                                                                                ? 'Sistema'
+                                                                                : actor.nombre ? shortEmployeeName(actor.emp || actor.nombre) : 'Autor no registrado';
 
                                                                             return (
                                                                                 <div key={item.id} className={`relative flex flex-col md:flex-row justify-between items-start md:items-center w-full group animate-in slide-in-from-bottom-4 fade-in duration-[var(--dur-lento)] ${!isLeftDesktop ? 'md:flex-row-reverse' : ''}`}>
@@ -597,17 +634,13 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
 
                                                                                                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-card">
                                                                                                     <div className="flex items-center gap-2">
-                                                                                                        <div className="w-6 h-6 rounded-full bg-surface-card-hover/80 border border-surface-card flex items-center justify-center text-content-3 text-caption font-black shadow-inner uppercase overflow-hidden shrink-0">
-                                                                                                            {actorPhotoUrl ? (
-                                                                                                                <img
-                                                                                                                    src={actorPhotoUrl}
-                                                                                                                    alt={actorName}
-                                                                                                                    className={`w-full h-full ${isSystemOrAdmin ? 'object-contain p-0.5' : 'object-cover'}`}
-                                                                                                                />
-                                                                                                            ) : (
-                                                                                                                actorName.charAt(0)
-                                                                                                            )}
-                                                                                                        </div>
+                                                                                                        {isSystemOrAdmin ? (
+                                                                                                            <div className="w-6 h-6 rounded-full bg-surface-card-hover/80 border border-surface-card flex items-center justify-center shadow-inner overflow-hidden shrink-0">
+                                                                                                                <img src="/Logo192.png" alt="Sistema" className="w-full h-full object-contain p-0.5" />
+                                                                                                            </div>
+                                                                                                        ) : actor.nombre ? (
+                                                                                                            <AvatarConEstado emp={actor.emp || { id: item.user_id ?? null, name: actor.nombre }} px={24} radio="rounded-full" marco="" mostrarChip={false} />
+                                                                                                        ) : null}
                                                                                                         <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none drop-shadow-sm truncate max-w-[120px] md:max-w-none">{actorName}</span>
                                                                                                     </div>
 
@@ -637,7 +670,16 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
 
                     {!showAllHistory && syntheticHistory.length > filteredHistory.length && !dateFilter.start && !dateFilter.end && searchQuery === '' && typeFilter === 'ALL' && (
                         <div className="pt-8 text-center animate-in fade-in duration-[var(--dur-lento)] relative z-base">
-                            <Button variant="secondary" onClick={() => setShowAllHistory(true)}>Cargar historial completo</Button>
+                            <Button variant="secondary" onClick={() => setShowAllHistory(true)}>
+                                {topeAlcanzado ? `Cargar los ${TOPE_DE_LA_BITACORA} más recientes` : 'Cargar historial completo'}
+                            </Button>
+                        </div>
+                    )}
+                    {topeAlcanzado && (showAllHistory || dateFilter.start || dateFilter.end || searchQuery !== '' || typeFilter !== 'ALL') && !isLoadingHistory && (
+                        <div className="pt-6 relative z-base">
+                            <Notice variant="info" icon={Clock}>
+                                Se muestran los {TOPE_DE_LA_BITACORA} movimientos más recientes de la bitácora de esta sucursal. Los anteriores no se cargan en esta vista.
+                            </Notice>
                         </div>
                     )}
                 </div>

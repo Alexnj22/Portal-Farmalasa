@@ -26,6 +26,10 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { analizarSucursal } from '@nucleo/data/ia';
+import { fetchBranchKiosks } from '@nucleo/data/branches';
+import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
+import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -122,8 +126,8 @@ const PanelCompletitud = memo(({ icono: Icono, etiqueta, pct, titulo, disabled, 
 PanelCompletitud.displayName = 'PanelCompletitud';
 
 const BranchCard = memo(({
-    branch, branchEmployees, count, activeKiosks, currentTime,
-    handleViewProfile, onActivarSucursal, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
+    branch, branchEmployees, count, asignados = count, activeKiosks, currentTime,
+    handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
     canEdit = false, staggerIndex = 0
 }) => {
     const [aiMode, setAiMode] = useState(false);
@@ -134,7 +138,11 @@ const BranchCard = memo(({
     const isFarmacia = branchType === 'FARMACIA';
 
     const pct = Math.min(Math.round((count / 20) * 100), 100);
-    const deleteDisabled = count > 0;
+    // `asignados` cuenta a TODA ficha con esta sala, dadas de baja incluidas:
+    // es la misma regla con la que `deleteBranch` (branchSlice) se niega a
+    // borrar. Con `count` (sólo activos en planilla) el botón aparecía sobre una
+    // sala con gente de baja y el borrado fallaba después de confirmar.
+    const deleteDisabled = asignados > 0;
     const isInactive = count === 0 && activeKiosks === 0;
     const scheduleDefined = isScheduleDefined(branch);
 
@@ -196,7 +204,7 @@ const BranchCard = memo(({
                             </div>
                         </div>
                         <div>
-                            <h4 className="text-subtitle font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-none tracking-tight">Gemini Insight</h4>
+                            <h4 className="text-subtitle font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-none tracking-tight">Diagnóstico</h4>
                             <p className="text-micro font-bold text-chart-3-text uppercase tracking-widest mt-0.5 opacity-80">{branch.name}</p>
                         </div>
                     </div>
@@ -258,7 +266,7 @@ const BranchCard = memo(({
                     <Button tone="chart-3" size="sm" icon={Pencil} disabled={!canEdit} title="Ajustes generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
 
                     {!deleteDisabled && (
-                        <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} />
+                        <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, asignados); }} />
                     )}
                 </div>
                 {alertStatus.hasAlerts && (
@@ -285,10 +293,12 @@ const BranchCard = memo(({
 
             <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
                 <div className="flex items-start gap-3">
-                    {/* Abre la ficha de la sucursal: es un destino, no una acción. Como
-                                        `<button>` no se podía abrir en otra pestaña. El `onClick`
-                                        se queda solo para dejar la sucursal activa en el store. */}
-                                    <Link to={`/sucursales/${branch.id}`} onClick={() => onActivarSucursal?.(branch)}
+                    {/* Abre la ficha de la sucursal: es un destino, no una acción.
+                        SIN `onClick`: el `setActiveBranch` que tenía navegaba OTRA vez
+                        (en `App.jsx` es un `navigate`), así que cada clic empujaba dos
+                        entradas al historial, y ⌘/Ctrl-clic abría la pestaña nueva Y
+                        además movía la actual. El `Link` solo ya hace las dos cosas bien. */}
+                                    <Link to={`/sucursales/${branch.id}`}
                                         className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full md:pr-[140px] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]">
                         <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-[var(--dur-slow)] group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
@@ -427,14 +437,13 @@ const BranchCard = memo(({
 // ============================================================================
 // 🚀 VISTA PRINCIPAL
 // ============================================================================
-const BranchesView = ({ openModal, setActiveBranch }) => {
+const BranchesView = ({ openModal }) => {
     const navigate = useNavigate();
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('branches', 'can_edit');
     const branches = useStaff(state => state.branches);
     const employees = useStaff(state => state.employees);
     const deleteBranch = useStaff(state => state.deleteBranch);
-    const getBranchKiosks = useStaff(state => state.getBranchKiosks);
 
     // 🚨 LEEMOS EL CACHÉ GLOBAL DE ZUSTAND SI EXISTE (Si no, lo inicializamos)
     // Asumiremos que el Store tiene un "kiosksCountCache" o usamos un estado local pre-cargado
@@ -442,6 +451,10 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
     
     // 🚨 MODIFICACIÓN: Si ya tenemos branches, NO bloqueamos la pantalla completa.
     const [isLoadingKiosks, setIsLoadingKiosks] = useState(branches.length === 0);
+    // Una lectura de kioscos que falla NO es «0 kioscos»: con cero la sala se
+    // pinta «Inactiva» y entra en el filtro de inactivas. Se avisa y se
+    // conserva el último conteo bueno de esa sala.
+    const [kioskError, setKioskError] = useState(null);
     
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, branch: null });
     const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'error' });
@@ -467,23 +480,29 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
 
             if (branches.length > 0) {
                 // Ya no bloqueamos la UI con skeleton si ya teníamos data
-                try {
-                    const results = await Promise.all(
-                        branches.map(branch => getBranchKiosks(branch.id).then(devices => {
-                            const activeDevices = kioscosActivos(devices);
-                            return { id: branch.id, count: activeDevices.length };
-                        }))
-                    );
-                    if (isMounted) {
-                        const newCounts = {};
-                        results.forEach(res => { newCounts[res.id] = res.count; });
-                        setKiosksCount(newCounts);
-                        setIsLoadingKiosks(false); // Solo apaga el skeleton si estaba prendido
-                    }
-                } catch (error) { 
-                    console.error("Error cargando kioscos", error); 
-                    setIsLoadingKiosks(false);
-                }
+                const results = await Promise.all(
+                    branches.map(async (branch) => {
+                        try {
+                            const { data, error } = await fetchBranchKiosks(branch.id);
+                            if (error) throw error;
+                            return { id: branch.id, count: kioscosActivos(data || []).length };
+                        } catch (error) {
+                            return { id: branch.id, error };
+                        }
+                    })
+                );
+                if (!isMounted) return;
+                const fallidas = results.filter(r => r.error);
+                if (fallidas.length) console.error('Error cargando kioscos', fallidas[0].error);
+                setKioskError(fallidas.length
+                    ? mensajeAmigable(fallidas[0].error, `No se pudieron leer los kioscos de ${fallidas.length === 1 ? 'una sucursal' : `${fallidas.length} sucursales`}: su conteo puede no estar al día.`)
+                    : null);
+                setKiosksCount(prev => {
+                    const next = { ...prev };
+                    results.forEach(res => { if (!res.error) next[res.id] = res.count; });
+                    return next;
+                });
+                setIsLoadingKiosks(false); // Solo apaga el skeleton si estaba prendido
             } else {
                 setIsLoadingKiosks(false);
             }
@@ -492,15 +511,32 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
         refreshData();
         const timer = setInterval(refreshData, 60000); // Se refresca en silencio cada minuto
         return () => { isMounted = false; clearInterval(timer); };
-    }, [branches, getBranchKiosks]);
+    }, [branches]);
 
+    // `soloPersonalEnPlanilla`, igual que la ficha (`BranchDetailView`): el
+    // número de la tarjeta y el «N Activos» de la ficha cuentan las mismas
+    // cabezas. Sin el filtro, «QA Testing» y el «Contador Externo» inflaban
+    // el personal de su sala sólo en esta lista.
     const employeesMap = useMemo(() => {
         const m = new Map();
-        (employees || []).forEach((e) => {
+        soloPersonalEnPlanilla(employees || []).forEach((e) => {
             if ((e.status || '').toUpperCase() === 'INACTIVO') return;
             const k = String(e.branchId || e.branch_id);
             if (!m.has(k)) m.set(k, []);
             m.get(k).push(e);
+        });
+        return m;
+    }, [employees]);
+
+    // Toda ficha con la sala asignada —de baja incluida—: la regla con la que
+    // `deleteBranch` se niega a borrar (compara `branchId` de TODOS los
+    // empleados del store). El botón de eliminar se decide con esto.
+    const asignadosPorSala = useMemo(() => {
+        const m = new Map();
+        (employees || []).forEach((e) => {
+            if (e.branchId === undefined || e.branchId === null) return;
+            const k = String(e.branchId);
+            m.set(k, (m.get(k) || 0) + 1);
         });
         return m;
     }, [employees]);
@@ -516,7 +552,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
             const pType = b.propertyType || safeParse(b.settings)?.propertyType;
             if (filterStatus === 'ALERTS' && !alert.hasAlerts) return false;
             if (filterStatus === 'INACTIVE' && !isInactive) return false;
-            if (filterStatus === 'RENTED' && pType !== 'RENTED') return false;
+            if (filterStatus === 'RENTED' && !esInmuebleAlquilado({ propertyType: pType })) return false;
             if (filterStatus === 'OWNED' && pType !== 'OWNED') return false;
             return true;
         });
@@ -527,27 +563,43 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
         return smartFilter(searchTerm, filteredBranchesBase, b => [b.name, b.address], { orden: 'relevancia' });
     }, [filteredBranchesBase, searchTerm]);
 
+    // Una sola navegación: `setActiveBranch` (App.jsx) ya era un `navigate`
+    // a la misma dirección, y llamarlo antes de éste empujaba dos entradas.
     const handleViewProfile = useCallback((branch) => {
-        if (setActiveBranch) setActiveBranch(branch);
-        navigate(`/sucursales/${branch.id}`); 
-    }, [setActiveBranch, navigate]);
+        navigate(`/sucursales/${branch.id}`);
+    }, [navigate]);
 
     const handleDeleteClick = useCallback((branch, count) => {
         if (!branch) return;
         if (count > 0) {
-            setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: `No se puede eliminar "${branch.name}" porque tiene ${count} empleado(s) asignado(s). Reasígnalos o dalos de baja primero.`, type: 'error' });
+            setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: `No se puede eliminar "${branch.name}" porque tiene ${count} ficha(s) asignada(s), contando las dadas de baja. Reasígnalas a otra sucursal primero.`, type: 'error' });
             return;
         }
         setConfirmDialog({ isOpen: true, branch });
     }, []);
 
+    // `deleteBranch` tiene DOS formas de fallar: lanza si hay fichas asignadas
+    // y devuelve `false` si la base rechazó el borrado. Antes sólo se miraba
+    // la primera, así que un `false` terminaba en «Sucursal Eliminada» sobre
+    // una sucursal que seguía ahí.
     const executeDelete = async () => {
         if (!confirmDialog.branch) return;
+        const { id, name } = confirmDialog.branch;
         try {
-            await deleteBranch(confirmDialog.branch.id);
-            useToastStore.getState().showToast('Sucursal Eliminada', `La sucursal ${confirmDialog.branch.name} ha sido borrada del sistema.`, 'success');
-        } catch {
-            useToastStore.getState().showToast('Error de Sistema', 'No se pudo eliminar la sucursal. Intenta nuevamente.', 'error');
+            const ok = await deleteBranch(id);
+            if (ok === false) {
+                useToastStore.getState().showToast('No se eliminó', `La sucursal ${name} no se pudo eliminar: la base rechazó el cambio. Intenta nuevamente.`, 'error');
+            } else {
+                useToastStore.getState().showToast('Sucursal Eliminada', `La sucursal ${name} ha sido borrada del sistema.`, 'success');
+            }
+        } catch (err) {
+            // El freno de fichas asignadas lo escribe el store para una persona
+            // («No se puede eliminar: Hay empleados…») y se muestra tal cual;
+            // un error de la base pasa por la traducción.
+            const texto = err instanceof Error && !('code' in err) && err.message
+                ? err.message
+                : mensajeAmigable(err, 'No se pudo eliminar la sucursal. Intenta nuevamente.');
+            useToastStore.getState().showToast('No se eliminó', texto, 'error');
         } finally {
             setConfirmDialog({ isOpen: false, branch: null });
         }
@@ -620,6 +672,11 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                 <div className="w-full flex-1 pb-12">
                     {/* Barra de filtros: cuerpo, a la derecha (§17) */}
                     <div className="flex justify-end px-2 pt-4">{filtrosCuerpo}</div>
+                    {kioskError && (
+                        <div className="px-2 pt-4">
+                            <Notice variant="danger" icon={AlertTriangle}>{kioskError}</Notice>
+                        </div>
+                    )}
                     {isLoadingKiosks ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max pt-4 px-2">
                             {/* BUG REAL (2026-07-27): acá se llamaba a
@@ -695,11 +752,11 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                                     branch={branch}
                                                     branchEmployees={employeesMap.get(String(branch.id)) || []}
                                                     count={employeesMap.get(String(branch.id))?.length || 0}
+                                                    asignados={asignadosPorSala.get(String(branch.id)) || 0}
                                                     activeKiosks={kiosksCount[branch.id] || 0}
                                                     currentTime={currentTime}
                                                     isMobile={isMobile}
                                                     handleViewProfile={handleViewProfile}
-                                                    onActivarSucursal={setActiveBranch}
                                                     openModal={openModal}
                                                     handleDeleteClick={handleDeleteClick}
                                                     handlePhoneAction={handlePhoneAction}

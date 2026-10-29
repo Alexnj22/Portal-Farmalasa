@@ -3,6 +3,7 @@ import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, Alert
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { diaDePago } from '@nucleo/utils/edicionDeSucursal';
 
 const SERVICE_CONFIG = {
  rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },
@@ -119,7 +120,9 @@ const FormServicePayment = ({ formData, setFormData }) => {
                             type="number" min="1" max="31"
                             placeholder="Ej: 15"
                             value={currentData.dueDay || ""}
-                            onChange={(e) => handleChange('dueDay', e.target.value)}
+                            // `min`/`max` sólo acotan las flechas: «45» se escribía igual
+                            // y el servicio quedaba «Vence pronto» para siempre.
+                            onChange={(e) => handleChange('dueDay', diaDePago(e.target.value))}
                         />
                     </div>
                 </div>

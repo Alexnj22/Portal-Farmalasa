@@ -1,10 +1,13 @@
 import React, { lazy, Suspense, useMemo, useState, useEffect } from 'react';
 import Button from '../../components/common/Button';
-import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
+import Notice from '../../components/common/Notice';
+import Badge from '../../components/common/Badge';
+import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, AlertTriangle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
 
 import { fetchBranchExpensesHistory } from '@nucleo/data/branches';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { estadoDeServicio, gastosPorMes, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { esInmuebleAlquilado, estadoDeServicio, gastosPorMes, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 
 // El dibujo arrastra `recharts` (95 kB gzip) y estaba en el cierre estático de
 // `BranchDetailView`: se bajaba al abrir cualquier sucursal para una gráfica de
@@ -15,17 +18,19 @@ const GraficaGastos = lazy(() => import('./GraficaGastos'));
 // MOTOR DE ESTADOS FINANCIEROS
 // ============================================================================
 // El estado de cada servicio sale del núcleo (`gastosDeSucursal`), el mismo de
-// la app; acá sólo se le pone el color de la tarjeta.
-const CLASE_DE_ESTADO = {
-    unknown: 'border-divider bg-surface-card-hover/50 text-content-3',
-    pending_receipt: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[var(--shadow-glow-chart-6-md)] ring-1 ring-chart-6/30',
-    paid: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-success-md)] ring-1 ring-success/30',
-    pending: 'border-warning bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning-md)] ring-1 ring-warning/30',
-    expired: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger/30',
+// la app; acá sólo se elige el `data-tono` de la tarjeta canónica (DESIGN.md
+// §5.1). Era una tarjeta escrita a mano —borde, fondo, anillo y sombra por
+// estado— que no seguía el radio ni el material del tema.
+const TONO_DE_ESTADO = {
+    unknown: 'dashed',
+    pending_receipt: 'warning',
+    paid: 'success',
+    pending: 'warning',
+    expired: 'danger',
 };
 const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const e = estadoDeServicio(dueDay, paidThrough, isReceiptPending);
-    return { ...e, colorClass: CLASE_DE_ESTADO[e.state] };
+    return { ...e, tono: TONO_DE_ESTADO[e.state] };
 };
 
 const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isReceiptPending, icon: Icon, onAction, onUploadReceipt, delay = 0, colorTheme = 'blue' }) => {
@@ -44,10 +49,10 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
     return (
         <div
-            className={`group relative rounded-modal p-5 transition-all duration-[var(--dur-lento)] animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:translate-y-[var(--lift-card)] hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
-            style={{ animationDelay: `${delay}ms`, willChange: 'transform, opacity' }}
+            data-surface="card" data-tono={statusObj.tono}
+            className={`group relative p-5 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col ${isPendingReceipt ? 'animate-pulse' : ''}`}
+            style={{ animationDelay: `${delay}ms` }}
         >
-            <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-lento)] pointer-events-none"></div>
 
             <div className="flex justify-between items-start mb-4 relative z-base">
                 <div className="flex items-center gap-3">
@@ -59,9 +64,8 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         <p className="text-micro font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div data-surface={isPendingReceipt ? undefined : 'card'} className={`px-2.5 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest shadow-sm border transition-colors duration-[var(--dur-slow)] ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'group-hover:bg-surface-card-hover'}`}>
-                    {statusObj.label}
-                </div>
+                {/* Un chip, no una tarjeta dentro de la tarjeta (§5: no se anidan). */}
+                <Badge variant={statusObj.variant}>{statusObj.label}</Badge>
             </div>
 
             <div className="flex-1 flex items-end justify-between mt-2 relative z-base">
@@ -118,14 +122,20 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
 
     const [historicalData, setHistoricalData] = useState([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
+    // Una lectura que falla NO es «$0 de gastos»: se dice como error y no se
+    // dibuja una gráfica en cero ni una variación de 0% (auditoría 2026-10).
+    const [historyError, setHistoryError] = useState(null);
 
     // 🔴 FETCH DE DATOS REALES DE SUPABASE
     useEffect(() => {
+        let vivo = true;
         const fetchExpensesData = async () => {
             if (!liveBranch?.id) return;
             setIsLoadingData(true);
+            setHistoryError(null);
             try {
-                // Traemos los gastos pagados de los últimos 6 meses
+                // Los pagos de los últimos 7 meses (6 para la gráfica + el
+                // anterior para la variación): el rango va al servidor.
                 const { data, error } = await fetchBranchExpensesHistory(liveBranch.id);
 
                 if (error) throw error;
@@ -140,16 +150,21 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                      chartData = [{ name: label, total: 0 }];
                 }
 
-                setHistoricalData(chartData);
+                if (vivo) setHistoricalData(chartData);
 
             } catch (err) {
                 console.error("Error cargando historial de gastos:", err);
+                if (vivo) {
+                    setHistoricalData([]);
+                    setHistoryError(mensajeAmigable(err, 'No se pudo cargar el historial de pagos de la sucursal.'));
+                }
             } finally {
-                setIsLoadingData(false);
+                if (vivo) setIsLoadingData(false);
             }
         };
 
         fetchExpensesData();
+        return () => { vivo = false; };
     }, [liveBranch?.id]);
 
 
@@ -226,6 +241,10 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
                     </div>
                 </div>
+            ) : historyError ? (
+                <div className="mb-8">
+                    <Notice variant="danger" icon={AlertTriangle}>{historyError}</Notice>
+                </div>
             ) : (
                 /* DASHBOARD REAL */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-[var(--dur-lento)] slide-in-from-bottom-4">
@@ -276,13 +295,12 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-[var(--dur-lento)] hover:shadow-md hover:translate-y-[var(--lift-card)]">
-                            <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-[var(--dur-lento)] group-hover:scale-150"></div>
+                        <div data-surface="card" data-tono="warning" className="p-6 flex-1 flex flex-col justify-center relative overflow-hidden">
                             <div className="flex items-center gap-2 mb-2 relative z-base">
-                                <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-border-card">
-                                    <Zap size={16} className="text-warning" strokeWidth={2.5}/>
+                                <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center border border-warning/30">
+                                    <Zap size={16} className="text-warning-text" strokeWidth={2.5}/>
                                 </div>
-                                <h5 className="text-caption font-black uppercase tracking-widest text-warning/90">Mayor Gasto Externo</h5>
+                                <h5 className="text-caption font-black uppercase tracking-widest text-warning-text">Mayor Gasto Externo</h5>
                             </div>
                             <p className="text-title-sm font-black text-warning-text leading-tight relative z-base tracking-tight mt-1">
                                 {stats.highestService}
@@ -296,7 +314,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             {/* TARJETAS DE SERVICIOS */}
             {/* Estas tarjetas se renderizan inmediatamente ya que no dependen del historial de Supabase */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(liveBranch?.settings?.propertyType === 'RENTED' || liveBranch?.propertyType === 'RENTED' || liveBranch?.propertyType === 'ALQUILADO') && (
+                {esInmuebleAlquilado(liveBranch) && (
                     <ServiceExpenseCard
                         title="Arrendamiento"
                         provider={rentData.landlordName}

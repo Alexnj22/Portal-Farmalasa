@@ -25,10 +25,16 @@ export function estadoDeServicio(dueDay, paidThrough, isReceiptPending, hoy = ne
     const [ptYearStr, ptMonthStr] = String(paidThrough).split('-');
     const ptYear = parseInt(ptYearStr, 10);
     const ptMonth = parseInt(ptMonthStr, 10);
-    if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
+    // Índice absoluto de mes (año × 12 + mes): «el mes pasado» de enero es
+    // diciembre del año ANTERIOR. Comparando año y mes por separado, un
+    // servicio pagado hasta diciembre salía «Vencido» el 1 de enero aunque su
+    // día de pago no hubiera llegado.
+    const pagado = ptYear * 12 + ptMonth;
+    const actual = currentYear * 12 + currentMonth;
+    if (pagado >= actual) {
         return { state: 'paid', label: 'Al día', variant: 'success' };
     }
-    if (ptYear === currentYear && ptMonth === currentMonth - 1) {
+    if (pagado === actual - 1) {
         return currentDay > dueDay
             ? { state: 'expired', label: 'Vencido', variant: 'danger' }
             : { state: 'pending', label: 'Vence pronto', variant: 'warning' };
@@ -36,7 +42,16 @@ export function estadoDeServicio(dueDay, paidThrough, isReceiptPending, hoy = ne
     return { state: 'expired', label: 'Vencido', variant: 'danger' };
 }
 
-const esAlquilada = (b) => b?.settings?.propertyType === 'RENTED' || b?.propertyType === 'RENTED' || b?.propertyType === 'ALQUILADO';
+/**
+ * ¿El local es alquilado? El dato vive en `propertyType` de la fila o en
+ * `settings.propertyType`, y hay filas viejas con 'ALQUILADO' en vez de
+ * 'RENTED': las dos formas valen lo mismo. Es la regla única para el
+ * arrendamiento, el filtro «Alquiladas» y el punto de la pestaña Gastos.
+ */
+const VALORES_ALQUILADA = ['RENTED', 'ALQUILADO'];
+export const esInmuebleAlquilado = (b) =>
+    VALORES_ALQUILADA.includes(b?.settings?.propertyType) || VALORES_ALQUILADA.includes(b?.propertyType);
+const esAlquilada = esInmuebleAlquilado;
 
 /** Los servicios que se le muestran a esta sucursal, cada uno con su estado. */
 export function serviciosDeSucursal(b, hoy = new Date()) {

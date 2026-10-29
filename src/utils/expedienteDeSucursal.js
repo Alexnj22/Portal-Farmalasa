@@ -11,6 +11,7 @@
  */
 import { categoriaDeDocumento } from '../data/constants';
 import { rotuloCategoriaSrs } from './edicionDeSucursal';
+import { diaDe, diasEntre } from './fecha';
 
 /** Un dato de texto del registro, o null si está vacío. */
 const texto = (v) => (v === undefined || v === null || String(v).trim() === '' ? null : String(v).trim());
@@ -21,11 +22,21 @@ export const SIN_DATO = 'Sin dato';
 /** Faltan 45 días o menos: se avisa. */
 export const DIAS_DE_AVISO_DOCUMENTO = 45;
 
-/** El estado de un documento: MISSING · EXPIRED · WARNING · OK. */
+/**
+ * El estado de un documento: MISSING · EXPIRED · WARNING · OK.
+ *
+ * Se cuenta en DÍAS DE CALENDARIO de El Salvador (`diaDe` + `diasEntre`), no
+ * en milisegundos: `new Date('2026-10-30')` es medianoche de Greenwich, o sea
+ * las 6 pm del 29 en la sala, y un permiso que vencía el 30 salía «Vencido»
+ * desde la tarde del 29. Vence el día que dice el papel, y ese día todavía
+ * vale (`Vence en 0d`).
+ */
 export function estadoDeDocumento(url, expDate, hoy = new Date()) {
     if (!url) return { type: 'MISSING', label: 'Falta documento', variant: 'warning' };
-    if (expDate) {
-        const diff = Math.ceil((new Date(expDate).getTime() - new Date(hoy).getTime()) / (1000 * 60 * 60 * 24));
+    const vence = diaDe(expDate);
+    const dia = diaDe(hoy);
+    if (vence && dia) {
+        const diff = diasEntre(dia, vence);
         if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', variant: 'danger', dias: diff };
         if (diff <= DIAS_DE_AVISO_DOCUMENTO) return { type: 'WARNING', label: `Vence en ${diff}d`, variant: 'chart-4', dias: diff };
     }
@@ -36,6 +47,73 @@ export function estadoDeDocumento(url, expDate, hoy = new Date()) {
 export const vencimientoEfectivo = (doc) => (doc.hasExpiration === false ? null : doc.expDate);
 
 /**
+ * Las filas del equipo de enfermería de una sala. La lista vigente es
+ * `legal.nursingRegents` (una fila por persona, con sus documentos); las salas
+ * que todavía no se migraron sólo tienen `legal.nurses`, una lista de ids. Es
+ * la MISMA lectura que `idsDeEnfermeria` (edicionDeSucursal): si existe
+ * `nursingRegents` manda ella, si no, se arma desde `nurses`. Las filas de
+ * `nursingRegents` NO se filtran, porque su índice es el que usan los renglones
+ * del expediente (`nurse_carne_<i>`) para encontrar dónde subir el archivo.
+ */
+export function filasDeEnfermeria(legal) {
+    const l = legal || {};
+    if (Array.isArray(l.nursingRegents)) return l.nursingRegents.map((n) => n || {});
+    if (!Array.isArray(l.nurses)) return [];
+    return l.nurses
+        .filter((v) => v !== undefined && v !== null && v !== '')
+        .map((employeeId) => ({ employeeId }));
+}
+
+const estaActivo = (e) => !!e && String(e.status || '').toUpperCase() !== 'INACTIVO';
+const porId = (empleados, id) => (id === undefined || id === null || id === ''
+    ? null
+    : (empleados || []).find((e) => String(e.id) === String(id)) || null);
+
+/**
+ * Quién cubre las plazas que exige la norma: regente, referente de
+ * farmacovigilancia y el equipo de enfermería. Una persona dada de baja
+ * (`INACTIVO`) o que ya no existe NO cuenta como asignada: la plaza está
+ * vacía aunque su id siga escrito en la ficha de la sala.
+ *
+ * Lo leen la pestaña Personal y el punto de alerta de esa pestaña: si cada uno
+ * resolviera por su lado, el punto podría decir «todo bien» sobre una tarjeta
+ * que dice «Falta Regente».
+ */
+export function personalNormativoDeSucursal(legal, empleados) {
+    const l = legal || {};
+    const activo = (id) => { const e = porId(empleados, id); return estaActivo(e) ? e : null; };
+    const enfermeria = filasDeEnfermeria(l)
+        .map((fila, indice) => ({ fila, indice, empleado: activo(fila.employeeId) }))
+        .filter((x) => x.empleado);
+    return {
+        regente: activo(l.regentEmployeeId),
+        referente: activo(l.pharmacovigilanceEmployeeId || l.farmacovigilanciaId),
+        enfermeria,
+    };
+}
+
+/** Los renglones del expediente que, si faltan, dejan la sala sin poder operar. */
+export const DOCUMENTOS_CRITICOS = ['srs', 'regente_cred', 'farmaco'];
+
+/**
+ * El punto de la pestaña Expediente: 'critical' · 'warning' · null. Sale de
+ * los MISMOS documentos y el MISMO estado que pinta el expediente: vencido es
+ * crítico; faltar uno de `DOCUMENTOS_CRITICOS` también; faltar otro o estar
+ * por vencer es aviso.
+ */
+export function alertaDelExpediente(b, hoy = new Date()) {
+    const { permisos, personal, infra, propios } = documentosDeSucursal(b);
+    let nivel = null;
+    for (const doc of [...permisos, ...personal, ...infra, ...propios]) {
+        const { type } = estadoDeDocumento(doc.url, vencimientoEfectivo(doc), hoy);
+        if (type === 'EXPIRED' || (type === 'MISSING' && DOCUMENTOS_CRITICOS.includes(doc.id))) return 'critical';
+        if (type === 'MISSING' || type === 'WARNING') nivel = 'warning';
+    }
+    return nivel;
+}
+
+
+/**
  * Los documentos de la sucursal en sus tres grupos fijos más los propios (los
  * que se agregaron a mano, con su categoría). Devuelve también el avance.
  */
@@ -43,7 +121,7 @@ export function documentosDeSucursal(b) {
     const legal = b?.settings?.legal || {};
     const rent = b?.settings?.rent || {};
     const propertyType = b?.settings?.propertyType || b?.propertyType || 'OWNED';
-    const nurses = legal.nursingRegents || [];
+    const nurses = filasDeEnfermeria(legal);
     const customDocs = b?.settings?.customDocs || [];
     const hasInjections = !!legal.injections;
     const hasControlledBooks = !!legal.controlledBooks;
@@ -159,7 +237,10 @@ export function ajustesConArchivo(settings, docId, archivo) {
     }
     const enf = archivoDeEnfermera(docId);
     if (enf && archivo) {
-        const lista = Array.isArray(s.legal?.nursingRegents) ? [...s.legal.nursingRegents] : [];
+        // Desde `filasDeEnfermeria`: si la sala todavía sólo tiene `nurses`,
+        // el renglón que se ve en el expediente tiene que poder subirse igual
+        // (y con eso la sala pasa a `nursingRegents`).
+        const lista = filasDeEnfermeria(s.legal);
         if (!lista[enf.indice]) return null;
         lista[enf.indice] = { ...lista[enf.indice], [enf.campo]: archivo };
         s.legal = { ...(s.legal || {}), nursingRegents: lista };

@@ -1,5 +1,5 @@
 import React, { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { horarioIncompleto } from '@nucleo/utils/edicionDeSucursal';
+import { horarioIncompleto, horarioCruzaMedianoche } from '@nucleo/utils/edicionDeSucursal';
 import Button from './common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
@@ -230,8 +230,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
      * automática —lo abierto manda sobre lo guardado— para que las dos hagan lo
      * mismo con los campos que la apertura ya trajo (el id de la sucursal, por
      * ejemplo, que no puede venir de un borrador). */
+    // Al EDITAR (lo único que ofrece), recuperar es justamente que lo escrito
+    // gane sobre lo abierto: con `{ ...borrador, ...prev }` la ficha abierta
+    // —que trae TODAS las claves de la sucursal— pisaba el borrador entero, y
+    // aceptar no recuperaba nada (auditoría 2026-10-29). Lo que la apertura
+    // fija y no puede venir de un borrador —el id del sujeto— se conserva.
     const recuperarBorrador = useCallback(() => {
-        if (borrador) setFormData(prev => ({ ...borrador, ...prev }));
+        if (borrador) setFormData(prev => ({
+            ...prev, ...borrador,
+            ...(prev?.id !== undefined ? { id: prev.id } : {}),
+            ...(prev?.employeeId !== undefined ? { employeeId: prev.employeeId } : {}),
+        }));
         setOfrecido('recuperado');
     }, [borrador, setFormData]);
 
@@ -749,6 +758,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         setIsSaving(false);
                         return;
                     }
+                    // `horario_de_sala()` y el estado «abierta ahora» no saben
+                    // de un cierre después de la medianoche (los días
+                    // especiales ya lo prohíben con un CHECK).
+                    if (horarioCruzaMedianoche(payloadToSave.weeklyHours || payloadToSave.weekly_hours)) {
+                        setValidationError("La hora de cierre tiene que ser posterior a la de apertura en todos los días abiertos.");
+                        setIsSaving(false);
+                        return;
+                    }
                 }
 
                 if (type === 'newBranch') {
@@ -818,8 +835,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
                 onClose();
-            } catch {
-                setValidationError("No se pudo procesar el pago.");
+            } catch (err) {
+                // El mensaje del store dice QUÉ pasó (p. ej. «el pago quedó
+                // registrado, pero…»): reintentar a ciegas lo duplicaba.
+                setValidationError(mensajeAmigable(err, "No se pudo procesar el pago."));
             } finally {
                 setIsSaving(false);
             }

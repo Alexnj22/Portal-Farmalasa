@@ -12,20 +12,29 @@ Deno.serve(async (req) => {
    * Hasta el 2026-10-02 bastaba con tener sesión —ni siquiera ser empleado
    * activo—. Ahora exige ver Sucursales, que es la pantalla que la llama
    * (TabStaff) y que hoy sólo tienen cargos de red; con alcance de una sala,
-   * sólo la propia. Ver PLAN-ALCANCE-POR-SUCURSAL F4. */
+   * sólo la propia. Ver PLAN-ALCANCE-POR-SUCURSAL F4.
+   *
+   * 2026-10-29: `can_edit`, no `can_view`. Esta función tiene UN solo modo y
+   * escribe: hace upsert del histórico de `branch_hourly_sales` (el botón
+   * «Recargar el histórico de ventas» de TabStaff, que «reescribe el histórico
+   * desde enero de 2025»). No hay lectura que el portal le pida sin editar.
+   *
+   * El upsert es incondicional sobre filas completas, que CLAUDE.md prohíbe en
+   * syncs RECURRENTES. Ésta no lo es: ningún cron la llama (sólo el botón,
+   * mes por mes con pausa de 3.5 s), así que se deja así a propósito. */
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const quien = await requireActiveEmployeeUser(req, admin);
   if (!quien) return responder({ error: "UNAUTHORIZED" }, 401);
-  const permiso = await permisoDeModulo(admin, quien.id, "branches", "can_view");
+  const permiso = await permisoDeModulo(admin, quien.id, "branches", "can_edit");
   if (permiso.roto) return responder({ error: permiso.roto }, 503);
-  if (!permiso.puede) return responder({ error: "No tienes permiso para ver las sucursales." }, 403);
+  if (!permiso.puede) return responder({ error: "No tienes permiso para recargar el histórico de ventas de las sucursales." }, 403);
 
   try {
     const { branchId, fechaI, fechaF } = await req.json();
 
     if (!branchId) throw new Error("branchId es obligatorio.");
     if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(branchId)) {
-      return responder({ error: "Solo puedes ver tu propia sucursal." }, 403);
+      return responder({ error: "Solo puedes recargar tu propia sucursal." }, 403);
     }
 
     // Credentials come from Supabase Secrets (ERP_BRANCH_MAP), never from the client

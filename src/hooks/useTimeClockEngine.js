@@ -521,7 +521,7 @@ export function useTimeClockEngine(props = {}) {
             
             if (currentConfig && currentConfig.deviceId) {
                 if (typeof revokeKioskDevice === 'function') {
-                    await revokeKioskDevice(currentConfig.deviceId, currentConfig.deviceName);
+                    await revokeKioskDevice(currentConfig.deviceId, currentConfig.deviceName, currentConfig.branchId);
                 }
             }
 

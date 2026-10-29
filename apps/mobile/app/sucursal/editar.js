@@ -20,7 +20,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { WEEK_DAYS } from '@nucleo/data/constants';
 import {
   OPCIONES_CATEGORIA_SRS, OPCIONES_DE_EXTINTOR, SERVICIOS_BASICOS, rotuloCategoriaSrs, candidatosLegales, cambiarDiaDelHorario, copiarDiaAnterior,
-  diaDePago, diaDelHorario, esAlquilada, finDeContrato, horarioIncompleto, limpiarAjustes, limpiarHorario,
+  diaDePago, diaDelHorario, esAlquilada, finDeContrato, horarioIncompleto, horarioCruzaMedianoche, limpiarAjustes, limpiarHorario,
   sucursalConCambios, generalDeSucursal, problemaDeLoGeneral, conEnfermeraNueva, sinEnfermera, conEnfermeraCambiada,
 } from '@nucleo/utils/edicionDeSucursal';
 import { EL_SALVADOR_GEO } from '@nucleo/data/elSalvadorGeo';
@@ -137,6 +137,10 @@ export default function EditarSucursal() {
   const guardar = () => {
     if (seccion === 'horarios' && horarioIncompleto(horario)) {
       Alert.alert('Faltan horas', 'Hay días marcados como abiertos sin hora de apertura o de cierre.');
+      return;
+    }
+    if (seccion === 'horarios' && horarioCruzaMedianoche(horario)) {
+      Alert.alert('Revisa las horas', 'La hora de cierre tiene que ser posterior a la de apertura en todos los días abiertos.');
       return;
     }
     const problema = problemaDeLoGeneral(general);

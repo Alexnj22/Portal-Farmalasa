@@ -20,8 +20,10 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { idsDeEnfermeria } from '@nucleo/utils/edicionDeSucursal';
-import { kioscosActivos, sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
+import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
+import { sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
+import { alertaDelExpediente, personalNormativoDeSucursal } from '@nucleo/utils/expedienteDeSucursal';
+import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
@@ -31,11 +33,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('branches', 'can_edit');
     const employees = useStaff(s => s.employees);
-    const getBranchKiosks = useStaff(s => s.getBranchKiosks);
     const branches = useStaff(s => s.branches);
     const getBranchHistory = useStaff(s => s.getBranchHistory);
-    
-    const [, setKioskCount] = useState(0);
 
     const [history, setHistory] = useState([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -46,9 +45,6 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
     const [showProfile, setShowProfile] = useState(false);
     const hoverTimeoutRef = useRef(null);
-
-    const [, setShowSideNav] = useState(false);
-    const sentinelRef = useRef(null);
 
 
     const liveBranch = useMemo(() => {
@@ -62,28 +58,6 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const hasLegal   = isFarmacia;
     const hasServices = isFarmacia;
     const hasPhone   = isFarmacia || isBodega;
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => setShowSideNav(!entry.isIntersecting),
-            { rootMargin: "-80px 0px 0px 0px" }
-        );
-        if (sentinelRef.current) observer.observe(sentinelRef.current);
-        return () => observer.disconnect();
-    }, []);
-
-    useEffect(() => {
-        let isMounted = true;
-        const loadKiosks = async () => {
-            if (liveBranch?.id) {
-                const devices = await getBranchKiosks(liveBranch.id);
-                const activeDevices = kioscosActivos(devices);
-                if (isMounted) setKioskCount(activeDevices.length);
-            }
-        };
-        loadKiosks();
-        return () => { isMounted = false; };
-    }, [liveBranch?.id, getBranchKiosks]);
 
     useEffect(() => {
         const handleForceRefresh = () => {
@@ -136,43 +110,33 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         }
     };
 
+    // Los puntos de las pestañas salen de las MISMAS funciones que pintan cada
+    // pestaña: la jefatura y el personal normativo de `TabStaff`, los
+    // documentos y su estado de `TabExpediente`. Antes cada punto tenía su
+    // regla propia —«JEFE» en mayúsculas, el id del regente escrito aunque la
+    // persona estuviera de baja, `new Date('AAAA-MM-DD')` que vence seis horas
+    // antes en la sala— y podía decir «todo bien» sobre una tarjeta que decía
+    // «Falta Regente».
     const getTabAlert = (tabId) => {
         const legalData = liveBranch?.settings?.legal || {};
 
         if (tabId === 'staff' && isFarmacia) {
-            const hasJefe = currentStaff.some(e => String(e.role || '').toUpperCase().includes('JEFE') && !String(e.role || '').toUpperCase().includes('SUB'));
-            const hasSubjefe = currentStaff.some(e => String(e.role || '').toUpperCase().includes('SUB'));
-            const hasRegente = !!legalData.regentEmployeeId;
-            const hasReferente = !!legalData.pharmacovigilanceEmployeeId;
+            const { jefe, subjefe } = jefaturaDeSucursal(currentStaff, branchType);
+            const { regente, referente, enfermeria } = personalNormativoDeSucursal(legalData, employees);
             const hasInjections = legalData.injections === true;
-            const hasNurse = idsDeEnfermeria(legalData).length > 0;
-            if (!hasJefe || !hasRegente || !hasReferente || (hasInjections && !hasNurse)) return 'critical';
-            if (!hasSubjefe) return 'warning';
+            if (!jefe || !regente || !referente || (hasInjections && enfermeria.length === 0)) return 'critical';
+            if (!subjefe) return 'warning';
             return null;
         }
 
         if (tabId === 'dossier' && isFarmacia) {
-            const getExpStatus = (dateStr) => {
-                if (!dateStr) return 'critical';
-                const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
-                if (diff < 0) return 'critical';
-                if (diff <= 45) return 'warning';
-                return 'ok';
-            };
-            const checks = [
-                !legalData.srsPermitUrl ? 'critical' : getExpStatus(legalData.srsExpiration),
-                !legalData.regentCredentialUrl ? 'critical' : getExpStatus(legalData.regentCredentialExp),
-                !legalData.farmacovigilanciaAuthUrl ? 'critical' : getExpStatus(legalData.pharmacovigilanceExp)
-            ];
-            if (checks.includes('critical')) return 'critical';
-            if (checks.includes('warning')) return 'warning';
-            return null;
+            return alertaDelExpediente(liveBranch);
         }
 
         if (tabId === 'expenses' && (isFarmacia || isBodega)) {
             const rentData = liveBranch?.settings?.rent || {};
             const svcData = liveBranch?.settings?.services || {};
-            if (liveBranch?.propertyType === 'RENTED' && !rentData.contract?.documentUrl) return 'warning';
+            if (esInmuebleAlquilado(liveBranch) && !rentData.contract?.documentUrl) return 'warning';
             if (isFarmacia && (!svcData.light?.provider || !svcData.water?.provider)) return 'warning';
             return null;
         }
@@ -417,7 +381,6 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 transparentBody={true}
             >
                 <div className="w-full flex-1 flex flex-col relative z-base pb-12">
-                    <div ref={sentinelRef} className="absolute -top-10 h-1 w-full pointer-events-none" aria-hidden="true" />
 
                     <div data-surface="card" className="p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
                         <div key={activeTab} className="animate-view-enter flex-1 flex flex-col">

@@ -150,8 +150,10 @@ export function diaDePago(valor) {
 }
 
 /** ¿El inmueble es alquilado? Lo dice la fila o sus ajustes. */
+// 'ALQUILADO' también: lo escribían versiones viejas del formulario, y el
+// expediente ya lo aceptaba (una sola regla con `esInmuebleAlquilado`).
 export const esAlquilada = (branch, ajustes) =>
-    (branch?.propertyType || ajustes?.propertyType) === 'RENTED';
+    ['RENTED', 'ALQUILADO'].includes(branch?.propertyType || ajustes?.propertyType);
 
 /**
  * La sucursal completa con los cambios encima, lista para `updateBranch`.
@@ -348,3 +350,77 @@ export function resumenDeCambios(cambios) {
         return `${ROTULO_DE_SECCION[seccion] || seccion}: ${rotulos.join(', ')}`;
     }).join(' · ');
 }
+
+// ── Qué cambió el formulario, para aplicarlo sobre la fila VIVA ─────────────
+// `updateBranch` escribía el `settings` entero armado con la copia en memoria:
+// lo que otra persona guardó entretanto se perdía (auditoría 2026-10-29). Ahora
+// se manda sólo la diferencia entre lo que el formulario recibió (`base`) y lo
+// que devuelve (`nuevo`), y `editar_sucursal` la aplica sobre la fila viva.
+//
+// Sólo cuentan las claves PRESENTES en `nuevo`: una ausente no es un borrado
+// (quien llama puede mandar un `settings` parcial, y la copia de base puede ser
+// más nueva que la del formulario). Para vaciar un dato se manda `null`. Los
+// arreglos son una hoja: se reemplazan enteros.
+const esObjeto = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+export function parchesDeAjustes(base, nuevo, ruta = []) {
+    const b = esObjeto(base) ? base : {};
+    if (!esObjeto(nuevo)) return [];
+    const parches = [];
+    for (const k of Object.keys(nuevo)) {
+        const v = nuevo[k];
+        if (v === undefined) continue;
+        if (esObjeto(v) && esObjeto(b[k])) {
+            parches.push(...parchesDeAjustes(b[k], v, [...ruta, k]));
+        } else if (!igual(b[k], v)) {
+            parches.push({ ruta: [...ruta, k], valor: v });
+        }
+    }
+    return parches;
+}
+
+const COLUMNAS_DE_SUCURSAL = [
+    ['name', (p) => p.name ?? p.branchName, (b) => b.name],
+    ['address', (p) => p.address, (b) => b.address],
+    ['phone', (p) => p.phone, (b) => b.phone],
+    ['cell', (p) => p.cell, (b) => b.cell],
+    ['opening_date', (p) => p.opening_date ?? p.openingDate, (b) => b.opening_date ?? b.openingDate],
+    ['weekly_hours', (p) => p.weekly_hours ?? p.weeklyHours, (b) => b.weekly_hours ?? b.weeklyHours],
+];
+
+/** Las columnas propias de `branches` que el formulario cambió (vacío → `null`). */
+export function columnasCambiadas(base, payload) {
+    const out = {};
+    for (const [col, delForm, deBase] of COLUMNAS_DE_SUCURSAL) {
+        const v = delForm(payload || {});
+        if (v === undefined) continue;
+        if (col === 'name' && !String(v || '').trim()) continue;
+        if (!igual(deBase(base || {}), v)) out[col] = v === '' ? null : v;
+    }
+    return out;
+}
+
+const ARCHIVOS_DE_FILA_DE_ENFERMERA = ['carneUrl', 'licenciaUrl', 'anualidadUrl'];
+
+/**
+ * Los documentos de enfermería que dejan de estar en la ficha: los de una fila
+ * que se quita y los que se vacían en una que sigue. Van al histórico como
+ * cualquier otro documento: un carné vencido sigue siendo la prueba de que
+ * estuvo vigente.
+ */
+export function documentosDeEnfermeriaQueSalen(antes, despues) {
+    const viejas = Array.isArray(antes) ? antes : [];
+    const nuevas = Array.isArray(despues) ? despues : [];
+    const salen = [];
+    for (const v of viejas) {
+        const n = nuevas.find((x) => String(x?.id) === String(v?.id));
+        for (const campo of ARCHIVOS_DE_FILA_DE_ENFERMERA) {
+            if (v?.[campo] && (!n || !n[campo])) salen.push({ campo, url: v[campo], employeeId: v.employeeId ?? null });
+        }
+    }
+    return salen;
+}
+
+/** Un día abierto cuyo cierre no es posterior a la apertura (cruza la medianoche). */
+export const horarioCruzaMedianoche = (horario) =>
+    Object.values(limpiarHorario(horario)).some((d) => d && d.isOpen && d.start && d.end && d.end <= d.start);

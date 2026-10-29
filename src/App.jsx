@@ -173,8 +173,14 @@ const BranchProfileWrapper = ({ openModal }) => {
         return <Navigate to="/sucursales" replace />;
     }
 
+    // `key={id}`: pasar de una sucursal a otra por la dirección (atrás,
+    // adelante, un enlace) tiene que montar la ficha de CERO. Sin la llave
+    // React reusaba el componente y el historial, la pestaña de Personal y
+    // las cargas en curso de la sala anterior se quedaban pintadas sobre la
+    // nueva hasta que algo las refrescara.
     return (
         <BranchDetailView
+            key={id}
             branch={branch}
             openModal={openModal}
         />

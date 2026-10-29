@@ -6,7 +6,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const db = vi.hoisted(() => ({
     insertBranch: vi.fn(),
     updateBranch: vi.fn(),
-    updateBranchReturning: vi.fn(),
+    fetchBranchRow: vi.fn(),
+    editarSucursal: vi.fn(),
     insertBranchDocument: vi.fn(),
     fetchBranchDocuments: vi.fn(),
     fetchAuditLogsForBranch: vi.fn(),
@@ -76,20 +77,31 @@ describe('crear sucursal: el enlace del contrato', () => {
 describe('editar sucursal: la fila «Histórico» del documento reemplazado', () => {
     const sala = { id: 3, name: 'Salud 3', settings: { legal: { municipalUrl: 'https://x/viejo.pdf', wasteUrl: 'https://x/desechos.pdf' } } };
     const cambios = { name: 'Salud 3', settings: { legal: { municipalFile: archivo, wasteFile: archivo } } };
+    // La base aplica los parches sobre la fila viva y devuelve antes/después.
+    const aplicar = (viva) => async (id, columnas, parches) => {
+        const despues = JSON.parse(JSON.stringify({ ...viva, ...columnas }));
+        for (const { ruta, valor } of parches) {
+            let o = despues.settings;
+            ruta.slice(0, -1).forEach(k => { o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}; o = o[k]; });
+            o[ruta[ruta.length - 1]] = valor;
+        }
+        return { data: { antes: viva, despues }, error: null };
+    };
+    beforeEach(() => { db.fetchBranchRow.mockResolvedValue({ data: sala, error: null }); });
 
     it('si el historial no entra, NO se toca la ficha y se lanza con un mensaje', async () => {
         db.insertBranchDocument.mockResolvedValue({ error: { message: 'boom' } });
         const { slice, leer } = armar([sala]);
 
         await expect(slice.updateBranch(3, cambios)).rejects.toThrow(/historial/);
-        expect(db.updateBranchReturning).not.toHaveBeenCalled();
+        expect(db.editarSucursal).not.toHaveBeenCalled();
         expect(leer().branches[0]).toBe(sala);
     });
 
     it('los dos históricos van en UN solo INSERT, antes de escribir la ficha', async () => {
         const orden = [];
         db.insertBranchDocument.mockImplementation(async () => { orden.push('historial'); return { error: null }; });
-        db.updateBranchReturning.mockImplementation(async (id, p) => { orden.push('ficha'); return { data: { id, ...p }, error: null }; });
+        db.editarSucursal.mockImplementation(async (...a) => { orden.push('ficha'); return aplicar(sala)(...a); });
         const { slice } = armar([sala]);
 
         await slice.updateBranch(3, cambios);
@@ -101,11 +113,33 @@ describe('editar sucursal: la fila «Histórico» del documento reemplazado', ()
         expect(orden).toEqual(['historial', 'ficha']);
     });
 
-    it('sin documentos reemplazados no escribe historial', async () => {
-        db.updateBranchReturning.mockImplementation(async (id, p) => ({ data: { id, ...p }, error: null }));
+    it('sin cambios no escribe nada', async () => {
         const { slice } = armar([sala]);
         await slice.updateBranch(3, { name: 'Salud 3', settings: {} });
         expect(db.insertBranchDocument).not.toHaveBeenCalled();
+        expect(db.editarSucursal).not.toHaveBeenCalled();
+    });
+
+    it('lo que otra persona guardó en el medio se queda (sólo viaja lo que cambió)', async () => {
+        // En memoria: sin licencia SRS. En la base: otra persona ya la subió.
+        const viva = { ...sala, settings: { legal: { ...sala.settings.legal, srsPermitUrl: 'https://x/srs.pdf' } } };
+        db.fetchBranchRow.mockResolvedValue({ data: viva, error: null });
+        db.editarSucursal.mockImplementation(aplicar(viva));
+        const { slice, leer } = armar([sala]);
+
+        // El formulario manda TODO el settings que abrió, con un solo cambio.
+        await slice.updateBranch(3, { name: 'Salud 3', settings: { legal: { ...sala.settings.legal, srsCategoria: '2' } } });
+
+        expect(db.editarSucursal.mock.calls[0][2]).toEqual([{ ruta: ['legal', 'srsCategoria'], valor: '2' }]);
+        expect(leer().branches[0].settings.legal.srsPermitUrl).toBe('https://x/srs.pdf');
+    });
+
+    it('quitar un documento lo deja en el histórico con lo que hay HOY en la base', async () => {
+        db.insertBranchDocument.mockResolvedValue({ error: null });
+        db.editarSucursal.mockImplementation(aplicar(sala));
+        const { slice } = armar([sala]);
+        await slice.updateBranch(3, { name: 'Salud 3', settings: { legal: { ...sala.settings.legal, wasteUrl: null } } });
+        expect(db.insertBranchDocument.mock.calls[0][0].map(f => f.file_url)).toEqual(['https://x/desechos.pdf']);
     });
 });
 

@@ -81,7 +81,7 @@ export default function Kioscos() {
       if (!seguro) return;
     }
     setOcupado(k.id);
-    const ok = await Promise.resolve(revokeKioskDevice(k.id, k.device_name)).catch(() => false);
+    const ok = await Promise.resolve(revokeKioskDevice(k.id, k.device_name, k.branch_id)).catch(() => false);
     setOcupado(null);
     if (ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

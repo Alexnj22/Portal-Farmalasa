@@ -1,7 +1,7 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 import {
-    insertBranch, updateBranch, updateBranchReturning, deleteBranch, insertBranchDocument,
+    insertBranch, updateBranch, deleteBranch, insertBranchDocument, fetchBranchRow, editarSucursal,
     fetchBranchDocuments, fetchAuditLogsForBranch, fetchActiveKioskDeviceCount, insertKioskDevice,
     updateKioskDevice, fetchBranchKiosks, fetchBranchExpenseRecord, updateBranchExpense, insertBranchExpense,
 } from '../../data/branches';
@@ -12,7 +12,11 @@ import { buscarCargo } from '../../utils/roles';
 import { yaEstabaPagado } from '../../utils/pagoDeSucursal';
 import { SIN_ASIGNAR } from '../../data/constants';
 import { useToastStore } from '../toastStore';
-import { cambiosDeSucursal, resumenDeCambios } from '../../utils/edicionDeSucursal';
+import {
+    cambiosDeSucursal, resumenDeCambios, parchesDeAjustes, columnasCambiadas,
+    documentosDeEnfermeriaQueSalen, idsDeEnfermeria,
+} from '../../utils/edicionDeSucursal';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const persistBranches = (branches) => {
     almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -38,7 +42,10 @@ const sanitizeForJsonb = (obj) => {
 // 🚨 HELPER PARA VERSIONADO
 const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newFile) => {
     const timestamp = Date.now();
-    const extension = newFile.name.split('.').pop() || 'pdf';
+    // Sólo `[a-z0-9]`: un archivo sin punto (posible desde la app) usaba el
+    // nombre entero —con espacios o tildes— y el almacén rechazaba la clave.
+    const partes = String(newFile.name || '').split('.');
+    const extension = (partes.length > 1 ? partes.pop() : '').toLowerCase().replace(/[^a-z0-9]/g, '') || 'pdf';
     const newFileName = `${fileType}_${timestamp}.${extension}`;
     const newPath = `branches/${branchId}/${categoryFolder}/${newFileName}`;
 
@@ -162,21 +169,28 @@ export const createBranchSlice = (set, get) => ({
             if (typeof payload.weeklyHours === 'string') { try { payload.weeklyHours = JSON.parse(payload.weeklyHours); } catch { payload.weeklyHours = {}; } }
             if (typeof payload.weekly_hours === 'string') { try { payload.weekly_hours = JSON.parse(payload.weekly_hours); } catch { payload.weekly_hours = {}; } }
 
-            const oldBranch = get().branches.find(b => String(b.id) === String(id));
-            if (!oldBranch) throw new Error("Sucursal no encontrada en la memoria para editar.");
+            // Dos copias y no una (auditoría 2026-10-29). `base` es de la que
+            // partió el formulario —la de memoria— y sirve para saber QUÉ
+            // cambió quien guarda. `viva` es la fila de la base ahora mismo y
+            // sirve para saber qué documento se archiva: lo que se aplica es la
+            // diferencia, sobre la viva, así que lo que otra persona guardó en
+            // el medio se queda.
+            const { data: viva, error: vivaErr } = await fetchBranchRow(id);
+            if (vivaErr || !viva) {
+                console.error('No se pudo leer la sucursal antes de guardar:', vivaErr);
+                throw new Error('No se pudo leer la sucursal antes de guardar. Intenta de nuevo.');
+            }
+            const base = get().branches.find(b => String(b.id) === String(id)) || viva;
+            const baseSettings = base.settings || {};
+            const baseLegal = baseSettings.legal || {};
+            const vivaSettings = (typeof viva.settings === 'string' ? safeJsonParse(viva.settings, {}) : viva.settings) || {};
+            const vivaLegal = vivaSettings.legal || {};
 
-            const oldSettings = oldBranch?.settings || {};
-            const oldLegal = oldSettings.legal || {};
-            const newSettings = (payload.settings || {});
-
-            const mergedSettings = {
-                ...oldSettings,
-                ...newSettings,
-                legal: { ...oldLegal, ...(newSettings.legal || {}) },
-                rent: { ...(oldSettings.rent || {}), ...(newSettings.rent || {}) },
-                services: { ...(oldSettings.services || {}), ...(newSettings.services || {}) },
-                location: { ...(oldSettings.location || {}), ...(newSettings.location || {}) }
-            };
+            // Copia de lo que llega, con los sub-objetos que se van a tocar
+            // copiados también: no se muta el `formData` de la pantalla.
+            const ajustes = { ...(payload.settings || {}) };
+            if (ajustes.legal) ajustes.legal = { ...ajustes.legal };
+            if (ajustes.rent) ajustes.rent = { ...ajustes.rent, ...(ajustes.rent.contract ? { contract: { ...ajustes.rent.contract } } : {}) };
 
             // Las filas «Histórico» se juntan acá y se escriben TODAS en un solo
             // INSERT, antes de la ficha. Antes se escribían una por una sin mirar
@@ -188,7 +202,7 @@ export const createBranchSlice = (set, get) => ({
             // nada). `branch_documents` no tiene DELETE —es append-only—, así
             // que escribirla una por una no se podría deshacer.
             const historialPendiente = [];
-            const archiveOldDoc = async (docType, docName, oldUrl, metadata = {}) => {
+            const archiveOldDoc = (docType, docName, oldUrl, metadata = {}) => {
                 if (!oldUrl) return;
                 historialPendiente.push({
                     branch_id: id,
@@ -200,19 +214,19 @@ export const createBranchSlice = (set, get) => ({
                 });
             };
 
-            // 1. GESTIÓN DE ARCHIVOS DE RENTA
-            if (esArchivoPorSubir(payload.settings?.rent?.contract?.documentFile)) {
-                const oldRentUrl = oldSettings?.rent?.contract?.documentUrl;
-                if (oldRentUrl) await archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento Anterior', oldRentUrl);
-
-                mergedSettings.rent.contract.documentUrl = await handleDocumentVersioning(
-                    id, 'inmueble', 'contrato_alquiler',
-                    payload.settings.rent.contract.documentFile
-                );
+            // 1. CONTRATO DE ALQUILER: se sube, o se quita. Quitarlo también
+            // deja el anterior en el histórico: antes sólo la subida lo hacía.
+            const contrato = ajustes.rent?.contract;
+            const contratoVivo = vivaSettings.rent?.contract?.documentUrl;
+            if (esArchivoPorSubir(contrato?.documentFile)) {
+                archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento Anterior', contratoVivo);
+                contrato.documentUrl = await handleDocumentVersioning(id, 'inmueble', 'contrato_alquiler', contrato.documentFile);
+            } else if (contrato && contrato.documentUrl === null && baseSettings.rent?.contract?.documentUrl) {
+                archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento (Histórico - Eliminado)', contratoVivo);
             }
 
             // 2. GESTIÓN DE ARCHIVOS LEGALES
-            if (payload.settings?.legal) {
+            if (ajustes.legal) {
                 const fileFields = [
                     { file: 'srsPermitFile', url: 'srsPermitUrl', type: 'PERMISO_SRS', label: 'Licencia CSSP/DNM', dbType: 'permiso_srs' },
                     { file: 'regentCredentialFile', url: 'regentCredentialUrl', type: 'CREDENCIAL_JVQF', label: 'Credencial Regencia JVQF', dbType: 'credencial_jvqf' },
@@ -226,21 +240,13 @@ export const createBranchSlice = (set, get) => ({
                 ];
 
                 for (const f of fileFields) {
-                    const newUploadedFile = payload.settings.legal[f.file];
-
-                    if (esArchivoPorSubir(newUploadedFile)) {
-                        const oldUrl = oldLegal[f.url];
-                        if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico)`, oldUrl);
-
-                        mergedSettings.legal[f.url] = await handleDocumentVersioning(
-                            id, 'legal', f.dbType, newUploadedFile
-                        );
-                    } else if (payload.settings.legal[f.url] === null) {
-                        const oldUrl = oldLegal[f.url];
-                        if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico - Eliminado)`, oldUrl);
-                        mergedSettings.legal[f.url] = null;
-                    } else if (payload.settings.legal[f.url]) {
-                        mergedSettings.legal[f.url] = payload.settings.legal[f.url];
+                    if (esArchivoPorSubir(ajustes.legal[f.file])) {
+                        archiveOldDoc(f.type, `${f.label} (Histórico)`, vivaLegal[f.url]);
+                        ajustes.legal[f.url] = await handleDocumentVersioning(id, 'legal', f.dbType, ajustes.legal[f.file]);
+                    } else if (ajustes.legal[f.url] === null && baseLegal[f.url]) {
+                        // Quien guarda lo vio y lo quitó: se archiva el que hay
+                        // HOY en la base, que es el que se va.
+                        archiveOldDoc(f.type, `${f.label} (Histórico - Eliminado)`, vivaLegal[f.url]);
                     }
                 }
             }
@@ -248,12 +254,11 @@ export const createBranchSlice = (set, get) => ({
             // 3. ARCHIVOS DE CADA ENFERMERA (carné, licencia y recibo de anualidad).
             // El formulario los ponía en `<campo>File` y nadie los subía: la
             // limpieza de abajo los borraba y el renglón seguía en «falta
-            // documento» sin error (2026-10-09: ninguna ruta escribía `carneUrl`;
-            // no mordió todavía porque ninguna sala tiene enfermeras cargadas).
-            // Se versionan igual que los legales.
-            const enfermeras = payload.settings?.legal?.nursingRegents;
+            // documento» sin error (2026-10-09). Se versionan igual que los
+            // legales, y los de una enfermera que se quita van al histórico.
+            const enfermeras = ajustes.legal?.nursingRegents;
             if (Array.isArray(enfermeras)) {
-                const viejas = Array.isArray(oldLegal.nursingRegents) ? oldLegal.nursingRegents : [];
+                const viejas = Array.isArray(vivaLegal.nursingRegents) ? vivaLegal.nursingRegents : [];
                 const ARCHIVOS_DE_ENFERMERA = [
                     { file: 'carneFile', url: 'carneUrl', type: 'CARNE_JVQE', label: 'Carné JVQE', dbType: 'carne_jvqe' },
                     { file: 'licenciaFile', url: 'licenciaUrl', type: 'LICENCIA_ENFERMERIA', label: 'Licencia de Regencia de Enfermería', dbType: 'licencia_enfermeria' },
@@ -265,29 +270,29 @@ export const createBranchSlice = (set, get) => ({
                     const fila = { ...n };
                     for (const f of ARCHIVOS_DE_ENFERMERA) {
                         if (esArchivoPorSubir(n[f.file])) {
-                            const oldUrl = vieja[f.url];
-                            if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico)`, oldUrl, { enfermera: n.employeeId || null });
+                            archiveOldDoc(f.type, `${f.label} (Histórico)`, vieja[f.url], { enfermera: n.employeeId || null });
                             fila[f.url] = await handleDocumentVersioning(id, 'legal', `${f.dbType}_${n.id}`, n[f.file]);
                         }
                         delete fila[f.file];
                     }
                     resultado.push(fila);
                 }
-                mergedSettings.legal.nursingRegents = resultado;
+                for (const sale of documentosDeEnfermeriaQueSalen(viejas, resultado)) {
+                    const f = ARCHIVOS_DE_ENFERMERA.find(a => a.url === sale.campo);
+                    // Si se reemplazó por uno nuevo, ya se archivó arriba.
+                    if (historialPendiente.some(h => h.file_url === sale.url)) continue;
+                    archiveOldDoc(f.type, `${f.label} (Histórico - Eliminado)`, sale.url, { enfermera: sale.employeeId });
+                }
+                ajustes.legal.nursingRegents = resultado;
             }
 
-            // Limpiamos todo el objeto de basura binaria antes de enviar a JSONB
-            const cleanSettingsForDB = sanitizeForJsonb(mergedSettings);
-
-            const dbPayload = {
-                name: payload.name || payload.branchName || "Sin Nombre",
-                address: payload.address || null,
-                phone: payload.phone || null,
-                cell: payload.cell || null,
-                opening_date: payload.opening_date || payload.openingDate || null,
-                weekly_hours: payload.weekly_hours || payload.weeklyHours || {},
-                settings: cleanSettingsForDB
-            };
+            // Lo que cambió, y nada más. Sin binarios: un `File` dentro del
+            // `jsonb` lo vuelve inserializable.
+            const parches = parchesDeAjustes(sanitizeForJsonb(baseSettings), sanitizeForJsonb(ajustes));
+            const columnas = columnasCambiadas(base, payload);
+            if (parches.length === 0 && Object.keys(columnas).length === 0 && historialPendiente.length === 0) {
+                return true;
+            }
 
             if (historialPendiente.length > 0) {
                 const { error: histErr } = await insertBranchDocument(historialPendiente);
@@ -297,38 +302,54 @@ export const createBranchSlice = (set, get) => ({
                 }
             }
 
-            const { data: updated, error } = await updateBranchReturning(id, dbPayload);
+            const { data: resultadoRpc, error } = await editarSucursal(id, columnas, parches);
             if (error) throw error;
+            const antes = resultadoRpc?.antes || viva;
+            const updated = resultadoRpc?.despues;
+            if (!updated) throw new Error('La sucursal no devolvió su estado después de guardar. Recarga la página.');
 
-            // 🚨 LÓGICA DE SINCRONIZACIÓN EN CASCADA Y AUDITORÍA INTELIGENTE
+            const antesLegal = antes.settings?.legal || {};
             const legalNow = updated.settings?.legal || {};
 
-            const requiredStaffIds = [];
-            if (legalNow.regentEmployeeId) requiredStaffIds.push(legalNow.regentEmployeeId);
-            const referenteNow = legalNow.pharmacovigilanceEmployeeId || legalNow.farmacovigilanciaId;
-            if (referenteNow) requiredStaffIds.push(referenteNow);
-            if (legalNow.nursingRegents && Array.isArray(legalNow.nursingRegents)) {
-                legalNow.nursingRegents.forEach(n => {
-                    if (n.employeeId) requiredStaffIds.push(n.employeeId);
-                });
-            }
+            // 🚨 CASCADA DE PERSONAL — sólo a quien ENTRÓ en este guardado.
+            // Antes, cualquier guardado (aunque fuera el horario) volvía a
+            // mover a la regente y a cada enfermera a esta sala: si RRHH la
+            // había trasladado, editar otra cosa la traía de vuelta, sin
+            // bitácora y con el error tragado. El referente de
+            // farmacovigilancia no se mueve: es uno para toda la red.
+            const entraron = [];
+            if (legalNow.regentEmployeeId && legalNow.regentEmployeeId !== antesLegal.regentEmployeeId) entraron.push(legalNow.regentEmployeeId);
+            const enfermeriaAntes = new Set(idsDeEnfermeria(antesLegal).map(String));
+            for (const empId of idsDeEnfermeria(legalNow)) if (!enfermeriaAntes.has(String(empId))) entraron.push(empId);
 
-            if (requiredStaffIds.length > 0) {
-                const { updateEmployee } = get();
-                if (updateEmployee) {
-                    for (const empId of requiredStaffIds) {
-                        try {
-                            await updateEmployee(empId, { branchId: id });
-                        } catch (e) {
-                            console.warn("Fallo al sincronizar empleado con sucursal:", empId, e);
-                        }
-                    }
+            const { updateEmployee, employees } = get();
+            const noMovidos = [];
+            for (const empId of entraron) {
+                const persona = (employees || []).find(e => String(e.id) === String(empId));
+                if (!persona || String(persona.branchId) === String(id) || !updateEmployee) continue;
+                try {
+                    await updateEmployee(empId, { branchId: id });
+                    await get().appendAuditLog('EMPLEADO_ASIGNADO', empId, {
+                        type: 'REASSIGNMENT', previous_branch_id: persona.branchId ?? null, target_branch_id: id,
+                        branch_id: id, target_branch_name: updated.name,
+                        note: `Asignado a ${updated.name} al cargarlo en el expediente de la sucursal`,
+                    });
+                } catch (e) {
+                    console.error("No se pudo mover al empleado a la sucursal:", empId, e);
+                    noMovidos.push(persona);
                 }
             }
+            if (noMovidos.length > 0) {
+                useToastStore.getState().showToast(
+                    'Falta mover personal',
+                    `La sucursal se guardó, pero no se pudo asignar a ${noMovidos.map(p => shortEmployeeName(p)).join(', ')} a esta sala. Hazlo desde Personal.`,
+                    'error'
+                );
+            }
 
-            // Auditoría Inteligente: Detectamos exactamente qué cambió
-
-            if (oldLegal.regentEmployeeId !== legalNow.regentEmployeeId) {
+            // Auditoría: lo que cambió en ESTE guardado (antes → después de la
+            // misma sentencia), no la copia de memoria contra la fila nueva.
+            if (antesLegal.regentEmployeeId !== legalNow.regentEmployeeId) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
                     timeline_title: 'Asignación de regente farmacéutico',
                     dimension: 'LEGAL',
@@ -339,7 +360,9 @@ export const createBranchSlice = (set, get) => ({
 
             // Las dos claves del mismo referente (la vieja la escribía un solo
             // formulario): se compara el que resulta, no la clave.
-            if ((oldLegal.pharmacovigilanceEmployeeId || oldLegal.farmacovigilanciaId) !== referenteNow) {
+            const referenteAntes = antesLegal.pharmacovigilanceEmployeeId || antesLegal.farmacovigilanciaId;
+            const referenteNow = legalNow.pharmacovigilanceEmployeeId || legalNow.farmacovigilanciaId;
+            if (referenteAntes !== referenteNow) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
                     timeline_title: 'Asignación de farmacovigilancia',
                     dimension: 'LEGAL',
@@ -348,27 +371,16 @@ export const createBranchSlice = (set, get) => ({
                 });
             }
 
-            const oldNurses = Array.isArray(oldLegal.nursingRegents) ? oldLegal.nursingRegents.length : 0;
-            const newNurses = Array.isArray(legalNow.nursingRegents) ? legalNow.nursingRegents.length : 0;
-
-            if (oldNurses !== newNurses) {
-                await get().appendAuditLog('EDITAR_SUCURSAL', id, {
-                    timeline_title: 'Actualización de equipo de enfermería',
-                    dimension: 'LEGAL',
-                    branch_id: id,
-                    new_value: `${newNurses} Profesional(es) Asignado(s)`
-                });
-            }
-
             // Todo lo demás —general, legal (SRS, libros, enfermería…), horario,
             // inmueble y servicios— en UNA entrada por guardado con las
-            // secciones y los campos que cambiaron. Antes sólo quedaba rastro de
-            // un cambio de nombre, y sólo si no había cambiado el regente.
-            const cambios = cambiosDeSucursal(oldBranch, updated);
+            // secciones y los campos que cambiaron. (El equipo de enfermería
+            // tenía además una entrada propia por tamaño: quedaban dos por el
+            // mismo cambio.)
+            const cambios = cambiosDeSucursal(antes, updated);
             if (cambios.length > 0) {
                 const soloLegal = cambios.every(c => c.seccion === 'legal');
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
-                    timeline_title: `Actualización de datos: ${updated.name || payload.name || payload.branchName || 'Sucursal'}`,
+                    timeline_title: `Actualización de datos: ${updated.name || 'Sucursal'}`,
                     dimension: soloLegal ? 'LEGAL' : 'OPERATIVE',
                     branch_id: id,
                     secciones: cambios.map(c => c.seccion),
@@ -481,7 +493,11 @@ export const createBranchSlice = (set, get) => ({
 
     registerKioskDevice: async (branchId, deviceName) => {
         try {
-            const { count } = await fetchActiveKioskDeviceCount(branchId);
+            // El tope también lo pone la base (`trg_kiosk_devices_tope`): esto
+            // es para avisar antes. Si el conteo falla, NO se registra —antes
+            // `undefined >= 3` daba falso y pasaba igual—.
+            const { count, error: countErr } = await fetchActiveKioskDeviceCount(branchId);
+            if (countErr) throw new Error('No se pudo comprobar cuántos kioscos tiene la sucursal. Intenta de nuevo.');
 
             if (count >= LIMITE_KIOSCOS) throw new Error(`Límite alcanzado: Ya existen ${LIMITE_KIOSCOS} dispositivos activos.`);
 
@@ -508,7 +524,9 @@ export const createBranchSlice = (set, get) => ({
         }
     },
 
-    revokeKioskDevice: async (deviceId, deviceName) => {
+    // `branchId` va a la bitácora para que el historial de la sala lo muestre
+    // (lo busca `audit_log_de_sucursal` en `details.branch_id`).
+    revokeKioskDevice: async (deviceId, deviceName, branchId = null) => {
         try {
             const { error } = await updateKioskDevice(deviceId, { status: 'REVOKED', revoked_at: new Date().toISOString() });
 
@@ -517,6 +535,7 @@ export const createBranchSlice = (set, get) => ({
             await get().appendAuditLog('REVOCAR_KIOSCO', deviceId, {
                 timeline_title: `Kiosco Desvinculado`,
                 dimension: 'OPERATIVE',
+                ...(branchId ? { branch_id: branchId } : {}),
                 old_value: deviceName,
                 new_value: 'Acceso revocado'
             }); 
@@ -627,69 +646,69 @@ export const createBranchSlice = (set, get) => ({
                 if (insError) throw insError;
             }
 
-            const branch = get().branches.find(b => String(b.id) === String(branchId));
-            if (branch) {
-                const newSettings = JSON.parse(JSON.stringify(branch.settings || {}));
-                const isPending = !esArchivoPorSubir(expenseData.receiptFile);
+            const serviceMap = { rent: 'Alquiler', light: 'Energía eléctrica', water: 'Agua potable', internet: 'Internet', phone: 'Plan celular', taxes: 'Impuestos' };
+            const srvName = serviceMap[expenseData.expense_type] || expenseData.expense_type;
 
-                // «Pagado hasta» sólo AVANZA. Registrar un mes ya cubierto (un
-                // pago atrasado que se anota tarde) lo hacía retroceder: con el
-                // alquiler pagado hasta octubre, anotar agosto dejaba a la
-                // sucursal debiendo septiembre y octubre (2026-10-21).
-                let destino;
-                if (expenseData.expense_type === 'rent') {
-                    if (!newSettings.rent) newSettings.rent = {};
-                    destino = newSettings.rent;
-                } else {
-                    if (!newSettings.services) newSettings.services = {};
-                    if (!newSettings.services[expenseData.expense_type]) newSettings.services[expenseData.expense_type] = {};
-                    destino = newSettings.services[expenseData.expense_type];
-                }
-                if (expenseData.billing_month === destino.paidThrough || !yaEstabaPagado(destino.paidThrough, expenseData.billing_month)) {
-                    destino.paidThrough = expenseData.billing_month;
-                    destino.isReceiptPending = isPending;
-                    destino.amount = expenseData.amount;
-                }
+            // 🔴 LÓGICA DE AUDITORÍA INTELIGENTE — va apenas el pago quedó
+            // escrito: si lo que sigue falla, el pago igual existe y tiene que
+            // estar en la bitácora.
+            let timelineTitle = `Pago de ${srvName}`;
+            let oldVal = `Mes: ${expenseData.billing_month}`;
+            let newVal = `Monto: ${formatMoney(expenseData.amount)}`;
+            let actionType = 'PAGO_REGISTRADO';
 
-                const cleanSettingsForDB = sanitizeForJsonb(newSettings);
-                const { error: setErr } = await updateBranch(branchId, { settings: cleanSettingsForDB });
-                if (setErr) throw setErr;
+            // Si ya existía, significa que entraron a adjuntar el comprobante o actualizar el monto
+            if (existingRecord) {
+                timelineTitle = receiptUrl ? `Comprobante Adjuntado: ${srvName}` : `Actualización de Pago: ${srvName}`;
+                oldVal = `Mes: ${expenseData.billing_month}`;
+                newVal = receiptUrl ? `Recibo guardado en expediente` : `Monto actualizado a ${formatMoney(expenseData.amount)}`;
+                actionType = 'EDITAR_SUCURSAL'; // Cambiamos el tipo para que no salga el icono de pago duplicado
+            }
+
+            await get().appendAuditLog(actionType, branchId, {
+                timeline_title: timelineTitle,
+                dimension: 'FINANCE',
+                branch_id: branchId,
+                old_value: oldVal,
+                new_value: newVal,
+                servicio: expenseData.expense_type,
+                monto: expenseData.amount,
+                file_url: receiptUrl // 🔴 MÁGIA: Si subieron el archivo, aparecerá el botón "Ver Doc" en la línea de tiempo
+            });
+
+            // «Pagado hasta» del servicio: se decide contra la fila VIVA y se
+            // escriben sólo esas tres claves. Antes se reescribía el `settings`
+            // ENTERO desde la copia en memoria, y anotar un pago con la
+            // pantalla abierta desde la mañana borraba lo que otro guardó en
+            // el medio (auditoría 2026-10-29).
+            const parcial = 'El pago quedó registrado, pero no se pudo actualizar «pagado hasta». Vuelve a abrir la sucursal y revisa el servicio.';
+            const { data: viva, error: vivaErr } = await fetchBranchRow(branchId);
+            if (vivaErr || !viva) { console.error(vivaErr); throw new Error(parcial); }
+            const ruta = expenseData.expense_type === 'rent' ? ['rent'] : ['services', expenseData.expense_type];
+            const destino = ruta.reduce((o, k) => (o && typeof o === 'object' ? o[k] : undefined), viva.settings || {}) || {};
+
+            // «Pagado hasta» sólo AVANZA. Registrar un mes ya cubierto (un
+            // pago atrasado que se anota tarde) lo hacía retroceder: con el
+            // alquiler pagado hasta octubre, anotar agosto dejaba a la
+            // sucursal debiendo septiembre y octubre (2026-10-21).
+            if (expenseData.billing_month === destino.paidThrough || !yaEstabaPagado(destino.paidThrough, expenseData.billing_month)) {
+                // Pendiente = no hay comprobante NI nuevo NI el que ya tenía
+                // el registro: corregir el monto sin adjuntar no lo borra.
+                const isPending = !receiptUrl && !existingRecord?.receipt_url;
+                const { data: res, error: setErr } = await editarSucursal(branchId, {}, [
+                    { ruta: [...ruta, 'paidThrough'], valor: expenseData.billing_month },
+                    { ruta: [...ruta, 'isReceiptPending'], valor: isPending },
+                    { ruta: [...ruta, 'amount'], valor: expenseData.amount },
+                ]);
+                if (setErr || !res?.despues) { console.error(setErr); throw new Error(parcial); }
 
                 set((state) => {
                     const next = state.branches.map(b =>
                         String(b.id) === String(branchId)
-                            ? { ...b, settings: newSettings }
+                            ? { ...b, settings: res.despues.settings || {}, rent: res.despues.settings?.rent || null }
                             : b
                     );
                     return { branches: persistBranches(next) };
-                });
-
-                const serviceMap = { rent: 'Alquiler', light: 'Energía eléctrica', water: 'Agua potable', internet: 'Internet', phone: 'Plan celular', taxes: 'Impuestos' };
-                const srvName = serviceMap[expenseData.expense_type] || expenseData.expense_type;
-
-                // 🔴 LÓGICA DE AUDITORÍA INTELIGENTE
-                let timelineTitle = `Pago de ${srvName}`;
-                let oldVal = `Mes: ${expenseData.billing_month}`;
-                let newVal = `Monto: ${formatMoney(expenseData.amount)}`;
-                let actionType = 'PAGO_REGISTRADO';
-
-                // Si ya existía, significa que entraron a adjuntar el comprobante o actualizar el monto
-                if (existingRecord) {
-                    timelineTitle = receiptUrl ? `Comprobante Adjuntado: ${srvName}` : `Actualización de Pago: ${srvName}`;
-                    oldVal = `Mes: ${expenseData.billing_month}`;
-                    newVal = receiptUrl ? `Recibo guardado en expediente` : `Monto actualizado a ${formatMoney(expenseData.amount)}`;
-                    actionType = 'EDITAR_SUCURSAL'; // Cambiamos el tipo para que no salga el icono de pago duplicado
-                }
-
-                await get().appendAuditLog(actionType, branchId, {
-                    timeline_title: timelineTitle,
-                    dimension: 'FINANCE',
-                    branch_id: branchId,
-                    old_value: oldVal,
-                    new_value: newVal,
-                    servicio: expenseData.expense_type,
-                    monto: expenseData.amount,
-                    file_url: receiptUrl // 🔴 MÁGIA: Si subieron el archivo, aparecerá el botón "Ver Doc" en la línea de tiempo
                 });
             }
             return true;

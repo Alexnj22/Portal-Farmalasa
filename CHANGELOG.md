@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1365.0 — Sucursales: auditoría completa — guardar sin pisar a otros, enfermería en una lista, alcance por sala y expediente coherente
+
+Auditoría completa del módulo (2026-10-29). Datos y base (migración `20261029163414`):
+- Se borraron de Storage los 24 archivos de prueba de marzo (`branches/2` y `branches/4`) que ninguna sala referenciaba.
+- Enfermería en UNA lista: las 6 farmacias tenían sus 7 enfermeras sólo en `legal.nurses`; la ficha mostraba «Sin Enfermero/a» y agregar una desde el formulario borraba a las demás. Pasadas a `nursingRegents`.
+- `editar_sucursal(id, columnas, parches)`: el guardado manda sólo lo que cambió y se aplica sobre la fila viva. Antes se escribía el `settings` entero desde la copia en memoria y se perdía lo que otra persona guardó en el medio (también al registrar un pago).
+- Alcance por sala en las lecturas de documentos, gastos y archivos de `branches/` (el cargo 40 veía toda la red). `anon` fuera de `branch_documents`/`branch_expenses`/`erp_sucursal_map`. UNIQUE de gasto por sala·servicio·mes. Tope de 3 kioscos también en la base. El historial de la sala incluye kioscos y jefatura.
+
+Escritura: quitar el contrato o una enfermera deja sus documentos en el histórico; la cascada de personal sólo mueve a quien entra y no al referente de la red, con bitácora y aviso si falla; «recuperar borrador» recupera; el pago dice qué quedó a medias y ya no marca «comprobante pendiente» cuando existe; día de pago acotado; extensión de archivo saneada; horario que cruza la medianoche rechazado (portal y app).
+
+Vistas: eliminar una sucursal ya no dice «eliminada» cuando falla; la tendencia de gastos mira los últimos meses y no los 100 más viejos; los puntos de alerta de Expediente y Personal salen de la misma regla que su contenido; vencimientos en día de El Salvador; enero ya no marca todo vencido; `key` por sala en la ficha; ⌘-clic abre en otra pestaña; errores de lectura avisan en vez de mostrar ceros; recarga del histórico de ventas sólo con permiso de edición y en bitácora; CSV/PDF del historial por `exportCsv`/`registrarEgreso` con el autor real; tarjetas canónicas y sin nombrar al proveedor de IA.
+
+Funciones (código listo, falta desplegar): `check-doc-expiry` mira el error de cada aviso, descarta fechas inválidas, cubre los mismos documentos que el expediente y avisa por permiso del módulo; `analyze-branch` exige el permiso y acota lo que manda al modelo; `sync-wfm-sales` exige edición.
+
 ## v2.1364.1 — Inyecciones: el lote se elige de una lista que se filtra al escribir
 
 - La fila de botones «Ya usados» no escalaba: con seis lotes era una pared.

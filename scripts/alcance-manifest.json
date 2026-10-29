@@ -921,6 +921,18 @@
     },
     "reclamo_registrar": {
       "guarda": "alcance"
+    },
+    "consulta_existencia_crear": {
+      "guarda": "sin-sala",
+      "motivo": "Preguntar no mueve existencia: cualquiera que cuenta inventario puede pedirle a cualquier sala que cuente (usuario, 2026-10-29). Sólo crea la pregunta y avisa a quien cuenta en esa sala."
+    },
+    "consulta_existencia_comparar": {
+      "guarda": "solo-servidor",
+      "motivo": "Interna: EXECUTE sólo para service_role. La llaman contar y ajuste, que ya comprobaron la sala."
+    },
+    "consulta_existencia_contadores": {
+      "guarda": "solo-servidor",
+      "motivo": "Interna: EXECUTE sólo para service_role; arma la lista de avisos."
     }
   },
   "buckets_abiertos": {

@@ -980,7 +980,7 @@ export const AREAS = [
             // la devolución de un pedido y el envío por avería. Va acá porque el
             // depósito es `inventario-evidencia` y de acá salieron sus reglas.
             'src/data/evidencia.js',
-            'src/data/conteoInventario.js', 'src/data/ventasPerdidas.js',
+            'src/data/conteoInventario.js', 'src/data/consultasExistencia.js', 'src/data/ventasPerdidas.js',
             'src/store/slices/conteoInventarioSlice.js',
             'src/utils/conteoInventarioPrint.js', 'src/utils/conteoPapel.js', 'src/utils/conteoPapelHtml.js',
         ],
@@ -989,7 +989,9 @@ export const AREAS = [
                  'conteo_inventario_costos',
                  'inventory', 'inventory_sync_huella', 'inventory_sync_log',
                  'conteos_inventario', 'conteo_inventario_items', 'conteo_inventario_item_history',
-                 'ventas_perdidas', 'traslados_erp_linea', 'productos_sin_venta_avisados'],
+                 'ventas_perdidas', 'traslados_erp_linea', 'productos_sin_venta_avisados',
+                 // Consultas de existencia (2026-10-29): una sala cuenta un producto a ciegas.
+                 'consultas_existencia', 'consultas_existencia_salas'],
         edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp'],
         crons: ['refresh-inv-mv-2min', 'crear-conteos-ciclicos-mensual', 'vacuum-inventory-hourly',
                 'leer-traslados-erp'],

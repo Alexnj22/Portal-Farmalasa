@@ -3,7 +3,7 @@ import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2, Trash2 } from 'lucide-react';
+import { ClipboardCheck, ScanSearch, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2, Trash2 } from 'lucide-react';
 import LiquidSelect from '../components/common/LiquidSelect';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
@@ -27,6 +27,8 @@ import usePulsacionLarga from '@nucleo/hooks/usePulsacionLarga';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
+import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
+import TabConsultasExistencia from './inventario/TabConsultasExistencia';
 
 // 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
 // 'CERRADO'. Las claves bg/text/border tampoco: solo se usaba `variante`, que es
@@ -37,6 +39,13 @@ const ESTADO_CFG = {
     FINALIZADO:  { icon: FileCheck2,   label: 'Finalizado',  variante: 'chart-1' },
     CERRADO:     { icon: CheckCircle2, label: 'Cerrado',     variante: 'success' },
 };
+
+// Dos pestañas: los conteos de siempre y las consultas de existencia (una sala
+// cuenta UN producto que le preguntaron, a ciegas; 2026-10-29).
+const PESTANAS = [
+    { key: 'conteos',   label: 'Conteos',   icon: ClipboardCheck },
+    { key: 'consultas', label: 'Consultas de existencia', icon: ScanSearch },
+];
 
 // Los alcances viven en el núcleo (`utils/conteoDeInventario`).
 const SCOPE_LABEL = ALCANCE_CONTEO;
@@ -141,6 +150,7 @@ export default function ConteoInventarioView() {
     // que se vea de qué sucursal son los datos y no parezca "todo el portal".
     const isBranchScoped = getScope('conteo_inventario') !== 'ALL';
 
+    const [pestana, setPestana] = usePestanaEnUrl(PESTANAS, 'conteos');
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [branchFilter, setBranchFilter] = useState(isBranchScoped ? String(user?.branchId || '') : '');
@@ -228,8 +238,11 @@ export default function ConteoInventarioView() {
     // D3.9 (2026-07-27): barra reescrita a mano → canónico.
     const filtersContent = (
         <ViewTabBar
-            searchValue={search}
-            onSearchChange={setSearch}
+            tabs={PESTANAS}
+            activeTab={pestana}
+            onTabChange={setPestana}
+            searchValue={pestana === 'conteos' ? search : undefined}
+            onSearchChange={pestana === 'conteos' ? setSearch : undefined}
             placeholder="Buscar por sucursal..."
             // Ni el filtro de sucursal ni la acción van acá: §17 es explícito en
             // que los dos viven en el CUERPO de la vista, y el header es
@@ -245,6 +258,11 @@ export default function ConteoInventarioView() {
                 contra los 32 de Personal. Y `space-y-6` reemplaza los `mb-*` sueltos
                 que traía cada bloque — el ritmo entre bloques es del contenedor, y
                 repartido en cada hijo se desincroniza en cuanto uno se esconde. */}
+            {pestana === 'consultas' ? (
+                <div className="p-4 md:p-6 lg:p-8 animate-in fade-in duration-[var(--dur-lento)]">
+                    <TabConsultasExistencia />
+                </div>
+            ) : (
             <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-[var(--dur-lento)]">
 
             {/* Resumen arriba, y cada tarjeta es un FILTRO. La pregunta de esta
@@ -497,6 +515,7 @@ export default function ConteoInventarioView() {
             </DataTable>
             </div>
             </div>
+            )}
 
             <NuevoConteoModal
                 isOpen={showModal}

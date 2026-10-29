@@ -6740,6 +6740,195 @@ export type Database = {
           },
         ]
       }
+      consultas_existencia: {
+        Row: {
+          cerrada_at: string | null
+          created_at: string
+          erp_product_id: number
+          id: string
+          motivo: string | null
+          origen: string
+          pedido_desde: number | null
+          pedido_por: string | null
+        }
+        Insert: {
+          cerrada_at?: string | null
+          created_at?: string
+          erp_product_id: number
+          id?: string
+          motivo?: string | null
+          origen?: string
+          pedido_desde?: number | null
+          pedido_por?: string | null
+        }
+        Update: {
+          cerrada_at?: string | null
+          created_at?: string
+          erp_product_id?: number
+          id?: string
+          motivo?: string | null
+          origen?: string
+          pedido_desde?: number | null
+          pedido_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_existencia_erp_product_id_fkey"
+            columns: ["erp_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_erp_product_id_fkey"
+            columns: ["erp_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_pedido_desde_fkey"
+            columns: ["pedido_desde"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_pedido_por_fkey"
+            columns: ["pedido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_pedido_por_fkey"
+            columns: ["pedido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultas_existencia_salas: {
+        Row: {
+          branch_id: number
+          consulta_id: string
+          contado_1_at: string | null
+          contado_1_por: string | null
+          contado_2_at: string | null
+          contado_2_por: string | null
+          conteo_1: Json | null
+          conteo_2: Json | null
+          created_at: string
+          diferencia: number | null
+          erp_sucursal_id: number
+          estado: string
+          id: string
+          nota: string | null
+          resuelto_at: string | null
+          resuelto_por: string | null
+          sistema: Json
+          solicitudes: string[]
+        }
+        Insert: {
+          branch_id: number
+          consulta_id: string
+          contado_1_at?: string | null
+          contado_1_por?: string | null
+          contado_2_at?: string | null
+          contado_2_por?: string | null
+          conteo_1?: Json | null
+          conteo_2?: Json | null
+          created_at?: string
+          diferencia?: number | null
+          erp_sucursal_id: number
+          estado?: string
+          id?: string
+          nota?: string | null
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          sistema?: Json
+          solicitudes?: string[]
+        }
+        Update: {
+          branch_id?: number
+          consulta_id?: string
+          contado_1_at?: string | null
+          contado_1_por?: string | null
+          contado_2_at?: string | null
+          contado_2_por?: string | null
+          conteo_1?: Json | null
+          conteo_2?: Json | null
+          created_at?: string
+          diferencia?: number | null
+          erp_sucursal_id?: number
+          estado?: string
+          id?: string
+          nota?: string | null
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          sistema?: Json
+          solicitudes?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_existencia_salas_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_salas_consulta_id_fkey"
+            columns: ["consulta_id"]
+            isOneToOne: false
+            referencedRelation: "consultas_existencia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_salas_contado_1_por_fkey"
+            columns: ["contado_1_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_salas_contado_1_por_fkey"
+            columns: ["contado_1_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_salas_contado_2_por_fkey"
+            columns: ["contado_2_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_salas_contado_2_por_fkey"
+            columns: ["contado_2_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_salas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_existencia_salas_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contabilidad_config: {
         Row: {
           created_at: string
@@ -30251,6 +30440,43 @@ export type Database = {
         Args: { p_forzar?: boolean; p_year_month: string }
         Returns: number
       }
+      consulta_existencia_ajuste: { Args: { p_id: string }; Returns: Json }
+      consulta_existencia_avisar_resumen: {
+        Args: { p_consulta: string }
+        Returns: undefined
+      }
+      consulta_existencia_comparar: {
+        Args: { p_conteo: Json; p_producto: number; p_sucursal: number }
+        Returns: Json
+      }
+      consulta_existencia_contadores: {
+        Args: { p_branch: number }
+        Returns: string[]
+      }
+      consulta_existencia_contar: {
+        Args: { p_conteo: Json; p_id: string }
+        Returns: Json
+      }
+      consulta_existencia_crear: {
+        Args: {
+          p_motivo?: string
+          p_origen?: string
+          p_producto: number
+          p_salas: number[]
+        }
+        Returns: string
+      }
+      consulta_existencia_para_contar: { Args: { p_id: string }; Returns: Json }
+      consulta_existencia_resolver: {
+        Args: {
+          p_estado: string
+          p_id: string
+          p_nota?: string
+          p_solicitudes?: string[]
+        }
+        Returns: undefined
+      }
+      consultas_existencia_lista: { Args: never; Returns: Json }
       consumir_vale_de_identidad: {
         Args: { p_persona: string; p_vale: string }
         Returns: string
@@ -31571,6 +31797,7 @@ export type Database = {
       }
       extraer_observaciones_mh: { Args: { p_texto: string }; Returns: string[] }
       f_unaccent: { Args: { "": string }; Returns: string }
+      factor_de_detalle: { Args: { p_detalle: string }; Returns: number }
       factores_sospechosos: {
         Args: never
         Returns: {
@@ -36145,6 +36372,10 @@ export type Database = {
           tipo: string
           unidades: number
         }[]
+      }
+      unidades_en_presentaciones: {
+        Args: { p_producto: number; p_unidades: number }
+        Returns: string
       }
       unlock_module: { Args: { p_module_key: string }; Returns: Json }
       update_customer_fiscal: {

@@ -17,7 +17,9 @@ import { insertMovimientoInventario } from './inventoryMovements';
 export async function fetchRevisionDePresentaciones() {
     const { data, error } = await supabase.rpc('revision_de_presentaciones');
     if (error) return { data: null, error };
-    const datos = data ?? { cambios: [], existencias: [], sospechosos: [] };
+    // La función devuelve `json`: para los tipos es un `Json` sin forma.
+    /** @type {{ cambios: any[], existencias: any[], sospechosos: any[] }} */
+    const datos = /** @type {any} */ (data) ?? { cambios: [], existencias: [], sospechosos: [] };
     // La presentación que CAMBIÓ vive en el cambio, no en la fila: la fila
     // lleva la de la existencia (en X-Ray Dol, el blíster nuevo; cambió la caja).
     const tipoDelCambio = new Map((datos.cambios ?? []).map(c => [c.id, c.resultado?.presentacion]));

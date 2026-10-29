@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1380.0 — Consultas de existencia: pedirle a una sala que cuente a ciegas
+
+Conteo de inventario tiene una pestaña nueva, **Consultas de existencia**. Cualquiera
+que cuenta inventario —la oficina o una sala— le pregunta a una o varias salas
+(la propia incluida, o todas) cuánto tienen de UN producto.
+
+- **Conteo ciego.** La sala no ve lo que dice el sistema. Cuenta por presentación,
+  y por lote sólo si el producto es regulado (los lotes salen por nombre y fecha,
+  sin cantidades; se puede agregar uno que falte).
+- **Un reconteo.** Si no cuadra, el portal pide volver a contar sin decir cuánto
+  ni hacia dónde. Si el reconteo cuadra, queda «Cuadra»; si no, «Descuadre».
+- **Sólo quien aprueba inventario ajusta.** El botón «Ajustar» recalcula contra la
+  existencia de ese momento: si se movió desde el conteo no ajusta y ofrece pedir
+  otro conteo. Arma la carga o el descarte (motivo Descuadre) en presentaciones y
+  la aplica enseguida. «Sin ajuste» exige el motivo.
+- **Resumen.** Cuando todas las salas contestaron, llega a Talento Humano, a
+  Supervisión de Ventas y a quien pidió: «Salud 2: sobran 3 blister · Salud 3: cuadra».
+  Con un faltante, va además al teléfono.
+- **Revisión de factor** suma «Pedir conteo a la sala» en cada tarjeta de existencia.
+
+Base: `consultas_existencia`, `consultas_existencia_salas` y las funciones
+`consulta_existencia_*` (migraciones `20261029185257`, `20261029185839`).
+Probado en producción dentro de una transacción deshecha con X-Ray Dol en Salud 2:
+contar 1 caja contra 1 blíster pide recontar, el reconteo da descuadre y el ajuste
+propone cargar 3 blíster.
+
 ## v2.1379.0 — Sucursales: ubicar desde el enlace o el mapa
 
 Configuración general de una sucursal: el punto se marca en un **mapa** (tocar o arrastrar el pin) o sale del **enlace de Google Maps** al pegarlo, y con él se completan departamento, municipio y dirección. Las casillas de latitud y longitud a mano —y la ayuda de «clic derecho sobre la farmacia»— desaparecen.

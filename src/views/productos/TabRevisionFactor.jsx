@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, PackageX, History, AlertTriangle, CheckCircle2, Clock, Wrench } from 'lucide-react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { ArrowRight, PackageX, History, AlertTriangle, CheckCircle2, Clock, Wrench, ScanSearch } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
@@ -13,6 +13,10 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+
+// Pedirle a la sala que cuente antes de corregir. Diferido: sólo hace falta al
+// apretar el botón.
+const NuevaConsultaExistencia = lazy(() => import('../../components/inventario/NuevaConsultaExistencia'));
 
 /**
  * Revisión de factor — pedido del usuario, 2026-10-15: «poder ver en algún
@@ -120,6 +124,8 @@ function FilaExistencia({ fila: f, onHecho }) {
     const employees = useStaffStore(s => s.employees);
     const [confirmar, setConfirmar] = useState(false);
     const [trabajando, setTrabajando] = useState(false);
+    const [preguntar, setPreguntar] = useState(false);
+    const puedePreguntar = hasPermission('conteo_inventario', 'can_edit');
 
     const puedeAplicar = hasPermission('requests_inventario', 'can_approve');
     const sol = f.solicitud;
@@ -212,9 +218,26 @@ function FilaExistencia({ fila: f, onHecho }) {
             )}
 
             {!sol && (
-                <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
-                    Corregir en la caja
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
+                        Corregir en la caja
+                    </Button>
+                    {/* ¿Hay de verdad lo que el cambio supone? La sala cuenta a
+                        ciegas y el portal dice si cuadra. */}
+                    {puedePreguntar && (
+                        <Button size="sm" variant="secondary" icon={ScanSearch} onClick={() => setPreguntar(true)}>
+                            Pedir conteo a la sala
+                        </Button>
+                    )}
+                </div>
+            )}
+            {preguntar && (
+                <Suspense fallback={null}>
+                    <NuevaConsultaExistencia producto={{ id: f.erp_product_id, nombre: f.nombre }}
+                        salasIniciales={[f.erp_sucursal_id]} origen="revision_factor"
+                        motivoInicial={`Cambio de presentación: antes 1 ${f.tipo_cambio ?? f.presentacion} = ${f.de}, ahora = ${f.a}`}
+                        onCerrar={() => setPreguntar(false)} />
+                </Suspense>
             )}
 
             <ConfirmModal

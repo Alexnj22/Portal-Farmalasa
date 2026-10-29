@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-29T17:06:50.342Z",
+ "generado": "2026-10-29T18:59:08.448Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -389,7 +389,7 @@
   },
   "app_tratamiento_agregar": {
    "area": "app-clientes",
-   "por": "llamada"
+   "por": "código"
   },
   "app_tratamiento_cambiar": {
    "area": "app-clientes",
@@ -397,7 +397,7 @@
   },
   "app_tratamiento_candidatos": {
    "area": "app-clientes",
-   "por": "llamada"
+   "por": "código"
   },
   "app_tratamiento_dosis": {
    "area": "app-clientes",
@@ -405,7 +405,7 @@
   },
   "app_tratamiento_quitar": {
    "area": "app-clientes",
-   "por": "llamada"
+   "por": "código"
   },
   "app_tratamientos_de": {
    "area": "app-clientes",
@@ -626,16 +626,16 @@
    "area": "ventas",
    "por": "cron"
   },
-  "avisar_facturas_descuadradas": {
-   "area": "ventas",
-   "por": "cron"
-  },
   "avisar_factores_sospechosos": {
    "area": "productos",
    "por": "cron"
   },
   "avisar_facturas_de_sala": {
    "area": "compras",
+   "por": "cron"
+  },
+  "avisar_facturas_descuadradas": {
+   "area": "ventas",
    "por": "cron"
   },
   "avisar_falla_del_consejo": {
@@ -1283,6 +1283,48 @@
   "congelar_metas_mes": {
    "area": "metas",
    "por": "tablas"
+  },
+  "consulta_existencia_ajuste": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "consulta_existencia_avisar_resumen": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "consulta_existencia_comparar": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
+  },
+  "consulta_existencia_contadores": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
+  },
+  "consulta_existencia_contar": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "consulta_existencia_crear": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
+  },
+  "consulta_existencia_para_contar": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
+  },
+  "consulta_existencia_resolver": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
+  },
+  "consultas_existencia_lista": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
   },
   "consumir_vale_de_identidad": {
    "area": "cortes-efectivo",
@@ -2345,7 +2387,7 @@
    "por": "tablas"
   },
   "es_medicamento_de_tratamiento": {
-   "area": "ventas",
+   "area": "app-clientes",
    "por": "llamada"
   },
   "es_solicitud_operativa": {
@@ -2410,6 +2452,11 @@
    "area": "inventario",
    "por": "llamada"
   },
+  "factor_de_detalle": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
+  },
   "factores_sospechosos": {
    "area": "productos",
    "por": "tablas"
@@ -2419,8 +2466,8 @@
    "por": "código"
   },
   "facturas_sala_guarda": {
-   "area": "compras",
-   "por": "llamada"
+   "area": "tablero",
+   "por": "código"
   },
   "familia_de_tratamiento": {
    "area": "app-clientes",
@@ -5441,6 +5488,11 @@
   "unidad_de_despacho": {
    "area": "inventario",
    "por": "código"
+  },
+  "unidades_en_presentaciones": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
   },
   "unlock_module": {
    "area": "permisos",

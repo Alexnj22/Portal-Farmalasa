@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1368.0 — App de clientes: actualizaciones por aire
+
+Un cambio que es sólo JavaScript (pantallas, textos, lógica) llega al teléfono
+sin pasar por la tienda: la app lo baja al abrir y lo usa la vez siguiente.
+Servidor propio sobre Supabase, no EAS Update: sin costo por usuario
+(migración `20261029171914`).
+
+- **Publicar:** `npm run app:actualizar -- "Qué cambia"` (o
+  `--plataforma=ios|android`, `--ver` para ver sin publicar). Exige
+  `apps/clientes` commiteado y guarda el commit en la fila.
+- `expo-updates` con versión de runtime `fingerprint`: la huella del código
+  nativo. Un paquete sólo llega a binarios con la misma huella, así que nunca
+  pide un módulo que el teléfono no tiene. Si lo nativo cambió, el script lo
+  avisa: ese paquete espera un binario nuevo.
+- La app nunca baja a un paquete más viejo que el que trae instalado
+  (compara la fecha), así que un binario nuevo no se pisa con uno viejo.
+- Función pública `app-actualizaciones` (protocolo 1 de expo-updates; 204 =
+  nada nuevo) y bucket privado `app-actualizaciones` con URLs firmadas de un
+  día. `app_actualizaciones.activa = false` deja de ofrecer un paquete.
+- Llega a partir del próximo binario (el primero con `expo-updates`); los
+  instalados hoy no saben preguntar.
+
 ## v2.1367.2 — Caja: comentarios del cierre al día con lo que hace
 
 PENDIENTES 34. Dos comentarios de `operar-caja` (acción `cerrar`) seguían

@@ -224,6 +224,10 @@
       "guarda": "cron",
       "motivo": "Avisos al teléfono de los clientes: lo llama sólo el cron `avisos-clientes-15min` con x-cron-secret; no recibe sala ni ficha del cuerpo (salvo la prueba de cumpleaños, que también exige el secreto)."
     },
+    "app-actualizaciones": {
+      "guarda": "publica",
+      "motivo": "Actualizaciones por aire de la app de clientes: la llama expo-updates al abrir, antes de que haya sesión. Sólo lee: devuelve el paquete activo de la plataforma y la huella nativa que pide, con URLs firmadas de un día. No recibe sala ni ficha y entrega código que ya viaja en cada instalación."
+    },
     "app-clientes": {
       "guarda": "publica",
       "motivo": "La app del cliente: entra con documento + teléfono (mismo freno por IP que mis-puntos) y desde ahí la ficha sale SIEMPRE de la sesión, nunca del cuerpo."

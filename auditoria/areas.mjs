@@ -903,8 +903,10 @@ export const AREAS = [
                  // Qué moléculas cuentan como tratamiento crónico (2026-10-29).
                  'tratamiento_moleculas',
                  // La última compilación subida, para el aviso de actualizar (2026-10-29).
-                 'app_version_publicada'],
-        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja', 'purgar-chat-clientes'],
+                 'app_version_publicada',
+                 // Actualizaciones por aire publicadas (2026-10-29).
+                 'app_actualizaciones'],
+        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja', 'purgar-chat-clientes', 'app-actualizaciones'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'mayoristas-resumen-diario', 'purge-app-errores-diario',

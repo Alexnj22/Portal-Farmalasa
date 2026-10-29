@@ -48,6 +48,7 @@
     "hooks:install": "git config core.hooksPath .githooks",
     "version:bump": "node scripts/version-bump.mjs",
     "worktree": "bash scripts/worktree.sh",
+    "app:actualizar": "node scripts/publicar-actualizacion.mjs",
     "limpiar:dist": "node scripts/limpiar-dist.mjs",
     "limpiar:worktrees": "node scripts/limpiar-worktrees.mjs",
     "probar:boletas": "node scripts/probar-lectura-de-boletas.mjs",

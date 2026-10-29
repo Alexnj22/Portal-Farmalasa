@@ -435,6 +435,42 @@ export type Database = {
           },
         ]
       }
+      app_actualizaciones: {
+        Row: {
+          activa: boolean
+          app: string
+          commit_git: string | null
+          created_at: string
+          id: string
+          manifiesto: Json
+          mensaje: string | null
+          plataforma: string
+          runtime_version: string
+        }
+        Insert: {
+          activa?: boolean
+          app: string
+          commit_git?: string | null
+          created_at?: string
+          id?: string
+          manifiesto: Json
+          mensaje?: string | null
+          plataforma: string
+          runtime_version: string
+        }
+        Update: {
+          activa?: boolean
+          app?: string
+          commit_git?: string | null
+          created_at?: string
+          id?: string
+          manifiesto?: Json
+          mensaje?: string | null
+          plataforma?: string
+          runtime_version?: string
+        }
+        Relationships: []
+      }
       app_ajustes: {
         Row: {
           created_at: string

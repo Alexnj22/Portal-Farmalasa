@@ -267,6 +267,15 @@
       "eas": {
         "projectId": "8061eb79-1917-46b4-8851-c50f43db1a0d"
       }
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/app-actualizaciones",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

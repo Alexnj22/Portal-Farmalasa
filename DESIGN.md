@@ -2359,6 +2359,24 @@ Envuelve `ModalShell` con `surface={null}` y declara **él** la superficie del p
 los botones apilados y su área segura) y las tres ranuras de composición:
 `LiquidModal.Header` / `.Body` / `.Footer`.
 
+**El encabezado tiene anatomía propia (2026-10-29).** Hasta esa fecha `Header`
+era una ranura vacía y cada consumidor escribía a mano el ícono, el título, el
+subtítulo y la ✕. Regla del usuario: *«nada debe estar a mano, todo debe ser
+canónico»*. Con `titulo`, el canónico lo dibuja:
+
+```jsx
+<LiquidModal.Header icono={Clock} tono="brand" titulo="Horarios de atención"
+    subtitulo="Sucursal: La Popular" onClose={cerrar}>
+    {/* opcional: lo que va DEBAJO del título (pasos, pestañas) */}
+</LiquidModal.Header>
+```
+
+`avatar` reemplaza al ícono (la cara de una persona) y `compacto` guarda la
+baldosa y trunca en el teléfono. Sin `titulo` sigue siendo la ranura libre:
+**es deuda**, no una variante — los consumidores que la usan así se migran.
+`Body` acepta `ref` (el contenedor que scrollea) y `relleno={false}` para el
+llamador que pinta su propio interior.
+
 ### UnifiedModal
 
 File: `src/components/UnifiedModal.jsx`

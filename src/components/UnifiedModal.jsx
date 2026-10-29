@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidModal from "./common/LiquidModal";
+import Notice from './common/Notice';
 import AvatarConEstado from './common/AvatarConEstado';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { LoadingState } from './common/StateViews';
@@ -64,6 +65,31 @@ const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "v
 const HIDES_FOOTER = new Set(["viewWfmAnalytics", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "editContact", "viewPurchaseDte", "viewSalesDte", "editProveedor", "editCliente"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
+
+// El ícono y el tono del encabezado por tipo. Era una cadena de `if` que
+// devolvía una baldosa escrita a mano en cada rama; ahora la baldosa la dibuja
+// `LiquidModal.Header` y acá sólo se dice cuál.
+const ICONO_DEL_MODAL = {
+    newBranch: [Building2, 'brand'], editBranch: [Building2, 'brand'],
+    editBranchInmueble: [Building2, 'brand'], viewBranchEmployees: [Building2, 'brand'],
+    newEmployee: [UserPlus, 'brand'], editEmployee: [UserPlus, 'brand'],
+    rehireEmployee: [RefreshCw, 'success'],
+    vacationRecall: [Palmtree, 'warning'],
+    editBranchLegal: [Scale, 'success'],
+    editBranchServicios: [Zap, 'warning'],
+    editBranchHorarios: [Clock, 'brand'],
+    editBranchLeadership: [Star, 'warning'],
+    addCustomDocument: [FilePlus, 'brand'], editCustomDocument: [FilePlus, 'brand'],
+    newPayrollPeriod: [DollarSign, 'brand'],
+    editPayrollEntry: [Pencil, 'warning'],
+    editProveedor: [Truck, 'brand'],
+    editCliente: [Contact, 'brand'],
+};
+const iconoDelTipo = (type) => {
+    if (SHIELD_ICONS.has(type)) return { icono: ShieldCheck, tono: 'success' };
+    const [icono, tono] = ICONO_DEL_MODAL[type] || [Settings, 'neutral'];
+    return { icono, tono };
+};
 
 const BRANCH_SUBTITLES = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService", "editBranchLeadership", "addCustomDocument", "editCustomDocument"]);
 
@@ -925,7 +951,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
     if (!montadoParaSalida) return null;
 
-    const FallbackLoader = () => <LoadingState variant="content" label="Cargando Módulo…" />;
+    const FallbackLoader = () => <LoadingState variant="content" label="Cargando" />;
 
     // Tipos que necesitan que su contenido llene el modal (visor de PDF/documento con
     // scroll interno propio) en vez de altura natural por contenido. `min-h-full`/`h-full`
@@ -944,73 +970,33 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     // La foto que se acaba de elegir en el alta/edición de un empleado, para
     // el avatar del encabezado (la guardada la resuelve `AvatarConEstado`).
     const fotoRecienElegida = formData?.photoPreview || null;
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-sm bg-surface-card-hover";
+    const iconoDelModal = iconoDelTipo(type);
+    // La ficha que ya existe lleva SIEMPRE su avatar (foto, o la inicial si no
+    // tiene); el alta, sólo cuando ya eligió foto (2026-10-26). La marca de
+    // pendientes se apaga: el banner de abajo ya la dice.
+    const avatarDelModal = esFichaDeEmpleado && (type === 'editEmployee' || fotoRecienElegida) ? (
+        <AvatarConEstado emp={{ id: formData.id, name: formData.name, status: formData.status,
+                hire_date: formData.hire_date, photo: fotoRecienElegida || null, photo_url: null }}
+            px={48} radio="rounded-2xl" pendientes={false} />
+    ) : undefined;
 
     return (
         <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-modal" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
 
                 {!hidesHeader && (
-                    /* En el teléfono el alta de empleado es un formulario de cuatro
-                       pestañas y lo que importa es el campo, no el marco: medido
-                       en un iPhone 13, encabezado (título en dos renglones, nombre
-                       en dos, pasos) y pie (tres botones en dos filas) se comían
-                       ~70% del alto y el formulario quedaba en una franja. Para
-                       ese modal el encabezado se compacta y el ícono se guarda. */
-                    <div className={`flex-none bg-transparent border-b border-divider flex flex-col relative z-base shrink-0
-                        ${esFichaDeEmpleado ? 'px-5 py-3.5 gap-3 md:px-10 md:py-6 md:gap-4' : 'px-6 md:px-10 py-6 gap-4'}`}>
-                        <div className="flex justify-between items-center gap-3">
-                            <div className={`flex items-center gap-4 min-w-0 ${esFichaDeEmpleado ? '[&>*:first-child]:hidden sm:[&>*:first-child]:flex' : ''}`}>
-
-                                {(() => {
-                                    if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-success`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-brand-text`}><Building2 size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newEmployee" || type === "editEmployee") {
-                                        /* La cara de la persona, si ya la tiene (2026-10-26): un
-                                           ícono de «agregar persona» sobre la ficha de alguien que
-                                           ya existe decía menos de lo que se sabía. La recién
-                                           elegida (`photoPreview`) gana; si no, `AvatarConEstado`
-                                           la resuelve del store por id, firmada. La marca de
-                                           pendientes se apaga: el banner de abajo ya la dice. */
-                                        // La ficha que ya existe lleva SIEMPRE su avatar (foto, o la
-                                        // inicial si no tiene); el alta, sólo cuando ya eligió foto.
-                                        if (type === "editEmployee" || fotoRecienElegida) return (
-                                            <AvatarConEstado emp={{ id: formData.id, name: formData.name, status: formData.status,
-                                                    hire_date: formData.hire_date, photo: fotoRecienElegida || null, photo_url: null }}
-                                                px={48} radio="rounded-2xl" pendientes={false} />
-                                        );
-                                        return <div className={`${squircleClass} text-brand-text`}><UserPlus size={22} strokeWidth={2.5} /></div>;
-                                    }
-                                    if (type === "rehireEmployee") return <div className={`${squircleClass} text-success`}><RefreshCw size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "vacationRecall") return <div className={`${squircleClass} text-warning`}><Palmtree size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchLegal") return <div className={`${squircleClass} text-success`}><Scale size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchServicios") return <div className={`${squircleClass} text-warning`}><Zap size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-brand-text`}><Clock size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchLeadership") return <div className={`${squircleClass} text-warning`}><Star size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-brand-text`}><FilePlus size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand-text`}><DollarSign size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Pencil size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editProveedor") return <div className={`${squircleClass} text-brand-text`}><Truck size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editCliente") return <div className={`${squircleClass} text-brand-text`}><Contact size={22} strokeWidth={2.5} /></div>;
-
-                                    return <div className={`${squircleClass} text-content-3`}><Settings size={22} strokeWidth={2.5} /></div>;
-                                })()}
-
-                                <div className="min-w-0">
-                                    {/* Canónico (DESIGN §7 y §26.4): `text-title-sm` y con
-                                        mayúscula sólo en la primera palabra. Las mayúsculas
-                                        espaciadas son de los RÓTULOS, no de los títulos; acá
-                                        gritaban y en el teléfono partían el título en dos. */}
-                                    <h3 className={`text-title-sm font-black text-content tracking-tight leading-snug ${esFichaDeEmpleado ? 'truncate' : ''}`}>
-                                        {getModalTitle()}
-                                    </h3>
-                                    {getModalSubtitle() && (
-                                        <p className={`text-label font-medium text-content-3 mt-0.5 ${esFichaDeEmpleado ? 'truncate' : ''}`}>{getModalSubtitle()}</p>
-                                    )}
-                                </div>
-                            </div>
-                            <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
-                        </div>
-
+                    /* El encabezado es el del canónico (2026-10-29). El ícono de
+                       cada tipo sale de `ICONO_DEL_MODAL`; la ficha de empleado
+                       lleva la cara de la persona y va `compacto` (en el teléfono
+                       el encabezado se comía ~70% del alto). */
+                    <LiquidModal.Header
+                        titulo={getModalTitle()}
+                        subtitulo={getModalSubtitle() || undefined}
+                        icono={iconoDelModal.icono}
+                        tono={iconoDelModal.tono}
+                        avatar={avatarDelModal}
+                        compacto={esFichaDeEmpleado}
+                        onClose={onClose}
+                    >
                         {(type === 'newEmployee' || type === 'editEmployee') && (
                             <div className="flex items-center justify-center">
                                 {EMP_STEPS.map((step, idx) => {
@@ -1062,20 +1048,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 })}
                             </div>
                         )}
-                    </div>
+                    </LiquidModal.Header>
                 )}
 
-                <div
-                    ref={scrollRef}
-                    className={`flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-base w-full ${fillHeight ? 'flex flex-col' : ''}`}
-                    style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}
-                >
+                <LiquidModal.Body ref={scrollRef} relleno={false}
+                    className={`scrollbar-hide w-full ${fillHeight ? 'flex flex-col' : ''}`}>
                     <div className={`flex flex-col w-full ${fillHeight ? 'flex-1 min-h-0' : 'min-h-full'} ${hidesHeader ? 'p-0' : 'px-6 md:px-10 py-6'}`}>
                         {validationError && (
-                            <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-2xl flex items-center gap-3 text-danger shadow-sm shrink-0 animate-in fade-in slide-in-from-top-4">
-                                <AlertCircle size={20} strokeWidth={2.5} className="shrink-0" />
-                                <p className="text-label font-bold uppercase tracking-wide leading-tight">{validationError}</p>
-                            </div>
+                            <Notice variant="danger" icon={AlertCircle} bloque className="mb-6 shrink-0">{validationError}</Notice>
                         )}
 
                         {hayQueOfrecer && (
@@ -1132,7 +1112,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             </Suspense>
                         </form>
                     </div>
-                </div>
+                </LiquidModal.Body>
 
                 {!hidesFooter && (() => {
                     const isEmpForm = type === 'newEmployee' || type === 'editEmployee';

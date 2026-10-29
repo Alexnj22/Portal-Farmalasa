@@ -1,4 +1,6 @@
-import React, { useRef } from 'react';
+import React, { forwardRef, useRef } from 'react';
+import { X } from 'lucide-react';
+import Button from './Button';
 import AsaHoja from './AsaHoja';
 import ModalShell from './ModalShell';
 import { useArrastreHoja } from './arrastreHoja';
@@ -207,16 +209,71 @@ export default function LiquidModal({
     );
 }
 
+// El color del ícono del encabezado, de la paleta cerrada (§6.0).
+const TONO_DEL_ICONO = {
+    brand: 'text-brand-text',
+    success: 'text-success-text',
+    warning: 'text-warning-text',
+    danger: 'text-danger-text',
+    neutral: 'text-content-3',
+};
+
 /**
  * Header section — bg-transparent so the glass blur shows through.
- * className merges onto the section div (e.g. for padding overrides).
+ *
+ * ── La ANATOMÍA del encabezado es del canónico (2026-10-29) ──────────────
+ * Hasta acá esto era una ranura vacía: cada uno de los 105 consumidores
+ * escribía a mano su ícono, su título, su subtítulo y su ✕, y salían cinco
+ * tamaños de título y cuatro de ícono. Pedido del usuario: «nada debe estar a
+ * mano, todo debe ser canónico». Con `titulo`, el encabezado se dibuja solo:
+ *
+ *   <LiquidModal.Header icono={Clock} tono="brand" titulo="Horarios"
+ *       subtitulo="Sucursal: La Popular" onClose={cerrar} />
+ *
+ *   icono      componente de lucide; va en su baldosa
+ *   avatar     un nodo que ocupa el lugar del ícono (la cara de una persona)
+ *   tono       brand · success · warning · danger · neutral
+ *   compacto   en el teléfono guarda la baldosa y trunca (fichas largas)
+ *   children   lo que va DEBAJO del título (pasos, pestañas)
+ *
+ * Sin `titulo` se comporta como antes —ranura libre—, así los consumidores
+ * que todavía la usan así no cambian hasta que se migren.
  */
-LiquidModal.Header = function LiquidModalHeader({ children, className = '' }) {
+LiquidModal.Header = function LiquidModalHeader({
+    children, className = '',
+    titulo, subtitulo, icono: Icono, avatar, tono = 'neutral', onClose, compacto = false,
+}) {
     // Acostado el alto es lo escaso (ver el pie): la cabecera pierde relleno
     // vertical, no contenido. 20px → 12px arriba y abajo.
     const lateral = usePanelLateral();
+    if (!titulo) {
+        return (
+            <div data-parte="cabecera" className={`flex-none bg-transparent px-6 ${lateral ? 'py-3' : 'py-5'} border-b border-divider shrink-0 relative z-base ${className}`}>
+                {children}
+            </div>
+        );
+    }
+    const marca = avatar ?? (Icono ? (
+        <span aria-hidden="true" className={`w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card bg-surface-card-hover ${TONO_DEL_ICONO[tono] || TONO_DEL_ICONO.neutral}`}>
+            <Icono size={22} strokeWidth={2.5} />
+        </span>
+    ) : null);
     return (
-        <div data-parte="cabecera" className={`flex-none bg-transparent px-6 ${lateral ? 'py-3' : 'py-5'} border-b border-divider shrink-0 relative z-base ${className}`}>
+        <div data-parte="cabecera" className={`flex-none bg-transparent border-b border-divider shrink-0 relative z-base flex flex-col
+            ${compacto ? 'px-5 py-3.5 gap-3 md:px-10 md:py-6 md:gap-4' : `px-6 md:px-10 ${lateral ? 'py-3' : 'py-6'} gap-4`} ${className}`}>
+            <div className="flex justify-between items-center gap-3">
+                <div className="flex items-center gap-4 min-w-0">
+                    {marca && <div className={compacto ? 'hidden sm:flex' : 'flex'}>{marca}</div>}
+                    <div className="min-w-0">
+                        {/* `text-title-sm` y sentence case (§7, §26.4): las
+                            mayúsculas espaciadas son de los rótulos, no de los
+                            títulos. */}
+                        <h3 className={`text-title-sm font-black text-content tracking-tight leading-snug ${compacto ? 'truncate' : ''}`}>{titulo}</h3>
+                        {subtitulo && <p className={`text-label font-medium text-content-3 mt-0.5 ${compacto ? 'truncate' : ''}`}>{subtitulo}</p>}
+                    </div>
+                </div>
+                {onClose && <Button variant="ghost" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />}
+            </div>
             {children}
         </div>
     );
@@ -225,13 +282,16 @@ LiquidModal.Header = function LiquidModalHeader({ children, className = '' }) {
 /**
  * Scrollable body section — transparent so the glass blur shows through.
  */
-LiquidModal.Body = function LiquidModalBody({ children, className = '' }) {
+// `ref` llega al contenedor que scrollea (quien necesite subir al tope o
+// medir), y `relleno={false}` lo deja sin padding para el llamador que pinta su
+// propio interior — p. ej. un visor de documento que ocupa todo el cuerpo.
+LiquidModal.Body = forwardRef(function LiquidModalBody({ children, className = '', relleno = true }, ref) {
     return (
-        <div data-parte="cuerpo" className={`relative z-base px-6 py-5 flex-1 overflow-y-auto ${className}`}>
+        <div ref={ref} data-parte="cuerpo" className={`relative z-base ${relleno ? 'px-6 py-5' : ''} flex-1 overflow-y-auto overscroll-contain ${className}`}>
             {children}
         </div>
     );
-};
+});
 
 /**
  * Footer section — la zona de acciones.

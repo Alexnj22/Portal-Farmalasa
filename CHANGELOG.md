@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1375.0 — El encabezado de los modales, canónico
+
+`LiquidModal.Header` era una ranura vacía y cada modal escribía a mano su ícono, título, subtítulo y ✕. Ahora tiene anatomía: `icono`, `tono`, `titulo`, `subtitulo`, `avatar`, `compacto`, `onClose`, y lo que va debajo como `children`. `UnifiedModal` —todos los formularios de sucursal, empleado, nómina, proveedores, clientes y documentos— la usa: la cadena de `if` que devolvía una baldosa escrita a mano por tipo pasó a ser la tabla `ICONO_DEL_MODAL`. Su cuerpo es `LiquidModal.Body` (ahora acepta `ref` y `relleno={false}`), y el error de validación es un `Notice` en vez de una caja roja a mano. DESIGN.md § LiquidModal lo documenta.
+
 ## v2.1374.1 — app:actualizar: la llave del servidor que sí sirve
 
 - `npm run app:actualizar` usa la llave `service_role`: la CLI devuelve la

@@ -254,6 +254,14 @@
    "area": "app-clientes",
    "por": "trigger"
   },
+  "app_chat_por_purgar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_chat_purgar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "app_chat_resumen": {
    "area": "app-clientes",
    "por": "llamada"
@@ -290,6 +298,10 @@
   "app_cliente_inyecciones_por_recordar": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "app_cliente_preregistros_purgar": {
+   "area": "app-clientes",
+   "por": "cron"
   },
   "app_cliente_sesiones_purgar": {
    "area": "app-clientes",

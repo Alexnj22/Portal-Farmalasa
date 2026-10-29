@@ -865,6 +865,7 @@ export const AREAS = [
             'supabase/functions/app-clientes/',
             'supabase/functions/avisos-clientes/',
             'supabase/functions/wallet-pases/',
+            'supabase/functions/purgar-chat-clientes/',
             'supabase/functions/_shared/pase.ts',
             'supabase/functions/_shared/imagenesPase.ts',
             'supabase/functions/_shared/consentimientoPuntos.ts',
@@ -896,11 +897,11 @@ export const AREAS = [
                  'reclamos_clientes',
                  // Qué moléculas cuentan como tratamiento crónico (2026-10-29).
                  'tratamiento_moleculas'],
-        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja'],
+        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'wompi-pagos', 'preventa-caja', 'purgar-chat-clientes'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'mayoristas-resumen-diario', 'purge-app-errores-diario',
-                'puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'reservas-vigilar-15min', 'encargos-sugerir-producto', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
+                'puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'purge-app-cliente-preregistros', 'purgar-chat-clientes-diario', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'reservas-vigilar-15min', 'encargos-sugerir-producto', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
                 'recetas-escalar-15min',
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.

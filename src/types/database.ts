@@ -647,6 +647,7 @@ export type Database = {
           calificada_at: string | null
           canal: string
           cliente_escribiendo_at: string | null
+          cliente_vacio_hasta_id: number | null
           created_at: string
           customer_id: number
           escalada_sala_at: string | null
@@ -677,6 +678,7 @@ export type Database = {
           calificada_at?: string | null
           canal?: string
           cliente_escribiendo_at?: string | null
+          cliente_vacio_hasta_id?: number | null
           created_at?: string
           customer_id: number
           escalada_sala_at?: string | null
@@ -707,6 +709,7 @@ export type Database = {
           calificada_at?: string | null
           canal?: string
           cliente_escribiendo_at?: string | null
+          cliente_vacio_hasta_id?: number | null
           created_at?: string
           customer_id?: number
           escalada_sala_at?: string | null
@@ -28986,6 +28989,8 @@ export type Database = {
       }
       app_catalogo_producto: { Args: { p_id: number }; Returns: Json }
       app_catalogo_rehacer_destacados: { Args: never; Returns: number }
+      app_chat_por_purgar: { Args: { p_limite?: number }; Returns: Json }
+      app_chat_purgar: { Args: { p_ids: number[] }; Returns: number }
       app_chat_resumen: {
         Args: { p_adjunto: Json; p_texto: string }
         Returns: string
@@ -29010,6 +29015,7 @@ export type Database = {
           sala: string
         }[]
       }
+      app_cliente_preregistros_purgar: { Args: never; Returns: number }
       app_cliente_sesiones_purgar: { Args: never; Returns: number }
       app_existencias_netas: { Args: { p_ids: number[] }; Returns: Json }
       app_historia_quienes_vieron: {

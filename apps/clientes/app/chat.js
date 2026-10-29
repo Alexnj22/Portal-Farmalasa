@@ -958,15 +958,38 @@ export default function Chat() {
   const atiendeNombre = vivo.atiende ? nombrePropio(vivo.atiende) : null;
   const conPreferencia = !!preferente;
   const abrirBuscar = useCallback(() => { Haptics.selectionAsync().catch(() => {}); Keyboard.dismiss(); setBuscar(true); }, []);
+  // Vaciar el chat SÓLO en la app del cliente (PENDIENTES 29, 2026-10-29): la
+  // farmacia sigue viendo la conversación; se borra de verdad a los 12 meses
+  // sin mensajes. El servidor guarda desde dónde mostrar, así que vale también
+  // en otro teléfono.
+  const vaciar = useCallback(() => {
+    Keyboard.dismiss();
+    Alert.alert('¿Vaciar el chat?', 'Los mensajes se quitan de tu app. La farmacia conserva la conversación.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Vaciar', style: 'destructive', onPress: async () => {
+        const r = await pedir('chat_vaciar');
+        if (!r?.ok) { Alert.alert('No se vació', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
+        setMensajes([]);
+        setHayMas(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      } },
+    ]);
+  }, [pedir]);
   const opcionesTitulo = useMemo(() => ({ title: 'Farmacia Salud', headerTitle: () => (
     <TituloChat fuera={fuera} atiende={atiendeNombre} escribiendo={escribiendoNombre} preferente={conPreferencia} />
   ), headerRight: () => (
-    // Buscar en el chat y su galería (2026-10-20).
-    <Presionable onPress={abrirBuscar} hitSlop={10} accessibilityRole="button" accessibilityLabel="Buscar en el chat, fotos y productos"
-      style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-      <Icono sf="magnifyingglass" respaldo="⌕" tam={18} color={t.color.magentaTexto} />
-    </Presionable>
-  ) }), [fuera, atiendeNombre, escribiendoNombre, conPreferencia, abrirBuscar, t]);
+    <View style={{ flexDirection: 'row' }}>
+      {/* Buscar en el chat y su galería (2026-10-20). */}
+      <Presionable onPress={abrirBuscar} hitSlop={10} accessibilityRole="button" accessibilityLabel="Buscar en el chat, fotos y productos"
+        style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+        <Icono sf="magnifyingglass" respaldo="⌕" tam={18} color={t.color.magentaTexto} />
+      </Presionable>
+      <Presionable onPress={vaciar} hitSlop={10} accessibilityRole="button" accessibilityLabel="Vaciar el chat"
+        style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+        <Icono sf="trash" respaldo="🗑" tam={17} color={t.color.magentaTexto} />
+      </Presionable>
+    </View>
+  ) }), [fuera, atiendeNombre, escribiendoNombre, conPreferencia, abrirBuscar, vaciar, t]);
   // El teclado en iOS, con transformaciones y no con el alto (ver «El teclado», al pie).
   const insAbajo = Math.max(ins.bottom, 8);
   const subida = useAnimatedStyle(() => ({ transform: [{ translateY: tecladoAlto ? -subidaConTeclado(tecladoAlto.value, insAbajo) : 0 }] }));

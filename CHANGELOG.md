@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1360.0 — App de clientes: plazos de datos y vaciar el chat
+
+PENDIENTES 29, plazos decididos por el usuario el 2026-10-29:
+
+| dato | plazo | cómo |
+|---|---|---|
+| pre-registro no vinculado | 60 días | cron `purge-app-cliente-preregistros` |
+| chat | 12 meses sin mensajes, con fotos y audios | edge `purgar-chat-clientes` + cron diario |
+| sesiones | 30 días después de cerrarse o vencer | ya existía |
+| Wallet | al quitar la tarjeta del teléfono | ya existía (`wallet-pases`) |
+| reservas y pagos | se conservan | comprobantes de dinero cobrado |
+
+El pre-registro **vinculado** no se borra: sus aceptaciones son la prueba del
+consentimiento. Los archivos del chat se borran por la API de Storage antes que
+las filas; si un archivo falla, esa conversación espera a la corrida siguiente.
+
+**Vaciar el chat** (sólo para el cliente): botón de papelera en el chat de la
+app. Guarda `cliente_vacio_hasta_id` y la app muestra sólo lo posterior; la
+farmacia sigue viendo la conversación entera. El botón aparece con la próxima
+versión de la app; el servidor ya está desplegado.
+
 ## v2.1359.10 — Tratamientos: cuenta cuánto se compra, no sólo cada cuánto
 
 La regla de v2.1359.8 sólo miraba la frecuencia. Una Cardioaspirina de 30

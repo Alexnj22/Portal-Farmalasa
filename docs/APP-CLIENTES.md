@@ -466,9 +466,13 @@ recoja; «Opcional», que depende de una función que él elige usar.
 4. **Sentry y la IP.** Con `sendDefaultPii: false` el SDK no manda la IP, pero
    Sentry puede inferirla del envío según la configuración del proyecto. Activar
    en Sentry *Settings › Security & Privacy › Prevent Storing of IP Addresses*.
-5. **Plazos sin purga** (el aviso dice «mientras dure la relación», cláusula
-   6.2): sesiones, pre-registros, chat, recetas, reservas, encargos, pagos,
-   historias vistas, aceptaciones, encuestas y `wallet_registros`.
+5. **Plazos** (el aviso dice «mientras dure la relación», cláusula 6.2).
+   Decididos el 2026-10-29 (v2.1360.0): pre-registro no vinculado 60 días; chat 12
+   meses sin mensajes, con sus archivos (`purgar-chat-clientes`); sesiones 30
+   días después de cerrarse o vencer; Wallet al quitar la tarjeta; reservas y
+   pagos **se conservan** (comprobantes de dinero cobrado). El cliente puede
+   vaciar su chat, sólo para él (`cliente_vacio_hasta_id`). Siguen sin plazo:
+   recetas, encargos, historias vistas, aceptaciones y encuestas.
 6. **Versión del aviso aceptado.** El aviso subió a versión 2, pero
    `TEXTOS_CONSENTIMIENTO.aviso` (`supabase/functions/_shared/consentimientoPuntos.ts`)
    sigue en `aviso-2026-09-04`. Subirlo a `aviso-2026-10-17` hace que la app le

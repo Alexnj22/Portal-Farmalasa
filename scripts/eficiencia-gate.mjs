@@ -268,6 +268,18 @@ const CRONS = [
           + '(2026-10-19). SQL puro sobre la propia base, con tope de 5000 por corrida.',
   },
   {
+    job: 'purge-app-cliente-preregistros', slug: null, cadencia: '55 9 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Borra los pre-registros de la app no vinculados a los 60 días (PENDIENTES 29, 2026-10-29). '
+          + 'SQL puro, tope de 2000 por corrida.',
+  },
+  {
+    job: 'purgar-chat-clientes-diario', slug: 'purgar-chat-clientes', cadencia: '5 10 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Borra los chats de la app con 12 meses sin mensajes, con sus fotos y audios del bucket '
+          + '(PENDIENTES 29, 2026-10-29). Sólo base y Storage, tope de 200 conversaciones por corrida.',
+  },
+  {
     job: 'refresh-product-last-sale-daily', slug: null, cadencia: '45 6 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Recalcula `product_last_sale` —la fecha de la última venta de cada producto en cada '

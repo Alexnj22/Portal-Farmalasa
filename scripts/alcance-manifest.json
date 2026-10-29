@@ -87,6 +87,9 @@
     "check-doc-expiry": {
       "guarda": "cron"
     },
+    "purgar-chat-clientes": {
+      "guarda": "cron"
+    },
     "check-employee-doc-expiry": {
       "guarda": "cron"
     },

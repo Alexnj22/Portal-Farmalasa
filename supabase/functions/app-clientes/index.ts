@@ -1640,7 +1640,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
-    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_subir_url", "chat_reaccionar", "chat_escribiendo", "chat_calificar", "chat_buscar", "chat_galeria", "chat_editar", "chat_borrar", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
+    if (["chat_mensajes", "chat_enviar", "chat_leido", "chat_vaciar", "chat_subir_url", "chat_reaccionar", "chat_escribiendo", "chat_calificar", "chat_buscar", "chat_galeria", "chat_editar", "chat_borrar", "perfil", "perfil_subir_url", "perfil_confirmar", "perfil_quitar"].includes(accion)) {
       if (!customerId) return json({ ok: false, pendiente: true, mensaje: "Completa tu registro en una sucursal para usar esta opción." });
     }
 
@@ -1750,7 +1750,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     const POR_PAGINA_CHAT = 30;
     const convDe = async () => {
       const { data, error } = await admin.from("app_chat_conversaciones")
-        .select("id, canal, sin_leer_cliente, tomada_por, tomada_at, escribiendo_por, escribiendo_at, visto_equipo_at, ultimo_de, ultimo_mensaje_at, estado, resuelta_at, calificacion, calificada_at")
+        .select("id, canal, sin_leer_cliente, cliente_vacio_hasta_id, tomada_por, tomada_at, escribiendo_por, escribiendo_at, visto_equipo_at, ultimo_de, ultimo_mensaje_at, estado, resuelta_at, calificacion, calificada_at")
         .eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
       return data;
@@ -1914,7 +1914,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           // La semana anterior a lo más viejo que la app tiene. Si esa semana
           // está vacía, la ventana salta a la semana del mensaje más nuevo de
           // los que quedan (sin pedir semanas vacías una por una).
-          let q = admin.from("app_chat_mensajes").select(COLS_CHAT).limit(POR_SEMANA + 1).eq("conversacion_id", cv.id);
+          let q = admin.from("app_chat_mensajes").select(COLS_CHAT).limit(POR_SEMANA + 1).eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0);
           q = Number.isSafeInteger(antes) && antes > 0 ? q.lt("id", antes) : q.lt("created_at", new Date(antesDe).toISOString());
           const { data, error } = await q.order("id", { ascending: false });
           if (error) throw error;
@@ -1932,25 +1932,25 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           // un mínimo de 15 y siempre desde el primer mensaje sin leer, para
           // que la franja «N mensajes nuevos» tenga dónde ir.
           const { data: rec, error: eRec } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(TOPE_PRIMERA)
-            .eq("conversacion_id", cv.id).gte("created_at", new Date(desdeFecha!).toISOString()).order("id", { ascending: false });
+            .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).gte("created_at", new Date(desdeFecha!).toISOString()).order("id", { ascending: false });
           if (eRec) throw eRec;
           let lista = rec ?? [];
           if (lista.length < MINIMO) {
             const { data: ult, error: eUlt } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(MINIMO)
-              .eq("conversacion_id", cv.id).order("id", { ascending: false });
+              .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).order("id", { ascending: false });
             if (eUlt) throw eUlt;
             lista = ult ?? [];
           }
           const sinLeer = Math.min(TOPE_PRIMERA, Number(cv.sin_leer_cliente ?? 0));
           if (sinLeer > 0 && lista.length < TOPE_PRIMERA) {
             const { data: noLeidos, error: eNl } = await admin.from("app_chat_mensajes").select("id").limit(sinLeer)
-              .eq("conversacion_id", cv.id).eq("autor", "equipo").order("id", { ascending: false });
+              .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).eq("autor", "equipo").order("id", { ascending: false });
             if (eNl) throw eNl;
             const primero = (noLeidos ?? []).at(-1)?.id;
             const masViejo = lista.at(-1)?.id;
             if (primero != null && masViejo != null && primero < masViejo) {
               const { data: hasta, error: eH } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(TOPE_PRIMERA)
-                .eq("conversacion_id", cv.id).gte("id", primero).order("id", { ascending: false });
+                .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).gte("id", primero).order("id", { ascending: false });
               if (eH) throw eH;
               lista = hasta ?? lista;
             }
@@ -1958,7 +1958,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           const masViejo = lista.at(-1)?.id;
           if (masViejo != null) {
             const { data: antesUno, error: eA } = await admin.from("app_chat_mensajes").select("id").limit(1)
-              .eq("conversacion_id", cv.id).lt("id", masViejo);
+              .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).lt("id", masViejo);
             if (eA) throw eA;
             hayMas = (antesUno ?? []).length > 0;
           }
@@ -1967,12 +1967,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       } else if (Number.isSafeInteger(desde) && desde > 0) {
         // Lo nuevo desde el último que la app ya tiene (en orden).
         const { data, error } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(100)
-          .eq("conversacion_id", cv.id).gt("id", desde).order("id", { ascending: true });
+          .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).gt("id", desde).order("id", { ascending: true });
         if (error) throw error;
         filas = data ?? [];
       } else {
         let q = admin.from("app_chat_mensajes").select(COLS_CHAT).limit(POR_PAGINA_CHAT + 1)
-          .eq("conversacion_id", cv.id);
+          .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0);
         if (Number.isSafeInteger(antes) && antes > 0) q = q.lt("id", antes);
         const { data, error } = await q.order("id", { ascending: false });
         if (error) throw error;
@@ -2005,7 +2005,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       let cambiados: any[] = [];
       if (cambiosDesde != null) {
         const { data: ch, error: eCh } = await admin.from("app_chat_mensajes").select(COLS_CHAT).limit(50)
-          .eq("conversacion_id", cv.id).gt("cambiado_at", new Date(cambiosDesde - 2000).toISOString());
+          .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).gt("cambiado_at", new Date(cambiosDesde - 2000).toISOString());
         if (eCh) throw eCh;
         cambiados = ch ?? [];
       }
@@ -2023,7 +2023,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!cv || q.length < 2) return json({ ok: true, mensajes: [] });
       const patron = `%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
       const { data, error } = await admin.from("app_chat_mensajes").select(COLS_BUSCAR)
-        .eq("conversacion_id", cv.id).neq("autor", "sistema").is("borrado_at", null).ilike("texto", patron)
+        .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).neq("autor", "sistema").is("borrado_at", null).ilike("texto", patron)
         .order("id", { ascending: false }).limit(40);
       if (error) throw error;
       return json({ ok: true, mensajes: await armarMensajes(data ?? []) });
@@ -2032,9 +2032,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const cv = await convDe();
       if (!cv) return json({ ok: true, fotos: [], productos: [] });
       const [{ data: f, error: eF }, { data: p, error: eP }] = await Promise.all([
-        admin.from("app_chat_mensajes").select(COLS_BUSCAR).eq("conversacion_id", cv.id).not("foto_ruta", "is", null)
+        admin.from("app_chat_mensajes").select(COLS_BUSCAR).eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).not("foto_ruta", "is", null)
           .order("id", { ascending: false }).limit(60),
-        admin.from("app_chat_mensajes").select(COLS_BUSCAR).eq("conversacion_id", cv.id).not("adjunto", "is", null)
+        admin.from("app_chat_mensajes").select(COLS_BUSCAR).eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id ?? 0).not("adjunto", "is", null)
           .order("id", { ascending: false }).limit(40),
       ]);
       if (eF) throw eF;
@@ -2307,6 +2307,23 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (error) throw error;
       if (!hecha?.length) return json({ ok: false, mensaje: "Esta conversación ya no se puede calificar." });
       return json({ ok: true, conversacion: { estado: "resuelta", calificacion: nota, puede_calificar: false } });
+    }
+    // Vaciar el chat SÓLO para el cliente (PENDIENTES 29, 2026-10-29): se
+    // guarda hasta qué mensaje vació y las lecturas de arriba (`chat_mensajes`,
+    // `chat_buscar`, `chat_galeria`) le muestran sólo lo posterior. No borra
+    // nada: la farmacia sigue viendo la conversación entera.
+    if (accion === "chat_vaciar") {
+      const cv = await convDe();
+      if (!cv) return json({ ok: true });
+      const { data: ult, error: eU } = await admin.from("app_chat_mensajes").select("id")
+        .eq("conversacion_id", cv.id).order("id", { ascending: false }).limit(1);
+      if (eU) throw eU;
+      const hasta = ult?.[0]?.id;
+      if (hasta == null) return json({ ok: true });
+      const { error: eV } = await admin.from("app_chat_conversaciones")
+        .update({ cliente_vacio_hasta_id: hasta, sin_leer_cliente: 0 }).eq("id", cv.id);
+      if (eV) throw eV;
+      return json({ ok: true });
     }
     if (accion === "chat_leido") {
       const ahora = new Date().toISOString();

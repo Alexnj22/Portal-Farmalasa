@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.8 — La descarga por vencimiento también pide foto
+
+_(pendiente de redactar)_
+
 ## v2.1381.7 — Compras: el aviso de la carga cuenta lo ya confirmado
 
 El aviso «N renglones necesitan un ojo» de la carga de compras se cuenta con

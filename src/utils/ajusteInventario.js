@@ -40,7 +40,21 @@ export const MOTIVOS_AJUSTE = {
 };
 
 // Un descuadre no se fotografía, y pedirla ahí sería un trámite vacío.
-export const OPS_CON_FOTO = ['PRODUCTO DAÑADO'];
+// Vencimiento entró el 2026-10-29 (usuario): quien aprueba está en otra sala y
+// la fecha impresa en el empaque es lo único que prueba que venció.
+// Cada operación dice QUÉ tiene que verse en la foto: el rótulo y el aviso de
+// que falta salen de acá para el portal y la app.
+export const FOTO_DE_AJUSTE = {
+    'PRODUCTO DAÑADO': {
+        titulo: 'Foto del daño', alt: 'Daño', app: 'Fotos del producto dañado (obligatorio)',
+        falta: 'Falta la foto: es lo único que quien aprueba puede mirar para saber que el producto está dañado.',
+    },
+    'VENCIMIENTO': {
+        titulo: 'Foto del vencimiento', alt: 'Vencimiento', app: 'Fotos de la fecha de vencimiento (obligatorio)',
+        falta: 'Falta la foto: que se vea la fecha de vencimiento impresa en el empaque.',
+    },
+};
+export const OPS_CON_FOTO = Object.keys(FOTO_DE_AJUSTE);
 export const BUCKET_EVIDENCIA = 'inventario-evidencia';
 export const MAX_FOTOS_AJUSTE = 3;
 

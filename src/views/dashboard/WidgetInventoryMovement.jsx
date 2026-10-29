@@ -23,7 +23,7 @@ import {
 } from '@nucleo/data/inventoryMovements';
 import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
-import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
+import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, OPS_CON_FOTO, FOTO_DE_AJUSTE, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 
 // Widget «Ajuste de Inventario».
@@ -239,6 +239,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const esCarga = op?.movimiento === 'CARGA';
     const motivos = MOTIVOS[opKey] ?? null;
     const pideFoto = OPS_CON_FOTO.includes(opKey);
+    const textoFoto = FOTO_DE_AJUSTE[opKey];
 
     const volver = useCallback(() => {
         setOpKey(null); setLineas([]); setCausa(''); setBusqueda(''); setError('');
@@ -1168,7 +1169,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         <div className="flex flex-col gap-2">
                             <div className="flex items-baseline gap-2 px-1">
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">
-                                    Foto del daño
+                                    {textoFoto.titulo}
                                 </p>
                                 <span className="text-micro text-content-3 font-semibold">
                                     {fotos.length} de {MAX_FOTOS}
@@ -1182,13 +1183,12 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                             <FotosDeEvidencia
                                 fotos={fotos} onCambio={setFotos}
                                 max={MAX_FOTOS} maxMB={10}
-                                resaltar onError={setError} alt="Daño"
+                                resaltar onError={setError} alt={textoFoto.alt}
                             />
 
                             {fotos.length === 0 && (
                                 <p className="text-micro text-warning-text font-semibold px-1 leading-snug">
-                                    Falta la foto: es lo único que quien aprueba puede mirar para
-                                    saber que el producto está dañado.
+                                    {textoFoto.falta}
                                 </p>
                             )}
                         </div>

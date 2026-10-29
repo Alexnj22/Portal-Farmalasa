@@ -33,12 +33,13 @@
 // (`saldoDeBolsa`), no contra lo guardado, y el servidor rechaza si no coincide
 // con el suyo.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import {
   confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchInvariante, fetchPorDepositar, fetchSaldos, marcarConteoBolsa, recibirBolsas,
 } from '@nucleo/data/bolsas';
@@ -189,7 +190,11 @@ export default function Bolsas() {
 
   useEffect(() => { if (getScope && !alcanceTodos) router.replace('/bolsas-sala'); }, [alcanceTodos, getScope]);
 
+  // Gana la lectura MÁS NUEVA: la acción, el aviso en vivo y el reloj pueden
+  // cruzarse, y una lectura vieja que vuelve tarde pintaría la etapa anterior.
+  const lecturaRef = useRef(0);
   const cargar = useCallback(async () => {
+    const esta = ++lecturaRef.current;
     const [vivas, conDif, contadas, paraBanco, invar] = await Promise.all([
       fetchBolsas({ estados: ['ABIERTA', 'ENTREGADA', 'RECIBIDA'] }),
       fetchBolsasConDiferencia(),
@@ -200,16 +205,23 @@ export default function Bolsas() {
       puedeContar ? fetchPorDepositar() : Promise.resolve([]),
       fetchInvariante({ desde: desdeContadas, hasta: hastaContadas }),
     ]);
+    if (esta !== lecturaRef.current) return;
     setInvariante(invar || []);
     setPorDepositar(paraBanco || []);
     const todas = [...(vivas || []), ...(conDif || []), ...(contadas || [])];
     const saldos = await fetchSaldos([...new Set(todas.map((b) => b.id))]);
+    if (esta !== lecturaRef.current) return;
     const conSaldo = (b) => ({ ...b, ...(saldos.get(b.id) || {}) });
     setBolsas((vivas || []).map(conSaldo));
     setDiferencias((conDif || []).map(conSaldo));
     setContadas((contadas || []).map(conSaldo));
   }, [puedeContar, desdeContadas, hastaContadas]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+  // Se pone al día sola, como en el portal: con dos o tres contando a la vez,
+  // cada teléfono tiene que ver lo que hicieron los otros sin deslizar. Se
+  // pausa con una bolsa abierta o una diferencia a medio resolver: cambiarle
+  // las cifras por debajo a quien está decidiendo es cómo se firma otra cosa.
+  useRefrescoEnVivo(cargar, { tabla: 'bolsas', ms: 60_000, activo: !abierta && !resolviendo });
 
   const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`;
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);

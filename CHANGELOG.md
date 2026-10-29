@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.6 — Bolsas en la app: se pone al día sola
+
+La pantalla de bolsas de la app sólo se actualizaba al deslizar hacia abajo o
+después de una acción propia: con dos o tres personas contando a la vez, cada
+teléfono veía sólo lo suyo. Ahora escucha los cambios de `bolsas` en vivo (con
+el reloj de 60 s de respaldo, igual que el portal), se pausa con una bolsa
+abierta o una diferencia a medio resolver, y de dos lecturas cruzadas gana la
+más nueva. La aceleración de `get_bolsas_con_diferencia` (v2.1359.4) ya le
+llegaba sola, porque es del servidor.
+
 ## v2.1359.5 — App: compila otra vez (Metro mira _shared para la regla de tardanza)
 
 v2.1357.47 hizo que `src/data/attendanceAudit.js` importe

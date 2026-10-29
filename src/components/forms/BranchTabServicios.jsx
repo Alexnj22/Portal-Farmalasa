@@ -1,90 +1,59 @@
 import React from 'react';
 import { Zap, Droplet, Wifi, Smartphone, CalendarDays } from 'lucide-react';
-import { LazyInput, clampInt } from './BranchHelpers';
+import { LazyInput, SeccionDeFormulario, clampInt } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
-const BranchTabServicios = ({ services, updateServiceField }) => {
+// El tono de cada servicio sale de la paleta cerrada (§6.0) por la ranura
+// `tono` de la sección; antes cada uno traía su par de clases escritas a mano.
+const SERVICIOS = [
+    { id: 'light', icon: Zap, label: 'Energía eléctrica', placeholder: 'Ej: CAESS', accountLabel: 'Nº de NIC / NPE', tono: 'warning' },
+    { id: 'water', icon: Droplet, label: 'Agua potable', placeholder: 'Ej: ANDA', accountLabel: 'Nº de cuenta', tono: 'chart-9' },
+    { id: 'internet', icon: Wifi, label: 'Internet fijo', placeholder: 'Ej: Tigo / Claro', accountLabel: 'Nº de contrato o teléfono', tono: 'brand' },
+    { id: 'mobile', icon: Smartphone, label: 'Telefonía móvil (flota)', placeholder: 'Ej: Claro', accountLabel: 'Nº de teléfono', tono: 'chart-3' },
+];
 
-    // 🚨 GPU LOCK: Mantenemos el scroll ultra fluido a 60 FPS
-    const gpuLockStyle = {
-        transform: 'translateZ(0)',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        willChange: 'transform'
-    };
-
-    // 🚨 ESTILOS LIQUID GLASS CONSISTENTES
-    const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)]";
-    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
-
-    const servicesList = [
-        { id: 'light', icon: Zap, label: 'Energía eléctrica', placeholder: 'Ej. CAESS', accountLabel: 'Nº de NIC / NPE', color: 'text-warning', bgIcon: 'bg-warning/10' },
-        { id: 'water', icon: Droplet, label: 'Agua potable', placeholder: 'Ej. ANDA', accountLabel: 'Nº de Cuenta', color: 'text-chart-9-text', bgIcon: 'bg-chart-9/10' },
-        { id: 'internet', icon: Wifi, label: 'Internet fijo', placeholder: 'Ej. Tigo / Claro', accountLabel: 'Nº de Contrato / Teléfono', color: 'text-brand-text', bgIcon: 'bg-chart-1/10' },
-        { id: 'mobile', icon: Smartphone, label: 'Telefonía móvil (flota)', placeholder: 'Ej. Claro', accountLabel: 'Nº de Teléfono', color: 'text-chart-3-text', bgIcon: 'bg-chart-3/10' },
-    ];
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full" style={gpuLockStyle}>
-            {servicesList.map((srv) => (
-                <div key={srv.id} className={`${islandClass} ${islandHoverClass} flex flex-col`} style={gpuLockStyle}>
-                    
-                    {/* ENCABEZADO CON ÍCONO COLOREADO */}
-                    <div className="flex items-center gap-3 mb-5">
-                        <div className={`p-2 ${srv.bgIcon} ${srv.color} rounded-xl border border-border-card shadow-[var(--shadow-shine)]`}>
-                            <srv.icon size={18} strokeWidth={2.5} />
-                        </div>
-                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content">
-                            {srv.label}
-                        </h4>
-                    </div>
-
-                    {/* CAMPOS: Apilados verticalmente */}
-                    <div className="flex flex-col gap-5 flex-1">
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>Proveedor</label>
-                            <LazyInput 
-                                placeholder={srv.placeholder} 
-                                value={services[srv.id]?.provider || ""} 
-                                onChange={(val) => updateServiceField(srv.id, 'provider', val)} 
-                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`} 
-                            />
-                        </div>
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>{srv.accountLabel}</label>
-                            <LazyInput 
-                                value={services[srv.id]?.account || ""} 
-                                onChange={(val) => updateServiceField(srv.id, 'account', val)} 
-                                className={`!bg-surface-card shadow-sm h-[42px] text-body font-mono border-divider ${inputHoverClass}`} 
-                            />
-                        </div>
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>Día de Pago (1-31)</label>
-                            <LazyInput 
-                                type="number" 
-                                placeholder="Ej: 15" 
-                                value={services[srv.id]?.dueDay || ""} 
-                                onChange={(val) => updateServiceField(srv.id, 'dueDay', clampInt(val, 1, 31))} 
-                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`} 
-                            />
-                        </div>
-                        
-                        {/* 🚨 FIX: LiquidDatePicker con mode="month" */}
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-success')}><span className="flex items-center gap-1.5"><CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado</span></label>
-                            <LiquidDatePicker tono="success"
-                                mode="month"
-                                value={services[srv.id]?.paidThrough || ""}
-                                onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)}
-                                />
-                        </div>
+const BranchTabServicios = ({ services, updateServiceField }) => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+        {SERVICIOS.map((srv) => (
+            <SeccionDeFormulario key={srv.id} icon={srv.icon} titulo={srv.label} tono={srv.tono}>
+                <LazyInput
+                    label="Proveedor"
+                    name={`suc-${srv.id}-proveedor`}
+                    placeholder={srv.placeholder}
+                    value={services[srv.id]?.provider || ""}
+                    onChange={(val) => updateServiceField(srv.id, 'provider', val)}
+                />
+                <LazyInput
+                    label={srv.accountLabel}
+                    name={`suc-${srv.id}-cuenta`}
+                    inputClassName="tabular-nums"
+                    value={services[srv.id]?.account || ""}
+                    onChange={(val) => updateServiceField(srv.id, 'account', val)}
+                />
+                <div className="grid grid-cols-1 gap-4">
+                    <LazyInput
+                        label="Día de pago (1-31)"
+                        name={`suc-${srv.id}-dia`}
+                        inputMode="numeric"
+                        placeholder="Ej: 15"
+                        value={services[srv.id]?.dueDay ?? ""}
+                        onChange={(val) => updateServiceField(srv.id, 'dueDay', clampInt(val, 1, 31))}
+                    />
+                    <div>
+                        <span className={rotuloCampo('text-success-text')}>
+                            <span className="flex items-center gap-1.5"><CalendarDays size={12} strokeWidth={2.5} aria-hidden="true" /> Último mes pagado</span>
+                        </span>
+                        <LiquidDatePicker tono="success"
+                            mode="month"
+                            value={services[srv.id]?.paidThrough || ""}
+                            onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)}
+                        />
                     </div>
                 </div>
-            ))}
-        </div>
-    );
-};
+            </SeccionDeFormulario>
+        ))}
+    </div>
+);
 
 export default React.memo(BranchTabServicios);

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Notice from '../common/Notice';
 import Button from '../common/Button';
-import { SkeletonText } from '../common/StateViews';
-import { Laptop, AlertCircle, Loader2, Unplug, PowerOff, Activity } from 'lucide-react';
+import Badge from '../common/Badge';
+import { SkeletonText, EmptyState } from '../common/StateViews';
+import { Laptop, AlertCircle, Unplug, PowerOff, Activity } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { kioscosActivos, LIMITE_KIOSCOS } from '@nucleo/utils/kioscos';
@@ -71,12 +72,10 @@ const FormDispositivos = ({ formData }) => {
                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content flex items-center gap-2">
                     <Activity size={16} className="text-brand-text"/> Dispositivos aprobados
                 </h4>
-                <div className="bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1.5 shadow-sm">
-                    <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
-                    <span className="text-micro font-black tracking-widest uppercase">
-                        {activeKiosks.length} / {LIMITE_KIOSCOS}
-                    </span>
-                </div>
+                {/* El cupo es un dato, no algo vivo: sin el punto que latía. */}
+                <Badge size="sm" variant={activeKiosks.length >= LIMITE_KIOSCOS ? 'warning' : 'success'} uppercase={false}>
+                    {activeKiosks.length} de {LIMITE_KIOSCOS}
+                </Badge>
             </div>
 
             {/* CONTENEDOR DE LISTA ÚNICA */}
@@ -96,22 +95,22 @@ const FormDispositivos = ({ formData }) => {
                                         {/* FILA 1: INFORMACIÓN PRINCIPAL (Nunca se desborda gracias al min-w-0 y truncate) */}
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div data-surface={isConfirming ? undefined : 'card'} className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
+                                                <div aria-hidden="true" className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>
                                                     <Laptop size={20} strokeWidth={isConfirming ? 2.5 : 2} />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className={`text-body font-black leading-tight truncate ${isConfirming ? 'text-danger' : 'text-content'}`}>
+                                                    <p className={`text-body font-black leading-tight truncate ${isConfirming ? 'text-danger-text' : 'text-content'}`}>
                                                         {kiosk.device_name}
                                                     </p>
-                                                    <p className="text-micro font-bold tracking-widest uppercase text-content-3 mt-0.5 truncate">
-                                                        {isConfirming ? 'Confirmar desconexión' : `Vinculado: ${fechaTexto(kiosk.created_at)}`}
+                                                    <p className="text-label text-content-3 mt-0.5 truncate">
+                                                        {isConfirming ? '¿Desconectar este equipo?' : `Vinculado el ${fechaTexto(kiosk.created_at)}`}
                                                     </p>
                                                 </div>
                                             </div>
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <Button variant="destructive" size="sm" icon={PowerOff} title="Desconectar kiosco" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
+                                                <Button variant="ghost" tone="danger" size="sm" icon={PowerOff} aria-label="Desconectar el kiosco" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
                                             )}
                                         </div>
 
@@ -119,20 +118,15 @@ const FormDispositivos = ({ formData }) => {
                                         {isConfirming && (
                                             <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-danger/30 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-base)]">
                                                 <Button variant="secondary" disabled={isRevoking} onClick={() => setConfirmingId(null)}>Cancelar</Button>
-                                                <Button variant="destructive" disabled={isRevoking} onClick={() => executeRevoke(kiosk.id, kiosk.device_name)}>{isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}</Button>
+                                                <Button variant="destructive" icon={Unplug} loading={isRevoking} disabled={isRevoking} onClick={() => executeRevoke(kiosk.id, kiosk.device_name)}>Desconectar</Button>
                                             </div>
                                         )}
                                     </div>
                                 );
                             })
                         ) : (
-                            <div data-surface="card" className="text-center py-10">
-                                <div className="w-12 h-12 bg-surface-card-hover border border-divider rounded-xl flex items-center justify-center mx-auto mb-3 text-content-3">
-                                    <Laptop size={20} strokeWidth={2} />
-                                </div>
-                                <p className="text-label text-content-3 font-black uppercase tracking-widest">Ningún equipo conectado</p>
-                                <p className="text-caption text-content-3 mt-1 font-bold px-4">Inicia sesión en la tablet de la sucursal para vincularla.</p>
-                            </div>
+                            <EmptyState compact icon={Laptop} title="Sin kioscos vinculados"
+                                subtitle="Inicia sesión en la tablet de la sucursal para vincularla." />
                         )}
                     </div>
                 )}

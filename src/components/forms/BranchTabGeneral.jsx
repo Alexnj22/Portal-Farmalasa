@@ -1,208 +1,159 @@
 import React, { useMemo } from 'react';
 import Badge from '../common/Badge';
-import { Building2, MapPin, Phone, Smartphone, Map, Map as MapIcon, Navigation } from 'lucide-react';
+import { Building2, MapPin, Phone, Smartphone, Map as MapIcon, Navigation } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
-import { LazyInput, formatPhoneMask } from './BranchHelpers';
+import { LazyInput, SeccionDeFormulario, formatPhoneMask } from './BranchHelpers';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
+// «Falta info»: el dato no es obligatorio para guardar, pero el expediente de
+// la sala queda incompleto sin él. Va en la ranura `labelAction` del canónico
+// —no pintando la caja de naranja con `!border-warning`—, así la etiqueta, el
+// alto y el foco siguen siendo los de todos los campos.
+const FaltaInfo = () => <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>;
+
 const BranchTabGeneral = ({
-    formData, setFormData, name, openingDate, location, 
-    departmentList = [], municipalityList = [], // 🚨 Prevención por default
+    formData, setFormData, name, openingDate, location,
+    departmentList = [], municipalityList = [],
     updateNestedSetting, getTabStatus
 }) => {
+    const depOptions = useMemo(() => (departmentList || []).map(d => ({ value: d, label: d })), [departmentList]);
+    const munOptions = useMemo(() => (municipalityList || []).map(m => ({ value: m, label: m })), [municipalityList]);
 
-    // 🚨 FIX DEL ERROR: Agregamos ( || [] ) para asegurar que map nunca lea undefined
-    const depOptions = useMemo(() => 
-        (departmentList || []).map(d => ({ value: d, label: d }))
-    , [departmentList]);
-
-    const munOptions = useMemo(() => 
-        (municipalityList || []).map(m => ({ value: m, label: m }))
-    , [municipalityList]);
-
-    // 🚨 DISEÑO COMPACTO: p-4 y rounded-3xl para ahorrar espacio vertical
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-    const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
-    
-    // Altura optimizada h-[40px] para encajar perfecto
-    const inputHoverClass = "transition-all duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50";
+    const incompleto = getTabStatus(1) === 'orange';
+    const sinNombre = getTabStatus(1) === 'red' && !name.trim();
 
     return (
-        // 🚨 COMPRESIÓN: space-y-4 en lugar de space-y-6
         <div className="space-y-4 w-full">
-            
-            {/* ISLA 1: IDENTIDAD */}
-            <div className={`${islandClass} ${islandHoverClass}`}>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[var(--shadow-shine)]">
-                        <Building2 size={16} strokeWidth={2.5} />
-                    </div>
-                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Identidad de Sucursal</h4>
-                </div>
 
+            <SeccionDeFormulario icon={Building2} titulo="Identidad">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <LazyInput
+                        label="Nombre comercial"
+                        name="suc-nombre"
+                        required
+                        icon={Building2}
+                        placeholder="Ej: La Popular Centro"
+                        value={name}
+                        hasError={sinNombre}
+                        onChange={(val) => setFormData(prev => ({ ...prev, name: val, branchName: val }))}
+                    />
                     <div>
-                        <label className={`${rotuloCampo('text-content-3')} transition-colors`}>
-                            Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
-                        </label>
-                        <LazyInput
-                            required
-                            icon={Building2}
-                            placeholder="Ej: La Popular Centro"
-                            value={name}
-                            onChange={(val) => setFormData(prev => ({ ...prev, name: val, branchName: val }))}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'red' && !name.trim() ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
-                        />
-                    </div>
-                    <div>
-                        <label className={rotuloCampo('text-content-3')}>Fecha de Apertura</label>
+                        <span className={rotuloCampo('text-content-3')}>Fecha de apertura</span>
                         <LiquidDatePicker
                             value={openingDate}
                             onChange={(val) => setFormData(prev => ({ ...prev, openingDate: val, opening_date: val }))}
-                            />
+                        />
                     </div>
                 </div>
-            </div>
+            </SeccionDeFormulario>
 
-            {/* ISLA 2: UBICACIÓN */}
-            <div className={`${islandClass} ${islandHoverClass}`}>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[var(--shadow-shine)]">
-                        <MapPin size={16} strokeWidth={2.5} />
-                    </div>
-                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Ubicación Geográfica</h4>
-                </div>
-
+            <SeccionDeFormulario icon={MapPin} titulo="Ubicación" tono="success">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative z-content"> 
-                        <label className={rotuloCampo('text-content-3')}>Departamento</label>
+                    <div>
+                        <span id="suc-depto-rotulo" className={rotuloCampo('text-content-3')}>Departamento</span>
                         <LiquidSelect
+                            ariaLabelledBy="suc-depto-rotulo"
                             value={location.department || ""}
                             onChange={(val) => {
                                 updateNestedSetting('location', 'department', val);
                                 updateNestedSetting('location', 'municipality', '');
                             }}
                             options={depOptions}
-                            placeholder="-- Seleccionar --"
+                            placeholder="Elegir departamento"
+                            clearLabel="Ninguno"
                             icon={MapIcon}
                         />
                     </div>
-
-                    <div className="relative z-base">
-                        <label className={rotuloCampo('text-content-3')}>
-                            Distrito / Municipio
-                            {getTabStatus(1) === 'orange' && !location.municipality && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
-                        </label>
+                    <div>
+                        <span id="suc-municipio-rotulo" className={rotuloCampo('text-content-3')}>
+                            Distrito / municipio
+                            {incompleto && !location.municipality && <FaltaInfo />}
+                        </span>
                         <LiquidSelect
+                            ariaLabelledBy="suc-municipio-rotulo"
                             value={location.municipality || ""}
                             onChange={(val) => updateNestedSetting('location', 'municipality', val)}
                             options={munOptions}
-                            placeholder={location.department ? '-- Seleccionar --' : 'Elija Depto.'}
+                            placeholder={location.department ? 'Elegir municipio' : 'Primero el departamento'}
+                            clearLabel="Ninguno"
                             icon={Navigation}
                             disabled={!location.department}
                         />
                     </div>
 
-                    <div>
-                        <label className={rotuloCampo('text-content-3')}>
-                            Dirección Exacta
-                            {getTabStatus(1) === 'orange' && !formData.address?.trim() && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
-                        </label>
-                        <LazyInput
-                            placeholder="Barrio El Centro, 1ra Av. Norte..."
-                            value={formData.address || ""}
-                            onChange={(val) => setFormData(prev => ({ ...prev, address: val }))}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.address?.trim() ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
-                        />
-                    </div>
-                    <div>
-                        <label className={rotuloCampo('text-content-3')}>Enlace Google Maps</label>
-                        <LazyInput
-                            icon={Map}
-                            placeholder="https://maps.google.com/..."
-                            value={location.mapsUrl || ""}
-                            onChange={(val) => updateNestedSetting('location', 'mapsUrl', val)}
-                            className={`!bg-surface-card border-divider shadow-sm h-[40px] text-body ${inputHoverClass}`}
-                        />
-                    </div>
+                    <LazyInput
+                        label="Dirección exacta"
+                        name="suc-direccion"
+                        labelAction={incompleto && !formData.address?.trim() ? <FaltaInfo /> : null}
+                        icon={MapPin}
+                        placeholder="Barrio El Centro, 1ra Av. Norte…"
+                        value={formData.address || ""}
+                        onChange={(val) => setFormData(prev => ({ ...prev, address: val }))}
+                    />
+                    <LazyInput
+                        label="Enlace de Google Maps"
+                        name="suc-maps"
+                        icon={MapIcon}
+                        placeholder="https://maps.google.com/…"
+                        value={location.mapsUrl || ""}
+                        onChange={(val) => updateNestedSetting('location', 'mapsUrl', val)}
+                    />
 
-                    {/* Coordenadas GPS */}
-                    <div className="md:col-span-2">
-                        <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><Navigation size={10} />
-                            Coordenadas GPS
-                            <span className="normal-case tracking-normal font-medium text-content-3 text-micro">
-                                · Google Maps → click derecho → "¿Qué hay aquí?" → copiar lat, lng
-                            </span></span></label>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className={rotuloCampo('text-content-2', { denso: true })}>Latitud</label>
-                                <LazyInput
-                                    placeholder="14.0123456"
-                                    value={String(location.lat || '')}
-                                    onChange={(val) => updateNestedSetting('location', 'lat', val ? Number(val) : null)}
-                                    className={`!bg-surface-card border-divider shadow-sm h-[40px] text-body font-mono ${inputHoverClass}`}
-                                />
-                            </div>
-                            <div>
-                                <label className={rotuloCampo('text-content-2', { denso: true })}>Longitud</label>
-                                <LazyInput
-                                    placeholder="-89.1234567"
-                                    value={String(location.lng || '')}
-                                    onChange={(val) => updateNestedSetting('location', 'lng', val ? Number(val) : null)}
-                                    className={`!bg-surface-card border-divider shadow-sm h-[40px] text-body font-mono ${inputHoverClass}`}
-                                />
-                            </div>
-                        </div>
-                        {location.lat && location.lng && (
-                            <p className="text-micro text-success-text font-semibold mt-1.5 ml-1">
-                                ✓ {Number(location.lat).toFixed(6)}, {Number(location.lng).toFixed(6)}
-                            </p>
-                        )}
+                    {/* La ayuda de las coordenadas va DEBAJO, como prosa — no
+                        apretada en la línea del rótulo en letra de 10px. */}
+                    <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                        <LazyInput
+                            label="Latitud"
+                            name="suc-lat"
+                            inputMode="decimal"
+                            placeholder="14.0123456"
+                            inputClassName="tabular-nums"
+                            value={location.lat ?? ''}
+                            onChange={(val) => updateNestedSetting('location', 'lat', val ? Number(val) : null)}
+                        />
+                        <LazyInput
+                            label="Longitud"
+                            name="suc-lng"
+                            inputMode="decimal"
+                            placeholder="-89.1234567"
+                            inputClassName="tabular-nums"
+                            value={location.lng ?? ''}
+                            onChange={(val) => updateNestedSetting('location', 'lng', val ? Number(val) : null)}
+                        />
+                        <p className="col-span-2 -mt-2 text-label text-content-3">
+                            En Google Maps, clic derecho sobre la farmacia: el primer renglón trae la latitud y la longitud.
+                        </p>
                     </div>
                 </div>
-            </div>
+            </SeccionDeFormulario>
 
-            {/* ISLA 3: CONTACTO */}
-            <div className={`${islandClass} ${islandHoverClass}`}>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[var(--shadow-shine)]">
-                        <Phone size={16} strokeWidth={2.5} />
-                    </div>
-                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Canales de Contacto</h4>
-                </div>
-
+            <SeccionDeFormulario icon={Phone} titulo="Contacto" tono="chart-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className={rotuloCampo('text-content-3')}>
-                            Teléfono Fijo
-                            {getTabStatus(1) === 'orange' && !formData.phone && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
-                        </label>
-                        <LazyInput
-                            icon={Phone}
-                            placeholder="2222-0001"
-                            value={formData.phone || ""}
-                            onChange={(val) => setFormData(prev => ({ ...prev, phone: formatPhoneMask(val) }))}
-                            maxLength={9}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.phone ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
-                        />
-                    </div>
-                    <div>
-                        <label className={rotuloCampo('text-content-3')}>
-                            Celular / WhatsApp
-                            {getTabStatus(1) === 'orange' && !formData.cell && <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>}
-                        </label>
-                        <LazyInput
-                            icon={Smartphone}
-                            placeholder="7000-0001"
-                            value={formData.cell || ""}
-                            onChange={(val) => setFormData(prev => ({ ...prev, cell: formatPhoneMask(val) }))}
-                            maxLength={9}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.cell ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
-                        />
-                    </div>
+                    <LazyInput
+                        label="Teléfono fijo"
+                        name="suc-telefono"
+                        labelAction={incompleto && !formData.phone ? <FaltaInfo /> : null}
+                        icon={Phone}
+                        inputMode="tel"
+                        placeholder="2222-0001"
+                        value={formData.phone || ""}
+                        onChange={(val) => setFormData(prev => ({ ...prev, phone: formatPhoneMask(val) }))}
+                        maxLength={9}
+                    />
+                    <LazyInput
+                        label="Celular / WhatsApp"
+                        name="suc-celular"
+                        labelAction={incompleto && !formData.cell ? <FaltaInfo /> : null}
+                        icon={Smartphone}
+                        inputMode="tel"
+                        placeholder="7000-0001"
+                        value={formData.cell || ""}
+                        onChange={(val) => setFormData(prev => ({ ...prev, cell: formatPhoneMask(val) }))}
+                        maxLength={9}
+                    />
                 </div>
-            </div>
+            </SeccionDeFormulario>
         </div>
     );
 };

@@ -1,285 +1,199 @@
 import React, { useMemo } from 'react';
 import Badge from '../common/Badge';
 import { ShieldCheck, FileBadge, ShieldAlert, FileWarning, Syringe, AlertCircle } from 'lucide-react';
-import { LazyInput, Switch, FileUploader } from './BranchHelpers';
+import { LazyInput, Switch, FileUploader, SeccionDeFormulario } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
-import Button from '../common/Button';
+import Checkbox from '../common/Checkbox';
+import Notice from '../common/Notice';
+import { EmptyState } from '../common/StateViews';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { OPCIONES_CATEGORIA_SRS, idsDeEnfermeria } from '@nucleo/utils/edicionDeSucursal';
+
+// Un vencimiento se rotula en naranja con su ícono: es la fecha que dispara el
+// aviso de documentos por vencer, y se distingue de una fecha cualquiera.
+const RotuloVencimiento = ({ children }) => (
+    <span className={rotuloCampo('text-warning-text')}>
+        <span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} aria-hidden="true" /> {children}</span>
+    </span>
+);
+
+const Vencimiento = ({ rotulo, value, onChange }) => (
+    <div>
+        <RotuloVencimiento>{rotulo}</RotuloVencimiento>
+        <LiquidDatePicker tono="warning" value={value || ""} onChange={onChange} />
+    </div>
+);
+
+// El documento va al pie de su sección, separado por una línea.
+const PieDocumento = ({ children }) => <div className="pt-4 border-t border-divider mt-auto">{children}</div>;
+
+const Desactivado = ({ icon }) => <EmptyState linea icon={icon} title="Desactivado" />;
 
 const BranchTabLegal = ({
     legal, updateNestedSetting, availableRegents,
     availablePharmacovigilance, availableNurses, toggleNurse
 }) => {
-
-    // 🚨 GPU LOCK: Mantenemos el scroll a 60 FPS
-    const gpuLockStyle = {
-        transform: 'translateZ(0)',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        willChange: 'transform'
-    };
-
-    // 🚨 ESTILOS LIQUID GLASS
-    const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col h-full";
-    const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
-
+    // El nombre de una persona sale del canónico (`shortEmployeeName`), también
+    // en las opciones de un select.
     const regentOptions = useMemo(() =>
-        availableRegents.map(e => ({ value: e.id, label: e.name }))
+        availableRegents.map(e => ({ value: e.id, label: shortEmployeeName(e) }))
         , [availableRegents]);
+
+    const pharmaOptions = useMemo(() =>
+        availablePharmacovigilance.map(e => ({ value: e.id, label: shortEmployeeName(e) }))
+        , [availablePharmacovigilance]);
 
     // Quién está en enfermería: de `nursingRegents` (núcleo), no de `legal.nurses`.
     const enfermeriaIds = useMemo(() => idsDeEnfermeria(legal).map(String), [legal]);
 
-    const pharmaOptions = useMemo(() =>
-        availablePharmacovigilance.map(e => ({ value: e.id, label: e.name }))
-        , [availablePharmacovigilance]);
+    const archivo = (campoArchivo, campoUrl) => (f) => {
+        updateNestedSetting('legal', campoArchivo, f);
+        if (!f) updateNestedSetting('legal', campoUrl, null);
+    };
 
     return (
-        <div className="space-y-6 w-full" style={gpuLockStyle}>
+        <div className="space-y-4 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
 
-            {/* 🚨 GRID PRINCIPAL: 2 COLUMNAS (Para las 4 tarjetas operativas) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-
-                {/* ISLA 1: LICENCIA SRS */}
-                <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
-                        <ShieldCheck size={18} strokeWidth={2.5} /> Licencia de Funcionamiento (CSSP/DNM)
-                    </h4>
-                    {/* 🚨 CONTENIDO EN 1 COLUMNA (flex-col) */}
-                    <div className="flex flex-col flex-1 gap-4">
+                <SeccionDeFormulario icon={ShieldCheck} titulo="Licencia de funcionamiento (CSSP/DNM)">
+                    <LazyInput
+                        label="Número de resolución"
+                        name="suc-srs-resolucion"
+                        placeholder="Ej: SRS-2024-001"
+                        value={legal.srsPermit || ""}
+                        onChange={(val) => updateNestedSetting('legal', 'srsPermit', val)}
+                    />
+                    {/* Uno debajo del otro: la sección ocupa media columna del
+                        modal y a dos columnas el select se cortaba en «Ca…». */}
+                    <div className="grid grid-cols-1 gap-4">
                         <div>
-                            <label className={rotuloCampo('text-content-3')}>Número de Resolución</label>
-                            <LazyInput
-                                placeholder="Ej: SRS-2024-001"
-                                value={legal.srsPermit || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'srsPermit', val)}
-                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
-                            />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="relative focus-within:z-sidebar">
-                                <label className={rotuloCampo('text-content-3')}>Categoría SRS</label>
-                                <LiquidSelect
-                                    value={legal.srsCategoria || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'srsCategoria', val || '')}
-                                    options={OPCIONES_CATEGORIA_SRS}
-                                    placeholder="Sin categoría"
-                                />
-                            </div>
-                            <div>
-                                <label className={rotuloCampo('text-content-3')}>Nº de Inscripción SRS</label>
-                                <LazyInput
-                                    placeholder="Ej: 0123"
-                                    value={legal.srsInscripcion || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'srsInscripcion', val)}
-                                    className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
-                                />
-                            </div>
-                        </div>
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento de Licencia</span></label>
-                            <LiquidDatePicker tono="warning"
-                                value={legal.srsExpiration || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'srsExpiration', val)}
-                                />
-                        </div>
-                        {/* mt-auto empuja el uploader siempre al fondo de la tarjeta */}
-                        <div className="pt-4 border-t border-divider mt-auto">
-                            <FileUploader
-                                label="Documento Físico Licencia (PDF)"
-                                file={legal.srsPermitFile}
-                                url={legal.srsPermitUrl}
-                                onChange={(f) => {
-                                    updateNestedSetting('legal', 'srsPermitFile', f);
-                                    if (!f) updateNestedSetting('legal', 'srsPermitUrl', null);
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* ISLA 2: REGENCIA FARMACÉUTICA */}
-                <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
-                        <FileBadge size={18} strokeWidth={2.5} /> Regencia Farmacéutica
-                    </h4>
-                    <div className="flex flex-col flex-1 gap-4">
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-content-3')}>
-                                Regente Asignado
-                                {availableRegents.length === 0 && <Badge size="sm" variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
-                            </label>
+                            <span id="suc-srs-categoria" className={rotuloCampo('text-content-3')}>Categoría SRS</span>
                             <LiquidSelect
-                                value={legal.regentEmployeeId || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'regentEmployeeId', val)}
-                                options={regentOptions}
-                                placeholder="-- Seleccionar --"
+                                ariaLabelledBy="suc-srs-categoria"
+                                value={legal.srsCategoria || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'srsCategoria', val || '')}
+                                options={OPCIONES_CATEGORIA_SRS}
+                                placeholder="Sin categoría"
+                                clearLabel="Ninguna"
                             />
                         </div>
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial</span></label>
-                            <LiquidDatePicker tono="warning"
-                                value={legal.regentCredentialExp || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'regentCredentialExp', val)}
-                                />
-                        </div>
-                        <div className="pt-4 border-t border-divider mt-auto">
-                            <FileUploader
-                                label="Contrato de Regencia (PDF)"
-                                file={legal.regentCredentialFile}
-                                url={legal.regentCredentialUrl}
-                                onChange={(f) => {
-                                    updateNestedSetting('legal', 'regentCredentialFile', f);
-                                    if (!f) updateNestedSetting('legal', 'regentCredentialUrl', null);
-                                }}
-                            />
-                        </div>
+                        <LazyInput
+                            label="Nº de inscripción SRS"
+                            name="suc-srs-inscripcion"
+                            placeholder="Ej: 0123"
+                            value={legal.srsInscripcion || ""}
+                            onChange={(val) => updateNestedSetting('legal', 'srsInscripcion', val)}
+                        />
                     </div>
-                </div>
+                    <Vencimiento rotulo="Vencimiento de la licencia" value={legal.srsExpiration}
+                        onChange={(val) => updateNestedSetting('legal', 'srsExpiration', val)} />
+                    <PieDocumento>
+                        <FileUploader label="Licencia (PDF)" file={legal.srsPermitFile} url={legal.srsPermitUrl}
+                            onChange={archivo('srsPermitFile', 'srsPermitUrl')} />
+                    </PieDocumento>
+                </SeccionDeFormulario>
 
-                {/* ISLA 3: FARMACOVIGILANCIA */}
-                <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
-                        <ShieldAlert size={18} strokeWidth={2.5} /> Referente de Farmacovigilancia
-                    </h4>
-                    <div className="flex flex-col flex-1 gap-4">
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-content-3')}>
-                                Referente Asignado
-                                {availablePharmacovigilance.length === 0 && <Badge size="sm" variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
-                            </label>
-                            <LiquidSelect
-                                value={legal.pharmacovigilanceEmployeeId || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceEmployeeId', val)}
-                                options={pharmaOptions}
-                                placeholder="-- Seleccionar --"
-                            />
-                        </div>
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial</span></label>
-                            <LiquidDatePicker tono="warning"
-                                value={legal.pharmacovigilanceExp || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceExp', val)}
-                                />
-                        </div>
-                        <div className="pt-4 border-t border-divider mt-auto">
-                            <FileUploader
-                                label="Contrato / Designación (PDF)"
-                                file={legal.farmacovigilanciaAuthFile}
-                                url={legal.farmacovigilanciaAuthUrl}
-                                onChange={(f) => {
-                                    updateNestedSetting('legal', 'farmacovigilanciaAuthFile', f);
-                                    if (!f) updateNestedSetting('legal', 'farmacovigilanciaAuthUrl', null);
-                                }}
-                            />
-                        </div>
+                <SeccionDeFormulario icon={FileBadge} titulo="Regencia farmacéutica">
+                    <div>
+                        <span id="suc-regente" className={rotuloCampo('text-content-3')}>
+                            Regente asignado
+                            {availableRegents.length === 0 && <Badge size="sm" variant="warning" uppercase={false}>Sin personal</Badge>}
+                        </span>
+                        <LiquidSelect
+                            ariaLabelledBy="suc-regente"
+                            value={legal.regentEmployeeId || ""}
+                            onChange={(val) => updateNestedSetting('legal', 'regentEmployeeId', val)}
+                            options={regentOptions}
+                            placeholder="Elegir regente"
+                            clearLabel="Ninguno"
+                        />
                     </div>
-                </div>
+                    <Vencimiento rotulo="Vencimiento de la credencial" value={legal.regentCredentialExp}
+                        onChange={(val) => updateNestedSetting('legal', 'regentCredentialExp', val)} />
+                    <PieDocumento>
+                        <FileUploader label="Contrato de regencia (PDF)" file={legal.regentCredentialFile} url={legal.regentCredentialUrl}
+                            onChange={archivo('regentCredentialFile', 'regentCredentialUrl')} />
+                    </PieDocumento>
+                </SeccionDeFormulario>
 
-                {/* ISLA 4: ÁREA DE INYECTABLES */}
-                <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <div className="flex items-center justify-between mb-5">
-                        <h4 className="text-body font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
-                            <Syringe size={18} strokeWidth={2.5} /> Área Inyectables
-                        </h4>
-                        <Switch label="Aplica inyecciones" on={legal.injections || false} onToggle={() => updateNestedSetting('legal', 'injections', !legal.injections)} />
+                <SeccionDeFormulario icon={ShieldAlert} titulo="Referente de farmacovigilancia">
+                    <div>
+                        <span id="suc-farmacovigilancia" className={rotuloCampo('text-content-3')}>
+                            Referente asignado
+                            {availablePharmacovigilance.length === 0 && <Badge size="sm" variant="warning" uppercase={false}>Sin personal</Badge>}
+                        </span>
+                        <LiquidSelect
+                            ariaLabelledBy="suc-farmacovigilancia"
+                            value={legal.pharmacovigilanceEmployeeId || ""}
+                            onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceEmployeeId', val)}
+                            options={pharmaOptions}
+                            placeholder="Elegir referente"
+                            clearLabel="Ninguno"
+                        />
                     </div>
+                    <Vencimiento rotulo="Vencimiento de la credencial" value={legal.pharmacovigilanceExp}
+                        onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceExp', val)} />
+                    <PieDocumento>
+                        <FileUploader label="Contrato o designación (PDF)" file={legal.farmacovigilanciaAuthFile} url={legal.farmacovigilanciaAuthUrl}
+                            onChange={archivo('farmacovigilanciaAuthFile', 'farmacovigilanciaAuthUrl')} />
+                    </PieDocumento>
+                </SeccionDeFormulario>
+
+                <SeccionDeFormulario icon={Syringe} titulo="Área de inyectables" tono="chart-9"
+                    accion={<Switch label="Aplica inyecciones" on={legal.injections || false}
+                        onToggle={() => updateNestedSetting('legal', 'injections', !legal.injections)} />}>
                     {legal.injections ? (
-                        <div className="flex flex-col flex-1 gap-4">
-                            <div>
-                                <label className={rotuloCampo('text-content-3')}>Enfermeros Autorizados</label>
+                        <>
+                            <fieldset>
+                                <legend className={rotuloCampo('text-content-3')}>Enfermería autorizada</legend>
                                 {availableNurses.length === 0 ? (
-                                    <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-2xl border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
+                                    <Notice variant="warning">No hay personal de enfermería en esta sucursal</Notice>
                                 ) : (
-                                    <div data-surface="card" className="flex flex-wrap gap-2 p-3.5 max-h-[100px] overflow-y-auto custom-scrollbar">
-                                        {availableNurses.map(emp => {
-                                            const isSelected = enfermeriaIds.includes(String(emp.id));
-                                            return (
-                                                <Button
-                                                    size="sm"
-                                                    tone="chart-9"
-                                                    key={emp.id}
-                                                    type="button"
-                                                    onClick={() => toggleNurse(emp.id)}
-                                                >{emp.name.split(' ')[0]} {isSelected && '✓'}</Button>
-                                            );
-                                        })}
+                                    // Casillas, no botones con «✓» en el texto: lo
+                                    // que se elige es un sí/no por persona, y un
+                                    // botón no anuncia si está marcado.
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                                        {availableNurses.map(emp => (
+                                            <Checkbox key={emp.id}
+                                                checked={enfermeriaIds.includes(String(emp.id))}
+                                                onChange={() => toggleNurse(emp.id)}
+                                                label={shortEmployeeName(emp)} />
+                                        ))}
                                     </div>
                                 )}
-                            </div>
-                            <div className="pt-4 border-t border-divider mt-auto">
-                                <FileUploader
-                                    label="Permiso de Área (PDF)"
-                                    file={legal.nursingServicePermitFile}
-                                    url={legal.nursingServicePermitUrl}
-                                    onChange={(f) => {
-                                        updateNestedSetting('legal', 'nursingServicePermitFile', f);
-                                        if (!f) updateNestedSetting('legal', 'nursingServicePermitUrl', null);
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    ) : (
-                        <div data-surface="card" className="flex-1 flex items-center justify-center py-8 text-center border-2 border-dashed">
-                            <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center gap-1.5">
-                                <AlertCircle size={14} /> Módulo Desactivado
-                            </p>
-                        </div>
-                    )}
-                </div>
-
+                            </fieldset>
+                            <PieDocumento>
+                                <FileUploader label="Permiso del área (PDF)" file={legal.nursingServicePermitFile} url={legal.nursingServicePermitUrl}
+                                    onChange={archivo('nursingServicePermitFile', 'nursingServicePermitUrl')} />
+                            </PieDocumento>
+                        </>
+                    ) : <Desactivado icon={Syringe} />}
+                </SeccionDeFormulario>
             </div>
 
-            {/* 🚨 BLOQUE FINAL (FULL WIDTH / 1 COLUMNA): LIBROS CONTROLADOS */}
-            <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                <div className="flex items-center justify-between mb-5">
-                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
-                        <FileWarning size={18} strokeWidth={2.5} /> Libros Controlados
-                    </h4>
-                    <Switch label="Libros controlados" on={legal.controlledBooks || false} onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />
-                </div>
+            <SeccionDeFormulario icon={FileWarning} titulo="Libros controlados" tono="warning"
+                accion={<Switch label="Libros controlados" on={legal.controlledBooks || false}
+                    onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />}>
                 {legal.controlledBooks ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-[var(--dur-slow)]">
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>Nº Resolución Autorización</label>
-                            <LazyInput
-                                placeholder="Ej: RES-LIB-2025"
-                                value={legal.controlledBooksRes || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'controlledBooksRes', val)}
-                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
-                            />
-                        </div>
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento de la Autorización</span></label>
-                            <LiquidDatePicker tono="warning"
-                                value={legal.controlledBooksExp || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'controlledBooksExp', val)}
-                                />
-                        </div>
-                        <div className="pt-2 md:pt-0 md:col-span-2">
-                            <FileUploader
-                                label="Resolución de Libros (PDF)"
-                                file={legal.controlledBooksFile}
-                                url={legal.controlledBooksUrl}
-                                onChange={(f) => {
-                                    updateNestedSetting('legal', 'controlledBooksFile', f);
-                                    if (!f) updateNestedSetting('legal', 'controlledBooksUrl', null);
-                                }}
-                            />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <LazyInput
+                            label="Nº de resolución de autorización"
+                            name="suc-libros-resolucion"
+                            placeholder="Ej: RES-LIB-2025"
+                            value={legal.controlledBooksRes || ""}
+                            onChange={(val) => updateNestedSetting('legal', 'controlledBooksRes', val)}
+                        />
+                        <Vencimiento rotulo="Vencimiento de la autorización" value={legal.controlledBooksExp}
+                            onChange={(val) => updateNestedSetting('legal', 'controlledBooksExp', val)} />
+                        <div className="md:col-span-2">
+                            <FileUploader label="Resolución de libros (PDF)" file={legal.controlledBooksFile} url={legal.controlledBooksUrl}
+                                onChange={archivo('controlledBooksFile', 'controlledBooksUrl')} />
                         </div>
                     </div>
-                ) : (
-                    <div data-surface="card" className="py-8 text-center border-2 border-dashed animate-in fade-in duration-[var(--dur-slow)]">
-                        <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-1.5">
-                            <AlertCircle size={14} /> Módulo Desactivado
-                        </p>
-                    </div>
-                )}
-            </div>
-
+                ) : <Desactivado icon={FileWarning} />}
+            </SeccionDeFormulario>
         </div>
     );
 };

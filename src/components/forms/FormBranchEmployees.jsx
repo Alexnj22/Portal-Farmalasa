@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle, Building2, Globe, CalendarDays, MapPin } from 'lucide-react';
+import { Users, Shield, Star, Stethoscope, Briefcase, AlertCircle, Building2, Globe } from 'lucide-react';
 import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '@nucleo/utils/clickable';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -13,49 +13,67 @@ const safeParse = (obj) => {
     try { return JSON.parse(obj) || {}; } catch { return {}; }
 };
 
-const COLOR_MAP = {
-    blue: "bg-gradient-to-br from-chart-1/10 to-chart-1/20 border-chart-1/40 text-chart-1-text",
-    indigo: "bg-gradient-to-br from-chart-3/10 to-chart-3/20 border-chart-3/40 text-chart-3-text",
-    emerald: "bg-gradient-to-br from-success/10 to-success/20 border-success/40 text-success-text",
-    rose: "bg-gradient-to-br from-danger/10 to-danger/20 border-danger/40 text-danger-text",
-    cyan: "bg-gradient-to-br from-chart-9/10 to-chart-9/20 border-chart-9/40 text-chart-9-text",
-    amber: "bg-gradient-to-br from-warning/10 to-warning/20 border-warning/40 text-warning-text",
-    slate: "bg-gradient-to-br from-chart-8/10 to-chart-8/20 border-chart-8/40 text-chart-8-text",
-    violet: "bg-gradient-to-br from-chart-3/10 to-chart-3/20 border-chart-3/40 text-chart-3-text",
-};
-
 const EMPTY_EMPLOYEES = [];
 
-const getTimeAgo = (dateString) => {
-    if (!dateString) return 'Dato no disponible';
-    const diff = new Date() - new Date(dateString);
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days < 30) return `Hace ${days} días`;
-    if (days < 365) return `Hace ${Math.floor(days/30)} meses`;
-    return `Hace ${Math.floor(days/365)} años`;
+// 2026-10-29: la tarjeta mostraba «Ingreso: hace N años» y «En sucursal: hace
+// N meses» con fechas de MUESTRA (`2023-08-15`, `2024-01-20`) cuando la ficha
+// no las tenía — un dato inventado con la misma cara que uno real; «En
+// sucursal» no existe en ninguna ficha, así que era SIEMPRE inventado. Se
+// quitaron las dos: la antigüedad real ya la pinta el listón del avatar.
+
+const Encabezado = ({ icon: Icon, children }) => (
+    <h3 className="flex items-center gap-2 mb-3 text-caption font-black uppercase tracking-widest text-content-3">
+        <Icon size={14} strokeWidth={2.5} aria-hidden="true" /> {children}
+    </h3>
+);
+
+// Un puesto con persona abre su ficha; uno vacío no abre nada y se dibuja
+// punteado (`data-tono="dashed"`, §5.1) — la tarjeta que invita a llenarla.
+const Puesto = ({ slot, onAbrir, grande = false }) => {
+    const emp = slot.employee;
+    const Icon = slot.icon;
+    if (!emp) {
+        return (
+            <div data-surface="card" data-tono="dashed" className={`flex items-center gap-3 ${grande ? 'p-4' : 'p-3'}`}>
+                <span aria-hidden="true" className={`shrink-0 rounded-xl flex items-center justify-center bg-danger/10 text-danger-text ${grande ? 'w-12 h-12' : 'w-9 h-9'}`}>
+                    <Icon size={grande ? 20 : 14} strokeWidth={2.5} />
+                </span>
+                <div className="min-w-0">
+                    <p className="text-body-sm font-bold text-content-2 leading-tight">{slot.roleName}</p>
+                    <p className="mt-0.5 flex items-center gap-1 text-micro font-black uppercase tracking-widest text-danger-text">
+                        <AlertCircle size={10} strokeWidth={3} aria-hidden="true" /> {slot.required ? 'Falta asignar' : SIN_ASIGNAR}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+    return (
+        <div data-surface="card" {...clickable(() => onAbrir(emp), { label: `Ver la ficha de ${shortEmployeeName(emp)}` })}
+            className={`relative flex items-center gap-3 cursor-pointer ${grande ? 'p-4' : 'p-3'}`}>
+            <AvatarConEstado emp={emp} px={grande ? 48 : 36} radio={grande ? 'rounded-2xl' : 'rounded-lg'} />
+            <div className="flex-1 min-w-0">
+                <p className={`font-black text-content truncate leading-tight ${grande ? 'text-body' : 'text-body-sm'}`}>{shortEmployeeName(emp)}</p>
+                <p className="mt-0.5 text-micro font-black uppercase tracking-widest text-content-3 truncate">{slot.roleName}</p>
+            </div>
+            <OjoDeTarjeta size={grande ? undefined : 13} className="self-start" />
+        </div>
+    );
 };
 
 const FormBranchEmployees = ({ formData, onClose, setView, setActiveEmployee }) => {
     const employees = useStaff(state => state.employees) || EMPTY_EMPLOYEES;
     const branchId = String(formData?.id);
 
-    const gpuLockStyle = {
-        transform: 'translateZ(0)',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        willChange: 'transform'
-    };
-
     const { plantSlots, opSlots } = useMemo(() => {
         const settings = safeParse(formData?.settings);
         const legal = settings.legal || {};
-const hasInjections = legal.injections === true;
+        const hasInjections = legal.injections === true;
         let jefe = null, subJefe = null;
-        let regenteFarmacia = employees.find(e => e.id === legal.regentEmployeeId) || null;
-        let referenteFarma = employees.find(e => e.id === legal.pharmacovigilanceEmployeeId) || null;
+        const regenteFarmacia = employees.find(e => e.id === legal.regentEmployeeId) || null;
+        const referenteFarma = employees.find(e => e.id === legal.pharmacovigilanceEmployeeId) || null;
         const idsEnfermeria = idsDeEnfermeria(legal).map(String);
-        let enfermeros = employees.filter(e => idsEnfermeria.includes(String(e.id)));
-        let dependientes = [], globals = [];
+        const enfermeros = employees.filter(e => idsEnfermeria.includes(String(e.id)));
+        const dependientes = [], globals = [];
 
         employees.forEach(e => {
             const roleUp = (e.role || '').toUpperCase();
@@ -72,163 +90,52 @@ const hasInjections = legal.injections === true;
             }
         });
 
-        const oSlots = [];
-        globals.forEach(g => {
-            let icon = Briefcase, color = 'slate';
+        const oSlots = globals.map(g => {
             const roleUp = (g.role || '').toUpperCase();
-            if (roleUp.includes('GERENTE')) { icon = Star; color = 'amber'; }
-            else if (roleUp.includes('ADMIN')) { icon = Shield; color = 'indigo'; }
-            else if (roleUp.includes('SUPERVISOR')) { icon = Briefcase; color = 'blue'; }
-            oSlots.push({ id: `glob-${g.id}`, roleName: g.role, employee: g, required: false, icon, color });
+            const icon = roleUp.includes('GERENTE') ? Star : roleUp.includes('ADMIN') ? Shield : Briefcase;
+            return { id: `glob-${g.id}`, roleName: g.role, employee: g, required: false, icon };
         });
-
-        oSlots.push({ id: 'regente', roleName: 'Regente Farmacéutico', employee: regenteFarmacia, required: true, icon: Briefcase, color: 'emerald' });
-        oSlots.push({ id: 'referente', roleName: 'Referente Farmacovigilancia', employee: referenteFarma, required: true, icon: Shield, color: 'violet' });
+        oSlots.push({ id: 'regente', roleName: 'Regente farmacéutico', employee: regenteFarmacia, required: true, icon: Briefcase });
+        oSlots.push({ id: 'referente', roleName: 'Referente de farmacovigilancia', employee: referenteFarma, required: true, icon: Shield });
 
         const pSlots = [
-            { id: 'jefe', roleName: 'Jefe de Sucursal', employee: jefe, required: true, icon: Star, color: 'blue' },
-            { id: 'subjefe', roleName: 'Sub Jefe de Sucursal', employee: subJefe, required: true, icon: Shield, color: 'indigo' }
+            { id: 'jefe', roleName: 'Jefe de sucursal', employee: jefe, required: true, icon: Star },
+            { id: 'subjefe', roleName: 'Subjefe de sucursal', employee: subJefe, required: true, icon: Shield },
         ];
 
         if (hasInjections || enfermeros.length > 0) {
-            if (enfermeros.length === 0) pSlots.push({ id: 'enf-empty', roleName: 'Regente de Enfermería', employee: null, required: true, icon: Stethoscope, color: 'rose' });
-            else enfermeros.forEach((enf, i) => pSlots.push({ id: `enf-${i}`, roleName: 'Regente de Enfermería', employee: enf, required: true, icon: Stethoscope, color: 'rose' }));
+            if (enfermeros.length === 0) pSlots.push({ id: 'enf-empty', roleName: 'Regente de enfermería', employee: null, required: true, icon: Stethoscope });
+            else enfermeros.forEach((enf, i) => pSlots.push({ id: `enf-${i}`, roleName: 'Regente de enfermería', employee: enf, required: true, icon: Stethoscope }));
         }
 
-        if (dependientes.length === 0) pSlots.push({ id: 'dep-empty', roleName: 'Dependientes', employee: null, required: true, icon: Users, color: 'cyan' });
-        else dependientes.forEach((dep, i) => pSlots.push({ id: `dep-${i}`, roleName: dep.role || 'Dependiente', employee: dep, required: false, icon: Users, color: 'cyan' }));
+        if (dependientes.length === 0) pSlots.push({ id: 'dep-empty', roleName: 'Dependientes', employee: null, required: true, icon: Users });
+        else dependientes.forEach((dep, i) => pSlots.push({ id: `dep-${i}`, roleName: dep.role || 'Dependiente', employee: dep, required: false, icon: Users }));
 
         return { plantSlots: pSlots, opSlots: oSlots };
     }, [employees, branchId, formData]);
 
-    // El respaldo cuando no hay foto —las iniciales— lo resuelve
-    // `AvatarConEstado` con `shortEmployeeName`, el mismo del resto del portal.
-
-    const handleViewEmployee = (e, emp) => {
-        e.stopPropagation(); 
-        if (!emp) return; 
+    const abrirFicha = (emp) => {
+        if (!emp) return;
         if (setActiveEmployee) setActiveEmployee(emp);
-        
-        // 🚨 Ajuste de enrutamiento: Cambia 'empleados' por el nombre real de tu vista si es diferente.
-        if (setView) setView('empleados'); 
+        if (setView) setView('empleados');
         if (onClose) onClose();
     };
 
     return (
-        <div className="w-full flex flex-col space-y-10 pb-4" style={gpuLockStyle}>
-            
-            {/* 👑 SECCIÓN 1: PERSONAL DE PLANTA */}
-            <div style={gpuLockStyle}>
-                <div className="flex items-center gap-2 mb-5 px-1">
-                    <div className="p-1.5 bg-brand/10 rounded-lg border border-brand/20">
-                        <Building2 size={16} className="text-brand-text" strokeWidth={2.5} />
-                    </div>
-                    <h3 className="text-body font-black text-content uppercase tracking-widest">Personal de Planta</h3>
+        <div className="w-full flex flex-col gap-6 pb-2">
+            <section>
+                <Encabezado icon={Building2}>Personal de planta</Encabezado>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {plantSlots.map(slot => <Puesto key={slot.id} slot={slot} onAbrir={abrirFicha} grande />)}
                 </div>
+            </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {plantSlots.map((slot) => {
-                        const emp = slot.employee;
-                        
-                        // Si no hay fecha, usa un valor de muestra elegante
-                        const tiempoEmpresa = getTimeAgo(emp?.hireDate || '2023-08-15T00:00:00Z');
-                        const tiempoSucursal = getTimeAgo(emp?.branchAssignDate || '2024-01-20T00:00:00Z');
-
-                        if (!emp) {
-                            return (
-                                <div key={slot.id} className="flex items-center gap-4 p-5 rounded-3xl border-2 border-dashed border-danger/30 bg-danger/10 h-[100px]">
-                                    <div className="w-12 h-12 rounded-2xl bg-surface-card flex items-center justify-center text-danger shadow-sm border border-danger/30 shrink-0">
-                                        <slot.icon size={20} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <h4 className="text-body-sm font-bold text-content-2 leading-tight">{slot.roleName}</h4>
-                                        <p className="text-micro font-black uppercase tracking-widest mt-1 text-danger flex items-center gap-1">
-                                            <AlertCircle size={10} strokeWidth={3} /> Falta Asignar
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group relative overflow-hidden cursor-pointer rounded-3xl bg-surface-card-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
-                                {/* Frente Normal */}
-                                <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] group-hover:-translate-y-4 group-hover:opacity-0">
-                                    <AvatarConEstado emp={emp} px={56} radio="rounded-2xl" className="shadow-inner" />
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="text-body-lg font-black text-content truncate leading-tight">{shortEmployeeName(emp)}</h4>
-                                        <span className="text-caption font-bold uppercase tracking-widest text-content-3 mt-1 block truncate">{slot.roleName}</span>
-                                    </div>
-                                    {/* La tarjeta abre la ficha de la persona. El panel
-                                        que sube al pasar el puntero ya lo decía con su
-                                        flecha, pero eso es hover: en un teléfono no
-                                        existe, así que en reposo no había ninguna señal.
-                                        No se pisan — la cara de arriba se va justo
-                                        cuando aparece el panel. */}
-                                    <OjoDeTarjeta className="self-start" />
-                                </div>
-                                
-                                {/* 🚨 Panel Deslizante Liquid Glass */}
-                                <div data-cobertura className="absolute inset-0 border-t border-border-card p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] shadow-[var(--shadow-sticky-t)]">
-                                    <div className="flex justify-between items-center mb-2 border-b border-divider pb-2">
-                                        <span className="text-content font-black text-body-sm truncate">{shortEmployeeName(emp)}</span>
-                                        <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center shadow-md">
-                                            <ArrowUpRight size={12} className="text-white shrink-0" strokeWidth={3} />
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <div className="flex items-center gap-2 text-content-2"><CalendarDays size={12} className="text-brand-text"/><span className="text-micro font-bold tracking-wider uppercase">Ingreso: {tiempoEmpresa}</span></div>
-                                        <div className="flex items-center gap-2 text-content-2"><MapPin size={12} className="text-success"/><span className="text-micro font-bold tracking-wider uppercase">En sucursal: {tiempoSucursal}</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+            <section className="pt-5 border-t border-divider">
+                <Encabezado icon={Globe}>Soporte de la red</Encabezado>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {opSlots.map(slot => <Puesto key={slot.id} slot={slot} onAbrir={abrirFicha} />)}
                 </div>
-            </div>
-
-            {/* 🛡️ SECCIÓN 2: SOPORTE OPERATIVO (SECUNDARIOS) */}
-            <div className="pt-6 border-t border-divider" style={gpuLockStyle}>
-                <div className="flex items-center gap-2 mb-4 px-1 opacity-80">
-                    <Globe size={14} className="text-content-3" strokeWidth={2.5} />
-                    <h3 className="text-caption font-black text-content-3 uppercase tracking-widest">Soporte Operativo & Global</h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {opSlots.map((slot) => {
-                        const emp = slot.employee;
-
-                        if (!emp) {
-                            return (
-                                <div key={slot.id} data-surface="card" className="flex items-center gap-3 p-3 bg-surface-card-hover/50 border-dashed h-[72px]">
-                                    <div className="w-9 h-9 rounded-lg bg-surface-card flex items-center justify-center text-content-3 shrink-0 border border-divider">
-                                        <slot.icon size={14} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="flex flex-col flex-1">
-                                        <h4 className="text-caption font-bold text-content-3 leading-tight whitespace-normal">{slot.roleName}</h4>
-                                        <p className="text-micro font-black text-danger uppercase tracking-widest mt-0.5">{SIN_ASIGNAR}</p>
-                                    </div>
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group cursor-pointer p-3 rounded-2xl bg-surface-card-hover/50 border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-[var(--dur-slow)] flex items-center gap-3 active:scale-[0.97] h-[72px]">
-                                <AvatarConEstado emp={emp} px={36} radio="rounded-lg"
-                                    className="shadow-sm transition-transform group-hover:scale-105" />
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="text-label font-bold text-content-2 leading-tight group-hover:text-brand-text transition-colors whitespace-normal truncate">{shortEmployeeName(emp)}</h4>
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
-                                </div>
-                                {/* Ésta no tenía ninguna señal: se veía igual que la
-                                    de al lado sin persona asignada, que no abre nada. */}
-                                <OjoDeTarjeta size={13} className="self-start" />
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
+            </section>
         </div>
     );
 };

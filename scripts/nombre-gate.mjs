@@ -108,8 +108,6 @@ const EXCEPCIONES = {
     { n: 1, motivo: 'ídem — el receptor del DTE de una compra' },
 
   // ── Otra regla, deliberada: sólo el primer nombre ─────────────────────────
-  'src/components/forms/BranchTabLegal.jsx':
-    { n: 1, motivo: 'botón angosto de selección: `split(\' \')[0]` es sólo el primer nombre, a propósito' },
   'src/views/dashboard/WidgetAnnulmentRequest.jsx':
     { n: 2, motivo: 'dos chips `text-micro` muestran sólo el primer nombre a propósito; el que pretendía ser nombre+apellido ya usa el canónico' },
 

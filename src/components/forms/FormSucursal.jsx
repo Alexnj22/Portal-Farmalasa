@@ -2,6 +2,7 @@ import React, { useMemo, useCallback, Suspense } from 'react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { WEEK_DAYS } from '@nucleo/data/constants';
 import { EL_SALVADOR_GEO } from './BranchHelpers';
+import { SkeletonText } from '../common/StateViews';
 import { alternarEnfermera, candidatosLegales, finDeContrato, limpiarAjustes, limpiarHorario } from '@nucleo/utils/edicionDeSucursal';
 
 const BranchTabGeneral = React.lazy(() => import('./BranchTabGeneral'));
@@ -116,11 +117,8 @@ const FormSucursal = ({ formData, setFormData, section = "general" }) => {
         // Hacemos el contenedor relative y le damos un ancho y alto plenos para que no colapse
         <div className="w-full h-full flex flex-col relative">
             <Suspense fallback={
-                <div className="flex h-full w-full items-center justify-center p-10">
-                    <span className="text-content-2 font-bold uppercase tracking-widest text-caption animate-pulse">
-                        Cargando Módulo...
-                    </span>
-                </div>
+                // Esqueleto, no un rótulo «Cargando…» que late (§18.2).
+                <div className="p-2"><SkeletonText lines={6} /></div>
             }>
                 
                 {section === "general" && (

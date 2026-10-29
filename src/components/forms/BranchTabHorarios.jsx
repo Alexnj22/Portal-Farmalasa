@@ -2,135 +2,82 @@ import React, { memo } from 'react';
 import { Clock, CopyPlus } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
 import { WEEK_DAYS } from '@nucleo/data/constants';
-import { Switch } from './BranchHelpers';
+import { Switch, SeccionDeFormulario } from './BranchHelpers';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import Button from '../common/Button';
 import HorariosEspeciales from './HorariosEspeciales';
 
-// 🚨 OPTIMIZACIÓN MÁXIMA: Extraemos el Día a su propio componente Memoizado
-// Solo se re-renderizará si sus props exactas (open, start, end, isInvalid) cambian.
-const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay }) => {
-    
-    // Clases dinámicas pre-calculadas
-    let cardClass = "group rounded-3xl p-4 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform-gpu ";
-    
-    if (open) {
-        if (isInvalid) {
-            cardClass += "bg-danger/10 border border-danger/30 shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-3)] hover:bg-danger/10";
-        } else {
-            cardClass += "bg-surface-card border border-border-card shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-3)] hover:border-brand/30";
-        }
-    } else {
-        cardClass += "bg-surface-card-hover/40 border border-border-card opacity-80 hover:opacity-100 hover:bg-surface-card hover:shadow-sm";
-    }
+// Un día, memoizado: sólo se vuelve a pintar si cambian sus props.
+//
+// 2026-10-29: era una tarjeta a mano (`rounded-3xl bg-surface-card border …`)
+// con el lift de una tarjeta que se abre, y el día inválido se pintaba con
+// clases de color que `data-surface` no deja ver. Ahora es la superficie del
+// tema, y el estado va por `data-tono` (§5.1): rojo si falta una hora, punteada
+// si está cerrado. El botón de copiar el día anterior era `destructive` — rojo
+// para una acción que no borra nada.
+const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay }) => (
+    <div data-surface="card" data-tono={open ? (isInvalid ? 'danger' : undefined) : 'dashed'} className="p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 min-w-0">
+                <p className={`text-body-sm font-black uppercase tracking-widest ${open ? (isInvalid ? 'text-danger-text' : 'text-content') : 'text-content-3'}`}>
+                    {day.name}
+                </p>
+                {index > 0 && open && (
+                    <Button icon={CopyPlus} iconOnly size="sm" variant="ghost"
+                        onClick={() => copyPreviousDay(index)}
+                        aria-label={`Copiar el horario del ${WEEK_DAYS[index - 1].name.toLowerCase()}`} />
+                )}
+            </div>
+            <Switch label={`${day.name}: ${open ? "abierta" : "cerrada"}`} on={open} onToggle={() => setDay(day.id, open ? { isOpen: false } : { isOpen: true, start: "", end: "" })} />
+        </div>
 
-    return (
-        <div className={cardClass}>
-            <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                    <p className={`text-body-sm font-black uppercase tracking-widest transition-colors duration-[var(--dur-slow)] ${open ? (isInvalid ? 'text-danger' : 'text-brand-text') : 'text-content-2 group-hover:text-content-2'}`}>
-                        {day.name}
-                    </p>
-                    
-                    {index > 0 && open && (
-                        <Button
-                            icon={CopyPlus}
-                            iconOnly
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => copyPreviousDay(index)}
-                            title={`Copiar horario de ${WEEK_DAYS[index - 1].name}`}
+        {open ? (
+            <div className="grid grid-cols-2 gap-3">
+                <div>
+                    <span className={rotuloCampo(isInvalid && !d.start ? 'text-danger-text' : 'text-content-3', { denso: true })}>Apertura</span>
+                    <TimePicker12 value={d.start || ""} defaultMeridiem="AM"
+                        onChange={(v) => setDay(day.id, { start: v, isOpen: true })} />
+                </div>
+                <div>
+                    <span className={rotuloCampo(isInvalid && !d.end ? 'text-danger-text' : 'text-content-3', { denso: true })}>Cierre</span>
+                    <TimePicker12 value={d.end || ""} defaultMeridiem="PM"
+                        onChange={(v) => setDay(day.id, { end: v, isOpen: true })} />
+                </div>
+            </div>
+        ) : (
+            <p className="py-2 text-center text-label font-bold text-content-3">Cerrado</p>
+        )}
+    </div>
+));
+
+const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay, branchId, schedule }) => (
+    <div className="w-full">
+        <SeccionDeFormulario icon={Clock} titulo="Horario semanal" subtitulo="La apertura y el cierre de cada día">
+            {/* Dos por fila como máximo: cada día lleva DOS selectores de hora
+                y a tres por fila el «AM» de la apertura se montaba sobre la
+                hora del cierre (medido a 1568px, modal de 896). */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {WEEK_DAYS.map((day, index) => {
+                    const d = safeDay(day.id);
+                    const open = d.isOpen;
+                    return (
+                        <DayCard
+                            key={day.id}
+                            day={day}
+                            index={index}
+                            d={d}
+                            open={open}
+                            isInvalid={open && (!d.start || !d.end)}
+                            setDay={setDay}
+                            copyPreviousDay={copyPreviousDay}
                         />
-                    )}
-                </div>
-                <Switch label={`${day.name}: ${open ? "abierta" : "cerrada"}`} on={open} onToggle={() => setDay(day.id, open ? { isOpen: false } : { isOpen: true, start: "", end: "" })} />
+                    );
+                })}
             </div>
-            
-            {open ? (
-                <div className="grid grid-cols-2 gap-3 relative">
-                    <div>
-                        <p className={`text-micro font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-danger' : 'text-content-3'}`}>
-                            Apertura
-                        </p>
-                        <div className="transition-all duration-[var(--dur-slow)] rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
-                            <TimePicker12
-                                value={d.start || ""}
-                                defaultMeridiem="AM"
-                                onChange={(v) => setDay(day.id, { start: v, isOpen: true })}
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <p className={`text-micro font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-danger' : 'text-content-3'}`}>
-                            Cierre
-                        </p>
-                        <div className="transition-all duration-[var(--dur-slow)] rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
-                            <TimePicker12
-                                value={d.end || ""}
-                                defaultMeridiem="PM"
-                                onChange={(v) => setDay(day.id, { end: v, isOpen: true })}
-                            />
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div data-surface="card" className="py-3.5 text-center bg-surface-card-hover/50 transition-colors duration-[var(--dur-slow)] group-hover:bg-surface-card-hover">
-                    <p className="text-caption font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-[var(--dur-slow)] group-hover:text-content-3">
-                        Cerrado
-                    </p>
-                </div>
-            )}
-        </div>
-    );
-});
-
-// Componente Principal
-const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay, branchId, schedule }) => {
-
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-    const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
-
-    return (
-        <div className="w-full">
-            <div className={`${islandClass} ${islandHoverClass}`}>
-                
-                {/* ENCABEZADO PRO */}
-                <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[var(--shadow-shine)]">
-                        <Clock size={16} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex flex-col">
-                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content leading-none">Definición de Horarios</h4>
-                        <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-1">Configura la apertura y cierre por día</p>
-                    </div>
-                </div>
-                
-                {/* CUADRÍCULA DE DÍAS OPTIMIZADA */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {WEEK_DAYS.map((day, index) => {
-                        const d = safeDay(day.id);
-                        const open = d.isOpen;
-                        const isInvalid = open && (!d.start || !d.end);
-
-                        return (
-                            <DayCard 
-                                key={day.id}
-                                day={day}
-                                index={index}
-                                d={d}
-                                open={open}
-                                isInvalid={isInvalid}
-                                setDay={setDay}
-                                copyPreviousDay={copyPreviousDay}
-                            />
-                        );
-                    })}
-                </div>
-            </div>
-            {/* Días puntuales y feriados: se guardan al momento, en su propia tabla. */}
-            <HorariosEspeciales branchId={branchId} weeklyHours={schedule} />
-        </div>
-    );
-};
+        </SeccionDeFormulario>
+        {/* Días puntuales y feriados: se guardan al momento, en su propia tabla. */}
+        <HorariosEspeciales branchId={branchId} weeklyHours={schedule} />
+    </div>
+);
 
 export default React.memo(BranchTabHorarios);

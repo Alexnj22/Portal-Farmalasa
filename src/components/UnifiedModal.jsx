@@ -1209,7 +1209,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             <Button variant="secondary" size="lg" disabled={isSaving} onClick={onClose}>Cancelar</Button>
                             <Button type="submit" form="unified-modal-form" size="lg"
                         disabled={isSaving || !isFormValid} loading={isSaving} icon={Save}>
-                        {isSaving ? 'Procesando' : 'Guardar Cambios'}
+                        {isSaving ? 'Guardando' : 'Guardar'}
                     </Button>
                         </LiquidModal.Footer>
                     );

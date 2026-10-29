@@ -1,10 +1,12 @@
 import React from 'react';
 import { OPCIONES_DE_EXTINTOR } from '@nucleo/utils/edicionDeSucursal';
-import Badge from '../common/Badge';
-import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmark, FileText, AlertCircle, Flame, BugOff, Info } from 'lucide-react';
-import { LazyInput, Switch, FileUploader, clampInt, formatPhoneMask } from './BranchHelpers';
+import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmark, FileText, AlertCircle, Flame, BugOff, KeyRound } from 'lucide-react';
+import { LazyInput, Switch, FileUploader, SeccionDeFormulario, clampInt, formatPhoneMask } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
+import SegmentedControl from '../common/SegmentedControl';
+import Notice from '../common/Notice';
+import { EmptyState } from '../common/StateViews';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
@@ -13,145 +15,122 @@ const safeParse = (obj) => {
     try { return JSON.parse(obj) || {}; } catch { return {}; }
 };
 
+const RotuloFecha = ({ children, tono = 'text-warning-text', icon: Icon = AlertCircle }) => (
+    <span className={rotuloCampo(tono)}>
+        <span className="flex items-center gap-1.5"><Icon size={12} strokeWidth={3} aria-hidden="true" /> {children}</span>
+    </span>
+);
+
+const PieDocumento = ({ children }) => <div className="pt-4 border-t border-divider mt-auto">{children}</div>;
+
+// Propio / alquilado es UNA de DOS opciones: `SegmentedControl` (§15.3), no un
+// interruptor con un rótulo pintado a cada lado.
+const TENENCIA = [
+    { value: 'OWNED', label: 'Propio', icon: Home },
+    { value: 'RENTED', label: 'Alquilado', icon: KeyRound },
+];
+
 const BranchTabInmueble = ({
     isRented, rent, rentContract, legal, setFormData,
     updateNestedSetting, handleContractChange, getTabStatus
 }) => {
-
-    const gpuLockStyle = {
-        transform: 'translateZ(0)',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        willChange: 'transform'
-    };
-
-    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
-
-    // Los tipos de extintor: núcleo (`OPCIONES_DE_EXTINTOR`), los mismos de la app.
-    const extinguisherOptions = OPCIONES_DE_EXTINTOR;
-
-    // 🚨 REGLA DE NEGOCIO: Si tiene inyecciones, los desechos son obligatorios
+    // Si tiene inyecciones, los desechos son obligatorios.
     const hasInjections = !!legal.injections;
-    
-    // El estado efectivo de los desechos. Si tiene inyecciones, forzamos que sea true.
     const isWasteManagementActive = hasInjections || !!legal.wasteManagement;
 
+    const faltaAlquiler = getTabStatus(3) === 'red';
+
+    const cambiarTenencia = (siguiente) => {
+        if (!siguiente || siguiente === (isRented ? 'RENTED' : 'OWNED')) return;
+        setFormData(prev => ({
+            ...prev,
+            propertyType: siguiente,
+            settings: {
+                ...safeParse(prev.settings),
+                propertyType: siguiente,
+                rent: siguiente === "RENTED" ? (safeParse(prev.settings)?.rent || { contract: {} }) : null
+            }
+        }));
+    };
+
+    const archivo = (campoArchivo, campoUrl) => (f) => {
+        updateNestedSetting('legal', campoArchivo, f);
+        if (!f) updateNestedSetting('legal', campoUrl, null);
+    };
+
     return (
-        <div className="space-y-6 w-full" style={gpuLockStyle}>
+        <div className="space-y-4 w-full">
 
-            {/* ISLA 1: INMUEBLE Y ARRENDAMIENTO */}
-            <div data-surface="card" className={`p-6 transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-border-card pb-5">
-                    <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
-                        <Home size={16} strokeWidth={2.5} /> Inmueble y Arrendamiento
-                    </h4>
-
-                    <div data-surface="card" className="flex items-center gap-4 px-5 py-2.5 transition-[box-shadow,background-color] duration-[var(--dur-slow)]">
-                        <span className={`text-caption font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
-                        <Switch label="Local alquilado" on={isRented} onToggle={() => {
-                            const nextState = isRented ? "OWNED" : "RENTED";
-                            setFormData(prev => ({
-                                ...prev,
-                                propertyType: nextState,
-                                settings: {
-                                    ...safeParse(prev.settings),
-                                    propertyType: nextState,
-                                    rent: nextState === "RENTED" ? (safeParse(prev.settings)?.rent || { contract: {} }) : null
-                                }
-                            }));
-                        }} />
-                        <span className={`text-caption font-black uppercase tracking-widest transition-colors ${isRented ? 'text-brand-text' : 'text-content-2'}`}>Alquilado</span>
-                    </div>
-                </div>
-
+            <SeccionDeFormulario icon={Home} titulo="Inmueble"
+                accion={<SegmentedControl size="sm" label="Tenencia del local" options={TENENCIA}
+                    value={isRented ? 'RENTED' : 'OWNED'} onChange={cambiarTenencia} />}>
                 {isRented ? (
-                    <div data-surface="card" className="grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
-                        <div className="md:col-span-2">
-                            <label className={rotuloCampo('text-content-3')}>
-                                Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
-                            </label>
-                            <LazyInput
-                                required
-                                icon={User}
-                                placeholder="Ej: Juan Perez"
-                                className={`!bg-surface-card shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordName ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
-                                value={rent.landlordName ?? ""}
-                                onChange={(val) => updateNestedSetting('rent', 'landlordName', val)}
-                            />
-                        </div>
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <LazyInput
+                            className="md:col-span-2"
+                            label="Arrendante (dueño)"
+                            name="suc-arrendante"
+                            required
+                            hasError={faltaAlquiler && !rent.landlordName}
+                            icon={User}
+                            placeholder="Ej: Juan Pérez"
+                            value={rent.landlordName ?? ""}
+                            onChange={(val) => updateNestedSetting('rent', 'landlordName', val)}
+                        />
+                        <LazyInput
+                            label="Teléfono"
+                            name="suc-arrendante-telefono"
+                            required
+                            hasError={faltaAlquiler && !rent.landlordPhone}
+                            icon={Phone}
+                            inputMode="tel"
+                            placeholder="2300-0000"
+                            pattern="[0-9]{4}-[0-9]{4}"
+                            value={rent.landlordPhone ?? ""}
+                            onChange={(val) => updateNestedSetting('rent', 'landlordPhone', formatPhoneMask(val))}
+                            maxLength={9}
+                        />
+                        <LazyInput
+                            label="Mensualidad"
+                            name="suc-mensualidad"
+                            required
+                            hasError={faltaAlquiler && !rent.amount}
+                            inputMode="decimal"
+                            maskType="DECIMAL"
+                            icon={DollarSign}
+                            placeholder="0.00"
+                            inputClassName="tabular-nums"
+                            value={rent.amount ?? ""}
+                            onChange={(val) => updateNestedSetting('rent', 'amount', val === "" ? null : Number(val))}
+                        />
                         <div>
-                            <label className={rotuloCampo('text-content-3')}>
-                                Teléfono * {getTabStatus(3) === 'red' && !rent.landlordPhone && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
-                            </label>
-                            <LazyInput
-                                required
-                                icon={Phone}
-                                placeholder="2300-0000"
-                                pattern="[0-9]{4}-[0-9]{4}"
-                                value={rent.landlordPhone ?? ""}
-                                onChange={(val) => updateNestedSetting('rent', 'landlordPhone', formatPhoneMask(val))}
-                                maxLength={9}
-                                className={`!bg-surface-card shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordPhone ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
-                            />
-
-                        </div>
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>
-                                Mensualidad ($) * {getTabStatus(3) === 'red' && !rent.amount && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
-                            </label>
-                            <LazyInput
-                                required
-                                inputMode="decimal"
-                                maskType="DECIMAL"
-                                icon={DollarSign}
-                                placeholder="0.00"
-                                className={`!bg-surface-card shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.amount ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
-                                value={rent.amount ?? ""}
-                                onChange={(val) => updateNestedSetting('rent', 'amount', val === "" ? null : Number(val))}
-                            />
-                        </div>
-
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-content-3')}>
-                                Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
-                            </label>
-                            <LiquidDatePicker hasError={getTabStatus(3) === 'red' && !rentContract.startDate}
+                            <span className={rotuloCampo('text-content-3')}>Inicio del contrato</span>
+                            <LiquidDatePicker hasError={faltaAlquiler && !rentContract.startDate}
                                 value={rentContract.startDate ?? ""}
                                 onChange={(val) => handleContractChange('startDate', val || null)}
-                                />
-                        </div>
-
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>
-                                Vigencia (Meses) * {getTabStatus(3) === 'red' && !rentContract.termMonths && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
-                            </label>
-                            <LazyInput
-                                required
-                                type="number"
-                                icon={CalendarDays}
-                                placeholder="Ej: 12"
-                                className={`!bg-surface-card shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.termMonths ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
-                                value={rentContract.termMonths ?? ""}
-                                onChange={(val) => handleContractChange('termMonths', val === "" ? null : clampInt(val, 1, 240))}
                             />
                         </div>
+                        <LazyInput
+                            label="Vigencia (meses)"
+                            name="suc-vigencia"
+                            required
+                            hasError={faltaAlquiler && !rentContract.termMonths}
+                            inputMode="numeric"
+                            icon={CalendarDays}
+                            placeholder="Ej: 12"
+                            value={rentContract.termMonths ?? ""}
+                            onChange={(val) => handleContractChange('termMonths', val === "" ? null : clampInt(val, 1, 240))}
+                        />
 
                         {rentContract.endDate && (
-                            <div className="md:col-span-2 flex items-center gap-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl">
-                                <AlertCircle size={18} className="text-warning shrink-0" />
-                                <p className="text-label font-black uppercase tracking-widest text-warning-text">
-                                    Vencimiento calculado del contrato: <span className="text-warning-text bg-surface-card px-3 py-1 rounded-lg shadow-sm ml-2">{fechaTexto(rentContract.endDate)}</span>
-                                </p>
-                            </div>
+                            <Notice variant="warning" icon={AlertCircle} className="md:col-span-2">
+                                El contrato vence el {fechaTexto(rentContract.endDate)}
+                            </Notice>
                         )}
 
-                        <div className="md:col-span-2 mt-2 pt-4 border-t border-divider">
+                        <div className="md:col-span-2 pt-4 border-t border-divider">
                             <FileUploader
-                                label="Contrato de Arrendamiento (PDF)"
-                                icon={FileText}
+                                label="Contrato de arrendamiento (PDF)"
                                 file={rentContract.documentFile}
                                 url={rentContract.documentUrl}
                                 onChange={(f) => {
@@ -162,204 +141,108 @@ const BranchTabInmueble = ({
                         </div>
                     </div>
                 ) : (
-                    <div data-surface="card" className="py-10 text-center">
-                        <div className="w-16 h-16 bg-chart-3/10 text-chart-3-text rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                            <Building2 size={28} strokeWidth={2} />
-                        </div>
-                        <p className="text-content-3 font-black uppercase tracking-widest text-body-sm">
-                            Local Propio
-                        </p>
-                        <p className="text-content-3 font-bold text-label mt-1">
-                            No se requiere información de arrendamiento.
-                        </p>
-                    </div>
+                    <EmptyState linea icon={Building2} title="Local propio: sin datos de alquiler" />
                 )}
-            </div>
+            </SeccionDeFormulario>
 
-            {/* GRID INTERMEDIO: ALCALDÍA Y DESECHOS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* ISLA 2: ALCALDÍA */}
-                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
-                        <Landmark size={16} strokeWidth={2.5} /> Permisos Municipales
-                    </h4>
-                    <div className="space-y-4 flex-1">
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>Nº de Cuenta Municipal</label>
-                            <LazyInput
-                                icon={FileText}
-                                placeholder="Ej: 12345-A"
-                                value={legal.municipalAccount || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'municipalAccount', val)}
-                                className={`!bg-surface-card shadow-sm ${inputHoverClass} border-divider`}
-                            />
-                        </div>
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Próx. Renovación / Pago</span></label>
-                            <LiquidDatePicker tono="warning"
-                                value={legal.municipalExpiration || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'municipalExpiration', val)}
-                                />
-                        </div>
-                        <div className="pt-2">
-                            <FileUploader
-                                label="Solvencia Municipal (PDF)"
-                                file={legal.municipalFile}
-                                url={legal.municipalUrl}
-                                onChange={(f) => {
-                                    updateNestedSetting('legal', 'municipalFile', f);
-                                    if (!f) updateNestedSetting('legal', 'municipalUrl', null);
-                                }}
-                            />
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SeccionDeFormulario icon={Landmark} titulo="Permisos municipales">
+                    <LazyInput
+                        label="Nº de cuenta municipal"
+                        name="suc-cuenta-municipal"
+                        icon={FileText}
+                        placeholder="Ej: 12345-A"
+                        value={legal.municipalAccount || ""}
+                        onChange={(val) => updateNestedSetting('legal', 'municipalAccount', val)}
+                    />
+                    <div>
+                        <RotuloFecha>Próxima renovación o pago</RotuloFecha>
+                        <LiquidDatePicker tono="warning"
+                            value={legal.municipalExpiration || ""}
+                            onChange={(val) => updateNestedSetting('legal', 'municipalExpiration', val)}
+                        />
                     </div>
-                </div>
+                    <PieDocumento>
+                        <FileUploader label="Solvencia municipal (PDF)" file={legal.municipalFile} url={legal.municipalUrl}
+                            onChange={archivo('municipalFile', 'municipalUrl')} />
+                    </PieDocumento>
+                </SeccionDeFormulario>
 
-                {/* ISLA 3: DESECHOS BIOINFECCIOSOS */}
-                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <div className="flex flex-col mb-5">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
-                                <Trash2 size={16} strokeWidth={2.5} /> Desechos Bioinfecciosos
-                            </h4>
-                            <Switch label="Desechos bioinfecciosos"
-                                on={isWasteManagementActive} 
-                                disabled={hasInjections} 
-                                onToggle={() => {
-                                    // Solo permitimos el toggle si NO tiene inyecciones
-                                    if (!hasInjections) {
-                                        updateNestedSetting('legal', 'wasteManagement', !legal.wasteManagement);
-                                    }
-                                }} 
-                            />
-                        </div>
-                        {hasInjections && (
-                            <p className="text-micro font-bold text-chart-1-text/80 mt-2 flex items-center gap-1 ml-6">
-                                <Info size={10} /> Obligatorio por área de inyecciones activa.
-                            </p>
-                        )}
-                    </div>
-
+                <SeccionDeFormulario icon={Trash2} titulo="Desechos bioinfecciosos" tono="danger"
+                    subtitulo={hasInjections ? 'Obligatorio: la sucursal aplica inyecciones' : undefined}
+                    accion={<Switch label="Desechos bioinfecciosos"
+                        on={isWasteManagementActive}
+                        disabled={hasInjections}
+                        onToggle={() => { if (!hasInjections) updateNestedSetting('legal', 'wasteManagement', !legal.wasteManagement); }} />}>
                     {isWasteManagementActive ? (
-                        <div className="space-y-4 flex-1">
-                            <div className="relative focus-within:z-sidebar">
-                                <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento Contrato</span></label>
+                        <>
+                            <div>
+                                <RotuloFecha>Vencimiento del contrato</RotuloFecha>
                                 <LiquidDatePicker tono="warning"
                                     value={legal.wasteExpiration || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'wasteExpiration', val)}
-                                    />
-                            </div>
-                            <div className="pt-2">
-                                <FileUploader
-                                    label="Contrato de Desechos (PDF)"
-                                    file={legal.wasteFile}
-                                    url={legal.wasteUrl}
-                                    onChange={(f) => {
-                                        updateNestedSetting('legal', 'wasteFile', f);
-                                        if (!f) updateNestedSetting('legal', 'wasteUrl', null);
-                                    }}
                                 />
                             </div>
-                        </div>
-                    ) : (
-                        <div data-surface="card" className="flex-1 flex flex-col items-center justify-center text-center p-6">
-                            <div className="w-12 h-12 bg-surface-card-hover text-content-3 rounded-full flex items-center justify-center mb-3">
-                                <Trash2 size={20} strokeWidth={2} />
-                            </div>
-                            <p className="text-content-2 font-bold text-label uppercase tracking-widest leading-relaxed">
-                                Gestión de desechos<br />desactivada
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
+                            <PieDocumento>
+                                <FileUploader label="Contrato de desechos (PDF)" file={legal.wasteFile} url={legal.wasteUrl}
+                                    onChange={archivo('wasteFile', 'wasteUrl')} />
+                            </PieDocumento>
+                        </>
+                    ) : <EmptyState linea icon={Trash2} title="Desactivado" />}
+                </SeccionDeFormulario>
 
-            {/* NUEVO GRID: EXTINTORES Y FUMIGACIÓN */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* ISLA 4: EXTINTORES */}
-                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-body-sm font-black uppercase tracking-widest text-chart-4-text mb-5 flex items-center gap-2">
-                        <Flame size={16} strokeWidth={2.5} /> Extintores
-                    </h4>
-
-                    <div className="space-y-4 flex-1">
+                <SeccionDeFormulario icon={Flame} titulo="Extintores" tono="chart-4">
+                    <div className="grid grid-cols-1 gap-4">
+                        <LazyInput
+                            label="Cantidad"
+                            name="suc-extintores"
+                            inputMode="numeric"
+                            placeholder="Ej: 2"
+                            value={legal.extinguisherCount ?? ""}
+                            onChange={(val) => updateNestedSetting('legal', 'extinguisherCount', val ? clampInt(val, 0, 99) : null)}
+                        />
                         <div>
-                            <label className={rotuloCampo('text-content-3')}>Cant. Extintores</label>
-                            <LazyInput
-                                type="number"
-                                placeholder="Ej: 2"
-                                value={legal.extinguisherCount || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'extinguisherCount', val ? Number(val) : null)}
-                                className={`!bg-surface-card shadow-sm ${inputHoverClass} border-divider`}
+                            <span id="suc-extintor-tipo" className={rotuloCampo('text-content-3')}>Tipo principal</span>
+                            <LiquidSelect
+                                ariaLabelledBy="suc-extintor-tipo"
+                                value={legal.extinguisherType || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'extinguisherType', val)}
+                                options={OPCIONES_DE_EXTINTOR}
+                                placeholder="Elegir tipo"
+                                clearLabel="Ninguno"
                             />
                         </div>
-
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-content-3')}>Tipo Principal</label>
-                            <div className={`rounded-2xl ${inputHoverClass}`}>
-                                <LiquidSelect
-                                    value={legal.extinguisherType || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'extinguisherType', val)}
-                                    options={extinguisherOptions}
-                                    placeholder="-- Seleccionar --"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-warning')}><span className="flex items-center gap-1.5"><AlertCircle size={12} strokeWidth={3} /> Vencimiento</span></label>
-                            <LiquidDatePicker tono="warning"
-                                value={legal.extinguisherExpiration || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'extinguisherExpiration', val)}
-                                />
-                        </div>
-
                     </div>
-                </div>
-
-                {/* ISLA 5: CONTROL DE PLAGAS Y FUMIGACIÓN */}
-                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-body-sm font-black uppercase tracking-widest text-success mb-5 flex items-center gap-2">
-                        <BugOff size={16} strokeWidth={2.5} /> Control de Plagas y Fumigación
-                    </h4>
-
-                    <div className="space-y-4 flex-1">
-                        <div>
-                            <label className={rotuloCampo('text-content-3')}>Empresa Proveedora</label>
-                            <LazyInput
-                                icon={Building2}
-                                placeholder="Nombre de la empresa"
-                                value={legal.pestControlCompany || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'pestControlCompany', val)}
-                                className={`!bg-surface-card shadow-sm ${inputHoverClass} border-divider`}
-                            />
-                        </div>
-
-                        <div className="relative focus-within:z-sidebar">
-                            <label className={rotuloCampo('text-success')}><span className="flex items-center gap-1.5"><CalendarDays size={12} strokeWidth={3} /> Última Fumigación</span></label>
-                            <LiquidDatePicker
-                                value={legal.lastFumigationDate || ""}
-                                onChange={(val) => updateNestedSetting('legal', 'lastFumigationDate', val)}
-                                />
-                        </div>
-
-                        <div className="pt-2 border-t border-divider mt-2">
-                            <FileUploader
-                                label="Certificado de Fumigación (PDF)"
-                                file={legal.fumigationFile}
-                                url={legal.fumigationUrl}
-                                onChange={(f) => {
-                                    updateNestedSetting('legal', 'fumigationFile', f);
-                                    if (!f) updateNestedSetting('legal', 'fumigationUrl', null); // 🚨 Limpia la URL
-                                }}
-                            />
-                        </div>
-
+                    <div>
+                        <RotuloFecha>Vencimiento de la recarga</RotuloFecha>
+                        <LiquidDatePicker tono="warning"
+                            value={legal.extinguisherExpiration || ""}
+                            onChange={(val) => updateNestedSetting('legal', 'extinguisherExpiration', val)}
+                        />
                     </div>
-                </div>
+                </SeccionDeFormulario>
 
+                <SeccionDeFormulario icon={BugOff} titulo="Control de plagas" tono="success">
+                    <LazyInput
+                        label="Empresa proveedora"
+                        name="suc-fumigadora"
+                        icon={Building2}
+                        placeholder="Nombre de la empresa"
+                        value={legal.pestControlCompany || ""}
+                        onChange={(val) => updateNestedSetting('legal', 'pestControlCompany', val)}
+                    />
+                    <div>
+                        <RotuloFecha tono="text-content-3" icon={CalendarDays}>Última fumigación</RotuloFecha>
+                        <LiquidDatePicker
+                            value={legal.lastFumigationDate || ""}
+                            onChange={(val) => updateNestedSetting('legal', 'lastFumigationDate', val)}
+                        />
+                    </div>
+                    <PieDocumento>
+                        <FileUploader label="Certificado de fumigación (PDF)" file={legal.fumigationFile} url={legal.fumigationUrl}
+                            onChange={archivo('fumigationFile', 'fumigationUrl')} />
+                    </PieDocumento>
+                </SeccionDeFormulario>
             </div>
         </div>
     );

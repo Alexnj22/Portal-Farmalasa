@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1374.0 — Sucursales: los formularios sobre el canónico
+
+Los formularios de sucursal (general, horarios, inmueble, servicios, legal), el personal asignado y los kioscos, rehechos sobre los canónicos.
+
+- **Campos:** la etiqueta iba afuera con un `<label>` sin `htmlFor` (clic en el rótulo no enfocaba nada) y cada llamador le pisaba la caja a `PortalInput` con `!bg-…`, `h-[40px]`/`h-[42px]`, sombras y bordes propios: por eso en Configuración general los campos medían distinto que los selects. Ahora `LazyInput` pasa `label`, `hasError` y `labelAction` al canónico y no recibe clases de caja. «Falta info» va en `labelAction`, no pintando la caja de naranja. El valor viaja como texto (un número en un campo requerido hacía reventar el `trim()` del canónico).
+- **Secciones:** las «islas» eran tarjetas a mano con lift de tarjeta que se abre y un `transform`/`will-change` permanente que apagaba el vidrio de adentro. Hoy son `SeccionDeFormulario` sobre `data-surface="card"`.
+- **Inmueble:** Propio/Alquilado es un `SegmentedControl`, no un interruptor con rótulos a los lados; el vencimiento del contrato es un `Notice`.
+- **Legal:** la enfermería se elige con casillas (`Checkbox`) y el nombre sale de `shortEmployeeName` (antes, sólo el primer nombre); los selects ya no se cortan en «Ca…».
+- **Horarios:** cada día es la superficie del tema con `data-tono` (rojo si falta una hora, punteado si cierra); dos por fila, porque a tres el «AM» se montaba sobre la hora de cierre; copiar el día anterior ya no es un botón rojo.
+- **Personal asignado:** mostraba antigüedad «en la empresa» y «en la sucursal» con fechas de MUESTRA cuando la ficha no las tenía; se quitaron (la real ya la dice el listón del avatar). Sin el panel que sólo aparecía al pasar el puntero.
+- **Kioscos:** cupo como `Badge` sin el punto que latía, vacío con `EmptyState`, botón con `loading`.
+- Sentence case en rótulos y botones; el pie dice «Guardar» / «Guardando».
+
 ## v2.1373.4 — Ventas: el detalle descuadrado se avisa como error de factura, no como puntos
 
 La CCF 401909 de Salud 1 mostraba «Descuento por puntos −$63.55» sin que nadie

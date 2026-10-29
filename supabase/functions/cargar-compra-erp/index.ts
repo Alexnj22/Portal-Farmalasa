@@ -167,7 +167,9 @@ async function enviarCompra(admin: any, x: {
   let j: any = null;
   try { j = JSON.parse(texto); } catch { /* abajo */ }
   if (!j) {
-    await marcar("sin_verificar", { error: `Respuesta ilegible: ${texto.slice(0, 300)}` });
+    // Entero (hasta 4000): en la primera prueba sólo se guardaron 300
+    // caracteres y la parte que decía qué consulta falló quedó afuera.
+    await marcar("sin_verificar", { error: `Respuesta ilegible: ${texto.slice(0, 4000)}` });
     return { enviada: null, error: "El sistema contestó algo que no se entiende. Puede haber entrado: NO la mandes de nuevo." };
   }
   if (String(j.typeinfo).toLowerCase() !== "success") {
@@ -467,9 +469,15 @@ Deno.serve(async (req: Request) => {
       // 20, ninguna más—, o sea que probablemente lo recorte; por eso la
       // verificación compara por el comienzo y no por igualdad.
       tipo_doc: tipoDoc, numero_doc: cod,
-      sumas_sin_iva: tot.sumas_sin_iva, subtotal: tot.subtotal, iva: tot.iva,
+      // `subtotal` viaja VACÍO: el formulario lo lee de `#subtotal`, que no
+      // existe en la página, y jQuery lo manda como cadena vacía.
+      sumas_sin_iva: tot.sumas_sin_iva, subtotal: "", iva: tot.iva,
       venta_exenta: tot.venta_exenta, total_percepcion: tot.total_percepcion,
-      dias_credito: diasCredito ?? 0, id_compra: "", total_renta_retenida: "0.00",
+      // `id_compra` va en "0", como el campo oculto `id_compra_g` del
+      // formulario. Vacío, el sistema arma consultas que terminan en `=` y
+      // revienta con «error in your SQL syntax near ''» — fue la primera
+      // prueba real (29-oct, C. Imberton): no se creó ninguna compra.
+      dias_credito: diasCredito ?? 0, id_compra: "0", total_renta_retenida: "0.00",
       json_imp_arr: [],
       // Consumo: Gasto de administración. Venta: Costo, costo interno — lo que
       // el propio formulario pone solo al elegir «Gravada».

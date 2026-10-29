@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1384.1 — Compras: id_compra en 0 como el formulario de Bodega
+
+Primera carga real a Bodega (29-oct, C. Imberton, $760.06): el sistema
+contestó «You have an error in your SQL syntax … near ''» varias veces y no
+creó ninguna compra (la lista de Bodega del 28 y 29 sigue con 27, ninguna
+nueva). El formulario de Bodega manda `id_compra` = "0" (campo oculto
+`id_compra_g`) y el portal mandaba vacío. Corregido, y `subtotal` va vacío
+como lo manda el formulario. La respuesta ilegible ahora se guarda entera
+(se guardaban 300 caracteres). El envío quedó apagado.
+
 ## v2.1384.0 — Bodega elige la presentación de lo que sale
 
 Al corregir lo que sale en «Finalizar» (portal y app), la cantidad va con su

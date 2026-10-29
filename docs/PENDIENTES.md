@@ -59,8 +59,9 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
     azar), con OK del usuario. — SEGURIDAD:59-110
     Después: **carné sólo en su horario** (ítem 14), sobre esta misma puerta,
     primero en modo aviso.
-11. **Carné sólo desde terminal registrada + tope de intentos**. Hoy hay 1
-    terminal en 1 de 7 salas. — SEGURIDAD:112-134
+11. ⏸ **Carné sólo desde terminal registrada + tope de intentos** — **en espera:
+    el usuario dijo «por el momento no» (2026-10-28)**. Remedido ese día: 1
+    terminal (La Popular) en 7 salas. — SEGURIDAD:112-134
 12. Segundo humano y dispositivo conocido: los interruptores existen y nada los
     consulta. — SEGURIDAD:156-226
 13. Vigilancia continua (cron) y `gate:seguridad`. — SEGURIDAD:228-246

@@ -8,7 +8,7 @@ import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
 import { AiThinkingState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
-import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
+import { Filter, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, ChevronRight, Sparkles, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -16,8 +16,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import { hora12 } from '@nucleo/utils/hora';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { formatMoney } from '@nucleo/utils/formatNumber';
-import { rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
+import { rotuloDelRegistro, lecturaDelRegistro } from '@nucleo/utils/historialDeSucursal';
 import { analizarHistorial } from '@nucleo/data/ia';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { registrarEgreso } from '@nucleo/data/egreso';
@@ -171,8 +170,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
 
         if (!searchQuery.trim()) return { results: result, isFuzzy: false };
         return smartFilter(searchQuery, result, item => {
-            const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
-            const itemName = parsedDetails.timeline_title || item.name || '';
+            const itemName = lecturaDelRegistro(item).titulo;
             const actorName = item.user_name || item.user_email || item.actor_name || 'Sistema';
             return [getActionLabel(item), itemName, actorName];
         });
@@ -238,11 +236,10 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
         try {
             const compressedHistory = printHistory.map(item => {
                 const date = fechaTexto(item.sortDate);
-                const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
                 return {
                     fecha: date,
                     accion: getActionLabel(item),
-                    detalle: parsedDetails.timeline_title || item.name || 'Registro del sistema',
+                    detalle: lecturaDelRegistro(item).titulo,
                     usuario: item.user_name || item.actor_name || 'Sistema'
                 };
             }).slice(0, 150);
@@ -277,10 +274,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
             const dStr = dateObj.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const tStr = (dateObj.getHours() === 0 && dateObj.getMinutes() === 0) ? 'N/A' : hora12(dateObj);
             const action = getActionLabel(item);
-            let desc = item.name || 'Registro del Sistema';
-            const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
-            if (parsedDetails.timeline_title) desc = parsedDetails.timeline_title;
-            else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) desc = `Pago de ${parsedDetails.servicio} registrado (${formatMoney(parsedDetails.monto)})`;
+            const lectura = lecturaDelRegistro(item);
+            const desc = lectura.nuevo ? `${lectura.titulo} (${lectura.nuevo})` : lectura.titulo;
             const actor = actorDelRegistro(item, employees).nombre || 'No registrado';
             return [dStr, tStr, action, desc, actor];
         });
@@ -304,10 +299,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                     <tbody className="text-caption">
                         {printHistory.map((item, idx) => {
                             const dateObj = new Date(item.sortDate);
-                            let itemTitle = item.name || 'Registro del sistema';
-                            const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
-                            if (parsedDetails.timeline_title) itemTitle = parsedDetails.timeline_title;
-                            else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) itemTitle = `Pago ${parsedDetails.servicio} (${formatMoney(parsedDetails.monto)})`;
+                            const lecturaImpresa = lecturaDelRegistro(item);
+                            const itemTitle = lecturaImpresa.nuevo ? `${lecturaImpresa.titulo} (${lecturaImpresa.nuevo})` : lecturaImpresa.titulo;
                             return (
                                 <tr key={idx} className="border-b border-divider break-inside-avoid">
                                     <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-SV')}</td>
@@ -325,7 +318,6 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
         );
     };
 
-    let globalEventIndex = 0;
 
     return (
         <div className="space-y-6 relative h-full flex flex-col">
@@ -333,10 +325,10 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
             {renderPrintPortal()}
             
             {/* HEADER CONTROLS */}
-            <div className="relative z-modal flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6 pb-6 border-b border-border-card no-print">
+            <div className="relative z-modal flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 pb-5 border-b border-divider no-print">
                 <div>
-                    <h3 className="font-black text-content uppercase tracking-tight text-lg">Historia de Sucursal</h3>
-                    <p className="text-label font-bold text-content-3 uppercase tracking-widest">Expediente Centralizado Interactivo</p>
+                    <h3 className="text-title-sm font-black text-content tracking-tight">Historial</h3>
+                    <p className="text-body-sm text-content-3">Lo que cambió en esta sucursal, lo más reciente arriba.</p>
                 </div>
 
                 {/* §17 (2026-07-30): esta barra llevaba en `trailingActions` el
@@ -425,7 +417,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
             {/* ============================================================================ */}
             {/* 🎭 CONTENEDOR DE TRANSICIÓN FLUIDA ENTRE MODO NORMAL Y MODO IA               */}
             {/* ============================================================================ */}
-            <div className="relative w-full max-w-5xl mx-auto py-2 flex-1">
+            <div className="relative w-full max-w-4xl py-2 flex-1">
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
                 <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
@@ -487,182 +479,125 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                 {/* 🏢 VISTA NORMAL DE LÍNEA DE TIEMPO (HISTORIAL) */}
                 <div inert={aiMode ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     
-                    {/* Línea Central Estética */}
-                    <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-[2px] bg-divider md:-translate-x-1/2 rounded-full"></div>
-
+                    {/* Una sola columna (2026-10-29). La línea de tiempo alternada
+                        —fecha a un lado, tarjeta al otro— dejaba media pantalla
+                        vacía en cada renglón y obligaba a mover el ojo de lado a
+                        lado para leer qué pasó y cuándo. Ahora cada registro dice
+                        las dos cosas en el mismo renglón. */}
                     {isLoadingHistory ? (
-                        /* SKELETON DE LÍNEA DE TIEMPO */
-                        <div className="w-full space-y-12 relative z-base pt-10">
+                        <div className="space-y-3 pt-5">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className={`flex flex-col md:flex-row items-center w-full ${i % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
-                                    <div className={`hidden md:block w-[45%] ${i % 2 === 0 ? 'text-left pl-12' : 'text-right pr-12'}`}>
-                                        <div className={`h-4 skeleton rounded-full w-24 ${i % 2 === 0 ? 'mr-auto' : 'ml-auto'}`} />
-                                    </div>
-                                    <div className="absolute left-[20px] md:left-1/2 w-8 h-8 skeleton rounded-full border-4 border-surface-card -translate-x-[20px] md:-translate-x-1/2 z-tabs" />
-                                    <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 ${i % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
-                                        <div className="h-32 bg-surface-card border border-border-card rounded-3xl p-5 w-full space-y-3">
-                                            <div className="h-3 skeleton rounded-full w-1/3" />
-                                            <div className="h-5 skeleton rounded-full w-3/4" />
-                                            <div className="h-3 skeleton rounded-full w-1/2 mt-2" />
-                                        </div>
-                                    </div>
+                                <div key={i} data-surface="card" className="p-4 space-y-2.5">
+                                    <div className="h-4 skeleton rounded-full w-1/2" />
+                                    <div className="h-3 skeleton rounded-full w-1/3" />
                                 </div>
                             ))}
                         </div>
                     ) : historyError && propHistory.length === 0 ? (
-                        <div className="relative z-base pt-10">
+                        <div className="pt-5">
                             <Notice variant="danger" icon={AlertTriangle}>{historyError}</Notice>
                         </div>
                     ) : filteredHistory.length === 0 ? (
-                        <div className="text-center py-20 opacity-60 relative z-base"><FileText className="text-content-3 mx-auto mb-4" size={48} /> Sin registros en esta sucursal</div>
+                        <div className="py-16 text-center">
+                            <FileText className="text-content-3 mx-auto mb-3" size={36} strokeWidth={1.5} aria-hidden="true" />
+                            <p className="text-body font-bold text-content-2">Sin registros</p>
+                            <p className="text-body-sm text-content-3 mt-1">Cuando se edite la sucursal, sus cambios aparecen aquí.</p>
+                        </div>
                     ) : (
-                        <div className="relative z-base w-full pt-2">
+                        <div className="pt-5">
                             {isHistorySearchFuzzy && searchQuery && (
-                                <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
-                </Notice>
+                                <Notice variant="warning" icon={Search} className="mb-4">
+                                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                                </Notice>
                             )}
                             {groupedHistory.map((yearGroup) => {
-                                const isYearCollapsed = collapsedYears[yearGroup.year] || false;
-                                const isYearOpen = !isYearCollapsed;
-
+                                const isYearOpen = !collapsedYears[yearGroup.year];
                                 return (
-                                    <div key={yearGroup.year} className="w-full mb-4">
+                                    <section key={yearGroup.year} className="mb-6 last:mb-0">
+                                        <button type="button" onClick={() => toggleYear(yearGroup.year)} aria-expanded={isYearOpen}
+                                            className="flex items-center gap-2 min-h-[var(--tap-min)] text-title-sm font-black text-content tabular-nums transition-colors duration-[var(--dur-fast)] hover:text-brand-text active:scale-[0.97]">
+                                            <ChevronRight size={18} strokeWidth={2.5} aria-hidden="true"
+                                                className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isYearOpen ? 'rotate-90' : ''}`} />
+                                            {yearGroup.year}
+                                        </button>
 
-                                        <div className="relative flex justify-center items-center w-full mb-4 group">
-                                            <Button
-                                                variant="primary"
-                                                icon={Calendar}
-                                                onClick={() => toggleYear(yearGroup.year)}
-                                            >AÑO {yearGroup.year}</Button>
-                                            <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
-                                        </div>
+                                        {isYearOpen && yearGroup.months.map((monthGroup) => {
+                                            const isMonthOpen = !collapsedMonths[monthGroup.id];
+                                            return (
+                                                <div key={monthGroup.id} className="mt-2">
+                                                    <button type="button" onClick={() => toggleMonth(monthGroup.id)} aria-expanded={isMonthOpen}
+                                                        className="flex items-center gap-1.5 min-h-[var(--tap-min)] pl-1 text-caption font-black text-content-3 uppercase tracking-widest transition-colors duration-[var(--dur-fast)] hover:text-content-2">
+                                                        <ChevronRight size={14} strokeWidth={2.5} aria-hidden="true"
+                                                            className={`transition-transform duration-[var(--dur-base)] ${isMonthOpen ? 'rotate-90' : ''}`} />
+                                                        {monthGroup.name}
+                                                        <span className="font-bold normal-case tracking-normal">· {monthGroup.events.length}</span>
+                                                    </button>
 
-                                        <div className={`grid transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isYearOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                                            <div className={`overflow-hidden transition-all duration-[var(--dur-lento)] ${isYearOpen ? 'px-2 -mx-2 pb-2 -mb-2' : 'px-0 mx-0 pb-0 mb-0'}`}>
+                                                    {isMonthOpen && (
+                                                        // La línea vertical es un trazo detrás de los puntos, no
+                                                        // un `border-l` (que el canon reserva y el gate prohíbe).
+                                                        <ol className="relative ml-[11px] pl-5 space-y-3 py-1">
+                                                            <span aria-hidden="true" className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full bg-divider" />
+                                                            {monthGroup.events.map((item) => {
+                                                                const theme = getThemeForAction(item.action, item.isDoc, item.isSynthetic);
+                                                                const lectura = lecturaDelRegistro(item);
+                                                                const dateObj = new Date(item.sortDate);
+                                                                const dia = dateObj.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
+                                                                const hora = hora12(dateObj);
+                                                                const conHora = hora !== hora12('00:00');
 
-                                                {yearGroup.months.map((monthGroup) => {
-                                                    const isMonthCollapsed = collapsedMonths[monthGroup.id] || false;
-                                                    const isMonthOpen = !isMonthCollapsed;
+                                                                // Id → correo → nombre (`actorDelRegistro`), y el
+                                                                // nombre CORTO del canónico junto a su foto.
+                                                                const actor = actorDelRegistro(item, employees);
+                                                                const actorName = actor.sistema
+                                                                    ? 'Sistema'
+                                                                    : actor.nombre ? shortEmployeeName(actor.emp || actor.nombre) : 'Autor no registrado';
 
-                                                    return (
-                                                        <div key={monthGroup.id} className="w-full mt-2 mb-2">
-
-                                                            <div className="relative flex justify-center items-center w-full mb-4 group">
-                                                                <Button
-                                                                    variant="secondary"
-                                                                    icon={ChevronRight}
-                                                                    onClick={() => toggleMonth(monthGroup.id)}
-                                                                >{monthGroup.name}</Button>
-                                                                <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
-                                                            </div>
-
-                                                            <div className={`grid transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isMonthOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                                                                <div className={`overflow-hidden transition-all duration-[var(--dur-lento)] ${isMonthOpen ? 'px-6 -mx-6 pb-8 -mb-8 pt-2 -mt-2' : 'px-0 mx-0 pb-0 mb-0 pt-0 mt-0'}`}>
-                                                                    <div className="space-y-4 py-1">
-                                                                        {monthGroup.events.map((item) => {
-                                                                            globalEventIndex++;
-                                                                            const isLeftDesktop = globalEventIndex % 2 !== 0;
-
-                                                                            const isDoc = item.isDoc;
-                                                                            const isSynthetic = item.isSynthetic;
-                                                                            const actionLabel = getActionLabel(item);
-                                                                            const theme = getThemeForAction(item.action, isDoc, isSynthetic);
-
-                                                                            const dateObj = new Date(item.sortDate);
-                                                                            const dateStr = dateObj.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' }).toUpperCase();
-                                                                            const timeStr = hora12(dateObj);
-
-                                                                            let itemTitle = item.name || 'Configuración Modificada';
-                                                                            let oldVal = null;
-                                                                            let newVal = null;
-
-                                                                            const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
-
-                                                                            if (parsedDetails.timeline_title) {
-                                                                                itemTitle = parsedDetails.timeline_title;
-                                                                                oldVal = parsedDetails.old_value;
-                                                                                newVal = parsedDetails.new_value;
-                                                                            } else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) {
-                                                                                itemTitle = `Pago de ${parsedDetails.servicio}`;
-                                                                                newVal = `Monto: ${formatMoney(parsedDetails.monto)}`;
-                                                                            }
-
-                                                                            // Id → correo → nombre (`actorDelRegistro`), y el
-                                                                            // nombre CORTO del canónico junto a su foto.
-                                                                            const actor = actorDelRegistro(item, employees);
-                                                                            const isSystemOrAdmin = actor.sistema;
-                                                                            const actorName = isSystemOrAdmin
-                                                                                ? 'Sistema'
-                                                                                : actor.nombre ? shortEmployeeName(actor.emp || actor.nombre) : 'Autor no registrado';
-
-                                                                            return (
-                                                                                <div key={item.id} className={`relative flex flex-col md:flex-row justify-between items-start md:items-center w-full group animate-in slide-in-from-bottom-4 fade-in duration-[var(--dur-lento)] ${!isLeftDesktop ? 'md:flex-row-reverse' : ''}`}>
-
-                                                                                    <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 mb-3 md:mb-0 z-content ${isLeftDesktop ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'}`}>
-                                                                                        <div className="inline-flex items-center gap-2">
-                                                                                            <span className="text-body-lg font-black text-content-2 drop-shadow-sm">{dateStr}</span>
-                                                                                            {timeStr !== hora12('00:00') && <Badge uppercase={false}>{timeStr}</Badge>}
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    <div className="absolute left-[20px] md:left-1/2 top-1 md:top-auto w-10 h-10 flex items-center justify-center -translate-x-[20px] md:-translate-x-1/2 z-tabs group-hover:scale-125 transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
-                                                                                        <div className={`absolute inset-0 rounded-full opacity-30 animate-pulse ${theme.dot}`}></div>
-                                                                                        <div className={`w-4 h-4 rounded-full border-[3px] border-surface-card shadow-sm relative ${theme.dot} ${theme.shadow}`}></div>
-                                                                                    </div>
-
-                                                                                    <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-content ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
-                                                                                        <div data-surface="card" className={`relative overflow-hidden p-5 transition-all duration-[var(--dur-lento)] hover:bg-surface-card-hover text-left`}>
-
-                                                                                            <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-[var(--dur-lento)] group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
-
-                                                                                            <div className="relative z-base">
-                                                                                                <div className="mb-3">
-                                                                                                    <Badge variant={theme.variante || 'neutral'}>{actionLabel}</Badge>
-                                                                                                </div>
-
-                                                                                                <h4 className="text-body-lg md:text-subtitle font-black text-content leading-tight mb-2">
-                                                                                                    {itemTitle}
-                                                                                                </h4>
-
-                                                                                                {(oldVal || newVal) && (
-                                                                                                    <div className="flex flex-col gap-1 mt-2">
-                                                                                                        {oldVal && <span className="text-caption font-bold text-content-3 line-through truncate">Antes: {oldVal}</span>}
-                                                                                                        {newVal && <span className={`text-caption font-bold truncate ${item.severity === 'CRITICAL' ? 'text-danger-text' : 'text-brand-text'}`}>Nuevo: {newVal}</span>}
-                                                                                                    </div>
-                                                                                                )}
-
-                                                                                                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-card">
-                                                                                                    <div className="flex items-center gap-2">
-                                                                                                        {isSystemOrAdmin ? (
-                                                                                                            <div className="w-6 h-6 rounded-full bg-surface-card-hover/80 border border-surface-card flex items-center justify-center shadow-inner overflow-hidden shrink-0">
-                                                                                                                <img src="/Logo192.png" alt="Sistema" className="w-full h-full object-contain p-0.5" />
-                                                                                                            </div>
-                                                                                                        ) : actor.nombre ? (
-                                                                                                            <AvatarConEstado emp={actor.emp || { id: item.user_id ?? null, name: actor.nombre }} px={24} radio="rounded-full" marco="" mostrarChip={false} />
-                                                                                                        ) : null}
-                                                                                                        <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none drop-shadow-sm truncate max-w-[120px] md:max-w-none">{actorName}</span>
-                                                                                                    </div>
-
-                                                                                                    {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <Button variant="secondary" icon={Eye} onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)}>Ver Doc</Button>
-                                                                                                    ) : null}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
+                                                                return (
+                                                                    <li key={item.id} className="relative">
+                                                                        <span aria-hidden="true"
+                                                                            className={`absolute -left-[25px] top-5 w-3 h-3 rounded-full ${theme.dot}`} />
+                                                                        <article data-surface="card" className="p-4">
+                                                                            <div className="flex items-start justify-between gap-3">
+                                                                                <div className="min-w-0">
+                                                                                    <p className={`text-body font-black leading-snug ${lectura.critico ? 'text-danger-text' : 'text-content'}`}>{lectura.titulo}</p>
+                                                                                    {(lectura.antes || lectura.nuevo) && (
+                                                                                        <p className="mt-1 text-body-sm text-content-2 break-words">
+                                                                                            {lectura.antes && <span className="text-content-3 line-through mr-2">{lectura.antes}</span>}
+                                                                                            {lectura.nuevo}
+                                                                                        </p>
+                                                                                    )}
                                                                                 </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </div>
+                                                                                <time dateTime={dateObj.toISOString()} className="shrink-0 text-right text-caption text-content-3 tabular-nums leading-tight">
+                                                                                    <span className="block font-bold text-content-2">{dia}</span>
+                                                                                    {conHora && <span className="block">{hora}</span>}
+                                                                                </time>
+                                                                            </div>
+                                                                            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                                                                                <Badge variant={theme.variante || 'neutral'} size="sm" uppercase={false}>{getActionLabel(item)}</Badge>
+                                                                                <span className="inline-flex items-center gap-1.5 min-w-0 text-caption font-semibold text-content-2">
+                                                                                    {actor.sistema ? (
+                                                                                        <img src="/Logo192.png" alt="" className="w-5 h-5 rounded-full object-contain" />
+                                                                                    ) : actor.nombre ? (
+                                                                                        <AvatarConEstado emp={actor.emp || { id: item.user_id ?? null, name: actor.nombre }} px={20} radio="rounded-full" marco="" />
+                                                                                    ) : null}
+                                                                                    <span className="truncate max-w-[180px]">{actorName}</span>
+                                                                                </span>
+                                                                                {lectura.archivo && (
+                                                                                    <Button variant="ghost" size="sm" icon={Eye} className="ml-auto"
+                                                                                        onClick={() => handlePreviewDocument(lectura.archivo, lectura.titulo)}>Ver documento</Button>
+                                                                                )}
+                                                                            </div>
+                                                                        </article>
+                                                                    </li>
+                                                                );
+                                                            })}
+                                                        </ol>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </section>
                                 );
                             })}
                         </div>

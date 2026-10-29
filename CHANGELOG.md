@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1370.0 — Sucursales: la lista y el historial, rehechos
+
+**La tarjeta de cada sucursal** pasó de siete cajas anidadas y un pie más ancho que el resto a una sola superficie (`data-surface="card"`) con renglones: estado de hoy en una frase («Abierta · 7:00 a. m. – 9:00 p. m.»), alertas con su número y su lista al pasar el puntero, dirección y teléfonos, avance del expediente con su porcentaje, y personal, kioscos y acciones en el pie — siempre visibles, también en el teléfono. Toda la tarjeta abre la ficha (ojo arriba a la derecha, §5.3). Se fueron el punto que latía en cada tarjeta, las ~40 sombras y transiciones por tarjeta y el lift doble, que es lo que hacía pesada la vista.
+
+**El historial de la ficha** es una sola columna: cada registro con un título que dice qué pasó, su rótulo en español, la fecha y la hora en el mismo renglón. Y trae sólo lo de la sala: `audit_log_de_sucursal` mezclaba registros de otros módulos que compartían el número (de ~2,570 con `target_id` igual a una sala, 6 eran de una sala), y por eso se veían «Configuración Modificada» con rótulo TRASLADO SOLICITADO. Migración `20261029171838`.
+
+**Pestañas de la ficha:** el punto de alerta ya no tapa la última letra. **Salud 2:** su horario estaba guardado como «19:00 PM» y la pantalla lo mostraba cortado; corregido en la base.
+
 ## v2.1369.1 — Se retira el recordatorio del techo de exportación
 
 PENDIENTES 35. El cron `recordar-linea-base-egreso-mensual` y su función

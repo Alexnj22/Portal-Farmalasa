@@ -1,5 +1,7 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
 import BotonIA from '../components/common/BotonIA';
+import LiquidTooltip from '../components/common/LiquidTooltip';
+import OjoDeTarjeta from '../components/common/OjoDeTarjeta';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -10,12 +12,13 @@ import { AiThinkingState, Skeleton, SkeletonText } from '../components/common/St
 import { useNavigate, Link } from "react-router-dom";
 import {
     Building2, MapPin, Phone, Smartphone, Clock, Pencil, Trash2, Plus,
-    Users, Eye, Monitor, AlertTriangle, CheckCircle2, Info, AlertCircle,
-    Search, Filter, X, ArrowUpRight, Copy, MessageCircle, ChevronRight,
-    Scale, Zap, Briefcase, Shield, Stethoscope, Sparkles, Activity, ArrowLeft
+    Users, Monitor, AlertTriangle, CheckCircle2, Info, AlertCircle,
+    Search, Filter, X, Copy, MessageCircle,
+    Briefcase, Shield, Stethoscope, Sparkles
 } from "lucide-react";
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
-import { kioscosActivos } from '@nucleo/utils/kioscos';
+import { kioscosActivos, LIMITE_KIOSCOS } from '@nucleo/utils/kioscos';
+import { clickable } from '@nucleo/utils/clickable';
 import { abiertaAhora, alertasDeSucursal, completitudDelPerfil, datosParaElDiagnostico, horarioDefinido, horarioDeHoy, leerAjustes, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from "@nucleo/utils/sucursales";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
@@ -24,7 +27,6 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 
 import { smartFilter } from '@nucleo/utils/searchUtils';
-import { fechaTexto } from '@nucleo/utils/fecha';
 import { analizarSucursal } from '@nucleo/data/ia';
 import { fetchBranchKiosks } from '@nucleo/data/branches';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
@@ -45,7 +47,6 @@ const BRANCH_TYPE_META = TIPOS_DE_SUCURSAL;
 const TYPE_ORDER = ORDEN_DE_TIPOS;
 
 const safeParse = leerAjustes;   // núcleo (`sucursales`)
-const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)] cursor-pointer transition-all duration-[var(--dur-slow)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] active:scale-[0.97]";
 
 // ============================================================================
 // 🧠 FUNCIONES PURAS
@@ -71,59 +72,58 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     };
 };
 
-// ============================================================================
-// 🚀 COMPONENTE DE TARJETA (CON ESTILO IA FUTURISTA)
-// ============================================================================
-// ── Dos bloques que estaban escritos varias veces (2026-07-28, D3.3) ─────
-// `TarjetaTelefono` iba dos veces (fijo y celular) y `PanelCompletitud` TRES
-// (legal, local, servicios), idénticas salvo el ícono, la etiqueta y el campo.
-// No pasan por `Button`: son tarjetas con ícono, dos líneas de texto y una
-// barra de progreso — el canónico no tiene eso y forzarlas las rompería. Lo
-// que sí hacía falta era que existiera UNA definición.
-const TarjetaTelefono = memo(({ icono: Icono, etiqueta, numero, onAccion, onWhatsApp }) => (
-    // El de WhatsApp era un `<div onClick>` DENTRO del `<button>`: no lo
-    // alcanzaba el teclado y su clic disparaba también el del padre. Ahora los
-    // dos son hermanos dentro de un contenedor, que es lo que siempre fueron.
-    <div className={`group/tel flex items-center rounded-2xl relative ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-        <button onClick={onAccion}
-            aria-label={`${etiqueta}: ${numero || 'sin número'}`}
-            className="flex items-center gap-2 p-2.5 text-left flex-1 min-w-0 rounded-2xl transition-transform duration-[var(--dur-fast)] active:scale-[0.98]">
-            <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-[var(--dur-slow)] group-hover/tel:scale-110 group-hover/tel:text-brand-text">
-                <Icono size={14} strokeWidth={2.5} />
-            </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-micro font-black text-content-2 uppercase tracking-widest">{etiqueta}</p>
-                <p className="text-body-sm font-bold text-content-2 whitespace-nowrap tracking-tight">{numero || "\u2014"}</p>
-            </div>
-        </button>
-        {onWhatsApp && numero && (
-            <button onClick={onWhatsApp} type="button"
-                aria-label={`Abrir WhatsApp con ${numero}`}
-                title="Abrir WhatsApp"
-                className="mr-1.5 w-6 h-6 min-w-[var(--tap-min)] min-h-[var(--tap-min)] bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm shrink-0 opacity-0 group-hover/tel:opacity-100 focus-visible:opacity-100 transition-all active:scale-[0.97] hover:bg-success-solid hover:text-white">
-                <MessageCircle size={13} strokeWidth={2.5} />
-            </button>
-        )}
-    </div>
-));
-TarjetaTelefono.displayName = 'TarjetaTelefono';
+// ── La tarjeta de la sucursal (rehecha el 2026-10-29) ────────────────────
+// Antes eran SIETE cajas de vidrio dentro de la tarjeta (dirección, dos
+// teléfonos, horario, tres paneles) más un pie de otro ancho, y la tarjeta
+// misma no era una superficie: sin `data-surface` no tenía fondo, así que el
+// pie —que sí lo tenía— parecía una pieza suelta más ancha que lo de arriba.
+// Además cada caja tenía su sombra, su lift y su transición: decenas de capas
+// animándose a la vez al pasar el puntero, que es lo que se sentía trabado.
+//
+// Ahora es UNA superficie (`data-surface="card"`, §5) con renglones separados
+// por divisores, y la tarjeta entera abre la ficha (§5.3, el ojo arriba a la
+// derecha). Las acciones van siempre visibles en el pie: escondidas detrás del
+// hover no existían en el teléfono.
 
-const PanelCompletitud = memo(({ icono: Icono, etiqueta, pct, titulo, disabled, onClick }) => (
-    <button type="button" onClick={onClick} disabled={disabled} title={titulo}
-        aria-label={`${titulo} \u2014 ${pct}% completo`}
-        className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-2xl text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-        <div className="flex items-center justify-between w-full">
-            <Icono size={12} strokeWidth={2.5} className={`transition-colors duration-[var(--dur-slow)] ${pct === 0 ? 'text-danger' : pct === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
-            <span className={`text-micro font-black uppercase tracking-widest transition-colors ${pct === 0 ? 'text-danger-text' : 'text-content-2 group-hover/prog:text-content-2'}`}>{etiqueta}</span>
-        </div>
-        {pct < 100 && (
-            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
-                <div className={`h-full transition-all duration-[var(--dur-lento)] ${pct === 0 ? 'bg-danger' : 'bg-warning'}`} style={{ width: `${Math.max(pct, 5)}%` }} />
-            </div>
-        )}
+// Una línea de dato: ícono, texto y —si hay— la acción a la derecha.
+const Renglon = ({ icono: Icono, children, accion }) => (
+    <div className="flex items-start gap-3 py-2.5">
+        <Icono size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-content-3" aria-hidden="true" />
+        <div className="min-w-0 flex-1">{children}</div>
+        {accion}
+    </div>
+);
+
+// Un teléfono es un botón: en el teléfono llama, en la computadora copia.
+const Telefono = ({ icono: Icono, etiqueta, numero, onAccion }) => (
+    <button type="button" onClick={onAccion} disabled={!numero}
+        aria-label={`${etiqueta}: ${numero || 'sin número'}`}
+        className="inline-flex items-center gap-1.5 min-h-[var(--tap-min)] rounded-lg -mx-1 px-1 text-body-sm font-semibold text-content-2 tabular-nums transition-colors duration-[var(--dur-fast)] hover:text-brand-text disabled:text-content-3 disabled:cursor-default active:scale-[0.97]">
+        <Icono size={14} strokeWidth={2} className="text-content-3" aria-hidden="true" />
+        {numero || 'Sin número'}
     </button>
-));
-PanelCompletitud.displayName = 'PanelCompletitud';
+);
+
+// El avance de una parte del expediente. Cuando la parte no aplica (local
+// propio, sala que no es farmacia) vale 100 y se dice «Completo».
+const Avance = ({ etiqueta, pct, titulo, disabled, onClick }) => {
+    const tono = pct >= 100 ? 'bg-success' : pct === 0 ? 'bg-danger' : 'bg-warning';
+    return (
+        <button type="button" onClick={onClick} disabled={disabled} title={titulo}
+            aria-label={`${titulo}: ${pct}% completo`}
+            className="flex flex-col gap-1.5 min-h-[var(--tap-min)] justify-center text-left rounded-lg transition-opacity duration-[var(--dur-fast)] hover:opacity-80 disabled:cursor-default disabled:hover:opacity-100 active:scale-[0.97]">
+            <span className="flex items-baseline justify-between gap-2">
+                <span className="text-caption font-bold text-content-3">{etiqueta}</span>
+                <span className={`text-caption font-black tabular-nums ${pct >= 100 ? 'text-success-text' : pct === 0 ? 'text-danger-text' : 'text-warning-text'}`}>{pct}%</span>
+            </span>
+            <span data-medida="dato" className="block h-1 w-full rounded-full bg-divider overflow-hidden">
+                <span className={`block h-full rounded-full ${tono}`} style={{ width: `${Math.max(pct, 3)}%` }} />
+            </span>
+        </button>
+    );
+};
+
+const textoDelHorario = (horario) => String(horario || '').replace(' - ', ' – ');
 
 const BranchCard = memo(({
     branch, branchEmployees, count, asignados = count, activeKiosks, currentTime,
@@ -136,8 +136,8 @@ const BranchCard = memo(({
 
     const branchType = branch.type || 'FARMACIA';
     const isFarmacia = branchType === 'FARMACIA';
+    const conKioscos = !['ADMINISTRATIVA', 'EXTERNA'].includes(branch.type);
 
-    const pct = Math.min(Math.round((count / 20) * 100), 100);
     // `asignados` cuenta a TODA ficha con esta sala, dadas de baja incluidas:
     // es la misma regla con la que `deleteBranch` (branchSlice) se niega a
     // borrar. Con `count` (sólo activos en planilla) el botón aparecía sobre una
@@ -150,289 +150,208 @@ const BranchCard = memo(({
     const currentStatus = isBranchOpenNow(branch, currentTime.day, currentTime.timeStr);
     const todaySchedule = getTodaySchedule(branch, currentTime.day);
     const completion = getProfileCompletion(branch);
+    const direccion = [branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ');
+    const mapa = branch.settings?.location?.mapsUrl
+        || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion || branch.name)}`;
 
-    const generateBranchAiSummary = async (e) => {
-        e.stopPropagation();
+    // El estado de hoy en una frase: el punto dice el color y el texto lo dice
+    // en palabras (el color solo no lo lee nadie con daltonismo).
+    const estado = isInactive
+        ? { punto: 'bg-warning', texto: 'Inactiva' }
+        : !scheduleDefined
+            ? { punto: 'bg-danger', texto: 'Sin horario' }
+            : todaySchedule === 'CERRADO'
+                ? { punto: 'bg-content-3', texto: 'Cerrada hoy' }
+                : currentStatus.status === 'OPEN'
+                    ? { punto: 'bg-success', texto: `Abierta · ${textoDelHorario(todaySchedule)}` }
+                    : { punto: 'bg-content-3', texto: `Cerrada · ${textoDelHorario(todaySchedule)}` };
+
+    const cerrarDiagnostico = () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); };
+    const generateBranchAiSummary = async () => {
         setAiMode(true);
         setIsGeneratingAi(true);
-
         try {
             // La foto que se le cuenta a la IA: núcleo (`sucursales`), la misma de la app.
             const snapshotData = datosParaElDiagnostico({
                 branch, inactiva: isInactive, estado: currentStatus.label, horario: todaySchedule,
                 empleados: count, kioscos: activeKiosks, alertas: alertStatus, completitud: completion,
             });
-
             const { data: aiResponse, error: aiError } = await analizarSucursal({ branchName: branch.name, branchData: JSON.stringify(snapshotData) });
-
             if (aiError) throw new Error(aiError.message);
-            if (!aiResponse?.success) throw new Error("Fallo en la generación del resumen.");
-
+            if (!aiResponse?.success) throw new Error('Fallo en la generación del resumen.');
             setAiSummaryData(aiResponse.aiSummary);
         } catch (error) {
-            console.error("Error al generar resumen IA:", error);
-            setAiSummaryData("Ocurrió un error de conexión con la red neuronal. Intenta de nuevo.");
+            console.error('Error al generar el diagnóstico:', error);
+            setAiSummaryData('No se pudo preparar el diagnóstico. Intenta de nuevo.');
         } finally {
             setIsGeneratingAi(false);
         }
     };
 
-    return (
-        // SIN `will-change-transform` (2026-08-09): declararlo deja la capa
-        // compuesta SIEMPRE, o sea backdrop root permanente, y apagaba el
-        // vidrio de los 14 tooltips de esta tarjeta. El lift de hover no lo
-        // necesita — se compone solo mientras dura.
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-[var(--dur-lento)] flex flex-col h-full overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-5)]'}`}>
-            
-            {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
-            <div data-cobertura inert={!(aiMode) ? true : undefined} className={`absolute inset-0 z-sidebar transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
-                
-                {/* 🔮 Esferas de Energía Animatedas de Fondo */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                    <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-chart-3/20 blur-[50px] rounded-full animate-pulse [animation-duration:4s]"></div>
-                    <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-chart-3/20 blur-[50px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
-                    <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-9/20 blur-[50px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
-                </div>
+    // Los controles de adentro no pueden abrir además la ficha.
+    const sinAbrir = (fn) => (e) => { e.preventDefault(); e.stopPropagation(); fn?.(e); };
 
-                {/* Cabecera del Overlay IA */}
-                <div className="relative z-base flex items-center justify-between p-5 border-b border-chart-3/20 bg-surface-card">
-                    <div className="flex items-center gap-3">
-                        <div className="relative w-8 h-8 flex items-center justify-center">
-                            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[3px] opacity-70"></div>
-                            <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-border-card">
-                                <Sparkles size={14} className="text-white" strokeWidth={2.5} />
+    return (
+        <article
+            data-surface="card"
+            {...clickable(() => handleViewProfile(branch), { label: `Abrir la ficha de ${branch.name}` })}
+            // Sin `hover:-translate-y-*`: `data-surface="card"` ya levanta con
+            // `--lift-card`, y un segundo lift se SUMA (DESIGN.md §5).
+            style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 340px', '--stagger-delay': `${Math.min(staggerIndex, 8) * 45}ms` }}
+            className={`animate-stagger-child group relative flex flex-col h-full overflow-hidden p-5 cursor-pointer ${isInactive ? 'opacity-80' : ''}`}
+        >
+            {/* El diagnóstico tapa la tarjeta mientras está abierto. */}
+            {aiMode && (
+                <div data-cobertura onClick={(e) => e.stopPropagation()}
+                    className="absolute inset-0 z-tabs flex flex-col bg-surface-card cursor-default animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-slow)]">
+                    <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-divider">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <Sparkles size={16} strokeWidth={2} className="text-chart-3-text shrink-0" aria-hidden="true" />
+                            <div className="min-w-0">
+                                <p className="text-body font-black text-content leading-tight">Diagnóstico</p>
+                                <p className="text-caption text-content-3 truncate">{branch.name}</p>
                             </div>
                         </div>
-                        <div>
-                            <h4 className="text-subtitle font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-none tracking-tight">Diagnóstico</h4>
-                            <p className="text-micro font-bold text-chart-3-text uppercase tracking-widest mt-0.5 opacity-80">{branch.name}</p>
-                        </div>
+                        <Button variant="ghost" size="sm" icon={X} iconOnly title="Cerrar diagnóstico" onClick={sinAbrir(cerrarDiagnostico)} />
                     </div>
-                    <Button variant="ghost" size="sm" icon={X} iconOnly onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} />
-                </div>
-
-                {/* Contenido del Overlay */}
-                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide relative z-base">
-                    {isGeneratingAi ? (
-                        <AiThinkingState size="sm" title="Analizando telemetría" steps="Ejecutando modelo neuronal" className="absolute inset-0" />
-                    ) : (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
-                            {aiSummaryData?.split('\n').map((paragraph, index) => (
-                                <div key={index} className="relative mb-4 group/p">
-                                    <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-[var(--dur-slow)]"></div>
-                                    
-                                    <p className="text-body font-medium text-content-2 leading-relaxed text-justify pl-4">
+                    <div className="flex-1 overflow-y-auto px-5 py-4">
+                        {isGeneratingAi ? (
+                            <AiThinkingState size="sm" title="Analizando la sucursal" steps="Revisando apertura, personal y expediente" className="h-full" />
+                        ) : (
+                            <div className="space-y-3">
+                                {aiSummaryData?.split('\n').filter(p => p.trim()).map((paragraph, index) => (
+                                    <p key={index} className="text-body-sm text-content-2 leading-relaxed">
                                         {paragraph.split('**').map((text, i) => (
-                                            i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
+                                            i % 2 === 1 ? <strong key={i} className="font-black text-content">{text}</strong> : text
                                         ))}
                                     </p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA
-                En el teléfono NO flotan: van en su propia fila arriba de la
-                ficha. Flotando tapaban el nombre de la sucursal —«La Popula▮»—
-                porque el hueco que el encabezado les reservaba (`pr-[140px]`)
-                se midió con botones de ratón, y en táctil cada uno sube a 44px
-                por el piso del dedo: el grupo pasa de 140 a ~190. Agrandar el
-                hueco dejaba el nombre en 100px y partido en dos renglones; es
-                mejor darles su renglón, total en un teléfono se ven siempre
-                (no hay `hover` que los revele). */}
-            <div className="flex items-center justify-end gap-1.5 z-tabs px-6 pt-5
-                md:absolute md:top-5 md:right-5 md:p-0">
-                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-[var(--dur-slow)] bg-surface-card p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-border-card hover:scale-105">
-                    
-                    {isFarmacia && (
-                        <>
-                        <BotonIA
-                            talla="sm"
-                            activo={aiMode}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }
-                                else { generateBranchAiSummary(e); }
-                            }}
-                            etiqueta="Diagnóstico Inteligente"
-                            etiquetaActiva="Cerrar Diagnóstico IA"
-                        />
-                        <div className="w-px h-4 bg-divider mx-0.5"></div>
-                        </>
-                    )}
-                    <Button size="sm" icon={Eye} title="Ver perfil" iconOnly onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} />
-                    <Button tone="chart-3" size="sm" icon={Pencil} disabled={!canEdit} title="Ajustes generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
-
-                    {!deleteDisabled && (
-                        <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, asignados); }} />
-                    )}
-                </div>
-                {alertStatus.hasAlerts && (
-                    <div className="relative group/badge flex items-center justify-center ml-1">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all cursor-help border ${alertStatus.badgeStyles}`}>
-                            <alertStatus.icon size={14} strokeWidth={2.5} />
-                        </div>
-                        <div data-surface="tooltip" className="absolute top-full mt-2 right-0 w-max max-w-[220px] p-4 opacity-0 invisible group-hover/badge:opacity-100 focus-within:opacity-100 group-hover/badge:visible transition-all duration-[var(--dur-slow)] translate-y-2 group-hover/badge:translate-y-0 z-sidebar">
-                            <p className="text-micro text-content-tooltip-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-tooltip pb-1.5 flex items-center justify-between">
-                                Problemas Detectados <span className="bg-danger/20 text-danger px-1.5 py-0.5 rounded text-micro">{alertStatus.list.length}</span>
-                            </p>
-                            <div className="space-y-2.5">
-                                {alertStatus.list.map((al, idx) => (
-                                    <div key={idx} className="flex items-start gap-2.5 text-caption font-bold">
-                                        <al.icon size={13} className={`mt-0.5 shrink-0 ${al.level === 'critical' ? 'text-danger animate-pulse' : 'text-warning'}`} strokeWidth={2.5} />
-                                        <span className="leading-tight text-content-tooltip">{al.message}</span>
-                                    </div>
                                 ))}
                             </div>
-                        </div>
+                        )}
                     </div>
-                )}
-            </div>
-
-            <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
-                <div className="flex items-start gap-3">
-                    {/* Abre la ficha de la sucursal: es un destino, no una acción.
-                        SIN `onClick`: el `setActiveBranch` que tenía navegaba OTRA vez
-                        (en `App.jsx` es un `navigate`), así que cada clic empujaba dos
-                        entradas al historial, y ⌘/Ctrl-clic abría la pestaña nueva Y
-                        además movía la actual. El `Link` solo ya hace las dos cosas bien. */}
-                                    <Link to={`/sucursales/${branch.id}`}
-                                        className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full md:pr-[140px] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]">
-                        <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-[var(--dur-slow)] group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
-                            <Building2 size={26} strokeWidth={1.5} />
-                        </div>
-                        <div className="min-w-0 flex-1 flex flex-col justify-center">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-title-sm font-bold text-content leading-tight group-hover/header:text-brand-text transition-colors duration-[var(--dur-slow)] line-clamp-2">{branch.name}</h3>
-                                <div className="relative group/status flex items-center justify-center p-1.5 cursor-help shrink-0">
-                                    {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[var(--shadow-glow-warning-md)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[var(--shadow-glow-success-md)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
-                                    <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 text-micro font-black uppercase tracking-widest opacity-0 invisible group-hover/status:opacity-100 focus-within:opacity-100 group-hover/status:visible transition-all duration-[var(--dur-slow)] translate-y-1 group-hover/status:translate-y-0 z-sidebar pointer-events-none">
-                                        {isInactive ? 'Inactiva' : currentStatus.status === 'OPEN' ? 'Abierta Ahora' : 'Cerrada Ahora'}
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 -mt-1 rotate-45" style={{ background: 'var(--tooltip-bg)' }}></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 mt-1">
-                                {branch.type && branch.type !== 'FARMACIA' && (
-                                    <Badge variant={BRANCH_TYPE_META[branch.type]?.variante || 'neutral'} size="sm">
-                                        {BRANCH_TYPE_META[branch.type]?.label}
-                                    </Badge>
-                                )}
-                                <p className="text-caption text-content-2 font-bold uppercase tracking-widest flex items-center gap-1">
-                                    {branch.openingDate || branch.opening_date
-                                        ? `${fechaTexto(branch.openingDate || branch.opening_date, { month: 'long', year: 'numeric' })}`
-                                        : 'Pendiente de apertura'}
-                                </p>
-                            </div>
-                        </div>
-                    </Link>
                 </div>
+            )}
 
-                <div className="flex flex-col gap-2.5 mt-2">
-                    <a href={branch.settings?.location?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || branch.name)}`} target="_blank" rel="noreferrer" className={`group/map flex items-start gap-3 p-3.5 rounded-2xl ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Abrir en Maps">
-                        <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-[var(--dur-slow)] group-hover/map:scale-110 group-hover/map:text-brand-text border border-divider"><MapPin size={16} strokeWidth={2.5} /></div>
-                        <div className="flex-1 flex justify-between items-start gap-2 pr-1">
-                            <div className="min-w-0 flex-1">
-                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-[var(--dur-slow)] group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
-                                <p className="text-body-sm font-semibold text-content-2 leading-snug break-words">{[branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || "No registrada"}</p>
-                            </div>
-                            <div className="shrink-0 mt-0.5" onClick={e => e.stopPropagation()}>
-                                <Button variant="secondary" icon={Copy} title="Copiar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ')); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); }} />
-                            </div>
-                        </div>
+            {/* ── Encabezado ── */}
+            <header className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-xl bg-brand/10 text-brand-text flex items-center justify-center shrink-0" aria-hidden="true">
+                    <Building2 size={20} strokeWidth={2} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-subtitle font-black text-content leading-tight truncate group-hover:text-brand-text transition-colors duration-[var(--dur-base)]">
+                            <Link to={`/sucursales/${branch.id}`} onClick={(e) => e.stopPropagation()} tabIndex={-1} className="outline-none">{branch.name}</Link>
+                        </h3>
+                        {branch.type && branch.type !== 'FARMACIA' && (
+                            <Badge variant={BRANCH_TYPE_META[branch.type]?.variante || 'neutral'} size="sm">
+                                {BRANCH_TYPE_META[branch.type]?.label}
+                            </Badge>
+                        )}
+                    </div>
+                    <p className="mt-1 flex items-center gap-1.5 text-caption font-semibold text-content-2">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${estado.punto}`} aria-hidden="true" />
+                        <span className="truncate">{estado.texto}</span>
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    {alertStatus.hasAlerts && (
+                        <LiquidTooltip variant="rich" side="bottom" content={
+                            <ul className="space-y-1.5 min-w-[180px]">
+                                {alertStatus.list.map((al, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-caption font-semibold">
+                                        <al.icon size={13} strokeWidth={2.5} className={`mt-0.5 shrink-0 ${al.level === 'critical' ? 'text-danger' : 'text-warning'}`} aria-hidden="true" />
+                                        <span className="text-content-tooltip">{al.message}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        }>
+                            <Badge variant={alertStatus.critica ? 'danger' : 'warning'} icon={AlertTriangle} size="sm" uppercase={false}
+                                aria-label={alertStatus.list.map(a => a.message).join(', ')}>
+                                {alertStatus.list.length === 1 ? '1 alerta' : `${alertStatus.list.length} alertas`}
+                            </Badge>
+                        </LiquidTooltip>
+                    )}
+                    <OjoDeTarjeta className="mt-0.5" />
+                </div>
+            </header>
+
+            {/* ── Datos ── */}
+            <div className="mt-3 divide-y divide-divider border-y border-divider">
+                <Renglon icono={MapPin} accion={direccion ? (
+                    <Button variant="ghost" size="sm" icon={Copy} iconOnly title="Copiar dirección"
+                        onClick={sinAbrir(() => { navigator.clipboard.writeText(direccion); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); })} />
+                ) : null}>
+                    <a href={mapa} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
+                        className="text-body-sm text-content-2 leading-snug line-clamp-2 hover:text-brand-text transition-colors duration-[var(--dur-fast)]"
+                        title="Abrir en el mapa">
+                        {direccion || 'Sin dirección registrada'}
                     </a>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <TarjetaTelefono icono={Phone} etiqueta="Fijo" numero={branch.phone}
-                            onAccion={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} />
-                        <TarjetaTelefono icono={Smartphone} etiqueta="Celular" numero={branch.cell}
-                            onAccion={(e) => handlePhoneAction(e, branch.cell, 'Celular')}
-                            onWhatsApp={(e) => handleWhatsAppAction(e, branch.cell)} />
-                    </div>
-
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 min-h-[var(--tap-min)] border flex items-center justify-between transition-all duration-[var(--dur-slow)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-hover)]'}`} title="Configurar horarios">
-                        <div className="flex items-center gap-2">
-                            <Clock size={14} className={`transition-colors duration-[var(--dur-slow)] ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand-text'}`} strokeWidth={2.5} />
-                            <span className={`text-caption font-black uppercase tracking-widest transition-colors duration-[var(--dur-slow)] ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
-                                {!scheduleDefined ? 'Falta Horario' : 'Horario (Hoy)'}
-                            </span>
-                        </div>
-                        {/* NO es un chip: es TEXTO que solo toma forma de chip en
-                            una de sus tres ramas (cuando la sucursal está cerrada
-                            hoy). Pasarlo a `Badge` lo volvería chip siempre, y las
-                            otras dos ramas —el horario y el "Definir" en rojo— son
-                            texto suelto dentro de la fila. */}
-                        {/* Dos de las tres ramas son TEXTO y una es un chip; escribirlo
-                            como un solo `<span>` con el ternario adentro obligaba a
-                            reconstruir la pastilla a mano. Separadas, cada una es lo
-                            que es. */}
-                        {todaySchedule === 'CERRADO' && scheduleDefined
-                            ? <Badge variant="neutral" size="sm">{todaySchedule}</Badge>
-                            : <span className={`font-bold text-body-sm tracking-tight ${!scheduleDefined ? 'text-danger' : 'text-content'}`}>
-                                  {!scheduleDefined ? 'Definir' : todaySchedule}
-                              </span>}
-                    </button>
+                </Renglon>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 py-1.5">
+                    <Telefono icono={Phone} etiqueta="Fijo" numero={branch.phone}
+                        onAccion={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} />
+                    <span className="inline-flex items-center gap-1">
+                        <Telefono icono={Smartphone} etiqueta="Celular" numero={branch.cell}
+                            onAccion={(e) => handlePhoneAction(e, branch.cell, 'Celular')} />
+                        {branch.cell && (
+                            <Button variant="ghost" size="sm" icon={MessageCircle} iconOnly title="Escribir por WhatsApp"
+                                onClick={(e) => handleWhatsAppAction(e, branch.cell)} />
+                        )}
+                    </span>
                 </div>
-
-                {!branch.expedienteOculto && <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
-                    <PanelCompletitud icono={Scale} etiqueta="Legal" pct={completion.legal}
-                        titulo="Completar datos legales" disabled={!canEdit}
-                        onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} />
-
-                    <PanelCompletitud icono={Building2} etiqueta="Local" pct={completion.property}
-                        titulo="Completar datos de inmueble" disabled={!canEdit}
-                        onClick={(e) => { e.stopPropagation(); openModal?.('editBranchInmueble', branch); }} />
-
-                    <PanelCompletitud icono={Zap} etiqueta="Serv." pct={completion.services}
-                        titulo="Completar servicios básicos" disabled={!canEdit}
-                        onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} />
-                </div>}
             </div>
 
-            <div className="px-6 py-4 bg-surface-card border-t border-border-card shadow-[var(--shadow-shine)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">
-                <button
-                    type="button"
-                    onClick={() => openModal && openModal("viewBranchEmployees", branch)}
-                    className={`flex flex-col gap-1.5 items-start group/personal hover:bg-surface-card p-2 -ml-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
-                    title="Ver listado de personal"
-                >
-                    <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/personal:text-content-2">
-                        <Users size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/personal:scale-110 group-hover/personal:text-brand-text" strokeWidth={2.5} />
-                        <span className="text-caption font-bold uppercase tracking-widest transition-colors duration-[var(--dur-slow)] group-hover/personal:text-content-2">Personal</span>
-                    </div>
-                    <div className="flex items-center gap-3 w-full pr-4">
-                        <div className="flex-1 h-1.5 bg-surface-card shadow-[var(--shadow-shine)] rounded-full overflow-hidden border border-border-card">
-                            <div className="h-full bg-gradient-to-r from-brand to-chart-9" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="text-body-lg font-black text-content leading-none">{count}</span>
-                    </div>
+            {/* ── Expediente ── */}
+            {!branch.expedienteOculto && completion.legal != null && (
+                <div className="grid grid-cols-3 gap-4 pt-3">
+                    <Avance etiqueta="Legal" pct={completion.legal} titulo="Datos legales" disabled={!canEdit}
+                        onClick={sinAbrir(() => openModal?.('editBranchLegal', branch))} />
+                    <Avance etiqueta="Local" pct={completion.property} titulo="Datos del inmueble" disabled={!canEdit}
+                        onClick={sinAbrir(() => openModal?.('editBranchInmueble', branch))} />
+                    <Avance etiqueta="Servicios" pct={completion.services} titulo="Servicios básicos" disabled={!canEdit}
+                        onClick={sinAbrir(() => openModal?.('editBranchServicios', branch))} />
+                </div>
+            )}
+
+            {/* ── Pie: gente, kioscos y acciones ── */}
+            <footer className="mt-auto pt-4 flex items-center gap-1">
+                <button type="button" onClick={sinAbrir(() => openModal?.('viewBranchEmployees', branch))}
+                    className="inline-flex items-center gap-1.5 min-h-[var(--tap-min)] rounded-lg px-2 -ml-2 text-body-sm text-content-2 transition-colors duration-[var(--dur-fast)] hover:text-brand-text active:scale-[0.97]"
+                    title="Ver el personal">
+                    <Users size={15} strokeWidth={2} className="text-content-3" aria-hidden="true" />
+                    <span className="font-black text-content tabular-nums">{count}</span>
+                    <span>{count === 1 ? 'persona' : 'personas'}</span>
                 </button>
-
-                {!['ADMINISTRATIVA','EXTERNA'].includes(branch.type) && (
-                    <>
-                        <div className="w-px h-8 bg-divider mx-2"></div>
-                        {/* Como en la ficha (`BranchDetailView`): gestionar —o sea, poder
-                            revocar— es de quien edita sucursales. Antes se abría para
-                            cualquiera que viera la lista (2026-10-09). */}
-                        <button type="button" disabled={!canEdit} onClick={() => canEdit && openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer disabled:cursor-default disabled:hover:bg-transparent disabled:active:scale-100" title={canEdit ? 'Gestionar kioscos' : 'Kioscos activos'}>
-                            <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/kiosk:text-content-2">
-                                <span className="text-caption font-bold uppercase tracking-widest">Kioscos</span>
-                                <Monitor size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/kiosk:scale-110 group-hover/kiosk:text-chart-3-text" strokeWidth={2.5} />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className={`text-body-lg font-black leading-none ${activeKiosks > 0 ? 'text-chart-3-text' : 'text-content-3'}`}>{activeKiosks} <span className="text-caption font-bold text-content-3">/ 3</span></span>
-                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-success border-success/30 shadow-[var(--shadow-glow-success-md)] animate-pulse' : 'bg-surface-card shadow-inner border-border-card'}`} />
-                            </div>
-                        </button>
-                    </>
+                {conKioscos && (
+                    // Gestionar —o sea, poder revocar— es de quien edita sucursales.
+                    <button type="button" disabled={!canEdit} onClick={sinAbrir(() => canEdit && openModal?.('manageKiosks', branch))}
+                        className="inline-flex items-center gap-1.5 min-h-[var(--tap-min)] rounded-lg px-2 text-body-sm text-content-2 transition-colors duration-[var(--dur-fast)] hover:text-brand-text disabled:hover:text-content-2 disabled:cursor-default active:scale-[0.97]"
+                        title={canEdit ? 'Gestionar kioscos' : 'Kioscos activos'}>
+                        <Monitor size={15} strokeWidth={2} className={activeKiosks > 0 ? 'text-success' : 'text-content-3'} aria-hidden="true" />
+                        <span className="font-black text-content tabular-nums">{activeKiosks}</span>
+                        <span>de {LIMITE_KIOSCOS} kioscos</span>
+                    </button>
                 )}
-            </div>
-        </div>
+                <div className="ml-auto flex items-center gap-0.5">
+                    {isFarmacia && (
+                        <BotonIA talla="sm" activo={aiMode}
+                            onClick={sinAbrir(() => (aiMode ? cerrarDiagnostico() : generateBranchAiSummary()))}
+                            etiqueta="Diagnóstico" etiquetaActiva="Cerrar diagnóstico" />
+                    )}
+                    {canEdit && (
+                        <Button variant="ghost" size="sm" icon={Pencil} iconOnly title="Editar sucursal"
+                            onClick={sinAbrir(() => openModal?.('editBranch', branch))} />
+                    )}
+                    {canEdit && !deleteDisabled && (
+                        <Button variant="ghost" tone="danger" size="sm" icon={Trash2} iconOnly title="Eliminar sucursal"
+                            onClick={sinAbrir(() => handleDeleteClick(branch, asignados))} />
+                    )}
+                </div>
+            </footer>
+        </article>
     );
 });
+BranchCard.displayName = 'BranchCard';
 
 // ============================================================================
 // 🚀 VISTA PRINCIPAL
@@ -744,7 +663,7 @@ const BranchesView = ({ openModal }) => {
                                                 <span className="text-caption font-bold text-content-3">{groupBranches.length}</span>
                                             </div>
                                         )}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-max">
                                             {groupBranches.map((branch, i) => (
                                                 <BranchCard
                                                     key={branch.id}

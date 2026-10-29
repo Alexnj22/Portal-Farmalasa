@@ -11,15 +11,47 @@ const detallesDe = (item) => {
     try { return JSON.parse(item.details); } catch { return {}; }
 };
 
-/** El rótulo del registro (lo que el portal pinta en la insignia). */
+export const DIMENSIONES_DEL_HISTORIAL = [
+    { value: 'LEGAL', label: 'Legal' }, { value: 'FINANCE', label: 'Finanzas' },
+    { value: 'OPERATIVE', label: 'Operativo' }, { value: 'HR', label: 'Personal' }, { value: 'OTHER', label: 'Otros' },
+];
+
+/**
+ * El título de cada acción que llega al historial de una sala. Sin él, un
+ * registro sin `timeline_title` se pintaba «Configuración Modificada» —el
+ * mismo título para un pago, un kiosco y una persona asignada—, y la acción
+ * cruda (`TRASLADO_SOLICITADO`) quedaba de rótulo en mayúsculas.
+ */
+const TITULO_DE_ACCION = {
+    APERTURA_OFICIAL: 'Apertura de la sucursal',
+    EDITAR_SUCURSAL: 'Datos de la sucursal actualizados',
+    ELIMINAR_SUCURSAL: 'Sucursal eliminada',
+    DOC_AGREGADO: 'Documento agregado',
+    PAGO_REGISTRADO: 'Pago registrado',
+    RECARGA_HISTORICO_VENTAS_INICIADA: 'Recarga de ventas iniciada',
+    RECARGA_HISTORICO_VENTAS_TERMINADA: 'Recarga de ventas terminada',
+    VINCULAR_KIOSCO: 'Kiosco vinculado',
+    REVOCAR_KIOSCO: 'Kiosco revocado',
+    EMPLEADO_ASIGNADO: 'Persona asignada',
+    EMPLEADO_RELEVADO: 'Persona relevada',
+    EMPLEADO_DESVINCULADO_SUCURSAL: 'Persona desvinculada',
+    PROMOTION: 'Cambio de cargo',
+    SINCRONIZAR_VENTAS_SUCURSAL: 'Ventas actualizadas',
+};
+
+const aFrase = (accion) => {
+    const t = String(accion || '').replace(/_/g, ' ').toLowerCase().trim();
+    return t ? t[0].toUpperCase() + t.slice(1) : 'Registro';
+};
+
+/** El título legible de una acción del historial. */
+export const tituloDeAccion = (accion) => TITULO_DE_ACCION[accion] || aFrase(accion);
+
+/** El rótulo del registro (lo que el portal pinta en la insignia): su dimensión, en palabras. */
 export function rotuloDelRegistro(item) {
-    if (item?.isSynthetic) return item.action?.replace(/_/g, ' ');
-    if (item?.isDoc) return 'ARCHIVO HISTÓRICO';
-    const d = detallesDe(item);
-    if (d.dimension) return d.dimension;
-    if (item?.action === 'PAGO_REGISTRADO') return 'PAGO REGISTRADO';
-    if (item?.action === 'EDITAR_SUCURSAL') return 'ACTUALIZACIÓN DE DATOS';
-    return item?.action?.replace(/_/g, ' ') || 'REGISTRO DE SISTEMA';
+    if (item?.isSynthetic) return 'Hito';
+    if (item?.isDoc) return 'Archivo histórico';
+    return DIMENSIONES_DEL_HISTORIAL.find((x) => x.value === dimensionDelRegistro(item))?.label || 'Otros';
 }
 
 /** La dimensión, para filtrar: LEGAL · FINANCE · OPERATIVE · HR · OTHER (o la que traiga). */
@@ -35,17 +67,13 @@ export function dimensionDelRegistro(item) {
     return 'OTHER';
 }
 
-export const DIMENSIONES_DEL_HISTORIAL = [
-    { value: 'LEGAL', label: 'Legal' }, { value: 'FINANCE', label: 'Finanzas' },
-    { value: 'OPERATIVE', label: 'Operativo' }, { value: 'HR', label: 'Personal' }, { value: 'OTHER', label: 'Otros' },
-];
 
 /** Título, antes/nuevo, quién y el archivo de un registro. */
 export function lecturaDelRegistro(item) {
     const d = detallesDe(item);
-    let titulo = item?.name || 'Configuración Modificada';
+    let titulo = item?.name || tituloDeAccion(item?.action);
     let antes = null;
-    let nuevo = null;
+    let nuevo = d.new_value ?? null;
     if (d.timeline_title) {
         titulo = d.timeline_title; antes = d.old_value ?? null; nuevo = d.new_value ?? null;
     } else if (item?.action === 'PAGO_REGISTRADO' && d.servicio) {

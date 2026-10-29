@@ -293,11 +293,17 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                             key={tab.id}
                                             ref={(el) => tabBtnRefs.current.set(tab.id, el)}
                                             onClick={() => setActiveTab(tab.id)}
+                                            aria-current={isActive ? 'page' : undefined}
                                         >
                                             <span className="hidden xl:inline">{tab.label}</span>
-
-                                            {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-danger rounded-full shadow-[var(--shadow-glow-danger-md)] animate-pulse border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
-                                            {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-warning rounded-full shadow-[var(--shadow-glow-warning-md)] border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
+                                            {/* El punto va DESPUÉS del rótulo, en la línea: absoluto
+                                                en la esquina caía encima de la última letra
+                                                («Perso●al», «Gast●s»). Sin `animate-pulse`: cuatro
+                                                pestañas latiendo a la vez no dicen más que una quieta. */}
+                                            {alertStatus && (
+                                                <span aria-label={alertStatus === 'critical' ? 'requiere atención' : 'con avisos'}
+                                                    className={`inline-block w-2 h-2 rounded-full shrink-0 ${alertStatus === 'critical' ? 'bg-danger' : 'bg-warning'}`} />
+                                            )}
                                         </Button>
                                     );
                                 })}

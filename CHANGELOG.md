@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1384.0 — Bodega elige la presentación de lo que sale
+
+Al corregir lo que sale en «Finalizar» (portal y app), la cantidad va con su
+presentación al lado (CAJA X 10 / UNIDAD). Antes la casilla estaba en la del
+renglón sin decirlo: en el pedido #234 de Salud 4 salieron 5 tabletas de
+FLUCONAZOL 150MG ECOMED, se guardaron como 5 cajas, el traslado intentó mover
+50 y falló, y la sala confirmó «5 cajas».
+
+- `presentacionesDeEnvio` (núcleo) ofrece la del renglón y las que no
+  redondean: múltiplos y divisores de ella.
+- `ajustesDeEnvio` convierte a la del renglón cuando da entero; si no da
+  (5 unidades de una caja de 10) manda el `factor`.
+- `confirmar_envio_pedido` acepta ese `factor` y pasa el renglón a esa
+  presentación: factor, presentación, asignado, topes y lotes se multiplican
+  por lo mismo (migración `20261029220829_envio_en_otra_presentacion`).
+- El #234 se corrigió en la base: renglón 135319 en UNIDAD (10 asignadas, 5
+  enviadas, 5 recibidas) y la línea del traslado reabierta, que salió como el
+  traslado 58679 con 5 UNIDADES.
+
 ## v2.1383.1 — Compras: el modal de carga más ordenado
 
 El modal de carga de compras, ordenado (usuario: «visualmente no está tan

@@ -7,6 +7,7 @@ import { getExactPageGroups } from '@nucleo/utils/pedidoPrint';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import FilterBar from '../../components/common/FilterBar';
 import PortalInput from '../../components/common/PortalInput';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import Notice from '../../components/common/Notice';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { smartFilter } from '@nucleo/utils/searchUtils';
@@ -16,7 +17,7 @@ import { esperaDeSondeo } from './logicaDeRutas';
 import { buscarProductos } from '@nucleo/data/busquedaProductos';
 import {
     ajustesDeEnvio, ajustesDelSimulacro, alternarCaja, armarCajaMap, armarPaginaItems, asignacionCompleta, asignacionInicial,
-    cuantasCajas, despachablesDe,
+    cuantasCajas, despachablesDe, presentacionesDeEnvio,
 } from '@nucleo/utils/finalizarCajas';
 
 // Un solo «sin productos» para siempre: `items` es dependencia del efecto que
@@ -235,8 +236,21 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     const setCantidad = (itemId, valor, motivo) => {
         setAjustes(prev => ({
             ...prev,
-            [itemId]: { cantidad: valor, motivo: motivo ?? prev[itemId]?.motivo ?? '' },
+            [itemId]: { ...prev[itemId], cantidad: valor, motivo: motivo ?? prev[itemId]?.motivo ?? '' },
         }));
+    };
+    // La presentación en que se escribe lo que sale. Sin elegirla, la casilla
+    // estaba en la del renglón sin decirlo: 5 tabletas de un renglón en cajas
+    // de 10 se guardaron como 5 cajas (pedido #234, 2026-10-28).
+    // Al cambiarla, el número se traduce si da entero (1 caja → 10 unidades):
+    // así lo que se ve sigue diciendo lo mismo hasta que alguien lo corrija.
+    const setPresentacion = (itemId, factor, factorAntes) => {
+        setAjustes(prev => {
+            const a = prev[itemId] ?? {};
+            const unidades = Number(a.cantidad) * factorAntes;
+            const cantidad = a.cantidad !== '' && unidades % factor === 0 ? unidades / factor : a.cantidad;
+            return { ...prev, [itemId]: { ...a, cantidad, factor } };
+        });
     };
     const quitarAjuste = (itemId) => {
         setAjustes(prev => {
@@ -452,6 +466,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 const asignado = Number(it.cantidad_asignada ?? 0);
                                 const cant     = a.cantidad === '' ? '' : Number(a.cantidad);
                                 const enCero   = cant === 0;
+                                const presOpts = presentacionesDeEnvio(it);
+                                const fSale    = Number(a.factor) || presOpts[0].factor;
                                 return (
                                     <div key={id} data-surface="card"
                                         className={`rounded-2xl border px-3 py-2.5 ${enCero ? 'bg-danger/10 border-danger/30' : ''}`}>
@@ -474,10 +490,12 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                         </div>
                                         <div className="flex items-center gap-2 mt-2">
                                             <Badge variant="neutral" size="sm" uppercase={false}>
-                                                asignado {asignado}
+                                                asignado {asignado} {presOpts[0].label}
                                             </Badge>
-                                            <span className="text-content-3 text-label">→</span>
-                                            <div className="w-24">
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-label text-content-3">sale</span>
+                                            <div className="w-20 shrink-0">
                                                 <PortalInput
                                                     aria-label={`Cantidad que sale de ${it.products?.nombre ?? 'el producto'}`}
                                                     type="number"
@@ -487,7 +505,14 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                     inputClassName="text-body font-bold text-content text-center"
                                                 />
                                             </div>
-                                            <span className="text-label text-content-3">sale</span>
+                                            <div className="flex-1 min-w-0">
+                                                <LiquidSelect
+                                                    aria-label={`Presentación de lo que sale de ${it.products?.nombre ?? 'el producto'}`}
+                                                    value={String(fSale)}
+                                                    onChange={v => setPresentacion(id, Number(v), fSale)}
+                                                    options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                                    compact clearable={false} />
+                                            </div>
                                             {enCero ? (
                                                 <Badge variant="danger" size="sm" uppercase={false} className="ml-auto">no sale</Badge>
                                             ) : (
@@ -525,7 +550,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 {r.products?.nombre ?? '—'}
                                             </span>
                                             <span className="text-micro text-content-3">
-                                                asignado {r.cantidad_asignada}
+                                                asignado {r.cantidad_asignada} {presentacionesDeEnvio(r)[0].label}
                                             </span>
                                         </button>
                                         <Button variant="ghost" size="xs" icon={Ban} className="text-danger-text"

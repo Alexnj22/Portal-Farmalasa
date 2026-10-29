@@ -25,7 +25,7 @@ import { fetchPedidoItemsAll, fetchPedidoSucursalStatus, fetchTrasladoErp, guard
 import { finalizarPedidoConCajas } from '@nucleo/data/accionesDeBodega';
 import {
   ajustesDeEnvio, ajustesDelSimulacro, alternarCaja, armarCajaMap, armarPaginaItems, asignacionCompleta, asignacionInicial,
-  cuantasCajas, despachablesDe,
+  cuantasCajas, despachablesDe, presentacionesDeEnvio,
 } from '@nucleo/utils/finalizarCajas';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -138,7 +138,16 @@ export default function FinalizarPedido() {
     : []), [buscar, despachables, ajustes]);
 
   const irAHojas = () => { setAsignacion(asignacionInicial(totalHojas, cajas)); setPaso(2); };
-  const setCantidad = (id, valor, motivo) => setAjustes((prev) => ({ ...prev, [id]: { cantidad: valor, motivo: motivo ?? prev[id]?.motivo ?? '' } }));
+  const setCantidad = (id, valor, motivo) => setAjustes((prev) => ({ ...prev, [id]: { ...prev[id], cantidad: valor, motivo: motivo ?? prev[id]?.motivo ?? '' } }));
+  // La presentación de lo que sale, como en el portal (`presentacionesDeEnvio`):
+  // sin ella, 5 tabletas de un renglón en cajas de 10 se guardaban como 5 cajas.
+  // Al cambiarla el número se traduce si da entero.
+  const setPresentacion = (id, factor, antes) => setAjustes((prev) => {
+    const a = prev[id] ?? {};
+    const unidades = Number(a.cantidad) * antes;
+    const cantidad = a.cantidad !== '' && unidades % factor === 0 ? unidades / factor : a.cantidad;
+    return { ...prev, [id]: { ...a, cantidad, factor } };
+  });
   const quitar = (id) => setAjustes((prev) => { const n = { ...prev }; delete n[id]; return n; });
 
   const finalizar = async () => {
@@ -248,10 +257,12 @@ export default function FinalizarPedido() {
                   const it = despachables.find((r) => String(r.id) === String(id));
                   if (!it) return null;
                   const cero = Number(a.cantidad) === 0 && a.cantidad !== '';
+                  const presOpts = presentacionesDeEnvio(it);
+                  const fSale = Number(a.factor) || presOpts[0].factor;
                   return (
                     <Seccion key={id} titulo={it.products?.nombre ?? '—'} pie={a.motivo || null}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
-                        <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`asignado ${it.cantidad_asignada} → sale`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`asignado ${it.cantidad_asignada} ${presOpts[0].label} → sale`}</Text>
                         <View style={{ width: 80 }}>
                           <Campo multiline={false} keyboardType="number-pad" value={String(a.cantidad ?? '')}
                             onChangeText={(t) => setCantidad(id, t === '' ? '' : Math.max(0, parseInt(t, 10) || 0))} />
@@ -262,6 +273,12 @@ export default function FinalizarPedido() {
                           <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Como se asignó</Text>
                         </Pressable>
                       </View>
+                      {presOpts.length > 1 ? (
+                        <View style={{ paddingBottom: 6 }}>
+                          <Segmentos margen={0} opciones={presOpts.map((o) => ({ id: String(o.factor), label: o.label }))}
+                            activa={String(fSale)} onCambiar={(v) => setPresentacion(id, Number(v), fSale)} />
+                        </View>
+                      ) : null}
                     </Seccion>
                   );
                 })}
@@ -271,7 +288,7 @@ export default function FinalizarPedido() {
                     <Pressable key={r.id} onPress={() => { setCantidad(r.id, Number(r.cantidad_asignada ?? 0), ''); setBuscar(''); }}
                       style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{r.products?.nombre ?? '—'}</Text>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`asignado ${r.cantidad_asignada}`}</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`asignado ${r.cantidad_asignada} ${presentacionesDeEnvio(r)[0].label}`}</Text>
                     </Pressable>
                   ))}
                 </Seccion>

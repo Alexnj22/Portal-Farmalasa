@@ -6,6 +6,8 @@
 // ajuste de envío: la sala recibe por hoja y por caja, y dos maneras de
 // repartirlas serían dos pedidos distintos para la misma recepción.
 
+import { mapaDePresentaciones } from './recepcionDePedido';
+
 /** Lo que de verdad sale: lo que la bodega no pudo cubrir nunca estuvo en la caja. */
 export const despachablesDe = (items = []) =>
     items.filter(r => !r.sin_stock && (r.cantidad_asignada ?? 0) > 0);
@@ -61,8 +63,41 @@ export function armarPaginaItems(hojas = []) {
 }
 
 /**
+ * Las presentaciones en que Bodega puede decir lo que sale de un renglón:
+ * `[{ factor, label }]`, con la del renglón primero.
+ *
+ * Sólo las que se pueden escribir SIN redondear: las que son un múltiplo de la
+ * del renglón (2 cajas de 10 sobre un renglón en unidades) y las que la
+ * dividen (5 unidades sobre un renglón en cajas de 10 — ahí el renglón pasa a
+ * esa presentación al confirmar, ver `confirmar_envio_pedido`). Una de 4 sobre
+ * una de 10 no entra: no hay cuenta entera que la guarde.
+ *
+ * Nació de 5 tabletas que se escribieron en la casilla de un renglón en cajas
+ * y se guardaron como 5 cajas (pedido #234, 2026-10-28): la casilla no decía
+ * en qué estaba, y el traslado intentó mover 50.
+ */
+export function presentacionesDeEnvio(r) {
+    const R = Number(r?.factor) || 1;
+    const propia = { factor: R, label: r?.presentaciones?.tipo || (R === 1 ? 'UNIDAD' : `×${R}`) };
+    const opts = [propia];
+    const filas = (r?.products?.product_precios ?? [])
+        .map(p => ({ ...p, product_id: r.erp_product_id }));
+    for (const o of (mapaDePresentaciones(filas)[r?.erp_product_id] ?? [])) {
+        if (o.factor === R || opts.some(x => x.factor === o.factor)) continue;
+        if (o.factor % R === 0 || R % o.factor === 0) opts.push({ factor: o.factor, label: o.label });
+    }
+    return opts;
+}
+
+/**
  * Los ajustes de envío: sólo las EXCEPCIONES. `ajustes` es
- * `{ [pedido_item_id]: { cantidad, motivo } }`; uno igual a lo asignado no cuenta.
+ * `{ [pedido_item_id]: { cantidad, motivo, factor? } }`; `factor` es la
+ * presentación en que se escribió `cantidad` (sin él, la del renglón). Uno
+ * igual a lo asignado no cuenta.
+ *
+ * Sale en la presentación del renglón siempre que la cuenta dé entera; sólo
+ * si no da (5 unidades de un renglón en cajas de 10) viaja con su `factor`, y
+ * la base pasa el renglón a esa presentación.
  */
 export function ajustesDeEnvio(ajustes = {}, items = []) {
     const despachables = despachablesDe(items);
@@ -71,8 +106,14 @@ export function ajustesDeEnvio(ajustes = {}, items = []) {
             const it = despachables.find(r => String(r.id) === String(id));
             if (!it) return null;
             const cant = Number(a.cantidad);
-            if (!Number.isFinite(cant) || cant === Number(it.cantidad_asignada)) return null;
-            return { pedido_item_id: Number(id), cantidad_enviada: cant, motivo: a.motivo || null };
+            if (!Number.isFinite(cant)) return null;
+            const R = Number(it.factor) || 1;
+            const f = Number(a.factor) || R;
+            const unidades = cant * f;
+            if (unidades === Number(it.cantidad_asignada) * R) return null;
+            const motivo = a.motivo || null;
+            if (unidades % R === 0) return { pedido_item_id: Number(id), cantidad_enviada: unidades / R, motivo };
+            return { pedido_item_id: Number(id), cantidad_enviada: cant, factor: f, motivo };
         })
         .filter(Boolean);
 }

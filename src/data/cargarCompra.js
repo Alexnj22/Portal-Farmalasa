@@ -165,3 +165,22 @@ export async function simularCarga({ documentId, uso, renglones, diasCredito }) 
     anotar('COMPRA_SIMULADA', documentId, { uso, carga: data?.carga_id, listo: data?.revision?.listo });
     return { resultado: data, error: null };
 }
+
+/**
+ * Producto nuevo copiando a uno parecido — SIMULACRO: arma el alta como la
+ * mandaría el sistema y la revisa (que no exista ya, que el precio cubra el
+ * costo, que el modelo sirva). No crea nada.
+ */
+export async function simularProductoNuevo({ nombre, barcode, modeloId, costo, precio }) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
+        body: { accion: 'producto_nuevo', nombre, barcode, modelo_id: modeloId, costo, precio },
+    });
+    if (error) {
+        let msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+        return { resultado: null, error: msg ?? 'No se pudo revisar el producto.' };
+    }
+    if (data?.error) return { resultado: null, error: data.error };
+    anotar('PRODUCTO_NUEVO_SIMULADO', modeloId, { nombre, listo: data?.revision?.listo });
+    return { resultado: data, error: null };
+}

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1378.0 — Cargar compra: crear un producto copiando a uno parecido
+
+Paso 4 del plan, en SIMULACRO. En un renglón sin producto aparece «Crear
+producto»: nombre y código de barras salen de la descripción, el costo por
+unidad del renglón (dividido entre las unidades por caja), y se pide el precio
+de venta y un producto «Igual que…». Del modelo —leído de su pantalla de
+edición del sistema con un GET— se copian categoría, laboratorio, proveedor,
+perecedero y exento; los otros 6 precios guardan su proporción (un cero queda
+en cero y el simbólico de $0.01 se copia). Frena si ya existe un producto con
+ese código o ese nombre, si el precio no cubre el costo, o si el modelo es
+regulado o antibiótico. `_shared/compraSobre.ts` traduce el `senddata()` del
+alta; probado contra la pantalla real de CHOCO CONO SARITA. Crear de verdad
+queda apagado hasta la primera carga con Bodega mirando.
+
 ## v2.1377.3 — Sin el desenfoque viejo detrás de los formularios
 
 Con un formulario de `UnifiedModal` abierto (sucursales, empleados, nómina, proveedores…) el layout desenfocaba la página de atrás 2px y la achicaba al 98%. Ningún otro modal lo hacía: el velo canónico (`[data-velo]`, §5.3) no desenfoca en Liquid. Era el blur viejo, escrito a mano en `AppLayout`, y además un `filter` + `transform` sobre todo el portal en cada apertura. Se quitó junto con `isOverlayActive` y el `setOverlayActive` de Auditoría de tiempos, que sólo lo alimentaban. El bloqueo del fondo lo sigue poniendo `ModalShell`.

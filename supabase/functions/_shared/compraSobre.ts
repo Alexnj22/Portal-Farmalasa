@@ -185,3 +185,102 @@ export function totalDelDocumento(resumen: any): number | null {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
+
+// ── Producto nuevo desde un renglón (paso 4 del plan) ────────────────────────
+//
+// Traducción de `senddata()` de `js/funciones/funciones_producto.js` con
+// `process=insert`. El producto nuevo COPIA a uno parecido —categoría,
+// laboratorio, proveedor, marcas de perecedero/exento/regulado/antibiótico—
+// porque son siete decisiones que la persona que carga una compra no tiene
+// por qué saber, y equivocarse en «regulado» saca al producto del control.
+// Lo único que se pide es lo que el modelo no puede saber: nombre, código de
+// barras y precio de venta.
+
+export type Modelo = {
+  id: number; nombre: string;
+  categoria: string | null; laboratorio: string | null; proveedor: string | null;
+  perecedero: boolean; exento: boolean; decimal: boolean; regulado: boolean; antibiotico: boolean;
+  marca: string;
+  /** Los 7 precios de su presentación de 1 unidad, en el orden del formulario. */
+  precios: number[] | null;
+};
+
+const seleccionado = (html: string, id: string): string | null => {
+  const m = new RegExp(`<select[^>]*id=["']${id}["'][^>]*>([\\s\\S]*?)</select>`).exec(html);
+  if (!m) return null;
+  const o = /<option[^>]*value=['"]?(\d+)['"]?[^>]*\bselected\b/.exec(m[1]);
+  return o ? o[1] : null;
+};
+const marcado = (html: string, id: string): boolean =>
+  new RegExp(`<input[^>]*id=["']${id}["'][^>]*\\bchecked\\b`).test(html);
+const valorDe = (html: string, id: string): string => {
+  const m = new RegExp(`<input[^>]*id=["']${id}["'][^>]*value=["']([^"']*)["']`).exec(html);
+  return m ? m[1].trim() : "";
+};
+
+/** Lee la pantalla de edición del modelo (`editar_producto.php`, un GET). */
+export function leerModelo(id: number, html: string): Modelo {
+  // La tabla de presentaciones: cada fila trae sus celdas con clase
+  // (`unidad_p`, `precio0`…`precio6`). Se toma la ACTIVA de 1 unidad; una
+  // presentación desactivada se dibuja igual y no sirve de modelo.
+  let precios: number[] | null = null;
+  const tabla = /id=["']presentacion_table["'][^>]*>([\s\S]*?)<\/tbody>/.exec(html)?.[1] ?? "";
+  const celda = (fila: string, clase: string) => {
+    const m = new RegExp(`<td[^>]*class=['"][^'"]*\\b${clase}\\b[^'"]*['"][^>]*>([^<]*)<`).exec(fila);
+    return m ? Number(m[1].trim()) : NaN;
+  };
+  for (const fila of tabla.split(/<tr/i).slice(1)) {
+    if (/fa-eye-slash/.test(fila)) continue;
+    if (celda(fila, "unidad_p") !== 1) continue;
+    const p7 = [0, 1, 2, 3, 4, 5, 6].map((k) => celda(fila, `precio${k}`));
+    if (p7.every((x) => Number.isFinite(x))) { precios = p7; break; }
+  }
+  return {
+    id, nombre: valorDe(html, "descripcion"),
+    categoria: seleccionado(html, "id_categoria"),
+    laboratorio: seleccionado(html, "id_laboratorio"),
+    proveedor: seleccionado(html, "proveedor"),
+    perecedero: marcado(html, "perecedero"), exento: marcado(html, "exento"),
+    decimal: marcado(html, "decimal"), regulado: marcado(html, "regulado"),
+    antibiotico: marcado(html, "antibiotico"),
+    marca: valorDe(html, "marca"), precios,
+  };
+}
+
+/**
+ * Los 7 precios del nuevo: el primero es el que pone la persona y los otros
+ * guardan la MISMA proporción que en el modelo. Un cero sigue en cero (esa
+ * lista no se usa) y un precio simbólico de ≤ $0.05 se copia tal cual —el
+ * modelo trae $0.01 en el séptimo y escalarlo no tiene sentido—.
+ */
+export function preciosDelNuevo(modelo: number[], precio: number): number[] {
+  const base = modelo[0];
+  return modelo.map((p, i) => {
+    if (i === 0) return r2(precio);
+    if (!(p > 0)) return 0;
+    if (p <= 0.05 || !(base > 0)) return p;
+    return r2((p / base) * precio);
+  });
+}
+
+export function sobreDeProductoNuevo(
+  m: Modelo, n: { nombre: string; barcode: string; costo: number; precio: number },
+): Record<string, string> {
+  const precios = preciosDelNuevo(m.precios ?? [n.precio, 0, 0, 0, 0, 0, 0], n.precio);
+  // id_pp 1 = «UNIDAD» del catálogo de presentaciones; descripción «1X1» como
+  // la de todos los modelos medidos.
+  const lista = `1,1X1,1,0,0,${n.costo.toFixed(4)},${n.barcode},${precios.map((p) => p.toFixed(4)).join("#")}#;`;
+  // El formulario original manda la cadena «undefined» en lo que no está
+  // marcado (`$('#x:checked').val()`); se reproduce igual.
+  const casilla = (b: boolean) => (b ? "1" : "undefined");
+  const sobre: Record<string, string> = {
+    process: "insert", id_producto: "0", barcode: n.barcode, descripcion: n.nombre,
+    exento: casilla(m.exento), proveedor: m.proveedor ?? "", id_categoria: m.categoria ?? "",
+    perecedero: casilla(m.perecedero), lista, marca: m.marca, minimo: "undefined",
+    cuantos: "1", estado: "undefined", decimals: casilla(m.decimal), composicion: "",
+    id_laboratorio: m.laboratorio ?? "", json_arr: "[]",
+    regulado: m.regulado ? "1" : "0", antibiotico: m.antibiotico ? "1" : "0",
+  };
+  for (let i = 0; i < 7; i++) sobre[`desc${i}`] = "0";
+  return sobre;
+}

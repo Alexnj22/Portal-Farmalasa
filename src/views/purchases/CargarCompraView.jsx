@@ -21,7 +21,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchPropuesta, confirmarProducto, buscarProductos,
-    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -146,6 +146,109 @@ const ajusteInicial = (r) => ({
     vence: r.vence ? r.vence.slice(0, 7) : '',
 });
 
+// ── Producto nuevo desde un renglón (paso 4) ──────────────────────────────
+//
+// Copia a un producto PARECIDO —categoría, laboratorio, proveedor, si vence,
+// si es exento— y sólo pide lo que el modelo no puede saber. Por ahora revisa
+// el alta sin crearla: crear de verdad se enciende después de la primera
+// carga con Bodega mirando.
+const nombreDelRenglon = (t) => String(t ?? '').split('|')[0].replace(/\s+/g, ' ').trim().toUpperCase();
+const barrasDelRenglon = (t) => /\b(\d{12,14})\b/.exec(String(t ?? ''))?.[1] ?? '';
+const ROTULO_PRECIO = ['Precio 1', 'Precio 2', 'Precio 3', 'Precio 4', 'Precio 5', 'Precio 6', 'Precio 7'];
+
+function NuevoProducto({ renglon, factor, onCerrar }) {
+    const costo = Number(renglon.costo) / (Number(factor) > 0 ? Number(factor) : 1);
+    const [nombre, setNombre]   = useState(nombreDelRenglon(renglon.descripcion));
+    const [barras, setBarras]   = useState(barrasDelRenglon(renglon.descripcion));
+    const [precio, setPrecio]   = useState('');
+    const [modelo, setModelo]   = useState(null);
+    const [eligiendo, setElig]  = useState(true);
+    const [revisando, setRev]   = useState(false);
+    const [res, setRes]         = useState(null);
+    const [error, setError]     = useState('');
+
+    const revisar = async () => {
+        setRev(true); setError(''); setRes(null);
+        const { resultado, error: e } = await simularProductoNuevo({
+            nombre, barcode: barras, modeloId: modelo?.id, costo: Math.round(costo * 1e4) / 1e4, precio: Number(precio),
+        });
+        setRev(false);
+        if (e) { setError(e); return; }
+        setRes(resultado.revision);
+    };
+    const cambiar = (set) => (e) => { set(e.target.value); setRes(null); };
+    const margen = Number(precio) > 0 ? Math.round((1 - costo / Number(precio)) * 100) : null;
+
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-2xl" ariaLabel="Crear producto">
+            <LiquidModal.Header titulo="Crear producto" subtitulo={renglon.descripcion} icono={PackagePlus} onClose={onCerrar} />
+            <LiquidModal.Body>
+                {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                        <PortalInput label="Nombre" value={nombre} onChange={cambiar(setNombre)} />
+                    </div>
+                    <PortalInput label="Código de barras" value={barras} onChange={cambiar(setBarras)} inputMode="numeric" />
+                    <PortalInput label="Precio de venta por unidad" inputMode="decimal" maskType="DECIMAL" prefix="$"
+                        value={precio} onChange={cambiar(setPrecio)}
+                        helperText={margen != null ? `margen ${margen} %` : null} />
+                </div>
+                <p className="text-micro text-content-3 mt-2">
+                    Costo por unidad: <b>{formatMoney(costo)}</b>
+                    {Number(factor) > 1 && ` (${formatMoney(renglon.costo)} la caja de ${factor})`}
+                </p>
+
+                <div className="mt-4">
+                    <p className="text-label font-black text-content">Igual que…</p>
+                    <p className="text-micro text-content-3 mb-2">
+                        Un producto parecido ya existente: se copian su categoría, laboratorio, proveedor, si vence y
+                        si es exento, y los otros precios guardan su misma proporción.
+                    </p>
+                    {modelo && !eligiendo ? (
+                        <div className="flex items-center gap-2">
+                            <Badge variant="info" size="sm">{modelo.nombre}</Badge>
+                            <Button size="xs" variant="ghost" onClick={() => setElig(true)}>Cambiar</Button>
+                        </div>
+                    ) : (
+                        <BuscadorProducto
+                            onElegir={(prod) => { setModelo(prod); setElig(false); setRes(null); }}
+                            onCancelar={() => setElig(false)} />
+                    )}
+                </div>
+
+                {res && (res.listo ? (
+                    <div className="mt-4">
+                        <Notice variant="success" icon={CheckCircle2}>
+                            <b>El alta está bien armada.</b> Se crearía <b>{res.nombre}</b> como «{res.modelo.nombre}»:
+                            {' '}{res.modelo.categoria} · {res.modelo.laboratorio} · {res.modelo.proveedor}
+                            {res.modelo.perecedero ? ' · vence' : ''}{res.modelo.exento ? ' · exento' : ''}.
+                        </Notice>
+                        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 mt-2">
+                            {res.precios.map((p, k) => (
+                                <Dato key={k} titulo={ROTULO_PRECIO[k]} valor={formatMoney(p)} />
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="mt-4">
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            <ul className="list-disc pl-5">{res.problemas.map((x, k) => <li key={k}>{x}</li>)}</ul>
+                        </Notice>
+                    </div>
+                ))}
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <div className="flex items-center gap-2 w-full">
+                    <p className="text-micro text-content-3 flex-1">Revisa el alta sin crearla todavía.</p>
+                    <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
+                    <Button size="sm" loading={revisando} disabled={!modelo || !nombre.trim() || !(Number(precio) > 0)}
+                        onClick={revisar}>Revisar alta</Button>
+                </div>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
 function Propuesta({ doc, puedeEditar, onCerrar }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
@@ -159,6 +262,7 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const [dias, setDias]       = useState('');
     const [revisando, setRev]   = useState(false);
     const [resultado, setRes]   = useState(null);
+    const [creando, setCreando] = useState(null);   // índice del renglón
 
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
@@ -362,6 +466,11 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                                             && ` · ${Math.round(r.match_similitud * 100)}%`}
                                                     </Badge>
                                                 )}
+                                                {puedeEditar && !conProducto && (
+                                                    <Button size="xs" variant="ghost" onClick={() => setCreando(i)}>
+                                                        Crear producto
+                                                    </Button>
+                                                )}
                                                 {puedeEditar && r.codigo_proveedor && !elegido && !r.listo && (
                                                     <Button size="xs" variant="ghost"
                                                         loading={guardando === r.codigo_proveedor}
@@ -406,6 +515,10 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                         })}
                     </div>
                 </>)}
+                {creando != null && p && (
+                    <NuevoProducto renglon={p.renglones[creando]} factor={ajustes[creando]?.factor}
+                        onCerrar={() => setCreando(null)} />
+                )}
             </LiquidModal.Body>
 
             <LiquidModal.Footer>

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -88,4 +90,33 @@ describe('factorEnLaDescripcion', () => {
         ['ELECTROLIT MARACUYA 625 ML', null],
         ['BOLSA DE AGUA X 500 ML', null],
     ])('%s → %s', (t, n) => expect(factorEnLaDescripcion(t)).toBe(n));
+});
+
+describe('producto nuevo copiando un modelo', () => {
+    /* Pantalla de edición real de CHOCO CONO SARITA (5106), recortada a los
+     * controles que se leen. Leída con un GET el 2026-10-29. */
+    const html = readFileSync(path.join(process.cwd(), 'tests/fixtures/erp/editar-producto-5106.html'), 'utf8');
+    const m = leerModelo(5106, html);
+
+    it('lee categoría, laboratorio, proveedor, casillas y los 7 precios', () => {
+        expect(m).toMatchObject({
+            categoria: '4', laboratorio: '366', proveedor: '135',
+            perecedero: true, exento: false, regulado: false, antibiotico: false,
+            precios: [1, 1, 1, 0, 0, 0, 0.01],
+        });
+    });
+
+    it('los precios guardan la proporción del modelo; ceros y simbólicos quedan', () => {
+        expect(preciosDelNuevo([2.5, 2.3, 2.15, 2, 2, 1.8899, 0.01], 5)).toEqual([5, 4.6, 4.3, 4, 4, 3.78, 0.01]);
+        expect(preciosDelNuevo(m.precios, 1.25)).toEqual([1.25, 1.25, 1.25, 0, 0, 0, 0.01]);
+    });
+
+    it('arma el formulario de alta como el sistema', () => {
+        const s = sobreDeProductoNuevo(m, { nombre: 'CONO NUEVO SARITA', barcode: '7401090899999', costo: 0.6, precio: 1 });
+        expect(s).toMatchObject({
+            process: 'insert', id_producto: '0', descripcion: 'CONO NUEVO SARITA', id_categoria: '4',
+            id_laboratorio: '366', proveedor: '135', perecedero: '1', exento: 'undefined', regulado: '0',
+            lista: '1,1X1,1,0,0,0.6000,7401090899999,1.0000#1.0000#1.0000#0.0000#0.0000#0.0000#0.0100#;',
+        });
+    });
 });

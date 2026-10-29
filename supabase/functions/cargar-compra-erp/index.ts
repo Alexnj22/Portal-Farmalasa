@@ -23,7 +23,7 @@ import { BASE, login, pedir } from "../_shared/erp-dte.ts";
 import { sesionEn } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre,
+  lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo,
 } from "../_shared/compraSobre.ts";
 
 const COMPRAS = `${BASE}/compras.php`;
@@ -66,6 +66,68 @@ async function productoDelSistema(cookie: string, id: number): Promise<ProductoD
   };
 }
 
+/** El texto de la opción elegida de un `<select>` de la pantalla del sistema. */
+function textoElegido(html: string, id: string): string | null {
+  const m = new RegExp(`<select[^>]*id=["']${id}["'][^>]*>([\\s\\S]*?)</select>`).exec(html);
+  const o = m && /<option[^>]*\bselected\b[^>]*>([^<]*)</.exec(m[1]);
+  return o ? o[1].trim() : null;
+}
+
+/**
+ * Producto nuevo copiando a uno parecido — SIMULACRO. Lee la pantalla de
+ * edición del modelo (un GET) y arma el alta tal como la mandaría el
+ * formulario del sistema, sin mandarla.
+ */
+async function productoNuevo(admin: any, body: any) {
+  const problemas: string[] = [];
+  const nombre = String(body?.nombre ?? "").replace(/\s+/g, " ").trim().toUpperCase();
+  const barcode = String(body?.barcode ?? "").trim();
+  const modeloId = Number(body?.modelo_id);
+  const costo = Number(body?.costo);
+  const precio = Number(body?.precio);
+
+  if (nombre.length < 4 || nombre.length > 120) problemas.push("El nombre tiene que tener entre 4 y 120 letras.");
+  if (barcode && !/^\d{8,14}$/.test(barcode)) problemas.push("El código de barras son de 8 a 14 dígitos.");
+  if (!(costo > 0)) problemas.push("Falta el costo por unidad.");
+  if (!(precio > 0)) problemas.push("Falta el precio de venta.");
+  else if (costo > 0 && precio <= costo) problemas.push(`El precio ($${precio.toFixed(2)}) no es mayor que el costo ($${costo.toFixed(4)}).`);
+  if (!Number.isFinite(modeloId)) return { error: "Falta el producto modelo." };
+
+  // Que no exista ya: el mismo código de barras, o el mismo nombre.
+  const { data: iguales, error: eI } = await admin.from("products").select("id, nombre, codigo_barras")
+    .or([barcode ? `codigo_barras.eq.${barcode}` : null, `nombre.ilike.${nombre.replace(/[,()]/g, " ")}`].filter(Boolean).join(","))
+    .limit(3);
+  if (eI) throw eI;
+  for (const x of iguales ?? []) problemas.push(`Ya existe: ${x.nombre} (${x.id}).`);
+
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  const html = await pedir(cookie, `${BASE}/editar_producto.php?id_producto=${modeloId}`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
+  const m = leerModelo(modeloId, html);
+  if (!m.nombre) return { error: `El producto ${modeloId} no existe en el sistema.` };
+  if (!m.categoria || !m.laboratorio || !m.proveedor) problemas.push(`El modelo «${m.nombre}» no tiene categoría, laboratorio o proveedor: elegí otro.`);
+  if (!m.precios) problemas.push(`El modelo «${m.nombre}» no tiene presentación de 1 unidad activa: elegí otro.`);
+  // Un producto controlado no se da de alta copiando: lo que lo hace
+  // controlado es justo lo que hay que decidir con cuidado.
+  if (m.regulado || m.antibiotico) problemas.push(`El modelo «${m.nombre}» es regulado o antibiótico: ese tipo de producto se da de alta a mano.`);
+
+  const sobre = sobreDeProductoNuevo(m, { nombre, barcode, costo: costo > 0 ? costo : 0, precio: precio > 0 ? precio : 0 });
+  return {
+    simulacro: true, sobre,
+    revision: {
+      problemas, listo: problemas.length === 0,
+      nombre, barcode: barcode || null,
+      modelo: {
+        id: m.id, nombre: m.nombre,
+        categoria: textoElegido(html, "id_categoria"),
+        laboratorio: textoElegido(html, "id_laboratorio"),
+        proveedor: textoElegido(html, "proveedor"),
+        perecedero: m.perecedero, exento: m.exento,
+      },
+      precios: sobre.lista.split(",").slice(7).join(",").replace(/;$/, "").split("#").filter(Boolean).map(Number),
+    },
+  };
+}
+
 Deno.serve(async (req: Request) => {
   const cors = { ...getCorsHeaders(req), "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -88,6 +150,7 @@ Deno.serve(async (req: Request) => {
     if (body?.enviar === true) {
       return responder({ error: "El envío real todavía no está habilitado: por ahora sólo el simulacro." }, 409);
     }
+    if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body));
     if (!Number.isFinite(documentId)) return responder({ error: "Falta el documento." }, 400);
 
     // ── El documento y su proveedor ──────────────────────────────────────────

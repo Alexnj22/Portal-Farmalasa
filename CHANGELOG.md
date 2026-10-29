@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.6 — Foto desde el teléfono en la evidencia y el catálogo
+
+Reporte de sala: en un descarte por daño, desde la computadora no había forma
+de mandar la foto desde el teléfono. El QR vivía sólo en los adjuntos
+(`FileField`); la tira de fotos de evidencia y la foto del catálogo no lo tenían.
+- **Tira de evidencia** (descarte por daño, devolución, envío con daño,
+  apartado): en escritorio aparece el azulejo **Teléfono** junto a «Agregar».
+- **Catálogo de productos**: botón **Con el teléfono** bajo la foto; la foto
+  entra por el mismo editor.
+- Hook compartido `useFotoDelTelefono`. Si desde el teléfono se mandan varias
+  fotos juntas (llegan como PDF), se avisa que se manden de una en una.
+
 ## v2.1381.5 — Revisión de factor y conteos agrupados por producto
 
 _(pendiente de redactar)_

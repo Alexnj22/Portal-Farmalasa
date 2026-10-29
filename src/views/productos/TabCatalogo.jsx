@@ -44,6 +44,7 @@ import PhotoLightbox from '../../components/common/PhotoLightbox';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
+import useFotoDelTelefono from '../../components/common/useFotoDelTelefono';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import {
     COLUMNAS_DE_PRECIO, NIVELES_DE_MARGEN, NIVELES_DE_PRECIO, nivelesVisibles,
@@ -905,6 +906,13 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
     const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await pasteImageFromClipboard(); if (f) setPendingFile(f); };
 
+    // En escritorio, la foto puede venir del teléfono (2026-10-29): entra por el
+    // mismo editor que una elegida del disco.
+    const fotoDelTelefono = useFotoDelTelefono(setPendingFile, {
+        etiqueta: 'Foto del producto',
+        onError: (msg) => { if (msg) useToastStore.getState().showToast('Foto', msg, 'error'); },
+    });
+
     const handlePhotoSelect = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -1112,10 +1120,18 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     <Button variant="secondary" size="xs" icon={Camera}
                                         onClick={() => camaraRef.current?.click()}>Tomar foto</Button>
                                 )}
+                                {!esTactil && (
+                                    <Button variant="secondary" size="xs" icon={Smartphone}
+                                        loading={fotoDelTelefono.pidiendo} disabled={fotoDelTelefono.esperando}
+                                        onClick={fotoDelTelefono.pedir}>
+                                        {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
+                                    </Button>
+                                )}
                                 {localFoto && (
                                     <Button variant="ghost" size="xs" onClick={() => fileRef.current?.click()}>Cambiar foto</Button>
                                 )}
                             </div>
+                            {fotoDelTelefono.dialogo}
                         </div>
 
                         {/* ── RIGHT: Precios ── */}

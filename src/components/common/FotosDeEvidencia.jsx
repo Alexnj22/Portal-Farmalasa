@@ -1,7 +1,8 @@
 import React, { memo, useCallback } from 'react';
-import { Camera, Images, X } from 'lucide-react';
+import { Camera, Images, Loader2, Smartphone, X } from 'lucide-react';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
+import useFotoDelTelefono from './useFotoDelTelefono';
 
 /**
  * FotosDeEvidencia — la tira de fotos de un formulario: miniaturas, agregar y
@@ -23,6 +24,13 @@ import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
  *
  * El azulejo de cámara sólo aparece con el dedo: en escritorio `capture` se
  * ignora y quedarían dos azulejos abriendo el mismo diálogo de archivos.
+ *
+ * ── Y en escritorio, el teléfono (2026-10-29) ─────────────────────────────
+ * La computadora de la sala no tiene cámara: sin un camino al teléfono, la
+ * foto del daño obligaba a mandársela a uno mismo por otro lado y bajarla.
+ * Reportado en un descarte por daño. Es su gemelo: con el dedo ya está la
+ * cámara ahí mismo, así que sólo aparece en escritorio (mismo criterio que
+ * `FileField`).
  */
 
 // El `accept` del azulejo de galería se queda fino a propósito: es el que filtra
@@ -46,14 +54,19 @@ const FotosDeEvidencia = memo(({
     const esTactil = useCoarsePointer();
     const falta = resaltar && fotos.length === 0;
 
-    const agregar = useCallback(ev => {
-        const f = ev.target.files?.[0];
-        ev.target.value = '';   // permite volver a elegir la misma
-        if (!f) return;
+    const sumar = useCallback(f => {
         if (f.size > maxMB * 1024 * 1024) { onError?.(`La foto no puede pasar de ${maxMB} MB`); return; }
         onError?.('');
         onCambio(prev => [...prev, f].slice(0, max));
     }, [max, maxMB, onCambio, onError]);
+
+    const agregar = useCallback(ev => {
+        const f = ev.target.files?.[0];
+        ev.target.value = '';   // permite volver a elegir la misma
+        if (f) sumar(f);
+    }, [sumar]);
+
+    const telefono = useFotoDelTelefono(sumar, { etiqueta: alt, onError });
 
     const claseAzulejo = falta
         ? `${AZULEJO} border-warning/50 bg-warning/[0.06] hover:border-warning`
@@ -96,6 +109,20 @@ const FotosDeEvidencia = memo(({
                     </span>
                 </label>
             )}
+
+            {fotos.length < max && !esTactil && (
+                <button type="button" className={claseAzulejo}
+                    onClick={telefono.pedir} disabled={telefono.pidiendo || telefono.esperando}
+                    aria-label="Tomar la foto con el teléfono">
+                    {telefono.pidiendo
+                        ? <Loader2 size={20} strokeWidth={2} className={`${claseIcono} animate-spin`} />
+                        : <Smartphone size={20} strokeWidth={2} className={claseIcono} />}
+                    <span className={`text-micro font-bold ${claseIcono}`}>
+                        {telefono.esperando ? 'Esperando…' : 'Teléfono'}
+                    </span>
+                </button>
+            )}
+            {telefono.dialogo}
         </div>
     );
 });

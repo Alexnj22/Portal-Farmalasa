@@ -23,7 +23,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1381.8 — La descarga por vencimiento también pide foto
 
-_(pendiente de redactar)_
+Pedido del usuario: la descarga por vencimiento exige al menos una foto (hasta
+3), igual que la de daño. Quien aprueba está en otra sala y la fecha impresa en
+el empaque es lo único que prueba que venció. Cada operación con foto declara
+su rótulo y su aviso en `FOTO_DE_AJUSTE` (`ajusteInventario.js`), que leen el
+portal y la app. (El commit dice v2.1381.7 por error: otra sesión tomó ese
+número en el medio; la versión publicada es la .8.)
 
 ## v2.1381.7 — Compras: el aviso de la carga cuenta lo ya confirmado
 

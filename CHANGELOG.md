@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.5 — App: compila otra vez (Metro mira _shared para la regla de tardanza)
+
+v2.1357.47 hizo que `src/data/attendanceAudit.js` importe
+`supabase/functions/_shared/tiempoTrabajado.ts`, y el `metro.config.js` de la
+app sólo miraba `_shared/dte`: iOS y Android fallaban al empaquetar con
+«Unable to resolve module». Ahora mira `_shared` entero (Metro sólo empaqueta
+lo importado). Verificado con `expo export --platform ios`.
+
 ## v2.1359.4 — Bolsas: la pantalla se pone al día en el acto
 
 «al confirmar un efectivo, o finalizar hay que actualizar para ver el cambio»

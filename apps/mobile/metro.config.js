@@ -29,7 +29,11 @@ const real = (p) => { try { return require('fs').realpathSync(p); } catch { retu
 const zxing = real(path.join(raiz, 'node_modules', '@zxing', 'library')) + path.sep;
 // (con `ts-custom-error`, de lo único que depende).
 const errorPropio = real(path.join(raiz, 'node_modules', 'ts-custom-error')) + path.sep;
-config.watchFolders = [nucleo, path.join(raiz, 'supabase', 'functions', '_shared', 'dte'), zxing, errorPropio];
+// La regla de tardanza (`data/attendanceAudit.js`) es la MISMA del cron y vive
+// en `_shared/tiempoTrabajado.ts`, sin imports. Sin mirar `_shared` la
+// compilación de la app fallaba con «Unable to resolve module» (2026-10-29).
+// Se mira la carpeta (contiene a `dte/`): Metro sólo empaqueta lo importado.
+config.watchFolders = [nucleo, path.join(raiz, 'supabase', 'functions', '_shared'), zxing, errorPropio];
 
 const ALIAS = {
   '@nucleo/': path.join(raiz, 'src') + '/',

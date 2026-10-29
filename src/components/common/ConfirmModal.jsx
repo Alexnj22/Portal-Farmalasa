@@ -128,7 +128,9 @@ const ConfirmModal = ({
                 <Button
                     variant={isDestructive ? 'destructive' : 'primary'}
                     className="flex-1"
-                    loading={isProcessing}
+                    // Sin `loading`: el ícono de arriba ya gira. Dos ruedas a la
+                    // vez decían lo mismo dos veces (reporte del 29-oct).
+                    disabled={isProcessing}
                     onClick={onConfirm}
                 >
                     {isProcessing

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1385.1 — Confirmar: una sola rueda mientras procesa
+
+El diálogo de confirmación mostraba dos ruedas girando a la vez mientras
+procesaba (la del ícono y la del botón). Queda sólo la del ícono; el botón se
+deshabilita. Vale para todos los diálogos de confirmación del portal.
+
 ## v2.1385.0 — Compras: estado de la carga en Bodega por documento
 
 La lista de facturas por cargar tiene una columna **Estado** y el modal la

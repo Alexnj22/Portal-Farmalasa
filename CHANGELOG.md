@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1373.1 — Plan: cargar compras en Bodega con reparto a las salas
+
+Sólo documentación. `docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md`: qué
+existe, tres bloqueos medidos (La Constancia sin DTE en el buzón, Agua Fría sin
+proveedor ligado, el diccionario sin presentación), las seis reglas del envío y
+el orden de trabajo. PENDIENTES 8 destrabado.
+
 ## v2.1373.0 — Sucursales sin el botón de diagnóstico
 
 Se quita el botón «Diagnóstico» de la tarjeta de cada sucursal y de la ficha de la app: le mandaba a la IA lo mismo que la tarjeta ya muestra (estado, personal, kioscos, alertas, expediente) y devolvía esa información en párrafos, sin un dato nuevo. Queda anotado volver con un resumen diario por sala que sí cruce ventas, faltantes, cortes y asistencia (`docs/PENDIENTES.md` §A, 31 y 32).

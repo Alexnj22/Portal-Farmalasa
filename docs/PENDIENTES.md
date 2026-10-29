@@ -102,8 +102,11 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 22. Dueño del lote fundido o vencido en el libro (con datos de noviembre). — BITACORAS:177
 
 ### Operación
-23. **«Quién responde» en las diferencias de conteo de inventario** (como
-    `cortes_caja_diferencia_personas`). — FALTANTES:414-417
+23. ⏸ **«Quién responde» en las diferencias de conteo de inventario** (como
+    `cortes_caja_diferencia_personas`) — **en espera: el usuario lo tiene que
+    hablar con gerencia** (2026-10-29). Propuesta: al cerrar un conteo con
+    diferencia en dinero, pedir quién responde, cuánto y por qué vía, igual que
+    caja. — FALTANTES:414-417
 24. ~~Vencer los trabajos de impresión encolados~~ — **hecho** (migración `20261028223512`, 10 min). Y avisa a quien lo mandó con «Reimprimir» (`20261028225821`).
 25. ~~Pruebas del reparto nocturno de `consolidate-timesheets`~~ — **hecho v2.1357.47**.
 26. ~~Unificar la fórmula de la tardanza; `late_minutes ||`~~ — **hecho v2.1357.47**.

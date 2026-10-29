@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.5 — Compras: la carga pide la cantidad que entra
+
+En la carga de compras, el campo «Unid. por caja» pasa a ser **«Cantidad a
+cargar»**: las unidades que entran a Bodega (usuario: el 1 se confundía con
+la cantidad). Debajo dice cómo sale —«60 de la factura × 1»— y avisa si no
+da parejo. Lo que viaja sigue siendo el factor, que es lo que elige la
+presentación de Bodega.
+
 ## v2.1382.4 — Chat con clientes: foto desde el teléfono
 
 En la computadora, el compositor del chat suma un botón con el ícono de

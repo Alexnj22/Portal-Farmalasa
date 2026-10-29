@@ -148,6 +148,23 @@ const ajusteInicial = (r) => ({
     vence: r.vence ? r.vence.slice(0, 7) : '',
 });
 
+// Las unidades que entran con un factor dado, y la línea de ayuda debajo del
+// campo: de dónde salió y cómo se reparte en lo que factura el proveedor.
+const cargarDe = (r, factor) => {
+    const n = Number(r.cantidad) * Number(factor || 1);
+    return Number.isFinite(n) ? String(Math.round(n * 1000) / 1000) : '';
+};
+const cargarAyuda = (r, aj) => {
+    const cant = Number(r.cantidad), f = Number(aj.factor);
+    if (!(f > 0)) return 'Escribe cuántas unidades entran.';
+    if (!Number.isInteger(Math.round(f * 1000) / 1000)) {
+        return `No da parejo: ${cant} de la factura no se reparten en ${aj.cargar ?? cargarDe(r, f)} unidades.`;
+    }
+    const como = `${cant} de la factura × ${f}`;
+    const origen = ORIGEN_FACTOR[r.factor_origen];
+    return origen && Number(aj.factor) === Number(r.factor_proveedor ?? 1) ? `${como} · ${origen}` : como;
+};
+
 // ── Producto nuevo desde un renglón (paso 4) ──────────────────────────────
 //
 // Copia a un producto PARECIDO —categoría, laboratorio, proveedor, si vence,
@@ -293,6 +310,19 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const ajustar = (i, campo, valor) => {
         setAjustes(a => ({ ...a, [i]: { ...a[i], [campo]: valor } }));
         setRes(null);   // lo revisado ya no es lo que se ve
+    };
+    // La persona escribe las UNIDADES que entran (usuario, 2026-10-29: «pon la
+    // cantidad a cargar»); lo que viaja sigue siendo el factor —unidades por
+    // cada una que factura el proveedor—, que es lo que elige la presentación
+    // de Bodega. Se guarda lo tecleado tal cual para no pelearle a medio número.
+    const ajustarCarga = (i, r, valor) => {
+        const limpio = String(valor).replace(/[^\d]/g, '');
+        const n = Number(limpio), cant = Number(r.cantidad);
+        setAjustes(a => ({
+            ...a,
+            [i]: { ...a[i], cargar: limpio, ...(n > 0 && cant > 0 ? { factor: String(n / cant) } : {}) },
+        }));
+        setRes(null);
     };
 
     const confirmar = async (renglon, i, producto) => {
@@ -599,9 +629,10 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                     </div>
                                     {uso === 'venta' && (
                                         <div className="mt-2 grid grid-cols-3 gap-2 max-w-xl">
-                                            <PortalInput compact labelDenso label="Unid. por caja" type="number" min="1"
-                                                helperText={ORIGEN_FACTOR[r.factor_origen] ?? null}
-                                                value={aj.factor} onChange={e => ajustar(i, 'factor', e.target.value)}
+                                            <PortalInput compact labelDenso label="Cantidad a cargar" inputMode="numeric"
+                                                helperText={cargarAyuda(r, aj)}
+                                                value={aj.cargar ?? cargarDe(r, aj.factor)}
+                                                onChange={e => ajustarCarga(i, r, e.target.value)}
                                                 labelAction={factorCambio && puedeEditar ? (
                                                     <Button size="xs" variant="ghost" loading={guardando === r.codigo_proveedor}
                                                         onClick={() => confirmar(r, i, { id: productoDe(r), nombre: elegido?.nombre ?? r.producto })}>

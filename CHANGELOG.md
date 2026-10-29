@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1360.1 — Vaciar el chat pide dos confirmaciones
+
+App de clientes (usuario, 2026-10-29: «que salga un aviso que no se puede
+recuperar, no se borre de un solo»). Primero «¿Vaciar el chat?» → Continuar;
+después «Esto no se puede deshacer» → Vaciar chat.
+
 ## v2.1360.0 — App de clientes: plazos de datos y vaciar el chat
 
 PENDIENTES 29, plazos decididos por el usuario el 2026-10-29:

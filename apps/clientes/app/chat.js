@@ -964,15 +964,21 @@ export default function Chat() {
   // en otro teléfono.
   const vaciar = useCallback(() => {
     Keyboard.dismiss();
-    Alert.alert('¿Vaciar el chat?', 'Los mensajes se quitan de tu app. La farmacia conserva la conversación.', [
+    // Dos pasos (usuario, 2026-10-29: «que salga un aviso que no se puede
+    // recuperar, no se borre de un solo»).
+    const confirmar = () => Alert.alert('Esto no se puede deshacer', 'Los mensajes, fotos y audios no se podrán recuperar en tu app.', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Vaciar', style: 'destructive', onPress: async () => {
+      { text: 'Vaciar chat', style: 'destructive', onPress: async () => {
         const r = await pedir('chat_vaciar');
         if (!r?.ok) { Alert.alert('No se vació', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
         setMensajes([]);
         setHayMas(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } },
+    ]);
+    Alert.alert('¿Vaciar el chat?', 'Se quitarán todos los mensajes de tu app. La farmacia conserva la conversación.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Continuar', onPress: confirmar },
     ]);
   }, [pedir]);
   const opcionesTitulo = useMemo(() => ({ title: 'Farmacia Salud', headerTitle: () => (

@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.3 — App: los documentos se suben en la ficha, también al crear un empleado
+
+Seguimiento del reporte de Talento Humano (2026-10-28): al dar de alta desde la
+app no había dónde subir documentos, porque sólo existían en «Expediente», que
+pide una ficha ya guardada. «Nuevo empleado» y «Editar ficha» tienen ahora una
+pestaña **Documentos** con las mismas secciones del portal (al entrar, cada
+año, ISSS y AFP, seguro, profesión, sólo si aplica), reverso y hojas, el
+vencimiento y «Otros documentos». Todo va a `employee_documents` y se guarda
+con la ficha; en un alta sube a `employee-documents/unassigned`, como el
+portal. Componente nuevo: `apps/mobile/componentes/personas/ficha/DocumentosDeLaFicha.js`.
+
 ## v2.1359.2 — Registro por lote con la estructura de las demás pestañas
 
 Bitácoras → Registro por lote, corregido a pedido del usuario:

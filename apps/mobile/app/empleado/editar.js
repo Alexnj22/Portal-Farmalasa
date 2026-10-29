@@ -68,12 +68,13 @@ import Contacto from '../../componentes/personas/ficha/Contacto';
 import Salud from '../../componentes/personas/ficha/Salud';
 import Dependientes from '../../componentes/personas/ficha/Dependientes';
 import Acreditaciones from '../../componentes/personas/ficha/Acreditaciones';
+import DocumentosDeLaFicha from '../../componentes/personas/ficha/DocumentosDeLaFicha';
 import Contrato from '../../componentes/personas/ficha/Contrato';
 import { Habilidades, Herramientas, Vehiculos } from '../../componentes/personas/ficha/Extras';
 import Acceso, { Banco } from '../../componentes/personas/ficha/Acceso';
 import { ElegirConOtro, Enlace, Fichas, Nota, op } from '../../componentes/personas/ficha/Piezas';
 
-const PESTANAS = [{ id: 'personal', label: 'Personal' }, { id: 'laboral', label: 'Laboral' }, { id: 'nomina', label: 'Nómina y acceso' }];
+const PESTANAS = [{ id: 'personal', label: 'Personal' }, { id: 'laboral', label: 'Laboral' }, { id: 'documentos', label: 'Documentos' }, { id: 'nomina', label: 'Nómina y acceso' }];
 
 // Lo que el formulario maneja. Los arreglos arrancan vacíos; el resto en ''.
 const LISTAS = ['extra_phones', 'extra_emails', 'extra_addresses', 'emergency_contact_extra_phones', 'economic_dependents', 'chronic_conditions',
@@ -313,7 +314,7 @@ export default function EditarEmpleado() {
     // ahí al terminar. Antes el alta volvía a la lista y Talento Humano buscaba
     // dónde subir licencias y AFP sin encontrarlo (2026-10-28).
     const botones = [{ text: 'Listo', style: 'cancel', onPress: () => router.back() }];
-    if (r?.id) botones.push({ text: 'Subir documentos', onPress: () => router.replace({ pathname: '/empleado/expediente', params: { id: String(r.id) } }) });
+    if (r?.id) botones.push({ text: 'Abrir el expediente', onPress: () => router.replace({ pathname: '/empleado/expediente', params: { id: String(r.id) } }) });
     Alert.alert(r?.enlazadoCon ? 'Expediente enlazado' : 'Empleado registrado', partes.join('\n\n') || 'La ficha se guardó.', botones);
   };
 
@@ -441,6 +442,12 @@ export default function EditarEmpleado() {
             </>
           ) : null}
 
+          {/* Los documentos se suben acá también en el ALTA (2026-10-29): antes
+              sólo existían en «Expediente», que pide una ficha ya guardada. */}
+          {pestana === 'documentos' ? (
+            <DocumentosDeLaFicha form={form} setForm={setForm} empleadoId={emp?.id || null} quien={user} />
+          ) : null}
+
           {pestana === 'nomina' ? (
             <>
               {veBanco ? <Banco form={form} cambiar={cambiar} /> : null}
@@ -458,16 +465,9 @@ export default function EditarEmpleado() {
           {intento && motivo ? <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{motivo}</Text> : null}
           <BotonGrande texto={guardando ? 'Guardando…' : esAlta ? (form.enlazar_con_id ? 'Guardar sobre su ficha' : 'Dar de alta') : 'Guardar cambios'}
             onPress={guardar} deshabilitado={guardando} />
-          {/* Un botón y no una nota gris al pie: con la nota, quien venía a
-              subir documentos no encontraba dónde (2026-10-28). */}
-          {esAlta ? (
-            <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>
-              La foto, los estudios y los documentos se suben en «Expediente», al terminar el alta.
-            </Text>
-          ) : (
-            <BotonGrande texto="Documentos, foto y estudios" borde color={MARCA.azulClaro}
-              onPress={() => router.push({ pathname: '/empleado/expediente', params: { id: String(emp.id) } })} />
-          )}
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>
+            {esAlta ? 'La foto y los estudios se completan en «Expediente» de su ficha.' : 'La foto y los estudios están en «Expediente».'}
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </>

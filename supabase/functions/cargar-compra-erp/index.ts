@@ -2,15 +2,16 @@
 //
 // Plan: docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md.
 //
-// Por ahora SÓLO SIMULACRO. Arma el formulario exacto que el sistema de la caja
+// Por omisión, SIMULACRO. Arma el formulario exacto que el sistema de la caja
 // recibiría (`_shared/compraSobre.ts`), lo revisa y lo deja escrito en
 // `compra_carga` con estado `simulada`. Del sistema sólo LEE: las presentaciones
 // de cada producto (`consultar_stock`, `getpresentacion`) y la tasa de
 // percepción del proveedor (`datos_proveedores`). Ninguna de las tres escribe.
 //
-// El envío real (POST `compras.php` `process=insert`) es irreversible desde acá
-// —sólo se deshace anulando la compra allá— y queda apagado hasta que el
-// usuario dé el OK para la primera compra con Bodega mirando.
+// El envío real (`enviar: true`, POST `compras.php` `process=insert`) es
+// irreversible desde acá —sólo se deshace anulando la compra allá—. Está
+// detrás del secreto `CARGA_COMPRA_ENVIO=on` y de los frenos de
+// `enviarCompra`; sin el secreto contesta 409.
 //
 // La función confía en el navegador sólo para las DECISIONES (qué producto es
 // cada renglón y su lote/vencimiento). Cantidades, costos y totales los vuelve a
@@ -23,7 +24,7 @@ import { BASE, login, pedir } from "../_shared/erp-dte.ts";
 import { sesionEn } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo,
+  lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos,
 } from "../_shared/compraSobre.ts";
 
 const COMPRAS = `${BASE}/compras.php`;
@@ -64,6 +65,135 @@ async function productoDelSistema(cookie: string, id: number): Promise<ProductoD
     perecedero: String(j.perecedero) === "1", regulado: String(j.regulado) === "1",
     presentaciones,
   };
+}
+
+const hoyEnSalvador = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+
+/**
+ * El envío real. Cinco frenos antes del POST, y ninguno sobra:
+ * 1. la revisión de ESTA llamada no tiene problemas;
+ * 2. lo que se manda es IDÉNTICO a lo que la persona revisó (`carga_id`): si
+ *    entre la revisión y el clic cambió un precio o una presentación, se
+ *    revisa de nuevo — nunca se manda algo que nadie vio;
+ * 3. la fila pasa de `simulada` a `enviando` con el índice único de
+ *    `compra_carga`: un doble clic o dos pestañas no mandan dos compras;
+ * 4. el POST va UNA vez, sin reintento — `pedir()` reintenta, y reintentar un
+ *    alta que quizá entró es duplicar la compra;
+ * 5. si no se sabe qué pasó (se cortó la red), queda `sin_verificar` y no
+ *    `fallida`: `fallida` deja volver a mandar, y eso sólo vale si el sistema
+ *    DIJO que no.
+ */
+async function enviarCompra(admin: any, x: {
+  cookie: string; documentId: number; cargaId: number; sobre: Record<string, unknown>;
+  revision: any; lineas: LineaSobre[]; erpProveedor: number;
+}) {
+  if (!x.revision.listo) return { enviada: false, revision: x.revision, error: "La revisión tiene problemas: no se mandó." };
+  if (!Number.isFinite(x.cargaId)) return { enviada: false, error: "Falta la revisión que se aprobó." };
+
+  const { data: rev, error: eR } = await admin.from("compra_carga").select("id, document_id, estado, sobre, created_at")
+    .eq("id", x.cargaId).maybeSingle();
+  if (eR) throw eR;
+  if (!rev || rev.document_id !== x.documentId || rev.estado !== "simulada") {
+    return { enviada: false, error: "Esa revisión ya no vale: revisá la carga de nuevo." };
+  }
+  if (Date.now() - new Date(rev.created_at).getTime() > 30 * 60_000) {
+    return { enviada: false, error: "La revisión tiene más de 30 minutos: revisá la carga de nuevo." };
+  }
+  if (JSON.stringify(rev.sobre) !== JSON.stringify(x.sobre)) {
+    return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisá la carga de nuevo." };
+  }
+
+  const { data: tomada, error: eT } = await admin.from("compra_carga")
+    .update({ estado: "enviando", updated_at: new Date().toISOString() })
+    .eq("id", x.cargaId).eq("estado", "simulada").select("id");
+  if (eT) {
+    if (eT.code === "23505") return { enviada: false, error: "Esta compra ya se mandó desde el portal." };
+    throw eT;
+  }
+  if (!tomada?.length) return { enviada: false, error: "Esa revisión ya se usó." };
+
+  const marcar = (estado: string, extra: Record<string, unknown> = {}) =>
+    admin.from("compra_carga").update({ estado, updated_at: new Date().toISOString(), ...extra }).eq("id", x.cargaId);
+
+  const form = new URLSearchParams();
+  for (const [k, v] of Object.entries(x.sobre)) {
+    if (Array.isArray(v)) { if (v.length) form.set(k, JSON.stringify(v)); continue; } // jQuery omite el arreglo vacío
+    form.set(k, String(v));
+  }
+
+  let texto: string;
+  try {
+    const res = await fetch(COMPRAS, {
+      method: "POST",
+      headers: {
+        Cookie: x.cookie, "User-Agent": "Mozilla/5.0", "X-Requested-With": "XMLHttpRequest",
+        Referer: COMPRAS, "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: form.toString(),
+      signal: AbortSignal.timeout(90_000),
+    });
+    texto = await res.text();
+  } catch (e: any) {
+    await marcar("sin_verificar", { error: `Sin respuesta del sistema: ${e?.message ?? e}` });
+    return { enviada: null, error: "El sistema no contestó. Puede haber entrado: NO la mandes de nuevo; avisá a Bodega para que la busque." };
+  }
+
+  let j: any = null;
+  try { j = JSON.parse(texto); } catch { /* abajo */ }
+  if (!j) {
+    await marcar("sin_verificar", { error: `Respuesta ilegible: ${texto.slice(0, 300)}` });
+    return { enviada: null, error: "El sistema contestó algo que no se entiende. Puede haber entrado: NO la mandes de nuevo." };
+  }
+  if (String(j.typeinfo).toLowerCase() !== "success") {
+    await marcar("fallida", { error: String(j.msg ?? "rechazada") });
+    return { enviada: false, error: `El sistema no la aceptó: ${j.msg ?? "sin motivo"}` };
+  }
+
+  // ── Leerla de vuelta ───────────────────────────────────────────────────────
+  const verif = await leerDeVuelta(x.cookie, x.sobre, x.lineas, x.erpProveedor).catch((e) => ({ ok: false, compra: null, notas: [`No se pudo leer de vuelta: ${e?.message ?? e}`] }));
+  await marcar(verif.ok ? "verificada" : "sin_verificar", {
+    erp_compra_id: verif.compra, error: verif.notas.length ? verif.notas.join(" · ") : null,
+  });
+  return { enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null };
+}
+
+/** Busca la compra recién hecha en la lista del día y compara renglón por renglón. */
+async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, lineas: LineaSobre[], erpProveedor: number) {
+  const hoy = String(sobre.fecha);
+  const t = await pedir(cookie, `${BASE}/descargar_compras_json.php?fini=${hoy}&ffin=${hoy}&id_sucursal=${ERP_BODEGA}`,
+    undefined, { timeoutMs: 90_000 });
+  const compras: any[] = JSON.parse(t)?.compras ?? [];
+  const numero = String(sobre.numero_doc).toUpperCase();
+  const c = compras.find((k) => !k.anulada && Number(k.proveedor?.id) === erpProveedor
+    && String(k.documento?.numero ?? "").trim().toUpperCase() === numero);
+  if (!c) return { ok: false, compra: null, notas: ["Entró, pero no aparece en la lista de compras de hoy."] };
+
+  const notas: string[] = [];
+  const total = Number(c.totales?.total_operacion);
+  if (!(Math.abs(total - Number(sobre.total)) <= TOLERANCIA)) notas.push(`Total en el sistema $${total} contra $${sobre.total}.`);
+  const items: any[] = c.items ?? [];
+  const productos = lineas.filter((l) => l.bandera === "PRODUCTO");
+  // Los servicios (consumo) no se sabe todavía si salen en esta lista: el
+  // conteo sólo se exige cuando la compra es toda de productos.
+  if (productos.length === lineas.length && items.length !== lineas.length) {
+    notas.push(`El sistema tiene ${items.length} renglones y se mandaron ${lineas.length}.`);
+  }
+  // Agrupado por producto (uno puede venir en dos renglones). Se acepta la
+  // cantidad en unidades o en la presentación: la lista no dice en cuál está,
+  // y las compras medidas eran todas de 1 unidad.
+  const porProducto = new Map<string, { cant: number; unidades: number }>();
+  for (const l of productos) {
+    const a = porProducto.get(l.id_producto) ?? { cant: 0, unidades: 0 };
+    a.cant += Number(l.cant); a.unidades += Number(l.cant) * Number(l.unidad);
+    porProducto.set(l.id_producto, a);
+  }
+  for (const [id, e] of porProducto) {
+    const delSistema = items.filter((it) => String(it.producto_id) === id).reduce((a, it) => a + Number(it.cantidad), 0);
+    if (Math.abs(delSistema - e.unidades) > 0.001 && Math.abs(delSistema - e.cant) > 0.001) {
+      notas.push(`Producto ${id}: ${delSistema} en el sistema, se esperaban ${e.unidades} unidades.`);
+    }
+  }
+  return { ok: notas.length === 0, compra: Number(c.compra_id) || null, notas };
 }
 
 /** El texto de la opción elegida de un `<select>` de la pantalla del sistema. */
@@ -147,8 +277,9 @@ Deno.serve(async (req: Request) => {
     const decisiones: Record<string, { product_id?: number; factor?: number; lote?: string; vence?: string }> =
       body?.renglones ?? {};
     const diasCredito = Number.isFinite(Number(body?.dias_credito)) ? Math.max(0, Math.trunc(Number(body.dias_credito))) : null;
-    if (body?.enviar === true) {
-      return responder({ error: "El envío real todavía no está habilitado: por ahora sólo el simulacro." }, 409);
+    const enviar = body?.enviar === true;
+    if (enviar && Deno.env.get("CARGA_COMPRA_ENVIO") !== "on") {
+      return responder({ error: "El envío a Bodega todavía no está encendido." }, 409);
     }
     if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body));
     if (!Number.isFinite(documentId)) return responder({ error: "Falta el documento." }, 400);
@@ -216,6 +347,7 @@ Deno.serve(async (req: Request) => {
     const cache = new Map<number, ProductoDelSistema | null>();
     const lineas: LineaSobre[] = [];
     const detalle: unknown[] = [];
+    const cobrado: number[] = [];
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       const r: RenglonDoc = {
@@ -223,6 +355,7 @@ Deno.serve(async (req: Request) => {
         cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
         descuento: Number(it?.montoDescu ?? 0),
         exento: Number(it?.ventaExenta ?? 0) > 0,
+        subtotal: Number(it?.ventaGravada ?? 0) + Number(it?.ventaExenta ?? 0) + Number(it?.ventaNoSuj ?? 0),
       };
       let dec: Decision;
       if (uso === "consumo") dec = { tipo: "consumo" };
@@ -245,10 +378,11 @@ Deno.serve(async (req: Request) => {
       }
       const res = lineaDelSobre(i, r, dec);
       problemas.push(...res.problemas);
-      if (res.linea) lineas.push(res.linea);
+      if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); }
       detalle.push({ renglon: i, descripcion: r.descripcion, linea: res.linea, ...(res.detalle ?? {}) });
     }
 
+    const regalos = repartirRegalos(lineas, cobrado);
     const tot = totalesDelSobre(lineas, tipoDoc, tasa);
     const totalDoc = totalDelDocumento(dte?.resumen);
     const diferencia = totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100;
@@ -261,10 +395,16 @@ Deno.serve(async (req: Request) => {
 
     const sobre = {
       process: "insert", datos: "", json_arr: JSON.stringify(lineas), cuantos: 0,
-      total: tot.total, fecha: d.fecha_emision,
+      // La fecha de la CARGA, no la del documento: es lo que pone el formulario
+      // por omisión y lo que hace Bodega — medido desde agosto, 688 de 710
+      // compras con 1 a 7 días de diferencia contra la emisión.
+      total: tot.total, fecha: hoyEnSalvador(),
       concepto: uso === "consumo" ? "COMPRA PARA CONSUMO" : "COMPRA DE PRODUCTO",
       destino: "3", proveedor: String(erpProveedor ?? ""),
-      tipo_doc: tipoDoc, numero_doc: cod,
+      // 20 caracteres: es lo que guarda el sistema (616 de 710 compras desde
+      // septiembre miden exactamente 20; ninguna más) y con lo que la lee de
+      // vuelta la verificación.
+      tipo_doc: tipoDoc, numero_doc: cod.slice(0, 20),
       sumas_sin_iva: tot.sumas_sin_iva, subtotal: tot.subtotal, iva: tot.iva,
       venta_exenta: tot.venta_exenta, total_percepcion: tot.total_percepcion,
       dias_credito: diasCredito ?? 0, id_compra: "", total_renta_retenida: "0.00",
@@ -278,11 +418,15 @@ Deno.serve(async (req: Request) => {
       clase_documento_tributario: "4", numero_serie: "",
     };
 
-    const revision = {
+    const revision = { regalos,
       problemas, listo: problemas.length === 0,
       total_documento: totalDoc, total_armado: Number(tot.total), diferencia,
       percepcion_proveedor: tasa, renglones: detalle,
     };
+    if (enviar) return responder(await enviarCompra(admin, {
+      cookie, documentId, cargaId: Number(body?.carga_id), sobre, revision, lineas, erpProveedor: erpProveedor!,
+    }));
+
     const { data: fila, error: eI } = await admin.from("compra_carga").insert({
       document_id: documentId, estado: "simulada", uso, sobre, revision, creado_por: quien.id,
     }).select("id").single();

@@ -6,8 +6,8 @@ import { anotar } from './audit';
 //
 // **Nada de esto escribe en el sistema de origen.** La pantalla arma la compra
 // y la muestra, y `simularCarga` arma el formulario exacto que se mandaría y lo
-// revisa — sólo leyendo del otro lado. El envío real está apagado hasta la
-// primera carga con Bodega mirando (docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md).
+// revisa — sólo leyendo del otro lado. `enviarCarga` manda la revisada; la
+// función la tiene detrás de un interruptor (docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md).
 //
 // La propuesta la calcula la edge function `leer-dte-json`, que es la única que
 // puede leer el JSON y el PDF del bucket privado. Se la invoca con la sesión de
@@ -164,6 +164,27 @@ export async function simularCarga({ documentId, uso, renglones, diasCredito }) 
     if (data?.error) return { resultado: null, error: data.error };
     anotar('COMPRA_SIMULADA', documentId, { uso, carga: data?.carga_id, listo: data?.revision?.listo });
     return { resultado: data, error: null };
+}
+
+/**
+ * Manda la compra a Bodega: la MISMA que se revisó (`cargaId`). La función
+ * vuelve a armarla y se niega si algo cambió. Respuesta:
+ * `enviada: true` (con `verificada` y `erp_compra_id`), `false` (no entró, se
+ * puede corregir y volver a mandar) o `null` (no se sabe: NO mandar de nuevo).
+ */
+export async function enviarCarga({ documentId, cargaId, uso, renglones, diasCredito }) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
+        body: { document_id: documentId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito },
+    });
+    if (error) {
+        let msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+        return { resultado: { enviada: null }, error: msg ?? 'No se supo si entró.' };
+    }
+    anotar('COMPRA_ENVIADA_A_BODEGA', documentId, {
+        carga: cargaId, enviada: data?.enviada, verificada: data?.verificada, compra: data?.erp_compra_id, error: data?.error,
+    });
+    return { resultado: data, error: data?.error ?? null };
 }
 
 /**

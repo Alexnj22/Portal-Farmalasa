@@ -37,6 +37,10 @@ export type RenglonDoc = {
   precio: number;      // precioUni del documento
   descuento: number;   // montoDescu
   exento: boolean;
+  /** ventaGravada + ventaExenta + ventaNoSuj: lo que el proveedor cobró por
+   *  el renglón, ya con su redondeo. Manda sobre precio × cantidad, que en un
+   *  documento de Steiner da 2,123.88 donde la factura suma 2,123.89. */
+  subtotal?: number;
 };
 
 export type Decision =
@@ -66,6 +70,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 /** El costo por unidad del proveedor, neto de su descuento. */
 export function costoNeto(r: RenglonDoc): number {
   if (!(r.cantidad > 0)) return r.precio;
+  if (Number(r.subtotal) > 0) return r4(Number(r.subtotal) / r.cantidad);
   return r4((r.precio * r.cantidad - (r.descuento || 0)) / r.cantidad);
 }
 
@@ -141,6 +146,51 @@ export function lineaDelSobre(
 }
 
 /** Lo que el formulario calcularía con esas líneas (copia de `totales()`). */
+/**
+ * Producto de regalo (renglón de producto a $0, como «PROMOCIONAL ELECTROLIT»):
+ * su costo se REPARTE entre todas las unidades de la compra, que es como lo
+ * carga Bodega a mano — medido en las compras 5871, 5872 y 6372 de Steiner:
+ * 1,200 unidades pagadas a $1.7699 y 108 de regalo quedan TODAS a
+ * $1.6237/$1.6238 (= 2,123.87 ÷ 1,308). Cargado a $0, el regalo bajaría el
+ * costo promedio de ese sabor solo y el de los demás quedaría alto.
+ *
+ * Generalizado: el regalo vale lo que en promedio costó una unidad pagada, y
+ * todo se escala por la misma razón para que el total no se mueva. Cada
+ * renglón conserva su subtotal redondeado; el costo por unidad sale de ahí.
+ * Devuelve cuántos renglones eran regalo.
+ */
+export function repartirRegalos(lineas: LineaSobre[], cobrado: number[] = []): number {
+  // `cobrado[i]` = subtotal de la factura para `lineas[i]`; sin él, costo × cant.
+  const exactoDe = new Map(lineas.map((l, i) => [l, Number(cobrado[i]) > 0 ? Number(cobrado[i]) : Number(l.compra) * Number(l.cant)]));
+  const prod = lineas.filter((l) => l.bandera === "PRODUCTO" && !l.exento);
+  const regalos = prod.filter((l) => Number(l.compra) === 0 && Number(l.cant) > 0);
+  const pagados = prod.filter((l) => Number(l.compra) > 0);
+  if (!regalos.length || !pagados.length) return 0;
+  // En existencias (cant × unidad), no en cajas: un regalo puede venir suelto.
+  const exist = (l: LineaSobre) => Number(l.cant) * Number(l.unidad);
+  const pagado = pagados.reduce((a, l) => a + exactoDe.get(l)!, 0);
+  const uPagadas = pagados.reduce((a, l) => a + exist(l), 0);
+  const uRegalo = regalos.reduce((a, l) => a + exist(l), 0);
+  const ref = pagado / uPagadas;               // costo de una unidad pagada
+  const k = pagado / (pagado + ref * uRegalo); // = uPagadas / (uPagadas + uRegalo)
+  // El costo va con 4 decimales, y redondear cada renglón por su lado corre
+  // el total hasta 4 centavos en una compra de 1,300 unidades. Se elige hacia
+  // abajo o hacia arriba según cuál deje la suma acumulada más cerca de la
+  // exacta — Bodega hace lo mismo a mano: alterna $1.6237 y $1.6238.
+  let exacto = 0, armado = 0;
+  for (const l of prod) {
+    const cant = Number(l.cant);
+    const valor = (Number(l.compra) > 0 ? exactoDe.get(l)! : ref * exist(l)) * k;
+    exacto += valor;
+    const u = (valor / cant) * 1e4;
+    const abajo = Math.floor(u) / 1e4, arriba = Math.ceil(u) / 1e4;
+    const c = Math.abs(armado + abajo * cant - exacto) <= Math.abs(armado + arriba * cant - exacto) ? abajo : arriba;
+    armado += c * cant;
+    l.compra = c.toFixed(4); l.compra_fin = l.compra;
+  }
+  return regalos.length;
+}
+
 export function totalesDelSobre(
   lineas: LineaSobre[], tipoDoc: "CCF" | "COF" | "FSE", tasaPercepcion: number,
 ) {

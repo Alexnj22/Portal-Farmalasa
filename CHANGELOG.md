@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.0 — Cargar compra: el envío a Bodega, apagado, y lo que enseñó compararla con Bodega
+
+Antes del primer envío real se armaron con el portal tres compras de Steiner
+que Bodega ya había cargado a mano (5871, 5872, 6372) y se compararon con lo
+guardado, sólo leyendo. Tres diferencias, corregidas:
+
+- **Producto de regalo** (renglón a $0): Bodega reparte su costo entre todas
+  las unidades —1,200 a $1.7699 + 108 de regalo quedan todas a $1.6237—. El
+  portal lo cargaba a $0. Ahora reparte igual (`repartirRegalos`), eligiendo
+  hacia arriba o abajo el cuarto decimal para que el total no se corra.
+- **Fecha**: la del día de la carga, como el formulario y como Bodega (688 de
+  710 compras desde agosto), no la de emisión.
+- **Número**: los primeros 20 caracteres del código, que es lo que guarda el
+  sistema.
+
+El costo por unidad sale del subtotal que cobró el proveedor y no de precio ×
+cantidad. Totales al centavo en dos y a uno en la tercera.
+
+El envío (`Cargar en Bodega`) está escrito y desplegado, **apagado** detrás del
+secreto `CARGA_COMPRA_ENVIO`: manda sólo lo idéntico a lo revisado, una vez por
+documento, sin reintentar el POST, y la lee de vuelta en la lista del día. Si
+no se sabe qué pasó, no deja volver a mandarla.
+
 ## v2.1380.0 — Consultas de existencia: pedirle a una sala que cuente a ciegas
 
 Conteo de inventario tiene una pestaña nueva, **Consultas de existencia**. Cualquiera

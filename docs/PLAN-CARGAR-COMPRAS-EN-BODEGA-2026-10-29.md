@@ -165,3 +165,30 @@ recuerde».
 | 5 | Primer envío real de una compra chica, con Bodega mirando | la compra leída de vuelta cuadra |
 | 6 | Reparto por sala en la pantalla → `enviar-producto-erp` | la sala recibe el lote de la compra |
 | 7 | Carga manual (papel + QR) para quien no manda el DTE | La Constancia cargada sin teclear el código |
+
+## 4 quater. Comparado contra compras que Bodega cargó a mano (2026-10-29)
+
+Antes del primer envío real se armó, con el portal, la compra de tres facturas
+de Steiner que Bodega ya había cargado (compras 5871, 5872 y 6372) y se comparó
+con lo que quedó guardado. Sólo lecturas. Tres diferencias, las tres corregidas:
+
+| | Bodega | el portal armaba | ahora |
+|---|---|---|---|
+| producto de regalo (renglón a $0) | reparte el costo: TODO a $1.6237/$1.6238 | regalo a $0, el resto a $1.7699 | reparte igual (`repartirRegalos`) |
+| fecha | la del día de la carga (688 de 710 compras desde agosto, 1–7 días después de la emisión) | la de emisión | la del día |
+| número de documento | 20 caracteres (616 de 710; ninguna más larga) | los 36 del código | los primeros 20 |
+
+Y el costo por unidad sale del subtotal que cobró el proveedor
+(`ventaGravada`), no de precio × cantidad: en una de las tres daba 2,123.88
+donde la factura suma 2,123.89. Con eso, los totales cuadran al centavo en
+dos y a un centavo en la tercera.
+
+Coinciden: producto, cantidad, presentación (UNIDAD), percepción, IVA. Bodega
+puso a mano vencimiento 2027-12-01 y lote «GENERICO»; el portal deja el
+vencimiento a la sala (§4 ter) y el lote vacío, que el sistema guarda como
+«GENERICO».
+
+**El envío** (`enviar: true`) está escrito con cinco frenos —revisión sin
+problemas, idéntico a lo revisado, un solo envío por documento, POST sin
+reintento, y «no se sabe» que NO deja volver a mandar— y lo lee de vuelta en
+la lista del día. Queda apagado detrás del secreto `CARGA_COMPRA_ENVIO=on`.

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo } from '../../supabase/functions/_shared/compraSobre.ts';
+import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -118,5 +118,33 @@ describe('producto nuevo copiando un modelo', () => {
             id_laboratorio: '366', proveedor: '135', perecedero: '1', exento: 'undefined', regulado: '0',
             lista: '1,1X1,1,0,0,0.6000,7401090899999,1.0000#1.0000#1.0000#0.0000#0.0000#0.0000#0.0100#;',
         });
+    });
+});
+
+describe('producto de regalo', () => {
+    /* Steiner, compra 6372 cargada a mano por Bodega: 1,200 Electrolit a
+     * $1.7699 y 108 «PROMOCIONAL» a $0. Bodega los dejó TODOS a
+     * $1.6237/$1.6238 (= 2,123.87 ÷ 1,308). */
+    const linea = (id, cant, compra) => ({
+        id_producto: id, compra: compra.toFixed(4), compra_fin: compra.toFixed(4), venta: '2.5000', cant: String(cant),
+        unidad: '1', vence: '', id_presentacion: '1', exento: 0, bandera: 'PRODUCTO', descripcion_ser: '-', numero_lote: '',
+    });
+    const cants = [[2812, 108, 0], [2811, 240, 424.78], [2813, 60, 106.19], [2806, 180, 318.58],
+        [2805, 360, 637.16], [2818, 180, 318.58], [2807, 120, 212.39], [2809, 60, 106.19]];
+    const lineas = cants.map(([id, c, sub]) => linea(String(id), c, sub > 0 ? Math.round(sub / c * 1e4) / 1e4 : 0));
+    const cobrado = cants.map(([, , sub]) => sub);
+
+    it('reparte el costo entre todas las unidades y el total no se mueve', () => {
+        expect(repartirRegalos(lineas, cobrado)).toBe(1);
+        for (const l of lineas) expect(['1.6237', '1.6238']).toContain(l.compra);
+        expect(lineas.every(l => l.compra === l.compra_fin)).toBe(true);
+        const t = totalesDelSobre(lineas, 'CCF', 0.01);
+        expect(Number(t.total)).toBeCloseTo(2421.21, 2);
+    });
+
+    it('sin regalo no toca nada', () => {
+        const sin = [linea('1', 10, 2), linea('2', 5, 3)];
+        expect(repartirRegalos(sin)).toBe(0);
+        expect(sin.map(l => l.compra)).toEqual(['2.0000', '3.0000']);
     });
 });

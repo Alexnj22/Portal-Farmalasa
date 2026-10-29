@@ -15,13 +15,14 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalInput from '../../components/common/PortalInput';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { saveDraft, loadDraft } from '@nucleo/utils/draftUtils';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchPropuesta, confirmarProducto, buscarProductos,
-    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, enviarCarga,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -263,6 +264,9 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const [revisando, setRev]   = useState(false);
     const [resultado, setRes]   = useState(null);
     const [creando, setCreando] = useState(null);   // índice del renglón
+    const [confirmando, setConf] = useState(false);
+    const [enviando, setEnv]     = useState(false);
+    const [envio, setEnvio]      = useState(null);   // respuesta del envío
 
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
@@ -310,14 +314,29 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const productoDe = (r) => elegidos[r.codigo_proveedor]?.product_id
         ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) ? r.producto_id : null);
 
+    const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, {
+        product_id: productoDe(r),
+        factor: Number(ajustes[i]?.factor) || 1,
+        lote: ajustes[i]?.lote || null,
+        vence: ajustes[i]?.vence || null,
+    }]));
+
+    // Manda EXACTAMENTE lo revisado: la función lo vuelve a armar y se niega si
+    // algo cambió, así que acá se le pasan las mismas decisiones.
+    const enviar = async () => {
+        setEnv(true); setError('');
+        const { resultado: r, error: e } = await enviarCarga({
+            documentId: doc.document_id, cargaId: resultado.carga_id, uso, renglones: decisiones(),
+            diasCredito: dias === '' ? null : Number(dias),
+        });
+        setEnv(false); setConf(false);
+        setEnvio({ ...(r ?? {}), error: e });
+        setRes(null);
+    };
+
     const revisar = async () => {
-        setRev(true); setError(''); setRes(null);
-        const renglones = Object.fromEntries(p.renglones.map((r, i) => [i, {
-            product_id: productoDe(r),
-            factor: Number(ajustes[i]?.factor) || 1,
-            lote: ajustes[i]?.lote || null,
-            vence: ajustes[i]?.vence || null,
-        }]));
+        setRev(true); setError(''); setRes(null); setEnvio(null);
+        const renglones = decisiones();
         const { resultado: res, error: e } = await simularCarga({
             documentId: doc.document_id, uso, renglones,
             diasCredito: dias === '' ? null : Number(dias),
@@ -376,6 +395,23 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                         </Notice>
                     )}
 
+                    {envio && (envio.enviada === true ? (
+                        <Notice variant={envio.verificada ? 'success' : 'warning'} icon={envio.verificada ? CheckCircle2 : AlertTriangle}>
+                            <b>Cargada en Bodega{envio.erp_compra_id ? ` (compra ${envio.erp_compra_id})` : ''}.</b>{' '}
+                            {envio.verificada
+                                ? 'Se leyó de vuelta y cuadra renglón por renglón.'
+                                : <>Entró, pero al leerla de vuelta algo no cuadró: {(envio.notas ?? []).join(' ')}</>}
+                        </Notice>
+                    ) : envio.enviada === false ? (
+                        <Notice variant="danger" icon={AlertTriangle}>
+                            <b>No entró.</b> {envio.error}
+                        </Notice>
+                    ) : (
+                        <Notice variant="danger" icon={AlertTriangle}>
+                            <b>No se sabe si entró.</b> {envio.error} No la mandes de nuevo: avisá a Bodega para que la busque.
+                        </Notice>
+                    ))}
+
                     {revision && (revision.listo ? (
                         <Notice variant="success" icon={CheckCircle2}>
                             <b>Lista para cargar.</b> {revision.renglones.length} renglones · total{' '}
@@ -384,6 +420,12 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                 <span className="block mt-1">
                                     {pendientesDeVence === 1 ? 'Un renglón va' : `${pendientesDeVence} renglones van`} sin
                                     vencimiento: se le va a pedir a la sala que lo reciba.
+                                </span>
+                            )}
+                            {revision.regalos > 0 && (
+                                <span className="block mt-1">
+                                    Trae {revision.regalos === 1 ? 'un producto' : `${revision.regalos} productos`} de
+                                    regalo: su costo se reparte entre todas las unidades, como lo carga Bodega.
                                 </span>
                             )}
                             <span className="block text-micro mt-1">Todavía no se manda: esto fue una revisión.</span>
@@ -524,14 +566,23 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
             <LiquidModal.Footer>
                 <div className="flex items-center gap-2 w-full">
                     <p className="text-micro text-content-3 flex-1">
-                        «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. No registra nada.
+                        «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. Se registra sólo con «Cargar en Bodega».
                     </p>
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
-                    {puedeEditar && p && (
-                        <Button size="sm" loading={revisando} onClick={revisar}>Revisar carga</Button>
+                    {puedeEditar && p && !envio?.enviada && (
+                        <Button size="sm" variant={revision?.listo ? 'ghost' : 'primary'} loading={revisando}
+                            disabled={enviando} onClick={revisar}>Revisar carga</Button>
+                    )}
+                    {puedeEditar && revision?.listo && resultado?.carga_id && (
+                        <Button size="sm" onClick={() => setConf(true)} disabled={revisando}>Cargar en Bodega</Button>
                     )}
                 </div>
             </LiquidModal.Footer>
+            <ConfirmModal isOpen={confirmando} onClose={() => !enviando && setConf(false)} onConfirm={enviar}
+                isProcessing={enviando} isDestructive={false}
+                title="¿Cargar esta compra en Bodega?"
+                message={`Se registra la compra de ${doc.emisor_nombre} por ${formatMoney(revision?.total_armado)} en Bodega. Sólo se deshace anulándola allá.`}
+                confirmText="Sí, cargar" />
         </LiquidModal>
     );
 }

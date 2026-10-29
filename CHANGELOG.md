@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.53 — Vigilancia de seguridad: avisa a gerencia y TH
+
+PENDIENTES 13 / SEGURIDAD-Y-ACCESO §3.7. Avisa, nunca bloquea; los avisos van
+a Gerente General y Jefe/a de Talento Humano (decisión del usuario).
+
+- **Al momento**: cambiar, agregar o borrar un control de `security_config`
+  avisa con quién lo hizo (trigger `seguridad_aviso_cambio`, con push). Si fue
+  por la base directa, el aviso lo dice.
+- **Cada mañana, 7:00 SV** (`seguridad-vigilancia-diaria`): cuentas de
+  personas activas con 60+ días sin entrar, cuentas abiertas sin dueño activo
+  y entradas de noche (22:00–05:00). Cada hallazgo una sola vez. Primer día: 2
+  cuentas sin uso.
+- **`npm run gate:seguridad`**: policies de escritura abiertas, `user_metadata`
+  decidiendo permisos (base y edge functions) y la vigilancia viva. La parte de
+  edge functions corre en el pre-commit. Se le fabricó la regresión en las tres
+  categorías y las cazó.
+- Ícono `ShieldAlert` para el aviso `SEGURIDAD_VIGILANCIA`.
+
 ## v2.1357.52 — El motivo del corte rechazado se ve, y el aviso de preventas sale antes de contar
 
 Salud 2 intentó el corte nueve veces el 28-oct y sólo vio «No se pudo

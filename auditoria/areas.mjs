@@ -1214,7 +1214,9 @@ export const AREAS = [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'recordar-linea-base-egreso-mensual',
                 'check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
-                'purge-cron-history-daily', 'vigilar-reinicio-de-la-base'],
+                'purge-cron-history-daily', 'vigilar-reinicio-de-la-base',
+                // 2026-10-28: la vigilancia de seguridad (PENDIENTES 13).
+                'seguridad-vigilancia-diaria'],
         docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md',
                'docs/SEGURIDAD-Y-ACCESO.md',
                'docs/INCIDENTE-CAIDA-2026-09-14.md'],

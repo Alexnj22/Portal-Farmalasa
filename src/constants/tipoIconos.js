@@ -105,6 +105,9 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     DATOS_INCIDENTE:    'ShieldAlert',
     // 2026-10-28: el ticket que esperó más de 10 minutos y no salió.
     IMPRESION_VENCIDA:  'Printer',
+    // 2026-10-28: la vigilancia de seguridad (un control que cambió, una cuenta
+    // sin uso o sin dueño, una entrada de noche). Va a gerencia y TH.
+    SEGURIDAD_VIGILANCIA: 'ShieldAlert',
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.

@@ -227,6 +227,33 @@ fácil y qué tan grave** es lo que deja hacer hoy, no por esfuerzo.
 
 ### 3.7 · Vigilancia continua y `gate:seguridad`
 
+> ✅ **Hecho el 2026-10-28** (migración `20261029023934`). Decisión del usuario:
+> los avisos van a **Gerente General y Jefe/a de Talento Humano**, por cargo.
+>
+> - **Al momento**: el trigger `seguridad_aviso_cambio` sobre `security_config`
+>   avisa cualquier alta, baja o cambio de estado (no de la nota), con quién lo
+>   hizo — o «alguien sin sesión del portal» si fue por la base directa.
+> - **Cada mañana a las 7:00 SV** (`seguridad-vigilancia-diaria` →
+>   `vigilar_seguridad()`): cuenta de persona activa 60+ días sin entrar y
+>   abierta; cuenta sin bloquear cuyo dueño no está activo o que no es de nadie;
+>   entrada entre 22:00 y 05:00 SV en las últimas 24 h. Cada hallazgo se avisa
+>   una vez (`avisos_emitidos`).
+> - **`npm run gate:seguridad`**: policy de escritura con `true` que no sea sólo
+>   de `service_role`; `user_metadata` en una policy o función de la base; una
+>   edge function que autorice leyendo `user_metadata` (esto último también en
+>   el pre-commit); y que el trigger y el cron sigan vivos.
+>
+> Quedó afuera, a propósito: «sesiones que leen tablas fuera de sus módulos» y
+> «dispositivos nuevos en cuentas de alto privilegio». La primera no tiene
+> fuente (no hay registro de lecturas por tabla); la segunda es §3.6, en espera
+> por decisión del usuario. La entrada «fuera del horario» se mide contra la
+> noche (22:00–05:00) y no contra el turno de cada quien, porque los horarios
+> todavía no están cargados (ítem 14).
+>
+> Medido al aplicarlo: 2 personas activas sin entrar en 60 días, 0 cuentas
+> sueltas abiertas (las 8 sin dueño están bloqueadas), 0 entradas de noche en
+> 30 días.
+
 - **Qué.** Un cron diario que **avisa, nunca bloquea**: cuentas activas sin uso
   en 60 días, sesiones que leen tablas fuera de sus módulos, dispositivos nuevos
   en cuentas de alto privilegio, actividad fuera del horario de la sala y —el que

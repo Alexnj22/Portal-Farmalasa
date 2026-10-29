@@ -35450,6 +35450,9 @@ export type Database = {
       }
       sec_avisa: { Args: { p_key: string }; Returns: boolean }
       sec_exige: { Args: { p_key: string }; Returns: boolean }
+      seguridad_destinatarios: { Args: never; Returns: string[] }
+      seguridad_rotulo_control: { Args: { p_key: string }; Returns: string }
+      seguridad_rotulo_estado: { Args: { p_estado: string }; Returns: string }
       seleccionar_muestra_ciclica: {
         Args: { p_branch_id: number; p_tamano?: number }
         Returns: {
@@ -35904,6 +35907,7 @@ export type Database = {
         Returns: Json
       }
       vigilar_reinicio_de_la_base: { Args: never; Returns: undefined }
+      vigilar_seguridad: { Args: never; Returns: Json }
       wallet_registros_por_avisar: {
         Args: never
         Returns: {

@@ -5091,6 +5091,22 @@
    "area": "permisos",
    "por": "nombre"
   },
+  "seguridad_aviso_cambio_de_control": {
+   "area": "sistema",
+   "por": "trigger"
+  },
+  "seguridad_destinatarios": {
+   "area": "sistema",
+   "por": "llamada"
+  },
+  "seguridad_rotulo_control": {
+   "area": "sistema",
+   "por": "llamada"
+  },
+  "seguridad_rotulo_estado": {
+   "area": "sistema",
+   "por": "llamada"
+  },
   "seleccionar_muestra_ciclica": {
    "area": "inventario",
    "por": "tablas"
@@ -5466,6 +5482,10 @@
    "por": "código"
   },
   "vigilar_reinicio_de_la_base": {
+   "area": "sistema",
+   "por": "cron"
+  },
+  "vigilar_seguridad": {
    "area": "sistema",
    "por": "cron"
   },

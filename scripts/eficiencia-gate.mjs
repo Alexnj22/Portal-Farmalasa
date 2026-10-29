@@ -128,6 +128,13 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'seguridad-vigilancia-diaria', slug: null, cadencia: '0 13 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'La vigilancia de seguridad (2026-10-28, PENDIENTES 13): cuentas sin uso en 60 días, cuentas '
+          + 'abiertas sin dueño activo y entradas de noche, avisadas una vez a gerencia y TH. Lee '
+          + '`auth.users`/`auth.sessions` (~130 filas) y `employees`. Sólo la base propia.',
+  },
+  {
     job: 'impresion-vencer-2min', slug: null, cadencia: '*/2 * * * *',
     corridasDia: 720, sistema: 0,
     motivo: 'Vence el ticket que esperó más de 10 min en la cola aunque la caja siga apagada, y le avisa '

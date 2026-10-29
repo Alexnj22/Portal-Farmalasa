@@ -85,6 +85,7 @@
     "comparar:diferencia-de-corte": "npx --yes vite-node scripts/comparar-diferencia-de-corte.mjs",
     "gate:tipos": "node scripts/tipos-gate.mjs",
     "gate:alcance": "node scripts/alcance-gate.mjs",
+    "gate:seguridad": "node scripts/seguridad-gate.mjs",
     "gate:app-nativa": "node scripts/app-nativa-gate.mjs",
     "tipos:base": "bash -c 'd=$(mktemp -d) && (cd $d && supabase gen types typescript --project-id sacecdkdmsdvgqnrsett --schema public) > src/types/database.ts'",
     "publicar": "node scripts/publicar.mjs",

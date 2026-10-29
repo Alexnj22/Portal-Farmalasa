@@ -140,6 +140,14 @@ if git diff --cached --name-only | grep -qE '^(supabase/functions/|scripts/alcan
   node scripts/alcance-gate.mjs --hook || exit 1
 fi
 
+# seguridad-gate: sólo si el commit toca una edge function. En `--hook` no sale
+# a la red: busca una edge function que decida un permiso leyendo
+# `user_metadata` (lo escribe el navegador). Las policies abiertas y la
+# vigilancia viva las mira `npm run gate:seguridad` al cerrar. (2026-10-28)
+if git diff --cached --name-only | grep -qE '^(supabase/functions/|scripts/seguridad-gate)'; then
+  node scripts/seguridad-gate.mjs --hook || exit 1
+fi
+
 # undefinidos-gate: sólo si el commit toca `src/`. Corre la regla `no-undef` de
 # ESLint —y SÓLO esa— sobre lo que el índice conoce. Bloqueante en cero.
 #

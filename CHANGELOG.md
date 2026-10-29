@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.7 — Compras: el aviso de la carga cuenta lo ya confirmado
+
+El aviso «N renglones necesitan un ojo» de la carga de compras se cuenta con
+lo que ya se resolvió en pantalla. Antes era la foto de cuando se abrió el
+documento: dos productos recién confirmados seguían saliendo «por confirmar»
+al lado de su sello verde. También cuenta el lote y el vencimiento tecleados.
+
 ## v2.1381.6 — Foto desde el teléfono en la evidencia y el catálogo
 
 Reporte de sala: en un descarte por daño, desde la computadora no había forma

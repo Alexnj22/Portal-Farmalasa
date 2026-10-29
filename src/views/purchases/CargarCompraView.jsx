@@ -346,8 +346,26 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
         setRes(res);
     };
 
-    const resumen = p?.resumen;
-    const faltan = (p?.renglones ?? []).filter(r => r.falta.length > 0).length;
+    // El aviso se cuenta ACÁ, con lo que la persona ya resolvió en pantalla
+    // (lo confirmado y el lote/vencimiento tecleados). El `resumen` del
+    // servidor es la foto de cuando se abrió: con él, dos renglones recién
+    // confirmados seguían saliendo «por confirmar» junto a su sello verde.
+    const estado = (p?.renglones ?? []).map((r, i) => {
+        const confirmado = !!elegidos[r.codigo_proveedor];
+        return {
+            sin_producto: !r.producto_id && !confirmado,
+            a_confirmar: !!r.producto_id && !r.seguro && !confirmado,
+            sin_lote: !ajustes[i]?.lote,
+            sin_vencimiento: !ajustes[i]?.vence,
+        };
+    });
+    const contar = (k) => estado.filter(e => e[k]).length;
+    const resumen = p && {
+        renglones: p.renglones.length,
+        sin_producto: contar('sin_producto'), a_confirmar: contar('a_confirmar'),
+        sin_lote: contar('sin_lote'), sin_vencimiento: contar('sin_vencimiento'),
+    };
+    const faltan = estado.filter(e => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento).length;
     const revision = resultado?.revision;
     const pendientesDeVence = (revision?.renglones ?? []).filter(x => x.vence_pendiente).length;
     const entraComo = useMemo(() => new Map((revision?.renglones ?? []).map(x => [x.renglon, x])), [revision]);

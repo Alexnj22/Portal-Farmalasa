@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.10 — Tratamientos: cuenta cuánto se compra, no sólo cada cuánto
+
+La regla de v2.1359.8 sólo miraba la frecuencia. Una Cardioaspirina de 30
+tabletas cada ~70 días salía como tratamiento (cubre el 42% de los días) y el
+aviso de un Enalapril en caja de 100 salía por el promedio de días, no por
+cuándo se acaba lo comprado (migración `20261029154528`):
+
+- `tratamiento_dias_por_unidad()`: tabletas del «X 100» del nombre entre la
+  presentación más grande (caja de 10 blísteres → 10 por blíster), una toma
+  diaria; anticonceptivo oral 28 días, inyectable 30 (trimestral 90),
+  alendronato semanal. Si no se puede saber (inhaladores, soluciones,
+  insulina en vial), no cuenta.
+- **Cobertura ≥ 70%**: lo comprado antes de la última compra cubre al menos el
+  70% de los días entre la primera y la última. 387 → 162 tratamientos.
+- `app_tratamientos.se_acaba` = última compra + lo que dura esa compra. El aviso
+  sale de ahí; la app, el expediente y el chat la leen. «Cada N días» sigue
+  siendo la frecuencia.
+- La detección deja la lista igual a la definición: lo activo que deja de
+  cumplir sale (los suspendidos por el cliente se quedan).
+
 ## v2.1359.9 — La bolsa en camino muestra lo que salió, no lo que se pidió
 
 Un despacho incompleto se veía completo del lado de quien recibe. Salud 2 → Salud 1,

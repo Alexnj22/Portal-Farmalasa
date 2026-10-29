@@ -2425,42 +2425,51 @@ export type Database = {
       }
       app_tratamientos: {
         Row: {
+          cobertura: number | null
           created_at: string
           customer_id: number
+          dura_dias: number | null
           estado: string
           id: number
           intervalo_dias: number
           motivo: string | null
           nombre: string
           product_id: number
+          se_acaba: string | null
           suspendido_at: string | null
           ultima_compra: string
           updated_at: string
           veces: number
         }
         Insert: {
+          cobertura?: number | null
           created_at?: string
           customer_id: number
+          dura_dias?: number | null
           estado?: string
           id?: number
           intervalo_dias: number
           motivo?: string | null
           nombre: string
           product_id: number
+          se_acaba?: string | null
           suspendido_at?: string | null
           ultima_compra: string
           updated_at?: string
           veces: number
         }
         Update: {
+          cobertura?: number | null
           created_at?: string
           customer_id?: number
+          dura_dias?: number | null
           estado?: string
           id?: number
           intervalo_dias?: number
           motivo?: string | null
           nombre?: string
           product_id?: number
+          se_acaba?: string | null
           suspendido_at?: string | null
           ultima_compra?: string
           updated_at?: string
@@ -35826,6 +35835,10 @@ export type Database = {
           producto: string
           request_id: string
         }[]
+      }
+      tratamiento_dias_por_unidad: {
+        Args: { p_product_id: number }
+        Returns: number
       }
       turno_del_dia: { Args: { p_dia: Json; p_turno?: Json }; Returns: Json }
       unblock_employee: { Args: { p_employee_id: string }; Returns: boolean }

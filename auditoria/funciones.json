@@ -5360,6 +5360,10 @@
    "area": "traslados",
    "por": "código"
   },
+  "tratamiento_dias_por_unidad": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
   "turno_del_dia": {
    "area": "horarios",
    "por": "a mano",

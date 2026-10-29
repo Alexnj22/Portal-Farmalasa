@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.1 — Inventario: pedir conteo desde el detalle del producto
+
+En Inventario, al abrir un producto (la fila en escritorio, la ficha en el
+teléfono) aparece **«Pedir conteo»** debajo de sus ubicaciones. Abre el mismo
+diálogo de Consultas de existencia con el producto y la sala ya elegidos; se
+pueden sumar otras salas o todas. Sólo para quien cuenta inventario
+(`conteo_inventario.can_edit`). El diálogo se carga al apretar, no viaja con la vista.
+
 ## v2.1381.0 — Cargar compra: el envío a Bodega, apagado, y lo que enseñó compararla con Bodega
 
 Antes del primer envío real se armaron con el portal tres compras de Steiner

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import {
     AlertTriangle, Calendar, CalendarClock, Loader2, Package, PackageX,
-    Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign,
+    Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign, ScanSearch,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -24,6 +24,11 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { loteAMostrar, unidadesDeUbicacion, unidadesVencidasPorProducto, vencimientoDe } from '@nucleo/utils/inventarioDeSala';
 
 import { ERP_NAMES } from '@nucleo/constants/erp';
+import { useAuth } from '@nucleo/context/AuthContext';
+
+// Pedirle a una o varias salas que cuenten el producto (Consultas de
+// existencia). Diferido: sólo hace falta al apretar el botón.
+const NuevaConsultaExistencia = lazy(() => import('../../components/inventario/NuevaConsultaExistencia'));
 // Orden numérico a propósito en esta pestaña (no el de despacho de `ERP_ORDEN`).
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
 // Guarda el NOMBRE de la variante, no tres clases (2026-07-28, D3.5).
@@ -88,7 +93,7 @@ const COLS_UBICACION = [
 // dibuja fichas— y el mismo componente se monta en `ExpedienteMovil`. Escrito
 // una vez para que no puedan divergir: era la única forma de ver en qué
 // ubicación está cada lote, y desde el teléfono no se alcanzaba.
-function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false }) {
+function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false, onPedirConteo = null }) {
     const hayRegulares = (regulares || []).length > 0;
     const hayVencidos  = (vencidos  || []).length > 0;
 
@@ -117,11 +122,22 @@ function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false }) 
 
     // En el expediente no va el degradado de la fila expandida: ahí no hay fila
     // de la que colgar, y el material de la hoja ya es el fondo.
-    if (comoPanel) return <div className="px-1 pb-2">{cuerpo}</div>;
+    // ¿Lo que dice acá es lo que hay en el estante? La sala cuenta a ciegas y
+    // el portal dice si cuadra.
+    const pedir = onPedirConteo && (
+        <div className="pt-2">
+            <Button variant="secondary" size="sm" icon={ScanSearch} onClick={onPedirConteo}>
+                Pedir conteo
+            </Button>
+        </div>
+    );
+
+    if (comoPanel) return <div className="px-1 pb-2">{cuerpo}{pedir}</div>;
 
     return (
         <div className="bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-[var(--fila-expandida-fin)] px-10 py-3">
             {cuerpo}
+            {pedir}
         </div>
     );
 }
@@ -192,6 +208,9 @@ export default function TabInventario({ searchTerm = '' }) {
     const [sixMonthsTotal,   setSixMonthsTotal]   = useState(0);
     const [inversionTotal,   setInversionTotal]   = useState(0);
     const [expandedKey,      setExpandedKey]      = useState(null);
+    const { hasPermission } = useAuth();
+    const puedePedirConteo = hasPermission('conteo_inventario', 'can_edit');
+    const [pedirConteo, setPedirConteo] = useState(null);
     const [expandedData,     setExpandedData]     = useState({});
     const [expandedVencidos, setExpandedVencidos] = useState({});
     const [expandLoading,    setExpandLoading]    = useState(new Set());
@@ -578,6 +597,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                 cargando={expandLoading.has(key)}
                                                 regulares={expandedData[key]}
                                                 vencidos={expandedVencidos[key]}
+                                                onPedirConteo={puedePedirConteo ? () => setPedirConteo(group) : null}
                                             />
                                         </td>
                                     </tr>
@@ -602,10 +622,20 @@ export default function TabInventario({ searchTerm = '' }) {
                             cargando={expandLoading.has(k)}
                             regulares={expandedData[k]}
                             vencidos={expandedVencidos[k]}
+                            onPedirConteo={puedePedirConteo ? () => setPedirConteo(g) : null}
                         />
                     );
                 }}
             </ExpedienteMovil>
+
+            {pedirConteo && (
+                <Suspense fallback={null}>
+                    <NuevaConsultaExistencia
+                        producto={{ id: pedirConteo.erp_product_id, nombre: pedirConteo.descripcion }}
+                        salasIniciales={[pedirConteo.erp_sucursal_id]}
+                        onCerrar={() => setPedirConteo(null)} />
+                </Suspense>
+            )}
 
             {/* ── Pagination ── */}
             {!loading && total > 0 && (

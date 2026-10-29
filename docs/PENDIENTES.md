@@ -85,8 +85,9 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 18. ⏸ **Disposición final y devoluciones de antibióticos** — **en espera: se arma
     con los procedimientos que el usuario ya tiene hechos y todavía no subió**
     (usuario, 2026-10-28). — BITACORAS:172
-19. **Borradores de los procedimientos 7–9** (antibióticos, vencidos,
-    farmacovigilancia) para que firme el regente. — BITACORAS:142
+19. ⏸ **Procedimientos 7–9** (antibióticos, vencidos, farmacovigilancia) —
+    **en espera: el usuario ya los tiene hechos y los va a subir** (2026-10-28).
+    — BITACORAS:142
 20. Lote y vencimiento en las inyecciones. — BITACORAS:215
 21. Fotos del bucket `recetas` dentro del respaldo semanal. — BITACORAS:306
 22. Dueño del lote fundido o vencido en el libro (con datos de noviembre). — BITACORAS:177

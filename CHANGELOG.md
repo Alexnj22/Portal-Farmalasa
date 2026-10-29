@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.6 — Compras: el freno de «algo cambió» compara el contenido
+
+Primera prueba real del envío a Bodega (29-oct, C. Imberton): el portal la
+frenó con «Algo cambió desde la revisión» sin que nada cambiara. La revisión
+se guarda en `jsonb`, que reordena las claves, y el freno comparaba el texto.
+Ahora compara con las claves ordenadas. No se mandó nada: el freno corre
+antes del POST.
+
 ## v2.1382.5 — Compras: la carga pide la cantidad que entra
 
 En la carga de compras, el campo «Unid. por caja» pasa a ser **«Cantidad a

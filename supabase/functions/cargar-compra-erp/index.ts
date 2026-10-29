@@ -69,6 +69,16 @@ async function productoDelSistema(cookie: string, id: number): Promise<ProductoD
 }
 
 
+/** JSON con las claves ordenadas a todo nivel: igual para el mismo contenido. */
+function canonico(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonico).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v as Record<string, unknown>).sort()
+      .map((k) => `${JSON.stringify(k)}:${canonico((v as Record<string, unknown>)[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(v);
+}
+
 /**
  * El envío real. Cinco frenos antes del POST, y ninguno sobra:
  * 1. la revisión de ESTA llamada no tiene problemas;
@@ -99,7 +109,10 @@ async function enviarCompra(admin: any, x: {
   if (Date.now() - new Date(rev.created_at).getTime() > 30 * 60_000) {
     return { enviada: false, error: "La revisión tiene más de 30 minutos: revisa la carga de nuevo." };
   }
-  if (JSON.stringify(rev.sobre) !== JSON.stringify(x.sobre)) {
+  // Con las claves ORDENADAS: `jsonb` guarda el objeto con su propio orden
+  // (largo de la clave, después alfabético), así que comparar el texto tal
+  // cual daba «algo cambió» siempre — pasó en la primera prueba, 29-oct.
+  if (canonico(rev.sobre) !== canonico(x.sobre)) {
     return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisa la carga de nuevo." };
   }
 

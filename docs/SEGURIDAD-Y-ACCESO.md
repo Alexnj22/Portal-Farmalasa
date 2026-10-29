@@ -228,7 +228,11 @@ fácil y qué tan grave** es lo que deja hacer hoy, no por esfuerzo.
 ### 3.7 · Vigilancia continua y `gate:seguridad`
 
 > ✅ **Hecho el 2026-10-28** (migración `20261029023934`). Decisión del usuario:
-> los avisos van a **Gerente General y Jefe/a de Talento Humano**, por cargo.
+> los avisos van **sólo a Edwin Núñez** («solo a edwin. nadie mas»;
+> `20261029025157`). Primero se pusieron a Gerente General y Jefe/a de TH; el
+> usuario lo corrigió el mismo día. Como es el único destinatario, el aviso de
+> cambio de control le llega **aunque el cambio lo haya hecho él** — si no,
+> una sesión suya robada apagaría un control sin que nadie se enterara.
 >
 > - **Al momento**: el trigger `seguridad_aviso_cambio` sobre `security_config`
 >   avisa cualquier alta, baja o cambio de estado (no de la nota), con quién lo

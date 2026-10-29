@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.54 — Vigilancia de seguridad: sólo a Edwin
+
+Decisión del usuario: «solo a edwin. nadie mas». `seguridad_destinatarios()`
+devuelve sólo a Edwin Núñez (migración `20261029025157`). Y como es el único
+destinatario, el aviso de cambio de control le llega aunque el cambio lo haya
+hecho él: `notify_employees` saltea a quien actúa, y una sesión suya robada
+habría apagado un control en silencio. Probado en pruebas: el aviso llega y la
+sesión queda intacta después.
+
 ## v2.1357.53 — Vigilancia de seguridad: avisa a gerencia y TH
 
 PENDIENTES 13 / SEGURIDAD-Y-ACCESO §3.7. Avisa, nunca bloquea; los avisos van

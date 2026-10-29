@@ -154,6 +154,10 @@
       "guarda": "publica",
       "motivo": "Es el login."
     },
+    "cargar-compra-erp": {
+      "guarda": "sin-sala",
+      "motivo": "Carga compras SIEMPRE en Bodega (sucursal fija en el código); el navegador no elige sala. Exige can_edit de cargar_compra."
+    },
     "enviar-producto-erp": {
       "guarda": "alcance"
     },

@@ -5,7 +5,9 @@ import { anotar } from './audit';
 // Cargar compra desde el documento — la capa de datos.
 //
 // **Nada de esto escribe en el sistema de origen.** La pantalla arma la compra
-// y la muestra; registrarla allá es un paso posterior que todavía no existe.
+// y la muestra, y `simularCarga` arma el formulario exacto que se mandaría y lo
+// revisa — sólo leyendo del otro lado. El envío real está apagado hasta la
+// primera carga con Bodega mirando (docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md).
 //
 // La propuesta la calcula la edge function `leer-dte-json`, que es la única que
 // puede leer el JSON y el PDF del bucket privado. Se la invoca con la sesión de
@@ -49,14 +51,18 @@ export async function fetchPropuesta(documentId) {
 //
 // Anota su propia entrada en la bitácora (D3, 2026-09-28). `contexto` lleva lo
 // legible que sólo la pantalla conoce (el nombre del proveedor y del producto).
-export async function confirmarProducto(emisorNit, codigoProveedor, productId, contexto = {}) {
+//
+// `factor`: cuántas unidades del producto trae cada unidad que factura el
+// proveedor («CJA 10 U» → 10). Se aprende junto con el producto.
+export async function confirmarProducto(emisorNit, codigoProveedor, productId, contexto = {}, factor = 1) {
     const { error } = await supabase.rpc('confirmar_alias_producto', {
         p_emisor_nit: emisorNit,
         p_codigo_prov: codigoProveedor,
         p_product_id: Number(productId),
+        p_factor: Number(factor) > 0 ? Number(factor) : 1,
     });
     if (!error) {
-        anotar('COMPRA_ALIAS_CONFIRMADO', productId, { codigo: codigoProveedor, ...contexto });
+        anotar('COMPRA_ALIAS_CONFIRMADO', productId, { codigo: codigoProveedor, factor, ...contexto });
     }
     return { error: error?.message ?? null };
 }
@@ -136,4 +142,26 @@ export async function buscarProductos(texto, limite = 12) {
     });
     if (error) return { filas: [], error };
     return { filas: data ?? [], error: null, aproximado };
+}
+
+/**
+ * Armar la compra como la recibiría el otro sistema y revisarla, SIN mandarla.
+ *
+ * `renglones` lleva sólo las decisiones —`{ [índice]: { product_id, factor,
+ * lote, vence } }`—: cantidades, costos y totales la función los vuelve a leer
+ * del documento. Devuelve `{ sobre, revision }`; `revision.problemas` vacío
+ * significa que se podría mandar.
+ */
+export async function simularCarga({ documentId, uso, renglones, diasCredito }) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
+        body: { document_id: documentId, uso, renglones, dias_credito: diasCredito },
+    });
+    if (error) {
+        let msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+        return { resultado: null, error: msg ?? 'No se pudo armar la compra.' };
+    }
+    if (data?.error) return { resultado: null, error: data.error };
+    anotar('COMPRA_SIMULADA', documentId, { uso, carga: data?.carga_id, listo: data?.revision?.listo });
+    return { resultado: data, error: null };
 }

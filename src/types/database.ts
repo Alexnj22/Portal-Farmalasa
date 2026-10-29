@@ -6279,6 +6279,77 @@ export type Database = {
           },
         ]
       }
+      compra_carga: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          document_id: number
+          erp_compra_id: number | null
+          error: string | null
+          estado: string
+          id: number
+          revision: Json
+          sobre: Json | null
+          updated_at: string
+          uso: string
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          document_id: number
+          erp_compra_id?: number | null
+          error?: string | null
+          estado: string
+          id?: never
+          revision?: Json
+          sobre?: Json | null
+          updated_at?: string
+          uso: string
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          document_id?: number
+          erp_compra_id?: number | null
+          error?: string | null
+          estado?: string
+          id?: never
+          revision?: Json
+          sobre?: Json | null
+          updated_at?: string
+          uso?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_carga_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_carga_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_carga_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_carga_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_documento_leido: {
         Row: {
           document_id: number
@@ -6464,6 +6535,7 @@ export type Database = {
           confirmado_por: string | null
           created_at: string
           emisor_nit: string
+          factor_proveedor: number
           id: number
           origen: string
           product_id: number
@@ -6475,6 +6547,7 @@ export type Database = {
           confirmado_por?: string | null
           created_at?: string
           emisor_nit: string
+          factor_proveedor?: number
           id?: number
           origen?: string
           product_id: number
@@ -6486,6 +6559,7 @@ export type Database = {
           confirmado_por?: string | null
           created_at?: string
           emisor_nit?: string
+          factor_proveedor?: number
           id?: number
           origen?: string
           product_id?: number
@@ -30109,6 +30183,7 @@ export type Database = {
         Args: {
           p_codigo_prov: string
           p_emisor_nit: string
+          p_factor?: number
           p_product_id: number
         }
         Returns: undefined

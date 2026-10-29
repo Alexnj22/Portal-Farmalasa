@@ -14,12 +14,14 @@ import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidModal from '../../components/common/LiquidModal';
 import PortalInput from '../../components/common/PortalInput';
+import SegmentedControl from '../../components/common/SegmentedControl';
+import { saveDraft, loadDraft } from '@nucleo/utils/draftUtils';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchPropuesta, confirmarProducto, buscarProductos,
-    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -124,6 +126,19 @@ function BuscadorProducto({ onElegir, onCancelar }) {
 }
 
 /* ─── La compra armada ─────────────────────────────────────────────────────── */
+const USOS = [
+    { value: 'venta',   label: 'Para vender' },
+    { value: 'consumo', label: 'Para consumo' },
+];
+
+// Lo que la persona ajustó en un renglón: unidades por cada una del proveedor,
+// lote y vencimiento. Arranca con lo que trae la propuesta.
+const ajusteInicial = (r) => ({
+    factor: String(r.factor_proveedor ?? 1),
+    lote: r.lote ?? '',
+    vence: r.vence ? r.vence.slice(0, 7) : '',
+});
+
 function Propuesta({ doc, puedeEditar, onCerrar }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
@@ -131,30 +146,78 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const [elegidos, setEleg] = useState({});
     const [buscando, setBusc] = useState(null);
     const [guardando, setG]   = useState(null);
+    // ── Para armar la carga ──
+    const [uso, setUso]         = useState('venta');
+    const [ajustes, setAjustes] = useState({});   // {índice: ajusteInicial}
+    const [dias, setDias]       = useState('');
+    const [revisando, setRev]   = useState(false);
+    const [resultado, setRes]   = useState(null);
 
     const cargar = useCallback(async () => {
-        setP(null); setError('');
+        setP(null); setError(''); setRes(null);
         const { propuesta, error: e } = await fetchPropuesta(doc.document_id);
         if (e) { setError(e); return; }
         setP(propuesta);
+        // Lo que la persona ya había ajustado sobre ESTE documento vuelve: la
+        // sesión se cierra sola a los pocos minutos y una factura de 30
+        // renglones no se vuelve a teclear.
+        const b = loadDraft(`cargar-compra:${doc.document_id}`);
+        setAjustes(b?.ajustes ?? Object.fromEntries(propuesta.renglones.map((r, i) => [i, ajusteInicial(r)])));
+        setUso(b?.uso ?? 'venta');
+        setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
     }, [doc.document_id]);
+
+    useEffect(() => {
+        if (p) saveDraft(`cargar-compra:${doc.document_id}`, { ajustes, uso, dias });
+    }, [p, ajustes, uso, dias, doc.document_id]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
 
-    const confirmar = async (renglon, producto) => {
+    const ajustar = (i, campo, valor) => {
+        setAjustes(a => ({ ...a, [i]: { ...a[i], [campo]: valor } }));
+        setRes(null);   // lo revisado ya no es lo que se ve
+    };
+
+    const confirmar = async (renglon, i, producto) => {
         setG(renglon.codigo_proveedor);
         const { error: e } = await confirmarProducto(
             p.documento.emisor_nit, renglon.codigo_proveedor, producto.id,
-            { proveedor: p.documento.emisor, producto: producto.nombre });
+            { proveedor: p.documento.emisor, producto: producto.nombre },
+            ajustes[i]?.factor);
         setG(null);
         if (e) { setError(e); return; }
-        setEleg(x => ({ ...x, [renglon.codigo_proveedor]: { product_id: producto.id, nombre: producto.nombre } }));
+        setEleg(x => ({ ...x, [renglon.codigo_proveedor]: { product_id: producto.id, nombre: producto.nombre, factor: ajustes[i]?.factor } }));
         setBusc(null);
+        setRes(null);
+    };
+
+    // El producto que se mandaría: lo elegido acá, o lo que llegó SEGURO
+    // (código de barras o diccionario). Un parecido sin confirmar no viaja: la
+    // revisión lo devuelve como «sin producto elegido», que es lo que es.
+    const productoDe = (r) => elegidos[r.codigo_proveedor]?.product_id ?? (r.seguro ? r.producto_id : null);
+
+    const revisar = async () => {
+        setRev(true); setError(''); setRes(null);
+        const renglones = Object.fromEntries(p.renglones.map((r, i) => [i, {
+            product_id: productoDe(r),
+            factor: Number(ajustes[i]?.factor) || 1,
+            lote: ajustes[i]?.lote || null,
+            vence: ajustes[i]?.vence || null,
+        }]));
+        const { resultado: res, error: e } = await simularCarga({
+            documentId: doc.document_id, uso, renglones,
+            diasCredito: dias === '' ? null : Number(dias),
+        });
+        setRev(false);
+        if (e) { setError(e); return; }
+        setRes(res);
     };
 
     const resumen = p?.resumen;
     const faltan = (p?.renglones ?? []).filter(r => r.falta.length > 0).length;
+    const revision = resultado?.revision;
+    const entraComo = useMemo(() => new Map((revision?.renglones ?? []).map(x => [x.renglon, x])), [revision]);
 
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-5xl"
@@ -190,8 +253,41 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                               nota={p.encabezado.dias_credito_origen} />
                     </div>
 
+                    {/* Para qué es la compra. Consumo se registra igual en el
+                        libro, pero como gasto y sin sumar existencias. */}
+                    <div className="flex flex-wrap items-end gap-3 mb-3">
+                        <SegmentedControl label="La compra es" value={uso} onChange={(v) => { setUso(v); setRes(null); }} options={USOS} />
+                        <div className="w-32">
+                            <PortalInput compact label="Días de crédito" type="number" min="0" value={dias}
+                                onChange={e => { setDias(e.target.value); setRes(null); }} />
+                        </div>
+                    </div>
+                    {uso === 'consumo' && (
+                        <Notice variant="info" icon={HelpCircle}>
+                            Se registra en el libro de compras como <b>gasto</b>: no suma existencias y cada renglón
+                            entra con su descripción. Lo de consumo no se reparte a las salas.
+                        </Notice>
+                    )}
+
+                    {revision && (revision.listo ? (
+                        <Notice variant="success" icon={CheckCircle2}>
+                            <b>Lista para cargar.</b> {revision.renglones.length} renglones · total{' '}
+                            {formatMoney(revision.total_armado)}, igual al del documento.
+                            <span className="block text-micro mt-1">Todavía no se manda: esto fue una revisión.</span>
+                        </Notice>
+                    ) : (
+                        <Notice variant="warning" icon={AlertTriangle}>
+                            <b>Antes de cargarla hay que resolver {revision.problemas.length === 1 ? 'esto' : `${revision.problemas.length} cosas`}:</b>
+                            <ul className="list-disc pl-5 mt-1">
+                                {revision.problemas.map((x, k) => (
+                                    <li key={k}>{x.renglon != null ? `Renglón ${x.renglon + 1}: ` : ''}{x.texto}</li>
+                                ))}
+                            </ul>
+                        </Notice>
+                    ))}
+
                     {/* Lo que hay que mirar antes de nada. */}
-                    {faltan > 0 && (
+                    {!revision && uso === 'venta' && faltan > 0 && (
                         <Notice variant="warning" icon={AlertTriangle}>
                             <b>{faltan}</b> de {resumen.renglones} renglones necesitan un ojo:{' '}
                             {/* Sólo lo que de verdad falta. Enumerar las cuatro
@@ -209,7 +305,7 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                             ))}
                         </Notice>
                     )}
-                    {faltan === 0 && (
+                    {!revision && uso === 'venta' && faltan === 0 && (
                         <Notice variant="success" icon={CheckCircle2}>
                             Los {resumen.renglones} renglones están completos.
                         </Notice>
@@ -220,53 +316,76 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                             const elegido = elegidos[r.codigo_proveedor];
                             const o = ORIGEN[elegido ? 'aprendido' : r.match_origen] ?? null;
                             const Icono = o?.icon ?? HelpCircle;
+                            const aj = ajustes[i] ?? ajusteInicial(r);
+                            const conProducto = !!productoDe(r);
+                            const factorCambio = conProducto && r.codigo_proveedor
+                                && Number(aj.factor) !== Number(elegido?.factor ?? r.factor_proveedor ?? 1);
+                            const sim = entraComo.get(i);
                             return (
                                 <div key={`${r.codigo_proveedor}-${i}`} data-surface="card" className="px-3 py-2.5">
                                     <div className="flex items-start gap-3 flex-wrap">
                                         <div className="flex-1 min-w-[14rem]">
                                             <p className="text-label font-black text-content">
-                                                {elegido?.nombre ?? r.producto ?? '— sin producto —'}
+                                                {uso === 'consumo' ? r.descripcion : (elegido?.nombre ?? r.producto ?? '— sin producto —')}
                                             </p>
-                                            <p className="text-micro text-content-3">{r.descripcion}</p>
+                                            {uso === 'venta' && <p className="text-micro text-content-3">{r.descripcion}</p>}
                                         </div>
                                         <div className="text-right shrink-0">
                                             <p className="text-label font-black text-content tabular-nums">
                                                 {r.cantidad} × {formatMoney(r.costo)}
                                             </p>
-                                            <p className="text-micro text-content-3">
-                                                {r.lote ? `lote ${r.lote}` : 'sin lote'}
-                                                {' · '}
-                                                {r.vence ? `vence ${r.vence.slice(0, 7)}` : 'sin vencimiento'}
-                                            </p>
-                                        </div>
-                                        <div className="shrink-0 flex items-center gap-2">
-                                            {o && (
-                                                <Badge variant={elegido ? 'success' : o.variant} size="sm">
-                                                    <Icono size={11} className="mr-1 inline" />
-                                                    {elegido ? 'Confirmado' : o.label}
-                                                    {r.match_origen === 'parecido' && !elegido && r.match_similitud != null
-                                                        && ` · ${Math.round(r.match_similitud * 100)}%`}
-                                                </Badge>
-                                            )}
-                                            {puedeEditar && r.codigo_proveedor && !elegido && !r.listo && (
-                                                <Button size="xs" variant="ghost"
-                                                    loading={guardando === r.codigo_proveedor}
-                                                    onClick={() => setBusc(buscando === r.codigo_proveedor ? null : r.codigo_proveedor)}>
-                                                    {r.producto_id ? 'Es otro' : 'Elegir'}
-                                                </Button>
-                                            )}
-                                            {puedeEditar && r.producto_id && !elegido && r.match_origen === 'parecido' && (
-                                                <Button size="xs"
-                                                    loading={guardando === r.codigo_proveedor}
-                                                    onClick={() => confirmar(r, { id: r.producto_id, nombre: r.producto })}>
-                                                    Es correcto
-                                                </Button>
+                                            {sim?.existencias != null && (
+                                                <p className="text-micro text-success-text">
+                                                    entran {sim.existencias} unid.{sim.presentacion > 1 ? ` (en cajas de ${sim.presentacion})` : ''}
+                                                </p>
                                             )}
                                         </div>
+                                        {uso === 'venta' && (
+                                            <div className="shrink-0 flex items-center gap-2">
+                                                {o && (
+                                                    <Badge variant={elegido ? 'success' : o.variant} size="sm">
+                                                        <Icono size={11} className="mr-1 inline" />
+                                                        {elegido ? 'Confirmado' : o.label}
+                                                        {r.match_origen === 'parecido' && !elegido && r.match_similitud != null
+                                                            && ` · ${Math.round(r.match_similitud * 100)}%`}
+                                                    </Badge>
+                                                )}
+                                                {puedeEditar && r.codigo_proveedor && !elegido && !r.listo && (
+                                                    <Button size="xs" variant="ghost"
+                                                        loading={guardando === r.codigo_proveedor}
+                                                        onClick={() => setBusc(buscando === r.codigo_proveedor ? null : r.codigo_proveedor)}>
+                                                        {r.producto_id ? 'Es otro' : 'Elegir'}
+                                                    </Button>
+                                                )}
+                                                {puedeEditar && r.producto_id && !elegido && r.match_origen === 'parecido' && (
+                                                    <Button size="xs"
+                                                        loading={guardando === r.codigo_proveedor}
+                                                        onClick={() => confirmar(r, i, { id: r.producto_id, nombre: r.producto })}>
+                                                        Es correcto
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
+                                    {uso === 'venta' && (
+                                        <div className="mt-2 grid grid-cols-3 gap-2 max-w-xl">
+                                            <PortalInput compact labelDenso label="Unidades por cada una" type="number" min="1"
+                                                value={aj.factor} onChange={e => ajustar(i, 'factor', e.target.value)}
+                                                labelAction={factorCambio && puedeEditar ? (
+                                                    <Button size="xs" variant="ghost" loading={guardando === r.codigo_proveedor}
+                                                        onClick={() => confirmar(r, i, { id: productoDe(r), nombre: elegido?.nombre ?? r.producto })}>
+                                                        Recordar
+                                                    </Button>
+                                                ) : null} />
+                                            <PortalInput compact labelDenso label="Lote" value={aj.lote}
+                                                onChange={e => ajustar(i, 'lote', e.target.value)} />
+                                            <PortalInput compact labelDenso label="Vence" type="month" value={aj.vence}
+                                                onChange={e => ajustar(i, 'vence', e.target.value)} />
+                                        </div>
+                                    )}
                                     {buscando === r.codigo_proveedor && (
                                         <BuscadorProducto
-                                            onElegir={(prod) => confirmar(r, prod)}
+                                            onElegir={(prod) => confirmar(r, i, prod)}
                                             onCancelar={() => setBusc(null)} />
                                     )}
                                 </div>
@@ -279,9 +398,12 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
             <LiquidModal.Footer>
                 <div className="flex items-center gap-2 w-full">
                     <p className="text-micro text-content-3 flex-1">
-                        Esto no registra nada todavía: es la compra armada para revisarla.
+                        «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. No registra nada.
                     </p>
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
+                    {puedeEditar && p && (
+                        <Button size="sm" loading={revisando} onClick={revisar}>Revisar carga</Button>
+                    )}
                 </div>
             </LiquidModal.Footer>
         </LiquidModal>

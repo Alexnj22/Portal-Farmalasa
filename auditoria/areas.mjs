@@ -757,7 +757,7 @@ export const AREAS = [
                  'puntos_consulta_intentos', 'dte_rechazos_avisados'],
         edge: ['regularizar-dte', 'dte-para-cliente', 'sincronizar-fichas-clientes', 'push-cliente-erp',
                'aplicar-solicitud-facturacion', 'sync-sales-dte', 'sync-numero-control',
-               'backfill-dte-related-docs', 'leer-dte-json', 'mis-puntos',
+               'backfill-dte-related-docs', 'leer-dte-json', 'cargar-compra-erp', 'mis-puntos',
                // La dispara una sala desde Inicio, pero el EFECTO es fiscal:
                // escribe el correo en la ficha de origen y retransmite el DTE.
                'responder-dato-pedido'],
@@ -1117,7 +1117,7 @@ export const AREAS = [
                  'purchase_dte_documents', 'purchase_dte_claims', 'purchase_dte_processed_messages',
                  'purchase_dte_review_queue', 'purchase_claim_avisos', 'purchase_claim_lines',
                  'purchase_claim_rules', 'compra_documento_leido', 'compra_pago_aplicado',
-                 'compra_pagos', 'compra_producto_alias', 'compra_renglon_pendiente',
+                 'compra_pagos', 'compra_producto_alias', 'compra_renglon_pendiente', 'compra_carga',
                  'proveedores', 'proveedores_categorias', 'proveedores_maestro', 'suppliers',
                  'email_sync_accounts', 'email_sync_log'],
         edge: ['sync-erp-purchases', 'sync-purchase-emails', 'check-purchases-reconciliation',

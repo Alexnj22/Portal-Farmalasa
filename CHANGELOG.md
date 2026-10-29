@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1376.0 — Cargar compra: unidades por caja, consumo y revisión de la carga
+
+Pasos 1 a 3 de `docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md`. **No escribe
+en el sistema de la caja.**
+
+- **Unidades por cada una del proveedor**: el diccionario
+  (`compra_producto_alias.factor_proveedor`) aprende que «CJA 10 U» trae 10. La
+  carga busca la presentación de ese tamaño y, si no existe, entra por unidad
+  multiplicando la cantidad: sin esto la caja de 10 entraba como 1 unidad a 10
+  veces el costo.
+- **Para vender / para consumo**: consumo se arma como renglones de servicio,
+  clasificación Gasto (administración), sin sumar existencias.
+- **Revisar carga**: la función nueva `cargar-compra-erp` arma el formulario
+  EXACTO del sistema de la caja (`_shared/compraSobre.ts`, traducción de su
+  `senddata`/`totales`), sólo leyendo de allá (presentaciones y percepción del
+  proveedor), compara el total con el del documento y dice qué falta. Cada
+  revisión queda en `compra_carga` (estado `simulada`). El envío real responde
+  409 hasta la primera carga con Bodega mirando.
+- Lote, vencimiento y días de crédito editables por renglón, con borrador.
+
 ## v2.1375.1 — Ventas: la factura con error dice cuánto se debía cobrar, avisa a la sala y se marca en la fila
 
 Sigue de v2.1373.4.

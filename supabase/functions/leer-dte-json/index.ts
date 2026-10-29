@@ -350,6 +350,17 @@ Deno.serve(async (req: Request) => {
           }
         }
 
+        // Cuántas unidades trae cada una del proveedor, aprendido con el
+        // producto. Una lectura por documento, no una por renglón.
+        const { data: alias, error: errA } = await admin.from("compra_producto_alias")
+          .select("codigo_proveedor, product_id, factor_proveedor").eq("emisor_nit", d.emisor_nit);
+        if (errA) throw errA;
+        // Por código del proveedor; si no manda código, la llave es `#`+nombre
+        // normalizado en SQL (`norm_search`), que acá no se reproduce: se va
+        // por el producto, que es lo que el diccionario ya resolvió.
+        const factorDe = new Map((alias ?? []).map((a: any) => [a.codigo_proveedor, Number(a.factor_proveedor) || 1]));
+        const factorDelProducto = new Map((alias ?? []).map((a: any) => [a.product_id, Number(a.factor_proveedor) || 1]));
+
         const renglones = [];
         for (const it of items) {
           // Al emparejador va el NOMBRE LIMPIO, no la descripción cruda: el
@@ -378,6 +389,8 @@ Deno.serve(async (req: Request) => {
             total_linea: it?.ventaGravada ?? it?.ventaExenta ?? it?.ventaNoSuj ?? null,
             exento: Number(it?.ventaExenta ?? 0) > 0,
             producto_id: match?.product_id ?? null,
+            factor_proveedor: match?.origen === "aprendido"
+              ? (factorDe.get(String(it?.codigo ?? "").trim()) ?? factorDelProducto.get(match?.product_id) ?? 1) : 1,
             producto: match?.nombre ?? null,
             match_origen: match?.origen ?? "sin candidato",
             match_similitud: match?.similitud ?? null,

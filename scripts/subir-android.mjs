@@ -225,6 +225,15 @@ if (aab) {
   }
   writeFileSync(gradle, g);
 
+  // Más memoria para Gradle (2026-10-29): con expo-updates, la plantilla de
+  // Expo (-Xmx2048m, Metaspace 512m) se quedó corta — `OutOfMemoryError:
+  // Metaspace` en ksp y en el lint, y Gradle colgado sin terminar.
+  const propiedades = join(app, 'android', 'gradle.properties');
+  const p = readFileSync(propiedades, 'utf8');
+  const conMemoria = p.replace(/^org\.gradle\.jvmargs=.*$/m, 'org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1536m');
+  if (conMemoria === p && !p.includes('MaxMetaspaceSize=1536m')) console.warn('⚠ No se encontró org.gradle.jvmargs en gradle.properties: se compila con la memoria de la plantilla.');
+  writeFileSync(propiedades, conMemoria);
+
   const android = join(app, 'android');
   correr(`./gradlew bundleRelease${banderas.has('--apk') ? ' assembleRelease' : ''} --console=plain`, android);
 

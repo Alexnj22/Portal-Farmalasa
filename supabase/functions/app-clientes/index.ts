@@ -1770,15 +1770,27 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // resuelve: si el cliente vuelve a escribir, el trigger la reabre, y al
     // resolverla de nuevo (`resuelta_at` posterior a `calificada_at`) se puede
     // calificar otra vez.
+    //
+    // Y no se pide calificar una conversación que el cliente VACIÓ (2026-10-29,
+    // usuario: «borré el chat y me sigue preguntando cómo califico la
+    // atención»): si no le queda ningún mensaje a la vista, no hay qué
+    // calificar. Si el equipo le vuelve a escribir y la resuelve, sí.
     // deno-lint-ignore no-explicit-any
-    const estadoConversacion = (cv: any) => {
+    const estadoConversacion = async (cv: any) => {
       if (!cv) return { estado: null, calificacion: null, puede_calificar: false };
       const resuelta = cv.estado === "resuelta";
       const vigente = !!cv.calificada_at && (!cv.resuelta_at || Date.parse(cv.calificada_at) >= Date.parse(cv.resuelta_at));
+      let puede = resuelta && !vigente;
+      if (puede && cv.cliente_vacio_hasta_id != null) {
+        const { data: ult, error } = await admin.from("app_chat_mensajes").select("id")
+          .eq("conversacion_id", cv.id).gt("id", cv.cliente_vacio_hasta_id).limit(1);
+        if (error) throw error;
+        puede = !!ult?.length;
+      }
       return {
         estado: cv.estado,
         calificacion: vigente ? Number(cv.calificacion) || null : null,
-        puede_calificar: resuelta && !vigente,
+        puede_calificar: puede,
       };
     };
     // Cada foto firmada viaja con su `foto_clave` (la ruta en Storage, que no
@@ -1898,7 +1910,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // sondeo de 5 s costaba una consulta y un viaje a Storage.
       const [cv, hor] = await Promise.all([convDe(), horarioFarmacia(admin)]);
       const base = { ok: true, fuera_de_horario: !hor.abierta, horario: { abierta: hor.abierta, texto: hor.texto, feriado: hor.feriado },
-        conversacion: estadoConversacion(cv) };
+        conversacion: await estadoConversacion(cv) };
       if (!cv) return json({ ...base, mensajes: [], hay_mas: false, sin_leer: 0 });
       const desde = Number(body?.desde_id), antes = Number(body?.antes_id);
       const COLS_CHAT = "id, autor, employee_id, texto, foto_ruta, adjunto, respuesta_a, created_at, editado_at, borrado_at, automatica";
@@ -2310,7 +2322,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!Number.isInteger(nota) || nota < 1 || nota > 5) return json({ ok: false, mensaje: "Elige de 1 a 5 estrellas." });
       const comentario = String(body?.comentario ?? "").trim().slice(0, 500) || null;
       const cv = await convDe();
-      if (!cv || !estadoConversacion(cv).puede_calificar) return json({ ok: false, mensaje: "Esta conversación ya no se puede calificar." });
+      if (!cv || !(await estadoConversacion(cv)).puede_calificar) return json({ ok: false, mensaje: "Esta conversación ya no se puede calificar." });
       const { data: hecha, error } = await admin.from("app_chat_conversaciones")
         .update({ calificacion: nota, calificacion_comentario: comentario, calificada_at: new Date().toISOString() })
         .eq("id", cv.id).eq("customer_id", customerId).eq("estado", "resuelta").select("id").limit(1);

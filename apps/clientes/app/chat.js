@@ -973,6 +973,8 @@ export default function Chat() {
         if (!r?.ok) { Alert.alert('No se vació', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
         setMensajes([]);
         setHayMas(false);
+        // Vaciado, no queda qué calificar (el servidor tampoco lo vuelve a pedir).
+        setConversacion((c) => (c ? { ...c, puede_calificar: false } : c));
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } },
     ]);

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1370.1 — App de clientes: no pedir calificación de un chat vaciado
+
+- Si el cliente vació el chat y no le queda ningún mensaje a la vista, la app
+  ya no le pide calificar la atención (`estadoConversacion` en `app-clientes`;
+  `chat_calificar` también lo rechaza). Si el equipo le vuelve a escribir y la
+  resuelve, se puede calificar de nuevo. La app la oculta al momento de vaciar.
+- `subir-android`: más memoria para Gradle (`OutOfMemoryError: Metaspace` con
+  expo-updates).
+
 ## v2.1370.0 — Sucursales: la lista y el historial, rehechos
 
 **La tarjeta de cada sucursal** pasó de siete cajas anidadas y un pie más ancho que el resto a una sola superficie (`data-surface="card"`) con renglones: estado de hoy en una frase («Abierta · 7:00 a. m. – 9:00 p. m.»), alertas con su número y su lista al pasar el puntero, dirección y teléfonos, avance del expediente con su porcentaje, y personal, kioscos y acciones en el pie — siempre visibles, también en el teléfono. Toda la tarjeta abre la ficha (ojo arriba a la derecha, §5.3). Se fueron el punto que latía en cada tarjeta, las ~40 sombras y transiciones por tarjeta y el lift doble, que es lo que hacía pesada la vista.

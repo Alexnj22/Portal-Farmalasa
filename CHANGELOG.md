@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.3 — Un reconteo se suma a la tarjeta de su producto
+
+Consultas de existencia y Revisión de factor juntan todos los pedidos de un
+mismo producto en una tarjeta, con el ÚLTIMO conteo de cada sala
+(`agruparPorProducto`). Pedirle a una sala que vuelva a contar abría una tarjeta
+nueva con sólo esa sala, y la original —con las demás— quedaba abajo: parecía
+que se habían borrado.
+
 ## v2.1382.2 — Compras: el total del documento es lo que se paga
 
 El total con el que la revisión de la carga compara la factura es ahora

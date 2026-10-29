@@ -85,6 +85,32 @@ export async function resolverConsulta(id, { estado, solicitudes = [], nota = nu
 }
 
 /** «faltan 1 caja y 2 blister» / «sobran 3 blister» / «cuadra». */
+/**
+ * Las consultas de un mismo producto como una sola: por sala vale la ÚLTIMA,
+ * porque un reconteo pedido aparte reemplaza al anterior. La lista llega de la
+ * más nueva a la más vieja. Cada sala lleva su `consulta` (para ajustarla).
+ */
+export function agruparPorProducto(consultas) {
+    const m = new Map();
+    for (const c of consultas ?? []) {
+        let g = m.get(c.erp_product_id);
+        if (!g) {
+            g = { erp_product_id: c.erp_product_id, nombre: c.nombre, ultima: c, primera: c,
+                pedidos: 0, abierta: false, porSala: new Map() };
+            m.set(c.erp_product_id, g);
+        }
+        g.pedidos += 1;
+        g.primera = c;
+        if (!c.cerrada_at) g.abierta = true;
+        for (const s of c.salas ?? []) {
+            if (!g.porSala.has(s.erp_sucursal_id)) g.porSala.set(s.erp_sucursal_id, { ...s, consulta: c });
+        }
+    }
+    return [...m.values()].map(({ porSala, ...g }) => ({
+        ...g, salas: [...porSala.values()].sort((a, b) => String(a.sala).localeCompare(String(b.sala))),
+    }));
+}
+
 /** «1 caja», «4 blister»; sin nada en el estante, «nada». */
 export function enPresentaciones(texto, unidades) {
     if (texto && texto !== '0') return texto;

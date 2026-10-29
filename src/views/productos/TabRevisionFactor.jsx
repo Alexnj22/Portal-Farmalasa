@@ -6,7 +6,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
-import { fetchConsultasExistencia, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
+import { fetchConsultasExistencia, agruparPorProducto, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -71,9 +71,9 @@ export default function TabRevisionFactor() {
         }
         return [...m.values()];
     }, [datos]);
-    const consultaAbierta = useMemo(() => new Map(consultas
-        .filter(c => !c.cerrada_at)
-        .map(c => [c.erp_product_id, c])), [consultas]);
+    // Todos los pedidos del producto juntos, con el último conteo de cada sala.
+    const consultaAbierta = useMemo(() => new Map(agruparPorProducto(consultas)
+        .map(g => [g.erp_product_id, g])), [consultas]);
 
     if (datos === null) {
         return <div className="p-4"><SkeletonText lines={6} /></div>;
@@ -164,7 +164,7 @@ function TarjetaProducto({ grupo: g, consulta, onHecho }) {
                     <p className="text-body-sm font-black text-content truncate" title={g.nombre}>{g.nombre}</p>
                     {mismoCambio && <CambioDeFactor f={f0} />}
                 </div>
-                {consulta && (
+                {consulta?.abierta && (
                     <Badge size="sm" uppercase={false} variant="info" icon={ScanSearch}>
                         Conteo pedido · {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)}
                     </Badge>
@@ -192,7 +192,7 @@ function TarjetaProducto({ grupo: g, consulta, onHecho }) {
 
             {/* ¿Hay de verdad lo que el cambio supone? Un solo pedido para
                 todas las salas del producto; las salas cuentan a ciegas. */}
-            {puedePreguntar && !consulta && sinCorregir && (
+            {puedePreguntar && !consulta?.abierta && sinCorregir && (
                 <Button size="sm" variant="secondary" icon={ScanSearch} onClick={() => setPreguntar(true)}>
                     {salas.length === 1 ? `Pedir conteo a ${salas[0][1]}` : `Pedir conteo a las ${salas.length} salas`}
                 </Button>

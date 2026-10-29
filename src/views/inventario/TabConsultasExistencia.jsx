@@ -19,7 +19,7 @@ import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import {
     crearConsultaExistencia, fetchAjusteDeConsulta, fetchConsultasExistencia,
-    enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia,
+    agruparPorProducto, enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia,
 } from '@nucleo/data/consultasExistencia';
 
 /**
@@ -61,9 +61,16 @@ export default function TabConsultasExistencia() {
 
     // Una tarjeta por producto con sus salas adentro: quien ve toda la red
     // tenía siete tarjetas iguales por consulta.
-    const porContar = useMemo(() => (consultas ?? [])
-        .map(c => ({ consulta: c, salas: (c.salas ?? []).filter(s => s.puedo_contar) }))
-        .filter(g => g.salas.length > 0), [consultas]);
+    // Y un reconteo pedido aparte se suma a la tarjeta de su producto en vez
+    // de abrir otra: por sala vale el último conteo.
+    const grupos = useMemo(() => agruparPorProducto(consultas), [consultas]);
+    const porContar = useMemo(() => grupos
+        .map(g => {
+            const salas = g.salas.filter(s => s.puedo_contar);
+            // La nota que ve quien cuenta es la del pedido que le toca.
+            return { ...g, salas, motivo: salas[0]?.consulta?.motivo ?? g.primera.motivo };
+        })
+        .filter(g => g.salas.length > 0), [grupos]);
     const empleado = useCallback((id) => (employees ?? []).find(e => e.id === id), [employees]);
 
     const abrirAjuste = async (consulta, sala) => {
@@ -149,12 +156,12 @@ export default function TabConsultasExistencia() {
                         Te toca contar <span className="tabular-nums">· {formatQty(porContar.length)}</span>
                     </h3>
                     <ul className="grid gap-2 lg:grid-cols-2">
-                        {porContar.map(({ consulta, salas }) => (
-                            <li key={consulta.id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
+                        {porContar.map(({ erp_product_id, nombre, motivo, salas }) => (
+                            <li key={erp_product_id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
                                 <div className="min-w-0">
-                                    <p className="text-body-sm font-black text-content truncate" title={consulta.nombre}>{consulta.nombre}</p>
-                                    {consulta.motivo && (
-                                        <p className="text-label font-bold text-content-3 truncate" title={consulta.motivo}>{consulta.motivo}</p>
+                                    <p className="text-body-sm font-black text-content truncate" title={nombre}>{nombre}</p>
+                                    {motivo && (
+                                        <p className="text-label font-bold text-content-3 truncate" title={motivo}>{motivo}</p>
                                     )}
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
@@ -181,20 +188,21 @@ export default function TabConsultasExistencia() {
                 <h3 className="text-label font-black uppercase tracking-widest text-content-3">Consultas</h3>
                 {consultas == null ? (
                     <div data-surface="card" className="p-4"><SkeletonText lines={4} /></div>
-                ) : consultas.length === 0 ? (
+                ) : grupos.length === 0 ? (
                     <div data-surface="card" className="p-8 text-center">
                         <ScanSearch size={28} className="mx-auto text-content-3 mb-2" />
                         <p className="text-body-sm font-bold text-content-3">Todavía no se pidió ningún conteo</p>
                     </div>
                 ) : (
                     <ul className="grid gap-2 lg:grid-cols-2">
-                        {consultas.map(c => {
+                        {grupos.map(g => {
+                            const c = g.primera;   // quién lo pidió primero
                             const quien = empleado(c.pedido_por);
-                            const salas = c.salas ?? [];
+                            const salas = g.salas;
                             const contestaron = salas.filter(s => !['PENDIENTE', 'RECONTAR'].includes(s.estado)).length;
                             const descuadres = salas.filter(s => s.estado === 'DESCUADRE').length;
                             return (
-                                <li key={c.id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
+                                <li key={g.erp_product_id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
                                             <p className="text-body-sm font-black text-content truncate" title={c.nombre}>{c.nombre}</p>
@@ -203,6 +211,7 @@ export default function TabConsultasExistencia() {
                                                 <span className="truncate">
                                                     {quien ? shortEmployeeName(quien) : 'Sistema'}
                                                     {c.pedido_desde ? ` · ${c.pedido_desde}` : ''} · {fechaNumerica(c.created_at)}
+                                                    {g.pedidos > 1 ? ` · ${g.pedidos} pedidos` : ''}
                                                 </span>
                                             </p>
                                         </div>
@@ -214,12 +223,12 @@ export default function TabConsultasExistencia() {
                                                 : `${formatQty(contestaron)} de ${formatQty(salas.length)} contaron`}
                                         </Badge>
                                     </div>
-                                    {c.motivo && <p className="text-label font-bold text-content-2">{c.motivo}</p>}
+                                    {g.primera.motivo && <p className="text-label font-bold text-content-2">{g.primera.motivo}</p>}
                                     <ul className="grid gap-x-4 sm:grid-cols-2 border-t border-divider">
                                         {salas.map(s => (
                                             <FilaDeSala key={s.id} sala={s} puedeAjustar={puedeAjustar} trabajando={trabajando}
-                                                onAjustar={() => abrirAjuste(c, s)}
-                                                onSinAjuste={() => setSinAjuste({ consulta: c, sala: s })} />
+                                                onAjustar={() => abrirAjuste(s.consulta, s)}
+                                                onSinAjuste={() => setSinAjuste({ consulta: s.consulta, sala: s })} />
                                         ))}
                                     </ul>
                                 </li>

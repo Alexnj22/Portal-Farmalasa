@@ -246,9 +246,10 @@ vista y sin darse por emitida.
 Y dos cosas que no son del DTE pero también faltan (venían del plan de pase a
 producción, hoy en `docs/planes-cerrados/PLAN-TOROGOZ-A-PRODUCCION-2026-10-01.md`):
 
-- **GPS en Rutas.** `vercel.json` manda `Permissions-Policy: geolocation=()`, que
-  apaga la ubicación en todo el sitio: las visitas se guardan sin coordenadas y
-  sin error. Hay que cambiarlo a `geolocation=(self)`.
+- ~~**GPS en Rutas.**~~ **No se cambia** (usuario, 2026-10-29: «solo para las
+  apps»). `vercel.json` manda `Permissions-Policy: geolocation=()` a propósito:
+  en el navegador las visitas se guardan sin coordenadas; en la app el GPS es
+  nativo (`src/plataforma/ubicacion.js`) y ese encabezado no lo afecta.
 - **Correo al cliente:** una `RESEND_API_KEY` nueva (la anterior quedó expuesta) y
   `CORREO_REMITENTE`. `CORREO_MODO` no se pone en producción.
 

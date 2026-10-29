@@ -111,7 +111,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 25. ~~Pruebas del reparto nocturno de `consolidate-timesheets`~~ — **hecho v2.1357.47**.
 26. ~~Unificar la fórmula de la tardanza; `late_minutes ||`~~ — **hecho v2.1357.47**.
 27. ~~`inventoryMovements.js`: `factor` de la base y `.in()` sin corte~~ — **hecho v2.1359.7**. — PRODUCTOS:50
-28. GPS en Rutas: `vercel.json:99` `geolocation=()` → `(self)`. — DISTRIBUCION:249
+28. ~~GPS en Rutas en el navegador~~ — **cerrado sin cambio**: el GPS es sólo para las apps (usuario, 2026-10-01 y reconfirmado 2026-10-29). `geolocation=()` en `vercel.json` se queda a propósito; la app usa el GPS nativo, que ese encabezado no toca. — DISTRIBUCION:249
 29. Purga (o decisión escrita de conservar) de pre-registros, chat, reservas y
     wallet de la app de clientes. — APP-CLIENTES:469
 30. Descuento por renglón en ventas (antes: ver si el JSON lo trae). — DESCUENTOS:45

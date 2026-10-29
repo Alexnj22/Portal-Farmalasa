@@ -94,13 +94,13 @@ async function enviarCompra(admin: any, x: {
     .eq("id", x.cargaId).maybeSingle();
   if (eR) throw eR;
   if (!rev || rev.document_id !== x.documentId || rev.estado !== "simulada") {
-    return { enviada: false, error: "Esa revisión ya no vale: revisá la carga de nuevo." };
+    return { enviada: false, error: "Esa revisión ya no vale: revisa la carga de nuevo." };
   }
   if (Date.now() - new Date(rev.created_at).getTime() > 30 * 60_000) {
-    return { enviada: false, error: "La revisión tiene más de 30 minutos: revisá la carga de nuevo." };
+    return { enviada: false, error: "La revisión tiene más de 30 minutos: revisa la carga de nuevo." };
   }
   if (JSON.stringify(rev.sobre) !== JSON.stringify(x.sobre)) {
-    return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisá la carga de nuevo." };
+    return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisa la carga de nuevo." };
   }
 
   // Freno 2b: que Bodega no la tenga YA. `purchase_receipts` (freno de la
@@ -144,7 +144,7 @@ async function enviarCompra(admin: any, x: {
     texto = await res.text();
   } catch (e: any) {
     await marcar("sin_verificar", { error: `Sin respuesta del sistema: ${e?.message ?? e}` });
-    return { enviada: null, error: "El sistema no contestó. Puede haber entrado: NO la mandes de nuevo; avisá a Bodega para que la busque." };
+    return { enviada: null, error: "El sistema no contestó. Puede haber entrado: NO la mandes de nuevo; avisa a Bodega para que la busque." };
   }
 
   let j: any = null;
@@ -276,8 +276,8 @@ async function productoNuevo(admin: any, body: any) {
   const html = await pedir(cookie, `${BASE}/editar_producto.php?id_producto=${modeloId}`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
   const m = leerModelo(modeloId, html);
   if (!m.nombre) return { error: `El producto ${modeloId} no existe en el sistema.` };
-  if (!m.categoria || !m.laboratorio || !m.proveedor) problemas.push(`El modelo «${m.nombre}» no tiene categoría, laboratorio o proveedor: elegí otro.`);
-  if (!m.precios) problemas.push(`El modelo «${m.nombre}» no tiene presentación de 1 unidad activa: elegí otro.`);
+  if (!m.categoria || !m.laboratorio || !m.proveedor) problemas.push(`El modelo «${m.nombre}» no tiene categoría, laboratorio o proveedor: elige otro.`);
+  if (!m.precios) problemas.push(`El modelo «${m.nombre}» no tiene presentación de 1 unidad activa: elige otro.`);
   // Un producto controlado no se da de alta copiando: lo que lo hace
   // controlado es justo lo que hay que decidir con cuidado.
   if (m.regulado || m.antibiotico) problemas.push(`El modelo «${m.nombre}» es regulado o antibiótico: ese tipo de producto se da de alta a mano.`);
@@ -310,7 +310,7 @@ Deno.serve(async (req: Request) => {
   if (!quien) return responder({ error: "Sesión no válida." }, 401);
   const permiso = await permisoDeModulo(admin, quien.id, "cargar_compra", "can_edit");
   if (permiso.roto) return responder({ error: permiso.roto }, 500);
-  if (!permiso.puede) return responder({ error: "No tenés permiso para cargar compras." }, 403);
+  if (!permiso.puede) return responder({ error: "No tienes permiso para cargar compras." }, 403);
 
   try {
     const body = await req.json().catch(() => ({}));

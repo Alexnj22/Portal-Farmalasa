@@ -25,6 +25,7 @@ import {
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, enviarCarga,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
@@ -369,6 +370,23 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const revision = resultado?.revision;
     const pendientesDeVence = (revision?.renglones ?? []).filter(x => x.vence_pendiente).length;
     const entraComo = useMemo(() => new Map((revision?.renglones ?? []).map(x => [x.renglon, x])), [revision]);
+    // El costo que trae ESTA factura contra el que tiene Bodega, y el margen
+    // con el precio de venta actual (la misma regla del catálogo). Sale de la
+    // revisión: `linea.compra` ya lleva el descuento y el reparto de regalos.
+    const costos = useMemo(() => {
+        const m = new Map();
+        for (const x of revision?.renglones ?? []) {
+            if (!x.linea || x.linea.bandera !== 'PRODUCTO') continue;
+            const nuevo = Number(x.linea.compra), antes = x.costo_anterior, venta = Number(x.linea.venta);
+            const cambio = antes ? (nuevo - antes) / antes * 100 : null;
+            const margen = calcMargin(venta, nuevo);
+            m.set(x.renglon, { nuevo, antes, venta, cambio, margen, alerta: marginLabel(margen) });
+        }
+        return m;
+    }, [revision]);
+    const subenDeCosto = [...costos.values()].filter(c => c.cambio != null && c.cambio >= 0.5).length;
+    const bajanDeCosto = [...costos.values()].filter(c => c.cambio != null && c.cambio <= -0.5).length;
+    const conMargenMalo = [...costos.values()].filter(c => c.alerta).length;
 
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-5xl"
@@ -426,7 +444,7 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                         </Notice>
                     ) : (
                         <Notice variant="danger" icon={AlertTriangle}>
-                            <b>No se sabe si entró.</b> {envio.error} No la mandes de nuevo: avisá a Bodega para que la busque.
+                            <b>No se sabe si entró.</b> {envio.error} No la mandes de nuevo: avisa a Bodega para que la busque.
                         </Notice>
                     ))}
 
@@ -438,6 +456,15 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                 <span className="block mt-1">
                                     {pendientesDeVence === 1 ? 'Un renglón va' : `${pendientesDeVence} renglones van`} sin
                                     vencimiento: se le va a pedir a la sala que lo reciba.
+                                </span>
+                            )}
+                            {(subenDeCosto > 0 || bajanDeCosto > 0 || conMargenMalo > 0) && (
+                                <span className="block mt-1">
+                                    {[
+                                        subenDeCosto > 0 && `${subenDeCosto} ${subenDeCosto === 1 ? 'sube' : 'suben'} de costo`,
+                                        bajanDeCosto > 0 && `${bajanDeCosto} ${bajanDeCosto === 1 ? 'baja' : 'bajan'} de costo`,
+                                        conMargenMalo > 0 && `${conMargenMalo} con margen bajo o en pérdida: revisa el precio de venta`,
+                                    ].filter(Boolean).join(' · ')}.
                                 </span>
                             )}
                             {revision.regalos > 0 && (
@@ -512,6 +539,28 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                                     entran {sim.existencias} unid.{sim.presentacion > 1 ? ` (en cajas de ${sim.presentacion})` : ''}
                                                 </p>
                                             )}
+                                            {costos.get(i) && (() => {
+                                                const c = costos.get(i);
+                                                const tono = c.cambio == null || Math.abs(c.cambio) < 0.5 ? 'text-content-3'
+                                                    : c.cambio > 0 ? 'text-warning-text' : 'text-success-text';
+                                                return (
+                                                    <>
+                                                        <p className={`text-micro tabular-nums ${tono}`}>
+                                                            costo {formatMoney(c.nuevo, { decimales: 4 })}
+                                                            {c.antes == null ? ' · sin costo anterior'
+                                                                : Math.abs(c.cambio) < 0.5 ? ' · igual que antes'
+                                                                : ` · antes ${formatMoney(c.antes, { decimales: 4 })} (${c.cambio > 0 ? '+' : ''}${c.cambio.toFixed(1)} %)`}
+                                                        </p>
+                                                        <p className="text-micro tabular-nums text-content-3">
+                                                            venta {formatMoney(c.venta)}
+                                                            {c.margen != null && ` · margen ${Math.round(c.margen)} %`}
+                                                            {c.alerta && (
+                                                                <Badge variant={c.alerta.variante} size="sm" className="ml-1">{c.alerta.label}</Badge>
+                                                            )}
+                                                        </p>
+                                                    </>
+                                                );
+                                            })()}
                                             {sim?.vence_pendiente && (
                                                 <p className="text-micro text-warning-text">el vencimiento lo pone la sala</p>
                                             )}

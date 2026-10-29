@@ -141,7 +141,13 @@ export function lineaDelSobre(
       compra_fin: compra.toFixed(4), numero_lote: lote,
     },
     problemas,
-    detalle: { presentacion: pres.unidad, existencias: r4(cant * pres.unidad), vence_pendiente: vencePendiente },
+    // `costo_anterior` es el de la presentación en Bodega ANTES de esta compra,
+    // en la misma base que `linea.compra` (sin IVA, por presentación): la
+    // pantalla compara los dos para decir si subió y si el precio aguanta.
+    detalle: {
+      presentacion: pres.unidad, existencias: r4(cant * pres.unidad), vence_pendiente: vencePendiente,
+      costo_anterior: Number.isFinite(pres.costo) && pres.costo > 0 ? pres.costo : null,
+    },
   };
 }
 

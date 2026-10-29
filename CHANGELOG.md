@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.0 — Compras: la revisión dice si el costo subió y si el precio aguanta
+
+Al revisar una carga, cada renglón dice el **costo que trae la factura**
+contra el que tenía Bodega (subió/bajó y cuánto), el **precio de venta**
+actual y el **margen** con la misma regla del catálogo («Margen bajo» bajo
+15 %, «Pérdida» bajo cero). El aviso verde resume cuántos suben, cuántos bajan
+y cuántos necesitan revisar el precio. El costo nuevo es el que se cargaría:
+con descuento y con el reparto de regalos. Textos de la carga pasados a tuteo.
+
 ## v2.1381.10 — El descarte «Llegó en mal estado» también pide foto
 
 Pedido del usuario: el descarte con motivo «Llegó en mal estado» exige foto,

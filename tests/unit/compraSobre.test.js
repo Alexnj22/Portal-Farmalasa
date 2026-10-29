@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos } from '../../supabase/functions/_shared/compraSobre.ts';
+import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -146,5 +146,19 @@ describe('producto de regalo', () => {
         const sin = [linea('1', 10, 2), linea('2', 5, 3)];
         expect(repartirRegalos(sin)).toBe(0);
         expect(sin.map(l => l.compra)).toEqual(['2.0000', '3.0000']);
+    });
+});
+
+describe('totalDelDocumento', () => {
+    it('suma la percepción cuando el documento la deja fuera de la operación (Imberton)', () => {
+        expect(totalDelDocumento({ montoTotalOperacion: 753.39, ivaPerci1: 6.67, totalPagar: 760.06 })).toBe(760.06);
+    });
+    it('no la suma dos veces cuando ya viene adentro', () => {
+        expect(totalDelDocumento({ montoTotalOperacion: 760.06, ivaPerci1: 6.67, totalPagar: 760.06 })).toBe(760.06);
+    });
+    it('sin percepción, la operación', () => {
+        expect(totalDelDocumento({ montoTotalOperacion: 66.54, ivaPerci1: 0, totalPagar: 66.54 })).toBe(66.54);
+        expect(totalDelDocumento({ totalPagar: 10 })).toBe(10);
+        expect(totalDelDocumento(null)).toBe(null);
     });
 });

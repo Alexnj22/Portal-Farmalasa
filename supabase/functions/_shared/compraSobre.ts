@@ -231,9 +231,20 @@ export function tipoDocDe(tipoDte: string | null | undefined): "CCF" | "COF" | "
 
 /** El total del documento, para compararlo con el que calcularía el sistema. */
 export function totalDelDocumento(resumen: any): number | null {
-  const v = resumen?.montoTotalOperacion ?? resumen?.totalPagar;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+  const num = (v: unknown) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+  const mto = num(resumen?.montoTotalOperacion);
+  const pagar = num(resumen?.totalPagar);
+  const perc = num(resumen?.ivaPerci1) ?? 0;
+  // El total de Bodega lleva la percepción adentro. Hacienda la deja FUERA de
+  // `montoTotalOperacion` y la suma en `totalPagar` (C. Imberton, 28-oct:
+  // 753.39 + 6.67 = 760.06); otros emisores la meten en los dos. Se suma sólo
+  // cuando el propio documento lo confirma: operación + percepción − retenciones
+  // = a pagar.
+  if (mto != null && perc > 0 && pagar != null) {
+    const rete = (num(resumen?.ivaRete1) ?? 0) + (num(resumen?.reteRenta) ?? 0);
+    if (Math.abs(mto + perc - rete - pagar) <= 0.02) return Math.round((mto + perc) * 100) / 100;
+  }
+  return mto ?? pagar;
 }
 
 // ── Producto nuevo desde un renglón (paso 4 del plan) ────────────────────────

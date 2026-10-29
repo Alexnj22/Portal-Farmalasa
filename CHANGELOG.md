@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.9 — Compras: el total del documento con la percepción aparte
+
+La revisión de la carga en Bodega decía que el total no cuadraba en las
+facturas que traen la percepción aparte, como manda Hacienda: C. Imberton
+(28-oct) tiene $753.39 de operación + $6.67 de percepción = $760.06 a pagar,
+y el portal comparaba contra los $753.39. Ahora suma la percepción cuando el
+propio documento lo confirma (operación + percepción − retenciones = a pagar)
+y no la suma dos veces en los emisores que ya la meten adentro.
+
 ## v2.1381.8 — La descarga por vencimiento también pide foto
 
 Pedido del usuario: la descarga por vencimiento exige al menos una foto (hasta

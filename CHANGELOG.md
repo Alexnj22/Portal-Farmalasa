@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1363.0 — Inyecciones: vencimiento MM/AA con calendario, lotes ya usados y aviso de lote parecido
+
+- **«02/28» salía VENCIDA.** `venceNormal` sólo entendía el año de 4 cifras, y
+  `motivoDelLote` comparaba el texto crudo contra la fecha de hoy. Ahora acepta
+  MM/AA, y lo que no es un mes dice «Escribe el vencimiento como MM/AA».
+- **Campo `CampoMesAnio`** (common): se escribe con dígitos y la «/» la pone
+  solo («2» ya es febrero), o se elige del cuadro de meses (los pasados
+  apagados). Reemplaza el `type="month"` nativo, que en Safari era texto suelto.
+- **Lotes ya usados del producto** (`inyeccion_lotes_conocidos`, de todas las
+  salas, sin vencidos): botones lote · vence que se eligen juntos; escribir un
+  lote conocido completa su vencimiento.
+- **Un lote parecido frena el cobro** (`loteParecido`): cortado («M55» por
+  «M55895»), a una tecla, O/0 · I/1, o el mismo lote con otro vencimiento. La
+  caja elige «Usar M55895» o «No, es otro lote».
+
 ## v2.1362.0 — La app de clientes avisa cuando hay una versión nueva
 
 Al abrir Puntos Salud o volver a ella, si hay una compilación más nueva que la

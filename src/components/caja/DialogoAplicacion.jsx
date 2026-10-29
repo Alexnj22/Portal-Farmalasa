@@ -9,12 +9,13 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
+import CampoMesAnio from '../common/CampoMesAnio';
 import SearchInput from '../common/SearchInput';
 import SegmentedControl from '../common/SegmentedControl';
 import { LoadingState } from '../common/StateViews';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import {
-    aplicarPendientes, buscarVentaPorComprobante, fetchAplicacionesPendientes, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion,
+    aplicarPendientes, buscarVentaPorComprobante, fetchAplicacionesPendientes, fetchLotesConocidos, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion,
 } from '@nucleo/data/inyecciones';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -23,9 +24,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import {
-    aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, LOTE_VACIO, motivoDelLote, seleccionDeVenta, topeDeMezcla,
+    aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, LOTE_VACIO, motivoDelLote, seleccionDeVenta, topeDeMezcla, venceNormal, loteParecido,
 } from '@nucleo/utils/cobroDeAplicacion';
-import { fechaNumerica } from '@nucleo/utils/fecha';
+import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
 import BuscarFicha from './BuscarFicha';
 import FormaDePago from './FormaDePago';
@@ -96,20 +97,77 @@ const factura = (c) => String(c || '').replace(/^0+/, '');
  * El lote y el vencimiento de la ampolla, escritos mirándola (PENDIENTES 20).
  * El vencimiento es el MES impreso; el motivo de lo que falta sale del núcleo
  * (`motivoDelLote`), con las mismas reglas que la base.
+ *
+ * Los lotes que ya se vieron de ese producto —en cualquier sala— salen como
+ * opciones (2026-10-29): el par lote + vencimiento se elige junto, de un toque,
+ * y escribir un lote conocido completa su vencimiento. Escribir uno nuevo sigue
+ * abierto: la caja tiene la ampolla en la mano y es la que manda.
  */
-function LoteDeAmpolla({ titulo, valor, onChange }) {
+function LoteDeAmpolla({ titulo, producto, valor, onChange }) {
     const motivo = motivoDelLote(valor);
     const tocado = Boolean(valor.lote || valor.vence);
+    const [conocidos, setConocidos] = useState([]);
+    const productoRebotado = useTextoRebotado(producto || '', 400);
+    useEffect(() => {
+        let vivo = true;
+        fetchLotesConocidos(productoRebotado)
+            .then((l) => { if (vivo) setConocidos(l); })
+            .catch((e) => { console.warn('[inyecciones] lotes conocidos:', e); if (vivo) setConocidos([]); });
+        return () => { vivo = false; };
+    }, [productoRebotado]);
+    // Un lote parecido a uno ya visto frena el cobro hasta que la caja elija:
+    // es ése (se usa el conocido) o es otro (`nuevo`). Viaja en el valor para
+    // que `cuentaDelCobro` lo vea; al servidor no llega.
+    const parecido = valor.nuevo ? null : loteParecido(valor, conocidos);
+    useEffect(() => {
+        if ((parecido?.lote ?? null) !== (valor.parecido?.lote ?? null)
+            || (parecido?.vence ?? null) !== (valor.parecido?.vence ?? null)) onChange({ ...valor, parecido });
+    }, [parecido, valor, onChange]);
+    const escribirLote = (lote) => {
+        const conocido = conocidos.find((c) => c.lote === lote);
+        onChange({ ...valor, lote, nuevo: false, ...(conocido && !valor.vence ? { vence: conocido.vence } : {}) });
+    };
+    const mesAnio = (v) => { const [a, m] = String(v).split('-'); return `${m}/${a}`; };
     return (
         <div className="space-y-2">
             {titulo && <p className="text-body-sm font-semibold text-content-2">{titulo}</p>}
+            {conocidos.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-caption text-content-3 mr-1">Ya usados:</span>
+                    {conocidos.map((c) => {
+                        const elegido = valor.lote === c.lote && venceNormal(valor.vence) === c.vence;
+                        return (
+                            <Button key={`${c.lote}|${c.vence}`} size="sm" variant={elegido ? 'primary' : 'secondary'}
+                                aria-pressed={elegido} onClick={() => onChange({ lote: c.lote, vence: c.vence })}>
+                                {c.lote} · {mesAnio(c.vence)}
+                            </Button>
+                        );
+                    })}
+                </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <PortalInput label="Lote de la ampolla" value={valor.lote} maxLength={30}
-                    onChange={(e) => onChange({ ...valor, lote: e.target.value.toUpperCase() })} placeholder="Ej. 6D1514B" />
-                <PortalInput label="Vence" type="month" value={valor.vence} placeholder="MM/AAAA"
-                    onChange={(e) => onChange({ ...valor, vence: e.target.value })} />
+                    onChange={(e) => escribirLote(e.target.value.toUpperCase())} placeholder="Ej. 6D1514B" />
+                <CampoMesAnio label="Vence" value={valor.vence} desde={hoySV().slice(0, 7)}
+                    onChange={(vence) => onChange({ ...valor, vence, nuevo: false })} />
             </div>
-            {motivo && (
+            {parecido ? (
+                <Notice variant="warning">
+                    <span className="block">
+                        {parecido.lote === String(valor.lote || '').trim().toUpperCase()
+                            ? <>El lote <b>{parecido.lote}</b> ya se registró con vencimiento <b>{mesAnio(parecido.vence)}</b>. Un lote tiene un solo vencimiento.</>
+                            : <>¿Es el lote <b>{parecido.lote}</b> · {mesAnio(parecido.vence)}? Se parece al que escribiste.</>}
+                    </span>
+                    <span className="flex flex-wrap gap-2 mt-2">
+                        <Button size="sm" variant="primary" onClick={() => onChange({ lote: parecido.lote, vence: parecido.vence })}>
+                            Usar {parecido.lote} · {mesAnio(parecido.vence)}
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => onChange({ ...valor, nuevo: true, parecido: null })}>
+                            No, es otro lote
+                        </Button>
+                    </span>
+                </Notice>
+            ) : motivo && (
                 <p className={`text-caption ${tocado ? 'text-warning' : 'text-content-3'}`}>{motivo}</p>
             )}
         </div>
@@ -249,7 +307,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     // quedan pagadas sin aplicar y si se puede cobrar) es la del núcleo. Lo que
     // queda sin aplicar necesita a nombre de quién: «que haya un control».
     const { origen, precio, faltaDosis, faltaFicha, total, monto, ahora, quedan, valido } = cuentaDelCobro({
-        modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida,
+        modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida, lotes,
     });
     // Los renglones elegidos cuya factura no dice qué ampolla es.
     const renglonesSinLote = useMemo(() => items.filter((i) => 'lote' in i)
@@ -570,7 +628,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                             La factura no dice qué ampolla es: escribe el lote y el vencimiento impresos en ella.
                                         </p>
                                         {renglonesSinLote.map((r) => (
-                                            <LoteDeAmpolla key={r.linea_num} titulo={r.descripcion}
+                                            <LoteDeAmpolla key={r.linea_num} titulo={r.descripcion} producto={r.descripcion}
                                                 valor={lotes[r.linea_num] || LOTE_VACIO}
                                                 onChange={(v) => setLotes((x) => ({ ...x, [r.linea_num]: v }))} />
                                         ))}
@@ -589,7 +647,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                             <span className="text-body-sm text-content-2">Cuántas aplicaciones se pagan</span>
                             <Contador etiqueta="aplicaciones" valor={cantidad} min={1} max={10} onChange={setCantidad} />
                         </div>
-                        <LoteDeAmpolla valor={loteTraida} onChange={setLoteTraida} />
+                        <LoteDeAmpolla producto={producto} valor={loteTraida} onChange={setLoteTraida} />
                         {/* Obligatoria (2026-10-28): una traída sin ficha quedaba «sin
                             nombre» en la bitácora. Si no tiene, se crea acá. */}
                         <BuscarFicha ficha={ficha} onElegir={(c) => { setFicha(c); if (c) setANombreDe(c.name); }}

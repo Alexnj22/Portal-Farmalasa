@@ -96,6 +96,10 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+    // El cobro de una inyección se hace con el cliente enfrente y la ampolla
+    // en la mano, y el monto lo recalcula el servidor. Restaurarlo después de
+    // un cierre de sesión volvería a cobrar una venta que ya se fue del mostrador.
+    'src/components/caja/DialogoAplicacion.jsx': 'cobro de mostrador con el cliente enfrente; restaurarlo cobraría una venta ya ida',
     // Los ajustes del planificador no son un formulario: cada interruptor y
     // cada desplegable GUARDA al tocarlo. Lo único que se escribe es una fecha
     // especial (nombre, mes, día, idea): perderla es volver a teclear una línea.

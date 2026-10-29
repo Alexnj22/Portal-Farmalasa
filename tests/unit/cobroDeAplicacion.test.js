@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aplicacionDelCobro, cuentaDelCobro, esClienteGenerico, gruposDePendientes, itemsDelCobro, motivoDelLote, seleccionDeVenta, venceNormal } from '@nucleo/utils/cobroDeAplicacion';
+import { aplicacionDelCobro, cuentaDelCobro, esClienteGenerico, gruposDePendientes, itemsDelCobro, motivoDelLote, seleccionDeVenta, venceNormal, loteParecido } from '@nucleo/utils/cobroDeAplicacion';
 
 const precios = { COMPRADA: 1, TRAIDA: 2 };
 
@@ -55,6 +55,11 @@ describe('lote de la ampolla (PENDIENTES 20)', () => {
         expect(venceNormal('5/2027')).toBe('2027-05');
         expect(venceNormal('05-2027')).toBe('2027-05');
         expect(venceNormal('2027-05')).toBe('2027-05');
+        expect(venceNormal('02/28')).toBe('2028-02');
+        expect(venceNormal('2/28')).toBe('2028-02');
+        expect(motivoDelLote({ lote: 'M55', vence: '02/28' }, HOY)).toBeNull();
+        expect(motivoDelLote({ lote: 'M55', vence: '02/' }, HOY)).toMatch(/MM\/AA/);
+        expect(motivoDelLote({ lote: 'M55', vence: '13/28' }, HOY)).toMatch(/MM\/AA/);
     });
     it('sólo el renglón cuya factura no identifica la ampolla lleva lote, y sin él no se cobra', () => {
         const renglones = { 1: { linea_num: 1, pide_lote: true }, 2: { linea_num: 2, pide_lote: false } };
@@ -67,5 +72,30 @@ describe('lote de la ampolla (PENDIENTES 20)', () => {
         const con = itemsDelCobro({ ...base, lotes: { 1: { lote: 'x9', vence: '12/2099' } } });
         expect(con.find((i) => i.linea_num === 1)).toMatchObject({ lote: 'X9', vence: '2099-12' });
         expect(cuenta(con)).toMatchObject({ valido: true, faltaLote: false });
+    });
+});
+
+describe('loteParecido', () => {
+    const conocidos = [{ lote: 'M55895', vence: '2028-02' }, { lote: '6D1514B', vence: '2027-05' }];
+    it('el idéntico con su mismo vencimiento no es duda', () => {
+        expect(loteParecido({ lote: 'M55895', vence: '02/28' }, conocidos)).toBeNull();
+        expect(loteParecido({ lote: 'M55895', vence: '' }, conocidos)).toBeNull();
+    });
+    it('el mismo lote con otro vencimiento sí', () => {
+        expect(loteParecido({ lote: 'M55895', vence: '03/28' }, conocidos)?.lote).toBe('M55895');
+    });
+    it('cortado, a una tecla, cambiado de lugar o confundido O/0', () => {
+        expect(loteParecido({ lote: 'M55' }, conocidos)?.lote).toBe('M55895');
+        expect(loteParecido({ lote: 'M55896' }, conocidos)?.lote).toBe('M55895');
+        expect(loteParecido({ lote: 'M58595' }, conocidos)?.lote).toBe('M55895');
+        expect(loteParecido({ lote: '6D1514' }, conocidos)?.lote).toBe('6D1514B');
+        expect(loteParecido({ lote: '6D-15I4B' }, conocidos)?.lote).toBe('6D1514B');
+    });
+    it('uno distinto no se parece', () => {
+        expect(loteParecido({ lote: 'X99812' }, conocidos)).toBeNull();
+        expect(loteParecido({ lote: 'M61257' }, conocidos)).toBeNull();
+    });
+    it('sin confirmar, no se cobra', () => {
+        expect(motivoDelLote({ lote: 'M55', vence: '02/28', parecido: conocidos[0] }, '2026-10-28')).toMatch(/M55895/);
     });
 });

@@ -30,6 +30,19 @@ export async function fetchInyeccionesParaCobrar({ sala, buscar = '', dias = 30 
 }
 
 /**
+ * Los lotes ya vistos de una inyección, de todas las salas y sin los vencidos
+ * (2026-10-29): lo que escribió otra caja, o lo que traía la factura. El par
+ * lote + vencimiento viaja junto para elegirlo de un toque. `vence` = 'AAAA-MM'.
+ * @returns {Promise<{ lote: string, vence: string, veces: number }[]>}
+ */
+export async function fetchLotesConocidos(producto) {
+    if (!String(producto || '').trim()) return [];
+    const { data, error } = await supabase.rpc('inyeccion_lotes_conocidos', { p_producto: producto });
+    if (error) throw error;
+    return /** @type {any} */ (data) ?? [];
+}
+
+/**
  * Una venta por su número de comprobante, de CUALQUIER sala (2026-10-03): el
  * cliente compró en una sucursal y se la aplica en otra, con el ticket. Es la
  * única forma de llegar a una venta de otra sala. Acepta el correlativo (con o

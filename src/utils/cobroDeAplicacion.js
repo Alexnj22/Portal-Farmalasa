@@ -16,24 +16,83 @@ import { hoySV } from './fecha';
  * ('2027-05') y vale hasta su último día.
  */
 export const LOTE_VACIO = { lote: '', vence: '' };
-/** «05/2027» o «5-2027» (como se lee en la ampolla) → '2027-05'; lo demás, tal cual. */
+/**
+ * «05/2027», «5-2027» o «05/27» (como se lee en la ampolla) → '2027-05'; lo
+ * demás, tal cual. El año de dos dígitos es el que más se imprime: sin
+ * reconocerlo, «02/28» se comparaba como texto contra la fecha de hoy y salía
+ * VENCIDA una ampolla que vence en 2028.
+ */
 export function venceNormal(v) {
     const t = String(v || '').trim();
-    const m = /^(\d{1,2})[/-](\d{4})$/.exec(t);
-    return m ? `${m[2]}-${m[1].padStart(2, '0')}` : t;
+    const m = /^(\d{1,2})\s*[/-]\s*(\d{2}|\d{4})$/.exec(t);
+    if (!m) return t;
+    const anio = m[2].length === 2 ? `20${m[2]}` : m[2];
+    return `${anio}-${m[1].padStart(2, '0')}`;
 }
 const LOTES_QUE_NO_SON = ['GENERICO', 'GENÉRICO', 'SIN LOTE', 'N/A', 'NA'];
-/** @param {{ lote?: string, vence?: string }} [valor] */
-export function motivoDelLote({ lote, vence } = {}, hoy = hoySV()) {
+/** @param {{ lote?: string, vence?: string, parecido?: { lote: string, vence: string } | null }} [valor] */
+export function motivoDelLote({ lote, vence, parecido } = {}, hoy = hoySV()) {
     const l = String(lote || '').trim().toUpperCase();
     if (!l || LOTES_QUE_NO_SON.includes(l)) return 'Falta el lote impreso en la ampolla.';
     if (l.length < 2 || l.length > 30) return 'Ese lote no parece un lote.';
     const v = venceNormal(vence);
     if (!v) return 'Falta el vencimiento de la ampolla.';
-    const m = /^(\d{4})-(\d{2})$/.exec(v);
-    const fin = m ? `${m[1]}-${m[2]}-31` : v;   // un mes vale hasta su último día
+    const m = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(v);
+    // Lo que no es un mes no se compara: como texto, cualquier cosa que empiece
+    // con «0» o «1» sale «vencida».
+    if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return 'Escribe el vencimiento como MM/AA.';
+    const fin = v.length === 7 ? `${v}-31` : v;   // un mes vale hasta su último día
     if (fin < String(hoy)) return 'La ampolla está vencida: no se puede aplicar.';
+    // Lo pone la pantalla al comparar con los lotes ya vistos (`loteParecido`):
+    // hasta que la caja elige el conocido o confirma que es otro, no se cobra.
+    if (parecido) return `¿Es el lote ${parecido.lote}? Confirma antes de cobrar.`;
     return null;
+}
+
+/**
+ * ¿El lote escrito es uno ya conocido con un error de tecleo? (usuario,
+ * 2026-10-29: «que no se agreguen múltiples lotes que sean el mismo con
+ * errores»). Devuelve el conocido al que se parece, o `null` si es idéntico a
+ * uno o no se parece a ninguno. Parecido es:
+ *   · iguales sin espacios/guiones/puntos y con O→0, I/L→1 (lo que se confunde
+ *     leyendo una ampolla);
+ *   · uno es el comienzo del otro (se cortó: «M55» por «M55895»);
+ *   · a una tecla de distancia (cambiada, de más o de menos) desde 4 caracteres;
+ *   · el mismo lote con OTRO vencimiento (un lote tiene un solo vencimiento).
+ * No frena para siempre: la caja confirma «es otro lote» (`nuevo: true`).
+ * @param {{ lote?: string, vence?: string }} valor
+ * @param {{ lote: string, vence: string }[]} conocidos
+ */
+export function loteParecido({ lote, vence } = {}, conocidos = []) {
+    const l = String(lote || '').trim().toUpperCase();
+    if (l.length < 2 || !conocidos.length) return null;
+    const v = venceNormal(vence);
+    const exacto = conocidos.find((c) => c.lote === l);
+    if (exacto) {
+        const mismoMes = !/^\d{4}-\d{2}$/.test(v) || conocidos.some((c) => c.lote === l && c.vence === v);
+        return mismoMes ? null : exacto;
+    }
+    const plano = (x) => x.replace(/[\s.\-_/]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+    const p = plano(l);
+    return conocidos.find((c) => {
+        const q = plano(c.lote);
+        if (p === q) return true;
+        if (Math.min(p.length, q.length) >= 3 && (q.startsWith(p) || p.startsWith(q))) return true;
+        return Math.min(p.length, q.length) >= 4 && aUnaTecla(p, q);
+    }) || null;
+}
+
+/** Distancia de edición ≤ 1 (incluye dos letras vecinas cambiadas de lugar). */
+function aUnaTecla(a, b) {
+    if (a === b) return false;
+    if (Math.abs(a.length - b.length) > 1) return false;
+    if (a.length === b.length) {
+        const dif = [...a].map((ch, i) => (ch !== b[i] ? i : -1)).filter((i) => i >= 0);
+        return dif.length === 1 || (dif.length === 2 && dif[1] === dif[0] + 1 && a[dif[0]] === b[dif[1]] && a[dif[1]] === b[dif[0]]);
+    }
+    const [c, l] = a.length < b.length ? [a, b] : [b, a];
+    for (let i = 0; i < l.length; i++) if (l.slice(0, i) + l.slice(i + 1) === c) return true;
+    return false;
 }
 
 /** El nombre de mostrador no sirve para reclamar una pendiente. */
@@ -84,13 +143,14 @@ export function itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis
  * pasar»): sin ella la aplicación no tiene a quién pertenecer. Si el cliente
  * no tiene, se le crea en el mismo diálogo.
  */
-export function cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida }) {
+export function cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida, lotes = {} }) {
     const origen = modo === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA';
     const precio = precios ? (origen === 'TRAIDA' ? precios.TRAIDA : precios.COMPRADA) : null;
     const faltaDosis = (items || []).some((i) => 'dosis_ml' in i && i.dosis_ml == null);
     const faltaLote = origen === 'TRAIDA'
         ? motivoDelLote(loteTraida) !== null
-        : (items || []).some((i) => 'lote' in i && motivoDelLote(i) !== null);
+        // `parecido` vive en el estado de la pantalla, no en lo que viaja al servidor.
+        : (items || []).some((i) => 'lote' in i && motivoDelLote({ ...i, parecido: lotes[i.linea_num]?.parecido }) !== null);
     const total = origen === 'COMPRADA'
         ? (mezcla ? ((items || []).length ? veces : 0) : (items || []).reduce((s, i) => s + i.cantidad, 0))
         : cantidad;

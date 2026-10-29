@@ -239,6 +239,9 @@ const FileField = memo(({
      * seis diálogos que decir que sí. Un paso que siempre se confirma sin mirar
      * no protege nada.
      *
+     * Revertido en parte el 2026-10-29: el recorte se sigue proponiendo solo,
+     * pero se confirma en el editor antes de subir — medido, erraba la mitad.
+     *
      * Se guarda la foto ORIGINAL y las esquinas detectadas para que «Ajustar»
      * reabra el editor donde estaba, en vez de volver a empezar. */
     const [preparando, setPreparando] = useState(false);
@@ -315,10 +318,18 @@ const FileField = memo(({
                 } catch { /* abajo se abre el editor */ }
                 setPreparando(false);
                 if (r.ok) {
+                    /* Lo detectado se MUESTRA antes de subirse (2026-10-29).
+                     * Se entregaba directo y el «Ajustar» quedaba para después:
+                     * el 28-oct Talento Humano subió 6 fotos desde el teléfono y
+                     * tuvo que ajustar 3, moviendo esquinas hasta un 39 % — el
+                     * recorte solo erraba la mitad de las veces y lo malo ya
+                     * estaba adjunto. Ahora el editor abre con las esquinas
+                     * puestas: si están bien es un toque, si no se corrigen ahí. */
                     setPreparado({ original: archivo, esquinas: r.esquinas, formato: r.formato });
                     anotarRecorte(tipoDeDocumento, { modo: 'automatico',
                         lados_afinados: r.afinado?.lados ?? null, afinado: r.afinado?.movimiento ?? null });
-                    onChange?.(r.archivo, { yaPreparado: true });
+                    setAjustando(true);
+                    setPorEditar(archivo);
                 } else {
                     anotarRecorte(tipoDeDocumento, { modo: 'sin_deteccion', motivo: r.motivo || null });
                     setPorEditar(archivo);

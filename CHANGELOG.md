@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.1 — Personal: el DUI de un solo archivo ya no sale pendiente, el recorte de la foto se confirma antes de subir, y la app lleva a los documentos
+
+Reporte de Talento Humano del 2026-10-28.
+
+- **DUI en un solo archivo marcado «Pendiente».** El modo arrancaba siempre en
+  «Frente y reverso», así que al reabrir una ficha con `DUI_COMPLETO` se veían
+  dos casillas vacías. Ahora el modo sale de lo guardado (como ya hacía la
+  app) y el aviso da por entregado el DUI de cualquiera de las dos formas.
+- **La foto se recortaba y subía sin mirarla.** `FileField` entregaba el
+  recorte automático directo. Medido el 28-oct: de 6 fotos subidas solas, 3
+  hubo que ajustarlas después moviendo esquinas hasta un 39 %. Ahora el editor
+  abre con las esquinas detectadas: si están bien es un toque, si no se
+  corrigen antes de subir. Vale para todo documento (licencias, AFP, ISSS…).
+- **App: no aparecían los documentos.** Viven en «Expediente», y «Editar la
+  ficha» sólo lo nombraba en una nota gris. Ahora hay un botón ahí, y al
+  terminar un alta el aviso ofrece «Subir documentos».
+
 ## v2.1359.0 — Lote y vencimiento en cada inyección aplicada
 
 PENDIENTES 20. Cada aplicación de inyección queda con el lote y el

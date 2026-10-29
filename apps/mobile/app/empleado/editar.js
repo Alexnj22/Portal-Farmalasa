@@ -309,7 +309,12 @@ export default function EditarEmpleado() {
     }
     if (r?.avisoDeUsuario) partes.push(`El usuario no cambió: ${r.avisoDeUsuario}`);
     if (r?.avisos?.length) partes.push(`Falta algo: ${r.avisos.join(' ')}`);
-    Alert.alert(r?.enlazadoCon ? 'Expediente enlazado' : 'Empleado registrado', partes.join('\n\n') || 'La ficha se guardó.', [{ text: 'Listo', onPress: () => router.back() }]);
+    // Los documentos viven en «Expediente», no en este formulario: ofrecer ir
+    // ahí al terminar. Antes el alta volvía a la lista y Talento Humano buscaba
+    // dónde subir licencias y AFP sin encontrarlo (2026-10-28).
+    const botones = [{ text: 'Listo', style: 'cancel', onPress: () => router.back() }];
+    if (r?.id) botones.push({ text: 'Subir documentos', onPress: () => router.replace({ pathname: '/empleado/expediente', params: { id: String(r.id) } }) });
+    Alert.alert(r?.enlazadoCon ? 'Expediente enlazado' : 'Empleado registrado', partes.join('\n\n') || 'La ficha se guardó.', botones);
   };
 
   const guardar = async () => {
@@ -453,9 +458,16 @@ export default function EditarEmpleado() {
           {intento && motivo ? <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{motivo}</Text> : null}
           <BotonGrande texto={guardando ? 'Guardando…' : esAlta ? (form.enlazar_con_id ? 'Guardar sobre su ficha' : 'Dar de alta') : 'Guardar cambios'}
             onPress={guardar} deshabilitado={guardando} />
-          <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>
-            {esAlta ? 'La foto, los estudios y el resto del expediente se completan en «Expediente» de su ficha.' : 'La foto, los estudios y los documentos están en «Expediente».'}
-          </Text>
+          {/* Un botón y no una nota gris al pie: con la nota, quien venía a
+              subir documentos no encontraba dónde (2026-10-28). */}
+          {esAlta ? (
+            <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>
+              La foto, los estudios y los documentos se suben en «Expediente», al terminar el alta.
+            </Text>
+          ) : (
+            <BotonGrande texto="Documentos, foto y estudios" borde color={MARCA.azulClaro}
+              onPress={() => router.push({ pathname: '/empleado/expediente', params: { id: String(emp.id) } })} />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </>

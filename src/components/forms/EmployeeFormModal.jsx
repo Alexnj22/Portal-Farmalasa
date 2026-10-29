@@ -1199,6 +1199,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // puede traer una sola.
     const [verPendientes, setVerPendientes] = useState(false);
     const [duiEnUnArchivo, setDuiEnUnArchivo] = useState(false);
+    // Al abrir una ficha, el modo sale de lo que YA está guardado: con un DUI
+    // subido en un solo archivo, arrancar en «Frente y reverso» pintaba las dos
+    // casillas vacías y el bloque entero como Pendiente (reporte 2026-10-29).
+    // Es lo que ya hacía la app (`DuiPorCaras.js`).
+    useEffect(() => {
+        const docs = formData?.employee_documents || [];
+        const hay = (c) => docs.some(d => d.category === c && d.url);
+        setDuiEnUnArchivo(hay('DUI_COMPLETO') && !(hay('DUI_FRENTE') && hay('DUI_REVERSO')));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData?.id]);
     const [duiLeido, setDuiLeido] = useState(null);
     // El fallo de lectura se queda EN LA PANTALLA, no en un toast.
     //
@@ -2624,7 +2634,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </p>
                                     </div>
                                 </div>
-                                {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (duiEnUnArchivo ? !!getDocEntry('DUI_COMPLETO').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url))) && (
+                                {/* Entregado de CUALQUIERA de las dos formas, igual que
+                                    `expediente.js`: el modo elegido decide qué casillas se
+                                    ven, no si el documento está. */}
+                                {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_COMPLETO').url || (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url))) && (
                                     <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>
                                 )}
                             </div>

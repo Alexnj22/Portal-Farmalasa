@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1373.3 — Plan de compras: lo leído del sistema y las decisiones
+
+Sólo documentación (`PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md` §4 bis y §5):
+anular compra existe, la compra admite renglones de servicio (consumo, sin
+inventario), crear producto se puede desde `agregar_producto.php`, y el reparto
+usa `enviar-producto-erp`. Decisiones del usuario: carga manual para quien
+entrega en papel, consumo vs venta, y producto/presentación en la carga.
+
 ## v2.1373.2 — Revisión de factor: el cambio de tamaño se lee del catálogo
 
 El «antes → ahora» de un cambio de presentación salía sólo de las VENTAS: con

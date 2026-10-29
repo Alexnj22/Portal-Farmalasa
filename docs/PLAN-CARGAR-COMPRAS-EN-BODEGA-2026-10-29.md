@@ -95,13 +95,54 @@ chica y alguien de Bodega mirando el sistema**, porque nunca se envió un
 - Pepsi: no aparece con ese nombre ni en documentos ni en compras. Hay que saber
   qué empresa factura (¿La Constancia?).
 
+## 4 bis. Lo leído del sistema el 2026-10-29 (sólo GET) y lo que decidió el usuario
+
+**Anular una compra SÍ existe**: `anular_compra.php` (`id`), detrás del menú de
+Admin Compras, con el aviso «No podrá deshacer este paso». Y
+`actualizar_compra.php` (`process=actualizar`) cambia DESPUÉS la clasificación
+fiscal (`tipo_operacion`, `clasificacion`, `tipo_costo_gasto`) sin tocar
+renglones. O sea: una compra mal clasificada se corrige; una con renglones mal
+se anula y se carga de nuevo.
+
+**La compra admite renglones que NO entran al inventario**: «servicio»
+(`bandera = 'SERVICIO'`, `id_producto = 'nuevo_servicio'`, `descripcion_ser`
+libre). Con `clasificacion = 2` (Gasto) y `tipo_costo_gasto` 1 ó 2 (gasto de
+venta / de administración) entra al libro de compras sin sumar existencias.
+`destino` sólo ofrece «LOCAL DE VENTA» (3).
+
+**Crear un producto se puede**: `agregar_producto.php` `process=insert`
+devuelve `id_producto`. Pide código de barras, descripción, marca, proveedor,
+categoría, laboratorio, composición, exento / perecedero / decimales /
+regulado / antibiótico, y la lista de presentaciones (presentación, descripción,
+factor, costo, código de barras y 7 precios), más mínimos por ubicación.
+
+**El reparto ya tiene su motor**: `enviar-producto-erp` empuja producto de
+Bodega a una sala, un traslado por renglón, y la sala acepta o devuelve
+producto por producto. El reparto de la compra lo alimenta; no se escribe otro.
+
+Decisiones del usuario:
+
+1. **La Constancia entrega en papel**: la sala que la recibe la manda a Bodega.
+   Hace falta la **carga manual** (sin documento electrónico) en la misma
+   pantalla. El papel trae el código QR del DTE: escanearlo da el código de
+   generación, que es lo que liga la compra con el libro.
+2. **Consumo vs venta**: toda factura de crédito fiscal se registra (libro de
+   compras); lo que cambia es la clasificación. Venta → renglones de producto,
+   Costo. Consumo → renglón de servicio, Gasto, sin inventario. El IVA de
+   alimentos y bebidas para consumo NO es deducible (Art. 65-A LIVA, la misma
+   nota que ya tienen esos proveedores en su ficha) — **el contador confirma**.
+3. **Presentación y producto nuevo se resuelven en la carga**: la presentación
+   se elige en el renglón y se aprende junto al producto; si el producto no
+   existe, se crea desde ahí mismo.
+
 ## 5. Orden de trabajo
 
 | | qué | listo cuando |
 |---|---|---|
-| 0 | Destrabar: La Constancia manda DTE; Agua Fría ligada a su proveedor; confirmar los ~90 productos de bebidas en «Por confirmar» | los 5 proveedores con documento y producto |
-| 1 | Presentación en el diccionario (`compra_producto_alias.id_presentacion`, aprendida igual que el producto) | ningún renglón de bebidas sin presentación |
-| 2 | `compra_carga` + función de envío en simulacro | simulacro verde sobre las facturas de bebidas del mes |
-| 3 | Primer envío real, con Bodega mirando | la compra leída de vuelta cuadra |
-| 4 | Reparto en la pantalla + `compra_reparto` | se guarda y se valida la suma |
-| 5 | Traslados desde el reparto | la sala recibe el lote de la compra |
+| 1 | Presentación en el diccionario (aprendida con el producto) | ningún renglón confirmado sin presentación |
+| 2 | Consumo: marcar el documento (o el renglón) como consumo → servicio + Gasto | el simulacro arma el sobre de una compra de consumo |
+| 3 | `compra_carga` + función de envío, **simulacro por omisión**, con lectura de vuelta | simulacro verde sobre las facturas del mes |
+| 4 | Producto nuevo desde el renglón (`agregar_producto.php`) | simulacro arma el producto; primer alta real con Bodega mirando |
+| 5 | Primer envío real de una compra chica, con Bodega mirando | la compra leída de vuelta cuadra |
+| 6 | Reparto por sala en la pantalla → `enviar-producto-erp` | la sala recibe el lote de la compra |
+| 7 | Carga manual (papel + QR) para quien no manda el DTE | La Constancia cargada sin teclear el código |

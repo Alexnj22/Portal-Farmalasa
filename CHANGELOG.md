@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1371.0 — Las facturas de compra se cargan todas en Bodega
+
+Decisión del usuario: «vamos a centralizar todas las compras a bodega,
+incluidas comunicación, bebidas, etc.». Cierra PENDIENTES 36 (asignar la sala
+de COFARSAL sola), que deja de tener sentido.
+
+- **Facturas de mi sala** abre siempre Bodega y ya no ofrece elegir sucursal.
+- `facturas_sala_guarda` rechaza cualquier otra sala («Las compras se cargan
+  todas en Bodega»). Probado con una sesión real: Bodega ve 31 facturas de los
+  últimos 45 días, Salud 1 queda rechazada.
+- Recarga Movistar dejó de repartirse por línea telefónica: sus 5 facturas
+  recientes, antes atadas a Salud 1/2/3, ahora le aparecen a Bodega. Las líneas
+  quedan guardadas.
+
+Migración `20261029174259`.
+
+## v2.1370.0 — Revisión de factor: existencia por corregir en los dos sentidos
+
+Productos → Revisión de factor sólo ofrecía corregir cuando la presentación se
+ACHICABA (CAJA 1x16 → 1x1: la caja muestra 16, son 1, se descartan 15). Cuando
+CRECE (CAJA 1x1 → 1x24) la caja deja la caja que había contada como 1 unidad
+suelta, y el portal avisaba del cambio sin sugerir nada ni dar botón.
+
+- **Sentido «crece»**: tarjeta nueva «Había 1 caja, hoy cuenta 1 unidad suelta ·
+  se carga 1 caja», con el mismo botón; crea una CARGA en vez de un descarte.
+  Sólo cuando la presentación que cambió era la única del producto: si tiene
+  UNIDAD o BLISTER al lado, la existencia ya estaba en esa unidad (medido en
+  Reversal Flex, Alerkem y Distem: están bien). Lo que había sale de la foto
+  diaria anterior al cambio, porque hoy no se ve (1 de 24 son 0 cajas).
+- **Foto en vez de búsqueda viva** (`existencia_por_corregir`): la lista era
+  TODO el inventario del producto durante 120 días, así que una compra nueva
+  de ≥16 cajas habría salido como «se descartan 19». Ahora el proceso guarda
+  sala, lote y cantidad al convertir, y la pantalla ofrece sólo esas filas
+  mientras sigan exactamente igual.
+- **«Corregida» sólo si entró en la caja**: una solicitud aprobada que la caja
+  rechazó decía «Corregida». Ahora dice «Aprobada, sin aplicar».
+- **«Factor que no cuadra» no acusa historia**: no cuenta ventas de antes del
+  último cambio de presentación del producto.
+- El aviso a quien decide el MIN·MAX nombra las salas con existencia por
+  corregir en los dos sentidos.
+
+Migración `20261029173744_existencia_por_corregir_en_los_dos_sentidos`. Las dos
+tarjetas que había (Acetaminofén Forte X16 en Salud 2, Uro Vaxom en La Popular)
+pasaron al formato nuevo sin cambios.
+
 ## v2.1370.1 — App de clientes: no pedir calificación de un chat vaciado
 
 - Si el cliente vació el chat y no le queda ningún mensaje a la vista, la app

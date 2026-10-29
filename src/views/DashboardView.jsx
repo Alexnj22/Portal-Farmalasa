@@ -42,6 +42,7 @@ import {
     ERP_ORDEN as MM_ERP_ORDER,
     BRANCH_A_ERP as MM_BRANCH_TO_ERP,
     ERP_UBICACION_POR_SUCURSAL,
+    ERP_BODEGA,
 } from '@nucleo/constants/erp';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
@@ -467,11 +468,10 @@ const TABS = [
 
 // Min/Max usa sucursal ERP (1-7); el portal usa branch_id. Los mapas están en
 // `constants/erp` y se importan arriba con sus nombres de acá.
-// Las siete salas de `MM_BRANCH_TO_ERP` son las que cargan compras; el resto
-// (Administración) no. Ésta es la que abre el widget de Facturas de mi Sala
-// cuando la propia no está entre ellas — La Popular, la primera del orden de
-// despacho, igual que en el resto del tablero.
-const SALA_COMPRAS_POR_DEFECTO = 2;
+// Las compras se cargan TODAS en Bodega (usuario, 2026-10-29: «vamos a
+// centralizar todas las compras a bodega»). El widget de Facturas de Sala abre
+// siempre la suya y la base rechaza cualquier otra (`facturas_sala_guarda`).
+const SALA_DE_COMPRAS = Number(Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === ERP_BODEGA));
 
 // Las salas que venden (Bodega no tiene meta) — la lista vive en el módulo de
 // Metas, que es su dueño; acá solo se consume.
@@ -1789,19 +1789,6 @@ const DashboardView = ({ openModal }) => {
       () => salaQueFacturaPorDefecto(user?.branchId ?? user?.branch_id));
   const [minmaxErp, setMinmaxErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
   const [movimientoErp, setMovimientoErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
-  // Facturas de mi Sala trabaja con `branch_id` del portal (no con el número de
-  // sucursal del sistema de compras): la baldosa se lo pasa tal cual al RPC, y
-  // con alcance BRANCH la base lo compara contra la sala del propio empleado.
-  //
-  // Arranca en la sala propia SOLO si esa sala carga compras. Administración no
-  // es una de las siete, y quien trabaja ahí abriría el widget contra una sala
-  // que no está ni en el desplegable: el selector en blanco y cero facturas. Es
-  // exactamente el defecto que ya se había corregido en la baldosa de
-  // Facturación (ver `salaQueFacturaPorDefecto` arriba), en otro widget.
-  const [facturasBranch, setFacturasBranch] = useState(() => {
-      const propia = Number(user?.branchId ?? user?.branch_id);
-      return String(MM_BRANCH_TO_ERP[propia] ? propia : SALA_COMPRAS_POR_DEFECTO);
-  });
   // Arranca en la sala propia; si el usuario no está en una sala de venta
   // (gerencia, bodega), en la primera de la lista.
   const [metaBranch, setMetaBranch] = useState(() => {
@@ -3414,33 +3401,8 @@ const DashboardView = ({ openModal }) => {
     // baldosa: la baldosa es la puerta y solo lleva el número de lo que espera.
     if (wid === 'facturas_sala') {
       if (!showWidget('facturas_sala', 'dash_facturas_sala')) return null;
-      const isFactAllScope = getScope('dash_facturas_sala') === 'ALL';
-      // Con alcance BRANCH el desplegable ni se ofrece: la base rechaza
-      // cualquier sala que no sea la propia, así que un selector prometería un
-      // alcance que no existe. Con ALL, elegir sala es todo el sentido.
-      const propia = String(user?.branchId ?? user?.branch_id ?? '');
-      const factBranch = isFactAllScope ? facturasBranch : propia;
-      // Las siete que cargan compras, en el orden en que las nombra el negocio
-      // —el de `MM_ERP_ORDER`, no el del maestro—. Filtrar por `type` traería
-      // también Administración, que no carga ninguna.
-      const factOpts = MM_ERP_ORDER
-        .map(erp => Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === erp))
-        .map(id => branches.find(b => String(b.id) === String(id)))
-        .filter(Boolean)
-        .map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('facturas_sala',
-        <WidgetFacturasSala
-          branchId={factBranch ? Number(factBranch) : null}
-          selectorSucursal={isFactAllScope && factOpts.length > 0 && (
-            <LiquidSelect
-              value={facturasBranch}
-              onChange={val => setFacturasBranch(val ?? String(SALA_COMPRAS_POR_DEFECTO))}
-              options={factOpts}
-              placeholder="Sucursal..."
-              clearable={false}
-            />
-          )}
-        />
+        <WidgetFacturasSala branchId={SALA_DE_COMPRAS} />
       , staggerIdx);
     }
 

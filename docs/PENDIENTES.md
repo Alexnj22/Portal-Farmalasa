@@ -121,7 +121,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 33. ✅ Vendors fuera del entry y `pdfjs` por `import()` (2026-10-29). Facturas de compra 138→10 kB; tras cada deploy se bajan 184 kB en vez de 303 (React y Supabase quedan en caché); el arranque en frío no cambia (303 kB).
 34. ✅ Comentarios de `operar-caja` corregidos (2026-10-29): decían que cerrar el turno emite el Z; desde el 1-sep el Z sale antes por `hacer-corte-caja`. Logo: el icono (sin el nombre) va en todo ticket con la marca arriba, por los tres caminos (`logoTicket.js`). **Falta verlo en papel** en una sala.
 35. ✅ Cron `recordar-linea-base-egreso-mensual` y su función retirados (2026-10-29). El techo se decidió el 2026-10-01; desde entonces devolvía 0.
-36. COFARSAL AP3 → asignar la sala sola (pista sin medir).
+36. ~~COFARSAL AP3 → asignar la sala sola~~ Descartado (2026-10-29): todas las compras se cargan en Bodega. Facturas de Sala abre sólo Bodega y la base rechaza otra sala; Movistar dejó de repartirse por línea.
 
 ---
 

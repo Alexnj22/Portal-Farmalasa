@@ -2031,7 +2031,7 @@ Deno.serve(async (req) => {
        * Va DESPUÉS de las dos guardas de repetido: un reintento del mismo
        * envío tiene que contestar con lo que ya se escribió, y si cotizara
        * primero lo rechazaría por «ya no quedan» — las que pagó él mismo. */
-      type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number; cliente?: string; customer_id?: number };
+      type Aplicacion = { origen?: string; items?: unknown; cantidad?: number; producto?: string; aplicar_ahora?: number; cliente?: string; customer_id?: number; lote?: string; vence?: string };
       const aplicacion = (body.aplicacion && typeof body.aplicacion === "object") ? body.aplicacion as Aplicacion : null;
       const esAplicacion = esEntrada && !esAbono && String(body.tipo ?? "") === "APLICACION";
       /* Exigirla depende de la BANDERA del catálogo (`lleva_comprobante` de
@@ -2071,7 +2071,9 @@ Deno.serve(async (req) => {
         const { data: cot, error: errCot } = await supabase.rpc("inyeccion_cotizar", {
           p_branch_id: sala,
           p_origen: origen,
-          p_items: origen === "COMPRADA" ? (aplicacion.items ?? []) : null,
+          // La traída lleva el lote y el vencimiento de la ampolla en `p_items[0]`:
+          // `inyeccion_cotizar` los exige ANTES de mover la caja.
+          p_items: origen === "COMPRADA" ? (aplicacion.items ?? []) : [{ lote: aplicacion.lote ?? "", vence: aplicacion.vence ?? "" }],
           p_cantidad: origen === "COMPRADA" ? null : Number(aplicacion.cantidad ?? 0),
           p_producto: origen === "COMPRADA" ? null : String(aplicacion.producto ?? ""),
         });
@@ -2467,7 +2469,7 @@ Deno.serve(async (req) => {
         const { data: reg, error: errReg } = await supabase.rpc("inyeccion_registrar", {
           p_cobro_id: fila.id,
           p_origen: String(aplicacion.origen),
-          p_items: aplicacion.origen === "COMPRADA" ? (aplicacion.items ?? []) : null,
+          p_items: aplicacion.origen === "COMPRADA" ? (aplicacion.items ?? []) : [{ lote: aplicacion.lote ?? "", vence: aplicacion.vence ?? "" }],
           p_cantidad: aplicacion.origen === "TRAIDA" ? Number(aplicacion.cantidad ?? 0) : null,
           p_producto: aplicacion.origen === "TRAIDA" ? String(aplicacion.producto ?? "") : null,
           p_aplicar_ahora: Number(aplicacion.aplicar_ahora ?? 0),

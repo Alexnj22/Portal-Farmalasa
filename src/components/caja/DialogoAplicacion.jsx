@@ -23,7 +23,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import {
-    aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, seleccionDeVenta, topeDeMezcla,
+    aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, LOTE_VACIO, motivoDelLote, seleccionDeVenta, topeDeMezcla,
 } from '@nucleo/utils/cobroDeAplicacion';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -92,6 +92,30 @@ const fechaCorta = (f) => fechaNumerica(f, { anio: false });
  * `esClienteGenerico` del núcleo, dentro de `seleccionDeVenta`. */
 const factura = (c) => String(c || '').replace(/^0+/, '');
 
+/**
+ * El lote y el vencimiento de la ampolla, escritos mirándola (PENDIENTES 20).
+ * El vencimiento es el MES impreso; el motivo de lo que falta sale del núcleo
+ * (`motivoDelLote`), con las mismas reglas que la base.
+ */
+function LoteDeAmpolla({ titulo, valor, onChange }) {
+    const motivo = motivoDelLote(valor);
+    const tocado = Boolean(valor.lote || valor.vence);
+    return (
+        <div className="space-y-2">
+            {titulo && <p className="text-body-sm font-semibold text-content-2">{titulo}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <PortalInput label="Lote de la ampolla" value={valor.lote} maxLength={30}
+                    onChange={(e) => onChange({ ...valor, lote: e.target.value.toUpperCase() })} placeholder="Ej. 6D1514B" />
+                <PortalInput label="Vence" type="month" value={valor.vence} placeholder="MM/AAAA"
+                    onChange={(e) => onChange({ ...valor, vence: e.target.value })} />
+            </div>
+            {motivo && (
+                <p className={`text-caption ${tocado ? 'text-warning' : 'text-content-3'}`}>{motivo}</p>
+            )}
+        </div>
+    );
+}
+
 export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onCobrar }) {
     const showToast = useToastStore((s) => s.showToast);
     const [modo, setModo] = useState('COMPRADA');
@@ -112,6 +136,9 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const [mezcla, setMezcla] = useState(false);          // van en la misma jeringa
     const [enMezcla, setEnMezcla] = useState(() => new Set());  // linea_num que entran
     const [vecesMezcla, setVecesMezcla] = useState(1);    // cuántas aplicaciones mezcladas
+    // linea_num → { lote, vence } de la ampolla, sólo en los renglones cuya
+    // factura no la identifica («GENERICO» o vacío: `pide_lote`).
+    const [lotes, setLotes] = useState({});
     // Sube para volver a pedir la lista: las ventas tardan hasta un minuto en llegar.
     const [vuelta, setVuelta] = useState(0);
     // ── Comprada en otra sucursal ──
@@ -123,6 +150,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     // ── La trajo / sin venta ──
     const [producto, setProducto] = useState('');
     const [cantidad, setCantidad] = useState(1);
+    const [loteTraida, setLoteTraida] = useState(LOTE_VACIO);
 
     const [aplicarAhora, setAplicarAhora] = useState(1);
     const [aNombreDe, setANombreDe] = useState('');
@@ -205,6 +233,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         setMezcla(false);
         setEnMezcla(sel.enMezcla);
         setVecesMezcla(1);
+        setLotes({});
         setAplicarAhora(1);
         setANombreDe(sel.aNombreDe);
     };
@@ -214,14 +243,17 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     const topeMezcla = useMemo(() => topeDeMezcla(enMezcla, renglonDe, dosis), [enMezcla, renglonDe, dosis]);
     // Lo elegido no puede pasar del saldo: al cambiar la dosis o quién entra, el tope baja.
     const veces = Math.min(vecesMezcla, topeMezcla);
-    const items = useMemo(() => itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe }),
-        [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe]);
+    const items = useMemo(() => itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe, lotes }),
+        [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe, lotes]);
     // La cuenta (origen, precio, total —mezcladas: una por vez—, monto, cuántas
     // quedan pagadas sin aplicar y si se puede cobrar) es la del núcleo. Lo que
     // queda sin aplicar necesita a nombre de quién: «que haya un control».
     const { origen, precio, faltaDosis, faltaFicha, total, monto, ahora, quedan, valido } = cuentaDelCobro({
-        modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha,
+        modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida,
     });
+    // Los renglones elegidos cuya factura no dice qué ampolla es.
+    const renglonesSinLote = useMemo(() => items.filter((i) => 'lote' in i)
+        .map((i) => renglonDe(i.linea_num)).filter(Boolean), [items, renglonDe]);
 
     const estadoPago = estadoDeFormaDePago(pago, monto);
 
@@ -233,7 +265,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                 clave: claveDeEnvio.current,
                 monto,
                 pago,
-                aplicacion: aplicacionDelCobro({ origen, items, producto, cantidad, ahora, quedan, aNombreDe, ficha }),
+                aplicacion: aplicacionDelCobro({ origen, items, producto, cantidad, ahora, quedan, aNombreDe, ficha, loteTraida }),
             });
         } catch (e) {
             /* Un rechazo del cobro ya lo avisa quien llama (`correr` convierte
@@ -532,6 +564,18 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 {faltaDosis && (
                                     <p className="text-caption text-warning">Falta elegir cuánto se pone.</p>
                                 )}
+                                {renglonesSinLote.length > 0 && (
+                                    <div className="space-y-3 pt-2 border-t border-border-card">
+                                        <p className="text-caption text-content-3">
+                                            La factura no dice qué ampolla es: escribe el lote y el vencimiento impresos en ella.
+                                        </p>
+                                        {renglonesSinLote.map((r) => (
+                                            <LoteDeAmpolla key={r.linea_num} titulo={r.descripcion}
+                                                valor={lotes[r.linea_num] || LOTE_VACIO}
+                                                onChange={(v) => setLotes((x) => ({ ...x, [r.linea_num]: v }))} />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -545,6 +589,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                             <span className="text-body-sm text-content-2">Cuántas aplicaciones se pagan</span>
                             <Contador etiqueta="aplicaciones" valor={cantidad} min={1} max={10} onChange={setCantidad} />
                         </div>
+                        <LoteDeAmpolla valor={loteTraida} onChange={setLoteTraida} />
                         {/* Obligatoria (2026-10-28): una traída sin ficha quedaba «sin
                             nombre» en la bitácora. Si no tiene, se crea acá. */}
                         <BuscarFicha ficha={ficha} onElegir={(c) => { setFicha(c); if (c) setANombreDe(c.name); }}

@@ -19,7 +19,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { anotarIngreso, fetchTiposDeMovimiento } from '@nucleo/data/bolsas';
 import { aplicarPendientes, buscarVentaPorComprobante, fetchAplicacionesPendientes, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion } from '@nucleo/data/inyecciones';
 import { buscarClientes, crearClienteDeMostrador } from '@nucleo/data/customers';
-import { aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, seleccionDeVenta, topeDeMezcla } from '@nucleo/utils/cobroDeAplicacion';
+import { aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, LOTE_VACIO, motivoDelLote, seleccionDeVenta, topeDeMezcla } from '@nucleo/utils/cobroDeAplicacion';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
@@ -79,6 +79,22 @@ function Venta({ v, activa, onElegir }) {
   );
 }
 
+// Lote y vencimiento escritos mirando la ampolla; el motivo de lo que falta sale
+// del núcleo (`motivoDelLote`), con las mismas reglas que la base.
+function LoteDeAmpolla({ titulo, valor, onCambiar }) {
+  const motivo = motivoDelLote(valor);
+  return (
+    <View style={{ gap: 6 }}>
+      {titulo ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{titulo}</Text> : null}
+      <Campo multiline={false} value={valor.lote} maxLength={30} autoCapitalize="characters"
+        onChangeText={(t) => onCambiar({ ...valor, lote: t.toUpperCase() })} placeholder="Lote de la ampolla" />
+      <Campo multiline={false} value={valor.vence} maxLength={7} keyboardType="numbers-and-punctuation"
+        onChangeText={(t) => onCambiar({ ...valor, vence: t })} placeholder="Vence (MM/AAAA)" />
+      {motivo && (valor.lote || valor.vence) ? <Aviso tono="cuidado" texto={motivo} /> : null}
+    </View>
+  );
+}
+
 export default function AplicacionInyeccion() {
   const { sala } = useLocalSearchParams();
   const { user, hasPermission } = useAuth();
@@ -101,6 +117,10 @@ export default function AplicacionInyeccion() {
   const [encontradas, setEncontradas] = useState(null);
   const [producto, setProducto] = useState('');
   const [cantidad, setCantidad] = useState(1);
+  // Lote y vencimiento de la ampolla (PENDIENTES 20): la traída, y los renglones
+  // cuya factura no la identifica (`pide_lote`). Obligatorios.
+  const [loteTraida, setLoteTraida] = useState(LOTE_VACIO);
+  const [lotes, setLotes] = useState({});
   const [aplicarAhora, setAplicarAhora] = useState(1);
   const [aNombreDe, setANombreDe] = useState('');
   const [ficha, setFicha] = useState(null);
@@ -151,8 +171,9 @@ export default function AplicacionInyeccion() {
   const venta = useMemo(() => (ventaExterna?.id === ventaId ? ventaExterna : null) || (ventas || []).find((v) => v.id === ventaId) || null, [ventas, ventaId, ventaExterna]);
   const renglonDe = useCallback((l) => (venta?.renglones || []).find((r) => r.linea_num === Number(l)), [venta]);
   const veces = Math.min(vecesMezcla, topeDeMezcla(enMezcla, renglonDe, dosis));
-  const items = useMemo(() => itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe }), [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe]);
-  const c = cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha });
+  const items = useMemo(() => itemsDelCobro({ mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe, lotes }), [mezcla, enMezcla, veces, cuantas, ventaId, dosis, renglonDe, lotes]);
+  const renglonesSinLote = items.filter((i) => 'lote' in i).map((i) => renglonDe(i.linea_num)).filter(Boolean);
+  const c = cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida });
   const crearFicha = async () => {
     trabajando('Creando la ficha…');
     try {
@@ -168,7 +189,7 @@ export default function AplicacionInyeccion() {
   const elegirVenta = (v, externa = false) => {
     const sel = seleccionDeVenta(v);
     setVentaExterna(externa ? v : null); setVentaId(v.id);
-    setCuantas(sel.cuantas); setDosis(sel.dosis); setMezcla(false); setEnMezcla(sel.enMezcla); setVecesMezcla(1); setAplicarAhora(1); setANombreDe(sel.aNombreDe);
+    setCuantas(sel.cuantas); setDosis(sel.dosis); setMezcla(false); setEnMezcla(sel.enMezcla); setVecesMezcla(1); setLotes({}); setAplicarAhora(1); setANombreDe(sel.aNombreDe);
   };
   const cambiarModo = (m) => { setModo(m); setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); setEncontradas(null); };
 
@@ -191,7 +212,7 @@ export default function AplicacionInyeccion() {
         }
         const r = await anotarIngreso({
           sala, monto: c.monto, clave, tipo: 'APLICACION', concepto: tipo?.etiqueta || 'Aplicacion de inyeccion',
-          aplicacion: aplicacionDelCobro({ origen: c.origen, items, producto, cantidad, ahora: c.ahora, quedan: c.quedan, aNombreDe, ficha }),
+          aplicacion: aplicacionDelCobro({ origen: c.origen, items, producto, cantidad, ahora: c.ahora, quedan: c.quedan, aNombreDe, ficha, loteTraida }),
           fotoUrl, ...datosDeFormaDePago(pago, fotoUrl),
         }).catch((e) => ({ error: e }));
         setEnviando(false);
@@ -307,6 +328,11 @@ export default function AplicacionInyeccion() {
                   {mezcla ? (enMezcla.size < 2 ? <Aviso tono="cuidado" texto="Elige al menos dos para mezclar." />
                     : <View style={{ gap: 4 }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Aplicaciones mezcladas</Text><Contador etiqueta="aplicaciones mezcladas" valor={veces} min={1} max={Math.max(1, topeDeMezcla(enMezcla, renglonDe, dosis))} onCambiar={setVecesMezcla} /></View>) : null}
                   {c.faltaDosis ? <Aviso tono="cuidado" texto="Falta elegir cuánto se pone." /> : null}
+                  {renglonesSinLote.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>La factura no dice qué ampolla es: escribe el lote y el vencimiento impresos en ella.</Text> : null}
+                  {renglonesSinLote.map((r) => (
+                    <LoteDeAmpolla key={r.linea_num} titulo={r.descripcion} valor={lotes[r.linea_num] || LOTE_VACIO}
+                      onCambiar={(v) => setLotes((x) => ({ ...x, [r.linea_num]: v }))} />
+                  ))}
                 </Seccion>
               </>
             ) : null}
@@ -315,6 +341,7 @@ export default function AplicacionInyeccion() {
               <Seccion titulo="La trajo el cliente">
                 <Campo multiline={false} value={producto} maxLength={40} onChangeText={setProducto} placeholder="Qué inyección (Neurobion 25000)" />
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Aplicaciones</Text><Contador etiqueta="aplicaciones" valor={cantidad} min={1} max={10} onCambiar={setCantidad} /></View>
+                <LoteDeAmpolla valor={loteTraida} onCambiar={setLoteTraida} />
                 {ficha ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{`Ficha: ${ficha.name}`}</Text>

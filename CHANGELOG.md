@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.0 — Lote y vencimiento en cada inyección aplicada
+
+PENDIENTES 20. Cada aplicación de inyección queda con el lote y el
+vencimiento de la ampolla, obligatorios (usuario, 2026-10-28).
+
+- **Comprada con lote en la factura** (586 de 934): se toma de la factura; el
+  vencimiento que la factura no trae sale de la compra de ese lote. No se pide nada.
+- **Comprada con lote «GENERICO» o vacío** (348) y **traída por el cliente**
+  (82): la caja escribe el lote y el vencimiento (MM/AAAA) mirando la ampolla,
+  en el portal y en la app. Sin ellos no se cobra.
+- **Ampolla vencida: no se cobra.** El juez es `inyeccion_lote_valido` y lo
+  llama `inyeccion_cotizar`, ANTES de mover la caja.
+- La bitácora de inyecciones muestra el lote y el vencimiento de cada fila, y
+  el CSV lleva las columnas LOTE y VENCE.
+
+Migración `20261029134551_inyecciones_lote_y_vencimiento`; `operar-caja` v73
+pasa el lote de la traída. La app necesita versión nueva para pedirlo: la vieja
+recibe el aviso «Falta el lote de la ampolla» al cobrar una traída o genérica.
+
 ## v2.1358.0 — Registro trazable de antibióticos por lote
 
 PENDIENTES 17 (Guía SRS 3.3/3.4, CRÍTICOS). Nueva pestaña **Bitácoras →

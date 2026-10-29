@@ -88,7 +88,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 19. ⏸ **Procedimientos 7–9** (antibióticos, vencidos, farmacovigilancia) —
     **en espera: el usuario ya los tiene hechos y los va a subir** (2026-10-28).
     — BITACORAS:142
-20. Lote y vencimiento en las inyecciones. — BITACORAS:215
+20. ~~Lote y vencimiento en las inyecciones~~ — **hecho v2.1359.0** (obligatorio al cobrar cuando la factura no lo dice). — BITACORAS:215
 21. Fotos del bucket `recetas` dentro del respaldo semanal. — BITACORAS:306
 22. Dueño del lote fundido o vencido en el libro (con datos de noviembre). — BITACORAS:177
 

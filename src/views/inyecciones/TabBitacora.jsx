@@ -24,7 +24,7 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import { hoySV } from '@nucleo/utils/fecha';
 import {
     CABECERA_CSV_BITACORA, CAMPOS_DE_BUSQUEDA_BITACORA, ESTADOS_BITACORA, agregarFiltroDeBitacora, filasCsvBitacora,
-    filtrosEfectivosDeBitacora, quitarFiltroDeBitacora, rotuloDeFiltroDeBitacora,
+    filtrosEfectivosDeBitacora, quitarFiltroDeBitacora, rotuloDeFiltroDeBitacora, venceDeAmpolla,
 } from '@nucleo/utils/inyeccionesPendientes';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -291,6 +291,10 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                         </DataCell>
                         <DataCell className="text-body-sm">
                             <p className="text-content">{f.producto}</p>
+                            {/* Lote de la ampolla: de la factura, o escrito al cobrar (PENDIENTES 20). */}
+                            <p className="text-caption text-content-3">
+                                {f.lote ? `Lote ${f.lote}${f.vence ? ` · vence ${venceDeAmpolla(f.vence)}` : ''}` : 'Sin lote registrado'}
+                            </p>
                             {(f.dosis_ml != null || f.mezclada) && (
                                 <p className="flex flex-wrap gap-1.5 mt-1">
                                     {/* La dosis, para quien la aplique (se cobró por ml). */}

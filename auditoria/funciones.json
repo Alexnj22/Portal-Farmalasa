@@ -3357,6 +3357,18 @@
    "area": "ventas",
    "por": "código"
   },
+  "inyeccion_lote_aplicado": {
+   "area": "ventas",
+   "por": "llamada"
+  },
+  "inyeccion_lote_pide": {
+   "area": "ventas",
+   "por": "llamada"
+  },
+  "inyeccion_lote_valido": {
+   "area": "ventas",
+   "por": "llamada"
+  },
   "inyeccion_registrar": {
    "area": "cortes-efectivo",
    "por": "código"

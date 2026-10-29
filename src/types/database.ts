@@ -15591,10 +15591,12 @@ export type Database = {
           id: number
           invoice_id: number | null
           linea_num: number | null
+          lote: string | null
           mezcla_de: number | null
           origen: string
           precio: number
           producto: string
+          vence: string | null
           vinculada_por: string | null
         }
         Insert: {
@@ -15614,10 +15616,12 @@ export type Database = {
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
+          lote?: string | null
           mezcla_de?: number | null
           origen: string
           precio: number
           producto: string
+          vence?: string | null
           vinculada_por?: string | null
         }
         Update: {
@@ -15637,10 +15641,12 @@ export type Database = {
           id?: never
           invoice_id?: number | null
           linea_num?: number | null
+          lote?: string | null
           mezcla_de?: number | null
           origen?: string
           precio?: number
           producto?: string
+          vence?: string | null
           vinculada_por?: string | null
         }
         Relationships: [
@@ -33239,6 +33245,23 @@ export type Database = {
       inyeccion_fijar_precio: {
         Args: { p_origen: string; p_precio: number }
         Returns: undefined
+      }
+      inyeccion_lote_aplicado: {
+        Args: {
+          p_invoice_id: number
+          p_linea: number
+          p_lote: string
+          p_vence: string
+        }
+        Returns: {
+          lote: string
+          vence: string
+        }[]
+      }
+      inyeccion_lote_pide: { Args: { p_lote: string }; Returns: boolean }
+      inyeccion_lote_valido: {
+        Args: { p_lote: string; p_vence: string }
+        Returns: Json
       }
       inyeccion_registrar: {
         Args: {

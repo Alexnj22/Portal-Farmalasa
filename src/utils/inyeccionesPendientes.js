@@ -60,13 +60,17 @@ const horaBitacora = (ts) => (ts ? fechaHora12(ts) : '—');
 const nombreBitacora = (n) => (n ? shortEmployeeName(n) : '—');
 const facturaBitacora = (c) => String(c || '').replace(/^0+/, '');
 
-export const CABECERA_CSV_BITACORA = ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'PRECIO', 'COBRADA POR', 'VENDIO',
+export const CABECERA_CSV_BITACORA = ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'LOTE', 'VENCE', 'PRECIO', 'COBRADA POR', 'VENDIO',
     'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN'];
+
+/** El vencimiento de la ampolla como viene impreso: «05/2027». */
+export const venceDeAmpolla = (v) => (v ? `${String(v).slice(5, 7)}/${String(v).slice(0, 4)}` : '');
 
 export function filasCsvBitacora(filas) {
     return (filas || []).map((f) => [
         horaBitacora(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', facturaBitacora(f.correlativo), f.venta_sala || '',
-        f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto, f.precio, nombreBitacora(f.cobrada_por), f.vendedor ? nombreBitacora(f.vendedor) : '',
+        f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto,
+        f.lote || '', venceDeAmpolla(f.vence), f.precio, nombreBitacora(f.cobrada_por), f.vendedor ? nombreBitacora(f.vendedor) : '',
         f.estado, f.aplicada_at ? horaBitacora(f.aplicada_at) : '', f.aplicada_por ? nombreBitacora(f.aplicada_por) : '',
         f.aplicada_en || '',
     ]);

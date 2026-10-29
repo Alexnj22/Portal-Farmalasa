@@ -2431,6 +2431,8 @@ export type Database = {
           cobertura: number | null
           created_at: string
           customer_id: number
+          dosis_at: string | null
+          dosis_dia: number | null
           dura_dias: number | null
           estado: string
           id: number
@@ -2448,6 +2450,8 @@ export type Database = {
           cobertura?: number | null
           created_at?: string
           customer_id: number
+          dosis_at?: string | null
+          dosis_dia?: number | null
           dura_dias?: number | null
           estado?: string
           id?: number
@@ -2465,6 +2469,8 @@ export type Database = {
           cobertura?: number | null
           created_at?: string
           customer_id?: number
+          dosis_at?: string | null
+          dosis_dia?: number | null
           dura_dias?: number | null
           estado?: string
           id?: number
@@ -29074,6 +29080,10 @@ export type Database = {
         }
         Returns: Json
       }
+      app_tratamiento_dosis: {
+        Args: { p_customer: number; p_dosis: number; p_product_id: number }
+        Returns: Json
+      }
       app_tratamientos_de: { Args: { p_customer: number }; Returns: Json }
       app_tratamientos_detectar: {
         Args: { p_clientes: number[] }
@@ -35841,6 +35851,10 @@ export type Database = {
           producto: string
           request_id: string
         }[]
+      }
+      tratamiento_ajusta_dosis: {
+        Args: { p_product_id: number }
+        Returns: boolean
       }
       tratamiento_dias_por_unidad: {
         Args: { p_product_id: number }

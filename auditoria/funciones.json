@@ -391,6 +391,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "app_tratamiento_dosis": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
   "app_tratamientos_de": {
    "area": "app-clientes",
    "por": "código"
@@ -5371,6 +5375,10 @@
   "traslados_por_barrer": {
    "area": "traslados",
    "por": "código"
+  },
+  "tratamiento_ajusta_dosis": {
+   "area": "app-clientes",
+   "por": "llamada"
   },
   "tratamiento_dias_por_unidad": {
    "area": "app-clientes",

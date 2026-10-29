@@ -7,6 +7,8 @@
 // medicamento en el carrito —en la presentación y cantidad de la última
 // compra— y lo abre (componentes/VolverAPedir). La ficha del producto se abre
 // tocando su nombre.
+// Dosis (2026-10-29): «Recordarme tomarlo» manda cuánto toma al día y la fecha
+// en que se acaba sale de ahí; al cerrar la hoja se vuelve a pedir la lista.
 import { useCallback, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
@@ -106,22 +108,23 @@ export default function Tratamientos() {
       ) : null}
       {activos.map((t) => <Fila key={t.id} t={t} alVer={() => navegar(`/producto/${t.product_id}`)} alVolver={() => volverAPedir(t)}
         volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
-        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} />)}
+        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)}
+        alQuitarDosis={t.ajusta_dosis && t.dosis != null ? () => pedir('tratamiento_dosis', { product_id: t.product_id, dosis: null }).then(cargar) : undefined} />)}
       {apagados.length ? <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, marginTop: 8, marginLeft: 4 }}>YA NO LO TOMO</Text> : null}
       {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
-      {tomas ? <TomasHoja tratamiento={tomas} actual={useTomas.getState().config[String(tomas.product_id)]} alCerrar={() => setTomas(null)} /> : null}
+      {tomas ? <TomasHoja tratamiento={tomas} actual={useTomas.getState().config[String(tomas.product_id)]} alCerrar={() => { setTomas(null); cargar(); }} /> : null}
     </Pantalla>
   );
 }
 
-function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar }) {
+function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDosis }) {
   const tema = useTema();
   const pid = String(t.product_id);
   const recordatorio = useTomas((s) => s.config[pid]);
   const tomado = useTomas((s) => tomadoHoy(s.registro, pid));
   const quitar = () => Alert.alert('Quitar recordatorio', `Dejamos de avisarte las tomas de ${nombrePropio(t.nombre)}.`, [
     { text: 'Cancelar', style: 'cancel' },
-    { text: 'Quitar', style: 'destructive', onPress: () => { quitarRecordatorio(pid); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); } },
+    { text: 'Quitar', style: 'destructive', onPress: () => { quitarRecordatorio(pid); alQuitarDosis?.(); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); } },
   ]);
   const dias = diasHasta(t.se_acaba);
   const urgente = !apagado && dias <= 3;

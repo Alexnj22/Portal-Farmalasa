@@ -13,8 +13,14 @@
 // cosas («3 veces al día · cada 8 h») y «Otro horario». Las de intervalo se
 // reparten parejo desde la primera toma (8:00 por defecto) y mover una corre
 // las demás; «Otro horario» deja elegir cuántas tomas y cada hora libre.
+//
+// 2026-10-29: «¿Cuánto tomas cada vez?» (½, 1, 1½ o 2). Las tomas al día por
+// esa cantidad es la dosis diaria, y ESO —sólo eso, nunca los horarios— se
+// manda al servidor (`tratamiento_dosis`) para calcular cuándo se acaba lo
+// comprado. No se pregunta en anticonceptivos ni en los de toma semanal
+// (`ajusta_dosis` falso): su ciclo es fijo.
 import { useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -23,6 +29,7 @@ import { colorSistema } from './sistema';
 import { Boton, RADIO, Seccion } from './ui';
 import SelectorHora, { HORA_NATIVA } from './SelectorHora';
 import { nombrePropio } from '../lib/formato';
+import { useSesion } from '../lib/sesion';
 import { DURACIONES, INICIO_DEFECTO, MAX_TOMAS_LIBRES, OPCIONES, diaTexto, guardarRecordatorio, horaTexto, horasCada, horasRecomendadas, inicioRecomendado, horasVeces, hoyLocal, opcionGuardada, quitarRecordatorio, revisarHoras, sumarDias } from '../lib/tomas';
 import { useTema } from '../tema/tema';
 
@@ -35,6 +42,7 @@ function mover(h, horas, minutos) {
   return `${dos(Math.floor(total / 60))}:${dos(total % 60)}`;
 }
 const MAX_DIAS = 365;
+const CANTIDADES = [{ v: 0.5, texto: '½' }, { v: 1, texto: '1' }, { v: 1.5, texto: '1½' }, { v: 2, texto: '2' }];
 
 export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   const t = useTema();
@@ -49,6 +57,9 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   const [duracion, setDuracion] = useState(actual?.duracion ?? null);
   const [hasta, setHasta] = useState(actual?.duracion === 'fecha' ? actual.hasta : sumarDias(hoyLocal(), 14));
   const [nota, setNota] = useState(actual?.nota ?? '');
+  const ajusta = !!tratamiento.ajusta_dosis;
+  const [cantidad, setCantidad] = useState(() => actual?.cantidad ?? 1);
+  const pedir = useSesion((s) => s.pedir);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
@@ -112,15 +123,21 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
     const r = await guardarRecordatorio({
       product_id: String(tratamiento.product_id), nombre: tratamiento.nombre, se_acaba: tratamiento.se_acaba ?? null,
       horas, duracion, hasta: fin, nota: nota.trim(),
-      modo: libre ? 'veces' : 'cada', n, inicio: libre ? null : horas[0],
+      modo: libre ? 'veces' : 'cada', n, inicio: libre ? null : horas[0], cantidad: ajusta ? cantidad : null,
     });
+    if (!r.ok) { setGuardando(false); setError(r.error); return; }
+    // El recordatorio ya quedó en el teléfono: si la dosis no llega, se avisa
+    // pero no se deshace lo guardado.
+    const d = ajusta ? await pedir('tratamiento_dosis', { product_id: tratamiento.product_id, dosis: horas.length * cantidad }) : { ok: true };
     setGuardando(false);
-    if (!r.ok) { setError(r.error); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     alCerrar();
+    if (!d?.ok) Alert.alert('Recordatorio guardado', 'No pudimos actualizar cuándo se te acaba. Lo intentaremos la próxima vez que lo guardes.');
   };
   const quitar = async () => {
     await quitarRecordatorio(String(tratamiento.product_id));
+    // Sin recordatorio se vuelve a contar una toma al día.
+    if (ajusta) pedir('tratamiento_dosis', { product_id: tratamiento.product_id, dosis: null });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     alCerrar();
   };
@@ -142,7 +159,9 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginTop: 8 }}>
               <Icono sf="lock.fill" respaldo="i" tam={13} color={colorSistema.texto3} />
               <Text style={{ flex: 1, fontSize: 12.5, lineHeight: 17, color: colorSistema.texto3 }}>
-                Tus horarios se guardan sólo en este teléfono; no los enviamos a nadie. Si cierras sesión, se borran.
+                {ajusta
+                  ? 'Tus horarios se guardan sólo en este teléfono. A la farmacia sólo le llega cuánto tomas al día, para avisarte antes de que se te acabe.'
+                  : 'Tus horarios se guardan sólo en este teléfono; no los enviamos a nadie.'} Si cierras sesión, se borran.
               </Text>
             </View>
           </View>
@@ -218,6 +237,29 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             </View>
           ) : null}
           {!HORA_NATIVA ? <Text style={{ fontSize: 12, color: colorSistema.texto3, marginTop: aviso ? 0 : -8, marginLeft: 4 }}>Los botones de la izquierda mueven la hora; los de la derecha, de 15 en 15 minutos.</Text> : null}
+
+          {ajusta ? (
+            <>
+              <Seccion>¿Cuánto tomas cada vez?</Seccion>
+              <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
+                {CANTIDADES.map((c) => {
+                  const elegida = c.v === cantidad;
+                  return (
+                    <Presionable key={c.v} onPress={() => { Haptics.selectionAsync().catch(() => {}); setCantidad(c.v); }}
+                      accessibilityRole="radio" accessibilityState={{ selected: elegida }}
+                      accessibilityLabel={`${c.texto} ${c.v === 1 ? 'tableta' : 'tabletas'}`}
+                      style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: elegida ? t.color.magenta : superficie, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+                      <Text style={{ fontSize: 18, fontWeight: '800', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{c.texto}</Text>
+                    </Presionable>
+                  );
+                })}
+              </View>
+              <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
+                {`Tabletas por toma. En total, ${String(horas.length * cantidad).replace('.5', '½').replace(/^0½$/, '½')} al día: con eso calculamos cuándo se te acaba.`}
+              </Text>
+            </>
+          ) : null}
 
           <Seccion>¿Por cuánto tiempo?</Seccion>
           <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>

@@ -1636,7 +1636,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
-    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
+    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -2911,6 +2911,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       });
       if (error) return json({ ok: false, mensaje: error.code === "P0001" && error.message ? error.message : "No se pudo guardar." });
       return json({ ok: true });
+    }
+    // Cuánto toma al día (2026-10-29): lo manda «Recordarme tomarlo» al
+    // guardar (y `null` al quitarlo). Sólo la dosis: los horarios se quedan en
+    // el teléfono. Con ella se calcula cuándo se le acaba lo comprado.
+    if (accion === "tratamiento_dosis") {
+      const dosis = body?.dosis == null ? null : Number(body.dosis);
+      if (dosis !== null && !(Number.isFinite(dosis) && dosis > 0 && dosis <= 24)) return json({ ok: false, mensaje: "Esa dosis no es válida." });
+      const { data, error } = await admin.rpc("app_tratamiento_dosis", {
+        p_customer: customerId, p_product_id: Number(body?.product_id), p_dosis: dosis,
+      });
+      if (error) return json({ ok: false, mensaje: error.code === "P0001" && error.message ? error.message : "No se pudo guardar." });
+      return json({ ok: true, se_acaba: (data as { se_acaba?: string } | null)?.se_acaba ?? null });
     }
 
     // ── Encuestas en la app (2026-10-07): las publicadas con el canal «app»

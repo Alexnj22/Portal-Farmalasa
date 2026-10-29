@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1360.3 — Tratamientos: la dosis la pone el cliente
+
+Hasta ahora se calculaba cuánto dura lo comprado a una toma diaria: quien toma
+dos se quedaba sin medicina antes del aviso, y quien toma media recibía el
+aviso con medio frasco (migración `20261029155325`).
+
+- «Recordarme tomarlo» pregunta **¿Cuánto tomas cada vez?** (½, 1, 1½, 2). Las
+  tomas al día por esa cantidad es la dosis diaria, y la app la manda con la
+  acción nueva `tratamiento_dosis`. **Sólo la dosis**: los horarios se quedan
+  en el teléfono, y el texto de privacidad de la hoja ahora lo dice así.
+- `app_tratamiento_dosis` la guarda en `app_tratamientos.dosis_dia`, recalcula
+  en el acto y devuelve la fecha nueva. Quitar el recordatorio la borra (vuelve
+  a una toma diaria).
+- Con dosis del cliente, `dura_dias` y la cobertura salen de ella y no se exige
+  el 70% de cobertura: el cliente dijo que lo toma.
+- Anticonceptivos y alendronato no la preguntan (`tratamiento_ajusta_dosis`):
+  su ciclo es fijo.
+
 ## v2.1360.2 — La solicitud y el historial marcan qué salió de un traslado incompleto
 
 Seguimiento de v2.1359.9. La bolsa en camino ya contaba lo que salió, pero el

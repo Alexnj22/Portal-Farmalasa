@@ -40,8 +40,13 @@ const MARCAS_TECNICAS = [
     /\b[a-z][a-z0-9]*_[a-z0-9_]+\b/,
     // Payloads: HTML del ERP/Cloudflare, JSON crudo, XML de Hacienda.
     /<!DOCTYPE|<html|<\/?[a-z]+>|^\s*[[{]"/i,
-    // Códigos de error de la plataforma.
-    /\bPGRST\d+\b|\b[0-9A-Z]{5}\b:\s|\bSQLSTATE\b|\berror code\b/i,
+    // Códigos de error de la plataforma. El SQLSTATE (`23505: `, `P0001: `)
+    // exige un dígito y mayúsculas: con `/i` y sin dígito, cualquier palabra
+    // de cinco letras antes de dos puntos contaba como código — «antes de
+    // hacer el corte: puede ser…» tapó el motivo de las preventas y Salud 2
+    // vio el genérico nueve veces (2026-10-28).
+    /\bPGRST\d+\b|\b(?=[0-9A-Z]*\d)[0-9A-Z]{5}\b:\s/,
+    /\bSQLSTATE\b|\berror code\b/i,
     // Prosa de Postgres / PostgREST / supabase-js. Toda en inglés: el portal no
     // muestra inglés a nadie, así que estas frases no pueden ser copy legítima.
     /\b(constraint|relation|column|schema cache|violates|duplicate key|syntax error|permission denied|null value in|does not exist|invalid input syntax|out of range|deadlock detected|could not find|unexpected token|failed to fetch|network ?error|internal server error)\b/i,

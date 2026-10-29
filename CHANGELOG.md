@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.52 — El motivo del corte rechazado se ve, y el aviso de preventas sale antes de contar
+
+Salud 2 intentó el corte nueve veces el 28-oct y sólo vio «No se pudo
+completar la operación». El servidor sí decía que había una preventa sin
+finalizar, pero el filtro de errores técnicos tomaba «corte: » por un código
+SQLSTATE (cinco letras + dos puntos, sin distinguir mayúsculas) y lo tapaba.
+Ahora el código exige un dígito. El mensaje de preventas se acortó (hasta dos
+nombradas) para no pasar el tope de 240 caracteres.
+
+Y el aviso previo de Mi caja (`preventas: true`) recibía siempre 400 «Falta el
+efectivo contado»: la consulta ya no exige efectivo, así que la lista sale al
+abrir el diálogo, antes de contar.
+
 ## v2.1357.51 — El correo del cliente sale puesto al mandar su documento
 
 Al abrir «Correo» en el documento electrónico para el cliente (Modificar

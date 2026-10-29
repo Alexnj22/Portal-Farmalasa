@@ -592,7 +592,10 @@ Deno.serve(async (req) => {
     const tipo = String(body.tipo ?? "C").toUpperCase() === "Z" ? "Z" : "C";
     const esZ = tipo === "Z";
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
-    if (!simular && !esZ && !(Number.isFinite(efectivo) && efectivo >= 0)) {
+    // La consulta de preventas (`body.preventas`) no cuenta nada: sin esta
+    // excepción contestaba 400 «Falta el efectivo contado» y el aviso previo
+    // de Mi caja no salía nunca (2026-10-28, Salud 2).
+    if (!simular && !esZ && body.preventas !== true && !(Number.isFinite(efectivo) && efectivo >= 0)) {
       return json({ ok: false, error: "Falta el efectivo contado." }, 400);
     }
 
@@ -839,15 +842,19 @@ Deno.serve(async (req) => {
     if (!simular) {
       const vivas = await preventasVivas(cookie);
       if (vivas.length) {
-        const lista = vivas.map((p) => `#${p.referencia} ${p.cliente} $${p.total.toFixed(2)}`).join("; ");
+        // Corto a propósito: la pantalla cambia por el genérico todo mensaje de
+        // más de 240 caracteres, y con nombres largos la lista entera lo pasaba.
+        // La lista completa viaja en `preventas`.
+        const lista = vivas.slice(0, 2)
+          .map((p) => `#${p.referencia} ${String(p.cliente).slice(0, 30)} $${p.total.toFixed(2)}`)
+          .join("; ") + (vivas.length > 2 ? ` y ${vivas.length - 2} más` : "");
         const cuantas = vivas.length === 1
-          ? "Hay una preventa guardada sin finalizar"
-          : `Hay ${vivas.length} preventas guardadas sin finalizar`;
+          ? "Hay una preventa sin finalizar"
+          : `Hay ${vivas.length} preventas sin finalizar`;
         return json({
           ok: false, preventas_pendientes: true, preventas: vivas,
           error: `${cuantas} (${lista}). Finalízala o elimínala en la caja antes de `
-            + (esZ ? "cerrar el día" : "hacer el corte")
-            + ": puede ser dinero que ya está en el cajón y todavía no es venta.",
+            + (esZ ? "cerrar el día." : "hacer el corte."),
         }, 409);
       }
     }

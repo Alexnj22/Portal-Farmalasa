@@ -2776,16 +2776,19 @@ Deno.serve(async (req) => {
         ...(cajaSimulada ? { simulado: true } : {}) });
     }
 
-    // ── CERRAR EL DÍA ───────────────────────────────────────────────────────
+    // ── CERRAR EL TURNO (último paso de cerrar el día) ──────────────────────
     //
     // La rama va con su `if` EXPLÍCITO y no de cola: cerrar no se deshace, y
     // ser el final del `try` la convertía en lo que pasa cuando ninguna otra
     // coincide. Ver el comentario de la lista de acciones.
     //
-    // NO se cierra sin al menos un corte del día (regla del usuario, 30-ago).
-    // El cierre emite el Z, y un día que cierra sin haber cortado deja el
-    // efectivo de toda la jornada sin haberse contado ni una vez: la diferencia
-    // ya no se puede atribuir a ningún turno, y el Z no se deshace.
+    // Esto NO emite el Z (descubierto el 1-sep: `cerrar_turno` sólo termina el
+    // turno). El Z lo emite ANTES `hacer-corte-caja` con `tipo: 'Z'`, y ahí
+    // viven los frenos que mandan —corte confirmado, ninguno sin resolver,
+    // efectivo sin contar, preventas—. `cerrarElDia` (src/data/bolsas.js) llama
+    // a esta acción recién cuando el Z salió. Los dos frenos de abajo repiten
+    // los primeros a propósito: es la última puerta antes de algo que no se
+    // deshace, y alguien podría llamar a esta acción sin pasar por el Z.
     //
     // El corte se cuenta del DÍA QUE LA CAJA TIENE ABIERTO —no de hoy—: una
     // caja que quedó abierta pasada la medianoche sigue en su día, y pedirle un
@@ -2864,9 +2867,11 @@ Deno.serve(async (req) => {
 
     /* ── ¿Salió el Z? Se COMPRUEBA, no se supone ──────────────────────────
      *
-     * El cierre del turno es lo que emite el Z, y hasta el 31-ago el portal
-     * daba por hecho que había salido: contestaba `cerrada: true` con sólo
-     * mirar que la caja aceptara la petición.
+     * Hasta el 31-ago el portal creía que cerrar el turno emitía el Z y daba
+     * por hecho que había salido: contestaba `cerrada: true` con sólo mirar
+     * que la caja aceptara la petición. No lo emite —desde el 1-sep el Z sale
+     * antes, por `hacer-corte-caja`—, así que esto ya no comprueba lo que este
+     * paso hizo sino lo que el anterior dejó: que el día tenga su Z.
      *
      * Se agrega por lo que enseñó el primer corte hecho desde el portal ese
      * mismo día: el formulario del corte trae `tipo_corte` con **X** marcado

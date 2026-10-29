@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1367.2 — Caja: comentarios del cierre al día con lo que hace
+
+PENDIENTES 34. Dos comentarios de `operar-caja` (acción `cerrar`) seguían
+diciendo que cerrar el turno emite el Z. No lo emite —descubierto el 1-sep—: el
+Z sale antes por `hacer-corte-caja` con `tipo: 'Z'`, donde viven los frenos que
+mandan, y `cerrarElDia` cierra el turno recién después. Sólo comentarios: sin
+cambio de comportamiento ni redespliegue.
+
 ## v2.1367.1 — funciones.json sin marcas de conflicto
 
 v2.1367.0 subió `auditoria/funciones.json` con marcas de conflicto (`<<<<<<<`)

@@ -23,7 +23,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1376.1 — Revisión de factor: el cambio se mide contra el catálogo de antes
 
-_(pendiente de redactar)_
+X-Ray Dol X 48 pasó de CAJA 1x1 a CAJA 1x4 y, en la misma carga, la caja le
+creó un BLISTER 1x1. La existencia (1 caja en Salud 2, Salud 3 y La Popular)
+quedó como 1 blíster y el portal no lo marcó: preguntaba si el producto tenía
+otra presentación mirando el catálogo de HOY, y vio el blíster nuevo.
+
+- «¿Era la única presentación?» se pregunta sobre las activas JUSTO ANTES del
+  cambio: la foto `catalogo_antes` o, para cambios anteriores, el historial de
+  precios. Lo normal es que la caja apague la vieja y deje sólo las nuevas.
+  Revisados los 9 cambios de 120 días: sólo X-Ray Dol cambia.
+- Si hay una presentación de 1, la carga va ahí y cuadra exacto: X-Ray Dol
+  ofrece **cargar 3 blísteres** por sala, sin unidades sueltas de más.
+- La tarjeta nombra la presentación que cambió (caja), no la de la existencia.
+
+Migración `20261029183040_existencia_por_corregir_catalogo_de_antes`.
 
 ## v2.1376.0 — Cargar compra: unidades por caja, consumo y revisión de la carga
 

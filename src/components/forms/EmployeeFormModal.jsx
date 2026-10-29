@@ -70,7 +70,7 @@ import { fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
 import { getStoragePathFromUrl } from '@nucleo/utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
-import { DOS_CARAS, COMPARTIBLES, VARIAS_HOJAS, SIN_VENCIMIENTO, ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado,
+import { DOS_CARAS, COMPARTIBLES, VARIAS_HOJAS, SIN_VENCIMIENTO, ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado, enUnaPieza,
     POR_ANIO_CALENDARIO, vencimientoDelAnio, anioDelVencimiento, anioQueCubre, estadoDelDocumento, carasConElVencimientoDelDui } from '@nucleo/utils/documentosDelExpediente';
 import TarjetaDeDocumento from './TarjetaDeDocumento';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '@nucleo/utils/economicDependents';
@@ -1779,6 +1779,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         while (hojas.length <= idx) hojas.push({ url: null, file_name: '' });
         hojas[idx] = { ...hojas[idx], ...patch };
         const updated = { ...base, hojas };
+        // Llegó un reverso: son dos archivos. Sin borrar la marca, quitar ese
+        // reverso después devolvería el documento a «un solo archivo» solo.
+        if (patch.url) delete updated.una_pieza;
         if (i >= 0) list[i] = updated; else list.push(updated);
         return { ...prev, employee_documents: list };
     });
@@ -1862,6 +1865,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const hasFile = !!doc.url;
         const expiryBadge = getExpiryBadge(doc.expiry_date);
         const hojas = Array.isArray(doc.hojas) ? doc.hojas : [];
+        const dosCaras = DOS_CARAS.has(category);
+        const unaPieza = dosCaras && enUnaPieza(doc);
         /* UNA caja y no un fragmento (2026-10-15). Devolvía las piezas sueltas
            —rótulo, archivo, reverso, vencimiento—, y donde el llamador lo pone
            dentro de una cuadrícula de dos columnas (Acreditaciones) cada pieza
@@ -1873,16 +1878,35 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     "Subiendo y analizando con IA…" que este modal ya mostraba:
                     la subida dispara `analyze-document` y puede tardar varios
                     segundos, así que la fila tiene que decirlo. */}
-                {DOS_CARAS.has(category) && (
+                {/* Igual que el DUI: dos archivos, o uno con las dos caras.
+                    El selector se ofrece sólo con el reverso vacío — con un
+                    reverso cargado ya son dos archivos, y pasar a «un solo
+                    archivo» lo escondería sin quitarlo. */}
+                {dosCaras && !hojas[0]?.url && (
+                    <div className="flex items-center gap-1.5">
+                        {[{ v: false, l: 'Frente y reverso' }, { v: true, l: 'Un solo archivo' }].map(op => (
+                            <button key={String(op.v)} type="button"
+                                onClick={() => updateDoc(category, { una_pieza: op.v })}
+                                aria-pressed={unaPieza === op.v}
+                                className={`min-h-[var(--tap-min)] px-3 rounded-full text-micro font-black uppercase tracking-wide border transition-all active:scale-[0.97] ${
+                                    unaPieza === op.v
+                                        ? 'bg-brand text-white border-brand shadow-[var(--shadow-glow-brand)]'
+                                        : 'bg-surface-card text-content-2 border-border-card hover:border-brand/40'}`}>
+                                {op.l}
+                            </button>
+                        ))}
+                    </div>
+                )}
+                {dosCaras && (
                     <div className="flex items-center gap-2">
                         <label className={rotuloCampo('text-content-2', { denso: true })}>
-                            <span>Frente</span>
+                            <span>{unaPieza ? 'Documento completo (las dos caras)' : 'Frente'}</span>
                         </label>
                         {/* Las dos caras de una vez, como el DUI. Sólo en
                             escritorio —en el teléfono ya está la cámara en cada
                             casilla— y sólo con las dos casillas vacías: con una
                             ya puesta, la otra se sube con su propio botón. */}
-                        {!esTactil && !hasFile && !hojas[0]?.url && (
+                        {!esTactil && !unaPieza && !hasFile && !hojas[0]?.url && (
                             <Button variant="ghost" size="sm" icon={Smartphone} className="ml-auto"
                                 onClick={() => pedirDosCarasAlTelefono(category)}
                                 disabled={!!capturaDosCaras || isAnalyzing}>
@@ -1904,7 +1928,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     tipoDeDocumento={CATEGORIAS_DE_DUI.has(category) ? 'dui' : 'documento'}
                     // Este bloque dibuja su propio rótulo, así que `FileField` no
                     // recibe `label` y el diálogo del QR no sabría de qué foto habla.
-                    etiquetaParaTelefono={DOS_CARAS.has(category)
+                    etiquetaParaTelefono={unaPieza
+                        ? `${rotuloDelDoc(category).toLowerCase()} con las dos caras`
+                        : dosCaras
                         ? `el frente de ${rotuloDelDoc(category).toLowerCase()}`
                         : (rotuloDelDoc(category) || doc.title || '')}
                     onChange={f => f ? handleDocFile(category, f) : removeDocFile(category)}
@@ -1916,7 +1942,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     respuesta a «ve cómo hacerlo por el QR» — no hacía falta
                     nada nuevo, hacía falta que hubiera una casilla donde
                     ponerlo. */}
-                {DOS_CARAS.has(category) && (
+                {dosCaras && !unaPieza && (
                     <div className="mt-2">
                         <label className={rotuloCampo('text-content-2', { denso: true })}>
                             <span>Reverso</span>

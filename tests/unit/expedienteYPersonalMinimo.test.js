@@ -551,7 +551,39 @@ describe('las hojas de un documento', () => {
     it('el reverso y las hojas usan el canónico de adjuntos', () => {
         // Ahí viven la cámara del teléfono por QR, el editor y el visor: una
         // segunda forma de adjuntar sería una que se queda sin esas tres.
-        const i = form.indexOf('{DOS_CARAS.has(category) && (');
+        const i = form.indexOf('{dosCaras && (');
+        expect(i).toBeGreaterThan(-1);
         expect(form.slice(i, i + 2000)).toMatch(/<FileField/);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Las dos caras en un solo archivo — lo mismo que el DUI con `DUI_COMPLETO`
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('un documento de dos caras en un solo archivo', () => {
+    const slice = fs.readFileSync(
+        path.join(process.cwd(), 'src/store/slices/employeeSlice.js'), 'utf8');
+
+    it('la marca no le exige el reverso', async () => {
+        const { faltaElReverso } = await import('@nucleo/utils/documentosDelExpediente');
+        const frente = { url: 'https://x/frente.pdf', hojas: [] };
+        expect(faltaElReverso('LICENCIA_CARRO', frente)).toBe(true);
+        expect(faltaElReverso('LICENCIA_CARRO', { ...frente, una_pieza: true })).toBe(false);
+        // Un documento de una cara no tiene reverso que faltar.
+        expect(faltaElReverso('ANTECEDENTES_PENALES', frente)).toBe(false);
+    });
+
+    it('un reverso cargado gana sobre la marca', async () => {
+        const { enUnaPieza } = await import('@nucleo/utils/documentosDelExpediente');
+        expect(enUnaPieza({ url: 'a', una_pieza: true, hojas: [] })).toBe(true);
+        expect(enUnaPieza({ url: 'a', una_pieza: true, hojas: [{ url: 'b' }] })).toBe(false);
+        expect(enUnaPieza({ url: 'a' })).toBe(false);
+    });
+
+    it('sobrevive al guardado, en las DOS ramas', () => {
+        const fn = slice.slice(slice.indexOf('uploadEmployeeDocuments: async'));
+        const cuerpo = fn.slice(0, fn.indexOf('uploadFileToStorage:'));
+        expect(cuerpo.match(/una_pieza: true/g) || []).toHaveLength(2);
     });
 });

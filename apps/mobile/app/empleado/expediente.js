@@ -30,7 +30,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { DOS_CARAS, EDUCATION_OPTIONS, LEVELS_WITH_PROFESSION, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, SECCIONES_DE_DOCUMENTOS,
-  VARIAS_HOJAS, documentoReemplazado, parcheDeArchivoNuevo, rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+  VARIAS_HOJAS, documentoReemplazado, enUnaPieza, parcheDeArchivoNuevo, rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
 import { elegirYSubir } from '../../componentes/personas/ficha/documentos';
 import { openStoredFile, subirArchivo } from '@nucleo/utils/storageFiles';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -130,8 +130,22 @@ export default function Expediente() {
     const i = l.findIndex((d) => d.category === cat);
     const base = i >= 0 ? l[i] : { category: cat, title: rotuloDelDocumento(cat), file_name: '', url: null, expiry_date: '' };
     const nuevo = { ...base, hojas: cambiarHojas([...(base.hojas || [])]) };
+    // Llegó un reverso: son dos archivos, y la marca de «un solo archivo» se
+    // borra para que quitar ese reverso después no la reviva (igual que el portal).
+    if (nuevo.hojas[0]?.url) delete nuevo.una_pieza;
     if (i >= 0) l[i] = nuevo; else l.push(nuevo);
     return l;
+  };
+  // Las dos caras en un solo archivo, como el DUI (`enUnaPieza`). No toca
+  // `historial`: es cómo llegó el papel, no un reemplazo.
+  const marcarUnaPieza = (cat, valor) => {
+    const l = [...docs];
+    const i = l.findIndex((d) => d.category === cat);
+    const base = i >= 0 ? l[i] : { category: cat, title: rotuloDelDocumento(cat), file_name: '', url: null, expiry_date: '' };
+    const nuevo = { ...base, una_pieza: valor };
+    if (!valor) delete nuevo.una_pieza;
+    if (i >= 0) l[i] = nuevo; else l.push(nuevo);
+    guardar({ employee_documents: l }, valor ? 'Las dos caras en un archivo' : 'Frente y reverso por separado');
   };
   const subirHoja = async (cat, idx) => {
     try {
@@ -223,9 +237,22 @@ export default function Expediente() {
                         </View>
                       ) : d?.expiry_date ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 'auto' }}>{`Vence ${fechaTexto(d.expiry_date, { day: 'numeric', month: 'short', year: 'numeric' })}`}</Text> : null}
                     </View>
-                    {DOS_CARAS.has(cat) ? (
-                      <Hoja rotulo="Reverso" hoja={d?.hojas?.[0]} puede={puedeEditar} ocupado={ocupado}
-                        onVer={abrir} onSubir={() => subirHoja(cat, 0)} onQuitar={() => quitarHoja(cat, 0, true)} />
+                    {DOS_CARAS.has(cat) && enUnaPieza(d) ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingLeft: 12 }}>
+                        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 14 }}>Las dos caras en un solo archivo</Text>
+                        {puedeEditar ? <Pressable onPress={() => marcarUnaPieza(cat, false)} disabled={ocupado} hitSlop={6}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Separar</Text></Pressable> : null}
+                      </View>
+                    ) : DOS_CARAS.has(cat) ? (
+                      <>
+                        <Hoja rotulo="Reverso" hoja={d?.hojas?.[0]} puede={puedeEditar} ocupado={ocupado}
+                          onVer={abrir} onSubir={() => subirHoja(cat, 0)} onQuitar={() => quitarHoja(cat, 0, true)} />
+                        {/* Con el reverso vacío, igual que el selector del portal. */}
+                        {puedeEditar && !d?.hojas?.[0]?.url ? (
+                          <Pressable onPress={() => marcarUnaPieza(cat, true)} disabled={ocupado} hitSlop={6} style={{ paddingLeft: 12 }}>
+                            <Text style={{ color: colorSistema.acento, fontSize: 15 }}>Las dos caras vienen en un solo archivo</Text>
+                          </Pressable>
+                        ) : null}
+                      </>
                     ) : null}
                     {VARIAS_HOJAS.has(cat) ? (
                       <>

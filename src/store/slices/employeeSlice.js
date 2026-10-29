@@ -585,6 +585,7 @@ export const createEmployeeSlice = (set, get) => ({
                     file_name: doc.file_name || doc.file.name || '',
                     historial: Array.isArray(doc.historial) ? doc.historial : [],
                     hojas: hojasDe(doc),
+                    ...(doc.una_pieza ? { una_pieza: true } : {}),
                     expiry_date: expiryDate, issue_date: issueDate, uploaded_at: new Date().toISOString() });
             } else if (doc.url || hojasDe(doc).length) {
                 /* `|| hojas.length`: un documento puede tener el reverso cargado
@@ -594,6 +595,7 @@ export const createEmployeeSlice = (set, get) => ({
                     file_name: doc.file_name || '',
                     historial: Array.isArray(doc.historial) ? doc.historial : [],
                     hojas: hojasDe(doc),
+                    ...(doc.una_pieza ? { una_pieza: true } : {}),
                     expiry_date: doc.expiry_date || null, issue_date: doc.issue_date || null, uploaded_at: doc.uploaded_at || new Date().toISOString() });
             }
         }

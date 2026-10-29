@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1361.0 — Licencias, carnés y tarjetas en un solo archivo, igual que el DUI
+
+El selector «Frente y reverso / Un solo archivo» existía sólo para el DUI. Las
+licencias, los carnés de las juntas y las tarjetas del ISSS y la AFP tenían
+siempre dos casillas: un PDF con las dos caras entraba en «Frente» y el reverso
+quedaba «Pendiente» para siempre.
+
+- Ahora esos documentos tienen el mismo selector. «Un solo archivo» deja una
+  sola casilla («Documento completo (las dos caras)») y no pide el reverso.
+- La elección se guarda en el documento (`una_pieza`) y en las DOS ramas de
+  `uploadEmployeeDocuments`, así que al reabrir la ficha se ve como se dejó.
+- Un reverso cargado gana sobre la marca (`enUnaPieza`): el selector sólo se
+  ofrece con el reverso vacío y subir un reverso la borra, así que nunca puede
+  esconder un archivo que existe.
+- La app hace lo mismo en el expediente: «Las dos caras vienen en un solo
+  archivo» y «Separar».
+
 ## v2.1360.3 — Tratamientos: la dosis la pone el cliente
 
 Hasta ahora se calculaba cuánto dura lo comprado a una toma diaria: quien toma

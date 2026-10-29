@@ -531,6 +531,24 @@ export const DOS_CARAS = new Set([
     'SRS', 'ENFERMERIA', 'MEDICO', 'CONTADURIA',
     'TARJETA_ISSS', 'TARJETA_AFP',
 ]);
+
+/* ── Las dos caras en un solo archivo (2026-10-29) ──────────────────────────
+ *
+ * Lo mismo que el DUI con `DUI_COMPLETO`: Talento Humano recibe un PDF o una
+ * foto con frente y reverso juntos, y obligar a partirlo es trabajo manual.
+ * Quien carga lo elige (`una_pieza: true` en la entrada); no se adivina por el
+ * tipo de archivo — un JPG puede traer las dos caras y un PDF una sola.
+ *
+ * Un reverso cargado GANA sobre la marca: si hay dos archivos, son dos caras
+ * por separado, y así la marca nunca puede esconder un reverso que existe. */
+export function enUnaPieza(doc) {
+    return !!doc?.una_pieza && !doc?.hojas?.[0]?.url;
+}
+
+/** ¿Le falta el reverso? Nunca a uno que no es de dos caras ni a uno en una pieza. */
+export function faltaElReverso(categoria, doc) {
+    return DOS_CARAS.has(categoria) && !enUnaPieza(doc) && !doc?.hojas?.[0]?.url;
+}
 /* ── Documentos que NO son de una sola persona ──────────────────────────────
  *
  * El acuse sellado del Ministerio de Trabajo por una recontratación nombra a

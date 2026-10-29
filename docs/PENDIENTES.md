@@ -82,7 +82,9 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 17. ~~Registro trazable de antibióticos por lote~~ — **hecho v2.1358.0**
     (Bitácoras → Registro por lote; foto diaria por lote desde el 28-oct).
     Devoluciones y destrucción entran con el ítem 18.
-18. **Disposición final y devoluciones de antibióticos.** — BITACORAS:172
+18. ⏸ **Disposición final y devoluciones de antibióticos** — **en espera: se arma
+    con los procedimientos que el usuario ya tiene hechos y todavía no subió**
+    (usuario, 2026-10-28). — BITACORAS:172
 19. **Borradores de los procedimientos 7–9** (antibióticos, vencidos,
     farmacovigilancia) para que firme el regente. — BITACORAS:142
 20. Lote y vencimiento en las inyecciones. — BITACORAS:215

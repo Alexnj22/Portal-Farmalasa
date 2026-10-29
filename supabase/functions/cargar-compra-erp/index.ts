@@ -67,7 +67,6 @@ async function productoDelSistema(cookie: string, id: number): Promise<ProductoD
   };
 }
 
-const hoyEnSalvador = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
 /**
  * El envío real. Cinco frenos antes del POST, y ninguno sobra:
@@ -157,10 +156,10 @@ async function enviarCompra(admin: any, x: {
   return { enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null };
 }
 
-/** Busca la compra recién hecha en la lista del día y compara renglón por renglón. */
+/** Busca la compra recién hecha en la lista de su fecha y compara renglón por renglón. */
 async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, lineas: LineaSobre[], erpProveedor: number) {
-  const hoy = String(sobre.fecha);
-  const t = await pedir(cookie, `${BASE}/descargar_compras_json.php?fini=${hoy}&ffin=${hoy}&id_sucursal=${ERP_BODEGA}`,
+  const dia = String(sobre.fecha);
+  const t = await pedir(cookie, `${BASE}/descargar_compras_json.php?fini=${dia}&ffin=${dia}&id_sucursal=${ERP_BODEGA}`,
     undefined, { timeoutMs: 90_000 });
   const compras: any[] = JSON.parse(t)?.compras ?? [];
   const numero = String(sobre.numero_doc).toUpperCase();
@@ -168,7 +167,7 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
     const n = String(k.documento?.numero ?? "").trim().toUpperCase();
     return !k.anulada && Number(k.proveedor?.id) === erpProveedor && n.length >= 8 && numero.startsWith(n);
   });
-  if (!c) return { ok: false, compra: null, notas: ["Entró, pero no aparece en la lista de compras de hoy."] };
+  if (!c) return { ok: false, compra: null, notas: ["Entró, pero no aparece en la lista de compras de la fecha de la factura."] };
 
   const notas: string[] = [];
   const total = Number(c.totales?.total_operacion);
@@ -397,10 +396,12 @@ Deno.serve(async (req: Request) => {
 
     const sobre = {
       process: "insert", datos: "", json_arr: JSON.stringify(lineas), cuantos: 0,
-      // La fecha de la CARGA, no la del documento: es lo que pone el formulario
-      // por omisión y lo que hace Bodega — medido desde agosto, 688 de 710
-      // compras con 1 a 7 días de diferencia contra la emisión.
-      total: tot.total, fecha: hoyEnSalvador(),
+      // La fecha de EMISIÓN del documento (usuario, 2026-10-29). El sistema
+      // la devuelve como `documento.fecha_emision` y el libro de compras va
+      // por ella. Bodega venía poniendo el día de la carga —el default del
+      // formulario: 688 de 710 compras desde agosto, 1 a 7 días después—, lo
+      // que corre la factura de mes cuando llega a fin de mes.
+      total: tot.total, fecha: String(d.fecha_emision).slice(0, 10),
       concepto: uso === "consumo" ? "COMPRA PARA CONSUMO" : "COMPRA DE PRODUCTO",
       destino: "3", proveedor: String(erpProveedor ?? ""),
       // El código COMPLETO (usuario, 2026-10-29). Ojo: el sistema hoy guarda

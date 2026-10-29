@@ -175,8 +175,8 @@ con lo que quedó guardado. Sólo lecturas. Tres diferencias, las tres corregida
 | | Bodega | el portal armaba | ahora |
 |---|---|---|---|
 | producto de regalo (renglón a $0) | reparte el costo: TODO a $1.6237/$1.6238 | regalo a $0, el resto a $1.7699 | reparte igual (`repartirRegalos`) |
-| fecha | la del día de la carga (688 de 710 compras desde agosto, 1–7 días después de la emisión) | la de emisión | la del día |
-| número de documento | 20 caracteres (616 de 710; ninguna más larga) | los 36 del código | los primeros 20 |
+| fecha | la del día de la carga (688 de 710 compras desde agosto, 1–7 días después de la emisión) | la de emisión | **la de emisión** (usuario, 2026-10-29: es la que manda en el libro de compras) |
+| número de documento | 20 caracteres (616 de 710; ninguna más larga) | los 36 del código | **el código completo** (usuario, 2026-10-29); la verificación compara por el comienzo por si el sistema recorta |
 
 Y el costo por unidad sale del subtotal que cobró el proveedor
 (`ventaGravada`), no de precio × cantidad: en una de las tres daba 2,123.88

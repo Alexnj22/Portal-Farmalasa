@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.3 — Compras: la fecha de la compra es la de emisión
+
+La compra que el portal carga en Bodega lleva la **fecha de emisión** de la
+factura, no la del día de la carga. Es la que manda en el libro de compras:
+con la del día, una factura del 30 cargada el 2 caía en el mes siguiente.
+La verificación posterior busca la compra en la lista de esa fecha. Sólo
+cambia la función `cargar-compra-erp` (desplegada); el envío sigue apagado.
+
 ## v2.1381.2 — Cargar compra: el número del documento va completo
 
 Decisión del usuario: el código de generación se manda entero, no los primeros

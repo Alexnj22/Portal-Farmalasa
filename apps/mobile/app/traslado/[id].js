@@ -22,7 +22,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchApprovalRequestById } from '@nucleo/data/requests';
 import { despacharTraslado, fetchDisponibilidadTraslado, MOTIVOS_RECHAZO, rechazarTraslado, recibirTraslado } from '@nucleo/data/traslados';
 import { loQueSeManda, nombreDeLinea, paquetesQueSalen, sugerenciaDeRechazo } from '@nucleo/utils/decisionTraslado';
-import { loQueLlego, renglonesDe } from '@nucleo/utils/trasladoTexto';
+import { loQueLlego, loQueNoSalio, metaDelEnvio, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import { buscadorDePersonas, desdeHace, motivoDeRechazo } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fmtVence } from '@nucleo/utils/pedirTraslado';
@@ -213,8 +213,10 @@ export default function Traslado() {
 
           {/* Qué se pide: renglones y lotes. Mientras se contesta, cada renglón
               lleva su casilla. */}
-          <Bloque titulo={puedeContestar && !modo && lineas.length ? 'Cuánto envías' : 'Lo que se pide'}>
-            {renglonesDe(m).map((r, i) => {
+          {/* Ya despachado se muestra lo que VIAJA, y aparte lo que no salió:
+              es la lista contra la que se coteja la bolsa al recibirla. */}
+          <Bloque titulo={puedeContestar && !modo && lineas.length ? 'Cuánto envías' : m.erp_traslado ? 'Lo que viene' : 'Lo que se pide'}>
+            {renglonesDe(m.erp_traslado ? metaDelEnvio(m) : m).map((r, i) => {
               const l = lineas.find((x) => x.idx === r.idx);
               const max = l ? paquetesQueSalen(l, items[r.idx]) : 0;
               const sale = Math.min(Number(cuantos[r.idx]) || 0, r.cantidad);
@@ -244,6 +246,17 @@ export default function Traslado() {
             })}
             {m.reason || fila.note ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Nota: {m.reason || fila.note}</Text> : null}
           </Bloque>
+
+          {loQueNoSalio(m).length ? (
+            <Bloque titulo="Se pidió y no viene">
+              {loQueNoSalio(m).map((r) => (
+                <View key={r.idx} style={{ flexDirection: 'row', gap: 8 }}>
+                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{r.nombre}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14, fontVariant: ['tabular-nums'] }}>{`${r.salio} de ${r.pedida} ${r.presentacion}`}</Text>
+                </View>
+              ))}
+            </Bloque>
+          ) : null}
 
           {/* ── Contestar ── */}
           {puedeContestar && disp?.respaldo ? (

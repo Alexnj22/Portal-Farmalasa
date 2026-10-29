@@ -4,7 +4,7 @@
 // `renglonesDe`, `desdeHace`), los mismos del portal.
 import { Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
+import { metaDelEnvio, piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import { desdeHace } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Vidrio from '../Vidrio';
@@ -36,8 +36,11 @@ export function Pildora({ texto, color }) {
  */
 export default function TarjetaTraslado({ fila, persona, estado, alerta = false, desdeCuando, onPress }) {
   const m = fila.metadata ?? {};
-  const p = piezasDe(m);
-  const renglones = renglonesDe(m);
+  // Ya despachado, la tarjeta cuenta lo que VIAJA (un despacho incompleto
+  // seguía diciendo lo pedido); sin despacho, `metaDelEnvio` devuelve lo pedido.
+  const envio = metaDelEnvio(m);
+  const p = piezasDe(envio);
+  const renglones = renglonesDe(envio);
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress?.(); }}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>

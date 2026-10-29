@@ -143,6 +143,86 @@ export function renglonesDe(meta) {
     }));
 }
 
+/* Las líneas del despacho que son de ESTE renglón, o `null` si no se puede
+ * saber: el detalle guarda el producto y no la posición, así que con el mismo
+ * producto en dos renglones (dos presentaciones) no hay cómo repartirlo. Es la
+ * misma regla que `loQueLlego` y que la función que recibe. */
+function lineasDelRenglon(items, idx, detalle) {
+    const id = Number(items[idx]?.erp_product_id);
+    const repetido = items.filter(i => Number(i?.erp_product_id) === id).length > 1;
+    if (repetido) return null;
+    return detalle.filter(d => Number(d?.erp_product_id) === id);
+}
+
+/**
+ * La `metadata` vista desde lo que SALIÓ y no desde lo que se pidió.
+ *
+ * `metadata.items` es el pedido, y un despacho puede salir incompleto —«enviar
+ * lo que hay», o quien pidió avisa que ya no hace falta todo—. Pintar `items`
+ * en la bolsa en camino es ponerle a quien recibe una lista contra la que va a
+ * cotejar lo que nunca salió. Pasó el 29-oct-2026: Salud 2 → Salud 1 se pidieron
+ * 5 productos y 24 unidades, salieron 2 y 4, y la bolsa por recibir decía «5
+ * PRODUCTOS · 24 unidades» con los lotes de los cinco.
+ *
+ * Devuelve la misma forma que `metadata` —con `items` y `total_unidades`
+ * reescritos— para que `piezasDe`, `renglonesDe` y `lotesPedidos` sirvan tal
+ * cual. Sin `erp_traslado.detalle` (todavía no salió, o una fila vieja)
+ * devuelve la `metadata` sin tocar. Un renglón que no se puede repartir se
+ * queda como se pidió: preferible un techo flojo a esconder lo que sí viajó.
+ */
+export function metaDelEnvio(meta) {
+    const detalle = Array.isArray(meta?.erp_traslado?.detalle) ? meta.erp_traslado.detalle : null;
+    const items = Array.isArray(meta?.items) ? meta.items : [];
+    if (!detalle || detalle.length === 0 || items.length === 0) return meta;
+
+    const salieron = items.flatMap((item, idx) => {
+        const suyas = lineasDelRenglon(items, idx, detalle);
+        if (suyas == null) return [item];
+        const cantidad = suyas.reduce((s, d) => s + (Number(d?.cantidad) || 0), 0);
+        if (cantidad <= 0) return [];
+        const pedidos = Array.isArray(item.lotes) ? item.lotes : [];
+        const lotes = suyas.map(d => {
+            // El genérico viaja sin número de lote; el pedido lo nombraba.
+            const lote = d?.numero_lote ?? (pedidos.length === 1 ? pedidos[0]?.lote : null);
+            const pedido = pedidos.find(l => l?.lote && l.lote === lote);
+            return { lote, vence: pedido?.vence ?? null, unidades: Number(d?.cantidad) || 0 };
+        });
+        return [{ ...item, cantidad, lotes }];
+    });
+
+    return {
+        ...meta,
+        items: salieron,
+        total_unidades: salieron.reduce((s, i) => s + (Number(i.cantidad) || 0), 0),
+    };
+}
+
+/**
+ * Lo que se pidió y NO salió, o salió de menos: la otra mitad de
+ * `metaDelEnvio`. Quien recibe tiene que saber que no viene, y por qué, para no
+ * declararlo faltante ni salir a buscarlo. Vacío si salió todo o si todavía no
+ * salió nada.
+ */
+export function loQueNoSalio(meta) {
+    const detalle = Array.isArray(meta?.erp_traslado?.detalle) ? meta.erp_traslado.detalle : null;
+    const items = Array.isArray(meta?.items) ? meta.items : [];
+    if (!detalle || detalle.length === 0) return [];
+    return items.flatMap((item, idx) => {
+        const suyas = lineasDelRenglon(items, idx, detalle);
+        if (suyas == null) return [];
+        const pedida = Number(item.cantidad) || 0;
+        const salio = suyas.reduce((s, d) => s + (Number(d?.cantidad) || 0), 0);
+        if (salio >= pedida) return [];
+        return [{
+            idx,
+            nombre: item.descripcion ?? `#${item.erp_product_id ?? '?'}`,
+            presentacion: item.presentacion_tipo ?? '',
+            pedida,
+            salio,
+        }];
+    });
+}
+
 /**
  * Lo que de verdad VIAJÓ en la bolsa, renglón por renglón.
  *

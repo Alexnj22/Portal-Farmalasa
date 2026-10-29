@@ -163,18 +163,24 @@ export const desdeHace = (iso, ahora) => {
     return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
 };
 
-/** Cuánto tardó en resolverse, para ponerlo al lado de la hora de la decisión. */
+/**
+ * Cuánto tardó en resolverse, para ponerlo al lado de la hora de la decisión.
+ *
+ * «tardó 17 h» y no «en 17 h»: al lado del «hace 17 h» de quien pidió, «en 17 h»
+ * se leía como una hora FUTURA —reportado el 29-oct-2026 sobre un traslado
+ * despachado esa misma mañana: «no entiendo»—.
+ */
 export const cuantoTardo = (desde, hasta) => {
     if (!desde || !hasta) return '';
     const ms = new Date(hasta).getTime() - new Date(desde).getTime();
     if (!Number.isFinite(ms) || ms < 0) return '';
     const min = Math.floor(ms / 60000);
     if (min < 1)  return 'al momento';
-    if (min < 60) return `en ${min} min`;
+    if (min < 60) return `tardó ${min} min`;
     const horas = Math.floor(min / 60);
-    if (horas < 24) return `en ${horas} h`;
+    if (horas < 24) return `tardó ${horas} h`;
     const dias = Math.floor(horas / 24);
-    return `en ${dias} ${dias === 1 ? 'día' : 'días'}`;
+    return `tardó ${dias} ${dias === 1 ? 'día' : 'días'}`;
 };
 
 /* ── Quién es quién ────────────────────────────────────────────────────────

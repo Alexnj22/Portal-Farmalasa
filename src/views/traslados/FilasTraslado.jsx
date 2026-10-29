@@ -11,7 +11,7 @@ import {
     fetchDisponibilidadTraslado,
 } from '@nucleo/data/traslados';
 import { loQueSeManda, nombreDeLinea, paquetesQueSalen, sugerenciaDeRechazo } from '@nucleo/utils/decisionTraslado';
-import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
+import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, loQueNoSalio, metaDelEnvio, piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import DeclararFaltantes from './DeclararFaltantes';
 import { desdeHace, cuantoTardo } from '@nucleo/utils/movimientoTexto';
 import { ChipPersona, FichaPersona } from '../solicitudes/PersonasSolicitud';
@@ -614,9 +614,13 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
      * adentro del modal, cerrarlo perdería lo escrito sin decir nada. */
     const [faltaron, setFaltaron] = useState([]);
     const meta   = fila.metadata ?? {};
-    const piezas = piezasDe(meta);
-    const lotes  = lotesPedidos(meta);
-    const renglones = renglonesDe(meta);
+    // La bolsa ya salió: lo que se coteja es lo que VIAJA, no lo que se pidió
+    // (ver `metaDelEnvio` — un despacho incompleto pintaba los cinco productos).
+    const envio  = metaDelEnvio(meta);
+    const piezas = piezasDe(envio);
+    const lotes  = lotesPedidos(envio);
+    const renglones = renglonesDe(envio);
+    const noSalio = loQueNoSalio(meta);
     const lotesDeMas = Math.max(0, lotes.length - LOTES_EN_TARJETA);
 
     // Salió cuando se despachó, que es lo que `updated_at` guarda en esta etapa.
@@ -733,6 +737,11 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                         productos», y cinco lotes sueltos debajo no dicen cuál
                         es de cuál. Con uno solo el nombre ya está arriba y van
                         los lotes a secas, como siempre. */}
+                    {noSalio.length > 0 && (
+                        <p className="mt-1.5 text-micro font-bold text-warning-text">
+                            Salió incompleto · {noSalio.length} {noSalio.length === 1 ? 'producto no viene' : 'productos no vienen'} como se pidió
+                        </p>
+                    )}
                     {renglones.length > 1 ? (
                         <div className="mt-1.5">
                             <ListaRenglones renglones={renglones} tope={LOTES_EN_TARJETA} />
@@ -840,7 +849,9 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                          faltaron = [], onFaltaron = null,
                          ocupado, error, onRecibir, onCerrar }) {
     const meta = fila.metadata ?? {};
-    const renglones = renglonesDe(meta);
+    const renglones = renglonesDe(metaDelEnvio(meta));
+    const noSalio = loQueNoSalio(meta);
+    const motivoParcial = meta?.erp_traslado?.parcial?.motivo || fila.approver_note || '';
     const { user } = useAuth();
     const [imprimiendo, setImprimiendo] = useState(false);
     const [avisoPapel, setAvisoPapel] = useState('');
@@ -914,14 +925,18 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                     {renglones.length > 1 ? (
                         <div data-surface="card" className="px-3 py-2.5">
                             <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1.5">
-                                Los {renglones.length} productos que se pidieron
+                                {noSalio.length
+                                    ? `Los ${renglones.length} productos que vienen`
+                                    : `Los ${renglones.length} productos que se pidieron`}
                             </p>
                             <ListaRenglones renglones={renglones} />
                         </div>
                     ) : lotes.length > 0 && (
                         <div data-surface="card" className="px-3 py-2.5">
                             <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-1.5">
-                                {lotes.length === 1 ? 'El lote que se pidió' : `Los ${lotes.length} lotes que se pidieron`}
+                                {noSalio.length
+                                    ? (lotes.length === 1 ? 'El lote que viene' : `Los ${lotes.length} lotes que vienen`)
+                                    : (lotes.length === 1 ? 'El lote que se pidió' : `Los ${lotes.length} lotes que se pidieron`)}
                             </p>
                             <div className="flex flex-col gap-1">
                                 {lotes.map((l, i) => (
@@ -936,6 +951,31 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                                     </p>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* ── Lo que se pidió y no viene ───────────────────────
+                        Aparte y con su motivo: quien despachó ya dijo que no
+                        sale, así que no es un faltante para declarar ni una
+                        caja que salir a buscar. */}
+                    {noSalio.length > 0 && (
+                        <div data-surface="card" className="px-3 py-2.5">
+                            <p className="text-micro font-black uppercase tracking-widest text-warning-text mb-1.5">
+                                {noSalio.length === 1 ? 'Se pidió y no viene' : 'Se pidieron y no vienen'}
+                            </p>
+                            <div className="flex flex-col gap-1">
+                                {noSalio.map(r => (
+                                    <p key={r.idx} className="flex items-baseline justify-between gap-2 text-label font-semibold text-content-2">
+                                        <span className="min-w-0 truncate" title={r.nombre}>{r.nombre}</span>
+                                        <span className="shrink-0 tabular-nums text-content-3">
+                                            {r.salio} de {r.pedida} {r.presentacion}
+                                        </span>
+                                    </p>
+                                ))}
+                            </div>
+                            {motivoParcial && (
+                                <p className="mt-2 text-label text-content-2 leading-snug">{motivoParcial}</p>
+                            )}
                         </div>
                     )}
 

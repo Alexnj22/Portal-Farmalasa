@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1359.9 — La bolsa en camino muestra lo que salió, no lo que se pidió
+
+Un despacho incompleto se veía completo del lado de quien recibe. Salud 2 → Salud 1,
+29-oct: se pidieron 5 productos y 24 unidades, salieron 2 y 4 («Pidieron que solo se
+les enviaran esos productos»), y la bolsa por recibir decía «5 PRODUCTOS · 24
+unidades» con los lotes de los cinco. La tarjeta y el diálogo leían `metadata.items`
+—lo pedido— y no `erp_traslado.detalle`, que es lo que salió.
+
+- `metaDelEnvio` y `loQueNoSalio` en `trasladoTexto`: la tarjeta, el título, las
+  unidades y los lotes cuentan lo que viaja, y lo que no salió va aparte con su
+  motivo. Igual en la app (tarjeta y detalle del traslado).
+- `cuantoTardo` dice «tardó 17 h» y no «en 17 h», que al lado de «hace 17 h» se
+  leía como una hora futura.
+
 ## v2.1359.8 — Tratamientos: sólo medicamentos de uso crónico con compra real
 
 La app de clientes mandó «¿Ya te toca otra vez?» por una metformina que el

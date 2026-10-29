@@ -113,7 +113,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 27. ~~`inventoryMovements.js`: `factor` de la base y `.in()` sin corte~~ — **hecho v2.1359.7**. — PRODUCTOS:50
 28. ~~GPS en Rutas en el navegador~~ — **cerrado sin cambio**: el GPS es sólo para las apps (usuario, 2026-10-01 y reconfirmado 2026-10-29). `geolocation=()` en `vercel.json` se queda a propósito; la app usa el GPS nativo, que ese encabezado no toca. — DISTRIBUCION:249
 29. ~~Plazos de datos de la app de clientes~~ — **hecho v2.1360.0**. — APP-CLIENTES:469
-30. Descuento por renglón en ventas. **Verificado 2026-10-29: el JSON NO lo trae** (DESCUENTOS §2). Queda decidir si se separa por cruce con las campañas. — DESCUENTOS:45
+30. ✅ Descuento por renglón en ventas (2026-10-29, v2.1364.0). El JSON no lo trae; se separa campaña / a mano cruzando con la copia de las campañas. Promociones → Rebajas. — DESCUENTOS §2
 
 ### Higiene y rendimiento (menor)
 31. Lista escrita de las 48 tablas sin `created_at` y por qué.

@@ -1547,6 +1547,10 @@
    "area": "facturacion-dte",
    "por": "código"
   },
+  "descuentos_espejo_sync": {
+   "area": "promociones",
+   "por": "código"
+  },
   "desmarcar_conteo_bolsa": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -4588,6 +4592,10 @@
    "por": "código"
   },
   "reactivar_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "rebajas_en_ventas": {
    "area": "promociones",
    "por": "código"
   },

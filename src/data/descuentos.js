@@ -195,3 +195,21 @@ export async function moverDescuentosA(lista, fin, mensaje = (e) => e?.message |
     }
     return quedan;
 }
+
+/**
+ * Las rebajas de las ventas de un período, separadas en «de campaña» y «a
+ * mano» (PENDIENTES 30). La factura no trae el descuento del renglón: la base
+ * lo cruza con la copia de las campañas (`descuentos_espejo`). Hasta 92 días
+ * por llamada; `branchId` null = las salas que el permiso deja ver.
+ */
+export async function fetchRebajasEnVentas({ desde, hasta, branchId = null }) {
+    const { data, error } = await supabase.rpc('rebajas_en_ventas', {
+        p_desde: desde, p_hasta: hasta, p_branch_id: branchId ? Number(branchId) : null,
+    });
+    if (error) throw error;
+    return {
+        resumen: data?.resumen ?? { campana: { renglones: 0, monto: 0 }, a_mano: { renglones: 0, monto: 0 } },
+        porCampana: data?.por_campana ?? [],
+        aMano: data?.a_mano ?? [],
+    };
+}

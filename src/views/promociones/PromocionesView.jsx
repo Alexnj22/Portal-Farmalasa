@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
-    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download, Loader2,
+    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download, Loader2, BadgePercent,
 } from 'lucide-react';
+import PeriodStepper from '../../components/common/PeriodStepper';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -19,7 +20,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { conteoDePromociones, csvListaDePromociones, estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
-import { hoySV } from '@nucleo/utils/fecha';
+import { hoySV, correrMes, etiquetaMes, mesSV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 
@@ -33,6 +34,7 @@ const TabHistorico = lazy(() => import('./TabHistorico'));
 const TabExcedentes = lazy(() => import('./TabExcedentes'));
 const TabDescuentos = lazy(() => import('./TabDescuentos'));
 const TabPagos = lazy(() => import('./TabPagos'));
+const TabRebajas = lazy(() => import('./TabRebajas'));
 
 // Los diálogos se bajan al abrirse (`dialogoDiferido`), no al entrar.
 const DescuentoModal = dialogoDiferido(() => import('./DescuentoModal'));
@@ -120,6 +122,9 @@ export default function PromocionesView() {
         { key: 'activas',     label: 'Activas',     icon: Tag },
         { key: 'seguimiento', label: 'Seguimiento', icon: Layers },
         { key: 'descuentos',  label: 'Descuentos',  icon: Percent },
+        // Lo que de verdad se rebajó en las ventas: de campaña o a mano
+        // (PENDIENTES 30, 2026-10-29).
+        { key: 'rebajas',     label: 'Rebajas',     icon: BadgePercent },
         { key: 'excedentes',  label: 'Excedentes',  icon: Scale },
         // La «Liquidación» mensual se retiró el 2026-09-22: ningún bono se paga
         // por mes. El de meta es semestral (Metas → Pago semestral) y el de
@@ -150,6 +155,12 @@ export default function PromocionesView() {
        controles flotando sin caja —reportado con captura en Liquidación—. */
     const [seguida, setSeguida] = useState('');  // la promoción que se sigue
     const [pagosPendientes, setPagosPendientes] = useState('pendientes'); // 'pendientes' | 'todas'
+
+    // Rebajas: el mes, la sala y qué se mira (las tarjetas lo eligen).
+    const mesDeHoy = mesSV();
+    const [periodoReb, setPeriodoReb] = useState(mesDeHoy);
+    const [fRebSala, setFRebSala] = useState('');
+    const [vistaReb, setVistaReb] = useState('campana'); // 'campana' | 'a_mano'
 
     const [promos, setPromos] = useState([]);
     /* De qué `recarga` es la última respuesta de la lista. El cargador y el
@@ -288,10 +299,12 @@ export default function PromocionesView() {
     const recortaLaLista = ['activas', 'seguimiento', 'historico'].includes(tab);
     const filtrosPuestos = recortaLaLista
         ? [fTipo, filtraEstado && fEstado, fLab].filter(Boolean).length
-        : tab === 'descuentos' ? [fDescSala, fDescEstado].filter(Boolean).length : 0;
+        : tab === 'descuentos' ? [fDescSala, fDescEstado].filter(Boolean).length
+            : tab === 'rebajas' ? [fRebSala, periodoReb !== mesDeHoy].filter(Boolean).length : 0;
     const limpiarFiltros = useCallback(() => {
         setFTipo(''); setFEstado(''); setFLab(''); setFDescSala(''); setFDescEstado('');
-    }, []);
+        setFRebSala(''); setPeriodoReb(mesDeHoy);
+    }, [mesDeHoy]);
 
     /* Busca por nombre del descuento y también por el de sus productos: quien
        pregunta «¿este producto tiene descuento?» escribe el producto. */
@@ -432,7 +445,7 @@ export default function PromocionesView() {
         tone: 'success', variant: 'quiet', soloIcono: true, onClick: exportador,
     }] : [];
 
-    const acciones = [...(!puedeEditar || tab === 'descuentos' ? [] : [
+    const acciones = [...(!puedeEditar || tab === 'descuentos' || tab === 'rebajas' ? [] : [
             /* SIN `rotuloFijo`: es «opt-in y rara» según el propio canónico
                —hace que el texto no ceda nunca y la píldora se mida siempre
                con él—, y puesta en las DOS dejaba la barra con dos botones
@@ -555,6 +568,13 @@ export default function PromocionesView() {
                 />
             );
         }
+        if (tab === 'rebajas') {
+            return (
+                <TabRebajas periodo={periodoReb} salaId={fRebSala} vista={vistaReb} onVista={setVistaReb}
+                    busqueda={busqueda} salas={salasDeVenta}
+                    onResumen={setResumenTab} onExportable={publicarExportador} />
+            );
+        }
         if (tab === 'pagos') {
             return (
                 <TabPagos busqueda={busqueda} soloPendientes={pagosPendientes === 'pendientes'}
@@ -631,7 +651,8 @@ export default function PromocionesView() {
                                 {tarjetas.map((m) => (
                                     <StatCard key={m.key} icon={m.icon}
                                         iconBg={m.iconBg} iconCls={m.iconCls} valueCls={m.valueCls}
-                                        label={m.label} value={m.value} sub={m.sub} />
+                                        label={m.label} value={m.value} sub={m.sub}
+                                        active={m.active} onClick={m.onClick} />
                                 ))}
                             </CarrilCards>
                         ) : <div className="flex-1" />}
@@ -683,6 +704,30 @@ export default function PromocionesView() {
                                                 { value: 'terminados', label: 'Terminados' },
                                             ]}
                                         />
+                                    </FilterBar.Section>
+                                )}
+
+                                {tab === 'rebajas' && (
+                                    <FilterBar.Section label="mes" active={periodoReb !== mesDeHoy}
+                                        onClear={() => setPeriodoReb(mesDeHoy)}>
+                                        <PeriodStepper
+                                            unit="mes"
+                                            onPrev={() => setPeriodoReb((p) => correrMes(p, -1))}
+                                            onNext={() => setPeriodoReb((p) => correrMes(p, 1))}
+                                            nextDisabled={periodoReb >= mesDeHoy}
+                                            isCurrent={periodoReb === mesDeHoy}
+                                            onReset={() => setPeriodoReb(mesDeHoy)}
+                                            resetLabel="Este mes"
+                                            label={etiquetaMes(periodoReb)}
+                                        />
+                                    </FilterBar.Section>
+                                )}
+                                {tab === 'rebajas' && (
+                                    <FilterBar.Section label="sucursal" active={!!fRebSala}
+                                        onClear={() => setFRebSala('')}>
+                                        <FilterBar.Sucursal value={fRebSala}
+                                            onChange={(v) => setFRebSala(v || '')}
+                                            options={salasDeVenta.map((b) => ({ value: String(b.id), label: b.name }))} />
                                     </FilterBar.Section>
                                 )}
 

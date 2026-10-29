@@ -606,6 +606,8 @@ export const AREAS = [
             'src/views/promociones/',
             'src/data/promociones.js',
             'src/data/descuentos.js',
+            'src/utils/rebajasVenta.js',
+            'supabase/functions/espejo-descuentos/',
             'src/data/bonosProducto.js',
             'src/components/caja/BonosPorPagar.jsx',
         ],
@@ -615,11 +617,14 @@ export const AREAS = [
                  'promocion_laboratorio', 'promocion_nivel', 'promocion_nivel_umbral',
                  'promocion_cierre_sala',
                  // El pago del bono de producto en la sala (2026-09-22).
-                 'promocion_pago'],
+                 'promocion_pago',
+                 // Copia de las campañas de descuento, para separar la rebaja de
+                 // campaña del precio cambiado a mano (PENDIENTES 30, 2026-10-29).
+                 'descuentos_espejo'],
         // El EFECTO de `descuentos-erp` es un descuento en la venta, que es lo que
         // esta pantalla configura — aunque el dato viva en el sistema de la caja.
-        edge: ['descuentos-erp'],
-        crons: ['promociones-ciclo-diario'],
+        edge: ['descuentos-erp', 'espejo-descuentos'],
+        crons: ['promociones-ciclo-diario', 'espejo-descuentos'],
         docs: ['docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md',
                'docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md'],
     },

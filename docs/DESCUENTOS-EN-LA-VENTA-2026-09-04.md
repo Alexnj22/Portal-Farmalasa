@@ -61,8 +61,23 @@ no se verificó. Es otra tanda de trabajo y no era lo que se pidió.
 función temporal ya borrada. Cada renglón trae sólo `id, descripcion, cantidad,
 presentacion, precio_unitario, total_linea, lote, fecha_vencimiento`, y
 `totales` sólo `subtotal, iva, retencion, total`. Ni `descuento_monto` ni
-`id_promo`. La diferencia derivada, en septiembre 2026: **304 de 33,353
-renglones con rebaja, $1,445.86** — campaña y precio a mano mezclados.
+`id_promo`.
+
+**Cómo se separa (v2.1364.0).** `rebajas_en_ventas` cruza cada renglón
+rebajado con `descuentos_espejo` —la copia de las campañas que mantiene el cron
+`espejo-descuentos` 3 veces al día, porque allá se borran sin rastro—: es de
+campaña si ese día, en esa sala, el producto estaba en una y la rebaja es la
+que la campaña da (±$0.02). Lo demás es «a mano». Pantalla: Promociones →
+Rebajas.
+
+⚠ **En el CCF el `precio_unitario` trae el IVA y el `total_linea` no.** Sin
+dividir entre 1.13 todo crédito fiscal parece rebajado un 11.5 %: la primera
+medición de septiembre dio «304 renglones, $1,445.86» y era falsa. Corregida:
+**199 rebajas — 195 de campaña ($1,027.85) y 4 a mano ($53.60)**. De febrero a
+octubre, las de campaña casan al centavo en 1,196 de 1,221.
+
+Límite conocido: un precio cambiado a mano que coincida exactamente con el
+descuento de una campaña vigente para ese producto cuenta como de campaña.
 
 ---
 

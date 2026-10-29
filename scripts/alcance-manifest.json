@@ -121,6 +121,9 @@
     "descuentos-erp": {
       "guarda": "alcance"
     },
+    "espejo-descuentos": {
+      "guarda": "cron"
+    },
     "devolver-pedido-erp": {
       "guarda": "alcance"
     },

@@ -268,6 +268,13 @@ const CRONS = [
           + '(2026-10-19). SQL puro sobre la propia base, con tope de 5000 por corrida.',
   },
   {
+    job: 'espejo-descuentos', slug: 'espejo-descuentos', cadencia: '0 13,19,1 * * *',
+    corridasDia: 3, sistema: 6,
+    motivo: 'Copia las campañas de descuento del sistema de ventas (PENDIENTES 30, 2026-10-29): login, '
+          + 'salas, lista y los productos SÓLO de las vigentes, futuras o nuevas (hoy 2-3). Las '
+          + 'terminadas no se releen. ~6 peticiones por corrida.',
+  },
+  {
     job: 'purge-app-cliente-preregistros', slug: null, cadencia: '55 9 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Borra los pre-registros de la app no vinculados a los 60 días (PENDIENTES 29, 2026-10-29). '

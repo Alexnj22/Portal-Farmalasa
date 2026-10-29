@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1364.0 — Promociones: rebajas de campaña y a mano
+
+PENDIENTES 30. La factura no trae el descuento del renglón, sólo el total ya
+rebajado: una rebaja de campaña y un precio cambiado al vender se veían igual.
+
+- **Pestaña Rebajas** en Promociones, por mes y sucursal. Dos tarjetas que
+  eligen la vista: **De campaña** (cuánto rebajó y cuánto se cobró en cada
+  campaña) y **A mano** (producto, quién vendió, sucursal, precio → cobrado,
+  rebaja y %). Si había una campaña del producto que casi la explica, dice por
+  qué no cuenta: terminó antes, no vale en esa sucursal, u otro monto. Exporta CSV.
+- **`descuentos_espejo`** + cron `espejo-descuentos` (7:00, 13:00, 19:00): copia
+  las campañas, que en el origen se borran sin rastro. Una borrada se marca, no
+  se pierde.
+- **`rebajas_en_ventas`** clasifica en la base. Índice parcial
+  `sales_invoice_items_con_rebaja_idx`: un mes pasó de 78K bloques a 4.8K.
+- En el CCF el precio trae IVA y el total no: se divide entre 1.13. Septiembre:
+  195 de campaña ($1,027.85) y 4 a mano ($53.60).
+
 ## v2.1363.0 — Inyecciones: vencimiento MM/AA con calendario, lotes ya usados y aviso de lote parecido
 
 - **«02/28» salía VENCIDA.** `venceNormal` sólo entendía el año de 4 cifras, y

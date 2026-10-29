@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.4 — Compras: Bodega en vivo antes de mandar, y la compra vuelve al portal
+
+Dos frenos que faltaban en el envío a Bodega (sigue apagado):
+- **Justo antes de mandar se mira Bodega en vivo**, de la fecha de emisión a
+  hoy: si alguien ya la cargó a mano —con la fecha del día— no se manda. El
+  espejo del portal puede ir 10 minutos atrás.
+- **La compra vuelve al portal enseguida.** El cron de compras mira ayer y
+  hoy por la fecha de la compra; con la fecha de emisión, una factura de hace
+  días entraba recién con el barrido del domingo. Ahora el envío pide esa
+  fecha a `sync-erp-purchases` al terminar.
+
 ## v2.1381.3 — Compras: la fecha de la compra es la de emisión
 
 La compra que el portal carga en Bodega lleva la **fecha de emisión** de la

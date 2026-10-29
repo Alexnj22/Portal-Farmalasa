@@ -29,6 +29,7 @@ import {
 
 const COMPRAS = `${BASE}/compras.php`;
 const ERP_BODEGA = 6;
+const BODEGA_BRANCH_ID = 30; // la de `sync-erp-purchases`
 const TOLERANCIA = 0.05;
 
 // Las dos, iguales a las de `leer-dte-json`.
@@ -102,6 +103,15 @@ async function enviarCompra(admin: any, x: {
     return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisá la carga de nuevo." };
   }
 
+  // Freno 2b: que Bodega no la tenga YA. `purchase_receipts` (freno de la
+  // revisión) es un espejo que va hasta 10 minutos atrás, y Bodega carga con el
+  // día de la carga mientras el portal manda la emisión: se mira en vivo, de la
+  // emisión a hoy, en la lista liviana. Si no se puede mirar, no se manda.
+  const yaEsta = await yaEnBodega(x.cookie, String(x.sobre.fecha), String(x.sobre.numero_doc))
+    .catch((e) => ({ error: String(e?.message ?? e) }));
+  if ("error" in yaEsta) return { enviada: false, error: `No se pudo comprobar si Bodega ya la tiene: ${yaEsta.error}` };
+  if (yaEsta.compra) return { enviada: false, error: `Bodega ya la tiene cargada (compra ${yaEsta.compra}): no se mandó.` };
+
   const { data: tomada, error: eT } = await admin.from("compra_carga")
     .update({ estado: "enviando", updated_at: new Date().toISOString() })
     .eq("id", x.cargaId).eq("estado", "simulada").select("id");
@@ -153,7 +163,38 @@ async function enviarCompra(admin: any, x: {
   await marcar(verif.ok ? "verificada" : "sin_verificar", {
     erp_compra_id: verif.compra, error: verif.notas.length ? verif.notas.join(" · ") : null,
   });
+  // Traerla al portal ya. El cron de compras mira ayer y hoy por la fecha de
+  // la compra, y ésta lleva la de EMISIÓN: sin esto entraba recién con el
+  // barrido del domingo (10 días) o nunca. Después de responder, sin esperarla.
+  EdgeRuntime.waitUntil(fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-erp-purchases`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET") ?? ""}` },
+    body: JSON.stringify({ fini: x.sobre.fecha, ffin: x.sobre.fecha, branchId: BODEGA_BRANCH_ID }),
+    signal: AbortSignal.timeout(140_000),
+  }).then((r) => { if (!r.ok) console.error("[cargar-compra-erp] traerla al portal:", r.status); })
+    .catch((e) => console.error("[cargar-compra-erp] traerla al portal:", e?.message ?? e)));
   return { enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null };
+}
+
+/**
+ * ¿Bodega ya tiene este documento? Lista liviana de Admin Compras
+ * (`admin_compras_fecha_dt.php`: id, tipo, número, … fecha) de la emisión a
+ * hoy. La sucursal es estado de la sesión, y la de `sesionEn` ya es Bodega.
+ * El número guardado son 20 caracteres del código de generación: con eso se
+ * compara. Una anulada también frena — en la duda, no se manda.
+ */
+async function yaEnBodega(cookie: string, desde: string, numero: string): Promise<{ compra: number | null }> {
+  const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+  const qs = `fechai=${desde}&fechaf=${hoy < desde ? desde : hoy}&draw=1&start=0&length=5000`;
+  const t = await pedir(cookie, `${BASE}/admin_compras_fecha_dt.php?${qs}`, undefined, { timeoutMs: 60_000 });
+  const filas: any[][] = JSON.parse(t)?.data;
+  if (!Array.isArray(filas)) throw new Error("la lista de compras no vino");
+  const buscado = numero.toUpperCase();
+  const f = filas.find((r) => {
+    const n = String(r[2] ?? "").replace(/<[^>]*>/g, "").trim().toUpperCase();
+    return n.length >= 8 && buscado.startsWith(n);
+  });
+  return { compra: f ? Number(f[0]) || -1 : null };
 }
 
 /** Busca la compra recién hecha en la lista de su fecha y compara renglón por renglón. */

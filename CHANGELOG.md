@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1386.2 — Consultas de existencia: cada sala ve lo suyo
+
+En Conteo de inventario → Consultas, una sala incluida en una consulta veía
+las demás salas de esa consulta con su conteo y lo que decía el sistema. Ahora
+`consultas_existencia_lista` filtra en la base: quien no pidió la consulta
+(ni la persona ni su sala) ve sólo el renglón de su sala; quien la pidió y el
+alcance ALL (cargos administrativos) ven todas. Medido en producción: una
+dependiente de Salud 4 ve 3 consultas con 1 sala cada una; Administrador ve
+las 7. Ajustar sigue reservado a `requests_inventario.can_approve`, en la
+pantalla y en el servidor.
+
 ## v2.1386.1 — Compras: productos con nombre y si el costo subió
 
 La pestaña **Productos** de Compras (Bodega) mostraba sólo el número de cada

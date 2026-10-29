@@ -23,6 +23,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+import { fechaHora12 } from '@nucleo/utils/hora';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,12 @@ const PRODUCTO_COLS = [
     { key: 'last_cost', label: 'Último costo',      align: 'right'  },
 ];
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const fmt$ = (n) => formatMoney(n || 0);
+const fmtNum = (n) => formatQty(n || 0, { decimalesMax: 2 });
+const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
+
 // Cuánto cambió el último costo contra la compra anterior. Sube = rojo (el
 // margen se achica), baja = verde. Menos de medio punto no se marca.
 function CambioDeCosto({ actual, anterior }) {
@@ -71,12 +78,6 @@ function CambioDeCosto({ actual, anterior }) {
     );
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const fmt$ = (n) => formatMoney(n || 0);
-const fmtNum = (n) => formatQty(n || 0, { decimalesMax: 2 });
-const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
-
 function defaultRange() {
     const end   = new Date();
     const start = new Date();
@@ -91,9 +92,7 @@ function defaultRange() {
 // «quién lo hizo» del portal.
 function CargadaDesdePortal({ carga }) {
     if (!carga) return null;
-    const cuando = new Date(carga.cargada_el).toLocaleString('es-SV', {
-        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
+    const cuando = fechaHora12(carga.cargada_el, { day: '2-digit', month: '2-digit', year: 'numeric' });
     return (
         <div className="flex items-center gap-2 flex-wrap text-label text-content-2 mb-2">
             <MonitorCheck size={14} className="text-info-text shrink-0" />

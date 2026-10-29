@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.55 — Vigilancia: no avisa a Edwin de sus propios cambios
+
+Decisión del usuario: «si lo hice yo, que no llegue ya que soy quien controla
+todo el portal». Se deshace la excepción de v2.1357.54: el aviso de cambio de
+control vuelve a saltear a quien hizo el cambio (migración `20261029025439`).
+Riesgo aceptado: un cambio hecho con una sesión suya robada no avisa.
+
 ## v2.1357.54 — Vigilancia de seguridad: sólo a Edwin
 
 Decisión del usuario: «solo a edwin. nadie mas». `seguridad_destinatarios()`

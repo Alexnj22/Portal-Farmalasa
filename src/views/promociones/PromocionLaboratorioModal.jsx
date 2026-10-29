@@ -194,11 +194,9 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
             maxWidth="max-w-3xl"
             ariaLabel={editando ? 'Editar promoción por laboratorio' : 'Nueva promoción por laboratorio'}
         >
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">
-                    {editando ? 'Editar promoción por laboratorio' : 'Nueva promoción por laboratorio'}
-                </h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={editando ? 'Editar promoción por laboratorio' : 'Nueva promoción por laboratorio'}
+                onClose={onClose} />
 
             <LiquidModal.Body>
                 {cargando ? <LoadingState label="Cargando la promoción…" /> : (

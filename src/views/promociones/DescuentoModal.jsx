@@ -170,9 +170,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel={titulo}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{titulo}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={titulo} onClose={onClose} />
 
             <LiquidModal.Body>
                 {cargando ? <LoadingState label="Cargando el descuento…" /> : (

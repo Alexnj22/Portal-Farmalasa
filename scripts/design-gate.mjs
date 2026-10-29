@@ -2658,6 +2658,21 @@ function scanFile(path) {
       }
     }
 
+    // ── `encabezado-de-modal-a-mano` (2026-10-29, CERO ABSOLUTO) ─────────
+    // `LiquidModal.Header` sin `titulo` es la ranura libre: el llamador
+    // escribe a mano su h2/h3, su baldosa y su ✕. Así llegaron a convivir
+    // cinco tamaños de título y cuatro de ícono en 102 archivos. Regla del
+    // usuario: «nada debe estar a mano, todo debe ser canónico». El tag se
+    // recorre contando llaves (`tagsJsx`): el Header suele ocupar varias líneas.
+    for (const [ini, fin] of tagsJsx(sinComentarios2, 'LiquidModal.Header')) {
+      const tag = sinComentarios2.slice(ini, fin);
+      if (/\btitulo=/.test(tag)) continue;
+      findings.push({ line: sinComentarios2.slice(0, ini).split('\n').length,
+        category: 'encabezado-de-modal-a-mano',
+        label: 'encabezado de modal a mano — `titulo`/`subtitulo`/`icono`/`onClose` del canónico (DESIGN § LiquidModal)',
+        text: tag.replace(/\s+/g, ' ').slice(0, 90) });
+    }
+
     // ── `button-name` (2026-07-28) ──────────────────────────────────────
     // Hermano del anterior, para el otro lado del formulario: un `<button>`
     // cuyo contenido son SOLO íconos, sin `aria-label` ni `title`. Un lector

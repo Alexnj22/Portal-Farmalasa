@@ -39,12 +39,7 @@ const rotuloTipo = (t) => TIPOS_COMPRA.find(x => x.value === t)?.label ?? t;
 function ProveedoresModal({ proveedores, onEditar, onNuevo, onClose }) {
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-xl" ariaLabel="Proveedores">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Truck size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Proveedores</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Truck} tono="brand" titulo="Proveedores" onClose={onClose} />
             <LiquidModal.Body>
                 {proveedores.length === 0 ? (
                     <p className="text-caption text-content-3">Sin proveedores todavía.</p>

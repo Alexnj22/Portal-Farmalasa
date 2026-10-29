@@ -350,33 +350,27 @@ export default function CorteDetalleModal({
             className="h-fit"
             ariaLabel={`Corte de las ${hora12(visible?.hora)}`}
         >
-            <LiquidModal.Header>
-                {/* La insignia va en el ENCABEZADO y no sólo al pie: es lo
-                    primero que hay que saber de un corte ya resuelto, y sigue
-                    a la vista mientras se lee el resto. `pr-8` deja libre la
-                    esquina donde el diálogo pinta su botón de cerrar. */}
-                <div className="min-w-0 pr-8">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-body font-bold text-content">Corte de las {hora12(visible?.hora)}</h3>
-                        {!pendiente && visible && (
-                            visible.estado === 'CONFIRMADO'
-                                ? <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>
-                                : <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>
-                        )}
-                    </div>
-                    <p className="text-caption text-content-3 truncate">
-                        {nombreSala[visible?.branch_id] || (visible ? `Sucursal ${visible.branch_id}` : '')}
-                        {visible?.fecha ? ` · ${fechaLarga(visible.fecha)}` : ''}
-                        {/* El nombre sale de quién lo hizo en el portal. El del
-                            sistema de la caja es el de la cuenta de la sala, y en
-                            tres salas lleva el nombre de una persona que no cortó. */}
-                        {visible?.hizo?.name ? ` · ${shortEmployeeName(visible.hizo)}` : ''}
-                        {/* Y quién recibió la caja: confirmar el corte cierra el
-                            turno, así que son los dos nombres del mismo acto. */}
-                        {visible?.recibe?.name ? ` → ${shortEmployeeName(visible.recibe)}` : ''}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            {/* La insignia va en el ENCABEZADO y no sólo al pie: es lo primero
+                que hay que saber de un corte ya resuelto, y sigue a la vista
+                mientras se lee el resto. */}
+            <LiquidModal.Header titulo={`Corte de las ${hora12(visible?.hora)}`}
+                onClose={ocupadoId ? undefined : onClose}
+                acciones={!pendiente && visible && (
+                    visible.estado === 'CONFIRMADO'
+                        ? <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>
+                        : <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>
+                )}
+                subtitulo={<>
+                    {nombreSala[visible?.branch_id] || (visible ? `Sucursal ${visible.branch_id}` : '')}
+                    {visible?.fecha ? ` · ${fechaLarga(visible.fecha)}` : ''}
+                    {/* El nombre sale de quién lo hizo en el portal. El del
+                        sistema de la caja es el de la cuenta de la sala, y en
+                        tres salas lleva el nombre de una persona que no cortó. */}
+                    {visible?.hizo?.name ? ` · ${shortEmployeeName(visible.hizo)}` : ''}
+                    {/* Y quién recibió la caja: confirmar el corte cierra el
+                        turno, así que son los dos nombres del mismo acto. */}
+                    {visible?.recibe?.name ? ` → ${shortEmployeeName(visible.recibe)}` : ''}
+                </>} />
 
             <LiquidModal.Body className="space-y-4">
                 {visible && (

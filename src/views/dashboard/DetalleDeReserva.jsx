@@ -42,16 +42,14 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-xl" ariaLabel={`Reserva ${codigo}`}>
-            <LiquidModal.Header>
-                <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-body-xl font-semibold text-content tabular-nums">{codigo}</h2>
+            <LiquidModal.Header
+                titulo={<span className="tabular-nums">{codigo}</span>}
+                subtitulo={`${r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sala'}${r.sala ? ` · ${r.sala}` : ''}`}
+                acciones={<>
                     <Badge variant={estado.variant} uppercase={false}>{estado.label}</Badge>
                     <InsigniaDeNivel nivel={r.nivel} />
-                </div>
-                <p className="text-body-sm text-content-2">
-                    {r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sala'}{r.sala ? ` · ${r.sala}` : ''}
-                </p>
-            </LiquidModal.Header>
+                </>}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-6">
                     {mayores.length > 0 && (

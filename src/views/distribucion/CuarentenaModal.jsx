@@ -40,12 +40,7 @@ export default function CuarentenaModal({ filas, puedeResolver, onClose, onCambi
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Cuarentena">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <ShieldAlert size={18} className="text-warning shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">En cuarentena</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={ShieldAlert} tono="warning" titulo="En cuarentena" onClose={ocupado ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3">
                     {error && <Notice variant="danger" bloque>{error}</Notice>}

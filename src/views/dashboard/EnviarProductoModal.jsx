@@ -864,19 +864,11 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         const parcial   = !nadaSalio && resultado.enviadas < resultado.total;
         return (
             <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Resultado del envío">
-                <LiquidModal.Header>
-                    <div className="flex items-center gap-2.5">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                            nadaSalio ? 'bg-danger/10' : parcial ? 'bg-warning/10' : 'bg-success/10'}`}>
-                            {nadaSalio
-                                ? <AlertTriangle size={16} className="text-danger-text" strokeWidth={2.5} />
-                                : <Check size={16} className={parcial ? 'text-warning-text' : 'text-success-text'} strokeWidth={2.5} />}
-                        </div>
-                        <p className="text-body font-black text-content">
-                            {nadaSalio ? 'No salió nada' : parcial ? 'Salió una parte' : 'Producto en camino'}
-                        </p>
-                    </div>
-                </LiquidModal.Header>
+                <LiquidModal.Header
+                    titulo={nadaSalio ? 'No salió nada' : parcial ? 'Salió una parte' : 'Producto en camino'}
+                    icono={nadaSalio ? AlertTriangle : Check}
+                    tono={nadaSalio ? 'danger' : parcial ? 'warning' : 'success'}
+                    onClose={onClose} />
                 <LiquidModal.Body className="flex flex-col gap-3">
                     <p className="text-body-sm text-content-2 font-medium leading-snug">
                         {nadaSalio
@@ -919,25 +911,13 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Enviar a otra sala">
-            <LiquidModal.Header>
-                <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                        <Send size={15} className="text-brand-text" strokeWidth={2.5} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-body font-black text-content leading-tight">Enviar a otra sala</p>
-                        <p className="text-label text-content-3 mt-0.5">
-                            {/* «tu sala» sólo cuando de verdad es la propia: con
-                                alcance sobre todas, el producto sale de la sala
-                                que se elija en cada renglón. */}
-                            {alcanceTodo
-                                ? 'Producto que sale de una sala hacia otra'
-                                : 'Producto que sale de tu sala hacia otra'}
-                        </p>
-                    </div>
-                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} aria-label="Cerrar" />
-                </div>
-            </LiquidModal.Header>
+            {/* «tu sala» sólo cuando de verdad es la propia: con alcance sobre
+                todas, el producto sale de la sala que se elija en cada renglón. */}
+            <LiquidModal.Header titulo="Enviar a otra sala"
+                subtitulo={alcanceTodo
+                    ? 'Producto que sale de una sala hacia otra'
+                    : 'Producto que sale de tu sala hacia otra'}
+                icono={Send} tono="brand" onClose={onClose} />
 
             <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
                 <div className="shrink-0">

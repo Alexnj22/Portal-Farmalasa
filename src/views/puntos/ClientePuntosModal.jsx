@@ -202,44 +202,33 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
 
     return (
         <>
-            <LiquidModal.Header>
-                {/* Compacto a propósito: el encabezado queda fijo, y en el teléfono
-                    el nombre en tres renglones se comía un tercio de la pantalla.
-                    El nombre cabe en dos renglones; el botón, a su lado, sólo con
-                    el ícono en el teléfono. */}
-                <div className="flex items-start justify-between gap-3 w-full">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
-                            <Star size={18} />
+            {/* Compacto a propósito: el encabezado queda fijo, y en el teléfono
+                el nombre en tres renglones se comía un tercio de la pantalla.
+                El botón, a su lado, sólo con el ícono en el teléfono. */}
+            <LiquidModal.Header compacto icono={Star} tono="brand" onClose={onClose}
+                titulo={cliente?.nombre ?? 'Cliente'}
+                subtitulo={
+                    <span className="inline-flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><IdCard size={12} />{cliente?.dui || 'Sin DUI'}</span>
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Phone size={12} />{cliente?.telefono || 'Sin teléfono'}</span>
+                    </span>
+                }
+                acciones={cliente && (
+                    <>
+                        {/* El `hidden` va en un envoltorio: puesto en el botón,
+                            su propio `inline-flex` le ganaba y salían los dos. */}
+                        <span className="hidden sm:block shrink-0">
+                            <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onEditar(cliente)}>
+                                {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                            </Button>
                         </span>
-                        <div className="min-w-0">
-                            <h2 className="text-body-lg sm:text-title font-black text-content line-clamp-2 sm:truncate leading-tight">
-                                {cliente?.nombre ?? 'Cliente'}
-                            </h2>
-                            <p className="text-caption text-content-3 mt-0.5 flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
-                                <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><IdCard size={12} />{cliente?.dui || 'Sin DUI'}</span>
-                                <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Phone size={12} />{cliente?.telefono || 'Sin teléfono'}</span>
-                            </p>
-                        </div>
-                    </div>
-                    {cliente && (
-                        <>
-                            {/* El `hidden` va en un envoltorio: puesto en el botón,
-                                su propio `inline-flex` le ganaba y salían los dos. */}
-                            <span className="hidden sm:block shrink-0">
-                                <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onEditar(cliente)}>
-                                    {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
-                                </Button>
-                            </span>
-                            <span className="sm:hidden shrink-0">
-                                <Button variant="secondary" size="sm" icon={Pencil} iconOnly onClick={() => onEditar(cliente)}
-                                    title={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
-                                    aria-label={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'} />
-                            </span>
-                        </>
-                    )}
-                </div>
-            </LiquidModal.Header>
+                        <span className="sm:hidden shrink-0">
+                            <Button variant="secondary" size="sm" icon={Pencil} iconOnly onClick={() => onEditar(cliente)}
+                                title={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                                aria-label={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'} />
+                        </span>
+                    </>
+                )} />
 
             <LiquidModal.Body>
                 {cargando ? <LoadingState label="Buscando los puntos del cliente…" /> : !cliente ? (

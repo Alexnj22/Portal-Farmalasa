@@ -113,12 +113,8 @@ function CargarModal({ vendedores, vendedorInicial, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Cargar camión">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Truck size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Cargar camión</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Truck} tono="brand" titulo="Cargar camión"
+                onClose={ocupado ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4" data-cargar-camion>
                     {error && <Notice variant="danger" bloque>{error}</Notice>}
@@ -199,12 +195,8 @@ function DescargarModal({ camion, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Descargar camión">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Undo2 size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Descargar · {shortEmployeeName(camion.vendedor)}</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Undo2} tono="brand" titulo={`Descargar · ${shortEmployeeName(camion.vendedor)}`}
+                onClose={ocupado ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3" data-descargar-camion>
                     {error && <Notice variant="danger" bloque>{error}</Notice>}

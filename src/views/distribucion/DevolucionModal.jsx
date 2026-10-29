@@ -70,15 +70,9 @@ export default function DevolucionModal({ dteId, onClose, onEmitida }) {
     const doc = datos?.documento;
     return (
         <LiquidModal open onClose={emitiendo ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Devolución">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2.5">
-                        <Undo2 size={18} className="text-brand-text shrink-0" />
-                        <h2 className="text-title font-black text-content truncate">Devolución con nota de crédito</h2>
-                    </div>
-                    {doc && <p className="text-caption text-content-3 mt-1 truncate">{doc.cliente} · {doc.numero_control} · {fechaNumerica(doc.fec_emi)}</p>}
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Undo2} tono="brand" titulo="Devolución con nota de crédito"
+                subtitulo={doc ? `${doc.cliente} · ${doc.numero_control} · ${fechaNumerica(doc.fec_emi)}` : undefined}
+                onClose={emitiendo ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4" data-devolucion>
                     {error && <Notice variant="danger" icon={AlertTriangle} bloque>{error}</Notice>}

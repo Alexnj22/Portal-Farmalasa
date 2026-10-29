@@ -190,14 +190,9 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
     return (
         <LiquidModal open={!!abierto} onClose={guardando ? undefined : onClose}
             maxWidth="max-w-lg" className="h-fit" ariaLabel="Depósito al banco">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Finalizar el efectivo</h3>
-                    <p className="text-caption text-content-3">
-                        {bolsas.length} {bolsas.length === 1 ? 'bolsa contada' : 'bolsas contadas'} · lo que no salga queda como remanente
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Finalizar el efectivo"
+                subtitulo={<>{bolsas.length} {bolsas.length === 1 ? 'bolsa contada' : 'bolsas contadas'} · lo que no salga queda como remanente</>}
+                onClose={guardando ? undefined : onClose} />
 
             <LiquidModal.Body className="space-y-4">
                 {error && <Notice variant="danger">{error}</Notice>}

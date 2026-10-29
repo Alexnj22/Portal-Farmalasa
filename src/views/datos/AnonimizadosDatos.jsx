@@ -81,9 +81,7 @@ export default function AnonimizadosDatos() {
 
             {resguardo && (
                 <LiquidModal open onClose={() => setResguardo(null)} maxWidth="max-w-2xl" ariaLabel="Resguardo de datos anonimizados">
-                    <LiquidModal.Header>
-                        <h2 className="text-title font-black text-content">Resguardo · ficha #{resguardo.customer_id}</h2>
-                    </LiquidModal.Header>
+                    <LiquidModal.Header titulo={`Resguardo · ficha #${resguardo.customer_id}`} onClose={() => setResguardo(null)} />
                     <LiquidModal.Body>
                         <ConsultaResguardo anonimizacionId={resguardo.id} />
                     </LiquidModal.Body>
@@ -128,9 +126,7 @@ function Reactivar({ onClose, onHecho }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Reactivar datos de un cliente">
-            <LiquidModal.Header>
-                <h2 className="text-title font-black text-content">Reactivar datos</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Reactivar datos" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-wrap items-end gap-2">

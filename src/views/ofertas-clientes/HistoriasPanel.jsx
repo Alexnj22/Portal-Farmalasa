@@ -207,9 +207,7 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel={nueva ? 'Nueva historia' : 'Editar historia'}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{nueva ? 'Nueva historia' : 'Editar historia'}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={nueva ? 'Nueva historia' : 'Editar historia'} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
@@ -275,12 +273,10 @@ function VistasModal({ historia, resumen, onClose }) {
     }, [historia.id]);
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Quién vio la historia">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{historia.titulo}</h2>
-                <p className="text-body-sm text-content-3">
-                    {resumen?.vistas ?? 0} la vieron · {resumen?.con_cuenta ?? 0} con cuenta · {resumen?.visitantes ?? 0} sin cuenta · {resumen?.tocaron ?? 0} tocaron un botón
-                </p>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={historia.titulo}
+                subtitulo={`${resumen?.vistas ?? 0} la vieron · ${resumen?.con_cuenta ?? 0} con cuenta · ${resumen?.visitantes ?? 0} sin cuenta · ${resumen?.tocaron ?? 0} tocaron un botón`}
+                onClose={onClose} />
             <LiquidModal.Body>
                 {error ? <Notice variant="danger">{error}</Notice>
                     : !lista ? <LoadingState label="Cargando" />

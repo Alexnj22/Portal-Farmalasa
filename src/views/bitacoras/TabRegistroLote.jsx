@@ -66,15 +66,11 @@ function DetalleLote({ fila, registro, onClose }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-4xl" ariaLabel={`Lote ${fila.lote}`}>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content leading-snug">{fila.producto}</h3>
-                    <p className="text-caption text-content-3">
-                        Lote {fila.lote}{fila.vence ? ` · vence ${fmtVence(fila.vence)}` : ''}
-                        {fila.factor_caja > 1 ? ` · caja de ${fila.factor_caja}` : ''}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={fila.producto} onClose={onClose}
+                subtitulo={<>
+                    Lote {fila.lote}{fila.vence ? ` · vence ${fmtVence(fila.vence)}` : ''}
+                    {fila.factor_caja > 1 ? ` · caja de ${fila.factor_caja}` : ''}
+                </>} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">

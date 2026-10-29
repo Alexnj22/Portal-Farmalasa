@@ -81,16 +81,10 @@ export default function HojaCuadreAntibioticos({ cuadre, onClose }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-5xl" ariaLabel="Hoja de movimientos de antibióticos">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Hoja de movimientos de antibióticos</h3>
-                    <p className="text-caption text-content-3">
-                        {cuadre.sin_saldo_inicial
-                            ? `Movimientos del ${fmtDia(cuadre.desde)} al ${fmtDia(cuadre.hasta)}`
-                            : `Saldo inicial al ${fmtDia(cuadre.saldo_inicial_del)} · movimientos del ${fmtDia(cuadre.desde)} al ${fmtDia(cuadre.hasta)}`}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Hoja de movimientos de antibióticos" onClose={onClose}
+                subtitulo={cuadre.sin_saldo_inicial
+                    ? `Movimientos del ${fmtDia(cuadre.desde)} al ${fmtDia(cuadre.hasta)}`
+                    : `Saldo inicial al ${fmtDia(cuadre.saldo_inicial_del)} · movimientos del ${fmtDia(cuadre.desde)} al ${fmtDia(cuadre.hasta)}`} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     {cuadre.sin_saldo_inicial && (

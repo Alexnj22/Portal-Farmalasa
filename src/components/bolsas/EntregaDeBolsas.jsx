@@ -210,17 +210,14 @@ export default function EntregaDeBolsas({
     return (
         <LiquidModal open={!!abierto} onClose={guardando ? undefined : onClose}
             maxWidth="max-w-lg" className="h-fit" ariaLabel="Entregar el efectivo">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Entregar el efectivo</h3>
-                    <p className="text-caption text-content-3">
-                        {nombreSala ? `${nombreSala} · ` : ''}
-                        {porDia.length
-                            ? `${porDia.length} ${porDia.length === 1 ? 'día' : 'días'} en la sala`
-                            : 'No hay bolsas en la sala'}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Entregar el efectivo"
+                subtitulo={<>
+                    {nombreSala ? `${nombreSala} · ` : ''}
+                    {porDia.length
+                        ? `${porDia.length} ${porDia.length === 1 ? 'día' : 'días'} en la sala`
+                        : 'No hay bolsas en la sala'}
+                </>}
+                onClose={guardando ? undefined : onClose} />
 
             <LiquidModal.Body className="space-y-4">
                 {!porDia.length && (

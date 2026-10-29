@@ -301,7 +301,7 @@ function Confirmar({ encargo, enviando = false, onClose, onConfirmar }) {
     const riesgo = encargoConRiesgo(encargo);
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Confirmar encargo">
-            <LiquidModal.Header><h2 className="text-body-xl font-semibold text-content">Confirmar {encargo.codigo}</h2></LiquidModal.Header>
+            <LiquidModal.Header titulo={`Confirmar ${encargo.codigo}`} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">{encargo.cantidad} × {encargo.producto}{encargo.nota_cliente ? ` · «${encargo.nota_cliente}»` : ''}</p>
@@ -336,7 +336,7 @@ function Rechazar({ encargo, enviando = false, onClose, onRechazar }) {
     const exigeMotivo = !!encargo.producto_nuevo;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel={ROT.rechazar}>
-            <LiquidModal.Header><h2 className="text-body-xl font-semibold text-content">{titulo}</h2></LiquidModal.Header>
+            <LiquidModal.Header titulo={titulo} onClose={onClose} />
             <LiquidModal.Body>
                 <PortalTextarea label="Motivo para el cliente" rows={3} value={nota} maxLength={300} onChange={(e) => setNota(e.target.value)}
                     placeholder="Ej. El proveedor no lo tiene; te recomendamos …" />
@@ -355,7 +355,7 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
     const [enviando, setEnviando] = useState(false);
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pasar a saldo a favor">
-            <LiquidModal.Header><h2 className="text-body-xl font-semibold text-content">{`${encargo.codigo} a saldo a favor`}</h2></LiquidModal.Header>
+            <LiquidModal.Header titulo={`${encargo.codigo} a saldo a favor`} onClose={onClose} />
             <LiquidModal.Body>
                 <Notice variant="info" compact icon={Wallet}>
                     Lo pagado ({formatMoney(encargo.anticipo)}) queda a favor del cliente por {vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sala.
@@ -412,10 +412,9 @@ function Vincular({ encargo, onClose, onListo }) {
     };
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Vincular producto">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Vincular {encargo.codigo}</h2>
-                <p className="text-body-sm text-content-2">Elige el producto que ya se creó para «{encargo.producto}».</p>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Vincular ${encargo.codigo}`}
+                subtitulo={`Elige el producto que ya se creó para «${encargo.producto}».`}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <FichaDeProductoNuevo encargo={encargo} />

@@ -79,14 +79,9 @@ export default function AnotarLimpieza({ area, turno, fecha, registro, modo = 'r
     return (
         <LiquidModal open onClose={guardando ? undefined : () => onCerrar(false)}
             maxWidth="max-w-md" className="h-fit" ariaLabel={titulo}>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">{titulo}</h3>
-                    <p className="text-caption text-content-3 truncate">
-                        {area.nombre} · {turno.label} ({rango12(turno.desde, turno.hasta)})
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={titulo}
+                subtitulo={`${area.nombre} · ${turno.label} (${rango12(turno.desde, turno.hasta)})`}
+                onClose={guardando ? undefined : () => onCerrar(false)} />
 
             <LiquidModal.Body className="space-y-4">
                 {quitando ? (

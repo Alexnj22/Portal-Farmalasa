@@ -81,11 +81,9 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel={nueva ? 'Nueva oferta' : 'Editar oferta'}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">
-                    {deDescuento ? 'Oferta en la app' : nueva ? 'Nueva oferta' : 'Editar oferta'}
-                </h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={deDescuento ? 'Oferta en la app' : nueva ? 'Nueva oferta' : 'Editar oferta'}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     {deDescuento && (

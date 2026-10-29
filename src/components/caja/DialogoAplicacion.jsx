@@ -419,16 +419,12 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
             {/* Encabezado y pie FIJOS, cuerpo con scroll (2026-10-03): con una
                 venta de varias aplicaciones el cuerpo crecía y el botón de cobrar
                 quedaba fuera de la pantalla (reporte del usuario). */}
-            <LiquidModal.Header className="space-y-3">
-                <div>
-                    <h3 className="text-h3 font-bold text-content">Aplicación de inyección</h3>
-                    <p className="text-body-sm text-content-2 mt-1">
-                        {precios
-                            ? <>Comprada aquí <b className="text-content">{formatMoney(precios.COMPRADA)}</b> · traída por
-                                el cliente <b className="text-content">{formatMoney(precios.TRAIDA)}</b>, por aplicación.</>
-                            : 'Cada aplicación pagada queda a nombre del cliente hasta que se aplica.'}
-                    </p>
-                </div>
+            <LiquidModal.Header titulo="Aplicación de inyección"
+                onClose={enviando ? undefined : onClose}
+                subtitulo={precios
+                    ? <>Comprada aquí <b className="text-content">{formatMoney(precios.COMPRADA)}</b> · traída por
+                        el cliente <b className="text-content">{formatMoney(precios.TRAIDA)}</b>, por aplicación.</>
+                    : 'Cada aplicación pagada queda a nombre del cliente hasta que se aplica.'}>
                 <SegmentedControl options={MODOS} value={modo} label="Cómo se paga" layout="block" columns={4}
                     onChange={(m) => { setModo(m); setVentaId(null); setVentaExterna(null); setCuantas({}); setMezcla(false); setFicha(null); }} />
             </LiquidModal.Header>

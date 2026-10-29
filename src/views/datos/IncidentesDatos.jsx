@@ -159,12 +159,8 @@ function Ficha({ inc, onClose, onGuardado }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Incidente de seguridad de datos">
-            <LiquidModal.Header>
-                <div className="flex items-start justify-between gap-3 w-full">
-                    <h2 className="text-title font-black text-content">{nuevo ? 'Registrar incidente' : 'Incidente de seguridad'}</h2>
-                    {!nuevo && <EstadoDelPlazo inc={inc} />}
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={nuevo ? 'Registrar incidente' : 'Incidente de seguridad'}
+                acciones={!nuevo && <EstadoDelPlazo inc={inc} />} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
                     {plazo && !plazo.completo && !cerrado && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../../components/common/Button';
-import { CalendarClock, History, X, Check } from 'lucide-react';
+import { CalendarClock, History, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import TimePicker12 from '../../components/common/TimePicker12';
@@ -47,22 +47,9 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`${isEditing ? 'Reprogramar entrega' : 'Programar entrega'} — Pedido #${numero}`}>
-            <LiquidModal.Header>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-chart-3/10 flex items-center justify-center">
-                            <CalendarClock size={16} className="text-chart-3-text" />
-                        </div>
-                        <div>
-                            <p className="text-body font-bold text-content">
-                                {isEditing ? 'Reprogramar entrega' : 'Programar entrega'}
-                            </p>
-                            <p className="text-label text-content-3">Pedido #{numero}</p>
-                        </div>
-                    </div>
-                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={CalendarClock} tono="neutral" onClose={onClose}
+                titulo={isEditing ? 'Reprogramar entrega' : 'Programar entrega'}
+                subtitulo={`Pedido #${numero}`} />
 
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
                 <div className="space-y-1.5">

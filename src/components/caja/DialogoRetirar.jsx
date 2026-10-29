@@ -115,10 +115,9 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Retirar lo apartado">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Retirar {v?.codigo ?? ''}</h2>
-                {v && <p className="text-body-sm text-content-2">{v.producto} · {v.cliente}</p>}
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Retirar ${v?.codigo ?? ''}`}
+                subtitulo={v ? `${v.producto} · ${v.cliente}` : null}
+                onClose={ocupado ? undefined : onClose} />
             <LiquidModal.Body>
                 {error ? <Notice variant="danger">{error}</Notice> : !v ? (
                     <p className="text-body-sm text-content-3">Cargando…</p>

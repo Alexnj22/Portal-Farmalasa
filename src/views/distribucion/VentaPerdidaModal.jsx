@@ -95,12 +95,9 @@ export default function VentaPerdidaModal({ emisorId, cliente, pedidoId = null, 
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-xl" ariaLabel="Venta perdida">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <PackageX size={18} className="text-warning-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Venta perdida{cliente ? ` · ${cliente.nombre}` : ''}</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={PackageX} tono="warning"
+                titulo={`Venta perdida${cliente ? ` · ${cliente.nombre}` : ''}`}
+                onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3" onKeyDown={(e) => {
                     if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.name === 'cantidad-perdida') { e.preventDefault(); guardar(); }

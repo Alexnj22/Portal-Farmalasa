@@ -106,12 +106,9 @@ export default function EntregarPremioEscaneado({ codigo, miSala, puedeAdministr
         const hay = (sinRegalo.hay_en ?? []).filter((x) => Number(x.branch_id) !== Number(miSala));
         return (
             <LiquidModal open onClose={ocupado ? undefined : onCerrar} maxWidth="max-w-md" ariaLabel="Regalo sin existencia en esta sala">
-                <LiquidModal.Header>
-                    <h2 className="text-body-xl font-semibold text-content">Aquí no hay {sinRegalo.nombre}</h2>
-                    <p className="text-body-sm text-content-2">
-                        Premio {sinRegalo.codigo} de {sinRegalo.cliente?.nombre ?? 'el cliente'}. Pregúntale qué prefiere.
-                    </p>
-                </LiquidModal.Header>
+                <LiquidModal.Header titulo={`Aquí no hay ${sinRegalo.nombre}`}
+                    subtitulo={`Premio ${sinRegalo.codigo} de ${sinRegalo.cliente?.nombre ?? 'el cliente'}. Pregúntale qué prefiere.`}
+                    onClose={ocupado ? undefined : onCerrar} />
                 <LiquidModal.Body>
                     <div className="flex flex-col gap-2">
                         {hay.length ? hay.map((x) => (

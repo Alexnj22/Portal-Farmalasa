@@ -92,12 +92,9 @@ export default function EditarAntibioticoModal({ producto: inicial = null, onClo
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Antibiótico del listado">
-            <LiquidModal.Header>
-                <h3 className="text-h3 font-bold text-content">{producto ? producto.producto : 'Agregar un producto'}</h3>
-                {producto?.origen === 'nombre' && (
-                    <p className="text-caption text-content-3 mt-1">Hoy está en el listado por su nombre. Lo que guardes aquí manda.</p>
-                )}
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={producto ? producto.producto : 'Agregar un producto'}
+                subtitulo={producto?.origen === 'nombre' ? 'Hoy está en el listado por su nombre. Lo que guardes aquí manda.' : undefined}
+                onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body className="space-y-4">
                 {!producto ? (
                     <div className="space-y-2">

@@ -65,12 +65,9 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Resolver reserva">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Resolver {codigo}</h2>
-                <p className="text-body-sm text-content-2">
-                    {r.cantidad} × {r.producto} · {shortEmployeeName(r.cliente ?? '')}
-                </p>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Resolver ${codigo}`}
+                subtitulo={<>{r.cantidad} × {r.producto} · {shortEmployeeName(r.cliente ?? '')}</>}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     {r.traslado_nota && <Notice variant="warning" compact icon={Truck}>{r.traslado_nota}</Notice>}

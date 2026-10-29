@@ -75,16 +75,9 @@ export default function AnotarLectura({ area, franja, lectura, fecha, valores, o
         <LiquidModal open onClose={guardando ? undefined : () => onCerrar(false)}
             maxWidth="max-w-md" className="h-fit"
             ariaLabel={corrigiendo ? 'Corregir la lectura' : 'Anotar la lectura'}>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">
-                        {corrigiendo ? 'Corregir la lectura' : 'Anotar la lectura'}
-                    </h3>
-                    <p className="text-caption text-content-3 truncate">
-                        {area.nombre} · {franja.label} ({rango12(franja.desde, franja.hasta)}) · {rotularRango(area)}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={corrigiendo ? 'Corregir la lectura' : 'Anotar la lectura'}
+                subtitulo={<>{area.nombre} · {franja.label} ({rango12(franja.desde, franja.hasta)}) · {rotularRango(area)}</>}
+                onClose={guardando ? undefined : () => onCerrar(false)} />
 
             <LiquidModal.Body className="space-y-4">
                 {corrigiendo && (

@@ -809,9 +809,7 @@ function AvisoWhatsapp({ reserva, onCerrar, onEnviado }) {
     };
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel="Avisar por WhatsApp">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Avisar por WhatsApp</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Avisar por WhatsApp" onClose={onCerrar} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
@@ -874,9 +872,7 @@ function UsarSaldo({ saldo, onCerrar, onUsado, buscarSaldoAFavor, usarSaldoAFavo
     };
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel="Usar saldo a favor">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Usar saldo a favor · {codigo}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Usar saldo a favor · ${codigo}`} onClose={onCerrar} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     {!fila ? (
@@ -935,9 +931,7 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
     };
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel="Devolver saldo a favor">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Devolver {formatMoney(monto)} en dinero</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Devolver ${formatMoney(monto)} en dinero`} onClose={onCerrar} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
@@ -972,9 +966,7 @@ function VentaYaFacturada({ caso, ocupada, onCerrar, onDecidir }) {
     const codigo = r.pedido ?? codigoDeReserva(r.id);
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel={`Cancelar ${codigo}`}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Este producto ya se le facturó</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Este producto ya se le facturó" onClose={onCerrar} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
@@ -1016,9 +1008,7 @@ function ConMotivo({ titulo, texto, etiqueta, boton, onCerrar, onConfirmar }) {
     };
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel={titulo}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{titulo}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={titulo} onClose={onCerrar} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">{texto}</p>
@@ -1066,9 +1056,7 @@ function EntregarDevolucion({ reserva: r, sala, onCerrar, onEntregada }) {
     };
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel="Entregar devolución">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Entregar {formatMoney(monto)} en efectivo</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Entregar ${formatMoney(monto)} en efectivo`} onClose={onCerrar} />
             <LiquidModal.Body>
                 <p className="text-body-sm text-content-2">
                     {codigo} · {String(r.cliente ?? '').split(/\s+/)[0]}. Sale de la caja de esta sala como vale «Devolución a un cliente»:

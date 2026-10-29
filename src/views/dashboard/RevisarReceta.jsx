@@ -77,16 +77,14 @@ export default function RevisarReceta({ reserva, onClose, onDecidida }) {
     const codigo = reserva.pedido ?? codigoDeReserva(reserva.id);
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Revisar receta">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h2 className="text-body-xl font-semibold text-content">Receta de {String(reserva.cliente ?? '').split(/\s+/)[0]}</h2>
-                    <p className="text-body-sm text-content-2 truncate">
-                        {reserva.cantidad} × {reserva.producto} · {codigo}
-                        {reserva.receta_subida_at ? ` · subida el ${fechaTexto(reserva.receta_subida_at, { day: 'numeric', month: 'short' })}, ${hora12(reserva.receta_subida_at)}` : ''}
-                        {Number(reserva.receta_fotos) > 1 ? ` · foto ${reserva.receta_fotos}` : ''}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={`Receta de ${String(reserva.cliente ?? '').split(/\s+/)[0]}`}
+                subtitulo={<>
+                    {reserva.cantidad} × {reserva.producto} · {codigo}
+                    {reserva.receta_subida_at ? ` · subida el ${fechaTexto(reserva.receta_subida_at, { day: 'numeric', month: 'short' })}, ${hora12(reserva.receta_subida_at)}` : ''}
+                    {Number(reserva.receta_fotos) > 1 ? ` · foto ${reserva.receta_fotos}` : ''}
+                </>}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     {!decidible && reserva.receta_estado === 'otra_foto' && (

@@ -212,14 +212,8 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
         <>
             <LiquidModal open={!!bolsa} onClose={onClose} maxWidth="max-w-2xl"
                 ariaLabel={`Detalle de la bolsa ${bolsa.folio}`}>
-                <LiquidModal.Header>
-                    <div className="min-w-0">
-                        <h3 className="text-body font-bold text-content">{bolsa.folio}</h3>
-                        <p className="text-caption text-content-3 truncate">
-                            {sala} · corte del {fechaCorta(bolsa.fecha)} {hora12(bolsa.hora)}
-                        </p>
-                    </div>
-                </LiquidModal.Header>
+                <LiquidModal.Header titulo={bolsa.folio} onClose={onClose}
+                    subtitulo={`${sala} · corte del ${fechaCorta(bolsa.fecha)} ${hora12(bolsa.hora)}`} />
 
                 <LiquidModal.Body className="space-y-4">
                     <div data-surface="card" className="p-3 space-y-1">

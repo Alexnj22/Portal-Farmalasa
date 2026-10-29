@@ -126,12 +126,9 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel="Reactivar promoción">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Reactivar promoción</h2>
-                <p className="text-caption text-content-3 break-words">
-                    {promo?.nombre} · {fmtVigencia(promo?.inicio, promo?.fin)}
-                </p>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Reactivar promoción"
+                subtitulo={<span className="break-words">{promo?.nombre} · {fmtVigencia(promo?.inicio, promo?.fin)}</span>}
+                onClose={onClose} />
 
             <LiquidModal.Body>
                 <div className="space-y-4">

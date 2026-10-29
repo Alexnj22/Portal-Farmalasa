@@ -99,10 +99,7 @@ export function RegistrarLlamada({ reserva = null, encargo = null, titulo, telef
     };
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Registrar llamada">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Registrar llamada</h2>
-                {titulo && <p className="text-body-sm text-content-2">{titulo}</p>}
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Registrar llamada" subtitulo={titulo || undefined} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     {telefono && (

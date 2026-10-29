@@ -310,22 +310,18 @@ const SesionesView = () => {
                 className="h-fit"
                 ariaLabel={`Conexiones de ${detalleVisible?.empleado || ''}`}
             >
-                <LiquidModal.Header>
-                    <div className="flex items-center gap-3">
+                <LiquidModal.Header
+                    avatar={(
                         <AvatarConEstado
                             emp={{ id: detalleVisible?.ficha_id, name: detalleVisible?.empleado, photo: detalleVisible?.foto }}
                             px={44} radio="rounded-2xl" marco=""
                         />
-                        <div className="min-w-0">
-                            <h3 className="text-body font-bold text-content truncate">{detalleVisible?.empleado}</h3>
-                            <p className="text-caption text-content-3 truncate">
-                                {detalleVisible?.conexiones.length === 1
-                                    ? '1 conexión abierta'
-                                    : `${detalleVisible?.conexiones.length} conexiones abiertas`}
-                            </p>
-                        </div>
-                    </div>
-                </LiquidModal.Header>
+                    )}
+                    titulo={detalleVisible?.empleado}
+                    subtitulo={detalleVisible?.conexiones.length === 1
+                        ? '1 conexión abierta'
+                        : `${detalleVisible?.conexiones.length} conexiones abiertas`}
+                    onClose={() => setAbierta(null)} />
 
                 <LiquidModal.Body className="space-y-2">
                     {detalleVisible?.bloqueado && (

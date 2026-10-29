@@ -318,14 +318,10 @@ export default function DiasConDiferencia({
             >
                 {visible && (
                     <>
-                        <LiquidModal.Header>
-                            <div className="min-w-0">
-                                <h3 className="text-body font-bold text-content">
-                                    {nombreSala[visible.branch_id] || `Sucursal ${visible.branch_id}`}
-                                </h3>
-                                <p className="text-caption text-content-3 capitalize">{rotularFecha(visible.fecha)}</p>
-                            </div>
-                        </LiquidModal.Header>
+                        <LiquidModal.Header
+                            titulo={nombreSala[visible.branch_id] || `Sucursal ${visible.branch_id}`}
+                            subtitulo={<span className="capitalize">{rotularFecha(visible.fecha)}</span>}
+                            onClose={() => setAbierto(null)} />
 
                         <LiquidModal.Body className="space-y-4">
                             {/* Lo primero: cuánto, en el signo que se mira. Nunca el

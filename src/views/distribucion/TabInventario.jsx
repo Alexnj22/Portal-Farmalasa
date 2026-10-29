@@ -110,12 +110,8 @@ function EntradaModal({ emisorId, onClose, onGuardado }) {
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Entrada de lote">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <PackagePlus size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Entrada de lote</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={PackagePlus} tono="brand" titulo="Entrada de lote"
+                onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
                     {error && <Notice variant="danger" bloque>{error}</Notice>}
@@ -186,12 +182,9 @@ function LoteModal({ lote, puedeAjustar, onClose, onGuardado }) {
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-xl" ariaLabel={`Lote ${lote.lote}`}>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h2 className="text-title font-black text-content truncate">{lote.nombre}</h2>
-                    <p className="text-caption text-content-3">Lote {lote.lote} · vence {lote.vence ? fechaNumerica(lote.vence) : 'sin fecha'}</p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={lote.nombre}
+                subtitulo={`Lote ${lote.lote} · vence ${lote.vence ? fechaNumerica(lote.vence) : 'sin fecha'}`}
+                onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-5">
                     {error && <Notice variant="danger" bloque>{error}</Notice>}

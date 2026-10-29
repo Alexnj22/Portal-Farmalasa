@@ -53,11 +53,9 @@ export default function DuplicarModal({ mes, piezas, preseleccion = null, onClos
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Duplicar piezas">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">
-                    {preseleccion ? `Duplicar «${preseleccion.titulo}»` : `Duplicar piezas de ${etiquetaMes(mes)}`}
-                </h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={preseleccion ? `Duplicar «${preseleccion.titulo}»` : `Duplicar piezas de ${etiquetaMes(mes)}`}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <Campo rotulo="A qué mes">

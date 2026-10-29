@@ -82,12 +82,7 @@ export function EditorDeEtiquetas({ abierto, conversacion, onClose, onGuardado }
 
     return (
         <LiquidModal open={abierto} onClose={guardando ? undefined : onClose} maxWidth="max-w-md" ariaLabel="Etiquetas del cliente">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Tags size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Etiquetas del cliente</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Tags} tono="brand" titulo="Etiquetas del cliente" onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3">
                     <p className="text-caption text-content-2">

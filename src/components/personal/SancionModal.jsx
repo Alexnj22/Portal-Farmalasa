@@ -219,17 +219,9 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
         // quedaban a y=−464, fuera de alcance (prueba en vivo, 2026-10-22).
         // El pie con los botones queda fijo; lo que se desplaza es el cuerpo.
         <LiquidModal open={open} onClose={guardando ? undefined : onClose} maxWidth="max-w-xl" ariaLabel="Registrar una sanción">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-btn bg-warning/10 flex items-center justify-center shrink-0">
-                        <ShieldAlert size={22} className="text-warning-text" />
-                    </div>
-                    <div className="min-w-0">
-                        <h2 className="text-h4 font-black text-content-1 leading-tight">Registrar una sanción</h2>
-                        <p className="text-caption text-content-3 truncate">{empleado?.name} · RIT Art. 83</p>
-                    </div>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={ShieldAlert} tono="warning" titulo="Registrar una sanción"
+                subtitulo={<>{empleado?.name} · RIT Art. 83</>}
+                onClose={guardando ? undefined : onClose} />
 
             <LiquidModal.Body className="space-y-5">
 

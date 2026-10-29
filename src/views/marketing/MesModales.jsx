@@ -50,11 +50,9 @@ export function DecisionMesModal({ modo, mes, resumen, onClose, onCambio }) {
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md"
             ariaLabel={publicar ? 'Enviar el calendario a revisión' : 'Aprobar el calendario'}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">
-                    {publicar ? (reenvio ? `Reenviar ${etiqueta}` : `Enviar ${etiqueta} a revisión`) : `Aprobar ${etiqueta}`}
-                </h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={publicar ? (reenvio ? `Reenviar ${etiqueta}` : `Enviar ${etiqueta} a revisión`) : `Aprobar ${etiqueta}`}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     {publicar ? (
@@ -117,9 +115,7 @@ export function DatosDelMesModal({ open, mes, puedeAprobar, asignado = 0, onClos
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-md" ariaLabel="Datos del mes">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{etiquetaMes(mes.mes)}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={etiquetaMes(mes.mes)} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <PortalTextarea label="Objetivo del mes" name="objetivo" value={objetivo}

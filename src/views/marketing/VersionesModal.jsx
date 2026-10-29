@@ -68,11 +68,9 @@ export default function VersionesModal({ archivos, archivo, firmadas, mesId, pie
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-6xl" ariaLabel="Versiones del diseño">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content truncate">
-                    Versiones · {ultima.nombre || 'diseño'} <span className="text-content-3 font-normal">({cadena.length})</span>
-                </h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={<>Versiones · {ultima.nombre || 'diseño'} <span className="text-content-3 font-normal">({cadena.length})</span></>}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     {cadena.length > 1 ? (

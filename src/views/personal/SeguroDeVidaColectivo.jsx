@@ -90,24 +90,12 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Seguro de vida colectivo">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-btn bg-chart-9/10 flex items-center justify-center shrink-0">
-                        <ShieldCheck size={18} className="text-chart-9-text" strokeWidth={2.5} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-body font-black text-content truncate">Seguro de vida colectivo</p>
-                        <p className="text-micro text-content-3 font-medium truncate">
-                            {poliza ? `${poliza.aseguradora} · se paga cada ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][mes - 1]}` : 'Cargando…'}
-                        </p>
-                    </div>
-                    {/* El foco al abrir va acá y no al primer campo (que es el de la
-                        póliza, al fondo): ModalShell lo respeta si ya hay algo
-                        enfocado, y así el teléfono no abre desplazado hasta la
-                        mitad de la lista. Este modal primero se LEE. */}
-                    <Button variant="ghost" size="sm" icon={X} iconOnly title="Cerrar" onClick={onClose} autoFocus />
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={ShieldCheck} tono="neutral" titulo="Seguro de vida colectivo"
+                subtitulo={poliza ? `${poliza.aseguradora} · se paga cada ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][mes - 1]}` : 'Cargando…'}
+                // El foco al abrir va a la ✕ y no al primer campo (que es el de la
+                // póliza, al fondo): ModalShell lo respeta si ya hay algo enfocado,
+                // y así el teléfono no abre desplazado hasta la mitad de la lista.
+                onClose={onClose} enfocarCierre />
 
             <LiquidModal.Body className="flex flex-col gap-5">
                     {fallo && <Notice variant="danger" compact>{fallo}</Notice>}

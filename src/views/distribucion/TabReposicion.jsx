@@ -56,7 +56,7 @@ function MinMaxModal({ producto, onClose, onGuardado }) {
     };
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-md" ariaLabel="Mínimo y máximo">
-            <LiquidModal.Header><h2 className="text-title font-black text-content truncate">{producto.nombre}</h2></LiquidModal.Header>
+            <LiquidModal.Header titulo={producto.nombre} onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3">
                     {error && <Notice variant="danger" bloque>{error}</Notice>}

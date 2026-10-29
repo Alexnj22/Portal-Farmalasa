@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1377.0 — Todos los encabezados de modal, canónicos
+
+Los 102 archivos que todavía dibujaban a mano el encabezado de su modal (caja, cortes, bolsas, distribución, tablero, marketing, promociones, puntos, ofertas, chat, bitácoras, datos, compras, pedidos, encuestas…) usan ahora `LiquidModal.Header` con `titulo`/`subtitulo`/`icono`/`tono`/`acciones`/`onClose`. Desaparecen los cinco tamaños de título y las baldosas de ícono escritas en cada archivo.
+
+- **Todos cierran igual.** Los modales que no tenían ✕ la tienen ahora, con el mismo handler (y la misma guarda de «guardando») que su raíz; las ✕ hechas a mano se quitaron.
+- **El canónico suma** `acciones` (badges y botones junto al título), `onVolver` (la flecha de un paso atrás) y `enfocarCierre` (el seguro de vida colectivo abre con el foco en la ✕ para no saltar al fondo en el teléfono).
+- **`ModalConRanuras`**: el formulario de adentro ya no portalea un encabezado dibujado; declara sus datos con `EncabezadoModal` y lo dibuja el canónico (el ajuste de inventario es el primero).
+- Un título que llega vacío mientras carga ya no tira el encabezado a la ranura libre perdiendo la ✕.
+- **`gate:design`** estrena `encabezado-de-modal-a-mano`, bloqueante en cero.
+- Cambios visibles a revisar: algunos títulos largos ahora se parten en dos líneas en vez de cortarse con «…»; el monto de un movimiento de caja baja al tamaño de título; el ícono de un vistazo del tablero pierde el color propio del widget.
+
 ## v2.1376.2 — Ventas: dos renglones iguales ya no se esconden (falsa «Error en factura»)
 
 Con la marca de v2.1375.1 aparecieron dos falsas alarmas: la COF 401886 (Salud

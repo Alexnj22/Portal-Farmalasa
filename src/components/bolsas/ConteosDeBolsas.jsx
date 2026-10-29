@@ -392,15 +392,11 @@ function Detalle({ conteo, onClose }) {
     return (
         <LiquidModal open={!!c} onClose={onClose}
             maxWidth="max-w-5xl" className="h-fit" ariaLabel={`Conteo ${c.folio}`}>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">{c.folio}</h3>
-                    <p className="text-caption text-content-3">
-                        {rangoDeDias(c.dia_desde, c.dia_hasta)} · {c.cuantas} {Number(c.cuantas) === 1 ? 'bolsa' : 'bolsas'}
-                        {' '}· {selloDeTiempo(c.cerrado_at)}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={c.folio} onClose={onClose}
+                subtitulo={<>
+                    {rangoDeDias(c.dia_desde, c.dia_hasta)} · {c.cuantas} {Number(c.cuantas) === 1 ? 'bolsa' : 'bolsas'}
+                    {' '}· {selloDeTiempo(c.cerrado_at)}
+                </>} />
 
             <LiquidModal.Body className="space-y-5">
                 {/* Las cuatro cifras en UNA fila, en el orden en que se leen:

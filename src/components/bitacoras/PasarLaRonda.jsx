@@ -246,14 +246,9 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
     return (
         <LiquidModal open onClose={guardando ? undefined : cerrar}
             maxWidth="max-w-lg" ariaLabel="Pasar la ronda">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Pasar la ronda</h3>
-                    <p className="text-caption text-content-3">
-                        Lo que dejes en blanco queda pendiente.
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Pasar la ronda"
+                subtitulo="Lo que dejes en blanco queda pendiente."
+                onClose={guardando ? undefined : cerrar} />
 
             <LiquidModal.Body className="space-y-4">
                 {Object.keys(errores).length > 0 && (

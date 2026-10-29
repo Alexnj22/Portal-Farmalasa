@@ -197,9 +197,7 @@ function BannerModal({ banner, onClose, onGuardado, onError }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel={nuevo ? 'Nuevo banner' : 'Editar banner'}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{nuevo ? 'Nuevo banner' : 'Editar banner'}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={nuevo ? 'Nuevo banner' : 'Editar banner'} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}

@@ -87,9 +87,7 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
     if (esNueva) {
         return (
             <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel="Nueva solicitud">
-                <LiquidModal.Header>
-                    <h2 className="text-body-xl font-semibold text-content">Pedir una pieza</h2>
-                </LiquidModal.Header>
+                <LiquidModal.Header titulo="Pedir una pieza" onClose={onClose} />
                 <LiquidModal.Body>
                     <div className="space-y-4">
                         {hayBorrador && <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />}
@@ -140,12 +138,10 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
     const marca = marcas.find((m) => m.id === solicitud.marca_id);
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Solicitud ${solicitud.titulo}`}>
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2 min-w-0">
-                    <h2 className="text-body-xl font-semibold text-content truncate">{solicitud.titulo}</h2>
-                    <Badge variant={est.variant} size="sm">{est.label}</Badge>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={solicitud.titulo}
+                acciones={<Badge variant={est.variant} size="sm">{est.label}</Badge>}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <div className="flex items-center gap-2">

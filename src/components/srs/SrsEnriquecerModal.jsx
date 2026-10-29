@@ -221,20 +221,8 @@ export default function SrsEnriquecerModal({ onClose }) {
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" zClass="z-confirm" ariaLabel="Enriquecer desde SRS">
 
-                <LiquidModal.Header>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-chart-3/10 flex items-center justify-center">
-                                <FlaskConical size={15} className="text-chart-3-text" />
-                            </div>
-                            <div>
-                                <p className="text-body-lg font-black text-content">Enriquecer desde SRS</p>
-                                <p className="text-label text-content-3">Busca y aplica principios activos del Registro Sanitario</p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
-                    </div>
-                </LiquidModal.Header>
+                <LiquidModal.Header icono={FlaskConical} tono="neutral" titulo="Enriquecer desde SRS"
+                    subtitulo="Busca y aplica principios activos del Registro Sanitario" onClose={onClose} />
 
                 <LiquidModal.Body className="flex flex-col gap-5">
 

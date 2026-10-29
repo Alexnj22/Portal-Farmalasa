@@ -392,39 +392,36 @@ export default function PiezaModal({
         <>
             <LiquidModal open={open} onClose={onClose} maxWidth="max-w-5xl"
                 ariaLabel={esNueva ? 'Nueva pieza' : `Pieza ${pieza.titulo}`}>
-                <LiquidModal.Header>
-                    {/* Cuándo sale y en qué va, arriba y siempre a la vista
-                        (pedido del usuario): el camino de la pieza es el
-                        selector de estado, y el día y la hora van al lado. */}
-                    <div className="space-y-4 min-w-0 pr-8">
-                        <div className="flex items-start gap-3 min-w-0">
-                            <span className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${tonoActual.suave} ${tonoActual.texto}`}>
-                                <IconoFormato size={20} aria-hidden />
-                            </span>
-                            <div className="min-w-0 flex-1 space-y-0.5">
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <h2 className="text-body-xl font-semibold text-content truncate">
-                                        {esNueva ? (form.titulo?.trim() || 'Nueva pieza') : pieza.titulo}
-                                    </h2>
-                                    <Badge variant={estForm.variant} size="sm">{estForm.label}</Badge>
-                                </div>
-                                <div className="flex items-center gap-2 text-caption text-content-3 min-w-0 flex-wrap">
-                                    <span>{formatoActual.label}</span>
+                {/* Cuándo sale y en qué va, arriba y siempre a la vista
+                    (pedido del usuario): el camino de la pieza es el
+                    selector de estado, y el día y la hora van al lado.
+                    La baldosa va por `avatar` y no por `icono`: su color
+                    sigue al ESTADO de la pieza (`tonoDeEstado`), que tiene
+                    más matices que los cinco tonos del canónico. */}
+                <LiquidModal.Header
+                    titulo={esNueva ? (form.titulo?.trim() || 'Nueva pieza') : pieza.titulo}
+                    subtitulo={
+                        <span className="inline-flex items-center gap-2 min-w-0 flex-wrap">
+                            <span>{formatoActual.label}</span>
+                            <span aria-hidden>·</span>
+                            <span>{mes ? etiquetaMes(mes.mes) : ''}</span>
+                            {!esNueva && pieza.created_by && (
+                                <>
                                     <span aria-hidden>·</span>
-                                    <span>{mes ? etiquetaMes(mes.mes) : ''}</span>
-                                    {!esNueva && pieza.created_by && (
-                                        <>
-                                            <span aria-hidden>·</span>
-                                            <span className="shrink-0">creada por</span>
-                                            <Quien id={pieza.created_by} personas={personas} px={18} />
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {!compacto && bloqueDelFlujo}
-                    </div>
+                                    <span className="shrink-0">creada por</span>
+                                    <Quien id={pieza.created_by} personas={personas} px={18} />
+                                </>
+                            )}
+                        </span>
+                    }
+                    avatar={
+                        <span aria-hidden="true" className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${tonoActual.suave} ${tonoActual.texto}`}>
+                            <IconoFormato size={22} />
+                        </span>
+                    }
+                    acciones={<Badge variant={estForm.variant} size="sm">{estForm.label}</Badge>}
+                    onClose={onClose}>
+                    {!compacto && bloqueDelFlujo}
                 </LiquidModal.Header>
                 <LiquidModal.Body>
                     {compacto && <div className="mb-4">{bloqueDelFlujo}</div>}

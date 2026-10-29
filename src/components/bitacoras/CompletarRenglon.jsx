@@ -440,23 +440,15 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                 contexto de sólo lectura, se mira una vez, y no se vuelve a
                 tocar. Reportado antes como «dame más clara la info, casi no se
                 nota ni se ve». */}
-            <LiquidModal.Header>
+            <LiquidModal.Header titulo={renglon.producto_nombre}
+                onClose={guardando ? undefined : () => onCerrar(false)}
+                subtitulo={<>
+                    <span className="font-black tabular-nums text-content-2">{renglon.folio_txt}</span>
+                    {' · '}{fmtFecha(renglon.fecha)}
+                    {renglon.correlativo_doc ? ` · ${renglon.correlativo_doc}` : ''}
+                    {renglon.vendedor ? ` · ${renglon.vendedor}` : ''}
+                </>}>
                 <div className="min-w-0 space-y-1.5">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-label font-black tabular-nums text-content-2">
-                            {renglon.folio_txt}
-                        </span>
-                        <span className="text-caption text-content-3">
-                            {fmtFecha(renglon.fecha)}
-                            {renglon.correlativo_doc ? ` · ${renglon.correlativo_doc}` : ''}
-                            {renglon.vendedor ? ` · ${renglon.vendedor}` : ''}
-                        </span>
-                    </div>
-
-                    <h3 className="text-body-lg font-black text-content leading-tight">
-                        {renglon.producto_nombre}
-                    </h3>
-
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="text-body font-black text-brand-text tabular-nums">
                             {num(renglon.cantidad)}

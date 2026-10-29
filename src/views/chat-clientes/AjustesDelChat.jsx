@@ -155,12 +155,7 @@ export default function AjustesDelChat({ abierto, onClose, estado }) {
 
     return (
         <LiquidModal open={abierto} onClose={guardando ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Ajustes del chat">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <MessageSquareText size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Ajustes del chat</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={MessageSquareText} tono="brand" titulo="Ajustes del chat" onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-1.5">

@@ -91,17 +91,8 @@ function Cuerpo({ cuenta, puedeAsignar, onClose, onAsignada }) {
 
     return (
         <>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2.5">
-                        <History size={18} className="text-brand-text shrink-0" />
-                        <h2 className="text-title font-black text-content truncate">
-                            Cuenta {cuenta.id_cliente} del sistema anterior
-                        </h2>
-                    </div>
-                    <p className="text-caption text-content-3 mt-1">{cuenta.motivo}</p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Cuenta ${cuenta.id_cliente} del sistema anterior`}
+                subtitulo={cuenta.motivo} icono={History} tono="brand" onClose={onClose} />
 
             <LiquidModal.Body>
                 <div className="flex flex-col gap-5">

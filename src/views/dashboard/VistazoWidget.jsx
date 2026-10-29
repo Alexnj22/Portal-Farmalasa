@@ -1,8 +1,7 @@
 import React, { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronRight, X } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
-import Button from '../../components/common/Button';
 import { ResumenWidgetCtx } from './tamanoWidget';
 
 // El vistazo de un widget: qué se pinta cuando el tamaño elegido no le alcanza
@@ -76,15 +75,9 @@ export default function VistazoWidget({ title, icon: Icon, color, action, resume
 
             {abierto && (
                 <LiquidModal open onClose={() => setAbierto(false)} maxWidth="max-w-2xl" ariaLabel={title}>
-                    <LiquidModal.Header>
-                        <div className="flex items-center gap-2.5">
-                            <Icon size={16} strokeWidth={2.5} className="shrink-0" style={{ color }} />
-                            <p className="flex-1 min-w-0 text-body font-black text-content leading-tight truncate">{title}</p>
-                            {action && <div className="shrink-0 whitespace-nowrap">{action}</div>}
-                            <Button variant="ghost" size="xs" icon={X} iconOnly
-                                onClick={() => setAbierto(false)} aria-label="Cerrar" />
-                        </div>
-                    </LiquidModal.Header>
+                    <LiquidModal.Header titulo={title} icono={Icon} tono="neutral" compacto
+                        acciones={action && <div className="shrink-0 whitespace-nowrap">{action}</div>}
+                        onClose={() => setAbierto(false)} />
                     {/* Alto FIJO y no «lo que mida el contenido»: los widgets
                         están escritos para llenar una celda (`h-full` y su
                         propio desplazamiento), y sin un alto que llenar se

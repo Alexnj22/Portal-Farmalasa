@@ -265,18 +265,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Editar promoción">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h2 className="text-body-xl font-semibold text-content truncate">
-                        {promo?.nombre || 'Editar promoción'}
-                    </h2>
-                    {promo && (
-                        <p className="text-caption text-content-3">
-                            {fmtVigencia(promo.inicio, promo.fin)} · {estadoVisible(promo).rotulo}
-                        </p>
-                    )}
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={promo?.nombre || 'Editar promoción'} onClose={onClose}
+                subtitulo={promo ? `${fmtVigencia(promo.inicio, promo.fin)} · ${estadoVisible(promo).rotulo}` : undefined} />
 
             <LiquidModal.Body>
                 {cargando && <LoadingState label="Cargando la promoción…" />}
@@ -512,13 +502,10 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 maxWidth="max-w-md"
                 ariaLabel="¿También en el descuento?"
             >
-                <LiquidModal.Header>
-                    <h2 className="text-body-lg font-black text-content">
-                        {pendiente?.tipo === 'quitar'
-                            ? '¿También le quito el descuento?'
-                            : '¿También le bajo el precio?'}
-                    </h2>
-                </LiquidModal.Header>
+                <LiquidModal.Header onClose={() => !(agregando || sincronizando) && setPendiente(null)}
+                    titulo={pendiente?.tipo === 'quitar'
+                        ? '¿También le quito el descuento?'
+                        : '¿También le bajo el precio?'} />
 
                 <LiquidModal.Body>
                     <Notice variant={pendiente?.tipo === 'quitar' ? 'warning' : 'info'}

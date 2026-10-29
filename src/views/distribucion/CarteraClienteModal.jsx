@@ -178,21 +178,15 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
 
     return (
         <LiquidModal open onClose={cobrando ? undefined : onClose} maxWidth="max-w-4xl" ariaLabel={`Cuenta de ${cliente.nombre}`}>
-            <LiquidModal.Header>
-                <div className="flex flex-wrap items-start justify-between gap-3 w-full">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2.5">
-                            <HandCoins size={18} className="text-brand-text shrink-0" />
-                            <h2 className="text-title font-black text-content truncate">{cliente.nombre}</h2>
-                        </div>
-                        <p className="text-caption text-content-3 mt-1">{cliente.ruta ?? ''}{cliente.telefono ? ` · Tel. ${cliente.telefono}` : ''}</p>
-                    </div>
+            <LiquidModal.Header icono={HandCoins} tono="brand" titulo={cliente.nombre}
+                subtitulo={`${cliente.ruta ?? ''}${cliente.telefono ? ` · Tel. ${cliente.telefono}` : ''}`}
+                acciones={(
                     <div className="text-right">
                         <p className="text-caption text-content-3">Debe</p>
                         <p className="text-display font-black text-brand-text tabular-nums" data-testid="saldo-cliente">{formatMoney(saldo)}</p>
                     </div>
-                </div>
-            </LiquidModal.Header>
+                )}
+                onClose={cobrando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
                     {error && <Notice variant="danger" icon={AlertTriangle} bloque>{error}</Notice>}

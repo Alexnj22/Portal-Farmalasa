@@ -52,12 +52,8 @@ export default function ProveedorModal({ emisorId, inicial = {}, onClose, onGuar
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel={nuevo ? 'Nuevo proveedor' : f.nombre}>
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Truck size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">{nuevo ? 'Nuevo proveedor' : f.nombre}</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Truck} tono="brand" titulo={nuevo ? 'Nuevo proveedor' : f.nombre}
+                onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
                     {error && <Notice variant="danger" bloque>{error}</Notice>}

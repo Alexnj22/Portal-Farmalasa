@@ -34,10 +34,9 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
     const valida = fecha && fecha >= hoySV() && fecha !== encargo.fecha_estimada;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Cambiar la fecha del encargo">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{`Nueva fecha para ${encargo.codigo}`}</h2>
-                <p className="text-body-sm text-content-2">{encargo.cantidad} × {encargo.producto}{encargo.fecha_estimada ? ` · hoy dice ${fechaTexto(encargo.fecha_estimada, { day: 'numeric', month: 'long' })}` : ''}</p>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Nueva fecha para ${encargo.codigo}`}
+                subtitulo={<>{encargo.cantidad} × {encargo.producto}{encargo.fecha_estimada ? ` · hoy dice ${fechaTexto(encargo.fecha_estimada, { day: 'numeric', month: 'long' })}` : ''}</>}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <div>
@@ -68,10 +67,9 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
     const showToast = useToastStore((s) => s.showToast);
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="El proveedor no entregó">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{`El proveedor no entregó ${encargo.codigo}`}</h2>
-                <p className="text-body-sm text-content-2">{encargo.cantidad} × {encargo.producto} · pagado {formatMoney(encargo.anticipo)}</p>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`El proveedor no entregó ${encargo.codigo}`}
+                subtitulo={<>{encargo.cantidad} × {encargo.producto} · pagado {formatMoney(encargo.anticipo)}</>}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <SegmentedControl label="Qué eligió el cliente" value={eleccion} onChange={setEleccion} layout="block" columns={2}

@@ -224,29 +224,17 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
 
     return (
         <>
-            <LiquidModal.Header>
-                <div className="flex items-start justify-between gap-4 w-full">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2.5">
-                            <FileText size={18} className="text-brand-text shrink-0" />
-                            <h2 className="text-title font-black text-content truncate">
-                                Solicitud {solicitud.folio_txt}
-                            </h2>
-                        </div>
-                        <p className="text-caption text-content-3 mt-1">
-                            Impresa el {fechaTexto(solicitud.impresa_at, { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </p>
-                    </div>
-                    {plazo && (
-                        <Badge variant={plazo.vencida ? 'danger' : plazo.apremia ? 'warning' : 'neutral'}
-                            icon={Clock} uppercase={false}>
-                            {plazo.vencida
-                                ? `Vencida hace ${Math.abs(plazo.restan)} d.h.`
-                                : `Quedan ${plazo.restan} días hábiles`}
-                        </Badge>
-                    )}
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={FileText} tono="brand" titulo={`Solicitud ${solicitud.folio_txt}`}
+                subtitulo={`Impresa el ${fechaTexto(solicitud.impresa_at, { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                onClose={onClose}
+                acciones={plazo && (
+                    <Badge variant={plazo.vencida ? 'danger' : plazo.apremia ? 'warning' : 'neutral'}
+                        icon={Clock} uppercase={false}>
+                        {plazo.vencida
+                            ? `Vencida hace ${Math.abs(plazo.restan)} d.h.`
+                            : `Quedan ${plazo.restan} días hábiles`}
+                    </Badge>
+                )} />
 
             <LiquidModal.Body>
                 <div className="flex flex-col gap-5">

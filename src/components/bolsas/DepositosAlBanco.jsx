@@ -122,14 +122,9 @@ function Detalle({ deposito, nombreSala, onClose, onCambio }) {
     return (
         <LiquidModal open={!!d} onClose={onClose}
             maxWidth="max-w-lg" className="h-fit" ariaLabel={`Depósito ${d.folio}`}>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">{d.folio}</h3>
-                    <p className="text-caption text-content-3">
-                        {fechaLarga(d.fecha)} · cerrado por {d.cerrado_por || '—'} · {selloDeTiempo(d.cerrado_at)}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={d.folio}
+                subtitulo={`${fechaLarga(d.fecha)} · cerrado por ${d.cerrado_por || '—'} · ${selloDeTiempo(d.cerrado_at)}`}
+                onClose={onClose} />
 
             <LiquidModal.Body className="space-y-4">
                 {/* La misma cuenta que se vio al cerrarlo, en el mismo orden.

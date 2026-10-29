@@ -244,9 +244,7 @@ function RespuestasRapidas({ textoActual, onClose, onElegir }) {
     const visibles = (filas ?? []).filter((r) => !busca || tokenMatch(busca, r.titulo, r.texto));
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Respuestas rápidas">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Respuestas rápidas</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Respuestas rápidas" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <SearchInput value={busca} onChange={setBusca} placeholder="Buscar respuesta…" ariaLabel="Buscar una respuesta rápida" />
@@ -302,9 +300,7 @@ function ElegirProducto({ onClose, onElegir }) {
     };
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Enviar un producto">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Enviar un producto</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Enviar un producto" onClose={onClose} />
             <LiquidModal.Body>
                 {buscando ? <SkeletonText lines={2} /> : (
                     <BuscadorDeProducto onElegir={elegir} placeholder="Nombre del producto"
@@ -330,9 +326,7 @@ function ElegirOferta({ onClose, onElegir }) {
     const visibles = (ofertas ?? []).filter((o) => !busca || tokenMatch(busca, o.titulo, o.etiqueta ?? ''));
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Enviar una oferta">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Enviar una oferta</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Enviar una oferta" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <SearchInput value={busca} onChange={setBusca} placeholder="Buscar oferta…" ariaLabel="Buscar una oferta" />

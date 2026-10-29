@@ -151,33 +151,9 @@ function SelectorOperacion({ onSelect }) {
 /* ─── Encabezado del armado ───────────────────────────────────────────────── */
 // Va DENTRO del encabezado del modal (ranura `EncabezadoModal`), no debajo.
 // Reportado el 2026-08-07: «no me gusta el doble encabezado que crea, hazlo uno
-// solo». La puerta decía «Ajuste de Inventario / Cargar o descargar producto de
-// tu sala» y esto repetía el gesto justo abajo, con su propio borde: dos
-// títulos para una pantalla. Ahora reemplaza a aquél mientras hay una operación
-// elegida, y al volver atrás reaparece el de la puerta.
-//
-// Sin `border-b` ni `pb-2` propios: el borde lo pone `LiquidModal.Header`. Y sin
-// `flex-col`, porque acá los hijos son los de la fila del encabezado.
-function CabeceraMovimiento({ op, branchName, onBack, lineas, unidades }) {
-    const Icon = op.icon;
-    return (
-        <>
-            <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} aria-label="Volver" />
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${op.iconBg}`}>
-                <Icon size={16} strokeWidth={2} className={op.color} />
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-body font-black text-content truncate leading-tight">{op.label}</p>
-                <p className="text-label text-content-3 mt-0.5 truncate">{branchName}</p>
-            </div>
-            {lineas > 0 && (
-                <p className="text-body-sm font-black text-content shrink-0">
-                    {lineas} · {unidades}u
-                </p>
-            )}
-        </>
-    );
-}
+// solo». Reemplaza al de la puerta mientras hay una operación elegida, y al
+// volver atrás reaparece aquél. Lo dibuja el canónico: acá sólo van los datos.
+const TONO_DE_OPERACION = { 'VENCIMIENTO': 'danger', 'DESCARTE': 'warning', 'PRODUCTO DAÑADO': 'warning', 'CARGA': 'success' };
 
 export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId, selectorSucursal, onHecho }) {
     const { user } = useAuth();
@@ -590,12 +566,16 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
 
     return (
         <div className="flex flex-col gap-3 flex-1 min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
-            <EncabezadoModal>
-                <CabeceraMovimiento
-                    op={op} branchName={branchName} onBack={volver}
-                    lineas={totales.lineas} unidades={totales.unidades}
-                />
-            </EncabezadoModal>
+            <EncabezadoModal
+                titulo={op.label} subtitulo={branchName}
+                icono={op.icon} tono={TONO_DE_OPERACION[op.key] ?? 'neutral'}
+                onVolver={volver}
+                acciones={totales.lineas > 0 && (
+                    <span className="text-body-sm font-black text-content tabular-nums">
+                        {totales.lineas} · {totales.unidades}u
+                    </span>
+                )}
+            />
 
             {enConteo?.conteo_abierto && (
                 <p className="shrink-0 flex items-center gap-1 text-micro text-content-3 font-semibold px-1">

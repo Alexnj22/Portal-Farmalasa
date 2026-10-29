@@ -272,9 +272,7 @@ function NuevaEncuestaModal({ plantillas, onClose, onCreada, onError }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Nueva encuesta">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Nueva encuesta</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Nueva encuesta" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <div>

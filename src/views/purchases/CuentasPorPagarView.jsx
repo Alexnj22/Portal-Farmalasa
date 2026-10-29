@@ -182,18 +182,11 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
 
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-4xl" ariaLabel={`Cuentas por pagar de ${fila.proveedor}`}>
-            <LiquidModal.Header>
-                <div className="flex items-center gap-3 min-w-0">
-                    <Wallet size={18} className="text-brand-text shrink-0" />
-                    <div className="min-w-0">
-                        <p className="text-body font-black text-content truncate">{fila.proveedor}</p>
-                        <p className="text-micro text-content-3">
-                            Debemos {formatMoney(fila.saldo)}
-                            {Number(fila.vencido) > 0 && ` · ${formatMoney(fila.vencido)} vencido`}
-                        </p>
-                    </div>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Wallet} tono="brand" titulo={fila.proveedor} onClose={onCerrar}
+                subtitulo={<>
+                    Debemos {formatMoney(fila.saldo)}
+                    {Number(fila.vencido) > 0 && ` · ${formatMoney(fila.vencido)} vencido`}
+                </>} />
 
             <LiquidModal.Body>
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}

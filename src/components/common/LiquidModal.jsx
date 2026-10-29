@@ -1,5 +1,5 @@
 import React, { forwardRef, useRef } from 'react';
-import { X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import Button from './Button';
 import AsaHoja from './AsaHoja';
 import ModalShell from './ModalShell';
@@ -12,7 +12,7 @@ import useMediaQuery from '../../plataforma/useMediaQuery';
  *
  * Usage:
  *   <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-md">
- *     <LiquidModal.Header>…title / icon / close button…</LiquidModal.Header>
+ *     <LiquidModal.Header titulo="…" subtitulo="…" icono={Icono} onClose={onClose} />
  *     <LiquidModal.Body>…content…</LiquidModal.Body>
  *     <LiquidModal.Footer>…action buttons…</LiquidModal.Footer>
  *   </LiquidModal>
@@ -234,19 +234,27 @@ const TONO_DEL_ICONO = {
  *   avatar     un nodo que ocupa el lugar del ícono (la cara de una persona)
  *   tono       brand · success · warning · danger · neutral
  *   compacto   en el teléfono guarda la baldosa y trunca (fichas largas)
+ *   acciones   botones a la derecha del título, antes de la ✕
+ *   onVolver   flecha a la izquierda (un paso atrás dentro del modal)
+ *   enfocarCierre  el foco inicial va a la ✕ (en el teléfono evita que la
+ *              hoja abra scrolleada hasta el primer campo)
  *   children   lo que va DEBAJO del título (pasos, pestañas)
  *
- * Sin `titulo` se comporta como antes —ranura libre—, así los consumidores
+ * Sin ninguna de esas props se comporta como antes —ranura libre—, así los consumidores
  * que todavía la usan así no cambian hasta que se migren.
  */
 LiquidModal.Header = function LiquidModalHeader({
     children, className = '',
-    titulo, subtitulo, icono: Icono, avatar, tono = 'neutral', onClose, compacto = false,
+    titulo, subtitulo, icono: Icono, avatar, tono = 'neutral', onClose, compacto = false, acciones, enfocarCierre = false, onVolver,
 }) {
     // Acostado el alto es lo escaso (ver el pie): la cabecera pierde relleno
     // vertical, no contenido. 20px → 12px arriba y abajo.
     const lateral = usePanelLateral();
-    if (!titulo) {
+    // Ranura libre sólo si NO se pasó ninguna pieza de la anatomía. Mirar si
+    // `titulo` tiene texto no alcanza: un título que llega vacío mientras carga
+    // (`cliente?.nombre`) tiraba el encabezado entero —✕ incluida— a la ranura.
+    const ranuraLibre = titulo === undefined && subtitulo === undefined && !Icono && !avatar && !onClose && !acciones && !onVolver;
+    if (ranuraLibre) {
         return (
             <div data-parte="cabecera" className={`flex-none bg-transparent px-6 ${lateral ? 'py-3' : 'py-5'} border-b border-divider shrink-0 relative z-base ${className}`}>
                 {children}
@@ -263,6 +271,7 @@ LiquidModal.Header = function LiquidModalHeader({
             ${compacto ? 'px-5 py-3.5 gap-3 md:px-10 md:py-6 md:gap-4' : `px-6 md:px-10 ${lateral ? 'py-3' : 'py-6'} gap-4`} ${className}`}>
             <div className="flex justify-between items-center gap-3">
                 <div className="flex items-center gap-4 min-w-0">
+                    {onVolver && <Button variant="ghost" icon={ArrowLeft} iconOnly aria-label="Volver" onClick={onVolver} />}
                     {marca && <div className={compacto ? 'hidden sm:flex' : 'flex'}>{marca}</div>}
                     <div className="min-w-0">
                         {/* `text-title-sm` y sentence case (§7, §26.4): las
@@ -272,7 +281,12 @@ LiquidModal.Header = function LiquidModalHeader({
                         {subtitulo && <p className={`text-label font-medium text-content-3 mt-0.5 ${compacto ? 'truncate' : ''}`}>{subtitulo}</p>}
                     </div>
                 </div>
-                {onClose && <Button variant="ghost" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />}
+                {(acciones || onClose) && (
+                    <div className="flex items-center gap-2 shrink-0">
+                        {acciones}
+                        {onClose && <Button variant="ghost" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} autoFocus={enfocarCierre} />}
+                    </div>
+                )}
             </div>
             {children}
         </div>

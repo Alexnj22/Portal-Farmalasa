@@ -66,9 +66,7 @@ export default function DuplicarPromocionModal({ promo, open, onClose, onDuplica
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel="Duplicar promoción">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Duplicar promoción</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Duplicar promoción" onClose={onClose} />
 
             <LiquidModal.Body>
                 <div className="space-y-4">

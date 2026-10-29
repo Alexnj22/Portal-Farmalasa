@@ -654,23 +654,13 @@ export default function ModalNuevaPersonal({
 
     return (
         <LiquidModal open={open} onClose={() => !enviando && onClose?.()} maxWidth="max-w-2xl" ariaLabel="Nueva solicitud" zClass="z-toast">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
-                        <ClipboardList size={16} strokeWidth={2} className="text-content-2" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-body font-black text-content leading-tight truncate">Nueva solicitud</p>
-                        {/* El resumen ES el subtítulo: se arma solo y es lo único
-                            que no se va con el scroll del cuerpo. */}
-                        <p className="text-label text-content-3 mt-0.5 truncate">{resumen}</p>
-                    </div>
-                    <Button variant="ghost" size="xs" icon={X} iconOnly
-                        onClick={() => !enviando && onClose?.()} aria-label="Cerrar" />
-                </div>
-
+            {/* El resumen ES el subtítulo: se arma solo y es lo único que no se
+                va con el scroll del cuerpo. */}
+            <LiquidModal.Header titulo="Nueva solicitud" subtitulo={resumen}
+                icono={ClipboardList} tono="neutral" compacto
+                onClose={() => !enviando && onClose?.()}>
                 {puedeElegirEmpleado && (
-                    <div className="mt-3">
+                    <div>
                         <LiquidSelect
                             value={empleadoId}
                             onChange={v => { setEmpleadoId(v ?? ''); setPayload({}); setError(''); }}

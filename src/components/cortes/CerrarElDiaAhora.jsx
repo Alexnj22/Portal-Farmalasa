@@ -40,14 +40,9 @@ export default function CerrarElDiaAhora({ sala = '', hora = '', ocupado = false
     return (
         <LiquidModal open onClose={ocupado ? undefined : onDespues} maxWidth="max-w-md"
             className="h-fit" ariaLabel="Cerrar el día">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">¿Cierras el día ahora?</h3>
-                    <p className="text-caption text-content-3 truncate">
-                        {[sala, hora && `corte de las ${hora} confirmado`].filter(Boolean).join(' · ')}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="¿Cierras el día ahora?"
+                subtitulo={[sala, hora && `corte de las ${hora} confirmado`].filter(Boolean).join(' · ')}
+                onClose={ocupado ? undefined : onDespues} />
 
             <LiquidModal.Body className="space-y-3">
                 <Notice variant="info" icon={Lock}>

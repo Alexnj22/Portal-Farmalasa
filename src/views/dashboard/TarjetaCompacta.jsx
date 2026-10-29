@@ -87,10 +87,8 @@ export default function TarjetaCompacta({
 
             {masAbierto && (
                 <LiquidModal open onClose={() => setMasAbierto(false)} maxWidth="max-w-sm" ariaLabel={`Más acciones de ${codigo}`}>
-                    <LiquidModal.Header>
-                        <h2 className="text-body-lg font-semibold text-content tabular-nums">{codigo}</h2>
-                        <p className="text-body-sm text-content-2 truncate">{cliente}</p>
-                    </LiquidModal.Header>
+                    <LiquidModal.Header titulo={codigo} subtitulo={cliente} compacto
+                        onClose={() => setMasAbierto(false)} />
                     <LiquidModal.Body>
                         <div className="grid gap-2">
                             {acciones.map((a, i) => (

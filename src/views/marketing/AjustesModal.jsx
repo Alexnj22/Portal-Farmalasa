@@ -62,9 +62,7 @@ export default function AjustesModal({ open, onClose, marcas, redes, ajustes, fe
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel="Ajustes del planificador">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Ajustes del planificador</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Ajustes del planificador" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-6">
                     <section className="space-y-3">

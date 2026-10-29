@@ -394,9 +394,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Nueva promoción">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Nueva promoción</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Nueva promoción" onClose={onClose} />
 
             <LiquidModal.Body>
                 <div className="space-y-4">

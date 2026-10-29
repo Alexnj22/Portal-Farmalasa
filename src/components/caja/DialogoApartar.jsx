@@ -78,12 +78,9 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
     if (!abierto) return null;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Apartar o encargar">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Apartar o encargar</h2>
-                <p className="text-body-sm text-content-2">
-                    Si hay en la sala se aparta con anticipo; si no hay, se encarga y Compras confirma el precio.
-                </p>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Apartar o encargar"
+                subtitulo="Si hay en la sala se aparta con anticipo; si no hay, se encarga y Compras confirma el precio."
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <SegmentedControl label="Qué hacer" value={vista} onChange={setVista}

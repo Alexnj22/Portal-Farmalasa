@@ -74,14 +74,9 @@ export default function EntregaDeCaja({
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-md"
             className="h-fit" ariaLabel="Quién recibe la caja">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">¿Quién recibe la caja?</h3>
-                    <p className="text-caption text-content-3 truncate">
-                        {[sala, hora && `corte de las ${hora}`].filter(Boolean).join(' · ')}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="¿Quién recibe la caja?"
+                subtitulo={[sala, hora && `corte de las ${hora}`].filter(Boolean).join(' · ')}
+                onClose={ocupado ? undefined : onClose} />
 
             <LiquidModal.Body className="space-y-3">
                 {/* Qué significa firmar acá, dicho antes de firmar. Sin esto la

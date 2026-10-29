@@ -2371,9 +2371,14 @@ canónico»*. Con `titulo`, el canónico lo dibuja:
 </LiquidModal.Header>
 ```
 
-`avatar` reemplaza al ícono (la cara de una persona) y `compacto` guarda la
-baldosa y trunca en el teléfono. Sin `titulo` sigue siendo la ranura libre:
-**es deuda**, no una variante — los consumidores que la usan así se migran.
+`avatar` reemplaza al ícono (la cara de una persona), `compacto` guarda la
+baldosa y trunca en el teléfono, `acciones` va a la derecha antes de la ✕,
+`onVolver` pone la flecha de un paso atrás y `enfocarCierre` le da el foco
+inicial a la ✕. Sin ninguna de esas props es la ranura libre, y **ya no hay
+ningún consumidor así**: `gate:design` la cuenta como
+`encabezado-de-modal-a-mano`, bloqueante en cero. Un formulario que vive dentro
+de `ModalConRanuras` declara su encabezado con `EncabezadoModal` pasando DATOS
+(`titulo`, `icono`, `onVolver`…), nunca JSX dibujado.
 `Body` acepta `ref` (el contenedor que scrollea) y `relleno={false}` para el
 llamador que pinta su propio interior.
 

@@ -50,7 +50,7 @@
  * el problema.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, Check, Contrast, ImageIcon, Loader2, Maximize2, RotateCw, Sparkles, Wand2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, Contrast, ImageIcon, Loader2, Maximize2, RotateCw, Sparkles, Wand2 } from 'lucide-react';
 import Button from './Button';
 import LiquidModal from './LiquidModal';
 import Notice from './Notice';
@@ -286,55 +286,48 @@ export default function EditorDeDocumento({
                 dejaba el título y la X a distinta altura, y el relleno vertical
                 sumaba alto que le falta al documento. Reportada como *«el header
                 es demasiado grande»* (2026-08-30). En escritorio no cambia. */}
-            <LiquidModal.Header className="flex items-center gap-2 px-3! py-1.5! md:px-6! md:py-4!">
-                {/* ── La cabecera y el pie son ALTO QUE NO ES DOCUMENTO ───────
-                    Medido en un iPhone 13: la cabecera se llevaba 94 px y el
-                    pie **237** —los cuatro botones se apilaban en cuatro
-                    renglones—, así que del alto de la pantalla al documento le
-                    quedaba el 27 %. «Se ve súper pequeño» en el teléfono era
-                    exactamente eso, y no el tamaño del diálogo.
+            {/* ── La cabecera y el pie son ALTO QUE NO ES DOCUMENTO ───────
+                Medido en un iPhone 13: la cabecera se llevaba 94 px y el
+                pie **237** —los cuatro botones se apilaban en cuatro
+                renglones—, así que del alto de la pantalla al documento le
+                quedaba el 27 %. «Se ve súper pequeño» en el teléfono era
+                exactamente eso, y no el tamaño del diálogo.
 
-                    Ahora el pie es UNA fila que no se parte, las herramientas
-                    van sin rótulo con el dedo, y «Cancelar» se mudó acá arriba
-                    como una X: es una salida, no una acción del trabajo. */}
-                <div className="min-w-0 flex-1">
-                    <h3 className={`font-bold text-content ${conElDedo ? 'text-body-sm' : 'text-body'}`}>
-                        {enEncuadre ? doc.titulo : 'Acabado'}
-                    </h3>
-                    {/* Lo que está por llegar SE VE llegando: sin esto el editor
-                        abre con cara de terminado y la lectura cae encima. */}
-                    {enEncuadre && analizando ? (
-                        <p className="text-caption text-content-3 flex items-center gap-1.5">
-                            <Loader2 size={12} className="animate-spin shrink-0" />
-                            Buscando el documento en la foto…
-                        </p>
-                    ) : !conElDedo && (
-                        /* Con el dedo la instrucción NO va acá: en un teléfono
-                           ocupa dos o tres renglones de cabecera, y ese alto sale
-                           del documento. Va sobre la propia foto (`ayuda`), donde
-                           no le saca espacio a nada. */
-                        <p className="text-caption text-content-3">
-                            {/* Lo que hay que LOGRAR con este papel — lo dice el
-                                catálogo, y es distinto para una receta, una
-                                boleta y un DUI. El CÓMO (los gestos) va sobre la
-                                foto: son dos preguntas distintas y mezclarlas en
-                                un renglón deja las dos a medias. */}
-                            {enEncuadre ? doc.bajada
-                                : (formato?.seguro
-                                    /* El nombre del papel SÓLO cuando no hay
-                                       duda: un oficio de pie y una cédula parada
-                                       se llevan un 3.6 %, y poner el nombre
-                                       equivocado se lee como que el portal
-                                       entendió el documento. Ver
-                                       `utils/formatosDePapel.js`. */
-                                    ? `Se ajustó a tamaño ${formato.nombre.toLowerCase()} ${formato.orientacion}. Elige cómo se ve.`
-                                    : 'Elige cómo se ve. Puedes volver y corregir el encuadre.')}
-                        </p>
-                    )}
-                </div>
-                <Button variant="ghost" size="sm" icon={X} iconOnly title="Cancelar"
-                    onClick={onCancel} disabled={guardando} />
-            </LiquidModal.Header>
+                Ahora el pie es UNA fila que no se parte, las herramientas
+                van sin rótulo con el dedo, y «Cancelar» se mudó arriba
+                como la X del encabezado: es una salida, no una acción del
+                trabajo. El relleno propio se conserva: es el que se midió. */}
+            <LiquidModal.Header compacto className="px-3! py-1.5! md:px-6! md:py-4!"
+                titulo={enEncuadre ? doc.titulo : 'Acabado'}
+                onClose={guardando ? undefined : onCancel}
+                subtitulo={enEncuadre && analizando ? (
+                    /* Lo que está por llegar SE VE llegando: sin esto el editor
+                       abre con cara de terminado y la lectura cae encima. */
+                    <span className="inline-flex items-center gap-1.5">
+                        <Loader2 size={12} className="animate-spin shrink-0" />
+                        Buscando el documento en la foto…
+                    </span>
+                ) : !conElDedo && (
+                    /* Con el dedo la instrucción NO va en la cabecera: en un
+                       teléfono ocupa dos o tres renglones, y ese alto sale del
+                       documento. Va sobre la propia foto (`ayuda`), donde no le
+                       saca espacio a nada.
+
+                       Lo que hay que LOGRAR con este papel — lo dice el
+                       catálogo, y es distinto para una receta, una boleta y un
+                       DUI. El CÓMO (los gestos) va sobre la foto: son dos
+                       preguntas distintas y mezclarlas en un renglón deja las
+                       dos a medias. */
+                    enEncuadre ? doc.bajada
+                        : (formato?.seguro
+                            /* El nombre del papel SÓLO cuando no hay duda: un
+                               oficio de pie y una cédula parada se llevan un
+                               3.6 %, y poner el nombre equivocado se lee como
+                               que el portal entendió el documento. Ver
+                               `utils/formatosDePapel.js`. */
+                            ? `Se ajustó a tamaño ${formato.nombre.toLowerCase()} ${formato.orientacion}. Elige cómo se ve.`
+                            : 'Elige cómo se ve. Puedes volver y corregir el encuadre.')
+                )} />
 
             {/* `px-*!`/`py-*!` y no `p-*!`: el canónico trae `px-6 py-5`, y `p-3`
                 no le gana a `px-6` — son propiedades distintas, no una más

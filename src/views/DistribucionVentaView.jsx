@@ -1373,15 +1373,10 @@ export default function DistribucionVentaView() {
                 Todo lo demás queda detrás: sólo el monto, y Enter procesa. */}
             {verCobro && cliente && lineas.length > 0 && (
                 <LiquidModal open onClose={guardando ? undefined : () => setVerCobro(false)} maxWidth="max-w-3xl" ariaLabel="Cobrar">
-                    <LiquidModal.Header>
-                        <div className="flex items-center justify-between gap-3 w-full">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                                <Wallet size={18} className="text-brand-text shrink-0" />
-                                <h2 className="text-title font-black text-content truncate">{porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} · {cliente.nombre}</h2>
-                            </div>
-                            <p className="text-display font-black text-brand-text tabular-nums shrink-0">{formatMoney(estimado.total)}</p>
-                        </div>
-                    </LiquidModal.Header>
+                    <LiquidModal.Header icono={Wallet} tono="brand"
+                        titulo={<>{porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} · {cliente.nombre}</>}
+                        acciones={<p className="text-display font-black text-brand-text tabular-nums">{formatMoney(estimado.total)}</p>}
+                        onClose={guardando ? undefined : () => setVerCobro(false)} />
                     <LiquidModal.Body>
                         <div data-cobro-ventana onKeyDownCapture={alTecladoCobro}
                             className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_17rem] gap-4 items-start">
@@ -1453,12 +1448,9 @@ export default function DistribucionVentaView() {
             {verBorrar && (
                 <LiquidModal open onClose={borrando ? undefined : () => setVerBorrar(false)} maxWidth="max-w-md"
                     ariaLabel={corrigiendo ? 'Borrar preventa' : 'Vaciar la venta'}>
-                    <LiquidModal.Header>
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <Eraser size={18} className="text-danger-text shrink-0" />
-                            <h2 className="text-title font-black text-content">{corrigiendo ? `Borrar la preventa ${pedido?.pedido.id}` : 'Vaciar la venta'}</h2>
-                        </div>
-                    </LiquidModal.Header>
+                    <LiquidModal.Header icono={Eraser} tono="danger"
+                        titulo={corrigiendo ? `Borrar la preventa ${pedido?.pedido.id}` : 'Vaciar la venta'}
+                        onClose={borrando ? undefined : () => setVerBorrar(false)} />
                     <LiquidModal.Body>
                         <div className="flex flex-col gap-3" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmarBorrar(); } }}>
                             <p className="text-body-sm text-content-2">
@@ -1515,13 +1507,9 @@ export default function DistribucionVentaView() {
             )}
             {verPendientes && (
                 <LiquidModal open onClose={() => setVerPendientes(false)} maxWidth="max-w-xl" ariaLabel="Pendientes de finalizar">
-                    <LiquidModal.Header>
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <ListChecks size={18} className="text-brand-text shrink-0" />
-                            <h2 className="text-title font-black text-content">Pendientes de finalizar</h2>
-                            <Badge size="sm" variant="warning" uppercase={false}>{pendientes?.length ?? 0}</Badge>
-                        </div>
-                    </LiquidModal.Header>
+                    <LiquidModal.Header icono={ListChecks} tono="brand" titulo="Pendientes de finalizar"
+                        acciones={<Badge size="sm" variant="warning" uppercase={false}>{pendientes?.length ?? 0}</Badge>}
+                        onClose={() => setVerPendientes(false)} />
                     <LiquidModal.Body>
                         <div className="flex flex-col gap-3">
                             {(pendientes?.length ?? 0) > 4 && (

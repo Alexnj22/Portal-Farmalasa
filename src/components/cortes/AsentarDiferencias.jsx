@@ -202,14 +202,9 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
             className="h-fit"
             ariaLabel="Registrar las diferencias en el sistema"
         >
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">Anotar en el sistema</h3>
-                    <p className="text-caption text-content-3">
-                        Dinero que ya se movió por una diferencia y no tiene su vale o ingreso
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Anotar en el sistema"
+                subtitulo="Dinero que ya se movió por una diferencia y no tiene su vale o ingreso"
+                onClose={ocupada ? undefined : onClose} />
 
             <LiquidModal.Body className="space-y-4">
                 {/* Una línea y no dos párrafos (usuario, 2026-09-25: «mira esos

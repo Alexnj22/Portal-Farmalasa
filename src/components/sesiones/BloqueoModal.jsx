@@ -41,17 +41,9 @@ export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesa
             maxWidth="max-w-md"
             ariaLabel={`Bloquear a ${visible?.empleado || ''}`}
         >
-            <LiquidModal.Header>
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-danger/[0.12] border border-danger/30 flex items-center justify-center shrink-0">
-                        <ShieldOff size={16} className="text-danger" />
-                    </div>
-                    <div className="min-w-0">
-                        <h3 className="text-body font-bold text-content truncate">Bloquear a {visible?.empleado}</h3>
-                        <p className="text-caption text-content-3">Le quita el acceso al portal por completo.</p>
-                    </div>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={ShieldOff} tono="danger" titulo={<>Bloquear a {visible?.empleado}</>}
+                subtitulo="Le quita el acceso al portal por completo."
+                onClose={procesando ? undefined : onCancelar} />
 
             <LiquidModal.Body className="space-y-4">
                 <Notice variant="warning" icon={AlertTriangle}>

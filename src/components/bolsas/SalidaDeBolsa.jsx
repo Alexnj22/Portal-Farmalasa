@@ -1395,18 +1395,13 @@ export default function SalidaDeBolsa({
     return (
         <LiquidModal open={!!abierto} onClose={guardando ? undefined : onClose}
             maxWidth="max-w-lg" className="h-fit" ariaLabel={titulo}>
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h3 className="text-body font-bold text-content">{titulo}</h3>
-                    <p className="text-caption text-content-3">
-                        {enIdentidad
-                            ? `${t.etiqueta} · ${formatMoney(n)}`
-                            : lista.length
-                                ? `${lista.length} ${lista.length === 1 ? 'bolsa' : 'bolsas'} en la sala · ${formatMoney(totalDisponible(lista))}`
-                                : 'Sin bolsas con efectivo en la sala'}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={titulo}
+                subtitulo={enIdentidad
+                    ? `${t.etiqueta} · ${formatMoney(n)}`
+                    : lista.length
+                        ? `${lista.length} ${lista.length === 1 ? 'bolsa' : 'bolsas'} en la sala · ${formatMoney(totalDisponible(lista))}`
+                        : 'Sin bolsas con efectivo en la sala'}
+                onClose={guardando ? undefined : onClose} />
 
             <LiquidModal.Body className="space-y-4">
                 {/* ── Paso 2: quién se lleva el efectivo ──────────────────────

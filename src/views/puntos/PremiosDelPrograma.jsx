@@ -331,10 +331,9 @@ function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = ''
 
     return (
         <LiquidModal open onClose={guardando ? undefined : cerrar} maxWidth="max-w-lg" ariaLabel={TITULOS[modo]}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{TITULOS[modo]}</h2>
-                {promo && modo !== 'editar' && <p className="text-body-sm text-content-2">{promo.nombre}</p>}
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={TITULOS[modo]}
+                subtitulo={promo && modo !== 'editar' ? promo.nombre : undefined}
+                onClose={guardando ? undefined : cerrar} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3">
                     {(modo === 'nuevo' || modo === 'editar') && (

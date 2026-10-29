@@ -141,9 +141,7 @@ function AsignarFicha({ incentivo, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Asignar ficha">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Asignar ficha</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Asignar ficha" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">

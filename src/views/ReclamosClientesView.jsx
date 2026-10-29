@@ -175,7 +175,7 @@ function Registrar({ deTodaLaRed, salaPropia, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-xl" ariaLabel="Registrar reclamo">
-            <LiquidModal.Header><h2 className="text-title font-black text-content">Registrar reclamo</h2></LiquidModal.Header>
+            <LiquidModal.Header titulo="Registrar reclamo" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
                     <SegmentedControl label="Sobre qué es" value={programa} onChange={setPrograma} options={PROGRAMAS} />
@@ -216,17 +216,9 @@ function Detalle({ r, puedeResponder, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-xl" ariaLabel={`Reclamo ${r.folio}`}>
-            <LiquidModal.Header>
-                <div className="flex items-start justify-between gap-3 w-full">
-                    <div className="min-w-0">
-                        <h2 className="text-title font-black text-content truncate">Reclamo {r.folio} · {r.cliente_nombre}</h2>
-                        <p className="text-caption text-content-3">
-                            {[ROTULO_PROGRAMA[r.programa], r.sala?.name, r.cliente_telefono].filter(Boolean).join(' · ')}
-                        </p>
-                    </div>
-                    <EstadoDelPlazo r={r} />
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={<>Reclamo {r.folio} · {r.cliente_nombre}</>}
+                subtitulo={[ROTULO_PROGRAMA[r.programa], r.sala?.name, r.cliente_telefono].filter(Boolean).join(' · ')}
+                acciones={<EstadoDelPlazo r={r} />} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
                     <p className="text-body text-content whitespace-pre-line">{r.tema}</p>

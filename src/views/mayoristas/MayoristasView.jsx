@@ -290,15 +290,11 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Detalle del cliente mayorista">
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h2 className="text-body-xl font-semibold text-content truncate">{cliente.nombre ?? 'Cliente'}</h2>
-                    <p className="text-caption text-content-3">
-                        {[cliente.documento, cliente.telefono, est ? ESTADOS[est]?.label : null,
-                            est === 'aprobado' ? `${PRECIOS[cliente.precio]} · ${RANGOS[d?.rango ?? cliente.rango]?.nombre ?? 'Jade'}` : null].filter(Boolean).join(' · ')}
-                    </p>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={cliente.nombre ?? 'Cliente'}
+                subtitulo={[cliente.documento, cliente.telefono, est ? ESTADOS[est]?.label : null,
+                    est === 'aprobado' ? `${PRECIOS[cliente.precio]} · ${RANGOS[d?.rango ?? cliente.rango]?.nombre ?? 'Jade'}` : null].filter(Boolean).join(' · ')}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     {!cliente.ficha_completa && cliente.ficha_completa !== undefined && (

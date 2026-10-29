@@ -334,10 +334,10 @@ function CerrarIdeaModal({ idea, modo, piezas, mes, onClose, onListo, fallo }) {
     };
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel={usar ? 'Ligar idea a una pieza' : 'Descartar idea'}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{usar ? 'Ligar a una pieza' : 'Descartar la idea'}</h2>
-                <p className="text-caption text-content-3 truncate">«{idea.titulo}»</p>
-            </LiquidModal.Header>
+            <LiquidModal.Header
+                titulo={usar ? 'Ligar a una pieza' : 'Descartar la idea'}
+                subtitulo={`«${idea.titulo}»`}
+                onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     {usar && (

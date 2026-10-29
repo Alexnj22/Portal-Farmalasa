@@ -208,16 +208,13 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-6xl" ariaLabel={titulo}>
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <ShoppingCart size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">{titulo}</h2>
+            <LiquidModal.Header icono={ShoppingCart} tono="brand" titulo={titulo} onClose={ocupado ? undefined : onClose}
+                acciones={<>
                     {estado && estado !== 'borrador' && (
                         <Badge size="sm" variant={estado === 'recibida' ? 'success' : 'danger'}>{estado === 'recibida' ? 'Recibida' : 'Anulada'}</Badge>
                     )}
                     {estado === 'borrador' && compraId && <Badge size="sm" variant="warning">Borrador</Badge>}
-                </div>
-            </LiquidModal.Header>
+                </>} />
             <LiquidModal.Body>
                 {!c && error ? (
                     <Notice variant="danger" icon={AlertTriangle} bloque>{error}</Notice>

@@ -352,9 +352,7 @@ function ResolverModal({ pre, onClose, onListo, onError }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pre-registro">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">{pre.nombre}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={pre.nombre} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">Documento {pre.documento} · Teléfono {pre.telefono}{pre.email ? ` · ${pre.email}` : ''}</p>

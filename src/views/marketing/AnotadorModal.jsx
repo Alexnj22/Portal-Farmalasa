@@ -84,14 +84,11 @@ export default function AnotadorModal({ archivo, src, mesId, piezaId, comentario
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-6xl" ariaLabel={`Comentar sobre ${archivo.nombre || 'el diseño'}`}>
-            <LiquidModal.Header>
-                <div className="flex items-center gap-3 flex-wrap min-w-0">
-                    <h2 className="text-body-xl font-semibold text-content truncate">
-                        Comentar sobre el diseño{archivo.version > 1 ? ` · V${archivo.version}` : ''}
-                    </h2>
-                    <SegmentedControl size="sm" value={herramienta} onChange={(v) => { setHerramienta(v); setBorrador(null); }}
-                        label="Herramienta" options={HERRAMIENTAS} />
-                </div>
+            <LiquidModal.Header
+                titulo={`Comentar sobre el diseño${archivo.version > 1 ? ` · V${archivo.version}` : ''}`}
+                onClose={onClose}>
+                <SegmentedControl size="sm" value={herramienta} onChange={(v) => { setHerramienta(v); setBorrador(null); }}
+                    label="Herramienta" options={HERRAMIENTAS} />
             </LiquidModal.Header>
             <LiquidModal.Body>
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">

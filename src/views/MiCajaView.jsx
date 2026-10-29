@@ -2413,10 +2413,7 @@ function Marco({ abierto, onClose, titulo, bajada, pie, children }) {
     if (!abierto) return null;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-sm" ariaLabel={titulo}>
-            <LiquidModal.Header>
-                <h3 className="text-h3 font-bold text-content">{titulo}</h3>
-                {bajada && <p className="text-body-sm text-content-2 mt-1">{bajada}</p>}
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={titulo} subtitulo={bajada} onClose={onClose} />
             <LiquidModal.Body className="space-y-4">{children}</LiquidModal.Body>
             {/* `justify-end` en escritorio: el pie canónico reparte con
                 `justify-between`, y con dos botones eso los manda a las

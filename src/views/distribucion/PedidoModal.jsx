@@ -79,20 +79,10 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, on
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel={`Pedido ${pedido.id}`}>
-            <LiquidModal.Header>
-                <div className="flex items-start justify-between gap-4 w-full">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2.5">
-                            <ClipboardList size={18} className="text-brand-text shrink-0" />
-                            <h2 className="text-title font-black text-content truncate">Pedido {pedido.id}</h2>
-                        </div>
-                        <p className="text-caption text-content-3 mt-1 truncate">
-                            {pedido.dist_clientes?.nombre} · {rotuloTipoCliente(pedido.dist_clientes?.tipo)}
-                        </p>
-                    </div>
-                    <Badge variant={est.variant}>{est.label}</Badge>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={ClipboardList} tono="brand" titulo={`Pedido ${pedido.id}`}
+                subtitulo={`${pedido.dist_clientes?.nombre ?? ''} · ${rotuloTipoCliente(pedido.dist_clientes?.tipo)}`}
+                acciones={<Badge variant={est.variant}>{est.label}</Badge>}
+                onClose={ocupado ? undefined : onClose} />
 
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">

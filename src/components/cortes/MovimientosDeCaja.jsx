@@ -474,6 +474,8 @@ const TONOS = {
     neutro: 'bg-content-3/10 text-content-2',
     cobro:  'bg-brand/10 text-brand-text',
 };
+/* El mismo tono, dicho con la paleta del encabezado canónico. */
+const TONO_DEL_ENCABEZADO = { entra: 'success', sale: 'warning', ido: 'danger', neutro: 'neutral', cobro: 'brand' };
 const COLOR_MONTO = {
     entra: 'text-success-text', sale: 'text-warning-text', ido: 'text-danger-text line-through',
     neutro: 'text-content-3', cobro: 'text-success-text',
@@ -802,25 +804,17 @@ function DetalleDelMovimiento({ ficha: f, historia, sala, onClose }) {
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Detalle del movimiento de caja">
-            <LiquidModal.Header>
-                <div className="flex items-start gap-3">
-                    <span className={`shrink-0 w-12 h-12 rounded-2xl grid place-items-center ${TONOS[f.tono]}`} aria-hidden="true">
-                        <f.Icono size={22} strokeWidth={2} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-caption font-black uppercase tracking-widest text-content-3">{f.tipo}</p>
-                        <p className={`text-display font-black tabular-nums leading-tight ${COLOR_MONTO[f.tono]}`}>
-                            {montoConSigno(f.entra, f.monto)}
-                        </p>
-                        {f.montoNota && (
-                            <p className={`text-caption text-content-3 tabular-nums ${f.montoNotaTachada ? 'line-through' : ''}`}>
-                                {f.montoNota}
-                            </p>
-                        )}
-                    </div>
-                </div>
+            <LiquidModal.Header icono={f.Icono} tono={TONO_DEL_ENCABEZADO[f.tono]} onClose={onClose}
+                titulo={<span className={`tabular-nums ${COLOR_MONTO[f.tono]}`}>{montoConSigno(f.entra, f.monto)}</span>}
+                subtitulo={<>
+                    {f.tipo}
+                    {f.montoNota && <>
+                        {' · '}
+                        <span className={`tabular-nums ${f.montoNotaTachada ? 'line-through' : ''}`}>{f.montoNota}</span>
+                    </>}
+                </>}>
                 {f.marcas.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">{f.marcas.map(marcaDe)}</div>
+                    <div className="flex flex-wrap gap-1.5">{f.marcas.map(marcaDe)}</div>
                 )}
             </LiquidModal.Header>
 

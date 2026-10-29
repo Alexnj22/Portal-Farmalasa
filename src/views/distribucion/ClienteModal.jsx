@@ -77,12 +77,8 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel={nuevo ? 'Nuevo cliente' : f.nombre}>
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Store size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">{nuevo ? 'Nuevo cliente' : f.nombre}</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Store} tono="brand" titulo={nuevo ? 'Nuevo cliente' : f.nombre}
+                onClose={guardando ? undefined : onClose} />
 
             <LiquidModal.Body>
                 <div className="flex flex-col gap-5">

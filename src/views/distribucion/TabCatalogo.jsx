@@ -121,12 +121,8 @@ function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Precio de distribución">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Tag size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">{nuevo ? 'Agregar producto' : item.nombre}</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Tag} tono="brand" titulo={nuevo ? 'Agregar producto' : item.nombre}
+                onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
                     {error && <Notice variant="danger" bloque>{error}</Notice>}

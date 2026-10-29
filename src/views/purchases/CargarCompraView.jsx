@@ -222,18 +222,11 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-5xl"
             ariaLabel={`Compra propuesta de ${doc.emisor_nombre}`}>
-            <LiquidModal.Header>
-                <div className="flex items-center gap-3 min-w-0">
-                    <PackagePlus size={18} className="text-brand-text shrink-0" />
-                    <div className="min-w-0">
-                        <p className="text-body font-black text-content truncate">{doc.emisor_nombre}</p>
-                        <p className="text-micro text-content-3">
-                            {fmtFecha(doc.fecha_emision)} · {formatMoney(doc.monto_total)}
-                            {resumen && ` · ${resumen.renglones} renglones`}
-                        </p>
-                    </div>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={PackagePlus} tono="brand" titulo={doc.emisor_nombre} onClose={onCerrar}
+                subtitulo={<>
+                    {fmtFecha(doc.fecha_emision)} · {formatMoney(doc.monto_total)}
+                    {resumen && ` · ${resumen.renglones} renglones`}
+                </>} />
 
             <LiquidModal.Body>
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}

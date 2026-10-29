@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import { claveOrigen, diasHasta, fmtVence } from '@nucleo/utils/pedirTraslado';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
-import { ArrowLeft, ArrowLeftRight, Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, Check, Loader2, Pencil, Trash2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -119,34 +119,19 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
             {/* Las tres ranuras del canónico. Antes era un `<div>` suelto con el
                 título a mano, sin botón de cerrar y con la acción al final del
                 cuerpo que scrollea. */}
-            <LiquidModal.Header>
-                <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                        <ArrowLeftRight size={15} className="text-brand-text" strokeWidth={2.5} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-body font-black text-content leading-tight">
-                            {producto?.descripcion ?? 'Pedir a otra sala'}
-                        </p>
-                        <p className="text-label text-content-3 mt-0.5">
-                            {producto ? 'Solicitar a otra sala' : 'Elige el producto'}
-                        </p>
-                    </div>
-                    {/* Volver al buscador.
-                        Antes sólo aparecía cuando el producto había salido del
-                        buscador —«si llegó puesto desde la consulta de
-                        inventario, atrás no es acá»—. Con el compositor sí es
-                        acá: soltar el producto es cómo se elige el siguiente,
-                        venga de donde venga. */}
-                    {producto && !listo && pestana === 'agregar' && (
-                        <Button variant="ghost" size="xs" icon={ArrowLeft} iconOnly
-                            onClick={() => onClose?.()}
-                            aria-label="Elegir otro producto" />
-                    )}
-                    <Button variant="ghost" size="xs" icon={X} iconOnly
-                        onClick={onClose} aria-label="Cerrar" />
-                </div>
-            </LiquidModal.Header>
+            {/* Volver al buscador (la acción de la flecha).
+                Antes sólo aparecía cuando el producto había salido del
+                buscador —«si llegó puesto desde la consulta de inventario,
+                atrás no es acá»—. Con el compositor sí es acá: soltar el
+                producto es cómo se elige el siguiente, venga de donde venga. */}
+            <LiquidModal.Header titulo={producto?.descripcion ?? 'Pedir a otra sala'}
+                subtitulo={producto ? 'Solicitar a otra sala' : 'Elige el producto'}
+                icono={ArrowLeftRight} tono="brand" onClose={onClose}
+                acciones={producto && !listo && pestana === 'agregar' && (
+                    <Button variant="ghost" icon={ArrowLeft} iconOnly
+                        onClick={() => onClose?.()}
+                        aria-label="Elegir otro producto" />
+                )} />
 
             <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
                 {/* ── Las dos mitades, como en Ajuste de Inventario ─────────

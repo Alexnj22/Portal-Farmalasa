@@ -44,9 +44,8 @@ export default function DialogoReenviarIngreso({ movimiento, sala, userId, onClo
 
     return (
         <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Reenviar el ingreso">
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content">Reenviar con más pruebas</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo="Reenviar con más pruebas"
+                onClose={enviando ? undefined : onClose} />
             <LiquidModal.Body>
             <div className="space-y-4">
                 <p className="text-body-sm text-content-2">

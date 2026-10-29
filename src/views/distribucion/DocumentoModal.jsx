@@ -340,21 +340,13 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Documento">
-            <LiquidModal.Header>
-                <div className="flex items-start justify-between gap-4 w-full">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2.5">
-                            <FileCheck2 size={18} className="text-brand-text shrink-0" />
-                            <h2 className="text-title font-black text-content truncate">
-                                {d ? TIPO_DOCUMENTO[d.tipo]?.largo : 'Documento'}
-                                {d && <span className="text-content-3 font-bold"> · {formatMoney(d.total_pagar)}</span>}
-                            </h2>
-                        </div>
-                        {d && <p className="text-caption text-content-3 mt-1 truncate">{d.dist_clientes?.nombre} · {d.numero_control}</p>}
-                    </div>
-                    {est && <Badge variant={est.variant}>{est.label}</Badge>}
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={FileCheck2} tono="brand" onClose={ocupado ? undefined : onClose}
+                titulo={<>
+                    {d ? TIPO_DOCUMENTO[d.tipo]?.largo : 'Documento'}
+                    {d && <span className="text-content-3"> · {formatMoney(d.total_pagar)}</span>}
+                </>}
+                subtitulo={d ? `${d.dist_clientes?.nombre} · ${d.numero_control}` : undefined}
+                acciones={est && <Badge variant={est.variant}>{est.label}</Badge>} />
 
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">

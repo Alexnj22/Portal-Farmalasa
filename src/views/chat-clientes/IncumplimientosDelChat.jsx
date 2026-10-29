@@ -40,12 +40,7 @@ export default function IncumplimientosDelChat({ abierto, onClose, equipo, asegu
 
     return (
         <LiquidModal open={abierto} onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Incumplimientos del chat">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <ShieldAlert size={18} className="text-danger-text shrink-0" />
-                    <h2 className="text-title font-black text-content truncate">Incumplimientos del chat</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={ShieldAlert} tono="danger" titulo="Incumplimientos del chat" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3">
                     <p className="text-caption text-content-2">

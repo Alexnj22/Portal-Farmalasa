@@ -24,18 +24,9 @@ export default function MatrizLaboratorioModal({ open, promocionId, onClose }) {
             maxWidth="max-w-3xl"
             ariaLabel="Avance de la promoción por laboratorio"
         >
-            <LiquidModal.Header>
-                <div className="min-w-0">
-                    <h2 className="text-body-xl font-semibold text-content truncate">
-                        {cab?.nombre || 'Promoción por laboratorio'}
-                    </h2>
-                    {cab && (
-                        <p className="text-caption text-content-3 mt-0.5">
-                            {rotuloMes(cab.mes_medido)}
-                        </p>
-                    )}
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={cab?.nombre || 'Promoción por laboratorio'}
+                subtitulo={cab ? rotuloMes(cab.mes_medido) : undefined}
+                onClose={onClose} />
 
             <LiquidModal.Body>
                 <MatrizLaboratorio key={promocionId} promocionId={promocionId} onCabecera={setCab} />

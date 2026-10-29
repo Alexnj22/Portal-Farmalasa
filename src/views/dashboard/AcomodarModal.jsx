@@ -290,17 +290,9 @@ export default function AcomodarModal({
     return (
         <LiquidModal open={abierto} onClose={onCerrar} maxWidth="max-w-4xl"
             ariaLabel={`Acomodar ${titulo}`}>
-            <LiquidModal.Header>
-                <div className="flex items-center justify-between gap-3 w-full">
-                    <div className="min-w-0">
-                        <p className="text-body font-black text-content truncate">Acomodar {titulo}</p>
-                        <p className="text-label font-semibold text-content-3">
-                            Arrastra para mover · toca uno para cambiarle el tamaño
-                        </p>
-                    </div>
-                    <Button variant="ghost" iconOnly icon={X} onClick={onCerrar} aria-label="Cerrar" />
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Acomodar ${titulo}`}
+                subtitulo="Arrastra para mover · toca uno para cambiarle el tamaño"
+                onClose={onCerrar} />
 
             {/* `flex flex-col min-h-0`: el cuerpo reparte su alto entre el
                 aviso, la retícula y los apagados, y la retícula se queda con lo

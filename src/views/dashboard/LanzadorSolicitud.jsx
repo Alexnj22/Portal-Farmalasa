@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useMemo, useLayoutEffect, useContext, createContext } from 'react';
+import React, { useState, useCallback, useMemo, useLayoutEffect, useContext, useRef, createContext } from 'react';
 import { createPortal } from 'react-dom';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
-import { CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { CheckCircle2, ChevronRight } from 'lucide-react';
 import { useTamanoWidget } from './tamanoWidget';
 
 // La baldosa que abre una solicitud, y el modal donde se arma.
@@ -75,10 +75,26 @@ function Ranura({ nombre, children }) {
  * producto de tu sala» y justo debajo, con su propio borde, «Descargar por
  * vencimiento / La Popular». Dos títulos para una sola pantalla.
  *
+ * Desde el 2026-10-29 el contenido manda DATOS, no un encabezado dibujado: lo
+ * dibuja `LiquidModal.Header` (regla «nada a mano»). Sólo `acciones` viaja por
+ * portal, porque es JSX que cambia en cada render y como estado haría un bucle.
+ * `onVolver` se guarda en una ref por lo mismo: su identidad cambia siempre.
+ *
  * La puerta conserva el botón de cerrar: eso no es del contenido.
  */
-export function EncabezadoModal({ children }) {
-    return <Ranura nombre="encabezado">{children}</Ranura>;
+export function EncabezadoModal({ titulo, subtitulo, icono, tono, onVolver, acciones }) {
+    const ctx = useContext(RanurasCtx);
+    const fijar = ctx?.fijarEncabezado;
+    const volverRef = useRef(onVolver);
+    useLayoutEffect(() => { volverRef.current = onVolver; });
+    const hayVolver = !!onVolver;
+    useLayoutEffect(() => {
+        if (!fijar) return undefined;
+        fijar({ titulo, subtitulo, icono, tono,
+            onVolver: hayVolver ? () => volverRef.current?.() : undefined });
+        return () => fijar(null);
+    }, [fijar, titulo, subtitulo, icono, tono, hayVolver]);
+    return acciones ? <Ranura nombre="encabezado">{acciones}</Ranura> : null;
 }
 
 /** Controles que van en el ENCABEZADO del modal (buscador, filtro de fecha). */
@@ -132,43 +148,28 @@ export function ModalConRanuras({
         return () => setInquilinos(c => ({ ...c, [nombre]: c[nombre] - 1 }));
     }, []);
 
-    const ranuras = useMemo(() => ({ nodos, registrar }), [nodos, registrar]);
+    // El encabezado que declaró el contenido (`EncabezadoModal`), o `null`.
+    const [propio, fijarEncabezado] = useState(null);
+    const ranuras = useMemo(() => ({ nodos, registrar, fijarEncabezado }), [nodos, registrar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth={maxWidth} ariaLabel={label}>
             <RanurasCtx.Provider value={ranuras}>
-                <LiquidModal.Header>
-                    <div className="flex items-center gap-2.5">
-                        {/* `contents`: lo que se portalea acá SON los
-                            hijos directos de esta fila, así que hereda su
-                            reparto en vez de quedar encajonado. Mismo
-                            motivo que en el pie. */}
-                        <div ref={refEncabezado} className="contents" />
-                        {/* El título de la puerta cede el lugar cuando el
-                            contenido trae el suyo. El botón de cerrar NO:
-                            ése es de la puerta y se queda siempre. */}
-                        {inquilinos.encabezado === 0 && (
-                          <>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
-                                <Icon size={16} strokeWidth={2} className="text-content-2" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-body font-black text-content leading-tight truncate">{label}</p>
-                                {descripcion && (
-                                    <p className="text-label text-content-3 mt-0.5 truncate">{descripcion}</p>
-                                )}
-                            </div>
-                          </>
-                        )}
-                        <Button variant="ghost" size="xs" icon={X} iconOnly
-                            onClick={onClose} aria-label="Cerrar" />
-                    </div>
-                    {/* `empty:hidden` y no un contador: mientras nadie
-                        portalee nada el div no tiene ni un hijo, así que
-                        `:empty` lo agarra y el margen no se aplica —
-                        `display:none` no deja margen. Sin esto quedaba
-                        un renglón de aire bajo el título. */}
-                    <div ref={refHerramientas} className="mt-3 empty:hidden" />
+                {/* El título de la puerta cede el lugar cuando el contenido
+                    declara el suyo. El botón de cerrar NO: ése es de la puerta
+                    y se queda siempre. */}
+                <LiquidModal.Header
+                    titulo={propio?.titulo ?? label}
+                    subtitulo={propio ? propio.subtitulo : descripcion}
+                    icono={propio ? propio.icono : Icon}
+                    tono={propio?.tono ?? 'neutral'}
+                    onVolver={propio?.onVolver}
+                    acciones={<div ref={refEncabezado} className="contents" />}
+                    onClose={onClose}
+                >
+                    {/* `empty:hidden`: mientras nadie portalee nada el div no
+                        tiene hijos, y `display:none` no ocupa el hueco del gap. */}
+                    <div ref={refHerramientas} className="empty:hidden" />
                 </LiquidModal.Header>
 
                 {/* `flex flex-col min-h-0`: los formularios de adentro

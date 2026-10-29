@@ -87,9 +87,7 @@ export default function PautaModal({ open, onClose, pieza, redes, limite = 0, ot
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-2xl" ariaLabel={`Pauta de ${pieza.titulo}`}>
-            <LiquidModal.Header>
-                <h2 className="text-body-xl font-semibold text-content truncate">Pauta · {pieza.titulo}</h2>
-            </LiquidModal.Header>
+            <LiquidModal.Header titulo={`Pauta · ${pieza.titulo}`} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-5">
                     {hayBorrador && <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />}

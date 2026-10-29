@@ -46,12 +46,7 @@ export default function ExistenciasSucursales({ terminoInicial = '', onClose }) 
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Existencias en todas las sucursales">
-            <LiquidModal.Header>
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <Warehouse size={18} className="text-brand-text shrink-0" />
-                    <h2 className="text-title font-black text-content">Existencias en todas las sucursales</h2>
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Warehouse} tono="brand" titulo="Existencias en todas las sucursales" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-3">
                     <PortalInput icon={cargando ? Loader2 : Search} name="buscar-existencias" value={termino} autoFocus

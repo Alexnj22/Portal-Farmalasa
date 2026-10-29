@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Undo2, X, Check } from 'lucide-react';
+import { Undo2, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
@@ -64,20 +64,8 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm"
             ariaLabel={`Devolver a bodega — ${item?.products?.nombre ?? ''}`}>
-            <LiquidModal.Header>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-chart-4/10 flex items-center justify-center shrink-0">
-                            <Undo2 size={16} className="text-chart-4-text" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-body font-bold text-content">Devolver a bodega</p>
-                            <p className="text-label text-content-3 truncate">{item?.products?.nombre ?? '—'}</p>
-                        </div>
-                    </div>
-                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />
-                </div>
-            </LiquidModal.Header>
+            <LiquidModal.Header icono={Undo2} tono="neutral" titulo="Devolver a bodega"
+                subtitulo={item?.products?.nombre ?? '—'} onClose={onClose} />
 
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
                 {/* ── Motivo ── */}

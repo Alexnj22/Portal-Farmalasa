@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.2 — Compras: el total del documento es lo que se paga
+
+El total con el que la revisión de la carga compara la factura es ahora
+`totalPagar` más las retenciones, y no `montoTotalOperacion`. Medido contra
+403 compras que Bodega cargó a mano desde agosto: la regla vieja cuadraba
+155 y fallaba en 234 —toda factura con la percepción fuera de la
+operación—; la nueva cuadra 387. Las 16 que no cuadran son diferencias de
+Bodega contra la factura (cargadas sin percepción, o con otro monto), no de
+la regla. GAMMA, que no llena `ivaPerci1`, también entra.
+
 ## v2.1382.1 — Revisión de factor muestra lo que contó cada sala
 
 - **Productos → Revisión de factor**: debajo de cada sala por corregir sale lo

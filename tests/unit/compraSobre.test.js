@@ -156,6 +156,12 @@ describe('totalDelDocumento', () => {
     it('no la suma dos veces cuando ya viene adentro', () => {
         expect(totalDelDocumento({ montoTotalOperacion: 760.06, ivaPerci1: 6.67, totalPagar: 760.06 })).toBe(760.06);
     });
+    it('sin `ivaPerci1` pero con la percepción en lo que se paga (GAMMA)', () => {
+        expect(totalDelDocumento({ montoTotalOperacion: 342.45, totalPagar: 345.48 })).toBe(345.48);
+    });
+    it('devuelve la retención: la descuenta el que paga, no cambia la compra', () => {
+        expect(totalDelDocumento({ montoTotalOperacion: 113, ivaRete1: 1, totalPagar: 112 })).toBe(113);
+    });
     it('sin percepción, la operación', () => {
         expect(totalDelDocumento({ montoTotalOperacion: 66.54, ivaPerci1: 0, totalPagar: 66.54 })).toBe(66.54);
         expect(totalDelDocumento({ totalPagar: 10 })).toBe(10);

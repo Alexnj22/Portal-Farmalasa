@@ -4710,10 +4710,6 @@
    "area": "compras",
    "por": "tablas"
   },
-  "recordar_linea_base_de_egreso": {
-   "area": "sistema",
-   "por": "cron"
-  },
   "refresh_customer_activity": {
    "area": "facturacion-dte",
    "por": "cron"

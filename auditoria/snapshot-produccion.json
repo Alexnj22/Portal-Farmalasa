@@ -495,7 +495,6 @@
     "purge-session-activity-daily",
     "purge-sync-logs-daily",
     "recetas-escalar-15min",
-    "recordar-linea-base-egreso-mensual",
     "reenviar-ccf-10min",
     "refresh-customer-activity-daily",
     "refresh-inv-mv-2min",

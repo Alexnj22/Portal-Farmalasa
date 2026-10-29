@@ -179,6 +179,10 @@ por accidente.
 
 ### El recordatorio que se apaga solo
 
+> **Retirado el 2026-10-29** (cron y función): se decidió el 2026-10-01 que no
+> va techo —avisa `export_log_avisar_descarga_grande` desde 5,000 filas—, así que
+> ya no tenía nada que recordar. Queda como historia.
+
 `recordar-linea-base-egreso-mensual` (día 1, 9:00 SV) avisa cuando `export_log`
 cumple 30 días. **Se apaga cuando alguien decide, no cuando alguien lo lee**: la
 condición de corte es que `techo_exportacion` tenga autor, y las filas nacieron

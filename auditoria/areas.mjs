@@ -1225,7 +1225,6 @@ export const AREAS = [
         edge: ['check-sync-health-alerts', 'backup-critical-tables', 'oss-proxy', 'saly-ai'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
-                'recordar-linea-base-egreso-mensual',
                 'check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
                 'purge-cron-history-daily', 'vigilar-reinicio-de-la-base',
                 // 2026-10-28: la vigilancia de seguridad (PENDIENTES 13).

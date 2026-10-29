@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1369.1 — Se retira el recordatorio del techo de exportación
+
+PENDIENTES 35. El cron `recordar-linea-base-egreso-mensual` y su función
+`recordar_linea_base_de_egreso` avisaban cuando `export_log` cumplía 30 días,
+para decidir un techo a las descargas. Se decidió el 2026-10-01 (no va techo;
+avisa `export_log_avisar_descarga_grande` desde 5,000 filas) y desde entonces
+devolvía 0 cada mes. Migración `20261029173142`; cron fuera de `gate:eficiencia`,
+de `areas.mjs` y de `funciones.json`.
+
 ## v2.1369.0 — El ticket lleva el icono de la farmacia
 
 PENDIENTES 34 (usuario: «agrega el logo. pero solo el icono»). Todo ticket con

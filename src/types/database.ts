@@ -35059,7 +35059,6 @@ export type Database = {
         Args: { p_proveedor_id: number }
         Returns: number
       }
-      recordar_linea_base_de_egreso: { Args: never; Returns: number }
       refresh_customer_activity: { Args: never; Returns: Json }
       refresh_inventory_grouped_mv: { Args: never; Returns: undefined }
       refresh_primera_venta_producto: { Args: never; Returns: undefined }

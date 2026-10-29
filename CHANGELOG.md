@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1362.0 — La app de clientes avisa cuando hay una versión nueva
+
+Al abrir Puntos Salud o volver a ella, si hay una compilación más nueva que la
+instalada sale «Hay una versión nueva» con **Actualizar** y **Más tarde**.
+**Avisa, no obliga** (decisión del usuario): no hay versión mínima ni pantalla
+que trabe. «Más tarde» calla esa compilación tres días; una más nueva vuelve a
+avisar. Pregunta como mucho cada 6 horas (migración `20261029162352`).
+
+- `app_version_publicada` guarda, por plataforma, la última compilación y el
+  enlace de «Actualizar»: hoy TestFlight y la pista interna de Play. Al salir a
+  la tienda pública se cambia el enlace en la tabla, sin compilar.
+- La llenan solos `subir-ios` (cuando Apple termina de procesar la
+  compilación; antes el botón llevaría a TestFlight sin nada que instalar) y
+  `subir-android` (al lanzarla en la pista). Si no pueden, imprimen el SQL.
+- Acción pública `version_publicada` en `app-clientes`: también avisa a quien
+  mira sin cuenta.
+- Quien tenga la compilación 78 (iOS) o 38 (Android) o anterior tiene que
+  instalar la próxima a mano: esas no saben avisar.
+
 ## v2.1361.0 — Licencias, carnés y tarjetas en un solo archivo, igual que el DUI
 
 El selector «Frente y reverso / Un solo archivo» existía sólo para el DUI. Las

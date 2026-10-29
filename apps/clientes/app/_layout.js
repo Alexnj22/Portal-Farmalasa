@@ -29,6 +29,7 @@ import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid'
 import NovedadesHoja from '../componentes/NovedadesHoja';
 import { guiaVista, revisarAlAbrir, usePresentacion } from '../lib/novedades';
 import { revisarAceptacion, useAceptacion } from '../lib/aceptacion';
+import { revisarActualizacion } from '../lib/actualizacion';
 
 // La hoja de opciones y el prompt de iOS, en Android (componentes/HojasAndroid).
 instalarHojasAndroid();
@@ -251,6 +252,24 @@ function Presentacion() {
   return <NovedadesHoja novedades={novedades} alCerrar={() => usePresentacion.getState().cerrarNovedades()} />;
 }
 
+// «Hay una versión nueva» (2026-10-29, lib/actualizacion.js): al ver las
+// pestañas y al volver a primer plano. Espera a que no haya bloqueo, guía ni
+// novedades encima: un aviso a la vez.
+function AvisoDeActualizacion() {
+  const segmentos = useSegments();
+  const activa = useAppActiva();
+  const bloqueada = useBloqueo((s) => s.bloqueada);
+  const guia = usePresentacion((s) => s.guiaPendiente);
+  const novedades = usePresentacion((s) => !!(s.novedades || s.novedadesPendientes));
+  const enPestanas = segmentos[0] === '(tabs)';
+  useEffect(() => {
+    if (WEB || !activa || bloqueada || !enPestanas || guia || novedades) return undefined;
+    const reloj = setTimeout(() => { revisarActualizacion(); }, 1500);
+    return () => clearTimeout(reloj);
+  }, [activa, bloqueada, enPestanas, guia, novedades]);
+  return null;
+}
+
 const BARRA_CHAT = {
   headerTransparent: true,
   headerBlurEffect: 'none',
@@ -384,6 +403,7 @@ function Raiz() {
           {/* El aviso con la app abierta: debajo del bloqueo, que lo tapa. */}
           <AvisoEnApp />
           <Presentacion />
+          <AvisoDeActualizacion />
           <Bloqueo />
           <Telon />
           <HojasAndroid />

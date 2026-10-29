@@ -53,6 +53,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { esperarTurno } from './lib/turno-de-compilacion.mjs';
+import { anotarVersionPublicada } from './lib/version-publicada.mjs';
 
 const args = process.argv.slice(2);
 const banderas = new Set(args.filter((a) => a.startsWith('--')).map((a) => a.split('=')[0]));
@@ -282,3 +283,4 @@ try {
 await play('POST', `/edits/${edit.id}:commit`);
 writeFileSync(REGISTRO, JSON.stringify({ ...subidas, [CLAVE_REGISTRO]: Number(subido.versionCode) }, null, 2) + '\n');
 console.log(`✓ ${appJson.name} ${appJson.version} (${subido.versionCode}) subida a la pista «internal» de Google Play.`);
+anotarVersionPublicada({ perfil, plataforma: 'android', version: appJson.version, build: subido.versionCode });

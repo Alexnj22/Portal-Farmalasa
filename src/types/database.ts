@@ -2501,6 +2501,36 @@ export type Database = {
           },
         ]
       }
+      app_version_publicada: {
+        Row: {
+          app: string
+          build: number
+          created_at: string
+          enlace: string
+          plataforma: string
+          publicada_at: string
+          version: string
+        }
+        Insert: {
+          app: string
+          build: number
+          created_at?: string
+          enlace: string
+          plataforma: string
+          publicada_at?: string
+          version: string
+        }
+        Update: {
+          app?: string
+          build?: number
+          created_at?: string
+          enlace?: string
+          plataforma?: string
+          publicada_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       approval_requests: {
         Row: {
           approvals: Json
@@ -8931,6 +8961,59 @@ export type Database = {
             columns: ["remanente_recibido_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      descuentos_espejo: {
+        Row: {
+          borrado_at: string | null
+          branch_id: number | null
+          created_at: string
+          descripcion: string
+          fin: string
+          id: number
+          inicio: string
+          monto: number
+          productos: number[]
+          tipo: string
+          todas_las_salas: boolean
+          updated_at: string
+        }
+        Insert: {
+          borrado_at?: string | null
+          branch_id?: number | null
+          created_at?: string
+          descripcion: string
+          fin: string
+          id: number
+          inicio: string
+          monto: number
+          productos?: number[]
+          tipo: string
+          todas_las_salas: boolean
+          updated_at?: string
+        }
+        Update: {
+          borrado_at?: string | null
+          branch_id?: number | null
+          created_at?: string
+          descripcion?: string
+          fin?: string
+          id?: number
+          inicio?: string
+          monto?: number
+          productos?: number[]
+          tipo?: string
+          todas_las_salas?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "descuentos_espejo_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]
@@ -30410,6 +30493,10 @@ export type Database = {
         Args: { p_deshacer?: boolean; p_id: number }
         Returns: undefined
       }
+      descuentos_espejo_sync: {
+        Args: { completa: boolean; p: Json }
+        Returns: Json
+      }
       desmarcar_conteo_bolsa: {
         Args: { p_id: number }
         Returns: {
@@ -33313,6 +33400,7 @@ export type Database = {
         Args: { p_lote: string; p_vence: string }
         Returns: Json
       }
+      inyeccion_lotes_conocidos: { Args: { p_producto: string }; Returns: Json }
       inyeccion_registrar: {
         Args: {
           p_aplicar_ahora: number
@@ -34714,6 +34802,10 @@ export type Database = {
       }
       reactivar_promocion: {
         Args: { p_fin: string; p_id: number }
+        Returns: Json
+      }
+      rebajas_en_ventas: {
+        Args: { p_branch_id?: number; p_desde: string; p_hasta: string }
         Returns: Json
       }
       rebuild_product_sales_monthly_agg: {

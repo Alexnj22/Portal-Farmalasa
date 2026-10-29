@@ -1232,6 +1232,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // La MISMA regla cobra `reservar_carrito`.
     // deno-lint-ignore no-explicit-any
     const factorMayor = (lista: any[]) => Math.max(1, ...lista.map((x: any) => Number(x?.factor) || 1));
+    // «Hay una versión nueva» (2026-10-29): la última compilación subida de la
+    // app, para que avise. Pública: también la ve quien mira sin cuenta.
+    if (accion === "version_publicada") {
+      const plataforma = String(body?.plataforma ?? "");
+      if (plataforma !== "ios" && plataforma !== "android") return json({ ok: false, mensaje: "Plataforma no válida." });
+      const { data, error } = await admin.from("app_version_publicada").select("version, build, enlace")
+        .eq("app", "clientes").eq("plataforma", plataforma).maybeSingle();
+      if (error) throw error;
+      return json({ ok: true, version: data?.version ?? null, build: data?.build ?? null, enlace: data?.enlace ?? null });
+    }
     if (accion === "catalogo") {
       const q = String(body?.q ?? "").slice(0, 60);
       const desde = Math.max(0, Math.min(1000, Number(body?.desde) || 0));

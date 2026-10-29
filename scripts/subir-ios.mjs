@@ -26,6 +26,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } fro
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { esperarTurno } from './lib/turno-de-compilacion.mjs';
+import { anotarVersionPublicada } from './lib/version-publicada.mjs';
 
 const [carpeta, perfil] = process.argv.slice(2);
 if (!carpeta || !perfil) {
@@ -156,3 +157,22 @@ correr(`xcodebuild -exportArchive -archivePath "${salida}/app.xcarchive" -export
 
 writeFileSync(REGISTRO, JSON.stringify({ ...subidas, [bundle]: Number(numero) }, null, 2) + '\n');
 console.log(`✓ ${appJson.name} ${appJson.version} (${numero}) subida. Aparece en TestFlight en 10–30 minutos.`);
+
+// ── El aviso de la app ──────────────────────────────────────────────────────
+// «Hay una versión nueva» (lib/version-publicada.mjs) se anota recién cuando
+// Apple termina de procesarla: antes, el botón «Actualizar» llevaría a
+// TestFlight sin nada que instalar. Se espera hasta 45 minutos.
+if (perfil === 'clientes') {
+  console.log('→ Esperando a que Apple procese la compilación para avisar en la app…');
+  let estado = null;
+  for (let i = 0; i < 90 && estado !== 'VALID'; i++) {
+    await new Promise((r) => setTimeout(r, 30_000));
+    try {
+      const { data } = await apiAsc(`/v1/builds?filter[app]=${apps[0].id}&filter[version]=${numero}&fields[builds]=processingState`);
+      estado = data?.[0]?.attributes?.processingState ?? null;
+      if (estado === 'FAILED' || estado === 'INVALID') break;
+    } catch { /* un tropiezo de la API no corta la espera */ }
+  }
+  if (estado === 'VALID') anotarVersionPublicada({ perfil, plataforma: 'ios', version: appJson.version, build: numero });
+  else console.warn(`⚠ Apple no terminó de procesar la ${numero} (${estado ?? 'sin estado'}): la app no avisará. Cuando aparezca en TestFlight, corré:\n  UPDATE public.app_version_publicada SET version = '${appJson.version}', build = ${numero}, publicada_at = now() WHERE app = 'clientes' AND plataforma = 'ios' AND build < ${numero};`);
+}

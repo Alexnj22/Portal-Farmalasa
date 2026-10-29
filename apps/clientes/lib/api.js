@@ -15,7 +15,7 @@ const EN_VIVO = new Set(['chat_mensajes', 'chat_escribiendo', 'chat_leido']);
 // se cortan, es «no se pudo consultar», no «no sabemos si se hizo».
 const CONSULTAS = new Set([
   'factura_documento', 'carrito_existencias', 'reserva_existencias', 'documentos_estado',
-  'correos_lista', 'mis_datos_fiscales', 'perfil',
+  'correos_lista', 'mis_datos_fiscales', 'perfil', 'version_publicada',
 ]);
 
 // Las ESCRITURAS también llevan tope (2026-10-15): sin él, enviar un mensaje,

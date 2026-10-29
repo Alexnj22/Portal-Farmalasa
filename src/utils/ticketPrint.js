@@ -1,5 +1,6 @@
 import * as almacen from '@plataforma/almacen';
 import { mensajeAmigable } from './errorMessages';
+import { LOGO_TICKET_PNG, LOGO_TICKET_URL, logoParaElRollo } from './logoTicket';
 import { svgDeCodigoDeBarras, ajustarAltoDelMarco, imprimirMarco as imprimirMarcoDelNavegador, imprimirHtmlSinVista, permisoDeRedLocal } from '@plataforma/impresion';
 // ─── Impresión en rollo (ticketera) ──────────────────────────────────────────
 //
@@ -340,6 +341,7 @@ export function construirTicketHtml(ticket) {
     print-color-adjust: exact;
   }
   .centro { text-align: center; }
+  .logo { display: block; width: 16mm; height: 16mm; margin: 0 auto 1.5mm; image-rendering: pixelated; }
   .marca { font-size: 11pt; font-weight: 700; letter-spacing: .3px; }
   .sub { font-size: 8pt; }
   .titulo {
@@ -407,6 +409,7 @@ export function construirTicketHtml(ticket) {
 </head>
 <body>
   <div class="centro">
+    ${encabezado.titulo ? `<img class="logo" src="${LOGO_TICKET_PNG}" alt=""/>` : ''}
     ${encabezado.titulo ? `<div class="marca">${esc(encabezado.titulo)}</div>` : ''}
     ${(encabezado.lineas ?? []).map(l => `<div class="sub">${esc(l)}</div>`).join('')}
   </div>
@@ -514,10 +517,10 @@ export function imprimirTicket(ticket) {
 //    programa contestó algo, no QUÉ contestó. Un 404 y un 200 se ven igual.
 //    Por eso hay que elegir el sistema de la computadora en vez de probar los
 //    dos: probar los dos imprimiría dos veces donde ambos existan.
-// 3. **Las imágenes van vacías.** El origen manda su logo y dos códigos QR por
-//    URL; acá no se manda ninguna hasta comprobar que el programa las omite sin
-//    romperse cuando llegan vacías. Es lo único de este contrato que no salió de
-//    leer su código.
+// 3. **Las imágenes.** El origen manda su logo y dos códigos QR por URL. Vacías
+//    no rompen nada (ticket del 14-08). Desde el 2026-10-29 va el icono de la
+//    farmacia en `img` (ver logoTicket.js) cuando el ticket lleva la marca;
+//    `qr_farmalasa` sigue vacío.
 const RUTA_PROGRAMA = 'http://localhost/impresion_dte/';
 
 /**
@@ -1022,7 +1025,9 @@ export function seccionesParaElPrograma(ticket) {
         // no lleva pie: era un renglón en blanco de más en cada papel.
         pie: soloASCII(LETRA_CHICA + CENTRO + (pie.length ? '\n' + pie.join('\n') : ''))
             + '\n'.repeat(SALTOS_DE_CORTE),
-        img: '',
+        // El icono, sólo si el ticket lleva la marca arriba (una etiqueta de
+        // bolsa no la lleva). Ver logoTicket.js.
+        img: encabezado.titulo ? LOGO_TICKET_URL : '',
         // Por ESTE camino el QR va como URL: el programa de la caja lo dibuja,
         // que es lo que el sistema de facturación ya hace. Los bytes ESC/POS
         // NO pueden ir acá — llevan NUL y el NUL se pierde en el trayecto.
@@ -1057,7 +1062,8 @@ export function textoParaElRollo(ticket) {
     // El QR va acá y no dentro de las secciones, por lo mismo que el corte: es
     // lo ÚNICO que se emite distinto según el camino. Entre el cuerpo y el pie,
     // que es donde el programa de la caja pone el suyo.
-    return `${ESC}@` + s.encabezado + s.cuerpo + qrParaElRollo(ticket?.qr) + s.pie + CORTAR_PAPEL;
+    const logo = ticket?.encabezado?.titulo ? logoParaElRollo(ticket?.ancho) : '';
+    return `${ESC}@` + logo + s.encabezado + s.cuerpo + qrParaElRollo(ticket?.qr) + s.pie + CORTAR_PAPEL;
 }
 
 /**

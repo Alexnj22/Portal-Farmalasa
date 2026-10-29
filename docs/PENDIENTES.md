@@ -119,7 +119,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 31. ✅ Las 48 tablas sin `created_at`, con su motivo (2026-10-29): `auditoria/tablas-sin-created-at.json`, en 4 grupos. `gate:auditoria` falla si aparece una nueva sin declarar.
 32. ✅ Deuda de `gate:data` en cero (2026-10-29): escritura-a-ciegas 35→0, error-ignorado 26→0, las dos bloqueantes en cero.
 33. ✅ Vendors fuera del entry y `pdfjs` por `import()` (2026-10-29). Facturas de compra 138→10 kB; tras cada deploy se bajan 184 kB en vez de 303 (React y Supabase quedan en caché); el arranque en frío no cambia (303 kB).
-34. ✅ Comentarios de `operar-caja` corregidos (2026-10-29): decían que cerrar el turno emite el Z; desde el 1-sep el Z sale antes por `hacer-corte-caja`. **Queda el logo del ticket** (`ticketPrint.js`, `img: ''`): se manda vacío porque no está probado qué hace el programa de la caja con una imagen; se prueba con papel en la mano.
+34. ✅ Comentarios de `operar-caja` corregidos (2026-10-29): decían que cerrar el turno emite el Z; desde el 1-sep el Z sale antes por `hacer-corte-caja`. Logo: el icono (sin el nombre) va en todo ticket con la marca arriba, por los tres caminos (`logoTicket.js`). **Falta verlo en papel** en una sala.
 35. Dar de baja el cron `recordar-linea-base-egreso-mensual` (ya cumplió).
 36. COFARSAL AP3 → asignar la sala sola (pista sin medir).
 

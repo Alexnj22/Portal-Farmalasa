@@ -679,6 +679,8 @@ en unos segundos». Ahora:
    llegan vacías. Es lo único del contrato que no salió de leer su código — y el
    ticket del 14-08 salió bien con las tres vacías, así que **omitirlas no rompe
    nada**; falta sólo saber si las dibuja cuando llegan.
+   **2026-10-29**: `img` lleva el icono de la farmacia (`src/utils/logoTicket.js`);
+   por la cola sale como imagen de puntos `GS v 0`. Falta verlo en papel.
 3. **Qué documento va al rollo.** *(Resuelto: hoy imprimen Cortes, Bolsas, Mi
    caja, traslados y Distribución.)* Al escribirse, el motor no estaba enganchado
    a ninguna vista. Los candidatos, en orden de uso probable: una

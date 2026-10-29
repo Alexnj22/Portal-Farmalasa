@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1369.0 — El ticket lleva el icono de la farmacia
+
+PENDIENTES 34 (usuario: «agrega el logo. pero solo el icono»). Todo ticket con
+la marca arriba sale con el círculo y la cruz, en blanco y negro (128 puntos,
+~16 mm), por los tres caminos:
+
+- **directo** (programa de la caja): por URL en `img`, como el del sistema de
+  facturación — `public/logo-ticket.png`.
+- **cola de la sala**: imagen de puntos `GS v 0`, centrada con relleno y no con
+  `ESC a`, que en esa impresora no manda.
+- **diálogo del navegador**: embebido en el HTML.
+
+La etiqueta de bolsa, que no lleva marca, sale sin icono. Falta verlo en papel.
+
 ## v2.1368.0 — App de clientes: actualizaciones por aire
 
 Un cambio que es sólo JavaScript (pantallas, textos, lógica) llega al teléfono

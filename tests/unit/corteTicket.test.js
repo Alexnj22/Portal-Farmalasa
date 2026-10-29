@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { construirComprobanteDeCorte } from '@nucleo/utils/corteTicket';
 import { resultadoDeLaFila } from '@nucleo/utils/cortesDiagnostico';
 import { textoParaElRollo } from '@nucleo/utils/ticketPrint';
+import { logoParaElRollo } from '@nucleo/utils/logoTicket';
 
 /*
  * El comprobante del corte, anclado contra un corte REAL: el 14323 de Salud 3
@@ -168,7 +169,8 @@ describe('comprobante del corte', () => {
         // Sin los renglones vacíos del avance de papel del final. 20 es lo
         // MEDIDO el 2026-08-31, no un número redondo: el tope existe para que
         // el papel no vuelva a crecer, así que un margen holgado no vigila nada.
-        const utiles = papel.split('\n').filter((l) => l.trim()).length;
+        // El icono es una imagen de puntos: sus bytes 0x0A son datos, no renglones.
+        const utiles = papel.replace(logoParaElRollo(58), '').split('\n').filter((l) => l.trim()).length;
         expect(utiles).toBeLessThanOrEqual(20);
     });
 

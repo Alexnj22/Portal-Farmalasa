@@ -1195,7 +1195,7 @@ export const AREAS = [
             'src/views/ImpresionView.jsx',
             'src/components/impresion/',
             'src/data/impresion.js',
-            'src/utils/ticketPrint.js', 'src/utils/ticketCampos.js', 'src/utils/pruebaDeImpresion.js',
+            'src/utils/ticketPrint.js', 'src/utils/logoTicket.js', 'src/utils/ticketCampos.js', 'src/utils/pruebaDeImpresion.js',
             'scripts/agente-impresion/', 'scripts/publicar-agente.mjs',
         ],
         tablas: ['cola_impresion', 'impresion_dispositivos'],

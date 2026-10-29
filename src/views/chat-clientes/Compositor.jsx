@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, MessageSquareText, Mic, Package, Send, Tag, Trash2, X } from 'lucide-react';
+import { ImagePlus, MessageSquareText, Mic, Package, Send, Smartphone, Tag, Trash2, X } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import Button from '../../components/common/Button';
@@ -23,6 +23,8 @@ import {
 } from '@nucleo/data/chatClientes';
 import { FranjaDeRespuesta } from './AccionesDeMensaje';
 import useGrabadora from './useGrabadora';
+import useFotoDelTelefono from '../../components/common/useFotoDelTelefono';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { guardarBorrador, leerBorrador } from '@nucleo/utils/chatBorradores';
 
 // El cuadro para responder: texto, una foto, una respuesta rápida guardada, o
@@ -72,13 +74,24 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
     const vista = useMemo(() => (archivo ? URL.createObjectURL(archivo) : null), [archivo]);
     useEffect(() => () => { if (vista) URL.revokeObjectURL(vista); }, [vista]);
 
-    const elegirFoto = (e) => {
-        const f = e.target.files?.[0];
-        e.target.value = '';
-        if (!f) return;
+    const ponerFoto = (f) => {
         if (f.size > MAX_FOTO) { showToast('Foto muy pesada', 'El máximo es 8 MB.', 'error'); return; }
         setArchivo(f);
     };
+    const elegirFoto = (e) => {
+        const f = e.target.files?.[0];
+        e.target.value = '';
+        if (f) ponerFoto(f);
+    };
+
+    // En la computadora, la foto puede tomarse con el teléfono (QR): la que
+    // llega queda adjunta igual que una elegida del disco, lista para enviar.
+    // Con el dedo no se ofrece — la cámara ya está en «Adjuntar una foto».
+    const esTactil = useCoarsePointer();
+    const fotoDelTelefono = useFotoDelTelefono(ponerFoto, {
+        etiqueta: 'Chat con el cliente',
+        onError: (msg) => { if (msg) showToast('Foto', msg, 'error'); },
+    });
 
     // ── Nota de voz ── (al llegar al tope de duración se envía sola)
     const alTopeRef = useRef(null);
@@ -176,6 +189,12 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
             <div className={`flex items-center gap-0.5 ${grabando ? 'hidden' : ''}`}>
                 <input ref={fileRef} type="file" accept={TIPOS_FOTO} className="sr-only" onChange={elegirFoto} />
                 <Button variant="ghost" size="xs" iconOnly icon={ImagePlus} title="Adjuntar una foto" onClick={() => fileRef.current?.click()} />
+                {!esTactil && (
+                    <Button variant="ghost" size="xs" iconOnly icon={Smartphone}
+                        title={fotoDelTelefono.esperando ? 'Esperando la foto del teléfono…' : 'Tomar la foto con el teléfono'}
+                        loading={fotoDelTelefono.pidiendo} disabled={fotoDelTelefono.esperando}
+                        onClick={fotoDelTelefono.pedir} />
+                )}
                 <Button variant="ghost" size="xs" iconOnly icon={MessageSquareText} title="Respuestas rápidas" onClick={() => setHoja('respuestas')} />
                 <Button variant="ghost" size="xs" iconOnly icon={Package} title="Enviar un producto" onClick={() => setHoja('producto')} />
                 <Button variant="ghost" size="xs" iconOnly icon={Tag} title="Enviar una oferta" onClick={() => setHoja('oferta')} />
@@ -186,6 +205,7 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
                 </span>
             </div>
 
+            {fotoDelTelefono.dialogo}
             {hoja === 'respuestas' && (
                 <RespuestasRapidas textoActual={texto} onClose={() => setHoja(null)}
                     onElegir={(t) => { setTexto((prev) => (prev.trim() ? `${prev.trimEnd()} ${t}` : t)); setHoja(null); }} />

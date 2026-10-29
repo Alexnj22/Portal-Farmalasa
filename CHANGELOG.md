@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.4 — Chat con clientes: foto desde el teléfono
+
+En la computadora, el compositor del chat suma un botón con el ícono de
+teléfono: muestra un QR, se toma la foto con el teléfono y queda adjunta lista
+para enviar al cliente. Usa el mismo `useFotoDelTelefono` de la evidencia.
+
 ## v2.1382.3 — Un reconteo se suma a la tarjeta de su producto
 
 Consultas de existencia y Revisión de factor juntan todos los pedidos de un

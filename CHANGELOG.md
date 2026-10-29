@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1357.50 — El DTE de la noche se entrega aunque todavía no tenga código
+
+`dte-para-cliente` rechazaba con «Esta venta no tiene documento electrónico»
+justo los COF de las 6 p. m. en adelante, que son para los que existe: como no
+se envían, nunca reciben código de generación (2026-10-28: 124 de 125 sin él).
+El chequeo iba antes del envío; ahora se manda a Hacienda por `regularizar-dte`
+(que trabaja con el número interno), se relee la fila y recién ahí se exige el
+código. Desplegada en producción con JWT.
+
 ## v2.1357.49 — impresión: el ticket que no salió avisa y se reimprime desde el aviso
 
 - Un ticket que espera más de 10 minutos en la cola ahora se vence **aunque la

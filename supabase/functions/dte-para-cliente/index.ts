@@ -94,7 +94,9 @@ Deno.serve(async (req) => {
     if (!f) throw new ErrorUsuario("Esa venta ya no está en el portal.", 404);
     if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(f.branch_id))
       throw new ErrorUsuario("Esa venta es de otra sucursal.", 403);
-    if (!f.codigo_generacion) throw new ErrorUsuario("Esta venta no tiene documento electrónico.");
+    // El código de generación NO se exige acá: un COF de la noche nunca se
+    // armó como documento, así que llega sin él (medido el 2026-10-28: 124 de
+    // 125). Lo asigna el envío; se exige después de mandarlo, más abajo.
     const { data: valida, error: eV } = await admin.rpc("venta_valida", { p_estado: f.estado });
     if (eV) throw eV;
     if (!valida) throw new ErrorUsuario("Esta venta está anulada: no tiene documento que entregar.");
@@ -134,7 +136,15 @@ Deno.serve(async (req) => {
         throw new ErrorUsuario("Hacienda todavía no recibió este documento. Intenta de nuevo en unos minutos; si sigue igual, avisa a supervisión.", 502);
       }
       seEnvio = !d.omitida;
+      // `regularizar-dte` releyó esa fecha antes de contestar: el código de
+      // generación —y el sello— ya están en la fila.
+      const { data: f2, error: eF2 } = await admin.from("sales_invoices")
+        .select("codigo_generacion, recibido_mh").eq("id", invoiceId).maybeSingle();
+      if (eF2) throw eF2;
+      if (f2) Object.assign(f, f2);
     }
+    if (!f.codigo_generacion)
+      throw new ErrorUsuario("El documento todavía no está listo. Intenta de nuevo en un minuto.", 503);
 
     // ── 2 · Los dos archivos ───────────────────────────────────────────
     const cg = String(f.codigo_generacion).toUpperCase();

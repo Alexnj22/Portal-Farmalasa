@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1381.5 — Revisión de factor y conteos agrupados por producto
+
+_(pendiente de redactar)_
+
 ## v2.1381.4 — Compras: Bodega en vivo antes de mandar, y la compra vuelve al portal
 
 Dos frenos que faltaban en el envío a Bodega (sigue apagado):

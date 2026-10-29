@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ArrowRight, PackageX, History, AlertTriangle, CheckCircle2, Clock, Wrench, ScanSearch } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -6,6 +6,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
+import { fetchConsultasExistencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -37,6 +38,8 @@ const NuevaConsultaExistencia = lazy(() => import('../../components/inventario/N
 export default function TabRevisionFactor() {
     const [datos, setDatos] = useState(null);   // null = cargando
 
+    const [consultas, setConsultas] = useState([]);
+
     const cargar = useCallback(() => {
         let cancelado = false;
         fetchRevisionDePresentaciones().then(({ data, error }) => {
@@ -48,10 +51,29 @@ export default function TabRevisionFactor() {
             }
             setDatos(data);
         });
+        // Los conteos ya pedidos, para no ofrecer pedir otro encima. Si no se
+        // pueden leer (sin permiso de conteo) el botón sigue, y el servidor
+        // frena el duplicado igual.
+        fetchConsultasExistencia().then(({ data }) => { if (!cancelado) setConsultas(data); });
         return () => { cancelado = true; };
     }, []);
 
     useEffect(() => cargar(), [cargar]);
+
+    // Una tarjeta por producto, con sus salas adentro: el mismo cambio de
+    // presentación pega en varias salas y verlas sueltas invitaba a pedir el
+    // mismo conteo una vez por tarjeta.
+    const porProducto = useMemo(() => {
+        const m = new Map();
+        for (const f of datos?.existencias ?? []) {
+            if (!m.has(f.erp_product_id)) m.set(f.erp_product_id, { erp_product_id: f.erp_product_id, nombre: f.nombre, filas: [] });
+            m.get(f.erp_product_id).filas.push(f);
+        }
+        return [...m.values()];
+    }, [datos]);
+    const consultaAbierta = useMemo(() => new Map(consultas
+        .filter(c => !c.cerrada_at)
+        .map(c => [c.erp_product_id, c])), [consultas]);
 
     if (datos === null) {
         return <div className="p-4"><SkeletonText lines={6} /></div>;
@@ -61,15 +83,15 @@ export default function TabRevisionFactor() {
 
     return (
         <div className="space-y-6">
-            <Seccion icono={PackageX} titulo="Existencia por corregir" cuenta={existencias.length}
+            <Seccion icono={PackageX} titulo="Existencia por corregir" cuenta={porProducto.length}
                 bajada="La caja no convierte la existencia cuando cambia el tamaño de la presentación: queda contada en la unidad vieja. Si la caja se achicó sobra existencia; si creció, falta.">
                 {existencias.length === 0
                     ? <EmptyState linea icon={CheckCircle2} title="Sin existencia por corregir" />
                     : (
                         <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                            {existencias.map(f => (
-                                <FilaExistencia key={`${f.cambio_id}-${f.sentido}-${f.erp_sucursal_id}-${f.lote}-${f.presentacion}`}
-                                    fila={f} onHecho={cargar} />
+                            {porProducto.map(g => (
+                                <TarjetaProducto key={g.erp_product_id} grupo={g}
+                                    consulta={consultaAbierta.get(g.erp_product_id)} onHecho={cargar} />
                             ))}
                         </ul>
                     )}
@@ -118,14 +140,78 @@ function Seccion({ icono: Icono, titulo, cuenta, bajada, children }) {
     );
 }
 
-// ─── Un lote con la existencia en la unidad vieja ───────────────────────────
-function FilaExistencia({ fila: f, onHecho }) {
+// ─── Un producto con su existencia en la unidad vieja, sala por sala ────────
+function TarjetaProducto({ grupo: g, consulta, onHecho }) {
+    const { hasPermission } = useAuth();
+    const [preguntar, setPreguntar] = useState(false);
+    const puedePreguntar = hasPermission('conteo_inventario', 'can_edit');
+
+    const f0 = g.filas[0];
+    const presDe = (f) => f.tipo_cambio ?? f.presentacion;
+    // El de→a va arriba una sola vez cuando todas las salas comparten el mismo
+    // cambio, que es lo normal; si no, cada sala lleva el suyo.
+    const mismoCambio = g.filas.every(f => presDe(f) === presDe(f0) && f.de === f0.de && f.a === f0.a);
+    const salas = [...new Map(g.filas.map(f => [f.erp_sucursal_id, f.sala])).entries()];
+    const sinCorregir = g.filas.some(f => !f.solicitud);
+    const respondidas = consulta ? (consulta.salas ?? []).filter(s => !['PENDIENTE', 'RECONTAR'].includes(s.estado)).length : 0;
+
+    return (
+        <li data-surface="card" className="border-divider px-3.5 py-3 space-y-2.5">
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 space-y-1">
+                    <p className="text-body-sm font-black text-content truncate" title={g.nombre}>{g.nombre}</p>
+                    {mismoCambio && <CambioDeFactor f={f0} />}
+                </div>
+                {consulta && (
+                    <Badge size="sm" uppercase={false} variant="info" icon={ScanSearch}>
+                        Conteo pedido · {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)}
+                    </Badge>
+                )}
+            </div>
+
+            <ul className="divide-y divide-divider border-t border-divider">
+                {g.filas.map(f => (
+                    <SalaPorCorregir key={`${f.cambio_id}-${f.sentido}-${f.erp_sucursal_id}-${f.lote}-${f.presentacion}`}
+                        fila={f} conCambio={!mismoCambio} onHecho={onHecho} />
+                ))}
+            </ul>
+
+            {/* ¿Hay de verdad lo que el cambio supone? Un solo pedido para
+                todas las salas del producto; las salas cuentan a ciegas. */}
+            {puedePreguntar && !consulta && sinCorregir && (
+                <Button size="sm" variant="secondary" icon={ScanSearch} onClick={() => setPreguntar(true)}>
+                    {salas.length === 1 ? `Pedir conteo a ${salas[0][1]}` : `Pedir conteo a las ${salas.length} salas`}
+                </Button>
+            )}
+            {preguntar && (
+                <Suspense fallback={null}>
+                    <NuevaConsultaExistencia producto={{ id: g.erp_product_id, nombre: g.nombre }}
+                        salasIniciales={salas.map(([id]) => id)} origen="revision_factor"
+                        motivoInicial={`Cambio de presentación: antes 1 ${presDe(f0)} = ${f0.de}, ahora = ${f0.a}`}
+                        onCerrar={() => setPreguntar(false)} onCreada={onHecho} />
+                </Suspense>
+            )}
+        </li>
+    );
+}
+
+function CambioDeFactor({ f }) {
+    const pres = f.tipo_cambio ?? f.presentacion;
+    return (
+        <p className="flex flex-wrap items-center gap-x-2 text-label font-bold">
+            <span className="text-content-3">1 {pres} = {formatQty(f.de)}</span>
+            <ArrowRight size={12} className="text-content-3" />
+            <span className="text-content">1 {pres} = {formatQty(f.a)}</span>
+        </p>
+    );
+}
+
+// ─── Una sala (un lote) con la existencia en la unidad vieja ────────────────
+function SalaPorCorregir({ fila: f, conCambio, onHecho }) {
     const { user, hasPermission } = useAuth();
     const employees = useStaffStore(s => s.employees);
     const [confirmar, setConfirmar] = useState(false);
     const [trabajando, setTrabajando] = useState(false);
-    const [preguntar, setPreguntar] = useState(false);
-    const puedePreguntar = hasPermission('conteo_inventario', 'can_edit');
 
     const puedeAplicar = hasPermission('requests_inventario', 'can_approve');
     const sol = f.solicitud;
@@ -176,26 +262,27 @@ function FilaExistencia({ fila: f, onHecho }) {
     };
 
     return (
-        <li data-surface="card" className="border-divider px-3.5 py-3 space-y-2">
+        <li className="py-2.5 last:pb-0 space-y-1.5">
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                    <p className="text-body-sm font-black text-content truncate" title={f.nombre}>{f.nombre}</p>
-                    <p className="text-label font-bold text-content-3 truncate">
-                        {f.sala}{f.lote ? ` · lote ${f.lote}` : ''}
-                        {f.vence ? ` · vence ${fechaNumerica(f.vence)}` : ''}
-                    </p>
+                    <p className="text-body-sm font-bold text-content truncate">{f.sala}</p>
+                    {(f.lote || f.vence) && (
+                        <p className="text-label font-bold text-content-3 truncate">
+                            {f.lote ? `lote ${f.lote}` : ''}{f.lote && f.vence ? ' · ' : ''}
+                            {f.vence ? `vence ${fechaNumerica(f.vence)}` : ''}
+                        </p>
+                    )}
+                    {conCambio && <CambioDeFactor f={f} />}
                 </div>
-                {estado && (
+                {estado ? (
                     <Badge size="sm" uppercase={false} variant={estado.variant} icon={estado.icon}>
                         {estado.texto}
                     </Badge>
+                ) : (
+                    <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
+                        Corregir
+                    </Button>
                 )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm font-bold">
-                <span className="text-content-3">1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.de)}</span>
-                <ArrowRight size={13} className="text-content-3" />
-                <span className="text-content">1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.a)}</span>
             </div>
 
             {carga ? (
@@ -215,29 +302,6 @@ function FilaExistencia({ fila: f, onHecho }) {
                         </span>
                     )}
                 </p>
-            )}
-
-            {!sol && (
-                <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
-                        Corregir en la caja
-                    </Button>
-                    {/* ¿Hay de verdad lo que el cambio supone? La sala cuenta a
-                        ciegas y el portal dice si cuadra. */}
-                    {puedePreguntar && (
-                        <Button size="sm" variant="secondary" icon={ScanSearch} onClick={() => setPreguntar(true)}>
-                            Pedir conteo a la sala
-                        </Button>
-                    )}
-                </div>
-            )}
-            {preguntar && (
-                <Suspense fallback={null}>
-                    <NuevaConsultaExistencia producto={{ id: f.erp_product_id, nombre: f.nombre }}
-                        salasIniciales={[f.erp_sucursal_id]} origen="revision_factor"
-                        motivoInicial={`Cambio de presentación: antes 1 ${f.tipo_cambio ?? f.presentacion} = ${f.de}, ahora = ${f.a}`}
-                        onCerrar={() => setPreguntar(false)} />
-                </Suspense>
             )}
 
             <ConfirmModal

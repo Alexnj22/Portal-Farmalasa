@@ -59,8 +59,11 @@ export default function TabConsultasExistencia() {
     }, []);
     useEffect(() => { cargar(); }, [cargar]);
 
-    const porContar = useMemo(() => (consultas ?? []).flatMap(c => (c.salas ?? [])
-        .filter(s => s.puedo_contar).map(s => ({ consulta: c, sala: s }))), [consultas]);
+    // Una tarjeta por producto con sus salas adentro: quien ve toda la red
+    // tenía siete tarjetas iguales por consulta.
+    const porContar = useMemo(() => (consultas ?? [])
+        .map(c => ({ consulta: c, salas: (c.salas ?? []).filter(s => s.puedo_contar) }))
+        .filter(g => g.salas.length > 0), [consultas]);
     const empleado = useCallback((id) => (employees ?? []).find(e => e.id === id), [employees]);
 
     const abrirAjuste = async (consulta, sala) => {
@@ -142,19 +145,32 @@ export default function TabConsultasExistencia() {
 
             {porContar.length > 0 && (
                 <section className="space-y-2">
-                    <h3 className="text-label font-black uppercase tracking-widest text-content-3">Te toca contar</h3>
-                    <ul className="grid gap-2 md:grid-cols-2">
-                        {porContar.map(({ consulta, sala }) => (
-                            <li key={sala.id} data-surface="card" className="px-3.5 py-3 flex items-center justify-between gap-3">
+                    <h3 className="text-label font-black uppercase tracking-widest text-content-3">
+                        Te toca contar <span className="tabular-nums">· {formatQty(porContar.length)}</span>
+                    </h3>
+                    <ul className="grid gap-2 lg:grid-cols-2">
+                        {porContar.map(({ consulta, salas }) => (
+                            <li key={consulta.id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
                                 <div className="min-w-0">
                                     <p className="text-body-sm font-black text-content truncate" title={consulta.nombre}>{consulta.nombre}</p>
-                                    <p className="text-label font-bold text-content-3 truncate">
-                                        {sala.sala}{sala.estado === 'RECONTAR' ? ' · hay que volver a contar' : ''}
-                                    </p>
+                                    {consulta.motivo && (
+                                        <p className="text-label font-bold text-content-3 truncate" title={consulta.motivo}>{consulta.motivo}</p>
+                                    )}
                                 </div>
-                                <Button variant="primary" size="sm" icon={ClipboardCheck} onClick={() => setContando(sala.id)}>
-                                    {sala.estado === 'RECONTAR' ? 'Recontar' : 'Contar'}
-                                </Button>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {salas.map(s => {
+                                        const recontar = s.estado === 'RECONTAR';
+                                        return (
+                                            <Button key={s.id} size="sm" variant={recontar ? 'secondary' : 'primary'}
+                                                icon={recontar ? RotateCcw : ClipboardCheck} onClick={() => setContando(s.id)}
+                                                title={recontar ? `${s.sala}: no cuadró, hay que volver a contar` : `Contar en ${s.sala}`}>
+                                                {salas.length === 1 && !recontar ? 'Contar' : s.sala}
+                                                {recontar && salas.length > 1 ? ' · recontar' : ''}
+                                                {recontar && salas.length === 1 ? 'Volver a contar' : ''}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -171,24 +187,36 @@ export default function TabConsultasExistencia() {
                         <p className="text-body-sm font-bold text-content-3">Todavía no se pidió ningún conteo</p>
                     </div>
                 ) : (
-                    <ul className="space-y-2">
+                    <ul className="grid gap-2 lg:grid-cols-2">
                         {consultas.map(c => {
                             const quien = empleado(c.pedido_por);
+                            const salas = c.salas ?? [];
+                            const contestaron = salas.filter(s => !['PENDIENTE', 'RECONTAR'].includes(s.estado)).length;
+                            const descuadres = salas.filter(s => s.estado === 'DESCUADRE').length;
                             return (
                                 <li key={c.id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
-                                    <div className="min-w-0">
-                                        <p className="text-body-sm font-black text-content truncate" title={c.nombre}>{c.nombre}</p>
-                                        <p className="text-label font-bold text-content-3 flex items-center gap-1.5 min-w-0">
-                                            {quien && <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />}
-                                            <span className="truncate">
-                                                {quien ? shortEmployeeName(quien) : 'Sistema'}
-                                                {c.pedido_desde ? ` · ${c.pedido_desde}` : ''} · {fechaNumerica(c.created_at)}
-                                            </span>
-                                        </p>
-                                        {c.motivo && <p className="text-label text-content-2 mt-0.5">{c.motivo}</p>}
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-body-sm font-black text-content truncate" title={c.nombre}>{c.nombre}</p>
+                                            <p className="text-label font-bold text-content-3 flex items-center gap-1.5 min-w-0">
+                                                {quien && <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />}
+                                                <span className="truncate">
+                                                    {quien ? shortEmployeeName(quien) : 'Sistema'}
+                                                    {c.pedido_desde ? ` · ${c.pedido_desde}` : ''} · {fechaNumerica(c.created_at)}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <Badge size="sm" uppercase={false}
+                                            variant={descuadres ? 'danger' : contestaron === salas.length ? 'success' : 'neutral'}
+                                            icon={descuadres ? AlertTriangle : contestaron === salas.length ? CheckCircle2 : Clock}>
+                                            {descuadres
+                                                ? `${formatQty(descuadres)} con descuadre`
+                                                : `${formatQty(contestaron)} de ${formatQty(salas.length)} contaron`}
+                                        </Badge>
                                     </div>
-                                    <ul className="divide-y divide-divider">
-                                        {(c.salas ?? []).map(s => (
+                                    {c.motivo && <p className="text-label font-bold text-content-2">{c.motivo}</p>}
+                                    <ul className="grid gap-x-4 sm:grid-cols-2 border-t border-divider">
+                                        {salas.map(s => (
                                             <FilaDeSala key={s.id} sala={s} puedeAjustar={puedeAjustar} trabajando={trabajando}
                                                 onAjustar={() => abrirAjuste(c, s)}
                                                 onSinAjuste={() => setSinAjuste({ consulta: c, sala: s })} />
@@ -235,9 +263,9 @@ function FilaDeSala({ sala: s, puedeAjustar, trabajando, onAjustar, onSinAjuste 
     const est = ESTADO[s.estado] ?? ESTADO.PENDIENTE;
     const final = s.final;
     return (
-        <li className="py-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <li className={`py-2 border-b border-divider flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 ${s.estado === 'DESCUADRE' ? 'sm:col-span-2' : ''}`}>
             <div className="min-w-0">
-                <p className="text-body-sm font-bold text-content">{s.sala}</p>
+                <p className="text-body-sm font-bold text-content truncate">{s.sala}</p>
                 {final && (
                     <p className="text-label text-content-3 tabular-nums">
                         Contó {formatQty(final.contado)} · sistema {formatQty(final.sistema)}

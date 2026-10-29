@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1366.1 — El portal ya no rebaja React y Supabase en cada versión
+
+PENDIENTES 33 (B2 de la auditoría del 30-jul, más `pdfjs`). Medido antes y
+después sobre la misma compilación, en gzip:
+
+| | antes | después |
+|---|---:|---:|
+| arranque en frío (entry + lo que importa) | 303 kB | 303 kB |
+| lo que se vuelve a bajar tras cada versión | 303 kB | **184 kB** |
+| entrar a Facturas de compra | 138 kB | **10 kB** |
+
+- `vite.config.js` separa `vendor-react` (74 kB) y `vendor-supabase` (46 kB):
+  su contenido no cambia entre versiones, así que el navegador los conserva.
+  El arranque en frío no empeora — era el riesgo que la auditoría pedía medir.
+- `dtePdfCodigo.js` carga `pdfjs` (128 kB) recién al leer un PDF. Verificado
+  leyendo un PDF real con la compilación nueva. `gate:bundle` lo vigila por su
+  chunk `pdfjs`.
+
+---
+
 ## v2.1366.0 — Sucursales: cada sala ve sólo su expediente
 
 Lo legal, el alquiler (monto y arrendante), los servicios y los documentos propios de cada sala salieron de `branches.settings` —que lee cualquier sesión del portal— a la tabla nueva `sucursal_expediente`, que sólo ve quien tiene el módulo Sucursales con alcance a toda la red, o la sala propia. Un trigger los separa en cada escritura, así ningún escritor tiene que saber de la tabla; `editar_sucursal` lee y devuelve la sala entera. El aviso de vencimientos y el recordatorio del cuadre de antibióticos leen de la tabla nueva. Una sala cuyo expediente no se ve no muestra alertas de expediente ni las pestañas Expediente y Gastos, en el portal y en la app. Migración `20261029170526`.

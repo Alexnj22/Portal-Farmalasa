@@ -64,6 +64,7 @@ const PESADAS = {
   'vfs_fonts': 'pdfmake embebe las fuentes: 809 kB gzip. Sólo hace falta al generar el PDF.',
   'pdfmake': 'Sólo hace falta al generar el PDF.',
   'pdf.worker': 'pdfjs sólo hace falta al leer un PDF subido.',
+  'pdfjs': 'pdfjs sólo hace falta al leer un PDF subido (PENDIENTES 33). El chunk lo nombra vite.config.js.',
   'ort.bundle': 'onnxruntime (quitar fondo de fotos) — sólo al editar una foto.',
   'ort.webgpu': 'onnxruntime (quitar fondo de fotos) — sólo al editar una foto.',
   'jszip': 'Sólo hace falta al exportar el ZIP.',

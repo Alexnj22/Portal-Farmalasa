@@ -118,7 +118,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 ### Higiene y rendimiento (menor)
 31. ✅ Las 48 tablas sin `created_at`, con su motivo (2026-10-29): `auditoria/tablas-sin-created-at.json`, en 4 grupos. `gate:auditoria` falla si aparece una nueva sin declarar.
 32. ✅ Deuda de `gate:data` en cero (2026-10-29): escritura-a-ciegas 35→0, error-ignorado 26→0, las dos bloqueantes en cero.
-33. Separar vendors del chunk de entrada (B2); `pdfjs-dist` a `await import()`.
+33. ✅ Vendors fuera del entry y `pdfjs` por `import()` (2026-10-29). Facturas de compra 138→10 kB; tras cada deploy se bajan 184 kB en vez de 303 (React y Supabase quedan en caché); el arranque en frío no cambia (303 kB).
 34. Dos comentarios viejos en `operar-caja/index.ts:2779,2860`; logo vacío en el ticket.
 35. Dar de baja el cron `recordar-linea-base-egreso-mensual` (ya cumplió).
 36. COFARSAL AP3 → asignar la sala sola (pista sin medir).

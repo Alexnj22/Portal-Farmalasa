@@ -58,6 +58,20 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: (id) => id.startsWith('@capacitor/geolocation') || id.startsWith('@capacitor-community/background-geolocation'),
+      // B2 (PENDIENTES 33): las librerías de terceros en chunks propios. Su
+      // contenido no cambia entre despliegues, así que su nombre tampoco y el
+      // navegador las conserva; antes viajaban dentro del chunk de entrada y
+      // se volvían a bajar enteras con cada versión del portal.
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return 'vendor-react';
+          if (id.includes('node_modules/@supabase/')) return 'vendor-supabase';
+          // Nombre fijo para que `gate:bundle` lo reconozca si vuelve a entrar estático.
+          if (id.includes('node_modules/pdfjs-dist/')) return 'pdfjs';
+          return undefined;
+        },
+      },
     },
   },
   server: {

@@ -3,10 +3,23 @@
 // gráfica del DTE (dte_guia_tecnica.pdf pág. 7 — obligatorio en todo DTE) —
 // permite emparejar un PDF huérfano o un doc "confirmado sin JSON" con su
 // JSON real sin depender de un match manual a ciegas.
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+//
+// pdfjs se carga recién al leer un PDF (PENDIENTES 33): importado estático
+// viajaba entero en el chunk de Facturas de compra aunque nadie leyera uno.
+let pdfjsPromise = null;
+function getPdfjs() {
+    if (!pdfjsPromise) {
+        pdfjsPromise = Promise.all([
+            import('pdfjs-dist'),
+            import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+        ]).then(([lib, worker]) => {
+            const pdfjsLib = lib.default?.getDocument ? lib.default : lib;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = worker.default;
+            return pdfjsLib;
+        }).catch((err) => { pdfjsPromise = null; throw err; });
+    }
+    return pdfjsPromise;
+}
 
 const UUID_RE = /\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b/;
 
@@ -18,6 +31,7 @@ export async function extractCodigoGeneracionFromPdf(pdfUrl) {
     if (!res.ok) throw new Error(`No se pudo descargar el PDF (HTTP ${res.status})`);
     const buf = await res.arrayBuffer();
 
+    const pdfjsLib = await getPdfjs();
     const doc = await pdfjsLib.getDocument({ data: buf }).promise;
     for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);

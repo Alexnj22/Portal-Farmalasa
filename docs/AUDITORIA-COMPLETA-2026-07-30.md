@@ -111,7 +111,7 @@ Pero no estaba escrito en ningún lado, así que no se aplicó al resto:
 | `pdfmake` + `vfs_fonts` | `pedidoPrint.js`, `conteoInventarioPrint.js` | estático | **dinámico** ✅ |
 | `@zxing/*` | `LoginView` | dinámico ✅ | — |
 | `@imgly/background-removal` | `PhotoEditorModal` | dinámico ✅ | — |
-| `pdfjs-dist` | `dtePdfCodigo.js` → FacturasCompra | estático | pendiente |
+| `pdfjs-dist` | `dtePdfCodigo.js` → FacturasCompra | `import()` | hecho 2026-10-29 (138→10 kB) |
 | `jszip` | `data/facturasCompra.js` | estático | pendiente |
 | `recharts` | `ChartContainer` (95 kB) | estático | correcto (es el gráfico) |
 

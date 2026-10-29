@@ -379,6 +379,7 @@ export function parchesDeAjustes(base, nuevo, ruta = []) {
     return parches;
 }
 
+/** @type {Array<[string, (p: any) => any, (b: any) => any]>} */
 const COLUMNAS_DE_SUCURSAL = [
     ['name', (p) => p.name ?? p.branchName, (b) => b.name],
     ['address', (p) => p.address, (b) => b.address],
@@ -424,3 +425,18 @@ export function documentosDeEnfermeriaQueSalen(antes, despues) {
 /** Un día abierto cuyo cierre no es posterior a la apertura (cruza la medianoche). */
 export const horarioCruzaMedianoche = (horario) =>
     Object.values(limpiarHorario(horario)).some((d) => d && d.isOpen && d.start && d.end && d.end <= d.start);
+
+
+/**
+ * Une el expediente (`sucursal_expediente.datos`) a la sucursal. `datos`
+ * `undefined` = esta persona no puede ver el de esa sala: la sucursal queda
+ * marcada `expedienteOculto` para que alertas y pestañas no lo lean como
+ * «falta todo».
+ */
+export function unirExpediente(branch, datos) {
+    if (!branch) return branch;
+    if (datos === undefined) return { ...branch, expedienteOculto: true };
+    const ajustes = typeof branch.settings === 'string' ? JSON.parse(branch.settings) : (branch.settings || {});
+    const settings = { ...ajustes, ...datos };
+    return { ...branch, settings, rent: settings.rent || null, expedienteOculto: false };
+}

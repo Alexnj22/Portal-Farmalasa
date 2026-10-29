@@ -448,7 +448,7 @@ export const AREAS = [
             // `horario_de_sala()`; la usa `farmacia_estado()` para el chat.
             'src/components/forms/HorariosEspeciales.jsx',
         ],
-        tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map', 'sucursal_horario_especial'],
+        tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map', 'sucursal_horario_especial', 'sucursal_expediente'],
         edge: ['analyze-branch', 'check-doc-expiry'],
         crons: ['check-doc-expiry-daily'],
         docs: ['docs/SUCURSALES-EL-EXPEDIENTE-DE-CADA-SALA-2026-08-24.md'],

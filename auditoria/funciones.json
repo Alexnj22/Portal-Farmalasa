@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-28T22:10:28.246Z",
+ "generado": "2026-10-29T17:06:50.342Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -84,7 +84,7 @@
   },
   "antibioticos_lote_foto": {
    "area": "bitacoras",
-   "por": "código"
+   "por": "cron"
   },
   "anular_abono_diferencia": {
    "area": "cortes-efectivo",
@@ -387,13 +387,25 @@
    "area": "app-clientes",
    "por": "trigger"
   },
+  "app_tratamiento_agregar": {
+   "area": "ventas",
+   "por": "tablas"
+  },
   "app_tratamiento_cambiar": {
    "area": "app-clientes",
    "por": "código"
   },
+  "app_tratamiento_candidatos": {
+   "area": "ventas",
+   "por": "tablas"
+  },
   "app_tratamiento_dosis": {
    "area": "app-clientes",
-   "por": "llamada"
+   "por": "código"
+  },
+  "app_tratamiento_quitar": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "app_tratamientos_de": {
    "area": "app-clientes",
@@ -579,8 +591,8 @@
    "por": "cron"
   },
   "avisar_cuadre_antibioticos": {
-   "area": "comunicacion",
-   "por": "tablas"
+   "area": "bitacoras",
+   "por": "cron"
   },
   "avisar_descarga_grande": {
    "area": "sistema",
@@ -739,7 +751,7 @@
   },
   "bitacora_exigir_acceso": {
    "area": "bitacoras",
-   "por": "llamada"
+   "por": "código"
   },
   "bitacora_exigir_libro": {
    "area": "bitacoras",
@@ -2011,6 +2023,10 @@
    "area": "promociones",
    "por": "código"
   },
+  "editar_sucursal": {
+   "area": "sucursales",
+   "por": "código"
+  },
   "editar_tarifa_renglon": {
    "area": "promociones",
    "por": "código"
@@ -2325,7 +2341,7 @@
    "por": "tablas"
   },
   "es_medicamento_de_tratamiento": {
-   "area": "app-clientes",
+   "area": "ventas",
    "por": "llamada"
   },
   "es_solicitud_operativa": {
@@ -2399,7 +2415,7 @@
   },
   "familia_de_tratamiento": {
    "area": "app-clientes",
-   "por": "llamada"
+   "por": "tablas"
   },
   "farmacia_estado": {
    "area": "app-clientes",
@@ -2662,8 +2678,8 @@
    "por": "código"
   },
   "get_cuadre_antibioticos_mes": {
-   "area": "inventario",
-   "por": "tablas"
+   "area": "bitacoras",
+   "por": "código"
   },
   "get_cuentas_por_pagar": {
    "area": "compras",
@@ -3382,16 +3398,20 @@
    "por": "código"
   },
   "inyeccion_lote_aplicado": {
-   "area": "ventas",
-   "por": "llamada"
+   "area": "compras",
+   "por": "tablas"
   },
   "inyeccion_lote_pide": {
-   "area": "ventas",
+   "area": "cortes-efectivo",
    "por": "llamada"
   },
   "inyeccion_lote_valido": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "inyeccion_lotes_conocidos": {
    "area": "ventas",
-   "por": "llamada"
+   "por": "código"
   },
   "inyeccion_registrar": {
    "area": "cortes-efectivo",
@@ -3476,6 +3496,10 @@
   "kiosk_auth_code_for": {
    "area": "plataforma",
    "por": "llamada"
+  },
+  "kiosk_devices_tope": {
+   "area": "acceso",
+   "por": "trigger"
   },
   "liberar_parada_de_ruta": {
    "area": "pedidos",
@@ -3899,7 +3923,7 @@
    "por": "llamada"
   },
   "nombre_corto_de_empleado": {
-   "area": "cortes-efectivo",
+   "area": "sistema",
    "por": "llamada"
   },
   "nombre_de_pago": {
@@ -5144,8 +5168,8 @@
    "por": "trigger"
   },
   "seguridad_destinatarios": {
-   "area": "sistema",
-   "por": "llamada"
+   "area": "personal",
+   "por": "tablas"
   },
   "seguridad_rotulo_control": {
    "area": "sistema",
@@ -5163,6 +5187,10 @@
    "area": "facturacion-dte",
    "por": "a mano",
    "manual": true
+  },
+  "separar_expediente_de_sucursal": {
+   "area": "sucursales",
+   "por": "trigger"
   },
   "session_idle_limit_minutes": {
    "area": "plataforma",
@@ -5385,12 +5413,12 @@
    "por": "código"
   },
   "tratamiento_ajusta_dosis": {
-   "area": "app-clientes",
-   "por": "llamada"
+   "area": "productos",
+   "por": "tablas"
   },
   "tratamiento_dias_por_unidad": {
-   "area": "app-clientes",
-   "por": "llamada"
+   "area": "productos",
+   "por": "tablas"
   },
   "turno_del_dia": {
    "area": "horarios",

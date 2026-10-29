@@ -9,6 +9,7 @@
 // mínimo.
 import { supabase } from '../supabaseClient';
 import { correrMes, mesSV } from '../utils/fecha';
+import { unirExpediente } from '../utils/edicionDeSucursal';
 
 // ── Sucursal ─────────────────────────────────────────────────────────────────
 
@@ -23,8 +24,25 @@ export function updateBranch(branchId, patch) {
 // La fila VIVA, para comparar contra lo que hay en la base y no contra la copia
 // en memoria (que puede tener horas): de ahí salen el documento a archivar y
 // lo que se anota en la bitácora.
-export function fetchBranchRow(branchId) {
-    return supabase.from('branches').select('*').eq('id', branchId).single();
+export async function fetchBranchRow(branchId) {
+    const fila = await supabase.from('branches').select('*').eq('id', branchId).single();
+    if (fila.error || !fila.data) return fila;
+    const exp = await supabase.from('sucursal_expediente').select('datos').eq('branch_id', branchId).maybeSingle();
+    if (exp.error) return { data: null, error: exp.error };
+    return { data: unirExpediente(fila.data, exp.data ? exp.data.datos : undefined), error: null };
+}
+
+/**
+ * El expediente de cada sala (`legal`, `rent`, `services`, `customDocs`) vive
+ * en `sucursal_expediente` y no en `branches.settings`: así cada sala ve lo
+ * suyo. El RLS devuelve sólo las filas que esta persona puede ver; la que no
+ * viene es de una sala ajena. Devuelve `Map<branch_id, datos>`, o `null` si la
+ * lectura falló (quien llama deja las sucursales como estaban).
+ */
+export async function fetchExpedientes() {
+    const { data, error } = await supabase.from('sucursal_expediente').select('branch_id, datos');
+    if (error) { console.error('No se pudo leer el expediente de las sucursales:', error); return null; }
+    return new Map((data || []).map((f) => [Number(f.branch_id), f.datos || {}]));
 }
 
 /**
@@ -33,8 +51,10 @@ export function fetchBranchRow(branchId) {
  * dentro de `settings`; `columnas` = las columnas propias que cambiaron.
  * Devuelve `{ data: { antes, despues }, error }`.
  */
-export function editarSucursal(branchId, columnas, parches) {
-    return supabase.rpc('editar_sucursal', { p_id: Number(branchId), p_columnas: columnas || {}, p_parches: parches || [] });
+/** @returns {Promise<{ data: { antes: any, despues: any } | null, error: any }>} */
+export async function editarSucursal(branchId, columnas, parches) {
+    const { data, error } = await supabase.rpc('editar_sucursal', { p_id: Number(branchId), p_columnas: columnas || {}, p_parches: parches || [] });
+    return { data: /** @type {{ antes: any, despues: any } | null} */ (data), error };
 }
 
 export function deleteBranch(branchId) {
@@ -56,8 +76,10 @@ export function fetchBranchDocuments(branchId) {
 // Por RPC y no leyendo `audit_logs`: la bitácora entera no puede estar abierta
 // para que esta vista muestre el historial de UNA sucursal. El filtro va del
 // lado del servidor, junto con el permiso.
-export function fetchAuditLogsForBranch(branchId) {
-    return supabase.rpc('audit_log_de_sucursal', { p_branch_id: String(branchId) });
+/** @returns {Promise<{ data: Array<any> | null, error: any }>} */
+export async function fetchAuditLogsForBranch(branchId) {
+    const { data, error } = await supabase.rpc('audit_log_de_sucursal', { p_branch_id: String(branchId) });
+    return { data: /** @type {Array<any> | null} */ (data), error };
 }
 
 // ── Kioscos ──────────────────────────────────────────────────────────────────

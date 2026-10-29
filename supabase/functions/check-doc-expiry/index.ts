@@ -170,11 +170,25 @@ Deno.serve(async (req) => {
     }
     const destinatariosDe = (branchId: number) => [...new Set([...deRed, ...(deSala.get(Number(branchId)) || [])])];
 
-    const { data: branches, error: branchErr } = await supabase
+    const { data: filas, error: branchErr } = await supabase
       .from('branches')
       .select('id, name, settings');
-
     if (branchErr) throw branchErr;
+
+    // Desde el 2026-10-29 el expediente (legal, rent…) vive en
+    // `sucursal_expediente` y no en `branches.settings`. Si falla esta lectura
+    // se corta: sin ella no hay nada que vencer y el cron vería un 200 vacío.
+    const { data: expedientes, error: expErr } = await supabase
+      .from('sucursal_expediente')
+      .select('branch_id, datos');
+    if (expErr) throw expErr;
+    // deno-lint-ignore no-explicit-any
+    const expDe = new Map((expedientes || []).map((e: any) => [Number(e.branch_id), e.datos || {}]));
+    // deno-lint-ignore no-explicit-any
+    const branches = (filas || []).map((b: any) => ({
+      ...b,
+      settings: { ...(typeof b.settings === 'string' ? JSON.parse(b.settings) : (b.settings || {})), ...(expDe.get(Number(b.id)) || {}) },
+    }));
 
     const today = todayCST();
     let created = 0;

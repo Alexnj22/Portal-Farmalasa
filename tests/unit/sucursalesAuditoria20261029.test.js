@@ -133,3 +133,24 @@ describe('el expediente mira lo mismo que el aviso diario', () => {
         expect(alertaDelExpediente({ settings: { legal: { ...legal, extinguisherExpiration: '2026-10-01' } } }, hoy)).toBe('critical');
     });
 });
+
+describe('cada sucursal ve lo suyo: el expediente se une aparte', () => {
+    it('une el expediente a settings sin perder el horario ni la ubicación', async () => {
+        const { unirExpediente } = await import('@nucleo/utils/edicionDeSucursal');
+        const b = unirExpediente({ id: 1, settings: { location: { lat: 1 }, propertyType: 'RENTED' } }, { legal: { srsPermit: 'X' }, rent: { amount: 300 } });
+        expect(b.settings).toEqual({ location: { lat: 1 }, propertyType: 'RENTED', legal: { srsPermit: 'X' }, rent: { amount: 300 } });
+        expect(b.rent).toEqual({ amount: 300 });
+        expect(b.expedienteOculto).toBe(false);
+    });
+    it('una sala ajena queda marcada y sus alertas no inventan faltas', async () => {
+        const { unirExpediente } = await import('@nucleo/utils/edicionDeSucursal');
+        const { alertasDeSucursal, completitudDelPerfil } = await import('@nucleo/utils/sucursales');
+        const ajena = unirExpediente({ id: 2, type: 'FARMACIA', address: 'x', phone: '1', settings: { propertyType: 'RENTED' } }, undefined);
+        expect(ajena.expedienteOculto).toBe(true);
+        const mensajes = alertasDeSucursal(ajena, Date.now(), []).list.map((a) => a.message);
+        expect(mensajes).not.toContain('Falta regente');
+        expect(mensajes).not.toContain('Falta contrato');
+        expect(mensajes).not.toContain('Falta permiso SRS');
+        expect(completitudDelPerfil(ajena)).toEqual({ legal: null, property: null, services: null });
+    });
+});

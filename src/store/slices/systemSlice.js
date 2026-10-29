@@ -10,6 +10,8 @@ import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
 import { fetchSalarios, fetchCredenciales, fetchIdentidades, codigoDeCarneLibre, guardarDatosProtegidos, cuentaDeAcceso } from '../../data/employees';
 import { kioscoMarcajesRecientes } from '../../data/kiosco';
+import { fetchExpedientes } from '../../data/branches';
+import { unirExpediente } from '../../utils/edicionDeSucursal';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import {
     fetchHorariosDeLaSemana,
@@ -143,6 +145,7 @@ export const createSystemSlice = (set, get) => ({
                             supabase.from('shifts').select('*'),
                             supabase.from('announcements').select('*').order('created_at', { ascending: false }),
                         ]);
+                        const expedientes = branchData ? await fetchExpedientes() : null;
 
                         // Holidays
                         if (holidaysData) {
@@ -152,13 +155,15 @@ export const createSystemSlice = (set, get) => ({
 
                         // Branches
                         if (branchData) {
-                            const mappedBranches = branchData.map((b) => ({
-                                ...b,
-                                weeklyHours: b.weekly_hours,
-                                propertyType: /** @type {any} */ (b.settings)?.propertyType || 'OWNED',
-                                rent: /** @type {any} */ (b.settings)?.rent || null,
-                                type: b.type || 'FARMACIA',
-                            }));
+                            const mappedBranches = branchData
+                                .map((b) => (expedientes ? unirExpediente(b, expedientes.get(Number(b.id))) : b))
+                                .map((b) => ({
+                                    ...b,
+                                    weeklyHours: b.weekly_hours,
+                                    propertyType: /** @type {any} */ (b.settings)?.propertyType || 'OWNED',
+                                    rent: /** @type {any} */ (b.settings)?.rent || null,
+                                    type: b.type || 'FARMACIA',
+                                }));
                             set({ branches: mappedBranches });
                             almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));
                         }

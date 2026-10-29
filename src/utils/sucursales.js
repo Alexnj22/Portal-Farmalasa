@@ -64,6 +64,10 @@ export const completitudDelPerfil = (branch) => {
     const bType = branch.type || 'FARMACIA';
     const isFarmacia = bType === 'FARMACIA';
 
+    // Sin el expediente de esa sala no hay nada que puntuar: la barra no puede
+    // decir 0% sobre datos que esta persona simplemente no ve.
+    if (branch.expedienteOculto) return { legal: null, property: null, services: null };
+
     let legalScore = isFarmacia ? 0 : 100;
     if (isFarmacia) {
         if (legal.regentEmployeeId) legalScore += 40;
@@ -122,13 +126,18 @@ export const alertasDeSucursal = (branch, currentTimestamp, branchEmployees = []
         else if (diffDays < 0) alerts.push({ level: 'warning', message: `Revisar pago de ${serviceName}`, icono: 'AlertCircle' });
     };
 
-    if (!pType) alerts.push({ level: 'warning', message: 'Inmueble no definido', icono: 'Info' });
+    // Expediente de otra sala: no se ve, así que no se juzga (si no, toda sala
+    // ajena saldría con «Falta regente» y «Falta contrato»).
+    const oculto = branch.expedienteOculto === true;
+
+    if (oculto) { /* sin expediente que mirar */ }
+    else if (!pType) alerts.push({ level: 'warning', message: 'Inmueble no definido', icono: 'Info' });
     else if (pType === 'RENTED') {
         if (!settings.rent?.contract?.endDate) alerts.push({ level: 'warning', message: 'Falta contrato', icono: 'Info' });
         else evaluateDocExpiration(settings.rent.contract.endDate, "Contrato Alquiler", 60);
     }
 
-    if (isFarmacia) {
+    if (isFarmacia && !oculto) {
         if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta permiso SRS', icono: 'Info' });
         evaluateDocExpiration(legalData.srsExpiration, "Licencia CSSP/DNM", 60);
         evaluateDocExpiration(legalData.regentCredentialExp, "Credencial Regente", 45);
@@ -145,13 +154,13 @@ export const alertasDeSucursal = (branch, currentTimestamp, branchEmployees = []
         if (!horarioDefinido(branch)) alerts.push({ level: 'critical', message: 'Sin horarios', icono: 'Clock' });
         const hasJefe = branchEmployees.some(e => (e.role || '').toUpperCase().includes('JEFE') && !(e.role || '').toUpperCase().includes('SUB'));
         if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta jefe de sucursal', icono: 'Users' });
-        if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta regente', icono: 'Briefcase' });
-        if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta referente', icono: 'Shield' });
+        if (!oculto && !legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta regente', icono: 'Briefcase' });
+        if (!oculto && !legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta referente', icono: 'Shield' });
         // Enfermería sale de `nursingRegents` (con `nurses` sólo para filas viejas).
-        if (hasInjections && idsDeEnfermeria(legalData).length === 0) alerts.push({ level: 'critical', message: 'Falta enfermero/a', icono: 'Stethoscope' });
-        evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
-        evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
-        evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
+        if (!oculto && hasInjections && idsDeEnfermeria(legalData).length === 0) alerts.push({ level: 'critical', message: 'Falta enfermero/a', icono: 'Stethoscope' });
+        if (!oculto) evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
+        if (!oculto) evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
+        if (!oculto) evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
     }
 
     if (alerts.length === 0) return { hasAlerts: false, message: 'Operativa', critica: false, icono: 'CheckCircle2', list: [] };
@@ -182,7 +191,7 @@ export function ahoraEnSV(ms = Date.now()) {
  * @param {number}  p.empleados cuántas personas asignadas
  * @param {number}  p.kioscos   kioscos activos
  * @param {{list: Array<{level: string, message: string}>}} p.alertas  `alertasDeSucursal`
- * @param {{legal: number, property: number, services: number}} p.completitud  `completitudDelPerfil`
+ * @param {{legal: number|null, property: number|null, services: number|null}} p.completitud  `completitudDelPerfil`
  */
 export function datosParaElDiagnostico({ branch, inactiva, estado, horario, empleados, kioscos, alertas, completitud }) {
     const lista = alertas?.list || [];
@@ -193,6 +202,6 @@ export function datosParaElDiagnostico({ branch, inactiva, estado, horario, empl
         empleadosAsignados: empleados,
         kioscosActivos: kioscos,
         alertas: lista.length > 0 ? lista.map(a => `${String(a.level).toUpperCase()}: ${a.message}`) : ['Ninguna alerta, todo en orden.'],
-        progresoExpediente: `Documentos Legales: ${completitud?.legal}%, Datos del Local: ${completitud?.property}%, Servicios Básicos: ${completitud?.services}%`,
+        progresoExpediente: completitud?.legal == null ? 'No disponible' : `Documentos Legales: ${completitud?.legal}%, Datos del Local: ${completitud?.property}%, Servicios Básicos: ${completitud?.services}%`,
     };
 }

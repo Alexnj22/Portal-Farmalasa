@@ -377,7 +377,7 @@ const BranchCard = memo(({
                     </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
+                {!branch.expedienteOculto && <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
                     <PanelCompletitud icono={Scale} etiqueta="Legal" pct={completion.legal}
                         titulo="Completar datos legales" disabled={!canEdit}
                         onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} />
@@ -389,7 +389,7 @@ const BranchCard = memo(({
                     <PanelCompletitud icono={Zap} etiqueta="Serv." pct={completion.services}
                         titulo="Completar servicios básicos" disabled={!canEdit}
                         onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} />
-                </div>
+                </div>}
             </div>
 
             <div className="px-6 py-4 bg-surface-card border-t border-border-card shadow-[var(--shadow-shine)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">

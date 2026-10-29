@@ -2433,12 +2433,14 @@ export type Database = {
           customer_id: number
           dosis_at: string | null
           dosis_dia: number | null
+          dura_cliente: number | null
           dura_dias: number | null
           estado: string
           id: number
           intervalo_dias: number
           motivo: string | null
           nombre: string
+          origen: string
           product_id: number
           se_acaba: string | null
           suspendido_at: string | null
@@ -2452,12 +2454,14 @@ export type Database = {
           customer_id: number
           dosis_at?: string | null
           dosis_dia?: number | null
+          dura_cliente?: number | null
           dura_dias?: number | null
           estado?: string
           id?: number
           intervalo_dias: number
           motivo?: string | null
           nombre: string
+          origen?: string
           product_id: number
           se_acaba?: string | null
           suspendido_at?: string | null
@@ -2471,12 +2475,14 @@ export type Database = {
           customer_id?: number
           dosis_at?: string | null
           dosis_dia?: number | null
+          dura_cliente?: number | null
           dura_dias?: number | null
           estado?: string
           id?: number
           intervalo_dias?: number
           motivo?: string | null
           nombre?: string
+          origen?: string
           product_id?: number
           se_acaba?: string | null
           suspendido_at?: string | null
@@ -4742,7 +4748,7 @@ export type Database = {
       branch_documents: {
         Row: {
           branch_id: number
-          created_at: string | null
+          created_at: string
           document_type: string
           expiration_date: string | null
           file_url: string | null
@@ -4754,7 +4760,7 @@ export type Database = {
         }
         Insert: {
           branch_id: number
-          created_at?: string | null
+          created_at?: string
           document_type: string
           expiration_date?: string | null
           file_url?: string | null
@@ -4766,7 +4772,7 @@ export type Database = {
         }
         Update: {
           branch_id?: number
-          created_at?: string | null
+          created_at?: string
           document_type?: string
           expiration_date?: string | null
           file_url?: string | null
@@ -4791,7 +4797,7 @@ export type Database = {
           amount: number
           billing_month: string
           branch_id: number
-          created_at: string | null
+          created_at: string
           due_date: string
           expense_type: string
           id: number
@@ -4804,7 +4810,7 @@ export type Database = {
           amount: number
           billing_month: string
           branch_id: number
-          created_at?: string | null
+          created_at?: string
           due_date: string
           expense_type: string
           id?: number
@@ -4817,7 +4823,7 @@ export type Database = {
           amount?: number
           billing_month?: string
           branch_id?: number
-          created_at?: string | null
+          created_at?: string
           due_date?: string
           expense_type?: string
           id?: number
@@ -26791,6 +26797,35 @@ export type Database = {
         }
         Relationships: []
       }
+      sucursal_expediente: {
+        Row: {
+          branch_id: number
+          created_at: string
+          datos: Json
+          updated_at: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          datos?: Json
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          datos?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sucursal_expediente_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sucursal_horario_especial: {
         Row: {
           abre: string | null
@@ -29154,6 +29189,15 @@ export type Database = {
         Args: { p_customer_id: number; p_id: number }
         Returns: Json
       }
+      app_tratamiento_agregar: {
+        Args: {
+          p_customer: number
+          p_dias: number
+          p_dosis: number
+          p_product_id: number
+        }
+        Returns: Json
+      }
       app_tratamiento_cambiar: {
         Args: {
           p_activo: boolean
@@ -29163,8 +29207,16 @@ export type Database = {
         }
         Returns: Json
       }
+      app_tratamiento_candidatos: {
+        Args: { p_customer: number }
+        Returns: Json
+      }
       app_tratamiento_dosis: {
         Args: { p_customer: number; p_dosis: number; p_product_id: number }
+        Returns: Json
+      }
+      app_tratamiento_quitar: {
+        Args: { p_customer: number; p_id: number }
         Returns: Json
       }
       app_tratamientos_de: { Args: { p_customer: number }; Returns: Json }
@@ -30993,6 +31045,10 @@ export type Database = {
       }
       editar_reparto: {
         Args: { p_renglon_id: number; p_reparto: Json }
+        Returns: Json
+      }
+      editar_sucursal: {
+        Args: { p_columnas: Json; p_id: number; p_parches: Json }
         Returns: Json
       }
       editar_tarifa_renglon: {

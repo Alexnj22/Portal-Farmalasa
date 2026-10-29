@@ -205,11 +205,14 @@ function Resumen({ b, gente, kioscos, puedeEditar }) {
           </View>
         ) : null}
       </Seccion>
-      <Seccion titulo="Perfil completo">
-        <Barra rotulo="Legal" pct={comp.legal} />
-        <Barra rotulo="Inmueble" pct={comp.property} />
-        <Barra rotulo="Servicios" pct={comp.services} />
-      </Seccion>
+      {/* Sin el expediente de esta sala no hay perfil que medir. */}
+      {b.expedienteOculto ? null : (
+        <Seccion titulo="Perfil completo">
+          <Barra rotulo="Legal" pct={comp.legal} />
+          <Barra rotulo="Inmueble" pct={comp.property} />
+          <Barra rotulo="Servicios" pct={comp.services} />
+        </Seccion>
+      )}
     </>
   );
 }
@@ -419,10 +422,12 @@ export default function Sucursal() {
           </View>
         </View>
         <Segmentos activa={pestana} onCambiar={setPestana}
-          opciones={[{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Expediente' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
+          opciones={b.expedienteOculto
+            ? [{ id: 'resumen', label: 'Resumen' }, { id: 'historial', label: 'Historial' }]
+            : [{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Expediente' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
         {pestana === 'resumen' ? <Resumen b={b} gente={gente} kioscos={kioscos} puedeEditar={puedeEditar} /> : null}
-        {pestana === 'expediente' ? <Expediente b={b} puedeEditar={puedeEditar} /> : null}
-        {pestana === 'gastos' ? <Gastos b={b} puedeEditar={puedeEditar} /> : null}
+        {pestana === 'expediente' && !b.expedienteOculto ? <Expediente b={b} puedeEditar={puedeEditar} /> : null}
+        {pestana === 'gastos' && !b.expedienteOculto ? <Gastos b={b} puedeEditar={puedeEditar} /> : null}
         {pestana === 'historial' ? <Historial b={b} empleados={empleados} /> : null}
         {puedeEditar ? (
           <Seccion titulo="Editar">

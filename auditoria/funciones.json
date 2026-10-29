@@ -626,6 +626,10 @@
    "area": "ventas",
    "por": "cron"
   },
+  "avisar_facturas_descuadradas": {
+   "area": "ventas",
+   "por": "cron"
+  },
   "avisar_factores_sospechosos": {
    "area": "productos",
    "por": "cron"

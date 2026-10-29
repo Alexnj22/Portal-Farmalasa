@@ -53,16 +53,34 @@ export function horaDeCorte(ffin, hoy = hoySV(), hora = horaSV()) {
     return hora.replace(/:\d\d$/, ':00');
 }
 
-/** El producto que se lee como descuento (canje de puntos) en los renglones. */
-export const PRODUCTO_DESCUENTO = -999;
+/**
+ * El renglón del canje de puntos: el origen lo manda con producto `0`, sin
+ * descripción y con el monto canjeado en positivo. Medido el 2026-10-29 desde
+ * ene-2025: 909 facturas con ese renglón y las 909 cuadran al centavo.
+ * (Antes se buscaba `-999`, un código que el origen no usa nunca.)
+ */
+export const PRODUCTO_PUNTOS = 0;
+
+/** Lo que el detalle puede separarse del total por redondeo, sin ser un error. */
+const TOLERANCIA_DESCUADRE = 0.05;
 
 /**
  * Los renglones de una venta listos para mostrar: sin duplicados (la
- * sincronización puede traer el mismo renglón dos veces), los productos y el
- * descuento por puntos. Si no viene el renglón de descuento pero la suma de los
- * productos pasa al total por más de un centavo, esa diferencia ES el descuento.
+ * sincronización puede traer el mismo renglón dos veces), los productos, el
+ * descuento por puntos y el DESCUADRE.
+ *
+ * Los puntos salen SÓLO de su renglón. Una diferencia entre el detalle y el
+ * total sin renglón que la explique no es un descuento: es un documento mal
+ * hecho, y se devuelve como `descuadre` para que la pantalla lo avise. Antes
+ * esa diferencia se pintaba como «Descuento por puntos» — la CCF 401909 de
+ * Salud 1 mostró −$63.55 de puntos que nadie canjeó.
+ *
+ * Contra qué se compara depende del documento: en el CCF los renglones van
+ * SIN IVA (contra el subtotal); en los demás van con IVA, y el total ya trae
+ * restada la retención.
+ *   → { productos, descuento, descuadre }  (descuadre > 0: el detalle suma de más)
  */
-export function renglonesDeLaVenta(items, total) {
+export function renglonesDeLaVenta(items, venta = {}) {
     const vistos = new Set();
     const unicos = (items || []).filter((it) => {
         const firma = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
@@ -70,13 +88,16 @@ export function renglonesDeLaVenta(items, total) {
         vistos.add(firma);
         return true;
     });
-    const descuentos = unicos.filter((it) => it.erp_product_id === PRODUCTO_DESCUENTO);
-    const productos = unicos.filter((it) => it.erp_product_id !== PRODUCTO_DESCUENTO && it.descripcion);
-    const porRenglon = descuentos.reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
+    const esPuntos = (it) => it.erp_product_id === PRODUCTO_PUNTOS;
+    const productos = unicos.filter((it) => !esPuntos(it) && it.descripcion);
+    const descuento = unicos.filter(esPuntos).reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
+    if (!productos.length) return { productos, descuento, descuadre: 0 };
     const suma = productos.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
-    const porDiferencia = suma - parseFloat(total || 0);
-    const descuento = descuentos.length ? porRenglon : (porDiferencia > 0.01 ? porDiferencia : 0);
-    return { productos, descuento };
+    const esperado = venta.tipo_documento === 'CCF' && venta.subtotal != null
+        ? parseFloat(venta.subtotal)
+        : parseFloat(venta.total || 0) + parseFloat(venta.retencion || 0);
+    const diferencia = Math.round((suma - descuento - esperado) * 100) / 100;
+    return { productos, descuento, descuadre: Math.abs(diferencia) > TOLERANCIA_DESCUADRE ? diferencia : 0 };
 }
 
 // ── Vendedores ──────────────────────────────────────────────────────────────

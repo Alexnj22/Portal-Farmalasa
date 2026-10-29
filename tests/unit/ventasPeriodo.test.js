@@ -21,13 +21,27 @@ describe('ventasPeriodo', () => {
         expect(horaDeCorte('2026-10-02', '2026-10-02', '14:37:51')).toBe('14:37:00');
         expect(horaDeCorte('2026-10-01', '2026-10-02', '14:37:51')).toBeNull();
     });
-    it('renglones: sin duplicados, descuento por renglón o por diferencia', () => {
+    it('renglones: sin duplicados, puntos sólo por su renglón, el resto es descuadre', () => {
         const a = { erp_product_id: 1, descripcion: 'A', precio_unitario: 2, total_linea: 4, cantidad: 2 };
-        expect(renglonesDeLaVenta([a, { ...a }], 4)).toEqual({ productos: [a], descuento: 0 });
-        const d = { erp_product_id: -999, descripcion: 'DESC', total_linea: -1.5 };
-        expect(renglonesDeLaVenta([a, d], 2.5).descuento).toBe(1.5);
-        expect(renglonesDeLaVenta([a], 3).descuento).toBe(1);
-        expect(renglonesDeLaVenta([a], 3.995).descuento).toBe(0);
+        expect(renglonesDeLaVenta([a, { ...a }], { total: 4 })).toEqual({ productos: [a], descuento: 0, descuadre: 0 });
+        const p = { erp_product_id: 0, descripcion: null, precio_unitario: 1.5, total_linea: 1.5 };
+        expect(renglonesDeLaVenta([a, p], { total: 2.5 })).toEqual({ productos: [a], descuento: 1.5, descuadre: 0 });
+        // Sin renglón de puntos, la diferencia NO es un descuento.
+        expect(renglonesDeLaVenta([a], { total: 3 })).toEqual({ productos: [a], descuento: 0, descuadre: 1 });
+        expect(renglonesDeLaVenta([a], { total: 3.97 }).descuadre).toBe(0);
+        // Retención: el total ya la trae restada.
+        expect(renglonesDeLaVenta([a], { total: 3.96, retencion: 0.04 }).descuadre).toBe(0);
+    });
+    it('renglones: el CCF se compara sin IVA (la CCF 401909 de Salud 1)', () => {
+        const items = [
+            { erp_product_id: 151, descripcion: 'VIGADEXA', precio_unitario: 20.15, total_linea: 35.66, lote: '78923' },
+            { erp_product_id: 151, descripcion: 'VIGADEXA', precio_unitario: 20.15, total_linea: 53.5, lote: '78906' },
+            { erp_product_id: 2054, descripcion: 'ENANTYUM', precio_unitario: 1.9, total_linea: 42.04, lote: 'GENERICO' },
+        ];
+        const r = renglonesDeLaVenta(items, { tipo_documento: 'CCF', total: 67.65, subtotal: 59.87 });
+        expect(r.descuento).toBe(0);
+        expect(r.descuadre).toBe(71.33);
+        expect(renglonesDeLaVenta(items.slice(0, 1), { tipo_documento: 'CCF', total: 40.30, subtotal: 35.66 }).descuadre).toBe(0);
     });
 });
 

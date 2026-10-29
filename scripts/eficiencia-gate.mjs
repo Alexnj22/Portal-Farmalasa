@@ -618,6 +618,14 @@ const CRONS = [
           + 'origen (U2, 2026-09-26).',
   },
   {
+    job: 'facturas-descuadradas', slug: null, cadencia: '25 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'SQL puro: `avisar_facturas_descuadradas` suma el detalle de las facturas de los '
+          + 'últimos 3 días contra su total y avisa una vez por factura cuyo detalle no cuadra '
+          + '(error de facturación, no puntos). Medido: 16 ms y ~8,300 bloques por corrida, por '
+          + '`idx_sales_invoices_fecha` + `idx_sii_invoice_covering`. No toca el sistema de origen.',
+  },
+  {
     job: 'dias-sin-cierre-0700-sv', slug: null, cadencia: '0 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: `avisar_dias_sin_cierre` le avisa a la sala y a supervisión, a las 7:00 SV, '

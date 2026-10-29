@@ -568,7 +568,9 @@ export const AREAS = [
                 'dte-resync-month-salud3', 'dte-resync-month-salud4', 'dte-resync-month-salud5',
                 // El vigilante de `venta_valida` (U2, 2026-09-26): avisa si
                 // aparece un estado de factura que nadie conoce.
-                'estados-de-venta-desconocidos'],
+                'estados-de-venta-desconocidos',
+                // Avisa la factura cuyo detalle no suma su total (2026-10-29).
+                'facturas-descuadradas'],
         docs: ['docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md',
                'docs/planes-cerrados/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md'],
     },

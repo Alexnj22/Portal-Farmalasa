@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1373.4 — Ventas: el detalle descuadrado se avisa como error de factura, no como puntos
+
+La CCF 401909 de Salud 1 mostraba «Descuento por puntos −$63.55» sin que nadie
+canjeara nada. `renglonesDeLaVenta` buscaba los puntos en el producto `-999`
+—que el origen no usa— y, al no encontrarlo, llamaba «puntos» a cualquier
+diferencia entre el detalle y el total.
+
+- **Los puntos salen sólo de su renglón** (producto `0`). Medido desde
+  ene-2025: 909 facturas con canje y las 909 cuadran al centavo.
+- **Cualquier otra diferencia es un error de factura** y la pantalla lo dice
+  en rojo. El CCF se compara sin IVA (contra el subtotal); los demás, contra
+  total + retención. De 396,722 facturas, sólo 2 descuadran.
+- **Aviso**: `avisar_facturas_descuadradas()` (cron `facturas-descuadradas`,
+  cada hora a los :25) mira los últimos 3 días y notifica a Gerente General y
+  Supervisor/a de Ventas, una vez por factura. 16 ms por corrida.
+
 ## v2.1373.3 — Plan de compras: lo leído del sistema y las decisiones
 
 Sólo documentación (`PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md` §4 bis y §5):

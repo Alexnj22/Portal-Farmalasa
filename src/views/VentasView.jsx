@@ -753,16 +753,25 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     </div>
                 ) : (
                     (() => {
-                        const { productos: regularItems, descuento: finalDiscount } = renglonesDeLaVenta(cachedItems, r.total);
+                        const { productos: regularItems, descuento: finalDiscount, descuadre } = renglonesDeLaVenta(cachedItems, r);
                         const nameTxt = 'text-content-2';
                         const numTxt = 'text-content-3';
                         return (
-                            /* `DataTable` y no una tabla a mano: en el teléfono cada
+                            <>
+                            {/* Un detalle que no suma el total, sin renglón de puntos que lo
+                                explique, es un documento mal hecho — no un descuento. */}
+                            {descuadre !== 0 && (
+                                <Notice variant="danger" icon={AlertTriangle} className="mb-2">
+                                    Error en la factura: los productos suman {fmt(Math.abs(descuadre))} {descuadre > 0 ? 'más' : 'menos'} que el total del documento
+                                    {r.tipo_documento === 'CCF' ? ' (sin IVA)' : ''}. Hay que revisarla.
+                                </Notice>
+                            )}
+                            {/* `DataTable` y no una tabla a mano: en el teléfono cada
                                línea cae a ficha con el producto arriba y su total a la
                                derecha. El descuento por puntos deja de ser un `<tr>`
                                con `colSpan` —que en modo ficha no significa nada— y
                                pasa a `footer`, que es donde el canónico pone los
-                               totales y se dibuja igual en las dos formas. */
+                               totales y se dibuja igual en las dos formas. */}
                             <DataTable
                                 columns={[
                                     { key: 'producto', label: 'Producto' },
@@ -830,6 +839,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         );
                                     })}
                             </DataTable>
+                            </>
                         );
                     })()
                 )}

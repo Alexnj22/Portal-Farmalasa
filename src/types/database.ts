@@ -29414,6 +29414,7 @@ export type Database = {
       avisar_estados_de_venta_desconocidos: { Args: never; Returns: number }
       avisar_factores_sospechosos: { Args: never; Returns: number }
       avisar_facturas_de_sala: { Args: never; Returns: number }
+      avisar_facturas_descuadradas: { Args: never; Returns: number }
       avisar_falla_del_consejo: {
         Args: { p_detalle?: string }
         Returns: boolean

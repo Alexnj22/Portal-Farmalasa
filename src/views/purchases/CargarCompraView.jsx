@@ -226,6 +226,7 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
     const resumen = p?.resumen;
     const faltan = (p?.renglones ?? []).filter(r => r.falta.length > 0).length;
     const revision = resultado?.revision;
+    const pendientesDeVence = (revision?.renglones ?? []).filter(x => x.vence_pendiente).length;
     const entraComo = useMemo(() => new Map((revision?.renglones ?? []).map(x => [x.renglon, x])), [revision]);
 
     return (
@@ -275,6 +276,12 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                         <Notice variant="success" icon={CheckCircle2}>
                             <b>Lista para cargar.</b> {revision.renglones.length} renglones · total{' '}
                             {formatMoney(revision.total_armado)}, igual al del documento.
+                            {pendientesDeVence > 0 && (
+                                <span className="block mt-1">
+                                    {pendientesDeVence === 1 ? 'Un renglón va' : `${pendientesDeVence} renglones van`} sin
+                                    vencimiento: se le va a pedir a la sala que lo reciba.
+                                </span>
+                            )}
                             <span className="block text-micro mt-1">Todavía no se manda: esto fue una revisión.</span>
                         </Notice>
                     ) : (
@@ -340,6 +347,9 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                                 <p className="text-micro text-success-text">
                                                     entran {sim.existencias} unid.{sim.presentacion > 1 ? ` (en cajas de ${sim.presentacion})` : ''}
                                                 </p>
+                                            )}
+                                            {sim?.vence_pendiente && (
+                                                <p className="text-micro text-warning-text">el vencimiento lo pone la sala</p>
                                             )}
                                         </div>
                                         {uso === 'venta' && (

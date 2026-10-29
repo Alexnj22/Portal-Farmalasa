@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1377.2 — Cargar compra: el vencimiento que falta lo pone la sala
+
+Decisión del usuario para Sarita, que no manda vencimiento: «que las salas de
+venta pongan el vence, haya una alerta o algo que recuerde». Un renglón
+perecedero sin fecha ya no frena la carga: va vacío —así lo acepta hoy el
+sistema, medido en los lotes de Barrita Fresa— y queda «vence pendiente». Sólo
+frena si el producto es regulado. La pantalla lo dice por renglón. El pedido a
+la sala, con aviso en la campana, entra con el reparto (paso 6): el lote es uno
+para toda la red, así que la primera sala que lo pone lo resuelve.
+
 ## v2.1377.1 — Cargar compra: el tamaño de la caja sale de la factura o del costo
 
 - «Unid. por caja» se propone en este orden: lo que dice la factura

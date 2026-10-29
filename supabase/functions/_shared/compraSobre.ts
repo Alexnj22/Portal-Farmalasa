@@ -113,11 +113,17 @@ export function lineaDelSobre(
     return { linea: null, problemas };
   }
 
+  // Sin vencimiento: el sistema lo acepta vacío —así se carga hoy Sarita,
+  // medido en sus lotes del 21-oct— y el lote es UNO para toda la red, así que
+  // la primera sala que lo recibe le pone la fecha (usuario, 2026-10-29). Sólo
+  // un producto REGULADO frena: ahí la fecha es parte del control sanitario.
   let vence = "NULL";
+  let vencePendiente = false;
   if (p.perecedero) {
     const m = /^(\d{4})-(\d{2})/.exec(d.vence ?? "");
     if (m) vence = `${m[1]}-${m[2]}-01`;
-    else problemas.push({ renglon: i, texto: `«${p.nombre}» vence y el renglón no dice cuándo.` });
+    else if (p.regulado) problemas.push({ renglon: i, texto: `«${p.nombre}» es regulado y el renglón no dice cuándo vence.` });
+    else { vence = ""; vencePendiente = true; }
   }
   const lote = p.regulado ? String(d.lote ?? "").trim() : "";
   if (p.regulado && !lote) problemas.push({ renglon: i, texto: `«${p.nombre}» lleva lote y el renglón no lo trae.` });
@@ -130,7 +136,7 @@ export function lineaDelSobre(
       compra_fin: compra.toFixed(4), numero_lote: lote,
     },
     problemas,
-    detalle: { presentacion: pres.unidad, existencias: r4(cant * pres.unidad) },
+    detalle: { presentacion: pres.unidad, existencias: r4(cant * pres.unidad), vence_pendiente: vencePendiente },
   };
 }
 

@@ -135,6 +135,25 @@ Decisiones del usuario:
    se elige en el renglón y se aprende junto al producto; si el producto no
    existe, se crea desde ahí mismo.
 
+## 4 ter. El vencimiento que no trae la factura (usuario, 2026-10-29)
+
+Sarita no manda vencimiento y sus helados son perecederos. Medido en el
+sistema (sólo lectura, `admin_lotes.php process=lotes`): **hoy ya se cargan sin
+fecha** —los lotes de Barrita Fresa tienen el vencimiento vacío— y **el lote es
+uno solo para toda la red** (el 32461 existe en Bodega, Salud 3 y Salud 2, cada
+una con su cantidad). La fecha se corrige con `admin_lotes.php
+process=actualizar` (`id_lote`, `fecha`).
+
+Decisión: «que las salas de venta pongan el vence, haya una alerta o algo que
+recuerde».
+
+- La carga NO frena por un vencimiento faltante: el renglón va vacío y queda
+  «vence pendiente». Sólo frena si el producto es **regulado**.
+- En el reparto (paso 6), la sala que recibe ese producto ve el campo de
+  vencimiento en la misma pantalla de recibir y un aviso en la campana hasta
+  ponerlo. Como el lote es de la red, **la primera sala que lo pone lo resuelve
+  para todas**; el portal lo escribe en el lote con `actualizar`.
+
 ## 5. Orden de trabajo
 
 | | qué | listo cuando |

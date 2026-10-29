@@ -34,10 +34,19 @@ describe('lineaDelSobre', () => {
         expect(detalle.existencias).toBe(20);
     });
 
-    it('perecedero sin vencimiento es un problema, no un NULL silencioso', () => {
-        const { problemas } = lineaDelSobre(3,
+    it('perecedero sin vencimiento entra vacío y queda pendiente para la sala', () => {
+        const { linea, problemas, detalle } = lineaDelSobre(3,
             { descripcion: 'X', cantidad: 1, precio: 1, descuento: 0, exento: false },
             { tipo: 'producto', producto: CONO, factor: 1, lote: null, vence: null });
+        expect(problemas).toEqual([]);
+        expect(linea.vence).toBe('');
+        expect(detalle.vence_pendiente).toBe(true);
+    });
+
+    it('regulado sin vencimiento SÍ frena', () => {
+        const { problemas } = lineaDelSobre(3,
+            { descripcion: 'X', cantidad: 1, precio: 1, descuento: 0, exento: false },
+            { tipo: 'producto', producto: { ...CONO, regulado: true }, factor: 1, lote: 'L1', vence: null });
         expect(problemas).toHaveLength(1);
         expect(problemas[0].renglon).toBe(3);
     });

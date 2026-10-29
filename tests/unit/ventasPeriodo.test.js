@@ -23,11 +23,11 @@ describe('ventasPeriodo', () => {
     });
     it('renglones: sin duplicados, puntos sólo por su renglón, el resto es descuadre', () => {
         const a = { erp_product_id: 1, descripcion: 'A', precio_unitario: 2, total_linea: 4, cantidad: 2 };
-        expect(renglonesDeLaVenta([a, { ...a }], { total: 4 })).toEqual({ productos: [a], descuento: 0, descuadre: 0 });
+        expect(renglonesDeLaVenta([a, { ...a }], { total: 4 })).toEqual({ productos: [a], descuento: 0, descuadre: 0, cobroEsperado: 4 });
         const p = { erp_product_id: 0, descripcion: null, precio_unitario: 1.5, total_linea: 1.5 };
-        expect(renglonesDeLaVenta([a, p], { total: 2.5 })).toEqual({ productos: [a], descuento: 1.5, descuadre: 0 });
+        expect(renglonesDeLaVenta([a, p], { total: 2.5 })).toEqual({ productos: [a], descuento: 1.5, descuadre: 0, cobroEsperado: 2.5 });
         // Sin renglón de puntos, la diferencia NO es un descuento.
-        expect(renglonesDeLaVenta([a], { total: 3 })).toEqual({ productos: [a], descuento: 0, descuadre: 1 });
+        expect(renglonesDeLaVenta([a], { total: 3 })).toEqual({ productos: [a], descuento: 0, descuadre: 1, cobroEsperado: 4 });
         expect(renglonesDeLaVenta([a], { total: 3.97 }).descuadre).toBe(0);
         // Retención: el total ya la trae restada.
         expect(renglonesDeLaVenta([a], { total: 3.96, retencion: 0.04 }).descuadre).toBe(0);
@@ -41,6 +41,8 @@ describe('ventasPeriodo', () => {
         const r = renglonesDeLaVenta(items, { tipo_documento: 'CCF', total: 67.65, subtotal: 59.87 });
         expect(r.descuento).toBe(0);
         expect(r.descuadre).toBe(71.33);
+        // Lo que se debía cobrar, con IVA: 131.20 × 1.13.
+        expect(r.cobroEsperado).toBe(148.26);
         expect(renglonesDeLaVenta(items.slice(0, 1), { tipo_documento: 'CCF', total: 40.30, subtotal: 35.66 }).descuadre).toBe(0);
     });
 });

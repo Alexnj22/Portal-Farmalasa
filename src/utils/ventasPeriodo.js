@@ -78,7 +78,11 @@ const TOLERANCIA_DESCUADRE = 0.05;
  * Contra qué se compara depende del documento: en el CCF los renglones van
  * SIN IVA (contra el subtotal); en los demás van con IVA, y el total ya trae
  * restada la retención.
- *   → { productos, descuento, descuadre }  (descuadre > 0: el detalle suma de más)
+ *
+ * `cobroEsperado` es lo que se debía cobrar según los productos, en la misma
+ * base que `total` (con IVA, sin los puntos y sin la retención): es la cifra
+ * que la sala compara con lo que facturó.
+ *   → { productos, descuento, descuadre, cobroEsperado }  (descuadre > 0: el detalle suma de más)
  */
 export function renglonesDeLaVenta(items, venta = {}) {
     const vistos = new Set();
@@ -91,13 +95,19 @@ export function renglonesDeLaVenta(items, venta = {}) {
     const esPuntos = (it) => it.erp_product_id === PRODUCTO_PUNTOS;
     const productos = unicos.filter((it) => !esPuntos(it) && it.descripcion);
     const descuento = unicos.filter(esPuntos).reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
-    if (!productos.length) return { productos, descuento, descuadre: 0 };
-    const suma = productos.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
-    const esperado = venta.tipo_documento === 'CCF' && venta.subtotal != null
-        ? parseFloat(venta.subtotal)
-        : parseFloat(venta.total || 0) + parseFloat(venta.retencion || 0);
-    const diferencia = Math.round((suma - descuento - esperado) * 100) / 100;
-    return { productos, descuento, descuadre: Math.abs(diferencia) > TOLERANCIA_DESCUADRE ? diferencia : 0 };
+    if (!productos.length) return { productos, descuento, descuadre: 0, cobroEsperado: null };
+    const centavos = (n) => Math.round(n * 100) / 100;
+    const esCcf = venta.tipo_documento === 'CCF' && venta.subtotal != null;
+    const retencion = parseFloat(venta.retencion || 0);
+    const neto = productos.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0) - descuento;
+    const esperado = esCcf ? parseFloat(venta.subtotal) : parseFloat(venta.total || 0) + retencion;
+    const diferencia = centavos(neto - esperado);
+    return {
+        productos,
+        descuento,
+        descuadre: Math.abs(diferencia) > TOLERANCIA_DESCUADRE ? diferencia : 0,
+        cobroEsperado: centavos((esCcf ? centavos(neto * 1.13) : neto) - retencion),
+    };
 }
 
 // ── Vendedores ──────────────────────────────────────────────────────────────

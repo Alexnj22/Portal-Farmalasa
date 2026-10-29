@@ -753,7 +753,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     </div>
                 ) : (
                     (() => {
-                        const { productos: regularItems, descuento: finalDiscount, descuadre } = renglonesDeLaVenta(cachedItems, r);
+                        const { productos: regularItems, descuento: finalDiscount, descuadre, cobroEsperado } = renglonesDeLaVenta(cachedItems, r);
+                        const porCobrar = descuadre !== 0 ? Math.round((cobroEsperado - parseFloat(r.total || 0)) * 100) / 100 : 0;
                         const nameTxt = 'text-content-2';
                         const numTxt = 'text-content-3';
                         return (
@@ -762,8 +763,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 explique, es un documento mal hecho — no un descuento. */}
                             {descuadre !== 0 && (
                                 <Notice variant="danger" icon={AlertTriangle} className="mb-2">
-                                    Error en la factura: los productos suman {fmt(Math.abs(descuadre))} {descuadre > 0 ? 'más' : 'menos'} que el total del documento
-                                    {r.tipo_documento === 'CCF' ? ' (sin IVA)' : ''}. Hay que revisarla.
+                                    <span className="block font-bold">Error en la factura: los productos no cuadran con el total.</span>
+                                    <span className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 tabular-nums">
+                                        <span>Según los productos: <strong>{fmt(cobroEsperado)}</strong></span>
+                                        <span>Se facturó: <strong>{fmt(r.total)}</strong></span>
+                                        <span>{porCobrar > 0 ? 'Se cobró de menos' : 'Se cobró de más'}: <strong>{fmt(Math.abs(porCobrar))}</strong></span>
+                                    </span>
                                 </Notice>
                             )}
                             {/* `DataTable` y no una tabla a mano: en el teléfono cada
@@ -992,6 +997,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const isExpanded  = expandedId === r.id;
                     const cachedItems = itemsCache[r.id];
                     const noData      = cachedItems && cachedItems.length === 0;
+                    // Los renglones de las filas visibles se piden en segundo plano,
+                    // así que la marca aparece sin tener que abrir la venta.
+                    const conError    = !!cachedItems?.length && !CANCELLED_ESTADOS.includes(r.estado)
+                        && renglonesDeLaVenta(cachedItems, r).descuadre !== 0;
                     const emp         = empMap.get(r.cod_vendedor);
                     const changes     = changelogCache[r.id] ?? [];
                     // Del embed de la propia consulta. PostgREST devuelve el
@@ -1026,6 +1035,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                             // El COF de la noche no se envía a Hacienda por decisión
                                             // (2026-10-19): no está «pendiente» de nada.
                                             && <span className="text-micro font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
+                                    {conError && (
+                                        <span className="flex items-center gap-1 text-micro font-black uppercase tracking-widest text-danger-text">
+                                            <AlertTriangle size={10} className="shrink-0" />Error en factura
+                                        </span>
+                                    )}
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     {r.erp_invoice_id && <p className={`font-mono text-label font-black text-content-3 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}

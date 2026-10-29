@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1375.1 — Ventas: la factura con error dice cuánto se debía cobrar, avisa a la sala y se marca en la fila
+
+Sigue de v2.1373.4.
+
+- **El aviso dice lo que se debía cobrar**: según los productos, lo que se
+  facturó y cuánto se cobró de menos o de más, con IVA y en la misma base que
+  el total. La CCF 401909: debía $148.26, se facturó $67.65, de menos $80.61.
+  `renglonesDeLaVenta` devuelve `cobroEsperado`.
+- **La fila se marca** con «Error en factura» bajo la fecha, sin abrirla: los
+  renglones de las filas visibles ya se piden en segundo plano.
+- **Se avisa también a la sala** que hizo la factura (su gente activa), además
+  de a Gerente General y Supervisor/a de Ventas. Las ya avisadas no se repiten.
+
 ## v2.1375.0 — El encabezado de los modales, canónico
 
 `LiquidModal.Header` era una ranura vacía y cada modal escribía a mano su ícono, título, subtítulo y ✕. Ahora tiene anatomía: `icono`, `tono`, `titulo`, `subtitulo`, `avatar`, `compacto`, `onClose`, y lo que va debajo como `children`. `UnifiedModal` —todos los formularios de sucursal, empleado, nómina, proveedores, clientes y documentos— la usa: la cadena de `if` que devolvía una baldosa escrita a mano por tipo pasó a ser la tabla `ICONO_DEL_MODAL`. Su cuerpo es `LiquidModal.Body` (ahora acepta `ref` y `relleno={false}`), y el error de validación es un `Notice` en vez de una caja roja a mano. DESIGN.md § LiquidModal lo documenta.

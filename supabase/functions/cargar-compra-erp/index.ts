@@ -51,14 +51,18 @@ async function productoDelSistema(cookie: string, id: number): Promise<ProductoD
   let j: any;
   try { j = JSON.parse(t); } catch { return null; }
   if (j?.typeinfo !== "Success") return null;
-  const opciones = [...String(j.select ?? "").matchAll(/value=['"]?(\d+)['"]?/g)].map((m) => m[1]);
+  // El texto de cada opción es el nombre de la presentación tal como lo ve
+  // Bodega («UNIDAD», «CAJA X 30»): la pantalla lo muestra para que se sepa
+  // EN QUÉ se carga, no sólo cuántas unidades entran.
+  const opciones = [...String(j.select ?? "").matchAll(/<option[^>]*value=['"]?(\d+)['"]?[^>]*>([^<]*)/g)]
+    .map((m) => ({ id: m[1], nombre: m[2].replace(/\s+/g, " ").trim() }));
   const presentaciones = [];
-  for (const id_presentacion of opciones) {
+  for (const { id: id_presentacion, nombre } of opciones) {
     const p = await pedir(cookie, COMPRAS, new URLSearchParams({ process: "getpresentacion", id_presentacion }),
       { extra: { Referer: COMPRAS } });
     try {
       const jp = JSON.parse(p);
-      presentaciones.push({ id: id_presentacion, unidad: Number(jp.unidad), costo: Number(jp.costo), precio: Number(jp.precio) });
+      presentaciones.push({ id: id_presentacion, unidad: Number(jp.unidad), costo: Number(jp.costo), precio: Number(jp.precio), nombre: nombre || undefined });
     } catch { /* una presentación ilegible no tumba las otras */ }
   }
   return {

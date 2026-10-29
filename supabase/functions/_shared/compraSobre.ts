@@ -21,7 +21,7 @@
 //     calendario sólo elige mes) y el de uno que no lo es, como la cadena
 //     `NULL`. El lote sólo lo lee si el producto es regulado.
 
-export type Presentacion = { id: string; unidad: number; costo: number; precio: number };
+export type Presentacion = { id: string; unidad: number; costo: number; precio: number; nombre?: string };
 
 export type ProductoDelSistema = {
   id: number;
@@ -145,7 +145,8 @@ export function lineaDelSobre(
     // en la misma base que `linea.compra` (sin IVA, por presentación): la
     // pantalla compara los dos para decir si subió y si el precio aguanta.
     detalle: {
-      presentacion: pres.unidad, existencias: r4(cant * pres.unidad), vence_pendiente: vencePendiente,
+      presentacion: pres.unidad, presentacion_nombre: pres.nombre ?? null,
+      existencias: r4(cant * pres.unidad), vence_pendiente: vencePendiente,
       costo_anterior: Number.isFinite(pres.costo) && pres.costo > 0 ? pres.costo : null,
     },
   };

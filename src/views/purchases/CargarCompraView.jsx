@@ -564,36 +564,6 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                             <p className="text-label font-black text-content tabular-nums">
                                                 {r.cantidad} × {formatMoney(r.costo)}
                                             </p>
-                                            {sim?.existencias != null && (
-                                                <p className="text-micro text-success-text">
-                                                    entran {sim.existencias} unid.{sim.presentacion > 1 ? ` (en cajas de ${sim.presentacion})` : ''}
-                                                </p>
-                                            )}
-                                            {costos.get(i) && (() => {
-                                                const c = costos.get(i);
-                                                const tono = c.cambio == null || Math.abs(c.cambio) < 0.5 ? 'text-content-3'
-                                                    : c.cambio > 0 ? 'text-warning-text' : 'text-success-text';
-                                                return (
-                                                    <>
-                                                        <p className={`text-micro tabular-nums ${tono}`}>
-                                                            costo {formatMoney(c.nuevo, { decimales: 4 })}
-                                                            {c.antes == null ? ' · sin costo anterior'
-                                                                : Math.abs(c.cambio) < 0.5 ? ' · igual que antes'
-                                                                : ` · antes ${formatMoney(c.antes, { decimales: 4 })} (${c.cambio > 0 ? '+' : ''}${c.cambio.toFixed(1)} %)`}
-                                                        </p>
-                                                        <p className="text-micro tabular-nums text-content-3">
-                                                            venta {formatMoney(c.venta)}
-                                                            {c.margen != null && ` · margen ${Math.round(c.margen)} %`}
-                                                            {c.alerta && (
-                                                                <Badge variant={c.alerta.variante} size="sm" className="ml-1">{c.alerta.label}</Badge>
-                                                            )}
-                                                        </p>
-                                                    </>
-                                                );
-                                            })()}
-                                            {sim?.vence_pendiente && (
-                                                <p className="text-micro text-warning-text">el vencimiento lo pone la sala</p>
-                                            )}
                                         </div>
                                         {uso === 'venta' && (
                                             <div className="shrink-0 flex items-center gap-2">
@@ -645,6 +615,7 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                                                 onChange={e => ajustar(i, 'vence', e.target.value)} />
                                         </div>
                                     )}
+                                    {sim?.linea && <ComoEntra sim={sim} costo={costos.get(i)} />}
                                     {buscando === r.codigo_proveedor && (
                                         <BuscadorProducto
                                             onElegir={(prod) => confirmar(r, i, prod)}
@@ -682,6 +653,45 @@ function Propuesta({ doc, puedeEditar, onCerrar }) {
                 message={`Se registra la compra de ${doc.emisor_nombre} por ${formatMoney(revision?.total_armado)} en Bodega. Sólo se deshace anulándola allá.`}
                 confirmText="Sí, cargar" />
         </LiquidModal>
+    );
+}
+
+/* Cómo entra un renglón a Bodega, después de revisar: en qué presentación,
+   cuántas unidades, el costo contra el anterior y el margen con el precio de
+   hoy. Cuatro datos en fila, cada uno con su rótulo, en vez de un párrafo. */
+function ComoEntra({ sim, costo }) {
+    const nombre = sim.presentacion_nombre || (sim.presentacion > 1 ? `Caja de ${sim.presentacion}` : 'Unidad');
+    const cambio = costo?.cambio;
+    const parejo = cambio == null || Math.abs(cambio) < 0.5;
+    const notaCosto = costo?.antes == null ? 'sin costo anterior'
+        : parejo ? 'igual que antes'
+        : `${cambio > 0 ? 'sube' : 'baja'} ${Math.abs(cambio).toFixed(1)} % · antes ${formatMoney(costo.antes, { decimales: 4 })}`;
+    return (
+        <div className="mt-2 pt-2 border-t border-divider grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2">
+            <Dato titulo="Se carga como" valor={nombre}
+                nota={sim.presentacion > 1 ? `${sim.presentacion} unidades c/u` : '1 unidad c/u'} />
+            <Dato titulo="Entran" valor={`${sim.existencias} unid.`}
+                nota={sim.vence_pendiente ? 'el vencimiento lo pone la sala' : null} />
+            {costo && (
+                <div className="min-w-0">
+                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Costo</p>
+                    <p className="text-label font-bold text-content tabular-nums">{formatMoney(costo.nuevo, { decimales: 4 })}</p>
+                    <p className={`text-micro tabular-nums truncate ${parejo ? 'text-content-3' : cambio > 0 ? 'text-warning-text' : 'text-success-text'}`}>
+                        {notaCosto}
+                    </p>
+                </div>
+            )}
+            {costo && (
+                <div className="min-w-0">
+                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Precio de venta</p>
+                    <p className="text-label font-bold text-content tabular-nums">{formatMoney(costo.venta)}</p>
+                    <p className="text-micro text-content-3 tabular-nums flex items-center gap-1">
+                        {costo.margen != null ? `margen ${Math.round(costo.margen)} %` : 'sin margen'}
+                        {costo.alerta && <Badge variant={costo.alerta.variante} size="sm">{costo.alerta.label}</Badge>}
+                    </p>
+                </div>
+            )}
+        </div>
     );
 }
 

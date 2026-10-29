@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1382.7 — Compras: en qué presentación entra cada renglón
+
+Después de revisar la carga, cada renglón muestra una fila con cuatro datos
+rotulados: **se carga como** (el nombre de la presentación de Bodega, sacado
+de su propia lista), **entran** (unidades), **costo** (contra el anterior: sube
+o baja y cuánto) y **precio de venta** con su margen. Antes eran tres líneas
+sueltas a la derecha, sin la presentación.
+
 ## v2.1382.6 — Compras: el freno de «algo cambió» compara el contenido
 
 Primera prueba real del envío a Bodega (29-oct, C. Imberton): el portal la

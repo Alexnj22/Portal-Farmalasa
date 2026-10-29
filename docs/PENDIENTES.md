@@ -89,7 +89,16 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
     **en espera: el usuario ya los tiene hechos y los va a subir** (2026-10-28).
     — BITACORAS:142
 20. ~~Lote y vencimiento en las inyecciones~~ — **hecho v2.1359.0** (obligatorio al cobrar cuando la factura no lo dice). — BITACORAS:215
-21. Fotos del bucket `recetas` dentro del respaldo semanal. — BITACORAS:306
+21. ⏸ **Fotos del bucket `recetas` dentro del respaldo semanal** — **en espera de
+    una receta real para probar la compresión** (usuario, 2026-10-29). Plan
+    acordado: (a) comprimir al subir con `reducirAJpeg` de `@plataforma/imagenes`,
+    lado máximo ~2000 px y calidad 0.85 (lo mismo que `capturaDesdeElTelefono`):
+    ~400 KB en vez de ~3 MB; mostrarle al usuario original y comprimida lado a
+    lado antes de fijarlo. (b) `backup-critical-tables` copia cada domingo SÓLO
+    las fotos nuevas a `backups/recetas/…` y **nunca las borra** (son
+    expediente; la ventana de 60 días es sólo para los volcados de tablas).
+    Volumen: 157 ventas con receta en sep-2026 → ~1.1 GB/año con respaldo,
+    comprimidas. Hoy el bucket está vacío (0 fotos). — BITACORAS:306
 22. Dueño del lote fundido o vencido en el libro (con datos de noviembre). — BITACORAS:177
 
 ### Operación

@@ -1,5 +1,4 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
-import BotonIA from '../components/common/BotonIA';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import OjoDeTarjeta from '../components/common/OjoDeTarjeta';
 import Notice from '../components/common/Notice';
@@ -19,7 +18,7 @@ import {
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { kioscosActivos, LIMITE_KIOSCOS } from '@nucleo/utils/kioscos';
 import { clickable } from '@nucleo/utils/clickable';
-import { abiertaAhora, alertasDeSucursal, completitudDelPerfil, datosParaElDiagnostico, horarioDefinido, horarioDeHoy, leerAjustes, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from "@nucleo/utils/sucursales";
+import { abiertaAhora, alertasDeSucursal, completitudDelPerfil, horarioDefinido, horarioDeHoy, leerAjustes, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from "@nucleo/utils/sucursales";
 import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -27,7 +26,6 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 
 import { smartFilter } from '@nucleo/utils/searchUtils';
-import { analizarSucursal } from '@nucleo/data/ia';
 import { fetchBranchKiosks } from '@nucleo/data/branches';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
@@ -130,12 +128,6 @@ const BranchCard = memo(({
     handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
     canEdit = false, staggerIndex = 0
 }) => {
-    const [aiMode, setAiMode] = useState(false);
-    const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-    const [aiSummaryData, setAiSummaryData] = useState(null);
-
-    const branchType = branch.type || 'FARMACIA';
-    const isFarmacia = branchType === 'FARMACIA';
     const conKioscos = !['ADMINISTRATIVA', 'EXTERNA'].includes(branch.type);
 
     // `asignados` cuenta a TODA ficha con esta sala, dadas de baja incluidas:
@@ -166,28 +158,6 @@ const BranchCard = memo(({
                     ? { punto: 'bg-success', texto: `Abierta · ${textoDelHorario(todaySchedule)}` }
                     : { punto: 'bg-content-3', texto: `Cerrada · ${textoDelHorario(todaySchedule)}` };
 
-    const cerrarDiagnostico = () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); };
-    const generateBranchAiSummary = async () => {
-        setAiMode(true);
-        setIsGeneratingAi(true);
-        try {
-            // La foto que se le cuenta a la IA: núcleo (`sucursales`), la misma de la app.
-            const snapshotData = datosParaElDiagnostico({
-                branch, inactiva: isInactive, estado: currentStatus.label, horario: todaySchedule,
-                empleados: count, kioscos: activeKiosks, alertas: alertStatus, completitud: completion,
-            });
-            const { data: aiResponse, error: aiError } = await analizarSucursal({ branchName: branch.name, branchData: JSON.stringify(snapshotData) });
-            if (aiError) throw new Error(aiError.message);
-            if (!aiResponse?.success) throw new Error('Fallo en la generación del resumen.');
-            setAiSummaryData(aiResponse.aiSummary);
-        } catch (error) {
-            console.error('Error al generar el diagnóstico:', error);
-            setAiSummaryData('No se pudo preparar el diagnóstico. Intenta de nuevo.');
-        } finally {
-            setIsGeneratingAi(false);
-        }
-    };
-
     // Los controles de adentro no pueden abrir además la ficha.
     const sinAbrir = (fn) => (e) => { e.preventDefault(); e.stopPropagation(); fn?.(e); };
 
@@ -200,38 +170,6 @@ const BranchCard = memo(({
             style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 340px', '--stagger-delay': `${Math.min(staggerIndex, 8) * 45}ms` }}
             className={`animate-stagger-child group relative flex flex-col h-full overflow-hidden p-5 cursor-pointer ${isInactive ? 'opacity-80' : ''}`}
         >
-            {/* El diagnóstico tapa la tarjeta mientras está abierto. */}
-            {aiMode && (
-                <div data-cobertura onClick={(e) => e.stopPropagation()}
-                    className="absolute inset-0 z-tabs flex flex-col bg-surface-card cursor-default animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-slow)]">
-                    <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-divider">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <Sparkles size={16} strokeWidth={2} className="text-chart-3-text shrink-0" aria-hidden="true" />
-                            <div className="min-w-0">
-                                <p className="text-body font-black text-content leading-tight">Diagnóstico</p>
-                                <p className="text-caption text-content-3 truncate">{branch.name}</p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="sm" icon={X} iconOnly title="Cerrar diagnóstico" onClick={sinAbrir(cerrarDiagnostico)} />
-                    </div>
-                    <div className="flex-1 overflow-y-auto px-5 py-4">
-                        {isGeneratingAi ? (
-                            <AiThinkingState size="sm" title="Analizando la sucursal" steps="Revisando apertura, personal y expediente" className="h-full" />
-                        ) : (
-                            <div className="space-y-3">
-                                {aiSummaryData?.split('\n').filter(p => p.trim()).map((paragraph, index) => (
-                                    <p key={index} className="text-body-sm text-content-2 leading-relaxed">
-                                        {paragraph.split('**').map((text, i) => (
-                                            i % 2 === 1 ? <strong key={i} className="font-black text-content">{text}</strong> : text
-                                        ))}
-                                    </p>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
             {/* ── Encabezado ── */}
             <header className="flex items-start gap-3">
                 <div className="w-11 h-11 rounded-xl bg-brand/10 text-brand-text flex items-center justify-center shrink-0" aria-hidden="true">
@@ -333,11 +271,6 @@ const BranchCard = memo(({
                     </button>
                 )}
                 <div className="ml-auto flex items-center gap-0.5">
-                    {isFarmacia && (
-                        <BotonIA talla="sm" activo={aiMode}
-                            onClick={sinAbrir(() => (aiMode ? cerrarDiagnostico() : generateBranchAiSummary()))}
-                            etiqueta="Diagnóstico" etiquetaActiva="Cerrar diagnóstico" />
-                    )}
                     {canEdit && (
                         <Button variant="ghost" size="sm" icon={Pencil} iconOnly title="Editar sucursal"
                             onClick={sinAbrir(() => openModal?.('editBranch', branch))} />

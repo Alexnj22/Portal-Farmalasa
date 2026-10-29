@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1373.0 — Sucursales sin el botón de diagnóstico
+
+Se quita el botón «Diagnóstico» de la tarjeta de cada sucursal y de la ficha de la app: le mandaba a la IA lo mismo que la tarjeta ya muestra (estado, personal, kioscos, alertas, expediente) y devolvía esa información en párrafos, sin un dato nuevo. Queda anotado volver con un resumen diario por sala que sí cruce ventas, faltantes, cortes y asistencia (`docs/PENDIENTES.md` §A, 31 y 32).
+
 ## v2.1372.0 — Revisión de factor: existencia por corregir en los dos sentidos
 
 Productos → Revisión de factor sólo ofrecía corregir cuando la presentación se

@@ -114,6 +114,28 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 28. ~~GPS en Rutas en el navegador~~ — **cerrado sin cambio**: el GPS es sólo para las apps (usuario, 2026-10-01 y reconfirmado 2026-10-29). `geolocation=()` en `vercel.json` se queda a propósito; la app usa el GPS nativo, que ese encabezado no toca. — DISTRIBUCION:249
 29. ~~Plazos de datos de la app de clientes~~ — **hecho v2.1360.0**. — APP-CLIENTES:469
 30. ✅ Descuento por renglón en ventas (2026-10-29, v2.1364.0). El JSON no lo trae; se separa campaña / a mano cruzando con la copia de las campañas. Promociones → Rebajas. — DESCUENTOS §2
+31. 💜 **Volver a traer a Sally, la IA del portal, con algo que decir** (usuario,
+    2026-10-29: «me da nostalgia quitarla»). Su «Diagnóstico» se quitó de la
+    tarjeta de Sucursales y de la ficha de la app (v2.1373.0) porque sólo le
+    repetía a la IA lo que la tarjeta ya mostraba (`datosParaElDiagnostico`,
+    sin un dato nuevo). La edge function `analyze-branch` sigue desplegada —la
+    usa también el análisis del personal en `TabStaff`— y
+    `datosParaElDiagnostico` quedó en `src/utils/sucursales.js` sin lector.
+    Vuelve como la voz del ítem 32, no como un botón.
+32. **Resumen diario de cada sucursal con IA** (usuario, 2026-10-29). Un widget
+    en la tarjeta (una línea: lo más urgente) y un panel en la ficha (el
+    detalle, cada número a la vista). Diseño acordado:
+    - Un cron de madrugada calcula los indicadores de cada sala **en SQL**;
+      la IA no calcula nada, sólo redacta en 2-3 líneas lo que se salió de lo
+      normal. Se guarda por día, así se ve cómo cambió.
+    - Cada número se compara con la historia de **la misma sala** (no un
+      umbral fijo): «vende 18% menos que su promedio de los martes».
+    - Día sin nada fuera de lo normal → «Sin novedades», sin relleno.
+    - No repetir Inicio ni Ventas: el valor es cruzar módulos por sala.
+    - Candidatos (falta que el usuario elija): ventas contra su historia y la
+      meta · faltantes de alta rotación · cortes con diferencia · ausencias y
+      tardanzas · productos por vencer · documentos de la sala por vencer.
+
 
 ### Higiene y rendimiento (menor)
 31. ✅ Las 48 tablas sin `created_at`, con su motivo (2026-10-29): `auditoria/tablas-sin-created-at.json`, en 4 grupos. `gate:auditoria` falla si aparece una nueva sin declarar.

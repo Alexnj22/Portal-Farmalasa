@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1367.1 — funciones.json sin marcas de conflicto
+
+v2.1367.0 subió `auditoria/funciones.json` con marcas de conflicto (`<<<<<<<`)
+de un `rebase --autostash`: otra sesión había sincronizado el inventario y
+anotado `app_tratamiento_agregar`/`_candidatos` en «ventas». Se rehízo desde la
+versión anterior con las tres funciones de agregar medicamento en
+`app-clientes`. `gate:auditoria` en verde.
+
 ## v2.1367.0 — Mis tratamientos: agregar un medicamento que tomo
 
 La lista automática sólo ve crónicos comprados con regularidad que alcanzan

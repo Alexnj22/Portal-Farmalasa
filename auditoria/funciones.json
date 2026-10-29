@@ -388,34 +388,20 @@
    "por": "trigger"
   },
   "app_tratamiento_agregar": {
-<<<<<<< Updated upstream
-   "area": "ventas",
-   "por": "tablas"
-=======
    "area": "app-clientes",
    "por": "llamada"
->>>>>>> Stashed changes
   },
   "app_tratamiento_cambiar": {
    "area": "app-clientes",
    "por": "código"
   },
   "app_tratamiento_candidatos": {
-<<<<<<< Updated upstream
-   "area": "ventas",
-   "por": "tablas"
-=======
    "area": "app-clientes",
    "por": "llamada"
->>>>>>> Stashed changes
   },
   "app_tratamiento_dosis": {
    "area": "app-clientes",
    "por": "código"
-  },
-  "app_tratamiento_quitar": {
-   "area": "app-clientes",
-   "por": "tablas"
   },
   "app_tratamiento_quitar": {
    "area": "app-clientes",

@@ -2376,6 +2376,11 @@
    "area": "compras",
    "por": "tablas"
   },
+  "existencia_por_corregir": {
+   "area": "productos",
+   "por": "código",
+   "manual": true
+  },
   "expandir_lineas_envio": {
    "area": "solicitudes",
    "por": "trigger"

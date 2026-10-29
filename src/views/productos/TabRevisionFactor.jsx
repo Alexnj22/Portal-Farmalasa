@@ -4,7 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -22,9 +22,13 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
  * Cuando la caja cambia el tamaño de una presentación (CAJA 1x30 → 1x1), el
  * portal ya convierte SOLO las ventas y el MIN·MAX (`procesar_cambios_de_factor`).
  * Lo que no puede hacer solo es la existencia: la caja no la convierte, y
- * descartar existencia es una decisión. Esta pestaña es donde se toma, con el
- * porqué y el de→a a la vista, y con un clic: crea la solicitud de descarte de
- * siempre y, si quien la pide puede aprobar inventario, la aplica enseguida.
+ * cambiar existencia es una decisión. Esta pestaña es donde se toma, con el
+ * porqué y el de→a a la vista, y con un clic: crea la solicitud de siempre
+ * —descarte si la presentación se achicó, carga si creció (2026-10-29)— y, si
+ * quien la pide puede aprobar inventario, la aplica enseguida.
+ *
+ * Las filas salen de la foto que sacó el proceso al convertir y sólo mientras
+ * sigan como estaban: una compra que llegó después no se ofrece para descartar.
  */
 export default function TabRevisionFactor() {
     const [datos, setDatos] = useState(null);   // null = cargando
@@ -54,13 +58,13 @@ export default function TabRevisionFactor() {
     return (
         <div className="space-y-6">
             <Seccion icono={PackageX} titulo="Existencia por corregir" cuenta={existencias.length}
-                bajada="La caja no convierte la existencia cuando cambia el tamaño de la presentación: queda contada en la unidad vieja.">
+                bajada="La caja no convierte la existencia cuando cambia el tamaño de la presentación: queda contada en la unidad vieja. Si la caja se achicó sobra existencia; si creció, falta.">
                 {existencias.length === 0
                     ? <EmptyState linea icon={CheckCircle2} title="Sin existencia por corregir" />
                     : (
                         <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
                             {existencias.map(f => (
-                                <FilaExistencia key={`${f.cambio_id}-${f.erp_sucursal_id}-${f.lote}-${f.presentacion}`}
+                                <FilaExistencia key={`${f.cambio_id}-${f.sentido}-${f.erp_sucursal_id}-${f.lote}-${f.presentacion}`}
                                     fila={f} onHecho={cargar} />
                             ))}
                         </ul>
@@ -79,7 +83,7 @@ export default function TabRevisionFactor() {
             </Seccion>
 
             <Seccion icono={History} titulo="Cambios de presentación" cuenta={cambios.length}
-                bajada="Lo que cambió en los últimos 120 días y lo que el portal convirtió solo.">
+                bajada="Lo que cambió en los últimos 120 días: las ventas que el portal convirtió solo y cómo quedó el MIN·MAX.">
                 {cambios.length === 0
                     ? <EmptyState linea icon={CheckCircle2} title="Sin cambios de presentación recientes" />
                     : (
@@ -119,6 +123,14 @@ function FilaExistencia({ fila: f, onHecho }) {
 
     const puedeAplicar = hasPermission('requests_inventario', 'can_approve');
     const sol = f.solicitud;
+    const carga = esCarga(f);
+    const pres = String(f.presentacion ?? '').toLowerCase();
+    // Aprobada no es aplicada: si la caja rechazó el ajuste, la solicitud queda
+    // aprobada y la existencia sigue igual. «Corregida» sólo cuando entró.
+    const estado = !sol ? null
+        : sol.aplicada ? { texto: 'Corregida', variant: 'success', icon: CheckCircle2 }
+        : sol.status === 'APPROVED' ? { texto: 'Aprobada, sin aplicar', variant: 'warning', icon: Clock }
+        : { texto: 'Pedida', variant: 'warning', icon: Clock };
 
     const corregir = async () => {
         setTrabajando(true);
@@ -138,8 +150,9 @@ function FilaExistencia({ fila: f, onHecho }) {
                     useToastStore.getState().showToast('La corrección quedó pedida',
                         `No se pudo aplicar todavía: ${r?.error ?? 'sin respuesta'}. Queda en Solicitudes para reintentar.`, 'warning');
                 } else {
-                    useToastStore.getState().showToast('Existencia corregida',
-                        `${f.nombre} en ${f.sala}: ${formatQty(f.muestra)} → ${formatQty(f.quedan)}.`, 'success');
+                    useToastStore.getState().showToast('Existencia corregida', carga
+                        ? `${f.nombre} en ${f.sala}: se cargaron ${formatQty(f.cargar)} ${pres}.`
+                        : `${f.nombre} en ${f.sala}: ${formatQty(f.muestra)} → ${formatQty(f.quedan)}.`, 'success');
                 }
             }
             setConfirmar(false);
@@ -161,11 +174,9 @@ function FilaExistencia({ fila: f, onHecho }) {
                         {f.vence ? ` · vence ${fechaNumerica(f.vence)}` : ''}
                     </p>
                 </div>
-                {sol && (
-                    <Badge size="sm" uppercase={false}
-                        variant={sol.status === 'APPROVED' ? 'success' : 'warning'}
-                        icon={sol.status === 'APPROVED' ? CheckCircle2 : Clock}>
-                        {sol.status === 'APPROVED' ? 'Corregida' : 'Pedida'}
+                {estado && (
+                    <Badge size="sm" uppercase={false} variant={estado.variant} icon={estado.icon}>
+                        {estado.texto}
                     </Badge>
                 )}
             </div>
@@ -176,16 +187,24 @@ function FilaExistencia({ fila: f, onHecho }) {
                 <span className="text-content">1 {f.presentacion} = {formatQty(f.a)}</span>
             </div>
 
-            <p className="text-label font-bold text-content-2">
-                Muestra <span className="tabular-nums">{formatQty(f.muestra)}</span>, son{' '}
-                <span className="tabular-nums text-content">{formatQty(f.quedan)}</span>
-                {' '}· se descartan <span className="tabular-nums text-danger-text">{formatQty(f.descartar)}</span>
-                {f.sueltas > 0 && (
-                    <span className="text-warning-text">
-                        {' '}· sobran {formatQty(f.sueltas)} unidades sueltas que no forman una {f.presentacion.toLowerCase()}
-                    </span>
-                )}
-            </p>
+            {carga ? (
+                <p className="text-label font-bold text-content-2">
+                    Había <span className="tabular-nums">{formatQty(f.muestra)}</span> {pres}, hoy cuenta{' '}
+                    <span className="tabular-nums">{formatQty(f.muestra)}</span> unidades sueltas
+                    {' '}· se cargan <span className="tabular-nums text-success-text">{formatQty(f.cargar)}</span> {pres}
+                </p>
+            ) : (
+                <p className="text-label font-bold text-content-2">
+                    Muestra <span className="tabular-nums">{formatQty(f.muestra)}</span>, son{' '}
+                    <span className="tabular-nums text-content">{formatQty(f.quedan)}</span>
+                    {' '}· se descartan <span className="tabular-nums text-danger-text">{formatQty(f.descartar)}</span>
+                    {f.sueltas > 0 && (
+                        <span className="text-warning-text">
+                            {' '}· sobran {formatQty(f.sueltas)} unidades sueltas que no forman una {pres}
+                        </span>
+                    )}
+                </p>
+            )}
 
             {!sol && (
                 <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
@@ -206,18 +225,33 @@ function FilaExistencia({ fila: f, onHecho }) {
                         <span className="block">
                             <b>Qué pasó:</b> la presentación cambió de tamaño: antes 1 {f.presentacion} = {formatQty(f.de)},
                             {' '}ahora 1 {f.presentacion} = {formatQty(f.a)}. La caja no convierte la existencia,
-                            {' '}así que en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedó mostrando {formatQty(f.muestra)}.
+                            {carga
+                                ? <> así que las {formatQty(f.muestra)} {pres} que había en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedaron contadas como {formatQty(f.muestra)} unidades sueltas.</>
+                                : <> así que en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedó mostrando {formatQty(f.muestra)}.</>}
                         </span>
                         <span className="block">
-                            <b>Qué se hace:</b> se descartan {formatQty(f.descartar)} y quedan {formatQty(f.quedan)}.
-                            {f.sueltas > 0 && ` Las ${formatQty(f.sueltas)} unidades sueltas no alcanzan para una ${f.presentacion.toLowerCase()} y también salen.`}
+                            {carga ? (
+                                <>
+                                    <b>Qué se hace:</b> se cargan {formatQty(f.cargar)} {pres} y la sala vuelve a tener {formatQty(f.quedan)}.
+                                    {f.sobran > 0 && ` Quedan además ${formatQty(f.sobran)} unidades sueltas de más que no se pueden sacar: no forman una ${pres}.`}
+                                </>
+                            ) : (
+                                <>
+                                    <b>Qué se hace:</b> se descartan {formatQty(f.descartar)} y quedan {formatQty(f.quedan)}.
+                                    {f.sueltas > 0 && ` Las ${formatQty(f.sueltas)} unidades sueltas no alcanzan para una ${pres} y también salen.`}
+                                </>
+                            )}
                         </span>
                         <span className="block">
                             <b>Lo que queda escrito en el movimiento:</b> «{causaDeCorreccion(f)}»
                         </span>
                         <span className="block text-content-3">
+                            {carga
+                                ? `Corregí sólo si en la sala hay ${formatQty(f.muestra)} ${pres} enteras. Si lo que hay son ${formatQty(f.muestra)} unidades sueltas, no corrijas: la existencia ya está bien.`
+                                : 'Si en la sala de verdad hay más, no corrijas: avisá para revisarlo.'}
+                            {' '}
                             {puedeAplicar
-                                ? 'Se aplica en la caja enseguida. Si en la sala de verdad hay más, no corrijas: avisá para revisarlo.'
+                                ? 'Se aplica en la caja enseguida.'
                                 : 'Se manda a quien aprueba inventario; la existencia cambia cuando la apruebe.'}
                         </span>
                     </span>

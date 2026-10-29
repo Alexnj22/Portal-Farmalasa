@@ -21,38 +21,54 @@ export async function fetchRevisionDePresentaciones() {
 }
 
 /**
+ * Los dos sentidos de un cambio que deja la existencia en la unidad vieja
+ * (`existencia_por_corregir`, 2026-10-29):
+ *
+ *   achica  CAJA 1x16 → 1x1: había 1 caja y la caja muestra 16. Se descartan 15.
+ *   crece   CAJA 1x1 → 1x24: había 1 caja y la caja la cuenta como 1 tableta
+ *           (0 cajas). Se carga 1 caja; queda 1 tableta suelta de más, porque
+ *           sin una presentación de 1 no hay cómo sacarla.
+ */
+export const esCarga = (f) => f?.sentido === 'crece';
+
+/**
  * La causa que queda escrita en el movimiento de la caja. Dice el porqué y el
  * de→a con los números de ESTE lote, para que quien lo lea en el kardex dentro
  * de un año entienda qué pasó sin abrir el portal.
  */
 export function causaDeCorreccion(f) {
-    return `Corrección por cambio de presentación: antes 1 ${f.presentacion} = ${f.de}, `
-        + `ahora 1 ${f.presentacion} = ${f.a}. La existencia quedó contada en la unidad vieja: `
-        + `mostraba ${f.muestra}, son ${f.quedan}. Se descartan ${f.descartar}`
-        + (f.lote ? ` del lote ${f.lote}` : '') + '.';
+    const cambio = `Corrección por cambio de presentación: antes 1 ${f.presentacion} = ${f.de}, `
+        + `ahora 1 ${f.presentacion} = ${f.a}. La existencia quedó contada en la unidad vieja: `;
+    const lote = f.lote ? ` del lote ${f.lote}` : '';
+    return esCarga(f)
+        ? cambio + `había ${f.muestra} ${f.presentacion.toLowerCase()} y quedaron como ${f.muestra} `
+            + `unidades sueltas. Se cargan ${f.cargar}${lote}.`
+        : cambio + `mostraba ${f.muestra}, son ${f.quedan}. Se descartan ${f.descartar}${lote}.`;
 }
 
 /**
- * Crea la solicitud de descarte que corrige UN lote. Es la misma solicitud de
- * inventario de siempre —la valida la base y la aplica
- * `aplicar-movimiento-inventario`—, con `correccion_de_factor` en la metadata
- * para que la revisión sepa que este lote ya tiene su corrección pedida.
+ * Crea la solicitud que corrige UN lote: un descarte si la presentación se
+ * achicó, una carga si creció. Es la misma solicitud de inventario de siempre
+ * —la valida la base y la aplica `aplicar-movimiento-inventario`—, con
+ * `correccion_de_factor` en la metadata para que la revisión sepa que este
+ * lote ya tiene su corrección pedida.
  *
  * `id` lo pone quien llama: el alta no devuelve la fila y hace falta para
  * aplicarla enseguida.
  */
 export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador }) {
-    const op = OPERACIONES_AJUSTE.find(o => o.key === 'DESCARTE');
+    const carga = esCarga(fila);
+    const op = OPERACIONES_AJUSTE.find(o => o.key === (carga ? 'CARGA' : 'DESCARTE'));
     const payload = solicitudDeAjuste({
         op,
-        motivo: 'DESCUADRE',
+        motivo: carga ? undefined : 'DESCUADRE',
         causa: causaDeCorreccion(fila),
         lineas: [{
             erp_product_id: fila.erp_product_id,
             descripcion:    fila.nombre,
             tipo:           fila.presentacion,
             factor:         fila.a,
-            cantidad:       fila.descartar,
+            cantidad:       carga ? fila.cargar : fila.descartar,
             lote:           fila.lote,
             vence:          fila.vence,
             existencia:     fila.muestra,
@@ -69,12 +85,13 @@ export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador }) 
     payload.id = id;
     payload.metadata.correccion_de_factor = {
         cambio_id: fila.cambio_id,
+        sentido: fila.sentido,
         de: fila.de, a: fila.a,
         muestra: fila.muestra, quedan: fila.quedan, sueltas: fila.sueltas,
         // H28: la corrección es de ESTE lote; la revisión la busca por lote.
         lote: fila.lote ?? null,
     };
-    return insertMovimientoInventario(payload, { lineas: 1, correccion_de_factor: true });
+    return insertMovimientoInventario(payload, { lineas: 1, correccion_de_factor: true, sentido: fila.sentido });
 }
 
 // ── Lo que se le dice a quien revisa (los textos de la web y de la app) ─────

@@ -423,7 +423,6 @@ function MainApp() {
 
     const [formData, setFormData] = useState({});
     const [targetEventId, setTargetEventId] = useState(null);
-    const [isAuditOverlayActive, setIsAuditOverlayActive] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
     const showAlert = (title, message, type = 'info') => {
@@ -852,7 +851,6 @@ function MainApp() {
 
                         <div className="relative z-base w-full flex-1 flex flex-col">
                             <AppLayout
-                                isOverlayActive={modalOpen || isAuditOverlayActive}
                                 handleLogout={handleLogout}
                             >
                                 <ErrorBoundary>
@@ -924,7 +922,7 @@ function MainApp() {
                                     {/* ── Operaciones ── */}
                                     <Route path="inicio" element={<PermissionGuard moduleKey="overview"><DashboardView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="monitor" element={<PermissionGuard moduleKey="monitor"><AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
-                                    <Route path="auditoria-de-tiempos" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
+                                    <Route path="auditoria-de-tiempos" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
                                     <Route path="horarios" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
                                     {/* Dos ámbitos, un componente. Cada ruta con SU módulo:
                                         `requests` es el centro de la sala, `requests_personales`

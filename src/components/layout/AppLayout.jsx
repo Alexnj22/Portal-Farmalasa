@@ -83,7 +83,7 @@ function revealOpenedGroup(navEl, headerEl, contentEl) {
 const isMacPlatform = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 const SHORTCUT_LABEL = isMacPlatform ? '⌘K' : 'Ctrl K';
 
-const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
+const AppLayout = ({ children, handleLogout }) => {
     const { user, hasPermission, isSU } = useAuth();
     const branches = useStaff((state) => state.branches || []);
     const announcements = useStaff((state) => state.announcements || []);
@@ -459,7 +459,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
 
     const isExpanded = isSidebarOpen;
-    const blurClasses = isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : '';
+    // 2026-10-29: con un modal de `UnifiedModal` abierto la página de atrás se
+    // desenfocaba 2px y se achicaba al 98%. Ningún otro modal lo hacía: el velo
+    // canónico (`[data-velo]`, §5.3) no desenfoca en Liquid. Era el blur viejo
+    // escrito a mano en el layout, y además un `filter` + `transform` sobre todo
+    // el portal en cada apertura. El bloqueo del fondo ya lo pone `ModalShell`.
 
     // ¿Queda menú por debajo del borde visible? El nav esconde su barra de
     // scroll (`scrollbar-hide`), así que sin esta señal el usuario no tiene
@@ -961,7 +965,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             // seguía asomando igual. Un valor que no compila no avisa.
                             ? `top-0 bottom-0 w-[85%] max-w-[280px] left-[max(8px,var(--sa-left))] transition-transform duration-[220ms] ease-[var(--ease-spring)]`
                             : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(8px,var(--sa-left))] transition-[width] duration-[220ms] ease-[var(--ease-spring)]`}
-                        ${blurClasses}`}
+`}
                     style={isMobile
                         ? { transform: isSidebarOpen
                             ? 'translateX(0)'
@@ -1255,7 +1259,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     alcance: no es que esté oculto, es literalmente inalcanzable. Bug real
                     detrás de Bloque 5.1 ("no puedo seleccionar Salud 1/3/5" en /pedidos,
                     "/productos pierde columnas" — ninguno de los dos era sobre hideBelow). */}
-                <main className={`flex-1 flex flex-col relative z-content lg:overflow-hidden min-w-0 ${blurClasses}`}>
+                <main className="flex-1 flex flex-col relative z-content lg:overflow-hidden min-w-0">
                     {/* Header móvil: sticky (NO position:fixed — en standalone el fixed
                         anidado en contextos de apilamiento dejaba de pintarse, franja gris)
                         sobre el body-scroll del documento: el contenido fluye por debajo de
@@ -1385,7 +1389,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         <nav data-shell="tabs-movil"
                             className={`lg:hidden fixed bottom-0 left-0 right-0 z-header pt-2
                                 pl-[max(1rem,var(--sa-left))] pr-[max(1rem,var(--sa-right))]
-                                pb-[max(16px,var(--sa-bottom))] transition duration-[var(--dur-lento)] ${blurClasses}`}>
+                                pb-[max(16px,var(--sa-bottom))] transition duration-[var(--dur-lento)]`}>
                             <div className="flex items-center justify-around rounded-card px-2 py-2 border
                                 bg-[rgb(var(--sidebar-realce)/0.95)] border-[rgb(var(--sidebar-ink)/0.6)] shadow-[var(--shadow-sticky-t)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {

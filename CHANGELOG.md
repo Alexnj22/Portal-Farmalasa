@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1377.3 — Sin el desenfoque viejo detrás de los formularios
+
+Con un formulario de `UnifiedModal` abierto (sucursales, empleados, nómina, proveedores…) el layout desenfocaba la página de atrás 2px y la achicaba al 98%. Ningún otro modal lo hacía: el velo canónico (`[data-velo]`, §5.3) no desenfoca en Liquid. Era el blur viejo, escrito a mano en `AppLayout`, y además un `filter` + `transform` sobre todo el portal en cada apertura. Se quitó junto con `isOverlayActive` y el `setOverlayActive` de Auditoría de tiempos, que sólo lo alimentaban. El bloqueo del fondo lo sigue poniendo `ModalShell`.
+
 ## v2.1377.2 — Cargar compra: el vencimiento que falta lo pone la sala
 
 Decisión del usuario para Sarita, que no manda vencimiento: «que las salas de

@@ -727,7 +727,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 }
 
 // ── Main view ─────────────────────────────────────────────────────────────────
-const AttendanceAuditView = ({ setOverlayActive }) => {
+const AttendanceAuditView = () => {
   const navigate  = useNavigate();
   const { user, hasPermission, getScope } = useAuth();
   const canEdit   = hasPermission('time_audit', 'can_edit');
@@ -767,10 +767,6 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const [editStart,         setEditStart]         = useState('');
   const [editEnd,           setEditEnd]           = useState('');
 
-  useEffect(() => {
-    if (setOverlayActive) setOverlayActive(!!correctionTarget);
-    return () => setOverlayActive?.(false);
-  }, [correctionTarget, setOverlayActive]);
 
   // Load attendance once — 62 days covers ~4 quincenas back
   useEffect(() => {

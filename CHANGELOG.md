@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1376.2 — Ventas: dos renglones iguales ya no se esconden (falsa «Error en factura»)
+
+Con la marca de v2.1375.1 aparecieron dos falsas alarmas: la COF 401886 (Salud
+1) y la 401759 (La Popular). Las dos estaban bien. `renglonesDeLaVenta` quitaba
+«duplicados» comparando el CONTENIDO del renglón, así que dos recargas de $1.25
+o dos Electrolit Fresa en la misma factura se volvían una. Eso escondía un
+renglón real desde siempre; antes no se notaba porque la diferencia sólo se
+leía cuando sobraba.
+
+Duplicado ahora es la misma fila (`id`): la base ya impide dos con el mismo
+(factura, línea). Las dos consultas de renglones traen `id`. El aviso de la
+base nunca tuvo este defecto (suma todas las filas) y no mandó nada por estas.
+
 ## v2.1376.1 — Revisión de factor: el cambio se mide contra el catálogo de antes
 
 X-Ray Dol X 48 pasó de CAJA 1x1 a CAJA 1x4 y, en la misma carga, la caja le

@@ -85,9 +85,15 @@ const TOLERANCIA_DESCUADRE = 0.05;
  *   → { productos, descuento, descuadre, cobroEsperado }  (descuadre > 0: el detalle suma de más)
  */
 export function renglonesDeLaVenta(items, venta = {}) {
+    // Duplicado es la MISMA fila (mismo `id`), nunca dos renglones iguales: la
+    // base no admite dos con el mismo (factura, línea), y vender dos veces lo
+    // mismo en una factura es real — la COF 401886 lleva dos recargas de $1.25.
+    // Comparar por contenido escondía el segundo renglón y la factura «no
+    // cuadraba». La firma por contenido queda sólo para filas sin `id`.
     const vistos = new Set();
     const unicos = (items || []).filter((it) => {
-        const firma = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
+        const firma = it.id != null ? `id:${it.id}`
+            : `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
         if (vistos.has(firma)) return false;
         vistos.add(firma);
         return true;

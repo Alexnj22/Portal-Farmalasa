@@ -281,7 +281,7 @@ export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch
  */
 export async function fetchInvoiceItemsByIds(invoiceIds) {
     const data = await fetchAllRows(() => supabase.from('sales_invoice_items')
-        .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
+        .select('id, invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
         .in('invoice_id', invoiceIds)
         .order('total_linea', { ascending: false })
         .order('id', { ascending: true }));
@@ -327,7 +327,7 @@ export function fetchInvoiceById(invoiceId) {
 
 export function fetchInvoiceItemsForInvoice(invoiceId) {
     return supabase.from('sales_invoice_items')
-        .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
+        .select('id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
         .eq('invoice_id', invoiceId)
         .order('total_linea', { ascending: false });
 }

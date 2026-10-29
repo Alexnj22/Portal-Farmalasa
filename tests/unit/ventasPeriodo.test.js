@@ -32,6 +32,18 @@ describe('ventasPeriodo', () => {
         // Retención: el total ya la trae restada.
         expect(renglonesDeLaVenta([a], { total: 3.96, retencion: 0.04 }).descuadre).toBe(0);
     });
+    it('renglones: dos renglones iguales de verdad NO son un duplicado (la COF 401886)', () => {
+        const recarga = { erp_product_id: 2963, descripcion: 'RECARGA SALDO CLARO', precio_unitario: 0.25, total_linea: 1.25, cantidad: 5, lote: 'GENERICO' };
+        const items = [{ ...recarga, id: 1 }, { ...recarga, id: 2 },
+            { id: 3, erp_product_id: 1001, descripcion: 'K FER', precio_unitario: 1.6, total_linea: 1.6 },
+            { id: 4, erp_product_id: 684, descripcion: 'AGUA', precio_unitario: 0.5, total_linea: 0.5 },
+            { id: 5, erp_product_id: 3101, descripcion: 'AMOXICILINA', precio_unitario: 1.5, total_linea: 1.5 }];
+        const r = renglonesDeLaVenta(items, { tipo_documento: 'COF', total: 6.10, subtotal: 5.40 });
+        expect(r.productos).toHaveLength(5);
+        expect(r.descuadre).toBe(0);
+        // La misma fila traída dos veces sí se descarta.
+        expect(renglonesDeLaVenta([...items, items[0]], { total: 6.10 }).productos).toHaveLength(5);
+    });
     it('renglones: el CCF se compara sin IVA (la CCF 401909 de Salud 1)', () => {
         const items = [
             { erp_product_id: 151, descripcion: 'VIGADEXA', precio_unitario: 20.15, total_linea: 35.66, lote: '78923' },

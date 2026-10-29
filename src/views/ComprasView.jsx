@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
-import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle, MonitorCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
@@ -14,8 +14,10 @@ import Button from '../components/common/Button';
 import FilterBar from '../components/common/FilterBar';
 import {
     fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
-    fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
+    fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount, fetchCargadasDesdePortal,
 } from '@nucleo/data/compras';
+import AvatarConEstado from '../components/common/AvatarConEstado';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
@@ -72,7 +74,28 @@ function defaultRange() {
 
 // ── ItemsExpand ───────────────────────────────────────────────────────────────
 
-function ItemsExpand({ receiptId, comoPanel = false }) {
+// Quién la cargó desde el portal y cuándo. Foto + nombre corto, como todo
+// «quién lo hizo» del portal.
+function CargadaDesdePortal({ carga }) {
+    if (!carga) return null;
+    const cuando = new Date(carga.cargada_el).toLocaleString('es-SV', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+    return (
+        <div className="flex items-center gap-2 flex-wrap text-label text-content-2 mb-2">
+            <MonitorCheck size={14} className="text-info-text shrink-0" />
+            <span>Cargada desde el portal por</span>
+            <AvatarConEstado emp={{ id: carga.employee_id, name: carga.empleado }} px={18} radio="rounded-full" marco="" />
+            <span className="font-semibold text-content">{shortEmployeeName(carga.empleado)}</span>
+            <span className="text-content-3 tabular-nums">· {cuando}</span>
+            {carga.estado === 'sin_verificar' && (
+                <Badge variant="warning" size="sm" uppercase={false}>sin comprobar</Badge>
+            )}
+        </div>
+    );
+}
+
+function ItemsExpand({ receiptId, carga, comoPanel = false }) {
     const { hasPermission } = useAuth();
     const canVerMontos = hasPermission('compras_ver_montos');
     const [items,   setItems]   = useState(null);
@@ -104,6 +127,7 @@ function ItemsExpand({ receiptId, comoPanel = false }) {
     // que se abre el detalle de una compra.
     if (comoPanel) return (
         <div className="flex flex-col px-3 py-2">
+            <CargadaDesdePortal carga={carga} />
             {items.map((it) => {
                 const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
                 return (
@@ -149,6 +173,7 @@ function ItemsExpand({ receiptId, comoPanel = false }) {
 
     return (
         <div className="px-4 py-3">
+            <CargadaDesdePortal carga={carga} />
             {/* `movil={false}` con su motivo: en el teléfono esta rama NO se
                 dibuja. `ExpedienteMovil` monta el mismo componente con
                 `comoPanel`, que sale arriba en bloques —es el diseño que pidió
@@ -202,6 +227,8 @@ function TabFacturas({
     const [page,      setPage]      = useState(1);
     const [total,     setTotal]     = useState(0);
     const [expandedId, setExpandedId] = useState(null);
+    // Las compras de la página que se cargaron con «Cargar en Bodega».
+    const [delPortal, setDelPortal] = useState({});
     // El detalle de la factura vive en un `<tr colSpan>` hermano, que en el
     // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
     const { enTelefono, abierto } = useExpedienteMovil(rows, expandedId);
@@ -220,6 +247,9 @@ function TabFacturas({
         setRows(data || []);
         setTotal(count || 0);
         setLoading(false);
+        const { porCompra, error } = await fetchCargadasDesdePortal((data || []).map(r => r.erp_purchase_id));
+        if (error) console.warn('[compras] no se pudo leer qué entró desde el portal:', error.message);
+        if (turno === vigente.current) setDelPortal(porCompra);
     }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm, page]);
 
     // Reset page when filters change
@@ -313,7 +343,18 @@ function TabFacturas({
                                     {!row.supplier_id && (
                                         <span className="text-micro font-mono text-content-3">#{row.erp_purchase_id}</span>
                                     )}
+                                    {delPortal[row.erp_purchase_id] && (
+                                        <Badge variant="info" size="sm" uppercase={false}
+                                            title={`Cargada desde el portal por ${shortEmployeeName(delPortal[row.erp_purchase_id].empleado)}`}>
+                                            <MonitorCheck size={11} className="mr-1 inline" />Desde el portal
+                                        </Badge>
+                                    )}
                                 </div>
+                                {row.documento_numero && (
+                                    <span className="block text-micro font-mono text-content-3 truncate">
+                                        {row.documento_tipo ? `${row.documento_tipo} · ` : ''}{row.documento_numero}
+                                    </span>
+                                )}
                             </DataCell>
                             <DataCell align="center" hideBelow="md">{estadoBadge(row.estado)}</DataCell>
                             <DataCell align="center">
@@ -348,7 +389,7 @@ function TabFacturas({
                         {expandedId === row.id && !enTelefono && (
                             <tr>
                                 <td colSpan={cols.length} className="p-0">
-                                    <ItemsExpand receiptId={row.id} />
+                                    <ItemsExpand receiptId={row.id} carga={delPortal[row.erp_purchase_id]} />
                                 </td>
                             </tr>
                         )}
@@ -363,7 +404,7 @@ function TabFacturas({
                 titulo={abierto?.proveedor || 'Factura de compra'}
                 subtitulo={abierto?.fecha}
             >
-                {(row) => <ItemsExpand receiptId={row.id} comoPanel />}
+                {(row) => <ItemsExpand receiptId={row.id} carga={delPortal[row.erp_purchase_id]} comoPanel />}
             </ExpedienteMovil>
 
             {totalPages > 1 && (

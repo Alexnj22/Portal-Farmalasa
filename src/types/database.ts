@@ -30423,6 +30423,17 @@ export type Database = {
           supplier_id: number
         }[]
       }
+      compras_cargadas_desde_portal: {
+        Args: { p_erp_ids: number[] }
+        Returns: {
+          cargada_el: string
+          document_id: number
+          empleado: string
+          employee_id: string
+          erp_compra_id: number
+          estado: string
+        }[]
+      }
       comprobantes_de_caja_red: { Args: never; Returns: boolean }
       comprobantes_de_caja_sala: { Args: never; Returns: string }
       confirm_pedido: {

@@ -19,7 +19,7 @@ export function fetchPurchaseReceiptItems(receiptId) {
 export function fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinProveedor, supplierId, searchTerm }) {
     let q = supabase
         .from('purchase_receipts')
-        .select('id, erp_purchase_id, fecha, proveedor, estado, subtotal, iva, total, supplier_id, suppliers(nombre), purchase_receipt_items(id)', { count: 'exact' })
+        .select('id, erp_purchase_id, fecha, proveedor, documento_tipo, documento_numero, estado, subtotal, iva, total, supplier_id, suppliers(nombre), purchase_receipt_items(id)', { count: 'exact' })
         .order('fecha', { ascending: false })
         .order('id',    { ascending: false })
         .range(from, to);
@@ -37,6 +37,19 @@ export function fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinPro
         if (patron) q = q.filter('proveedor', 'imatch', patron);
     }
     return q;
+}
+
+/**
+ * Cuáles de estas compras de Bodega entraron desde el portal («Cargar en
+ * Bodega»), quién las cargó y cuándo: `{ [erp_purchase_id]: fila }`.
+ * Una página son ≤ PAGE_SIZE ids y la función devuelve una fila por compra.
+ */
+export async function fetchCargadasDesdePortal(erpIds = []) {
+    const ids = [...new Set(erpIds.filter(Boolean))];
+    if (!ids.length) return { porCompra: {}, error: null };
+    const { data, error } = await supabase.rpc('compras_cargadas_desde_portal', { p_erp_ids: ids });
+    if (error) return { porCompra: {}, error };
+    return { porCompra: Object.fromEntries((data ?? []).map(r => [r.erp_compra_id, r])), error: null };
 }
 
 export function fetchProductPurchaseSummaryPage(from, to, searchTerm) {

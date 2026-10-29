@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1386.0 — Compras: marca de lo cargado desde el portal
+
+Compras (Bodega) marca con **«Desde el portal»** las compras que entraron con
+«Cargar en Bodega», y al abrir una dice quién la cargó (foto y nombre corto) y
+cuándo; si no se pudo comprobar, lo avisa. Debajo del proveedor sale el tipo y
+el número del documento (CCF · 1809BEF9…). Lo contesta
+`compras_cargadas_desde_portal(ids)` —DEFINER, con el permiso de `compras`—,
+porque `compra_carga` sólo la ve quien tiene `cargar_compra`.
+
 ## v2.1385.1 — Confirmar: una sola rueda mientras procesa
 
 El diálogo de confirmación mostraba dos ruedas girando a la vez mientras

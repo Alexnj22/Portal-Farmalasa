@@ -436,8 +436,9 @@ const EXCEPTIONS = {
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
   //   propio canónico; --danger es su final. Un degradado necesita dos
   //   paradas y solo una es token. Candidato a --danger-gradient en D2.5.
-  // · TabCatalogo.jsx — `ctx.fillStyle` de canvas: canvas NO resuelve var(),
-  //   necesita un color literal. Único caso técnico real del barrido.
+  // · plataforma/imagenes.js — `ctx.fillStyle` de canvas: canvas NO resuelve
+  //   var(), necesita un color literal. Es el fondo blanco de la foto del
+  //   catálogo; vivía en TabCatalogo.jsx hasta el 2026-10-30.
   // · tabminmax/constants.js — #94a3b8 es el escalón MEDIO de la rampa
   //   ABC/XYZ (A/X=chart-8 oscuro, B/Y=este, C/Z=warning/danger). Usar
   //   chart-8 colapsaría dos categorías en un color. Es una rampa
@@ -513,7 +514,8 @@ const EXCEPTIONS = {
   // propio (el botón, el aviso fijado, el enlace del pie).
   'src/components/common/paletaDeAviso.js': ['white'],
   // `carril-pildora`: excepción MEDIDA, ver la nota junto a ClientesView.
-  'src/views/productos/TabCatalogo.jsx': ['hex', 'carril-pildora'],
+  'src/views/productos/TabCatalogo.jsx': ['carril-pildora'],
+  'src/plataforma/imagenes.js': ['hex'],
   'src/views/productos/tabminmax/constants.js': ['hex'],
   // ── D2.2, cierre (2026-07-27) ──────────────────────────────────────────
   // Los 20 `zIndex:` que quedaban son tooltips y popovers PORTALEADOS: se

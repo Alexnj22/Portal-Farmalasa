@@ -327,6 +327,10 @@ const GRUPOS_CRUDOS = [
                 // migración que renombró las filas.
                 { key: 'productos_ver_costos',     label: 'Ver costos de compra', tipo: 'cap' },
             ]},
+            // La cola para completar foto y principio activo (2026-10-30). Editar
+            // deja escribir SÓLO esas dos cosas, no la ficha: para dárselo a una
+            // persona sin abrirle el catálogo, va en su cargo secundario.
+            { key: 'fotos_productos', label: 'Fotos de productos', desc: 'Completar la foto y el principio activo de los productos del catálogo, uno detrás de otro, en una cola común. Ver = mirar la cola y el avance del equipo; editar = subir fotos y escribir principios activos', icono: 'Camera', hasApprove: false },
             // Las dos nacieron como pestañas de Productos y pasaron a módulo
             // propio el 2026-08-08 (pedido del usuario). Ninguna lleva `sub`:
             // lo que gateaba cada pestaña era su propia clave, y esa clave ES

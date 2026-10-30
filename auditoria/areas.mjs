@@ -934,8 +934,8 @@ export const AREAS = [
         nombre: 'Productos, presentaciones y laboratorios',
         resumen: 'El catálogo: ficha del producto, presentaciones, principios activos, precios y su historial, laboratorios y política de vencimiento.',
         modulos: ['productos', 'productos_tab_catalogo', 'productos_tab_presentaciones',
-                  'productos_ver_costos', 'laboratorios'],
-        rutas: ['/productos', '/laboratorios'],
+                  'productos_ver_costos', 'laboratorios', 'fotos_productos'],
+        rutas: ['/productos', '/laboratorios', '/fotos-productos'],
         archivos: [
             'src/views/ProductosView.jsx', 'src/views/productos/TabCatalogo.jsx',
             'src/views/productos/TabLaboratorios.jsx', 'src/views/productos/TabPresentaciones.jsx',
@@ -944,6 +944,8 @@ export const AREAS = [
             // una presentación y la existencia que dejó un cambio.
             'src/views/productos/TabRevisionFactor.jsx', 'src/data/revisionFactor.js',
             'src/views/LaboratoriosView.jsx',
+            // Fotos de productos (2026-10-30): la cola para completar foto y principio activo.
+            'src/views/FotosProductosView.jsx', 'src/data/fotosProductos.js',
             'src/data/productos.js', 'src/data/presentaciones.js', 'src/data/laboratorios.js',
             'src/data/srs.js',   // el registro sanitario (salió de 3 copias en pantallas, F3)
             'src/data/minmaxLabs.js',
@@ -952,7 +954,8 @@ export const AREAS = [
         tablas: ['products', 'products_changelog', 'products_sync_log', 'presentaciones',
                  'product_active_principles', 'product_categories', 'product_locations',
                  'product_precios', 'product_precios_changelog', 'product_precios_history',
-                 'laboratorios', 'lab_locations', 'factores_sospechosos_avisados'],
+                 'laboratorios', 'lab_locations', 'factores_sospechosos_avisados',
+                 'producto_carga_tomas', 'producto_carga_log'],
         edge: ['sync-products', 'notify-new-products-daily'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.

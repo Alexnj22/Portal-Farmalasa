@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1404.0 — Fotos de productos: cola para completar foto y principio activo
+
+Módulo nuevo `fotos_productos` (Inventario › Producto): una cola común que pone el siguiente producto activo al que le falta foto o principio activo, los que más se venden primero. Medido el 2026-10-30: 4,362 de 4,382 activos sin foto y 3,632 sin principio. Abrir un producto lo toma 15 minutos para que otra persona no haga el mismo; «Guardar y siguiente» sube la foto (cuadrada, 800 px, mismo `product-photos/<id>.jpg` del catálogo) y los principios con su concentración juntos, y queda quién lo hizo. Avance del equipo por persona (hoy y 7 días). En el teléfono abre la cámara; en la computadora, el QR al teléfono. También pantalla nativa en la app. El permiso escribe SÓLO foto y principios (función DEFINER), no abre la ficha. `fotoDeCatalogo` sale de TabCatalogo a `plataforma/imagenes.js`.
+
+**Requiere la migración `fotos_de_productos_cola`** (tablas `producto_carga_tomas`/`producto_carga_log`, cuatro funciones, policies del bucket): sin ella la pantalla no carga.
+
 ## v2.1403.2 — El Enter del lector ya no cierra el diálogo del carné
 
 Salud 1 no pudo confirmar sus cortes del 30-oct: en «¿Quién recibe la caja?» el carné se leía bien, pero el Enter que manda el lector al final apretaba el botón con el foco —la «Cerrar» del diálogo— y el corte quedaba «sin resolver». 16 lecturas exitosas, ninguna confirmación, sin un solo error. `useCapturaDeCarne` ahora se queda con el Enter que cierra una ráfaga del lector (rápida de punta a punta); el Enter de alguien que escribe en un campo sigue igual. Vale para todas las pantallas que usan el lector. Reproducido y verificado en el entorno de pruebas.

@@ -52,6 +52,7 @@ import {
     clasificarCompras, comprasOrdenadas, historialDePreciosSinRepetir,
 } from '@nucleo/utils/preciosDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
+import { fotoDeCatalogo } from '../../plataforma/imagenes';
 
 
 // Los niveles de precio y cuáles ve cada cargo viven en el núcleo
@@ -542,30 +543,6 @@ async function pasteImageFromClipboard() {
     return null;
 }
 
-// Resize + compress an image File to a JPEG Blob (max side = maxPx)
-function resizeImage(file, maxPx, quality) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            const ratio = Math.min(1, maxPx / Math.max(img.width, img.height));
-            const w = Math.round(img.width  * ratio);
-            const h = Math.round(img.height * ratio);
-            const canvas = document.createElement('canvas');
-            canvas.width  = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, w, h);
-            ctx.drawImage(img, 0, 0, w, h);
-            canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', quality);
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
-        img.src = url;
-    });
-}
-
 // ── Purchase history helpers ──────────────────────────────────────────────────
 
 const CLASIF_STYLE = {
@@ -924,7 +901,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         setPendingFile(null);
         setPhotoLoading(true);
         try {
-            const resized = await resizeImage(blob, 800, 0.85);
+            const resized = await fotoDeCatalogo(blob, 800, 0.85);
             const path = `${product.id}.jpg`;
             const publicUrl = await subirArchivo('product-photos', path, resized, { upsert: true, contentType: 'image/jpeg' });
             const cacheBust = `${publicUrl}?t=${Date.now()}`;

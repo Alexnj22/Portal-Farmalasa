@@ -9,6 +9,7 @@
 // entrada contra la versión anterior: mismo componente. Plan en
 // `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
 import {
+    Camera,
     HandCoins,
     Syringe,
     CalendarCheck,
@@ -96,6 +97,7 @@ import { MODULE_GROUPS as GRUPOS, MODULE_INFO as INFO } from '@nucleo/constants/
 export * from '@nucleo/constants/permissionModules';
 
 const ICONOS = {
+    Camera,
     Activity,
     AlertTriangle,
     BadgeAlert,

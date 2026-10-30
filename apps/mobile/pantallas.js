@@ -72,6 +72,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/ventas-perdidas': true, // ver, marcar listo y reportar desde el mostrador
   '/conteo-inventario': '/conteos', // contar en el teléfono; crear y aprobar siguen en el portal
   '/productos': true,      // el catálogo para consultar; la ficha trae existencias y precios
+  '/fotos-productos': true, // la cola para completar foto y principio activo, con la cámara
   '/vacaciones': true,     // el plan del año mes por mes; asignar y aprobar siguen en el portal
   '/horarios': true,       // la semana de la sala día por día; editar la grilla sigue en el portal
   '/mis-documentos': true, // el expediente propio y los papeles de las solicitudes

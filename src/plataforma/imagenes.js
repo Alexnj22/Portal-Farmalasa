@@ -88,3 +88,24 @@ export async function comprimirFotoDeEmpleado(file, maxWidth = 400) {
         }, 'image/webp', 0.85);
     });
 }
+
+/**
+ * La foto del catálogo de productos: lado mayor `ladoMaximo`, JPEG, sobre
+ * fondo BLANCO (una PNG transparente saldría negra en JPEG). Vivía escrita
+ * dentro de la ficha del catálogo; salió el 2026-10-30 porque Fotos de
+ * productos sube al mismo bucket y la foto tiene que salir igual.
+ */
+export async function fotoDeCatalogo(archivo, ladoMaximo = 800, calidad = 0.85) {
+    const img = await abrirImagen(archivo);
+    const escala = Math.min(1, ladoMaximo / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * escala);
+    c.height = Math.round(img.height * escala);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return new Promise((resolve, reject) => {
+        c.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('No se pudo preparar la foto.'))), 'image/jpeg', calidad);
+    });
+}

@@ -96,6 +96,10 @@ export const MODULE_MAP = {
     galeria:           { path: '/galeria',          label: 'Galería',                  icono: 'FolderOpen' },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icono: 'Users',        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icono: 'Package'       },
+    // Completar la foto y el principio activo del catálogo en cola (2026-10-30).
+    // Módulo propio y no pestaña de Productos: quien sube fotos no tiene por
+    // qué ver precios ni la ficha entera.
+    fotos_productos:   { path: '/fotos-productos',  label: 'Fotos de productos',       icono: 'Camera'        },
     laboratorios:      { path: '/laboratorios',     label: 'Laboratorios',             icono: 'FlaskConical'  },
     pedidos:           { path: '/pedidos',          label: 'Pedidos a sucursales',     icono: 'ClipboardList' },
     // Las dos salieron de ser pestañas de Productos (v2.521.0). El catálogo

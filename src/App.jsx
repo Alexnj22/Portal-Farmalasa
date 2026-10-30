@@ -73,6 +73,7 @@ const CortesView = lazy(IMPORTADORES.CortesView);
 const CuentasPorCobrarView = lazy(IMPORTADORES.CuentasPorCobrarView);
 const BolsasView = lazy(IMPORTADORES.BolsasView);
 const ProductosView = lazy(IMPORTADORES.ProductosView);
+const FotosProductosView = lazy(IMPORTADORES.FotosProductosView);
 const LaboratoriosView = lazy(IMPORTADORES.LaboratoriosView);
 const PedidosView = lazy(IMPORTADORES.PedidosView);
 const GestionStockView = lazy(IMPORTADORES.GestionStockView);
@@ -958,6 +959,7 @@ function MainApp() {
                                     <Route path="mayoristas" element={<PermissionGuard moduleKey="mayoristas"><MayoristasView /></PermissionGuard>} />
                                     <Route path="reclamos-clientes" element={<PermissionGuard moduleKey="reclamos_clientes"><ReclamosClientesView /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
+                                    <Route path="fotos-productos" element={<PermissionGuard moduleKey="fotos_productos"><FotosProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
                                     <Route path="pedidos" element={<PermissionGuard moduleKey="pedidos"><PedidosView /></PermissionGuard>} />
                                     <Route path="gestion-stock" element={<PermissionGuard moduleKey="gestion_stock"><GestionStockView /></PermissionGuard>} />
@@ -1198,6 +1200,7 @@ const ROUTE_TITLES = {
     '/ofertas-clientes':  'Ofertas para clientes',
     '/galeria':           'Galería',
     '/productos':         'Productos',
+    '/fotos-productos':   'Fotos de productos',
     '/laboratorios':      'Laboratorios',
     '/pedidos':           'Pedidos a sucursales',
     '/traslados':         'Traslados entre salas',

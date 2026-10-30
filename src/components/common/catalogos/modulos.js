@@ -9,6 +9,7 @@
 // entrada contra la versión anterior: mismo componente. Plan en
 // `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
 import {
+    Camera,
     CalendarCheck,
     HandCoins,
     Monitor,
@@ -80,6 +81,7 @@ import { MENU_GROUPS as GRUPOS } from '@nucleo/constants/menuGroups';
 export * from '@nucleo/constants/moduleMap';
 
 const ICONOS = {
+    Camera,
     Activity,
     AlertTriangle,
     ArrowLeftRight,

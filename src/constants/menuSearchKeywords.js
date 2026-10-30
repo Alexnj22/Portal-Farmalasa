@@ -49,6 +49,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     bonificaciones:     ['incentivos', 'comisiones', 'bonos'],
     entrevistas:        ['reclutamiento', 'candidatos', 'contratacion'],
     productos:          ['catalogo', 'medicamentos', 'articulos', 'presentaciones', 'ficha de producto'],
+    fotos_productos:    ['foto de producto', 'imagen', 'principio activo', 'compuesto activo', 'completar catalogo'],
     laboratorios:       ['fabricantes', 'marcas', 'labs'],
     pedidos:            ['logistica', 'traslados entre sucursales', 'reabastecimiento', 'distribucion interna'],
     gestion_stock:      ['sin venta', 'sin min max', 'stock retenido', 'stock estancado', 'no rota', 'sin parametros'],

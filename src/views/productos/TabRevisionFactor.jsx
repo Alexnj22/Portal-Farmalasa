@@ -3,9 +3,9 @@ import { ArrowRight, PackageX, History, AlertTriangle, CheckCircle2, Clock, Wren
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { fetchConsultasExistencia, agruparPorProducto, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
@@ -14,7 +14,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatQty } from '@nucleo/utils/formatNumber';
-import { fechaNumerica } from '@nucleo/utils/fecha';
+import { fechaNumerica, venceDelMes, mesDelVence } from '@nucleo/utils/fecha';
 
 // Pedirle a la sala que cuente antes de corregir. Diferido: sólo hace falta al
 // apretar el botón.
@@ -303,7 +303,9 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
     // la caja (X-Ray Dol, 2026-10-30). Sale de lo que contó la sala; si no la
     // contó, la escribe quien corrige.
     const pideVence = necesitaVence(f);
-    const [vence, setVence] = useState(sol?.vence ?? f.vence_contado ?? '');
+    // Como mes ('AAAA-MM'): el empaque no trae día. Se guarda el día 1.
+    const [vence, setVence] = useState(mesDelVence(sol?.vence ?? f.vence_contado));
+    const venceDia = venceDelMes(vence);
     // Una pendiente que quien puede aplicar ya intentó y no entró: se reintenta
     // desde acá, sin ir a Solicitudes.
     const reintentable = !!sol && !sol.aplicada && sol.status === 'PENDING' && puedeAplicar;
@@ -319,15 +321,15 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
         try {
             let id = sol?.id;
             if (reintentable) {
-                if (pideVence && vence && vence !== sol.vence) {
-                    const { error } = await ponerVenceACorreccion(id, vence);
+                if (pideVence && venceDia && venceDia !== sol.vence) {
+                    const { error } = await ponerVenceACorreccion(id, venceDia);
                     if (error) throw error;
                 }
             } else {
                 id = crypto.randomUUID();
                 const { error } = await pedirCorreccionDeExistencia({
                     id, fila: f, usuarioId: user?.id, aprobador: supervisorQueResuelve(employees),
-                    vence: pideVence ? vence || null : null,
+                    vence: pideVence ? venceDia : null,
                 });
                 if (error) throw error;
             }
@@ -420,49 +422,25 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                 isDestructive={false}
                 title={`Corregir ${f.nombre}`}
                 confirmText={reintentable ? 'Aplicar ahora' : puedeAplicar ? 'Corregir ahora' : 'Pedir la corrección'}
-                confirmDisabled={pideVence && !vence}
+                confirmDisabled={pideVence && !venceDia}
                 message={(
-                    <span className="block space-y-2 text-left">
+                    <span className="block space-y-3 text-left">
                         <span className="block">
-                            <b>Qué pasó:</b> la presentación cambió de tamaño: antes 1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.de)},
-                            {' '}ahora 1 {f.tipo_cambio ?? f.presentacion} = {formatQty(f.a)}. La caja no convierte la existencia,
                             {carga
-                                ? <> así que las {formatQty(f.muestra)} {pres} que había en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedaron contadas como {formatQty(f.muestra)} {comoSeVe}.</>
-                                : <> así que en {f.sala}{f.lote ? ` (lote ${f.lote})` : ''} quedó mostrando {formatQty(f.muestra)}.</>}
-                        </span>
-                        <span className="block">
-                            {carga ? (
-                                <>
-                                    <b>Qué se hace:</b> se cargan {formatQty(f.cargar)} {enCarga} y la sala vuelve a tener {formatQty(f.quedan)} {pres}.
-                                    {f.sobran > 0 && ` Quedan además ${formatQty(f.sobran)} unidades sueltas de más que no se pueden sacar: no forman una ${pres}.`}
-                                </>
-                            ) : (
-                                <>
-                                    <b>Qué se hace:</b> se descartan {formatQty(f.descartar)} y quedan {formatQty(f.quedan)}.
-                                    {f.sueltas > 0 && ` Las ${formatQty(f.sueltas)} unidades sueltas no alcanzan para una ${pres} y también salen.`}
-                                </>
-                            )}
+                                ? <>En {f.sala} se cargan <b>{formatQty(f.cargar)} {enCarga}</b> y queda {formatQty(f.quedan)} {pres}.</>
+                                : <>En {f.sala} se descartan <b>{formatQty(f.descartar)}</b> y quedan {formatQty(f.quedan)} {pres}.</>}
+                            {carga && f.sobran > 0 && ` Sobran ${formatQty(f.sobran)} sueltas que no se pueden sacar.`}
+                            {!carga && f.sueltas > 0 && ` Las ${formatQty(f.sueltas)} sueltas también salen.`}
                         </span>
                         {pideVence && (
-                            <span className="block space-y-1">
-                                <b>Vence:</b>{' '}
-                                {f.vence_contado && vence === f.vence_contado
-                                    ? 'la fecha que contó la sala. Cámbiala si la caja dice otra.'
-                                    : 'el producto lleva fecha y la sala no la tiene en el sistema. Léela en la caja.'}
-                                <LiquidDatePicker value={vence ?? ''} onChange={(v) => setVence(v)} />
-                            </span>
+                            <CampoMesAnio label="Vence (mes y año)" value={vence} onChange={setVence} />
                         )}
-                        <span className="block">
-                            <b>Lo que queda escrito en el movimiento:</b> «{causaDeCorreccion(f)}»
-                        </span>
                         <span className="block text-content-3">
                             {carga
-                                ? `Corrige sólo si en la sala hay ${formatQty(f.muestra)} ${pres} enteras. Si lo que hay son ${formatQty(f.muestra)} ${comoSeVe}, no corrijas: la existencia ya está bien.`
-                                : 'Si en la sala de verdad hay más, no corrijas: avisa para revisarlo.'}
+                                ? `Sólo si en la sala hay ${formatQty(f.muestra)} ${pres} ${f.muestra === 1 ? 'entera' : 'enteras'}.`
+                                : 'Si en la sala hay más, no corrijas: avisa.'}
                             {' '}
-                            {puedeAplicar
-                                ? 'Se aplica en la caja enseguida.'
-                                : 'Se manda a quien aprueba inventario; la existencia cambia cuando la apruebe.'}
+                            {puedeAplicar ? 'Se aplica enseguida.' : 'La aplica quien aprueba inventario.'}
                         </span>
                     </span>
                 )}

@@ -131,3 +131,16 @@ describe('meses', () => {
         expect(diasHasta('2026-10-01')).toBe(6);
     });
 });
+
+describe('vencimiento por mes', () => {
+    it('el mes del empaque se guarda el día 1, como la caja', async () => {
+        const { venceDelMes, mesDelVence, mesAnioTexto } = await import('@nucleo/utils/fecha');
+        expect(venceDelMes('2029-12')).toBe('2029-12-01');
+        expect(venceDelMes('2029-13')).toBeNull();
+        expect(venceDelMes('12/20')).toBeNull();
+        expect(venceDelMes('')).toBeNull();
+        expect(mesDelVence('2029-12-01')).toBe('2029-12');
+        expect(mesDelVence(null)).toBe('');
+        expect(mesAnioTexto('2029-12-01')).toBe('12/2029');
+    });
+});

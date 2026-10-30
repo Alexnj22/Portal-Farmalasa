@@ -115,6 +115,19 @@ export function ultimoDiaDelMes(mes) {
     return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
 }
 
+/**
+ * Un vencimiento se lee en el empaque como MES y año, sin día. La caja lo
+ * guarda el día 1 (13,182 de 13,394 filas del inventario, 2026-10-30).
+ * `venceDelMes('2029-12')` → '2029-12-01'; lo que no es un mes, `null`.
+ */
+export const venceDelMes = (mes) => (/^\d{4}-(0[1-9]|1[0-2])$/.test(String(mes ?? '')) ? `${mes}-01` : null);
+
+/** El mes ('AAAA-MM') de un vencimiento guardado como día; vacío si no hay. */
+export const mesDelVence = (fecha) => (fecha ? String(fecha).slice(0, 7) : '');
+
+/** «12/2029». */
+export const mesAnioTexto = (fecha) => (fecha ? `${String(fecha).slice(5, 7)}/${String(fecha).slice(0, 4)}` : '');
+
 /** `[primer día, último día]` de un mes. */
 export const rangoDelMes = (mes) => [`${String(mes).slice(0, 7)}-01`, ultimoDiaDelMes(mes)];
 

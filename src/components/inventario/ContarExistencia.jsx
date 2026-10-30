@@ -3,12 +3,12 @@ import { CheckCircle2, ClipboardCheck, Plus, RotateCcw, AlertTriangle, X } from 
 import LiquidModal from '../common/LiquidModal';
 import Button from '../common/Button';
 import PortalInput from '../common/PortalInput';
-import LiquidDatePicker from '../common/LiquidDatePicker';
+import CampoMesAnio from '../common/CampoMesAnio';
 import Notice from '../common/Notice';
 import { SkeletonText } from '../common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { fechaNumerica } from '@nucleo/utils/fecha';
+import { venceDelMes, mesDelVence, mesAnioTexto } from '@nucleo/utils/fecha';
 import { contarExistencia, fetchParaContar } from '@nucleo/data/consultasExistencia';
 
 /**
@@ -45,8 +45,9 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
             setDatos(data);
             setRonda(data.ronda);
             setGrupos(data.regulado
-                ? (data.lotes ?? []).map(l => ({ lote: l.lote, vence: l.vence, nuevo: false, cantidades: {} }))
-                : [{ lote: null, vence: data.vence ?? null, nuevo: false, cantidades: {} }]);
+                // El vencimiento se maneja como MES ('AAAA-MM'): es lo que trae el empaque.
+                ? (data.lotes ?? []).map(l => ({ lote: l.lote, vence: mesDelVence(l.vence), nuevo: false, cantidades: {} }))
+                : [{ lote: null, vence: mesDelVence(data.vence), nuevo: false, cantidades: {} }]);
         });
         return () => { vivo = false; };
     }, [salaId, onCerrar]);
@@ -59,9 +60,9 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
     // podría cargar si hiciera falta.
     const conAlgo = (g) => Object.values(g.cantidades).some(v => Number(v) > 0);
     const loteIncompleto = grupos.some(g => g.nuevo && conAlgo(g)
-        && (!String(g.lote ?? '').trim() || !g.vence));
+        && (!String(g.lote ?? '').trim() || !venceDelMes(g.vence)));
     // Un perecedero contado sin fecha: la base también lo rechaza.
-    const faltaVence = !!datos?.perecedero && grupos.some(g => conAlgo(g) && !g.vence);
+    const faltaVence = !!datos?.perecedero && grupos.some(g => conAlgo(g) && !venceDelMes(g.vence));
     // Qué grupos piden la fecha en pantalla: los que no la traen del sistema.
     const [pidenVence, setPidenVence] = useState(new Set());
     useEffect(() => {
@@ -75,7 +76,7 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
             tipo: p.tipo, factor: p.factor,
             cantidad: Number(g.cantidades[p.tipo] || 0),
             ...(datos.regulado ? { lote: String(g.lote ?? '').trim().toUpperCase() } : {}),
-            ...(datos.regulado || datos.perecedero ? { vence: g.vence || null } : {}),
+            ...(datos.regulado || datos.perecedero ? { vence: venceDelMes(g.vence) } : {}),
         }))).filter(c => c.cantidad > 0 || !datos.regulado);
         setEnviando(true);
         const { data, error } = await contarExistencia(salaId, conteo);
@@ -132,7 +133,7 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                                             onChange={(e) => cambiar(i, { lote: e.target.value })} />
                                         <div className="space-y-1">
                                             <p className="text-label font-bold text-content-3">Vence</p>
-                                            <LiquidDatePicker value={g.vence ?? ''} onChange={(v) => cambiar(i, { vence: v })} />
+                                            <CampoMesAnio value={g.vence ?? ''} onChange={(v) => cambiar(i, { vence: v })} />
                                         </div>
                                         <Button variant="ghost" size="sm" icon={X} iconOnly title="Quitar el lote"
                                             onClick={() => setGrupos(gs => gs.filter((_, j) => j !== i))} />
@@ -140,16 +141,12 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                                 ) : (
                                     <p className="text-body-sm font-black text-content">
                                         Lote {g.lote}
-                                        {g.vence && !pidenVence.has(i) && <span className="text-content-3 font-bold"> · vence {fechaNumerica(g.vence)}</span>}
+                                        {g.vence && !pidenVence.has(i) && <span className="text-content-3 font-bold"> · vence {mesAnioTexto(venceDelMes(g.vence))}</span>}
                                     </p>
                                 ))}
                                 {datos.perecedero && !g.nuevo && (pidenVence.has(i) || !datos.regulado) && (
-                                    <div className="space-y-1">
-                                        <p className="text-label font-bold text-content-3">
-                                            Vence{!datos.regulado && g.vence && !pidenVence.has(i) ? ' · confirma la fecha de la caja' : ' · léela en la caja'}
-                                        </p>
-                                        <LiquidDatePicker value={g.vence ?? ''} onChange={(v) => cambiar(i, { vence: v })} />
-                                    </div>
+                                    <CampoMesAnio label="Vence (mes y año)" value={g.vence ?? ''}
+                                        onChange={(v) => cambiar(i, { vence: v })} />
                                 )}
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     {(datos.presentaciones ?? []).map(p => (

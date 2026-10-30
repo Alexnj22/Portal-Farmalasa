@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1391.2 — El vencimiento se pide como mes y año; la ventana de corregir, más corta
+
+- El conteo de existencia y la corrección de factor piden el vencimiento como
+  **mes y año** (`CampoMesAnio`), que es lo que trae el empaque. Se guarda el
+  día 1, igual que la caja (13,182 de 13,394 filas del inventario).
+  `venceDelMes`/`mesDelVence`/`mesAnioTexto` en `utils/fecha.js`.
+- La ventana de «Corregir» pasa de cinco párrafos a tres líneas: qué se carga o
+  descarta y cómo queda, el vencimiento si hace falta, y cuándo no corregir.
+  El de→a ya está en la tarjeta y el texto del movimiento queda en el kardex.
+
 ## v2.1391.1 — Finalizar un pedido con un renglón en otra presentación ya no falla
 
 Al confirmar lo que sale, pasar un renglón a otra presentación (pedido #236 de Salud 5: METFORMINA de 1 caja a 4 blísteres) daba «Esta función no está disponible». `confirmar_envio_pedido` trataba `stock_packs_snapshot` como texto y es numérica (`operator does not exist: numeric ~ unknown`). Venía de v2.1384.0. Ahora se multiplica directo. Migración `20261030161410_envio_stock_packs_es_numeric`.

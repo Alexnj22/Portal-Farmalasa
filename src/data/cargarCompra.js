@@ -326,3 +326,35 @@ export async function recibirRepartoDeCompra(id, vences) {
     anotar('COMPRA_REPARTO_RECIBIDO', id, { ok: !msg, comprobado: data?.comprobado ?? null, error: msg });
     return { resultado: msg ? null : data, error: msg };
 }
+
+/* ── Pedir fechas de vencimiento a una sala (2026-10-30) ─────────────────────
+ * Facturas que no traen vencimiento (Sarita): la mercadería está en la sala,
+ * así que Bodega le pide las fechas y la sala contesta desde Traslados. */
+
+/** Los pedidos vivos y los de los últimos 30 días (el RLS recorta a la sala). */
+export async function fetchPedidosDeVence() {
+    const { data, error } = await supabase.rpc('get_compra_pedidos_vence');
+    return { pedidos: Array.isArray(data) ? data : [], error: error?.message ?? null };
+}
+
+/** `renglones` = `[{ renglon, descripcion, cantidad }]`. */
+export async function pedirVencesASala(documentId, branchId, renglones) {
+    const { data, error } = await supabase.rpc('compra_pedir_vence', {
+        p_document_id: documentId, p_branch_id: Number(branchId), p_renglones: renglones,
+    });
+    anotar('COMPRA_VENCE_PEDIDO', documentId, { sala: Number(branchId), renglones: renglones.length, error: error?.message ?? null });
+    return { id: data ?? null, error: error?.message ?? null };
+}
+
+export async function cancelarPedidoDeVence(id) {
+    const { error } = await supabase.rpc('compra_cancelar_pedido_vence', { p_id: id });
+    anotar('COMPRA_VENCE_PEDIDO_CANCELADO', id, { error: error?.message ?? null });
+    return { error: error?.message ?? null };
+}
+
+/** `respuestas` = `{ renglon: 'YYYY-MM' }`. */
+export async function responderPedidoDeVence(id, respuestas) {
+    const { error } = await supabase.rpc('compra_responder_vence', { p_id: id, p_respuestas: respuestas });
+    anotar('COMPRA_VENCE_RESPONDIDO', id, { renglones: Object.keys(respuestas ?? {}).length, error: error?.message ?? null });
+    return { error: error?.message ?? null };
+}

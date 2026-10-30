@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Truck, AlertTriangle } from 'lucide-react';
+import { Truck, AlertTriangle, CalendarClock } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
-import { fetchRepartosDeCompra, recibirRepartoDeCompra } from '@nucleo/data/cargarCompra';
+import { fetchRepartosDeCompra, recibirRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
 
 /* Lo que Bodega le repartió a la sala al cargar una compra (2026-10-30).
  *
@@ -14,7 +14,11 @@ import { fetchRepartosDeCompra, recibirRepartoDeCompra } from '@nucleo/data/carg
  * mismo —producto que viene de Bodega y hay que recibir—. Se recibe completo,
  * como el resto, y si la factura no traía vencimiento la sala lo pone aquí:
  * es quien tiene la caja enfrente. Lo ya recibido no se muestra: esta lista
- * es una cola. */
+ * es una cola.
+ *
+ * Arriba de los envíos van los PEDIDOS DE FECHAS: una factura sin vencimiento
+ * (Sarita) cuya mercadería llegó a la sala; Bodega le pide las fechas para
+ * poder cargarla. */
 
 const ESTADO = {
     por_enviar: { label: 'Por salir de Bodega', variant: 'neutral' },
@@ -26,12 +30,14 @@ const ESTADO = {
 
 export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta }) {
     const [filas, setFilas] = useState(null);
+    const [pedidos, setPedidos] = useState([]);
     const [error, setError] = useState('');
 
     const cargar = useCallback(async () => {
-        const { filas: f, error: e } = await fetchRepartosDeCompra();
-        setError(e ?? '');
+        const [{ filas: f, error: e }, { pedidos: p, error: e2 }] = await Promise.all([fetchRepartosDeCompra(), fetchPedidosDeVence()]);
+        setError(e ?? e2 ?? '');
         setFilas(f.filter(x => x.estado !== 'recibido'));
+        setPedidos(p.filter(x => x.estado === 'pendiente'));
     }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
@@ -39,17 +45,95 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
     const q = busqueda.trim().toLowerCase();
     const vistas = (filas ?? []).filter(f => !q
         || [f.emisor_nombre, f.sala, ...(f.lineas ?? []).map(l => l.descripcion)].some(t => String(t ?? '').toLowerCase().includes(q)));
-    useEffect(() => { onCuenta?.(vistas.length); }, [vistas.length, onCuenta]);
+    const pedidosVistos = pedidos.filter(f => !q
+        || [f.emisor_nombre, f.sala, ...(f.renglones ?? []).map(l => l.descripcion)].some(t => String(t ?? '').toLowerCase().includes(q)));
+    const cuenta = vistas.length + pedidosVistos.length;
+    useEffect(() => { onCuenta?.(cuenta); }, [cuenta, onCuenta]);
 
-    if (!filas || (!vistas.length && !error)) return null;
+    if (!filas || (!cuenta && !error)) return null;
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
+        {pedidosVistos.length > 0 && (
+            <div className="flex flex-col gap-2">
+                <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                    Bodega te pide fechas de vencimiento · {pedidosVistos.length}
+                </p>
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                    {pedidosVistos.map(f => <PedidoDeVence key={f.id} pedido={f} puedeResponder={puedeRecibir} onHecho={cargar} />)}
+                </div>
+            </div>
+        )}
+        {vistas.length > 0 && <div className="flex flex-col gap-2">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
                 De las compras de Bodega · {vistas.length}
             </p>
             {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {vistas.map(f => <Envio key={f.id} fila={f} puedeRecibir={puedeRecibir} onHecho={cargar} />)}
+            </div>
+        </div>}
+        </div>
+    );
+}
+
+function PedidoDeVence({ pedido, puedeResponder, onHecho }) {
+    const [fechas, setFechas] = useState({});
+    const [enviando, setEnv] = useState(false);
+    const [error, setError] = useState('');
+    const renglones = pedido.renglones ?? [];
+    const faltan = renglones.some(l => !fechas[l.renglon]);
+
+    const responder = async () => {
+        setEnv(true); setError('');
+        const { error: e } = await responderPedidoDeVence(pedido.id, fechas);
+        setEnv(false);
+        if (e) { setError(e); return; }
+        onHecho();
+    };
+
+    return (
+        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2 h-full">
+            <div className="flex items-start gap-2">
+                <CalendarClock size={16} className="text-content-3 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <p className="text-label font-black text-content truncate">{pedido.emisor_nombre ?? 'Factura'}</p>
+                    <p className="text-micro text-content-3">
+                        {pedido.sala}{pedido.fecha_emision ? ` · factura del ${fechaNumerica(pedido.fecha_emision)}` : ''}
+                        {' · busca las cajas y pon cuándo vencen'}
+                    </p>
+                </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+                {renglones.map(l => (
+                    <div key={l.renglon} className="flex items-center gap-2 flex-wrap">
+                        <p className="flex-1 min-w-[10rem] text-label text-content">
+                            {l.descripcion}
+                            {l.cantidad != null && <span className="text-content-3"> · {l.cantidad}</span>}
+                        </p>
+                        {puedeResponder && (
+                            <div className="w-[9.5rem] shrink-0">
+                                <PortalInput compact labelDenso label="Vence" type="month"
+                                    value={fechas[l.renglon] ?? ''}
+                                    onChange={e => setFechas(v => ({ ...v, [l.renglon]: e.target.value }))} />
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            <div className="mt-auto flex items-center justify-between gap-2">
+                {pedido.pedido_por ? (
+                    <span className="flex items-center gap-1.5 text-micro text-content-3 min-w-0">
+                        <AvatarConEstado emp={{ id: pedido.pedido_por, name: pedido.pedido_nombre }} px={16} radio="rounded-full" marco="" />
+                        <span className="truncate">{shortEmployeeName(pedido.pedido_nombre)}</span>
+                    </span>
+                ) : <span />}
+                {puedeResponder && (
+                    <Button size="sm" className="min-h-[var(--tap-min)]" disabled={enviando || faltan} loading={enviando}
+                        title={faltan ? 'Pon todas las fechas' : undefined} onClick={responder}>
+                        Enviar fechas
+                    </Button>
+                )}
             </div>
         </div>
     );

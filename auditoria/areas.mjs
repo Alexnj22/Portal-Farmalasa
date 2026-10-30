@@ -1123,7 +1123,7 @@ export const AREAS = [
                  'purchase_dte_review_queue', 'purchase_claim_avisos', 'purchase_claim_lines',
                  'purchase_claim_rules', 'compra_documento_leido', 'compra_pago_aplicado',
                  'compra_pagos', 'compra_producto_alias', 'compra_renglon_pendiente', 'compra_carga',
-                 'compra_documento_resuelto', 'compra_proveedor_no_va_a_bodega', 'producto_alta_portal', 'compra_renglon_erroneo', 'compra_reparto', 'compra_nota_credito_libro',
+                 'compra_documento_resuelto', 'compra_proveedor_no_va_a_bodega', 'producto_alta_portal', 'compra_renglon_erroneo', 'compra_reparto', 'compra_pedido_vence', 'compra_nota_credito_libro',
                  'proveedores', 'proveedores_categorias', 'proveedores_maestro', 'suppliers',
                  'email_sync_accounts', 'email_sync_log'],
         edge: ['sync-erp-purchases', 'sync-purchase-emails', 'check-purchases-reconciliation',

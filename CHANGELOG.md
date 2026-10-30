@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1397.0 — Compras: pedir fechas de vencimiento a la sala
+
+Facturas que no traen vencimiento (Sarita: la mercadería llega a una sala y la
+factura a Bodega). En **Cargar compra**, si hay productos sin fecha, Bodega
+elige la sala que la recibió y toca **Pedir fechas** (usuario, 2026-10-30:
+«que bodega pueda solicitar a la sucursal, son para estos casos»).
+
+A la sala le llega un aviso y lo ve arriba de **Traslados → En camino**: un mes
+y año por producto, ninguno vencido, y **Enviar fechas**. A quien pidió le
+llega el aviso de vuelta, y las fechas llenan solas los renglones vacíos de la
+carga (lo escrito a mano no se pisa). Un solo pedido vivo por factura; Bodega
+puede cancelarlo para pedirlo a otra sala.
+
+`compra_pedido_vence` + `compra_pedir_vence` / `compra_responder_vence` /
+`compra_cancelar_pedido_vence` / `get_compra_pedidos_vence`. La respuesta
+exige Traslados y ser de esa sala (o alcance de todas).
+
 ## v2.1396.0 — Compras: repartir a las salas al cargar
 
 Al cargar una compra, cada renglón tiene **Enviar a sucursales**: se pone

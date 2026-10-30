@@ -6646,6 +6646,104 @@ export type Database = {
           },
         ]
       }
+      compra_pedido_vence: {
+        Row: {
+          branch_id: number
+          created_at: string
+          document_id: number
+          emisor_nombre: string | null
+          estado: string
+          fecha_emision: string | null
+          id: number
+          pedido_por: string
+          renglones: Json
+          respondido_at: string | null
+          respondido_por: string | null
+          respuestas: Json | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          document_id: number
+          emisor_nombre?: string | null
+          estado?: string
+          fecha_emision?: string | null
+          id?: never
+          pedido_por: string
+          renglones: Json
+          respondido_at?: string | null
+          respondido_por?: string | null
+          respuestas?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          document_id?: number
+          emisor_nombre?: string | null
+          estado?: string
+          fecha_emision?: string | null
+          id?: never
+          pedido_por?: string
+          renglones?: Json
+          respondido_at?: string | null
+          respondido_por?: string | null
+          respuestas?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_pedido_vence_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_pedido_vence_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_pedido_vence_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_pedido_vence_pedido_por_fkey"
+            columns: ["pedido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_pedido_vence_pedido_por_fkey"
+            columns: ["pedido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_pedido_vence_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_pedido_vence_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_producto_alias: {
         Row: {
           codigo_proveedor: string
@@ -30896,6 +30994,10 @@ export type Database = {
           supplier_id: number
         }[]
       }
+      compra_cancelar_pedido_vence: {
+        Args: { p_id: number }
+        Returns: undefined
+      }
       compra_deshacer_resolucion: {
         Args: { p_document_id: number; p_nit?: string }
         Returns: Json
@@ -30904,9 +31006,17 @@ export type Database = {
         Args: { p_id: number; p_nota: number }
         Returns: undefined
       }
+      compra_pedir_vence: {
+        Args: { p_branch_id: number; p_document_id: number; p_renglones: Json }
+        Returns: number
+      }
       compra_resolver_documento: {
         Args: { p_document_id: number; p_motivo: string; p_receipt_id?: number }
         Returns: Json
+      }
+      compra_responder_vence: {
+        Args: { p_id: number; p_respuestas: Json }
+        Returns: undefined
       }
       compras_cargadas_desde_portal: {
         Args: { p_erp_ids: number[] }
@@ -32636,6 +32746,7 @@ export type Database = {
         Returns: Json
       }
       get_compra_erroneos: { Args: never; Returns: Json }
+      get_compra_pedidos_vence: { Args: never; Returns: Json }
       get_compra_repartos: { Args: never; Returns: Json }
       get_consecutive_mh_alerts: {
         Args: never

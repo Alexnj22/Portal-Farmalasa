@@ -72,6 +72,8 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     COMPRA_MARGEN_BAJO: 'ShoppingCart',
     // Bodega le envió a la sala parte de una compra recién cargada.
     COMPRA_REPARTO: 'Truck',
+    // Bodega le pide a la sala las fechas de vencimiento de una factura.
+    COMPRA_PEDIDO_VENCE: 'CalendarClock',
     // El mismo `Landmark` con el que el circuito de bolsas rotula «Depósitos al
     // banco»: el aviso lleva a esa sección y tiene que verse como ella.
     DEPOSITO_BANCO:   'Landmark',

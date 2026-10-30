@@ -433,6 +433,10 @@
       ],
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
+    "compra_pedir_vence": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "Bodega (cargar_compra can_edit) le pide fechas de vencimiento a la sala que recibió la mercadería: elegir la sala es el punto. Sólo crea el pedido y avisa; la respuesta exige ser de esa sala (compra_responder_vence)."
+    },
     "avisar_a_empleados": {
       "guarda": "cruza-por-diseno",
       "motivo": "Un aviso va a quien tiene que decidir, que a menudo es de otra sala: los destinatarios cruzan sucursales por diseño. Lo sensible está acotado (2026-10-02): sólo cuatro tipos, máximo 10 personas, el enlace tiene que ser una ruta del portal, y los datos de la factura se copian sólo si quien decide puede ver esa venta."

@@ -26,6 +26,7 @@ import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/Tabl
 import {
     fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, darSalidaErroneo,
+    fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
@@ -417,6 +418,20 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
         setAjustes(a => ({ ...a, [i]: { ...a[i], [campo]: valor } }));
         setRes(null);   // lo revisado ya no es lo que se ve
     };
+    // Las fechas que contestó la sala: sólo llenan los renglones VACÍOS — lo
+    // que Bodega ya escribió a mano no se pisa.
+    const usarFechas = useCallback((respuestas) => {
+        let cambio = false;
+        setAjustes(a => {
+            const n = { ...a };
+            for (const [i, v] of Object.entries(respuestas ?? {})) {
+                if (v && !n[i]?.vence) { n[i] = { ...n[i], vence: v }; cambio = true; }
+            }
+            return cambio ? n : a;
+        });
+        if (cambio) setRes(null);
+    }, []);
+
     // La persona escribe las UNIDADES que entran (usuario, 2026-10-29: «pon la
     // cantidad a cargar»); lo que viaja sigue siendo el factor —unidades por
     // cada una que factura el proveedor—, que es lo que elige la presentación
@@ -647,7 +662,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                             {pendientesDeVence > 0 && (
                                 <span className="block mt-1">
                                     {pendientesDeVence === 1 ? 'Un renglón va' : `${pendientesDeVence} renglones van`} sin
-                                    vencimiento: se le va a pedir a la sala que lo reciba.
+                                    vencimiento: la sala que lo reciba la va a tener que poner.
                                 </span>
                             )}
                             {(subenDeCosto > 0 || bajanDeCosto > 0 || conMargenMalo > 0) && (
@@ -698,6 +713,12 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                                 </span>
                             ))}
                         </Notice>
+                    )}
+                    {uso === 'venta' && (
+                        <PedirFechas documentId={doc.document_id} salas={salasReparto} puedeEditar={puedeEditar}
+                            sinFecha={p.renglones.map((r, i) => ({ renglon: i, descripcion: r.descripcion, cantidad: r.cantidad }))
+                                .filter(x => !ajustes[x.renglon]?.vence && !ajustes[x.renglon]?.erroneo)}
+                            onFechas={usarFechas} />
                     )}
                     {!revision && uso === 'venta' && faltan === 0 && (
                         <Notice variant="success" icon={CheckCircle2}>
@@ -930,6 +951,91 @@ function TotalesLadoALado({ t }) {
 /* Cómo entra un renglón a Bodega, después de revisar: en qué presentación,
    cuántas unidades, el costo contra el anterior y el margen con el precio de
    hoy. Cuatro datos en fila, cada uno con su rótulo, en vez de un párrafo. */
+/**
+ * Facturas sin vencimiento (Sarita): la mercadería llegó a una sala y la
+ * factura a Bodega. Bodega le pide las fechas a esa sala; la sala contesta en
+ * Traslados y las fechas llenan los renglones vacíos solas (usuario,
+ * 2026-10-30: «que bodega pueda solicitar a la sucursal, son para estos casos»).
+ */
+function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
+    const [pedidos, setPedidos] = useState(null);
+    const [sala, setSala] = useState('');
+    const [ocupado, setOcupado] = useState(false);
+    const [error, setError] = useState('');
+
+    const cargar = useCallback(async () => {
+        const { pedidos: p, error: e } = await fetchPedidosDeVence();
+        if (e) setError(e);
+        setPedidos(p.filter(x => x.document_id === documentId && x.estado !== 'cancelado'));
+    }, [documentId]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
+    useEffect(() => { cargar(); }, [cargar]);
+
+    const vivo = (pedidos ?? []).find(x => x.estado === 'pendiente');
+    const contestado = (pedidos ?? []).find(x => x.estado === 'respondido');
+    useEffect(() => { if (contestado?.respuestas) onFechas(contestado.respuestas); }, [contestado, onFechas]);
+
+    const pedir = async () => {
+        setOcupado(true); setError('');
+        const { error: e } = await pedirVencesASala(documentId, sala, sinFecha);
+        setOcupado(false);
+        if (e) { setError(e); return; }
+        cargar();
+    };
+    const cancelar = async () => {
+        setOcupado(true); setError('');
+        const { error: e } = await cancelarPedidoDeVence(vivo.id);
+        setOcupado(false);
+        if (e) setError(e);
+        cargar();
+    };
+
+    if (!pedidos) return null;
+    if (vivo) {
+        return (
+            <Notice variant="info" icon={CalendarRange}>
+                <b>Fechas pedidas a {vivo.sala}</b> ({(vivo.renglones ?? []).length} productos), esperando respuesta.
+                Cuando conteste, se llenan solas.
+                <span className="flex items-center gap-2 mt-1 text-micro">
+                    <AvatarConEstado emp={{ id: vivo.pedido_por, name: vivo.pedido_nombre }} px={16} radio="rounded-full" marco="" />
+                    {shortEmployeeName(vivo.pedido_nombre)}
+                    {puedeEditar && <Button size="xs" variant="ghost" loading={ocupado} onClick={cancelar}>Cancelar pedido</Button>}
+                </span>
+                {error && <span className="block text-danger-text">{error}</span>}
+            </Notice>
+        );
+    }
+    return (
+        <>
+            {contestado && (
+                <Notice variant="success" icon={CheckCircle2}>
+                    <b>{contestado.sala} contestó las fechas</b> y ya están puestas en los renglones.
+                    <span className="flex items-center gap-2 mt-1 text-micro">
+                        <AvatarConEstado emp={{ id: contestado.respondido_por, name: contestado.respondido_nombre }} px={16} radio="rounded-full" marco="" />
+                        {shortEmployeeName(contestado.respondido_nombre)}
+                    </span>
+                </Notice>
+            )}
+            {sinFecha.length > 0 && puedeEditar && (
+                <Notice variant="warning" icon={CalendarRange}>
+                    <b>{sinFecha.length === 1 ? 'Un producto no trae' : `${sinFecha.length} productos no traen`} fecha de vencimiento.</b>{' '}
+                    Si la mercadería llegó a una sala, pídele las fechas:
+                    <span className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="w-[12rem]">
+                            <LiquidSelect value={sala} onChange={v => setSala(v || '')} placeholder="¿Qué sala la recibió?"
+                                options={salas.map(b => ({ value: String(b.id), label: b.name }))} compact />
+                        </span>
+                        <Button size="sm" icon={CalendarRange} disabled={!sala || ocupado} loading={ocupado} onClick={pedir}>
+                            Pedir fechas
+                        </Button>
+                    </span>
+                    {error && <span className="block mt-1 text-danger-text">{error}</span>}
+                </Notice>
+            )}
+        </>
+    );
+}
+
 /** `{ branchId: '12' }` tecleado → `{ branchId: 12 }` sin vacíos, o null. */
 function aRepartir(reparto) {
     if (!reparto) return null;

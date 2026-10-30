@@ -85,8 +85,8 @@ export const DIAS_DE_RESERVA = 7;
 
 // ── Reglamento de reservas v2 (rige desde `reglas_v2_desde()`, 2026-11-15) ──
 //
-// Un abono es un ANTICIPO: desde el reglamento v2 se retira en 30 días, sin
-// prórroga, y lo pagado queda a favor por un año (cláusulas 3.3, 6.4 y 8.2).
+// Un abono es un ANTICIPO: desde el reglamento v2 se retira en 30 días, con
+// prórroga sólo por solicitud autorizada (2026-10-30), y lo pagado queda a favor por un año (cláusulas 3.3, 6.4 y 8.2).
 // Cuál de las dos rige lo dice la base (`reserva_reglas()`, por la fecha de
 // HOY); estas funciones reciben esas reglas y, sin ellas, escriben las de v1.
 // Los papeles ya entregados siguen diciendo lo que decían: el texto se elige
@@ -99,8 +99,8 @@ export function vigenciaDelSaldo(reglas) {
 }
 
 export const POLITICA_DE_RESERVA_V2 = [
-    'El producto queda apartado 30 dias desde la fecha del comprobante. Los plazos para retirar no se prorrogan. Vencido sin retirarlo, la farmacia puede volver a venderlo.',
-    'Si el cliente desiste o no retira a tiempo, el abono queda como saldo a favor por 12 meses, aplicable a cualquier compra en cualquier sucursal. No se devuelve en efectivo salvo que la administracion lo autorice.',
+    'El producto queda apartado 30 dias desde la fecha del comprobante. El plazo no se prorroga automaticamente: la empresa puede autorizar una prorroga, a solicitud del cliente, cuando las circunstancias lo justifiquen. Vencido sin retirarlo, la farmacia puede volver a venderlo.',
+    'Si el cliente desiste o no retira a tiempo, el abono queda como saldo a favor por 12 meses, aplicable a cualquier compra en cualquier sucursal. No se devuelve en efectivo salvo que la empresa lo autorice.',
     'El retiro se hace presentando el comprobante. Sin el, se entrega solo al titular con documento de identidad.',
     'Con el abono, el precio queda fijo: es el del comprobante, aunque cambie durante el plazo.',
     'Si el producto no llega por causa del proveedor, se devuelve el abono completo o se aplica a otro producto, a eleccion del cliente.',

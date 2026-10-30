@@ -7,6 +7,7 @@ import LiquidModal from '../../components/common/LiquidModal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { codigoDeReserva, whatsappDe } from '@nucleo/data/reservas';
+import { textoDeProrroga } from '@nucleo/utils/reservasDeSala';
 import { TRASLADO, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, renglonesDe, telefonoLegible } from './reservaVista';
 import { HistorialDeAvisos, InsigniaDeNivel } from './AvisosDeReserva';
 
@@ -36,7 +37,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
     const fechas = [
         ['Creada', r.creada && cuando(r.creada)],
         ['Lista', r.lista_at && cuando(r.lista_at)],
-        ['Retira hasta', r.estado === 'lista' && r.vence_at && `${dia(r.vence_at)}${r.prorrogada_at ? ' (prorrogada)' : ''}`],
+        ['Retira hasta', r.estado === 'lista' && r.vence_at && `${dia(r.vence_at)}${textoDeProrroga(r)}`],
         ['Avisada', r.avisado_at && `${cuando(r.avisado_at)}${r.avisado_via === 'whatsapp' ? ' · por WhatsApp' : ''}`],
     ].filter(([, v]) => v);
 

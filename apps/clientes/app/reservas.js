@@ -52,6 +52,7 @@ import { Boton, Cargando, Pantalla, Seccion as SeccionUi, Tarjeta, Vacio } from 
 import GrupoDeBotones from '../componentes/GrupoDeBotones';
 import Icono from '../componentes/Icono';
 import CodigoReserva from '../componentes/CodigoReserva';
+import ProrrogaHoja from '../componentes/ProrrogaHoja';
 import { Entrada, Latido } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
@@ -66,6 +67,34 @@ import { useVisible } from '../lib/visible';
 import { sincronizarReservasVivas, vigilarReservasVivas } from '../modules/reserva-viva';
 import { esDeMuestra, misReservasConDemo, useDemo } from '../lib/demo';
 import { useModoPrueba } from '../lib/prueba';
+
+// Cómo se alarga el plazo (2026-10-30): 'directa' = la de 7 días de las
+// condiciones anteriores; 'pedir' = reglamento v2, cláusula 6.4 — se pide con
+// días y motivo y la Empresa decide; 'pendiente' = ya se pidió. `prorrogable`
+// lo manda el servidor y sólo es verdad para la directa.
+function modoDeProrroga(x, encargo = false) {
+  const lista = encargo ? x?.estado === 'listo' : x?.estado === 'lista';
+  if (!lista) return null;
+  if (x.prorroga?.estado === 'pendiente') return 'pendiente';
+  const usada = encargo ? x.prorrogado_at : x.prorrogada_at;
+  if (x.prorrogable === undefined) return usada ? null : 'directa';
+  if (x.prorrogable) return 'directa';
+  return usada ? null : 'pedir';
+}
+
+// La línea que dice en qué va la prórroga, o nada.
+function EstadoDeProrroga({ p }) {
+  const t = useTema();
+  if (!p) return null;
+  const dias = (n) => `${n} ${Number(n) === 1 ? 'día' : 'días'}`;
+  const texto = p.estado === 'pendiente' ? `Pediste ${dias(p.dias)} más · la estamos revisando`
+    : p.estado === 'autorizada' ? `Prórroga autorizada: ${dias(p.dias_autorizados ?? p.dias)} más`
+    : p.estado === 'negada' ? `No pudimos autorizar la prórroga${p.nota ? `: ${p.nota}` : '.'}`
+    : null;
+  if (!texto) return null;
+  const color = p.estado === 'negada' ? t.color.peligroTexto : p.estado === 'autorizada' ? t.color.verdeTexto : colorSistema.texto2;
+  return <Text style={{ fontSize: 14, fontWeight: '600', color }}>{texto}</Text>;
+}
 
 // Colores del tema (cambian con el modo oscuro y se leen sobre el vidrio).
 const ESTADO_BASE = {
@@ -210,6 +239,8 @@ export default function Reservas() {
   // segundo toque al instante; el estado deshabilita el botón.
   const pagandoYa = useRef(false);
   const [pagandoEncargo, setPagandoEncargo] = useState(null);
+  // La hoja para pedir la prórroga (reglamento v2, 6.4): { tipo, ids, titulo, vence }.
+  const [hojaProrroga, setHojaProrroga] = useState(null);
   const pagarEncargo = async (e) => {
     if (pagandoYa.current) return;
     pagandoYa.current = true;
@@ -337,7 +368,16 @@ export default function Reservas() {
 
   // La prórroga única (reglamento v4, 7.2): 7 días más, una sola vez. Un
   // pedido se prorroga entero, renglón por renglón (la misma acción).
-  const prorrogar = (filas) => Alert.alert('¿Necesitas más tiempo?',
+  const prorrogar = (filas) => {
+    if (filas.some((f) => modoDeProrroga(f) === 'pedir')) {
+      if (esDeMuestra(filas[0])) { avisoMuestra('En la vista de muestra no se cambia el plazo.'); return; }
+      const pedibles = filas.filter((f) => modoDeProrroga(f) === 'pedir');
+      setHojaProrroga({ tipo: 'reserva', ids: pedibles.map((f) => f.id), titulo: filas[0].pedido ?? filas[0].codigo, vence: pedibles[0].vence_at });
+      return;
+    }
+    prorrogarDirecta(filas);
+  };
+  const prorrogarDirecta = (filas) => Alert.alert('¿Necesitas más tiempo?',
     'Te damos 7 días más para retirarla. Sólo se puede pedir una vez.', [
     { text: 'No', style: 'cancel' },
     { text: 'Pedir 7 días más', onPress: async () => {
@@ -349,7 +389,10 @@ export default function Reservas() {
       cargar();
     } },
   ]);
-  const prorrogarEncargo = (e) => Alert.alert('¿Necesitas más tiempo?',
+  const prorrogarEncargo = (e) => (modoDeProrroga(e, true) === 'pedir'
+    ? setHojaProrroga({ tipo: 'encargo', ids: [e.id], titulo: e.codigo, vence: e.retirar_hasta ? `${e.retirar_hasta}T12:00:00-06:00` : null })
+    : prorrogarEncargoDirecta(e));
+  const prorrogarEncargoDirecta = (e) => Alert.alert('¿Necesitas más tiempo?',
     'Te damos 7 días más para retirar tu encargo. Sólo se puede pedir una vez.', [
     { text: 'No', style: 'cancel' },
     { text: 'Pedir 7 días más', onPress: async () => {
@@ -495,6 +538,10 @@ export default function Reservas() {
   };
   return (
     <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando} alFinal={d.siguiente ? cargarMas : undefined}>
+      {hojaProrroga ? (
+        <ProrrogaHoja {...hojaProrroga} alCerrar={() => setHojaProrroga(null)}
+          alPedir={(r) => { setHojaProrroga(null); Alert.alert('Prórroga pedida', r?.mensaje ?? 'Te avisamos cuando la revisemos.'); cargar(); }} />
+      ) : null}
       {chips}
       {vistaPrevia.vista}
       {filtro === 'todas' && encargos.length ? (
@@ -766,9 +813,10 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
           avisa ANTES (`avisoDeSaldo`). La prórroga única también se pide acá,
           sólo mientras el servidor diga `prorrogable` (el reglamento v2 la quita). */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 20 }}>
-        {lista && (r.prorrogable ?? !r.prorrogada_at) ? (
+        {lista ? <View style={{ width: '100%' }}><EstadoDeProrroga p={r.prorroga} /></View> : null}
+        {['directa', 'pedir'].includes(modoDeProrroga(r)) ? (
           <Presionable onPress={alProrrogar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Pedir 7 días más</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{modoDeProrroga(r) === 'pedir' ? 'Pedir más tiempo' : 'Pedir 7 días más'}</Text>
           </Presionable>
         ) : null}
         <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
@@ -973,9 +1021,14 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
       ) : null}
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 20 }}>
-        {g.filas.every((f) => f.estado === 'lista' && (f.prorrogable ?? !f.prorrogada_at)) ? (
+        {lista ? <View style={{ width: '100%' }}><EstadoDeProrroga p={g.filas.find((f) => f.prorroga)?.prorroga} /></View> : null}
+        {g.filas.every((f) => modoDeProrroga(f) === 'directa') ? (
           <Presionable onPress={alProrrogar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Pedir 7 días más</Text>
+          </Presionable>
+        ) : g.filas.some((f) => modoDeProrroga(f) === 'pedir') && !g.filas.some((f) => modoDeProrroga(f) === 'pendiente') ? (
+          <Presionable onPress={alProrrogar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Pedir más tiempo</Text>
           </Presionable>
         ) : null}
         <Presionable onPress={alCancelar} hitSlop={8} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
@@ -1302,9 +1355,10 @@ function Encargo({ e, alPagar, alCancelar, alProrrogar, pagando = false }) {
       {e.estado === 'confirmado' && e.pago_estado !== 'pagado' ? (
         <Boton alTocar={alPagar} cargando={pagando}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
       ) : null}
-      {e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) ? (
+      {e.estado === 'listo' ? <EstadoDeProrroga p={e.prorroga} /> : null}
+      {['directa', 'pedir'].includes(modoDeProrroga(e, true)) ? (
         <Presionable onPress={alProrrogar} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Pedir 7 días más</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{modoDeProrroga(e, true) === 'pedir' ? 'Pedir más tiempo' : 'Pedir 7 días más'}</Text>
         </Presionable>
       ) : null}
       {(e.estado === 'solicitado' || e.estado === 'confirmado') && e.pago_estado !== 'pagado' ? (

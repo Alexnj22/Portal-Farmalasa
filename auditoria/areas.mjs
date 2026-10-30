@@ -885,7 +885,7 @@ export const AREAS = [
         tablas: [
                  // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                  'apartado_aplicaciones', 'app_ajustes', 'app_chat_reacciones', 'app_cliente_aceptaciones', 'app_errores', 'app_tratamientos', 'clientes_mayoristas', 'clientes_mayoristas_historial', 'mayoristas_resumen_mensual', 'producto_insumo', 'puntos_codigo_acceso',
-                 'app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos',
+                 'app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'prorrogas_retiro', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos',
                  // Chat con la farmacia y foto de perfil (2026-10-12). Los archivos
                  // viven en el bucket privado `app-clientes-archivos`.
                  'app_chat_conversaciones', 'app_chat_mensajes', 'app_chat_respuestas', 'app_cliente_fotos',

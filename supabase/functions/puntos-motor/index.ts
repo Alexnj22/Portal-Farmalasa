@@ -180,9 +180,11 @@ Deno.serve(async (req) => {
         if (!destinatarios.length && !vigia) continue;
 
         // Un fallo en UN aviso no puede tumbar la corrida: se anota y se sigue.
-        const titulo = enCero ? 'Un canje dejó la venta en $0.00' : 'Se canjearon puntos que el cliente no tenía';
+        const titulo = enCero ? 'Un canje dejó la venta bajo el mínimo' : 'Se canjearon puntos que el cliente no tenía';
         const cuerpo = enCero
-          ? `La venta ${a.documento ?? ''} se pagó entera con ${a.puntos} puntos. Una venta no puede quedar en $0.00: hay que revisarla.`
+          // El mínimo a pagar lo dice la base (`puntos_minimo_a_pagar`): US$0.05
+          // desde el reglamento v2 (2026-11-15), US$0.01 antes. El aviso trae el total.
+          ? `La venta ${a.documento ?? ''} quedó en $${Number(a.total ?? 0).toFixed(2)} después de canjear ${a.puntos} puntos. Un canje debe dejar por pagar al menos el mínimo ($0.05 desde el 15 de noviembre): hay que revisarla.`
           // Quién y qué venta (2026-10-01): sin eso el aviso no se puede
           // revisar desde el teléfono, y «hay que revisar la venta» no dice cuál.
           : `${a.cliente ?? 'Un cliente'} — venta ${a.documento ?? ''}: se aplicaron ${a.pedidos} puntos de descuento y tenía ${a.tenia}. Hay que revisar la venta.`;

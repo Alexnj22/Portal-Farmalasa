@@ -393,6 +393,32 @@ export async function prorrogarEncargo(id) {
     return sinError(await supabase.rpc('encargo_prorrogar', { p_id: Number(id) }));
 }
 
+/**
+ * Reglamento de reservas v2, cláusula 6.4 (2026-10-30): la prórroga ya no la
+ * da la sala; se PIDE con los días que necesita el cliente y el motivo, y la
+ * autoriza quien tenga `dash_reservas_prorroga` (Talento Humano y Supervisión
+ * de ventas). Una sola autorizada por reserva o encargo; mientras está
+ * pendiente, el plazo no vence. `tipo`: 'reserva' | 'encargo'.
+ */
+export async function pedirProrroga(tipo, id, dias, motivo) {
+    return sinError(await supabase.rpc('prorroga_pedir', {
+        p_tipo: tipo, p_id: Number(id), p_dias: Number(dias), p_motivo: String(motivo ?? '').trim(),
+    }));
+}
+
+/** Autorizar (con los días pedidos u otros) o negar (con motivo, que se le dice al cliente). */
+export async function decidirProrroga(id, autorizar, nota, dias = null) {
+    return sinError(await supabase.rpc('prorroga_decidir', {
+        p_id: Number(id), p_autorizar: !!autorizar, p_nota: String(nota ?? '').trim() || null,
+        p_dias: dias == null || dias === '' ? null : Number(dias),
+    }));
+}
+
+/** La bandeja de quien autoriza: todas las prórrogas pendientes de la red. */
+export async function fetchProrrogasPendientes() {
+    return sinError(await supabase.rpc('prorrogas_pendientes')) ?? [];
+}
+
 /** El cliente no retira (o desiste de) un encargo pagado: lo pagado queda a su favor. */
 export async function pasarEncargoASaldo(id, motivo) {
     return sinError(await supabase.rpc('encargo_pasar_a_saldo', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));

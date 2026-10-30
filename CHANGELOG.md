@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1389.0 — Prórroga por solicitud, reserva pagada y encargo a 90 días, canje deja $0.05
+
+Lo que rige desde el 15 de noviembre (reglamentos firmados el 30-oct):
+
+- **Prórroga por solicitud** (reglamento de reservas 6.4). La sala o el
+  cliente desde la app la pide con los días que necesita y el motivo; llega a
+  Talento Humano y Supervisión de ventas (permiso nuevo
+  `dash_reservas_prorroga`), que la autorizan —con esos días u otros— o la
+  niegan con motivo. Una sola autorizada por reserva o encargo; mientras está
+  pendiente el plazo no vence. Tabla `prorrogas_retiro`, funciones
+  `prorroga_pedir`/`prorroga_pedir_por_cliente`/`prorroga_decidir`/
+  `prorrogas_pendientes`. Portal: «Pedir prórroga» y bandeja «Prórrogas por
+  autorizar» en Reservas; app del personal: `reserva-prorroga`; app de
+  clientes: «Pedir más tiempo».
+- **Reserva pagada y encargo especial: 90 días** para retirar (antes 60).
+- **Canje mínimo US$0.05**: `puntos_minimo_a_pagar(fecha)`; el aviso pasa a
+  «Canje dejó la venta bajo el mínimo».
+- Documentos: reglamento de reservas 4.5 y 6.4 (también desde la app),
+  procedimiento 2.3, 5.5, 7.5 y 8.1 (se vuelve a buscar por el código).
+
 ## v2.1388.1 — Revisión de factor: cada cambio dice si la existencia necesita ajuste
 
 En «Cambios de presentación», cada tarjeta ahora cierra con el estado de la

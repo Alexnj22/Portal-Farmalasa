@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-29T18:59:08.448Z",
+ "generado": "2026-10-30T15:47:24.233Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1228,6 +1228,18 @@
    "area": "compras",
    "por": "código"
   },
+  "compra_deshacer_resolucion": {
+   "area": "compras",
+   "por": "tablas"
+  },
+  "compra_resolver_documento": {
+   "area": "compras",
+   "por": "código"
+  },
+  "compras_cargadas_desde_portal": {
+   "area": "compras",
+   "por": "código"
+  },
   "comprobantes_de_caja_red": {
    "area": "cortes-efectivo",
    "por": "tablas"
@@ -1286,7 +1298,7 @@
   },
   "consulta_existencia_ajuste": {
    "area": "inventario",
-   "por": "tablas"
+   "por": "código"
   },
   "consulta_existencia_avisar_resumen": {
    "area": "inventario",
@@ -1304,7 +1316,7 @@
   },
   "consulta_existencia_contar": {
    "area": "inventario",
-   "por": "tablas"
+   "por": "código"
   },
   "consulta_existencia_crear": {
    "area": "inventario",
@@ -3045,6 +3057,10 @@
    "area": "solicitudes",
    "por": "código"
   },
+  "get_pistas_documentos_sin_cargar": {
+   "area": "compras",
+   "por": "código"
+  },
   "get_por_depositar": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -4241,6 +4257,47 @@
    "area": "promociones",
    "por": "tablas"
   },
+  "prorroga_aprobadores": {
+   "area": "app-clientes",
+   "por": "a mano",
+   "manual": true
+  },
+  "prorroga_de": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "prorroga_decidir": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "prorroga_pedir": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "prorroga_pedir_por_cliente": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "prorroga_pendiente": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "prorroga_registrar": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "prorroga_sin_efecto_al_cerrar": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "prorroga_vence_hoy": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "prorrogas_pendientes": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "publicar_horarios_de_sala": {
    "area": "horarios",
    "por": "código"
@@ -4437,6 +4494,10 @@
   "puntos_migrar_historial": {
    "area": "ventas",
    "por": "tablas"
+  },
+  "puntos_minimo_a_pagar": {
+   "area": "ventas",
+   "por": "código"
   },
   "puntos_nivel_de": {
    "area": "ventas",
@@ -4858,6 +4919,10 @@
    "area": "inventario",
    "por": "código"
   },
+  "regla_despacho_a_pendiente": {
+   "area": "pedidos",
+   "por": "tablas"
+  },
   "reglas_v2_desde": {
    "area": "ventas",
    "por": "tablas"
@@ -5073,6 +5138,10 @@
   },
   "resolver_reclamo_sancion": {
    "area": "personal",
+   "por": "código"
+  },
+  "resolver_regla_pendiente_sin_regla": {
+   "area": "pedidos",
    "por": "código"
   },
   "resumen_de_promocion": {
@@ -5472,6 +5541,14 @@
    "area": "productos",
    "por": "tablas"
   },
+  "trg_precio_vuelve_pendiente_la_regla": {
+   "area": "productos",
+   "por": "trigger"
+  },
+  "trg_regla_cierra_pendiente": {
+   "area": "pedidos",
+   "por": "trigger"
+  },
   "turno_del_dia": {
    "area": "horarios",
    "por": "a mano",
@@ -5531,7 +5608,7 @@
    "por": "código"
   },
   "upsert_products_minimal": {
-   "area": "compras",
+   "area": "facturacion-dte",
    "por": "código"
   },
   "upsert_proveedor_from_dte": {

@@ -11,7 +11,7 @@ import { Alert, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchEncargos, mensajeDeEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, whatsappDe } from '@nucleo/data/reservas';
-import { ROTULOS_DE_ENCARGO as ROT, encargoSinVincular, encargoVencido, estadoDeEncargo, notaDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, modoDeProrroga, textoDeProrroga, encargoSinVincular, encargoVencido, estadoDeEncargo, notaDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -86,7 +86,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
               <Pildora texto={est.texto} color={colorDeTono(est.tono)} />
             </View>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              {`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${pilaDelCliente(e)} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${corta(e.fecha_estimada)}` : ''}${e.anticipo ? ` · ${formatMoney(Number(e.anticipo))}` : ''}${e.retirar_hasta ? ` · retira hasta ${corta(e.retirar_hasta)}${e.prorrogado_at ? ' (prorrogado)' : ''}` : ''}`}
+              {`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${pilaDelCliente(e)} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${corta(e.fecha_estimada)}` : ''}${e.anticipo ? ` · ${formatMoney(Number(e.anticipo))}` : ''}${e.retirar_hasta ? ` · retira hasta ${corta(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : ''}`}
             </Text>
             {(sinVincular && e.sugerido) || vencido || e.nivel?.prioridad ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -118,8 +118,11 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
               {!soloLectura && e.registrar_llamada ? <Accion texto={ROT.llamada} onPress={() => llamar(e)} /> : null}
               {!soloLectura && e.puede_cambiar_fecha ? <Accion texto={ROT.fecha} onPress={() => abrir(e, 'fecha')} /> : null}
               {!soloLectura && e.puede_no_entrego ? <Accion texto={ROT.no_entrego} color={MARCA.rojo} onPress={() => abrir(e, 'no_entrego')} /> : null}
-              {!soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) ? <Accion texto={ROT.prorrogar} deshabilitado={!!ocupado}
+              {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'directa' ? <Accion texto={ROT.prorrogar} deshabilitado={!!ocupado}
                 onPress={() => mover(e, 'prorrogar', 'Prorrogar el plazo', 'Una sola prórroga de 7 días para retirarlo. No admite otra.')} /> : null}
+              {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' ? <Accion texto={ROT.pedir_prorroga}
+                onPress={() => router.push({ pathname: '/reserva-prorroga', params: { modo: 'pedir', tipo: 'encargo', ids: String(e.id), titulo: e.codigo,
+                  vence: e.retirar_hasta ? `${e.retirar_hasta}T12:00:00` : '' } })} /> : null}
               {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado)
                 ? <Accion texto={ROT.saldo} onPress={() => abrir(e, 'saldo')} /> : null}
             </View>

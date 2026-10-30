@@ -1665,6 +1665,7 @@ export type Database = {
           product_id: number | null
           producto_nombre: string
           producto_nuevo: boolean
+          prorroga_dias: number | null
           prorrogado_at: string | null
           prorrogado_por: string | null
           reserva_id: number | null
@@ -1700,6 +1701,7 @@ export type Database = {
           product_id?: number | null
           producto_nombre: string
           producto_nuevo?: boolean
+          prorroga_dias?: number | null
           prorrogado_at?: string | null
           prorrogado_por?: string | null
           reserva_id?: number | null
@@ -1735,6 +1737,7 @@ export type Database = {
           product_id?: number | null
           producto_nombre?: string
           producto_nuevo?: boolean
+          prorroga_dias?: number | null
           prorrogado_at?: string | null
           prorrogado_por?: string | null
           reserva_id?: number | null
@@ -2020,6 +2023,7 @@ export type Database = {
           preventa_id: number | null
           producto_id: number
           producto_nombre: string
+          prorroga_dias: number | null
           prorrogada_at: string | null
           prorrogada_por: string | null
           receta_escalada_at: string | null
@@ -2099,6 +2103,7 @@ export type Database = {
           preventa_id?: number | null
           producto_id: number
           producto_nombre: string
+          prorroga_dias?: number | null
           prorrogada_at?: string | null
           prorrogada_por?: string | null
           receta_escalada_at?: string | null
@@ -2178,6 +2183,7 @@ export type Database = {
           preventa_id?: number | null
           producto_id?: number
           producto_nombre?: string
+          prorroga_dias?: number | null
           prorrogada_at?: string | null
           prorrogada_por?: string | null
           receta_escalada_at?: string | null
@@ -22436,6 +22442,81 @@ export type Database = {
           },
         ]
       }
+      prorrogas_retiro: {
+        Row: {
+          branch_id: number
+          created_at: string
+          customer_id: number
+          decidida_at: string | null
+          decidida_por: string | null
+          dias: number
+          dias_autorizados: number | null
+          encargo_id: number | null
+          estado: string
+          id: number
+          motivo: string
+          nota: string | null
+          origen: string
+          pedida_por: string | null
+          reserva_id: number | null
+          vence_antes: string | null
+          vence_despues: string | null
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          customer_id: number
+          decidida_at?: string | null
+          decidida_por?: string | null
+          dias: number
+          dias_autorizados?: number | null
+          encargo_id?: number | null
+          estado?: string
+          id?: never
+          motivo: string
+          nota?: string | null
+          origen: string
+          pedida_por?: string | null
+          reserva_id?: number | null
+          vence_antes?: string | null
+          vence_despues?: string | null
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          customer_id?: number
+          decidida_at?: string | null
+          decidida_por?: string | null
+          dias?: number
+          dias_autorizados?: number | null
+          encargo_id?: number | null
+          estado?: string
+          id?: never
+          motivo?: string
+          nota?: string | null
+          origen?: string
+          pedida_por?: string | null
+          reserva_id?: number | null
+          vence_antes?: string | null
+          vence_despues?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prorrogas_retiro_encargo_id_fkey"
+            columns: ["encargo_id"]
+            isOneToOne: false
+            referencedRelation: "app_encargos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prorrogas_retiro_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proveedores: {
         Row: {
           created_at: string
@@ -34924,6 +35005,52 @@ export type Database = {
       promociones_cerrar_meses_de_laboratorio: { Args: never; Returns: number }
       promociones_ciclo_diario: { Args: never; Returns: string }
       promociones_registrar_excedentes: { Args: never; Returns: number }
+      prorroga_aprobadores: { Args: never; Returns: string[] }
+      prorroga_de: { Args: { p_id: number; p_tipo: string }; Returns: Json }
+      prorroga_decidir: {
+        Args: {
+          p_autorizar: boolean
+          p_dias?: number
+          p_id: number
+          p_nota: string
+        }
+        Returns: Json
+      }
+      prorroga_pedir: {
+        Args: { p_dias: number; p_id: number; p_motivo: string; p_tipo: string }
+        Returns: Json
+      }
+      prorroga_pedir_por_cliente: {
+        Args: {
+          p_customer: number
+          p_dias: number
+          p_id: number
+          p_motivo: string
+          p_tipo: string
+        }
+        Returns: Json
+      }
+      prorroga_pendiente: {
+        Args: { p_id: number; p_tipo: string }
+        Returns: boolean
+      }
+      prorroga_registrar: {
+        Args: {
+          p_customer: number
+          p_dias: number
+          p_empleado: string
+          p_id: number
+          p_motivo: string
+          p_origen: string
+          p_tipo: string
+        }
+        Returns: Json
+      }
+      prorroga_vence_hoy: {
+        Args: { p_id: number; p_tipo: string }
+        Returns: string
+      }
+      prorrogas_pendientes: { Args: never; Returns: Json }
       publicar_horarios_de_sala: {
         Args: { p_branch_id: number; p_week_start: string }
         Returns: number
@@ -35160,6 +35287,7 @@ export type Database = {
         }
         Returns: Json
       }
+      puntos_minimo_a_pagar: { Args: { p_dia: string }; Returns: number }
       puntos_nivel_de:
         | {
             Args: { p_compra: number }

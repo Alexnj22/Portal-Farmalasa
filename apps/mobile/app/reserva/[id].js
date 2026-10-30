@@ -21,7 +21,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { codigoDeReserva, fetchReservasDeSucursal, whatsappDe } from '@nucleo/data/reservas';
 import {
-  accionesDeReservaNucleo, agruparPorPedido, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, recetaLegible, renglonesDe, reservasAbiertas, telefonoLegible, TRASLADO_DE_RESERVA,
+  accionesDeReservaNucleo, agruparPorPedido, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, recetaLegible, renglonesDe, reservasAbiertas, telefonoLegible, textoDeProrroga, TRASLADO_DE_RESERVA,
 } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -97,7 +97,7 @@ export default function DetalleDeReserva() {
   const fechas = [
     ['Creada', r.creada && cuando(r.creada)],
     ['Lista', r.lista_at && cuando(r.lista_at)],
-    ['Retira hasta', r.estado === 'lista' && r.vence_at && `${dia(r.vence_at)}${r.prorrogada_at ? ' (prorrogada)' : ''}`],
+    ['Retira hasta', r.estado === 'lista' && r.vence_at && `${dia(r.vence_at)}${textoDeProrroga(r)}`],
     ['Avisada', r.avisado_at && `${cuando(r.avisado_at)}${r.avisado_via === 'whatsapp' ? ' · por WhatsApp' : ''}`],
   ].filter(([, v]) => v);
 

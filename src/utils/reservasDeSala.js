@@ -186,10 +186,41 @@ export function detalleDelRenglonDeReserva(x) {
     return '';
 }
 
+/**
+ * Cómo se le alarga el plazo a una reserva lista o a un encargo listo
+ * (2026-10-30):
+ *   'directa'   — condiciones anteriores: la sala la da, 7 días, una vez;
+ *   'pedir'     — reglamento v2, cláusula 6.4: se pide con días y motivo y la
+ *                 autoriza Talento Humano o Supervisión de ventas;
+ *   'pendiente' — ya se pidió y espera la decisión (el plazo no vence);
+ *   null        — no aplica, o ya tuvo su prórroga.
+ * `prorrogable` lo manda la base y sólo es verdad para la directa; sin el
+ * campo (respuesta vieja), la regla vieja.
+ */
+export function modoDeProrroga(x, { encargo = false } = {}) {
+    if (!x) return null;
+    const lista = encargo ? x.estado === 'listo' : (x.estado === 'lista' && !!x.vence_at);
+    if (!lista) return null;
+    if (x.prorroga?.estado === 'pendiente') return 'pendiente';
+    const usada = encargo ? x.prorrogado_at : x.prorrogada_at;
+    if (x.prorrogable === undefined) return usada ? null : 'directa';
+    if (x.prorrogable) return 'directa';
+    return usada ? null : 'pedir';
+}
+
+/** El texto de la prórroga junto al plazo: «(prorrogada)», «prórroga pedida…», o nada. */
+export function textoDeProrroga(x, { encargo = false } = {}) {
+    if (modoDeProrroga(x, { encargo }) === 'pendiente') {
+        const d = Number(x.prorroga?.dias ?? 0);
+        return ` · prórroga de ${d} ${d === 1 ? 'día' : 'días'} pedida, por autorizar`;
+    }
+    return (encargo ? x?.prorrogado_at : x?.prorrogada_at) ? (encargo ? ' (prorrogado)' : ' (prorrogada)') : '';
+}
+
 /** Hasta cuándo vale lo que está pasando ahora con la reserva. */
 export function plazoDeReserva(r) {
     const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
-    if (r.estado === 'lista' && r.vence_at) return `Retira hasta el ${dia(r.vence_at)}${r.prorrogada_at ? ' (prorrogada)' : ''}`;
+    if (r.estado === 'lista' && r.vence_at) return `Retira hasta el ${dia(r.vence_at)}${textoDeProrroga(r)}`;
     if (r.estado === 'pendiente' && r.horas_al_preparar) {
         const dias = Math.round(Number(r.horas_al_preparar) / 24);
         return `Al quedar lista tiene ${dias >= 1 ? `${dias} ${dias === 1 ? 'día' : 'días'}` : `${r.horas_al_preparar} h`} para retirarla`;
@@ -248,9 +279,12 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
     if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sala', renglon: porTraerDe,
         title: `Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega` });
     if (hayLista && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp' });
-    // La prórroga la decide la base (`prorrogable`): el reglamento v2 la quita
-    // desde `reglas_v2_desde()`. Sin el campo (respuesta vieja), la regla v1.
-    if (filas.some((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at))) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', title: 'Una sola prórroga' });
+    // La prórroga (`modoDeProrroga`): la directa de 7 días de las condiciones
+    // anteriores, o la que se PIDE desde el reglamento v2 (cláusula 6.4).
+    const modos = filas.map((x) => modoDeProrroga(x));
+    if (modos.includes('directa')) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', title: 'Una sola prórroga' });
+    else if (modos.includes('pedir') && !modos.includes('pendiente')) lista.push({ k: 'pedir_prorroga', label: 'Pedir prórroga',
+        title: 'Los días que necesita el cliente y el motivo: la autoriza Talento Humano o Supervisión de ventas' });
     // Reglamento v2, cláusula 9: el aviso por llamada queda registrado (quién,
     // cuándo y qué respondió el cliente). Lo habilita la base (`registrar_llamada`).
     if (filas.some((x) => x.registrar_llamada)) lista.push({ k: 'llamada', label: 'Registrar llamada', title: 'Anota que llamaste al cliente y qué respondió' });
@@ -317,7 +351,7 @@ export function cuentasDelGrupo(r) {
         total: filas.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0),
         todoPagado: filas.every((x) => x.pago_estado === 'pagado'),
         // Algún renglón listo que todavía no usó su única prórroga.
-        prorrogable: filas.some((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)),
+        prorrogable: filas.some((x) => modoDeProrroga(x) === 'directa'),
         // «Ya llegó: apartar» cuando lo pendiente venía por traslado.
         vieneDeTraslado: filas.some((x) => x.estado === 'pendiente' && x.traslado_estado),
     };
@@ -411,6 +445,7 @@ export const ROTULOS_DE_ENCARGO = {
     no_entrego: 'El proveedor no entregó',
     foto: 'Ver la foto',
     prorrogar: 'Prorrogar 7 días',
+    pedir_prorroga: 'Pedir prórroga',
     saldo: 'Pasar a saldo a favor',
 };
 

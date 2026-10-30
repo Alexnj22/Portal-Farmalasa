@@ -146,9 +146,9 @@ const TERMINOS_RESERVA_V2 = {
   titulo: "Así funciona tu reserva",
   puntos: [
     "Puedes reservar productos en oferta y también a precio normal, en la cantidad que necesites.",
-    "La sucursal tiene 24 horas para preparar tu reserva y te avisamos cuando está lista. Desde ese aviso tienes 7 días para retirarla si no pagaste nada, 30 días si dejaste un anticipo y 60 días si la pagaste completa.",
+    "La sucursal tiene 24 horas para preparar tu reserva y te avisamos cuando está lista. Desde ese aviso tienes 7 días para retirarla si no pagaste nada, 30 días si dejaste un anticipo y 90 días si la pagaste completa.",
     "Si pagas después, el plazo pasa al que corresponde a lo pagado, contado desde ese pago.",
-    "Los plazos para retirar no se prorrogan.",
+    "Los plazos para retirar no se prorrogan solos. Si necesitas más tiempo, pide una prórroga desde la app o en la sucursal, con los días que necesitas y el motivo: la Empresa puede autorizarla una vez, cuando las circunstancias lo justifiquen, y te avisamos lo que decida. Mientras la revisa, tu reserva sigue separada.",
     "Si la sucursal no tiene el producto, lo trae de otra sucursal o de la bodega: mientras viene en camino, el plazo de preparación se detiene, y te avisamos cuando esté lista. Si no quieres esperar, cancélala desde la app.",
     "Si la sucursal no alcanza a revisar tu receta o a preparar tu reserva a tiempo, la reserva se cierra y no cuenta en tu contra.",
     "Con un anticipo o el pago total, el precio queda fijo. Sin pago, el precio de oferta vale si la retiras dentro de las fechas de la oferta.",
@@ -1646,7 +1646,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
-    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
+    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pedir_prorroga", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -2379,6 +2379,23 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // anticipo de una reserva de sala vencida. Vale en cualquier sucursal hasta
     // su fecha; se usa mostrando el código en caja. Sólo lo vigente: ni usado,
     // ni devuelto en dinero, ni vencido.
+    // La última solicitud de prórroga de cada reserva o encargo (2026-10-30,
+    // reglamento v2, cláusula 6.4): la app muestra si está pedida, autorizada
+    // o negada. Una lectura por lista, no por fila.
+    // deno-lint-ignore no-explicit-any
+    const prorrogasDe = async (col: "reserva_id" | "encargo_id", ids: number[]): Promise<Map<number, any>> => {
+      const m = new Map<number, any>();
+      if (!ids.length) return m;
+      const { data, error } = await admin.from("prorrogas_retiro")
+        .select("id, reserva_id, encargo_id, dias, estado, dias_autorizados, nota, origen, created_at, decidida_at")
+        .in(col, ids).eq("customer_id", customerId).order("created_at", { ascending: false }).limit(500); // tope deliberado: ≤1 por fila listada
+      if (error) throw error;
+      for (const p of data ?? []) {
+        const k = Number(p[col]);
+        if (!m.has(k)) m.set(k, { id: p.id, dias: p.dias, estado: p.estado, dias_autorizados: p.dias_autorizados, nota: p.nota, origen: p.origen, pedida_at: p.created_at, decidida_at: p.decidida_at });
+      }
+      return m;
+    };
     const saldosAFavor = async (cid: number) => {
       const { data, error } = await admin.from("app_reservas")
         .select("id, pedido, saldo_favor, saldo_favor_vence, saldo_favor_origen").limit(100) // tope deliberado: son pocos
@@ -2460,7 +2477,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const recetas = await firmarRutas(admin, BUCKET_ARCHIVOS, data.map((r: any) => r.receta_ruta).filter(Boolean));
       // Los plazos que rigen hoy (reglamento v1 o v2, por fecha): la pantalla
       // los escribe tal cual en vez de tenerlos a mano.
-      const reglas = await reglasVigentes();
+      const [reglas, prorrogas] = await Promise.all([
+        reglasVigentes(),
+        prorrogasDe("reserva_id", data.filter((r: any) => r.estado === "lista").map((r: any) => Number(r.id))),
+      ]);
       return json({
         ok: true,
         reglas,
@@ -2480,6 +2500,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
             tipo: r.oferta_titulo ? "promocion" : "producto",
             total: Math.round(Number(r.precio_unitario ?? 0) * Number(r.cantidad ?? 1) * 100) / 100,
             total_pedido: tp ? Math.round((tp.suma + tp.envio) * 100) / 100 : null,
+            prorroga: prorrogas.get(Number(r.id)) ?? null,
           };
         }),
       });
@@ -2755,7 +2776,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { data: salas, error: eS } = await admin.from("branches").select("id, name");
       if (eS) throw eS;
       const nombre = new Map((salas ?? []).map((b: any) => [Number(b.id), sucursal(b.name)]));
-      return json({ ok: true, encargos: (data ?? []).map((e: any) => ({ ...e, codigo: `E-${String(e.id).padStart(6, "0")}`, sala: nombre.get(Number(e.branch_id)) ?? null })) });
+      const prorrogasE = await prorrogasDe("encargo_id", (data ?? []).filter((e: any) => e.estado === "listo").map((e: any) => Number(e.id)));
+      return json({ ok: true, encargos: (data ?? []).map((e: any) => ({ ...e, codigo: `E-${String(e.id).padStart(6, "0")}`, sala: nombre.get(Number(e.branch_id)) ?? null,
+        prorroga: prorrogasE.get(Number(e.id)) ?? null })) });
     }
 
     if (accion === "pagar_encargo") {
@@ -3661,6 +3684,24 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { data, error } = await admin.rpc("encargo_prorrogar_por_cliente", { p_id: Number(body?.id), p_customer: customerId });
       if (error) throw error;
       return json(data);
+    }
+    // Reglamento v2, cláusula 6.4 (2026-10-30): la prórroga se PIDE con los
+    // días y el motivo; la autoriza Talento Humano o Supervisión de ventas y
+    // el cliente recibe el aviso. La base valida dueño, estado y que sea una.
+    if (accion === "pedir_prorroga") {
+      const tipo = body?.tipo === "encargo" ? "encargo" : "reserva";
+      const dias = Number(body?.dias);
+      const motivo = String(body?.motivo ?? "").trim().slice(0, 300);
+      if (!Number.isInteger(dias) || dias < 1 || dias > 365) return json({ ok: false, mensaje: "Indica cuántos días necesitas (de 1 a 365)." });
+      if (motivo.length < 3) return json({ ok: false, mensaje: "Cuéntanos brevemente por qué necesitas más tiempo." });
+      const ids = (Array.isArray(body?.ids) ? body.ids : [body?.id]).map(Number).filter((n: number) => Number.isFinite(n) && n > 0).slice(0, 50);
+      if (!ids.length) return json({ ok: false, mensaje: "No encontramos la reserva." });
+      for (const id of ids) {
+        const { data, error } = await admin.rpc("prorroga_pedir_por_cliente", { p_tipo: tipo, p_id: id, p_customer: customerId, p_dias: dias, p_motivo: motivo });
+        if (error) throw error;
+        if (!data?.ok) return json(data);
+      }
+      return json({ ok: true, mensaje: "Pedimos tu prórroga. Te avisamos cuando la sucursal la revise; mientras tanto, tu reserva sigue separada." });
     }
 
     // ── Pagar una reserva en línea, con Wompi (2026-10-07) ────────────────

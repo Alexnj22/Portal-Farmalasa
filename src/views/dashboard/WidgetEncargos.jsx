@@ -13,6 +13,7 @@ import Notice from '../../components/common/Notice';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import { RegistrarLlamada } from './AvisosDeReserva';
 import { CambiarFecha, NoEntrego } from './AccionesDeEncargoV2';
+import { PedirProrroga } from './Prorroga';
 import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { vigenciaDelSaldo } from '@nucleo/utils/abonoTicket';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
@@ -21,7 +22,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { cambiarFechaDeEncargo, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { ROTULOS_DE_ENCARGO as ROT, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
 import { EmptyState } from '../../components/common/StateViews';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -80,6 +81,8 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
     const [llamando, setLlamando] = useState(null);
     const [cambiandoFecha, setCambiandoFecha] = useState(null);
     const [noEntrego, setNoEntrego] = useState(null);
+    // Reglamento v2, cláusula 6.4: la prórroga se pide y la autoriza TH o Supervisión.
+    const [pidiendoProrroga, setPidiendoProrroga] = useState(null);
     const reglas = useReglasDeReserva();
 
     const cargar = useCallback(async () => {
@@ -197,8 +200,10 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                         !soloLectura && e.puede_no_entrego && { k: 'no_entrego', label: ROT.no_entrego, icon: PackageX,
                             title: 'El cliente elige la devolución completa o aplicarlo a otro producto', onClick: () => setNoEntrego(e) },
                         e.foto_url && { k: 'foto', label: ROT.foto, icon: ImageIcon, onClick: () => openStoredFile(e.foto_url) },
-                        !soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) && { k: 'prorrogar', label: ROT.prorrogar, icon: CalendarPlus,
+                        !soloLectura && modoDeProrroga(e, { encargo: true }) === 'directa' && { k: 'prorrogar', label: ROT.prorrogar, icon: CalendarPlus,
                             loading: ocupado === e.id, title: 'Una sola prórroga', onClick: () => prorrogar(e) },
+                        !soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' && { k: 'pedir_prorroga', label: ROT.pedir_prorroga, icon: CalendarPlus,
+                            title: 'La autoriza Talento Humano o Supervisión de ventas', onClick: () => setPidiendoProrroga(e) },
                         !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: ROT.saldo,
                             icon: Wallet, title: 'El cliente no lo retira o desiste: lo pagado queda a su favor', onClick: () => setASaldo(e) },
                         !soloLectura && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
@@ -223,7 +228,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                     ...(e.fecha_estimada ? [{ rotulo: 'Llega', valor: fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' }) }] : []),
                                 ]}
                                 aviso={vencido(e) ? 'No lo retiró a tiempo: llamar al cliente' : null}
-                                plazo={e.retirar_hasta ? `Retira hasta el ${dia(e.retirar_hasta)}${e.prorrogado_at ? ' (prorrogado)' : ''}` : null}
+                                plazo={e.retirar_hasta ? `Retira hasta el ${dia(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : null}
                                 acciones={acc} />
                         </li>
                     );
@@ -236,7 +241,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                         <FilaConAcciones tone={e.estado === 'solicitado' || e.estado === 'aceptado' || vencido(e) ? 'warning' : null}
                             icon={e.producto_nuevo ? PackagePlus : PackageSearch}
                             titulo={`${e.cantidad} × ${e.producto}${e.producto_nuevo ? (e.product_id ? ` → ${e.producto_catalogo ?? 'vinculado'}` : ' · producto nuevo') : ''}`}
-                            detalle={`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}${e.retirar_hasta ? ` · retira hasta ${fechaTexto(e.retirar_hasta, { day: 'numeric', month: 'short' })}${e.prorrogado_at ? ' (prorrogado)' : ''}` : ''}`}
+                            detalle={`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}${e.retirar_hasta ? ` · retira hasta ${fechaTexto(e.retirar_hasta, { day: 'numeric', month: 'short' })}${textoDeProrroga(e, { encargo: true })}` : ''}`}
                             acciones={(
                                 <>
                                     <Badge variant={estadoDe(e)?.variant ?? 'neutral'} uppercase={false}>{estadoDe(e)?.label ?? e.estado}</Badge>
@@ -258,8 +263,10 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                     {vencido(e) && <Badge variant="warning" uppercase={false}>Sin retirar · llamar</Badge>}
                                     {!soloLectura && e.estado === 'listo' && <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setRetirando(e)}>{ROT.entregar}</Button>}
                                     {!soloLectura && e.registrar_llamada && <Button variant="ghost" size="xs" iconOnly icon={PhoneCall} title={ROT.llamada} onClick={() => setLlamando(e)} />}
-                                    {!soloLectura && e.estado === 'listo' && (e.prorrogable ?? !e.prorrogado_at) && <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupado === e.id}
+                                    {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'directa' && <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupado === e.id}
                                         title="Una sola prórroga" onClick={() => prorrogar(e)}>{ROT.prorrogar}</Button>}
+                                    {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' && <Button variant="ghost" size="xs" icon={CalendarPlus}
+                                        title="La autoriza Talento Humano o Supervisión de ventas" onClick={() => setPidiendoProrroga(e)}>{ROT.pedir_prorroga}</Button>}
                                     {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && (
                                         <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste: lo pagado queda a su favor" onClick={() => setASaldo(e)}>{ROT.saldo}</Button>
                                     )}
@@ -268,6 +275,11 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                     </li>
                 ))}
             </ul>
+            )}
+            {pidiendoProrroga && (
+                <PedirProrroga tipo="encargo" ids={[pidiendoProrroga.id]} titulo={pidiendoProrroga.codigo}
+                    vence={pidiendoProrroga.retirar_hasta ? `${pidiendoProrroga.retirar_hasta}T12:00:00` : null}
+                    onCerrar={() => setPidiendoProrroga(null)} onListo={() => { setPidiendoProrroga(null); cargar(); }} />
             )}
             {confirmando && <Confirmar encargo={confirmando} enviando={ocupado === confirmando.id} onClose={() => setConfirmando(null)}
                 onConfirmar={async (datos) => { if (await mover(confirmando, 'confirmar', datos)) setConfirmando(null); }} />}

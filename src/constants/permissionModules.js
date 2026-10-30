@@ -573,6 +573,9 @@ const GRUPOS_CRUDOS = [
                 // (2026-10-19) Lo pagado en línea que no se entregó queda a favor
                 // del cliente; devolverlo en DINERO es decisión de administración.
                 { key: 'dash_reservas_devolver_saldo', label: 'Devolver en dinero un saldo a favor (queda anotado quién, cuándo, cuánto y por qué)', tipo: 'cap' },
+                // (2026-10-30) Reglamento v2, cláusula 6.4: la prórroga del plazo para
+                // retirar se pide con días y motivo; la autoriza quien tenga esto.
+                { key: 'dash_reservas_prorroga', label: 'Autorizar o negar las prórrogas del plazo para retirar una reserva o un encargo', tipo: 'cap' },
             ]},
             { key: 'dash_recetas_pendientes', label: 'Widget: Recetas pendientes de mi sala', desc: 'Las ventas bajo receta que todavía esperan el paciente, el médico y la foto de la receta, las más viejas primero, y el formulario para completarlas ahí mismo. Un renglón se confirma cuando se le agrega toda esa información', icono: 'Pill', hasApprove: false, hasScope: true },
             { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi sala',   desc: 'Tomar la factura del proveedor —agua y recargas de Tigo, Claro y Movistar— para cargar la compra. Todas las compras se cargan en Bodega', icono: 'ReceiptText', hasApprove: false, hasScope: true },

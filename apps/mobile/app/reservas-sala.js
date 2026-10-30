@@ -28,7 +28,7 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  buscarSaldoAFavor, codigoDeReserva, fetchReservasDeSucursal, HORAS_RECETA_URGENTE, devolucionesPorEntregar,
+  buscarSaldoAFavor, codigoDeReserva, fetchProrrogasPendientes, fetchReservasDeSucursal, HORAS_RECETA_URGENTE, devolucionesPorEntregar,
 } from '@nucleo/data/reservas';
 import {
   accionesDeReservaNucleo, agruparPorPedido, quienRevisaLaReceta, codigoCompleto, conteoDeReservas, listaDePrecioDelGrupo, origenDelSaldo, pilaDelCliente,
@@ -78,6 +78,16 @@ export default function ReservasDeSala() {
   const { todas: todasParam } = useLocalSearchParams();
   const { user, hasPermission, getScope } = useAuth();
   const puedeDevolver = hasPermission('dash_reservas_devolver_saldo');
+  // Reglamento v2, cláusula 6.4: quien autoriza prórrogas ve cuántas esperan.
+  const puedeProrroga = hasPermission('dash_reservas_prorroga');
+  const [prorrogas, setProrrogas] = useState(0);
+  useFocusEffect(useCallback(() => {
+    if (!puedeProrroga) return undefined;
+    let vivo = true;
+    fetchProrrogasPendientes().then((l) => { if (vivo) setProrrogas(new Set((l || []).map((p) => `${p.tipo}:${p.codigo}`)).size); })
+      .catch((err) => console.error('reservas-sala: no se pudieron leer las prórrogas pendientes', err));
+    return () => { vivo = false; };
+  }, [puedeProrroga]));
   // Ver sin editar, revisar recetas y enviar a caja: lo mismo que el detalle (`permisosDeReservas`).
   const permisos = permisosDeReservas(hasPermission);
   const { soloLectura, puedeRecetas } = permisos;
@@ -193,6 +203,12 @@ export default function ReservasDeSala() {
             <Cifra valor={conteo.preparar} texto="Por preparar" color={MARCA.ambar} />
             <Cifra valor={conteo.listas} texto="Listas para retirar" color={MARCA.verde} />
             <Cifra valor={conteo.saldos} texto="Saldos a favor" color={colorSistema.texto} />
+          </View>
+        ) : null}
+        {puedeProrroga && prorrogas > 0 ? (
+          <View style={{ marginHorizontal: 16, flexDirection: 'row' }}>
+            <Accion texto={`${prorrogas} ${prorrogas === 1 ? 'prórroga espera' : 'prórrogas esperan'} tu autorización`} color={MARCA.ambar}
+              onPress={() => router.push({ pathname: '/reserva-prorroga', params: { modo: 'bandeja' } })} />
           </View>
         ) : null}
         {puedeApartar ? (

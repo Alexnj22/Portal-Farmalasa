@@ -13,6 +13,7 @@ import {
   cambiarEstadoReserva, codigoDeReserva, enviarPreventa, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, prorrogarReserva, whatsappDe,
 } from '@nucleo/data/reservas';
 import { puedeEnviarPreventa } from '@nucleo/utils/preventa';
+import { modoDeProrroga } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fallo, listo, trabajando } from '../Progreso';
@@ -109,7 +110,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
       { text: 'Prorrogar', onPress: async () => {
         setOcupada(r.id);
         try {
-          const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)).map((x) => x.id);
+          const ids = (r.renglones ?? [r]).filter((x) => modoDeProrroga(x) === 'directa').map((x) => x.id);
           let vence = null;
           for (const id of ids) vence = (await prorrogarReserva(id))?.vence_at ?? vence;
           listo('Plazo prorrogado', vence ? `Puede retirarla hasta el ${fechaTexto(vence, { weekday: 'long', day: 'numeric', month: 'long' })}. No admite otra prórroga.` : '');
@@ -170,6 +171,13 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
       case 'caja': enviarACaja(r); break;
       case 'whatsapp': avisarPorWhatsapp(r); break;
       case 'prorrogar': prorrogar(r); break;
+      // Reglamento v2, cláusula 6.4 (2026-10-30): se pide con días y motivo; la autoriza TH o Supervisión.
+      case 'pedir_prorroga': {
+        const pedibles = (r.renglones ?? [r]).filter((x) => modoDeProrroga(x) === 'pedir');
+        router.push({ pathname: '/reserva-prorroga', params: { modo: 'pedir', tipo: 'reserva', ids: pedibles.map((x) => x.id).join(','),
+          titulo: r.pedido ?? codigoDeReserva(r.id), vence: String(pedibles[0]?.vence_at ?? '') } });
+        break;
+      }
       // Reglamento v2, cláusula 9 (lo habilita la base con `registrar_llamada`).
       case 'llamada': router.push({ pathname: '/reserva-llamada', params: {
         reserva: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id), cliente: String(r.cliente ?? ''), telefono: String(r.telefono ?? '') } }); break;

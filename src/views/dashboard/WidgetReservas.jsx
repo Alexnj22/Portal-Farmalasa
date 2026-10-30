@@ -33,8 +33,9 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import {
     accionesDeReservaNucleo, agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
-    origenDelSaldo, plazoDeRetiro, quienRevisaLaReceta, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
+    modoDeProrroga, origenDelSaldo, plazoDeRetiro, quienRevisaLaReceta, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
 } from '@nucleo/utils/reservasDeSala';
+import { PedirProrroga, ProrrogasPorAutorizar } from './Prorroga';
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
 function esperaDeReceta(desde, ahora) {
@@ -142,6 +143,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // autoriza o la niega, y la sala la entrega con un vale de caja.
     const [pidiendoDevolucion, setPidiendoDevolucion] = useState(null);
     const [negando, setNegando] = useState(null);
+    // Reglamento v2, cláusula 6.4: la prórroga se pide (días y motivo) y la autoriza TH o Supervisión.
+    const [pidiendoProrroga, setPidiendoProrroga] = useState(null);
     const [entregando, setEntregando] = useState(null);
     // Saldos a favor de OTRA sala encontrados por el código (2026-10-19): el
     // saldo vale en cualquier sucursal, así que el código del cliente se busca
@@ -204,7 +207,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const prorrogar = async (r) => {
         setOcupada(r.id);
         try {
-            const ids = (r.renglones ?? [r]).filter((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)).map((x) => x.id);
+            const ids = (r.renglones ?? [r]).filter((x) => modoDeProrroga(x) === 'directa').map((x) => x.id);
             let vence = null;
             for (const id of ids) vence = (await prorrogarReserva(id))?.vence_at ?? vence;
             showToast('Plazo prorrogado', vence ? `Puede retirarla hasta el ${fechaTexto(vence, { weekday: 'long', day: 'numeric', month: 'long' })}. No admite otra prórroga.` : '', 'success');
@@ -324,6 +327,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             traer: { icon: ArrowLeftRight, onClick: (a) => setResolviendo(a.renglon) },
             whatsapp: { icon: MessageCircle, onClick: () => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) }) },
             prorrogar: { icon: CalendarPlus, onClick: () => prorrogar(r) },
+            pedir_prorroga: { icon: CalendarPlus, onClick: () => setPidiendoProrroga(r) },
             llamada: { icon: PhoneCall, onClick: () => setLlamando(r) },
             cancelar: { icon: XCircle, onClick: () => setCancelando(r) },
         };
@@ -375,6 +379,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         return (
             <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
                 <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-2'}>
+                    <ProrrogasPorAutorizar soloLectura={soloLectura} />
                     {!esBodega && (errorCarga ? (
                         <EmptyState icon={AlertTriangle} compact title="No se pudieron leer las reservas"
                             subtitle={mensajeAmigable(errorCarga, 'Revisa la conexión e intenta de nuevo.')}
@@ -449,6 +454,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             )}
             </div>
             <div className={completa ? 'flex flex-col gap-6 mt-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 flex flex-col gap-2'}>
+            <ProrrogasPorAutorizar soloLectura={soloLectura} />
             {delPedido.length > 0 && (
                 <p className="text-body-sm text-content break-words">
                     <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total {formatMoney(totalPedido)}
@@ -566,9 +572,13 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                                     <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title="Avisar por WhatsApp"
                                                         onClick={() => setWhatsapp({ ...r, mensaje: mensajeDeReservaLista(r, r.sala ?? nombreSala) })} />
                                                 )}
-                                                {(r.renglones ?? [r]).some((x) => x.estado === 'lista' && (x.prorrogable ?? !x.prorrogada_at)) && (
+                                                {(r.renglones ?? [r]).some((x) => modoDeProrroga(x) === 'directa') ? (
                                                     <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupada === r.id}
                                                         title="Una sola prórroga de 7 días" onClick={() => prorrogar(r)}>Prorrogar</Button>
+                                                ) : (r.renglones ?? [r]).some((x) => modoDeProrroga(x) === 'pedir')
+                                                    && !(r.renglones ?? [r]).some((x) => modoDeProrroga(x) === 'pendiente') && (
+                                                    <Button variant="ghost" size="xs" icon={CalendarPlus}
+                                                        title="La autoriza Talento Humano o Supervisión de ventas" onClick={() => setPidiendoProrroga(r)}>Pedir prórroga</Button>
                                                 )}
                                                 <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id}
                                                     onClick={() => setRetirando((r.renglones ?? [r]).filter((x) => x.estado === 'lista')
@@ -744,6 +754,12 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                         showToast('Devolución pedida', 'Administración recibe el aviso para autorizarla.', 'success');
                         setPidiendoDevolucion(null); cargar();
                     }} />
+            )}
+            {pidiendoProrroga && (
+                <PedirProrroga tipo="reserva" titulo={pidiendoProrroga.pedido ?? codigoDeReserva(pidiendoProrroga.id)}
+                    ids={(pidiendoProrroga.renglones ?? [pidiendoProrroga]).filter((x) => modoDeProrroga(x) === 'pedir').map((x) => x.id)}
+                    vence={(pidiendoProrroga.renglones ?? [pidiendoProrroga]).find((x) => modoDeProrroga(x) === 'pedir')?.vence_at}
+                    onCerrar={() => setPidiendoProrroga(null)} onListo={() => { setPidiendoProrroga(null); cargar(); }} />
             )}
             {negando && (
                 <ConMotivo titulo="No autorizar la devolución" texto="El saldo sigue a favor del cliente para usarlo en caja."

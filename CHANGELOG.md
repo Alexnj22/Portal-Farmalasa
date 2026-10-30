@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1390.0 — Compras: producto erróneo a vencidos y su nota de crédito
+
+Lo que un proveedor manda por error ya se marca al cargar la factura.
+
+- En cada renglón: **Es un error**. El renglón entra igual con la compra (la
+  factura lo cobra): como el producto que ya tenemos, o —si no lo tenemos—
+  como el genérico **5307 «PRODUCTO ERRONEO DE PROVEEDOR»** ($999.99, creado
+  hoy con OK del usuario, para que no se pueda vender sin notarlo).
+- Al cargar, si la compra se comprobó en el estante, esos renglones se pasan a
+  **Bodega de vencidos** con un traslado dentro de Bodega (estante → Bodega,
+  recibido en vencidos) y se comprueba leyendo la existencia de vencidos antes
+  y después. Si algo no se puede comprobar, no se mueve a ciegas: queda «Por
+  pasar a vencidos» con la razón.
+- `compra_renglon_erroneo` guarda lo que era DE VERDAD (descripción, código
+  del proveedor, unidades, costo, factura, quién lo marcó, traslado).
+- Pestaña **Por error** en Cargar compra: la lista con su estado y las notas de
+  crédito del proveedor —primero la que viene relacionada con esa factura—
+  para adjuntarla (`compra_erroneo_adjuntar_nota`).
+
+Falta: darle salida en el sistema cuando la nota de crédito llega.
+
 ## v2.1389.0 — Prórroga por solicitud, reserva pagada y encargo a 90 días, canje deja $0.05
 
 Lo que rige desde el 15 de noviembre (reglamentos firmados el 30-oct):

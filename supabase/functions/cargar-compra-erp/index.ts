@@ -21,7 +21,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
-import { sesionEn, existenciasDeUbicacion } from "../_shared/erp-traslado.ts";
+import {
+  sesionEn, existenciasDeUbicacion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
+  TRASLADO, RECIBIR,
+} from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
   lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos,
@@ -31,6 +34,10 @@ const COMPRAS = `${BASE}/compras.php`;
 const ERP_BODEGA = 6;
 const BODEGA_BRANCH_ID = 30; // la de `sync-erp-purchases`
 const TOLERANCIA = 0.05;
+/** El genérico con el que entra lo que un proveedor mandó por error y no
+ * tenemos en el catálogo. Creado el 2026-10-30 con OK del usuario, una sola
+ * vez; lo que era de verdad queda en `compra_renglon_erroneo`. */
+const PRODUCTO_ERRONEO = 5307;
 
 /**
  * La UBICACIÓN de Bodega donde entra la compra: el campo `destino` del
@@ -123,6 +130,7 @@ function canonico(v: unknown): string {
 async function enviarCompra(admin: any, x: {
   cookie: string; documentId: number; cargaId: number; sobre: Record<string, unknown>;
   revision: any; lineas: LineaSobre[]; erpProveedor: number;
+  quien: string; emisor: { nit: string | null; nombre: string | null };
 }) {
   if (!x.revision.listo) return { enviada: false, revision: x.revision, error: "La revisión tiene problemas: no se mandó." };
   if (!Number.isFinite(x.cargaId)) return { enviada: false, error: "Falta la revisión que se aprobó." };
@@ -248,7 +256,20 @@ async function enviarCompra(admin: any, x: {
     signal: AbortSignal.timeout(140_000),
   }).then((r) => { if (!r.ok) console.error("[cargar-compra-erp] traerla al portal:", r.status); })
     .catch((e) => console.error("[cargar-compra-erp] traerla al portal:", e?.message ?? e)));
-  return { enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null };
+  // Lo marcado como error del proveedor: se anota y, si la compra se
+  // comprobó en el estante, se pasa a Bodega de vencidos.
+  let vencidos: unknown = null;
+  const errs: Erroneo[] = x.revision.erroneos ?? [];
+  if (errs.length) {
+    vencidos = await apartarErroneos(admin, x.cookie, errs, {
+      cargaId: x.cargaId, documentId: x.documentId, quien: x.quien, emisor: x.emisor,
+      erpCompra: verif.compra, lineas: x.lineas, mover: verif.ok, estante,
+    }).catch(async (e) => {
+      console.error("[cargar-compra-erp] erróneos:", e?.message ?? e);
+      return { movidos: 0, error: `No se pudieron pasar a vencidos: ${e?.message ?? e}` };
+    });
+  }
+  return { enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null, vencidos };
 }
 
 /**
@@ -406,6 +427,126 @@ function opcionesDe(html: string, id: string): { value: string; label: string }[
  * Todo se puede cambiar. Con `crear` lo da de alta; sin él sólo revisa.
  * Un producto regulado o antibiótico no se da de alta desde acá.
  */
+type Erroneo = {
+  renglon: number; descripcion: string; codigo_proveedor: string | null;
+  product_id: number; es_generico: boolean; unidades: number; costo_unitario: number;
+};
+
+/**
+ * Anota cada renglón erróneo y lo pasa del estante de Bodega al área de
+ * vencidos con un traslado dentro de Bodega (origen = estante, destino =
+ * Bodega, recibido en vencidos). Es el mismo movimiento con el que se reparó
+ * la compra 6472 el 2026-10-30, que se midió unidad por unidad.
+ *
+ * Sólo se mueve si la compra se COMPROBÓ en el estante; si no, las filas
+ * quedan `por_mover` con la razón, y nadie mueve a ciegas. La recepción se
+ * comprueba leyendo la existencia de vencidos antes y después.
+ */
+async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
+  cargaId: number; documentId: number; quien: string; emisor: { nit: string | null; nombre: string | null };
+  erpCompra: number | null; lineas: LineaSobre[]; mover: boolean; estante: number;
+}) {
+  const { error: eI } = await admin.from("compra_renglon_erroneo").upsert(errs.map((e) => ({
+    compra_carga_id: x.cargaId, document_id: x.documentId, renglon: e.renglon,
+    emisor_nit: x.emisor.nit, emisor_nombre: x.emisor.nombre, descripcion: e.descripcion,
+    codigo_proveedor: e.codigo_proveedor, product_id: e.product_id, es_generico: e.es_generico,
+    unidades: e.unidades, costo_unitario: e.costo_unitario, erp_compra_id: x.erpCompra,
+    marcado_por: x.quien, estado: "por_mover",
+    nota: x.mover ? null : "La compra no se pudo comprobar en el estante: pasarlo a vencidos a mano.",
+  })), { onConflict: "compra_carga_id,renglon" });
+  if (eI) throw eI;
+  if (!x.mover) return { movidos: 0, error: "La compra no se comprobó: los erróneos quedan por mover." };
+
+  const nota = (texto: string) => admin.from("compra_renglon_erroneo")
+    .update({ nota: texto, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId).eq("estado", "por_mover");
+  const vencidosUbic = await ubicacionDeBodega(admin, true);
+  if (!vencidosUbic) { await nota("No se conoce el área de vencidos de Bodega."); return { movidos: 0, error: "No se conoce el área de vencidos." }; }
+
+  // Un renglón por producto, con la presentación y el lote con que entró.
+  const partes: string[] = [];
+  let total = 0;
+  const esperado = new Map<number, number>();
+  for (const e of errs) {
+    const l = x.lineas.find((y) => Number(y.id_producto) === e.product_id && Math.abs(Number(y.cant) * (Number(y.unidad) || 1) - e.unidades) < 1e-6);
+    if (!l) { await nota("No se encontró su renglón en la compra."); return { movidos: 0, error: "No se encontró el renglón en la compra." }; }
+    const f = await traerFila(cookie, e.product_id, x.estante);
+    if (!f.presentaciones.some((p) => p.id === String(l.id_presentacion))) {
+      await nota("Su presentación no aparece en el estante."); return { movidos: 0, error: "Presentación no encontrada en el estante." };
+    }
+    let idLote = "0";
+    if (f.regulado) {
+      const lote = f.lotes.find((z) => z.numero === String(l.numero_lote));
+      if (!lote) { await nota(`Lote ${l.numero_lote} no encontrado en el estante.`); return { movidos: 0, error: "Lote no encontrado." }; }
+      idLote = lote.id;
+    }
+    partes.push([e.product_id, l.compra, l.venta, l.cant, l.unidad, l.vence === "NULL" ? (f.vence || "") : l.vence, l.id_presentacion, idLote].join("|"));
+    total += Number(l.compra) * Number(l.cant);
+    esperado.set(e.product_id, (esperado.get(e.product_id) ?? 0) + e.unidades);
+  }
+
+  const pagina = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
+  const vale = pagina.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
+  if (!vale) { await nota("El sistema no entregó el número de vale."); return { movidos: 0, error: "Sin vale." }; }
+  const antesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidosUbic);
+  const antes = await pendientesDeOrigen(cookie, x.estante);
+  const r = await pedir(cookie, TRASLADO, new URLSearchParams({
+    process: "insert", datos: partes.join("#") + "#", id_traslado_guardado: "0", cuantos: String(partes.length),
+    total: total.toFixed(4), fecha: hoySV(),
+    concepto: armarConcepto(`PORTAL ERROR DEL PROVEEDOR COMPRA ${x.erpCompra ?? ""} ${x.emisor.nombre ?? ""} A VENCIDOS`).concepto,
+    origen: String(x.estante), id_suc_destino: String(ERP_BODEGA), id_ubicacion_destino: "0", numero_vale: vale,
+  }), { extra: { Referer: TRASLADO } });
+  let ok = false;
+  try { ok = String(JSON.parse(r)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+  if (!ok) { await nota(`El sistema no aceptó el traslado: ${r.slice(0, 300)}`); return { movidos: 0, error: "El traslado a vencidos no entró." }; }
+  const despues = await pendientesDeOrigen(cookie, x.estante);
+  const { id: idT } = await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, []);
+  if (!idT) {
+    await nota("Salió el traslado a vencidos pero no se pudo identificar su número: recibirlo a mano en vencidos.");
+    return { movidos: 0, error: "Traslado sin identificar: recibirlo a mano." };
+  }
+  await admin.from("compra_renglon_erroneo").update({ erp_traslado_id: idT, updated_at: new Date().toISOString() })
+    .eq("compra_carga_id", x.cargaId);
+
+  // Recibirlo en vencidos, con lo que la propia pantalla de recepción muestra.
+  const rec = await pedir(cookie, `${RECIBIR}?id_movimiento=${idT}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+  const filas: string[] = []; let tot = 0;
+  for (const tr of [...rec.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]).filter((t) => /class="id_p"/.test(t))) {
+    const idProd = tr.match(/class="id_p">\s*(\d+)/)?.[1] ?? "";
+    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+    const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const venta = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+    const esp = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const vence = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+    if (!idProd || !idPres) continue;
+    filas.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+    tot += Number(compra) * Number(esp);
+  }
+  if (filas.length !== partes.length) {
+    await nota(`El traslado ${idT} quedó sin recibir: recibirlo a mano en vencidos.`);
+    return { movidos: 0, traslado: idT, error: "No se pudo leer la recepción." };
+  }
+  const r2 = await pedir(cookie, RECIBIR, new URLSearchParams({
+    process: "insert", datos: filas.join("#") + "#", cuantos: String(filas.length), total: tot.toFixed(4),
+    fecha: hoySV(), concepto: `PORTAL ERROR DEL PROVEEDOR (TRASLADO ${idT})`, destino: String(vencidosUbic), id_traslado: idT,
+  }), { extra: { Referer: RECIBIR } });
+  let ok2 = false;
+  try { ok2 = String(JSON.parse(r2)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+
+  // Comprobarlo en vencidos: cada producto tiene que haber subido lo marcado.
+  const despuesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidosUbic);
+  const entro = ok2 && antesVenc && despuesVenc && [...esperado].every(([id, u]) =>
+    (despuesVenc.get(id) ?? 0) - (antesVenc.get(id) ?? 0) >= u - 1e-6);
+  if (!entro) {
+    await nota(`El traslado ${idT} no se pudo comprobar en vencidos: revisarlo.`);
+    return { movidos: 0, traslado: idT, error: "No se comprobó en vencidos." };
+  }
+  const { error: eU } = await admin.from("compra_renglon_erroneo")
+    .update({ estado: "en_vencidos", nota: null, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId);
+  if (eU) throw eU;
+  return { movidos: errs.length, traslado: idT };
+}
+
 async function productoNuevo(admin: any, body: any, creaQuien: string | null = null) {
   const problemas: string[] = [];
   const nombre = String(body?.nombre ?? "").replace(/\s+/g, " ").trim().toUpperCase();
@@ -599,6 +740,7 @@ Deno.serve(async (req: Request) => {
     const lineas: LineaSobre[] = [];
     const detalle: unknown[] = [];
     const cobrado: number[] = [];
+    const erroneos: Erroneo[] = [];
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       const r: RenglonDoc = {
@@ -612,7 +754,11 @@ Deno.serve(async (req: Request) => {
       if (uso === "consumo") dec = { tipo: "consumo" };
       else {
         const x = decisiones[String(i)] ?? {};
-        const pid = Number(x.product_id);
+        // Error del proveedor: entra igual (la factura lo cobra) y después se
+        // pasa a vencidos. Sin producto propio, como el genérico.
+        const erroneo = (x as any).erroneo === true;
+        const elegido = Number(x.product_id);
+        const pid = erroneo && !(elegido > 0) ? PRODUCTO_ERRONEO : elegido;
         if (!Number.isFinite(pid) || pid <= 0) {
           problemas.push({ renglon: i, texto: `«${r.descripcion}» no tiene producto elegido.` });
           detalle.push({ renglon: i, descripcion: r.descripcion, error: "sin producto" });
@@ -625,10 +771,21 @@ Deno.serve(async (req: Request) => {
           detalle.push({ renglon: i, descripcion: r.descripcion, error: "producto inexistente" });
           continue;
         }
-        dec = { tipo: "producto", producto, factor: Number(x.factor) || 1, lote: x.lote ?? null, vence: x.vence ?? null };
+        dec = {
+          tipo: "producto", producto, factor: pid === PRODUCTO_ERRONEO ? 1 : (Number(x.factor) || 1),
+          lote: x.lote ?? null, vence: x.vence ?? null,
+        };
       }
       const res = lineaDelSobre(i, r, dec);
       problemas.push(...res.problemas);
+      if (res.linea && dec.tipo === "producto" && (decisiones[String(i)] as any)?.erroneo === true) {
+        const u = Number(res.linea.unidad) || 1;
+        erroneos.push({
+          renglon: i, descripcion: r.descripcion, codigo_proveedor: String(it?.codigo ?? "") || null,
+          product_id: Number(res.linea.id_producto), es_generico: Number(res.linea.id_producto) === PRODUCTO_ERRONEO,
+          unidades: Number(res.linea.cant) * u, costo_unitario: Math.round((Number(res.linea.compra) / u) * 1e4) / 1e4,
+        });
+      }
       if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); }
       detalle.push({ renglon: i, descripcion: r.descripcion, linea: res.linea, ...(res.detalle ?? {}) });
     }
@@ -704,10 +861,11 @@ Deno.serve(async (req: Request) => {
     const revision = { regalos, totales,
       problemas, listo: problemas.length === 0,
       total_documento: totalDoc, total_armado: Number(tot.total), diferencia,
-      percepcion_proveedor: tasa, renglones: detalle,
+      percepcion_proveedor: tasa, renglones: detalle, erroneos,
     };
     if (enviar) return responder(await enviarCompra(admin, {
       cookie, documentId, cargaId: Number(body?.carga_id), sobre, revision, lineas, erpProveedor: erpProveedor!,
+      quien: quien.id, emisor: { nit: d.emisor_nit, nombre: d.emisor_nombre },
     }));
 
     const { data: fila, error: eI } = await admin.from("compra_carga").insert({

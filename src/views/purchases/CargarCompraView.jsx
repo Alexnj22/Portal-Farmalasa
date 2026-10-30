@@ -17,13 +17,15 @@ import PortalInput from '../../components/common/PortalInput';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import Checkbox from '../../components/common/Checkbox';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
-    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
@@ -74,6 +76,7 @@ const ORIGEN = {
 const TABS = [
     { key: 'facturas',  label: 'Facturas'      },
     { key: 'confirmar', label: 'Por confirmar' },
+    { key: 'erroneos',  label: 'Por error'     },
 ];
 
 const COLS = [
@@ -448,6 +451,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
         factor: Number(ajustes[i]?.factor) || 1,
         lote: ajustes[i]?.lote || null,
         vence: ajustes[i]?.vence || null,
+        erroneo: ajustes[i]?.erroneo === true,
     }]));
 
     // Manda EXACTAMENTE lo revisado: la función lo vuelve a armar y se niega si
@@ -613,6 +617,9 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                             {envio.verificada
                                 ? 'Se leyó de vuelta y cuadra renglón por renglón.'
                                 : <>Entró, pero al leerla de vuelta algo no cuadró: {(envio.notas ?? []).join(' ')}</>}
+                            {envio.vencidos && (envio.vencidos.movidos > 0
+                                ? <> Lo marcado como error ya está en Bodega de vencidos (traslado {envio.vencidos.traslado}).</>
+                                : <> <b>Lo marcado como error NO se pasó a vencidos:</b> {envio.vencidos.error}</>)}
                         </Notice>
                     ) : envio.enviada === false ? (
                         <Notice variant="danger" icon={AlertTriangle}>
@@ -704,12 +711,19 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                                     <div className="flex items-start gap-3 flex-wrap">
                                         <div className="flex-1 min-w-[14rem]">
                                             <p className="text-label font-black text-content">
-                                                {uso === 'consumo' ? r.descripcion : (elegido?.nombre ?? r.producto ?? '— sin producto —')}
+                                                {uso === 'consumo' ? r.descripcion
+                                                    : aj.erroneo && !conProducto ? 'PRODUCTO ERRONEO DE PROVEEDOR'
+                                                    : (elegido?.nombre ?? r.producto ?? '— sin producto —')}
                                             </p>
                                             {uso === 'venta' && <p className="text-micro text-content-3">{r.descripcion}</p>}
-                                            {uso === 'venta' && !conProducto && !r.producto_id && (
+                                            {uso === 'venta' && !aj.erroneo && !conProducto && !r.producto_id && (
                                                 <p className="text-micro text-warning font-bold">
-                                                    No está en Bodega: ¿es nuevo, o es uno que ya tenemos con otro nombre?
+                                                    No está en Bodega: ¿es nuevo, o es uno que ya tenemos con otro nombre? ¿O vino por error?
+                                                </p>
+                                            )}
+                                            {uso === 'venta' && aj.erroneo && (
+                                                <p className="text-micro text-danger font-bold">
+                                                    Error del proveedor: entra con la compra y pasa a Bodega de vencidos hasta que llegue la nota de crédito.
                                                 </p>
                                             )}
                                         </div>
@@ -728,9 +742,15 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                                                             && ` · ${Math.round(r.match_similitud * 100)}%`}
                                                     </Badge>
                                                 )}
-                                                {puedeEditar && !conProducto && (
+                                                {puedeEditar && !conProducto && !aj.erroneo && (
                                                     <Button size="xs" onClick={() => setCreando(i)} icon={PackagePlus}>
                                                         Es nuevo
+                                                    </Button>
+                                                )}
+                                                {puedeEditar && (
+                                                    <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
+                                                        onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
+                                                        {aj.erroneo ? 'No es error' : 'Es un error'}
                                                     </Button>
                                                 )}
                                                 {puedeEditar && r.codigo_proveedor && !elegido && !r.listo && (
@@ -978,6 +998,113 @@ const RESUMEN = {
     resueltos:  { icon: BookMarked, label: 'Confirmados', renglones: 'ya resueltos' },
     todos:      { icon: Layers,     label: 'En la lista', renglones: 'en total' },
 };
+
+/* Lo que un proveedor mandó por error: entró con su compra, pasó a Bodega de
+ * vencidos, y espera su nota de crédito. Acá se ve qué era de verdad —aunque
+ * en el sistema figure como el genérico— y se le adjunta la nota. */
+const ESTADO_ERRONEO = {
+    por_mover:   { label: 'Por pasar a vencidos', variant: 'warning' },
+    en_vencidos: { label: 'En vencidos · falta nota', variant: 'info' },
+    con_nota:    { label: 'Con nota de crédito', variant: 'success' },
+    salio:       { label: 'Ya salió', variant: 'neutral' },
+};
+
+function TabErroneos({ puedeEditar }) {
+    const [filas, setFilas]   = useState(null);
+    const [error, setError]   = useState('');
+    const [elegida, setEleg]  = useState({});   // {id: nota}
+    const [guardando, setG]   = useState(null);
+
+    const cargar = useCallback(async () => {
+        const { filas: f, error: e } = await fetchErroneos();
+        setError(e ?? ''); setFilas(f);
+    }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
+    useEffect(() => { cargar(); }, [cargar]);
+
+    const adjuntar = async (fila, nota) => {
+        setG(fila.id);
+        const { error: e } = await adjuntarNotaDeCredito(fila.id, nota);
+        setG(null);
+        if (e) { setError(e === 'FORBIDDEN' ? 'No tienes permiso para adjuntar la nota.' : e); return; }
+        useStaff.getState().appendAuditLog(nota ? 'COMPRA_ERRONEO_NOTA_ADJUNTA' : 'COMPRA_ERRONEO_NOTA_QUITADA', String(fila.id), {
+            nota, descripcion: fila.descripcion, proveedor: fila.emisor_nombre,
+        });
+        cargar();
+    };
+
+    if (!filas) return <p className="text-label text-content-3">Cargando…</p>;
+    return (
+        <div className="space-y-3">
+            {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+            <Notice variant="info" icon={HelpCircle}>
+                Lo que un proveedor mandó por error. Entra con su compra, pasa a Bodega de vencidos y espera la nota de
+                crédito. Si no lo tenemos en el catálogo, en Bodega figura como «PRODUCTO ERRONEO DE PROVEEDOR»; aquí queda lo que era.
+            </Notice>
+            {!filas.length && <p className="text-label text-content-3">No hay nada marcado como error.</p>}
+            {filas.map(f => {
+                const est = ESTADO_ERRONEO[f.estado] ?? ESTADO_ERRONEO.por_mover;
+                const opciones = (f.notas_candidatas ?? []).map(n => ({
+                    value: String(n.id),
+                    label: `${n.numero ?? n.id} · ${n.fecha} · ${formatMoney(n.total)}${n.relacionada ? ' · de esta factura' : ''}`,
+                }));
+                const nota = elegida[f.id] ?? (opciones[0]?.value ?? '');
+                return (
+                    <div key={f.id} data-surface="card" className="px-3 py-2.5">
+                        <div className="flex items-start gap-3 flex-wrap">
+                            <div className="flex-1 min-w-[14rem]">
+                                <p className="text-label font-black text-content">{f.descripcion}</p>
+                                <p className="text-micro text-content-3">
+                                    {f.emisor_nombre} · factura {f.factura} ({f.factura_fecha})
+                                    {f.erp_compra_id ? ` · compra ${f.erp_compra_id}` : ''}
+                                    {f.es_generico ? ' · en Bodega como PRODUCTO ERRONEO DE PROVEEDOR' : ''}
+                                </p>
+                                <p className="text-micro text-content-3 flex items-center gap-1 mt-0.5">
+                                    <AvatarConEstado emp={{ id: f.marcado_por, name: f.marcado_nombre }} px={16} radio="rounded-full" marco="" />
+                                    {shortEmployeeName(f.marcado_nombre ?? '')} · {new Date(f.created_at).toLocaleDateString('es-SV')}
+                                    {f.erp_traslado_id ? ` · traslado ${f.erp_traslado_id}` : ''}
+                                </p>
+                                {f.nota && <p className="text-micro text-warning font-bold mt-0.5">{f.nota}</p>}
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className="text-label font-black text-content tabular-nums">
+                                    {Number(f.unidades)} u · {formatMoney(Number(f.unidades) * Number(f.costo_unitario))}
+                                </p>
+                                <Badge variant={est.variant} size="sm">{est.label}</Badge>
+                            </div>
+                        </div>
+                        {f.nota_credito_document_id ? (
+                            <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                <p className="text-micro text-content">
+                                    Nota de crédito <b>{f.nota_numero}</b> · {f.nota_fecha} · {formatMoney(f.nota_total)}
+                                </p>
+                                {puedeEditar && f.estado !== 'salio' && (
+                                    <Button size="xs" variant="ghost" disabled={guardando === f.id} onClick={() => adjuntar(f, null)}>
+                                        Quitar
+                                    </Button>
+                                )}
+                            </div>
+                        ) : puedeEditar && (
+                            opciones.length ? (
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                    <div className="min-w-[16rem] flex-1 max-w-md">
+                                        <LiquidSelect value={nota} onChange={v => setEleg(x => ({ ...x, [f.id]: v || '' }))}
+                                            options={opciones} placeholder="Nota de crédito" ariaLabel="Nota de crédito" clearable={false} compact />
+                                    </div>
+                                    <Button size="xs" disabled={!nota || guardando === f.id} onClick={() => adjuntar(f, nota)}>
+                                        Adjuntar nota
+                                    </Button>
+                                </div>
+                            ) : (
+                                <p className="text-micro text-content-3 mt-2">Todavía no llega ninguna nota de crédito de este proveedor.</p>
+                            )
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 function TabPorConfirmar({ puedeEditar }) {
     const [filas, setFilas]   = useState(null);
@@ -1328,7 +1455,8 @@ export default function CargarCompraView() {
         <GlassViewLayout icon={PackagePlus} title="Cargar compra" filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
 
-            {tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} /> : (<>
+            {tab === 'erroneos' ? <TabErroneos puedeEditar={puedeEditar} />
+            : tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} /> : (<>
 
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen de lo que falta cargar">

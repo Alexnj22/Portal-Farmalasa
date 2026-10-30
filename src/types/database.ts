@@ -6673,6 +6673,97 @@ export type Database = {
         }
         Relationships: []
       }
+      compra_renglon_erroneo: {
+        Row: {
+          codigo_proveedor: string | null
+          compra_carga_id: number
+          costo_unitario: number
+          created_at: string
+          descripcion: string
+          document_id: number
+          emisor_nit: string | null
+          emisor_nombre: string | null
+          erp_compra_id: number | null
+          erp_traslado_id: string | null
+          es_generico: boolean
+          estado: string
+          id: number
+          marcado_por: string | null
+          nota: string | null
+          nota_credito_document_id: number | null
+          product_id: number
+          renglon: number
+          unidades: number
+          updated_at: string
+        }
+        Insert: {
+          codigo_proveedor?: string | null
+          compra_carga_id: number
+          costo_unitario: number
+          created_at?: string
+          descripcion: string
+          document_id: number
+          emisor_nit?: string | null
+          emisor_nombre?: string | null
+          erp_compra_id?: number | null
+          erp_traslado_id?: string | null
+          es_generico: boolean
+          estado?: string
+          id?: never
+          marcado_por?: string | null
+          nota?: string | null
+          nota_credito_document_id?: number | null
+          product_id: number
+          renglon: number
+          unidades: number
+          updated_at?: string
+        }
+        Update: {
+          codigo_proveedor?: string | null
+          compra_carga_id?: number
+          costo_unitario?: number
+          created_at?: string
+          descripcion?: string
+          document_id?: number
+          emisor_nit?: string | null
+          emisor_nombre?: string | null
+          erp_compra_id?: number | null
+          erp_traslado_id?: string | null
+          es_generico?: boolean
+          estado?: string
+          id?: never
+          marcado_por?: string | null
+          nota?: string | null
+          nota_credito_document_id?: number | null
+          product_id?: number
+          renglon?: number
+          unidades?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_renglon_erroneo_compra_carga_id_fkey"
+            columns: ["compra_carga_id"]
+            isOneToOne: false
+            referencedRelation: "compra_carga"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_marcado_por_fkey"
+            columns: ["marcado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_marcado_por_fkey"
+            columns: ["marcado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_renglon_pendiente: {
         Row: {
           codigo_proveedor: string | null
@@ -30641,6 +30732,10 @@ export type Database = {
         Args: { p_document_id: number; p_nit?: string }
         Returns: Json
       }
+      compra_erroneo_adjuntar_nota: {
+        Args: { p_id: number; p_nota: number }
+        Returns: undefined
+      }
       compra_resolver_documento: {
         Args: { p_document_id: number; p_motivo: string; p_receipt_id?: number }
         Returns: Json
@@ -30822,6 +30917,10 @@ export type Database = {
       contexto_de_solicitud_minmax: {
         Args: { p_erp_product_id: number; p_erp_sucursal_id: number }
         Returns: Json
+      }
+      correccion_de_factor_poner_vence: {
+        Args: { p_id: string; p_vence: string }
+        Returns: undefined
       }
       corregir_lectura_bitacora: {
         Args: {
@@ -32366,6 +32465,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_compra_erroneos: { Args: never; Returns: Json }
       get_consecutive_mh_alerts: {
         Args: never
         Returns: {

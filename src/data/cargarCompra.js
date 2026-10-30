@@ -273,3 +273,16 @@ export async function crearProductoNuevo(datos) {
     });
     return r;
 }
+
+/** Lo que vino por error, con las notas de crédito que le pueden corresponder. */
+export async function fetchErroneos() {
+    const { data, error } = await supabase.rpc('get_compra_erroneos');
+    return { filas: Array.isArray(data) ? data : [], error: error?.message ?? null };
+}
+
+/** Adjunta (o quita, con `null`) la nota de crédito de un renglón erróneo. */
+export async function adjuntarNotaDeCredito(id, notaId) {
+    const { error } = await supabase.rpc('compra_erroneo_adjuntar_nota', { p_id: Number(id), p_nota: notaId ? Number(notaId) : null });
+    if (!error) anotar(notaId ? 'COMPRA_ERRONEO_NOTA_ADJUNTA' : 'COMPRA_ERRONEO_NOTA_QUITADA', id, { nota: notaId });
+    return { error: error?.message ?? null };
+}

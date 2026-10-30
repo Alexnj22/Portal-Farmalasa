@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, CheckCircle2, FlaskConical, ImagePlus, Loader2, Package, Plus, SkipForward, Smartphone, Users, X } from 'lucide-react';
+import { Camera, CheckCircle2, FlaskConical, Globe, ImagePlus, Loader2, Package, Plus, Search, SkipForward, Smartphone, Users, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import CarrilCards from '../components/common/CarrilCards';
@@ -24,6 +24,10 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { formatQty } from '@nucleo/utils/formatNumber';
+import SrsBuscadorWidget from '../components/srs/SrsBuscadorWidget';
+import { buscarEnSrsParaProducto } from '@nucleo/data/srs';
+import { resultadoDeSrs } from '@nucleo/utils/srs';
+import { SRS_AUTO_MIN, decidirSrs, principiosDeSrs } from '@nucleo/utils/enriquecerSrs';
 import { buscarParaCarga, fetchColaDeCarga, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
 
 const PhotoEditorModal = lazy(() => import('../components/common/PhotoEditorModal'));
@@ -259,12 +263,20 @@ function Faltas({ p }) {
 // La foto nueva y los principios se guardan JUNTOS al apretar «Guardar y
 // siguiente»: la foto se sube recién ahí, así que saltar un producto no deja
 // archivos sueltos en el bucket.
+//
+// Tres atajos para que cada producto cueste segundos (2026-10-30, pedido del
+// usuario: «que sea funcional, fácil de usar y muy útil»):
+//  · el principio lo SUGIERE el registro sanitario apenas se abre el producto;
+//  · en la computadora la foto entra pegándola (Ctrl+V), arrastrándola, o
+//    buscándola en internet con el nombre ya escrito;
+//  · ⌘/Ctrl+Enter guarda y pasa al siguiente.
 function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
     const esTactil = useCoarsePointer();
     const archivoRef = useRef(null);
     const camaraRef = useRef(null);
     const [pendiente, setPendiente] = useState(null);     // archivo elegido, todavía sin recortar
     const [fotoNueva, setFotoNueva] = useState(null);     // Blob recortado, listo para subir
+    const [encima, setEncima] = useState(false);          // arrastrando una imagen sobre la foto
     const vistaNueva = useMemo(() => (fotoNueva ? URL.createObjectURL(fotoNueva) : null), [fotoNueva]);
     useEffect(() => () => { if (vistaNueva) URL.revokeObjectURL(vistaNueva); }, [vistaNueva]);
 
@@ -272,6 +284,7 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
     const [preset, setPreset] = useState(inicial.preset);
     const [items, setItems] = useState(inicial.items);
     const [tocoPrincipios, setTocoPrincipios] = useState(false);
+    const [deSrs, setDeSrs] = useState(null);             // el registro de donde salió lo escrito
     const [guardando, setGuardando] = useState(false);
 
     const fotoDelTelefono = useFotoDelTelefono(setPendiente, {
@@ -285,8 +298,39 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
         e.target.value = '';
     };
 
+    // Pegar una imagen copiada (de internet, de WhatsApp Web…) en cualquier
+    // parte de la pantalla. Si el foco está en un campo de texto y lo pegado es
+    // texto, el campo lo recibe como siempre: sólo se toma una IMAGEN.
+    useEffect(() => {
+        if (!puedeEditar) return undefined;
+        const alPegar = (e) => {
+            for (const item of e.clipboardData?.items || []) {
+                if (item.type.startsWith('image/')) {
+                    const f = item.getAsFile();
+                    if (f) { e.preventDefault(); setPendiente(f); return; }
+                }
+            }
+        };
+        document.addEventListener('paste', alPegar);
+        return () => document.removeEventListener('paste', alPegar);
+    }, [puedeEditar]);
+
+    const soltar = (e) => {
+        e.preventDefault();
+        setEncima(false);
+        const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/'));
+        if (f) setPendiente(f);
+        else avisar('Foto', 'Suelta una imagen (JPG, PNG o WebP).', 'warning');
+    };
+
+    const buscarEnInternet = () => {
+        const q = [producto.nombre, producto.laboratorio].filter(Boolean).join(' ');
+        window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`, '_blank', 'noopener');
+    };
+
     const cambiar = (fn) => { setTocoPrincipios(true); fn(); };
     const elegirPreset = (p) => cambiar(() => {
+        setDeSrs(null);
         if (preset === p) { setPreset(null); setItems([{ nombre: '', concentracion: '', orden: 0, _key: Date.now() }]); }
         else { setPreset(p); setItems([]); }
     });
@@ -295,6 +339,17 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
         ? prev.filter((p) => p._key !== key)
         : [{ nombre: '', concentracion: '', orden: 0, _key: Date.now() }])));
     const editar = (key, campo, valor) => cambiar(() => setItems((prev) => prev.map((p) => (p._key === key ? { ...p, [campo]: valor } : p))));
+
+    // Lo que trae un registro del SRS reemplaza lo escrito (un registro es UN
+    // producto: sus principios van juntos, no se mezclan con los de otro).
+    const usarSrs = useCallback((crudo) => {
+        const lista = principiosDeSrs(crudo);
+        if (!lista.length) { avisar('Registro sanitario', 'Ese registro no trae principio activo.', 'warning'); return; }
+        setTocoPrincipios(true);
+        setPreset(null);
+        setItems(lista.map((p, i) => ({ ...p, _key: `srs-${Date.now()}-${i}` })));
+        setDeSrs(resultadoDeSrs(crudo));
+    }, []);
 
     const principios = tocoPrincipios ? principiosParaGuardar(producto.id, { preset, items }) : null;
     // Borrar todos los principios no se hace desde acá: la cola es para completar.
@@ -311,7 +366,8 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                 const url = await subirArchivo('product-photos', `${producto.id}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
                 fotoUrl = `${url}?t=${Date.now()}`;
             }
-            await guardarCarga(producto.id, { fotoUrl, principios: principiosValidos }, { producto: producto.nombre });
+            await guardarCarga(producto.id, { fotoUrl, principios: principiosValidos },
+                { producto: producto.nombre, ...(deSrs?.noregistro ? { registro_sanitario: deSrs.noregistro } : {}) });
             avisar('Guardado', producto.nombre, 'success');
             onGuardado();
         } catch (err) {
@@ -320,6 +376,18 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
             setGuardando(false);
         }
     };
+
+    // ⌘/Ctrl+Enter: guardar y siguiente sin soltar el teclado.
+    const guardarRef = useRef(guardar);
+    guardarRef.current = guardar;
+    useEffect(() => {
+        if (!puedeEditar) return undefined;
+        const alTeclear = (e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); guardarRef.current(); }
+        };
+        document.addEventListener('keydown', alTeclear);
+        return () => document.removeEventListener('keydown', alTeclear);
+    }, [puedeEditar]);
 
     const fotoVisible = vistaNueva || producto.foto_url;
 
@@ -346,13 +414,16 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                     <input ref={camaraRef} type="file" {...PROPS_CAMARA} className="hidden" aria-hidden="true" tabIndex={-1} onChange={elegirArchivo} />
                     <button type="button" disabled={!puedeEditar}
                         onClick={() => (esTactil ? camaraRef : archivoRef).current?.click()}
-                        className="relative w-full aspect-square max-w-[240px] rounded-2xl border-2 border-dashed border-divider overflow-hidden bg-surface-card active:scale-[0.97] transition-transform">
+                        onDragOver={(e) => { e.preventDefault(); if (!encima) setEncima(true); }}
+                        onDragLeave={() => setEncima(false)}
+                        onDrop={puedeEditar ? soltar : undefined}
+                        className={`relative w-full aspect-square max-w-[240px] rounded-2xl border-2 border-dashed overflow-hidden bg-surface-card active:scale-[0.97] transition-[transform,border-color] ${encima ? 'border-brand' : 'border-divider'}`}>
                         {fotoVisible ? (
                             <img src={fotoVisible} alt="" className="w-full h-full object-contain p-2" />
                         ) : (
-                            <span className="w-full h-full flex flex-col items-center justify-center gap-2 text-content-3">
+                            <span className="w-full h-full flex flex-col items-center justify-center gap-2 px-4 text-center text-content-3">
                                 <ImagePlus size={32} />
-                                <span className="text-caption font-semibold">{esTactil ? 'Tomar foto' : 'Subir foto'}</span>
+                                <span className="text-caption font-semibold">{esTactil ? 'Tomar foto' : 'Subir, arrastrar o pegar (Ctrl+V)'}</span>
                             </span>
                         )}
                         {vistaNueva && <Badge variant="success" className="absolute top-2 left-2">Nueva</Badge>}
@@ -367,6 +438,10 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                                     {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
                                 </Button>
                             )}
+                            <Button variant="ghost" size="sm" icon={Globe} onClick={buscarEnInternet}
+                                title="Abre la búsqueda de imágenes con el nombre del producto: copia una y pégala aquí">
+                                Buscar en internet
+                            </Button>
                             <Button variant="ghost" size="sm" icon={ImagePlus} onClick={() => archivoRef.current?.click()}>Elegir archivo</Button>
                             {fotoNueva && <Button variant="ghost" size="sm" icon={X} onClick={() => setFotoNueva(null)}>Descartar</Button>}
                         </div>
@@ -382,32 +457,44 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                 </div>
 
                 {/* ── Principio activo ── */}
-                <div className="space-y-2 min-w-0">
-                    <p className="text-label font-semibold text-content-2 flex items-center gap-1.5"><FlaskConical size={14} /> Principio activo</p>
-                    <p className="text-caption text-content-3">Como dice el empaque: el principio y su concentración. Si trae varios, uno por renglón.</p>
-                    <SegmentedControl size="sm" label="No es un medicamento" value={preset} onChange={elegirPreset}
-                        options={PRINCIPIO_PRESETS.map((p) => ({ value: p, label: p }))} />
-                    {!preset && (
-                        <div className="space-y-1.5">
-                            {items.map((it, i) => (
-                                <div key={it._key} className="flex items-center gap-1.5">
-                                    <span className="text-micro font-bold w-4 text-right shrink-0 text-content-3">{i + 1}</span>
-                                    <PortalInput aria-label="Nombre del principio activo" value={it.nombre} readOnly={!puedeEditar}
-                                        onChange={(e) => editar(it._key, 'nombre', e.target.value)}
-                                        placeholder="Ej. Amoxicilina" className="flex-1 min-w-0" />
-                                    <PortalInput aria-label="Concentración" value={it.concentracion || ''} readOnly={!puedeEditar}
-                                        onChange={(e) => editar(it._key, 'concentracion', e.target.value)}
-                                        placeholder="500mg" inputClassName="text-center" className="w-24 shrink-0" />
-                                    <Button variant="ghost" size="sm" icon={X} iconOnly title="Quitar" disabled={!puedeEditar} onClick={() => quitar(it._key)} />
-                                </div>
-                            ))}
-                            {puedeEditar && <Button variant="ghost" size="sm" icon={Plus} onClick={agregar}>Agregar otro principio</Button>}
-                        </div>
+                <div className="space-y-3 min-w-0">
+                    <div className="space-y-2">
+                        <p className="text-label font-semibold text-content-2 flex items-center gap-1.5"><FlaskConical size={14} /> Principio activo</p>
+                        <SegmentedControl size="sm" label="No es un medicamento" value={preset} onChange={elegirPreset}
+                            options={PRINCIPIO_PRESETS.map((p) => ({ value: p, label: p }))} />
+                        {!preset && (
+                            <div className="space-y-1.5">
+                                {items.map((it, i) => (
+                                    <div key={it._key} className="flex items-center gap-1.5">
+                                        <span className="text-micro font-bold w-4 text-right shrink-0 text-content-3">{i + 1}</span>
+                                        <PortalInput aria-label="Nombre del principio activo" value={it.nombre} readOnly={!puedeEditar}
+                                            onChange={(e) => editar(it._key, 'nombre', e.target.value)}
+                                            placeholder="Ej. Amoxicilina" className="flex-1 min-w-0" />
+                                        <PortalInput aria-label="Concentración" value={it.concentracion || ''} readOnly={!puedeEditar}
+                                            onChange={(e) => editar(it._key, 'concentracion', e.target.value)}
+                                            placeholder="500mg" inputClassName="text-center" className="w-28 shrink-0" />
+                                        <Button variant="ghost" size="sm" icon={X} iconOnly title="Quitar" disabled={!puedeEditar} onClick={() => quitar(it._key)} />
+                                    </div>
+                                ))}
+                                {puedeEditar && <Button variant="ghost" size="sm" icon={Plus} onClick={agregar}>Agregar otro principio</Button>}
+                            </div>
+                        )}
+                        {deSrs && !preset && (
+                            <Notice variant="chart-3" compact>
+                                {`Tomado del registro ${deSrs.noregistro || 'sanitario'} (${deSrs.nombre}). Revísalo contra el empaque antes de guardar.`}
+                            </Notice>
+                        )}
+                    </div>
+
+                    {puedeEditar && !preset && (
+                        <SugerenciasSrs producto={producto} onUsar={usarSrs}
+                            autoAplicar={producto.falta_principio && !tocoPrincipios} />
                     )}
                 </div>
             </div>
 
             <footer className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                {!esTactil && puedeEditar && <span className="text-micro text-content-3 mr-auto">⌘/Ctrl + Enter guarda y pasa al siguiente</span>}
                 <Button variant="ghost" icon={SkipForward} onClick={onSaltar} disabled={guardando}>Saltar</Button>
                 {puedeEditar && (
                     <Button variant="primary" icon={guardando ? Loader2 : CheckCircle2} loading={guardando}
@@ -417,5 +504,74 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                 )}
             </footer>
         </section>
+    );
+}
+
+// ── Lo que dice el registro sanitario ──────────────────────────────────────
+// Se busca solo al abrir el producto, con las mismas búsquedas y la misma
+// medida de parecido que «Enriquecer SRS» del catálogo (`utils/enriquecerSrs`):
+// así lo que acá se sugiere y lo que allá se aplica en lote no se contradicen.
+// Con el producto SIN principio y un candidato de 70% o más, se precarga
+// (`autoAplicar`) — la persona lo revisa y guarda; nunca se guarda solo.
+function SugerenciasSrs({ producto, onUsar, autoAplicar }) {
+    const [estado, setEstado] = useState({ cargando: true, candidatos: [], error: null });
+    const [buscarOtro, setBuscarOtro] = useState(false);
+    const aplicar = useRef(autoAplicar);
+
+    useEffect(() => {
+        let vivo = true;
+        buscarEnSrsParaProducto({ nombre: producto.nombre, laboratorios: { nombre: producto.laboratorio } })
+            .then((json) => {
+                if (!vivo) return;
+                const { tipo, entrada } = decidirSrs({ nombre: producto.nombre }, json.data || []);
+                const candidatos = (entrada?.candidates || []).filter((c) => principiosDeSrs(c.srs).length);
+                setEstado({ cargando: false, candidatos, error: null });
+                if (tipo === 'auto' && aplicar.current && candidatos[0]?.srs === entrada.srs) onUsar(entrada.srs);
+            })
+            .catch((err) => { if (vivo) setEstado({ cargando: false, candidatos: [], error: mensajeAmigable(err) }); });
+        return () => { vivo = false; };
+    }, [producto.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return (
+        <div className="space-y-2 pt-1 border-t border-divider">
+            <div className="flex items-center justify-between gap-2 pt-2">
+                <p className="text-label font-semibold text-content-2 flex items-center gap-1.5"><Search size={14} /> Registro sanitario</p>
+                <Button variant="ghost" size="sm" onClick={() => setBuscarOtro((v) => !v)}>
+                    {buscarOtro ? 'Cerrar búsqueda' : 'Buscar otro'}
+                </Button>
+            </div>
+            {estado.cargando ? (
+                <p className="text-caption text-content-3 flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Buscando coincidencias…</p>
+            ) : estado.error ? (
+                <Notice variant="warning" compact>{`No se pudo consultar el registro: ${estado.error}`}</Notice>
+            ) : estado.candidatos.length === 0 ? (
+                <p className="text-caption text-content-3">Sin coincidencias con principio activo. Prueba con «Buscar otro» o escríbelo del empaque.</p>
+            ) : (
+                <div className="space-y-1.5">
+                    {estado.candidatos.map(({ srs, score }) => {
+                        const r = resultadoDeSrs(srs);
+                        return (
+                            <ListRow key={srs.id ?? r.noregistro} density="sm"
+                                icon={FlaskConical} iconClass="text-chart-3-text"
+                                title={[r.principio, r.conc].filter(Boolean).join(' · ')}
+                                subtitle={[r.nombre, r.lab, r.forma, r.noregistro].filter(Boolean).join(' · ')}
+                                trailing={(
+                                    <span className="flex items-center gap-2 shrink-0">
+                                        <Badge variant={score >= SRS_AUTO_MIN ? 'success' : 'neutral'} title="Qué tanto se parece el nombre">
+                                            {`${Math.round(score * 100)}%`}
+                                        </Badge>
+                                        <span className="text-label font-semibold text-brand-text">Usar</span>
+                                    </span>
+                                )}
+                                onClick={() => onUsar(srs)} />
+                        );
+                    })}
+                </div>
+            )}
+            {buscarOtro && (
+                <SrsBuscadorWidget initialQuery={producto.nombre}
+                    onSelectResult={(crudo) => { onUsar(crudo); setBuscarOtro(false); }} />
+            )}
+        </div>
     );
 }

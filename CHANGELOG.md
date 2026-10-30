@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1406.0 — Fotos de productos: el registro sanitario sugiere el principio, y la foto se pega o se arrastra
+
+Al abrir un producto se consulta solo el registro sanitario (mismas búsquedas y misma medida de parecido que «Enriquecer SRS»): salen hasta tres coincidencias con su principio, concentración, registro y % de parecido, y «Usar» las copia. Si el producto no tenía principio y la mejor pasa el 70%, queda precargada con un aviso para revisarla contra el empaque — nunca se guarda sola. «Buscar otro» abre el buscador del registro. La foto en computadora entra pegándola (Ctrl+V), arrastrándola al cuadro o con «Buscar en internet» (imágenes con el nombre ya escrito). ⌘/Ctrl+Enter guarda y pasa al siguiente. Quitar el fondo ya lo hace el editor de la foto.
+
 ## v2.1405.1 — Compras: facturas anuladas con nota de crédito
 
 - **Facturas anuladas con nota de crédito**: si las notas de crédito ligadas a una factura suman su total, sale sola de «Facturas por cargar» (9 de la cola de 90 días, entre ellas RONASA 226C02B8). Si la nota no viene ligada pero es del mismo proveedor y del mismo total (RONASA escribe «CCF 22094» en vez del código), la fila dice «¿Anulada?» y la factura ofrece «Sí, está anulada» (motivo `anulada_nc`, se puede deshacer). Una nota parcial sólo avisa.

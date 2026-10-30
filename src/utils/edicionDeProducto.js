@@ -2,6 +2,8 @@
 // ubicaciones por sala. Vivía dentro de `TabCatalogo` (portal); sale al núcleo
 // para que el teléfono escriba EXACTAMENTE las mismas filas.
 
+import { normalizarConcentracion, normalizarPrincipio } from './concentracion';
+
 /** Los dos valores que no son un principio activo sino una respuesta. */
 export const PRINCIPIO_PRESETS = ['Insumo', 'No aplica'];
 
@@ -20,12 +22,14 @@ export function editorDePrincipios(guardados = []) {
  */
 export function principiosParaGuardar(productId, { preset = null, items = [] } = {}) {
     if (preset) return { rows: [{ product_id: productId, nombre: preset, concentracion: null, orden: 0 }], text: preset, saved: [{ nombre: preset }] };
+    // Nombre y concentración salen escritos de UNA forma (`utils/concentracion`):
+    // «ACETAMINOFÉN 500 mg», nunca «Acetaminofen 500 mg.» al lado de otra ficha.
     const toSave = items.filter(p => (p.nombre ?? '').trim());
     const rows = toSave.map((p, i) => ({
-        product_id: productId, nombre: p.nombre.trim(), concentracion: p.concentracion?.trim() || null, orden: i,
+        product_id: productId, nombre: normalizarPrincipio(p.nombre), concentracion: normalizarConcentracion(p.concentracion), orden: i,
     }));
-    const text = toSave.length
-        ? toSave.map(p => [p.nombre.trim(), p.concentracion?.trim()].filter(Boolean).join(' ')).join(', ')
+    const text = rows.length
+        ? rows.map(r => [r.nombre, r.concentracion].filter(Boolean).join(' ')).join(', ')
         : null;
     return { rows, text, saved: toSave };
 }

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, CheckCircle2, FlaskConical, Globe, ImagePlus, Loader2, Package, Plus, Search, SkipForward, Smartphone, Users, X } from 'lucide-react';
+import { Camera, CheckCircle2, ClipboardPaste, FlaskConical, Globe, ImagePlus, Loader2, Package, Plus, Search, SkipForward, Smartphone, Users, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import CarrilCards from '../components/common/CarrilCards';
@@ -28,7 +28,9 @@ import SrsBuscadorWidget from '../components/srs/SrsBuscadorWidget';
 import { buscarEnSrsParaProducto } from '@nucleo/data/srs';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { SRS_AUTO_MIN, decidirSrs, principiosDeSrs } from '@nucleo/utils/enriquecerSrs';
-import { buscarParaCarga, fetchColaDeCarga, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
+import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
+import { UNIDADES, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio } from '@nucleo/utils/concentracion';
+import LiquidSelect from '../components/common/LiquidSelect';
 
 const PhotoEditorModal = lazy(() => import('../components/common/PhotoEditorModal'));
 const LectorDeCodigo = lazy(() => import('../components/common/LectorDeCodigo'));
@@ -98,6 +100,13 @@ export default function FotosProductosView() {
 
     useEffect(() => { cargarCola(); }, [cargarCola]);
     useEffect(() => { cargarResumen(); }, [cargarResumen]);
+
+    // Los principios del catálogo, para elegir en vez de escribir (una vez por visita).
+    const [nombres, setNombres] = useState([]);
+    useEffect(() => {
+        fetchNombresDePrincipios().then(setNombres)
+            .catch((err) => console.error('FotosProductos: no se pudo leer la lista de principios', err));
+    }, []);
 
     // La búsqueda: nombre, principio activo o código de barras (el lector lo escribe acá).
     useEffect(() => {
@@ -192,7 +201,7 @@ export default function FotosProductosView() {
                         {cola == null && !elegido ? (
                             <section data-surface="card" className="p-5"><SkeletonText lines={6} /></section>
                         ) : actual ? (
-                            <FichaDeCarga key={actual.id} producto={actual} puedeEditar={puedeEditar}
+                            <FichaDeCarga key={actual.id} producto={actual} puedeEditar={puedeEditar} nombres={nombres}
                                 quedan={elegido ? null : cola.length}
                                 onGuardado={() => alGuardar(actual.id)}
                                 onSaltar={() => pasar(actual.id, { saltar: true })} />
@@ -259,6 +268,26 @@ function Faltas({ p }) {
     );
 }
 
+// ── Un renglón del principio: nombre, cantidad y unidad por separado ──────
+// Lo guardado («500 mg.») se lee en sus dos partes; lo que no se entiende
+// queda en `crudo` y se avisa, para que una persona lo corrija — nunca se borra.
+const renglonVacio = () => ({ nombre: '', cantidad: '', unidad: 'mg', crudo: null, _key: `n-${Date.now()}-${Math.random()}` });
+function aRenglon(p, i = 0) {
+    const l = leerConcentracion(p.concentracion);
+    return {
+        nombre: p.nombre ? normalizarPrincipio(p.nombre) : '',
+        cantidad: l.cantidad, unidad: l.unidad || (l.cantidad ? '' : 'mg'), crudo: l.crudo,
+        _key: p._key ?? `r-${Date.now()}-${i}`,
+    };
+}
+// El nombre actual siempre está entre las opciones, aunque sea nuevo.
+const opcionesDeNombre = (nombres, actual) => {
+    const lista = actual && !nombres.includes(actual) ? [actual, ...nombres] : nombres;
+    return lista.map((n) => ({ value: n, label: n }));
+};
+const opcionesDeUnidad = (actual) =>
+    (actual && !UNIDADES.includes(actual) ? [actual, ...UNIDADES] : UNIDADES).map((u) => ({ value: u, label: u }));
+
 // ── La ficha del producto que toca ─────────────────────────────────────────
 // La foto nueva y los principios se guardan JUNTOS al apretar «Guardar y
 // siguiente»: la foto se sube recién ahí, así que saltar un producto no deja
@@ -270,7 +299,7 @@ function Faltas({ p }) {
 //  · en la computadora la foto entra pegándola (Ctrl+V), arrastrándola, o
 //    buscándola en internet con el nombre ya escrito;
 //  · ⌘/Ctrl+Enter guarda y pasa al siguiente.
-function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
+function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar }) {
     const esTactil = useCoarsePointer();
     const archivoRef = useRef(null);
     const camaraRef = useRef(null);
@@ -282,7 +311,7 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
 
     const inicial = useMemo(() => editorDePrincipios(producto.principios || []), [producto.principios]);
     const [preset, setPreset] = useState(inicial.preset);
-    const [items, setItems] = useState(inicial.items);
+    const [items, setItems] = useState(() => inicial.items.map(aRenglon));
     const [tocoPrincipios, setTocoPrincipios] = useState(false);
     const [deSrs, setDeSrs] = useState(null);             // el registro de donde salió lo escrito
     const [guardando, setGuardando] = useState(false);
@@ -323,6 +352,22 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
         else avisar('Foto', 'Suelta una imagen (JPG, PNG o WebP).', 'warning');
     };
 
+    // El clic derecho sobre un botón no ofrece «Pegar» (el navegador sólo lo
+    // pone en los campos de texto): por eso el botón, y el clic derecho sobre
+    // el cuadro pega directo. Safari pide confirmar con su burbuja «Pegar».
+    const pegarImagen = async () => {
+        try {
+            if (!navigator.clipboard?.read) throw new Error('sin-lectura');
+            for (const item of await navigator.clipboard.read()) {
+                const tipo = item.types.find((t) => t.startsWith('image/'));
+                if (tipo) { const b = await item.getType(tipo); setPendiente(new File([b], 'pegada.png', { type: tipo })); return; }
+            }
+            avisar('Pegar imagen', 'No hay una imagen copiada. En la búsqueda: clic derecho sobre la imagen › Copiar imagen.', 'warning');
+        } catch {
+            avisar('Pegar imagen', 'El navegador no dejó leer lo copiado. Prueba con ⌘V / Ctrl+V.', 'warning');
+        }
+    };
+
     const buscarEnInternet = () => {
         const q = [producto.nombre, producto.laboratorio].filter(Boolean).join(' ');
         window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`, '_blank', 'noopener');
@@ -331,13 +376,13 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
     const cambiar = (fn) => { setTocoPrincipios(true); fn(); };
     const elegirPreset = (p) => cambiar(() => {
         setDeSrs(null);
-        if (preset === p) { setPreset(null); setItems([{ nombre: '', concentracion: '', orden: 0, _key: Date.now() }]); }
+        if (preset === p) { setPreset(null); setItems([renglonVacio()]); }
         else { setPreset(p); setItems([]); }
     });
-    const agregar = () => cambiar(() => setItems((prev) => [...prev, { nombre: '', concentracion: '', orden: prev.length, _key: Date.now() }]));
+    const agregar = () => cambiar(() => setItems((prev) => [...prev, renglonVacio()]));
     const quitar = (key) => cambiar(() => setItems((prev) => (prev.length > 1
         ? prev.filter((p) => p._key !== key)
-        : [{ nombre: '', concentracion: '', orden: 0, _key: Date.now() }])));
+        : [renglonVacio()])));
     const editar = (key, campo, valor) => cambiar(() => setItems((prev) => prev.map((p) => (p._key === key ? { ...p, [campo]: valor } : p))));
 
     // Lo que trae un registro del SRS reemplaza lo escrito (un registro es UN
@@ -347,11 +392,13 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
         if (!lista.length) { avisar('Registro sanitario', 'Ese registro no trae principio activo.', 'warning'); return; }
         setTocoPrincipios(true);
         setPreset(null);
-        setItems(lista.map((p, i) => ({ ...p, _key: `srs-${Date.now()}-${i}` })));
+        setItems(lista.map(aRenglon));
         setDeSrs(resultadoDeSrs(crudo));
     }, []);
 
-    const principios = tocoPrincipios ? principiosParaGuardar(producto.id, { preset, items }) : null;
+    const principios = tocoPrincipios
+        ? principiosParaGuardar(producto.id, { preset, items: items.map((it) => ({ nombre: it.nombre, concentracion: escribirConcentracion(it.cantidad, it.unidad) ?? it.crudo })) })
+        : null;
     // Borrar todos los principios no se hace desde acá: la cola es para completar.
     const principiosValidos = principios && principios.rows.length > 0 ? principios : null;
     const hayCambios = !!fotoNueva || !!principiosValidos;
@@ -417,6 +464,7 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                         onDragOver={(e) => { e.preventDefault(); if (!encima) setEncima(true); }}
                         onDragLeave={() => setEncima(false)}
                         onDrop={puedeEditar ? soltar : undefined}
+                        onContextMenu={puedeEditar && !esTactil ? (e) => { e.preventDefault(); pegarImagen(); } : undefined}
                         className={`relative w-full aspect-square max-w-[240px] rounded-2xl border-2 border-dashed overflow-hidden bg-surface-card active:scale-[0.97] transition-[transform,border-color] ${encima ? 'border-brand' : 'border-divider'}`}>
                         {fotoVisible ? (
                             <img src={fotoVisible} alt="" className="w-full h-full object-contain p-2" />
@@ -438,6 +486,7 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                                     {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
                                 </Button>
                             )}
+                            {!esTactil && <Button variant="ghost" size="sm" icon={ClipboardPaste} onClick={pegarImagen}>Pegar imagen</Button>}
                             <Button variant="ghost" size="sm" icon={Globe} onClick={buscarEnInternet}
                                 title="Abre la búsqueda de imágenes con el nombre del producto: copia una y pégala aquí">
                                 Buscar en internet
@@ -464,20 +513,40 @@ function FichaDeCarga({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
                             options={PRINCIPIO_PRESETS.map((p) => ({ value: p, label: p }))} />
                         {!preset && (
                             <div className="space-y-1.5">
+                                <div className="hidden sm:grid grid-cols-[1rem_1fr_6rem_8rem_2.75rem] gap-1.5 text-micro font-semibold uppercase tracking-wide text-content-3">
+                                    <span /><span>Principio activo</span><span className="text-center">Cantidad</span><span>Unidad</span><span />
+                                </div>
                                 {items.map((it, i) => (
-                                    <div key={it._key} className="flex items-center gap-1.5">
-                                        <span className="text-micro font-bold w-4 text-right shrink-0 text-content-3">{i + 1}</span>
-                                        <PortalInput aria-label="Nombre del principio activo" value={it.nombre} readOnly={!puedeEditar}
-                                            onChange={(e) => editar(it._key, 'nombre', e.target.value)}
-                                            placeholder="Ej. Amoxicilina" className="flex-1 min-w-0" />
-                                        <PortalInput aria-label="Concentración" value={it.concentracion || ''} readOnly={!puedeEditar}
-                                            onChange={(e) => editar(it._key, 'concentracion', e.target.value)}
-                                            placeholder="500mg" inputClassName="text-center" className="w-28 shrink-0" />
-                                        <Button variant="ghost" size="sm" icon={X} iconOnly title="Quitar" disabled={!puedeEditar} onClick={() => quitar(it._key)} />
+                                    <div key={it._key} className="grid grid-cols-[1rem_1fr_2.75rem] sm:grid-cols-[1rem_1fr_6rem_8rem_2.75rem] gap-1.5 items-center">
+                                        <span className="text-micro font-bold text-right text-content-3">{i + 1}</span>
+                                        <LiquidSelect ariaLabel="Principio activo" value={it.nombre || null} disabled={!puedeEditar}
+                                            onChange={(v) => editar(it._key, 'nombre', v ? normalizarPrincipio(v) : '')}
+                                            options={opcionesDeNombre(nombres, it.nombre)} placeholder="Elegir o escribir…"
+                                            searchThreshold={0} creatable clearLabel="Ninguno"
+                                            onCreateOption={(v) => editar(it._key, 'nombre', normalizarPrincipio(v))} />
+                                        <Button variant="ghost" size="sm" icon={X} iconOnly title="Quitar" disabled={!puedeEditar}
+                                            className="sm:order-last" onClick={() => quitar(it._key)} />
+                                        <span className="sm:hidden" />
+                                        <div className="col-span-2 sm:col-span-1 grid grid-cols-2 sm:contents gap-1.5">
+                                            <PortalInput aria-label="Cantidad" value={it.cantidad} readOnly={!puedeEditar} inputMode="decimal"
+                                                onChange={(e) => editar(it._key, 'cantidad', e.target.value.replace(/[^\d.,]/g, ''))}
+                                                placeholder="500" inputClassName="text-center" />
+                                            <LiquidSelect ariaLabel="Unidad" value={it.unidad || null} disabled={!puedeEditar} clearable={false}
+                                                onChange={(v) => editar(it._key, 'unidad', v || '')}
+                                                options={opcionesDeUnidad(it.unidad)} placeholder="Unidad" />
+                                        </div>
+                                        {it.crudo && !it.cantidad && (
+                                            <p className="col-span-full text-micro text-warning-text pl-5">
+                                                {`Estaba escrito «${it.crudo}»: pon la cantidad y la unidad para corregirlo.`}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                                 {puedeEditar && <Button variant="ghost" size="sm" icon={Plus} onClick={agregar}>Agregar otro principio</Button>}
                             </div>
+                        )}
+                        {principiosValidos?.text && (
+                            <p className="text-caption text-content-2">Quedará: <span className="font-semibold text-content">{principiosValidos.text}</span></p>
                         )}
                         {deSrs && !preset && (
                             <Notice variant="chart-3" compact>
@@ -553,7 +622,7 @@ function SugerenciasSrs({ producto, onUsar, autoAplicar }) {
                         return (
                             <ListRow key={srs.id ?? r.noregistro} density="sm"
                                 icon={FlaskConical} iconClass="text-chart-3-text"
-                                title={[r.principio, r.conc].filter(Boolean).join(' · ')}
+                                title={principiosDeSrs(srs).map((p) => [normalizarPrincipio(p.nombre), normalizarConcentracion(p.concentracion)].filter(Boolean).join(' ')).join(' + ')}
                                 subtitle={[r.nombre, r.lab, r.forma, r.noregistro].filter(Boolean).join(' · ')}
                                 trailing={(
                                     <span className="flex items-center gap-2 shrink-0">

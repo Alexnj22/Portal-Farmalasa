@@ -9,6 +9,9 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
 import { buscarIdsDeProducto } from './busquedaProductos';
+import { fetchAllRows } from '../utils/supabaseUtils';
+import { claveDePrincipio, normalizarPrincipio } from '../utils/concentracion';
+import { PRINCIPIO_PRESETS } from '../utils/edicionDeProducto';
 
 /** Qué se le pide a la cola: lo que falta. */
 export const FALTAS = ['cualquiera', 'foto', 'principio'];
@@ -70,4 +73,27 @@ export async function fetchResumenDeCarga() {
     const { data, error } = await supabase.rpc('resumen_carga_productos');
     if (error) throw error;
     return /** @type {any} */ (data);
+}
+
+/**
+ * Los principios que ya existen en el catálogo, uno por molécula: para elegir
+ * de la lista en vez de escribir una variante nueva («ACETAMINOFEN» al lado de
+ * «ACETAMINOFÉN»). De cada grupo que sólo difiere en tildes o mayúsculas gana
+ * la forma más usada. Son ~1,100 filas: se pagina (el techo de 1000).
+ */
+export async function fetchNombresDePrincipios() {
+    const filas = await fetchAllRows(() => supabase.from('product_active_principles').select('nombre').order('id'));
+    if (!filas) throw new Error('No se pudo leer la lista de principios activos.');
+    const grupos = new Map();
+    for (const { nombre } of filas) {
+        const n = normalizarPrincipio(nombre);
+        if (!n || PRINCIPIO_PRESETS.includes(nombre)) continue;
+        const k = claveDePrincipio(n);
+        const g = grupos.get(k) || new Map();
+        g.set(n, (g.get(n) || 0) + 1);
+        grupos.set(k, g);
+    }
+    return [...grupos.values()]
+        .map((g) => [...g.entries()].sort((a, b) => b[1] - a[1])[0][0])
+        .sort((a, b) => a.localeCompare(b, 'es'));
 }

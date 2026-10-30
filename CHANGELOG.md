@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1407.0 — Principios activos estandarizados: cantidad y unidad por separado
+
+En Fotos de productos, cada principio es un renglón con tres campos rotulados: **principio** (se elige de los ~490 que ya existen en el catálogo, sin repetir variantes por tilde o mayúscula; se puede crear uno nuevo), **cantidad** (sólo número) y **unidad** (lista fija: mg, g, mcg, UI, %, mL, mg/mL, mg/5 mL…). Debajo, «Quedará: ACETAMINOFÉN 500 mg». Lo que estaba escrito y no se entiende («n/a») se muestra con aviso para corregirlo, nunca se borra.
+
+`principiosParaGuardar` (núcleo) normaliza al guardar desde cualquier pantalla —catálogo, app y esta—: nombre en mayúsculas con tildes y concentración «500 mg» (sin «mg.», «gr», «ml»). Medido el 2026-10-30: la unidad venía escrita de 15 formas (838 «mg.», 127 «g.», 57 «mg»…) y los nombres de 509 formas para 491 principios. `utils/concentracion.js` con 20 pruebas. Las sugerencias del registro sanitario se muestran ya normalizadas.
+
+**Pegar imagen**: botón nuevo y clic derecho sobre el cuadro de la foto (el menú del navegador no ofrece «Pegar» fuera de un campo de texto, reportado en Safari).
+
 ## v2.1406.0 — Fotos de productos: el registro sanitario sugiere el principio, y la foto se pega o se arrastra
 
 Al abrir un producto se consulta solo el registro sanitario (mismas búsquedas y misma medida de parecido que «Enriquecer SRS»): salen hasta tres coincidencias con su principio, concentración, registro y % de parecido, y «Usar» las copia. Si el producto no tenía principio y la mejor pasa el 70%, queda precargada con un aviso para revisarla contra el empaque — nunca se guarda sola. «Buscar otro» abre el buscador del registro. La foto en computadora entra pegándola (Ctrl+V), arrastrándola al cuadro o con «Buscar en internet» (imágenes con el nombre ya escrito). ⌘/Ctrl+Enter guarda y pasa al siguiente. Quitar el fondo ya lo hace el editor de la foto.

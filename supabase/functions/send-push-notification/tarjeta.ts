@@ -51,7 +51,7 @@ async function fotoFirmada(supabase: any, url: string | null | undefined) {
 export async function quienEs(supabase: any, employeeId: string | null | undefined) {
   if (!employeeId) return undefined;
   const { data: e, error } = await supabase.from('employees')
-    .select('name, first_names, last_names, photo_url').eq('id', employeeId).maybeSingle();
+    .select('name, first_names, last_names, nombre_corto, photo_url').eq('id', employeeId).maybeSingle();
   if (error) { console.error('quién del aviso', error.message); return undefined; }
   if (!e) return undefined;
   return { nombre: nombreCorto(e), foto: await fotoFirmada(supabase, e.photo_url) };

@@ -14685,6 +14685,7 @@ export type Database = {
           municipality: string | null
           name: string | null
           nationality: string | null
+          nombre_corto: string | null
           nombre_elegido_el: string | null
           nombre_preferido: string | null
           nursing_license_number: string | null
@@ -14798,6 +14799,7 @@ export type Database = {
           municipality?: string | null
           name?: string | null
           nationality?: string | null
+          nombre_corto?: string | null
           nombre_elegido_el?: string | null
           nombre_preferido?: string | null
           nursing_license_number?: string | null
@@ -14911,6 +14913,7 @@ export type Database = {
           municipality?: string | null
           name?: string | null
           nationality?: string | null
+          nombre_corto?: string | null
           nombre_elegido_el?: string | null
           nombre_preferido?: string | null
           nursing_license_number?: string | null
@@ -29306,6 +29309,7 @@ export type Database = {
           municipality: string | null
           name: string | null
           nationality: string | null
+          nombre_corto: string | null
           nombre_elegido_el: string | null
           nombre_preferido: string | null
           nursing_license_number: string | null
@@ -35430,6 +35434,10 @@ export type Database = {
         Args: { p_max: number; p_min: number; p_razon: number }
         Returns: number[]
       }
+      parte_como_en_la_ficha: {
+        Args: { completo: string; parte: string }
+        Returns: string
+      }
       paso_de_monto: { Args: { p_monto: number }; Returns: number }
       pedir_dato_a_la_sala: {
         Args: {
@@ -36123,6 +36131,7 @@ export type Database = {
       puntos_vigilar_motor: { Args: never; Returns: Json }
       purgar_carnes_temporales: { Args: never; Returns: number }
       purgar_cola_impresion: { Args: never; Returns: number }
+      purge_compra_carga_simulada: { Args: never; Returns: number }
       purge_idle_sessions: { Args: never; Returns: number }
       push_de_notificaciones: { Args: { p_ids: string[] }; Returns: number }
       push_function_headers: { Args: never; Returns: Json }

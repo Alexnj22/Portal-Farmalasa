@@ -45,6 +45,9 @@ import {
 import { leerProfesion } from './profesionDelDui';
 
 const sinTildes = (v) => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+// ¿Lleva alguna tilde o Ñ? Sólo en los campos donde es parte del dato.
+const conTildes = (v) => /[\u0300-\u036f]/.test(String(v || '').normalize('NFD'));
+const CON_TILDES = new Set(['first_names', 'last_names']);
 
 const GENEROS = ['F', 'M'];
 const ESTADOS_FAMILIARES = ['SOLTERO', 'CASADO', 'DIVORCIADO', 'VIUDO', 'ACOMPAÑADO'];
@@ -142,7 +145,16 @@ export function aplicarDuiLeido(leido, actual = {}) {
     const poner = (campo, valor) => {
         if (valor === null || valor === undefined || valor === '') return;
         if (!vacio(actual[campo])) {
-            if (sinTildes(actual[campo]) === sinTildes(valor)) return;   // ya decía lo mismo
+            if (sinTildes(actual[campo]) === sinTildes(valor)) {
+                // Ya decía lo mismo, salvo tildes. En un nombre la Ñ y la tilde
+                // SÍ son el dato, así que gana la versión que las tiene
+                // (2026-10-30: una ficha con «NUNEZ» y un DUI con «NÚÑEZ» se
+                // quedaba con «NUNEZ», porque esta comparación las ignora).
+                // Nunca al revés: la zona de lectura de máquina del DUI no
+                // trae tildes ni Ñ, y no puede borrarlas de una ficha.
+                if (CON_TILDES.has(campo) && conTildes(valor) && !conTildes(actual[campo])) parche[campo] = valor;
+                return;   // y no se anota como reemplazo: es el mismo nombre
+            }
             reemplazos.push({ campo, rotulo: ROTULO_DUI[campo] || campo,
                               actual: String(actual[campo]), documento: String(valor) });
         }

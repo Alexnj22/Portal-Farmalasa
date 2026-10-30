@@ -236,13 +236,14 @@ Deno.serve(async (req) => {
       // conflicto de horarios no lo ve nadie.
       const { data: empRows, error: empRowsErr } = await supabase
         .from('employees')
-        .select('id, name, first_names, last_names')
+        .select('id, name, first_names, last_names, nombre_corto')
         .in('id', conflicted.map(r => r.employee_id));
       if (empRowsErr) throw new Error(`employees en conflicto: ${empRowsErr.message}`);
 
       const nameMap = new Map<string, string>();
       for (const emp of empRows || []) {
-        const fullName = emp.name || `${emp.first_names || ''} ${emp.last_names || ''}`.trim();
+        // El nombre corto del portal (el que la persona eligió): es un aviso.
+        const fullName = emp.nombre_corto || emp.name || `${emp.first_names || ''} ${emp.last_names || ''}`.trim();
         nameMap.set(String(emp.id), fullName || emp.id);
       }
 

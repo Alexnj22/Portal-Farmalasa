@@ -322,12 +322,6 @@
    "divergencia": null,
    "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
   },
-  "nombre_corto_de_empleado": {
-   "ms": "0.03",
-   "casos": "el nombre de una ficha · sin tablas",
-   "divergencia": null,
-   "nota": "medida el 2026-09-04: 0.025 ms de ejecución, plan `Result` a secas. NO PUEDE tener el defecto: no toca ninguna tabla — es manipulación de texto sobre sus tres parámetros—, así que no hay estimación de filas que el planificador pueda errar y el genérico ES el plan. Entra al manifiesto sólo porque el detector la ve (LANGUAGE sql + SET + un CTE de legibilidad), no porque haya algo que vigilar. Es el gemelo en SQL de shortEmployeeName."
-  },
   "numeros_de_caja": {
    "ms": null,
    "casos": null,

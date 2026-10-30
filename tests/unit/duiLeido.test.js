@@ -306,6 +306,20 @@ describe('reemplazos', () => {
         expect(reemplazos).toEqual([]);
     });
 
+    it('la Ñ y las tildes del documento corrigen el nombre, sin listarse', () => {
+        const { parche, reemplazos } = aplicarDuiLeido(
+            { nombres: 'EDWIN ALEXANDER', apellidos: 'NÚÑEZ JOYA' },
+            { first_names: 'EDWIN ALEXANDER', last_names: 'NUNEZ JOYA' });
+        expect(parche.last_names).toBe('NÚÑEZ JOYA');
+        expect(reemplazos).toEqual([]);
+    });
+
+    it('un documento sin tildes NO se las quita a la ficha', () => {
+        const { parche } = aplicarDuiLeido(
+            { apellidos: 'NUNEZ JOYA' }, { last_names: 'NÚÑEZ JOYA' });
+        expect(parche.last_names).toBeUndefined();
+    });
+
     it('un campo VACÍO se llena y no cuenta como reemplazo', () => {
         const { parche, reemplazos } = aplicarDuiLeido(
             { nombres: 'ANA' }, { first_names: '' });

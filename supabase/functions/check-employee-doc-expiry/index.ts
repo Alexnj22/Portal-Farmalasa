@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
 
     const { data: employees, error: empErr } = await supabase
       .from('employees')
-      .select('id, name, first_names, last_names, branch_id, status, employee_documents, dui_fecha_vencimiento')
+      .select('id, name, first_names, last_names, nombre_corto, branch_id, status, employee_documents, dui_fecha_vencimiento')
       .neq('status', 'INACTIVO');
     if (empErr) throw empErr;
 
@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
       const docs: any[] = Array.isArray(emp.employee_documents) ? emp.employee_documents : [];
       if (docs.length === 0) continue;
 
-      const empName = `${emp.first_names || ''} ${emp.last_names || ''}`.trim() || emp.name || 'Un empleado';
+      // El nombre corto del portal (el que la persona eligió), no el legal: es un aviso.
+      const empName = emp.nombre_corto || `${emp.first_names || ''} ${emp.last_names || ''}`.trim() || emp.name || 'Un empleado';
 
       for (const doc of docs) {
         if (!doc?.url || !doc?.expiry_date) continue;

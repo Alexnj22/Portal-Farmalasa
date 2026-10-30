@@ -51,14 +51,23 @@ export function gruposDeNombre(str) {
     return grupos;
 }
 
-// ¿`parte` es uno de los grupos de `completo`? Mismo criterio que
-// `es_parte_del_nombre` en la base: por palabras enteras y sin tildes. Si
-// Personal corrige la ficha y lo elegido deja de estar, el portal vuelve solo
-// al primero en vez de mostrar un nombre que la persona ya no tiene.
-const esParteDe = (parte, completo) => {
+
+// Lo elegido, escrito COMO EN LA FICHA: si eligió «NUNEZ» y después la ficha
+// se corrigió a «NÚÑEZ», se muestra «NÚÑEZ». Por palabras enteras y sin tildes,
+// igual que `es_parte_del_nombre` en la base. `null` si Personal corrigió la
+// ficha y lo elegido ya no está: el portal vuelve solo al primero en vez de
+// mostrar un nombre que la persona ya no tiene.
+function comoEnLaFicha(parte, completo) {
     const p = normalizar(parte);
-    return !!p && ` ${normalizar(completo)} `.includes(` ${p} `);
-};
+    if (!p) return null;
+    const palabras = String(completo || '').trim().split(/\s+/).filter(Boolean);
+    const n = p.split(' ').length;
+    for (let i = 0; i + n <= palabras.length; i++) {
+        const ventana = palabras.slice(i, i + n).join(' ');
+        if (normalizar(ventana) === p) return ventana;
+    }
+    return null;
+}
 
 // ¿Tiene algo que elegir? Con un solo nombre y un solo apellido no hay pregunta.
 export const tieneNombreQueElegir = (emp) =>
@@ -68,8 +77,8 @@ export const tieneNombreQueElegir = (emp) =>
 function cortoDesdeFicha(emp) {
     const nombres = gruposDeNombre(emp.first_names);
     const apellidos = gruposDeNombre(emp.last_names);
-    const first = esParteDe(emp.nombre_preferido, emp.first_names) ? emp.nombre_preferido.trim() : nombres[0] || '';
-    const last = esParteDe(emp.apellido_preferido, emp.last_names) ? emp.apellido_preferido.trim() : apellidos[0] || '';
+    const first = comoEnLaFicha(emp.nombre_preferido, emp.first_names) || nombres[0] || '';
+    const last = comoEnLaFicha(emp.apellido_preferido, emp.last_names) || apellidos[0] || '';
     return `${first} ${last}`.trim();
 }
 
@@ -112,6 +121,11 @@ export function shortEmployeeName(emp) {
     if ((emp.first_names || emp.last_names) && (emp.nombre_preferido || emp.apellido_preferido)) {
         return cortoDesdeFicha(emp);
     }
+
+    // La base lo guarda ya resuelto (`employees.nombre_corto`, lo mantiene un
+    // trigger con `nombre_corto_con_eleccion`, el gemelo de esta regla): las
+    // filas que llegan de una RPC lo traen hecho.
+    if (emp.nombre_corto) return String(emp.nombre_corto);
 
     const porId = emp.id != null ? cortoPorId.get(String(emp.id)) : undefined;
     if (porId) return porId;

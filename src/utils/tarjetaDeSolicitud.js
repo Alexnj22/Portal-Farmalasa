@@ -23,6 +23,9 @@ const comoNombre = (s) => String(s ?? '').toLowerCase().replace(/(^|\s)(\p{L})/g
 
 /** Primer nombre + primer apellido — la regla de `shortEmployeeName` (nameUtils.js), escrito como nombre. */
 export function nombreCorto(e) {
+    // El que la persona eligió para el portal, guardado en la ficha por la base
+    // (`employees.nombre_corto`, 2026-10-30). Sin él, la regla de siempre.
+    if (e?.nombre_corto) return comoNombre(e.nombre_corto);
     const a = primero(e?.first_names), b = primero(e?.last_names);
     if (a || b) return comoNombre(`${a} ${b}`.trim());
     const p = String(e?.name ?? '').trim().split(/\s+/).filter(Boolean);

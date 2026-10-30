@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1402.0 — El nombre elegido también en avisos, notificaciones, conteo y chat
+
+El nombre que cada persona eligió (v2.1400.0) ahora también sale en lo que arma el servidor: avisos, notificaciones del teléfono, el libro bajo receta, el conteo de inventario, el chat con clientes y los avisos de documentos por vencer y de horarios.
+
+- `employees.nombre_corto` se guarda en la ficha y lo mantiene un trigger (`mantener_nombre_corto`). `nombre_corto_de_empleado` lo lee sin cambiar su firma, así que sus diez llamadores no se tocaron. El conteo lee la columna: calculado por renglón le sumaba ~80 ms a un conteo de 3,407 renglones.
+- Lo elegido se escribe como en la ficha: si alguien eligió «NUNEZ» y después la ficha se corrige a «NÚÑEZ», sale «NÚÑEZ» (`parte_como_en_la_ficha` / `comoEnLaFicha`). Los gemelos de JS y SQL se enfrentaron en 110 casos: 0 distintos.
+- Las partículas («DE LA CRUZ») cuentan como un solo apellido también en SQL (`primer_grupo_de_nombre`).
+- Leer el DUI ya corrige la Ñ y las tildes de nombres y apellidos. Antes las ignoraba al comparar, y una ficha con «NUNEZ» se quedaba así aunque el DUI dijera «NÚÑEZ». Nunca al revés: la zona de lectura de máquina del DUI no trae tildes.
+- Edge functions (`send-push-notification`, `app-clientes`, `check-employee-doc-expiry`, `auto-copy-weekly-roster`): leen `nombre_corto`. **Falta desplegarlas.**
+
 ## v2.1401.2 — Compras: limpieza nocturna de revisiones sin usar
 
 Cada «Revisar carga» guarda una fila `simulada` en `compra_carga` para que

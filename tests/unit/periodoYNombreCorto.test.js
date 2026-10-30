@@ -237,3 +237,17 @@ describe('el nombre que la persona ELIGIÓ para el portal (2026-10-30)', () => {
         expect(tieneNombreQueElegir({ first_names: 'ANA', last_names: 'DE LA CRUZ' })).toBe(false);
     });
 });
+
+describe('el nombre corto que guarda la base', () => {
+    it('una fila que trae `nombre_corto` sale con ése', () => {
+        expect(shortEmployeeName({ id: 'x', name: 'EDWIN ALEXANDER NUNEZ JOYA', nombre_corto: 'ALEXANDER JOYA' }))
+            .toBe('ALEXANDER JOYA');
+    });
+});
+
+describe('lo elegido se escribe como en la ficha', () => {
+    it('eligió «NUNEZ» y la ficha ahora dice «NÚÑEZ»: sale con Ñ', () => {
+        expect(shortEmployeeName({ first_names: 'EDWIN ALEXANDER', last_names: 'NÚÑEZ JOYA',
+            nombre_preferido: 'EDWIN', apellido_preferido: 'NUNEZ' })).toBe('EDWIN NÚÑEZ');
+    });
+});

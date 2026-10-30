@@ -453,6 +453,8 @@ const RUTA_STORAGE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/
 // Nombre corto (primer nombre + primer apellido), el canon de `shortEmployeeName`.
 // deno-lint-ignore no-explicit-any
 const nombreCortoEmpleado = (e: any) => {
+  // El que la persona eligió para el portal (2026-10-30), guardado en la ficha.
+  if (e?.nombre_corto) return String(e.nombre_corto);
   const primero = (s: unknown) => String(s ?? "").trim().split(/\s+/)[0] ?? "";
   const n = primero(e?.first_names), a = primero(e?.last_names);
   if (n || a) return `${n} ${a}`.trim();
@@ -1820,7 +1822,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // deno-lint-ignore no-explicit-any
         const persona = new Map<any, { nombre: string; foto_url: string | null; foto_clave: string | null }>();
         if (!idsEq.length) return persona;
-        const { data, error } = await admin.from("employees").select("id, first_names, last_names, name, photo_url").limit(100).in("id", idsEq);
+        const { data, error } = await admin.from("employees").select("id, first_names, last_names, name, nombre_corto, photo_url").limit(100).in("id", idsEq);
         if (error) console.error("chat: no se pudo leer el equipo:", error.message);
         // deno-lint-ignore no-explicit-any
         const equipo: any[] = data ?? [];
@@ -2010,7 +2012,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // deno-lint-ignore no-explicit-any
       const quien = new Map<string, any>();
       if (ids.length) {
-        const { data: eqs, error: eE } = await admin.from("employees").select("id, first_names, last_names, name").limit(5).in("id", ids);
+        const { data: eqs, error: eE } = await admin.from("employees").select("id, first_names, last_names, name, nombre_corto").limit(5).in("id", ids);
         if (eE) console.error("chat_mensajes: equipo", eE.message);
         for (const e of eqs ?? []) quien.set(e.id, nombreCortoEmpleado(e));
       }

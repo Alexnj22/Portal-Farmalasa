@@ -4068,7 +4068,7 @@
   },
   "nombre_corto_con_eleccion": {
    "area": "personal",
-   "por": "llamada"
+   "por": "quien la llama"
   },
   "nombre_corto_de_empleado": {
    "area": "personal",
@@ -4172,6 +4172,10 @@
    "area": "minmax",
    "por": "llamada"
   },
+  "parte_como_en_la_ficha": {
+   "area": "personal",
+   "por": "quien la llama"
+  },
   "paso_de_monto": {
    "area": "cortes-efectivo",
    "por": "llamada"
@@ -4219,7 +4223,7 @@
   },
   "primer_grupo_de_nombre": {
    "area": "personal",
-   "por": "llamada"
+   "por": "quien la llama"
   },
   "probar_identidad": {
    "area": "acceso",

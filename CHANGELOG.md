@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1403.0 — Compras: aprender renglones sin código y reintentar envíos a sala
+
+**Renglones sin código del proveedor (papel, algunos DTE) ahora se aprenden.**
+El diccionario ya sabía recordarlos por `#`+nombre limpio (es la llave de «Por
+confirmar»), pero la carga no la conocía: confirmar un renglón así valía sólo
+para esa factura. `leer-dte-json` arma la llave con `compra_llave_de_renglon` y
+la manda con el renglón; la carga confirma con ella. La próxima factura de ese
+proveedor con ese renglón sale ya confirmada.
+
+**«Reintentar» en un envío a sala que no salió de Bodega.** En Traslados → En
+camino, para quien carga compras (`cargar_compra`): los `fallido`, y los «por
+salir» que quedaron quietos porque la compra no estaba comprobada. Muestra
+«Qué pasó» y lo repite en la confirmación. Un envío «por comprobar» NO se
+reintenta (puede haber salido): primero se comprueba. Del lado del servidor
+(`reparto_reintentar`): exige la compra `verificada`, toma el envío con
+candado de estado y usa el mismo camino del reparto de la carga, con la
+escritura una sola vez. La bitácora guarda el motivo anterior y el resultado.
+
 ## v2.1402.1 — Cargar compra: el buscador de Por confirmar va en la lupa
 
 La pestaña «Por confirmar» tenía su buscador suelto como un campo a lo ancho. Ahora usa la lupa de la barra de filtros, como «Facturas» y el resto del portal (y en el teléfono baja al clúster flotante). Cada pestaña guarda su propio texto.

@@ -7,7 +7,9 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { fetchRepartosDeCompra, recibirRepartoDeCompra, comprobarRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
+import ConfirmModal from '../../components/common/ConfirmModal';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { fetchRepartosDeCompra, recibirRepartoDeCompra, comprobarRepartoDeCompra, reintentarRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
 
 /* Lo que Bodega le repartió a la sala al cargar una compra (2026-10-30).
  *
@@ -31,6 +33,9 @@ const ESTADO = {
 };
 
 export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta }) {
+    // Reintentar es de Bodega (quien carga la compra), no de la sala.
+    const { hasPermission } = useAuth();
+    const puedeReintentar = hasPermission('cargar_compra', 'can_edit');
     const [filas, setFilas] = useState(null);
     const [pedidos, setPedidos] = useState([]);
     const [error, setError] = useState('');
@@ -82,7 +87,7 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
                 De las compras de Bodega · {vistas.length}
             </p>
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                {vistas.map(f => <Envio key={f.id} fila={f} puedeRecibir={puedeRecibir} onHecho={cargar} onAviso={setAviso} />)}
+                {vistas.map(f => <Envio key={f.id} fila={f} puedeRecibir={puedeRecibir} puedeReintentar={puedeReintentar} onHecho={cargar} onAviso={setAviso} />)}
             </div>
         </div>}
         </div>
@@ -152,8 +157,9 @@ function PedidoDeVence({ pedido, puedeResponder, onHecho }) {
     );
 }
 
-function Envio({ fila, puedeRecibir, onHecho, onAviso }) {
+function Envio({ fila, puedeRecibir, puedeReintentar, onHecho, onAviso }) {
     const [vences, setVences] = useState({});
+    const [confReintento, setConfR] = useState(false);
     const [recibiendo, setRec] = useState(false);
     const [error, setError] = useState('');
     const est = ESTADO[fila.estado] ?? { label: fila.estado, variant: 'neutral' };
@@ -168,6 +174,20 @@ function Envio({ fila, puedeRecibir, onHecho, onAviso }) {
         if (resultado && resultado.comprobado === false) {
             onAviso(`${fila.emisor_nombre ?? 'Un envío de Bodega'}: se recibió, pero la existencia de la sala no subió lo esperado. Avisa a Bodega.`);
         }
+        onHecho();
+    };
+    // Un envío que no salió: «fallido», o «por salir» que quedó quieto porque
+    // la compra no estaba comprobada. Uno «por comprobar» NO: puede haber salido.
+    const quieto = fila.estado === 'por_enviar' && !!fila.nota;
+    const reintentable = fila.estado === 'fallido' || quieto;
+    const reintentar = async () => {
+        setRec(true); setError('');
+        const { resultado, error: e } = await reintentarRepartoDeCompra(fila.id, fila.nota);
+        setRec(false); setConfR(false);
+        if (e) { setError(e); onHecho(); return; }
+        onAviso(resultado.ok
+            ? `${fila.emisor_nombre ?? 'El envío'} → ${fila.sala}: ya salió de Bodega${resultado.traslado ? ` (traslado ${resultado.traslado})` : ''}.`
+            : `${fila.emisor_nombre ?? 'El envío'} → ${fila.sala}: volvió a fallar. ${resultado.nota ?? ''}`);
         onHecho();
     };
     const comprobar = async () => {
@@ -211,9 +231,9 @@ function Envio({ fila, puedeRecibir, onHecho, onAviso }) {
                 ))}
             </div>
 
-            {['fallido', 'sin_verificar'].includes(fila.estado) && fila.nota && (
+            {(['fallido', 'sin_verificar'].includes(fila.estado) || quieto) && fila.nota && (
                 <p className="text-micro text-danger-text font-medium flex items-start gap-1">
-                    <AlertTriangle size={12} className="mt-0.5 shrink-0" /> {fila.nota}
+                    <AlertTriangle size={12} className="mt-0.5 shrink-0" /> <span><b>Qué pasó:</b> {fila.nota}</span>
                 </p>
             )}
             {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
@@ -225,6 +245,11 @@ function Envio({ fila, puedeRecibir, onHecho, onAviso }) {
                         <span className="truncate">{shortEmployeeName(fila.enviado_nombre)}</span>
                     </span>
                 ) : <span />}
+                {reintentable && puedeReintentar && (
+                    <Button size="sm" variant="secondary" className="min-h-[var(--tap-min)]" loading={recibiendo} onClick={() => setConfR(true)}>
+                        Reintentar
+                    </Button>
+                )}
                 {fila.estado === 'sin_verificar' && puedeRecibir && fila.erp_traslado_id && (
                     <Button size="sm" variant="secondary" className="min-h-[var(--tap-min)]" loading={recibiendo} onClick={comprobar}>
                         Comprobar
@@ -238,6 +263,11 @@ function Envio({ fila, puedeRecibir, onHecho, onAviso }) {
                     </Button>
                 )}
             </div>
+            <ConfirmModal isOpen={confReintento} onClose={() => !recibiendo && setConfR(false)} onConfirm={reintentar}
+                isProcessing={recibiendo} isDestructive={false}
+                title={`¿Mandar otra vez a ${fila.sala}?`}
+                message={`${fila.nota ? `La vez anterior: ${fila.nota} ` : ''}Se arma un traslado nuevo desde el estante de Bodega con ${lineas.length === 1 ? 'este producto' : `estos ${lineas.length} productos`}. Si el motivo no se arregló (por ejemplo, no hay existencia), va a volver a fallar y lo va a decir.`}
+                confirmText="Mandar otra vez" />
         </div>
     );
 }

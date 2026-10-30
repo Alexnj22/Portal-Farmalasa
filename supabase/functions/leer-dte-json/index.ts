@@ -383,8 +383,17 @@ Deno.serve(async (req: Request) => {
           // y hunden el parecido. Medido: con la cruda, 28% de los renglones
           // quedan sin ningún candidato; con el nombre limpio, 9%.
           const limpio = nombreLimpio(String(it?.descripcion ?? ""));
+          // Sin código del proveedor, la llave del diccionario es `#`+nombre
+          // limpio — la de «Por confirmar». Se arma acá y viaja con el renglón
+          // para que confirmarlo en la carga también quede aprendido.
+          let llave: string | null = String(it?.codigo ?? "").trim() || null;
+          if (!llave && limpio) {
+            const { data: k, error: errK } = await admin.rpc("compra_llave_de_renglon", { p_codigo: null, p_texto: limpio });
+            if (errK) throw errK;
+            llave = k ?? null;
+          }
           const { data: m, error: errM } = await admin.rpc("emparejar_producto_dte", {
-            p_emisor_nit: d.emisor_nit, p_codigo_prov: it?.codigo ?? null,
+            p_emisor_nit: d.emisor_nit, p_codigo_prov: llave,
             // El código de barras vive en la descripción CRUDA de algunos
             // proveedores, así que se manda entera cuando trae dígitos largos.
             p_texto: /\d{12,14}/.test(String(it?.descripcion ?? "")) ? String(it?.descripcion) : limpio,
@@ -397,6 +406,7 @@ Deno.serve(async (req: Request) => {
 
           renglones.push({
             codigo_proveedor: it?.codigo ?? null,
+            llave,
             descripcion: it?.descripcion ?? null,
             cantidad: it?.cantidad ?? null,
             costo: it?.precioUni ?? null,
@@ -407,7 +417,7 @@ Deno.serve(async (req: Request) => {
             // El factor se completa después del bucle (necesita el costo del
             // catálogo de todos los productos a la vez).
             factor_aprendido: match?.origen === "aprendido"
-              ? (factorDe.get(String(it?.codigo ?? "").trim()) ?? factorDelProducto.get(match?.product_id) ?? null) : null,
+              ? (factorDe.get(llave ?? "") ?? factorDelProducto.get(match?.product_id) ?? null) : null,
             factor_proveedor: 1, factor_origen: null as string | null,
             producto: match?.nombre ?? null,
             match_origen: match?.origen ?? "sin candidato",

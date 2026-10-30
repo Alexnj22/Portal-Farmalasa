@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-30T18:21:59.313Z",
+ "generado": "2026-10-30T18:44:05.010Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1250,6 +1250,10 @@
   },
   "compra_erroneo_adjuntar_nota_papel": {
    "area": "compras",
+   "por": "código"
+  },
+  "compra_llave_de_renglon": {
+   "area": "facturacion-dte",
    "por": "código"
   },
   "compra_pedir_vence": {
@@ -4068,7 +4072,7 @@
   },
   "nombre_corto_con_eleccion": {
    "area": "personal",
-   "por": "quien la llama"
+   "por": "código"
   },
   "nombre_corto_de_empleado": {
    "area": "personal",
@@ -4174,7 +4178,7 @@
   },
   "parte_como_en_la_ficha": {
    "area": "personal",
-   "por": "quien la llama"
+   "por": "llamada"
   },
   "paso_de_monto": {
    "area": "cortes-efectivo",
@@ -4223,7 +4227,7 @@
   },
   "primer_grupo_de_nombre": {
    "area": "personal",
-   "por": "quien la llama"
+   "por": "llamada"
   },
   "probar_identidad": {
    "area": "acceso",

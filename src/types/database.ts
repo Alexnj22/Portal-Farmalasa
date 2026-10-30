@@ -31248,6 +31248,10 @@ export type Database = {
         Args: { p_id: number; p_nota: Json }
         Returns: number
       }
+      compra_llave_de_renglon: {
+        Args: { p_codigo: string; p_texto: string }
+        Returns: string
+      }
       compra_pedir_vence: {
         Args: { p_branch_id: number; p_document_id: number; p_renglones: Json }
         Returns: number

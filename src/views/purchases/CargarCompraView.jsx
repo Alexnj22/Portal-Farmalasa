@@ -377,8 +377,9 @@ function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar,
 /** Qué renglones trae el documento, para no aplicar un borrador a otros. */
 const huellaDe = (renglones) => (renglones ?? []).map(r => [r.codigo_proveedor, r.descripcion, r.cantidad].join('|')).join('\n');
 
-/** La llave de un renglón: su código del proveedor, o su posición si no trae. */
-const claveDe = (r, i) => r.codigo_proveedor || `#${i}`;
+/** La llave de un renglón: la del diccionario (código del proveedor, o `#`+nombre
+ *  si no trae), o su posición si ni eso hay. */
+const claveDe = (r, i) => r.llave || r.codigo_proveedor || `@${i}`;
 
 function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirPapel = null }) {
     const [p, setP]           = useState(null);
@@ -478,14 +479,16 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         setRes(null);
     };
 
-    // Sin código del proveedor (un papel, algunos DTE) no hay qué aprender:
-    // la elección vale para ESTE renglón y nada más.
+    // Se aprende por la llave del diccionario: el código del proveedor, o si
+    // no trae (papel, algunos DTE), su nombre. La próxima factura de ese
+    // proveedor con ese renglón sale ya confirmada.
     const confirmar = async (renglon, i, producto) => {
         const k = claveDe(renglon, i);
-        if (renglon.codigo_proveedor) {
+        const llave = renglon.llave || renglon.codigo_proveedor;
+        if (llave && p.documento.emisor_nit) {
             setG(k);
             const { error: e } = await confirmarProducto(
-                p.documento.emisor_nit, renglon.codigo_proveedor, producto.id,
+                p.documento.emisor_nit, llave, producto.id,
                 { proveedor: p.documento.emisor, producto: producto.nombre },
                 ajustes[i]?.factor);
             setG(null);
@@ -779,7 +782,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                             const Icono = o?.icon ?? HelpCircle;
                             const aj = ajustes[i] ?? ajusteInicial(r);
                             const conProducto = !!productoDe(r, i);
-                            const factorCambio = conProducto && r.codigo_proveedor
+                            const factorCambio = conProducto && (r.llave || r.codigo_proveedor)
                                 && Number(aj.factor) !== Number(elegido?.factor ?? r.factor_proveedor ?? 1);
                             const sim = entraComo.get(i);
                             return (

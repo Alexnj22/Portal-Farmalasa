@@ -909,6 +909,50 @@ async function comprobarReparto(admin: any, id: number, quien: { id: string }) {
   return { ok: true, estado: cambios.estado };
 }
 
+/**
+ * Vuelve a mandar a la sala un envío que NO salió de Bodega (`fallido`, o
+ * `por_enviar` que quedó quieto porque la compra no estaba comprobada). Sólo
+ * esos: uno «sin verificar» puede haber salido y se comprueba, no se reenvía.
+ * Usa el mismo camino que el reparto de la carga, con su candado de estado.
+ */
+async function reintentarReparto(admin: any, id: number, quien: string) {
+  const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
+  if (eR) throw eR;
+  if (!r) return { error: "Ese envío no existe." };
+  const quieto = r.estado === "por_enviar" && Date.parse(r.updated_at ?? r.created_at) < Date.now() - 15 * 60_000;
+  if (r.estado !== "fallido" && !quieto) {
+    return { error: r.estado === "sin_verificar"
+      ? "Ese envío puede haber salido: primero hay que comprobarlo."
+      : "Sólo se reintenta un envío que no salió de Bodega." };
+  }
+  const { data: c, error: eC } = await admin.from("compra_carga").select("estado").eq("id", r.compra_carga_id).maybeSingle();
+  if (eC) throw eC;
+  if (c?.estado !== "verificada") return { error: "La compra todavía no está comprobada en Bodega: no se puede enviar a la sala." };
+  const lineas: LineaReparto[] = Array.isArray(r.lineas) ? r.lineas : [];
+  if (!lineas.length) return { error: "Ese envío no tiene productos." };
+
+  // El candado: sólo pasa quien lo saca del estado en que lo vio.
+  const { data: tomada, error: eT } = await admin.from("compra_reparto")
+    .update({ estado: "por_enviar", nota: null, enviado_por: quien, updated_at: new Date().toISOString() })
+    .eq("id", id).eq("estado", r.estado).select("id");
+  if (eT) throw eT;
+  if (!tomada?.length) return { error: "Alguien más lo está reintentando." };
+
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  const estante = await ubicacionDeBodega(admin, false);
+  if (!estante) {
+    const { error: eV } = await admin.from("compra_reparto").update({ estado: r.estado, nota: r.nota, updated_at: new Date().toISOString() }).eq("id", id).eq("estado", "por_enviar");
+    if (eV) throw eV;
+    return { error: "No se conoce el estante de Bodega." };
+  }
+  await repartirASalas(admin, cookie, lineas, {
+    cargaId: r.compra_carga_id, quien, emisor: r.emisor_nombre, erpCompra: r.erp_compra_id, mover: true, estante,
+  });
+  const { data: f, error: eF } = await admin.from("compra_reparto").select("estado, nota, erp_traslado_id").eq("id", id).maybeSingle();
+  if (eF) throw eF;
+  return { ok: f?.estado === "enviado", estado: f?.estado ?? null, nota: f?.nota ?? null, traslado: f?.erp_traslado_id ?? null, antes: r.nota ?? null };
+}
+
 type Erroneo = {
   renglon: number; descripcion: string; codigo_proveedor: string | null;
   product_id: number; es_generico: boolean; unidades: number; costo_unitario: number;
@@ -1564,6 +1608,15 @@ Deno.serve(async (req: Request) => {
   const permiso = await permisoDeModulo(admin, quien.id, "cargar_compra", "can_edit");
   if (permiso.roto) return responder({ error: permiso.roto }, 500);
   if (!permiso.puede) return responder({ error: "No tienes permiso para cargar compras." }, 403);
+  if (cuerpo?.accion === "reparto_reintentar") {
+    try {
+      const r = await reintentarReparto(admin, Number(cuerpo?.id), quien.id);
+      return responder(r, "error" in r ? 409 : 200);
+    } catch (e: any) {
+      console.error("[cargar-compra-erp] reintentar reparto:", e?.message ?? e);
+      return responder({ error: e?.message ?? String(e) }, 500);
+    }
+  }
 
   try {
     const body = await req.json().catch(() => ({}));

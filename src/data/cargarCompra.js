@@ -356,6 +356,23 @@ async function comprobar(accion, id, auditoria) {
 
 /** Un envío a la sala que quedó sin saber si entró: se le pregunta al sistema. */
 export const comprobarRepartoDeCompra = (id) => comprobar('reparto_comprobar', id, 'COMPRA_REPARTO_COMPROBADO');
+/**
+ * Vuelve a mandar a la sala un envío que no salió de Bodega. Es una escritura
+ * en el sistema: la función sólo lo acepta si el envío seguro no salió.
+ */
+export async function reintentarRepartoDeCompra(id, antes) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body: { accion: 'reparto_reintentar', id } });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('COMPRA_REPARTO_REINTENTADO', id, {
+        ok: !msg && data?.ok === true, estado: data?.estado ?? null, motivo_anterior: antes ?? null, nota: data?.nota ?? null, error: msg,
+    });
+    return { resultado: msg ? null : data, error: msg };
+}
+
 /** Un erróneo cuya salida se cortó: ¿bajó vencidos? */
 export const comprobarSalidaErroneo = (id) => comprobar('erroneo_comprobar', id, 'COMPRA_ERRONEO_COMPROBADO');
 /** Un erróneo que se recibió a mano en vencidos: ¿ya entró su traslado? */

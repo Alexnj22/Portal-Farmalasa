@@ -16,7 +16,7 @@ export function fetchPurchaseReceiptItems(receiptId) {
         .order('linea_num');
 }
 
-export function fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinProveedor, supplierId, searchTerm }) {
+export function fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinProveedor, supplierId, searchTerm, origen, idsPortal }) {
     let q = supabase
         .from('purchase_receipts')
         .select('id, erp_purchase_id, fecha, proveedor, documento_tipo, documento_numero, estado, subtotal, iva, total, supplier_id, suppliers(nombre), purchase_receipt_items(id)', { count: 'exact' })
@@ -26,6 +26,10 @@ export function fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinPro
 
     if (dateStart) q = q.gte('fecha', dateStart);
     if (dateEnd)   q = q.lte('fecha', dateEnd);
+    // «Desde el portal» / «A mano»: por los números de compra que cargó el
+    // portal (`fetchIdsDesdePortal`). Son pocos y únicos por compra.
+    if (origen === 'portal') q = q.in('erp_purchase_id', idsPortal?.length ? idsPortal : [-1]);
+    else if (origen === 'mano' && idsPortal?.length) q = q.not('erp_purchase_id', 'in', `(${idsPortal.join(',')})`);
     if (sinProveedor) q = q.is('supplier_id', null);
     else if (supplierId) q = q.eq('supplier_id', supplierId);
     // Cada palabra por separado y en cualquier orden, como el resto del portal,
@@ -37,6 +41,12 @@ export function fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinPro
         if (patron) q = q.filter('proveedor', 'imatch', patron);
     }
     return q;
+}
+
+/** Los números de compra que entraron desde el portal (para el filtro). */
+export async function fetchIdsDesdePortal() {
+    const { data, error } = await supabase.rpc('compras_erp_ids_desde_portal');
+    return { ids: Array.isArray(data) ? data.map(Number) : [], error };
 }
 
 /**

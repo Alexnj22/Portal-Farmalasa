@@ -30816,6 +30816,7 @@ export type Database = {
           estado: string
         }[]
       }
+      compras_erp_ids_desde_portal: { Args: never; Returns: Json }
       comprobantes_de_caja_red: { Args: never; Returns: boolean }
       comprobantes_de_caja_sala: { Args: never; Returns: string }
       confirm_pedido: {

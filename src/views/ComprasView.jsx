@@ -14,7 +14,7 @@ import Button from '../components/common/Button';
 import FilterBar from '../components/common/FilterBar';
 import {
     fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
-    fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount, fetchCargadasDesdePortal,
+    fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount, fetchCargadasDesdePortal, fetchIdsDesdePortal,
 } from '@nucleo/data/compras';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -35,6 +35,13 @@ const PAGE_SIZE = 50;
 const TABS = [
     { key: 'facturas',  label: 'Facturas'  },
     { key: 'productos', label: 'Productos' },
+];
+
+// El filtro «cómo entró» de las facturas: lo que se cargó con «Cargar en
+// Bodega» contra lo que Bodega cargó a mano en el sistema.
+const ORIGENES = [
+    { value: 'portal', label: 'Desde el portal' },
+    { value: 'mano',   label: 'A mano' },
 ];
 
 const FACTURA_COLS = [
@@ -241,6 +248,8 @@ function TabFacturas({
     const [expandedId, setExpandedId] = useState(null);
     // Las compras de la página que se cargaron con «Cargar en Bodega».
     const [delPortal, setDelPortal] = useState({});
+    // Cómo entró: '' todas · 'portal' · 'mano'.
+    const [origen, setOrigen] = useState('');
     // El detalle de la factura vive en un `<tr colSpan>` hermano, que en el
     // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
     const { enTelefono, abierto } = useExpedienteMovil(rows, expandedId);
@@ -254,7 +263,13 @@ function TabFacturas({
         const from = (page - 1) * PAGE_SIZE;
         const to   = from + PAGE_SIZE - 1;
 
-        const { data, count } = await fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinProveedor, supplierId, searchTerm });
+        let idsPortal = null;
+        if (origen) {
+            const { ids, error } = await fetchIdsDesdePortal();
+            if (error) console.warn('[compras] no se pudo leer qué entró desde el portal:', error.message);
+            idsPortal = ids;
+        }
+        const { data, count } = await fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinProveedor, supplierId, searchTerm, origen, idsPortal });
         if (turno !== vigente.current) return;
         setRows(data || []);
         setTotal(count || 0);
@@ -262,10 +277,10 @@ function TabFacturas({
         const { porCompra, error } = await fetchCargadasDesdePortal((data || []).map(r => r.erp_purchase_id));
         if (error) console.warn('[compras] no se pudo leer qué entró desde el portal:', error.message);
         if (turno === vigente.current) setDelPortal(porCompra);
-    }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm, page]);
+    }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm, page, origen]);
 
     // Reset page when filters change
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm, origen]); // eslint-disable-line react-hooks/set-state-in-effect
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
 
     const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -297,8 +312,8 @@ function TabFacturas({
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex justify-end">
                 <FilterBar
-                    onClear={() => { setSupplierId(''); setSinProveedor(false); }}
-                    activeCount={[supplierId, sinProveedor].filter(Boolean).length}
+                    onClear={() => { setSupplierId(''); setSinProveedor(false); setOrigen(''); }}
+                    activeCount={[supplierId, sinProveedor, origen].filter(Boolean).length}
                 >
                     {/* 3 · tiempo — esta vista no tiene ámbito ni entidad antes */}
                     <FilterBar.Section>
@@ -319,6 +334,18 @@ function TabFacturas({
                                 disabled={sinProveedor}
                                 options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
                                 placeholder="Todos los proveedores"
+                                compact bare
+                            />
+                        </div>
+                    </FilterBar.Section>
+
+                    <FilterBar.Section active={!!origen} onClear={() => setOrigen('')} label="cómo entró">
+                        <div className="w-[150px]">
+                            <LiquidSelect
+                                value={origen}
+                                onChange={val => setOrigen(val || '')}
+                                options={ORIGENES}
+                                placeholder="Cómo entró"
                                 compact bare
                             />
                         </div>

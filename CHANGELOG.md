@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1395.0 — Compras: filtro «Desde el portal / A mano»
+
+Compras (Bodega) → Facturas tiene un filtro más, **Cómo entró**: «Desde el
+portal» (cargadas con «Cargar en Bodega») o «A mano» (cargadas por Bodega en el
+sistema). Los números salen de `compras_erp_ids_desde_portal` (json, sin techo
+de 1000 filas); viajan en la URL del filtro, así que si un día pasan de ~1500
+hay que mover el filtro a la base.
+
 ## v2.1394.0 — La corrección de factor le dice a la sala lo que no se ajustó
 
 Salud 2 contó 8 blister de X-Ray Dol (1 caja y 4 blister) y el sistema tenía 1.

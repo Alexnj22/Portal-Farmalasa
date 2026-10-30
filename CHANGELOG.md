@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1397.1 — Compras: errores de escritura que no se miraban
+
+Tres consultas de `cargar-compra-erp` descartaban su error (lo marcó `gate:data`, que dejaba en rojo el pre-commit de todo el repo): marcar un reparto ya recibido, anotar el traslado a vencidos de un producto erróneo y leer la nota de crédito antes de dar salida. Ahora el error se ve; en la salida, además, el producto vuelve a «con nota» en vez de quedar trabado en «saliendo».
+
 ## v2.1397.0 — Compras: pedir fechas de vencimiento a la sala
 
 Facturas que no traen vencimiento (Sarita: la mercadería llega a una sala y la

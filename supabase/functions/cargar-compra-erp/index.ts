@@ -674,7 +674,8 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
     const estado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
     if (estado === "anulado") { await volver("El traslado está anulado en el sistema."); return { error: "El traslado está anulado en el sistema: avisa a Bodega." }; }
     if (estado === "recibido") {
-      await admin.from("compra_reparto").update({ estado: "recibido", recibido_por: quien.id, recibido_at: new Date().toISOString(), vences: fechas, nota: "Ya estaba recibido en el sistema.", updated_at: new Date().toISOString() }).eq("id", id);
+      const { error: eY } = await admin.from("compra_reparto").update({ estado: "recibido", recibido_por: quien.id, recibido_at: new Date().toISOString(), vences: fechas, nota: "Ya estaba recibido en el sistema.", updated_at: new Date().toISOString() }).eq("id", id);
+      if (eY) throw eY;
       return { recibido: true, ya: true };
     }
     const html = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(r.erp_traslado_id)}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
@@ -792,8 +793,9 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
     await nota("Salió el traslado a vencidos pero no se pudo identificar su número: recibirlo a mano en vencidos.");
     return { movidos: 0, error: "Traslado sin identificar: recibirlo a mano." };
   }
-  await admin.from("compra_renglon_erroneo").update({ erp_traslado_id: idT, updated_at: new Date().toISOString() })
+  const { error: eTr } = await admin.from("compra_renglon_erroneo").update({ erp_traslado_id: idT, updated_at: new Date().toISOString() })
     .eq("compra_carga_id", x.cargaId);
+  if (eTr) throw eTr;
 
   // Recibirlo en vencidos, con lo que la propia pantalla de recepción muestra.
   const rec = await pedir(cookie, `${RECIBIR}?id_movimiento=${idT}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
@@ -976,7 +978,8 @@ async function darSalidaErroneo(admin: any, id: number, quien: string) {
     const vencidos = await ubicacionDeBodega(admin, true);
     if (!vencidos) { await volver("No se conoce el área de vencidos."); return { error: "No se conoce el área de vencidos." }; }
     const antes = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidos);
-    const { data: nc } = await admin.from("purchase_dte_documents").select("numero_control").eq("id", e.nota_credito_document_id).maybeSingle();
+    const { data: nc, error: eNc } = await admin.from("purchase_dte_documents").select("numero_control").eq("id", e.nota_credito_document_id).maybeSingle();
+    if (eNc) { await volver(`No se pudo leer la nota: ${eNc.message}`); return { error: "No se pudo leer la nota de crédito: intenta de nuevo." }; }
     const concepto = armarConcepto(
       `DEVOLUCION A ${e.emisor_nombre ?? "PROVEEDOR"} - NOTA DE CREDITO ${nc?.numero_control ?? ""} - COMPRA ${e.erp_compra_id ?? ""} - ${e.descripcion}`,
     ).concepto;

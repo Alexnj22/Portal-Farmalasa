@@ -23,7 +23,7 @@ import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
 import { descartarUnaLinea } from "../_shared/erp-descarte.ts";
 import {
-  sesionEn, existenciasDeUbicacion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
+  sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
   TRASLADO, RECIBIR,
 } from "../_shared/erp-traslado.ts";
 import {
@@ -275,7 +275,18 @@ async function enviarCompra(admin: any, x: {
       return { movidos: 0, error: `No se pudieron pasar a vencidos: ${e?.message ?? e}` };
     });
   }
-  return { enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null, vencidos };
+  // El reparto a salas, en background: son varios viajes al sistema por sala y
+  // la respuesta no los espera. El rastro queda en `compra_reparto`.
+  const repartoPedido: LineaReparto[] = x.revision.reparto ?? [];
+  if (repartoPedido.length) {
+    EdgeRuntime.waitUntil(repartirASalas(admin, x.cookie, repartoPedido, {
+      cargaId: x.cargaId, quien: x.quien, emisor: x.emisor.nombre, erpCompra: verif.compra, mover: verif.ok, estante,
+    }).catch((e) => console.error("[cargar-compra-erp] reparto:", e?.message ?? e)));
+  }
+  return {
+    enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null, vencidos,
+    reparto: repartoPedido.length ? { salas: new Set(repartoPedido.map((l) => l.branch_id)).size, enviando: verif.ok } : null,
+  };
 }
 
 /**
@@ -481,6 +492,227 @@ async function avisarMargenBajo(admin: any, revision: any, proveedor: string | n
     p_push: true, p_branch_id: BODEGA_BRANCH_ID,
   });
   if (error) throw error;
+}
+
+/* ── Reparto a salas ─────────────────────────────────────────────────────────
+ *
+ * Al cargar, Bodega dice cuánto de cada renglón va a cada sala (usuario,
+ * 2026-10-30: «al cargar pregunta si se enviará a otra sucursal, y ahí se pone
+ * la cantidad … si se envía menos, que avise que quedará tanto en Bodega»).
+ * La compra entra ENTERA al estante de Bodega —es lo que dice la factura— y
+ * después sale un traslado por sala. La sala lo recibe desde Traslados, y si
+ * la factura no traía vencimiento lo pone ahí: es quien tiene la caja enfrente.
+ * El rastro es `compra_reparto`, una fila por sala.
+ */
+type Sala = { branch_id: number; erp: number; nombre: string; ubic: number };
+type LineaReparto = {
+  renglon: number; descripcion: string; branch_id: number; erp_product_id: number;
+  id_presentacion: string; unidad: number; paquetes: number; compra: string; venta: string;
+  vence: string; vence_pendiente: boolean; numero_lote: string | null;
+};
+
+async function salasDeReparto(admin: any): Promise<Map<number, Sala>> {
+  const { data, error } = await admin.from("erp_sucursal_map")
+    .select("erp_sucursal_id, branch_id, nombre, es_bodega, inv_ubicaciones").eq("es_bodega", false);
+  if (error) throw error;
+  const m = new Map<number, Sala>();
+  for (const r of data ?? []) {
+    const ubic = Number((r.inv_ubicaciones ?? []).find((u: any) => !u.isVencidos)?.id ?? 0);
+    if (r.branch_id && ubic > 0) m.set(Number(r.branch_id), { branch_id: Number(r.branch_id), erp: Number(r.erp_sucursal_id), nombre: String(r.nombre), ubic });
+  }
+  return m;
+}
+
+/** Las filas de `recibir_traslado.php` tal como la pantalla las manda. */
+function filasDeRecepcion(html: string) {
+  const out: { idProd: string; compra: string; venta: string; esp: string; unidad: string; vence: string; idPres: string }[] = [];
+  for (const tr of [...html.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]).filter((t) => /class="id_p"/.test(t))) {
+    const idProd = tr.match(/class="id_p">\s*(\d+)/)?.[1] ?? "";
+    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+    if (!idProd || !idPres) continue;
+    out.push({
+      idProd, idPres,
+      compra: tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0",
+      venta: tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0",
+      unidad: tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1",
+      esp: tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0",
+      vence: tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "",
+    });
+  }
+  return out;
+}
+
+/** Avisa a la gente activa de una sala (campana y push). */
+async function avisarSala(admin: any, branchId: number, titulo: string, cuerpo: string, meta: Record<string, unknown>) {
+  const { data: gente, error } = await admin.from("employees").select("id")
+    .eq("status", "ACTIVO").eq("branch_id", branchId).or("tipo_ficha.is.null,tipo_ficha.eq.empleado");
+  if (error) throw error;
+  if (!gente?.length) return;
+  const { error: eN } = await admin.rpc("notify_employees", {
+    p_recipients: gente.map((e: any) => e.id), p_type: "COMPRA_REPARTO", p_title: titulo, p_body: cuerpo,
+    p_link: "/traslados?tab=recibir", p_metadata: { origen: "cargar-compra", ...meta }, p_push: true, p_branch_id: branchId,
+  });
+  if (eN) throw eN;
+}
+
+/**
+ * Manda a cada sala lo que se le repartió: un traslado del estante de Bodega
+ * por sala. Corre en background después de la carga; lo que no sale queda en
+ * `compra_reparto` como `fallido` con su nota, a la vista de Bodega.
+ */
+async function repartirASalas(admin: any, cookie: string, lineas: LineaReparto[], x: {
+  cargaId: number; quien: string; emisor: string | null; erpCompra: number | null; mover: boolean; estante: number;
+}) {
+  const salas = await salasDeReparto(admin);
+  const porSala = new Map<number, LineaReparto[]>();
+  for (const l of lineas) porSala.set(l.branch_id, [...(porSala.get(l.branch_id) ?? []), l]);
+  const { error: eI } = await admin.from("compra_reparto").upsert([...porSala].map(([b, ls]) => ({
+    compra_carga_id: x.cargaId, branch_id: b, erp_sucursal_id: salas.get(b)?.erp ?? 0, erp_compra_id: x.erpCompra,
+    emisor_nombre: x.emisor, lineas: ls, estado: "por_enviar", enviado_por: x.quien,
+    nota: x.mover ? null : "La compra no se pudo comprobar en el estante: no se envió. Enviarlo a mano.",
+  })), { onConflict: "compra_carga_id,branch_id", ignoreDuplicates: true });
+  if (eI) throw eI;
+  if (!x.mover) return;
+
+  for (const [branchId, ls] of porSala) {
+    const sala = salas.get(branchId);
+    const fila = (cambios: Record<string, unknown>) => admin.from("compra_reparto")
+      .update({ ...cambios, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId).eq("branch_id", branchId);
+    const { data: tomada, error: eT } = await admin.from("compra_reparto").update({ estado: "enviando", updated_at: new Date().toISOString() })
+      .eq("compra_carga_id", x.cargaId).eq("branch_id", branchId).eq("estado", "por_enviar").select("id");
+    if (eT) throw eT;
+    if (!tomada?.length || !sala) continue;
+    try {
+      const partes: string[] = [];
+      let total = 0;
+      const filas = new Map<number, Awaited<ReturnType<typeof traerFila>>>();
+      for (const l of ls) {
+        if (!filas.has(l.erp_product_id)) filas.set(l.erp_product_id, await traerFila(cookie, l.erp_product_id, x.estante));
+        const f = filas.get(l.erp_product_id)!;
+        if (!f.presentaciones.some((p) => p.id === String(l.id_presentacion))) throw new Error(`«${l.descripcion}»: su presentación no aparece en el estante.`);
+        let idLote = "0";
+        if (f.regulado) {
+          const lote = f.lotes.find((z) => z.numero === String(l.numero_lote ?? ""));
+          if (!lote) throw new Error(`«${l.descripcion}»: el lote ${l.numero_lote} no aparece en el estante.`);
+          idLote = lote.id;
+        }
+        partes.push([l.erp_product_id, l.compra, l.venta, l.paquetes, l.unidad, l.vence || f.vence || "", l.id_presentacion, idLote].join("|"));
+        total += Number(l.compra) * l.paquetes;
+      }
+      const pagina = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
+      const vale = pagina.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
+      if (!vale) throw new Error("El sistema no entregó el número de vale.");
+      const antes = await pendientesDeOrigen(cookie, x.estante);
+      const r = await pedir(cookie, TRASLADO, new URLSearchParams({
+        process: "insert", datos: partes.join("#") + "#", id_traslado_guardado: "0", cuantos: String(partes.length),
+        total: total.toFixed(4), fecha: hoySV(),
+        concepto: armarConcepto(`PORTAL COMPRA ${x.erpCompra ?? ""} ${x.emisor ?? ""} A ${sala.nombre}`).concepto,
+        origen: String(x.estante), id_suc_destino: String(sala.erp), id_ubicacion_destino: "0", numero_vale: vale,
+      }), { extra: { Referer: TRASLADO } });
+      let ok = false;
+      try { ok = String(JSON.parse(r)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+      const despues = await pendientesDeOrigen(cookie, x.estante);
+      const { id: idT } = await identificarTrasladoNuevo(cookie, antes, despues, pagina, sala.erp, []);
+      if (!ok && !idT) throw new Error(`El sistema no aceptó el traslado: ${r.slice(0, 300)}`);
+      if (!idT) {
+        await fila({ estado: "fallido", nota: "El traslado salió pero no se pudo identificar su número: buscarlo en el sistema antes de volver a enviar." });
+        continue;
+      }
+      await fila({ estado: "enviado", erp_traslado_id: idT, enviado_at: new Date().toISOString(), nota: null });
+      const conVence = ls.filter((l) => l.vence_pendiente).length;
+      await avisarSala(admin, branchId, `Bodega te envió producto de ${x.emisor ?? "una compra"}`,
+        `${ls.length === 1 ? "1 producto" : `${ls.length} productos`} de la compra ${x.erpCompra ?? ""}. Recíbelo en Traslados → En camino`
+          + (conVence ? ` y pon la fecha de vencimiento de ${conVence === 1 ? "1 producto" : `${conVence} productos`}.` : "."),
+        { compra: x.erpCompra, traslado: idT },
+      ).catch((e) => console.error("[cargar-compra-erp] aviso a la sala:", e?.message ?? e));
+    } catch (e: any) {
+      await fila({ estado: "fallido", nota: String(e?.message ?? e).slice(0, 500) });
+    }
+  }
+}
+
+/**
+ * La sala recibe lo que Bodega le repartió. Si la factura no traía
+ * vencimiento, la sala lo pone acá (mes y año: se guarda el día 1). Se recibe
+ * completo —como el resto de traslados del portal— y se comprueba que la
+ * existencia de la sala subió.
+ */
+async function recibirReparto(admin: any, id: number, vences: Record<string, string>, quien: { id: string; name: string }) {
+  if (!Number.isFinite(id)) return { error: "Falta el envío." };
+  const permiso = await permisoDeModulo(admin, quien.id, "traslados", "can_view");
+  if (permiso.roto) return { error: permiso.roto };
+  const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
+  if (eR) throw eR;
+  if (!r) return { error: "Ese envío no existe." };
+  if (!permiso.puede || (!permiso.alcanceTodo && permiso.emp?.branch_id !== r.branch_id)) {
+    return { error: "Sólo lo puede recibir alguien de esa sala." };
+  }
+  if (r.estado === "recibido") return { recibido: true, ya: true };
+  if (r.estado !== "enviado" || !r.erp_traslado_id) return { error: "Ese envío no está en camino." };
+
+  const lineas = r.lineas as LineaReparto[];
+  const fechas: Record<string, string> = {};
+  for (const l of lineas.filter((z) => z.vence_pendiente)) {
+    const m = /^(\d{4})-(\d{2})/.exec(String(vences?.[String(l.renglon)] ?? ""));
+    if (!m) return { error: `Falta la fecha de vencimiento de «${l.descripcion}».` };
+    const f = `${m[1]}-${m[2]}-01`;
+    if (f < hoySV().slice(0, 7) + "-01") return { error: `«${l.descripcion}»: la fecha de vencimiento ya pasó.` };
+    fechas[String(l.erp_product_id)] = f;
+  }
+  const salas = await salasDeReparto(admin);
+  const sala = salas.get(Number(r.branch_id));
+  if (!sala) return { error: "No se conoce la ubicación de esa sala." };
+
+  const { data: tomada, error: eT } = await admin.from("compra_reparto").update({ estado: "recibiendo", updated_at: new Date().toISOString() })
+    .eq("id", id).eq("estado", "enviado").select("id");
+  if (eT) throw eT;
+  if (!tomada?.length) return { error: "Otra persona lo está recibiendo." };
+  const volver = (nota: string) => admin.from("compra_reparto").update({ estado: "enviado", nota, updated_at: new Date().toISOString() }).eq("id", id);
+
+  try {
+    const cookie = await sesionEn(sala.erp, login);
+    const estado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
+    if (estado === "anulado") { await volver("El traslado está anulado en el sistema."); return { error: "El traslado está anulado en el sistema: avisa a Bodega." }; }
+    if (estado === "recibido") {
+      await admin.from("compra_reparto").update({ estado: "recibido", recibido_por: quien.id, recibido_at: new Date().toISOString(), vences: fechas, nota: "Ya estaba recibido en el sistema.", updated_at: new Date().toISOString() }).eq("id", id);
+      return { recibido: true, ya: true };
+    }
+    const html = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(r.erp_traslado_id)}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+    const filas = filasDeRecepcion(html);
+    if (!filas.length) { await volver("No se pudo leer la recepción."); return { error: "No se pudo leer el traslado en el sistema: intenta de nuevo." }; }
+    const esperado = new Map<number, number>();
+    for (const l of lineas) esperado.set(l.erp_product_id, (esperado.get(l.erp_product_id) ?? 0) + l.paquetes * l.unidad);
+    let total = 0;
+    const partes = filas.map((f) => {
+      const vence = fechas[f.idProd] ?? f.vence;
+      total += Number(f.compra) * Number(f.esp);
+      return [f.idProd, f.compra, f.venta, f.esp, f.unidad, vence, f.idPres, f.esp].join("|");
+    });
+    if (filas.some((f) => !(fechas[f.idProd] ?? f.vence))) { await volver("Un renglón no tiene vencimiento."); return { error: "Un producto no tiene fecha de vencimiento." }; }
+    const antes = await existenciasDeUbicacion(cookie, sala.erp, sala.ubic);
+    const resp = await pedir(cookie, RECIBIR, new URLSearchParams({
+      process: "insert", datos: partes.join("#") + "#", cuantos: String(partes.length), total: total.toFixed(4), fecha: hoySV(),
+      concepto: armarConcepto(`PORTAL REC ${quien.name} COMPRA ${r.erp_compra_id ?? ""} ${r.emisor_nombre ?? ""}`).concepto,
+      destino: String(sala.ubic), id_traslado: String(r.erp_traslado_id),
+    }), { extra: { Referer: RECIBIR } });
+    let ok = false;
+    try { ok = String(JSON.parse(resp)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+    if (!ok && await estadoDeRecepcion(cookie, String(r.erp_traslado_id)) !== "recibido") {
+      await volver(`El sistema no aceptó la recepción: ${resp.slice(0, 200)}`);
+      return { error: "El sistema no aceptó la recepción: intenta de nuevo." };
+    }
+    const despues = await existenciasDeUbicacion(cookie, sala.erp, sala.ubic);
+    const comprobado = Boolean(antes && despues && [...esperado].every(([pid, u]) => (despues.get(pid) ?? 0) - (antes.get(pid) ?? 0) >= u - 1e-6));
+    const { error: eU } = await admin.from("compra_reparto").update({
+      estado: "recibido", recibido_por: quien.id, recibido_at: new Date().toISOString(), vences: fechas,
+      nota: comprobado ? null : "Recibido, pero la existencia de la sala no subió lo esperado: revisarlo.", updated_at: new Date().toISOString(),
+    }).eq("id", id);
+    if (eU) throw eU;
+    return { recibido: true, comprobado };
+  } catch (e: any) {
+    await volver(String(e?.message ?? e).slice(0, 300));
+    throw e;
+  }
 }
 
 type Erroneo = {
@@ -880,6 +1112,18 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const quien = await requireActiveEmployeeUser(req, admin);
   if (!quien) return responder({ error: "Sesión no válida." }, 401);
+  // La sala recibe lo que Bodega le repartió: su permiso es el de Traslados,
+  // no el de cargar compras, así que va antes de ese freno.
+  const cuerpo = await req.clone().json().catch(() => ({}));
+  if (cuerpo?.accion === "reparto_recibir") {
+    try {
+      const r = await recibirReparto(admin, Number(cuerpo?.id), cuerpo?.vences ?? {}, quien);
+      return responder(r, r && "error" in r ? 409 : 200);
+    } catch (e: any) {
+      console.error("[cargar-compra-erp] recibir reparto:", e?.message ?? e);
+      return responder({ error: e?.message ?? String(e) }, 500);
+    }
+  }
   const permiso = await permisoDeModulo(admin, quien.id, "cargar_compra", "can_edit");
   if (permiso.roto) return responder({ error: permiso.roto }, 500);
   if (!permiso.puede) return responder({ error: "No tienes permiso para cargar compras." }, 403);
@@ -964,6 +1208,8 @@ Deno.serve(async (req: Request) => {
     const detalle: unknown[] = [];
     const cobrado: number[] = [];
     const erroneos: Erroneo[] = [];
+    const reparto: LineaReparto[] = [];
+    const salas = uso === "venta" ? await salasDeReparto(admin) : new Map<number, Sala>();
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       const r: RenglonDoc = {
@@ -1008,6 +1254,40 @@ Deno.serve(async (req: Request) => {
           product_id: Number(res.linea.id_producto), es_generico: Number(res.linea.id_producto) === PRODUCTO_ERRONEO,
           unidades: Number(res.linea.cant) * u, costo_unitario: Math.round((Number(res.linea.compra) / u) * 1e4) / 1e4,
         });
+      }
+      // Lo que va a cada sala: en paquetes de la presentación con que entra, y
+      // nunca más de lo que entra. Lo que sobra queda en Bodega.
+      const pedidoReparto = (decisiones[String(i)] as any)?.reparto;
+      if (res.linea && dec.tipo === "producto" && pedidoReparto && typeof pedidoReparto === "object") {
+        if ((decisiones[String(i)] as any)?.erroneo === true) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}» es un producto erróneo: no se envía a salas.` });
+        } else {
+          // La pantalla manda UNIDADES (lo mismo que «Cantidad a cargar»); se
+          // traslada en la presentación con que entra, así que tienen que ser
+          // paquetes completos.
+          const unidad = Number(res.linea.unidad) || 1;
+          const entran = Number(res.linea.cant) * unidad;
+          let suma = 0;
+          for (const [b, v] of Object.entries(pedidoReparto)) {
+            const u = Number(v);
+            if (!(u > 0)) continue;
+            const sala = salas.get(Number(b));
+            if (!sala) { problemas.push({ renglon: i, texto: `«${r.descripcion}»: la sala ${b} no recibe envíos.` }); continue; }
+            const n = u / unidad;
+            if (Math.abs(n - Math.round(n)) > 1e-9) {
+              problemas.push({ renglon: i, texto: `«${r.descripcion}»: a ${sala.nombre} van ${u} unidades y entra en paquetes de ${unidad}.` });
+              continue;
+            }
+            suma += u;
+            reparto.push({
+              renglon: i, descripcion: r.descripcion, branch_id: sala.branch_id, erp_product_id: Number(res.linea.id_producto),
+              id_presentacion: String(res.linea.id_presentacion), unidad, paquetes: Math.round(n),
+              compra: String(res.linea.compra), venta: String(res.linea.venta), vence: res.linea.vence === "NULL" ? "" : String(res.linea.vence ?? ""),
+              vence_pendiente: Boolean((res.detalle as any)?.vence_pendiente), numero_lote: res.linea.numero_lote || null,
+            });
+          }
+          if (suma > entran + 1e-9) problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas y entran ${entran}.` });
+        }
       }
       if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); }
       detalle.push({ renglon: i, descripcion: r.descripcion, linea: res.linea, ...(res.detalle ?? {}) });
@@ -1084,7 +1364,7 @@ Deno.serve(async (req: Request) => {
     const revision = { regalos, totales,
       problemas, listo: problemas.length === 0,
       total_documento: totalDoc, total_armado: Number(tot.total), diferencia,
-      percepcion_proveedor: tasa, renglones: detalle, erroneos,
+      percepcion_proveedor: tasa, renglones: detalle, erroneos, reparto,
     };
     if (enviar) return responder(await enviarCompra(admin, {
       cookie, documentId, cargaId: Number(body?.carga_id), sobre, revision, lineas, erpProveedor: erpProveedor!,

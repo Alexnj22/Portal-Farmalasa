@@ -301,3 +301,28 @@ export async function darSalidaErroneo(id) {
     anotar('COMPRA_ERRONEO_SALIDA', id, { ok: !msg, comprobado: data?.comprobado ?? null, error: msg });
     return { resultado: msg ? null : data, error: msg };
 }
+
+/**
+ * Lo que Bodega repartió a las salas al cargar una compra (`compra_reparto`):
+ * lo que está en camino y lo recibido en los últimos 30 días. El RLS recorta
+ * a la sala propia.
+ */
+export async function fetchRepartosDeCompra() {
+    const { data, error } = await supabase.rpc('get_compra_repartos');
+    return { filas: Array.isArray(data) ? data : [], error: error?.message ?? null };
+}
+
+/**
+ * La sala recibe un envío de Bodega. `vences` = `{ renglon: 'YYYY-MM' }` para
+ * los productos cuya factura no traía vencimiento.
+ */
+export async function recibirRepartoDeCompra(id, vences) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body: { accion: 'reparto_recibir', id, vences } });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('COMPRA_REPARTO_RECIBIDO', id, { ok: !msg, comprobado: data?.comprobado ?? null, error: msg });
+    return { resultado: msg ? null : data, error: msg };
+}

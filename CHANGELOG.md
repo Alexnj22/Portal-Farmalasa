@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1396.0 — Compras: repartir a las salas al cargar
+
+Al cargar una compra, cada renglón tiene **Enviar a sucursales**: se pone
+cuántas unidades van a cada una de las seis salas. Nunca más de lo que entra
+(la revisión lo rechaza), en paquetes completos de la presentación con que
+entra, y si se envía menos la pantalla dice cuánto queda en Bodega (decisión
+del usuario, 2026-10-30).
+
+La compra entra entera al estante de Bodega —es lo que dice la factura— y
+después sale **un traslado por sala**, en background (`compra_reparto` guarda
+cada uno). La sala recibe un aviso y lo ve arriba de **Traslados → En camino**;
+lo recibe desde ahí, y si la factura no traía vencimiento (Sarita) lo pone en
+ese momento —mes y año—, porque es quien tiene la caja enfrente. Se recibe
+completo y se comprueba que la existencia de la sala subió.
+
+Recibir exige Traslados y ser de esa sala (o alcance de todas); el manifiesto de
+alcance pasa a `alcance`. De paso: el ícono del aviso de margen bajo
+(v2.1393.0) no estaba registrado en el catálogo de avisos.
+
 ## v2.1395.2 — Revisión de factor: la sala ya corregida no sale como descuadre
 
 En «Las demás salas», Salud 3 y La Popular seguían en rojo («contó 1 caja, el

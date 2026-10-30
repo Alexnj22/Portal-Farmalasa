@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import {
     PackagePlus, AlertTriangle, CheckCircle2, ScanBarcode, BookMarked,
-    Search, HelpCircle, CalendarRange, ListChecks, RefreshCw, EyeOff, Layers,
+    Search, HelpCircle, CalendarRange, ListChecks, RefreshCw, EyeOff, Layers, Truck,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -408,6 +408,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
 
+    // Las salas a las que se puede enviar al cargar: las seis farmacias.
+    const branches = useStaff(st => st.branches);
+    const salasReparto = useMemo(() => (branches ?? []).filter(b => b.type === 'FARMACIA')
+        .sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true })), [branches]);
+
     const ajustar = (i, campo, valor) => {
         setAjustes(a => ({ ...a, [i]: { ...a[i], [campo]: valor } }));
         setRes(null);   // lo revisado ya no es lo que se ve
@@ -452,6 +457,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
         lote: ajustes[i]?.lote || null,
         vence: ajustes[i]?.vence || null,
         erroneo: ajustes[i]?.erroneo === true,
+        reparto: aRepartir(ajustes[i]?.reparto),
     }]));
 
     // Manda EXACTAMENTE lo revisado: la función lo vuelve a armar y se niega si
@@ -617,6 +623,9 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                             {envio.verificada
                                 ? 'Se leyó de vuelta y cuadra renglón por renglón.'
                                 : <>Entró, pero al leerla de vuelta algo no cuadró: {(envio.notas ?? []).join(' ')}</>}
+                            {envio.reparto && (envio.reparto.enviando
+                                ? <> Se está enviando a {envio.reparto.salas === 1 ? '1 sala' : `${envio.reparto.salas} salas`}: lo reciben en Traslados → En camino.</>
+                                : <> <b>No se envió a las salas</b> porque la carga no se pudo comprobar: hay que enviarlo a mano.</>)}
                             {envio.vencidos && (envio.vencidos.movidos > 0
                                 ? <> Lo marcado como error ya está en Bodega de vencidos (traslado {envio.vencidos.traslado}).</>
                                 : <> <b>Lo marcado como error NO se pasó a vencidos:</b> {envio.vencidos.error}</>)}
@@ -788,6 +797,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                                                 onChange={e => ajustar(i, 'vence', e.target.value)} />
                                         </div>
                                     )}
+                                    {uso === 'venta' && conProducto && !aj.erroneo && (
+                                        <RepartoASalas salas={salasReparto} puedeEditar={puedeEditar}
+                                            total={Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0}
+                                            valor={aj.reparto} onChange={v => ajustar(i, 'reparto', v)} />
+                                    )}
                                     {sim?.linea && <ComoEntra sim={sim} costo={costos.get(i)} />}
                                     {buscando === r.codigo_proveedor && (
                                         <BuscadorProducto
@@ -916,6 +930,60 @@ function TotalesLadoALado({ t }) {
 /* Cómo entra un renglón a Bodega, después de revisar: en qué presentación,
    cuántas unidades, el costo contra el anterior y el margen con el precio de
    hoy. Cuatro datos en fila, cada uno con su rótulo, en vez de un párrafo. */
+/** `{ branchId: '12' }` tecleado → `{ branchId: 12 }` sin vacíos, o null. */
+function aRepartir(reparto) {
+    if (!reparto) return null;
+    const limpio = Object.fromEntries(Object.entries(reparto)
+        .map(([b, v]) => [b, Number(v)]).filter(([, n]) => n > 0));
+    return Object.keys(limpio).length ? limpio : null;
+}
+
+/**
+ * ¿Se envía parte de este renglón a otras salas? (usuario, 2026-10-30). La
+ * cantidad va en UNIDADES, igual que «Cantidad a cargar»; nunca más de lo que
+ * entra, y si se envía menos se dice cuánto queda en Bodega.
+ */
+function RepartoASalas({ salas, total, valor, onChange, puedeEditar }) {
+    if (!valor) {
+        return puedeEditar && salas.length > 0 ? (
+            <div className="mt-2">
+                <Button size="xs" variant="ghost" icon={Truck} onClick={() => onChange({})}>
+                    Enviar a sucursales
+                </Button>
+            </div>
+        ) : null;
+    }
+    const suma = Object.values(valor).reduce((t, v) => t + (Number(v) || 0), 0);
+    const quedan = total - suma;
+    return (
+        <div className="mt-2 pt-2 border-t border-divider">
+            <div className="flex items-center justify-between gap-2">
+                <p className="text-caption font-black text-content-3 uppercase tracking-widest flex items-center gap-1">
+                    <Truck size={12} /> Enviar a sucursales
+                </p>
+                {puedeEditar && (
+                    <Button size="xs" variant="ghost" onClick={() => onChange(null)}>No enviar</Button>
+                )}
+            </div>
+            <div className="mt-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                {salas.map(sala => (
+                    <PortalInput key={sala.id} compact labelDenso label={sala.name} inputMode="numeric"
+                        readOnly={!puedeEditar} placeholder="0"
+                        value={valor[sala.id] ?? ''}
+                        onChange={e => onChange({ ...valor, [sala.id]: String(e.target.value).replace(/[^\d]/g, '') })} />
+                ))}
+            </div>
+            {suma > 0 && (
+                <p className={`mt-1 text-micro font-bold tabular-nums ${quedan < 0 ? 'text-danger' : quedan > 0 ? 'text-warning' : 'text-content-2'}`}>
+                    {quedan < 0 ? `Se envían ${suma} y entran ${total}: no se puede enviar más de lo que entra.`
+                        : quedan > 0 ? `Se envían ${suma} · quedan ${quedan} en el inventario de Bodega.`
+                        : `Se envían las ${suma}: no queda nada en Bodega.`}
+                </p>
+            )}
+        </div>
+    );
+}
+
 function ComoEntra({ sim, costo }) {
     const nombre = sim.presentacion_nombre || (sim.presentacion > 1 ? `Caja de ${sim.presentacion}` : 'Unidad');
     const cambio = costo?.cambio;

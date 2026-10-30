@@ -70,6 +70,8 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // Subió un costo al cargar una compra y el margen quedó bajo: lleva a
     // Compras → Productos, así que va con el ícono de Compras.
     COMPRA_MARGEN_BAJO: 'ShoppingCart',
+    // Bodega le envió a la sala parte de una compra recién cargada.
+    COMPRA_REPARTO: 'Truck',
     // El mismo `Landmark` con el que el circuito de bolsas rotula «Depósitos al
     // banco»: el aviso lleva a esa sección y tiene que verse como ella.
     DEPOSITO_BANCO:   'Landmark',

@@ -155,8 +155,8 @@
       "motivo": "Es el login."
     },
     "cargar-compra-erp": {
-      "guarda": "sin-sala",
-      "motivo": "Carga compras SIEMPRE en Bodega (sucursal fija en el código); el navegador no elige sala. Exige can_edit de cargar_compra."
+      "guarda": "alcance",
+      "motivo": "Carga compras SIEMPRE en Bodega (sucursal fija; exige can_edit de cargar_compra). La sala de un reparto sale de compra_reparto, no del navegador, y recibirlo exige traslados + la sala propia (alcanceTodo)."
     },
     "enviar-producto-erp": {
       "guarda": "alcance"

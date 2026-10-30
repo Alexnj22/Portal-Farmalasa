@@ -36,6 +36,7 @@ import { textoBuscable } from '@nucleo/utils/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '@nucleo/data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '@nucleo/data/envios';
 import { fetchFaltantes } from '@nucleo/data/faltantes';
+import RepartosDeCompra from './traslados/RepartosDeCompra';
 const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
 // El historial es la pestaña que menos se abre, y trae sus tarjetas propias.
 const HistorialTraslados = lazy(() => import('./traslados/HistorialTraslados'));
@@ -430,6 +431,9 @@ export default function TrasladosView() {
      * sobre todas: con alcance se elige por renglón, y quien lo tiene —
      * supervisión, administración— muchas veces no tiene sala asignada. */
     const puedeEnviar = hasPermission('traslados', 'can_edit') && (alcanceTodas || Boolean(miBranch));
+    /* Lo que Bodega repartió al cargar una compra: cuántas tarjetas pinta, para
+       no decir «Nada en camino» encima de ellas. */
+    const [deCompras, setDeCompras] = useState(0);
 
     /* Cargando, por pestaña: Faltantes no tiene por qué esperar al historial,
      * y el historial sólo espera lo suyo. */
@@ -737,7 +741,10 @@ export default function TrasladosView() {
 
                     {cargando && <SkeletonText lines={4} />}
 
-                    {!cargando && lista.length === 0 && (
+                    <RepartosDeCompra busqueda={busqueda} onCuenta={setDeCompras}
+                        puedeRecibir={alcanceTodas || Boolean(miBranch)} />
+
+                    {!cargando && lista.length === 0 && deCompras === 0 && (
                         <EmptyState
                             icon={PackageCheck}
                             title={busqueda.trim() ? `Sin coincidencias para "${busqueda}"` : 'Nada en camino'}

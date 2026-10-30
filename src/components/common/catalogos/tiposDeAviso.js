@@ -37,6 +37,8 @@ import {
     MessageCircle,
     ShieldAlert,
     Printer,
+    ShoppingCart,
+    Truck,
 } from 'lucide-react';
 import { NOMBRE_DE_ICONO_POR_TIPO, nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 
@@ -66,9 +68,11 @@ const ICONOS = {
     Printer,
     RefreshCw,
     ShieldAlert,
+    ShoppingCart,
     Stethoscope,
     Target,
     Trash2,
+    Truck,
     UserCog,
     Wallet,
 };

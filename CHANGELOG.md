@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1409.1 — Quitar fondo funciona en el portal publicado
+
+La CSP de `vercel.json` bloqueaba `@imgly/background-removal` desde siempre: descarga el modelo de `staticimgly.com` (faltaba en `connect-src`), carga el motor de onnxruntime como `blob:` y compila WebAssembly (faltaban `blob:` y `'wasm-unsafe-eval'` en `script-src`). Autorizado por el usuario el 2026-10-30.
+
 ## v2.1409.0 — Editor de fotos de producto: revisa la calidad, quita el fondo y encuadra solo
 
 En Fotos de productos el editor ahora:

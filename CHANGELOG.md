@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1391.1 — Finalizar un pedido con un renglón en otra presentación ya no falla
+
+Al confirmar lo que sale, pasar un renglón a otra presentación (pedido #236 de Salud 5: METFORMINA de 1 caja a 4 blísteres) daba «Esta función no está disponible». `confirmar_envio_pedido` trataba `stock_packs_snapshot` como texto y es numérica (`operator does not exist: numeric ~ unknown`). Venía de v2.1384.0. Ahora se multiplica directo. Migración `20261030161410_envio_stock_packs_es_numeric`.
+
 ## v2.1391.0 — El conteo pide la fecha de vencimiento si el producto la necesita
 
 La corrección de X-Ray Dol (cargar 3 blister en Salud 3 y La Popular) no se

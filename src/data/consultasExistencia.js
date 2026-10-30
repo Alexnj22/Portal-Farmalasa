@@ -128,7 +128,7 @@ export function textoDeDiferencia(sala) {
  * en el estante y un DESCARTE con lo que falta. En un regulado puede haber las
  * dos (un lote de más y otro de menos). Devuelve los ids, en el orden creado.
  */
-export async function pedirAjusteDeConsulta({ consulta, sala, ajuste, usuarioId, aprobador }) {
+export async function pedirAjusteDeConsulta({ consulta, sala, ajuste, usuarioId, aprobador, vence = null }) {
     const ids = [];
     for (const sentido of ['carga', 'descarte']) {
         const lineas = (ajuste?.lineas ?? []).filter(l => l.sentido === sentido);
@@ -148,7 +148,9 @@ export async function pedirAjusteDeConsulta({ consulta, sala, ajuste, usuarioId,
                 factor:         l.factor,
                 cantidad:       l.cantidad,
                 lote:           l.lote,
-                vence:          l.vence,
+                // Un conteo anterior al 30-oct no trae fecha: la pone quien
+                // ajusta (la caja rechaza una carga de perecedero sin ella).
+                vence:          l.vence ?? (carga ? vence : null),
                 existencia:     l.existencia,
             })),
             usuarioId,
@@ -169,3 +171,7 @@ export async function pedirAjusteDeConsulta({ consulta, sala, ajuste, usuarioId,
     }
     return { ids, error: null };
 }
+
+/** ¿El ajuste carga un perecedero sin fecha? Entonces la pide antes. */
+export const ajusteNecesitaVence = (ajuste) => !!ajuste?.perecedero
+    && (ajuste?.lineas ?? []).some(l => l.sentido === 'carga' && !l.vence);

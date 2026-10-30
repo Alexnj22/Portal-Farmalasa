@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1394.0 — La corrección de factor le dice a la sala lo que no se ajustó
+
+Salud 2 contó 8 blister de X-Ray Dol (1 caja y 4 blister) y el sistema tenía 1.
+La corrección del cambio de tamaño carga 3; los otros 4 (1 caja) son una
+diferencia sin explicación que no le toca a la corrección. Decisión del usuario:
+se corrige lo que sugiere y el aviso a la sala dice lo demás.
+
+- **Revisión de factor**: si el conteo de la sala no coincide con la
+  corrección, la ventana lo dice («La sala contó 1 caja más: eso no se ajusta
+  aquí») y la nota con que se aplica le llega a la jefatura de la sala en el
+  aviso de «Carga aplicada»: «No se ajustó 1 caja que contaron de más: si lo
+  tienen, pidan la carga y expliquen de dónde salió». Al revés, pide el
+  descarte. `notaDeCorreccion` en `data/revisionFactor.js`, con pruebas.
+- El aviso a la sala lleva la nota hasta 280 caracteres (antes 140).
+- **Inventario → Consultas**: el ajuste de un perecedero contado sin fecha (los
+  conteos de antes de hoy) pide el vencimiento como mes y año antes de ajustar.
+
+Migración `20261030163347_ajuste_de_consulta_dice_perecedero_y_aviso_mas_largo`.
 ## v2.1393.0 — Compras: aviso cuando sube un costo y el margen queda bajo
 
 Al cargar una compra desde el portal, los renglones cuyo **costo subió** y

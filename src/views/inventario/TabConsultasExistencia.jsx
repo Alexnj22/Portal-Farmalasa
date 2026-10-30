@@ -4,6 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import PromptModal from '../../components/common/PromptModal';
+import CampoMesAnio from '../../components/common/CampoMesAnio';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { SkeletonText } from '../../components/common/StateViews';
 import NuevaConsultaExistencia from '../../components/inventario/NuevaConsultaExistencia';
@@ -13,13 +14,13 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { fechaNumerica } from '@nucleo/utils/fecha';
+import { fechaNumerica, venceDelMes } from '@nucleo/utils/fecha';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import {
     crearConsultaExistencia, fetchAjusteDeConsulta, fetchConsultasExistencia,
-    agruparPorProducto, enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia,
+    agruparPorProducto, enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia, ajusteNecesitaVence,
 } from '@nucleo/data/consultasExistencia';
 
 /**
@@ -49,6 +50,8 @@ export default function TabConsultasExistencia() {
     const [nueva, setNueva] = useState(false);
     const [contando, setContando] = useState(null);
     const [ajuste, setAjuste] = useState(null);     // { consulta, sala, datos }
+    // Mes y año de vencimiento cuando el ajuste carga un perecedero sin fecha.
+    const [venceAjuste, setVenceAjuste] = useState('');
     const [sinAjuste, setSinAjuste] = useState(null); // { consulta, sala }
     const [trabajando, setTrabajando] = useState(false);
 
@@ -78,6 +81,7 @@ export default function TabConsultasExistencia() {
         const { data, error } = await fetchAjusteDeConsulta(sala.id);
         setTrabajando(false);
         if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return; }
+        setVenceAjuste('');
         setAjuste({ consulta, sala, datos: data });
     };
 
@@ -87,6 +91,7 @@ export default function TabConsultasExistencia() {
         try {
             const { ids, error } = await pedirAjusteDeConsulta({
                 consulta, sala, ajuste: datos, usuarioId: user?.id, aprobador: supervisorQueResuelve(employees),
+                vence: venceDelMes(venceAjuste),
             });
             if (error) throw error;
             const fallos = [];
@@ -252,11 +257,21 @@ export default function TabConsultasExistencia() {
             ) : ajuste && (
                 <ConfirmModal isOpen onClose={() => setAjuste(null)} isDestructive={false} isProcessing={trabajando}
                     title={`Ajustar ${ajuste.sala.sala}`}
-                    message={`${ajuste.consulta.nombre}: la sala contó ${formatQty(ajuste.datos.contado)} unidades `
-                        + `y el sistema dice ${formatQty(ajuste.datos.sistema)}. Se `
-                        + (ajuste.datos.lineas ?? []).map(l => `${l.sentido === 'carga' ? 'cargan' : 'descartan'} `
-                            + `${formatQty(l.cantidad)} ${String(l.tipo).toLowerCase()}${l.lote ? ` del lote ${l.lote}` : ''}`).join(' y se ')
-                        + '.'}
+                    message={(
+                        <span className="block space-y-3 text-left">
+                            <span className="block">
+                                {`${ajuste.consulta.nombre}: la sala contó ${formatQty(ajuste.datos.contado)} unidades `
+                                    + `y el sistema dice ${formatQty(ajuste.datos.sistema)}. Se `
+                                    + (ajuste.datos.lineas ?? []).map(l => `${l.sentido === 'carga' ? 'cargan' : 'descartan'} `
+                                        + `${formatQty(l.cantidad)} ${String(l.tipo).toLowerCase()}${l.lote ? ` del lote ${l.lote}` : ''}`).join(' y se ')
+                                    + '.'}
+                            </span>
+                            {ajusteNecesitaVence(ajuste.datos) && (
+                                <CampoMesAnio label="Vence (mes y año)" value={venceAjuste} onChange={setVenceAjuste} />
+                            )}
+                        </span>
+                    )}
+                    confirmDisabled={ajusteNecesitaVence(ajuste.datos) && !venceDelMes(venceAjuste)}
                     confirmText="Ajustar" onConfirm={ajustar} />
             )}
 

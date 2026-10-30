@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, restoDelConteo, restoEnPresentaciones, notaDeCorreccion, unidadesDeLaCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { fetchConsultasExistencia, agruparPorProducto, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
@@ -261,7 +261,7 @@ function ResultadoDelConteo({ conteo: s, fila: f }) {
     if (s.estado === 'RECONTAR') {
         return <p className="text-label font-bold text-warning-text flex items-center gap-1"><Clock size={12} /> No cuadró la primera vez, la sala está recontando</p>;
     }
-    const supone = esCarga(f) ? f.cargar * (presentacionDeCarga(f).factor || 1) : -f.descartar;
+    const supone = unidadesDeLaCorreccion(f);
     const confirma = (s.diferencia ?? 0) === supone;
     return (
         <div className={`rounded-lg border px-2.5 py-1.5 text-label font-bold ${confirma ? 'border-success/30 bg-success/[0.08] text-success-text' : 'border-warning/30 bg-warning/[0.08] text-warning-text'}`}>
@@ -303,6 +303,8 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
     // la caja (X-Ray Dol, 2026-10-30). Sale de lo que contó la sala; si no la
     // contó, la escribe quien corrige.
     const pideVence = necesitaVence(f);
+    // Lo que la sala contó y esta corrección no cubre: va en el aviso a la sala.
+    const resto = restoDelConteo(f, conteo);
     // Como mes ('AAAA-MM'): el empaque no trae día. Se guarda el día 1.
     const [vence, setVence] = useState(mesDelVence(sol?.vence ?? f.vence_contado));
     const venceDia = venceDelMes(vence);
@@ -338,7 +340,7 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                 useToastStore.getState().showToast('Corrección pedida',
                     'Quien aprueba inventario recibió el aviso. La existencia cambia al aprobarla.', 'success');
             } else {
-                const r = await aplicarMovimientoInventarioEnErp(id, 'Corrección por cambio de presentación');
+                const r = await aplicarMovimientoInventarioEnErp(id, notaDeCorreccion(f, conteo));
                 if (!r?.ok) {
                     useToastStore.getState().showToast('No se aplicó',
                         `La caja no la aceptó: ${r?.error ?? 'sin respuesta'}. Puedes reintentarla desde esta misma tarjeta.`, 'warning');
@@ -432,6 +434,13 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                             {carga && f.sobran > 0 && ` Sobran ${formatQty(f.sobran)} sueltas que no se pueden sacar.`}
                             {!carga && f.sueltas > 0 && ` Las ${formatQty(f.sueltas)} sueltas también salen.`}
                         </span>
+                        {resto !== 0 && (
+                            <span className="block text-warning-text font-bold">
+                                {resto > 0
+                                    ? `La sala contó ${restoEnPresentaciones(f, resto)} más: eso no se ajusta aquí. El aviso le pide a la sala que solicite la carga y explique de dónde salió.`
+                                    : `La sala contó ${restoEnPresentaciones(f, resto)} menos: eso no se descuenta aquí. El aviso le pide a la sala que solicite el descarte y explique por qué.`}
+                            </span>
+                        )}
                         {pideVence && (
                             <CampoMesAnio label="Vence (mes y año)" value={vence} onChange={setVence} />
                         )}

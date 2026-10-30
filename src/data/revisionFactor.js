@@ -150,3 +150,50 @@ export async function ponerVenceACorreccion(id, vence) {
  * perecedero: un descarte sale de un lote que ya existe.
  */
 export const necesitaVence = (f) => esCarga(f) && !!f?.perecedero && !f?.vence;
+
+/**
+ * Lo que la corrección mueve, en unidades: lo que se carga (en la presentación
+ * de carga) o, en negativo, lo que se descarta.
+ */
+export const unidadesDeLaCorreccion = (f) => (esCarga(f)
+    ? (f?.cargar ?? 0) * (presentacionDeCarga(f).factor || 1)
+    : -(f?.descartar ?? 0));
+
+/**
+ * Lo que la sala contó de más (+) o de menos (−) DESPUÉS de la corrección: la
+ * parte de la diferencia que no viene del cambio de tamaño. Sin conteo, o con
+ * un conteo que cuadra con lo de hoy (no hay que corregir), 0.
+ */
+export function restoDelConteo(f, conteo) {
+    const d = conteo?.diferencia;
+    if (d == null || d === 0 || !['CUADRA', 'DESCUADRE'].includes(conteo?.estado)) return 0;
+    return d - unidadesDeLaCorreccion(f);
+}
+
+/** Unidades en las presentaciones del cambio: «1 caja», «1 caja y 2 blister». */
+export function restoEnPresentaciones(f, unidades) {
+    const u = Math.abs(unidades);
+    const grande = String(f?.tipo_cambio ?? f?.presentacion ?? '').toLowerCase();
+    const factor = esCarga(f) ? Number(f?.a) || 1 : 1;
+    if (factor <= 1) return `${u} ${grande}`;
+    const chica = String(presentacionDeCarga(f).tipo ?? 'unidades').toLowerCase();
+    const enteras = Math.floor(u / factor);
+    const sueltas = u % factor;
+    return [enteras ? `${enteras} ${grande}` : '', sueltas ? `${sueltas} ${chica}` : '']
+        .filter(Boolean).join(' y ');
+}
+
+/**
+ * La nota con que se aplica la corrección. Le llega a la jefatura de la sala en
+ * el aviso de «Carga aplicada», así que si la sala contó algo que la corrección
+ * no cubre lo dice ahí, con qué tiene que pedir (usuario, 2026-10-30).
+ */
+export function notaDeCorreccion(f, conteo) {
+    const base = 'Corrección por cambio de presentación.';
+    const resto = restoDelConteo(f, conteo);
+    if (!resto) return base;
+    const txt = restoEnPresentaciones(f, resto);
+    return resto > 0
+        ? `${base} No se ajustó ${txt} que contaron de más: si lo tienen, pidan la carga y expliquen de dónde salió.`
+        : `${base} No se descontó ${txt} que faltó en el conteo: si no está, pidan el descarte y expliquen por qué.`;
+}

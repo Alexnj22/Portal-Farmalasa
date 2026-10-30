@@ -208,3 +208,16 @@ describe('descuento al pie de la factura', () => {
         expect(factorDescuentoDeFactura({ ...RESUMEN, subTotal: 281.5 })).toEqual({ gravada: 1, exenta: 1 });
     });
 });
+
+describe('cantidad a cargar que no da parejo', () => {
+    const r = { descripcion: 'X', cantidad: 50, precio: 5.63, descuento: 0, exento: false, subtotal: 281.5 };
+    it('menos de lo facturado frena y no infla el costo', () => {
+        const res = lineaDelSobre(0, r, { tipo: 'producto', producto: CONO, factor: 0.9, lote: null, vence: '2028-03' });
+        expect(res.linea).toBeNull();
+        expect(res.problemas[0].texto).toMatch(/se cargan 45 y la factura cobra 50/);
+    });
+    it('un factor entero sigue entrando', () => {
+        const res = lineaDelSobre(0, r, { tipo: 'producto', producto: CONO, factor: 2, lote: null, vence: '2028-03' });
+        expect(res.linea?.cant).toBe('100');
+    });
+});

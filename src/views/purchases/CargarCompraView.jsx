@@ -859,11 +859,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                         {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
                                                     </Button>
                                                 )}
-                                                {puedeEditar && !elegido && !r.listo && (
+                                                {puedeEditar && (
                                                     <Button size="xs" variant="ghost"
                                                         loading={guardando === k}
                                                         onClick={() => setBusc(buscando === k ? null : k)}>
-                                                        {r.producto_id ? 'Es otro' : 'Elegir'}
+                                                        {conProducto || r.producto_id ? 'Es otro' : 'Elegir'}
                                                     </Button>
                                                 )}
                                                 {puedeEditar && r.producto_id && !elegido && r.match_origen === 'parecido' && (
@@ -900,6 +900,22 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             valor={aj.reparto} onChange={v => ajustar(i, 'reparto', v)} />
                                     )}
                                     {sim?.linea && <ComoEntra sim={sim} costo={costos.get(i)} />}
+                                    {sim?.linea && puedeEditar && (() => {
+                                        const sug = cantidadSospechosa(sim, costos.get(i));
+                                        return sug && (
+                                            <Notice variant="danger" icon={AlertTriangle} className="mt-2">
+                                                <span className="flex items-center gap-2 flex-wrap">
+                                                    <span className="flex-1 min-w-[14rem]">
+                                                        El costo queda {sug.veces} veces {sug.sube ? 'más caro' : 'más barato'} que antes:
+                                                        casi siempre es la cantidad. ¿Entran <b>{sug.unidades}</b> y no {sim.existencias}?
+                                                    </span>
+                                                    <Button size="xs" onClick={() => ajustarCarga(i, r, String(sug.unidades))}>
+                                                        Cargar {sug.unidades}
+                                                    </Button>
+                                                </span>
+                                            </Notice>
+                                        );
+                                    })()}
                                     {buscando === k && (
                                         <BuscadorProducto
                                             onElegir={(prod) => confirmar(r, i, prod)}
@@ -1178,6 +1194,20 @@ function RepartoASalas({ salas, total, valor, onChange, puedeEditar }) {
             )}
         </div>
     );
+}
+
+// Si el costo nuevo es un múltiplo entero (×2 o más) del de antes, lo más
+// probable es que la caja del proveedor traiga otra cantidad de unidades:
+// 50 «CAJA X 10» cargadas como 50 unidades dejan cada una 10 veces más cara.
+function cantidadSospechosa(sim, costo) {
+    const antes = Number(costo?.antes), nuevo = Number(costo?.nuevo);
+    if (!(antes > 0 && nuevo > 0)) return null;
+    const sube = nuevo > antes;
+    const razon = sube ? nuevo / antes : antes / nuevo;
+    const veces = Math.round(razon);
+    if (veces < 2 || Math.abs(razon - veces) / veces > 0.12) return null;
+    const unidades = sube ? sim.existencias * veces : sim.existencias / veces;
+    return Number.isInteger(unidades) && unidades > 0 ? { veces, sube, unidades } : null;
 }
 
 function ComoEntra({ sim, costo }) {

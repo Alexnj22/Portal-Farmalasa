@@ -103,6 +103,20 @@ export function lineaDelSobre(
 
   const p = d.producto;
   const factor = Number(d.factor) > 0 ? Number(d.factor) : 1;
+  // Cada una de la factura trae un número ENTERO de unidades (1, 10, 25…).
+  // Un factor partido sale de escribir en «Cantidad a cargar» menos de lo
+  // facturado —45 de 50 dan 0.9—, y sin este freno entraban 45 unidades a
+  // $6.26 en vez de 50 a $5.63: el faltante se escondía en un costo inflado.
+  if (!Number.isInteger(Math.round(factor * 1e6) / 1e6)) {
+    const unidades = r4(r.cantidad * factor);
+    problemas.push({
+      renglon: i,
+      texto: unidades < r.cantidad
+        ? `«${p.nombre}»: se cargan ${unidades} y la factura cobra ${r.cantidad}. Se carga lo facturado; si llegó menos, hay que pedir la nota de crédito.`
+        : `«${p.nombre}»: ${unidades} unidades no se reparten parejo en las ${r.cantidad} que factura el proveedor.`,
+    });
+    return { linea: null, problemas };
+  }
   let pres = p.presentaciones.find((x) => x.unidad === factor) ?? null;
   let cant = r.cantidad;
   let compra = costo;

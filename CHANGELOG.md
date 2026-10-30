@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1407.1 — Compras: corregir producto y cantidad en la carga
+
+- **«Es otro» siempre**: antes se escondía cuando el renglón venía completo (producto aprendido + lote + vence), o sea que un producto mal aprendido no se podía corregir en la carga.
+- **Cantidad que no da parejo frena**: escribir menos de lo facturado (45 de 50) daba un factor 0.9 y entraban 45 unidades a costo inflado. Ahora la revisión lo dice y no carga; lo facturado se carga y el faltante va por nota de crédito.
+- **Costo ×N**: si después de revisar el costo queda un múltiplo entero (×2 o más) del anterior, aviso con la cantidad probable y botón «Cargar N» — es casi siempre una caja tomada como unidad.
+
 ## v2.1407.0 — Principios activos estandarizados: cantidad y unidad por separado
 
 En Fotos de productos, cada principio es un renglón con tres campos rotulados: **principio** (se elige de los ~490 que ya existen en el catálogo, sin repetir variantes por tilde o mayúscula; se puede crear uno nuevo), **cantidad** (sólo número) y **unidad** (lista fija: mg, g, mcg, UI, %, mL, mg/mL, mg/5 mL…). Debajo, «Quedará: ACETAMINOFÉN 500 mg». Lo que estaba escrito y no se entiende («n/a») se muestra con aviso para corregirlo, nunca se borra.

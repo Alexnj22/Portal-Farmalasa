@@ -1379,8 +1379,8 @@
    "por": "código"
   },
   "correccion_de_factor_poner_vence": {
-   "area": "solicitudes",
-   "por": "tablas"
+   "area": "productos",
+   "por": "código"
   },
   "corregir_lectura_bitacora": {
    "area": "bitacoras",

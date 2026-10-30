@@ -3,8 +3,9 @@ import { ArrowRight, PackageX, History, AlertTriangle, CheckCircle2, Clock, Wren
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, causaDeCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { fetchConsultasExistencia, agruparPorProducto, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
@@ -298,19 +299,38 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
     const comoSeVe = presentacionDeCarga(f).factor === 1 && enCarga !== pres ? enCarga : 'unidades sueltas';
     // Aprobada no es aplicada: si la caja rechazó el ajuste, la solicitud queda
     // aprobada y la existencia sigue igual. «Corregida» sólo cuando entró.
+    // La fecha de vencimiento: una carga de un perecedero sin ella la rechaza
+    // la caja (X-Ray Dol, 2026-10-30). Sale de lo que contó la sala; si no la
+    // contó, la escribe quien corrige.
+    const pideVence = necesitaVence(f);
+    const [vence, setVence] = useState(sol?.vence ?? f.vence_contado ?? '');
+    // Una pendiente que quien puede aplicar ya intentó y no entró: se reintenta
+    // desde acá, sin ir a Solicitudes.
+    const reintentable = !!sol && !sol.aplicada && sol.status === 'PENDING' && puedeAplicar;
+    const sinFecha = pideVence && !sol?.vence;
     const estado = !sol ? null
         : sol.aplicada ? { texto: 'Corregida', variant: 'success', icon: CheckCircle2 }
         : sol.status === 'APPROVED' ? { texto: 'Aprobada, sin aplicar', variant: 'warning', icon: Clock }
+        : reintentable ? { texto: 'No se aplicó', variant: 'warning', icon: AlertTriangle }
         : { texto: 'Pedida', variant: 'warning', icon: Clock };
 
     const corregir = async () => {
         setTrabajando(true);
         try {
-            const id = crypto.randomUUID();
-            const { error } = await pedirCorreccionDeExistencia({
-                id, fila: f, usuarioId: user?.id, aprobador: supervisorQueResuelve(employees),
-            });
-            if (error) throw error;
+            let id = sol?.id;
+            if (reintentable) {
+                if (pideVence && vence && vence !== sol.vence) {
+                    const { error } = await ponerVenceACorreccion(id, vence);
+                    if (error) throw error;
+                }
+            } else {
+                id = crypto.randomUUID();
+                const { error } = await pedirCorreccionDeExistencia({
+                    id, fila: f, usuarioId: user?.id, aprobador: supervisorQueResuelve(employees),
+                    vence: pideVence ? vence || null : null,
+                });
+                if (error) throw error;
+            }
 
             if (!puedeAplicar) {
                 useToastStore.getState().showToast('Corrección pedida',
@@ -318,8 +338,8 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
             } else {
                 const r = await aplicarMovimientoInventarioEnErp(id, 'Corrección por cambio de presentación');
                 if (!r?.ok) {
-                    useToastStore.getState().showToast('La corrección quedó pedida',
-                        `No se pudo aplicar todavía: ${r?.error ?? 'sin respuesta'}. Queda en Solicitudes para reintentar.`, 'warning');
+                    useToastStore.getState().showToast('No se aplicó',
+                        `La caja no la aceptó: ${r?.error ?? 'sin respuesta'}. Puedes reintentarla desde esta misma tarjeta.`, 'warning');
                 } else {
                     useToastStore.getState().showToast('Existencia corregida', carga
                         ? `${f.nombre} en ${f.sala}: se cargaron ${formatQty(f.cargar)} ${enCarga}.`
@@ -348,7 +368,11 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                     )}
                     {conCambio && <CambioDeFactor f={f} />}
                 </div>
-                {estado ? (
+                {reintentable ? (
+                    <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
+                        Reintentar
+                    </Button>
+                ) : estado ? (
                     <Badge size="sm" uppercase={false} variant={estado.variant} icon={estado.icon}>
                         {estado.texto}
                     </Badge>
@@ -378,7 +402,15 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                 </p>
             )}
 
-            {!sol && <ResultadoDelConteo conteo={conteo} fila={f} />}
+            {reintentable && (
+                <p className="flex items-center gap-1.5 text-label font-bold text-warning-text">
+                    <AlertTriangle size={13} strokeWidth={2.5} className="shrink-0" />
+                    {sinFecha
+                        ? 'La caja no la aceptó: falta la fecha de vencimiento. Escríbela y reintenta.'
+                        : 'Se pidió y no entró en la caja. Reintenta para aplicarla.'}
+                </p>
+            )}
+            {(!sol || reintentable) && <ResultadoDelConteo conteo={conteo} fila={f} />}
 
             <ConfirmModal
                 isOpen={confirmar}
@@ -387,7 +419,8 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                 isProcessing={trabajando}
                 isDestructive={false}
                 title={`Corregir ${f.nombre}`}
-                confirmText={puedeAplicar ? 'Corregir ahora' : 'Pedir la corrección'}
+                confirmText={reintentable ? 'Aplicar ahora' : puedeAplicar ? 'Corregir ahora' : 'Pedir la corrección'}
+                confirmDisabled={pideVence && !vence}
                 message={(
                     <span className="block space-y-2 text-left">
                         <span className="block">
@@ -410,13 +443,22 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                                 </>
                             )}
                         </span>
+                        {pideVence && (
+                            <span className="block space-y-1">
+                                <b>Vence:</b>{' '}
+                                {f.vence_contado && vence === f.vence_contado
+                                    ? 'la fecha que contó la sala. Cámbiala si la caja dice otra.'
+                                    : 'el producto lleva fecha y la sala no la tiene en el sistema. Léela en la caja.'}
+                                <LiquidDatePicker value={vence ?? ''} onChange={(v) => setVence(v)} />
+                            </span>
+                        )}
                         <span className="block">
                             <b>Lo que queda escrito en el movimiento:</b> «{causaDeCorreccion(f)}»
                         </span>
                         <span className="block text-content-3">
                             {carga
-                                ? `Corregí sólo si en la sala hay ${formatQty(f.muestra)} ${pres} enteras. Si lo que hay son ${formatQty(f.muestra)} ${comoSeVe}, no corrijas: la existencia ya está bien.`
-                                : 'Si en la sala de verdad hay más, no corrijas: avisá para revisarlo.'}
+                                ? `Corrige sólo si en la sala hay ${formatQty(f.muestra)} ${pres} enteras. Si lo que hay son ${formatQty(f.muestra)} ${comoSeVe}, no corrijas: la existencia ya está bien.`
+                                : 'Si en la sala de verdad hay más, no corrijas: avisa para revisarlo.'}
                             {' '}
                             {puedeAplicar
                                 ? 'Se aplica en la caja enseguida.'

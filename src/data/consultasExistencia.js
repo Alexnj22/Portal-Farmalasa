@@ -26,7 +26,7 @@ const MENSAJES = {
     NO_ENCONTRADA:          'La consulta ya no existe.',
     FUERA_DE_ALCANCE:       'Esta consulta es de otra sala.',
     YA_CONTADA:             'Esta consulta ya se contó.',
-    CONTEO_INVALIDO:        'Revisa el conteo: cantidades enteras y, si lleva lote, el número de lote.',
+    CONTEO_INVALIDO:        'Revisa el conteo: cantidades enteras y, si el producto lo pide, el lote y la fecha de vencimiento.',
     SIN_DESCUADRE:          'Esta sala ya no tiene un descuadre pendiente.',
     NOTA_REQUERIDA:         'Escribe por qué no se ajusta.',
     SIN_SOLICITUD:          'No se creó ninguna solicitud de ajuste.',

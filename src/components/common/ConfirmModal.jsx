@@ -34,6 +34,9 @@ const ConfirmModal = ({
     // la segunda colgada de `onClose` significa que Escape y el clic afuera
     // ejecutan la peligrosa. Con esto, `onClose` vuelve a ser «no hacer nada».
     hideCancel = false,
+    // Falta un dato que el diálogo mismo pide (una fecha, un motivo): el botón
+    // espera. Mejor que dejarlo apretar y contestar con un error.
+    confirmDisabled = false,
 }) => {
     // En táctil el cuerpo es el canónico de hoja: título a la izquierda, ícono
     // en línea y botones apilados de ancho completo. El de abajo es el cuerpo de
@@ -63,6 +66,7 @@ const ConfirmModal = ({
                         <Button
                             variant={isDestructive ? 'destructive' : 'primary'}
                             loading={isProcessing}
+                            disabled={confirmDisabled}
                             onClick={onConfirm}
                         >
                             {isProcessing
@@ -130,7 +134,7 @@ const ConfirmModal = ({
                     className="flex-1"
                     // Sin `loading`: el ícono de arriba ya gira. Dos ruedas a la
                     // vez decían lo mismo dos veces (reporte del 29-oct).
-                    disabled={isProcessing}
+                    disabled={isProcessing || confirmDisabled}
                     onClick={onConfirm}
                 >
                     {isProcessing

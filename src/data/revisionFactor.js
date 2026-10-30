@@ -79,7 +79,7 @@ export function causaDeCorreccion(f) {
  * `id` lo pone quien llama: el alta no devuelve la fila y hace falta para
  * aplicarla enseguida.
  */
-export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador }) {
+export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador, vence = null }) {
     const carga = esCarga(fila);
     const op = OPERACIONES_AJUSTE.find(o => o.key === (carga ? 'CARGA' : 'DESCARTE'));
     const payload = solicitudDeAjuste({
@@ -93,7 +93,10 @@ export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador }) 
             factor:         carga ? presentacionDeCarga(fila).factor : fila.a,
             cantidad:       carga ? fila.cargar : fila.descartar,
             lote:           fila.lote,
-            vence:          fila.vence,
+            // La foto no trae fecha cuando la caja no la tenía; la pone quien
+            // corrige (o sale del conteo de la sala). Sin ella, la caja rechaza
+            // la carga de un perecedero.
+            vence:          fila.vence ?? vence,
             existencia:     fila.muestra,
         }],
         usuarioId,
@@ -132,3 +135,18 @@ export const textoDelSospechoso = (s) => (QUE_DICE[s?.tipo] ?? QUE_DICE.texto)(s
 export const minmaxDelCambio = (resultado) => (Array.isArray(resultado?.minmax) ? resultado.minmax : [])
     .map(m => `${m.sala} ${m.antes?.[0] ?? '—'}·${m.antes?.[1] ?? '—'} → ${m.ahora?.[0] ?? '—'}·${m.ahora?.[1] ?? '—'}`)
     .join(', ');
+
+/**
+ * Una corrección que la caja rechazó por falta de fecha de vencimiento queda
+ * pendiente: esto le pone la fecha (sólo eso) para volver a aplicarla.
+ */
+export async function ponerVenceACorreccion(id, vence) {
+    const { error } = await supabase.rpc('correccion_de_factor_poner_vence', { p_id: id, p_vence: vence });
+    return { error };
+}
+
+/**
+ * ¿La carga necesita una fecha que la foto no trae? Sólo una carga de un
+ * perecedero: un descarte sale de un lote que ya existe.
+ */
+export const necesitaVence = (f) => esCarga(f) && !!f?.perecedero && !f?.vence;

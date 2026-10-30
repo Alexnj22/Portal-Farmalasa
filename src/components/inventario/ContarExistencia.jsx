@@ -19,6 +19,11 @@ import { contarExistencia, fetchParaContar } from '@nucleo/data/consultasExisten
  * por presentación; si el producto es regulado, además por lote (los lotes que
  * la sala tiene salen por nombre y fecha, sin cantidades, y se puede agregar
  * uno que no esté en la lista). Un campo vacío cuenta como cero.
+ *
+ * Si el producto es perecedero, además pide la fecha de vencimiento de lo que
+ * se contó (2026-10-30): una carga de un perecedero sin fecha la rechaza la
+ * caja, y si el conteo no la trae el ajuste sale incompleto. Sin lote, una
+ * fecha para todo; con lote, la de cada lote que el sistema no tenga.
  */
 export default function ContarExistencia({ salaId, onCerrar, onContada }) {
     const [datos, setDatos] = useState(null);
@@ -41,7 +46,7 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
             setRonda(data.ronda);
             setGrupos(data.regulado
                 ? (data.lotes ?? []).map(l => ({ lote: l.lote, vence: l.vence, nuevo: false, cantidades: {} }))
-                : [{ lote: null, vence: null, nuevo: false, cantidades: {} }]);
+                : [{ lote: null, vence: data.vence ?? null, nuevo: false, cantidades: {} }]);
         });
         return () => { vivo = false; };
     }, [salaId, onCerrar]);
@@ -52,15 +57,25 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
 
     // Un lote nuevo con algo contado necesita número y fecha: sin ellos no se
     // podría cargar si hiciera falta.
-    const loteIncompleto = grupos.some(g => g.nuevo
-        && Object.values(g.cantidades).some(v => Number(v) > 0)
+    const conAlgo = (g) => Object.values(g.cantidades).some(v => Number(v) > 0);
+    const loteIncompleto = grupos.some(g => g.nuevo && conAlgo(g)
         && (!String(g.lote ?? '').trim() || !g.vence));
+    // Un perecedero contado sin fecha: la base también lo rechaza.
+    const faltaVence = !!datos?.perecedero && grupos.some(g => conAlgo(g) && !g.vence);
+    // Qué grupos piden la fecha en pantalla: los que no la traen del sistema.
+    const [pidenVence, setPidenVence] = useState(new Set());
+    useEffect(() => {
+        if (datos?.perecedero) setPidenVence(new Set(grupos.map((g, i) => (!g.vence ? i : null)).filter(i => i !== null)));
+        // Sólo al llegar los datos: escribir la fecha no tiene que esconder el campo.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [datos]);
 
     const enviar = async () => {
         const conteo = grupos.flatMap(g => (datos.presentaciones ?? []).map(p => ({
             tipo: p.tipo, factor: p.factor,
             cantidad: Number(g.cantidades[p.tipo] || 0),
-            ...(datos.regulado ? { lote: String(g.lote ?? '').trim().toUpperCase(), vence: g.vence || null } : {}),
+            ...(datos.regulado ? { lote: String(g.lote ?? '').trim().toUpperCase() } : {}),
+            ...(datos.regulado || datos.perecedero ? { vence: g.vence || null } : {}),
         }))).filter(c => c.cantidad > 0 || !datos.regulado);
         setEnviando(true);
         const { data, error } = await contarExistencia(salaId, conteo);
@@ -125,9 +140,17 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                                 ) : (
                                     <p className="text-body-sm font-black text-content">
                                         Lote {g.lote}
-                                        {g.vence && <span className="text-content-3 font-bold"> · vence {fechaNumerica(g.vence)}</span>}
+                                        {g.vence && !pidenVence.has(i) && <span className="text-content-3 font-bold"> · vence {fechaNumerica(g.vence)}</span>}
                                     </p>
                                 ))}
+                                {datos.perecedero && !g.nuevo && (pidenVence.has(i) || !datos.regulado) && (
+                                    <div className="space-y-1">
+                                        <p className="text-label font-bold text-content-3">
+                                            Vence{!datos.regulado && g.vence && !pidenVence.has(i) ? ' · confirma la fecha de la caja' : ' · léela en la caja'}
+                                        </p>
+                                        <LiquidDatePicker value={g.vence ?? ''} onChange={(v) => cambiar(i, { vence: v })} />
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     {(datos.presentaciones ?? []).map(p => (
                                         <PortalInput key={p.tipo} name={`cant-${i}-${p.tipo}`}
@@ -157,7 +180,7 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                     <>
                         <Button variant="ghost" onClick={onCerrar} disabled={enviando}>Cancelar</Button>
                         <Button variant="primary" icon={CheckCircle2} loading={enviando}
-                            disabled={!datos || loteIncompleto} onClick={enviar}>
+                            disabled={!datos || loteIncompleto || faltaVence} onClick={enviar}>
                             {ronda === 2 ? 'Enviar reconteo' : 'Enviar conteo'}
                         </Button>
                     </>

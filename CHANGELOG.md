@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1391.0 — El conteo pide la fecha de vencimiento si el producto la necesita
+
+La corrección de X-Ray Dol (cargar 3 blister en Salud 3 y La Popular) no se
+aplicaba: el producto es perecedero, su existencia está sin fecha y la caja
+rechaza una carga de perecedero sin vencimiento. La tarjeta decía «Pedida»,
+que parecía esperar una aprobación, y no lo era.
+
+- **Conteo de existencia**: si el producto es perecedero, pide la fecha de
+  vencimiento (sin lote, una para todo; con lote, la de cada lote que el
+  sistema no tenga). Si el sistema ya la tiene, viene puesta para confirmarla.
+  La base rechaza un renglón contado sin fecha. Son 2,135 productos perecederos
+  no regulados que hasta hoy se contaban sin ella.
+- **Revisión de factor**: la corrección de una carga de perecedero sin fecha la
+  toma de lo que contó la sala, o la pide en la ventana de «Corregir» (el botón
+  espera hasta tenerla).
+- **Corrección que no entró**: si quien puede aplicar ya la intentó y la caja la
+  rechazó, la tarjeta dice «No se aplicó», el motivo, y trae **Reintentar** —con
+  la fecha si es lo que faltó—. Ya no hay que ir a Solicitudes ni aprobar lo que
+  uno mismo pidió.
+- `ConfirmModal` acepta `confirmDisabled` para esperar un dato que el diálogo
+  mismo pide.
+
+Migración `20261030155844_conteo_pide_vence_si_el_producto_es_perecedero`
+(función nueva `correccion_de_factor_poner_vence`).
 ## v2.1390.1 — Compras: «Producto erróneo» en vez de «Es un error»
 
 El botón del renglón dice **Producto erróneo** (y «No es erróneo» para deshacerlo) y la pestaña, **Productos erróneos**. Pedido del usuario.

@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1392.0 — Compras: salida del producto erróneo y nota de crédito en el libro
+
+En **Productos erróneos**, cuando la nota de crédito ya está adjunta y el
+producto está en vencidos: botón **Dar salida** (con confirmación). Hace dos
+cosas, en este orden:
+
+1. **Registra la nota de crédito en el libro de compras** del sistema, como su
+   pantalla «Nota crédito compras» (decisión del usuario: «el portal»). Hasta
+   hoy nadie las registraba —el libro de Bodega de septiembre no trae
+   ninguna—. Sube el JSON para que el propio sistema lo lea, inserta con lo que
+   devolvió (reproduciendo el formulario tal cual, defectos incluidos) y lo
+   comprueba buscando la nota en el libro del mes. `compra_nota_credito_libro`
+   la toma antes de mandar: no se registra dos veces.
+2. **Descarga el producto de Bodega de vencidos** como DESCARTE (decisión del
+   usuario), con el concepto «DEVOLUCION A proveedor - NOTA DE CREDITO n -
+   COMPRA n - descripción», y comprueba que la existencia de vencidos bajó.
+
+`descartarUnaLinea` acepta ahora una línea sin tipo de presentación (cualquiera
+de ese factor; el factor se sigue comprobando).
+
 ## v2.1391.2 — El vencimiento se pide como mes y año; la ventana de corregir, más corta
 
 - El conteo de existencia y la corrección de factor piden el vencimiento como

@@ -70,7 +70,7 @@ describe('el diccionario que hace que el trabajo baje solo', () => {
         // en otro proveedor.
         await confirmarProducto('0614-1', 'AB-900', '77');
         expect(espia.rpc[0]).toEqual({ nombre: 'confirmar_alias_producto',
-            args: { p_emisor_nit: '0614-1', p_codigo_prov: 'AB-900', p_product_id: 77 } });
+            args: { p_emisor_nit: '0614-1', p_codigo_prov: 'AB-900', p_product_id: 77, p_factor: 1 } });
     });
 
     it('el id del producto viaja como NÚMERO aunque llegue del formulario como texto', async () => {

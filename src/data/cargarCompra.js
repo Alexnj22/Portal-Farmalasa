@@ -286,3 +286,18 @@ export async function adjuntarNotaDeCredito(id, notaId) {
     if (!error) anotar(notaId ? 'COMPRA_ERRONEO_NOTA_ADJUNTA' : 'COMPRA_ERRONEO_NOTA_QUITADA', id, { nota: notaId });
     return { error: error?.message ?? null };
 }
+
+/**
+ * Le da salida a un producto erróneo: registra su nota de crédito en el libro
+ * de compras y lo descarga de Bodega de vencidos.
+ */
+export async function darSalidaErroneo(id) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body: { accion: 'erroneo_salida', id } });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('COMPRA_ERRONEO_SALIDA', id, { ok: !msg, comprobado: data?.comprobado ?? null, error: msg });
+    return { resultado: msg ? null : data, error: msg };
+}

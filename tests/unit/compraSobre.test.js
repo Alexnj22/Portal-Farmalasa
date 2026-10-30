@@ -175,7 +175,9 @@ describe('totalDelDocumento', () => {
 describe('cargar-compra-erp · ubicación de destino', () => {
     const fuente = readFileSync(path.resolve(__dirname, '../../supabase/functions/cargar-compra-erp/index.ts'), 'utf8');
     it('no escribe la ubicación a mano', () => {
-        expect(fuente).not.toMatch(/destino:\s*["'`]\d+["'`]/);
+        // `id_ubicacion_destino: "0"` del traslado es otra cosa: el formulario
+        // manda cero y la ubicación se elige al recibir.
+        expect(fuente).not.toMatch(/[^_\w]destino:\s*["'`]\d+["'`]/);
         expect(fuente).toMatch(/destino:\s*String\(estanteBodega/);
     });
     it('compara contra la ubicación viva antes de mandar y comprueba el estante después', () => {

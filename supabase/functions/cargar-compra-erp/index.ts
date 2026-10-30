@@ -21,6 +21,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
+import { descartarUnaLinea } from "../_shared/erp-descarte.ts";
 import {
   sesionEn, existenciasDeUbicacion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
   TRASLADO, RECIBIR,
@@ -547,6 +548,172 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
   return { movidos: errs.length, traslado: idT };
 }
 
+const NOTA_CREDITO = `${BASE}/nota_credito_compras.php`;
+
+/**
+ * Registra una nota de crédito de compra en el libro de compras del sistema,
+ * como su pantalla «Nota crédito compras»: primero sube el JSON del documento
+ * (`process=automatic`), que el propio sistema lee y devuelve campo por campo;
+ * después manda `process=insertar` con lo que devolvió. Así los números salen
+ * del lector del sistema y no de uno escrito acá.
+ *
+ * Se reproduce el envío del formulario TAL CUAL, defectos incluidos: su JS arma
+ * `&numDocRelacionado` SIN «=» (la clave queda pegada al valor) y
+ * `clase_documento_tributario ` con un espacio. Así queda igual que si la
+ * cargara una persona.
+ *
+ * Se comprueba leyendo el libro (CSV) del mes de la nota y buscando su número.
+ */
+async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, quien: string) {
+  const { data: previa, error: eP } = await admin.from("compra_nota_credito_libro").select("estado").eq("document_id", notaId).maybeSingle();
+  if (eP) throw eP;
+  if (previa?.estado === "registrada") return { ok: true, ya: true };
+  if (previa && previa.estado !== "fallida") return { ok: false, error: "La nota quedó a medio registrar en el libro: revisarla a mano antes de seguir." };
+
+  const { data: n, error: eN } = await admin.from("purchase_dte_documents")
+    .select("id, tipo_dte, numero_control, codigo_generacion, fecha_emision, json_path").eq("id", notaId).maybeSingle();
+  if (eN) throw eN;
+  if (!n || n.tipo_dte !== "05") return { ok: false, error: "Eso no es una nota de crédito." };
+  const path = pathDeStorage(n.json_path);
+  if (!path) return { ok: false, error: "La nota no tiene su archivo." };
+  const { data: blob, error: eB } = await admin.storage.from("purchase-dte").download(path);
+  if (eB || !blob) throw new Error(`No se pudo leer el archivo de la nota: ${eB?.message}`);
+  const dte = desenvolver(JSON.parse(await blob.text()));
+
+  const fila = { document_id: notaId, erp_sucursal_id: ERP_BODEGA, estado: "enviando", registrada_por: quien, error: null, datos: null };
+  const { error: eT } = previa
+    ? await admin.from("compra_nota_credito_libro").update({ ...fila, updated_at: new Date().toISOString() }).eq("document_id", notaId).eq("estado", "fallida")
+    : await admin.from("compra_nota_credito_libro").insert(fila);
+  if (eT) {
+    if (eT.code === "23505") return { ok: false, error: "Otra persona está registrando esta nota." };
+    throw eT;
+  }
+  const marcar = (estado: string, extra: Record<string, unknown> = {}) =>
+    admin.from("compra_nota_credito_libro").update({ estado, updated_at: new Date().toISOString(), ...extra }).eq("document_id", notaId);
+
+  // 1. El sistema lee el JSON.
+  const fd = new FormData();
+  fd.set("json_ret", new Blob([JSON.stringify(dte)], { type: "application/json" }), `${n.codigo_generacion ?? notaId}.json`);
+  fd.set("process", "automatic");
+  fd.set("id_sucursal2", String(ERP_BODEGA));
+  let leido: any;
+  try {
+    const r = await fetch(NOTA_CREDITO, {
+      method: "POST", body: fd,
+      headers: { Cookie: cookie, "User-Agent": "Mozilla/5.0", "X-Requested-With": "XMLHttpRequest", Referer: NOTA_CREDITO },
+      signal: AbortSignal.timeout(60_000),
+    });
+    const t = await r.text();
+    try { leido = JSON.parse(t); } catch { leido = null; }
+    if (!leido?.numero_documento) {
+      await marcar("fallida", { error: `El sistema no leyó la nota: ${t.slice(0, 1000)}` });
+      return { ok: false, error: `El sistema no leyó la nota: ${String(leido?.msg ?? t.slice(0, 200))}` };
+    }
+  } catch (e) {
+    await marcar("fallida", { error: `Sin respuesta al leerla: ${(e as Error)?.message ?? e}` });
+    return { ok: false, error: "El sistema no contestó al leer la nota." };
+  }
+  if (!String(leido.numControl_DocRelacionado ?? "").trim()) {
+    await marcar("fallida", { error: "La nota no trae el documento que corrige.", datos: leido });
+    return { ok: false, error: "La nota no dice qué factura corrige: el sistema no la acepta así." };
+  }
+
+  // 2. Insertar con lo que el sistema leyó, como su formulario.
+  const v = (x: unknown) => encodeURIComponent(String(x ?? ""));
+  let cuerpo = "process=insertar" + "&fecha=" + v(leido.fecha_retencion);
+  cuerpo += "&agente=" + v(leido.agente) + "&numero_doc=" + v(leido.numero_documento);
+  cuerpo += "&numero_serie=" + v(leido.serie_documento);
+  cuerpo += "&tipo_doc=" + v(leido.tipo_documento) + "&nit=" + v(leido.nit_agente) + "&nrc=" + v(leido.nrc);
+  cuerpo += "&numDocRelacionado" + v(leido.numControl_DocRelacionado);
+  cuerpo += "&subtotal=" + v(leido.subTotal);
+  cuerpo += "&monto_total=" + v(leido.montoTotalOperacion);
+  cuerpo += "&total_impuestos=" + v(leido.total_impuestos);
+  cuerpo += "&tipo_operacion=1&clasificacion=1&tipo_costo_gasto=5";
+  cuerpo += "&clase_documento_tributario%20=4";
+  let resp = "";
+  try {
+    const r = await fetch(NOTA_CREDITO, {
+      method: "POST", body: cuerpo,
+      headers: { Cookie: cookie, "User-Agent": "Mozilla/5.0", "X-Requested-With": "XMLHttpRequest", Referer: NOTA_CREDITO,
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+      signal: AbortSignal.timeout(60_000),
+    });
+    resp = await r.text();
+  } catch (e) {
+    await marcar("sin_verificar", { datos: leido, error: `Sin respuesta al registrar: ${(e as Error)?.message ?? e}` });
+    return { ok: false, error: "El sistema no contestó al registrar la nota: puede haber entrado, revisar el libro antes de reintentar." };
+  }
+  let j: any = null;
+  try { j = JSON.parse(resp); } catch { /* abajo */ }
+  if (j && String(j.typeinfo).toLowerCase() !== "success") {
+    await marcar("fallida", { datos: leido, error: String(j.msg ?? resp.slice(0, 500)) });
+    return { ok: false, error: `El sistema no aceptó la nota: ${j.msg ?? "sin motivo"}` };
+  }
+
+  // 3. Comprobarla en el libro del mes.
+  const mes = String(n.fecha_emision).slice(0, 7);
+  const fin = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).toISOString().slice(0, 10);
+  let enLibro = false;
+  try {
+    const csv = await pedir(cookie, `${BASE}/libro_compras_iva_csv.php?fechaInicio=${mes}-01&fechaFin=${fin}`, undefined, { timeoutMs: 90_000 });
+    const numero = String(leido.numero_documento).replace(/-/g, "").toUpperCase().slice(0, 16);
+    enLibro = csv.split(/\r?\n/).some((l) => l.replace(/-/g, "").toUpperCase().includes(numero));
+  } catch { /* abajo */ }
+  await marcar(enLibro ? "registrada" : "sin_verificar", { datos: leido, error: enLibro ? null : `No apareció en el libro de ${mes}: ${resp.slice(0, 300)}` });
+  return enLibro ? { ok: true } : { ok: false, error: "Se mandó la nota pero no aparece en el libro: revisarla antes de reintentar." };
+}
+
+/**
+ * Le da salida a un producto erróneo cuando su nota de crédito ya está:
+ * 1. registra la nota en el libro de compras (si no estaba);
+ * 2. lo descarga de Bodega de vencidos como DESCARTE (usuario, 2026-10-30),
+ *    con un concepto que dice proveedor, nota y compra;
+ * 3. lo comprueba leyendo la existencia de vencidos antes y después.
+ */
+async function darSalidaErroneo(admin: any, id: number, quien: string) {
+  if (!Number.isFinite(id)) return { error: "Falta el renglón." };
+  const { data: tomadas, error: eT } = await admin.from("compra_renglon_erroneo")
+    .update({ estado: "saliendo", updated_at: new Date().toISOString() })
+    .eq("id", id).eq("estado", "con_nota").not("erp_traslado_id", "is", null).select("*");
+  if (eT) throw eT;
+  const e = tomadas?.[0];
+  if (!e) return { error: "Ese producto no está listo para salir (tiene que estar en vencidos y con su nota de crédito)." };
+  const volver = (nota: string) => admin.from("compra_renglon_erroneo")
+    .update({ estado: "con_nota", nota, updated_at: new Date().toISOString() }).eq("id", id);
+
+  try {
+    const cookie = await sesionEn(ERP_BODEGA, login);
+    const libro = await registrarNotaEnLibro(admin, cookie, Number(e.nota_credito_document_id), quien);
+    if (!libro.ok) { await volver(libro.error ?? "No se pudo registrar la nota."); return { error: libro.error }; }
+
+    const vencidos = await ubicacionDeBodega(admin, true);
+    if (!vencidos) { await volver("No se conoce el área de vencidos."); return { error: "No se conoce el área de vencidos." }; }
+    const antes = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidos);
+    const { data: nc } = await admin.from("purchase_dte_documents").select("numero_control").eq("id", e.nota_credito_document_id).maybeSingle();
+    const concepto = armarConcepto(
+      `DEVOLUCION A ${e.emisor_nombre ?? "PROVEEDOR"} - NOTA DE CREDITO ${nc?.numero_control ?? ""} - COMPRA ${e.erp_compra_id ?? ""} - ${e.descripcion}`,
+    ).concepto;
+    const r = await descartarUnaLinea({
+      erpSucursal: ERP_BODEGA, erpUbicacion: vencidos, concepto, iden: "DESCARTE",
+      linea: { erp_product_id: Number(e.product_id), presentacion_tipo: "", factor: 1, cantidad: Number(e.unidades), descripcion: e.descripcion },
+    });
+    if (!r.ok) { await volver(r.error); return { error: r.error }; }
+    const despues = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidos);
+    const bajo = antes && despues ? (antes.get(Number(e.product_id)) ?? 0) - (despues.get(Number(e.product_id)) ?? 0) : null;
+    const comprobado = bajo != null && bajo >= Number(e.unidades) - 1e-6;
+    const { error: eU } = await admin.from("compra_renglon_erroneo").update({
+      estado: "salio", salida: { ...r.aplicado, comprobado, bajo },
+      nota: comprobado ? null : "Se descargó, pero la existencia de vencidos no bajó lo esperado: revisarlo.",
+      updated_at: new Date().toISOString(),
+    }).eq("id", id);
+    if (eU) throw eU;
+    return { ok: true, comprobado };
+  } catch (err) {
+    await volver(`Falló: ${(err as Error)?.message ?? err}`);
+    throw err;
+  }
+}
+
 async function productoNuevo(admin: any, body: any, creaQuien: string | null = null) {
   const problemas: string[] = [];
   const nombre = String(body?.nombre ?? "").replace(/\s+/g, " ").trim().toUpperCase();
@@ -673,6 +840,7 @@ Deno.serve(async (req: Request) => {
     if (enviar && Deno.env.get("CARGA_COMPRA_ENVIO") !== "on") {
       return responder({ error: "El envío a Bodega todavía no está encendido." }, 409);
     }
+    if (body?.accion === "erroneo_salida") return responder(await darSalidaErroneo(admin, Number(body?.id), quien.id));
     if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body, body?.crear === true ? quien.id : null));
     if (!Number.isFinite(documentId)) return responder({ error: "Falta el documento." }, 400);
 

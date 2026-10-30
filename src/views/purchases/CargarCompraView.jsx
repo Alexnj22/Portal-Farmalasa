@@ -25,7 +25,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
-    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, darSalidaErroneo,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
@@ -1006,6 +1006,7 @@ const ESTADO_ERRONEO = {
     por_mover:   { label: 'Por pasar a vencidos', variant: 'warning' },
     en_vencidos: { label: 'En vencidos · falta nota', variant: 'info' },
     con_nota:    { label: 'Con nota de crédito', variant: 'success' },
+    saliendo:    { label: 'Saliendo…', variant: 'warning' },
     salio:       { label: 'Ya salió', variant: 'neutral' },
 };
 
@@ -1032,6 +1033,15 @@ function TabErroneos({ puedeEditar }) {
         });
         cargar();
     };
+    const [confirmaSalida, setConfSal] = useState(null);
+    const darSalida = async (fila) => {
+        setG(fila.id); setError('');
+        const { resultado, error: e } = await darSalidaErroneo(fila.id);
+        setG(null); setConfSal(null);
+        if (e) setError(e);
+        else if (!resultado?.comprobado) setError('Se le dio salida, pero la existencia de vencidos no bajó lo esperado: revísalo.');
+        cargar();
+    };
 
     if (!filas) return <p className="text-label text-content-3">Cargando…</p>;
     return (
@@ -1041,7 +1051,14 @@ function TabErroneos({ puedeEditar }) {
                 Lo que un proveedor mandó por error. Entra con su compra, pasa a Bodega de vencidos y espera la nota de
                 crédito. Si no lo tenemos en el catálogo, en Bodega figura como «PRODUCTO ERRONEO DE PROVEEDOR»; aquí queda lo que era.
             </Notice>
-            {!filas.length && <p className="text-label text-content-3">No hay nada marcado como error.</p>}
+            {!filas.length && <p className="text-label text-content-3">No hay productos erróneos.</p>}
+            {confirmaSalida && (
+                <ConfirmModal isOpen onClose={() => guardando !== confirmaSalida.id && setConfSal(null)} onConfirm={() => darSalida(confirmaSalida)}
+                    isProcessing={guardando === confirmaSalida.id} isDestructive={false}
+                    title="Dar salida"
+                    message={`Se registra la nota de crédito ${confirmaSalida.nota_numero} en el libro de compras y se descargan ${Number(confirmaSalida.unidades)} unidades de «${confirmaSalida.descripcion}» de Bodega de vencidos. No se puede deshacer.`}
+                    confirmText="Dar salida" />
+            )}
             {filas.map(f => {
                 const est = ESTADO_ERRONEO[f.estado] ?? ESTADO_ERRONEO.por_mover;
                 const opciones = (f.notas_candidatas ?? []).map(n => ({
@@ -1078,9 +1095,14 @@ function TabErroneos({ puedeEditar }) {
                                 <p className="text-micro text-content">
                                     Nota de crédito <b>{f.nota_numero}</b> · {f.nota_fecha} · {formatMoney(f.nota_total)}
                                 </p>
-                                {puedeEditar && f.estado !== 'salio' && (
+                                {puedeEditar && f.estado === 'con_nota' && (
                                     <Button size="xs" variant="ghost" disabled={guardando === f.id} onClick={() => adjuntar(f, null)}>
                                         Quitar
+                                    </Button>
+                                )}
+                                {puedeEditar && f.estado === 'con_nota' && f.erp_traslado_id && (
+                                    <Button size="xs" disabled={guardando === f.id} onClick={() => setConfSal(f)}>
+                                        {guardando === f.id ? 'Dando salida…' : 'Dar salida'}
                                     </Button>
                                 )}
                             </div>

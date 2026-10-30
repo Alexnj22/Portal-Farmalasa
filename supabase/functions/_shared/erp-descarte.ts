@@ -104,8 +104,12 @@ export async function descartarUnaLinea(opc: {
   })).filter((x) => x.id);
 
   // La presentación por su SIGNIFICADO: los ids del sistema no son los del portal.
+  // Sin tipo (un producto erróneo, que se descarga por unidades): cualquier
+  // presentación de ese factor; el factor se vuelve a comprobar abajo.
   const buscada = norm(`${l.presentacion_tipo} (${l.factor})`);
-  const elegida = presentaciones.find((p) => p.etiqueta === buscada);
+  const elegida = l.presentacion_tipo
+    ? presentaciones.find((p) => p.etiqueta === buscada)
+    : presentaciones.find((p) => p.etiqueta.endsWith(`(${l.factor})`));
   if (!elegida) {
     return { ok: false, codigo: "PRESENTACION_NO_EXISTE",
              error: `${nombre} ya no tiene la presentación ${l.presentacion_tipo} (${l.factor}).` };
@@ -131,7 +135,7 @@ export async function descartarUnaLinea(opc: {
   const enUnidades = Number(l.cantidad) * Number(unidad);
   if (stock !== null && enUnidades > stock) {
     return { ok: false, codigo: "SIN_EXISTENCIA",
-             error: `De ${nombre} quedan ${stock} unidades en esta sucursal y el premio lleva ${enUnidades}.` };
+             error: `De ${nombre} quedan ${stock} unidades y el descarte lleva ${enUnidades}.` };
   }
 
   // Lote: el que vence primero y alcanza (un regalo no elige lote; la sala

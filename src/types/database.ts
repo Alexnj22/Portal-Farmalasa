@@ -6438,6 +6438,68 @@ export type Database = {
           },
         ]
       }
+      compra_nota_credito_libro: {
+        Row: {
+          created_at: string
+          datos: Json | null
+          document_id: number
+          erp_sucursal_id: number
+          error: string | null
+          estado: string
+          registrada_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          datos?: Json | null
+          document_id: number
+          erp_sucursal_id: number
+          error?: string | null
+          estado?: string
+          registrada_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          datos?: Json | null
+          document_id?: number
+          erp_sucursal_id?: number
+          error?: string | null
+          estado?: string
+          registrada_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_nota_credito_libro_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_nota_credito_libro_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_nota_credito_libro_registrada_por_fkey"
+            columns: ["registrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_nota_credito_libro_registrada_por_fkey"
+            columns: ["registrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_pago_aplicado: {
         Row: {
           created_at: string
@@ -6693,6 +6755,7 @@ export type Database = {
           nota_credito_document_id: number | null
           product_id: number
           renglon: number
+          salida: Json | null
           unidades: number
           updated_at: string
         }
@@ -6715,6 +6778,7 @@ export type Database = {
           nota_credito_document_id?: number | null
           product_id: number
           renglon: number
+          salida?: Json | null
           unidades: number
           updated_at?: string
         }
@@ -6737,6 +6801,7 @@ export type Database = {
           nota_credito_document_id?: number | null
           product_id?: number
           renglon?: number
+          salida?: Json | null
           unidades?: number
           updated_at?: string
         }

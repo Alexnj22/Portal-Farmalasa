@@ -238,6 +238,9 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
             const url = await encuadrarProducto(src, { limpiarFondo });
             if (!url) { setSinProducto(true); return; }
             setImageSrc(prev => { if (prev !== originalUrl.current) URL.revokeObjectURL(prev); return url; });
+            // Limpiar un fondo plano ES quitar el fondo: se marca, así el botón
+            // dice «Fondo eliminado» y no invita a correr el modelo encima.
+            if (limpiarFondo) setBgRemoved(true);
             setCrop({ x: 0, y: 0 });
             setZoom(1);
         } catch (err) {
@@ -267,6 +270,8 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
             console.error('PhotoEditorModal: quitar fondo falló', err);
             setBgError(navigator.onLine === false
                 ? 'Sin conexión: la primera vez hay que descargar el modelo.'
+                : err?.message === 'tardo'
+                ? 'Tardó demasiado en esta computadora. Usa «Encuadrar producto» o una foto con fondo liso.'
                 : 'No se pudo quitar el fondo en este navegador. Prueba «Encuadrar» o usa una foto con fondo blanco.');
         } finally {
             setBgRemoving(false);
@@ -515,8 +520,11 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                     ) : (
                         <>
                             <div
-                                className={`absolute inset-0 ${bgRemoved ? '' : 'bg-[#111]'}`}
-                                style={bgRemoved ? CHECKER : undefined}
+                                // En el catálogo, sin fondo se ve sobre BLANCO: es como se
+                                // guarda y como sale en la app. Sobre oscuro parecía que
+                                // el fondo seguía ahí (reportado el 2026-10-30).
+                                className={`absolute inset-0 ${bgRemoved ? (producto ? 'bg-[#fff]' : '') : 'bg-[#111]'}`}
+                                style={bgRemoved && !producto ? CHECKER : undefined}
                             />
                             <Cropper
                                 image={imageSrc}

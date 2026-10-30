@@ -40,3 +40,21 @@ describe('nombre del principio', () => {
         expect(claveDePrincipio('Acetaminofén')).toBe(claveDePrincipio('ACETAMINOFEN'));
     });
 });
+
+describe('el nombre contra el registro sanitario', async () => {
+    const { concentracionesDelNombre, corregirConElNombre } = await import('@nucleo/utils/concentracion');
+    it('lee las concentraciones del nombre', () => {
+        expect(concentracionesDelNombre('OMEPRAZOL 20 MG X 100 CAPS. SAIMED')).toEqual(['20 mg']);
+        expect(concentracionesDelNombre('AMOXICILINA 500MG + CLAVULANICO 125MG')).toEqual(['500 mg', '125 mg']);
+        expect(concentracionesDelNombre('ACETAMINOFEN CAJA X 100 TAB')).toEqual([]);
+    });
+    it('F064815112006: el registro dice 21 mg y el nombre 20 mg', () => {
+        expect(corregirConElNombre('21 mg.', 'OMEPRAZOL 20 MG X 100 CAPS. SAIMED')).toBe('20 mg');
+    });
+    it('sin contradicción no corrige', () => {
+        expect(corregirConElNombre('500 mg.', 'ACETAMINOFEN 500MG CAJA X 100')).toBeNull();
+        expect(corregirConElNombre('500 mg', 'ACETAMINOFEN CAJA X 100')).toBeNull();
+        expect(corregirConElNombre('20 mg', 'X 40 MG Y 80 MG')).toBeNull();
+        expect(corregirConElNombre('5 mL', 'JARABE 120 MG')).toBeNull();
+    });
+});

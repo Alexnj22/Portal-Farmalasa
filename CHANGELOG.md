@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1410.2 — Fotos de productos: quitar fondo sin cuelgues y concentración contra el nombre
+
+- **Fondo limpio = fondo quitado.** Al limpiar un fondo plano el editor no lo marcaba, seguía pintando oscuro detrás y parecía que no había hecho nada: el botón invitaba a correr el modelo, que se colgaba en «Procesando…». Ahora queda «Fondo eliminado» y la vista previa es sobre **blanco**, como se guarda y como sale en la app.
+- **El modelo corre en CPU, con tope de 60 s.** Con WebGPU se colgó sin error; pasado el minuto avisa y sugiere «Encuadrar».
+- **La concentración se compara con el nombre.** El registro F064815112006 se llama «OMEPRAZOL SAIMED 20MG CAPSULAS» y su concentración dice «21 mg.» (dato del propio SRS). Con un solo principio y un solo número en el nombre del producto, gana el nombre y se avisa: «El registro dice 21 mg, pero el nombre del producto dice 20 mg». `corregirConElNombre` en `utils/concentracion.js`, con pruebas.
+- **«Completados hoy» cuenta productos**, no cambios (un producto con foto y principio sumaba 2). Lee `productos_hoy` de `resumen_carga_productos`; mientras la función no lo devuelva, cae a la suma de antes.
+
 ## v2.1410.1 — Fotos de productos: clic derecho › Pegar y fondo al instante
 
 - **Clic derecho › Pegar** sobre el cuadro de la foto: una capa invisible editable encima hace que el navegador ofrezca su propio «Pegar» (que no pide permiso). El botón «Pegar imagen» usaba la API del portapapeles, que Safari/Chrome pueden negar — ahora su aviso manda al clic derecho.

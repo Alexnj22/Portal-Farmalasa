@@ -171,8 +171,7 @@ export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600,
 
 // ── Quitar el fondo con el modelo (@imgly) ───────────────────────────────────
 // El modelo CHICO (isnet_quint8): el mediano daba bordes apenas mejores y
-// tardaba el doble, medido por el usuario como «super lento». Con WebGPU corre
-// en la tarjeta gráfica; si falla, se repite en CPU. `precargarQuitarFondo`
+// tardaba el doble, medido por el usuario como «super lento». `precargarQuitarFondo`
 // baja el modelo antes del primer uso, para que el primer clic no espere la
 // descarga.
 let libPromise = null;
@@ -183,26 +182,26 @@ function getLib() {
     }
     return libPromise;
 }
-const configFondo = (device) => ({ model: 'small', device, output: { format: 'image/png', quality: 1 } });
-const conGpu = () => (typeof navigator !== 'undefined' && navigator.gpu ? 'gpu' : 'cpu');
+// CPU siempre: con WebGPU se colgó en «Procesando…» sin error (2026-10-30),
+// y un cuelgue es peor que lento. Con tope: pasado el minuto se avisa.
+const configFondo = () => ({ model: 'small', device: 'cpu', output: { format: 'image/png', quality: 1 } });
+const TOPE_MS = 60_000;
 
 export async function quitarFondo(src) {
     const { removeBackground } = await getLib();
-    const device = conGpu();
-    try {
-        return await removeBackground(src, configFondo(device));
-    } catch (err) {
-        if (device === 'cpu') throw err;
-        console.warn('quitarFondo: la GPU falló, se repite en CPU', err);
-        return removeBackground(src, configFondo('cpu'));
-    }
+    let reloj;
+    const tope = new Promise((_, reject) => { reloj = setTimeout(() => reject(new Error('tardo')), TOPE_MS); });
+    // Quien llama atrapa el error y lo muestra; acá sólo se para el reloj.
+    return Promise.race([removeBackground(src, configFondo()), tope])
+        .then((blob) => { clearTimeout(reloj); return blob; },
+              (err) => { clearTimeout(reloj); throw err; });
 }
 
 let precargado = null;
 export function precargarQuitarFondo() {
     if (!precargado) {
         precargado = getLib()
-            .then(({ preload }) => preload(configFondo(conGpu())))
+            .then(({ preload }) => preload(configFondo()))
             .catch((err) => { precargado = null; console.warn('precargarQuitarFondo', err); });
     }
     return precargado;

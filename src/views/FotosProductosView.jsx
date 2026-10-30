@@ -30,7 +30,7 @@ import { buscarEnSrsParaProducto } from '@nucleo/data/srs';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { SRS_AUTO_MIN, decidirSrs, principiosDeSrs } from '@nucleo/utils/enriquecerSrs';
 import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
-import { UNIDADES, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio } from '@nucleo/utils/concentracion';
+import { UNIDADES, corregirConElNombre, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio } from '@nucleo/utils/concentracion';
 import LiquidSelect from '../components/common/LiquidSelect';
 
 const PhotoEditorModal = lazy(() => import('../components/common/PhotoEditorModal'));
@@ -183,7 +183,7 @@ export default function FotosProductosView() {
                         label="Sin principio activo" value={formatQty(resumen?.faltan_principio ?? 0)} loading={!resumen} />
                     <StatCard icon={CheckCircle2} iconBg="bg-success/10" iconCls="text-success-text" valueCls="text-success-text"
                         label="Completados hoy" loading={!resumen}
-                        value={formatQty(mias.reduce((s, p) => s + p.fotos_hoy + p.principios_hoy, 0))} />
+                        value={formatQty(mias.reduce((s, p) => s + (p.productos_hoy ?? p.fotos_hoy + p.principios_hoy), 0))} />
                 </CarrilCards>
 
                 <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 items-start">
@@ -238,10 +238,10 @@ export default function FotosProductosView() {
                                 <div className="min-w-0 flex-1">
                                     <p className="text-label font-semibold text-content truncate">{shortEmployeeName(p)}</p>
                                     <p className="text-micro text-content-3">
-                                        Hoy {p.fotos_hoy} foto(s) · {p.principios_hoy} principio(s)
+                                        {`Hoy ${p.productos_hoy ?? '—'} producto(s) · ${p.fotos_hoy} foto(s) · ${p.principios_hoy} principio(s)`}
                                     </p>
                                 </div>
-                                <Badge variant="neutral" title="Últimos 7 días">{p.fotos_semana + p.principios_semana}</Badge>
+                                <Badge variant="neutral" title="Productos en los últimos 7 días">{p.productos_semana ?? p.fotos_semana + p.principios_semana}</Badge>
                             </div>
                         ))}
                     </section>
@@ -403,9 +403,13 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
         if (!lista.length) { avisar('Registro sanitario', 'Ese registro no trae principio activo.', 'warning'); return; }
         setTocoPrincipios(true);
         setPreset(null);
-        setItems(lista.map(aRenglon));
-        setDeSrs(resultadoDeSrs(crudo));
-    }, []);
+        // El registro a veces trae otro número que el empaque (F064815112006:
+        // «…20MG CAPSULAS» con concentración «21 mg.»). Con UN principio y un
+        // solo número en el nombre, gana el nombre y se avisa.
+        const corregido = lista.length === 1 ? corregirConElNombre(lista[0].concentracion, producto.nombre) : null;
+        setItems((corregido ? [{ ...lista[0], concentracion: corregido }] : lista).map(aRenglon));
+        setDeSrs({ ...resultadoDeSrs(crudo), corregido: corregido && { srs: normalizarConcentracion(lista[0].concentracion), nombre: corregido } });
+    }, [producto.nombre]);
 
     const principios = tocoPrincipios
         ? principiosParaGuardar(producto.id, { preset, items: items.map((it) => ({ nombre: it.nombre, concentracion: escribirConcentracion(it.cantidad, it.unidad) ?? it.crudo })) })
@@ -583,6 +587,11 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                         {deSrs && !preset && (
                             <Notice variant="chart-3" compact>
                                 {`Tomado del registro ${deSrs.noregistro || 'sanitario'} (${deSrs.nombre}). Revísalo contra el empaque antes de guardar.`}
+                            </Notice>
+                        )}
+                        {deSrs?.corregido && !preset && (
+                            <Notice variant="warning" compact>
+                                {`El registro dice ${deSrs.corregido.srs}, pero el nombre del producto dice ${deSrs.corregido.nombre}: se dejó ${deSrs.corregido.nombre}. Confírmalo en el empaque.`}
                             </Notice>
                         )}
                     </div>

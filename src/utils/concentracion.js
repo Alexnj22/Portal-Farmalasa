@@ -76,3 +76,33 @@ export function normalizarPrincipio(nombre) {
 /** Clave para comparar dos nombres sin que una tilde los separe. */
 export const claveDePrincipio = (nombre) =>
     normalizarPrincipio(nombre).normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/**
+ * Las concentraciones que dice el NOMBRE del producto: «OMEPRAZOL 20 MG X 100
+ * CAPS» → `['20 mg']`. Sirve para comparar contra el registro sanitario, que a
+ * veces trae otro número (medido el 2026-10-30: F064815112006 se llama
+ * «OMEPRAZOL SAIMED 20MG CAPSULAS» y su concentración dice «21 mg.»).
+ */
+export function concentracionesDelNombre(nombre) {
+    const vistas = new Set();
+    const re = /(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|gr|ui|ml|%)(?![a-z])/gi;
+    for (const m of String(nombre ?? '').matchAll(re)) {
+        const c = normalizarConcentracion(`${m[1]} ${m[2]}`);
+        if (c) vistas.add(c);
+    }
+    return [...vistas];
+}
+
+/**
+ * Si el registro trae UN principio con un número que el nombre contradice
+ * (y el nombre dice uno solo, de la misma unidad), la del nombre — que es lo
+ * que dice el empaque. Si no, `null`: no hay contradicción que resolver.
+ */
+export function corregirConElNombre(concentracionSrs, nombre) {
+    const srs = leerConcentracion(concentracionSrs);
+    if (!srs.cantidad || !srs.unidad) return null;
+    const delNombre = concentracionesDelNombre(nombre)
+        .map(leerConcentracion).filter((c) => c.unidad === srs.unidad);
+    if (delNombre.length !== 1 || delNombre[0].cantidad === srs.cantidad) return null;
+    return escribirConcentracion(delNombre[0].cantidad, delNombre[0].unidad);
+}

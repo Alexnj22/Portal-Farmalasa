@@ -2121,6 +2121,10 @@
    "area": "promociones",
    "por": "código"
   },
+  "elegir_nombre_en_el_portal": {
+   "area": "personal",
+   "por": "código"
+  },
   "eliminar_caja_de_impresion": {
    "area": "impresion",
    "por": "código"
@@ -2433,6 +2437,10 @@
   "es_medicamento_de_tratamiento": {
    "area": "app-clientes",
    "por": "llamada"
+  },
+  "es_parte_del_nombre": {
+   "area": "personal",
+   "por": "quien la llama"
   },
   "es_solicitud_operativa": {
    "area": "permisos",

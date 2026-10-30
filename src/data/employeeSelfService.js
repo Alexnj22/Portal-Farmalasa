@@ -68,3 +68,12 @@ export function fetchOwnVacationPlansActive(employeeId) {
         .neq('status', 'CANCELLED')
         .order('start_date', { ascending: false });
 }
+
+// ── El nombre con el que la persona aparece en el portal ────────────────────
+//
+// La ficha la decide la sesión adentro de la función (`auth_employee_id()`),
+// nunca un parámetro: cada quien elige el SUYO. Y sólo acepta uno de sus
+// propios nombres y apellidos — no es un apodo. Devuelve `{ data, error }`.
+export function elegirNombreEnElPortal(nombre, apellido) {
+    return supabase.rpc('elegir_nombre_en_el_portal', { p_nombre: nombre, p_apellido: apellido });
+}

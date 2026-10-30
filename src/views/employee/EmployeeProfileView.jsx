@@ -7,7 +7,7 @@ import {
     User, Phone, HeartPulse, Briefcase,
     Clock, Pencil, Calendar, ArrowRightLeft, Sparkles, Palmtree,
     MapPin, CreditCard, Coffee, Zap, Award, TrendingUp, SlidersHorizontal, ChevronDown, ChevronUp, X, Stethoscope, FileText,
-    FolderOpen
+    FolderOpen, UserRound
 } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -21,6 +21,8 @@ import { formatTime12h } from '@nucleo/utils/helpers';
 import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import ElegirNombreDialog from '../../components/layout/ElegirNombreDialog';
+import { shortEmployeeName, tieneNombreQueElegir } from '@nucleo/utils/nameUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { ESTADO_DE_PLAN, ausenciaDelDia, cumpleEn, filtrarHistorial, historialDePerfil, proximasVacaciones, semanaDelPerfil, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 
@@ -84,6 +86,7 @@ const EmployeeProfileView = ({ openModal }) => {
     const branch = branches.find(b => String(b.id) === String(emp?.branchId || emp?.branch_id));
 
     const [events, setEvents]           = useState([]);
+    const [eligiendoNombre, setEligiendoNombre] = useState(false);
     const [evLoading, setEvLoading]     = useState(true);
     const [activeCount, setActiveCount] = useState(0);
     const [myVacPlans, setMyVacPlans]   = useState([]);
@@ -200,6 +203,14 @@ const EmployeeProfileView = ({ openModal }) => {
                 </div>
             )}
             {(emp.phone || emp.dui) && <div className="hidden md:block w-px h-6 bg-divider mx-0.5 shrink-0" />}
+            {/* Cuál de sus nombres y apellidos usa en el portal (2026-10-30). */}
+            {tieneNombreQueElegir(emp) && (
+                <Button variant="secondary" icon={UserRound} onClick={() => setEligiendoNombre(true)}
+                    title={`En el portal apareces como ${shortEmployeeName(emp)}`}>
+                    <span className="hidden sm:inline">Mi nombre</span>
+                </Button>
+            )}
+            <ElegirNombreDialog empleado={emp} open={eligiendoNombre} onClose={() => setEligiendoNombre(false)} />
             {/* Edit button */}
             {puedeEditarSuFicha && (
                 <Button icon={Pencil} onClick={() => openModal('editContact', emp)}><span className="hidden sm:inline">Editar</span></Button>

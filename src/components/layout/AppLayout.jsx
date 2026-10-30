@@ -43,6 +43,7 @@ const AvisosApagadosDialog = React.lazy(() => import('../common/AvisosApagadosDi
 const HuecoDeCampana = () => <div className="w-11 h-11 shrink-0" aria-hidden="true" />;
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
+import ElegirNombreDialog from './ElegirNombreDialog';
 import { APP_VERSION } from '../../version';
 import OfflineBanner from '../common/OfflineBanner';
 import BannerPortal from '../common/BannerPortal';
@@ -50,7 +51,7 @@ import Contador from '../common/Contador';
 import { MENU_GROUPS, MODULE_MAP } from '../common/catalogos/modulos';
 import { gruposVisibles } from '@nucleo/constants/menuGroups';
 import { prefetchRuta } from '../../routeImporters';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { shortEmployeeName, tieneNombreQueElegir } from '@nucleo/utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../plataforma/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -102,6 +103,14 @@ const AppLayout = ({ children, handleLogout }) => {
     // `myEmp` y `user` queda de respaldo (arranque en frío, empleado fuera del
     // alcance del store).
     const myShortName = useMemo(() => shortEmployeeName(myEmp || user), [myEmp, user]);
+
+    // Al entrar, quien tiene más de un nombre o más de un apellido y todavía no
+    // eligió cuál usar, lo elige (2026-10-30). Obligatorio una vez; después se
+    // cambia desde Mi perfil. Va en el layout para salir en cualquier módulo.
+    // Sólo con la lista recién leída: la del caché local puede ser de antes de
+    // que eligiera, y le volvería a preguntar.
+    const empleadosListos = useStaff((state) => state.employeesStatus === 'ready');
+    const debeElegirNombre = empleadosListos && !!myEmp && !myEmp.nombre_elegido_el && tieneNombreQueElegir(myEmp);
     const myBirthday = useMemo(() => {
         if (!myBirthDate) return null;
         const bDate = new Date(myBirthDate + 'T12:00:00');
@@ -1574,6 +1583,8 @@ const AppLayout = ({ children, handleLogout }) => {
                 items={searchableItems}
                 onNavigate={(path) => { navigate(path); if (isMobile) setIsSidebarOpen(false); }}
             />
+
+            <ElegirNombreDialog empleado={myEmp} open={debeElegirNombre} obligatorio />
 
         </LayoutGroup>
     );

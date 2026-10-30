@@ -83,7 +83,7 @@ export const CAMPOS_TRAS_LLAVE = [
 // columna nueva + `npm run tipos:base` hace fallar la prueba hasta agregarla.
 export const COLUMNAS_DE_EMPLOYEES = new Set([
     'account_number', 'account_type', 'acreditaciones', 'additional_skills', 'address',
-    'afp_estado', 'afp_institution', 'afp_number', 'alt_identity_document',
+    'afp_estado', 'afp_institution', 'apellido_preferido', 'afp_number', 'alt_identity_document',
     'alt_identity_document_type', 'bank_name', 'base_salary', 'birth_date', 'blocked_at',
     'blocked_by', 'blocked_reason', 'blocked_until', 'blood_type', 'branch_id',
     'carne_dependiente_url', 'carne_pendiente', 'chronic_conditions', 'code',
@@ -103,7 +103,7 @@ export const COLUMNAS_DE_EMPLOYEES = new Set([
     'kiosk_pin', 'last_names', 'lugar_nacimiento', 'lugar_pago', 'maestria_is_studying',
     'maestria_study_duration_years', 'maestria_study_start_date', 'maestria_title',
     'marital_status', 'medico_license_number', 'medio_pago', 'mtps_remitido_fecha',
-    'municipality', 'name', 'nationality', 'nursing_license_number', 'periodo_pago',
+    'municipality', 'name', 'nationality', 'nombre_elegido_el', 'nombre_preferido', 'nursing_license_number', 'periodo_pago',
     'pharmacist_license_number', 'phone', 'photo_url', 'profession', 'role_id',
     'secondary_role_id', 'shift_id', 'srs_accreditation_expiry', 'status',
     'study_duration_years', 'study_start_date', 'suplente_id',

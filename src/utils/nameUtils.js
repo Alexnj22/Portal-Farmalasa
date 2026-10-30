@@ -1,5 +1,7 @@
-// Nombre corto del portal: SIEMPRE primer nombre + primer apellido, aunque el
-// empleado tenga 2-3 nombres o 2-3 apellidos.
+// Nombre corto del portal: UN nombre + UN apellido, aunque el empleado tenga
+// 2-3 nombres o 2-3 apellidos. Cuál de ellos lo elige la persona al entrar al
+// portal (2026-10-30, `employees.nombre_preferido`/`apellido_preferido`); si no
+// eligió, el primero de cada uno.
 //
 // Es el nombre que va en TODA la interfaz —sidebar, solicitudes, tarjetas,
 // calendarios, chips, avatares, modales—. Las dos excepciones son el módulo de
@@ -19,19 +21,107 @@
 // `select` en vez de confiar en el corte.
 const primerToken = (str) => String(str || '').trim().split(/\s+/)[0] || '';
 
+// Las partículas no son un nombre por sí solas: «DE LA CRUZ» es UN apellido y
+// «MARIA DE LOS ANGELES» son dos nombres, no cuatro. Se pegan a la palabra que
+// sigue.
+const PARTICULAS = new Set(['DE', 'DEL', 'LA', 'LAS', 'LOS', 'SAN', 'SANTA', 'Y', 'VDA', 'VDA.']);
+
+const normalizar = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/\s+/g, ' ').trim();
+
+/**
+ * Los nombres (o apellidos) de una persona, uno por elemento, con las
+ * partículas pegadas a la palabra que sigue. Es la lista de la que la persona
+ * elige cuál usar en el portal.
+ * @param {string} str `first_names` o `last_names` de la ficha.
+ * @returns {string[]}
+ */
+export function gruposDeNombre(str) {
+    const grupos = [];
+    let pendiente = [];
+    for (const palabra of String(str || '').trim().split(/\s+/).filter(Boolean)) {
+        pendiente.push(palabra);
+        if (!PARTICULAS.has(normalizar(palabra))) { grupos.push(pendiente.join(' ')); pendiente = []; }
+    }
+    if (pendiente.length) {
+        // Partículas al final («LOPEZ DE»): van con el grupo anterior.
+        if (grupos.length) grupos[grupos.length - 1] += ' ' + pendiente.join(' ');
+        else grupos.push(pendiente.join(' '));
+    }
+    return grupos;
+}
+
+// ¿`parte` es uno de los grupos de `completo`? Mismo criterio que
+// `es_parte_del_nombre` en la base: por palabras enteras y sin tildes. Si
+// Personal corrige la ficha y lo elegido deja de estar, el portal vuelve solo
+// al primero en vez de mostrar un nombre que la persona ya no tiene.
+const esParteDe = (parte, completo) => {
+    const p = normalizar(parte);
+    return !!p && ` ${normalizar(completo)} `.includes(` ${p} `);
+};
+
+// ¿Tiene algo que elegir? Con un solo nombre y un solo apellido no hay pregunta.
+export const tieneNombreQueElegir = (emp) =>
+    !!emp && (gruposDeNombre(emp.first_names).length > 1 || gruposDeNombre(emp.last_names).length > 1);
+
+// El nombre corto a partir de las columnas de la ficha.
+function cortoDesdeFicha(emp) {
+    const nombres = gruposDeNombre(emp.first_names);
+    const apellidos = gruposDeNombre(emp.last_names);
+    const first = esParteDe(emp.nombre_preferido, emp.first_names) ? emp.nombre_preferido.trim() : nombres[0] || '';
+    const last = esParteDe(emp.apellido_preferido, emp.last_names) ? emp.apellido_preferido.trim() : apellidos[0] || '';
+    return `${first} ${last}`.trim();
+}
+
+// ── El nombre ELEGIDO viaja por un registro, no por cada `select` ──────────
+// Son ~555 llamadas a `shortEmployeeName` y muchas pintan filas de otras tablas
+// que traen sólo `id` + `name` (o el nombre guardado como texto). Agregar las
+// columnas nuevas a cada consulta sería imposible de mantener, así que el store
+// registra acá el nombre corto de cada ficha que carga (`staffStore`), y
+// cualquier objeto que traiga el `id` de la persona —o su nombre completo— sale
+// con el elegido.
+const cortoPorId = new Map();
+const cortoPorNombre = new Map();
+
+/** Lo llama el store cada vez que cambia la lista de empleados. */
+export function registrarNombresElegidos(employees) {
+    cortoPorId.clear();
+    cortoPorNombre.clear();
+    for (const e of employees || []) {
+        if (!e?.id || (!e.first_names && !e.last_names)) continue;
+        const corto = cortoDesdeFicha(e);
+        if (!corto) continue;
+        cortoPorId.set(String(e.id), corto);
+        cortoPorNombre.set(normalizar(`${e.first_names || ''} ${e.last_names || ''}`), corto);
+    }
+}
+
 /**
  * @param {object|string|null} emp Empleado (`{ first_names, last_names, name }`)
  *   o directamente su nombre completo ya concatenado.
- * @returns {string} "Primer Nombre Primer Apellido", o 'Personal' si no hay dato.
+ * @returns {string} El nombre y el apellido que la persona eligió (por defecto
+ *   el primero de cada uno), o 'Personal' si no hay dato.
  */
 export function shortEmployeeName(emp) {
     if (!emp) return 'Personal';
 
     if (typeof emp === 'string') return shortEmployeeName({ name: emp });
 
-    const first = primerToken(emp.first_names);
-    const last = primerToken(emp.last_names);
-    if (first || last) return `${first} ${last}`.trim();
+    // La fila trae la elección: manda ella (es la más fresca, p. ej. justo
+    // después de guardarla).
+    if ((emp.first_names || emp.last_names) && (emp.nombre_preferido || emp.apellido_preferido)) {
+        return cortoDesdeFicha(emp);
+    }
+
+    const porId = emp.id != null ? cortoPorId.get(String(emp.id)) : undefined;
+    if (porId) return porId;
+
+    const completo = emp.first_names || emp.last_names
+        ? `${emp.first_names || ''} ${emp.last_names || ''}` : emp.name;
+    const porNombre = completo ? cortoPorNombre.get(normalizar(completo)) : undefined;
+    if (porNombre) return porNombre;
+
+    if (emp.first_names || emp.last_names) return cortoDesdeFicha(emp);
 
     // Fallback: sólo hay el nombre concatenado (filas legadas, nombres guardados
     // como texto en otra tabla, o un `select` al que le faltan las dos columnas).
@@ -49,7 +139,11 @@ export function shortEmployeeName(emp) {
 export function employeeInitials(emp) {
     const short = shortEmployeeName(emp);
     if (short === 'Personal') return '?';
-    return short.split(/\s+/).slice(0, 2).map(t => t.charAt(0).toUpperCase()).join('');
+    // La primera palabra y la última que no sea partícula: «ANA DE LA CRUZ» es
+    // «AC», no «AD».
+    const palabras = short.split(/\s+/).filter(p => !PARTICULAS.has(normalizar(p)));
+    const usadas = palabras.length > 1 ? [palabras[0], palabras[palabras.length - 1]] : palabras;
+    return usadas.map(t => t.charAt(0).toUpperCase()).join('');
 }
 
 /**

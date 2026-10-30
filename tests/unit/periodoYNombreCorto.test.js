@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { granularidadDePeriodo, correrPeriodo, periodoDeHoy, periodoAlcanzaHoy, pad }
     from '@nucleo/utils/periodo';
 import { hoySV as svToday } from '@nucleo/utils/fecha';
-import { shortEmployeeName, employeeInitials } from '@nucleo/utils/nameUtils';
+import { shortEmployeeName, employeeInitials, gruposDeNombre, registrarNombresElegidos, tieneNombreQueElegir } from '@nucleo/utils/nameUtils';
 import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
 
 describe('qué ES un período, deducido del propio rango', () => {
@@ -200,5 +200,40 @@ describe('la edad decide qué documento se pide', () => {
         expect(calcAge(null)).toBeNull();
         expect(calcAge('')).toBeNull();
         expect(calcAge('no es fecha')).toBeNull();
+    });
+});
+
+describe('el nombre que la persona ELIGIÓ para el portal (2026-10-30)', () => {
+    const edwin = { id: 'e-1', first_names: 'EDWIN ALEXANDER', last_names: 'NUNEZ JOYA' };
+
+    it('las partículas van con su apellido', () => {
+        expect(gruposDeNombre('PEREZ DE LA CRUZ')).toEqual(['PEREZ', 'DE LA CRUZ']);
+        expect(gruposDeNombre('MARIA DE LOS ANGELES')).toEqual(['MARIA', 'DE LOS ANGELES']);
+        expect(gruposDeNombre('DE LEON')).toEqual(['DE LEON']);
+    });
+
+    it('la elección manda, y por defecto es el primero', () => {
+        expect(shortEmployeeName(edwin)).toBe('EDWIN NUNEZ');
+        expect(shortEmployeeName({ ...edwin, nombre_preferido: 'ALEXANDER', apellido_preferido: 'JOYA' }))
+            .toBe('ALEXANDER JOYA');
+    });
+
+    it('si la ficha cambió y lo elegido ya no está, vuelve al primero', () => {
+        expect(shortEmployeeName({ ...edwin, first_names: 'EDWIN', nombre_preferido: 'ALEXANDER' }))
+            .toBe('EDWIN NUNEZ');
+    });
+
+    it('llega a filas que sólo traen el id o el nombre completo', () => {
+        registrarNombresElegidos([{ ...edwin, nombre_preferido: 'ALEXANDER', apellido_preferido: 'JOYA' }]);
+        expect(shortEmployeeName({ id: 'e-1', name: 'EDWIN ALEXANDER NUNEZ JOYA' })).toBe('ALEXANDER JOYA');
+        expect(shortEmployeeName('Edwin Alexander Núñez Joya')).toBe('ALEXANDER JOYA');
+        expect(employeeInitials({ id: 'e-1' })).toBe('AJ');
+        registrarNombresElegidos([]);
+        expect(shortEmployeeName({ id: 'e-1', name: 'EDWIN ALEXANDER NUNEZ JOYA' })).toBe('EDWIN NUNEZ');
+    });
+
+    it('sólo pregunta a quien tiene algo que elegir', () => {
+        expect(tieneNombreQueElegir(edwin)).toBe(true);
+        expect(tieneNombreQueElegir({ first_names: 'ANA', last_names: 'DE LA CRUZ' })).toBe(false);
     });
 });

@@ -7011,6 +7011,7 @@ export type Database = {
           document_id: number | null
           emisor_nit: string | null
           emisor_nombre: string | null
+          en_vencidos_at: string | null
           erp_compra_id: number | null
           erp_traslado_id: string | null
           es_generico: boolean
@@ -7036,6 +7037,7 @@ export type Database = {
           document_id?: number | null
           emisor_nit?: string | null
           emisor_nombre?: string | null
+          en_vencidos_at?: string | null
           erp_compra_id?: number | null
           erp_traslado_id?: string | null
           es_generico: boolean
@@ -7061,6 +7063,7 @@ export type Database = {
           document_id?: number | null
           emisor_nit?: string | null
           emisor_nombre?: string | null
+          en_vencidos_at?: string | null
           erp_compra_id?: number | null
           erp_traslado_id?: string | null
           es_generico?: boolean
@@ -7086,6 +7089,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "compra_renglon_erroneo_document_fk"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_document_fk"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "compra_renglon_erroneo_manual_id_fkey"
             columns: ["manual_id"]
             isOneToOne: false
@@ -7104,6 +7121,20 @@ export type Database = {
             columns: ["marcado_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_nota_fk"
+            columns: ["nota_credito_document_id"]
+            isOneToOne: false
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_nota_fk"
+            columns: ["nota_credito_document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_dte_documents"
             referencedColumns: ["id"]
           },
           {
@@ -14571,6 +14602,7 @@ export type Database = {
           afp_number: string | null
           alt_identity_document: string | null
           alt_identity_document_type: string | null
+          apellido_preferido: string | null
           bank_name: string | null
           base_salary: number | null
           birth_date: string | null
@@ -14650,6 +14682,8 @@ export type Database = {
           municipality: string | null
           name: string | null
           nationality: string | null
+          nombre_elegido_el: string | null
+          nombre_preferido: string | null
           nursing_license_number: string | null
           periodo_pago: string | null
           pharmacist_license_number: string | null
@@ -14681,6 +14715,7 @@ export type Database = {
           afp_number?: string | null
           alt_identity_document?: string | null
           alt_identity_document_type?: string | null
+          apellido_preferido?: string | null
           bank_name?: string | null
           base_salary?: number | null
           birth_date?: string | null
@@ -14760,6 +14795,8 @@ export type Database = {
           municipality?: string | null
           name?: string | null
           nationality?: string | null
+          nombre_elegido_el?: string | null
+          nombre_preferido?: string | null
           nursing_license_number?: string | null
           periodo_pago?: string | null
           pharmacist_license_number?: string | null
@@ -14791,6 +14828,7 @@ export type Database = {
           afp_number?: string | null
           alt_identity_document?: string | null
           alt_identity_document_type?: string | null
+          apellido_preferido?: string | null
           bank_name?: string | null
           base_salary?: number | null
           birth_date?: string | null
@@ -14870,6 +14908,8 @@ export type Database = {
           municipality?: string | null
           name?: string | null
           nationality?: string | null
+          nombre_elegido_el?: string | null
+          nombre_preferido?: string | null
           nursing_license_number?: string | null
           periodo_pago?: string | null
           pharmacist_license_number?: string | null
@@ -29192,6 +29232,7 @@ export type Database = {
           afp_estado: string | null
           afp_institution: string | null
           alt_identity_document_type: string | null
+          apellido_preferido: string | null
           birth_date: string | null
           blocked_at: string | null
           blocked_by: string | null
@@ -29262,6 +29303,8 @@ export type Database = {
           municipality: string | null
           name: string | null
           nationality: string | null
+          nombre_elegido_el: string | null
+          nombre_preferido: string | null
           nursing_license_number: string | null
           periodo_pago: string | null
           pharmacist_license_number: string | null
@@ -31210,6 +31253,7 @@ export type Database = {
         Args: { p_id: number; p_respuestas: Json }
         Returns: undefined
       }
+      compra_soltar_trabados: { Args: never; Returns: Json }
       compras_cargadas_desde_portal: {
         Args: { p_erp_ids: number[] }
         Returns: {
@@ -32275,6 +32319,10 @@ export type Database = {
         }
         Returns: Json
       }
+      elegir_nombre_en_el_portal: {
+        Args: { p_apellido: string; p_nombre: string }
+        Returns: Json
+      }
       eliminar_caja_de_impresion: { Args: { p_id: string }; Returns: string }
       eliminar_conteo_inventario: {
         Args: { p_conteo_id: string }
@@ -32614,6 +32662,10 @@ export type Database = {
       }
       es_medicamento_de_tratamiento: {
         Args: { p_nombre: string; p_principio_activo: string }
+        Returns: boolean
+      }
+      es_parte_del_nombre: {
+        Args: { completo: string; parte: string }
         Returns: boolean
       }
       es_solicitud_operativa: { Args: { p_type: string }; Returns: boolean }
@@ -33303,6 +33355,10 @@ export type Database = {
           renglones: number
           tiene_pdf: boolean
         }[]
+      }
+      get_documentos_sin_cargar_json: {
+        Args: { p_dias?: number }
+        Returns: Json
       }
       get_donde_hay: {
         Args: { p_erp_product_id: number; p_erp_sucursal_destino: number }

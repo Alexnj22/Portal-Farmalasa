@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1400.0 — El nombre que cada persona elige para el portal
+
+Al entrar al portal, quien tiene más de un nombre o más de un apellido elige cuál de cada uno quiere usar, y el portal lo muestra así en todos lados. Se elige entre los propios nombres de la ficha (no es un apodo). La primera vez es obligatoria, y ya viene marcado el de siempre. Después se cambia desde Mi perfil, con el botón «Mi nombre». El nombre legal no cambia: planilla, CSV, contratos y PDF lo siguen usando completo.
+
+- Base: `employees.nombre_preferido`/`apellido_preferido`/`nombre_elegido_el`, que también salen por `employees_safe`. La función `elegir_nombre_en_el_portal` saca la ficha de la sesión y sólo acepta un nombre o apellido de la propia ficha (`es_parte_del_nombre`).
+- `shortEmployeeName` usa la elección. El store la registra por `id` y por nombre completo, así que vale también en las filas que no traen las columnas nuevas. Si Personal corrige la ficha y lo elegido ya no está, el nombre vuelve solo al primero.
+- Las partículas («DE LA CRUZ», «DE LOS ANGELES») cuentan como un solo nombre o apellido, y las iniciales se saltan las partículas.
+
 ## v2.1399.1 — App del personal: el buscador se ve en iPhone
 
 En iPhone, la pestaña Buscar de la app del personal no mostraba el campo de búsqueda. Ahora va fijo debajo del título y no se esconde al desplazar (`placement: 'stacked'`, `hideWhenScrolling: false`). Android no cambia. Entra en la próxima compilación de la app.

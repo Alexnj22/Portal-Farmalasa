@@ -1454,10 +1454,9 @@ function TabErroneos({ puedeEditar }) {
     );
 }
 
-function TabPorConfirmar({ puedeEditar }) {
+function TabPorConfirmar({ puedeEditar, busca = '' }) {
     const [filas, setFilas]   = useState(null);
     const [error, setError]   = useState('');
-    const [busca, setBusca]   = useState('');
     const [estado, setEstado] = useState('pendientes');
     const [barriendo, setBarr] = useState(null);   // texto de progreso
     const [buscando, setBusc] = useState(null);    // id del renglón abierto
@@ -1603,9 +1602,6 @@ function TabPorConfirmar({ puedeEditar }) {
                 los documentos nuevos.
             </Notice>
         )}
-
-        <PortalInput value={busca} onChange={e => setBusca(e.target.value)} tono="brand"
-            placeholder="Buscar proveedor, producto o código…" aria-label="Buscar" />
 
         <div className="flex flex-col gap-2">
             {filas === null && <p className="text-label text-content-3">Cargando…</p>}
@@ -1950,6 +1946,9 @@ export default function CargarCompraView() {
     const [filas, setFilas] = useState(null);
     const [error, setError] = useState('');
     const [busca, setBusca] = useState('');
+    // El buscador vive en la lupa de la barra (canónico); cada pestaña con
+    // lista guarda su propio texto.
+    const [buscaConfirmar, setBuscaConfirmar] = useState('');
     // Arranca en el último mes: es el período en el que de verdad se carga una
     // compra, y son ~600 documentos en vez de ~1,400.
     const [dias, setDias]   = useState('30');
@@ -2014,8 +2013,10 @@ export default function CargarCompraView() {
 
     const filtersContent = (
         <ViewTabBar tabs={TABS} activeTab={tab} onTabChange={setTab}
-            searchValue={busca} onSearchChange={setBusca} showSearch={tab === 'facturas'}
-            placeholder="Buscar proveedor o número de documento…" />
+            searchValue={tab === 'confirmar' ? buscaConfirmar : busca}
+            onSearchChange={tab === 'confirmar' ? setBuscaConfirmar : setBusca}
+            showSearch={tab === 'facturas' || tab === 'confirmar'}
+            placeholder={tab === 'confirmar' ? 'Buscar proveedor, producto o código…' : 'Buscar proveedor o número de documento…'} />
     );
 
     return (
@@ -2023,7 +2024,7 @@ export default function CargarCompraView() {
             <div className="p-5 md:p-6 space-y-5">
 
             {tab === 'erroneos' ? <TabErroneos puedeEditar={puedeEditar} />
-            : tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} /> : (<>
+            : tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} busca={buscaConfirmar} /> : (<>
 
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen de lo que falta cargar">

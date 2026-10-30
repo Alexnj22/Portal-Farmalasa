@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1402.1 — Cargar compra: el buscador de Por confirmar va en la lupa
+
+La pestaña «Por confirmar» tenía su buscador suelto como un campo a lo ancho. Ahora usa la lupa de la barra de filtros, como «Facturas» y el resto del portal (y en el teléfono baja al clúster flotante). Cada pestaña guarda su propio texto.
+
 ## v2.1402.0 — El nombre elegido también en avisos, notificaciones, conteo y chat
 
 El nombre que cada persona eligió (v2.1400.0) ahora también sale en lo que arma el servidor: avisos, notificaciones del teléfono, el libro bajo receta, el conteo de inventario, el chat con clientes y los avisos de documentos por vencer y de horarios.

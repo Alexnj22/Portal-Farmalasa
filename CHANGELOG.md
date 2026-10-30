@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1397.2 — Traslados: el buscador de envíos de Bodega usa la regla del portal
+
+Las tarjetas de Bodega en Traslados → En camino (envíos de compras y pedidos de fechas) filtraban con `toLowerCase().includes`: sin tildes no encontraba «Sarita» escrito distinto ni palabras en otro orden. Ahora usan `tokenMatch`, como el resto del portal (`gate:busqueda` lo frenaba).
+
 ## v2.1397.1 — Compras: errores de escritura que no se miraban
 
 Tres consultas de `cargar-compra-erp` descartaban su error (lo marcó `gate:data`, que dejaba en rojo el pre-commit de todo el repo): marcar un reparto ya recibido, anotar el traslado a vencidos de un producto erróneo y leer la nota de crédito antes de dar salida. Ahora el error se ve; en la salida, además, el producto vuelve a «con nota» en vez de quedar trabado en «saliendo».

@@ -6,6 +6,7 @@ import PortalInput from '../../components/common/PortalInput';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fetchRepartosDeCompra, recibirRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
 
 /* Lo que Bodega le repartió a la sala al cargar una compra (2026-10-30).
@@ -42,11 +43,12 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
 
-    const q = busqueda.trim().toLowerCase();
+    // La regla de búsqueda del portal (sin tildes, palabras en cualquier orden).
+    const q = busqueda.trim();
     const vistas = (filas ?? []).filter(f => !q
-        || [f.emisor_nombre, f.sala, ...(f.lineas ?? []).map(l => l.descripcion)].some(t => String(t ?? '').toLowerCase().includes(q)));
+        || tokenMatch(q, f.emisor_nombre, f.sala, ...(f.lineas ?? []).map(l => l.descripcion)));
     const pedidosVistos = pedidos.filter(f => !q
-        || [f.emisor_nombre, f.sala, ...(f.renglones ?? []).map(l => l.descripcion)].some(t => String(t ?? '').toLowerCase().includes(q)));
+        || tokenMatch(q, f.emisor_nombre, f.sala, ...(f.renglones ?? []).map(l => l.descripcion)));
     const cuenta = vistas.length + pedidosVistos.length;
     useEffect(() => { onCuenta?.(cuenta); }, [cuenta, onCuenta]);
 

@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-30T18:44:05.010Z",
+ "generado": "2026-10-30T21:30:44.688Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1210,6 +1210,10 @@
   },
   "cof_no_se_envia_mh": {
    "area": "facturacion-dte",
+   "por": "código"
+  },
+  "cola_carga_productos": {
+   "area": "productos",
    "por": "código"
   },
   "cola_espejo_portal_erp": {
@@ -3367,6 +3371,10 @@
    "area": "ventas",
    "por": "código"
   },
+  "guardar_carga_producto": {
+   "area": "productos",
+   "por": "código"
+  },
   "guardar_conteo_item": {
    "area": "inventario",
    "por": "código"
@@ -5244,6 +5252,10 @@
    "area": "pedidos",
    "por": "código"
   },
+  "resumen_carga_productos": {
+   "area": "productos",
+   "por": "código"
+  },
   "resumen_de_promocion": {
    "area": "promociones",
    "por": "código"
@@ -5590,6 +5602,10 @@
   },
   "tomar_paso_envio": {
    "area": "traslados",
+   "por": "código"
+  },
+  "tomar_producto_para_carga": {
+   "area": "productos",
    "por": "código"
   },
   "tope_renglones_envio": {

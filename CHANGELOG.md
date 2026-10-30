@@ -21,11 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1404.2 — Pedidos: el despacho acepta la presentación del mismo tamaño
+
+VENOFER (pedido a Salud 4) salió como UNIDAD de 1 y la ubicación de Bodega sólo
+ofrecía CAJA de 1: el despacho exigía el nombre exacto, el renglón quedó sin
+trasladar y la sala lo vio como «No entró al inventario», con un Reintentar que
+no podía arreglarlo. `trasladar-pedido-erp` (despacho y simulacro) ahora cae a
+cualquier presentación del MISMO factor, como ya hacía la devolución. El factor
+se sigue exigiendo: uno que cambió de verdad sigue saliendo como FACTOR_CAMBIO.
+
+## v2.1404.1 — Fotos de productos: migración y tipos
+
+Archivo de la migración `20261030212923_fotos_de_productos_cola` (ya aplicada en prod y verificada con una sesión de Gerente General: cola, toma y resumen responden), tipos de la base regenerados y las cuatro funciones nuevas en el mapa de auditoría (área Productos).
+
 ## v2.1404.0 — Fotos de productos: cola para completar foto y principio activo
 
 Módulo nuevo `fotos_productos` (Inventario › Producto): una cola común que pone el siguiente producto activo al que le falta foto o principio activo, los que más se venden primero. Medido el 2026-10-30: 4,362 de 4,382 activos sin foto y 3,632 sin principio. Abrir un producto lo toma 15 minutos para que otra persona no haga el mismo; «Guardar y siguiente» sube la foto (cuadrada, 800 px, mismo `product-photos/<id>.jpg` del catálogo) y los principios con su concentración juntos, y queda quién lo hizo. Avance del equipo por persona (hoy y 7 días). En el teléfono abre la cámara; en la computadora, el QR al teléfono. También pantalla nativa en la app. El permiso escribe SÓLO foto y principios (función DEFINER), no abre la ficha. `fotoDeCatalogo` sale de TabCatalogo a `plataforma/imagenes.js`.
 
-**Requiere la migración `fotos_de_productos_cola`** (tablas `producto_carga_tomas`/`producto_carga_log`, cuatro funciones, policies del bucket): sin ella la pantalla no carga.
+Migración `20261030212923_fotos_de_productos_cola` (aplicada en prod): tablas `producto_carga_tomas`/`producto_carga_log`, cuatro funciones DEFINER y las policies del bucket `product-photos` con el módulo nuevo.
 
 ## v2.1403.2 — El Enter del lector ya no cierra el diálogo del carné
 

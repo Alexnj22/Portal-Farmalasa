@@ -804,11 +804,13 @@ export async function resolverPresentacion(
     candidatas = fila.presentaciones.filter((p) => clave(p.tipo) && buscado.startsWith(`${clave(p.tipo)} `));
   }
   // `porFactor`: el último intento es CUALQUIER presentación del mismo tamaño.
-  // Lo pide la devolución de un sobrante, donde el nombre sólo distingue y lo
-  // que se mueve son unidades —un producto con «CAJA» y «UNIDAD» de 1 guarda
-  // una y la ubicación puede ofrecer la otra—. El traslado de un pedido NO lo
-  // pide: ahí un nombre que no está es señal de que el catálogo cambió y tiene
-  // que verlo alguien (FACTOR_CAMBIO).
+  // El nombre sólo distingue; lo que se mueve son unidades, y el factor se
+  // sigue exigiendo abajo, así que no puede mover una cantidad distinta. Un
+  // producto con «CAJA» y «UNIDAD» de 1 guarda una y la ubicación puede ofrecer
+  // la otra. Lo piden la devolución de un sobrante y, desde el 2026-10-30, el
+  // traslado de un pedido: VENOFER salió como UNIDAD de 1, Bodega sólo ofrecía
+  // CAJA de 1, y el renglón quedó sin trasladar con la caja ya en la sala.
+  // Un factor que de verdad cambió sigue cayendo en FACTOR_CAMBIO.
   if (!candidatas.length && porFactor) candidatas = fila.presentaciones;
   for (const c of candidatas) {
     const p = await pedir(cookie, TRASLADO, new URLSearchParams({

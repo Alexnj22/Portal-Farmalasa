@@ -21851,6 +21851,81 @@ export type Database = {
         }
         Relationships: []
       }
+      producto_carga_log: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: number
+          product_id: number
+          que: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: never
+          product_id: number
+          que: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: never
+          product_id?: number
+          que?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "producto_carga_log_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_carga_log_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      producto_carga_tomas: {
+        Row: {
+          created_at: string
+          employee_id: string
+          product_id: number
+          tomado_el: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          product_id: number
+          tomado_el?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          product_id?: number
+          tomado_el?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "producto_carga_tomas_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_carga_tomas_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       producto_insumo: {
         Row: {
           created_at: string
@@ -31206,6 +31281,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      cola_carga_productos: {
+        Args: { p_falta?: string; p_ids?: number[]; p_limite?: number }
+        Returns: Json
+      }
       cola_espejo_portal_erp: { Args: { p_limite?: number }; Returns: Json }
       compactar_busqueda: { Args: { p: string }; Returns: string }
       completar_dispensacion: {
@@ -34538,6 +34617,15 @@ export type Database = {
           total_sum: number
         }[]
       }
+      guardar_carga_producto: {
+        Args: {
+          p_filas?: Json
+          p_foto_url?: string
+          p_product_id: number
+          p_texto?: string
+        }
+        Returns: Json
+      }
       guardar_conteo_item: {
         Args: {
           p_estado_item?: string
@@ -36976,6 +37064,7 @@ export type Database = {
         Args: { p_erp_product_id: number }
         Returns: undefined
       }
+      resumen_carga_productos: { Args: never; Returns: Json }
       resumen_de_promocion: { Args: { p_id: number }; Returns: Json }
       resumen_ingreso_pedidos: {
         Args: { p_pedido_ids: string[] }
@@ -37342,6 +37431,10 @@ export type Database = {
       tomar_paso_envio: {
         Args: { p_actor: string; p_paso: string; p_request_id: string }
         Returns: boolean
+      }
+      tomar_producto_para_carga: {
+        Args: { p_product_id: number }
+        Returns: Json
       }
       tope_renglones_envio: { Args: never; Returns: number }
       touch_session: { Args: { p_device_class?: string }; Returns: undefined }

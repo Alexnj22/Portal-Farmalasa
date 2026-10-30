@@ -1071,7 +1071,7 @@ Deno.serve(async (req) => {
           const f = await traerFila(cookie, ln.erp_product_id as number, ubicOrigen);
           if (!f.encontrado) { await fallar("Ya no tiene existencia en bodega."); continue; }
 
-          const pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, Number(it.factor ?? 0));
+          const pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, Number(it.factor ?? 0), { porFactor: true });
           if (!pres) {
             await fallar(`Se despachó ${it.presentacion_tipo} de ${it.factor}, y hoy ninguna presentación `
               + `con ese nombre trae ese factor. Ofrece: ${f.presentaciones.map((p) => p.tipo).join(", ") || "ninguna"}.`);
@@ -1395,7 +1395,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, factor);
+        const pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, factor, { porFactor: true });
         if (!pres) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "FACTOR_CAMBIO",

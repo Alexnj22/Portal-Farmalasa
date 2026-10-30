@@ -22,6 +22,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
 import { descartarUnaLinea } from "../_shared/erp-descarte.ts";
+import { dteDeManual, validarManual } from "../_shared/compraManual.ts";
 import {
   sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
   TRASLADO, RECIBIR,
@@ -129,17 +130,17 @@ function canonico(v: unknown): string {
  *    DIJO que no.
  */
 async function enviarCompra(admin: any, x: {
-  cookie: string; documentId: number; cargaId: number; sobre: Record<string, unknown>;
+  cookie: string; documentId: number | null; manualId: number | null; cargaId: number; sobre: Record<string, unknown>;
   revision: any; lineas: LineaSobre[]; erpProveedor: number;
   quien: string; emisor: { nit: string | null; nombre: string | null };
 }) {
   if (!x.revision.listo) return { enviada: false, revision: x.revision, error: "La revisión tiene problemas: no se mandó." };
   if (!Number.isFinite(x.cargaId)) return { enviada: false, error: "Falta la revisión que se aprobó." };
 
-  const { data: rev, error: eR } = await admin.from("compra_carga").select("id, document_id, estado, sobre, created_at")
+  const { data: rev, error: eR } = await admin.from("compra_carga").select("id, document_id, manual_id, estado, sobre, created_at")
     .eq("id", x.cargaId).maybeSingle();
   if (eR) throw eR;
-  if (!rev || rev.document_id !== x.documentId || rev.estado !== "simulada") {
+  if (!rev || (rev.document_id ?? null) !== x.documentId || (rev.manual_id ?? null) !== x.manualId || rev.estado !== "simulada") {
     return { enviada: false, error: "Esa revisión ya no vale: revisa la carga de nuevo." };
   }
   if (Date.now() - new Date(rev.created_at).getTime() > 30 * 60_000) {
@@ -163,7 +164,9 @@ async function enviarCompra(admin: any, x: {
   // revisión) es un espejo que va hasta 10 minutos atrás, y Bodega carga con el
   // día de la carga mientras el portal manda la emisión: se mira en vivo, de la
   // emisión a hoy, en la lista liviana. Si no se puede mirar, no se manda.
-  const yaEsta = await yaEnBodega(x.cookie, String(x.sobre.fecha), String(x.sobre.numero_doc))
+  const yaEsta = await (x.manualId
+    ? papelYaRegistrado(x.cookie, String(x.sobre.numero_doc), String(x.sobre.tipo_doc), x.erpProveedor)
+    : yaEnBodega(x.cookie, String(x.sobre.fecha), String(x.sobre.numero_doc)))
     .catch((e) => ({ error: String(e?.message ?? e) }));
   if ("error" in yaEsta) return { enviada: false, error: `No se pudo comprobar si Bodega ya la tiene: ${yaEsta.error}` };
   if (yaEsta.compra) return { enviada: false, error: `Bodega ya la tiene cargada (compra ${yaEsta.compra}): no se mandó.` };
@@ -247,6 +250,12 @@ async function enviarCompra(admin: any, x: {
   await marcar(verif.ok ? "verificada" : "sin_verificar", {
     erp_compra_id: verif.compra, error: verif.notas.length ? verif.notas.join(" · ") : null,
   });
+  // El papel ya entró: sale de la lista de facturas en papel por cargar.
+  if (x.manualId) {
+    const { error: eM } = await admin.from("compra_documento_manual")
+      .update({ estado: "cargada", updated_at: new Date().toISOString() }).eq("id", x.manualId);
+    if (eM) console.error("[cargar-compra-erp] papel cargado:", eM.message);
+  }
   // Traerla al portal ya. El cron de compras mira ayer y hoy por la fecha de
   // la compra, y ésta lleva la de EMISIÓN: sin esto entraba recién con el
   // barrido del domingo (10 días) o nunca. Después de responder, sin esperarla.
@@ -266,7 +275,7 @@ async function enviarCompra(admin: any, x: {
   // comprobó en el estante, se pasa a Bodega de vencidos.
   let vencidos: unknown = null;
   const errs: Erroneo[] = x.revision.erroneos ?? [];
-  if (errs.length) {
+  if (errs.length && x.documentId) {
     vencidos = await apartarErroneos(admin, x.cookie, errs, {
       cargaId: x.cargaId, documentId: x.documentId, quien: x.quien, emisor: x.emisor,
       erpCompra: verif.compra, lineas: x.lineas, mover: verif.ok, estante,
@@ -310,6 +319,66 @@ async function yaEnBodega(cookie: string, desde: string, numero: string): Promis
   return { compra: f ? Number(f[0]) || -1 : null };
 }
 
+/**
+ * ¿Ese papel ya está registrado para ese proveedor? Es la MISMA pregunta que
+ * hace el formulario del sistema antes de guardar (`validarNumdoc`, sólo
+ * lectura): un número impreso es corto («005342») y sólo es único dentro de
+ * su proveedor, así que la lista por fecha que sirve para el DTE no alcanza.
+ */
+async function papelYaRegistrado(cookie: string, numero: string, tipo: string, proveedor: number): Promise<{ compra: number | null }> {
+  const t = await pedir(cookie, COMPRAS, new URLSearchParams({
+    process: "validarNumdoc", numeroDocImpreso: numero, tipo_impresion: tipo, id_proveedor: String(proveedor),
+  }), { extra: { Referer: COMPRAS } });
+  const j = JSON.parse(t);
+  if (typeof j?.valido !== "boolean") throw new Error("el sistema no dijo si el número está libre");
+  return { compra: j.valido ? null : -1 };
+}
+
+/** Los proveedores que se pueden elegir para un papel: los que el sistema conoce. */
+async function proveedoresParaPapel(admin: any) {
+  const { data, error } = await admin.from("proveedores_maestro")
+    .select("nit, nombre, dias_credito, suppliers!inner(erp_supplier_id)")
+    .not("suppliers.erp_supplier_id", "is", null).order("nombre");
+  if (error) throw error;
+  return {
+    proveedores: (data ?? []).map((p: any) => ({
+      nit: p.nit, nombre: p.nombre, dias_credito: p.dias_credito ?? null, erp_supplier_id: p.suppliers?.erp_supplier_id,
+    })),
+  };
+}
+
+/**
+ * Guarda (o corrige, mientras sea borrador) una factura en papel. Antes le
+ * pregunta al sistema si ese número ya está registrado para ese proveedor —
+ * escribir el papel entero para enterarse en el envío sería tiempo perdido.
+ */
+async function guardarPapel(admin: any, x: any, quien: string) {
+  const v = validarManual(x);
+  if (!v.ok) return { error: v.error };
+  const { data: pm, error: eP } = await admin.from("proveedores_maestro")
+    .select("nit, nombre, suppliers!inner(erp_supplier_id)").eq("nit", String(x?.proveedor_nit ?? "")).maybeSingle();
+  if (eP) throw eP;
+  const erp = pm?.suppliers?.erp_supplier_id;
+  if (!erp) return { error: "Elige el proveedor." };
+  const fila = { ...v.fila, proveedor_nit: pm.nit, proveedor_nombre: pm.nombre, erp_supplier_id: erp };
+
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  const ya = await papelYaRegistrado(cookie, String(fila.numero), String(fila.tipo_doc), erp).catch(() => null);
+  if (ya?.compra) return { error: `Esa factura de ${pm.nombre} ya está registrada en Bodega.` };
+
+  const id = Number(x?.id) > 0 ? Number(x.id) : null;
+  const q = id
+    ? admin.from("compra_documento_manual").update({ ...fila, updated_at: new Date().toISOString() }).eq("id", id).eq("estado", "borrador")
+    : admin.from("compra_documento_manual").insert({ ...fila, creado_por: quien });
+  const { data, error } = await q.select("id");
+  if (error) {
+    if (error.code === "23505") return { error: "Esa factura ya está escrita en el portal: búscala en «Facturas en papel»." };
+    throw error;
+  }
+  if (!data?.length) return { error: "Esa factura ya no se puede cambiar." };
+  return { manual_id: data[0].id, comprobado: ya != null };
+}
+
 /** Busca la compra recién hecha en la lista de su fecha y compara renglón por renglón. */
 async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, lineas: LineaSobre[], erpProveedor: number) {
   const dia = String(sobre.fecha);
@@ -317,9 +386,13 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
     undefined, { timeoutMs: 90_000 });
   const compras: any[] = JSON.parse(t)?.compras ?? [];
   const numero = String(sobre.numero_doc).toUpperCase();
+  // Un papel (clase 1) lleva su número entero y corto: igualdad. Un DTE, el
+  // código recortado a 20: por el comienzo.
+  const papel = String(sobre.clase_documento_tributario) === "1";
   const c = compras.find((k) => {
     const n = String(k.documento?.numero ?? "").trim().toUpperCase();
-    return !k.anulada && Number(k.proveedor?.id) === erpProveedor && n.length >= 8 && numero.startsWith(n);
+    return !k.anulada && Number(k.proveedor?.id) === erpProveedor
+      && (papel ? n === numero : n.length >= 8 && numero.startsWith(n));
   });
   if (!c) return { ok: false, compra: null, notas: ["Entró, pero no aparece en la lista de compras de la fecha de la factura."] };
 
@@ -1029,7 +1102,11 @@ async function productoNuevo(admin: any, body: any, creaQuien: string | null = n
     if (!m.nombre) m = null;
   }
   let provFactura: string | null = null;
-  if (body?.document_id) {
+  if (body?.manual_id) {
+    const { data: mp, error: eM } = await admin.from("compra_documento_manual").select("erp_supplier_id").eq("id", Number(body.manual_id)).maybeSingle();
+    if (eM) throw eM;
+    if (mp?.erp_supplier_id) provFactura = String(mp.erp_supplier_id);
+  } else if (body?.document_id) {
     const { data: d, error: eD } = await admin.from("purchase_dte_documents").select("emisor_nit").eq("id", Number(body.document_id)).maybeSingle();
     if (eD) throw eD;
     if (d?.emisor_nit) {
@@ -1133,7 +1210,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const documentId = Number(body?.document_id);
+    const manualId = Number(body?.manual_id) > 0 ? Number(body.manual_id) : null;
+    const documentId = manualId ? null : Number(body?.document_id);
     const uso = body?.uso === "consumo" ? "consumo" : "venta";
     const decisiones: Record<string, { product_id?: number; factor?: number; lote?: string; vence?: string }> =
       body?.renglones ?? {};
@@ -1144,14 +1222,35 @@ Deno.serve(async (req: Request) => {
     }
     if (body?.accion === "erroneo_salida") return responder(await darSalidaErroneo(admin, Number(body?.id), quien.id));
     if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body, body?.crear === true ? quien.id : null));
-    if (!Number.isFinite(documentId)) return responder({ error: "Falta el documento." }, 400);
+    if (body?.accion === "manual_proveedores") return responder(await proveedoresParaPapel(admin));
+    if (body?.accion === "manual_guardar") return responder(await guardarPapel(admin, body?.manual ?? {}, quien.id));
+    if (body?.accion === "manual_descartar") {
+      const { data: q, error: eQ } = await admin.from("compra_documento_manual")
+        .update({ estado: "descartada", updated_at: new Date().toISOString() })
+        .eq("id", Number(body?.id)).eq("estado", "borrador").select("id");
+      if (eQ) throw eQ;
+      return responder(q?.length ? { ok: true } : { error: "Esa factura ya no se puede descartar." });
+    }
+    if (!manualId && !Number.isFinite(documentId)) return responder({ error: "Falta el documento." }, 400);
 
     // ── El documento y su proveedor ──────────────────────────────────────────
-    const { data: d, error: eD } = await admin.from("purchase_dte_documents")
-      .select("id, codigo_generacion, numero_control, tipo_dte, emisor_nit, emisor_nombre, fecha_emision, json_path, sello_recibido, invalidado")
-      .eq("id", documentId).maybeSingle();
-    if (eD) throw eD;
-    if (!d) return responder({ error: "Ese documento no existe." }, 404);
+    // Un papel se viste de DTE (`dteDeManual`) y sigue el mismo camino.
+    let d: any, dte: any = null, manual: any = null;
+    if (manualId) {
+      const { data: m, error: eM } = await admin.from("compra_documento_manual").select("*").eq("id", manualId).maybeSingle();
+      if (eM) throw eM;
+      if (!m) return responder({ error: "Esa factura no existe." }, 404);
+      if (m.estado !== "borrador") return responder({ error: m.estado === "cargada" ? "Esa factura ya se cargó." : "Esa factura se descartó." }, 409);
+      manual = m;
+      ({ d, dte } = dteDeManual(m));
+    } else {
+      const { data: dd, error: eD } = await admin.from("purchase_dte_documents")
+        .select("id, codigo_generacion, numero_control, tipo_dte, emisor_nit, emisor_nombre, fecha_emision, json_path, sello_recibido, invalidado")
+        .eq("id", documentId).maybeSingle();
+      if (eD) throw eD;
+      if (!dd) return responder({ error: "Ese documento no existe." }, 404);
+      d = dd;
+    }
 
     const problemas: Problema[] = [];
     if (d.invalidado) problemas.push({ renglon: null, texto: "El emisor invalidó este documento." });
@@ -1159,41 +1258,53 @@ Deno.serve(async (req: Request) => {
     if (!tipoDoc) return responder({ error: `Tipo de documento ${d.tipo_dte} no se carga como compra.` }, 400);
 
     // ¿Ya está cargado? Las mismas cuatro igualdades de `get_documentos_sin_cargar`.
+    // Un papel: su número exacto, dentro de su proveedor.
     const cod = String(d.codigo_generacion ?? "").toUpperCase();
-    const candidatos = [...new Set([cod, cod.slice(0, 20), cod.replace(/-/g, "").slice(0, 20)])];
-    const { data: recibos, error: eR } = await admin.from("purchase_receipts")
-      .select("id, erp_purchase_id, documento_numero, sello_recibido, estado")
-      .or([
-        d.sello_recibido ? `sello_recibido.eq.${d.sello_recibido}` : null,
-        ...candidatos.map((c) => `documento_numero.ilike.${c}`),
-      ].filter(Boolean).join(","));
-    if (eR) throw eR;
-    const yaCargada = (recibos ?? []).filter((r: any) => (r.estado ?? "") !== "anulada"
-      && ((d.sello_recibido && r.sello_recibido === d.sello_recibido) || candidatos.includes(normNum(r.documento_numero ?? ""))));
-    if (yaCargada.length) {
-      problemas.push({ renglon: null, texto: `Ya está registrada (compra ${yaCargada.map((r: any) => r.erp_purchase_id).join(", ")}).` });
+    if (manual) {
+      const { data: rp, error: eRp } = await admin.from("purchase_receipts").select("erp_purchase_id, documento_numero, estado")
+        .eq("erp_supplier_id", manual.erp_supplier_id).eq("documento_tipo", manual.tipo_doc).ilike("documento_numero", cod);
+      if (eRp) throw eRp;
+      const ya = (rp ?? []).filter((r: any) => (r.estado ?? "") !== "anulada");
+      if (ya.length) problemas.push({ renglon: null, texto: `Ya está registrada (compra ${ya.map((r: any) => r.erp_purchase_id).join(", ")}).` });
+    }
+    if (!manual) {
+      const candidatos = [...new Set([cod, cod.slice(0, 20), cod.replace(/-/g, "").slice(0, 20)])];
+      const { data: recibos, error: eR } = await admin.from("purchase_receipts")
+        .select("id, erp_purchase_id, documento_numero, sello_recibido, estado")
+        .or([
+          d.sello_recibido ? `sello_recibido.eq.${d.sello_recibido}` : null,
+          ...candidatos.map((c) => `documento_numero.ilike.${c}`),
+        ].filter(Boolean).join(","));
+      if (eR) throw eR;
+      const yaCargada = (recibos ?? []).filter((r: any) => (r.estado ?? "") !== "anulada"
+        && ((d.sello_recibido && r.sello_recibido === d.sello_recibido) || candidatos.includes(normNum(r.documento_numero ?? ""))));
+      if (yaCargada.length) {
+        problemas.push({ renglon: null, texto: `Ya está registrada (compra ${yaCargada.map((r: any) => r.erp_purchase_id).join(", ")}).` });
+      }
     }
     const { data: viva, error: eV } = await admin.from("compra_carga").select("id, estado")
-      .eq("document_id", documentId).in("estado", ["enviando", "verificada", "sin_verificar"]).maybeSingle();
+      .eq(manual ? "manual_id" : "document_id", manual ? manualId : documentId).in("estado", ["enviando", "verificada", "sin_verificar"]).maybeSingle();
     if (eV) throw eV;
     if (viva) problemas.push({ renglon: null, texto: "Ya se mandó desde el portal." });
 
     const { data: prov, error: eP } = await admin.from("proveedores_maestro")
       .select("nombre, supplier_id").eq("nit", d.emisor_nit).maybeSingle();
     if (eP) throw eP;
-    let erpProveedor: number | null = null;
-    if (prov?.supplier_id) {
+    let erpProveedor: number | null = manual?.erp_supplier_id ?? null;
+    if (!erpProveedor && prov?.supplier_id) {
       const { data: s, error: eS } = await admin.from("suppliers").select("erp_supplier_id").eq("id", prov.supplier_id).maybeSingle();
       if (eS) throw eS;
       erpProveedor = s?.erp_supplier_id ?? null;
     }
     if (!erpProveedor) problemas.push({ renglon: null, texto: "El proveedor no está registrado en el catálogo de proveedores." });
 
-    const path = pathDeStorage(d.json_path);
-    if (!path) return responder({ error: "El documento no tiene su archivo." }, 400);
-    const { data: blob, error: eB } = await admin.storage.from("purchase-dte").download(path);
-    if (eB || !blob) throw new Error(`No se pudo leer el archivo: ${eB?.message}`);
-    const dte = desenvolver(JSON.parse(await blob.text()));
+    if (!dte) {
+      const path = pathDeStorage(d.json_path);
+      if (!path) return responder({ error: "El documento no tiene su archivo." }, 400);
+      const { data: blob, error: eB } = await admin.storage.from("purchase-dte").download(path);
+      if (eB || !blob) throw new Error(`No se pudo leer el archivo: ${eB?.message}`);
+      dte = desenvolver(JSON.parse(await blob.text()));
+    }
     const items: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
     if (!items.length) return responder({ error: "El documento no trae renglones." }, 400);
 
@@ -1229,6 +1340,13 @@ Deno.serve(async (req: Request) => {
         // Error del proveedor: entra igual (la factura lo cobra) y después se
         // pasa a vencidos. Sin producto propio, como el genérico.
         const erroneo = (x as any).erroneo === true;
+        // Un papel no tiene nota de crédito electrónica que anexar: el error
+        // del proveedor se resuelve como siempre, fuera del portal.
+        if (erroneo && manual) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}»: en una factura en papel no se marca como error.` });
+          detalle.push({ renglon: i, descripcion: r.descripcion, error: "error en papel" });
+          continue;
+        }
         const elegido = Number(x.product_id);
         const pid = erroneo && !(elegido > 0) ? PRODUCTO_ERRONEO : elegido;
         if (!Number.isFinite(pid) || pid <= 0) {
@@ -1340,7 +1458,8 @@ Deno.serve(async (req: Request) => {
       clasificacion: uso === "consumo" ? "2" : "1",
       tipo_costo_gasto: uso === "consumo" ? "2" : "5",
       total_fovial: 0, total_cotrans: 0,
-      clase_documento_tributario: "4", numero_serie: "",
+      // Un papel es DOCUMENTO IMPRESO (1) y lleva su serie; un DTE, 4.
+      clase_documento_tributario: manual ? "1" : "4", numero_serie: manual?.serie ?? "",
     };
 
     // Los totales lado a lado, para que la persona los compare con la factura
@@ -1370,12 +1489,12 @@ Deno.serve(async (req: Request) => {
       percepcion_proveedor: tasa, renglones: detalle, erroneos, reparto,
     };
     if (enviar) return responder(await enviarCompra(admin, {
-      cookie, documentId, cargaId: Number(body?.carga_id), sobre, revision, lineas, erpProveedor: erpProveedor!,
+      cookie, documentId, manualId, cargaId: Number(body?.carga_id), sobre, revision, lineas, erpProveedor: erpProveedor!,
       quien: quien.id, emisor: { nit: d.emisor_nit, nombre: d.emisor_nombre },
     }));
 
     const { data: fila, error: eI } = await admin.from("compra_carga").insert({
-      document_id: documentId, estado: "simulada", uso, sobre, revision, creado_por: quien.id,
+      document_id: documentId, manual_id: manualId, estado: "simulada", uso, sobre, revision, creado_por: quien.id,
     }).select("id").single();
     if (eI) throw eI;
 

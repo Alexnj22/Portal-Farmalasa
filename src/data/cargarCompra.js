@@ -82,9 +82,12 @@ export async function resolverDocumento(documentId, motivo, receiptId = null) {
  * Medido sobre 36 facturas de 12 proveedores: 94.3% de los renglones con
  * producto propuesto, 93.5% con lote, 92.1% con vencimiento.
  */
-export async function fetchPropuesta(documentId) {
+// `manualId`: una factura en papel (`compra_documento_manual`) en vez de un DTE.
+export async function fetchPropuesta(documentId, manualId = null) {
     const { data, error } = await supabase.functions.invoke('leer-dte-json', {
-        body: { document_ids: [documentId], modo: 'propuesta', max_items: 30 },
+        body: manualId
+            ? { manual_id: manualId, modo: 'propuesta', max_items: 30 }
+            : { document_ids: [documentId], modo: 'propuesta', max_items: 30 },
     });
     if (error) return { propuesta: null, error: error.message ?? 'No se pudo leer el documento.' };
     const doc = data?.documentos?.[0];
@@ -205,9 +208,9 @@ export async function buscarProductos(texto, limite = 12) {
  * del documento. Devuelve `{ sobre, revision }`; `revision.problemas` vacío
  * significa que se podría mandar.
  */
-export async function simularCarga({ documentId, uso, renglones, diasCredito }) {
+export async function simularCarga({ documentId, manualId = null, uso, renglones, diasCredito }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, uso, renglones, dias_credito: diasCredito },
+        body: { document_id: documentId, manual_id: manualId, uso, renglones, dias_credito: diasCredito },
     });
     if (error) {
         let msg = error.message;
@@ -215,7 +218,7 @@ export async function simularCarga({ documentId, uso, renglones, diasCredito }) 
         return { resultado: null, error: msg ?? 'No se pudo armar la compra.' };
     }
     if (data?.error) return { resultado: null, error: data.error };
-    anotar('COMPRA_SIMULADA', documentId, { uso, carga: data?.carga_id, listo: data?.revision?.listo });
+    anotar('COMPRA_SIMULADA', documentId ?? `papel-${manualId}`, { uso, carga: data?.carga_id, listo: data?.revision?.listo });
     return { resultado: data, error: null };
 }
 
@@ -225,16 +228,16 @@ export async function simularCarga({ documentId, uso, renglones, diasCredito }) 
  * `enviada: true` (con `verificada` y `erp_compra_id`), `false` (no entró, se
  * puede corregir y volver a mandar) o `null` (no se sabe: NO mandar de nuevo).
  */
-export async function enviarCarga({ documentId, cargaId, uso, renglones, diasCredito }) {
+export async function enviarCarga({ documentId, manualId = null, cargaId, uso, renglones, diasCredito }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito },
+        body: { document_id: documentId, manual_id: manualId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito },
     });
     if (error) {
         let msg = error.message;
         try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
         return { resultado: { enviada: null }, error: msg ?? 'No se supo si entró.' };
     }
-    anotar('COMPRA_ENVIADA_A_BODEGA', documentId, {
+    anotar('COMPRA_ENVIADA_A_BODEGA', documentId ?? `papel-${manualId}`, {
         carga: cargaId, enviada: data?.enviada, verificada: data?.verificada, compra: data?.erp_compra_id, error: data?.error,
     });
     return { resultado: data, error: data?.error ?? null };
@@ -262,12 +265,12 @@ async function invocarProducto(body) {
  * `catalogos`, las listas del formulario del sistema.
  */
 export async function simularProductoNuevo(datos) {
-    return invocarProducto({ ...datos, document_id: datos.documentId, modelo_id: datos.modeloId });
+    return invocarProducto({ ...datos, document_id: datos.documentId, manual_id: datos.manualId, modelo_id: datos.modeloId });
 }
 
 /** Lo da de alta de verdad, con lo MISMO que se revisó. */
 export async function crearProductoNuevo(datos) {
-    const r = await invocarProducto({ ...datos, document_id: datos.documentId, modelo_id: datos.modeloId, crear: true });
+    const r = await invocarProducto({ ...datos, document_id: datos.documentId, manual_id: datos.manualId, modelo_id: datos.modeloId, crear: true });
     anotar('PRODUCTO_NUEVO_CREADO', r.resultado?.producto?.id ?? datos.modeloId, {
         nombre: datos.nombre, ok: !r.error, verificado: r.resultado?.verificado ?? null, error: r.error,
     });
@@ -357,4 +360,46 @@ export async function responderPedidoDeVence(id, respuestas) {
     const { error } = await supabase.rpc('compra_responder_vence', { p_id: id, p_respuestas: respuestas });
     anotar('COMPRA_VENCE_RESPONDIDO', id, { renglones: Object.keys(respuestas ?? {}).length, error: error?.message ?? null });
     return { error: error?.message ?? null };
+}
+
+/* ── Facturas en papel (2026-10-30) ───────────────────────────────────────────
+ * Proveedores que no mandan DTE (La Constancia): se escriben a mano y siguen el
+ * mismo camino de la carga. Se guardan por la Edge Function, que pregunta al
+ * sistema si el número ya está registrado para ese proveedor. */
+
+async function invocarPapel(body, fallo) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body });
+    if (error) {
+        let msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+        return { data: null, error: msg ?? fallo };
+    }
+    return { data, error: data?.error ?? null };
+}
+
+export async function fetchProveedoresParaPapel() {
+    const { data, error } = await invocarPapel({ accion: 'manual_proveedores' }, 'No se pudo leer la lista de proveedores.');
+    return { proveedores: data?.proveedores ?? [], error };
+}
+
+/** Las que están escritas y todavía no se cargaron. */
+export async function fetchFacturasEnPapel() {
+    const { data, error } = await supabase.from('compra_documento_manual')
+        .select('id, proveedor_nit, proveedor_nombre, tipo_doc, numero, serie, fecha_emision, total, renglones, created_at')
+        .eq('estado', 'borrador').order('created_at', { ascending: false }).limit(100);
+    return { facturas: data ?? [], error: error?.message ?? null };
+}
+
+export async function guardarFacturaEnPapel(manual) {
+    const { data, error } = await invocarPapel({ accion: 'manual_guardar', manual }, 'No se pudo guardar la factura.');
+    anotar(manual?.id ? 'COMPRA_PAPEL_CORREGIDA' : 'COMPRA_PAPEL_ESCRITA', data?.manual_id ?? manual?.id ?? null, {
+        proveedor: manual?.proveedor_nit, numero: manual?.numero, total: manual?.total, error,
+    });
+    return { manualId: data?.manual_id ?? null, error };
+}
+
+export async function descartarFacturaEnPapel(id) {
+    const { error } = await invocarPapel({ accion: 'manual_descartar', id }, 'No se pudo descartar.');
+    anotar('COMPRA_PAPEL_DESCARTADA', id, { error });
+    return { error };
 }

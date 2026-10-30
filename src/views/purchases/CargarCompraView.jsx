@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from
 import {
     PackagePlus, AlertTriangle, CheckCircle2, ScanBarcode, BookMarked,
     Search, HelpCircle, CalendarRange, ListChecks, RefreshCw, EyeOff, Layers, Truck,
+    FileText, Plus, Trash2,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -27,8 +28,10 @@ import {
     fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, darSalidaErroneo,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
+    fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
 
 // El mismo visor de Facturas de compra (lleva el PDF): sólo se baja al abrir
@@ -209,9 +212,9 @@ const ROTULO_PRECIO = ['Precio 1', 'Precio 2', 'Precio 3', 'Precio 4', 'Precio 5
  * La persona sólo corrige lo que no calce. */
 const VACIO = { proveedor: null, categoria: null, laboratorio: null, marca: null, perecedero: null, exento: null, decimal: null };
 
-function NuevoProducto({ renglon, factor, documentId, onCerrar, onCreado }) {
+function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar, onCreado }) {
     const costo = Number(renglon.costo) / (Number(factor) > 0 ? Number(factor) : 1);
-    const clave = `producto-nuevo:${documentId}:${renglon.codigo_proveedor ?? renglon.descripcion}`;
+    const clave = `producto-nuevo:${documentId ?? `m${manualId}`}:${renglon.codigo_proveedor ?? renglon.descripcion}`;
     const [f, setF] = useState(() => loadDraft(clave)?.f ?? {
         nombre: nombreDelRenglon(renglon.descripcion), barcode: barrasDelRenglon(renglon.descripcion), precio: '', ...VACIO,
     });
@@ -227,7 +230,7 @@ function NuevoProducto({ renglon, factor, documentId, onCerrar, onCreado }) {
     useEffect(() => { saveDraft(clave, { f, modelo }); }, [clave, f, modelo]);
 
     const datos = (campos) => ({
-        documentId, modeloId: modelo?.id ?? null, costo: Math.round(costo * 1e4) / 1e4,
+        documentId, manualId, modeloId: modelo?.id ?? null, costo: Math.round(costo * 1e4) / 1e4,
         nombre: campos.nombre, barcode: campos.barcode, precio: Number(campos.precio) || null,
         ...Object.fromEntries(Object.keys(VACIO).filter(k => campos[k] != null).map(k => [k, campos[k]])),
     });
@@ -247,7 +250,7 @@ function NuevoProducto({ renglon, factor, documentId, onCerrar, onCreado }) {
         }));
         setRes(r);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `datos` lee el estado del momento
-    }, [modelo?.id, documentId, costo]);
+    }, [modelo?.id, documentId, manualId, costo]);
 
     // Al abrir y al cambiar el parecido: pedir sugerencias de nuevo, soltando
     // lo que venía del parecido anterior.
@@ -355,7 +358,7 @@ function NuevoProducto({ renglon, factor, documentId, onCerrar, onCreado }) {
     );
 }
 
-function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
+function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirPapel = null }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
     // Lo que la persona corrigió acá: {codigo_proveedor: {product_id, nombre}}
@@ -388,23 +391,26 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
         onCerrar();
     };
 
+    // Una factura en papel (`doc.manual_id`) va por el mismo camino que un DTE.
+    const papel = !!doc.manual_id;
+    const claveBorrador = `cargar-compra:${papel ? `m${doc.manual_id}` : doc.document_id}`;
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
-        const { propuesta, error: e } = await fetchPropuesta(doc.document_id);
+        const { propuesta, error: e } = await fetchPropuesta(doc.document_id, doc.manual_id ?? null);
         if (e) { setError(e); return; }
         setP(propuesta);
         // Lo que la persona ya había ajustado sobre ESTE documento vuelve: la
         // sesión se cierra sola a los pocos minutos y una factura de 30
         // renglones no se vuelve a teclear.
-        const b = loadDraft(`cargar-compra:${doc.document_id}`);
+        const b = loadDraft(claveBorrador);
         setAjustes(b?.ajustes ?? Object.fromEntries(propuesta.renglones.map((r, i) => [i, ajusteInicial(r)])));
         setUso(b?.uso ?? 'venta');
         setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
-    }, [doc.document_id]);
+    }, [doc.document_id, doc.manual_id, claveBorrador]);
 
     useEffect(() => {
-        if (p) saveDraft(`cargar-compra:${doc.document_id}`, { ajustes, uso, dias });
-    }, [p, ajustes, uso, dias, doc.document_id]);
+        if (p) saveDraft(claveBorrador, { ajustes, uso, dias });
+    }, [p, ajustes, uso, dias, claveBorrador]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
@@ -480,7 +486,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
     const enviar = async () => {
         setEnv(true); setError('');
         const { resultado: r, error: e } = await enviarCarga({
-            documentId: doc.document_id, cargaId: resultado.carga_id, uso, renglones: decisiones(),
+            documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, cargaId: resultado.carga_id, uso, renglones: decisiones(),
             diasCredito: dias === '' ? null : Number(dias),
         });
         setEnv(false); setConf(false);
@@ -492,7 +498,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
         setRev(true); setError(''); setRes(null); setEnvio(null);
         const renglones = decisiones();
         const { resultado: res, error: e } = await simularCarga({
-            documentId: doc.document_id, uso, renglones,
+            documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, uso, renglones,
             diasCredito: dias === '' ? null : Number(dias),
         });
         setRev(false);
@@ -598,7 +604,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                     {/* Una sola barra: qué se mira a la izquierda; cómo se carga a
                         la derecha (sólo tiene sentido mirando la carga). */}
                     <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
-                        <SegmentedControl size="sm" label="Ver" value={vista} onChange={setVista} options={VISTAS} />
+                        {papel ? <span /> : <SegmentedControl size="sm" label="Ver" value={vista} onChange={setVista} options={VISTAS} />}
                         {vista === 'carga' && (
                             <div className="flex flex-wrap items-end gap-3">
                                 <SegmentedControl size="sm" label="La compra es" value={uso}
@@ -612,7 +618,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                         )}
                     </div>
 
-                    {vista === 'documento' ? (
+                    {vista === 'documento' && !papel ? (
                         <div data-surface="card" className="h-[70vh] flex flex-col overflow-hidden">
                             <Suspense fallback={<p className="p-4 text-label text-content-3">Abriendo el documento…</p>}>
                                 <VisorDte formData={{ document: {
@@ -714,7 +720,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                             ))}
                         </Notice>
                     )}
-                    {uso === 'venta' && (
+                    {uso === 'venta' && !papel && (
                         <PedirFechas documentId={doc.document_id} salas={salasReparto} puedeEditar={puedeEditar}
                             sinFecha={p.renglones.map((r, i) => ({ renglon: i, descripcion: r.descripcion, cantidad: r.cantidad }))
                                 .filter(x => !ajustes[x.renglon]?.vence && !ajustes[x.renglon]?.erroneo)}
@@ -777,7 +783,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                                                         Es nuevo
                                                     </Button>
                                                 )}
-                                                {puedeEditar && (
+                                                {puedeEditar && !papel && (
                                                     <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
                                                         onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
                                                         {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
@@ -837,7 +843,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                 </>)}
                 {creando != null && p && (
                     <NuevoProducto renglon={p.renglones[creando]} factor={ajustes[creando]?.factor}
-                        documentId={doc.document_id}
+                        documentId={doc.document_id ?? null} manualId={doc.manual_id ?? null}
                         onCerrar={() => setCreando(null)}
                         onCreado={async (producto, notas) => {
                             const i = creando;
@@ -866,8 +872,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                     <p className="text-micro text-content-3 flex-1">
                         «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. Se registra sólo con «Cargar en Bodega».
                     </p>
-                    {puedeEditar && !envio?.enviada && !estadoCarga && (
+                    {puedeEditar && !papel && !envio?.enviada && !estadoCarga && (
                         <Button size="sm" variant="ghost" onClick={() => setSaliendo(true)}>No va a Bodega</Button>
+                    )}
+                    {puedeEditar && papel && !envio?.enviada && onCorregirPapel && (
+                        <Button size="sm" variant="ghost" onClick={onCorregirPapel}>Corregir factura</Button>
                     )}
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
                     {puedeEditar && p && !envio?.enviada && (
@@ -1577,6 +1586,209 @@ function TabPorConfirmar({ puedeEditar }) {
     </>);
 }
 
+/* ─── Factura en papel (2026-10-30) ─────────────────────────────────────────
+ * Proveedores que no mandan DTE (La Constancia): se copia el papel y de ahí en
+ * adelante es la misma carga — revisión, envío, verificación. Usuario,
+ * 2026-10-29: «que se pueda llenar a mano si no hay QR/foto». */
+
+const TIPOS_PAPEL = [
+    { value: 'CCF', label: 'Crédito fiscal' },
+    { value: 'COF', label: 'Factura' },
+    { value: 'FSE', label: 'Sujeto excluido' },
+];
+const RENGLON_VACIO = { codigo: '', descripcion: '', cantidad: '', importe: '', exento: false };
+const PAPEL_VACIO = { proveedor_nit: '', tipo_doc: 'CCF', numero: '', serie: '', fecha: '', total: '', renglones: [{ ...RENGLON_VACIO }] };
+
+/** El doc que abre la carga, armado desde la fila del papel. */
+const docDePapel = (m) => ({
+    manual_id: m.id, emisor_nombre: m.proveedor_nombre, emisor_nit: m.proveedor_nit,
+    fecha_emision: m.fecha_emision, monto_total: m.total,
+});
+
+function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
+    const clave = `factura-en-papel:${inicial?.id ?? 'nueva'}`;
+    const [f, setF] = useState(() => loadDraft(clave)?.f ?? (inicial ? {
+        id: inicial.id, proveedor_nit: inicial.proveedor_nit, tipo_doc: inicial.tipo_doc, numero: inicial.numero,
+        serie: inicial.serie ?? '', fecha: inicial.fecha_emision, total: String(inicial.total),
+        renglones: (inicial.renglones ?? []).map(r => ({
+            codigo: r.codigo ?? '', descripcion: r.descripcion, cantidad: String(r.cantidad),
+            importe: String(r.importe), exento: !!r.exento,
+        })),
+    } : PAPEL_VACIO));
+    const [proveedores, setProv] = useState(null);
+    const [guardando, setG] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => { saveDraft(clave, { f }); }, [clave, f]);
+    useEffect(() => {
+        let vivo = true;
+        fetchProveedoresParaPapel().then(({ proveedores: p, error: e }) => {
+            if (!vivo) return;
+            setProv(p);
+            if (e) setError(e);
+        });
+        return () => { vivo = false; };
+    }, []);
+
+    const poner = (campo, valor) => setF(x => ({ ...x, [campo]: valor }));
+    const ponerRenglon = (i, campo, valor) => setF(x => ({
+        ...x, renglones: x.renglones.map((r, k) => (k === i ? { ...r, [campo]: valor } : r)),
+    }));
+    const agregar = () => setF(x => ({ ...x, renglones: [...x.renglones, { ...RENGLON_VACIO }] }));
+    const quitar = (i) => setF(x => ({ ...x, renglones: x.renglones.filter((_, k) => k !== i) }));
+
+    // La suma de lo escrito, para que la persona la compare con el papel antes
+    // de seguir. En crédito fiscal el importe va sin IVA: se le suma el 13 % a
+    // lo gravado (la percepción, si la hay, la agrega la revisión).
+    const suma = f.renglones.reduce((a, r) => {
+        const m = Number(r.importe) || 0;
+        return { gravado: a.gravado + (r.exento ? 0 : m), exento: a.exento + (r.exento ? m : 0) };
+    }, { gravado: 0, exento: 0 });
+    const estimado = Math.round(((f.tipo_doc === 'CCF' ? suma.gravado * 1.13 : suma.gravado) + suma.exento) * 100) / 100;
+    const total = Number(f.total) || 0;
+    const descuadre = total > 0 && estimado > 0 && Math.abs(estimado - total) > 0.05;
+
+    const guardar = async () => {
+        setG(true); setError('');
+        const { manualId, error: e } = await guardarFacturaEnPapel({
+            ...f, numero: f.numero.trim(), total: Number(f.total),
+            renglones: f.renglones.map(r => ({
+                codigo: r.codigo, descripcion: r.descripcion, cantidad: Number(r.cantidad),
+                importe: Number(r.importe), exento: r.exento,
+            })),
+        });
+        setG(false);
+        if (e) { setError(e); return; }
+        clearDraft(clave);
+        onGuardada(manualId);
+    };
+
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-4xl" ariaLabel="Factura en papel">
+            <LiquidModal.Header icono={FileText} tono="brand" onClose={onCerrar}
+                titulo={inicial ? 'Corregir factura en papel' : 'Factura en papel'}
+                subtitulo="Para proveedores que no mandan factura electrónica: copia el papel tal como viene." />
+            <LiquidModal.Body>
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                    <div className="md:col-span-4">
+                        <label className={rotuloCampo('text-content-3')}>Proveedor</label>
+                        <LiquidSelect ariaLabel="Proveedor" value={f.proveedor_nit} onChange={v => poner('proveedor_nit', v || '')}
+                            placeholder={proveedores ? '¿De quién es la factura?' : 'Cargando proveedores…'}
+                            options={(proveedores ?? []).map(p => ({ value: p.nit, label: p.nombre }))}
+                            isLoading={!proveedores} />
+                    </div>
+                    <div className="md:col-span-2">
+                        <PortalInput label="Fecha de la factura" type="date" value={f.fecha} onChange={e => poner('fecha', e.target.value)} />
+                    </div>
+                    <div className="md:col-span-2">
+                        <SegmentedControl size="sm" label="Tipo" value={f.tipo_doc} onChange={v => poner('tipo_doc', v)} options={TIPOS_PAPEL} />
+                    </div>
+                    <div className="md:col-span-1">
+                        <PortalInput label="Serie" value={f.serie} onChange={e => poner('serie', e.target.value)} placeholder="Opcional" />
+                    </div>
+                    <div className="md:col-span-2">
+                        <PortalInput label="Número" value={f.numero} onChange={e => poner('numero', e.target.value)} placeholder="Como sale en el papel" />
+                    </div>
+                    <div className="md:col-span-1">
+                        <PortalInput label="Total" prefix="$" inputMode="decimal" maskType="DECIMAL" value={f.total} onChange={e => poner('total', e.target.value)} />
+                    </div>
+                </div>
+
+                <p className="mt-5 mb-2 text-caption font-black text-content-2 uppercase tracking-widest">
+                    Productos · el importe de cada línea{f.tipo_doc === 'COF' ? ', con IVA' : ', sin IVA'}, como en el papel
+                </p>
+                <div className="flex flex-col gap-2">
+                    {f.renglones.map((r, i) => (
+                        <div key={i} data-surface="card" className="px-3 py-2 grid grid-cols-2 md:grid-cols-12 gap-2 items-end">
+                            <div className="col-span-2 md:col-span-5">
+                                <PortalInput compact labelDenso label="Descripción" value={r.descripcion}
+                                    onChange={e => ponerRenglon(i, 'descripcion', e.target.value)} />
+                            </div>
+                            <div className="md:col-span-2">
+                                <PortalInput compact labelDenso label="Código" value={r.codigo} placeholder="Opcional"
+                                    onChange={e => ponerRenglon(i, 'codigo', e.target.value)} />
+                            </div>
+                            <div className="md:col-span-1">
+                                <PortalInput compact labelDenso label="Cant." type="number" min="0" value={r.cantidad}
+                                    onChange={e => ponerRenglon(i, 'cantidad', e.target.value)} />
+                            </div>
+                            <div className="md:col-span-3">
+                                <PortalInput compact labelDenso label="Importe" prefix="$" inputMode="decimal" maskType="DECIMAL" value={r.importe}
+                                    onChange={e => ponerRenglon(i, 'importe', e.target.value)} />
+                            </div>
+                            <div className="col-span-2 md:col-span-1 flex items-center justify-between gap-1 min-h-[var(--tap-min)]">
+                                <Checkbox size="sm" label="Exento" checked={r.exento} onChange={() => ponerRenglon(i, 'exento', !r.exento)} />
+                                {f.renglones.length > 1 && (
+                                    <Button size="xs" variant="ghost" iconOnly icon={Trash2} title="Quitar producto" onClick={() => quitar(i)} />
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <Button size="sm" variant="ghost" icon={Plus} onClick={agregar}>Otro producto</Button>
+                    <p className={`text-label tabular-nums ${descuadre ? 'text-warning-text font-bold' : 'text-content-2'}`}>
+                        Suma de los productos{f.tipo_doc === 'CCF' ? ' con IVA' : ''}: {formatMoney(estimado)}
+                        {descuadre && ` · el papel dice ${formatMoney(total)}: revisa`}
+                    </p>
+                </div>
+                {error && <Notice variant="danger" icon={AlertTriangle} className="mt-3">{error}</Notice>}
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <div className="flex items-center gap-2 w-full">
+                    <p className="text-micro text-content-3 flex-1">
+                        Al guardar se abre la carga: ahí se eligen los productos, el lote y el vencimiento, igual que con una factura electrónica.
+                    </p>
+                    <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
+                    <Button size="sm" loading={guardando} onClick={guardar}>Guardar y seguir</Button>
+                </div>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+/** Las facturas en papel escritas y todavía sin cargar. */
+function FacturasEnPapel({ facturas, puedeEditar, onAbrir, onDescartada }) {
+    const [descartando, setDesc] = useState(null);
+    const [error, setError] = useState('');
+    if (!facturas?.length) return null;
+    const descartar = async () => {
+        const { error: e } = await descartarFacturaEnPapel(descartando.id);
+        setDesc(null);
+        if (e) { setError(e); return; }
+        onDescartada();
+    };
+    return (
+        <div className="flex flex-col gap-2">
+            <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                Facturas en papel por cargar · {facturas.length}
+            </p>
+            {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {facturas.map(m => (
+                    <div key={m.id} data-surface="card" className="px-3 py-2 flex items-center gap-2">
+                        <FileText size={16} className="text-content-3 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-label font-black text-content truncate">{m.proveedor_nombre}</p>
+                            <p className="text-micro text-content-3 tabular-nums">
+                                {m.tipo_doc} {m.serie ? `${m.serie} · ` : ''}{m.numero} · {fmtFecha(m.fecha_emision)} · {formatMoney(m.total)}
+                            </p>
+                        </div>
+                        {puedeEditar && (
+                            <Button size="xs" variant="ghost" iconOnly icon={Trash2} title="Descartar" onClick={() => setDesc(m)} />
+                        )}
+                        <Button size="xs" className="min-h-[var(--tap-min)]" onClick={() => onAbrir(m)}>Cargar</Button>
+                    </div>
+                ))}
+            </div>
+            <ConfirmModal isOpen={!!descartando} onClose={() => setDesc(null)} onConfirm={descartar}
+                title="Descartar factura en papel"
+                message={descartando ? `La factura ${descartando.numero} de ${descartando.proveedor_nombre} sale de la lista sin cargarse.` : ''}
+                confirmText="Descartar" />
+        </div>
+    );
+}
+
 /* ─── La vista ────────────────────────────────────────────────────────────── */
 export default function CargarCompraView() {
     const { hasPermission } = useAuth();
@@ -1596,7 +1808,15 @@ export default function CargarCompraView() {
 
     const [estados, setEstados] = useState({});
     const [pistas, setPistas]   = useState({});
+    const [papeles, setPapeles] = useState([]);
+    const [escribiendo, setEscr] = useState(null);   // null · 'nueva' · la fila a corregir
+    const cargarPapeles = useCallback(async () => {
+        const { facturas, error: e } = await fetchFacturasEnPapel();
+        if (e) console.warn('[cargar-compra] facturas en papel:', e);
+        setPapeles(facturas);
+    }, []);
     const cargar = useCallback(async () => {
+        cargarPapeles();
         const { filas: f, error: e } = await fetchDocumentosSinCargar(Number(dias));
         setError(e?.message ?? '');
         setFilas(f);
@@ -1606,7 +1826,7 @@ export default function CargarCompraView() {
         if (ep) console.warn('[cargar-compra] sin pistas:', ep.message);
         setEstados(es);
         setPistas(ps);
-    }, [dias]);
+    }, [dias, cargarPapeles]);
 
     // **Sólo se pide si se está mirando.** Esta lista no vive en la pestaña «Por
     // confirmar», pero se pedía igual al montar la vista y en cada cambio de
@@ -1665,7 +1885,12 @@ export default function CargarCompraView() {
                             valueCls={totales.viejos ? 'text-warning-text' : 'text-content'} />
                     </CarrilCards>
 
-                    <div className="flex justify-end min-w-0">
+                    <div className="flex justify-end items-center gap-2 min-w-0">
+                        {puedeEditar && (
+                            <Button size="sm" variant="secondary" icon={FileText} onClick={() => setEscr('nueva')}>
+                                Factura en papel
+                            </Button>
+                        )}
                         <FilterBar onClear={() => setDias('30')} activeCount={dias !== '30' ? 1 : 0}>
                             <FilterBar.Section active={dias !== '30'} onClear={() => setDias('30')} label="período">
                                 <div style={{ width: '175px' }}>
@@ -1678,6 +1903,9 @@ export default function CargarCompraView() {
                 </div>
 
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+
+                <FacturasEnPapel facturas={papeles} puedeEditar={puedeEditar}
+                    onAbrir={m => setSel(docDePapel(m))} onDescartada={cargarPapeles} />
 
                 <Notice variant="info" icon={PackagePlus} compact>
                     El portal arma la compra desde el documento —producto, cantidad, costo, lote y
@@ -1752,9 +1980,24 @@ export default function CargarCompraView() {
             </>)}
             </div>
 
-            {sel && <Propuesta doc={sel} puedeEditar={puedeEditar} estadoCarga={estados[sel.document_id]}
-                pista={pistas[sel.document_id]}
+            {sel && <Propuesta doc={sel} puedeEditar={puedeEditar}
+                estadoCarga={sel.manual_id ? null : estados[sel.document_id]}
+                pista={sel.manual_id ? null : pistas[sel.document_id]}
+                onCorregirPapel={sel.manual_id ? () => {
+                    const m = papeles.find(x => x.id === sel.manual_id);
+                    setSel(null);
+                    if (m) setEscr(m);
+                } : null}
                 onCerrar={() => { setSel(null); cargar(); }} />}
+            {escribiendo && <FacturaEnPapel inicial={escribiendo === 'nueva' ? null : escribiendo}
+                onCerrar={() => setEscr(null)}
+                onGuardada={async (id) => {
+                    setEscr(null);
+                    const { facturas } = await fetchFacturasEnPapel();
+                    setPapeles(facturas);
+                    const m = facturas.find(x => x.id === id);
+                    if (m) setSel(docDePapel(m));
+                }} />}
         </GlassViewLayout>
     );
 }

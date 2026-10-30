@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1398.0 — Compras: cargar una factura en papel
+
+Proveedores que no mandan factura electrónica (La Constancia): en **Cargar
+compra** hay un botón **Factura en papel**. Se elige el proveedor, el tipo
+(crédito fiscal, factura o sujeto excluido), serie, número, fecha y total, y
+cada producto con su cantidad y el **importe de la línea** tal como viene en el
+papel (el unitario se despeja: en el papel a veces trae cuatro decimales). La
+pantalla suma lo escrito y avisa si no da el total. Usuario, 2026-10-29: «que se
+pueda llenar a mano si no hay QR/foto».
+
+Al guardar se abre la **misma carga** que con un DTE —productos, lote,
+vencimiento, reparto a salas, revisión y envío a Bodega—: el papel se viste de
+DTE (`_shared/compraManual.ts`) y de ahí en adelante no hay un segundo camino.
+Lo distinto: va como **documento impreso** (clase 1) con su serie; antes de
+guardar y antes de mandar se le pregunta al sistema si ese número ya está
+registrado para ese proveedor (la misma consulta que hace su formulario), y la
+lectura de vuelta compara el número exacto. En papel no se marca «Producto
+erróneo» ni se piden fechas a la sala. Las escritas y sin cargar quedan en
+«Facturas en papel por cargar» (Cargar o Descartar; «Corregir factura» desde la
+carga).
+
+`compra_documento_manual` (RLS de lectura `cargar_compra`), y `compra_carga`
+apunta a un DTE **o** a un papel (`manual_id`, CHECK de exactamente uno).
+
 ## v2.1397.4 — La ficha de empleado sólo se cierra con sus botones
 
 Al crear o editar un empleado, el modal ya no se cierra con un clic afuera, ni

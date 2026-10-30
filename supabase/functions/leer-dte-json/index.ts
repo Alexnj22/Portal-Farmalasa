@@ -3,6 +3,7 @@ import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
 import { factorEnLaDescripcion } from "../_shared/compraSobre.ts";
+import { dteDeManual } from "../_shared/compraManual.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
 //
@@ -180,6 +181,16 @@ Deno.serve(async (req: Request) => {
       }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
 
+    // Una factura en PAPEL vestida de DTE (`compraManual.ts`): sólo para la
+    // propuesta, que es lo que necesita la carga.
+    let manual: { d: any; dte: any } | null = null;
+    if (Number(body?.manual_id) > 0) {
+      const { data: m, error: errM } = await admin.from("compra_documento_manual").select("*").eq("id", Number(body.manual_id)).maybeSingle();
+      if (errM) throw new Error(`compra_documento_manual: ${errM.message}`);
+      if (!m) throw new Error("Esa factura no existe.");
+      manual = dteDeManual(m);
+    }
+
     let q = admin
       .from("purchase_dte_documents")
       .select("id, emisor_nombre, emisor_nit, codigo_generacion, fecha_emision, json_path, pdf_path, sello_recibido")
@@ -192,21 +203,24 @@ Deno.serve(async (req: Request) => {
     if (emisor_like) q = q.ilike("emisor_nombre", `%${emisor_like}%`);
     if (desde)       q = q.gte("fecha_emision", desde);
 
-    const { data: docs, error } = await q;
+    const { data: docsDte, error } = manual ? { data: [manual.d], error: null } : await q;
     if (error) throw new Error(`purchase_dte_documents: ${error.message}`);
+    const docs: any[] = docsDte ?? [];
 
     const salida: any[] = [];
 
     for (const d of docs ?? []) {
-      const path = pathDeStorage(d.json_path);
-      if (!path) { salida.push({ id: d.id, error: "json_path sin ruta de bucket" }); continue; }
+      let dte: any = manual?.dte ?? null;
+      if (!dte) {
+        const path = pathDeStorage(d.json_path);
+        if (!path) { salida.push({ id: d.id, error: "json_path sin ruta de bucket" }); continue; }
 
-      const { data: blob, error: dlErr } = await admin.storage.from("purchase-dte").download(path);
-      if (dlErr || !blob) { salida.push({ id: d.id, error: `descarga: ${dlErr?.message}` }); continue; }
+        const { data: blob, error: dlErr } = await admin.storage.from("purchase-dte").download(path);
+        if (dlErr || !blob) { salida.push({ id: d.id, error: `descarga: ${dlErr?.message}` }); continue; }
 
-      let dte: any;
-      try { dte = desenvolver(JSON.parse(await blob.text())); }
-      catch (e: any) { salida.push({ id: d.id, error: `json ilegible: ${e.message}` }); continue; }
+        try { dte = desenvolver(JSON.parse(await blob.text())); }
+        catch (e: any) { salida.push({ id: d.id, error: `json ilegible: ${e.message}` }); continue; }
+      }
 
       const items: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
       const claves = [...new Set(items.flatMap((it) => Object.keys(it ?? {})))].sort();
@@ -446,7 +460,7 @@ Deno.serve(async (req: Request) => {
 
         salida.push({
           documento: {
-            id: d.id, codigo_generacion: d.codigo_generacion,
+            id: d.id, manual_id: d.manual_id ?? null, codigo_generacion: d.codigo_generacion,
             numero_control: dte?.identificacion?.numeroControl ?? null,
             sello: d.sello_recibido ?? dte?.selloRecibido ?? null,
             fecha: d.fecha_emision, emisor: d.emisor_nombre, emisor_nit: d.emisor_nit,

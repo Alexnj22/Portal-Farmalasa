@@ -6289,11 +6289,12 @@ export type Database = {
         Row: {
           creado_por: string | null
           created_at: string
-          document_id: number
+          document_id: number | null
           erp_compra_id: number | null
           error: string | null
           estado: string
           id: number
+          manual_id: number | null
           revision: Json
           sobre: Json | null
           updated_at: string
@@ -6302,11 +6303,12 @@ export type Database = {
         Insert: {
           creado_por?: string | null
           created_at?: string
-          document_id: number
+          document_id?: number | null
           erp_compra_id?: number | null
           error?: string | null
           estado: string
           id?: never
+          manual_id?: number | null
           revision?: Json
           sobre?: Json | null
           updated_at?: string
@@ -6315,11 +6317,12 @@ export type Database = {
         Update: {
           creado_por?: string | null
           created_at?: string
-          document_id?: number
+          document_id?: number | null
           erp_compra_id?: number | null
           error?: string | null
           estado?: string
           id?: never
+          manual_id?: number | null
           revision?: Json
           sobre?: Json | null
           updated_at?: string
@@ -6354,6 +6357,13 @@ export type Database = {
             referencedRelation: "purchase_dte_documents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "compra_carga_manual_id_fkey"
+            columns: ["manual_id"]
+            isOneToOne: false
+            referencedRelation: "compra_documento_manual"
+            referencedColumns: ["id"]
+          },
         ]
       }
       compra_documento_leido: {
@@ -6385,6 +6395,75 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: true
             referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compra_documento_manual: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          erp_supplier_id: number
+          estado: string
+          fecha_emision: string
+          id: number
+          numero: string
+          percepcion: number
+          proveedor_nit: string
+          proveedor_nombre: string
+          renglones: Json
+          serie: string | null
+          tipo_doc: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          erp_supplier_id: number
+          estado?: string
+          fecha_emision: string
+          id?: never
+          numero: string
+          percepcion?: number
+          proveedor_nit: string
+          proveedor_nombre: string
+          renglones: Json
+          serie?: string | null
+          tipo_doc: string
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          erp_supplier_id?: number
+          estado?: string
+          fecha_emision?: string
+          id?: never
+          numero?: string
+          percepcion?: number
+          proveedor_nit?: string
+          proveedor_nombre?: string
+          renglones?: Json
+          serie?: string | null
+          tipo_doc?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_documento_manual_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_documento_manual_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
         ]

@@ -29,7 +29,7 @@ import {
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos,
+  lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
 } from "../_shared/compraSobre.ts";
 
 const COMPRAS = `${BASE}/compras.php`;
@@ -1757,6 +1757,8 @@ Deno.serve(async (req: Request) => {
     const erroneos: Erroneo[] = [];
     const reparto: LineaReparto[] = [];
     const salas = uso === "venta" ? await salasDeReparto(admin) : new Map<number, Sala>();
+    // El descuento al pie de la factura se reparte en el costo de cada renglón.
+    const dsc = factorDescuentoDeFactura(dte?.resumen);
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       const r: RenglonDoc = {
@@ -1764,7 +1766,7 @@ Deno.serve(async (req: Request) => {
         cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
         descuento: Number(it?.montoDescu ?? 0),
         exento: Number(it?.ventaExenta ?? 0) > 0,
-        subtotal: Number(it?.ventaGravada ?? 0) + Number(it?.ventaExenta ?? 0) + Number(it?.ventaNoSuj ?? 0),
+        subtotal: Number(it?.ventaGravada ?? 0) * dsc.gravada + Number(it?.ventaExenta ?? 0) * dsc.exenta + Number(it?.ventaNoSuj ?? 0),
       };
       let dec: Decision;
       if (uso === "consumo") dec = { tipo: "consumo" };

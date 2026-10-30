@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-30T21:30:44.688Z",
+ "generado": "2026-10-30T21:33:44.600Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1247,6 +1247,10 @@
   "compra_deshacer_resolucion": {
    "area": "compras",
    "por": "tablas"
+  },
+  "compra_devolver_documento": {
+   "area": "compras",
+   "por": "código"
   },
   "compra_erroneo_adjuntar_nota": {
    "area": "compras",

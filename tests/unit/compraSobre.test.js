@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento } from '../../supabase/functions/_shared/compraSobre.ts';
+import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento, factorDescuentoDeFactura } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -183,5 +183,28 @@ describe('cargar-compra-erp · ubicación de destino', () => {
     it('compara contra la ubicación viva antes de mandar y comprueba el estante después', () => {
         expect(fuente).toMatch(/String\(x\.sobre\.destino\) !== String\(estante\)/);
         expect(fuente).toMatch(/existenciasDeUbicacion\(x\.cookie, ERP_BODEGA, estante\)/);
+    });
+});
+
+describe('descuento al pie de la factura', () => {
+    // RONASA 226C02B8 (15-oct-2026): 50 × $5.63 y 35 % al pie. Bodega la
+    // había cargado antes a $3.6595, que es 5.63 × 0.65.
+    const RESUMEN = {
+        totalGravada: 281.5, subTotalVentas: 281.5, descuGravada: 98.52, descuExenta: 0, descuNoSuj: 0,
+        subTotal: 182.98, totalDescu: 98.52, montoTotalOperacion: 206.77, totalPagar: 206.77,
+    };
+    it('se reparte en el costo y el total cuadra con el documento', () => {
+        const f = factorDescuentoDeFactura(RESUMEN);
+        const r = { descripcion: 'MEDIBRIZ', cantidad: 50, precio: 5.63, descuento: 0, exento: false, subtotal: 281.5 * f.gravada };
+        expect(costoNeto(r)).toBe(3.6596);   // 182.98 ÷ 50: el subtotal que dice la factura
+        const { linea } = lineaDelSobre(0, r, { tipo: 'producto', producto: CONO, factor: 1, lote: null, vence: '2028-03' });
+        const tot = totalesDelSobre([linea], 'CCF', 0);
+        expect(Math.abs(Number(tot.total) - 206.77)).toBeLessThanOrEqual(0.05);
+    });
+    it('sin descuento al pie no cambia nada', () => {
+        expect(factorDescuentoDeFactura({ totalGravada: 100, subTotalVentas: 100, subTotal: 100 })).toEqual({ gravada: 1, exenta: 1 });
+    });
+    it('si el documento no lo resta, no se resta dos veces', () => {
+        expect(factorDescuentoDeFactura({ ...RESUMEN, subTotal: 281.5 })).toEqual({ gravada: 1, exenta: 1 });
     });
 });

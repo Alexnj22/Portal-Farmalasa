@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1405.0 — Compras: descuento al pie, deshacer «No va a Bodega» y abrir más rápido
+
+- **Descuento al pie de la factura**: un DTE con `resumen.descuGravada` (RONASA, 35 %) ya no carga el precio de lista. `factorDescuentoDeFactura` lo reparte en el subtotal de cada renglón —sólo si el documento mismo lo resta— y el costo sale 182.98 ÷ 50 = $3.6596, que cuadra con el total y con lo que Bodega había cargado a mano.
+- **Deshacer «No va a Bodega»**: aviso con «Deshacer» al sacar una factura o un proveedor (`compra_devolver_documento`).
+- **Abrir una compra**: el PDF se lee mientras se emparejan los renglones (de a 8 a la vez) y proveedor y diccionario se piden juntos.
+
 ## v2.1404.2 — Pedidos: el despacho acepta la presentación del mismo tamaño
 
 VENOFER (pedido a Salud 4) salió como UNIDAD de 1 y la ubicación de Bodega sólo

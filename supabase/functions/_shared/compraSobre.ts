@@ -152,6 +152,34 @@ export function lineaDelSobre(
   };
 }
 
+/**
+ * Descuento de la FACTURA, no del renglón (`resumen.descuGravada` /
+ * `descuExenta`): RONASA 226C02B8 trae 50 × $5.63 = $281.50 y un 35 % al pie
+ * ($98.52). Cada renglón dice $5.63, pero lo que se paga por unidad es
+ * $3.6595 — el mismo costo con que Bodega la cargó a mano la vez anterior.
+ * Sin repartirlo, la carga salía $111.33 arriba del documento y el aviso de
+ * margen gritaba «sube 53.8 %».
+ *
+ * Devuelve por cuánto multiplicar el subtotal de cada renglón gravado y
+ * exento. Sólo se aplica si el propio documento lo resta (`subTotal` =
+ * ventas − descuentos de la factura): un emisor que repite ahí la suma de los
+ * descuentos por renglón —que ya vienen restados en `ventaGravada`— lo
+ * restaría dos veces.
+ */
+export function factorDescuentoDeFactura(resumen: any): { gravada: number; exenta: number } {
+  const n = (v: unknown) => Number(v) || 0;
+  const dG = n(resumen?.descuGravada), dE = n(resumen?.descuExenta), dN = n(resumen?.descuNoSuj);
+  const sin = { gravada: 1, exenta: 1 };
+  if (!(dG > 0 || dE > 0)) return sin;
+  const ventas = n(resumen?.subTotalVentas) || n(resumen?.totalGravada) + n(resumen?.totalExenta) + n(resumen?.totalNoSuj);
+  if (Math.abs(ventas - dG - dE - dN - n(resumen?.subTotal)) > 0.02) return sin;
+  const g = n(resumen?.totalGravada), e = n(resumen?.totalExenta);
+  return {
+    gravada: g > 0 && dG > 0 ? (g - dG) / g : 1,
+    exenta: e > 0 && dE > 0 ? (e - dE) / e : 1,
+  };
+}
+
 /** Lo que el formulario calcularía con esas líneas (copia de `totales()`). */
 /**
  * Producto de regalo (renglón de producto a $0, como «PROMOCIONAL ELECTROLIT»):

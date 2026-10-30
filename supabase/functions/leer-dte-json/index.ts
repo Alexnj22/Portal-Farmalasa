@@ -210,6 +210,18 @@ Deno.serve(async (req: Request) => {
     const salida: any[] = [];
 
     for (const d of docs ?? []) {
+      // El PDF se baja y se lee MIENTRAS se baja el JSON y se emparejan los
+      // renglones: en serie era la mitad del tiempo de abrir una compra.
+      const pdfP: Promise<string> = (async () => {
+        if (!(modo === "pdf" || modo === "lotes" || modo === "verificar" || modo === "propuesta")) return "";
+        const pPdf = pathDeStorage(d.pdf_path);
+        if (!pPdf) return "";
+        const { data: pdfBlob, error: errPdf } = await admin.storage.from("purchase-dte").download(pPdf);
+        if (errPdf) console.error("[leer-dte-json] pdf:", errPdf.message);
+        if (!pdfBlob) return "";
+        try { return await textoDelPdf(new Uint8Array(await pdfBlob.arrayBuffer())); }
+        catch { return ""; /* PDF escaneado o sin capa de texto: se sigue sin él */ }
+      })();
       let dte: any = manual?.dte ?? null;
       if (!dte) {
         const path = pathDeStorage(d.json_path);
@@ -247,18 +259,8 @@ Deno.serve(async (req: Request) => {
       if (modo === "claves") { salida.push(base); continue; }
 
       // ── Modos que necesitan el PDF ──────────────────────────────────────
-      let txtPdf = "";
-      if (modo === "pdf" || modo === "lotes" || modo === "verificar" || modo === "propuesta") {
-        const pPdf = pathDeStorage(d.pdf_path);
-        if (pPdf) {
-          const { data: pdfBlob, error: errPdf } = await admin.storage.from("purchase-dte").download(pPdf);
-          if (errPdf) console.error("[leer-dte-json] pdf:", errPdf.message);
-          if (pdfBlob) {
-            try { txtPdf = await textoDelPdf(new Uint8Array(await pdfBlob.arrayBuffer())); }
-            catch { /* PDF escaneado o sin capa de texto: se sigue sin él */ }
-          }
-        }
-      }
+      // La propuesta lo espera recién al armar cada renglón.
+      const txtPdf = modo === "propuesta" ? "" : await pdfP;
 
       if (modo === "pdf") {
         const desdeC = Number(body?.pdf_desde ?? 0);
@@ -343,10 +345,15 @@ Deno.serve(async (req: Request) => {
       // salió cada dato, para que una persona lo mire. No toca el sistema de
       // origen ni la base — sólo lee.
       if (modo === "propuesta") {
-        const { data: prov, error: errProv } = await admin
-          .from("proveedores_maestro")
-          .select("nombre, supplier_id, f07_tipo_operacion, f07_clasificacion, f07_tipo_costo_gasto, clasificacion_estado, iva_deducible")
-          .eq("nit", d.emisor_nit).maybeSingle();
+        const [{ data: prov, error: errProv }, { data: alias, error: errA }] = await Promise.all([
+          admin.from("proveedores_maestro")
+            .select("nombre, supplier_id, f07_tipo_operacion, f07_clasificacion, f07_tipo_costo_gasto, clasificacion_estado, iva_deducible")
+            .eq("nit", d.emisor_nit).maybeSingle(),
+          // Cuántas unidades trae cada una del proveedor, aprendido con el
+          // producto. Una lectura por documento, no una por renglón.
+          admin.from("compra_producto_alias")
+            .select("codigo_proveedor, product_id, factor_proveedor").eq("emisor_nit", d.emisor_nit),
+        ]);
         if (errProv) throw errProv;
 
         // El plazo: el estándar lo pone en `resumen.pagos[].periodo` con
@@ -365,10 +372,6 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        // Cuántas unidades trae cada una del proveedor, aprendido con el
-        // producto. Una lectura por documento, no una por renglón.
-        const { data: alias, error: errA } = await admin.from("compra_producto_alias")
-          .select("codigo_proveedor, product_id, factor_proveedor").eq("emisor_nit", d.emisor_nit);
         if (errA) throw errA;
         // Por código del proveedor; si no manda código, la llave es `#`+nombre
         // normalizado en SQL (`norm_search`), que acá no se reproduce: se va
@@ -376,8 +379,10 @@ Deno.serve(async (req: Request) => {
         const factorDe = new Map((alias ?? []).map((a: any) => [a.codigo_proveedor, Number(a.factor_proveedor) || 1]));
         const factorDelProducto = new Map((alias ?? []).map((a: any) => [a.product_id, Number(a.factor_proveedor) || 1]));
 
-        const renglones = [];
-        for (const it of items) {
+        // Cada renglón se empareja por su lado: de a 8 a la vez, en el orden
+        // del documento. Uno tras otro, una factura de 40 renglones eran 40
+        // idas y vueltas a la base antes de poder mostrar nada.
+        const emparejar = async (it: any) => {
           // Al emparejador va el NOMBRE LIMPIO, no la descripción cruda: el
           // lote y la fecha metidos adentro son ruido distinto en cada renglón
           // y hunden el parecido. Medido: con la cruda, 28% de los renglones
@@ -399,8 +404,14 @@ Deno.serve(async (req: Request) => {
             p_texto: /\d{12,14}/.test(String(it?.descripcion ?? "")) ? String(it?.descripcion) : limpio,
           });
           if (errM) throw errM;
-          const match = Array.isArray(m) ? m[0] : m;
-          const lv = loteYVence(txtPdf, it);
+          return { it, llave, match: Array.isArray(m) ? m[0] : m };
+        };
+        const pares: { it: any; llave: string | null; match: any }[] = [];
+        for (let i = 0; i < items.length; i += 8) pares.push(...await Promise.all(items.slice(i, i + 8).map(emparejar)));
+        const txtPdfP = await pdfP;
+        const renglones = [];
+        for (const { it, llave, match } of pares) {
+          const lv = loteYVence(txtPdfP, it);
           const sim = Number(match?.similitud ?? 0);
           const seguro = match?.origen === "codigo_barras" || match?.origen === "aprendido" || sim >= 0.75;
 

@@ -31319,6 +31319,10 @@ export type Database = {
         Args: { p_document_id: number; p_nit?: string }
         Returns: Json
       }
+      compra_devolver_documento: {
+        Args: { p_document_id: number; p_proveedor?: boolean }
+        Returns: Json
+      }
       compra_erroneo_adjuntar_nota: {
         Args: { p_id: number; p_nota: number }
         Returns: undefined

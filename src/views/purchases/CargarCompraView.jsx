@@ -25,7 +25,7 @@ import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
-    fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
+    fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, devolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
@@ -381,7 +381,7 @@ const huellaDe = (renglones) => (renglones ?? []).map(r => [r.codigo_proveedor, 
  *  si no trae), o su posición si ni eso hay. */
 const claveDe = (r, i) => r.llave || r.codigo_proveedor || `@${i}`;
 
-function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirPapel = null }) {
+function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirPapel = null, onSacada = null }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
     // Lo que la persona corrigió acá: {codigo_proveedor: {product_id, nombre}}
@@ -412,6 +412,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         useStaff.getState().appendAuditLog('COMPRA_SACADA_DE_LA_COLA', String(doc.document_id), {
             motivo, compra: receiptId, proveedor: doc.emisor_nombre, total: doc.monto_total,
         });
+        onSacada?.(doc, motivo);
         onCerrar();
     };
 
@@ -1963,6 +1964,8 @@ export default function CargarCompraView() {
     const [pistas, setPistas]   = useState({});
     const [papeles, setPapeles] = useState([]);
     const [escribiendo, setEscr] = useState(null);   // null · 'nueva' · la fila a corregir
+    // La última que se sacó con «No va a Bodega», para poder deshacerlo.
+    const [sacada, setSacada] = useState(null);
     const cargarPapeles = useCallback(async () => {
         const { facturas, error: e } = await fetchFacturasEnPapel();
         if (e) console.warn('[cargar-compra] facturas en papel:', e);
@@ -1980,6 +1983,16 @@ export default function CargarCompraView() {
         setEstados(es);
         setPistas(ps);
     }, [dias, cargarPapeles]);
+    const deshacerSacada = async () => {
+        const { doc: d, proveedor } = sacada;
+        const { error: e } = await devolverDocumento(d.document_id, proveedor);
+        if (e) { setError(e === 'FORBIDDEN' ? 'No tienes permiso para devolverla a la lista.' : e); return; }
+        useStaff.getState().appendAuditLog('COMPRA_DEVUELTA_A_LA_COLA', String(d.document_id), {
+            proveedor: d.emisor_nombre, todo_el_proveedor: proveedor,
+        });
+        setSacada(null);
+        cargar();
+    };
 
     // **Sólo se pide si se está mirando.** Esta lista no vive en la pestaña «Por
     // confirmar», pero se pedía igual al montar la vista y en cada cambio de
@@ -2058,6 +2071,17 @@ export default function CargarCompraView() {
                 </div>
 
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+                {sacada && (
+                    <Notice variant="info" bloque
+                        action={<div className="flex gap-2">
+                            <Button size="sm" variant="secondary" onClick={deshacerSacada}>Deshacer</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setSacada(null)}>Listo</Button>
+                        </div>}>
+                        {sacada.proveedor
+                            ? `Nada de ${sacada.doc.emisor_nombre} aparece ya en la lista.`
+                            : `La factura de ${sacada.doc.emisor_nombre} salió de la lista.`}
+                    </Notice>
+                )}
 
                 <FacturasEnPapel facturas={papeles} puedeEditar={puedeEditar}
                     onAbrir={m => setSel(docDePapel(m))} onDescartada={cargarPapeles} />
@@ -2143,6 +2167,7 @@ export default function CargarCompraView() {
                     setSel(null);
                     if (m) setEscr(m);
                 } : null}
+                onSacada={(d, motivo) => motivo !== 'cargada_a_mano' && setSacada({ doc: d, proveedor: motivo === 'proveedor_no_va' })}
                 onCerrar={() => { setSel(null); cargar(); }} />}
             {escribiendo && <FacturaEnPapel inicial={escribiendo === 'nueva' ? null : escribiendo}
                 onCerrar={() => setEscr(null)}

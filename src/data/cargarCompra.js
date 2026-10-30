@@ -76,6 +76,15 @@ export async function resolverDocumento(documentId, motivo, receiptId = null) {
     return { data, error: error?.message ?? null };
 }
 
+/** Deshace «No va a Bodega»: la factura (o, con `proveedor`, todo lo de ese
+ *  proveedor) vuelve a la cola. */
+export async function devolverDocumento(documentId, proveedor = false) {
+    const { data, error } = await supabase.rpc('compra_devolver_documento', {
+        p_document_id: documentId, p_proveedor: !!proveedor,
+    });
+    return { ok: !!data?.ok, error: error?.message ?? null };
+}
+
 /**
  * La compra armada de un documento: encabezado y renglones, cada uno diciendo
  * **de dónde salió** su producto (código de barras, diccionario o parecido) y

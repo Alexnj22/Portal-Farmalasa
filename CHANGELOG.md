@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1401.2 — Compras: limpieza nocturna de revisiones sin usar
+
+Cada «Revisar carga» guarda una fila `simulada` en `compra_carga` para que
+«Cargar en Bodega» mande exactamente lo revisado; las que nunca se mandaban se
+quedaban para siempre. Cron `purge-compra-carga-simulada` (04:05 SV,
+`purge_compra_carga_simulada()`): borra las `simulada` de más de 30 días sin
+reparto ni erróneo colgado. Lo enviado, lo fallido y lo «sin verificar» es
+historia y no se toca.
+
 ## v2.1401.1 — Compras: el alta de producto reconoce los repetidos
 
 Al crear un producto nuevo desde la carga, el freno de «ya existe» sólo

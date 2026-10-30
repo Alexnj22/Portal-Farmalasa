@@ -128,6 +128,12 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'purge-compra-carga-simulada', slug: null, cadencia: '5 10 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Cargar compra (2026-10-30): borra las revisiones «simulada» de más de 30 días que nunca se '
+          + 'mandaron ni tienen reparto o erróneo colgado. Un DELETE sobre decenas de filas. Sólo la base propia.',
+  },
+  {
     job: 'compra-soltar-trabados', slug: null, cadencia: '*/10 * * * *',
     corridasDia: 144, sistema: 0,
     motivo: 'Cargar compra (auditoría 2026-10-30): pasa a «sin verificar» lo que quedó más de 15 min a '

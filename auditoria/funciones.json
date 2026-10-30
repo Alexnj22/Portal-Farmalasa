@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-30T18:16:37.826Z",
+ "generado": "2026-10-30T18:21:59.313Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -3677,6 +3677,10 @@
    "area": "permisos",
    "por": "código"
   },
+  "mantener_nombre_corto": {
+   "area": "personal",
+   "por": "trigger"
+  },
   "mapfre_cotizar": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -4063,7 +4067,7 @@
    "por": "llamada"
   },
   "nombre_corto_con_eleccion": {
-   "area": "inventario",
+   "area": "personal",
    "por": "llamada"
   },
   "nombre_corto_de_empleado": {
@@ -4214,7 +4218,7 @@
    "por": "código"
   },
   "primer_grupo_de_nombre": {
-   "area": "inventario",
+   "area": "personal",
    "por": "llamada"
   },
   "probar_identidad": {
@@ -4766,6 +4770,10 @@
   },
   "purgar_cola_impresion": {
    "area": "impresion",
+   "por": "cron"
+  },
+  "purge_compra_carga_simulada": {
+   "area": "compras",
    "por": "cron"
   },
   "purge_idle_sessions": {

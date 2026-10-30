@@ -21,7 +21,7 @@ import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
-    fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPropuesta, confirmarProducto, buscarProductos,
+    fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, enviarCarga,
 } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -36,6 +36,7 @@ const VISTAS = [
 ];
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
@@ -289,7 +290,7 @@ function NuevoProducto({ renglon, factor, onCerrar }) {
     );
 }
 
-function Propuesta({ doc, puedeEditar, estadoCarga, onCerrar }) {
+function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
     // Lo que la persona corrigió acá: {codigo_proveedor: {product_id, nombre}}
@@ -307,6 +308,20 @@ function Propuesta({ doc, puedeEditar, estadoCarga, onCerrar }) {
     const [enviando, setEnv]     = useState(false);
     const [envio, setEnvio]      = useState(null);   // respuesta del envío
     const [vista, setVista]      = useState('carga');
+    // Sacar el documento de la cola sin cargarlo: ya estaba cargado a mano, o
+    // no es mercadería. `saliendo` = qué se está por decidir en el pie.
+    const [saliendo, setSaliendo] = useState(false);
+    const [resolviendo, setResolv] = useState(false);
+    const sacarDeLaLista = async (motivo, receiptId = null) => {
+        setResolv(true);
+        const { error: e } = await resolverDocumento(doc.document_id, motivo, receiptId);
+        setResolv(false);
+        if (e) { setError(e === 'FORBIDDEN' ? 'No tienes permiso para sacarla de la lista.' : e); return; }
+        useStaff.getState().appendAuditLog('COMPRA_SACADA_DE_LA_COLA', String(doc.document_id), {
+            motivo, compra: receiptId, proveedor: doc.emisor_nombre, total: doc.monto_total,
+        });
+        onCerrar();
+    };
 
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
@@ -458,6 +473,30 @@ function Propuesta({ doc, puedeEditar, estadoCarga, onCerrar }) {
 
             <LiquidModal.Body>
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+                {pista?.compra && !envio?.enviada && !estadoCarga && (
+                    <Notice variant="warning" icon={HelpCircle}>
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <span className="flex-1 min-w-[16rem]">
+                                <b>Parece que ya se cargó a mano</b> en {pista.compra.sucursal ?? 'otra sucursal'}:
+                                compra del {fmtFecha(pista.compra.fecha)} por {formatMoney(pista.compra.total)},
+                                número <span className="font-mono">{pista.compra.numero}</span>. Mismo proveedor y
+                                mismo total, otro número. Si es la misma, no la cargues de nuevo.
+                            </span>
+                            {puedeEditar && (
+                                <Button size="sm" loading={resolviendo}
+                                    onClick={() => sacarDeLaLista('cargada_a_mano', pista.compra.id)}>
+                                    Sí, es esa
+                                </Button>
+                            )}
+                        </div>
+                    </Notice>
+                )}
+                {!pista?.compra && pista?.gasto && !envio?.enviada && !estadoCarga && (
+                    <Notice variant="info" icon={HelpCircle}>
+                        El proveedor está clasificado como <b>{pista.gasto}</b>: parece un gasto y no
+                        mercadería. Si no va a Bodega, sácala con «No va a Bodega».
+                    </Notice>
+                )}
                 {!p && !error && <p className="text-label text-content-3">Leyendo el documento y su archivo…</p>}
 
                 {p && (<>
@@ -682,10 +721,23 @@ function Propuesta({ doc, puedeEditar, estadoCarga, onCerrar }) {
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {saliendo ? (
+                <div className="flex items-center gap-2 w-full flex-wrap">
+                    <p className="text-label text-content-2 flex-1 min-w-[12rem]">¿Qué no va a Bodega?</p>
+                    <Button size="sm" variant="ghost" disabled={resolviendo} onClick={() => setSaliendo(false)}>Cancelar</Button>
+                    <Button size="sm" variant="secondary" loading={resolviendo}
+                        onClick={() => sacarDeLaLista('no_va_a_bodega')}>Sólo esta factura</Button>
+                    <Button size="sm" variant="secondary" loading={resolviendo} disabled={!doc.emisor_nit}
+                        onClick={() => sacarDeLaLista('proveedor_no_va')}>Nada de este proveedor</Button>
+                </div>
+                ) : (
                 <div className="flex items-center gap-2 w-full">
                     <p className="text-micro text-content-3 flex-1">
                         «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. Se registra sólo con «Cargar en Bodega».
                     </p>
+                    {puedeEditar && !envio?.enviada && !estadoCarga && (
+                        <Button size="sm" variant="ghost" onClick={() => setSaliendo(true)}>No va a Bodega</Button>
+                    )}
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
                     {puedeEditar && p && !envio?.enviada && (
                         <Button size="sm" variant={revision?.listo ? 'ghost' : 'primary'} loading={revisando}
@@ -695,6 +747,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, onCerrar }) {
                         <Button size="sm" onClick={() => setConf(true)} disabled={revisando}>Cargar en Bodega</Button>
                     )}
                 </div>
+                )}
             </LiquidModal.Footer>
             <ConfirmModal isOpen={confirmando} onClose={() => !enviando && setConf(false)} onConfirm={enviar}
                 isProcessing={enviando} isDestructive={false}
@@ -1143,12 +1196,17 @@ export default function CargarCompraView() {
     const [porPagina, setPorPagina] = useState(PAGE_SIZE_OPTIONS[0]);
 
     const [estados, setEstados] = useState({});
+    const [pistas, setPistas]   = useState({});
     const cargar = useCallback(async () => {
         const { filas: f, error: e } = await fetchDocumentosSinCargar(Number(dias));
         setError(e?.message ?? '');
         setFilas(f);
-        const { estados: es } = await fetchEstadosDeCarga((f ?? []).map(x => x.document_id));
+        const ids = (f ?? []).map(x => x.document_id);
+        const [{ estados: es }, { pistas: ps, error: ep }] = await Promise.all([
+            fetchEstadosDeCarga(ids), fetchPistasSinCargar(ids)]);
+        if (ep) console.warn('[cargar-compra] sin pistas:', ep.message);
         setEstados(es);
+        setPistas(ps);
     }, [dias]);
 
     // **Sólo se pide si se está mirando.** Esta lista no vive en la pestaña «Por
@@ -1223,11 +1281,25 @@ export default function CargarCompraView() {
 
                 <Notice variant="info" icon={PackagePlus} compact>
                     El portal arma la compra desde el documento —producto, cantidad, costo, lote y
-                    vencimiento— y cada renglón dice de dónde salió su dato. <b>Todavía no registra
-                    nada en el sistema</b>: es para revisarla. Lo que sí queda guardado es cada
-                    producto que confirmes, y de ahí en adelante ese proveedor no vuelve a preguntar.
-                    Toda compra entra a <b>Bodega</b>, y desde ahí el producto se mueve a las salas.
+                    vencimiento— y cada renglón dice de dónde salió su dato. Se revisa con «Revisar
+                    carga» y entra a <b>Bodega</b> con «Cargar en Bodega»; desde ahí el producto se
+                    mueve a las salas. Cada producto que confirmes queda guardado y ese proveedor no
+                    vuelve a preguntar.
                 </Notice>
+
+                {(() => {
+                    const ya = (filas ?? []).filter(f => !estados[f.document_id] && pistas[f.document_id]?.compra).length;
+                    const gasto = (filas ?? []).filter(f => !estados[f.document_id] && !pistas[f.document_id]?.compra && pistas[f.document_id]?.gasto).length;
+                    if (!ya && !gasto) return null;
+                    return (
+                        <Notice variant="warning" icon={HelpCircle} compact>
+                            {ya > 0 && <><b>{ya}</b> parece{ya === 1 ? '' : 'n'} ya cargada{ya === 1 ? '' : 's'} a mano con otro número
+                                («¿Ya cargada?»). </>}
+                            {gasto > 0 && <><b>{gasto}</b> parece{gasto === 1 ? '' : 'n'} gasto y no mercadería («¿Es gasto?»). </>}
+                            Ábrelas para confirmarlo y sacarlas de la lista.
+                        </Notice>
+                    );
+                })()}
 
                 <DataTable columns={COLS} dense loading={filas === null}
                     empty={{ icon: CheckCircle2, message: 'Sin facturas esperando carga en este período' }}
@@ -1260,6 +1332,11 @@ export default function CargarCompraView() {
                             <DataCell align="center" className="whitespace-nowrap">
                                 {(() => {
                                     const e = estadoDeCarga(estados[f.document_id]);
+                                    const pista = pistas[f.document_id];
+                                    if (!estados[f.document_id] && pista?.compra)
+                                        return <Badge variant="warning" size="sm">¿Ya cargada?</Badge>;
+                                    if (!estados[f.document_id] && pista?.gasto)
+                                        return <Badge variant="neutral" size="sm">¿Es gasto?</Badge>;
                                     return <Badge variant={e.variant} size="sm">{e.label}</Badge>;
                                 })()}
                             </DataCell>
@@ -1276,6 +1353,7 @@ export default function CargarCompraView() {
             </div>
 
             {sel && <Propuesta doc={sel} puedeEditar={puedeEditar} estadoCarga={estados[sel.document_id]}
+                pista={pistas[sel.document_id]}
                 onCerrar={() => { setSel(null); cargar(); }} />}
         </GlassViewLayout>
     );

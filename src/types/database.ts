@@ -6383,6 +6383,55 @@ export type Database = {
           },
         ]
       }
+      compra_documento_resuelto: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          document_id: number
+          id: number
+          motivo: string
+          purchase_receipt_id: number | null
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          document_id: number
+          id?: number
+          motivo: string
+          purchase_receipt_id?: number | null
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          document_id?: number
+          id?: number
+          motivo?: string
+          purchase_receipt_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_documento_resuelto_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_documento_resuelto_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_documento_resuelto_purchase_receipt_id_fkey"
+            columns: ["purchase_receipt_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_pago_aplicado: {
         Row: {
           created_at: string
@@ -6596,6 +6645,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      compra_proveedor_no_va_a_bodega: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          nit: string
+          nombre: string | null
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          nit: string
+          nombre?: string | null
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          nit?: string
+          nombre?: string | null
+        }
+        Relationships: []
       }
       compra_renglon_pendiente: {
         Row: {
@@ -30426,6 +30496,14 @@ export type Database = {
           supplier_id: number
         }[]
       }
+      compra_deshacer_resolucion: {
+        Args: { p_document_id: number; p_nit?: string }
+        Returns: Json
+      }
+      compra_resolver_documento: {
+        Args: { p_document_id: number; p_motivo: string; p_receipt_id?: number }
+        Returns: Json
+      }
       compras_cargadas_desde_portal: {
         Args: { p_erp_ids: number[] }
         Returns: {
@@ -33083,6 +33161,10 @@ export type Database = {
           photo_url: string
           role_id: number
         }[]
+      }
+      get_pistas_documentos_sin_cargar: {
+        Args: { p_ids: number[] }
+        Returns: Json
       }
       get_por_depositar: { Args: never; Returns: Json }
       get_precio_tipo: {

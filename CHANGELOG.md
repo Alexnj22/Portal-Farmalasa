@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1387.0 — Compras: lo ya cargado a mano y los gastos salen de la cola
+
+La cola «Por cargar en Bodega» tenía 97 facturas de más de 15 días y la mayoría
+no estaba pendiente: unas ya se habían cargado a mano con otro número y ~80 eran
+gastos (luz, agua, teléfono, banco, seguros).
+
+- **Reconoce el código escrito a mano**: si los primeros 12 caracteres
+  coinciden, la factura ya está cargada (Bodega se come un carácter o mete un
+  espacio). 6 de 96.
+- **«¿Ya cargada?»**: cuando una compra de cualquier sucursal tiene el mismo
+  proveedor, el mismo total (±$0.05) y fecha cercana, el modal la muestra y
+  con **«Sí, es esa»** sale de la cola. Es sugerencia: nada sale solo.
+- **«No va a Bodega»** en el modal: sólo esta factura, o nada de ese proveedor
+  en adelante. Si el proveedor está clasificado como gasto, la lista lo marca
+  «¿Es gasto?».
+- Se corrigió el aviso de arriba, que todavía decía que el portal no
+  registraba nada.
+
+Tablas `compra_documento_resuelto` y `compra_proveedor_no_va_a_bodega`, que
+sólo se escriben por `compra_resolver_documento` (exige editar compras).
+
 ## v2.1386.2 — Consultas de existencia: cada sala ve lo suyo
 
 En Conteo de inventario → Consultas, una sala incluida en una consulta veía

@@ -49,6 +49,32 @@ export async function fetchEstadosDeCarga(documentIds = []) {
 }
 
 /**
+ * Pistas para la cola, por documento: la compra que PARECE ser la misma
+ * cargada a mano con otro número (`compra`), y si el proveedor está
+ * clasificado como gasto (`gasto`, el nombre de la categoría). Es una
+ * sugerencia: nada sale de la cola hasta que alguien la confirma.
+ */
+export async function fetchPistasSinCargar(documentIds = []) {
+    const ids = [...new Set(documentIds.filter(Boolean))];
+    if (!ids.length) return { pistas: {}, error: null };
+    const { data, error } = await supabase.rpc('get_pistas_documentos_sin_cargar', { p_ids: ids });
+    if (error) return { pistas: {}, error };
+    return { pistas: Object.fromEntries((data ?? []).map(r => [r.document_id, r])), error: null };
+}
+
+/**
+ * Saca un documento de la cola por decisión de una persona:
+ *   'cargada_a_mano' (con la compra que es), 'no_va_a_bodega' (sólo éste), o
+ *   'proveedor_no_va' (todo lo de ese proveedor, hoy y en adelante).
+ */
+export async function resolverDocumento(documentId, motivo, receiptId = null) {
+    const { data, error } = await supabase.rpc('compra_resolver_documento', {
+        p_document_id: documentId, p_motivo: motivo, p_receipt_id: receiptId,
+    });
+    return { data, error: error?.message ?? null };
+}
+
+/**
  * La compra armada de un documento: encabezado y renglones, cada uno diciendo
  * **de dónde salió** su producto (código de barras, diccionario o parecido) y
  * su lote y vencimiento (la descripción o el PDF).

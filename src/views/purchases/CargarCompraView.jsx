@@ -76,7 +76,7 @@ const ORIGEN = {
 const TABS = [
     { key: 'facturas',  label: 'Facturas'      },
     { key: 'confirmar', label: 'Por confirmar' },
-    { key: 'erroneos',  label: 'Por error'     },
+    { key: 'erroneos',  label: 'Productos erróneos' },
 ];
 
 const COLS = [
@@ -750,7 +750,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar }) {
                                                 {puedeEditar && (
                                                     <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
                                                         onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
-                                                        {aj.erroneo ? 'No es error' : 'Es un error'}
+                                                        {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
                                                     </Button>
                                                 )}
                                                 {puedeEditar && r.codigo_proveedor && !elegido && !r.listo && (

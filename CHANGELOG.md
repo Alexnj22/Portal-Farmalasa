@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1390.1 — Compras: «Producto erróneo» en vez de «Es un error»
+
+El botón del renglón dice **Producto erróneo** (y «No es erróneo» para deshacerlo) y la pestaña, **Productos erróneos**. Pedido del usuario.
+
 ## v2.1390.0 — Compras: producto erróneo a vencidos y su nota de crédito
 
 Lo que un proveedor manda por error ya se marca al cargar la factura.

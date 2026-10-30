@@ -67,6 +67,9 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     CORTE_PENDIENTE:  'Wallet',
     // El día que nadie cerró: el mismo trabajo de caja, visto a la mañana.
     DIA_SIN_CIERRE:   'Wallet',
+    // Subió un costo al cargar una compra y el margen quedó bajo: lleva a
+    // Compras → Productos, así que va con el ícono de Compras.
+    COMPRA_MARGEN_BAJO: 'ShoppingCart',
     // El mismo `Landmark` con el que el circuito de bolsas rotula «Depósitos al
     // banco»: el aviso lleva a esa sección y tiene que verse como ella.
     DEPOSITO_BANCO:   'Landmark',

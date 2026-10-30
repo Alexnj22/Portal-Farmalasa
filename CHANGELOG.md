@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1393.0 — Compras: aviso cuando sube un costo y el margen queda bajo
+
+Al cargar una compra desde el portal, los renglones cuyo **costo subió** y
+cuyo **precio de venta actual deja menos de 15 % de margen** (la misma regla
+del catálogo, `marginLabel`) disparan un aviso —campana y push— a quienes
+ven costos (`productos_ver_costos`: hoy Administrador, Gerente General,
+Jefe/a de Compras y Logística, Jefe/a de Talento Humano y Supervisor/a de
+Ventas). Dice producto, costo de antes y de ahora, precio y margen, y lleva a
+Compras → Productos. Corre después de responder: un fallo del aviso no toca la
+carga. El producto erróneo genérico no cuenta.
+
 ## v2.1392.0 — Compras: salida del producto erróneo y nota de crédito en el libro
 
 En **Productos erróneos**, cuando la nota de crédito ya está adjunta y el

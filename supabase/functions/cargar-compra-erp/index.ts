@@ -257,6 +257,11 @@ async function enviarCompra(admin: any, x: {
     signal: AbortSignal.timeout(140_000),
   }).then((r) => { if (!r.ok) console.error("[cargar-compra-erp] traerla al portal:", r.status); })
     .catch((e) => console.error("[cargar-compra-erp] traerla al portal:", e?.message ?? e)));
+  // El costo subió y el precio de venta ya no deja margen: avisar a quien ve
+  // costos. Sin esperar, y sin que un fallo del aviso toque la carga.
+  EdgeRuntime.waitUntil(avisarMargenBajo(admin, x.revision, x.emisor.nombre, verif.compra)
+    .catch((e) => console.error("[cargar-compra-erp] aviso de margen:", e?.message ?? e)));
+
   // Lo marcado como error del proveedor: se anota y, si la compra se
   // comprobó en el estante, se pasa a Bodega de vencidos.
   let vencidos: unknown = null;
@@ -428,6 +433,56 @@ function opcionesDe(html: string, id: string): { value: string; label: string }[
  * Todo se puede cambiar. Con `crear` lo da de alta; sin él sólo revisa.
  * Un producto regulado o antibiótico no se da de alta desde acá.
  */
+/** Margen bajo: la MISMA regla del catálogo (`marginLabel`): menos de 15 %. */
+const MARGEN_MINIMO = 15;
+
+/**
+ * Los renglones de la compra recién cargada cuyo costo SUBIÓ y cuyo precio de
+ * venta actual deja menos de 15 % de margen (o pérdida). Se avisa a quien
+ * tiene el permiso de ver costos —que es quien puede decidir un precio—, con
+ * la lista: producto, costo de antes y de ahora, precio y margen.
+ */
+async function avisarMargenBajo(admin: any, revision: any, proveedor: string | null, compra: number | null) {
+  const malos: { producto: string; antes: number; ahora: number; venta: number; margen: number }[] = [];
+  for (const x of revision?.renglones ?? []) {
+    const l = x?.linea;
+    if (!l || l.bandera !== "PRODUCTO" || Number(l.id_producto) === PRODUCTO_ERRONEO) continue;
+    const ahora = Number(l.compra), venta = Number(l.venta), antes = Number(x.costo_anterior);
+    if (!(ahora > 0) || !(venta > 0) || !(antes > 0)) continue;
+    if ((ahora - antes) / antes * 100 < 0.5) continue;
+    const margen = (venta - ahora) / venta * 100;
+    if (margen >= MARGEN_MINIMO) continue;
+    malos.push({ producto: String(x.descripcion ?? l.id_producto), antes, ahora, venta, margen: Math.round(margen * 10) / 10 });
+  }
+  if (!malos.length) return;
+
+  const { data: perm, error: eP } = await admin.from("role_permissions").select("role_id")
+    .eq("module_key", "productos_ver_costos").eq("can_view", true);
+  if (eP) throw eP;
+  const { data: roles, error: eR } = await admin.from("roles").select("id, name").in("id", (perm ?? []).map((p: any) => p.role_id));
+  if (eR) throw eR;
+  const ids = (roles ?? []).filter((r: any) => !/^QA\b/i.test(r.name)).map((r: any) => r.id);
+  if (!ids.length) return;
+  const { data: gente, error: eG } = await admin.from("employees").select("id")
+    .eq("status", "ACTIVO").or(`role_id.in.(${ids.join(",")}),secondary_role_id.in.(${ids.join(",")})`)
+    .or("tipo_ficha.is.null,tipo_ficha.eq.empleado");
+  if (eG) throw eG;
+  if (!gente?.length) return;
+
+  const m = (n: number) => `$${n.toFixed(2)}`;
+  const lista = malos.slice(0, 8).map((x) =>
+    `${x.producto}: costo ${m(x.antes)} → ${m(x.ahora)}, precio ${m(x.venta)}, margen ${x.margen} %`).join("; ");
+  const { error } = await admin.rpc("notify_employees", {
+    p_recipients: gente.map((e: any) => e.id), p_type: "COMPRA_MARGEN_BAJO",
+    p_title: malos.length === 1 ? `Subió un costo y el margen quedó bajo` : `Subieron ${malos.length} costos y el margen quedó bajo`,
+    p_body: `En la compra${compra ? ` ${compra}` : ""} de ${proveedor ?? "un proveedor"}: ${lista}`
+      + (malos.length > 8 ? ` y ${malos.length - 8} más` : "") + ". Revisa el precio de venta.",
+    p_link: "/compras?tab=productos", p_metadata: { origen: "cargar-compra", compra, productos: malos },
+    p_push: true, p_branch_id: BODEGA_BRANCH_ID,
+  });
+  if (error) throw error;
+}
+
 type Erroneo = {
   renglon: number; descripcion: string; codigo_proveedor: string | null;
   product_id: number; es_generico: boolean; unidades: number; costo_unitario: number;

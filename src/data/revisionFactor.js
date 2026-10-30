@@ -79,7 +79,7 @@ export function causaDeCorreccion(f) {
  * `id` lo pone quien llama: el alta no devuelve la fila y hace falta para
  * aplicarla enseguida.
  */
-export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador, vence = null }) {
+export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador, vence = null, conteo = null }) {
     const carga = esCarga(fila);
     const op = OPERACIONES_AJUSTE.find(o => o.key === (carga ? 'CARGA' : 'DESCARTE'));
     const payload = solicitudDeAjuste({
@@ -116,6 +116,10 @@ export function pedirCorreccionDeExistencia({ id, fila, usuarioId, aprobador, ve
         muestra: fila.muestra, quedan: fila.quedan, sueltas: fila.sueltas,
         // H28: la corrección es de ESTE lote; la revisión la busca por lote.
         lote: fila.lote ?? null,
+        // Lo que la sala contó y esta corrección no cubre (unidades, + de más,
+        // − de menos). Distinto de 0, el aviso de «Carga aplicada» le llega a
+        // TODA la sala y no sólo a la jefatura: hay algo que pedir (2026-10-30).
+        resto: restoDelConteo(fila, conteo),
     };
     return insertMovimientoInventario(payload, { lineas: 1, correccion_de_factor: true, sentido: fila.sentido });
 }

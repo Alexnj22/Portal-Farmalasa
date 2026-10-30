@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1395.1 — El aviso de una corrección con algo sin ajustar le llega a toda la sala
+
+Cuando una corrección de factor deja algo sin ajustar (la sala contó de más o
+de menos), el aviso de «Carga/Descarte aplicado» le llega a todo el personal
+activo de la sala y no sólo a la jefatura: la nota le pide a la sala una
+solicitud, y la puede hacer cualquiera de turno (usuario, 2026-10-30). Los demás
+avisos de carga y descarte siguen yendo a la jefatura.
+
+La corrección guarda `correccion_de_factor.resto` (unidades sin ajustar) y el
+aviso lo lee sin cast: un valor raro no rompe la aprobación.
+
+Migración `20261030163954_aviso_de_correccion_a_toda_la_sala_si_queda_algo`.
+
 ## v2.1395.0 — Compras: filtro «Desde el portal / A mano»
 
 Compras (Bodega) → Facturas tiene un filtro más, **Cómo entró**: «Desde el

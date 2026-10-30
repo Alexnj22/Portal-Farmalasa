@@ -331,7 +331,7 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                 id = crypto.randomUUID();
                 const { error } = await pedirCorreccionDeExistencia({
                     id, fila: f, usuarioId: user?.id, aprobador: supervisorQueResuelve(employees),
-                    vence: pideVence ? venceDia : null,
+                    vence: pideVence ? venceDia : null, conteo,
                 });
                 if (error) throw error;
             }

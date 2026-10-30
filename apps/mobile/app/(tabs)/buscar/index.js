@@ -104,7 +104,13 @@ export default function Buscar() {
   return (
     <>
       <Stack.Screen options={{
+        // iPhone (2026-10-30): con título grande y barra transparente, iOS
+        // escondía el campo —se escondía al desplazar y la pestaña de búsqueda
+        // esperaba integrarlo a la barra de abajo— y no aparecía. Fijo debajo
+        // del título y siempre visible, como en Ajustes. Android no lo lee.
         headerSearchBarOptions: {
+          placement: 'stacked',
+          hideWhenScrolling: false,
           placeholder: 'Productos, personas, pantallas…',
           autoCapitalize: 'none',
           onChangeText: (e) => setTexto(e.nativeEvent.text),

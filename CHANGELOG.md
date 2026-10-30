@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1399.1 — App del personal: el buscador se ve en iPhone
+
+En iPhone, la pestaña Buscar de la app del personal no mostraba el campo de búsqueda. Ahora va fijo debajo del título y no se esconde al desplazar (`placement: 'stacked'`, `hideWhenScrolling: false`). Android no cambia. Entra en la próxima compilación de la app.
+
 ## v2.1399.0 — Compras: producto erróneo con factura y nota en papel
 
 Un producto que vino por error ahora se puede marcar también en una **factura

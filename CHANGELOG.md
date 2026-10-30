@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1410.3 — Quitar fondo en un worker, Retocar siempre y búsqueda del registro más tolerante
+
+- **Quitar fondo funciona de verdad.** Reproducido con Playwright (Chromium y WebKit) contra la CSP de producción: además de lo abierto en v2.1409.1, `@imgly` necesita `blob:` en `connect-src` (baja su motor así) y **`unsafe-eval`** (ndarray arma código con `new Function`). En vez de abrir eso a todo el portal, el modelo corre en `plataforma/fondoWorker.js` y `vercel.json` le da a ESE archivo su propia CSP; la del portal **vuelve a como estaba antes del 2026-10-30** (sin `wasm-unsafe-eval`, sin `blob:` en scripts, sin staticimgly). Medido con el worker compilado y las dos CSP: anda en los dos motores, ~26 s la primera vez (incluye bajar el modelo). Tope 90 s. `worker.format: 'es'` en `vite.config.js` (onnxruntime se parte en chunks).
+- **«Retocar» siempre en el catálogo** (antes sólo si el fondo se había quitado con éxito). Y el pincel «Restaurar» copia de la foto con fondo **encuadrada igual** que la imagen: antes copiaba la original sin encuadrar y habría pintado corrido.
+- **Registro sanitario:** como el SRS sólo devuelve lo que tiene TODAS las palabras, «ORFENAFLEX -D DISPENSADOR» daba cero. Se agregan búsquedas de respaldo (las dos primeras palabras, y la marca sola) y palabras de mostrador a las que se ignoran (`DISPENSADOR`, `DISPLAY`, `EXHIBIDOR`, `PACK`, `PAQUETE`, `BOLSA`, `FCO`).
+
 ## v2.1410.2 — Fotos de productos: quitar fondo sin cuelgues y concentración contra el nombre
 
 - **Fondo limpio = fondo quitado.** Al limpiar un fondo plano el editor no lo marcaba, seguía pintando oscuro detrás y parecía que no había hecho nada: el botón invitaba a correr el modelo, que se colgaba en «Procesando…». Ahora queda «Fondo eliminado» y la vista previa es sobre **blanco**, como se guarda y como sale en la app.

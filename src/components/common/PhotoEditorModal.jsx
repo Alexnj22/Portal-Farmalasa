@@ -193,13 +193,16 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
         return () => { vivo = false; URL.revokeObjectURL(url); };
     }, [file, producto]);
 
-    // Preload original img for restore brush (only once bg is removed)
+    // La foto CON fondo, alineada con la actual: de ahí copia «Restaurar».
+    // Empieza siendo la original; `encuadrar` la corta igual que a la imagen.
+    const baseRef = useRef(null);
     useEffect(() => {
-        if (!bgRemoved || !originalUrl.current) return;
+        const src = baseRef.current || originalUrl.current;
+        if (!src) return;
         const img = new Image();
-        img.src = originalUrl.current;
+        img.src = src;
         originalImgRef.current = img;
-    }, [bgRemoved]);
+    }, [bgRemoved, imageSrc]);
 
     // Init brush canvas whenever entering brush mode
     useEffect(() => {
@@ -235,8 +238,11 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
         setEncuadrando(true);
         setSinProducto(false);
         try {
-            const url = await encuadrarProducto(src, { limpiarFondo });
-            if (!url) { setSinProducto(true); return; }
+            const hecho = await encuadrarProducto(src, { limpiarFondo, base: baseRef.current || originalUrl.current });
+            if (!hecho) { setSinProducto(true); return; }
+            const { url } = hecho;
+            if (baseRef.current && baseRef.current !== originalUrl.current) URL.revokeObjectURL(baseRef.current);
+            baseRef.current = hecho.base;
             setImageSrc(prev => { if (prev !== originalUrl.current) URL.revokeObjectURL(prev); return url; });
             // Limpiar un fondo plano ES quitar el fondo: se marca, así el botón
             // dice «Fondo eliminado» y no invita a correr el modelo encima.
@@ -257,9 +263,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
         setBgRemoving(true);
         setBgError(null);
         try {
-            const resultBlob = producto
-                ? await quitarFondo(src)
-                : await (await import('@imgly/background-removal')).removeBackground(src, { model: 'small', output: { format: 'image/png', quality: 1 } });
+            const resultBlob = await quitarFondo(src);
             const newUrl = URL.createObjectURL(resultBlob);
             setImageSrc(prev => { if (prev !== originalUrl.current) URL.revokeObjectURL(prev); return newUrl; });
             setBgRemoved(true);
@@ -289,6 +293,8 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
     // ── Reset to original ──────────────────────────────────────────────────────
     const handleReset = () => {
         if (imageSrc !== originalUrl.current) URL.revokeObjectURL(imageSrc);
+        if (baseRef.current && baseRef.current !== originalUrl.current) URL.revokeObjectURL(baseRef.current);
+        baseRef.current = null;
         setImageSrc(originalUrl.current);
         setBgRemoved(false);
         setBgError(null);
@@ -683,8 +689,10 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                                                 : <><Scissors size={13} /> Quitar fondo</>}
                                 </button>
 
-                                {bgRemoved && (
-                                    <Button tone="chart-3" icon={Paintbrush} title="Retocar bordes del fondo con pincel" onClick={() => setBrushMode(true)}>Retocar</Button>
+                                {/* En el catálogo, siempre: borrar a mano también sirve
+                                    cuando el fondo no se pudo quitar solo. */}
+                                {(bgRemoved || producto) && (
+                                    <Button tone="chart-3" icon={Paintbrush} disabled={bgRemoving || encuadrando} title="Retocar bordes del fondo con pincel" onClick={() => setBrushMode(true)}>Retocar</Button>
                                 )}
 
                                 {bgRemoved && (

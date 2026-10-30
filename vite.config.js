@@ -55,6 +55,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@imgly/background-removal', '@capacitor/geolocation', '@capacitor-community/background-geolocation'],
   },
+  // El worker de quitar fondo (`plataforma/fondoWorker.js`) importa
+  // onnxruntime, que se parte en chunks: en formato iife no se puede.
+  worker: { format: 'es' },
   build: {
     rollupOptions: {
       external: (id) => id.startsWith('@capacitor/geolocation') || id.startsWith('@capacitor-community/background-geolocation'),

@@ -80,6 +80,8 @@ export async function medirFoto(src) {
 }
 
 /**
+ * Devuelve `{ url, base }` (o `null`): `base` es `opciones.base` cortada igual.
+ *
  * Recorta el producto y lo centra en un cuadrado con margen parejo: todas las
  * fotos del catálogo quedan del mismo tamaño aparente en la app.
  *
@@ -89,7 +91,7 @@ export async function medirFoto(src) {
  * `blob:` PNG (conserva la transparencia para poder seguir retocando), o
  * `null` si no encontró un producto que recortar.
  */
-export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600, limpiarFondo = false } = {}) {
+export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600, limpiarFondo = false, base = null } = {}) {
     const img = await cargar(src);
     const escala = Math.min(1, ladoMaximo / Math.max(img.naturalWidth, img.naturalHeight));
     const w = Math.round(img.naturalWidth * escala);
@@ -166,42 +168,82 @@ export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600,
     }
     octx.drawImage(c, x0, y0, bw, bh, Math.round((lado - bw) / 2), Math.round((lado - bh) / 2), bw, bh);
     const blob = await new Promise((resolve) => out.toBlob(resolve, 'image/png'));
-    return blob ? URL.createObjectURL(blob) : null;
-}
+    if (!blob) return null;
 
-// ── Quitar el fondo con el modelo (@imgly) ───────────────────────────────────
-// El modelo CHICO (isnet_quint8): el mediano daba bordes apenas mejores y
-// tardaba el doble, medido por el usuario como «super lento». `precargarQuitarFondo`
-// baja el modelo antes del primer uso, para que el primer clic no espere la
-// descarga.
-let libPromise = null;
-function getLib() {
-    if (!libPromise) {
-        libPromise = import('@imgly/background-removal')
-            .catch((err) => { libPromise = null; throw err; });
+    // La foto CON fondo, cortada en el MISMO lugar: es de donde copia el pincel
+    // «Restaurar». Sin esto copiaba la original sin encuadrar y pintaba corrido.
+    let urlBase = null;
+    if (base) {
+        const bi = await cargar(base);
+        const bc = document.createElement('canvas');
+        bc.width = lado; bc.height = lado;
+        const bctx = bc.getContext('2d');
+        bctx.fillStyle = 'white';
+        bctx.fillRect(0, 0, lado, lado);
+        // `base` tiene las mismas medidas que `src`: se escala igual.
+        const k = w / bi.naturalWidth;
+        bctx.drawImage(bi, x0 / k, y0 / k, bw / k, bh / k, Math.round((lado - bw) / 2), Math.round((lado - bh) / 2), bw, bh);
+        const bb = await new Promise((resolve) => bc.toBlob(resolve, 'image/png'));
+        urlBase = bb ? URL.createObjectURL(bb) : null;
     }
-    return libPromise;
+    return { url: URL.createObjectURL(blob), base: urlBase };
 }
-// CPU siempre: con WebGPU se colgó en «Procesando…» sin error (2026-10-30),
-// y un cuelgue es peor que lento. Con tope: pasado el minuto se avisa.
-const configFondo = () => ({ model: 'small', device: 'cpu', output: { format: 'image/png', quality: 1 } });
-const TOPE_MS = 60_000;
 
+// ── Quitar el fondo con el modelo (@imgly), en un worker ─────────────────────
+// Ver `fondoWorker.js`: en la página la CSP del portal lo bloquea, a propósito.
+// El modelo CHICO (isnet_quint8), en CPU: con WebGPU se colgó sin error. Tope
+// de 90 s — la primera vez incluye bajar el modelo (~25 s medidos).
+const TOPE_MS = 90_000;
+let trabajador = null;
+let siguiente = 0;
+const pendientes = new Map();
+
+function elTrabajador() {
+    if (!trabajador) {
+        trabajador = new Worker(new URL('./fondoWorker.js', import.meta.url), { type: 'module' });
+        trabajador.onmessage = ({ data }) => {
+            const p = pendientes.get(data.id);
+            if (!p) return;
+            pendientes.delete(data.id);
+            clearTimeout(p.reloj);
+            if (data.ok) p.resolve(data.blob ?? null); else p.reject(new Error(data.error || 'fallo'));
+        };
+        trabajador.onerror = (e) => {
+            // Un worker que no arrancó no contesta nunca: se rechaza todo lo
+            // pendiente y el próximo pedido crea uno nuevo.
+            for (const [, p] of pendientes) { clearTimeout(p.reloj); p.reject(new Error(e.message || 'worker')); }
+            pendientes.clear();
+            trabajador = null;
+        };
+    }
+    return trabajador;
+}
+
+function pedir(mensaje) {
+    const id = ++siguiente;
+    return new Promise((resolve, reject) => {
+        const reloj = setTimeout(() => { pendientes.delete(id); reject(new Error('tardo')); }, TOPE_MS);
+        pendientes.set(id, { resolve, reject, reloj });
+        elTrabajador().postMessage({ id, ...mensaje });
+    });
+}
+
+/** `src` (URL o blob:) → Blob PNG sin fondo. */
 export async function quitarFondo(src) {
-    const { removeBackground } = await getLib();
-    let reloj;
-    const tope = new Promise((_, reject) => { reloj = setTimeout(() => reject(new Error('tardo')), TOPE_MS); });
-    // Quien llama atrapa el error y lo muestra; acá sólo se para el reloj.
-    return Promise.race([removeBackground(src, configFondo()), tope])
-        .then((blob) => { clearTimeout(reloj); return blob; },
-              (err) => { clearTimeout(reloj); throw err; });
+    // Por un lienzo y no por `fetch(src)`: la CSP del portal no deja leer
+    // `blob:` con fetch (connect-src), y no hace falta abrirla para esto.
+    const img = await cargar(src);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    const blob = await new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('lienzo'))), 'image/png'));
+    return pedir({ tipo: 'quitar', blob });
 }
 
 let precargado = null;
 export function precargarQuitarFondo() {
     if (!precargado) {
-        precargado = getLib()
-            .then(({ preload }) => preload(configFondo()))
+        precargado = pedir({ tipo: 'precargar' })
             .catch((err) => { precargado = null; console.warn('precargarQuitarFondo', err); });
     }
     return precargado;

@@ -34,6 +34,9 @@ const SKIP_TOKENS = new Set([
     // Empaques
     'CAJA', 'FRASCO', 'BLISTER', 'BLIS', 'VIAL', 'VIALES', 'SOBRE', 'SOBRES',
     'TUBO', 'TUBOS', 'SACHET', 'SACHETS', 'ENVASE', 'POMO', 'UNIDAD', 'UNIDADES',
+    // Presentaciones de mostrador (2026-10-30: «ORFENAFLEX -D DISPENSADOR» no
+    // encontraba nada porque el SRS exige TODAS las palabras)
+    'DISPENSADOR', 'DISPLAY', 'EXHIBIDOR', 'PACK', 'PAQUETE', 'BOLSA', 'FCO',
 ]);
 
 const CORP_WORDS = new Set([
@@ -79,6 +82,11 @@ export function busquedasSrsDe(producto) {
     if (t.length) salida.push(t.slice(0, 4).join(' '));
     const marca = t.filter((x) => !/^\d+$/.test(x)).slice(0, 2);
     if (marca.length === 2 && marca.every((x) => x.length <= 6)) salida.push(marca.join(''));
+    // Respaldo: el SRS sólo devuelve lo que tiene TODAS las palabras, así que
+    // una palabra del catálogo que el registro no usa lo deja en cero. Se
+    // achica hasta la marca sola; el parecido decide después cuál sirve.
+    if (t.length > 2) salida.push(t.slice(0, 2).join(' '));
+    if (marca[0] && marca[0].length >= 4) salida.push(marca[0]);
     return [...new Set(salida.filter((q) => q.trim()))];
 }
 

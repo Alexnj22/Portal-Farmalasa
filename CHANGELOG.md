@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1401.1 — Compras: el alta de producto reconoce los repetidos
+
+Al crear un producto nuevo desde la carga, el freno de «ya existe» sólo
+comparaba el nombre EXACTO: «GALLETA OREO X12» pasaba aunque existiera «GALLETA
+OREO X 12» (el catálogo ya tiene casos así), y un nombre con paréntesis o comas
+ni siquiera se comparaba. Hoy lo decide `producto_alta_iguales` en la base:
+
+- **Igual** (frena): mismo nombre sin tildes, signos ni espacios, o mismo código
+  de barras — también contra las altas del portal que el catálogo todavía no
+  copió (se copia cada 10 min). Si está desactivado, dice que hay que
+  reactivarlo, no crear otro.
+- **Parecido** (sólo avisa): hasta 5 productos con nombre muy similar.
+
+En los dos casos la pantalla ofrece «Usar este», que lo elige en el renglón en
+vez de crear un duplicado. El candado contra dos altas simultáneas usa la misma
+llave (`producto_llave_nombre`).
+
 ## v2.1401.0 — Compras: auditoría del proceso de carga
 
 Auditoría completa de Cargar compra (proceso, base y pantallas). Lo que se

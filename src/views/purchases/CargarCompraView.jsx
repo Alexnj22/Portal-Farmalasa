@@ -212,7 +212,7 @@ const ROTULO_PRECIO = ['Precio 1', 'Precio 2', 'Precio 3', 'Precio 4', 'Precio 5
  * La persona sólo corrige lo que no calce. */
 const VACIO = { proveedor: null, categoria: null, laboratorio: null, marca: null, perecedero: null, exento: null, decimal: null };
 
-function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar, onCreado }) {
+function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar, onCreado, onUsar }) {
     const costo = Number(renglon.costo) / (Number(factor) > 0 ? Number(factor) : 1);
     const clave = `producto-nuevo:${documentId ?? `m${manualId}`}:${renglon.codigo_proveedor ?? renglon.descripcion}`;
     const [f, setF] = useState(() => loadDraft(clave)?.f ?? {
@@ -265,6 +265,9 @@ function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar,
         setF(x => ({ ...x, categoria: null, laboratorio: null, marca: null, perecedero: null, exento: null, decimal: null, precio: '' }));
         setModelo(prod);
     };
+    // Lo que la base dice que YA es este producto, o se le parece: elegirlo
+    // en vez de crear un duplicado.
+    const usarExistente = (x) => { clearDraft(clave); onUsar({ id: x.id, nombre: x.nombre }); };
     const crear = async () => {
         setCreando(true); setError('');
         const { resultado, error: e } = await crearProductoNuevo(datos(f));
@@ -324,6 +327,19 @@ function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar,
                         <Notice variant="warning" icon={AlertTriangle}>
                             <ul className="list-disc pl-5">{res.problemas.map((x, k) => <li key={k}>{x}</li>)}</ul>
                         </Notice>
+                    </div>
+                )}
+                {[...(res?.existentes ?? []), ...(res?.parecidos ?? [])].some(x => x.activo) && (
+                    <div className="mt-3 flex flex-col gap-1.5">
+                        <p className="text-micro text-content-3">
+                            {res.existentes?.length ? '¿Es éste?' : 'Se parece a productos que ya existen. Si es uno de ellos, úsalo:'}
+                        </p>
+                        {[...(res.existentes ?? []), ...(res.parecidos ?? [])].filter(x => x.activo).map(x => (
+                            <div key={x.id} className="flex items-center gap-2">
+                                <span className="text-label text-content flex-1 min-w-0 truncate">{x.nombre}</span>
+                                <Button size="xs" variant="secondary" onClick={() => usarExistente(x)}>Usar este</Button>
+                            </div>
+                        ))}
                     </div>
                 )}
                 {res?.listo && (
@@ -869,6 +885,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                     <NuevoProducto renglon={p.renglones[creando]} factor={ajustes[creando]?.factor}
                         documentId={doc.document_id ?? null} manualId={doc.manual_id ?? null}
                         onCerrar={() => setCreando(null)}
+                        onUsar={async (producto) => {
+                            const i = creando;
+                            setCreando(null);
+                            await confirmar(p.renglones[i], i, producto);
+                        }}
                         onCreado={async (producto, notas) => {
                             const i = creando;
                             setCreando(null);

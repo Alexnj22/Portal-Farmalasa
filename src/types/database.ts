@@ -7022,6 +7022,7 @@ export type Database = {
           nota: string | null
           nota_credito_document_id: number | null
           nota_papel_id: number | null
+          numero_lote: string | null
           product_id: number
           renglon: number
           salida: Json | null
@@ -7048,6 +7049,7 @@ export type Database = {
           nota?: string | null
           nota_credito_document_id?: number | null
           nota_papel_id?: number | null
+          numero_lote?: string | null
           product_id: number
           renglon: number
           salida?: Json | null
@@ -7074,6 +7076,7 @@ export type Database = {
           nota?: string | null
           nota_credito_document_id?: number | null
           nota_papel_id?: number | null
+          numero_lote?: string | null
           product_id?: number
           renglon?: number
           salida?: Json | null
@@ -35354,6 +35357,16 @@ export type Database = {
       motivos_rechazo_envio: { Args: never; Returns: string[] }
       next_cotizacion_numero: { Args: never; Returns: string }
       nit_sv_valido: { Args: { p_nit: string }; Returns: boolean }
+      nombre_corto_con_eleccion: {
+        Args: {
+          p_apellido: string
+          p_first: string
+          p_full: string
+          p_last: string
+          p_nombre: string
+        }
+        Returns: string
+      }
       nombre_corto_de_empleado: {
         Args: { p_first: string; p_full?: string; p_last: string }
         Returns: string
@@ -35480,6 +35493,7 @@ export type Database = {
         Args: { p_branch_id: number; p_tamano?: number }
         Returns: Json
       }
+      primer_grupo_de_nombre: { Args: { s: string }; Returns: string }
       probar_identidad: {
         Args: { p_employee_id: string; p_metodo: string; p_secreto: string }
         Returns: Json
@@ -35490,6 +35504,10 @@ export type Database = {
         Returns: Json
       }
       procesar_cambios_de_factor: { Args: never; Returns: Json }
+      producto_alta_iguales: {
+        Args: { p_barcode?: string; p_nombre: string }
+        Returns: Json
+      }
       producto_baja_rotacion: {
         Args: { p_branch_id: number; p_producto_id: number }
         Returns: boolean
@@ -35498,6 +35516,7 @@ export type Database = {
         Args: { p_insumo: boolean; p_motivo?: string; p_product_id: number }
         Returns: boolean
       }
+      producto_llave_nombre: { Args: { p: string }; Returns: string }
       productos_parados_de_sala: {
         Args: { p_erp_sucursal_id: number }
         Returns: Json

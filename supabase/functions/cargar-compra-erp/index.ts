@@ -1503,13 +1503,19 @@ async function productoNuevo(admin: any, body: any, creaQuien: string | null = n
   // controlado es justo lo que hay que decidir con cuidado.
   if (m && (m.regulado || m.antibiotico)) problemas.push(`«${m.nombre}» es regulado o antibiótico: un producto así se da de alta a mano.`);
 
-  // Que no exista ya: el mismo código de barras, o el mismo nombre.
-  const { data: iguales, error: eI } = await admin.from("products").select("id, nombre, codigo_barras")
-    .or([barcode ? `codigo_barras.eq.${barcode}` : null, `nombre.ilike.${nombre.replace(/[,()]/g, " ")}`].filter(Boolean).join(","))
-    .limit(3);
+  // Que no exista ya. La base compara sin tildes, signos ni espacios («OREO X 12»
+  // = «OREO X12»), mira también las altas del portal que el catálogo todavía no
+  // copió, y aparte devuelve los PARECIDOS — ésos sólo avisan.
+  const { data: cmp, error: eI } = await admin.rpc("producto_alta_iguales", { p_nombre: nombre, p_barcode: barcode || null });
   if (eI) throw eI;
-  const existentes = (iguales ?? []).map((x: any) => ({ id: x.id, nombre: x.nombre }));
-  for (const x of existentes) problemas.push(`Ya existe: ${x.nombre} (${x.id}).`);
+  const existentes = (cmp?.iguales ?? []).map((x: any) => ({ id: x.id, nombre: x.nombre, activo: x.activo !== false, por: x.por }));
+  const parecidos = (cmp?.parecidos ?? []).map((x: any) => ({ id: x.id, nombre: x.nombre, activo: x.activo !== false }));
+  for (const x of existentes) {
+    const como = x.por === "codigo" ? "con ese código de barras" : "con ese nombre";
+    problemas.push(x.activo
+      ? `Ya existe ${como}: ${x.nombre} (${x.id}). Úsalo en vez de crear otro.`
+      : `Ya existe ${como}, pero está desactivado: ${x.nombre} (${x.id}). Hay que reactivarlo, no crear otro.`);
+  }
 
   const base = {
     id: 0, nombre: "", regulado: false, antibiotico: false, precios: m?.precios ?? null,
@@ -1525,7 +1531,7 @@ async function productoNuevo(admin: any, body: any, creaQuien: string | null = n
     simulacro: true,
     catalogos: body?.catalogos ? catalogos : undefined,
     revision: {
-      problemas, listo: problemas.length === 0, existentes,
+      problemas, listo: problemas.length === 0, existentes, parecidos,
       nombre, barcode: barcode || null, valores, sugerido, precio, precio_sugerido: precioSugerido,
       modelo: m ? { id: m.id, nombre: m.nombre } : null,
       precios: sobre.lista.split(",").slice(7).join(",").replace(/;$/, "").split("#").filter(Boolean).map(Number),

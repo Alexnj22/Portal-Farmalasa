@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-30T18:10:39.739Z",
+ "generado": "2026-10-30T18:16:37.826Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -4062,9 +4062,13 @@
    "area": "compras",
    "por": "llamada"
   },
-  "nombre_corto_de_empleado": {
-   "area": "sistema",
+  "nombre_corto_con_eleccion": {
+   "area": "inventario",
    "por": "llamada"
+  },
+  "nombre_corto_de_empleado": {
+   "area": "personal",
+   "por": "tablas"
   },
   "nombre_de_pago": {
    "area": "solicitudes",
@@ -4209,6 +4213,10 @@
    "area": "inventario",
    "por": "código"
   },
+  "primer_grupo_de_nombre": {
+   "area": "inventario",
+   "por": "llamada"
+  },
   "probar_identidad": {
    "area": "acceso",
    "por": "tablas"
@@ -4225,6 +4233,10 @@
    "area": "minmax",
    "por": "cron"
   },
+  "producto_alta_iguales": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
   "producto_baja_rotacion": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -4232,6 +4244,10 @@
   "producto_insumo_marcar": {
    "area": "productos",
    "por": "código"
+  },
+  "producto_llave_nombre": {
+   "area": "facturacion-dte",
+   "por": "llamada"
   },
   "productos_parados_de_sala": {
    "area": "inventario",

@@ -71,6 +71,15 @@ export default function TabRevisionFactor() {
         }
         return [...m.values()];
     }, [datos]);
+    // Cuántas salas de cada cambio siguen arriba, en «Existencia por corregir».
+    const salasPorCambio = useMemo(() => {
+        const m = new Map();
+        for (const f of datos?.existencias ?? []) {
+            if (!m.has(f.cambio_id)) m.set(f.cambio_id, new Set());
+            m.get(f.cambio_id).add(f.erp_sucursal_id);
+        }
+        return new Map([...m].map(([id, salas]) => [id, salas.size]));
+    }, [datos]);
     // Todos los pedidos del producto juntos, con el último conteo de cada sala.
     const consultaAbierta = useMemo(() => new Map(agruparPorProducto(consultas)
         .map(g => [g.erp_product_id, g])), [consultas]);
@@ -114,7 +123,8 @@ export default function TabRevisionFactor() {
                     ? <EmptyState linea icon={CheckCircle2} title="Sin cambios de presentación recientes" />
                     : (
                         <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                            {cambios.map(c => <FilaCambio key={c.id} c={c} />)}
+                            {cambios.map(c => <FilaCambio key={c.id} c={c}
+                                salasPorCorregir={salasPorCambio.get(c.id) ?? 0} />)}
                         </ul>
                     )}
             </Seccion>
@@ -434,9 +444,15 @@ function FilaSospechoso({ s }) {
 }
 
 // ─── Un cambio ya procesado ──────────────────────────────────────────────────
-function FilaCambio({ c }) {
+function FilaCambio({ c, salasPorCorregir }) {
     const r = c.resultado ?? {};
     const minmax = Array.isArray(r.minmax) ? r.minmax : [];
+    // `procesar_cambios_de_factor` sólo deja `existencia_por_corregir` cuando
+    // alguna sala quedó contada en la unidad vieja; sin la clave, no hay nada
+    // que ajustar (ninguna fila con una caja vieja entera, o la existencia ya
+    // estaba en otra presentación). Pedido del usuario, 2026-10-30: «cuando
+    // pase eso, que lo diga».
+    const tocoExistencia = Array.isArray(r.existencia_por_corregir) && r.existencia_por_corregir.length > 0;
     return (
         <li data-surface="card" className="border-divider px-3.5 py-3 space-y-1.5">
             <div className="flex items-start justify-between gap-2">
@@ -450,6 +466,24 @@ function FilaCambio({ c }) {
                     Antes {formatQty(r.factor_antes)} por unidad de venta, ahora {formatQty(r.factor_ahora)}.
                     {' '}Se convirtieron {formatQty(r.ventas_convertidas ?? 0)} ventas.
                 </p>
+            )}
+            {c.procesado_at && r.factor_antes != null && (
+                !tocoExistencia ? (
+                    <p className="flex items-center gap-1.5 text-label font-bold text-success-text">
+                        <CheckCircle2 size={13} strokeWidth={2.5} className="shrink-0" />
+                        La existencia no necesita ajuste.
+                    </p>
+                ) : salasPorCorregir > 0 ? (
+                    <p className="flex items-center gap-1.5 text-label font-bold text-warning-text">
+                        <AlertTriangle size={13} strokeWidth={2.5} className="shrink-0" />
+                        {salasPorCorregir === 1 ? 'Falta ajustar la existencia de 1 sala' : `Falta ajustar la existencia de ${salasPorCorregir} salas`}: está arriba, en «Existencia por corregir».
+                    </p>
+                ) : (
+                    <p className="flex items-center gap-1.5 text-label font-bold text-content-3">
+                        <CheckCircle2 size={13} strokeWidth={2.5} className="shrink-0" />
+                        La existencia ya no tiene nada por ajustar.
+                    </p>
+                )
             )}
             {minmax.length > 0 && (
                 <p className="text-label font-bold text-content-3">

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1388.1 — Revisión de factor: cada cambio dice si la existencia necesita ajuste
+
+En «Cambios de presentación», cada tarjeta ahora cierra con el estado de la
+existencia: «La existencia no necesita ajuste» (ninguna sala quedó contada en la
+unidad vieja — Venofer 5→1 con 1 caja en Bodega), «Falta ajustar la existencia
+de N salas» (las que siguen en «Existencia por corregir») o «ya no tiene nada
+por ajustar». Antes la tarjeta callaba y no se sabía si había que hacer algo.
+
 ## v2.1388.0 — Compras: producto nuevo desde la carga, prellenado
 
 Cuando un renglón de la factura no está en Bodega, el modal lo dice —«¿es

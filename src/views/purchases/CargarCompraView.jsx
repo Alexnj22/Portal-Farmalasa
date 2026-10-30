@@ -1252,7 +1252,7 @@ function TabErroneos({ puedeEditar }) {
                                 </p>
                                 <p className="text-micro text-content-3 flex items-center gap-1 mt-0.5">
                                     <AvatarConEstado emp={{ id: f.marcado_por, name: f.marcado_nombre }} px={16} radio="rounded-full" marco="" />
-                                    {shortEmployeeName(f.marcado_nombre ?? '')} · {new Date(f.created_at).toLocaleDateString('es-SV')}
+                                    {shortEmployeeName(f.marcado_nombre ?? '')} · {fechaNumerica(f.created_at)}
                                     {f.erp_traslado_id ? ` · traslado ${f.erp_traslado_id}` : ''}
                                 </p>
                                 {f.nota && <p className="text-micro text-warning font-bold mt-0.5">{f.nota}</p>}

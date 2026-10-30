@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1397.3 — Compras: fecha de Productos erróneos con el canónico
+
+La fecha de cada producto erróneo en Cargar compra se formateaba con `toLocaleDateString`; ahora usa `fechaNumerica` (`gate:hora` frenaba el pre-commit de todo el repo).
+
 ## v2.1397.2 — Traslados: el buscador de envíos de Bodega usa la regla del portal
 
 Las tarjetas de Bodega en Traslados → En camino (envíos de compras y pedidos de fechas) filtraban con `toLowerCase().includes`: sin tildes no encontraba «Sarita» escrito distinto ni palabras en otro orden. Ahora usan `tokenMatch`, como el resto del portal (`gate:busqueda` lo frenaba).

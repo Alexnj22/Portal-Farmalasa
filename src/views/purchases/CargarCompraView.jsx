@@ -176,7 +176,21 @@ const ajusteInicial = (r) => ({
     factor: String(r.factor_proveedor ?? 1),
     lote: r.lote ?? '',
     vence: r.vence ? r.vence.slice(0, 7) : '',
+    venta: '',   // viñeta nueva leída en la caja; vacío = la que ya tiene Bodega
 });
+
+// La viñeta que tiene hoy Bodega para la presentación con que entraría: la de
+// la revisión si ya se revisó, si no la de la propuesta (misma regla que el
+// servidor: la presentación del tamaño del factor, si no la de 1).
+const vinetaActual = (r, aj, sim) => {
+    if (sim?.venta_anterior > 0) return Number(sim.venta_anterior);
+    const f = Number(aj?.factor) || 1;
+    const l = r.vinetas ?? [];
+    const v = (l.find(x => x.factor === f) ?? l.find(x => x.factor === 1))?.vineta;
+    return Number(v) > 0 ? Number(v) : null;
+};
+// Al múltiplo de 5 centavos de arriba: así se ponen las viñetas.
+const subirA5 = (n) => Math.ceil(Math.round(n * 100) / 5) * 5 / 100;
 
 // Las unidades que entran con un factor dado, y la línea de ayuda debajo del
 // campo: de dónde salió y cómo se reparte en lo que factura el proveedor.
@@ -516,6 +530,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         factor: Number(ajustes[i]?.factor) || 1,
         lote: ajustes[i]?.lote || null,
         vence: ajustes[i]?.vence || null,
+        venta: Number(ajustes[i]?.venta) > 0 ? Number(ajustes[i].venta) : null,
         erroneo: ajustes[i]?.erroneo === true,
         reparto: aRepartir(ajustes[i]?.reparto),
     }]));
@@ -532,6 +547,18 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, cargaId: resultado.carga_id, ...rev,
         });
         setEnv(false); setConf(false);
+        if (r?.enviada) {
+            for (const [i, x] of Object.entries(rev.renglones ?? {})) {
+                if (!(x.venta > 0)) continue;
+                const x0 = (resultado?.revision?.renglones ?? []).find(y => y.renglon === Number(i));
+                const ant = x0?.venta_anterior ?? null;
+                if (ant != null && Math.abs(ant - x.venta) < 0.005) continue;
+                useStaff.getState().appendAuditLog('COMPRA_VINETA_CAMBIADA', String(x.product_id), {
+                    documento: doc.document_id ?? null, papel: doc.manual_id ?? null, proveedor: doc.emisor_nombre,
+                    producto: x0?.descripcion ?? null, antes: ant, ahora: x.venta,
+                });
+            }
+        }
         setEnvio({ ...(r ?? {}), error: e });
         setRes(null);
     };
@@ -586,7 +613,17 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             const nuevo = Number(x.linea.compra), antes = x.costo_anterior, venta = Number(x.linea.venta);
             const cambio = antes ? (nuevo - antes) / antes * 100 : null;
             const margen = calcMargin(venta, nuevo);
-            m.set(x.renglon, { nuevo, antes, venta, cambio, margen, alerta: marginLabel(margen) });
+            const ventaAntes = x.venta_anterior ?? null;
+            // Si el costo sube y la viñeta no se movió: la que mantendría el
+            // margen que tenía antes, para preguntar si la caja trae precio nuevo.
+            const mAntes = ventaAntes > 0 && antes > 0 ? (ventaAntes - antes) / ventaAntes : null;
+            const sugerida = cambio != null && cambio >= 0.5 && mAntes > 0 && mAntes < 0.9
+                && Math.abs(venta - ventaAntes) < 0.005 ? subirA5(nuevo / (1 - mAntes)) : null;
+            m.set(x.renglon, {
+                nuevo, antes, venta, cambio, margen, alerta: marginLabel(margen), ventaAntes,
+                margenAntes: mAntes != null ? mAntes * 100 : null,
+                sugerida: sugerida > ventaAntes ? sugerida : null,
+            });
         }
         return m;
     }, [revision]);
@@ -877,7 +914,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                         )}
                                     </div>
                                     {uso === 'venta' && (
-                                        <div className="mt-2 grid grid-cols-3 gap-2 max-w-xl">
+                                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-3xl">
                                             <PortalInput compact labelDenso label="Cantidad a cargar" inputMode="numeric"
                                                 helperText={cargarAyuda(r, aj)}
                                                 value={aj.cargar ?? cargarDe(r, aj.factor)}
@@ -892,6 +929,21 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 onChange={e => ajustar(i, 'lote', e.target.value)} />
                                             <PortalInput compact labelDenso label="Vence" type="month" value={aj.vence}
                                                 onChange={e => ajustar(i, 'vence', e.target.value)} />
+                                            {(() => {
+                                                const actual = vinetaActual(r, aj, sim);
+                                                const nueva = Number(aj.venta);
+                                                const cambia = nueva > 0 && actual != null && Math.abs(nueva - actual) >= 0.005;
+                                                return (
+                                                    <PortalInput compact labelDenso label="Viñeta" inputMode="decimal"
+                                                        readOnly={!puedeEditar || aj.erroneo}
+                                                        placeholder={actual != null ? actual.toFixed(2) : 'la de Bodega'}
+                                                        value={aj.venta ?? ''}
+                                                        onChange={e => ajustar(i, 'venta', e.target.value.replace(/[^\d.]/g, ''))}
+                                                        helperText={cambia
+                                                            ? `${nueva > actual ? 'Sube' : 'Baja'} ${Math.abs((nueva - actual) / actual * 100).toFixed(1)} % · antes ${formatMoney(actual)}`
+                                                            : null} />
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                     {uso === 'venta' && conProducto && !aj.erroneo && (
@@ -900,6 +952,20 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             valor={aj.reparto} onChange={v => ajustar(i, 'reparto', v)} />
                                     )}
                                     {sim?.linea && <ComoEntra sim={sim} costo={costos.get(i)} />}
+                                    {sim?.linea && puedeEditar && !aj.erroneo && costos.get(i)?.sugerida && !cantidadSospechosa(sim, costos.get(i)) && (
+                                        <Notice variant="warning" icon={HelpCircle} className="mt-2">
+                                            <span className="flex items-center gap-2 flex-wrap">
+                                                <span className="flex-1 min-w-[14rem]">
+                                                    El costo sube {costos.get(i).cambio.toFixed(1)} % y la viñeta sigue en {formatMoney(costos.get(i).ventaAntes)}.
+                                                    ¿La caja trae precio nuevo? Con el mismo margen de antes ({Math.round(costos.get(i).margenAntes)} %)
+                                                    sería <b>{formatMoney(costos.get(i).sugerida)}</b>.
+                                                </span>
+                                                <Button size="xs" onClick={() => ajustar(i, 'venta', costos.get(i).sugerida.toFixed(2))}>
+                                                    Usar {formatMoney(costos.get(i).sugerida)}
+                                                </Button>
+                                            </span>
+                                        </Notice>
+                                    )}
                                     {sim?.linea && puedeEditar && (() => {
                                         const sug = cantidadSospechosa(sim, costos.get(i));
                                         return sug && (
@@ -1234,8 +1300,13 @@ function ComoEntra({ sim, costo }) {
             )}
             {costo && (
                 <div className="min-w-0">
-                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Precio de venta</p>
-                    <p className="text-label font-bold text-content tabular-nums">{formatMoney(costo.venta)}</p>
+                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Viñeta</p>
+                    <p className="text-label font-bold text-content tabular-nums">
+                        {formatMoney(costo.venta)}
+                        {costo.ventaAntes > 0 && Math.abs(costo.venta - costo.ventaAntes) >= 0.005 && (
+                            <span className="ml-1 text-micro font-bold text-warning-text">antes {formatMoney(costo.ventaAntes)}</span>
+                        )}
+                    </p>
                     <p className="text-micro text-content-3 tabular-nums flex items-center gap-1">
                         {costo.margen != null ? `margen ${Math.round(costo.margen)} %` : 'sin margen'}
                         {costo.alerta && <Badge variant={costo.alerta.variante} size="sm">{costo.alerta.label}</Badge>}

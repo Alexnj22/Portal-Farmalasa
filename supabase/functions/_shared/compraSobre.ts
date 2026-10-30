@@ -44,7 +44,7 @@ export type RenglonDoc = {
 };
 
 export type Decision =
-  | { tipo: "producto"; producto: ProductoDelSistema; factor: number; lote: string | null; vence: string | null }
+  | { tipo: "producto"; producto: ProductoDelSistema; factor: number; lote: string | null; vence: string | null; venta?: number | null }
   | { tipo: "consumo" };
 
 export type LineaSobre = {
@@ -144,12 +144,19 @@ export function lineaDelSobre(
     else if (p.regulado) problemas.push({ renglon: i, texto: `«${p.nombre}» es regulado y el renglón no dice cuándo vence.` });
     else { vence = ""; vencePendiente = true; }
   }
+  // La viñeta: la que Bodega leyó en la caja, o la que ya tiene. El sistema
+  // la guarda como el precio de venta de esa presentación.
+  const vinetaNueva = Number(d.venta) > 0 ? r2(Number(d.venta)) : null;
+  if (vinetaNueva && pres.precio > 0 && (vinetaNueva > pres.precio * 3 || vinetaNueva < pres.precio / 3)) {
+    problemas.push({ renglon: i, texto: `«${p.nombre}»: la viñeta nueva ($${vinetaNueva.toFixed(2)}) está muy lejos de la actual ($${pres.precio.toFixed(2)}). Revisa que sea de la misma presentación.` });
+  }
+  const venta = vinetaNueva ?? pres.precio;
   const lote = p.regulado ? String(d.lote ?? "").trim() : "";
   if (p.regulado && !lote) problemas.push({ renglon: i, texto: `«${p.nombre}» lleva lote y el renglón no lo trae.` });
 
   return {
     linea: {
-      id_producto: String(p.id), compra: compra.toFixed(4), venta: pres.precio.toFixed(4),
+      id_producto: String(p.id), compra: compra.toFixed(4), venta: venta.toFixed(4),
       cant: String(cant), unidad: String(pres.unidad), vence, id_presentacion: pres.id,
       exento: r.exento ? 1 : 0, bandera: "PRODUCTO", descripcion_ser: "-",
       compra_fin: compra.toFixed(4), numero_lote: lote,
@@ -162,6 +169,7 @@ export function lineaDelSobre(
       presentacion: pres.unidad, presentacion_nombre: pres.nombre ?? null,
       existencias: r4(cant * pres.unidad), vence_pendiente: vencePendiente,
       costo_anterior: Number.isFinite(pres.costo) && pres.costo > 0 ? pres.costo : null,
+      venta_anterior: Number.isFinite(pres.precio) && pres.precio > 0 ? pres.precio : null,
     },
   };
 }

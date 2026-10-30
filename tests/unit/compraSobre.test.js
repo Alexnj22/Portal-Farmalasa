@@ -221,3 +221,21 @@ describe('cantidad a cargar que no da parejo', () => {
         expect(res.linea?.cant).toBe('100');
     });
 });
+
+describe('viñeta', () => {
+    const r = { descripcion: 'X', cantidad: 10, precio: 0.7, descuento: 0, exento: false, subtotal: 7 };
+    it('sin viñeta nueva va la de Bodega y se informa la anterior', () => {
+        const res = lineaDelSobre(0, r, { tipo: 'producto', producto: CONO, factor: 1, lote: null, vence: '2028-03' });
+        expect(res.linea.venta).toBe('1.0000');
+        expect(res.detalle.venta_anterior).toBe(1);
+    });
+    it('la viñeta leída en la caja viaja como precio de venta', () => {
+        const res = lineaDelSobre(0, r, { tipo: 'producto', producto: CONO, factor: 1, lote: null, vence: '2028-03', venta: 1.25 });
+        expect(res.linea.venta).toBe('1.2500');
+        expect(res.problemas).toEqual([]);
+    });
+    it('una viñeta absurda frena', () => {
+        const res = lineaDelSobre(0, r, { tipo: 'producto', producto: CONO, factor: 1, lote: null, vence: '2028-03', venta: 10 });
+        expect(res.problemas[0].texto).toMatch(/muy lejos/);
+    });
+});

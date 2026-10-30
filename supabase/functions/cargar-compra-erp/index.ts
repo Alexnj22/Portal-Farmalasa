@@ -1792,6 +1792,7 @@ Deno.serve(async (req: Request) => {
         dec = {
           tipo: "producto", producto, factor: pid === PRODUCTO_ERRONEO ? 1 : (Number(x.factor) || 1),
           lote: x.lote ?? null, vence: x.vence ?? null,
+          venta: pid === PRODUCTO_ERRONEO ? null : (Number((x as any).venta) > 0 ? Number((x as any).venta) : null),
         };
       }
       const res = lineaDelSobre(i, r, dec);

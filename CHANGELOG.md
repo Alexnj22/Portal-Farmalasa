@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1408.0 — Compras: viñeta en la carga
+
+- **Viñeta en cada renglón de la carga**: llena con la de Bodega para la presentación con que entra; si la caja trae otra, se escribe y viaja como el precio de venta del renglón de la compra — el mismo campo con que Bodega ya cambia precios a mano (218 de 252 cambios de viñeta de los últimos 60 días cayeron el día de una compra de ese producto). Frena si queda a más de 3× de la actual.
+- **Sugerencia**: si el costo sube y la viñeta no se movió, propone la que mantiene el margen de antes (redondeada a 5 centavos) con «Usar $X».
+- **Rastro**: la revisión dice «antes $X»; al cargar queda `COMPRA_VINETA_CAMBIADA` en la bitácora con producto, factura, antes y ahora.
+- La sugerencia de tamaño de caja «por costo» ya descuenta el descuento al pie.
+
 ## v2.1407.1 — Compras: corregir producto y cantidad en la carga
 
 - **«Es otro» siempre**: antes se escondía cuando el renglón venía completo (producto aprendido + lote + vence), o sea que un producto mal aprendido no se podía corregir en la carga.

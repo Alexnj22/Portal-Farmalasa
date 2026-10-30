@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
-import { factorEnLaDescripcion } from "../_shared/compraSobre.ts";
+import { factorEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
@@ -459,16 +459,28 @@ Deno.serve(async (req: Request) => {
         // costo exacto de la barrita. Es una SUGERENCIA y se dice de dónde salió.
         const ids = [...new Set(renglones.map((r) => r.producto_id).filter(Boolean))];
         const costoUnidad = new Map<number, number>();
-        if (ids.length) {
+        // La viñeta (precio de venta) de cada presentación: la pantalla la
+        // muestra para que Bodega la compare con la caja. De a 200 productos:
+        // con varias presentaciones cada uno, la lista entera pasaría de 1000.
+        const vinetas = new Map<number, { factor: number; vineta: number }[]>();
+        for (let k = 0; k < ids.length; k += 200) {
           const { data: pp, error: errPP } = await admin.from("product_precios")
-            .select("product_id, costo").in("product_id", ids).eq("factor", 1).eq("activo", true);
+            .select("product_id, factor, costo, vineta").in("product_id", ids.slice(k, k + 200)).eq("activo", true);
           if (errPP) throw errPP;
-          for (const x of pp ?? []) if (Number(x.costo) > 0) costoUnidad.set(x.product_id, Number(x.costo));
+          for (const x of pp ?? []) {
+            if (Number(x.factor) === 1 && Number(x.costo) > 0) costoUnidad.set(x.product_id, Number(x.costo));
+            const l = vinetas.get(x.product_id) ?? [];
+            l.push({ factor: Number(x.factor), vineta: Number(x.vineta) });
+            vinetas.set(x.product_id, l);
+          }
         }
+        // El descuento al pie también baja el costo que se compara (RONASA 35 %).
+        const dsc = factorDescuentoDeFactura(dte?.resumen);
         for (const r of renglones) {
+          (r as any).vinetas = r.producto_id ? (vinetas.get(r.producto_id) ?? []) : [];
           const del_doc = factorEnLaDescripcion(String(r.descripcion ?? ""));
           const cu = r.producto_id ? costoUnidad.get(r.producto_id) : undefined;
-          const neto = Number(r.costo);
+          const neto = Number(r.costo) * (r.exento ? dsc.exenta : dsc.gravada);
           let por_costo: number | null = null;
           if (cu && neto > 0) {
             const n = Math.round(neto / cu);

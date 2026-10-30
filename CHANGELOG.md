@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1410.0 — Compras: registro de compras
+
+- **Registro de compras** (pestaña «Registro» en Cargar compra): una fila por renglón de cada compra que el portal cargó y el sistema confirmó — documento, proveedor, producto, presentación, unidades, precio de lista, descuento del renglón y del pie, costo por unidad y el anterior, viñeta y la anterior, lote, vence, envíos a salas, quién y cuándo. Filtro por fechas, búsqueda y CSV.
+- **Datos reales**: lo escribe la base (`compra_registro`) en el momento en que la carga queda confirmada, con lo que de verdad viajó. **Auditable**: nadie lo modifica ni lo borra (un trigger lo impide), y cada fila apunta a su carga completa. «Comprobado» lo cruza contra la compra registrada en Bodega (mismo producto, cantidad y costo).
+- Sólo de aquí en adelante; la primera fila es la carga de Imberton del 28-oct (2 renglones, cuadran).
+
 ## v2.1409.1 — Quitar fondo funciona en el portal publicado
 
 La CSP de `vercel.json` bloqueaba `@imgly/background-removal` desde siempre: descarga el modelo de `staticimgly.com` (faltaba en `connect-src`), carga el motor de onnxruntime como `blob:` y compila WebAssembly (faltaban `blob:` y `'wasm-unsafe-eval'` en `script-src`). Autorizado por el usuario el 2026-10-30.

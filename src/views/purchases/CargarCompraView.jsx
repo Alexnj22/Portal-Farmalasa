@@ -29,7 +29,9 @@ import {
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
+    fetchRegistroDeCompras,
 } from '@nucleo/data/cargarCompra';
+import { exportCsv } from '@nucleo/utils/csvExport';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
@@ -45,7 +47,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
-import { fechaNumerica } from '@nucleo/utils/fecha';
+import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
 // Vista «Cargar compra».
 //
@@ -81,7 +83,30 @@ const TABS = [
     { key: 'facturas',  label: 'Facturas'      },
     { key: 'confirmar', label: 'Por confirmar' },
     { key: 'erroneos',  label: 'Productos erróneos' },
+    { key: 'registro',  label: 'Registro' },
 ];
+
+const COLS_REGISTRO = [
+    { key: 'fecha',    label: 'Fecha',      align: 'left'   },
+    { key: 'producto', label: 'Producto',   align: 'left'   },
+    { key: 'cant',     label: 'Unidades',   align: 'right'  },
+    { key: 'costo',    label: 'Costo c/u',  align: 'right'  },
+    { key: 'vineta',   label: 'Viñeta',     align: 'right'  },
+    { key: 'lote',     label: 'Lote · vence', align: 'left', hideBelow: 'lg' },
+    { key: 'sistema',  label: 'Comprobado', align: 'center', hideBelow: 'md' },
+    { key: 'por',      label: 'Cargó',      align: 'left',   hideBelow: 'lg' },
+];
+const TIPO_REGISTRO = {
+    regalo:  { label: 'Regalo',   variant: 'info' },
+    erroneo: { label: 'Erróneo',  variant: 'warning' },
+    consumo: { label: 'Consumo',  variant: 'neutral' },
+};
+const EN_SISTEMA = {
+    cuadra:    { label: 'Cuadra',    variant: 'success' },
+    difiere:   { label: 'Difiere',   variant: 'danger' },
+    sin_copia: { label: 'Pendiente', variant: 'neutral' },
+};
+const pct = (a, b) => (a > 0 && b > 0 ? (b - a) / a * 100 : null);
 
 const COLS = [
     { key: 'fecha',      label: 'Fecha',      align: 'left'   },
@@ -1429,6 +1454,121 @@ const LIBRO_PAPEL = {
     fallida: 'el libro no la aceptó',
 };
 
+// El registro de compras: lo que el portal cargó, renglón por renglón, tal
+// como viajó al sistema. No se edita — lo escribe la base al confirmarse la
+// carga (`compra_registro`). «Comprobado» lo cruza contra la copia de la
+// compra que llega del sistema: mismo producto, cantidad y costo.
+function TabRegistro({ busca }) {
+    const [desde, setDesde] = useState(() => sumarDias(hoySV(), -30));
+    const [hasta, setHasta] = useState(() => hoySV());
+    const [filas, setFilas] = useState(null);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        let vivo = true;
+        fetchRegistroDeCompras(desde, hasta).then(({ filas: f, error: e }) => {
+            if (!vivo) return;
+            setError(e ?? ''); setFilas(f);
+        });
+        return () => { vivo = false; };
+    }, [desde, hasta]);
+
+    const vista = useMemo(() => (filas ?? []).filter(f => !busca
+        || tokenMatch(`${f.producto ?? ''} ${f.descripcion_proveedor ?? ''} ${f.proveedor_nombre ?? ''} ${f.numero_documento ?? ''} ${f.lote ?? ''}`, busca)),
+    [filas, busca]);
+    const difieren = vista.filter(f => f.en_sistema === 'difiere').length;
+
+    const exportar = () => {
+        const n = (v) => (v == null ? '' : v);
+        exportCsv(
+            ['Fecha', 'Tipo doc', 'Documento', 'Numero de control', 'NIT proveedor', 'Proveedor', 'Uso', 'Tipo',
+             'ID producto', 'Producto', 'Codigo proveedor', 'Descripcion proveedor', 'Presentacion', 'Unidades por presentacion',
+             'Cantidad', 'Unidades', 'Precio lista', 'Descuento renglon', 'Descuento pie %', 'Costo presentacion',
+             'Costo unidad', 'Costo anterior', 'Variacion costo %', 'Vineta', 'Vineta anterior', 'Lote', 'Vence',
+             'Enviado a salas', 'Comprobado', 'Cargado por', 'Cargado el', 'Carga', 'Compra en el sistema'],
+            vista.map(f => [
+                f.fecha_documento, n(f.tipo_documento), n(f.numero_documento), n(f.numero_control), n(f.proveedor_nit), n(f.proveedor_nombre),
+                n(f.uso), f.tipo, n(f.erp_product_id), n(f.producto), n(f.codigo_proveedor), n(f.descripcion_proveedor), n(f.presentacion),
+                n(f.unidades_por_presentacion), n(f.cantidad), n(f.unidades), n(f.precio_lista), n(f.descuento_renglon), n(f.descuento_pie_pct),
+                n(f.costo), n(f.costo_unidad), n(f.costo_anterior), n(pct(f.costo_anterior, f.costo)?.toFixed(2)),
+                n(f.vineta), n(f.vineta_anterior), n(f.lote), n(f.vence),
+                f.reparto ? Object.values(f.reparto).reduce((a, b) => a + Number(b), 0) : '',
+                n(EN_SISTEMA[f.en_sistema]?.label), shortEmployeeName(f.cargado_por_nombre ?? ''), n(f.cargado_at), f.carga_id, n(f.erp_compra_id),
+            ]),
+            `registro-de-compras-${desde}-a-${hasta}.csv`, 'cargar_compra');
+    };
+
+    return (
+        <div className="space-y-3">
+            {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+            <div className="flex flex-wrap items-end gap-2">
+                <PortalInput compact labelDenso label="Desde" type="date" value={desde} max={hasta} onChange={e => e.target.value && setDesde(e.target.value)} />
+                <PortalInput compact labelDenso label="Hasta" type="date" value={hasta} min={desde} onChange={e => e.target.value && setHasta(e.target.value)} />
+                <span className="flex-1" />
+                <Button size="sm" variant="secondary" disabled={!vista.length} onClick={exportar}>Descargar CSV</Button>
+            </div>
+            {difieren > 0 && (
+                <Notice variant="danger" icon={AlertTriangle}>
+                    {difieren === 1 ? 'Un renglón no cuadra' : `${difieren} renglones no cuadran`} con la compra registrada en Bodega: cantidad o costo distintos. Revísalo.
+                </Notice>
+            )}
+            <DataTable columns={COLS_REGISTRO} dense loading={filas === null}
+                empty={{ icon: CheckCircle2, message: 'Sin compras cargadas desde el portal en estas fechas' }}
+                movil={{ identidad: 'producto', ancla: 'costo' }}>
+                {vista.map((f, i) => {
+                    const dC = pct(f.costo_anterior, f.costo);
+                    const dV = pct(f.vineta_anterior, f.vineta);
+                    const tipo = TIPO_REGISTRO[f.tipo];
+                    const sis = EN_SISTEMA[f.en_sistema];
+                    return (
+                        <DataRow key={`${f.carga_id}-${f.renglon}`} index={i}>
+                            <DataCell>
+                                <p className="tabular-nums">{fechaNumerica(f.fecha_documento)}</p>
+                                <p className="text-micro text-content-3 truncate max-w-[12rem]">{f.proveedor_nombre}</p>
+                            </DataCell>
+                            <DataCell>
+                                <p className="font-bold text-content">{f.producto ?? f.descripcion_proveedor}</p>
+                                <p className="text-micro text-content-3">
+                                    {f.presentacion ?? '—'}
+                                    {tipo && <Badge size="sm" variant={tipo.variant} className="ml-1">{tipo.label}</Badge>}
+                                </p>
+                            </DataCell>
+                            <DataCell align="right" className="tabular-nums">{Number(f.unidades ?? 0)}</DataCell>
+                            <DataCell align="right" className="tabular-nums">
+                                <p>{f.costo_unidad != null ? formatMoney(f.costo_unidad) : '—'}</p>
+                                {dC != null && Math.abs(dC) >= 0.5 && (
+                                    <p className={`text-micro font-bold ${dC > 0 ? 'text-danger-text' : 'text-success-text'}`}>
+                                        {dC > 0 ? '+' : ''}{dC.toFixed(1)} %
+                                    </p>
+                                )}
+                            </DataCell>
+                            <DataCell align="right" className="tabular-nums">
+                                <p>{f.vineta != null ? formatMoney(f.vineta) : '—'}</p>
+                                {dV != null && Math.abs(dV) >= 0.5 && (
+                                    <p className="text-micro font-bold text-warning-text">antes {formatMoney(f.vineta_anterior)}</p>
+                                )}
+                            </DataCell>
+                            <DataCell>
+                                <p>{f.lote ?? '—'}</p>
+                                <p className="text-micro text-content-3 tabular-nums">{f.vence ? f.vence.slice(0, 7) : (f.vence_pendiente ? 'la pone la sala' : '—')}</p>
+                            </DataCell>
+                            <DataCell align="center">{sis ? <Badge size="sm" variant={sis.variant}>{sis.label}</Badge> : '—'}</DataCell>
+                            <DataCell>
+                                {f.cargado_por && (
+                                    <span className="inline-flex items-center gap-1">
+                                        <AvatarConEstado emp={{ id: f.cargado_por, name: f.cargado_por_nombre }} px={16} radio="rounded-full" marco="" />
+                                        {shortEmployeeName(f.cargado_por_nombre ?? '')}
+                                    </span>
+                                )}
+                            </DataCell>
+                        </DataRow>
+                    );
+                })}
+            </DataTable>
+        </div>
+    );
+}
+
 function TabErroneos({ puedeEditar }) {
     const [filas, setFilas]   = useState(null);
     const [error, setError]   = useState('');
@@ -2158,7 +2298,7 @@ export default function CargarCompraView() {
         <ViewTabBar tabs={TABS} activeTab={tab} onTabChange={setTab}
             searchValue={tab === 'confirmar' ? buscaConfirmar : busca}
             onSearchChange={tab === 'confirmar' ? setBuscaConfirmar : setBusca}
-            showSearch={tab === 'facturas' || tab === 'confirmar'}
+            showSearch={tab === 'facturas' || tab === 'confirmar' || tab === 'registro'}
             placeholder={tab === 'confirmar' ? 'Buscar proveedor, producto o código…' : 'Buscar proveedor o número de documento…'} />
     );
 
@@ -2166,7 +2306,8 @@ export default function CargarCompraView() {
         <GlassViewLayout icon={PackagePlus} title="Cargar compra" filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
 
-            {tab === 'erroneos' ? <TabErroneos puedeEditar={puedeEditar} />
+            {tab === 'registro' ? <TabRegistro busca={busca} />
+            : tab === 'erroneos' ? <TabErroneos puedeEditar={puedeEditar} />
             : tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} busca={buscaConfirmar} /> : (<>
 
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">

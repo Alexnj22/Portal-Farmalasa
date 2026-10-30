@@ -1841,7 +1841,19 @@ Deno.serve(async (req: Request) => {
         }
       }
       if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); }
-      detalle.push({ renglon: i, descripcion: r.descripcion, linea: res.linea, ...(res.detalle ?? {}) });
+      // Lo que el registro de compras necesita y la línea del sistema no dice:
+      // el precio de lista, los dos descuentos y si el renglón venía de regalo
+      // (se mira ANTES de repartirle costo, que es cuando todavía vale $0).
+      detalle.push({
+        renglon: i, descripcion: r.descripcion, linea: res.linea, ...(res.detalle ?? {}),
+        codigo_proveedor: String(it?.codigo ?? "").trim() || null,
+        precio_lista: Number.isFinite(r.precio) ? r.precio : null,
+        descuento_renglon: r.descuento || 0,
+        descuento_pie_pct: Math.round((1 - (r.exento ? dsc.exenta : dsc.gravada)) * 1e4) / 100,
+        regalo: !!res.linea && res.linea.bandera === "PRODUCTO" && Number(res.linea.compra) === 0,
+        // El sistema sólo recibe el lote de un regulado; el registro lo guarda siempre.
+        lote_leido: dec.tipo === "producto" ? (String(dec.lote ?? "").trim() || null) : null,
+      });
     }
 
     const regalos = repartirRegalos(lineas, cobrado);

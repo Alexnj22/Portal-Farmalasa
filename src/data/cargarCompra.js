@@ -460,3 +460,15 @@ export async function descartarFacturaEnPapel(id) {
     anotar('COMPRA_PAPEL_DESCARTADA', id, { error });
     return { error };
 }
+
+/**
+ * El registro de compras: una fila por renglón de cada compra que el portal
+ * cargó y el sistema confirmó. Lo escribe la base al confirmarse la carga y no
+ * se edita. Cada fila trae `en_sistema` — `cuadra` / `difiere` / `sin_copia` —
+ * contra la copia de la compra que llega del sistema.
+ */
+export async function fetchRegistroDeCompras(desde, hasta) {
+    const { data, error } = await supabase.rpc('get_compra_registro_json', { p_desde: desde, p_hasta: hasta });
+    if (error) return { filas: [], error: error.message };
+    return { filas: Array.isArray(data) ? data : [], error: null };
+}

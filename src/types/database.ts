@@ -7001,6 +7001,137 @@ export type Database = {
         }
         Relationships: []
       }
+      compra_registro: {
+        Row: {
+          cantidad: number | null
+          carga_id: number
+          cargado_at: string | null
+          cargado_por: string | null
+          codigo_proveedor: string | null
+          costo: number | null
+          costo_anterior: number | null
+          costo_unidad: number | null
+          created_at: string
+          descripcion_proveedor: string | null
+          descuento_pie_pct: number | null
+          descuento_renglon: number | null
+          document_id: number | null
+          erp_compra_id: number | null
+          erp_product_id: number | null
+          fecha_documento: string | null
+          id: number
+          id_presentacion: string | null
+          lote: string | null
+          manual_id: number | null
+          numero_control: string | null
+          numero_documento: string | null
+          precio_lista: number | null
+          presentacion: string | null
+          producto: string | null
+          proveedor_nit: string | null
+          proveedor_nombre: string | null
+          renglon: number
+          reparto: Json | null
+          tipo: string
+          tipo_documento: string | null
+          unidades: number | null
+          unidades_por_presentacion: number | null
+          uso: string | null
+          vence: string | null
+          vence_pendiente: boolean | null
+          vineta: number | null
+          vineta_anterior: number | null
+        }
+        Insert: {
+          cantidad?: number | null
+          carga_id: number
+          cargado_at?: string | null
+          cargado_por?: string | null
+          codigo_proveedor?: string | null
+          costo?: number | null
+          costo_anterior?: number | null
+          costo_unidad?: number | null
+          created_at?: string
+          descripcion_proveedor?: string | null
+          descuento_pie_pct?: number | null
+          descuento_renglon?: number | null
+          document_id?: number | null
+          erp_compra_id?: number | null
+          erp_product_id?: number | null
+          fecha_documento?: string | null
+          id?: number
+          id_presentacion?: string | null
+          lote?: string | null
+          manual_id?: number | null
+          numero_control?: string | null
+          numero_documento?: string | null
+          precio_lista?: number | null
+          presentacion?: string | null
+          producto?: string | null
+          proveedor_nit?: string | null
+          proveedor_nombre?: string | null
+          renglon: number
+          reparto?: Json | null
+          tipo: string
+          tipo_documento?: string | null
+          unidades?: number | null
+          unidades_por_presentacion?: number | null
+          uso?: string | null
+          vence?: string | null
+          vence_pendiente?: boolean | null
+          vineta?: number | null
+          vineta_anterior?: number | null
+        }
+        Update: {
+          cantidad?: number | null
+          carga_id?: number
+          cargado_at?: string | null
+          cargado_por?: string | null
+          codigo_proveedor?: string | null
+          costo?: number | null
+          costo_anterior?: number | null
+          costo_unidad?: number | null
+          created_at?: string
+          descripcion_proveedor?: string | null
+          descuento_pie_pct?: number | null
+          descuento_renglon?: number | null
+          document_id?: number | null
+          erp_compra_id?: number | null
+          erp_product_id?: number | null
+          fecha_documento?: string | null
+          id?: number
+          id_presentacion?: string | null
+          lote?: string | null
+          manual_id?: number | null
+          numero_control?: string | null
+          numero_documento?: string | null
+          precio_lista?: number | null
+          presentacion?: string | null
+          producto?: string | null
+          proveedor_nit?: string | null
+          proveedor_nombre?: string | null
+          renglon?: number
+          reparto?: Json | null
+          tipo?: string
+          tipo_documento?: string | null
+          unidades?: number | null
+          unidades_por_presentacion?: number | null
+          uso?: string | null
+          vence?: string | null
+          vence_pendiente?: boolean | null
+          vineta?: number | null
+          vineta_anterior?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_registro_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "compra_carga"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_renglon_erroneo: {
         Row: {
           codigo_proveedor: string | null
@@ -31339,6 +31470,10 @@ export type Database = {
         Args: { p_branch_id: number; p_document_id: number; p_renglones: Json }
         Returns: number
       }
+      compra_registro_anotar_carga: {
+        Args: { p_carga_id: number }
+        Returns: number
+      }
       compra_resolver_documento: {
         Args: { p_document_id: number; p_motivo: string; p_receipt_id?: number }
         Returns: Json
@@ -33085,6 +33220,10 @@ export type Database = {
       }
       get_compra_erroneos: { Args: never; Returns: Json }
       get_compra_pedidos_vence: { Args: never; Returns: Json }
+      get_compra_registro_json: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
       get_compra_repartos: { Args: never; Returns: Json }
       get_consecutive_mh_alerts: {
         Args: never

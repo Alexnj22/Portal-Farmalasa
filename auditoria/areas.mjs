@@ -946,6 +946,7 @@ export const AREAS = [
             'src/views/LaboratoriosView.jsx',
             // Fotos de productos (2026-10-30): la cola para completar foto y principio activo.
             'src/views/FotosProductosView.jsx', 'src/data/fotosProductos.js',
+            'src/utils/calidadDeFoto.js', 'src/plataforma/fotoDeProducto.js', // ¿sirve la foto? y encuadre del producto
             'src/utils/concentracion.js',   // nombre y concentración de un principio, escritos de una forma
             'src/data/productos.js', 'src/data/presentaciones.js', 'src/data/laboratorios.js',
             'src/data/srs.js',   // el registro sanitario (salió de 3 copias en pantallas, F3)

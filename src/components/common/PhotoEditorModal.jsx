@@ -3,8 +3,11 @@ import Button from './Button';
 import Cropper from 'react-easy-crop';
 import ModalShell from './ModalShell';
 import useMediaQuery from '../../plataforma/useMediaQuery';
+import { encuadrarProducto, medirFoto } from '../../plataforma/fotoDeProducto';
+import { revisarCalidad } from '@nucleo/utils/calidadDeFoto';
+import Notice from './Notice';
 import {
-    X, ZoomIn, ZoomOut, Scissors, Loader2, Check,
+    X, ZoomIn, ZoomOut, Scissors, Loader2, Check, Focus, ImageOff,
     RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft, Plus, Minus,
 } from 'lucide-react';
 
@@ -118,7 +121,11 @@ function BrushCursor({ pos, shape, size, type }) {
 
 // ── PhotoEditorModal ───────────────────────────────────────────────────────────
 
-export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
+// `producto` (2026-10-30): la foto va al catálogo y sale en la app de
+// clientes. Mide la imagen al abrirla y NO deja guardar una miniatura o una
+// imagen vacía; ofrece «Encuadrar» (centra el producto con margen parejo) y lo
+// hace solo después de quitar el fondo.
+export default function PhotoEditorModal({ file, onConfirm, onCancel, producto = false }) {
     // Arriba de todo: hay `return` tempranos más abajo y un hook no puede quedar
     // detrás de uno.
     const enTactil = useMediaQuery('(hover: none)');
@@ -137,7 +144,15 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     // Background removal state
     const [bgRemoving, setBgRemoving] = useState(false);
     const [bgRemoved, setBgRemoved]   = useState(false);
-    const [bgError, setBgError]       = useState(false);
+    const [bgError, setBgError]       = useState(null);     // texto del motivo, o null
+    // Calidad de la imagen ORIGINAL: el recorte no le agrega píxeles.
+    const [calidad, setCalidad]       = useState(null);     // problemas de revisarCalidad, o null mientras mide
+    const [medidas, setMedidas]       = useState(null);
+    const [roto, setRoto]             = useState(false);    // el navegador no la pudo abrir
+    const [encuadrando, setEncuadrando] = useState(false);
+    const [sinProducto, setSinProducto] = useState(false);
+    const [autoPaso, setAutoPaso]     = useState(null);     // 'encuadrar' | 'fondo' | null
+    const autoRef = useRef(null);
 
     // Brush mode state
     const [brushMode, setBrushMode]   = useState(false);
@@ -157,8 +172,25 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
         originalUrl.current = url;
         setImageSrc(url);
         readExifRotation(file).then(deg => { if (deg) setRotation(deg); });
-        return () => { URL.revokeObjectURL(url); };
-    }, [file]);
+        let vivo = true;
+        medirFoto(url)
+            .then((m) => {
+                if (!vivo) return;
+                setMedidas(m);
+                const problemas = revisarCalidad(m);
+                setCalidad(problemas);
+                // Automático en el catálogo: con fondo ya blanco basta encuadrar
+                // (instantáneo, sin modelo); con cualquier otro fondo se quita
+                // solo y después se encuadra. Una imagen que no se va a poder
+                // guardar no gasta el modelo.
+                if (producto && !problemas.some((p) => p.bloquea)) {
+                    autoRef.current = m.fondoBlanco ? 'encuadrar' : 'fondo';
+                    setAutoPaso(autoRef.current);
+                }
+            })
+            .catch(() => { if (vivo) setRoto(true); });
+        return () => { vivo = false; URL.revokeObjectURL(url); };
+    }, [file, producto]);
 
     // Preload original img for restore brush (only once bg is removed)
     useEffect(() => {
@@ -197,15 +229,35 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     const rotateLeft  = () => { setRotation(r => (r - 90 + 360) % 360); setCrop({ x: 0, y: 0 }); setZoom(1); };
     const rotateRight = () => { setRotation(r => (r + 90) % 360);       setCrop({ x: 0, y: 0 }); setZoom(1); };
 
+    // ── Encuadrar: el producto centrado con margen parejo ──────────────────────
+    const encuadrar = async (src = imageSrc) => {
+        setEncuadrando(true);
+        setSinProducto(false);
+        try {
+            const url = await encuadrarProducto(src);
+            if (!url) { setSinProducto(true); return; }
+            setImageSrc(prev => { if (prev !== originalUrl.current) URL.revokeObjectURL(prev); return url; });
+            setCrop({ x: 0, y: 0 });
+            setZoom(1);
+        } catch (err) {
+            console.error('PhotoEditorModal: encuadrar falló', err);
+            setSinProducto(true);
+        } finally {
+            setEncuadrando(false);
+        }
+    };
+
     // ── Remove background ──────────────────────────────────────────────────────
-    const handleRemoveBg = async () => {
+    const handleRemoveBg = async (src = imageSrc) => {
         if (bgRemoving || bgRemoved) return;
         setBgRemoving(true);
-        setBgError(false);
+        setBgError(null);
         try {
             const { removeBackground } = await import('@imgly/background-removal');
-            const resultBlob = await removeBackground(imageSrc, {
-                model: 'small',
+            const resultBlob = await removeBackground(src, {
+                // En el catálogo, el modelo mediano (isnet_fp16): bordes de cajas y
+                // blísteres más limpios; pesa el doble, pero se baja una vez y queda en caché.
+                model: producto ? 'medium' : 'small',
                 output: { format: 'image/png', quality: 1 },
             });
             const newUrl = URL.createObjectURL(resultBlob);
@@ -213,19 +265,33 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
             setBgRemoved(true);
             setCrop({ x: 0, y: 0 });
             setZoom(1);
-        } catch {
-            setBgError(true);
+            if (producto) await encuadrar(newUrl);
+        } catch (err) {
+            console.error('PhotoEditorModal: quitar fondo falló', err);
+            setBgError(navigator.onLine === false
+                ? 'Sin conexión: la primera vez hay que descargar el modelo.'
+                : 'No se pudo quitar el fondo en este navegador. Prueba «Encuadrar» o usa una foto con fondo blanco.');
         } finally {
             setBgRemoving(false);
         }
     };
+
+    // Corre el paso automático una vez, cuando ya están declaradas las acciones.
+    useEffect(() => {
+        if (!autoPaso) return;
+        setAutoPaso(null);
+        if (autoPaso === 'encuadrar') encuadrar(originalUrl.current);
+        else handleRemoveBg(originalUrl.current);
+    }, [autoPaso]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Reset to original ──────────────────────────────────────────────────────
     const handleReset = () => {
         if (imageSrc !== originalUrl.current) URL.revokeObjectURL(imageSrc);
         setImageSrc(originalUrl.current);
         setBgRemoved(false);
-        setBgError(false);
+        setBgError(null);
+        setSinProducto(false);
+        autoRef.current = null;
         setBrushMode(false);
         setBrushZoom(1); setBaseScale(1); setCursorPos(null);
         setCrop({ x: 0, y: 0 });
@@ -334,6 +400,23 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
     if (!imageSrc) return null;
 
+    const bloquea = producto && calidad?.some((p) => p.bloquea);
+
+    if (roto) {
+        return (
+            <ModalShell open onClose={onCancel} maxWidthClass="max-w-md" zClass="z-confirm" ariaLabel="La imagen no se pudo abrir">
+                <div className="p-6 flex flex-col items-center text-center gap-3">
+                    <ImageOff size={28} className="text-danger-text" />
+                    <p className="text-body-lg font-black text-content">La imagen no se pudo abrir</p>
+                    <p className="text-body-sm text-content-2">
+                        El archivo está dañado o no es una imagen. Si la copiaste de internet, ábrela en su página y copia la imagen grande, no la miniatura.
+                    </p>
+                    <Button variant="secondary" onClick={onCancel}>Cerrar</Button>
+                </div>
+            </ModalShell>
+        );
+    }
+
     // ── Canvas CSS dimensions ──
     // baseScale shrinks the canvas so it fits 340px at zoom=1.
     // brushZoom multiplies from that base. Canvas pixel size never changes (only CSS size).
@@ -377,7 +460,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                         <p className="text-label text-content-3 mt-0.5">
                             {brushMode
                                 ? 'Pinta para borrar o restaurar áreas · usa zoom para precisión'
-                                : 'Ajusta el encuadre y aplica ediciones'}
+                                : medidas ? `Original ${medidas.ancho}×${medidas.alto} px · ajusta el encuadre` : 'Ajusta el encuadre y aplica ediciones'}
                         </p>
                     </div>
                     <Button variant="secondary" size="sm" onClick={brushMode ? exitBrushMode : onCancel}>{brushMode ? <ChevronLeft size={16} strokeWidth={2.5} /> : <X size={16} strokeWidth={2.5} />}</Button>
@@ -575,7 +658,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                             {/* Background removal */}
                             <div className="flex gap-2">
                                 <button
-                                    onClick={handleRemoveBg}
+                                    onClick={() => handleRemoveBg()}
                                     disabled={bgRemoving || bgRemoved}
                                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-body-sm font-bold transition-all border ${
                                         bgRemoved
@@ -591,7 +674,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                         : bgRemoved
                                             ? <><Check size={13} /> Fondo eliminado</>
                                             : bgError
-                                                ? 'Error — intentar de nuevo'
+                                                ? 'Reintentar quitar fondo'
                                                 : <><Scissors size={13} /> Quitar fondo</>}
                                 </button>
 
@@ -603,6 +686,18 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     <Button variant="secondary" icon={RotateCcw} title="Restaurar imagen original" iconOnly onClick={handleReset} />
                                 )}
                             </div>
+
+                            {producto && (
+                                <Button variant="secondary" icon={encuadrando ? Loader2 : Focus} disabled={encuadrando || bgRemoving}
+                                    title="Recorta el producto y lo centra con el mismo margen que las demás fotos" onClick={() => encuadrar()}>
+                                    {encuadrando ? 'Encuadrando…' : 'Encuadrar producto'}
+                                </Button>
+                            )}
+                            {bgError && <Notice variant="danger" compact>{bgError}</Notice>}
+                            {sinProducto && <Notice variant="warning" compact>No se distingue el producto del fondo: encuádralo a mano con el zoom.</Notice>}
+                            {producto && calidad?.map((p) => (
+                                <Notice key={p.clave} variant={p.bloquea ? 'danger' : 'warning'} compact>{p.texto}</Notice>
+                            ))}
 
                             {bgRemoving && (
                                 <p className="text-caption text-content-3 text-center -mt-1">
@@ -617,7 +712,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                 {!brushMode && (
                     <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-divider shrink-0">
                         <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
-                        <Button disabled={confirming || !cropPx} onClick={handleConfirm}>{confirming
+                        <Button disabled={confirming || !cropPx || bloquea} onClick={handleConfirm}>{confirming
                                 ? <><Loader2 size={12} className="animate-spin" /> Guardando…</>
                                 : 'Guardar foto'}</Button>
                     </div>

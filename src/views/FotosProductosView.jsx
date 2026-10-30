@@ -498,7 +498,7 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                     {fotoDelTelefono.dialogo}
                     {pendiente && (
                         <Suspense fallback={null}>
-                            <PhotoEditorModal file={pendiente}
+                            <PhotoEditorModal file={pendiente} producto
                                 onConfirm={(blob) => { setPendiente(null); setFotoNueva(blob); }}
                                 onCancel={() => setPendiente(null)} />
                         </Suspense>

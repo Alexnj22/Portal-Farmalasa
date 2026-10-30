@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1409.0 — Editor de fotos de producto: revisa la calidad, quita el fondo y encuadra solo
+
+En Fotos de productos el editor ahora:
+- **Mide la imagen al abrirla** (`utils/calidadDeFoto.js`, misma regla en la app): lado menor < 250 px o imagen de un solo color **no se deja guardar**; < 500 px o desenfocada, avisa. El subtítulo dice el tamaño original. Una imagen que el navegador no puede abrir muestra «La imagen no se pudo abrir» en vez de un recorte vacío.
+- **Trabaja solo**: si el fondo ya es blanco, encuadra al instante (sin modelo); si no, quita el fondo con el modelo mediano (`isnet_fp16`, bordes más limpios) y después encuadra.
+- **Encuadrar producto**: recorta el producto y lo centra con 8% de margen, para que todas las fotos del catálogo se vean del mismo tamaño en la app.
+- El error de «Quitar fondo» dice el motivo.
+
+La app rechaza desde la galería las fotos de menos de 250 px.
+
+⚠️ «Quitar fondo» sigue bloqueado en producción por la CSP de `vercel.json` (falta `https://staticimgly.com` en `connect-src` y `'wasm-unsafe-eval' blob:` en `script-src`); hasta cambiarla, el editor cae a «Encuadrar» con aviso.
+
 ## v2.1408.0 — Compras: viñeta en la carga
 
 - **Viñeta en cada renglón de la carga**: llena con la de Bodega para la presentación con que entra; si la caja trae otra, se escribe y viaja como el precio de venta del renglón de la compra — el mismo campo con que Bodega ya cambia precios a mano (218 de 252 cambios de viñeta de los últimos 60 días cayeron el día de una compra de ese producto). Frena si queda a más de 3× de la actual.

@@ -20,6 +20,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { PRINCIPIO_PRESETS, editorDePrincipios, principiosParaGuardar } from '@nucleo/utils/edicionDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { revisarCalidad } from '@nucleo/utils/calidadDeFoto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { buscarParaCarga, fetchColaDeCarga, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
 import Segmentos from '../componentes/Segmentos';
@@ -45,6 +46,12 @@ async function elegir(desdeCamara) {
   const op = { mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 1 };
   const r = desdeCamara ? await ImagePicker.launchCameraAsync(op) : await ImagePicker.launchImageLibraryAsync(op);
   if (r.canceled || !r.assets?.[0]) return null;
+  // La misma regla que el portal (utils/calidadDeFoto): una miniatura no se guarda.
+  const { width = 0, height = 0 } = r.assets[0];
+  const problemas = revisarCalidad({ ancho: width, alto: height });
+  const grave = problemas.find((p) => p.bloquea);
+  if (grave) { Alert.alert('Foto muy pequeña', grave.texto); return null; }
+  if (problemas[0]) Alert.alert('Foto algo pequeña', problemas[0].texto);
   const ref = await ImageManipulator.manipulate(r.assets[0].uri).resize({ width: 800 }).renderAsync();
   const hecha = await ref.saveAsync({ compress: 0.85, format: SaveFormat.JPEG });
   return hecha.uri;

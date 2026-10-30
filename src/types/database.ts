@@ -6579,6 +6579,95 @@ export type Database = {
           },
         ]
       }
+      compra_nota_credito_papel: {
+        Row: {
+          creada_por: string | null
+          created_at: string
+          datos: Json | null
+          erp_supplier_id: number
+          error: string | null
+          estado: string
+          fecha: string
+          id: number
+          iva: number
+          numero: string
+          proveedor_nit: string
+          proveedor_nombre: string
+          registrada_por: string | null
+          serie: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          creada_por?: string | null
+          created_at?: string
+          datos?: Json | null
+          erp_supplier_id: number
+          error?: string | null
+          estado?: string
+          fecha: string
+          id?: never
+          iva: number
+          numero: string
+          proveedor_nit: string
+          proveedor_nombre: string
+          registrada_por?: string | null
+          serie: string
+          subtotal: number
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          creada_por?: string | null
+          created_at?: string
+          datos?: Json | null
+          erp_supplier_id?: number
+          error?: string | null
+          estado?: string
+          fecha?: string
+          id?: never
+          iva?: number
+          numero?: string
+          proveedor_nit?: string
+          proveedor_nombre?: string
+          registrada_por?: string | null
+          serie?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_nota_credito_papel_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_nota_credito_papel_creada_por_fkey"
+            columns: ["creada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_nota_credito_papel_registrada_por_fkey"
+            columns: ["registrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_nota_credito_papel_registrada_por_fkey"
+            columns: ["registrada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_pago_aplicado: {
         Row: {
           created_at: string
@@ -6919,7 +7008,7 @@ export type Database = {
           costo_unitario: number
           created_at: string
           descripcion: string
-          document_id: number
+          document_id: number | null
           emisor_nit: string | null
           emisor_nombre: string | null
           erp_compra_id: number | null
@@ -6927,9 +7016,11 @@ export type Database = {
           es_generico: boolean
           estado: string
           id: number
+          manual_id: number | null
           marcado_por: string | null
           nota: string | null
           nota_credito_document_id: number | null
+          nota_papel_id: number | null
           product_id: number
           renglon: number
           salida: Json | null
@@ -6942,7 +7033,7 @@ export type Database = {
           costo_unitario: number
           created_at?: string
           descripcion: string
-          document_id: number
+          document_id?: number | null
           emisor_nit?: string | null
           emisor_nombre?: string | null
           erp_compra_id?: number | null
@@ -6950,9 +7041,11 @@ export type Database = {
           es_generico: boolean
           estado?: string
           id?: never
+          manual_id?: number | null
           marcado_por?: string | null
           nota?: string | null
           nota_credito_document_id?: number | null
+          nota_papel_id?: number | null
           product_id: number
           renglon: number
           salida?: Json | null
@@ -6965,7 +7058,7 @@ export type Database = {
           costo_unitario?: number
           created_at?: string
           descripcion?: string
-          document_id?: number
+          document_id?: number | null
           emisor_nit?: string | null
           emisor_nombre?: string | null
           erp_compra_id?: number | null
@@ -6973,9 +7066,11 @@ export type Database = {
           es_generico?: boolean
           estado?: string
           id?: never
+          manual_id?: number | null
           marcado_por?: string | null
           nota?: string | null
           nota_credito_document_id?: number | null
+          nota_papel_id?: number | null
           product_id?: number
           renglon?: number
           salida?: Json | null
@@ -6991,6 +7086,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "compra_renglon_erroneo_manual_id_fkey"
+            columns: ["manual_id"]
+            isOneToOne: false
+            referencedRelation: "compra_documento_manual"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "compra_renglon_erroneo_marcado_por_fkey"
             columns: ["marcado_por"]
             isOneToOne: false
@@ -7002,6 +7104,13 @@ export type Database = {
             columns: ["marcado_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_nota_papel_id_fkey"
+            columns: ["nota_papel_id"]
+            isOneToOne: false
+            referencedRelation: "compra_nota_credito_papel"
             referencedColumns: ["id"]
           },
         ]
@@ -31084,6 +31193,10 @@ export type Database = {
       compra_erroneo_adjuntar_nota: {
         Args: { p_id: number; p_nota: number }
         Returns: undefined
+      }
+      compra_erroneo_adjuntar_nota_papel: {
+        Args: { p_id: number; p_nota: Json }
+        Returns: number
       }
       compra_pedir_vence: {
         Args: { p_branch_id: number; p_document_id: number; p_renglones: Json }

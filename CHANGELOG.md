@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1399.0 — Compras: producto erróneo con factura y nota en papel
+
+Un producto que vino por error ahora se puede marcar también en una **factura
+en papel**: entra con la compra y pasa a Bodega de vencidos, igual que con una
+electrónica. Y en **Por error**, si la nota de crédito vino en papel, **«La nota
+vino en papel»** pide serie, número, fecha, subtotal e IVA (el total se
+calcula). Una misma nota sirve para varios productos.
+
+Al **Dar salida**, el portal registra esa nota en el libro de compras como
+documento impreso —usuario, 2026-10-30: «sí» a que la registre el portal y no
+Bodega a mano— con el mismo envío del formulario de notas del sistema,
+relacionada con el número con que quedó la compra. Antes mira el libro del mes:
+si ya está (por número y NIT del proveedor) no la manda otra vez; después
+comprueba que entró. Si el proveedor no tiene NRC en su ficha, se frena.
+
+`compra_nota_credito_papel`; `compra_renglon_erroneo` admite `manual_id` y
+`nota_papel_id`; `compra_erroneo_adjuntar_nota_papel`; `get_compra_erroneos`
+con LEFT JOIN para los de papel.
+
 ## v2.1398.0 — Compras: cargar una factura en papel
 
 Proveedores que no mandan factura electrónica (La Constancia): en **Cargar

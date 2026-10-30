@@ -26,7 +26,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
-    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, darSalidaErroneo,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
 } from '@nucleo/data/cargarCompra';
@@ -783,7 +783,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                         Es nuevo
                                                     </Button>
                                                 )}
-                                                {puedeEditar && !papel && (
+                                                {puedeEditar && (
                                                     <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
                                                         onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
                                                         {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
@@ -1193,11 +1193,62 @@ const ESTADO_ERRONEO = {
     salio:       { label: 'Ya salió', variant: 'neutral' },
 };
 
+/**
+ * La nota de crédito en PAPEL de un producto erróneo (2026-10-30). Se escribe
+ * lo que dice el papel; al dar salida, el portal la registra en el libro de
+ * compras como documento impreso. El total se calcula: escribirlo aparte era
+ * una tercera cifra que podía no cuadrar con las otras dos.
+ */
+function NotaEnPapel({ fila, onListo, onCancelar }) {
+    const [n, setN] = useState({ serie: '', numero: '', fecha: '', subtotal: '', iva: '' });
+    const [guardando, setG] = useState(false);
+    const [error, setError] = useState('');
+    const poner = (k, v) => setN(x => ({ ...x, [k]: v }));
+    const total = Math.round(((Number(n.subtotal) || 0) + (Number(n.iva) || 0)) * 100) / 100;
+    const guardar = async () => {
+        setG(true); setError('');
+        const { error: e } = await adjuntarNotaEnPapel(fila.id, {
+            ...n, subtotal: Number(n.subtotal), iva: Number(n.iva), total,
+        });
+        setG(false);
+        if (e) { setError(e === 'FORBIDDEN' ? 'No tienes permiso para adjuntar la nota.' : e); return; }
+        onListo();
+    };
+    return (
+        <div className="mt-2 flex flex-col gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
+                <PortalInput compact labelDenso label="Serie" value={n.serie} onChange={e => poner('serie', e.target.value)} />
+                <PortalInput compact labelDenso label="Número" value={n.numero} onChange={e => poner('numero', e.target.value)} />
+                <PortalInput compact labelDenso label="Fecha" type="date" value={n.fecha} onChange={e => poner('fecha', e.target.value)} />
+                <PortalInput compact labelDenso label="Subtotal" prefix="$" inputMode="decimal" maskType="DECIMAL"
+                    value={n.subtotal} onChange={e => poner('subtotal', e.target.value)} />
+                <PortalInput compact labelDenso label="IVA" prefix="$" inputMode="decimal" maskType="DECIMAL"
+                    value={n.iva} onChange={e => poner('iva', e.target.value)} />
+                <p className="text-label text-content tabular-nums pb-2">Total <b>{formatMoney(total)}</b></p>
+            </div>
+            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            <div className="flex items-center gap-2">
+                <Button size="xs" loading={guardando} onClick={guardar}>Adjuntar nota en papel</Button>
+                <Button size="xs" variant="ghost" onClick={onCancelar}>Cancelar</Button>
+            </div>
+        </div>
+    );
+}
+
+const LIBRO_PAPEL = {
+    pendiente: null,
+    enviando: 'registrándose en el libro…',
+    registrada: 'ya está en el libro de compras',
+    sin_verificar: 'se mandó al libro pero no se pudo comprobar: revisarla',
+    fallida: 'el libro no la aceptó',
+};
+
 function TabErroneos({ puedeEditar }) {
     const [filas, setFilas]   = useState(null);
     const [error, setError]   = useState('');
     const [elegida, setEleg]  = useState({});   // {id: nota}
     const [guardando, setG]   = useState(null);
+    const [enPapel, setEnPapel] = useState(null);   // id del renglón con el formulario abierto
 
     const cargar = useCallback(async () => {
         const { filas: f, error: e } = await fetchErroneos();
@@ -1273,10 +1324,16 @@ function TabErroneos({ puedeEditar }) {
                                 <Badge variant={est.variant} size="sm">{est.label}</Badge>
                             </div>
                         </div>
-                        {f.nota_credito_document_id ? (
+                        {(f.nota_credito_document_id || f.nota_papel_id) ? (
                             <div className="mt-2 flex items-center gap-2 flex-wrap">
                                 <p className="text-micro text-content">
-                                    Nota de crédito <b>{f.nota_numero}</b> · {f.nota_fecha} · {formatMoney(f.nota_total)}
+                                    Nota de crédito{f.nota_papel ? ' en papel' : ''}{' '}
+                                    <b>{f.nota_papel?.serie ? `${f.nota_papel.serie} · ` : ''}{f.nota_numero}</b> · {fechaNumerica(f.nota_fecha)} · {formatMoney(f.nota_total)}
+                                    {LIBRO_PAPEL[f.nota_papel?.estado] && (
+                                        <span className={f.nota_papel.estado === 'registrada' ? 'text-content-3' : 'text-warning-text font-bold'}>
+                                            {' · '}{LIBRO_PAPEL[f.nota_papel.estado]}{f.nota_papel.error ? `: ${f.nota_papel.error}` : ''}
+                                        </span>
+                                    )}
                                 </p>
                                 {puedeEditar && f.estado === 'con_nota' && (
                                     <Button size="xs" variant="ghost" disabled={guardando === f.id} onClick={() => adjuntar(f, null)}>
@@ -1289,8 +1346,10 @@ function TabErroneos({ puedeEditar }) {
                                     </Button>
                                 )}
                             </div>
-                        ) : puedeEditar && (
-                            opciones.length ? (
+                        ) : puedeEditar && enPapel === f.id ? (
+                            <NotaEnPapel fila={f} onCancelar={() => setEnPapel(null)} onListo={() => { setEnPapel(null); cargar(); }} />
+                        ) : puedeEditar && (<>
+                            {opciones.length ? (
                                 <div className="mt-2 flex items-center gap-2 flex-wrap">
                                     <div className="min-w-[16rem] flex-1 max-w-md">
                                         <LiquidSelect value={nota} onChange={v => setEleg(x => ({ ...x, [f.id]: v || '' }))}
@@ -1301,9 +1360,12 @@ function TabErroneos({ puedeEditar }) {
                                     </Button>
                                 </div>
                             ) : (
-                                <p className="text-micro text-content-3 mt-2">Todavía no llega ninguna nota de crédito de este proveedor.</p>
-                            )
-                        )}
+                                <p className="text-micro text-content-3 mt-2">Todavía no llega ninguna nota de crédito electrónica de este proveedor.</p>
+                            )}
+                            <Button size="xs" variant="ghost" icon={FileText} className="mt-1" onClick={() => setEnPapel(f.id)}>
+                                La nota vino en papel
+                            </Button>
+                        </>)}
                     </div>
                 );
             })}

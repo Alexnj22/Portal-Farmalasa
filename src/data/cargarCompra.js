@@ -291,6 +291,16 @@ export async function adjuntarNotaDeCredito(id, notaId) {
 }
 
 /**
+ * Adjunta una nota de crédito en PAPEL: `{ numero, serie, fecha, subtotal, iva, total }`.
+ * Si esa nota (proveedor + número) ya se escribió para otro producto, se reutiliza.
+ */
+export async function adjuntarNotaEnPapel(id, nota) {
+    const { data, error } = await supabase.rpc('compra_erroneo_adjuntar_nota_papel', { p_id: Number(id), p_nota: nota });
+    anotar('COMPRA_ERRONEO_NOTA_PAPEL', id, { numero: nota?.numero, total: nota?.total, nota: data ?? null, error: error?.message ?? null });
+    return { error: error?.message ?? null };
+}
+
+/**
  * Le da salida a un producto erróneo: registra su nota de crédito en el libro
  * de compras y lo descarga de Bodega de vencidos.
  */

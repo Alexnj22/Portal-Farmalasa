@@ -275,9 +275,9 @@ async function enviarCompra(admin: any, x: {
   // comprobó en el estante, se pasa a Bodega de vencidos.
   let vencidos: unknown = null;
   const errs: Erroneo[] = x.revision.erroneos ?? [];
-  if (errs.length && x.documentId) {
+  if (errs.length) {
     vencidos = await apartarErroneos(admin, x.cookie, errs, {
-      cargaId: x.cargaId, documentId: x.documentId, quien: x.quien, emisor: x.emisor,
+      cargaId: x.cargaId, documentId: x.documentId, manualId: x.manualId, quien: x.quien, emisor: x.emisor,
       erpCompra: verif.compra, lineas: x.lineas, mover: verif.ok, estante,
     }).catch(async (e) => {
       console.error("[cargar-compra-erp] erróneos:", e?.message ?? e);
@@ -805,11 +805,11 @@ type Erroneo = {
  * comprueba leyendo la existencia de vencidos antes y después.
  */
 async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
-  cargaId: number; documentId: number; quien: string; emisor: { nit: string | null; nombre: string | null };
+  cargaId: number; documentId: number | null; manualId: number | null; quien: string; emisor: { nit: string | null; nombre: string | null };
   erpCompra: number | null; lineas: LineaSobre[]; mover: boolean; estante: number;
 }) {
   const { error: eI } = await admin.from("compra_renglon_erroneo").upsert(errs.map((e) => ({
-    compra_carga_id: x.cargaId, document_id: x.documentId, renglon: e.renglon,
+    compra_carga_id: x.cargaId, document_id: x.documentId, manual_id: x.manualId, renglon: e.renglon,
     emisor_nit: x.emisor.nit, emisor_nombre: x.emisor.nombre, descripcion: e.descripcion,
     codigo_proveedor: e.codigo_proveedor, product_id: e.product_id, es_generico: e.es_generico,
     unidades: e.unidades, costo_unitario: e.costo_unitario, erp_compra_id: x.erpCompra,
@@ -1026,6 +1026,123 @@ async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, 
 }
 
 /**
+ * La misma nota, pero en PAPEL (2026-10-30): no hay JSON que el sistema lea,
+ * así que se manda lo escrito en `compra_nota_credito_papel` con el MISMO envío
+ * del formulario —`process=insertar`, con sus defectos—, como documento
+ * impreso (clase 1). Lo que en la nota electrónica sale del lector del sistema
+ * acá sale de la ficha del proveedor (NIT, NRC) y de la compra (el número del
+ * documento que corrige). Medido el 30-oct con una lectura de prueba: para una
+ * nota electrónica el lector no devuelve `tipo_documento`, así que `tipo_doc`
+ * viaja vacío en los dos casos.
+ *
+ * Antes de mandar se mira el libro del mes: si la nota ya está (otra persona la
+ * registró a mano), se da por registrada sin mandar nada. Se reconoce por
+ * número Y NIT: un número impreso es corto y sólo es único en su proveedor.
+ */
+async function registrarNotaPapelEnLibro(admin: any, cookie: string, e: any, quien: string) {
+  const { data: n, error: eN } = await admin.from("compra_nota_credito_papel").select("*").eq("id", e.nota_papel_id).maybeSingle();
+  if (eN) throw eN;
+  if (!n) return { ok: false, error: "La nota en papel no existe." };
+  if (n.estado === "registrada") return { ok: true, ya: true };
+  if (n.estado === "enviando" || n.estado === "sin_verificar") {
+    return { ok: false, error: "La nota quedó a medio registrar en el libro: revisarla a mano antes de seguir." };
+  }
+  const { data: pm, error: eP } = await admin.from("proveedores_maestro").select("nit, nrc, nombre").eq("nit", n.proveedor_nit).maybeSingle();
+  if (eP) throw eP;
+  if (!pm?.nrc) return { ok: false, error: "Al proveedor le falta el NRC en su ficha: sin eso el libro no la acepta." };
+
+  // El documento que corrige: el número con que la compra quedó registrada.
+  let relacionado = "";
+  if (e.erp_compra_id) {
+    const { data: rc, error: eRc } = await admin.from("purchase_receipts").select("documento_numero").eq("erp_purchase_id", e.erp_compra_id).maybeSingle();
+    if (eRc) throw eRc;
+    relacionado = String(rc?.documento_numero ?? "");
+  }
+  if (!relacionado && e.manual_id) {
+    const { data: m, error: eM } = await admin.from("compra_documento_manual").select("numero").eq("id", e.manual_id).maybeSingle();
+    if (eM) throw eM;
+    relacionado = String(m?.numero ?? "");
+  }
+  if (!relacionado && e.document_id) {
+    const { data: f, error: eF } = await admin.from("purchase_dte_documents").select("codigo_generacion").eq("id", e.document_id).maybeSingle();
+    if (eF) throw eF;
+    relacionado = String(f?.codigo_generacion ?? "");
+  }
+  if (!relacionado) return { ok: false, error: "No se sabe qué factura corrige la nota." };
+
+  const marcar = async (estado: string, extra: Record<string, unknown> = {}) => {
+    const { error } = await admin.from("compra_nota_credito_papel")
+      .update({ estado, registrada_por: quien, updated_at: new Date().toISOString(), ...extra }).eq("id", n.id);
+    if (error) console.error("[cargar-compra-erp] nota en papel:", error.message);
+  };
+  const enElLibro = async () => {
+    const mes = String(n.fecha).slice(0, 7);
+    const fin = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).toISOString().slice(0, 10);
+    const csv = await pedir(cookie, `${BASE}/libro_compras_iva_csv.php?fechaInicio=${mes}-01&fechaFin=${fin}`, undefined, { timeoutMs: 90_000 });
+    const num = String(n.numero).replace(/-/g, "");
+    const nit = String(n.proveedor_nit).replace(/\D/g, "");
+    return csv.split(/\r?\n/).some((l) => {
+      const c = l.split(";");
+      return String(c[3] ?? "").replace(/-/g, "").toUpperCase() === num && String(c[4] ?? "").replace(/\D/g, "") === nit;
+    });
+  };
+
+  // ¿Ya estaba? Si no se puede mirar, no se manda.
+  let ya: boolean;
+  try { ya = await enElLibro(); } catch (err) {
+    return { ok: false, error: `No se pudo mirar el libro antes de registrar: ${(err as Error)?.message ?? err}` };
+  }
+  if (ya) { await marcar("registrada", { error: null, datos: { ya_estaba: true } }); return { ok: true, ya: true }; }
+
+  // Tomar la nota: dos salidas a la vez no la registran dos veces.
+  const { data: tomada, error: eT } = await admin.from("compra_nota_credito_papel")
+    .update({ estado: "enviando", updated_at: new Date().toISOString() })
+    .eq("id", n.id).in("estado", ["pendiente", "fallida"]).select("id");
+  if (eT) throw eT;
+  if (!tomada?.length) return { ok: false, error: "Otra persona está registrando esta nota." };
+
+  const v = (x: unknown) => encodeURIComponent(String(x ?? ""));
+  const datos = {
+    fecha: n.fecha, agente: pm.nombre ?? n.proveedor_nombre, numero_doc: n.numero, numero_serie: n.serie,
+    nit: pm.nit, nrc: pm.nrc, relacionado, subtotal: Number(n.subtotal).toFixed(2),
+    monto_total: Number(n.total).toFixed(2), total_impuestos: Number(n.iva).toFixed(2),
+  };
+  let cuerpo = "process=insertar" + "&fecha=" + v(datos.fecha);
+  cuerpo += "&agente=" + v(datos.agente) + "&numero_doc=" + v(datos.numero_doc);
+  cuerpo += "&numero_serie=" + v(datos.numero_serie);
+  cuerpo += "&tipo_doc=" + "&nit=" + v(datos.nit) + "&nrc=" + v(datos.nrc);
+  cuerpo += "&numDocRelacionado" + v(datos.relacionado);
+  cuerpo += "&subtotal=" + v(datos.subtotal);
+  cuerpo += "&monto_total=" + v(datos.monto_total);
+  cuerpo += "&total_impuestos=" + v(datos.total_impuestos);
+  cuerpo += "&tipo_operacion=1&clasificacion=1&tipo_costo_gasto=5";
+  cuerpo += "&clase_documento_tributario%20=1";
+  let resp = "";
+  try {
+    const r = await fetch(NOTA_CREDITO, {
+      method: "POST", body: cuerpo,
+      headers: { Cookie: cookie, "User-Agent": "Mozilla/5.0", "X-Requested-With": "XMLHttpRequest", Referer: NOTA_CREDITO,
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+      signal: AbortSignal.timeout(60_000),
+    });
+    resp = await r.text();
+  } catch (err) {
+    await marcar("sin_verificar", { datos, error: `Sin respuesta al registrar: ${(err as Error)?.message ?? err}` });
+    return { ok: false, error: "El sistema no contestó al registrar la nota: puede haber entrado, revisar el libro antes de reintentar." };
+  }
+  let j: any = null;
+  try { j = JSON.parse(resp); } catch { /* abajo */ }
+  if (j && String(j.typeinfo).toLowerCase() !== "success") {
+    await marcar("fallida", { datos, error: String(j.msg ?? resp.slice(0, 500)) });
+    return { ok: false, error: `El sistema no aceptó la nota: ${j.msg ?? "sin motivo"}` };
+  }
+  let entro = false;
+  try { entro = await enElLibro(); } catch { /* abajo */ }
+  await marcar(entro ? "registrada" : "sin_verificar", { datos, error: entro ? null : `No apareció en el libro: ${resp.slice(0, 300)}` });
+  return entro ? { ok: true } : { ok: false, error: "Se mandó la nota pero no aparece en el libro: revisarla antes de reintentar." };
+}
+
+/**
  * Le da salida a un producto erróneo cuando su nota de crédito ya está:
  * 1. registra la nota en el libro de compras (si no estaba);
  * 2. lo descarga de Bodega de vencidos como DESCARTE (usuario, 2026-10-30),
@@ -1045,13 +1162,17 @@ async function darSalidaErroneo(admin: any, id: number, quien: string) {
 
   try {
     const cookie = await sesionEn(ERP_BODEGA, login);
-    const libro = await registrarNotaEnLibro(admin, cookie, Number(e.nota_credito_document_id), quien);
+    const libro = e.nota_papel_id
+      ? await registrarNotaPapelEnLibro(admin, cookie, e, quien)
+      : await registrarNotaEnLibro(admin, cookie, Number(e.nota_credito_document_id), quien);
     if (!libro.ok) { await volver(libro.error ?? "No se pudo registrar la nota."); return { error: libro.error }; }
 
     const vencidos = await ubicacionDeBodega(admin, true);
     if (!vencidos) { await volver("No se conoce el área de vencidos."); return { error: "No se conoce el área de vencidos." }; }
     const antes = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidos);
-    const { data: nc, error: eNc } = await admin.from("purchase_dte_documents").select("numero_control").eq("id", e.nota_credito_document_id).maybeSingle();
+    const { data: nc, error: eNc } = e.nota_papel_id
+      ? await admin.from("compra_nota_credito_papel").select("numero_control:numero").eq("id", e.nota_papel_id).maybeSingle()
+      : await admin.from("purchase_dte_documents").select("numero_control").eq("id", e.nota_credito_document_id).maybeSingle();
     if (eNc) { await volver(`No se pudo leer la nota: ${eNc.message}`); return { error: "No se pudo leer la nota de crédito: intenta de nuevo." }; }
     const concepto = armarConcepto(
       `DEVOLUCION A ${e.emisor_nombre ?? "PROVEEDOR"} - NOTA DE CREDITO ${nc?.numero_control ?? ""} - COMPRA ${e.erp_compra_id ?? ""} - ${e.descripcion}`,
@@ -1340,13 +1461,6 @@ Deno.serve(async (req: Request) => {
         // Error del proveedor: entra igual (la factura lo cobra) y después se
         // pasa a vencidos. Sin producto propio, como el genérico.
         const erroneo = (x as any).erroneo === true;
-        // Un papel no tiene nota de crédito electrónica que anexar: el error
-        // del proveedor se resuelve como siempre, fuera del portal.
-        if (erroneo && manual) {
-          problemas.push({ renglon: i, texto: `«${r.descripcion}»: en una factura en papel no se marca como error.` });
-          detalle.push({ renglon: i, descripcion: r.descripcion, error: "error en papel" });
-          continue;
-        }
         const elegido = Number(x.product_id);
         const pid = erroneo && !(elegido > 0) ? PRODUCTO_ERRONEO : elegido;
         if (!Number.isFinite(pid) || pid <= 0) {

@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1387.2 — Compras: se comprueba que la carga entró al estante
+
+**Reparada la compra 6472** (C. Imberton): sus 150 unidades de Ensure estaban
+en «sucursal 6 · ubicación 3» por el defecto de v2.1387.1. Con OK del usuario
+se trasladaron al estante de Bodega (traslados 58839, prueba de 1 unidad, y
+58840) y se recibieron en la ubicación 1. Antes de mover todo se probó con una
+unidad porque el sistema SUMA la ubicación 3 de Bodega y de Salud 1 al
+mostrar existencia: el traslado descontó de la de Bodega (60→59) y Salud 1
+quedó en 7 y 4. Resultado leído del sistema: ubicación 3 en 0, estante 60 y 90.
+
+**Para que no vuelva a pasar**, además de la ubicación tomada del registro:
+- Antes de mandar se lee la existencia del estante de Bodega; si no se puede
+  leer, no se manda.
+- Después de cargar se vuelve a leer: cada producto tiene que haber subido lo
+  cargado. Si no, la carga queda «Por confirmar» con el detalle — el «Hecho» del
+  sistema y leer la compra de vuelta no lo detectaban (la 6472 pasó las dos).
+- Una prueba que falla si vuelve un `destino` con número fijo.
+
 ## v2.1387.1 — Compras: la carga entra al estante de Bodega
 
 **Defecto grave corregido.** La carga mandaba `destino: "3"`, que es la

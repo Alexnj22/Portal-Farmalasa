@@ -168,3 +168,18 @@ describe('totalDelDocumento', () => {
         expect(totalDelDocumento(null)).toBe(null);
     });
 });
+
+/* 2026-10-30: la carga mandó `destino: "3"` escrito a mano —la ubicación de
+ * Salud 1— y la compra 6472 dejó 150 unidades donde ningún inventario las ve.
+ * La ubicación sale de `erp_sucursal_map`; ningún número fijo puede volver. */
+describe('cargar-compra-erp · ubicación de destino', () => {
+    const fuente = readFileSync(path.resolve(__dirname, '../../supabase/functions/cargar-compra-erp/index.ts'), 'utf8');
+    it('no escribe la ubicación a mano', () => {
+        expect(fuente).not.toMatch(/destino:\s*["'`]\d+["'`]/);
+        expect(fuente).toMatch(/destino:\s*String\(estanteBodega/);
+    });
+    it('compara contra la ubicación viva antes de mandar y comprueba el estante después', () => {
+        expect(fuente).toMatch(/String\(x\.sobre\.destino\) !== String\(estante\)/);
+        expect(fuente).toMatch(/existenciasDeUbicacion\(x\.cookie, ERP_BODEGA, estante\)/);
+    });
+});

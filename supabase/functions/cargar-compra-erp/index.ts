@@ -21,7 +21,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
-import { sesionEn } from "../_shared/erp-traslado.ts";
+import { sesionEn, existenciasDeUbicacion } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
   lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos,
@@ -159,6 +159,14 @@ async function enviarCompra(admin: any, x: {
   if ("error" in yaEsta) return { enviada: false, error: `No se pudo comprobar si Bodega ya la tiene: ${yaEsta.error}` };
   if (yaEsta.compra) return { enviada: false, error: `Bodega ya la tiene cargada (compra ${yaEsta.compra}): no se mandó.` };
 
+  // Freno 2c: la existencia del ESTANTE antes de mandar, para comprobar después
+  // que la compra entró AHÍ. El «Success» del sistema y leer la compra de
+  // vuelta no lo dicen: la 6472 pasó las dos verificaciones con sus 150
+  // unidades en una ubicación que no era la de Bodega. Sin esta lectura no se
+  // manda — no habría cómo saber dónde quedó.
+  const estanteAntes = await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante);
+  if (!estanteAntes) return { enviada: false, error: "No se pudo leer la existencia de Bodega para comprobar la carga: no se mandó." };
+
   const { data: tomada, error: eT } = await admin.from("compra_carga")
     .update({ estado: "enviando", updated_at: new Date().toISOString() })
     .eq("id", x.cargaId).eq("estado", "simulada").select("id");
@@ -209,6 +217,24 @@ async function enviarCompra(admin: any, x: {
 
   // ── Leerla de vuelta ───────────────────────────────────────────────────────
   const verif = await leerDeVuelta(x.cookie, x.sobre, x.lineas, x.erpProveedor).catch((e) => ({ ok: false, compra: null, notas: [`No se pudo leer de vuelta: ${e?.message ?? e}`] }));
+  // ¿Entró al estante? Cada producto tiene que haber subido al menos lo que se
+  // cargó (en unidades). Una venta o un traslado en el medio puede dar un
+  // falso aviso; preferible a no enterarse de que la mercadería no está.
+  const estanteDespues = await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante);
+  if (!estanteDespues) {
+    verif.ok = false; verif.notas.push("No se pudo leer la existencia de Bodega después de cargar: comprobar que entró al estante.");
+  } else {
+    const esperado = new Map<number, number>();
+    for (const l of JSON.parse(String(x.sobre.json_arr)) as { id_producto: string; cant: string; unidad: string }[]) {
+      const id = Number(l.id_producto);
+      esperado.set(id, (esperado.get(id) ?? 0) + Number(l.cant) * (Number(l.unidad) || 1));
+    }
+    const faltan = [...esperado].filter(([id, u]) => (estanteDespues.get(id) ?? 0) - (estanteAntes.get(id) ?? 0) < u);
+    if (faltan.length) {
+      verif.ok = false;
+      verif.notas.push(`No entró al estante de Bodega: ${faltan.map(([id, u]) => `producto ${id} debía subir ${u} y subió ${(estanteDespues.get(id) ?? 0) - (estanteAntes.get(id) ?? 0)}`).join("; ")}.`);
+    }
+  }
   await marcar(verif.ok ? "verificada" : "sin_verificar", {
     erp_compra_id: verif.compra, error: verif.notas.length ? verif.notas.join(" · ") : null,
   });

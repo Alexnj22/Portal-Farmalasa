@@ -193,6 +193,21 @@ export default function useCapturaDeCarne(activo, alLeer, opciones = {}) {
                 clearTimeout(timerRef.current);
                 const entregado = leido.length >= MINIMO_DE_TECLAS
                     && (aceptarTecleado || !tecleada);
+                /* El Enter que cierra una ráfaga del LECTOR es del lector, no
+                 * del usuario: no puede seguir viaje. Si sigue, el navegador lo
+                 * usa para apretar el botón que tenga el foco — y al abrir un
+                 * diálogo el foco cae en su «Cerrar». Pasó en Salud 1 el
+                 * 2026-10-30: «¿Quién recibe la caja?» leía el carné bien y el
+                 * mismo Enter cerraba el diálogo, 16 veces seguidas, sin un solo
+                 * error. Sólo se cancela si fue una ráfaga de verdad —rápida de
+                 * punta a punta, Enter incluido—: el Enter de una persona que
+                 * escribe en un campo tiene que seguir funcionando. */
+                const deLector = leido.length >= MINIMO_DE_TECLAS
+                    && !tecleada && hueco <= GAP_HUMANO_MS;
+                if (deLector) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
                 anotar(leido, true, entregado,
                     entregado ? null : (leido.length < MINIMO_DE_TECLAS ? 'corta' : 'tecleada'));
                 if (entregado) {

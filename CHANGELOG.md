@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1403.2 — El Enter del lector ya no cierra el diálogo del carné
+
+Salud 1 no pudo confirmar sus cortes del 30-oct: en «¿Quién recibe la caja?» el carné se leía bien, pero el Enter que manda el lector al final apretaba el botón con el foco —la «Cerrar» del diálogo— y el corte quedaba «sin resolver». 16 lecturas exitosas, ninguna confirmación, sin un solo error. `useCapturaDeCarne` ahora se queda con el Enter que cierra una ráfaga del lector (rápida de punta a punta); el Enter de alguien que escribe en un campo sigue igual. Vale para todas las pantallas que usan el lector. Reproducido y verificado en el entorno de pruebas.
+
 ## v2.1403.1 — Compras: crear producto revisa el catálogo al día
 
 Al apretar «Crear producto» (no al revisar), `cargar-compra-erp` corre `sync-products` antes de buscar repetidos: la copia del catálogo se refresca cada 10 min y un producto que Bodega creó en el sistema en ese rato no se veía. Cuesta ~5 s (máx. medido 13 s) sólo en ese clic. Si el catálogo no se puede traer, no se crea: se estaría comparando contra una lista que se sabe vieja.

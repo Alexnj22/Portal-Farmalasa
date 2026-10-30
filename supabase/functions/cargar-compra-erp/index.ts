@@ -1547,6 +1547,21 @@ async function productoNuevo(admin: any, body: any, creaQuien: string | null = n
   // controlado es justo lo que hay que decidir con cuidado.
   if (m && (m.regulado || m.antibiotico)) problemas.push(`«${m.nombre}» es regulado o antibiótico: un producto así se da de alta a mano.`);
 
+  // Al CREAR (no al revisar): traer el catálogo del sistema al día antes de
+  // comparar. La copia del portal se refresca cada 10 min, y un producto que
+  // Bodega creó allá en ese rato no se vería como repetido. Cuesta ~5 s (máx.
+  // medido 13 s) y sólo en el clic de «Crear»; si no se puede, no se crea: se
+  // estaría comparando contra una lista que se sabe vieja.
+  if (creaQuien) {
+    const ok = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET") ?? ""}` },
+      body: "{}", signal: AbortSignal.timeout(60_000),
+    }).then(async (r) => r.ok && (await r.json().catch(() => ({})))?.ok !== false)
+      .catch((e) => { console.error("[cargar-compra-erp] catálogo al día:", e?.message ?? e); return false; });
+    if (!ok) return { error: "No se pudo revisar el catálogo del sistema al día, y sin eso no se sabe si el producto ya existe. Intenta en un momento." };
+  }
+
   // Que no exista ya. La base compara sin tildes, signos ni espacios («OREO X 12»
   // = «OREO X12»), mira también las altas del portal que el catálogo todavía no
   // copió, y aparte devuelve los PARECIDOS — ésos sólo avisan.

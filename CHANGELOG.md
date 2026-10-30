@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1403.1 — Compras: crear producto revisa el catálogo al día
+
+Al apretar «Crear producto» (no al revisar), `cargar-compra-erp` corre `sync-products` antes de buscar repetidos: la copia del catálogo se refresca cada 10 min y un producto que Bodega creó en el sistema en ese rato no se veía. Cuesta ~5 s (máx. medido 13 s) sólo en ese clic. Si el catálogo no se puede traer, no se crea: se estaría comparando contra una lista que se sabe vieja.
+
 ## v2.1403.0 — Compras: aprender renglones sin código y reintentar envíos a sala
 
 **Renglones sin código del proveedor (papel, algunos DTE) ahora se aprenden.**

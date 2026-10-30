@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1388.0 — Compras: producto nuevo desde la carga, prellenado
+
+Cuando un renglón de la factura no está en Bodega, el modal lo dice —«¿es
+nuevo, o es uno que ya tenemos con otro nombre?»— y ofrece **Es nuevo** o
+**Elegir**. «Es nuevo» abre el alta con los MISMOS datos que pide el
+formulario de productos del sistema, ya prellenados:
+- proveedor: el de la factura;
+- del producto parecido (si hay): categoría, laboratorio, marca, si vence, si
+  es exento, si se vende por fracción, y un precio sugerido con su mismo margen;
+- nombre y código de barras: del renglón.
+
+Todo se corrige ahí mismo. «Revisar» lo valida (que no exista ya por código o
+nombre, que el precio supere el costo, que proveedor/categoría/laboratorio
+existan) y «Crear producto» lo da de alta de verdad, lo lee de vuelta en su
+ficha y lo deja elegido en el renglón (alias con el proveedor). Un regulado o
+antibiótico no se da de alta desde acá.
+
+`producto_alta_portal` (nueva) toma el nombre y el código ANTES de mandar: un
+doble clic o un reintento no crean dos productos, y una respuesta ilegible deja
+la fila tomada para que nadie lo mande a ciegas.
+
 ## v2.1387.2 — Compras: se comprueba que la carga entró al estante
 
 **Reparada la compra 6472** (C. Imberton): sus 150 unidades de Ensure estaban

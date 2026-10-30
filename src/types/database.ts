@@ -21170,6 +21170,66 @@ export type Database = {
         }
         Relationships: []
       }
+      producto_alta_portal: {
+        Row: {
+          barcode: string | null
+          costo: number
+          creado_por: string | null
+          created_at: string
+          erp_product_id: number | null
+          error: string | null
+          estado: string
+          id: number
+          modelo_id: number
+          nombre: string
+          precio: number
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          costo: number
+          creado_por?: string | null
+          created_at?: string
+          erp_product_id?: number | null
+          error?: string | null
+          estado?: string
+          id?: never
+          modelo_id: number
+          nombre: string
+          precio: number
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          costo?: number
+          creado_por?: string | null
+          created_at?: string
+          erp_product_id?: number | null
+          error?: string | null
+          estado?: string
+          id?: never
+          modelo_id?: number
+          nombre?: string
+          precio?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "producto_alta_portal_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_alta_portal_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       producto_cantidad_habitual: {
         Row: {
           calculado_at: string

@@ -271,6 +271,8 @@ export type Modelo = {
   marca: string;
   /** Los 7 precios de su presentación de 1 unidad, en el orden del formulario. */
   precios: number[] | null;
+  /** El costo de esa misma presentación (para sugerir el precio con su margen). */
+  costo?: number | null;
 };
 
 const seleccionado = (html: string, id: string): string | null => {
@@ -292,6 +294,7 @@ export function leerModelo(id: number, html: string): Modelo {
   // (`unidad_p`, `precio0`…`precio6`). Se toma la ACTIVA de 1 unidad; una
   // presentación desactivada se dibuja igual y no sirve de modelo.
   let precios: number[] | null = null;
+  let costo: number | null = null;
   const tabla = /id=["']presentacion_table["'][^>]*>([\s\S]*?)<\/tbody>/.exec(html)?.[1] ?? "";
   const celda = (fila: string, clase: string) => {
     const m = new RegExp(`<td[^>]*class=['"][^'"]*\\b${clase}\\b[^'"]*['"][^>]*>([^<]*)<`).exec(fila);
@@ -301,7 +304,12 @@ export function leerModelo(id: number, html: string): Modelo {
     if (/fa-eye-slash/.test(fila)) continue;
     if (celda(fila, "unidad_p") !== 1) continue;
     const p7 = [0, 1, 2, 3, 4, 5, 6].map((k) => celda(fila, `precio${k}`));
-    if (p7.every((x) => Number.isFinite(x))) { precios = p7; break; }
+    if (p7.every((x) => Number.isFinite(x))) {
+      precios = p7;
+      const c = celda(fila, "costo");
+      costo = Number.isFinite(c) ? c : null;
+      break;
+    }
   }
   return {
     id, nombre: valorDe(html, "descripcion"),
@@ -311,7 +319,7 @@ export function leerModelo(id: number, html: string): Modelo {
     perecedero: marcado(html, "perecedero"), exento: marcado(html, "exento"),
     decimal: marcado(html, "decimal"), regulado: marcado(html, "regulado"),
     antibiotico: marcado(html, "antibiotico"),
-    marca: valorDe(html, "marca"), precios,
+    marca: valorDe(html, "marca"), precios, costo,
   };
 }
 

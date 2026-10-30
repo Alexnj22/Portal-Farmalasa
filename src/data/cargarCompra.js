@@ -245,16 +245,31 @@ export async function enviarCarga({ documentId, cargaId, uso, renglones, diasCre
  * mandaría el sistema y la revisa (que no exista ya, que el precio cubra el
  * costo, que el modelo sirva). No crea nada.
  */
-export async function simularProductoNuevo({ nombre, barcode, modeloId, costo, precio }) {
-    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { accion: 'producto_nuevo', nombre, barcode, modelo_id: modeloId, costo, precio },
-    });
+async function invocarProducto(body) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body: { accion: 'producto_nuevo', ...body } });
     if (error) {
         let msg = error.message;
         try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
         return { resultado: null, error: msg ?? 'No se pudo revisar el producto.' };
     }
     if (data?.error) return { resultado: null, error: data.error };
-    anotar('PRODUCTO_NUEVO_SIMULADO', modeloId, { nombre, listo: data?.revision?.listo });
     return { resultado: data, error: null };
+}
+
+/**
+ * Revisa el alta de un producto nuevo sin crearlo. Devuelve lo sugerido
+ * (proveedor de la factura, datos del parecido, precio con su margen) y, con
+ * `catalogos`, las listas del formulario del sistema.
+ */
+export async function simularProductoNuevo(datos) {
+    return invocarProducto({ ...datos, document_id: datos.documentId, modelo_id: datos.modeloId });
+}
+
+/** Lo da de alta de verdad, con lo MISMO que se revisó. */
+export async function crearProductoNuevo(datos) {
+    const r = await invocarProducto({ ...datos, document_id: datos.documentId, modelo_id: datos.modeloId, crear: true });
+    anotar('PRODUCTO_NUEVO_CREADO', r.resultado?.producto?.id ?? datos.modeloId, {
+        nombre: datos.nombre, ok: !r.error, verificado: r.resultado?.verificado ?? null, error: r.error,
+    });
+    return r;
 }

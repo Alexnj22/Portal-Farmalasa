@@ -314,62 +314,196 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
 }
 
 /** El texto de la opción elegida de un `<select>` de la pantalla del sistema. */
-function textoElegido(html: string, id: string): string | null {
-  const m = new RegExp(`<select[^>]*id=["']${id}["'][^>]*>([\\s\\S]*?)</select>`).exec(html);
-  const o = m && /<option[^>]*\bselected\b[^>]*>([^<]*)</.exec(m[1]);
-  return o ? o[1].trim() : null;
-}
 
 /**
  * Producto nuevo copiando a uno parecido — SIMULACRO. Lee la pantalla de
  * edición del modelo (un GET) y arma el alta tal como la mandaría el
  * formulario del sistema, sin mandarla.
  */
-async function productoNuevo(admin: any, body: any) {
+/**
+ * Da de alta el producto en el sistema, con el MISMO sobre que se acaba de
+ * revisar (se rearma en el servidor; nada viene del navegador).
+ *
+ * 1. Toma la fila en `producto_alta_portal` (nombre y código únicos): un doble
+ *    clic o un reintento chocan ahí y no crean dos productos.
+ * 2. Manda `agregar_producto.php` como lo hace su formulario.
+ * 3. Lo LEE de vuelta en su ficha: el «Success» no alcanza (ver la compra
+ *    6472, que dijo «Hecho» con la mercadería en otra ubicación).
+ * 4. Lo agrega al catálogo del portal para poder elegirlo en la carga ya.
+ */
+async function crearProducto(
+  admin: any, cookie: string, sobre: Record<string, string>,
+  x: { nombre: string; barcode: string; modeloId: number; costo: number; precio: number; quien: string },
+) {
+  const { data: fila, error: eF } = await admin.from("producto_alta_portal").insert({
+    nombre: x.nombre, barcode: x.barcode || null, modelo_id: x.modeloId,
+    costo: x.costo, precio: x.precio, creado_por: x.quien,
+  }).select("id").single();
+  if (eF) {
+    if (eF.code === "23505") return { error: "Ese producto ya se dio de alta desde el portal (o se está dando ahora)." };
+    throw eF;
+  }
+  const marcar = (estado: string, extra: Record<string, unknown> = {}) =>
+    admin.from("producto_alta_portal").update({ estado, updated_at: new Date().toISOString(), ...extra }).eq("id", fila.id);
+
+  let texto: string;
+  try {
+    texto = await pedir(cookie, `${BASE}/agregar_producto.php`, new URLSearchParams(sobre),
+      { extra: { Referer: `${BASE}/agregar_producto.php` } });
+  } catch (e) {
+    // No se sabe si llegó: la fila queda tomada para que no se mande a ciegas.
+    await marcar("sin_verificar", { error: `Sin respuesta: ${(e as Error)?.message ?? e}` });
+    return { error: "El sistema no contestó. Puede haberse creado: NO lo vuelvas a crear; búscalo primero." };
+  }
+  let j: any = null;
+  try { j = JSON.parse(texto); } catch { /* abajo */ }
+  if (!j) {
+    await marcar("sin_verificar", { error: `Respuesta ilegible: ${texto.slice(0, 4000)}` });
+    return { error: "El sistema contestó algo que no se entiende. Puede haberse creado: NO lo vuelvas a crear; búscalo primero." };
+  }
+  if (String(j.typeinfo).toLowerCase() !== "success") {
+    await marcar("fallido", { error: String(j.msg ?? "rechazado") });
+    return { error: `El sistema no lo aceptó: ${j.msg ?? "sin motivo"}` };
+  }
+  const id = Number(j.id_producto);
+  if (!(id > 0)) {
+    await marcar("sin_verificar", { error: `Sin número de producto: ${texto.slice(0, 500)}` });
+    return { error: "Se creó pero el sistema no dijo con qué número. Búscalo por nombre antes de volver a crearlo." };
+  }
+
+  // Leerlo de vuelta: que exista con ese nombre y tenga su presentación.
+  const html = await pedir(cookie, `${BASE}/editar_producto.php?id_producto=${id}`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
+  const leido = leerModelo(id, html);
+  const notas: string[] = [];
+  if (leido.nombre.toUpperCase() !== x.nombre) notas.push(`la ficha dice «${leido.nombre}»`);
+  if (!leido.precios) notas.push("no tiene presentación de 1 unidad activa");
+  else if (Math.abs(leido.precios[0] - x.precio) > 0.005) notas.push(`el precio quedó en $${leido.precios[0].toFixed(2)}`);
+  await marcar(notas.length ? "sin_verificar" : "creado", { erp_product_id: id, error: notas.length ? notas.join(" · ") : null });
+
+  const { error: eP } = await admin.rpc("upsert_products_minimal", { p_rows: [{ id, nombre: leido.nombre || x.nombre }] });
+  if (eP) throw eP;
+  return { creado: true, verificado: notas.length === 0, producto: { id, nombre: leido.nombre || x.nombre }, notas };
+}
+
+/** Las opciones de un <select> del formulario del sistema, sin «Seleccione». */
+function opcionesDe(html: string, id: string): { value: string; label: string }[] {
+  const m = new RegExp(`<select[^>]*id=["']${id}["'][^>]*>([\\s\\S]*?)</select>`).exec(html);
+  return [...(m?.[1] ?? "").matchAll(/<option[^>]*value=["']([^"']+)["'][^>]*>([^<]*)</g)]
+    .map((o) => ({ value: o[1], label: o[2].trim() })).filter((o) => o.value);
+}
+
+/**
+ * El alta de un producto que la compra trae y Bodega no tiene.
+ *
+ * Pide lo MISMO que `agregar_producto.php` —proveedor, categoría,
+ * laboratorio, marca, si vence, si es exento, si se vende por fracción, y la
+ * presentación de 1 unidad con su costo y precio— pero llega prellenado:
+ * - el proveedor es el de la factura;
+ * - si el renglón se parece a un producto que ya existe, se copian de él la
+ *   categoría, el laboratorio, la marca y las casillas, y el precio sugerido
+ *   guarda su mismo margen;
+ * - nombre y código de barras salen del renglón.
+ * Todo se puede cambiar. Con `crear` lo da de alta; sin él sólo revisa.
+ * Un producto regulado o antibiótico no se da de alta desde acá.
+ */
+async function productoNuevo(admin: any, body: any, creaQuien: string | null = null) {
   const problemas: string[] = [];
   const nombre = String(body?.nombre ?? "").replace(/\s+/g, " ").trim().toUpperCase();
   const barcode = String(body?.barcode ?? "").trim();
-  const modeloId = Number(body?.modelo_id);
+  const modeloId = Number(body?.modelo_id) || null;
   const costo = Number(body?.costo);
-  const precio = Number(body?.precio);
+  const precioPedido = Number(body?.precio);
+
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  const form = await pedir(cookie, `${BASE}/agregar_producto.php`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
+  const catalogos = {
+    proveedores: opcionesDe(form, "proveedor"),
+    categorias: opcionesDe(form, "id_categoria"),
+    laboratorios: opcionesDe(form, "id_laboratorio"),
+  };
+  if (!catalogos.categorias.length) return { error: "No se pudo leer el formulario de productos del sistema." };
+
+  // Lo que se sugiere: el parecido, y el proveedor de la factura.
+  let m: any = null, html = "";
+  if (modeloId) {
+    html = await pedir(cookie, `${BASE}/editar_producto.php?id_producto=${modeloId}`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
+    m = leerModelo(modeloId, html);
+    if (!m.nombre) m = null;
+  }
+  let provFactura: string | null = null;
+  if (body?.document_id) {
+    const { data: d, error: eD } = await admin.from("purchase_dte_documents").select("emisor_nit").eq("id", Number(body.document_id)).maybeSingle();
+    if (eD) throw eD;
+    if (d?.emisor_nit) {
+      const { data: pm, error: eP } = await admin.from("proveedores_maestro").select("supplier_id").eq("nit", d.emisor_nit).maybeSingle();
+      if (eP) throw eP;
+      if (pm?.supplier_id) {
+        const { data: su, error: eS } = await admin.from("suppliers").select("erp_supplier_id").eq("id", pm.supplier_id).maybeSingle();
+        if (eS) throw eS;
+        if (su?.erp_supplier_id) provFactura = String(su.erp_supplier_id);
+      }
+    }
+  }
+  const sugerido = {
+    proveedor: provFactura ?? m?.proveedor ?? "",
+    categoria: m?.categoria ?? "",
+    laboratorio: m?.laboratorio ?? "",
+    marca: m?.marca ?? "",
+    perecedero: m?.perecedero ?? true,
+    exento: m?.exento ?? false,
+    decimal: m?.decimal ?? false,
+  };
+  // El precio que guarda el margen del parecido (sólo si hay costo y precio leídos).
+  const margenModelo = m?.precios?.[0] > 0 && m?.costo > 0 ? 1 - m.costo / m.precios[0] : null;
+  const precioSugerido = costo > 0 && margenModelo != null && margenModelo > 0 && margenModelo < 0.9
+    ? Math.round((costo / (1 - margenModelo)) * 100) / 100 : null;
+
+  const dato = (k: keyof typeof sugerido) => (body?.[k] !== undefined && body?.[k] !== null ? body[k] : sugerido[k]);
+  const valores = {
+    proveedor: String(dato("proveedor") ?? ""), categoria: String(dato("categoria") ?? ""),
+    laboratorio: String(dato("laboratorio") ?? ""), marca: String(dato("marca") ?? "").trim().toUpperCase(),
+    perecedero: Boolean(dato("perecedero")), exento: Boolean(dato("exento")), decimal: Boolean(dato("decimal")),
+  };
+  const precio = precioPedido > 0 ? precioPedido : (precioSugerido ?? 0);
 
   if (nombre.length < 4 || nombre.length > 120) problemas.push("El nombre tiene que tener entre 4 y 120 letras.");
   if (barcode && !/^\d{8,14}$/.test(barcode)) problemas.push("El código de barras son de 8 a 14 dígitos.");
   if (!(costo > 0)) problemas.push("Falta el costo por unidad.");
   if (!(precio > 0)) problemas.push("Falta el precio de venta.");
   else if (costo > 0 && precio <= costo) problemas.push(`El precio ($${precio.toFixed(2)}) no es mayor que el costo ($${costo.toFixed(4)}).`);
-  if (!Number.isFinite(modeloId)) return { error: "Falta el producto modelo." };
+  const en = (lista: { value: string }[], v: string) => lista.some((o) => o.value === v);
+  if (!en(catalogos.proveedores, valores.proveedor)) problemas.push("Elige el proveedor.");
+  if (!en(catalogos.categorias, valores.categoria)) problemas.push("Elige la categoría.");
+  if (!en(catalogos.laboratorios, valores.laboratorio)) problemas.push("Elige el laboratorio.");
+  // Un producto controlado no se da de alta copiando: lo que lo hace
+  // controlado es justo lo que hay que decidir con cuidado.
+  if (m && (m.regulado || m.antibiotico)) problemas.push(`«${m.nombre}» es regulado o antibiótico: un producto así se da de alta a mano.`);
 
   // Que no exista ya: el mismo código de barras, o el mismo nombre.
   const { data: iguales, error: eI } = await admin.from("products").select("id, nombre, codigo_barras")
     .or([barcode ? `codigo_barras.eq.${barcode}` : null, `nombre.ilike.${nombre.replace(/[,()]/g, " ")}`].filter(Boolean).join(","))
     .limit(3);
   if (eI) throw eI;
-  for (const x of iguales ?? []) problemas.push(`Ya existe: ${x.nombre} (${x.id}).`);
+  const existentes = (iguales ?? []).map((x: any) => ({ id: x.id, nombre: x.nombre }));
+  for (const x of existentes) problemas.push(`Ya existe: ${x.nombre} (${x.id}).`);
 
-  const cookie = await sesionEn(ERP_BODEGA, login);
-  const html = await pedir(cookie, `${BASE}/editar_producto.php?id_producto=${modeloId}`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
-  const m = leerModelo(modeloId, html);
-  if (!m.nombre) return { error: `El producto ${modeloId} no existe en el sistema.` };
-  if (!m.categoria || !m.laboratorio || !m.proveedor) problemas.push(`El modelo «${m.nombre}» no tiene categoría, laboratorio o proveedor: elige otro.`);
-  if (!m.precios) problemas.push(`El modelo «${m.nombre}» no tiene presentación de 1 unidad activa: elige otro.`);
-  // Un producto controlado no se da de alta copiando: lo que lo hace
-  // controlado es justo lo que hay que decidir con cuidado.
-  if (m.regulado || m.antibiotico) problemas.push(`El modelo «${m.nombre}» es regulado o antibiótico: ese tipo de producto se da de alta a mano.`);
-
-  const sobre = sobreDeProductoNuevo(m, { nombre, barcode, costo: costo > 0 ? costo : 0, precio: precio > 0 ? precio : 0 });
+  const base = {
+    id: 0, nombre: "", regulado: false, antibiotico: false, precios: m?.precios ?? null,
+    proveedor: valores.proveedor, categoria: valores.categoria, laboratorio: valores.laboratorio,
+    marca: valores.marca, perecedero: valores.perecedero, exento: valores.exento, decimal: valores.decimal,
+  };
+  const sobre = sobreDeProductoNuevo(base as any, { nombre, barcode, costo: costo > 0 ? costo : 0, precio: precio > 0 ? precio : 0 });
+  if (creaQuien) {
+    if (problemas.length) return { error: problemas.join(" ") };
+    return await crearProducto(admin, cookie, sobre, { nombre, barcode, modeloId: modeloId ?? 0, costo, precio, quien: creaQuien });
+  }
   return {
-    simulacro: true, sobre,
+    simulacro: true,
+    catalogos: body?.catalogos ? catalogos : undefined,
     revision: {
-      problemas, listo: problemas.length === 0,
-      nombre, barcode: barcode || null,
-      modelo: {
-        id: m.id, nombre: m.nombre,
-        categoria: textoElegido(html, "id_categoria"),
-        laboratorio: textoElegido(html, "id_laboratorio"),
-        proveedor: textoElegido(html, "proveedor"),
-        perecedero: m.perecedero, exento: m.exento,
-      },
+      problemas, listo: problemas.length === 0, existentes,
+      nombre, barcode: barcode || null, valores, sugerido, precio, precio_sugerido: precioSugerido,
+      modelo: m ? { id: m.id, nombre: m.nombre } : null,
       precios: sobre.lista.split(",").slice(7).join(",").replace(/;$/, "").split("#").filter(Boolean).map(Number),
     },
   };
@@ -398,7 +532,7 @@ Deno.serve(async (req: Request) => {
     if (enviar && Deno.env.get("CARGA_COMPRA_ENVIO") !== "on") {
       return responder({ error: "El envío a Bodega todavía no está encendido." }, 409);
     }
-    if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body));
+    if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body, body?.crear === true ? quien.id : null));
     if (!Number.isFinite(documentId)) return responder({ error: "Falta el documento." }, 400);
 
     // ── El documento y su proveedor ──────────────────────────────────────────

@@ -142,6 +142,9 @@
 
   /* ── Cláusulas ─────────────────────────────────────────────────────────── */
   section { margin-top: 1.5rem; }
+  /* La firma nunca queda sola en una hoja: la última cláusula no se parte y
+     viaja con ella. Una página que sólo trae la firma no prueba qué se firmó. */
+  section:last-of-type { break-inside: avoid; break-after: avoid; }
   h2 { font-family: "IBM Plex Sans", system-ui, sans-serif;
        font-size: .95rem; font-weight: 700; margin: 0 0 .5rem; padding-bottom: .3rem;
        border-bottom: 1px solid var(--rule); display: flex; gap: .55rem; align-items: baseline; }
